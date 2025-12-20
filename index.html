@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TCG Prototype</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <h1>Trading Card Game Prototype</h1>
+      <div class="status-bar">
+        <span id="turn-indicator"></span>
+        <span id="phase-indicator"></span>
+      </div>
+    </header>
+
+    <main class="board">
+      <section class="player-area" id="player-1-area">
+        <header>
+          <h2>Player 1</h2>
+          <div class="player-stats">
+            <span id="player-1-hp"></span>
+            <span id="player-1-hand"></span>
+            <span id="player-1-deck"></span>
+          </div>
+        </header>
+        <div class="zone-row">
+          <div class="zone" id="player-1-field">
+            <h3>Field</h3>
+            <div class="slot-row" data-player="0"></div>
+          </div>
+          <div class="zone" id="player-1-piles">
+            <h3>Piles</h3>
+            <p id="player-1-carrion"></p>
+            <p id="player-1-exile"></p>
+            <p id="player-1-traps"></p>
+          </div>
+        </div>
+        <div class="zone" id="player-1-hand-zone">
+          <h3>Hand</h3>
+          <div class="hand-row" data-player="0"></div>
+        </div>
+      </section>
+
+      <section class="controls">
+        <h2>Controls</h2>
+        <div class="control-panel">
+          <button id="draw-button">Draw Card</button>
+          <button id="next-phase-button">Next Phase</button>
+          <button id="end-turn-button">End Turn</button>
+        </div>
+        <div class="control-panel" id="action-panel"></div>
+        <div class="control-panel" id="selection-panel"></div>
+        <div class="log-panel" id="log-panel"></div>
+      </section>
+
+      <section class="player-area" id="player-2-area">
+        <header>
+          <h2>Player 2</h2>
+          <div class="player-stats">
+            <span id="player-2-hp"></span>
+            <span id="player-2-hand"></span>
+            <span id="player-2-deck"></span>
+          </div>
+        </header>
+        <div class="zone-row">
+          <div class="zone" id="player-2-field">
+            <h3>Field</h3>
+            <div class="slot-row" data-player="1"></div>
+          </div>
+          <div class="zone" id="player-2-piles">
+            <h3>Piles</h3>
+            <p id="player-2-carrion"></p>
+            <p id="player-2-exile"></p>
+            <p id="player-2-traps"></p>
+          </div>
+        </div>
+        <div class="zone" id="player-2-hand-zone">
+          <h3>Hand</h3>
+          <div class="hand-row" data-player="1"></div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="js/main.js"></script>
+  </body>
+</html>
