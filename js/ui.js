@@ -221,9 +221,10 @@ const resolveAttack = (state, attacker, target, negateAttack = false) => {
   cleanupDestroyed(state);
 };
 
-const handleTrapResponse = (state, defender, attacker, target) => {
+const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
   if (defender.traps.length === 0) {
     resolveAttack(state, attacker, target, false);
+    onUpdate?.();
     return;
   }
 
@@ -251,12 +252,14 @@ const handleTrapResponse = (state, defender, attacker, target) => {
         logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
         clearSelectionPanel();
         pendingAttack = null;
+        onUpdate?.();
         return;
       }
       const negate = Boolean(result?.negateAttack);
       clearSelectionPanel();
       resolveAttack(state, attacker, target, negate);
       pendingAttack = null;
+      onUpdate?.();
     };
     item.appendChild(button);
     return item;
@@ -270,6 +273,7 @@ const handleTrapResponse = (state, defender, attacker, target) => {
     clearSelectionPanel();
     resolveAttack(state, attacker, target, false);
     pendingAttack = null;
+    onUpdate?.();
   };
   skipButton.appendChild(skipAction);
   items.push(skipButton);
@@ -282,7 +286,7 @@ const handleTrapResponse = (state, defender, attacker, target) => {
   });
 };
 
-const handleAttackSelection = (state, attacker) => {
+const handleAttackSelection = (state, attacker, onUpdate) => {
   const opponent = getOpponentPlayer(state);
   const validTargets = getValidTargets(state, attacker, opponent);
 
@@ -294,7 +298,7 @@ const handleAttackSelection = (state, attacker) => {
     button.textContent = `Attack ${creature.name}`;
     button.onclick = () => {
       clearSelectionPanel();
-      handleTrapResponse(state, opponent, attacker, { type: "creature", card: creature });
+      handleTrapResponse(state, opponent, attacker, { type: "creature", card: creature }, onUpdate);
     };
     item.appendChild(button);
     items.push(item);
@@ -307,7 +311,7 @@ const handleAttackSelection = (state, attacker) => {
     button.textContent = `Attack ${opponent.name}`;
     button.onclick = () => {
       clearSelectionPanel();
-      handleTrapResponse(state, opponent, attacker, { type: "player", player: opponent });
+      handleTrapResponse(state, opponent, attacker, { type: "player", player: opponent }, onUpdate);
     };
     item.appendChild(button);
     items.push(item);
@@ -324,6 +328,7 @@ const handleAttackSelection = (state, attacker) => {
 const handlePlayCard = (state, card, onUpdate) => {
   if (!canPlayCard(state)) {
     logMessage(state, "Cards may only be played during a main phase.");
+    onUpdate?.();
     return;
   }
 
@@ -333,6 +338,7 @@ const handlePlayCard = (state, card, onUpdate) => {
   const isFree = card.type === "Free Spell" || isFreePlay(card);
   if (!isFree && !cardLimitAvailable(state)) {
     logMessage(state, "You have already played a card this turn.");
+    onUpdate?.();
     return;
   }
 
@@ -368,6 +374,7 @@ const handlePlayCard = (state, card, onUpdate) => {
     const emptySlot = player.field.findIndex((slot) => slot === null);
     if (emptySlot === -1) {
       logMessage(state, "No empty field slots available.");
+      onUpdate?.();
       return;
     }
 
@@ -408,6 +415,7 @@ const handlePlayCard = (state, card, onUpdate) => {
             );
             if (preyToConsume.length > 3) {
               logMessage(state, "You can consume up to 3 prey.");
+              onUpdate?.();
               return;
             }
             consumePrey({
@@ -475,8 +483,8 @@ export const renderGame = (state, callbacks = {}) => {
   updateIndicators(state);
   updatePlayerStats(state, 0);
   updatePlayerStats(state, 1);
-  renderField(state, 0, (card) => handleAttackSelection(state, card));
-  renderField(state, 1, (card) => handleAttackSelection(state, card));
+  renderField(state, 0, (card) => handleAttackSelection(state, card, callbacks.onUpdate));
+  renderField(state, 1, (card) => handleAttackSelection(state, card, callbacks.onUpdate));
   renderHand(state, 0, (card) => handlePlayCard(state, card, callbacks.onUpdate));
   renderHand(state, 1, (card) => handlePlayCard(state, card, callbacks.onUpdate));
   updateActionPanel(state, callbacks.onNextPhase, callbacks.onEndTurn, callbacks.onDraw);
