@@ -3,85 +3,116 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TCG Prototype</title>
+    <title>Food Chain TCG</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body>
+  <body class="app">
     <header class="app-header">
-      <h1>Trading Card Game Prototype</h1>
+      <div class="title-block">
+        <h1>Food Chain TCG</h1>
+        <p class="subtitle">Tactical duels, predator strikes, and a mirrored battle view.</p>
+      </div>
       <div class="status-bar">
         <span id="turn-indicator"></span>
         <span id="phase-indicator"></span>
       </div>
     </header>
 
-    <main class="board">
-      <section class="player-area" id="player-1-area">
-        <header>
-          <h2>Player 1</h2>
-          <div class="player-stats">
-            <span id="player-1-hp"></span>
-            <span id="player-1-hand"></span>
-            <span id="player-1-deck"></span>
+    <main class="game-shell">
+      <section class="table-view">
+        <section class="player-zone opponent" id="opponent-zone">
+          <header class="player-header">
+            <div>
+              <h2 id="opponent-name">Opponent</h2>
+              <p class="player-role">Rival</p>
+            </div>
+            <div class="player-stats">
+              <span id="opponent-hp"></span>
+              <span id="opponent-hand"></span>
+              <span id="opponent-deck"></span>
+            </div>
+          </header>
+          <div class="zone-row">
+            <div class="zone field-zone">
+              <h3>Field</h3>
+              <div class="slot-row" data-zone="opponent-field"></div>
+            </div>
+            <div class="zone piles-zone">
+              <h3>Piles</h3>
+              <p id="opponent-carrion"></p>
+              <p id="opponent-exile"></p>
+              <p id="opponent-traps"></p>
+            </div>
           </div>
-        </header>
-        <div class="zone-row">
-          <div class="zone" id="player-1-field">
-            <h3>Field</h3>
-            <div class="slot-row" data-player="0"></div>
+          <div class="zone hand-zone">
+            <h3>Hand</h3>
+            <div class="hand-row hand-row--hidden" data-zone="opponent-hand"></div>
           </div>
-          <div class="zone" id="player-1-piles">
-            <h3>Piles</h3>
-            <p id="player-1-carrion"></p>
-            <p id="player-1-exile"></p>
-            <p id="player-1-traps"></p>
+        </section>
+
+        <section class="center-zone">
+          <div class="center-banner">
+            <div class="phase-pill" id="center-phase"></div>
+            <div class="turn-pill" id="center-turn"></div>
           </div>
-        </div>
-        <div class="zone" id="player-1-hand-zone">
-          <h3>Hand</h3>
-          <div class="hand-row" data-player="0"></div>
-        </div>
+          <div class="center-controls">
+            <button id="draw-button">Draw Card</button>
+            <button id="next-phase-button">Next Phase</button>
+            <button id="end-turn-button">End Turn</button>
+          </div>
+        </section>
+
+        <section class="player-zone active" id="active-zone">
+          <header class="player-header">
+            <div>
+              <h2 id="active-name">Active Player</h2>
+              <p class="player-role">Your Side</p>
+            </div>
+            <div class="player-stats">
+              <span id="active-hp"></span>
+              <span id="active-hand"></span>
+              <span id="active-deck"></span>
+            </div>
+          </header>
+          <div class="zone-row">
+            <div class="zone field-zone">
+              <h3>Field</h3>
+              <div class="slot-row" data-zone="active-field"></div>
+            </div>
+            <div class="zone piles-zone">
+              <h3>Piles</h3>
+              <p id="active-carrion"></p>
+              <p id="active-exile"></p>
+              <p id="active-traps"></p>
+            </div>
+          </div>
+          <div class="zone hand-zone">
+            <h3>Hand</h3>
+            <div class="hand-row" data-zone="active-hand"></div>
+          </div>
+        </section>
       </section>
 
-      <section class="controls">
-        <h2>Controls</h2>
-        <div class="control-panel">
-          <button id="draw-button">Draw Card</button>
-          <button id="next-phase-button">Next Phase</button>
-          <button id="end-turn-button">End Turn</button>
-        </div>
-        <div class="control-panel" id="action-panel"></div>
-        <div class="control-panel" id="selection-panel"></div>
-        <div class="log-panel" id="log-panel"></div>
-      </section>
-
-      <section class="player-area" id="player-2-area">
-        <header>
-          <h2>Player 2</h2>
-          <div class="player-stats">
-            <span id="player-2-hp"></span>
-            <span id="player-2-hand"></span>
-            <span id="player-2-deck"></span>
+      <aside class="side-panel">
+        <section class="panel" id="action-panel"></section>
+        <section class="panel" id="selection-panel"></section>
+        <section class="panel" id="card-inspector">
+          <h3>Card Details</h3>
+          <div class="inspector-body" id="card-inspector-body">
+            <p>Select or hover a card to view details.</p>
           </div>
-        </header>
-        <div class="zone-row">
-          <div class="zone" id="player-2-field">
-            <h3>Field</h3>
-            <div class="slot-row" data-player="1"></div>
-          </div>
-          <div class="zone" id="player-2-piles">
-            <h3>Piles</h3>
-            <p id="player-2-carrion"></p>
-            <p id="player-2-exile"></p>
-            <p id="player-2-traps"></p>
-          </div>
-        </div>
-        <div class="zone" id="player-2-hand-zone">
-          <h3>Hand</h3>
-          <div class="hand-row" data-player="1"></div>
-        </div>
-      </section>
+        </section>
+        <section class="panel log-panel" id="log-panel"></section>
+      </aside>
     </main>
+
+    <div class="pass-overlay" id="pass-overlay" aria-hidden="true">
+      <div class="pass-card">
+        <h2 id="pass-message">Pass to Player 2</h2>
+        <p>Hand off the device to your rival, then confirm to continue.</p>
+        <button id="pass-confirm">OK</button>
+      </div>
+    </div>
 
     <script type="module" src="js/main.js"></script>
   </body>
