@@ -321,7 +321,7 @@ const handleAttackSelection = (state, attacker) => {
   });
 };
 
-const handlePlayCard = (state, card) => {
+const handlePlayCard = (state, card, onUpdate) => {
   if (!canPlayCard(state)) {
     logMessage(state, "Cards may only be played during a main phase.");
     return;
@@ -351,6 +351,7 @@ const handlePlayCard = (state, card) => {
     if (!isFree) {
       state.cardPlayedThisTurn = true;
     }
+    onUpdate?.();
     return;
   }
 
@@ -359,6 +360,7 @@ const handlePlayCard = (state, card) => {
     player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
     state.cardPlayedThisTurn = true;
     logMessage(state, `${player.name} sets a trap.`);
+    onUpdate?.();
     return;
   }
 
@@ -432,9 +434,10 @@ const handlePlayCard = (state, card) => {
             }
             pendingConsumption = null;
             clearSelectionPanel();
-            renderGame(state);
+            onUpdate?.();
           },
         });
+        onUpdate?.();
         return;
       }
     }
@@ -446,6 +449,7 @@ const handlePlayCard = (state, card) => {
     if (!isFree) {
       state.cardPlayedThisTurn = true;
     }
+    onUpdate?.();
   }
 };
 
@@ -473,8 +477,8 @@ export const renderGame = (state, callbacks = {}) => {
   updatePlayerStats(state, 1);
   renderField(state, 0, (card) => handleAttackSelection(state, card));
   renderField(state, 1, (card) => handleAttackSelection(state, card));
-  renderHand(state, 0, (card) => handlePlayCard(state, card));
-  renderHand(state, 1, (card) => handlePlayCard(state, card));
+  renderHand(state, 0, (card) => handlePlayCard(state, card, callbacks.onUpdate));
+  renderHand(state, 1, (card) => handlePlayCard(state, card, callbacks.onUpdate));
   updateActionPanel(state, callbacks.onNextPhase, callbacks.onEndTurn, callbacks.onDraw);
   appendLog(state);
 };
