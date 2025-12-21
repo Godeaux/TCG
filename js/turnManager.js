@@ -36,6 +36,7 @@ export const endTurn = (state) => {
   state.activePlayerIndex = (state.activePlayerIndex + 1) % 2;
   state.phase = "Start";
   state.cardPlayedThisTurn = false;
+  state.passPending = true;
   resetCombat(state);
   logMessage(state, `Turn passes to ${state.players[state.activePlayerIndex].name}.`);
 };
