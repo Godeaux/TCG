@@ -324,6 +324,7 @@ const handleAttackSelection = (state, attacker) => {
 const handlePlayCard = (state, card, onUpdate) => {
   if (!canPlayCard(state)) {
     logMessage(state, "Cards may only be played during a main phase.");
+    onUpdate?.();
     return;
   }
 
@@ -333,6 +334,7 @@ const handlePlayCard = (state, card, onUpdate) => {
   const isFree = card.type === "Free Spell" || isFreePlay(card);
   if (!isFree && !cardLimitAvailable(state)) {
     logMessage(state, "You have already played a card this turn.");
+    onUpdate?.();
     return;
   }
 
@@ -368,6 +370,7 @@ const handlePlayCard = (state, card, onUpdate) => {
     const emptySlot = player.field.findIndex((slot) => slot === null);
     if (emptySlot === -1) {
       logMessage(state, "No empty field slots available.");
+      onUpdate?.();
       return;
     }
 
@@ -408,6 +411,7 @@ const handlePlayCard = (state, card, onUpdate) => {
             );
             if (preyToConsume.length > 3) {
               logMessage(state, "You can consume up to 3 prey.");
+              onUpdate?.();
               return;
             }
             consumePrey({
