@@ -2,15 +2,21 @@ import { drawCard, logMessage, resetCombat } from "./gameState.js";
 
 const PHASES = ["Start", "Draw", "Main 1", "Combat", "Main 2", "End"];
 
+const beginNextTurn = (state) => {
+  state.turn += 1;
+  state.activePlayerIndex = (state.activePlayerIndex + 1) % 2;
+  state.cardPlayedThisTurn = false;
+  resetCombat(state);
+  logMessage(state, `Turn passes to ${state.players[state.activePlayerIndex].name}.`);
+};
+
 export const advancePhase = (state) => {
   const currentIndex = PHASES.indexOf(state.phase);
   const nextIndex = (currentIndex + 1) % PHASES.length;
   state.phase = PHASES[nextIndex];
 
   if (state.phase === "Start") {
-    state.turn += 1;
-    state.cardPlayedThisTurn = false;
-    resetCombat(state);
+    beginNextTurn(state);
   }
 
   if (state.phase === "Draw") {
@@ -33,11 +39,8 @@ export const advancePhase = (state) => {
 };
 
 export const endTurn = (state) => {
-  state.activePlayerIndex = (state.activePlayerIndex + 1) % 2;
   state.phase = "Start";
-  state.cardPlayedThisTurn = false;
-  resetCombat(state);
-  logMessage(state, `Turn passes to ${state.players[state.activePlayerIndex].name}.`);
+  beginNextTurn(state);
 };
 
 export const canPlayCard = (state) => {
