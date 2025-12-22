@@ -7,6 +7,22 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <div class="deck-overlay" id="deck-overlay" aria-hidden="true">
+      <div class="deck-builder-card">
+        <h2 id="deck-title">Deck Builder</h2>
+        <p id="deck-subtitle" class="muted"></p>
+        <div class="deck-status" id="deck-status"></div>
+        <div class="deck-row-wrapper">
+          <h3>Full 50-Card Catalog</h3>
+          <div class="deck-row" id="deck-full-row"></div>
+        </div>
+        <div class="deck-row-wrapper">
+          <h3>Added to Deck</h3>
+          <div class="deck-row" id="deck-added-row"></div>
+        </div>
+        <button id="deck-confirm">Confirm Deck</button>
+      </div>
+    </div>
     <div class="setup-overlay" id="setup-overlay" aria-hidden="true">
       <div class="setup-card">
         <h2 id="setup-title">Opening Roll</h2>
