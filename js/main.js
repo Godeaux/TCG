@@ -1,4 +1,4 @@
-import { createGameState, logMessage, rollSetupDie, chooseFirstPlayer } from "./gameState.js";
+import { createGameState, logMessage, rollSetupDice, chooseFirstPlayer } from "./gameState.js";
 import { advancePhase, endTurn, startTurn } from "./turnManager.js";
 import { renderGame, setupInitialDraw } from "./ui.js";
 
@@ -32,8 +32,8 @@ const refresh = () => {
       state.passPending = false;
       refresh();
     },
-    onSetupRoll: (playerIndex) => {
-      rollSetupDie(state, playerIndex);
+    onSetupRoll: () => {
+      rollSetupDice(state);
       refresh();
     },
     onSetupChoose: (playerIndex) => {

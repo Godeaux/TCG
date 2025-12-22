@@ -34,6 +34,7 @@ export const createGameState = () => {
       stage: "rolling",
       rolls: [null, null],
       winnerIndex: null,
+      needsReroll: false,
     },
     log: [],
     combat: {
@@ -75,33 +76,31 @@ export const resetCombat = (state) => {
   });
 };
 
-export const rollSetupDie = (state, playerIndex) => {
+export const rollSetupDice = (state) => {
   if (!state.setup || state.setup.stage !== "rolling") {
     return null;
   }
-  if (state.setup.rolls[playerIndex] !== null) {
-    return state.setup.rolls[playerIndex];
-  }
-  const roll = Math.floor(Math.random() * 10) + 1;
-  state.setup.rolls[playerIndex] = roll;
-  logMessage(state, `${state.players[playerIndex].name} rolls a ${roll}.`);
 
-  const [p1Roll, p2Roll] = state.setup.rolls;
-  if (p1Roll !== null && p2Roll !== null) {
-    if (p1Roll === p2Roll) {
-      logMessage(state, "Tie! Reroll the dice to determine who chooses first.");
-      state.setup.rolls = [null, null];
-    } else {
-      state.setup.winnerIndex = p1Roll > p2Roll ? 0 : 1;
-      state.setup.stage = "choice";
-      logMessage(
-        state,
-        `${state.players[state.setup.winnerIndex].name} wins the roll and chooses who goes first.`
-      );
-    }
+  const p1Roll = Math.floor(Math.random() * 10) + 1;
+  const p2Roll = Math.floor(Math.random() * 10) + 1;
+  state.setup.rolls = [p1Roll, p2Roll];
+  state.setup.needsReroll = false;
+  logMessage(state, `${state.players[0].name} rolls a ${p1Roll}.`);
+  logMessage(state, `${state.players[1].name} rolls a ${p2Roll}.`);
+
+  if (p1Roll === p2Roll) {
+    state.setup.needsReroll = true;
+    logMessage(state, "Tie! Roll again to determine who chooses first.");
+    return state.setup.rolls;
   }
 
-  return roll;
+  state.setup.winnerIndex = p1Roll > p2Roll ? 0 : 1;
+  state.setup.stage = "choice";
+  logMessage(
+    state,
+    `${state.players[state.setup.winnerIndex].name} wins the roll and chooses who goes first.`
+  );
+  return state.setup.rolls;
 };
 
 export const chooseFirstPlayer = (state, chosenIndex) => {
@@ -112,5 +111,6 @@ export const chooseFirstPlayer = (state, chosenIndex) => {
   state.cardPlayedThisTurn = false;
   state.passPending = false;
   state.setup.stage = "complete";
+  state.setup.needsReroll = false;
   logMessage(state, `${state.players[chosenIndex].name} will take the first turn.`);
 };

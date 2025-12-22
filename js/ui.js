@@ -17,11 +17,6 @@ const passOverlay = document.getElementById("pass-overlay");
 const passTitle = document.getElementById("pass-title");
 const passConfirm = document.getElementById("pass-confirm");
 const inspectorPanel = document.getElementById("card-inspector");
-const setupOverlay = document.getElementById("setup-overlay");
-const setupTitle = document.getElementById("setup-title");
-const setupSubtitle = document.getElementById("setup-subtitle");
-const setupRolls = document.getElementById("setup-rolls");
-const setupActions = document.getElementById("setup-actions");
 
 let pendingConsumption = null;
 let pendingAttack = null;
@@ -32,13 +27,16 @@ const clearPanel = (panel) => {
 };
 
 const appendLog = (state) => {
-  logPanel.innerHTML = state.log.map((entry) => `<div>${entry}</div>`).join("");
+  const entries = [
+    `<div class="log-phase">Current Phase: <strong>${state.phase}</strong></div>`,
+    ...state.log.map((entry) => `<div>${entry}</div>`),
+  ];
+  logPanel.innerHTML = entries.join("");
 };
 
 const updateIndicators = (state) => {
   document.getElementById("turn-indicator").textContent =
     `Turn ${state.turn} — ${state.players[state.activePlayerIndex].name}`;
-  document.getElementById("phase-indicator").textContent = `Phase: ${state.phase}`;
 };
 
 const updatePlayerStats = (state, index, role) => {
@@ -583,12 +581,81 @@ const handlePlayCard = (state, card, onUpdate) => {
   }
 };
 
-const updateActionPanel = (state, onNextPhase, onEndTurn, controlsLocked) => {
+const renderSetupPanel = (state, callbacks) => {
+  const panel = document.createElement("div");
+  panel.className = "setup-panel";
+
+  const title = document.createElement("h3");
+  title.textContent = "Opening Roll";
+  panel.appendChild(title);
+
+  const subtitle = document.createElement("p");
+  subtitle.className = "muted";
+  subtitle.textContent = "Press Start game to roll a d10 for each player.";
+  panel.appendChild(subtitle);
+
+  const rollSummary = document.createElement("div");
+  rollSummary.className = "setup-rolls";
+  const [p1Roll, p2Roll] = state.setup.rolls;
+  rollSummary.innerHTML = `
+    <div>Player 1 roll: <strong>${p1Roll ?? "-"}</strong></div>
+    <div>Player 2 roll: <strong>${p2Roll ?? "-"}</strong></div>
+  `;
+  panel.appendChild(rollSummary);
+
+  const actions = document.createElement("div");
+  actions.className = "setup-actions";
+
+  if (state.setup.stage === "rolling") {
+    const rollButtons = document.createElement("div");
+    rollButtons.className = "setup-button-row";
+
+    const rollButton = document.createElement("button");
+    rollButton.textContent = state.setup.needsReroll ? "Roll again" : "Start game";
+    rollButton.onclick = () => callbacks.onSetupRoll?.();
+    rollButtons.appendChild(rollButton);
+
+    actions.appendChild(rollButtons);
+  }
+
+  if (state.setup.stage === "choice") {
+    const winnerName = state.players[state.setup.winnerIndex].name;
+    const message = document.createElement("p");
+    message.className = "muted";
+    message.textContent = `${winnerName} won the roll. Choose turn order:`;
+    actions.appendChild(message);
+
+    const choiceButtons = document.createElement("div");
+    choiceButtons.className = "setup-button-row";
+
+    const chooseFirst = document.createElement("button");
+    chooseFirst.textContent = "Go 1st";
+    chooseFirst.onclick = () => callbacks.onSetupChoose?.(state.setup.winnerIndex);
+    choiceButtons.appendChild(chooseFirst);
+
+    const chooseSecond = document.createElement("button");
+    chooseSecond.textContent = "Go 2nd";
+    chooseSecond.onclick = () =>
+      callbacks.onSetupChoose?.((state.setup.winnerIndex + 1) % 2);
+    choiceButtons.appendChild(chooseSecond);
+
+    actions.appendChild(choiceButtons);
+  }
+
+  panel.appendChild(actions);
+  actionPanel.appendChild(panel);
+};
+
+const updateActionPanel = (state, onNextPhase, onEndTurn, controlsLocked, callbacks) => {
   clearPanel(actionPanel);
   const info = document.createElement("p");
   const active = getActivePlayer(state);
   info.textContent = `Active Player: ${active.name}`;
   actionPanel.appendChild(info);
+
+  if (state.setup?.stage !== "complete") {
+    renderSetupPanel(state, callbacks);
+  }
 
   const nextPhaseButton = document.getElementById("next-phase-button");
   nextPhaseButton.onclick = onNextPhase;
@@ -597,76 +664,6 @@ const updateActionPanel = (state, onNextPhase, onEndTurn, controlsLocked) => {
   const endTurnButton = document.getElementById("end-turn-button");
   endTurnButton.onclick = onEndTurn;
   endTurnButton.disabled = controlsLocked;
-};
-
-const renderSetupOverlay = (state, callbacks) => {
-  if (!state.setup || state.setup.stage === "complete") {
-    setupOverlay.classList.remove("active");
-    setupOverlay.setAttribute("aria-hidden", "true");
-    return;
-  }
-
-  setupOverlay.classList.add("active");
-  setupOverlay.setAttribute("aria-hidden", "false");
-  setupTitle.textContent = "Opening Roll";
-  setupSubtitle.textContent =
-    "Each player rolls a d10. The winner chooses who takes the first turn.";
-
-  clearPanel(setupRolls);
-  const rollSummary = document.createElement("div");
-  rollSummary.className = "setup-roll-summary";
-  const p1Roll = state.setup.rolls[0];
-  const p2Roll = state.setup.rolls[1];
-  rollSummary.innerHTML = `
-    <div>Player 1 roll: <strong>${p1Roll ?? "-"}</strong></div>
-    <div>Player 2 roll: <strong>${p2Roll ?? "-"}</strong></div>
-  `;
-  setupRolls.appendChild(rollSummary);
-
-  clearPanel(setupActions);
-  if (state.setup.stage === "rolling") {
-    const rollButtons = document.createElement("div");
-    rollButtons.className = "setup-button-row";
-
-    const rollP1 = document.createElement("button");
-    rollP1.textContent = "Roll for Player 1";
-    rollP1.onclick = () => callbacks.onSetupRoll?.(0);
-    rollP1.disabled = state.setup.rolls[0] !== null;
-    rollButtons.appendChild(rollP1);
-
-    const rollP2 = document.createElement("button");
-    rollP2.textContent = "Roll for Player 2";
-    rollP2.onclick = () => callbacks.onSetupRoll?.(1);
-    rollP2.disabled = state.setup.rolls[1] !== null;
-    rollButtons.appendChild(rollP2);
-
-    setupActions.appendChild(rollButtons);
-    return;
-  }
-
-  if (state.setup.stage === "choice") {
-    const winnerName = state.players[state.setup.winnerIndex].name;
-    const message = document.createElement("p");
-    message.className = "muted";
-    message.textContent = `${winnerName} chooses who goes first.`;
-    setupActions.appendChild(message);
-
-    const choiceButtons = document.createElement("div");
-    choiceButtons.className = "setup-button-row";
-
-    const chooseSelf = document.createElement("button");
-    chooseSelf.textContent = `${winnerName} goes first`;
-    chooseSelf.onclick = () => callbacks.onSetupChoose?.(state.setup.winnerIndex);
-    choiceButtons.appendChild(chooseSelf);
-
-    const chooseOther = document.createElement("button");
-    chooseOther.textContent = `${state.players[(state.setup.winnerIndex + 1) % 2].name} goes first`;
-    chooseOther.onclick = () =>
-      callbacks.onSetupChoose?.((state.setup.winnerIndex + 1) % 2);
-    choiceButtons.appendChild(chooseOther);
-
-    setupActions.appendChild(choiceButtons);
-  }
 };
 
 export const renderGame = (state, callbacks = {}) => {
@@ -691,7 +688,13 @@ export const renderGame = (state, callbacks = {}) => {
     (card) => handlePlayCard(state, card, callbacks.onUpdate),
     passPending
   );
-  updateActionPanel(state, callbacks.onNextPhase, callbacks.onEndTurn, passPending || setupPending);
+  updateActionPanel(
+    state,
+    callbacks.onNextPhase,
+    callbacks.onEndTurn,
+    passPending || setupPending,
+    callbacks
+  );
   appendLog(state);
 
   if (passPending) {
@@ -703,8 +706,6 @@ export const renderGame = (state, callbacks = {}) => {
     passOverlay.classList.remove("active");
     passOverlay.setAttribute("aria-hidden", "true");
   }
-
-  renderSetupOverlay(state, callbacks);
 
   const inspectedCard = state.players
     .flatMap((player) => player.field.concat(player.hand))
