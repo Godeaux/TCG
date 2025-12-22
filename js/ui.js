@@ -22,6 +22,13 @@ const setupTitle = document.getElementById("setup-title");
 const setupSubtitle = document.getElementById("setup-subtitle");
 const setupRolls = document.getElementById("setup-rolls");
 const setupActions = document.getElementById("setup-actions");
+const deckOverlay = document.getElementById("deck-overlay");
+const deckTitle = document.getElementById("deck-title");
+const deckSubtitle = document.getElementById("deck-subtitle");
+const deckStatus = document.getElementById("deck-status");
+const deckFullRow = document.getElementById("deck-full-row");
+const deckAddedRow = document.getElementById("deck-added-row");
+const deckConfirm = document.getElementById("deck-confirm");
 
 let pendingConsumption = null;
 let pendingAttack = null;
@@ -599,8 +606,108 @@ const updateActionPanel = (state, onNextPhase, onEndTurn, controlsLocked) => {
   endTurnButton.disabled = controlsLocked;
 };
 
+const renderDeckBuilderOverlay = (state, callbacks) => {
+  if (!state.deckBuilder || state.deckBuilder.stage === "complete") {
+    deckOverlay.classList.remove("active");
+    deckOverlay.setAttribute("aria-hidden", "true");
+    return;
+  }
+
+  const isPlayerOne = state.deckBuilder.stage === "p1";
+  const playerIndex = isPlayerOne ? 0 : 1;
+  const player = state.players[playerIndex];
+  const available = state.deckBuilder.available[playerIndex];
+  const selected = state.deckBuilder.selections[playerIndex];
+  const predatorCount = selected.filter((card) => card.type === "Predator").length;
+  const preyCount = selected.filter((card) => card.type === "Prey").length;
+  const totalCount = selected.length;
+  const hasValidCount = totalCount === 20;
+  const preyRuleValid = preyCount > predatorCount;
+
+  deckOverlay.classList.add("active");
+  deckOverlay.setAttribute("aria-hidden", "false");
+  deckTitle.textContent = `${player.name} Deck Builder`;
+  deckSubtitle.textContent =
+    "Tap a card in the full catalog to add it to your 20-card deck. Tap a card below to remove it.";
+  deckStatus.innerHTML = `
+    <div class="deck-status-item">Cards selected: <strong>${totalCount}/20</strong></div>
+    <div class="deck-status-item ${preyRuleValid ? "" : "invalid"}">
+      Prey: <strong>${preyCount}</strong> • Predators: <strong>${predatorCount}</strong>
+    </div>
+  `;
+
+  clearPanel(deckFullRow);
+  clearPanel(deckAddedRow);
+
+  available.forEach((card, index) => {
+    const cardElement = document.createElement("div");
+    cardElement.className = `card deck-card ${cardTypeClass(card)}`;
+    cardElement.innerHTML = `
+      <div class="card-header">
+        <h4 class="card-title">${card.name}</h4>
+        <span class="card-type">${card.type}</span>
+      </div>
+      <div class="card-stats">${renderCardStats(card).join(" • ")}</div>
+    `;
+    cardElement.addEventListener("click", () => {
+      if (selected.length >= 20) {
+        logMessage(state, "Deck is full. Remove a card before adding another.");
+        callbacks.onUpdate?.();
+        return;
+      }
+      selected.push(card);
+      available.splice(index, 1);
+      callbacks.onUpdate?.();
+    });
+    deckFullRow.appendChild(cardElement);
+  });
+
+  selected.forEach((card, index) => {
+    const cardElement = document.createElement("div");
+    cardElement.className = `card deck-card selected ${cardTypeClass(card)}`;
+    cardElement.innerHTML = `
+      <div class="card-header">
+        <h4 class="card-title">${card.name}</h4>
+        <span class="card-type">${card.type}</span>
+      </div>
+      <div class="card-stats">${renderCardStats(card).join(" • ")}</div>
+    `;
+    cardElement.addEventListener("click", () => {
+      selected.splice(index, 1);
+      available.push(card);
+      available.sort(
+        (a, b) => state.deckBuilder.catalogOrder.indexOf(a.id) - state.deckBuilder.catalogOrder.indexOf(b.id)
+      );
+      callbacks.onUpdate?.();
+    });
+    deckAddedRow.appendChild(cardElement);
+  });
+
+  deckConfirm.disabled = !(hasValidCount && preyRuleValid);
+  deckConfirm.textContent = isPlayerOne ? "Confirm Player 1 Deck" : "Confirm Player 2 Deck";
+  deckConfirm.onclick = () => {
+    if (!hasValidCount || !preyRuleValid) {
+      return;
+    }
+    if (isPlayerOne) {
+      state.deckBuilder.stage = "p2";
+      logMessage(state, "Player 1 deck locked in. Hand off to Player 2.");
+      callbacks.onUpdate?.();
+      return;
+    }
+    state.deckBuilder.stage = "complete";
+    callbacks.onDeckComplete?.(state.deckBuilder.selections);
+    callbacks.onUpdate?.();
+  };
+};
+
 const renderSetupOverlay = (state, callbacks) => {
   if (!state.setup || state.setup.stage === "complete") {
+    setupOverlay.classList.remove("active");
+    setupOverlay.setAttribute("aria-hidden", "true");
+    return;
+  }
+  if (state.deckBuilder?.stage !== "complete") {
     setupOverlay.classList.remove("active");
     setupOverlay.setAttribute("aria-hidden", "true");
     return;
@@ -674,6 +781,9 @@ export const renderGame = (state, callbacks = {}) => {
   const opponentIndex = (state.activePlayerIndex + 1) % 2;
   const passPending = Boolean(state.passPending);
   const setupPending = state.setup?.stage !== "complete";
+  const deckBuilding = state.deckBuilder?.stage !== "complete";
+  document.body.classList.toggle("deck-building", deckBuilding);
+  document.documentElement.classList.toggle("deck-building", deckBuilding);
   updateIndicators(state);
   updatePlayerStats(state, opponentIndex, "opponent");
   updatePlayerStats(state, activeIndex, "active");
@@ -691,7 +801,12 @@ export const renderGame = (state, callbacks = {}) => {
     (card) => handlePlayCard(state, card, callbacks.onUpdate),
     passPending
   );
-  updateActionPanel(state, callbacks.onNextPhase, callbacks.onEndTurn, passPending || setupPending);
+  updateActionPanel(
+    state,
+    callbacks.onNextPhase,
+    callbacks.onEndTurn,
+    passPending || setupPending || deckBuilding
+  );
   appendLog(state);
 
   if (passPending) {
@@ -705,6 +820,7 @@ export const renderGame = (state, callbacks = {}) => {
   }
 
   renderSetupOverlay(state, callbacks);
+  renderDeckBuilderOverlay(state, callbacks);
 
   const inspectedCard = state.players
     .flatMap((player) => player.field.concat(player.hand))
