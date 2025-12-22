@@ -1,11 +1,14 @@
-import { createGameState, logMessage, rollSetupDie, chooseFirstPlayer } from "./gameState.js";
+import {
+  createGameState,
+  logMessage,
+  rollSetupDie,
+  chooseFirstPlayer,
+  setPlayerDeck,
+} from "./gameState.js";
 import { advancePhase, endTurn, startTurn } from "./turnManager.js";
 import { renderGame, setupInitialDraw } from "./ui.js";
 
 const state = createGameState();
-
-setupInitialDraw(state, 5);
-logMessage(state, "Each player draws 5 cards to start.");
 
 const checkWinCondition = () => {
   state.players.forEach((player, index) => {
@@ -39,6 +42,14 @@ const refresh = () => {
     onSetupChoose: (playerIndex) => {
       chooseFirstPlayer(state, playerIndex);
       startTurn(state);
+      refresh();
+    },
+    onDeckComplete: (selections) => {
+      selections.forEach((deck, index) => {
+        setPlayerDeck(state, index, deck);
+      });
+      setupInitialDraw(state, 5);
+      logMessage(state, "Each player draws 5 cards to start.");
       refresh();
     },
   });
