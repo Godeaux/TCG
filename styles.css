@@ -18,6 +18,16 @@ body {
   background: radial-gradient(circle at top, #1e293b 0%, #0b1320 55%, #05080f 100%);
 }
 
+html.deck-building,
+body.deck-building {
+  overflow: auto;
+}
+
+body.deck-building .app-header,
+body.deck-building .tabletop {
+  display: none;
+}
+
 .app-header {
   padding: 12px 20px;
   background: rgba(15, 23, 42, 0.9);
@@ -463,6 +473,125 @@ button.secondary {
   background: #334155;
   color: #94a3b8;
   cursor: not-allowed;
+}
+
+.deck-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.95);
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  z-index: 14;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  overflow: auto;
+  padding: 16px;
+}
+
+.deck-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.deck-builder-card {
+  background: rgba(15, 23, 42, 0.95);
+  border-radius: 0;
+  padding: 20px;
+  color: #f8fafc;
+  width: min(1100px, 100%);
+  min-height: 100%;
+  overflow: auto;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.deck-builder-card h2 {
+  margin: 0;
+}
+
+.deck-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: #e2e8f0;
+}
+
+.deck-status-item.invalid {
+  color: #fca5a5;
+}
+
+.deck-row-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.deck-row-wrapper h3 {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #cbd5f5;
+}
+
+.deck-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.deck-row::-webkit-scrollbar {
+  height: 8px;
+}
+
+.deck-row::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 999px;
+}
+
+.card.deck-card {
+  min-width: 160px;
+  flex: 0 0 auto;
+}
+
+.card.deck-card.selected {
+  outline: 2px solid rgba(56, 189, 248, 0.6);
+}
+
+#deck-confirm {
+  align-self: flex-end;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  background: #38bdf8;
+  color: #0f172a;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#deck-confirm:disabled {
+  background: #334155;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+  .deck-overlay {
+    padding: 0;
+  }
+
+  .deck-builder-card {
+    width: 100%;
+    padding: 16px;
+    border-radius: 0;
+  }
 }
 
 @media (max-width: 1100px) {

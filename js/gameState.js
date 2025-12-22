@@ -1,4 +1,4 @@
-import { getStarterDeck } from "./cards.js";
+import { cardCatalog } from "./cards.js";
 
 const shuffle = (array) => {
   for (let i = array.length - 1; i > 0; i -= 1) {
@@ -11,7 +11,7 @@ const shuffle = (array) => {
 const createPlayer = (name) => ({
   name,
   hp: 10,
-  deck: shuffle(getStarterDeck()),
+  deck: [],
   hand: [],
   field: [null, null, null],
   carrion: [],
@@ -21,6 +21,11 @@ const createPlayer = (name) => ({
 
 export const createGameState = () => {
   const players = [createPlayer("Player 1"), createPlayer("Player 2")];
+  const catalogOrder = cardCatalog.map((card) => card.id);
+  const catalogCopies = [
+    cardCatalog.map((card) => ({ ...card })),
+    cardCatalog.map((card) => ({ ...card })),
+  ];
   return {
     players,
     activePlayerIndex: 0,
@@ -34,6 +39,12 @@ export const createGameState = () => {
       stage: "rolling",
       rolls: [null, null],
       winnerIndex: null,
+    },
+    deckBuilder: {
+      stage: "p1",
+      selections: [[], []],
+      available: catalogCopies,
+      catalogOrder,
     },
     log: [],
     combat: {
@@ -57,6 +68,16 @@ export const logMessage = (state, message) => {
   if (state.log.length > 50) {
     state.log.pop();
   }
+};
+
+export const setPlayerDeck = (state, playerIndex, deck) => {
+  const player = state.players[playerIndex];
+  player.deck = shuffle([...deck]);
+  player.hand = [];
+  player.field = [null, null, null];
+  player.carrion = [];
+  player.exile = [];
+  player.traps = [];
 };
 
 export const getActivePlayer = (state) => state.players[state.activePlayerIndex];
