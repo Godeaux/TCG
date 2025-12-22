@@ -1,3 +1,5 @@
+import { hasBarrier } from "./keywords.js";
+
 export const createCardInstance = (cardData, turn) => {
   const base = {
     ...cardData,
@@ -11,6 +13,7 @@ export const createCardInstance = (cardData, turn) => {
       currentHp: cardData.hp,
       summonedTurn: turn,
       hasAttacked: false,
+      hasBarrier: hasBarrier(cardData),
     };
   }
 

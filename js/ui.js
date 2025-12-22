@@ -8,7 +8,7 @@ import { canPlayCard, cardLimitAvailable } from "./turnManager.js";
 import { createCardInstance } from "./cardTypes.js";
 import { consumePrey } from "./consumption.js";
 import { getValidTargets, resolveCreatureCombat, resolveDirectAttack, cleanupDestroyed } from "./combat.js";
-import { isFreePlay } from "./keywords.js";
+import { isFreePlay, isEdible, isPassive } from "./keywords.js";
 
 const selectionPanel = document.getElementById("selection-panel");
 const actionPanel = document.getElementById("action-panel");
@@ -17,6 +17,11 @@ const passOverlay = document.getElementById("pass-overlay");
 const passTitle = document.getElementById("pass-title");
 const passConfirm = document.getElementById("pass-confirm");
 const inspectorPanel = document.getElementById("card-inspector");
+const setupOverlay = document.getElementById("setup-overlay");
+const setupTitle = document.getElementById("setup-title");
+const setupSubtitle = document.getElementById("setup-subtitle");
+const setupRolls = document.getElementById("setup-rolls");
+const setupActions = document.getElementById("setup-actions");
 
 let pendingConsumption = null;
 let pendingAttack = null;
@@ -235,7 +240,8 @@ const renderField = (state, playerIndex, role, onAttack) => {
     if (
       state.phase === "Combat" &&
       playerIndex === state.activePlayerIndex &&
-      !card.hasAttacked
+      !card.hasAttacked &&
+      !isPassive(card)
     ) {
       const attackButton = document.createElement("button");
       attackButton.textContent = "Attack";
@@ -494,7 +500,9 @@ const handlePlayCard = (state, card, onUpdate) => {
     const creature = createCardInstance(card, state.turn);
 
     if (card.type === "Predator") {
-      const availablePrey = player.field.filter((slot) => slot && slot.type === "Prey");
+      const availablePrey = player.field.filter(
+        (slot) => slot && (slot.type === "Prey" || (slot.type === "Predator" && isEdible(slot)))
+      );
       if (availablePrey.length > 0) {
         pendingConsumption = {
           predator: creature,
@@ -509,7 +517,8 @@ const handlePlayCard = (state, card, onUpdate) => {
           checkbox.type = "checkbox";
           checkbox.value = prey.instanceId;
           const label = document.createElement("span");
-          label.textContent = `${prey.name} (Nutrition ${prey.nutrition})`;
+          const nutrition = prey.nutrition ?? prey.currentAtk ?? prey.atk ?? 0;
+          label.textContent = `${prey.name} (Nutrition ${nutrition})`;
           item.appendChild(checkbox);
           item.appendChild(label);
           return item;
@@ -565,6 +574,7 @@ const handlePlayCard = (state, card, onUpdate) => {
     player.field[emptySlot] = creature;
     if (card.type === "Predator" && creature.effect) {
       logMessage(state, `${creature.name} enters play with no consumption.`);
+      creature.dryDropped = true;
     }
     if (!isFree) {
       state.cardPlayedThisTurn = true;
@@ -589,10 +599,81 @@ const updateActionPanel = (state, onNextPhase, onEndTurn, controlsLocked) => {
   endTurnButton.disabled = controlsLocked;
 };
 
+const renderSetupOverlay = (state, callbacks) => {
+  if (!state.setup || state.setup.stage === "complete") {
+    setupOverlay.classList.remove("active");
+    setupOverlay.setAttribute("aria-hidden", "true");
+    return;
+  }
+
+  setupOverlay.classList.add("active");
+  setupOverlay.setAttribute("aria-hidden", "false");
+  setupTitle.textContent = "Opening Roll";
+  setupSubtitle.textContent =
+    "Each player rolls a d10. The winner chooses who takes the first turn.";
+
+  clearPanel(setupRolls);
+  const rollSummary = document.createElement("div");
+  rollSummary.className = "setup-roll-summary";
+  const p1Roll = state.setup.rolls[0];
+  const p2Roll = state.setup.rolls[1];
+  rollSummary.innerHTML = `
+    <div>Player 1 roll: <strong>${p1Roll ?? "-"}</strong></div>
+    <div>Player 2 roll: <strong>${p2Roll ?? "-"}</strong></div>
+  `;
+  setupRolls.appendChild(rollSummary);
+
+  clearPanel(setupActions);
+  if (state.setup.stage === "rolling") {
+    const rollButtons = document.createElement("div");
+    rollButtons.className = "setup-button-row";
+
+    const rollP1 = document.createElement("button");
+    rollP1.textContent = "Roll for Player 1";
+    rollP1.onclick = () => callbacks.onSetupRoll?.(0);
+    rollP1.disabled = state.setup.rolls[0] !== null;
+    rollButtons.appendChild(rollP1);
+
+    const rollP2 = document.createElement("button");
+    rollP2.textContent = "Roll for Player 2";
+    rollP2.onclick = () => callbacks.onSetupRoll?.(1);
+    rollP2.disabled = state.setup.rolls[1] !== null;
+    rollButtons.appendChild(rollP2);
+
+    setupActions.appendChild(rollButtons);
+    return;
+  }
+
+  if (state.setup.stage === "choice") {
+    const winnerName = state.players[state.setup.winnerIndex].name;
+    const message = document.createElement("p");
+    message.className = "muted";
+    message.textContent = `${winnerName} chooses who goes first.`;
+    setupActions.appendChild(message);
+
+    const choiceButtons = document.createElement("div");
+    choiceButtons.className = "setup-button-row";
+
+    const chooseSelf = document.createElement("button");
+    chooseSelf.textContent = `${winnerName} goes first`;
+    chooseSelf.onclick = () => callbacks.onSetupChoose?.(state.setup.winnerIndex);
+    choiceButtons.appendChild(chooseSelf);
+
+    const chooseOther = document.createElement("button");
+    chooseOther.textContent = `${state.players[(state.setup.winnerIndex + 1) % 2].name} goes first`;
+    chooseOther.onclick = () =>
+      callbacks.onSetupChoose?.((state.setup.winnerIndex + 1) % 2);
+    choiceButtons.appendChild(chooseOther);
+
+    setupActions.appendChild(choiceButtons);
+  }
+};
+
 export const renderGame = (state, callbacks = {}) => {
   const activeIndex = state.activePlayerIndex;
   const opponentIndex = (state.activePlayerIndex + 1) % 2;
   const passPending = Boolean(state.passPending);
+  const setupPending = state.setup?.stage !== "complete";
   updateIndicators(state);
   updatePlayerStats(state, opponentIndex, "opponent");
   updatePlayerStats(state, activeIndex, "active");
@@ -603,8 +684,14 @@ export const renderGame = (state, callbacks = {}) => {
     handleAttackSelection(state, card, callbacks.onUpdate)
   );
   renderHand(state, opponentIndex, "opponent", () => {}, true);
-  renderHand(state, activeIndex, "active", (card) => handlePlayCard(state, card, callbacks.onUpdate), passPending);
-  updateActionPanel(state, callbacks.onNextPhase, callbacks.onEndTurn, passPending);
+  renderHand(
+    state,
+    activeIndex,
+    "active",
+    (card) => handlePlayCard(state, card, callbacks.onUpdate),
+    passPending
+  );
+  updateActionPanel(state, callbacks.onNextPhase, callbacks.onEndTurn, passPending || setupPending);
   appendLog(state);
 
   if (passPending) {
@@ -616,6 +703,8 @@ export const renderGame = (state, callbacks = {}) => {
     passOverlay.classList.remove("active");
     passOverlay.setAttribute("aria-hidden", "true");
   }
+
+  renderSetupOverlay(state, callbacks);
 
   const inspectedCard = state.players
     .flatMap((player) => player.field.concat(player.hand))

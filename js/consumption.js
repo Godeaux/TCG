@@ -1,11 +1,19 @@
 import { logMessage } from "./gameState.js";
+import { isEdible } from "./keywords.js";
+
+const getNutritionValue = (card) => {
+  if (card.type === "Predator" && isEdible(card)) {
+    return card.currentAtk ?? card.atk ?? 0;
+  }
+  return card.nutrition ?? 0;
+};
 
 export const consumePrey = ({ predator, preyList, state, playerIndex }) => {
   if (!preyList.length) {
     return;
   }
 
-  const totalNutrition = preyList.reduce((sum, prey) => sum + (prey.nutrition || 0), 0);
+  const totalNutrition = preyList.reduce((sum, prey) => sum + getNutritionValue(prey), 0);
   predator.currentAtk += totalNutrition;
   predator.currentHp += totalNutrition;
 
