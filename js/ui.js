@@ -34,20 +34,12 @@ const deckFullRow = document.getElementById("deck-full-row");
 const deckAddedRow = document.getElementById("deck-added-row");
 const deckConfirm = document.getElementById("deck-confirm");
 const deckInspectorPanel = document.getElementById("deck-inspector");
-const pagesContainer = document.getElementById("pages-container");
-const mobileTabs = document.getElementById("mobile-tabs");
-const pageDots = document.getElementById("page-dots");
-const navLeft = document.getElementById("nav-left");
-const navRight = document.getElementById("nav-right");
-
 let pendingConsumption = null;
 let pendingAttack = null;
 let inspectedCardId = null;
 let deckHighlighted = null;
-let currentPage = 0;
 let navigationInitialized = false;
 let deckActiveTab = "catalog";
-const TOTAL_PAGES = 3;
 
 const clearPanel = (panel) => {
   if (!panel) {
@@ -60,17 +52,33 @@ const appendLog = (state) => {
   if (!logPanel) {
     return;
   }
-  logPanel.innerHTML = state.log.map((entry) => `<div>${entry}</div>`).join("");
+  logPanel.innerHTML = state.log
+    .slice()
+    .reverse()
+    .map((entry) => `<div>${entry}</div>`)
+    .join("");
 };
 
 const updateIndicators = (state) => {
   const turnNumber = document.getElementById("turn-number");
   const phaseLabel = document.getElementById("phase-label");
+  const panelTurnNumber = document.getElementById("panel-turn-number");
+  const panelPhaseLabel = document.getElementById("panel-phase-label");
+  const panelActivePlayer = document.getElementById("panel-active-player");
   if (turnNumber) {
     turnNumber.textContent = `Turn ${state.turn}`;
   }
   if (phaseLabel) {
     phaseLabel.textContent = state.phase;
+  }
+  if (panelTurnNumber) {
+    panelTurnNumber.textContent = `Turn ${state.turn}`;
+  }
+  if (panelPhaseLabel) {
+    panelPhaseLabel.textContent = state.phase;
+  }
+  if (panelActivePlayer) {
+    panelActivePlayer.textContent = state.players[state.activePlayerIndex].name;
   }
 };
 
@@ -90,9 +98,13 @@ const updatePlayerStats = (state, index, role) => {
   }
 
   if (role === "active") {
+    const deckCountEl = document.getElementById("active-deck-count");
     const carrionEl = document.getElementById("active-carrion");
     const exileEl = document.getElementById("active-exile");
     const trapsEl = document.getElementById("active-traps");
+    if (deckCountEl) {
+      deckCountEl.textContent = player.deck.length;
+    }
     if (carrionEl) {
       carrionEl.textContent = player.carrion.length;
     }
@@ -168,17 +180,24 @@ const renderKeywordTags = (card) => {
 };
 
 const renderCard = (card, options = {}) => {
-  const { showPlay = false, showAttack = false, onPlay, onAttack, onClick, showBack = false } =
-    options;
+  const {
+    showPlay = false,
+    showAttack = false,
+    onPlay,
+    onAttack,
+    onClick,
+    showBack = false,
+    className = "",
+  } = options;
   const cardElement = document.createElement("div");
 
   if (showBack) {
-    cardElement.className = "card back";
+    cardElement.className = `card back ${className}`.trim();
     cardElement.textContent = "Card Back";
     return cardElement;
   }
 
-  cardElement.className = `card ${cardTypeClass(card)}`;
+  cardElement.className = `card ${cardTypeClass(card)} ${className}`.trim();
   const inner = document.createElement("div");
   inner.className = "card-inner";
 
@@ -266,10 +285,9 @@ const setInspectorContentFor = (panel, card) => {
     return;
   }
   if (!card) {
-    panel.innerHTML = `<p class="muted">Tap a card to see its full details.</p>`;
+    panel.innerHTML = `<p class="muted">Click a card to inspect.</p>`;
     return;
   }
-  const keywords = card.keywords?.length ? card.keywords.join(", ") : "None";
   const keywordDetails = card.keywords?.length
     ? card.keywords
         .map((keyword) => {
@@ -279,15 +297,22 @@ const setInspectorContentFor = (panel, card) => {
         .join("")
     : "<li>No keywords.</li>";
   const stats = renderCardStats(card)
-    .map((stat) => `${stat.label} ${stat.value}`)
+    .map(
+      (stat) =>
+        `<span class="stat ${stat.className}">${stat.label} ${stat.value}</span>`
+    )
     .join(" • ");
   const effectSummary = getCardEffectSummary(card);
   panel.innerHTML = `
     <div class="inspector-card">
       <h4>${card.name}</h4>
-      <div class="meta">${card.type}${stats ? ` • ${stats}` : ""}</div>
-      <div class="meta">Keywords: ${keywords}</div>
-      <div class="effect"><strong>Effect:</strong> ${effectSummary}</div>
+      <div class="inspector-meta">${card.type}${stats ? ` • ${stats}` : ""}</div>
+      <div class="keyword-badges">
+        ${(card.keywords?.length ? card.keywords : ["No keywords"])
+          .map((keyword) => `<span>${keyword}</span>`)
+          .join("")}
+      </div>
+      <div class="inspector-effect"><strong>Effect:</strong> ${effectSummary}</div>
       <div class="keyword-glossary">
         <strong>Keyword Glossary</strong>
         <ul>${keywordDetails}</ul>
@@ -392,26 +417,67 @@ const renderField = (state, playerIndex, isOpponent, onAttack) => {
 };
 
 const renderHand = (state, onPlay, hideCards) => {
-  const handGrid = document.getElementById("active-hand");
-  if (!handGrid) {
+  const handArea = document.getElementById("active-hand");
+  if (!handArea) {
     return;
   }
-  clearPanel(handGrid);
+  clearPanel(handArea);
   const player = getActivePlayer(state);
-
-  if (hideCards) {
-    player.hand.forEach(() => {
-      handGrid.appendChild(renderCard({}, { showBack: true }));
-    });
-    return;
-  }
-
-  player.hand.forEach((card) => {
+  const cards = hideCards ? player.hand.map(() => ({})) : player.hand;
+  const elements = cards.map((card, index) => {
+    const isBack = hideCards;
+    const isFree = card.type === "Free Spell" || isFreePlay(card);
+    const playable = !hideCards && canPlayCard(state) && (isFree || cardLimitAvailable(state));
     const cardElement = renderCard(card, {
-      showPlay: true,
+      showBack: isBack,
+      showPlay: playable,
       onPlay,
+      className: `hand-card${playable ? " playable" : ""}`,
     });
-    handGrid.appendChild(cardElement);
+    cardElement.style.zIndex = `${index + 1}`;
+    handArea.appendChild(cardElement);
+    return cardElement;
+  });
+
+  const applyLayout = (hoveredIndex = null) => {
+    const handWidth = handArea.clientWidth;
+    const cardWidth = 80;
+    const count = elements.length;
+    if (count === 0) {
+      return;
+    }
+    const maxSpacing = 90;
+    let spacing = count > 1 ? Math.min(maxSpacing, handWidth / count) : 0;
+    if (count > 1) {
+      const totalWidth = cardWidth + spacing * (count - 1);
+      if (totalWidth > handWidth) {
+        spacing = Math.max(16, (handWidth - cardWidth) / (count - 1));
+      }
+    }
+
+    const center = handWidth / 2;
+    const maxRotation = 8;
+    const mid = (count - 1) / 2;
+
+    elements.forEach((element, index) => {
+      const offset = index - mid;
+      const spread = hoveredIndex === null ? 0 : Math.sign(offset) * 10;
+      const x = offset * spacing + spread;
+      const left = center + x - cardWidth / 2;
+      const rotation = count === 1 ? 0 : (offset / mid) * maxRotation;
+      const y = Math.abs(offset) * 4;
+
+      element.style.left = `${left}px`;
+      element.style.setProperty("--hand-y", `${y}px`);
+      element.style.setProperty("--hand-rot", `${rotation}deg`);
+    });
+  };
+
+  applyLayout(null);
+
+  elements.forEach((element, index) => {
+    element.addEventListener("mouseenter", () => applyLayout(index));
+    element.addEventListener("mouseleave", () => applyLayout(null));
   });
 };
 
@@ -922,52 +988,11 @@ const renderSetupOverlay = (state, callbacks) => {
   }
 };
 
-const updateNavButtons = () => {
-  if (navLeft) {
-    navLeft.disabled = currentPage === 0;
-  }
-  if (navRight) {
-    navRight.disabled = currentPage === TOTAL_PAGES - 1;
-  }
-};
-
-const navigateToPage = (pageIndex) => {
-  if (!pagesContainer) {
-    return;
-  }
-  const nextIndex = Math.max(0, Math.min(TOTAL_PAGES - 1, pageIndex));
-  const pages = Array.from(pagesContainer.querySelectorAll(".page"));
-  pages.forEach((page, index) => {
-    page.classList.toggle("active", index === nextIndex);
-    page.classList.toggle("exit-left", index < nextIndex);
-  });
-
-  const dots = Array.from(pageDots?.querySelectorAll(".page-dot") ?? []);
-  dots.forEach((dot) => dot.classList.toggle("active", Number(dot.dataset.page) === nextIndex));
-
-  const tabs = Array.from(mobileTabs?.querySelectorAll(".mobile-tab") ?? []);
-  tabs.forEach((tab) => tab.classList.toggle("active", Number(tab.dataset.page) === nextIndex));
-
-  currentPage = nextIndex;
-  updateNavButtons();
-};
-
 const initNavigation = () => {
   if (navigationInitialized) {
     return;
   }
   navigationInitialized = true;
-
-  navLeft?.addEventListener("click", () => navigateToPage(currentPage - 1));
-  navRight?.addEventListener("click", () => navigateToPage(currentPage + 1));
-
-  pageDots?.querySelectorAll(".page-dot").forEach((dot) => {
-    dot.addEventListener("click", () => navigateToPage(Number(dot.dataset.page)));
-  });
-
-  mobileTabs?.querySelectorAll(".mobile-tab").forEach((tab) => {
-    tab.addEventListener("click", () => navigateToPage(Number(tab.dataset.page)));
-  });
 
   document.querySelectorAll(".deck-tab").forEach((tab) => {
     tab.addEventListener("click", () => {
@@ -975,8 +1000,6 @@ const initNavigation = () => {
       updateDeckTabs();
     });
   });
-
-  updateNavButtons();
 };
 
 export const renderGame = (state, callbacks = {}) => {
