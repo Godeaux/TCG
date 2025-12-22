@@ -19,7 +19,7 @@ body {
 }
 
 .app-header {
-  padding: 14px 24px;
+  padding: 12px 20px;
   background: rgba(15, 23, 42, 0.9);
   color: #fefefe;
   display: flex;
@@ -31,13 +31,13 @@ body {
 
 .app-header h1 {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: 1.3rem;
 }
 
 .subtitle {
   margin: 4px 0 0;
   color: #94a3b8;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
 }
 
 .status-bar {
@@ -50,62 +50,49 @@ body {
 
 .tabletop {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 16px;
-  padding: 16px 20px 20px;
-  height: calc(100vh - 76px);
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px 14px 16px;
+  height: calc(100vh - 70px);
 }
 
 .arena {
   display: grid;
-  grid-template-rows: 1fr auto 1fr;
-  gap: 12px;
+  grid-template-rows: auto auto auto auto auto;
+  gap: 10px;
   height: 100%;
 }
 
-.player-board {
-  background: rgba(15, 23, 42, 0.82);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 18px;
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.5);
-}
-
-.player-board.active {
-  border-color: rgba(56, 189, 248, 0.6);
-  box-shadow: 0 12px 30px rgba(14, 116, 144, 0.5);
-}
-
-.player-header {
+.zone-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
-.player-header h2 {
-  margin: 0;
-  font-size: 1.1rem;
+.player-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.8rem;
 }
 
 .player-role {
   display: inline-flex;
   align-items: center;
-  margin-top: 4px;
   font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #38bdf8;
 }
 
-.player-stats {
+.player-piles {
   display: flex;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
 }
 
 .zone-row {
@@ -117,9 +104,9 @@ body {
 .zone {
   background: rgba(15, 23, 42, 0.6);
   border-radius: 14px;
-  padding: 10px;
+  padding: 8px 10px;
   border: 1px solid rgba(148, 163, 184, 0.2);
-  min-height: 140px;
+  min-height: 96px;
 }
 
 .zone h3 {
@@ -131,27 +118,28 @@ body {
 }
 
 .hand-zone {
-  min-height: 120px;
+  min-height: 90px;
 }
 
 .slot-row,
 .hand-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
 }
 
 .card {
-  border-radius: 12px;
-  padding: 10px;
+  border-radius: 10px;
+  padding: 8px;
   background: #f8fafc;
   color: #0f172a;
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.2);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   position: relative;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+  min-height: 72px;
 }
 
 .card:hover {
@@ -173,13 +161,13 @@ body {
 }
 
 .card-title {
-  font-size: 0.9rem;
+  font-size: 0.78rem;
   font-weight: 700;
   margin: 0;
 }
 
 .card-type {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-weight: 700;
@@ -188,7 +176,7 @@ body {
 .card-stats {
   display: flex;
   gap: 6px;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 600;
 }
 
@@ -196,7 +184,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  font-size: 0.65rem;
+  font-size: 0.6rem;
 }
 
 .tag {
@@ -228,14 +216,14 @@ body {
 
 .card button {
   margin-top: auto;
-  padding: 6px 8px;
+  padding: 5px 6px;
   border: none;
   border-radius: 6px;
   background: #0ea5e9;
   color: #fff;
   font-weight: 600;
   cursor: pointer;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
 }
 
 .card button.secondary {
@@ -249,50 +237,22 @@ body {
   font-size: 0.9rem;
 }
 
-.divider {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  justify-content: center;
-  color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  font-size: 0.7rem;
-}
-
-.divider-line {
-  flex: 1;
-  height: 1px;
-  background: rgba(148, 163, 184, 0.3);
-}
-
-.sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  height: 100%;
-}
-
-.panel {
-  background: rgba(15, 23, 42, 0.85);
-  border-radius: 16px;
-  padding: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.4);
-}
-
-.panel h2 {
-  margin: 0 0 8px;
-  font-size: 0.95rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: #e2e8f0;
-}
-
-.controls .control-panel {
+.info-zone {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.control-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.info-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .selection-list {
@@ -310,11 +270,11 @@ body {
   align-items: center;
   gap: 6px;
   color: #e2e8f0;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
 
-.control-panel button,
-#pass-confirm {
+#pass-confirm,
+.info-controls button {
   padding: 8px 12px;
   border: none;
   border-radius: 8px;
@@ -352,8 +312,11 @@ button.secondary {
 }
 
 .inspector {
-  flex: 0 0 auto;
-  min-height: 180px;
+  background: rgba(15, 23, 42, 0.85);
+  border-radius: 12px;
+  padding: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  min-height: 120px;
 }
 
 .inspector-content {
@@ -381,9 +344,9 @@ button.secondary {
 }
 
 .log {
-  flex: 1;
+  max-height: 120px;
   overflow-y: auto;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: #e2e8f0;
 }
 
@@ -394,7 +357,7 @@ button.secondary {
 
 .muted {
   color: #94a3b8;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
 
 .pass-overlay {
@@ -437,27 +400,22 @@ button.secondary {
 
 @media (max-width: 1100px) {
   .tabletop {
-    grid-template-columns: 1fr;
-  }
-
-  .sidebar {
-    flex-direction: row;
-    overflow-x: auto;
-  }
-
-  .panel {
-    min-width: 240px;
+    padding: 12px;
   }
 }
 
 @media (max-width: 820px) {
   .tabletop {
     height: auto;
-    overflow-y: auto;
   }
 
   html,
   body {
     overflow: auto;
+  }
+
+  .slot-row,
+  .hand-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

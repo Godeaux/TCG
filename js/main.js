@@ -27,10 +27,6 @@ const refresh = () => {
       endTurn(state);
       refresh();
     },
-    onDraw: () => {
-      logMessage(state, "Draw phase is automatic. Use Next Phase to continue.");
-      refresh();
-    },
     onUpdate: () => refresh(),
     onConfirmPass: () => {
       state.passPending = false;

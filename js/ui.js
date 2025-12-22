@@ -109,7 +109,7 @@ const setInspectorContent = (card) => {
   if (!card) {
     inspectorPanel.innerHTML = `
       <h2>Card Details</h2>
-      <p class="muted">Hover or click a card to see its full details.</p>
+      <p class="muted">Tap a card to see its full details.</p>
     `;
     return;
   }
@@ -224,7 +224,6 @@ const renderField = (state, playerIndex, role, onAttack) => {
       cardElement.appendChild(indicator);
     }
 
-    cardElement.addEventListener("mouseenter", () => setInspectorContent(card));
     cardElement.addEventListener("click", (event) => {
       if (event.target.closest("button")) {
         return;
@@ -277,7 +276,6 @@ const renderHand = (state, playerIndex, role, onPlay, hideCards) => {
       </div>
     `;
 
-    cardElement.addEventListener("mouseenter", () => setInspectorContent(card));
     cardElement.addEventListener("click", (event) => {
       if (event.target.closest("button")) {
         return;
@@ -575,16 +573,12 @@ const handlePlayCard = (state, card, onUpdate) => {
   }
 };
 
-const updateActionPanel = (state, onNextPhase, onEndTurn, onDraw, controlsLocked) => {
+const updateActionPanel = (state, onNextPhase, onEndTurn, controlsLocked) => {
   clearPanel(actionPanel);
   const info = document.createElement("p");
   const active = getActivePlayer(state);
   info.textContent = `Active Player: ${active.name}`;
   actionPanel.appendChild(info);
-
-  const drawButton = document.getElementById("draw-button");
-  drawButton.onclick = onDraw;
-  drawButton.disabled = state.phase !== "Draw" || controlsLocked;
 
   const nextPhaseButton = document.getElementById("next-phase-button");
   nextPhaseButton.onclick = onNextPhase;
@@ -610,7 +604,7 @@ export const renderGame = (state, callbacks = {}) => {
   );
   renderHand(state, opponentIndex, "opponent", () => {}, true);
   renderHand(state, activeIndex, "active", (card) => handlePlayCard(state, card, callbacks.onUpdate), passPending);
-  updateActionPanel(state, callbacks.onNextPhase, callbacks.onEndTurn, callbacks.onDraw, passPending);
+  updateActionPanel(state, callbacks.onNextPhase, callbacks.onEndTurn, passPending);
   appendLog(state);
 
   if (passPending) {
