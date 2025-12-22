@@ -13,6 +13,21 @@ export const KEYWORDS = {
   NEUROTOXIC: "Neurotoxic",
 };
 
+export const KEYWORD_DESCRIPTIONS = {
+  [KEYWORDS.HASTE]: "Can attack the Rival directly on the turn it is played.",
+  [KEYWORDS.FREE_PLAY]: "Does not count toward the one-card-per-turn limit.",
+  [KEYWORDS.HIDDEN]: "Cannot be targeted by attacks, but can be targeted by spells.",
+  [KEYWORDS.LURE]: "Enemies must attack this creature if able.",
+  [KEYWORDS.INVISIBLE]: "Cannot be targeted by attacks or spells.",
+  [KEYWORDS.PASSIVE]: "Cannot attack but can still defend and be consumed.",
+  [KEYWORDS.BARRIER]: "Negates the first instance of damage taken.",
+  [KEYWORDS.ACUITY]: "Can target Hidden and Invisible creatures.",
+  [KEYWORDS.IMMUNE]: "Only takes damage from direct creature attacks.",
+  [KEYWORDS.EDIBLE]: "Can be consumed as prey; nutrition equals its ATK.",
+  [KEYWORDS.SCAVENGE]: "May consume from the carrion pile when played.",
+  [KEYWORDS.NEUROTOXIC]: "Combat damage freezes the target until it dies next turn.",
+};
+
 export const hasKeyword = (card, keyword) => card.keywords?.includes(keyword);
 
 export const isHidden = (card) => hasKeyword(card, KEYWORDS.HIDDEN);

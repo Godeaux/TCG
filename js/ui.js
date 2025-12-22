@@ -8,7 +8,7 @@ import { canPlayCard, cardLimitAvailable } from "./turnManager.js";
 import { createCardInstance } from "./cardTypes.js";
 import { consumePrey } from "./consumption.js";
 import { getValidTargets, resolveCreatureCombat, resolveDirectAttack, cleanupDestroyed } from "./combat.js";
-import { isFreePlay, isEdible, isPassive } from "./keywords.js";
+import { isFreePlay, isEdible, isPassive, KEYWORD_DESCRIPTIONS } from "./keywords.js";
 
 const selectionPanel = document.getElementById("selection-panel");
 const actionPanel = document.getElementById("action-panel");
@@ -119,6 +119,11 @@ const getStatusIndicators = (card) => {
   return indicators.join(" ");
 };
 
+const renderKeywordTags = (card) => {
+  const keywords = card.keywords?.length ? card.keywords : ["No keywords"];
+  return keywords.map((keyword) => `<span class="tag">${keyword}</span>`).join("");
+};
+
 const setInspectorContentFor = (panel, card) => {
   if (!panel) {
     return;
@@ -131,6 +136,14 @@ const setInspectorContentFor = (panel, card) => {
     return;
   }
   const keywords = card.keywords?.length ? card.keywords.join(", ") : "None";
+  const keywordDetails = card.keywords?.length
+    ? card.keywords
+        .map((keyword) => {
+          const detail = KEYWORD_DESCRIPTIONS[keyword] ?? "No description available.";
+          return `<li><strong>${keyword}:</strong> ${detail}</li>`;
+        })
+        .join("")
+    : "<li>No keywords.</li>";
   const stats = renderCardStats(card).join(" • ");
   const effectSummary = getCardEffectSummary(card);
   panel.innerHTML = `
@@ -140,6 +153,10 @@ const setInspectorContentFor = (panel, card) => {
       <div class="meta">${card.type}${stats ? ` • ${stats}` : ""}</div>
       <div class="meta">Keywords: ${keywords}</div>
       <div class="effect"><strong>Effect:</strong> ${effectSummary}</div>
+      <div class="keyword-glossary">
+        <strong>Keyword Glossary</strong>
+        <ul>${keywordDetails}</ul>
+      </div>
     </div>
   `;
 };
@@ -655,12 +672,15 @@ const renderDeckBuilderOverlay = (state, callbacks) => {
     const cardElement = document.createElement("div");
     const isHighlighted = deckHighlighted?.list === "available" && deckHighlighted?.id === card.id;
     cardElement.className = `card deck-card ${isHighlighted ? "highlighted" : ""} ${cardTypeClass(card)}`;
+    const effectSummary = getCardEffectSummary(card);
     cardElement.innerHTML = `
       <div class="card-header">
         <h4 class="card-title">${card.name}</h4>
         <span class="card-type">${card.type}</span>
       </div>
       <div class="card-stats">${renderCardStats(card).join(" • ")}</div>
+      <div class="card-tags">${renderKeywordTags(card)}</div>
+      <div class="card-effect"><strong>Effect:</strong> ${effectSummary}</div>
     `;
     cardElement.addEventListener("click", () => {
       if (deckHighlighted?.list === "available" && deckHighlighted?.id === card.id) {
@@ -686,12 +706,15 @@ const renderDeckBuilderOverlay = (state, callbacks) => {
     const cardElement = document.createElement("div");
     const isHighlighted = deckHighlighted?.list === "selected" && deckHighlighted?.id === card.id;
     cardElement.className = `card deck-card selected ${isHighlighted ? "highlighted" : ""} ${cardTypeClass(card)}`;
+    const effectSummary = getCardEffectSummary(card);
     cardElement.innerHTML = `
       <div class="card-header">
         <h4 class="card-title">${card.name}</h4>
         <span class="card-type">${card.type}</span>
       </div>
       <div class="card-stats">${renderCardStats(card).join(" • ")}</div>
+      <div class="card-tags">${renderKeywordTags(card)}</div>
+      <div class="card-effect"><strong>Effect:</strong> ${effectSummary}</div>
     `;
     cardElement.addEventListener("click", () => {
       if (deckHighlighted?.list === "selected" && deckHighlighted?.id === card.id) {
