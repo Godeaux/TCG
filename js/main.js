@@ -32,6 +32,10 @@ const refresh = () => {
       refresh();
     },
     onUpdate: () => refresh(),
+    onConfirmPass: () => {
+      state.passPending = false;
+      refresh();
+    },
   });
 };
 

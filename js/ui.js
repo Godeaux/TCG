@@ -13,9 +13,14 @@ import { isFreePlay } from "./keywords.js";
 const selectionPanel = document.getElementById("selection-panel");
 const actionPanel = document.getElementById("action-panel");
 const logPanel = document.getElementById("log-panel");
+const passOverlay = document.getElementById("pass-overlay");
+const passTitle = document.getElementById("pass-title");
+const passConfirm = document.getElementById("pass-confirm");
+const inspectorPanel = document.getElementById("card-inspector");
 
 let pendingConsumption = null;
 let pendingAttack = null;
+let inspectedCardId = null;
 
 const clearPanel = (panel) => {
   panel.innerHTML = "";
@@ -31,34 +36,95 @@ const updateIndicators = (state) => {
   document.getElementById("phase-indicator").textContent = `Phase: ${state.phase}`;
 };
 
-const updatePlayerStats = (state, index) => {
+const updatePlayerStats = (state, index, role) => {
   const player = state.players[index];
-  document.getElementById(`player-${index + 1}-hp`).textContent = `HP: ${player.hp}`;
-  document.getElementById(`player-${index + 1}-hand`).textContent =
-    `Hand: ${player.hand.length}`;
-  document.getElementById(`player-${index + 1}-deck`).textContent =
-    `Deck: ${player.deck.length}`;
-  document.getElementById(`player-${index + 1}-carrion`).textContent =
-    `Carrion: ${player.carrion.length}`;
-  document.getElementById(`player-${index + 1}-exile`).textContent =
-    `Exile: ${player.exile.length}`;
-  document.getElementById(`player-${index + 1}-traps`).textContent =
-    `Set Traps: ${player.traps.length}`;
+  document.getElementById(`${role}-name`).textContent = player.name;
+  document.getElementById(`${role}-hp`).textContent = `HP: ${player.hp}`;
+  document.getElementById(`${role}-hand`).textContent = `Hand: ${player.hand.length}`;
+  document.getElementById(`${role}-deck`).textContent = `Deck: ${player.deck.length}`;
+  document.getElementById(`${role}-carrion`).textContent = `Carrion: ${player.carrion.length}`;
+  document.getElementById(`${role}-exile`).textContent = `Exile: ${player.exile.length}`;
+  document.getElementById(`${role}-traps`).textContent = `Set Traps: ${player.traps.length}`;
 };
 
-const renderCardInfo = (card) => {
-  const parts = [`${card.type}`];
+const cardTypeClass = (card) =>
+  `type-${card.type.toLowerCase().replace(" ", "-")}`;
+
+const renderCardStats = (card) => {
+  const stats = [];
   if (card.type === "Predator" || card.type === "Prey") {
-    parts.push(`ATK ${card.currentAtk ?? card.atk}`);
-    parts.push(`HP ${card.currentHp ?? card.hp}`);
+    stats.push(`ATK ${card.currentAtk ?? card.atk}`);
+    stats.push(`HP ${card.currentHp ?? card.hp}`);
   }
   if (card.type === "Prey") {
-    parts.push(`Nutrition ${card.nutrition}`);
+    stats.push(`NUT ${card.nutrition}`);
   }
-  if (card.keywords?.length) {
-    parts.push(`Keywords: ${card.keywords.join(", ")}`);
+  return stats;
+};
+
+const getCardEffectSummary = (card) => {
+  if (card.effectText) {
+    return card.effectText;
   }
-  return parts.join(" • ");
+  if (!card.effect) {
+    return "No special effect.";
+  }
+  let summary = "";
+  const log = (message) => {
+    if (!summary) {
+      summary = message;
+    }
+  };
+  try {
+    card.effect({
+      log,
+      player: {},
+      opponent: {},
+      attacker: {},
+    });
+  } catch {
+    summary = "";
+  }
+  return summary || "Effect text unavailable.";
+};
+
+const getStatusIndicators = (card) => {
+  const indicators = [];
+  if (card.dryDropped) {
+    indicators.push("🍂");
+  }
+  if (card.hasBarrier) {
+    indicators.push("🛡️");
+  }
+  if (card.frozen) {
+    indicators.push("❄️");
+  }
+  if (card.isToken) {
+    indicators.push("⚪");
+  }
+  return indicators.join(" ");
+};
+
+const setInspectorContent = (card) => {
+  if (!card) {
+    inspectorPanel.innerHTML = `
+      <h2>Card Details</h2>
+      <p class="muted">Hover or click a card to see its full details.</p>
+    `;
+    return;
+  }
+  const keywords = card.keywords?.length ? card.keywords.join(", ") : "None";
+  const stats = renderCardStats(card).join(" • ");
+  const effectSummary = getCardEffectSummary(card);
+  inspectorPanel.innerHTML = `
+    <h2>Card Details</h2>
+    <div class="inspector-content">
+      <h3>${card.name}</h3>
+      <div class="meta">${card.type}${stats ? ` • ${stats}` : ""}</div>
+      <div class="meta">Keywords: ${keywords}</div>
+      <div class="effect"><strong>Effect:</strong> ${effectSummary}</div>
+    </div>
+  `;
 };
 
 const resolveEffectResult = (state, result, context) => {
@@ -125,24 +191,47 @@ const resolveEffectResult = (state, result, context) => {
   }
 };
 
-const renderField = (state, playerIndex, onAttack) => {
-  const slotRow = document.querySelector(`.slot-row[data-player="${playerIndex}"]`);
+const renderField = (state, playerIndex, role, onAttack) => {
+  const slotRow = document.querySelector(`.slot-row[data-role="${role}-field"]`);
   clearPanel(slotRow);
   const player = state.players[playerIndex];
 
   player.field.forEach((card) => {
     const cardElement = document.createElement("div");
-    cardElement.className = "card";
+    cardElement.className = `card ${card ? cardTypeClass(card) : ""}`;
     if (!card) {
-      cardElement.innerHTML = "<h4>Empty Slot</h4>";
+      cardElement.innerHTML = "<strong>Empty Slot</strong>";
       slotRow.appendChild(cardElement);
       return;
     }
 
     cardElement.innerHTML = `
-      <h4>${card.name}</h4>
-      <p>${renderCardInfo(card)}</p>
+      <div class="card-header">
+        <h4 class="card-title">${card.name}</h4>
+        <span class="card-type">${card.type}</span>
+      </div>
+      <div class="card-stats">${renderCardStats(card).join(" • ")}</div>
+      <div class="card-tags">
+        ${(card.keywords || []).map((keyword) => `<span class="tag">${keyword}</span>`).join("")}
+      </div>
     `;
+
+    const status = getStatusIndicators(card);
+    if (status) {
+      const indicator = document.createElement("div");
+      indicator.className = "card-indicator";
+      indicator.textContent = status;
+      cardElement.appendChild(indicator);
+    }
+
+    cardElement.addEventListener("mouseenter", () => setInspectorContent(card));
+    cardElement.addEventListener("click", (event) => {
+      if (event.target.closest("button")) {
+        return;
+      }
+      inspectedCardId = card.instanceId;
+      setInspectorContent(card);
+    });
 
     if (
       state.phase === "Combat" &&
@@ -159,18 +248,43 @@ const renderField = (state, playerIndex, onAttack) => {
   });
 };
 
-const renderHand = (state, playerIndex, onPlay) => {
-  const handRow = document.querySelector(`.hand-row[data-player="${playerIndex}"]`);
+const renderHand = (state, playerIndex, role, onPlay, hideCards) => {
+  const handRow = document.querySelector(`.hand-row[data-role="${role}-hand"]`);
   clearPanel(handRow);
   const player = state.players[playerIndex];
 
+  if (hideCards) {
+    player.hand.forEach(() => {
+      const back = document.createElement("div");
+      back.className = "card back";
+      back.innerHTML = "<strong>Card Back</strong>";
+      handRow.appendChild(back);
+    });
+    return;
+  }
+
   player.hand.forEach((card) => {
     const cardElement = document.createElement("div");
-    cardElement.className = "card";
+    cardElement.className = `card ${cardTypeClass(card)}`;
     cardElement.innerHTML = `
-      <h4>${card.name}</h4>
-      <p>${renderCardInfo(card)}</p>
+      <div class="card-header">
+        <h4 class="card-title">${card.name}</h4>
+        <span class="card-type">${card.type}</span>
+      </div>
+      <div class="card-stats">${renderCardStats(card).join(" • ")}</div>
+      <div class="card-tags">
+        ${(card.keywords || []).map((keyword) => `<span class="tag">${keyword}</span>`).join("")}
+      </div>
     `;
+
+    cardElement.addEventListener("mouseenter", () => setInspectorContent(card));
+    cardElement.addEventListener("click", (event) => {
+      if (event.target.closest("button")) {
+        return;
+      }
+      inspectedCardId = card.instanceId;
+      setInspectorContent(card);
+    });
 
     if (playerIndex === state.activePlayerIndex) {
       const playButton = document.createElement("button");
@@ -461,7 +575,7 @@ const handlePlayCard = (state, card, onUpdate) => {
   }
 };
 
-const updateActionPanel = (state, onNextPhase, onEndTurn, onDraw) => {
+const updateActionPanel = (state, onNextPhase, onEndTurn, onDraw, controlsLocked) => {
   clearPanel(actionPanel);
   const info = document.createElement("p");
   const active = getActivePlayer(state);
@@ -470,25 +584,56 @@ const updateActionPanel = (state, onNextPhase, onEndTurn, onDraw) => {
 
   const drawButton = document.getElementById("draw-button");
   drawButton.onclick = onDraw;
-  drawButton.disabled = state.phase !== "Draw";
+  drawButton.disabled = state.phase !== "Draw" || controlsLocked;
 
   const nextPhaseButton = document.getElementById("next-phase-button");
   nextPhaseButton.onclick = onNextPhase;
+  nextPhaseButton.disabled = controlsLocked;
 
   const endTurnButton = document.getElementById("end-turn-button");
   endTurnButton.onclick = onEndTurn;
+  endTurnButton.disabled = controlsLocked;
 };
 
 export const renderGame = (state, callbacks = {}) => {
+  const activeIndex = state.activePlayerIndex;
+  const opponentIndex = (state.activePlayerIndex + 1) % 2;
+  const passPending = Boolean(state.passPending);
   updateIndicators(state);
-  updatePlayerStats(state, 0);
-  updatePlayerStats(state, 1);
-  renderField(state, 0, (card) => handleAttackSelection(state, card, callbacks.onUpdate));
-  renderField(state, 1, (card) => handleAttackSelection(state, card, callbacks.onUpdate));
-  renderHand(state, 0, (card) => handlePlayCard(state, card, callbacks.onUpdate));
-  renderHand(state, 1, (card) => handlePlayCard(state, card, callbacks.onUpdate));
-  updateActionPanel(state, callbacks.onNextPhase, callbacks.onEndTurn, callbacks.onDraw);
+  updatePlayerStats(state, opponentIndex, "opponent");
+  updatePlayerStats(state, activeIndex, "active");
+  renderField(state, opponentIndex, "opponent", (card) =>
+    handleAttackSelection(state, card, callbacks.onUpdate)
+  );
+  renderField(state, activeIndex, "active", (card) =>
+    handleAttackSelection(state, card, callbacks.onUpdate)
+  );
+  renderHand(state, opponentIndex, "opponent", () => {}, true);
+  renderHand(state, activeIndex, "active", (card) => handlePlayCard(state, card, callbacks.onUpdate), passPending);
+  updateActionPanel(state, callbacks.onNextPhase, callbacks.onEndTurn, callbacks.onDraw, passPending);
   appendLog(state);
+
+  if (passPending) {
+    passTitle.textContent = `Pass to ${state.players[activeIndex].name}`;
+    passOverlay.classList.add("active");
+    passOverlay.setAttribute("aria-hidden", "false");
+    passConfirm.onclick = callbacks.onConfirmPass;
+  } else {
+    passOverlay.classList.remove("active");
+    passOverlay.setAttribute("aria-hidden", "true");
+  }
+
+  const inspectedCard = state.players
+    .flatMap((player) => player.field.concat(player.hand))
+    .find((card) => card && card.instanceId === inspectedCardId);
+  if (inspectedCard) {
+    setInspectorContent(inspectedCard);
+  } else if (inspectedCardId) {
+    inspectedCardId = null;
+    setInspectorContent(null);
+  } else {
+    setInspectorContent(null);
+  }
 };
 
 export const setupInitialDraw = (state, count) => {

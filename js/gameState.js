@@ -27,6 +27,7 @@ export const createGameState = () => {
     phase: "Start",
     turn: 1,
     cardPlayedThisTurn: false,
+    passPending: false,
     log: [],
     combat: {
       declaredAttacks: [],
