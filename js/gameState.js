@@ -24,10 +24,17 @@ export const createGameState = () => {
   return {
     players,
     activePlayerIndex: 0,
-    phase: "Start",
+    phase: "Setup",
     turn: 1,
+    firstPlayerIndex: null,
+    skipFirstDraw: true,
     cardPlayedThisTurn: false,
     passPending: false,
+    setup: {
+      stage: "rolling",
+      rolls: [null, null],
+      winnerIndex: null,
+    },
     log: [],
     combat: {
       declaredAttacks: [],
@@ -66,4 +73,44 @@ export const resetCombat = (state) => {
       }
     });
   });
+};
+
+export const rollSetupDie = (state, playerIndex) => {
+  if (!state.setup || state.setup.stage !== "rolling") {
+    return null;
+  }
+  if (state.setup.rolls[playerIndex] !== null) {
+    return state.setup.rolls[playerIndex];
+  }
+  const roll = Math.floor(Math.random() * 10) + 1;
+  state.setup.rolls[playerIndex] = roll;
+  logMessage(state, `${state.players[playerIndex].name} rolls a ${roll}.`);
+
+  const [p1Roll, p2Roll] = state.setup.rolls;
+  if (p1Roll !== null && p2Roll !== null) {
+    if (p1Roll === p2Roll) {
+      logMessage(state, "Tie! Reroll the dice to determine who chooses first.");
+      state.setup.rolls = [null, null];
+    } else {
+      state.setup.winnerIndex = p1Roll > p2Roll ? 0 : 1;
+      state.setup.stage = "choice";
+      logMessage(
+        state,
+        `${state.players[state.setup.winnerIndex].name} wins the roll and chooses who goes first.`
+      );
+    }
+  }
+
+  return roll;
+};
+
+export const chooseFirstPlayer = (state, chosenIndex) => {
+  state.activePlayerIndex = chosenIndex;
+  state.firstPlayerIndex = chosenIndex;
+  state.turn = 1;
+  state.phase = "Start";
+  state.cardPlayedThisTurn = false;
+  state.passPending = false;
+  state.setup.stage = "complete";
+  logMessage(state, `${state.players[chosenIndex].name} will take the first turn.`);
 };

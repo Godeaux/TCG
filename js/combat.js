@@ -1,4 +1,4 @@
-import { hasHaste, hasLure, isHidden } from "./keywords.js";
+import { hasHaste, hasLure, isHidden, isInvisible, hasAcuity, isPassive } from "./keywords.js";
 import { logMessage } from "./gameState.js";
 
 const canAttackPlayer = (attacker, state) => {
@@ -9,20 +9,40 @@ const canAttackPlayer = (attacker, state) => {
 };
 
 export const getValidTargets = (state, attacker, opponent) => {
-  const visibleCreatures = opponent.field.filter((card) => card && !isHidden(card));
-  const lureCreatures = visibleCreatures.filter((card) => hasLure(card));
+  const hasPrecision = hasAcuity(attacker);
+  const targetableCreatures = opponent.field.filter((card) => {
+    if (!card) {
+      return false;
+    }
+    if (hasPrecision) {
+      return true;
+    }
+    return !isHidden(card) && !isInvisible(card);
+  });
+  const lureCreatures = targetableCreatures.filter((card) => hasLure(card));
 
   if (lureCreatures.length > 0) {
     return { creatures: lureCreatures, player: false };
   }
 
   const canDirect = canAttackPlayer(attacker, state);
-  return { creatures: visibleCreatures, player: canDirect };
+  return { creatures: targetableCreatures, player: canDirect };
+};
+
+const applyDamage = (creature, amount) => {
+  if (amount <= 0) {
+    return;
+  }
+  if (creature.hasBarrier) {
+    creature.hasBarrier = false;
+    return;
+  }
+  creature.currentHp -= amount;
 };
 
 export const resolveCreatureCombat = (state, attacker, defender) => {
-  defender.currentHp -= attacker.currentAtk;
-  attacker.currentHp -= defender.currentAtk;
+  applyDamage(defender, attacker.currentAtk);
+  applyDamage(attacker, defender.currentAtk);
 
   logMessage(
     state,
