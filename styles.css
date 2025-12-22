@@ -23,8 +23,11 @@ body.deck-building {
   overflow: auto;
 }
 
-body.deck-building .app-header,
 body.deck-building .tabletop {
+  display: none;
+}
+
+body.deck-building .status-bar {
   display: none;
 }
 
@@ -480,7 +483,7 @@ button.secondary {
   inset: 0;
   background: rgba(2, 6, 23, 0.95);
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;
   justify-content: center;
   z-index: 14;
   opacity: 0;
@@ -501,8 +504,6 @@ button.secondary {
   padding: 20px;
   color: #f8fafc;
   width: min(1100px, 100%);
-  min-height: 100%;
-  overflow: auto;
   border: 1px solid rgba(148, 163, 184, 0.3);
   box-shadow: 0 20px 40px rgba(15, 23, 42, 0.6);
   display: flex;
@@ -541,28 +542,29 @@ button.secondary {
 }
 
 .deck-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 6px;
-}
-
-.deck-row::-webkit-scrollbar {
-  height: 8px;
-}
-
-.deck-row::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.4);
-  border-radius: 999px;
+  align-items: stretch;
 }
 
 .card.deck-card {
-  min-width: 160px;
-  flex: 0 0 auto;
+  min-width: 0;
+  width: 100%;
+  justify-self: stretch;
 }
 
 .card.deck-card.selected {
   outline: 2px solid rgba(56, 189, 248, 0.6);
+}
+
+.card.deck-card.highlighted {
+  outline: 2px solid #facc15;
+  box-shadow: 0 0 12px rgba(250, 204, 21, 0.8);
+}
+
+.deck-inspector {
+  margin-top: 6px;
 }
 
 #deck-confirm {

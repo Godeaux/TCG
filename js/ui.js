@@ -29,10 +29,12 @@ const deckStatus = document.getElementById("deck-status");
 const deckFullRow = document.getElementById("deck-full-row");
 const deckAddedRow = document.getElementById("deck-added-row");
 const deckConfirm = document.getElementById("deck-confirm");
+const deckInspectorPanel = document.getElementById("deck-inspector");
 
 let pendingConsumption = null;
 let pendingAttack = null;
 let inspectedCardId = null;
+let deckHighlighted = null;
 
 const clearPanel = (panel) => {
   panel.innerHTML = "";
@@ -117,9 +119,12 @@ const getStatusIndicators = (card) => {
   return indicators.join(" ");
 };
 
-const setInspectorContent = (card) => {
+const setInspectorContentFor = (panel, card) => {
+  if (!panel) {
+    return;
+  }
   if (!card) {
-    inspectorPanel.innerHTML = `
+    panel.innerHTML = `
       <h2>Card Details</h2>
       <p class="muted">Tap a card to see its full details.</p>
     `;
@@ -128,7 +133,7 @@ const setInspectorContent = (card) => {
   const keywords = card.keywords?.length ? card.keywords.join(", ") : "None";
   const stats = renderCardStats(card).join(" • ");
   const effectSummary = getCardEffectSummary(card);
-  inspectorPanel.innerHTML = `
+  panel.innerHTML = `
     <h2>Card Details</h2>
     <div class="inspector-content">
       <h3>${card.name}</h3>
@@ -138,6 +143,9 @@ const setInspectorContent = (card) => {
     </div>
   `;
 };
+
+const setInspectorContent = (card) => setInspectorContentFor(inspectorPanel, card);
+const setDeckInspectorContent = (card) => setInspectorContentFor(deckInspectorPanel, card);
 
 const resolveEffectResult = (state, result, context) => {
   if (!result) {
@@ -610,6 +618,7 @@ const renderDeckBuilderOverlay = (state, callbacks) => {
   if (!state.deckBuilder || state.deckBuilder.stage === "complete") {
     deckOverlay.classList.remove("active");
     deckOverlay.setAttribute("aria-hidden", "true");
+    deckHighlighted = null;
     return;
   }
 
@@ -628,7 +637,7 @@ const renderDeckBuilderOverlay = (state, callbacks) => {
   deckOverlay.setAttribute("aria-hidden", "false");
   deckTitle.textContent = `${player.name} Deck Builder`;
   deckSubtitle.textContent =
-    "Tap a card in the full catalog to add it to your 20-card deck. Tap a card below to remove it.";
+    "Tap a card to preview its details. Tap a highlighted card again to add it to (or remove it from) your deck.";
   deckStatus.innerHTML = `
     <div class="deck-status-item">Cards selected: <strong>${totalCount}/20</strong></div>
     <div class="deck-status-item ${preyRuleValid ? "" : "invalid"}">
@@ -638,10 +647,14 @@ const renderDeckBuilderOverlay = (state, callbacks) => {
 
   clearPanel(deckFullRow);
   clearPanel(deckAddedRow);
+  if (!deckHighlighted) {
+    setDeckInspectorContent(null);
+  }
 
   available.forEach((card, index) => {
     const cardElement = document.createElement("div");
-    cardElement.className = `card deck-card ${cardTypeClass(card)}`;
+    const isHighlighted = deckHighlighted?.list === "available" && deckHighlighted?.id === card.id;
+    cardElement.className = `card deck-card ${isHighlighted ? "highlighted" : ""} ${cardTypeClass(card)}`;
     cardElement.innerHTML = `
       <div class="card-header">
         <h4 class="card-title">${card.name}</h4>
@@ -650,13 +663,20 @@ const renderDeckBuilderOverlay = (state, callbacks) => {
       <div class="card-stats">${renderCardStats(card).join(" • ")}</div>
     `;
     cardElement.addEventListener("click", () => {
-      if (selected.length >= 20) {
-        logMessage(state, "Deck is full. Remove a card before adding another.");
+      if (deckHighlighted?.list === "available" && deckHighlighted?.id === card.id) {
+        if (selected.length >= 20) {
+          logMessage(state, "Deck is full. Remove a card before adding another.");
+          callbacks.onUpdate?.();
+          return;
+        }
+        selected.push(card);
+        available.splice(index, 1);
+        deckHighlighted = null;
         callbacks.onUpdate?.();
         return;
       }
-      selected.push(card);
-      available.splice(index, 1);
+      deckHighlighted = { list: "available", id: card.id };
+      setDeckInspectorContent(card);
       callbacks.onUpdate?.();
     });
     deckFullRow.appendChild(cardElement);
@@ -664,7 +684,8 @@ const renderDeckBuilderOverlay = (state, callbacks) => {
 
   selected.forEach((card, index) => {
     const cardElement = document.createElement("div");
-    cardElement.className = `card deck-card selected ${cardTypeClass(card)}`;
+    const isHighlighted = deckHighlighted?.list === "selected" && deckHighlighted?.id === card.id;
+    cardElement.className = `card deck-card selected ${isHighlighted ? "highlighted" : ""} ${cardTypeClass(card)}`;
     cardElement.innerHTML = `
       <div class="card-header">
         <h4 class="card-title">${card.name}</h4>
@@ -673,11 +694,18 @@ const renderDeckBuilderOverlay = (state, callbacks) => {
       <div class="card-stats">${renderCardStats(card).join(" • ")}</div>
     `;
     cardElement.addEventListener("click", () => {
-      selected.splice(index, 1);
-      available.push(card);
-      available.sort(
-        (a, b) => state.deckBuilder.catalogOrder.indexOf(a.id) - state.deckBuilder.catalogOrder.indexOf(b.id)
-      );
+      if (deckHighlighted?.list === "selected" && deckHighlighted?.id === card.id) {
+        selected.splice(index, 1);
+        available.push(card);
+        available.sort(
+          (a, b) => state.deckBuilder.catalogOrder.indexOf(a.id) - state.deckBuilder.catalogOrder.indexOf(b.id)
+        );
+        deckHighlighted = null;
+        callbacks.onUpdate?.();
+        return;
+      }
+      deckHighlighted = { list: "selected", id: card.id };
+      setDeckInspectorContent(card);
       callbacks.onUpdate?.();
     });
     deckAddedRow.appendChild(cardElement);
@@ -692,10 +720,14 @@ const renderDeckBuilderOverlay = (state, callbacks) => {
     if (isPlayerOne) {
       state.deckBuilder.stage = "p2";
       logMessage(state, "Player 1 deck locked in. Hand off to Player 2.");
+      deckHighlighted = null;
+      setDeckInspectorContent(null);
       callbacks.onUpdate?.();
       return;
     }
     state.deckBuilder.stage = "complete";
+    deckHighlighted = null;
+    setDeckInspectorContent(null);
     callbacks.onDeckComplete?.(state.deckBuilder.selections);
     callbacks.onUpdate?.();
   };
