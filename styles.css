@@ -355,6 +355,16 @@ button.secondary {
   border-bottom: 1px solid rgba(148, 163, 184, 0.15);
 }
 
+.log .log-phase {
+  font-weight: 600;
+  color: #f8fafc;
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 8px;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
 .muted {
   color: #94a3b8;
   font-size: 0.75rem;
@@ -398,59 +408,40 @@ button.secondary {
   color: #cbd5f5;
 }
 
-.setup-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(2, 6, 23, 0.92);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 12;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-}
-
-.setup-overlay.active {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.setup-card {
-  background: rgba(15, 23, 42, 0.95);
-  border-radius: 18px;
-  padding: 28px 32px;
-  text-align: center;
-  color: #f8fafc;
-  max-width: 420px;
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.6);
+.setup-panel {
+  background: rgba(15, 23, 42, 0.7);
+  border-radius: 14px;
+  padding: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
+  margin-top: 8px;
 }
 
-.setup-card h2 {
+.setup-panel h3 {
   margin: 0;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #e2e8f0;
 }
 
 .setup-rolls {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 0.85rem;
+  display: grid;
+  gap: 4px;
+  font-size: 0.8rem;
   color: #cbd5f5;
 }
 
 .setup-button-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
+  gap: 8px;
 }
 
 .setup-actions button {
-  padding: 8px 12px;
+  padding: 6px 10px;
   border: none;
   border-radius: 8px;
   background: #38bdf8;
