@@ -141,12 +141,12 @@ const getCardEffectSummary = (card) => {
   }
   const effectFn = card.effect ?? card.onPlay ?? card.onConsume ?? card.onEnd ?? card.onStart;
   if (!effectFn) {
-    return "No special effect.";
+    return "";
   }
   let summary = "";
   const log = (message) => {
     if (!summary) {
-      summary = message;
+      summary = message.replace(/^.*?\b(?:effect|triggers|summons|takes the field)\b:\s*/i, "");
     }
   };
   try {
@@ -159,7 +159,7 @@ const getCardEffectSummary = (card) => {
   } catch {
     summary = "";
   }
-  return summary || "Effect text unavailable.";
+  return summary;
 };
 
 const getStatusIndicators = (card) => {
@@ -180,7 +180,10 @@ const getStatusIndicators = (card) => {
 };
 
 const renderKeywordTags = (card) => {
-  const keywords = card.keywords?.length ? card.keywords : ["No keywords"];
+  if (!card.keywords?.length) {
+    return "";
+  }
+  const keywords = card.keywords;
   return keywords.map((keyword) => `<span>${keyword}</span>`).join("");
 };
 
@@ -279,13 +282,16 @@ const renderDeckCard = (card, options = {}) => {
     )
     .join("");
   const effectSummary = getCardEffectSummary(card);
+  const effectRow = effectSummary
+    ? `<div class="card-effect"><strong>Effect:</strong> ${effectSummary}</div>`
+    : "";
   cardElement.innerHTML = `
     <div class="card-inner">
       <div class="card-name">${card.name}</div>
       <div class="card-type-label">${card.type}</div>
       <div class="card-stats-row">${stats}</div>
       <div class="card-keywords">${renderKeywordTags(card)}</div>
-      <div class="card-effect"><strong>Effect:</strong> ${effectSummary}</div>
+      ${effectRow}
     </div>
   `;
   cardElement.addEventListener("click", () => onClick?.());
@@ -334,7 +340,7 @@ const setInspectorContentFor = (panel, card) => {
     panel.innerHTML = `<p class="muted">Tap a card to see its full details.</p>`;
     return;
   }
-  const keywords = card.keywords?.length ? card.keywords.join(", ") : "None";
+  const keywords = card.keywords?.length ? card.keywords.join(", ") : "";
   const keywordDetails = card.keywords?.length
     ? card.keywords
         .map((keyword) => {
@@ -342,21 +348,28 @@ const setInspectorContentFor = (panel, card) => {
           return `<li><strong>${keyword}:</strong> ${detail}</li>`;
         })
         .join("")
-    : "<li>No keywords.</li>";
+    : "";
   const stats = renderCardStats(card)
     .map((stat) => `${stat.label} ${stat.value}`)
     .join(" • ");
   const effectSummary = getCardEffectSummary(card);
+  const keywordLabel = keywords ? `Keywords: ${keywords}` : "";
+  const keywordBlock = keywordDetails
+    ? `<div class="keyword-glossary">
+        <strong>Keyword Glossary</strong>
+        <ul>${keywordDetails}</ul>
+      </div>`
+    : "";
+  const effectBlock = effectSummary
+    ? `<div class="effect"><strong>Effect:</strong> ${effectSummary}</div>`
+    : "";
   panel.innerHTML = `
     <div class="inspector-card">
       <h4>${card.name}</h4>
       <div class="meta">${card.type}${stats ? ` • ${stats}` : ""}</div>
-      <div class="meta">Keywords: ${keywords}</div>
-      <div class="effect"><strong>Effect:</strong> ${effectSummary}</div>
-      <div class="keyword-glossary">
-        <strong>Keyword Glossary</strong>
-        <ul>${keywordDetails}</ul>
-      </div>
+      ${keywordLabel ? `<div class="meta">${keywordLabel}</div>` : ""}
+      ${effectBlock}
+      ${keywordBlock}
     </div>
   `;
 };
