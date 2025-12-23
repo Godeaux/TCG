@@ -35,6 +35,9 @@ export const createGameState = () => {
     skipFirstDraw: true,
     cardPlayedThisTurn: false,
     passPending: false,
+    fieldSpell: null,
+    beforeCombatQueue: [],
+    beforeCombatProcessing: false,
     setup: {
       stage: "rolling",
       rolls: [null, null],
@@ -78,6 +81,9 @@ export const setPlayerDeck = (state, playerIndex, deck) => {
   player.carrion = [];
   player.exile = [];
   player.traps = [];
+  if (state.fieldSpell?.ownerIndex === playerIndex) {
+    state.fieldSpell = null;
+  }
 };
 
 export const getActivePlayer = (state) => state.players[state.activePlayerIndex];

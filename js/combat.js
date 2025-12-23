@@ -1,5 +1,14 @@
-import { hasHaste, hasLure, isHidden, isInvisible, hasAcuity, isPassive } from "./keywords.js";
+import {
+  hasHaste,
+  hasLure,
+  isHidden,
+  isInvisible,
+  hasAcuity,
+  isPassive,
+  hasNeurotoxic,
+} from "./keywords.js";
 import { logMessage } from "./gameState.js";
+import { resolveEffectResult } from "./effects.js";
 
 const canAttackPlayer = (attacker, state) => {
   if (hasHaste(attacker)) {
@@ -44,6 +53,26 @@ export const resolveCreatureCombat = (state, attacker, defender) => {
   applyDamage(defender, attacker.currentAtk);
   applyDamage(attacker, defender.currentAtk);
 
+  if (hasNeurotoxic(attacker) && attacker.currentAtk > 0) {
+    defender.frozen = true;
+    defender.frozenDiesTurn = state.turn + 1;
+    logMessage(state, `${defender.name} is frozen by neurotoxin.`);
+  }
+  if (hasNeurotoxic(defender) && defender.currentAtk > 0) {
+    attacker.frozen = true;
+    attacker.frozenDiesTurn = state.turn + 1;
+    logMessage(state, `${attacker.name} is frozen by neurotoxin.`);
+  }
+
+  if (defender.currentHp <= 0) {
+    defender.diedInCombat = true;
+    defender.slainBy = attacker;
+  }
+  if (attacker.currentHp <= 0) {
+    attacker.diedInCombat = true;
+    attacker.slainBy = defender;
+  }
+
   logMessage(
     state,
     `${attacker.name} and ${defender.name} trade blows (${attacker.currentAtk}/${attacker.currentHp} vs ${defender.currentAtk}/${defender.currentHp}).`
@@ -59,8 +88,26 @@ export const cleanupDestroyed = (state) => {
   state.players.forEach((player) => {
     player.field = player.field.map((card) => {
       if (card && card.currentHp <= 0) {
+        if (card.onSlain && card.diedInCombat) {
+          const result = card.onSlain({
+            log: (message) => logMessage(state, message),
+            player,
+            opponent: state.players[(state.players.indexOf(player) + 1) % 2],
+            creature: card,
+            killer: card.slainBy,
+            state,
+          });
+          resolveEffectResult(state, result, {
+            playerIndex: state.players.indexOf(player),
+            opponentIndex: (state.players.indexOf(player) + 1) % 2,
+            card,
+          });
+        }
         player.carrion.push(card);
         logMessage(state, `${card.name} is destroyed and sent to carrion.`);
+        if (state.fieldSpell?.card?.instanceId === card.instanceId) {
+          state.fieldSpell = null;
+        }
         return null;
       }
       return card;
