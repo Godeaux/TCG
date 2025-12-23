@@ -1,9 +1,4 @@
-import {
-  getActivePlayer,
-  getOpponentPlayer,
-  logMessage,
-  drawCard,
-} from "./gameState.js";
+import { getActivePlayer, getOpponentPlayer, logMessage, drawCard } from "./gameState.js";
 import { canPlayCard, cardLimitAvailable } from "./turnManager.js";
 import { createCardInstance } from "./cardTypes.js";
 import { consumePrey } from "./consumption.js";
@@ -13,7 +8,14 @@ import {
   resolveDirectAttack,
   cleanupDestroyed,
 } from "./combat.js";
-import { isFreePlay, isEdible, isPassive, KEYWORD_DESCRIPTIONS } from "./keywords.js";
+import {
+  isFreePlay,
+  isEdible,
+  isPassive,
+  hasScavenge,
+  KEYWORD_DESCRIPTIONS,
+} from "./keywords.js";
+import { resolveEffectResult } from "./effects.js";
 
 const selectionPanel = document.getElementById("selection-panel");
 const actionBar = document.getElementById("action-bar");
@@ -137,7 +139,8 @@ const getCardEffectSummary = (card) => {
   if (card.effectText) {
     return card.effectText;
   }
-  if (!card.effect) {
+  const effectFn = card.effect ?? card.onPlay ?? card.onConsume ?? card.onEnd ?? card.onStart;
+  if (!effectFn) {
     return "No special effect.";
   }
   let summary = "";
@@ -147,7 +150,7 @@ const getCardEffectSummary = (card) => {
     }
   };
   try {
-    card.effect({
+    effectFn({
       log,
       player: {},
       opponent: {},
@@ -182,8 +185,16 @@ const renderKeywordTags = (card) => {
 };
 
 const renderCard = (card, options = {}) => {
-  const { showPlay = false, showAttack = false, onPlay, onAttack, onClick, showBack = false } =
-    options;
+  const {
+    showPlay = false,
+    showAttack = false,
+    showDiscard = false,
+    onPlay,
+    onAttack,
+    onDiscard,
+    onClick,
+    showBack = false,
+  } = options;
   const cardElement = document.createElement("div");
 
   if (showBack) {
@@ -224,6 +235,12 @@ const renderCard = (card, options = {}) => {
       attackButton.textContent = "Attack";
       attackButton.onclick = () => onAttack?.(card);
       actions.appendChild(attackButton);
+    }
+    if (showDiscard) {
+      const discardButton = document.createElement("button");
+      discardButton.textContent = "Discard";
+      discardButton.onclick = () => onDiscard?.(card);
+      actions.appendChild(discardButton);
     }
     inner.appendChild(actions);
   }
@@ -347,68 +364,46 @@ const setInspectorContentFor = (panel, card) => {
 const setInspectorContent = (card) => setInspectorContentFor(inspectorPanel, card);
 const setDeckInspectorContent = (card) => setInspectorContentFor(deckInspectorPanel, card);
 
-const resolveEffectResult = (state, result, context) => {
+const resolveEffectChain = (state, result, context, onUpdate, onComplete) => {
   if (!result) {
+    onComplete?.();
+    return;
+  }
+  if (result.selectTarget) {
+    const { selectTarget, ...rest } = result;
+    if (Object.keys(rest).length > 0) {
+      resolveEffectResult(state, rest, context);
+    }
+    const { title, candidates: candidatesInput, onSelect } = selectTarget;
+    const candidates =
+      typeof candidatesInput === "function" ? candidatesInput() : candidatesInput;
+    const items = candidates.map((candidate) => {
+      const item = document.createElement("label");
+      item.className = "selection-item";
+      const button = document.createElement("button");
+      button.textContent = candidate.label;
+      button.onclick = () => {
+        clearSelectionPanel();
+        const followUp = onSelect(candidate.value);
+        resolveEffectChain(state, followUp, context, onUpdate, onComplete);
+        cleanupDestroyed(state);
+        onUpdate?.();
+      };
+      item.appendChild(button);
+      return item;
+    });
+
+    renderSelectionPanel({
+      title,
+      items,
+      onConfirm: clearSelectionPanel,
+      confirmLabel: "Cancel",
+    });
     return;
   }
 
-  if (result.draw) {
-    for (let i = 0; i < result.draw; i += 1) {
-      drawCard(state, context.playerIndex);
-    }
-    logMessage(state, `${state.players[context.playerIndex].name} draws ${result.draw} card(s).`);
-  }
-
-  if (result.heal) {
-    if (typeof result.heal === "number") {
-      state.players[context.playerIndex].hp += result.heal;
-      logMessage(state, `${state.players[context.playerIndex].name} heals ${result.heal} HP.`);
-    } else {
-      const { player, amount } = result.heal;
-      player.hp += amount;
-      logMessage(state, `${player.name} heals ${amount} HP.`);
-    }
-  }
-
-  if (result.gainHp) {
-    state.players[context.playerIndex].hp += result.gainHp;
-    logMessage(state, `${state.players[context.playerIndex].name} gains ${result.gainHp} HP.`);
-  }
-
-  if (result.damageOpponent) {
-    state.players[context.opponentIndex].hp -= result.damageOpponent;
-    logMessage(
-      state,
-      `${state.players[context.opponentIndex].name} takes ${result.damageOpponent} damage.`
-    );
-  }
-
-  if (result.damagePlayer) {
-    const { player, amount } = result.damagePlayer;
-    player.hp -= amount;
-    logMessage(state, `${player.name} takes ${amount} damage.`);
-  }
-
-  if (result.damageCreature) {
-    const { creature, amount } = result.damageCreature;
-    creature.currentHp -= amount;
-    logMessage(state, `${creature.name} takes ${amount} damage.`);
-  }
-
-  if (result.teamBuff) {
-    const { player, atk, hp } = result.teamBuff;
-    player.field.forEach((creature) => {
-      if (creature) {
-        creature.currentAtk += atk;
-        creature.currentHp += hp;
-      }
-    });
-  }
-
-  if (result.tempBuff && context.card) {
-    context.card.currentAtk += result.tempBuff.atk;
-    context.card.currentHp += result.tempBuff.hp;
-  }
+  resolveEffectResult(state, result, context);
+  onComplete?.();
 };
 
 const renderField = (state, playerIndex, isOpponent, onAttack) => {
@@ -426,11 +421,14 @@ const renderField = (state, playerIndex, isOpponent, onAttack) => {
       slot.textContent = "Empty Slot";
       return;
     }
+    const isCreature = card.type === "Predator" || card.type === "Prey";
     const showAttack =
       !isOpponent &&
       state.phase === "Combat" &&
       !card.hasAttacked &&
-      !isPassive(card);
+      !isPassive(card) &&
+      !card.frozen &&
+      isCreature;
     const cardElement = renderCard(card, {
       showAttack,
       onAttack,
@@ -439,7 +437,7 @@ const renderField = (state, playerIndex, isOpponent, onAttack) => {
   });
 };
 
-const renderHand = (state, onPlay, hideCards) => {
+const renderHand = (state, onPlay, onUpdate, hideCards) => {
   const handGrid = document.getElementById("active-hand");
   if (!handGrid) {
     return;
@@ -455,9 +453,15 @@ const renderHand = (state, onPlay, hideCards) => {
   }
 
   player.hand.forEach((card) => {
+    const showDiscard =
+      card.discardEffect &&
+      card.discardEffect.timing === "main" &&
+      canPlayCard(state);
     const cardElement = renderCard(card, {
       showPlay: true,
+      showDiscard,
       onPlay,
+      onDiscard: (discardCard) => handleDiscardEffect(state, discardCard, onUpdate),
     });
     handGrid.appendChild(cardElement);
   });
@@ -499,6 +503,43 @@ const resolveAttack = (state, attacker, target, negateAttack = false) => {
     return;
   }
 
+  if (target.type === "creature" && target.card.onDefend) {
+    const defender = target.card;
+    const playerIndex = state.activePlayerIndex;
+    const opponentIndex = (state.activePlayerIndex + 1) % 2;
+    const result = defender.onDefend({
+      log: (message) => logMessage(state, message),
+      attacker,
+      defender,
+      player: state.players[playerIndex],
+      opponent: state.players[opponentIndex],
+      playerIndex,
+      opponentIndex,
+      state,
+    });
+    resolveEffectChain(
+      state,
+      result,
+      {
+        playerIndex: state.activePlayerIndex,
+        opponentIndex: (state.activePlayerIndex + 1) % 2,
+        card: defender,
+      },
+      null
+    );
+    cleanupDestroyed(state);
+    if (attacker.currentHp <= 0) {
+      logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
+      attacker.hasAttacked = true;
+      return;
+    }
+    if (result?.returnToHand) {
+      attacker.hasAttacked = true;
+      cleanupDestroyed(state);
+      return;
+    }
+  }
+
   if (target.type === "player") {
     resolveDirectAttack(state, attacker, target.player);
   } else {
@@ -529,8 +570,9 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
       const result = trap.effect({
         log: (message) => logMessage(state, message),
         attacker,
+        target,
       });
-      resolveEffectResult(state, result, {
+      resolveEffectChain(state, result, {
         playerIndex: pendingAttack.defenderIndex,
         opponentIndex: (pendingAttack.defenderIndex + 1) % 2,
       });
@@ -564,6 +606,41 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
   };
   skipButton.appendChild(skipAction);
   items.push(skipButton);
+
+  if (target.type === "player") {
+    const discardOptions = defender.hand.filter(
+      (card) => card.discardEffect?.timing === "directAttack"
+    );
+    discardOptions.forEach((card) => {
+      const item = document.createElement("label");
+      item.className = "selection-item";
+      const button = document.createElement("button");
+      button.textContent = `Discard ${card.name}`;
+      button.onclick = () => {
+        defender.hand = defender.hand.filter((itemCard) => itemCard.instanceId !== card.instanceId);
+        if (card.type === "Predator" || card.type === "Prey") {
+          defender.carrion.push(card);
+        } else {
+          defender.exile.push(card);
+        }
+        const result = card.discardEffect.effect({
+          log: (message) => logMessage(state, message),
+          attacker,
+          defender,
+        });
+        resolveEffectChain(state, result, {
+          playerIndex: pendingAttack.defenderIndex,
+          opponentIndex: (pendingAttack.defenderIndex + 1) % 2,
+        });
+        clearSelectionPanel();
+        resolveAttack(state, attacker, target, Boolean(result?.negateAttack));
+        pendingAttack = null;
+        onUpdate?.();
+      };
+      item.appendChild(button);
+      items.push(item);
+    });
+  }
 
   renderSelectionPanel({
     title: `${defender.name} may trigger a trap`,
@@ -621,6 +698,8 @@ const handlePlayCard = (state, card, onUpdate) => {
 
   const player = getActivePlayer(state);
   const opponent = getOpponentPlayer(state);
+  const playerIndex = state.activePlayerIndex;
+  const opponentIndex = (state.activePlayerIndex + 1) % 2;
 
   const isFree = card.type === "Free Spell" || isFreePlay(card);
   if (!isFree && !cardLimitAvailable(state)) {
@@ -634,12 +713,17 @@ const handlePlayCard = (state, card, onUpdate) => {
       log: (message) => logMessage(state, message),
       player,
       opponent,
+      state,
+      playerIndex,
+      opponentIndex,
     });
-    resolveEffectResult(state, result, {
-      playerIndex: state.activePlayerIndex,
-      opponentIndex: (state.activePlayerIndex + 1) % 2,
-    });
-    player.exile.push(card);
+    resolveEffectChain(state, result, {
+      playerIndex,
+      opponentIndex,
+    }, onUpdate, () => cleanupDestroyed(state));
+    if (!card.isFieldSpell) {
+      player.exile.push(card);
+    }
     player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
     if (!isFree) {
       state.cardPlayedThisTurn = true;
@@ -672,14 +756,21 @@ const handlePlayCard = (state, card, onUpdate) => {
       const availablePrey = player.field.filter(
         (slot) => slot && (slot.type === "Prey" || (slot.type === "Predator" && isEdible(slot)))
       );
-      if (availablePrey.length > 0) {
+      const availableCarrion = hasScavenge(creature)
+        ? player.carrion.filter(
+            (slot) =>
+              slot && (slot.type === "Prey" || (slot.type === "Predator" && isEdible(slot)))
+          )
+        : [];
+      const ediblePrey = availablePrey.filter((slot) => !slot.frozen);
+      if (ediblePrey.length > 0 || availableCarrion.length > 0) {
         pendingConsumption = {
           predator: creature,
           playerIndex: state.activePlayerIndex,
           slotIndex: emptySlot,
         };
 
-        const items = availablePrey.map((prey) => {
+        const items = [...ediblePrey, ...availableCarrion].map((prey) => {
           const item = document.createElement("label");
           item.className = "selection-item";
           const checkbox = document.createElement("input");
@@ -687,7 +778,8 @@ const handlePlayCard = (state, card, onUpdate) => {
           checkbox.value = prey.instanceId;
           const label = document.createElement("span");
           const nutrition = prey.nutrition ?? prey.currentAtk ?? prey.atk ?? 0;
-          label.textContent = `${prey.name} (Nutrition ${nutrition})`;
+          const sourceLabel = availableCarrion.includes(prey) ? "Carrion" : "Field";
+          label.textContent = `${prey.name} (${sourceLabel}, Nutrition ${nutrition})`;
           item.appendChild(checkbox);
           item.appendChild(label);
           return item;
@@ -703,7 +795,11 @@ const handlePlayCard = (state, card, onUpdate) => {
             const preyToConsume = availablePrey.filter((prey) =>
               selectedIds.includes(prey.instanceId)
             );
-            if (preyToConsume.length > 3) {
+            const carrionToConsume = availableCarrion.filter((prey) =>
+              selectedIds.includes(prey.instanceId)
+            );
+            const totalSelected = preyToConsume.length + carrionToConsume.length;
+            if (totalSelected > 3) {
               logMessage(state, "You can consume up to 3 prey.");
               onUpdate?.();
               return;
@@ -711,22 +807,34 @@ const handlePlayCard = (state, card, onUpdate) => {
             consumePrey({
               predator: creature,
               preyList: preyToConsume,
+              carrionList: carrionToConsume,
               state,
               playerIndex: state.activePlayerIndex,
             });
-            if (preyToConsume.length > 0 && creature.effect) {
-              const result = creature.effect({
+            player.field[pendingConsumption.slotIndex] = creature;
+            if (totalSelected > 0 && creature.onConsume) {
+              const result = creature.onConsume({
                 log: (message) => logMessage(state, message),
                 player,
                 opponent,
+                creature,
+                state,
+                playerIndex,
+                opponentIndex,
               });
-              resolveEffectResult(state, result, {
-                playerIndex: state.activePlayerIndex,
-                opponentIndex: (state.activePlayerIndex + 1) % 2,
-                card: creature,
-              });
+              resolveEffectChain(
+                state,
+                result,
+                {
+                  playerIndex: state.activePlayerIndex,
+                  opponentIndex: (state.activePlayerIndex + 1) % 2,
+                  card: creature,
+                },
+                onUpdate,
+                () => cleanupDestroyed(state)
+              );
             }
-            player.field[pendingConsumption.slotIndex] = creature;
+            triggerPlayTraps(state, creature, onUpdate);
             if (!isFree) {
               state.cardPlayedThisTurn = true;
             }
@@ -741,15 +849,122 @@ const handlePlayCard = (state, card, onUpdate) => {
     }
 
     player.field[emptySlot] = creature;
-    if (card.type === "Predator" && creature.effect) {
+    if (card.type === "Predator" && creature.onConsume) {
       logMessage(state, `${creature.name} enters play with no consumption.`);
       creature.dryDropped = true;
     }
+    if (card.type === "Prey" && creature.onPlay) {
+      const result = creature.onPlay({
+        log: (message) => logMessage(state, message),
+        player,
+        opponent,
+        creature,
+        state,
+        playerIndex,
+        opponentIndex,
+      });
+      resolveEffectChain(
+        state,
+        result,
+        {
+          playerIndex: state.activePlayerIndex,
+          opponentIndex: (state.activePlayerIndex + 1) % 2,
+          card: creature,
+        },
+        onUpdate,
+        () => cleanupDestroyed(state)
+      );
+    }
+    triggerPlayTraps(state, creature, onUpdate);
     if (!isFree) {
       state.cardPlayedThisTurn = true;
     }
     onUpdate?.();
   }
+};
+
+const handleDiscardEffect = (state, card, onUpdate) => {
+  if (!card.discardEffect) {
+    return;
+  }
+  const playerIndex = state.activePlayerIndex;
+  const opponentIndex = (playerIndex + 1) % 2;
+  const player = state.players[playerIndex];
+  const opponent = state.players[opponentIndex];
+  player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
+  if (card.type === "Predator" || card.type === "Prey") {
+    player.carrion.push(card);
+  } else {
+    player.exile.push(card);
+  }
+  const result = card.discardEffect.effect({
+    log: (message) => logMessage(state, message),
+    player,
+    opponent,
+    state,
+    playerIndex,
+    opponentIndex,
+  });
+  resolveEffectChain(
+    state,
+    result,
+    { playerIndex, opponentIndex },
+    onUpdate
+  );
+  cleanupDestroyed(state);
+  onUpdate?.();
+};
+
+const triggerPlayTraps = (state, creature, onUpdate) => {
+  const opponentIndex = (state.activePlayerIndex + 1) % 2;
+  const opponent = state.players[opponentIndex];
+  const triggerKey = creature.type === "Predator" ? "rivalPlaysPred" : "rivalPlaysPrey";
+  const relevantTraps = opponent.traps.filter((trap) => trap.trigger === triggerKey);
+  if (relevantTraps.length === 0) {
+    return;
+  }
+  const items = relevantTraps.map((trap) => {
+    const item = document.createElement("label");
+    item.className = "selection-item";
+    const button = document.createElement("button");
+    button.className = "secondary";
+    button.textContent = `Trigger ${trap.name}`;
+    button.onclick = () => {
+      opponent.traps = opponent.traps.filter((itemTrap) => itemTrap.instanceId !== trap.instanceId);
+      opponent.exile.push(trap);
+      const result = trap.effect({
+        log: (message) => logMessage(state, message),
+        target: { type: "creature", card: creature },
+      });
+      resolveEffectChain(state, result, {
+        playerIndex: opponentIndex,
+        opponentIndex: state.activePlayerIndex,
+      });
+      cleanupDestroyed(state);
+      clearSelectionPanel();
+      onUpdate?.();
+    };
+    item.appendChild(button);
+    return item;
+  });
+
+  const skipButton = document.createElement("label");
+  skipButton.className = "selection-item";
+  const skipAction = document.createElement("button");
+  skipAction.textContent = "Skip Trap";
+  skipAction.onclick = () => {
+    clearSelectionPanel();
+    onUpdate?.();
+  };
+  skipButton.appendChild(skipAction);
+  items.push(skipButton);
+
+  renderSelectionPanel({
+    title: `${opponent.name} may trigger a trap`,
+    items,
+    onConfirm: () => {},
+    confirmLabel: null,
+  });
 };
 
 const updateActionBar = (onNextPhase) => {
@@ -1029,6 +1244,45 @@ const initNavigation = () => {
   updateNavButtons();
 };
 
+const processBeforeCombatQueue = (state, onUpdate) => {
+  if (state.phase !== "Before Combat") {
+    return;
+  }
+  if (state.beforeCombatProcessing || state.beforeCombatQueue.length === 0) {
+    return;
+  }
+  const creature = state.beforeCombatQueue.shift();
+  if (!creature?.onBeforeCombat) {
+    return;
+  }
+  state.beforeCombatProcessing = true;
+  const playerIndex = state.activePlayerIndex;
+  const opponentIndex = (playerIndex + 1) % 2;
+  const player = state.players[playerIndex];
+  const opponent = state.players[opponentIndex];
+  const result = creature.onBeforeCombat({
+    log: (message) => logMessage(state, message),
+    player,
+    opponent,
+    creature,
+    state,
+    playerIndex,
+    opponentIndex,
+  });
+  resolveEffectChain(
+    state,
+    result,
+    { playerIndex, opponentIndex, card: creature },
+    onUpdate,
+    () => {
+      cleanupDestroyed(state);
+      state.beforeCombatProcessing = false;
+      onUpdate?.();
+      processBeforeCombatQueue(state, onUpdate);
+    }
+  );
+};
+
 export const renderGame = (state, callbacks = {}) => {
   initNavigation();
 
@@ -1046,9 +1300,15 @@ export const renderGame = (state, callbacks = {}) => {
   renderField(state, activeIndex, false, (card) =>
     handleAttackSelection(state, card, callbacks.onUpdate)
   );
-  renderHand(state, (card) => handlePlayCard(state, card, callbacks.onUpdate), passPending);
+  renderHand(
+    state,
+    (card) => handlePlayCard(state, card, callbacks.onUpdate),
+    callbacks.onUpdate,
+    passPending
+  );
   updateActionBar(callbacks.onNextPhase);
   appendLog(state);
+  processBeforeCombatQueue(state, callbacks.onUpdate);
 
   if (passPending) {
     passTitle.textContent = `Pass to ${state.players[activeIndex].name}`;

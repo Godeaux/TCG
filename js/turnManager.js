@@ -1,11 +1,132 @@
 import { drawCard, logMessage, resetCombat } from "./gameState.js";
+import { cleanupDestroyed } from "./combat.js";
+import { resolveEffectResult } from "./effects.js";
 
 const PHASES = ["Start", "Draw", "Main 1", "Before Combat", "Combat", "Main 2", "End"];
+
+const runStartOfTurnEffects = (state) => {
+  const player = state.players[state.activePlayerIndex];
+  const playerIndex = state.activePlayerIndex;
+  const opponentIndex = (state.activePlayerIndex + 1) % 2;
+  player.field.forEach((creature) => {
+    if (creature?.onStart) {
+      const result = creature.onStart({
+        log: (message) => logMessage(state, message),
+        player,
+        opponent: state.players[opponentIndex],
+        creature,
+        state,
+        playerIndex,
+        opponentIndex,
+      });
+      resolveEffectResult(state, result, {
+        playerIndex,
+        opponentIndex,
+        card: creature,
+      });
+    }
+    if (creature?.transformOnStart) {
+      resolveEffectResult(state, {
+        transformCard: { card: creature, newCardData: creature.transformOnStart },
+      }, {
+        playerIndex: state.activePlayerIndex,
+        opponentIndex: (state.activePlayerIndex + 1) % 2,
+        card: creature,
+      });
+    }
+  });
+
+  if (state.fieldSpell?.ownerIndex === state.activePlayerIndex) {
+    const fieldSpell = state.fieldSpell.card;
+    if (fieldSpell?.onStart) {
+      const result = fieldSpell.onStart({
+        log: (message) => logMessage(state, message),
+        player,
+        opponent: state.players[opponentIndex],
+        creature: fieldSpell,
+        state,
+        playerIndex,
+        opponentIndex,
+      });
+      resolveEffectResult(state, result, {
+        playerIndex,
+        opponentIndex,
+        card: fieldSpell,
+      });
+    }
+  }
+};
+
+const runEndOfTurnEffects = (state) => {
+  const player = state.players[state.activePlayerIndex];
+  const playerIndex = state.activePlayerIndex;
+  const opponentIndex = (state.activePlayerIndex + 1) % 2;
+  player.field.forEach((creature) => {
+    if (creature?.onEnd) {
+      const result = creature.onEnd({
+        log: (message) => logMessage(state, message),
+        player,
+        opponent: state.players[opponentIndex],
+        creature,
+        state,
+        playerIndex,
+        opponentIndex,
+      });
+      resolveEffectResult(state, result, {
+        playerIndex,
+        opponentIndex,
+        card: creature,
+      });
+    }
+    if (creature?.endOfTurnSummon) {
+      resolveEffectResult(state, {
+        summonTokens: { playerIndex: state.activePlayerIndex, tokens: [creature.endOfTurnSummon] },
+      }, {
+        playerIndex: state.activePlayerIndex,
+        opponentIndex: (state.activePlayerIndex + 1) % 2,
+        card: creature,
+      });
+      creature.endOfTurnSummon = null;
+    }
+  });
+
+  if (state.fieldSpell?.ownerIndex === state.activePlayerIndex) {
+    const fieldSpell = state.fieldSpell.card;
+    if (fieldSpell?.onEnd) {
+      const result = fieldSpell.onEnd({
+        log: (message) => logMessage(state, message),
+        player,
+        opponent: state.players[opponentIndex],
+        creature: fieldSpell,
+        state,
+        playerIndex,
+        opponentIndex,
+      });
+      resolveEffectResult(state, result, {
+        playerIndex,
+        opponentIndex,
+        card: fieldSpell,
+      });
+    }
+  }
+};
+
+const handleFrozenDeaths = (state) => {
+  const player = state.players[state.activePlayerIndex];
+  player.field.forEach((creature) => {
+    if (creature?.frozen && creature.frozenDiesTurn <= state.turn) {
+      creature.currentHp = 0;
+      logMessage(state, `${creature.name} succumbs to frozen toxin.`);
+    }
+  });
+};
 
 export const startTurn = (state) => {
   state.cardPlayedThisTurn = false;
   resetCombat(state);
   logMessage(state, `${state.players[state.activePlayerIndex].name}'s turn begins.`);
+  runStartOfTurnEffects(state);
+  cleanupDestroyed(state);
 };
 
 export const advancePhase = (state) => {
@@ -42,11 +163,20 @@ export const advancePhase = (state) => {
     }
   }
 
+  if (state.phase === "Before Combat") {
+    const player = state.players[state.activePlayerIndex];
+    state.beforeCombatQueue = player.field.filter((creature) => creature?.onBeforeCombat);
+    state.beforeCombatProcessing = false;
+  }
+
   if (state.phase === "Combat") {
     resetCombat(state);
   }
 
   if (state.phase === "End") {
+    runEndOfTurnEffects(state);
+    handleFrozenDeaths(state);
+    cleanupDestroyed(state);
     logMessage(state, `${state.players[state.activePlayerIndex].name} ends their turn.`);
   }
 };

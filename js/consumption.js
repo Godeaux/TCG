@@ -8,12 +8,15 @@ const getNutritionValue = (card) => {
   return card.nutrition ?? 0;
 };
 
-export const consumePrey = ({ predator, preyList, state, playerIndex }) => {
-  if (!preyList.length) {
+export const consumePrey = ({ predator, preyList, carrionList = [], state, playerIndex }) => {
+  if (!preyList.length && !carrionList.length) {
     return;
   }
 
-  const totalNutrition = preyList.reduce((sum, prey) => sum + getNutritionValue(prey), 0);
+  const totalNutrition = [...preyList, ...carrionList].reduce(
+    (sum, prey) => sum + getNutritionValue(prey),
+    0
+  );
   predator.currentAtk += totalNutrition;
   predator.currentHp += totalNutrition;
 
@@ -26,8 +29,16 @@ export const consumePrey = ({ predator, preyList, state, playerIndex }) => {
     }
   });
 
+  carrionList.forEach((prey) => {
+    const player = state.players[playerIndex];
+    const carrionIndex = player.carrion.findIndex((item) => item.instanceId === prey.instanceId);
+    if (carrionIndex >= 0) {
+      player.carrion.splice(carrionIndex, 1);
+    }
+  });
+
   logMessage(
     state,
-    `${predator.name} consumes ${preyList.length} prey for +${totalNutrition}/+${totalNutrition}.`
+    `${predator.name} consumes ${preyList.length + carrionList.length} prey for +${totalNutrition}/+${totalNutrition}.`
   );
 };
