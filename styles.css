@@ -167,7 +167,7 @@ button {
   flex: 1;
   position: relative;
   overflow: hidden;
-  padding: 18px 14px 0;
+  padding: 14px 10px 0;
 }
 
 .page {
@@ -193,7 +193,7 @@ button {
 .battlefield {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 12px;
   height: 100%;
   justify-content: space-between;
 }
@@ -219,7 +219,8 @@ button {
 .field-divider {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  padding: 4px 0;
 }
 
 .divider-line {
@@ -235,6 +236,15 @@ button {
   border-radius: 50%;
   background: radial-gradient(circle, var(--gold-light), var(--gold-dark));
   box-shadow: 0 0 12px rgba(212, 168, 83, 0.6);
+}
+
+.field-divider-text {
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  text-align: center;
+  white-space: nowrap;
 }
 
 .hand-container {
@@ -838,6 +848,7 @@ button {
   .battlefield {
     max-width: 760px;
     margin: 0 auto;
+    gap: 18px;
   }
 
   .hand-grid {
