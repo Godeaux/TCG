@@ -287,9 +287,11 @@ const buildRandomDeck = ({ available, selected, catalogOrder }) => {
     });
   };
 
-  takeCards((card) => card.type === "predator", 6);
-  takeCards((card) => card.type === "prey", 7);
-  takeCards((card) => ["spell", "freespell", "trap"].includes(card.type), 7);
+  takeCards((card) => card.type === "Predator", 6);
+  takeCards((card) => card.type === "Prey", 7);
+  takeCards((card) => card.type === "Spell", 4);
+  takeCards((card) => card.type === "Free Spell", 2);
+  takeCards((card) => card.type === "Trap", 1);
 
   selected.push(...picks);
 };
