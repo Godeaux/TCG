@@ -775,6 +775,32 @@ button {
   overflow: hidden;
 }
 
+.deck-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.deck-actions .btn-primary {
+  flex: 1;
+}
+
+.deck-random {
+  flex: 0 0 25%;
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+
+.deck-random:hover {
+  color: var(--gold-light);
+  border-color: var(--border-gold);
+}
+
 .btn-primary {
   background: linear-gradient(135deg, var(--gold), var(--gold-dark));
   color: #2e2211;

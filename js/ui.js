@@ -33,6 +33,7 @@ const deckStatus = document.getElementById("deck-status");
 const deckFullRow = document.getElementById("deck-full-row");
 const deckAddedRow = document.getElementById("deck-added-row");
 const deckConfirm = document.getElementById("deck-confirm");
+const deckRandom = document.getElementById("deck-random");
 const deckInspectorPanel = document.getElementById("deck-inspector");
 const pagesContainer = document.getElementById("pages-container");
 const mobileTabs = document.getElementById("mobile-tabs");
@@ -259,6 +260,38 @@ const renderDeckCard = (card, options = {}) => {
   `;
   cardElement.addEventListener("click", () => onClick?.());
   return cardElement;
+};
+
+const shuffle = (items) => {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+};
+
+const buildRandomDeck = ({ available, selected, catalogOrder }) => {
+  available.push(...selected.splice(0, selected.length));
+  available.sort((a, b) => catalogOrder.indexOf(a.id) - catalogOrder.indexOf(b.id));
+
+  const picks = [];
+  const takeCards = (filterFn, count) => {
+    const candidates = shuffle(available.filter(filterFn)).slice(0, count);
+    candidates.forEach((card) => {
+      const index = available.findIndex((entry) => entry.id === card.id);
+      if (index >= 0) {
+        available.splice(index, 1);
+      }
+      picks.push(card);
+    });
+  };
+
+  takeCards((card) => card.type === "predator", 6);
+  takeCards((card) => card.type === "prey", 7);
+  takeCards((card) => ["spell", "freespell", "trap"].includes(card.type), 7);
+
+  selected.push(...picks);
 };
 
 const setInspectorContentFor = (panel, card) => {
@@ -845,6 +878,19 @@ const renderDeckBuilderOverlay = (state, callbacks) => {
     callbacks.onDeckComplete?.(state.deckBuilder.selections);
     callbacks.onUpdate?.();
   };
+
+  if (deckRandom) {
+    deckRandom.onclick = () => {
+      buildRandomDeck({
+        available,
+        selected,
+        catalogOrder: state.deckBuilder.catalogOrder,
+      });
+      deckHighlighted = null;
+      setDeckInspectorContent(null);
+      callbacks.onUpdate?.();
+    };
+  }
 };
 
 const renderSetupOverlay = (state, callbacks) => {
