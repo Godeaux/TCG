@@ -71,10 +71,10 @@
             </div>
           </div>
         </div>
-        <div class="turn-badge">
+        <button class="turn-badge" id="turn-badge" type="button" aria-label="Advance phase">
           <span class="turn-number" id="turn-number">Turn 1</span>
           <span class="phase-label" id="phase-label">Main</span>
-        </div>
+        </button>
         <div class="player-badge active-player">
           <div class="player-info right">
             <span class="player-name" id="active-name">Player 1</span>
@@ -176,19 +176,8 @@
         </button>
       </nav>
 
-      <footer class="action-bar">
-        <div class="action-buttons">
-          <button class="action-btn" id="next-phase-button">
-            <span class="btn-icon">▶</span>
-            <span class="btn-label">Next Phase</span>
-          </button>
-          <button class="action-btn primary" id="end-turn-button">
-            <span class="btn-icon">⏭</span>
-            <span class="btn-label">End Turn</span>
-          </button>
-        </div>
+      <footer class="action-bar" id="action-bar">
         <div class="selection-panel" id="selection-panel"></div>
-        <div class="action-panel" id="action-panel"></div>
       </footer>
 
       <div class="page-dots" id="page-dots">

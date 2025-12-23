@@ -16,7 +16,7 @@ import {
 import { isFreePlay, isEdible, isPassive, KEYWORD_DESCRIPTIONS } from "./keywords.js";
 
 const selectionPanel = document.getElementById("selection-panel");
-const actionPanel = document.getElementById("action-panel");
+const actionBar = document.getElementById("action-bar");
 const logPanel = document.getElementById("log-panel");
 const passOverlay = document.getElementById("pass-overlay");
 const passTitle = document.getElementById("pass-title");
@@ -64,15 +64,23 @@ const appendLog = (state) => {
   logPanel.innerHTML = state.log.map((entry) => `<div>${entry}</div>`).join("");
 };
 
-const updateIndicators = (state) => {
+const updateIndicators = (state, controlsLocked) => {
   const turnNumber = document.getElementById("turn-number");
   const phaseLabel = document.getElementById("phase-label");
+  const turnBadge = document.getElementById("turn-badge");
+  const opponentBadge = document.querySelector(".player-badge.opponent");
+  const activeBadge = document.querySelector(".player-badge.active-player");
   if (turnNumber) {
     turnNumber.textContent = `Turn ${state.turn}`;
   }
   if (phaseLabel) {
     phaseLabel.textContent = state.phase;
   }
+  if (turnBadge) {
+    turnBadge.disabled = controlsLocked;
+  }
+  opponentBadge?.classList.remove("is-active");
+  activeBadge?.classList.add("is-active");
 };
 
 const updatePlayerStats = (state, index, role) => {
@@ -471,9 +479,13 @@ const renderSelectionPanel = ({ title, items, onConfirm, confirmLabel = "Confirm
     confirmButton.onclick = onConfirm;
     selectionPanel.appendChild(confirmButton);
   }
+  actionBar?.classList.add("has-selection");
 };
 
-const clearSelectionPanel = () => clearPanel(selectionPanel);
+const clearSelectionPanel = () => {
+  clearPanel(selectionPanel);
+  actionBar?.classList.remove("has-selection");
+};
 
 const resolveAttack = (state, attacker, target, negateAttack = false) => {
   if (negateAttack) {
@@ -735,25 +747,10 @@ const handlePlayCard = (state, card, onUpdate) => {
   }
 };
 
-const updateActionBar = (state, onNextPhase, onEndTurn, controlsLocked) => {
-  clearPanel(actionPanel);
-  if (actionPanel) {
-    const info = document.createElement("p");
-    const active = getActivePlayer(state);
-    info.textContent = `Active Player: ${active.name}`;
-    actionPanel.appendChild(info);
-  }
-
-  const nextPhaseButton = document.getElementById("next-phase-button");
-  if (nextPhaseButton) {
-    nextPhaseButton.onclick = onNextPhase;
-    nextPhaseButton.disabled = controlsLocked;
-  }
-
-  const endTurnButton = document.getElementById("end-turn-button");
-  if (endTurnButton) {
-    endTurnButton.onclick = onEndTurn;
-    endTurnButton.disabled = controlsLocked;
+const updateActionBar = (onNextPhase) => {
+  const turnBadge = document.getElementById("turn-badge");
+  if (turnBadge) {
+    turnBadge.onclick = onNextPhase;
   }
 };
 
@@ -1037,7 +1034,7 @@ export const renderGame = (state, callbacks = {}) => {
   const deckBuilding = state.deckBuilder?.stage !== "complete";
   document.body.classList.toggle("deck-building", deckBuilding);
   document.documentElement.classList.toggle("deck-building", deckBuilding);
-  updateIndicators(state);
+  updateIndicators(state, passPending || setupPending || deckBuilding);
   updatePlayerStats(state, opponentIndex, "opponent");
   updatePlayerStats(state, activeIndex, "active");
   renderField(state, opponentIndex, true, null);
@@ -1045,12 +1042,7 @@ export const renderGame = (state, callbacks = {}) => {
     handleAttackSelection(state, card, callbacks.onUpdate)
   );
   renderHand(state, (card) => handlePlayCard(state, card, callbacks.onUpdate), passPending);
-  updateActionBar(
-    state,
-    callbacks.onNextPhase,
-    callbacks.onEndTurn,
-    passPending || setupPending || deckBuilding
-  );
+  updateActionBar(callbacks.onNextPhase);
   appendLog(state);
 
   if (passPending) {
