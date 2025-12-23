@@ -23,7 +23,11 @@ const refresh = () => {
   checkWinCondition();
   renderGame(state, {
     onNextPhase: () => {
-      advancePhase(state);
+      if (state.phase === "End") {
+        endTurn(state);
+      } else {
+        advancePhase(state);
+      }
       refresh();
     },
     onEndTurn: () => {
