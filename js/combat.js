@@ -9,6 +9,7 @@ import {
 } from "./keywords.js";
 import { logMessage } from "./gameState.js";
 import { resolveEffectResult } from "./effects.js";
+import { isCreatureCard } from "./cardTypes.js";
 
 const canAttackPlayer = (attacker, state) => {
   if (hasHaste(attacker)) {
@@ -20,7 +21,7 @@ const canAttackPlayer = (attacker, state) => {
 export const getValidTargets = (state, attacker, opponent) => {
   const hasPrecision = hasAcuity(attacker);
   const targetableCreatures = opponent.field.filter((card) => {
-    if (!card) {
+    if (!isCreatureCard(card)) {
       return false;
     }
     if (hasPrecision) {
