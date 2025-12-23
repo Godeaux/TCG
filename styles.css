@@ -103,21 +103,6 @@ button {
   border-radius: 999px;
 }
 
-.player-badge.active-player {
-  flex-direction: row-reverse;
-}
-
-.player-avatar {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-weight: 600;
-  background: radial-gradient(circle at top, var(--gold-light), var(--gold-dark));
-  color: #2e2211;
-}
-
 .player-info {
   display: flex;
   flex-direction: column;
