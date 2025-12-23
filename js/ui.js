@@ -68,8 +68,8 @@ const updateIndicators = (state, controlsLocked) => {
   const turnNumber = document.getElementById("turn-number");
   const phaseLabel = document.getElementById("phase-label");
   const turnBadge = document.getElementById("turn-badge");
-  const opponentBadge = document.querySelector(".player-badge.opponent");
-  const activeBadge = document.querySelector(".player-badge.active-player");
+  const playerLeftBadge = document.querySelector(".player-badge.player-left");
+  const playerRightBadge = document.querySelector(".player-badge.player-right");
   if (turnNumber) {
     turnNumber.textContent = `Turn ${state.turn}`;
   }
@@ -79,8 +79,13 @@ const updateIndicators = (state, controlsLocked) => {
   if (turnBadge) {
     turnBadge.disabled = controlsLocked;
   }
-  opponentBadge?.classList.remove("is-active");
-  activeBadge?.classList.add("is-active");
+  playerLeftBadge?.classList.remove("is-active");
+  playerRightBadge?.classList.remove("is-active");
+  if (state.activePlayerIndex === 0) {
+    playerLeftBadge?.classList.add("is-active");
+  } else {
+    playerRightBadge?.classList.add("is-active");
+  }
 };
 
 const updatePlayerStats = (state, index, role) => {
@@ -1035,8 +1040,8 @@ export const renderGame = (state, callbacks = {}) => {
   document.body.classList.toggle("deck-building", deckBuilding);
   document.documentElement.classList.toggle("deck-building", deckBuilding);
   updateIndicators(state, passPending || setupPending || deckBuilding);
-  updatePlayerStats(state, opponentIndex, "opponent");
-  updatePlayerStats(state, activeIndex, "active");
+  updatePlayerStats(state, 0, "player1");
+  updatePlayerStats(state, 1, "player2");
   renderField(state, opponentIndex, true, null);
   renderField(state, activeIndex, false, (card) =>
     handleAttackSelection(state, card, callbacks.onUpdate)
