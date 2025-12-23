@@ -216,12 +216,17 @@ const renderCard = (card, options = {}) => {
         `<span class="card-stat ${stat.className}">${stat.label} ${stat.value}</span>`
     )
     .join("");
+  const effectSummary = getCardEffectSummary(card);
+  const effectLine = effectSummary
+    ? `<div class="card-effect">${effectSummary}</div>`
+    : "";
 
   inner.innerHTML = `
     <div class="card-name">${card.name}</div>
     <div class="card-type-label">${card.type}</div>
     <div class="card-stats-row">${stats}</div>
     <div class="card-keywords">${renderKeywordTags(card)}</div>
+    ${effectLine}
   `;
 
   if (showPlay || showAttack) {
