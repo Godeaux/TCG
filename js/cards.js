@@ -1,4 +1,5 @@
 import { isInvisible } from "./keywords.js";
+import { isCreatureCard } from "./cardTypes.js";
 import { findCreatureOwnerIndex } from "./effects.js";
 
 const flyingFishToken = {
@@ -290,8 +291,8 @@ const fishCards = [
     keywords: [],
     onConsume: ({ log, player, opponent, state }) => {
       const creatures = [
-        ...player.field.filter((creature) => creature && !isInvisible(creature)),
-        ...opponent.field.filter((creature) => creature && !isInvisible(creature)),
+        ...player.field.filter((creature) => isCreatureCard(creature) && !isInvisible(creature)),
+        ...opponent.field.filter((creature) => isCreatureCard(creature) && !isInvisible(creature)),
       ];
       const candidates = creatures.map((creature) => ({
         label: creature.name,
@@ -379,7 +380,7 @@ const fishCards = [
     hp: 5,
     keywords: ["Acuity"],
     onConsume: ({ log, player, opponent, state }) => {
-      const targets = opponent.field.filter((creature) => creature);
+      const targets = opponent.field.filter((creature) => isCreatureCard(creature));
       if (targets.length === 0) {
         log("Great White Shark effect: no enemy creatures to target.");
         return null;
@@ -455,9 +456,9 @@ const fishCards = [
     hp: 1,
     nutrition: 1,
     keywords: [],
-    onPlay: ({ log }) => {
+    onPlay: ({ log, opponentIndex }) => {
       log("Celestial Eye Goldfish: draw 2 cards and reveal rival hand.");
-      return { draw: 2 };
+      return { draw: 2, revealHand: { playerIndex: opponentIndex, durationMs: 3000 } };
     },
   },
   {
@@ -713,11 +714,11 @@ const fishCards = [
     keywords: [],
     onBeforeCombat: ({ log, player, opponent, state }) => {
       const candidates = [
-        ...player.field.filter((card) => card && !isInvisible(card)).map((card) => ({
+        ...player.field.filter((card) => isCreatureCard(card) && !isInvisible(card)).map((card) => ({
           label: card.name,
           value: card,
         })),
-        ...opponent.field.filter((card) => card && !isInvisible(card)).map((card) => ({
+        ...opponent.field.filter((card) => isCreatureCard(card) && !isInvisible(card)).map((card) => ({
           label: card.name,
           value: card,
         })),
@@ -802,7 +803,7 @@ const fishCards = [
     type: "Spell",
     effect: ({ log, opponent, player, state }) => {
       const targets = opponent.field.filter(
-        (creature) => creature && creature.type === "Prey" && !isInvisible(creature)
+        (creature) => isCreatureCard(creature) && creature.type === "Prey" && !isInvisible(creature)
       );
       if (targets.length === 0) {
         log("Net: no enemy prey to capture.");
@@ -838,7 +839,9 @@ const fishCards = [
     name: "Harpoon",
     type: "Spell",
     effect: ({ log, player, opponent, state, playerIndex, opponentIndex }) => {
-      const targets = opponent.field.filter((creature) => creature && !isInvisible(creature));
+      const targets = opponent.field.filter(
+        (creature) => isCreatureCard(creature) && !isInvisible(creature)
+      );
       if (targets.length === 0) {
         log("Harpoon: no enemy target available.");
         return null;
@@ -903,9 +906,16 @@ const fishCards = [
     id: "fish-free-spell-fisherman",
     name: "Fisherman",
     type: "Free Spell",
-    effect: ({ log }) => {
-      log("Fisherman: draw 1 card.");
-      return { draw: 1 };
+    effect: ({ log, player, playerIndex }) => {
+      if (player.deck.length === 0) {
+        log("Fisherman: deck is empty.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Fisherman: choose a card to add to hand",
+        candidates: () => player.deck.map((card) => ({ label: card.name, value: card })),
+        onSelect: (card) => ({ addToHand: { playerIndex, card, fromDeck: true } }),
+      });
     },
   },
   {
@@ -913,7 +923,7 @@ const fishCards = [
     name: "Undertow",
     type: "Free Spell",
     effect: ({ log, opponent, player, state }) => {
-      const targets = opponent.field.filter((card) => card && !isInvisible(card));
+      const targets = opponent.field.filter((card) => isCreatureCard(card) && !isInvisible(card));
       if (targets.length === 0) {
         log("Undertow: no enemy creatures to strip.");
         return null;

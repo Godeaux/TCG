@@ -369,8 +369,42 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete) => {
     onComplete?.();
     return;
   }
-  if (result.selectTarget) {
-    const { selectTarget, ...rest } = result;
+  const { revealHand, ...restResult } = result;
+  let nextResult = restResult;
+
+  if (revealHand) {
+    const { playerIndex, durationMs = 3000 } = revealHand;
+    const handOwner = state.players[playerIndex];
+    const items = [];
+    if (handOwner.hand.length === 0) {
+      const item = document.createElement("label");
+      item.className = "selection-item";
+      item.textContent = "No cards in hand.";
+      items.push(item);
+    } else {
+      handOwner.hand.forEach((card) => {
+        const item = document.createElement("label");
+        item.className = "selection-item";
+        item.textContent = card.name;
+        items.push(item);
+      });
+    }
+
+    renderSelectionPanel({
+      title: `${handOwner.name}'s hand`,
+      items,
+      onConfirm: () => {},
+      confirmLabel: null,
+    });
+
+    setTimeout(() => {
+      clearSelectionPanel();
+      onUpdate?.();
+    }, durationMs);
+  }
+
+  if (nextResult.selectTarget) {
+    const { selectTarget, ...rest } = nextResult;
     if (Object.keys(rest).length > 0) {
       resolveEffectResult(state, rest, context);
     }
@@ -402,7 +436,7 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete) => {
     return;
   }
 
-  resolveEffectResult(state, result, context);
+  resolveEffectResult(state, nextResult, context);
   onComplete?.();
 };
 
@@ -812,34 +846,36 @@ const handlePlayCard = (state, card, onUpdate) => {
               playerIndex: state.activePlayerIndex,
             });
             player.field[pendingConsumption.slotIndex] = creature;
-            if (totalSelected > 0 && creature.onConsume) {
-              const result = creature.onConsume({
-                log: (message) => logMessage(state, message),
-                player,
-                opponent,
-                creature,
-                state,
-                playerIndex,
-                opponentIndex,
-              });
-              resolveEffectChain(
-                state,
-                result,
-                {
-                  playerIndex: state.activePlayerIndex,
-                  opponentIndex: (state.activePlayerIndex + 1) % 2,
-                  card: creature,
-                },
-                onUpdate,
-                () => cleanupDestroyed(state)
-              );
-            }
-            triggerPlayTraps(state, creature, onUpdate);
-            if (!isFree) {
-              state.cardPlayedThisTurn = true;
-            }
-            pendingConsumption = null;
             clearSelectionPanel();
+            triggerPlayTraps(state, creature, onUpdate, () => {
+              if (totalSelected > 0 && creature.onConsume) {
+                const result = creature.onConsume({
+                  log: (message) => logMessage(state, message),
+                  player,
+                  opponent,
+                  creature,
+                  state,
+                  playerIndex,
+                  opponentIndex,
+                });
+                resolveEffectChain(
+                  state,
+                  result,
+                  {
+                    playerIndex: state.activePlayerIndex,
+                    opponentIndex: (state.activePlayerIndex + 1) % 2,
+                    card: creature,
+                  },
+                  onUpdate,
+                  () => cleanupDestroyed(state)
+                );
+              }
+              if (!isFree) {
+                state.cardPlayedThisTurn = true;
+              }
+              pendingConsumption = null;
+              onUpdate?.();
+            });
             onUpdate?.();
           },
         });
@@ -853,33 +889,34 @@ const handlePlayCard = (state, card, onUpdate) => {
       logMessage(state, `${creature.name} enters play with no consumption.`);
       creature.dryDropped = true;
     }
-    if (card.type === "Prey" && creature.onPlay) {
-      const result = creature.onPlay({
-        log: (message) => logMessage(state, message),
-        player,
-        opponent,
-        creature,
-        state,
-        playerIndex,
-        opponentIndex,
-      });
-      resolveEffectChain(
-        state,
-        result,
-        {
-          playerIndex: state.activePlayerIndex,
-          opponentIndex: (state.activePlayerIndex + 1) % 2,
-          card: creature,
-        },
-        onUpdate,
-        () => cleanupDestroyed(state)
-      );
-    }
-    triggerPlayTraps(state, creature, onUpdate);
-    if (!isFree) {
-      state.cardPlayedThisTurn = true;
-    }
-    onUpdate?.();
+    triggerPlayTraps(state, creature, onUpdate, () => {
+      if (card.type === "Prey" && creature.onPlay) {
+        const result = creature.onPlay({
+          log: (message) => logMessage(state, message),
+          player,
+          opponent,
+          creature,
+          state,
+          playerIndex,
+          opponentIndex,
+        });
+        resolveEffectChain(
+          state,
+          result,
+          {
+            playerIndex: state.activePlayerIndex,
+            opponentIndex: (state.activePlayerIndex + 1) % 2,
+            card: creature,
+          },
+          onUpdate,
+          () => cleanupDestroyed(state)
+        );
+      }
+      if (!isFree) {
+        state.cardPlayedThisTurn = true;
+      }
+      onUpdate?.();
+    });
   }
 };
 
@@ -915,12 +952,13 @@ const handleDiscardEffect = (state, card, onUpdate) => {
   onUpdate?.();
 };
 
-const triggerPlayTraps = (state, creature, onUpdate) => {
+const triggerPlayTraps = (state, creature, onUpdate, onResolved) => {
   const opponentIndex = (state.activePlayerIndex + 1) % 2;
   const opponent = state.players[opponentIndex];
   const triggerKey = creature.type === "Predator" ? "rivalPlaysPred" : "rivalPlaysPrey";
   const relevantTraps = opponent.traps.filter((trap) => trap.trigger === triggerKey);
   if (relevantTraps.length === 0) {
+    onResolved?.();
     return;
   }
   const items = relevantTraps.map((trap) => {
@@ -943,6 +981,7 @@ const triggerPlayTraps = (state, creature, onUpdate) => {
       cleanupDestroyed(state);
       clearSelectionPanel();
       onUpdate?.();
+      onResolved?.();
     };
     item.appendChild(button);
     return item;
@@ -955,6 +994,7 @@ const triggerPlayTraps = (state, creature, onUpdate) => {
   skipAction.onclick = () => {
     clearSelectionPanel();
     onUpdate?.();
+    onResolved?.();
   };
   skipButton.appendChild(skipAction);
   items.push(skipButton);
