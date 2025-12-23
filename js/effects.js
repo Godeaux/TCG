@@ -50,13 +50,26 @@ const placeToken = (state, playerIndex, tokenData) => {
   const emptySlot = player.field.findIndex((slot) => slot === null);
   if (emptySlot === -1) {
     logMessage(state, `No empty field slots available to summon ${tokenData.name}.`);
-    return false;
+    return null;
   }
   const token = createCardInstance({ ...tokenData, isToken: true }, state.turn);
   token.isToken = true;
   player.field[emptySlot] = token;
   logMessage(state, `${player.name} summons ${token.name}.`);
-  return true;
+  return token;
+};
+
+const placeCreatureOnField = (state, playerIndex, cardData) => {
+  const player = state.players[playerIndex];
+  const emptySlot = player.field.findIndex((slot) => slot === null);
+  if (emptySlot === -1) {
+    logMessage(state, "No empty field slots available.");
+    return null;
+  }
+  const instance = createCardInstance(cardData, state.turn);
+  player.field[emptySlot] = instance;
+  logMessage(state, `${player.name} plays ${instance.name}.`);
+  return instance;
 };
 
 export const stripAbilities = (card) => {
@@ -214,6 +227,12 @@ export const resolveEffectResult = (state, result, context) => {
     creature.currentHp += hp;
   }
 
+  if (result.restoreCreature) {
+    const { creature } = result.restoreCreature;
+    creature.currentHp = creature.hp;
+    logMessage(state, `${creature.name} is regenerated.`);
+  }
+
   if (result.addKeyword) {
     const { creature, keyword } = result.addKeyword;
     if (!creature.keywords.includes(keyword)) {
@@ -249,9 +268,35 @@ export const resolveEffectResult = (state, result, context) => {
     logMessage(state, `${result.removeAbilities.name} loses all abilities.`);
   }
 
+  if (result.removeAbilitiesAll) {
+    result.removeAbilitiesAll.forEach((creature) => {
+      stripAbilities(creature);
+      logMessage(state, `${creature.name} loses all abilities.`);
+    });
+  }
+
   if (result.summonTokens) {
     const { playerIndex, tokens } = result.summonTokens;
-    tokens.forEach((token) => placeToken(state, playerIndex, token));
+    tokens.forEach((tokenData) => {
+      const summoned = placeToken(state, playerIndex, tokenData);
+      if (summoned?.onPlay) {
+        const opponentIndex = (playerIndex + 1) % 2;
+        const resultOnPlay = summoned.onPlay({
+          log: (message) => logMessage(state, message),
+          player: state.players[playerIndex],
+          opponent: state.players[opponentIndex],
+          creature: summoned,
+          state,
+          playerIndex,
+          opponentIndex,
+        });
+        resolveEffectResult(state, resultOnPlay, {
+          playerIndex,
+          opponentIndex,
+          card: summoned,
+        });
+      }
+    });
   }
 
   if (result.addToHand) {
@@ -265,6 +310,68 @@ export const resolveEffectResult = (state, result, context) => {
     }
     state.players[playerIndex].hand.push({ ...card, instanceId: crypto.randomUUID() });
     logMessage(state, `${state.players[playerIndex].name} adds ${card.name} to hand.`);
+  }
+
+  if (result.playFromHand) {
+    const { playerIndex, card } = result.playFromHand;
+    const player = state.players[playerIndex];
+    const instance = placeCreatureOnField(state, playerIndex, card);
+    if (!instance) {
+      return;
+    }
+    player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
+    if (instance.type === "Prey" && instance.onPlay) {
+      const opponentIndex = (playerIndex + 1) % 2;
+      const resultOnPlay = instance.onPlay({
+        log: (message) => logMessage(state, message),
+        player: state.players[playerIndex],
+        opponent: state.players[opponentIndex],
+        creature: instance,
+        state,
+        playerIndex,
+        opponentIndex,
+      });
+      resolveEffectResult(state, resultOnPlay, {
+        playerIndex,
+        opponentIndex,
+        card: instance,
+      });
+    }
+  }
+
+  if (result.playFromDeck) {
+    const { playerIndex, card } = result.playFromDeck;
+    const player = state.players[playerIndex];
+    const emptySlot = player.field.findIndex((slot) => slot === null);
+    if (emptySlot === -1) {
+      logMessage(state, "No empty field slots available.");
+      return;
+    }
+    const deckIndex = player.deck.findIndex((deckCard) => deckCard.id === card.id);
+    if (deckIndex >= 0) {
+      player.deck.splice(deckIndex, 1);
+    }
+    const instance = placeCreatureOnField(state, playerIndex, card);
+    if (!instance) {
+      return;
+    }
+    if (instance.type === "Prey" && instance.onPlay) {
+      const opponentIndex = (playerIndex + 1) % 2;
+      const resultOnPlay = instance.onPlay({
+        log: (message) => logMessage(state, message),
+        player: state.players[playerIndex],
+        opponent: state.players[opponentIndex],
+        creature: instance,
+        state,
+        playerIndex,
+        opponentIndex,
+      });
+      resolveEffectResult(state, resultOnPlay, {
+        playerIndex,
+        opponentIndex,
+        card: instance,
+      });
+    }
   }
 
   if (result.discardCards) {
