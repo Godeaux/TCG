@@ -172,13 +172,6 @@ export const advancePhase = (state) => {
   if (state.phase === "Combat") {
     resetCombat(state);
   }
-
-  if (state.phase === "End") {
-    runEndOfTurnEffects(state);
-    handleFrozenDeaths(state);
-    cleanupDestroyed(state);
-    logMessage(state, `${state.players[state.activePlayerIndex].name} ends their turn.`);
-  }
 };
 
 export const endTurn = (state) => {
@@ -187,6 +180,10 @@ export const endTurn = (state) => {
     return;
   }
 
+  runEndOfTurnEffects(state);
+  handleFrozenDeaths(state);
+  cleanupDestroyed(state);
+  logMessage(state, `${state.players[state.activePlayerIndex].name} ends their turn.`);
   state.activePlayerIndex = (state.activePlayerIndex + 1) % 2;
   state.phase = "Start";
   state.turn += 1;
