@@ -206,6 +206,7 @@ button {
   grid-template-rows: minmax(0, 2fr) minmax(0, 1fr);
   gap: 10px;
   height: 100%;
+  min-width: 0;
 }
 
 .battlefield-region {
@@ -308,6 +309,7 @@ button {
   border-top: 1px solid var(--border-subtle);
   box-shadow: 0 -12px 24px rgba(0, 0, 0, 0.35);
   border-radius: 18px 18px 0 0;
+  overflow: hidden;
 }
 
 .hand-container {
@@ -317,6 +319,7 @@ button {
   height: 100%;
   width: 100%;
   min-height: 0;
+  min-width: 0;
 }
 
 .hand-header {
@@ -345,6 +348,9 @@ button {
   overflow: hidden;
   padding: 0 6px 6px;
   min-height: 0;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .hand-grid .card {
