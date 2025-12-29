@@ -187,11 +187,32 @@ const renderKeywordTags = (card) => {
   return keywords.map((keyword) => `<span>${keyword}</span>`).join("");
 };
 
+const renderCardInnerHtml = (card, { showEffectSummary } = {}) => {
+  const stats = renderCardStats(card)
+    .map(
+      (stat) =>
+        `<span class="card-stat ${stat.className}">${stat.label} ${stat.value}</span>`
+    )
+    .join("");
+  const effectSummary = showEffectSummary ? getCardEffectSummary(card) : "";
+  const effectRow = effectSummary
+    ? `<div class="card-effect"><strong>Effect:</strong> ${effectSummary}</div>`
+    : "";
+  return `
+    <div class="card-name">${card.name}</div>
+    <div class="card-type-label">${card.type}</div>
+    <div class="card-stats-row">${stats}</div>
+    <div class="card-keywords">${renderKeywordTags(card)}</div>
+    ${effectRow}
+  `;
+};
+
 const renderCard = (card, options = {}) => {
   const {
     showPlay = false,
     showAttack = false,
     showDiscard = false,
+    showEffectSummary = false,
     onPlay,
     onAttack,
     onDiscard,
@@ -210,19 +231,7 @@ const renderCard = (card, options = {}) => {
   const inner = document.createElement("div");
   inner.className = "card-inner";
 
-  const stats = renderCardStats(card)
-    .map(
-      (stat) =>
-        `<span class="card-stat ${stat.className}">${stat.label} ${stat.value}</span>`
-    )
-    .join("");
-
-  inner.innerHTML = `
-    <div class="card-name">${card.name}</div>
-    <div class="card-type-label">${card.type}</div>
-    <div class="card-stats-row">${stats}</div>
-    <div class="card-keywords">${renderKeywordTags(card)}</div>
-  `;
+  inner.innerHTML = renderCardInnerHtml(card, { showEffectSummary });
 
   if (showPlay || showAttack) {
     const actions = document.createElement("div");
@@ -275,23 +284,9 @@ const renderDeckCard = (card, options = {}) => {
   cardElement.className = `card deck-card ${highlighted ? "highlighted" : ""} ${
     selected ? "selected" : ""
   } ${cardTypeClass(card)}`;
-  const stats = renderCardStats(card)
-    .map(
-      (stat) =>
-        `<span class="card-stat ${stat.className}">${stat.label} ${stat.value}</span>`
-    )
-    .join("");
-  const effectSummary = getCardEffectSummary(card);
-  const effectRow = effectSummary
-    ? `<div class="card-effect"><strong>Effect:</strong> ${effectSummary}</div>`
-    : "";
   cardElement.innerHTML = `
     <div class="card-inner">
-      <div class="card-name">${card.name}</div>
-      <div class="card-type-label">${card.type}</div>
-      <div class="card-stats-row">${stats}</div>
-      <div class="card-keywords">${renderKeywordTags(card)}</div>
-      ${effectRow}
+      ${renderCardInnerHtml(card, { showEffectSummary: true })}
     </div>
   `;
   cardElement.addEventListener("click", () => onClick?.());
@@ -369,7 +364,7 @@ const setInspectorContentFor = (panel, card) => {
       <div class="meta">${card.type}${stats ? ` • ${stats}` : ""}</div>
       ${keywordLabel ? `<div class="meta">${keywordLabel}</div>` : ""}
       ${effectBlock}
-      ${keywordBlock}
+      ${keywordBlock || `<div class="meta muted">No keyword glossary entries for this card.</div>`}
     </div>
   `;
 };
@@ -524,6 +519,7 @@ const renderHand = (state, onPlay, onUpdate, hideCards) => {
       canPlayCard(state);
     const cardElement = renderCard(card, {
       showPlay: true,
+      showEffectSummary: true,
       showDiscard,
       onPlay,
       onDiscard: (discardCard) => handleDiscardEffect(state, discardCard, onUpdate),
