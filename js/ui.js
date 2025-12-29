@@ -99,11 +99,6 @@ const updateActionPanel = (state, callbacks = {}) => {
     return;
   }
 
-  const title = document.createElement("div");
-  title.className = "action-title";
-  title.textContent = selectedCard.name;
-  actionPanel.appendChild(title);
-
   const actions = document.createElement("div");
   actions.className = "action-buttons";
 
