@@ -11,6 +11,7 @@ export const KEYWORDS = {
   EDIBLE: "Edible",
   SCAVENGE: "Scavenge",
   NEUROTOXIC: "Neurotoxic",
+  AMBUSH: "Ambush",
 };
 
 export const KEYWORD_DESCRIPTIONS = {
@@ -26,6 +27,8 @@ export const KEYWORD_DESCRIPTIONS = {
   [KEYWORDS.EDIBLE]: "Can be consumed as prey; nutrition equals its ATK.",
   [KEYWORDS.SCAVENGE]: "May consume from the carrion pile when played.",
   [KEYWORDS.NEUROTOXIC]: "Combat damage freezes the target until it dies next turn.",
+  [KEYWORDS.AMBUSH]:
+    "If it kills its target when attacking, it takes no damage; otherwise it takes damage normally.",
 };
 
 export const hasKeyword = (card, keyword) => card.keywords?.includes(keyword);
@@ -53,3 +56,5 @@ export const isEdible = (card) => hasKeyword(card, KEYWORDS.EDIBLE);
 export const hasScavenge = (card) => hasKeyword(card, KEYWORDS.SCAVENGE);
 
 export const hasNeurotoxic = (card) => hasKeyword(card, KEYWORDS.NEUROTOXIC);
+
+export const hasAmbush = (card) => hasKeyword(card, KEYWORDS.AMBUSH);

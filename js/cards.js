@@ -967,6 +967,11 @@ const fishCards = [
     effectText: "Either play a prey or add a prey from deck to hand.",
     effect: ({ log, player, playerIndex }) => {
       const preyInDeck = player.deck.filter((card) => card.type === "Prey");
+      const deckCandidates = preyInDeck.map((card) => ({
+        label: card.name,
+        value: card,
+        card,
+      }));
       if (preyInDeck.length === 0) {
         log("Angler: no prey in deck.");
         return null;
@@ -981,13 +986,15 @@ const fishCards = [
           if (choice === "play") {
             return makeTargetedSelection({
               title: "Angler: choose a prey to play",
-              candidates: preyInDeck.map((card) => ({ label: card.name, value: card })),
+              candidates: deckCandidates,
+              renderCards: true,
               onSelect: (card) => ({ playFromDeck: { playerIndex, card } }),
             });
           }
           return makeTargetedSelection({
             title: "Angler: choose a prey to add to hand",
-            candidates: preyInDeck.map((card) => ({ label: card.name, value: card })),
+            candidates: deckCandidates,
+            renderCards: true,
             onSelect: (card) => ({ addToHand: { playerIndex, card, fromDeck: true } }),
           });
         },
