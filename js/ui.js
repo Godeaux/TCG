@@ -50,7 +50,9 @@ let deckHighlighted = null;
 let currentPage = 0;
 let navigationInitialized = false;
 let deckActiveTab = "catalog";
-const TOTAL_PAGES = 3;
+let latestState = null;
+const TOTAL_PAGES = 2;
+let handPreviewInitialized = false;
 
 const clearPanel = (panel) => {
   if (!panel) {
@@ -228,6 +230,9 @@ const renderCard = (card, options = {}) => {
   }
 
   cardElement.className = `card ${cardTypeClass(card)}`;
+  if (card.instanceId) {
+    cardElement.dataset.instanceId = card.instanceId;
+  }
   const inner = document.createElement("div");
   inner.className = "card-inner";
 
@@ -276,6 +281,61 @@ const renderCard = (card, options = {}) => {
   });
 
   return cardElement;
+};
+
+const initHandPreview = () => {
+  if (handPreviewInitialized) {
+    return;
+  }
+  const handGrid = document.getElementById("active-hand");
+  if (!handGrid) {
+    return;
+  }
+  handPreviewInitialized = true;
+
+  const clearFocus = () => {
+    handGrid.querySelectorAll(".card.hand-focus").forEach((card) => {
+      card.classList.remove("hand-focus");
+    });
+  };
+
+  const focusCardElement = (cardElement) => {
+    if (!cardElement || !handGrid.contains(cardElement)) {
+      return;
+    }
+    if (cardElement.classList.contains("hand-focus")) {
+      return;
+    }
+    clearFocus();
+    cardElement.classList.add("hand-focus");
+    const instanceId = cardElement.dataset.instanceId;
+    if (!instanceId) {
+      return;
+    }
+    const card = latestState?.players
+      ?.flatMap((player) => player.hand)
+      .find((handCard) => handCard.instanceId === instanceId);
+    if (card) {
+      inspectedCardId = card.instanceId;
+      setInspectorContent(card);
+    }
+  };
+
+  const handlePointer = (event) => {
+    const target = document.elementFromPoint(event.clientX, event.clientY);
+    const cardElement = target?.closest(".hand-grid .card");
+    if (cardElement) {
+      focusCardElement(cardElement);
+    }
+  };
+
+  handGrid.addEventListener("pointerdown", handlePointer);
+  handGrid.addEventListener("pointermove", (event) => {
+    if (event.pointerType === "mouse" || event.buttons === 1 || event.pressure > 0) {
+      handlePointer(event);
+    }
+  });
+  handGrid.addEventListener("pointerleave", clearFocus);
 };
 
 const renderDeckCard = (card, options = {}) => {
@@ -1371,7 +1431,9 @@ const processBeforeCombatQueue = (state, onUpdate) => {
 };
 
 export const renderGame = (state, callbacks = {}) => {
+  latestState = state;
   initNavigation();
+  initHandPreview();
 
   const activeIndex = state.activePlayerIndex;
   const opponentIndex = (state.activePlayerIndex + 1) % 2;

@@ -98,31 +98,39 @@
 
       <div class="pages-container" id="pages-container">
         <section class="page page-battlefield active" data-page="0">
-          <div class="battlefield">
-            <div class="field-row opponent-field">
-              <div class="field-slot" data-slot="0"></div>
-              <div class="field-slot" data-slot="1"></div>
-              <div class="field-slot" data-slot="2"></div>
+          <div class="battlefield-layout">
+            <div class="battlefield-region">
+              <div class="battlefield">
+                <div class="field-row opponent-field">
+                  <div class="field-slot" data-slot="0"></div>
+                  <div class="field-slot" data-slot="1"></div>
+                  <div class="field-slot" data-slot="2"></div>
+                </div>
+                <div class="field-divider">
+                  <p class="field-divider-text">
+                    Food Chain™ (C) Food Chain TCG. All rights reserved.
+                  </p>
+                </div>
+                <div class="field-row player-field">
+                  <div class="field-slot" data-slot="0"></div>
+                  <div class="field-slot" data-slot="1"></div>
+                  <div class="field-slot" data-slot="2"></div>
+                </div>
+              </div>
             </div>
-            <div class="field-divider">
-              <p class="field-divider-text">Food Chain™ (C) Food Chain TCG. All rights reserved.</p>
-            </div>
-            <div class="field-row player-field">
-              <div class="field-slot" data-slot="0"></div>
-              <div class="field-slot" data-slot="1"></div>
-              <div class="field-slot" data-slot="2"></div>
+            <div class="hand-panel">
+              <div class="hand-container">
+                <div class="hand-header">
+                  <h3 class="hand-title">Your Hand</h3>
+                  <span class="hand-hint">Drag to preview • Tap to play</span>
+                </div>
+                <div class="hand-grid" id="active-hand"></div>
+              </div>
             </div>
           </div>
         </section>
 
-        <section class="page page-hand" data-page="1">
-          <div class="hand-container">
-            <h3 class="hand-title">Your Hand</h3>
-            <div class="hand-grid" id="active-hand"></div>
-          </div>
-        </section>
-
-        <section class="page page-info" data-page="2">
+        <section class="page page-info" data-page="1">
           <div class="info-container">
             <div class="info-section inspector-section">
               <h3>Card Inspector</h3>
@@ -162,12 +170,6 @@
         </button>
         <button class="mobile-tab" data-page="1">
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4 6h16v12H4z" fill="none" stroke="currentColor" stroke-width="2" />
-          </svg>
-          <span>Hand</span>
-        </button>
-        <button class="mobile-tab" data-page="2">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M5 4h14v16H5z" fill="none" stroke="currentColor" stroke-width="2" />
           </svg>
           <span>Info</span>
@@ -181,7 +183,6 @@
       <div class="page-dots" id="page-dots">
         <button class="page-dot active" data-page="0"></button>
         <button class="page-dot" data-page="1"></button>
-        <button class="page-dot" data-page="2"></button>
       </div>
     </div>
 
