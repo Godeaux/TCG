@@ -421,22 +421,40 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete) => {
     if (Object.keys(rest).length > 0) {
       resolveEffectResult(state, rest, context);
     }
-    const { title, candidates: candidatesInput, onSelect } = selectTarget;
+    const {
+      title,
+      candidates: candidatesInput,
+      onSelect,
+      renderCards = false,
+    } = selectTarget;
     const candidates =
       typeof candidatesInput === "function" ? candidatesInput() : candidatesInput;
+    const handleSelection = (value) => {
+      clearSelectionPanel();
+      const followUp = onSelect(value);
+      resolveEffectChain(state, followUp, context, onUpdate, onComplete);
+      cleanupDestroyed(state);
+      onUpdate?.();
+    };
     const items = candidates.map((candidate) => {
       const item = document.createElement("label");
       item.className = "selection-item";
-      const button = document.createElement("button");
-      button.textContent = candidate.label;
-      button.onclick = () => {
-        clearSelectionPanel();
-        const followUp = onSelect(candidate.value);
-        resolveEffectChain(state, followUp, context, onUpdate, onComplete);
-        cleanupDestroyed(state);
-        onUpdate?.();
-      };
-      item.appendChild(button);
+      if (renderCards && candidate.card) {
+        item.classList.add("selection-card");
+        const cardElement = renderCard(candidate.card, {
+          onClick: () => handleSelection(candidate.value),
+        });
+        const button = document.createElement("button");
+        button.textContent = `Select ${candidate.label}`;
+        button.onclick = () => handleSelection(candidate.value);
+        item.appendChild(cardElement);
+        item.appendChild(button);
+      } else {
+        const button = document.createElement("button");
+        button.textContent = candidate.label;
+        button.onclick = () => handleSelection(candidate.value);
+        item.appendChild(button);
+      }
       return item;
     });
 
@@ -748,7 +766,7 @@ const handlePlayCard = (state, card, onUpdate) => {
   const playerIndex = state.activePlayerIndex;
   const opponentIndex = (state.activePlayerIndex + 1) % 2;
 
-  const isFree = card.type === "Free Spell" || isFreePlay(card);
+  const isFree = card.type === "Free Spell" || card.type === "Trap" || isFreePlay(card);
   if (!isFree && !cardLimitAvailable(state)) {
     logMessage(state, "You have already played a card this turn.");
     onUpdate?.();
@@ -782,7 +800,6 @@ const handlePlayCard = (state, card, onUpdate) => {
   if (card.type === "Trap") {
     player.traps.push(card);
     player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
-    state.cardPlayedThisTurn = true;
     logMessage(state, `${player.name} sets a trap.`);
     onUpdate?.();
     return;
@@ -790,7 +807,19 @@ const handlePlayCard = (state, card, onUpdate) => {
 
   if (card.type === "Predator" || card.type === "Prey") {
     const emptySlot = player.field.findIndex((slot) => slot === null);
-    if (emptySlot === -1) {
+    const availablePrey =
+      card.type === "Predator"
+        ? player.field.filter(
+            (slot) => slot && (slot.type === "Prey" || (slot.type === "Predator" && isEdible(slot)))
+          )
+        : [];
+    const ediblePrey = availablePrey.filter((slot) => !slot.frozen);
+    if (card.type === "Predator" && emptySlot === -1 && ediblePrey.length === 0) {
+      logMessage(state, "No empty field slots available.");
+      onUpdate?.();
+      return;
+    }
+    if (card.type === "Prey" && emptySlot === -1) {
       logMessage(state, "No empty field slots available.");
       onUpdate?.();
       return;
@@ -800,21 +829,17 @@ const handlePlayCard = (state, card, onUpdate) => {
     const creature = createCardInstance(card, state.turn);
 
     if (card.type === "Predator") {
-      const availablePrey = player.field.filter(
-        (slot) => slot && (slot.type === "Prey" || (slot.type === "Predator" && isEdible(slot)))
-      );
       const availableCarrion = hasScavenge(creature)
         ? player.carrion.filter(
             (slot) =>
               slot && (slot.type === "Prey" || (slot.type === "Predator" && isEdible(slot)))
           )
         : [];
-      const ediblePrey = availablePrey.filter((slot) => !slot.frozen);
       if (ediblePrey.length > 0 || availableCarrion.length > 0) {
         pendingConsumption = {
           predator: creature,
           playerIndex: state.activePlayerIndex,
-          slotIndex: emptySlot,
+          slotIndex: emptySlot >= 0 ? emptySlot : null,
         };
 
         const items = [...ediblePrey, ...availableCarrion].map((prey) => {
@@ -851,6 +876,11 @@ const handlePlayCard = (state, card, onUpdate) => {
               onUpdate?.();
               return;
             }
+            if (emptySlot === -1 && preyToConsume.length === 0) {
+              logMessage(state, "You must consume a field prey to make room.");
+              onUpdate?.();
+              return;
+            }
             consumePrey({
               predator: creature,
               preyList: preyToConsume,
@@ -858,7 +888,15 @@ const handlePlayCard = (state, card, onUpdate) => {
               state,
               playerIndex: state.activePlayerIndex,
             });
-            player.field[pendingConsumption.slotIndex] = creature;
+            const placementSlot =
+              pendingConsumption.slotIndex ?? player.field.findIndex((slot) => slot === null);
+            if (placementSlot === -1) {
+              logMessage(state, "No empty field slots available.");
+              clearSelectionPanel();
+              onUpdate?.();
+              return;
+            }
+            player.field[placementSlot] = creature;
             clearSelectionPanel();
             triggerPlayTraps(state, creature, onUpdate, () => {
               if (totalSelected > 0 && creature.onConsume) {

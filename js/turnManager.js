@@ -36,25 +36,7 @@ const runStartOfTurnEffects = (state) => {
     }
   });
 
-  if (state.fieldSpell?.ownerIndex === state.activePlayerIndex) {
-    const fieldSpell = state.fieldSpell.card;
-    if (fieldSpell?.onStart) {
-      const result = fieldSpell.onStart({
-        log: (message) => logMessage(state, message),
-        player,
-        opponent: state.players[opponentIndex],
-        creature: fieldSpell,
-        state,
-        playerIndex,
-        opponentIndex,
-      });
-      resolveEffectResult(state, result, {
-        playerIndex,
-        opponentIndex,
-        card: fieldSpell,
-      });
-    }
-  }
+  // Field spells live on the field and are handled in the loop above.
 };
 
 const runEndOfTurnEffects = (state) => {
@@ -90,25 +72,7 @@ const runEndOfTurnEffects = (state) => {
     }
   });
 
-  if (state.fieldSpell?.ownerIndex === state.activePlayerIndex) {
-    const fieldSpell = state.fieldSpell.card;
-    if (fieldSpell?.onEnd) {
-      const result = fieldSpell.onEnd({
-        log: (message) => logMessage(state, message),
-        player,
-        opponent: state.players[opponentIndex],
-        creature: fieldSpell,
-        state,
-        playerIndex,
-        opponentIndex,
-      });
-      resolveEffectResult(state, result, {
-        playerIndex,
-        opponentIndex,
-        card: fieldSpell,
-      });
-    }
-  }
+  // Field spells live on the field and are handled in the loop above.
 };
 
 const handleFrozenDeaths = (state) => {

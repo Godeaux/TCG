@@ -6,6 +6,7 @@ import {
   hasAcuity,
   isPassive,
   hasNeurotoxic,
+  hasAmbush,
 } from "./keywords.js";
 import { logMessage } from "./gameState.js";
 import { resolveEffectResult } from "./effects.js";
@@ -51,15 +52,20 @@ const applyDamage = (creature, amount) => {
 };
 
 export const resolveCreatureCombat = (state, attacker, defender) => {
+  const ambushAttack = hasAmbush(attacker);
   applyDamage(defender, attacker.currentAtk);
-  applyDamage(attacker, defender.currentAtk);
+  const defenderSurvived = defender.currentHp > 0;
+  const defenderDealsDamage = !ambushAttack || defenderSurvived;
+  if (defenderDealsDamage) {
+    applyDamage(attacker, defender.currentAtk);
+  }
 
   if (hasNeurotoxic(attacker) && attacker.currentAtk > 0) {
     defender.frozen = true;
     defender.frozenDiesTurn = state.turn + 1;
     logMessage(state, `${defender.name} is frozen by neurotoxin.`);
   }
-  if (hasNeurotoxic(defender) && defender.currentAtk > 0) {
+  if (defenderDealsDamage && hasNeurotoxic(defender) && defender.currentAtk > 0) {
     attacker.frozen = true;
     attacker.frozenDiesTurn = state.turn + 1;
     logMessage(state, `${attacker.name} is frozen by neurotoxin.`);
@@ -74,6 +80,13 @@ export const resolveCreatureCombat = (state, attacker, defender) => {
     attacker.slainBy = defender;
   }
 
+  if (ambushAttack && !defenderSurvived) {
+    logMessage(
+      state,
+      `${attacker.name} ambushes ${defender.name} and avoids damage (${attacker.currentAtk}/${attacker.currentHp}).`
+    );
+    return;
+  }
   logMessage(
     state,
     `${attacker.name} and ${defender.name} trade blows (${attacker.currentAtk}/${attacker.currentHp} vs ${defender.currentAtk}/${defender.currentHp}).`
