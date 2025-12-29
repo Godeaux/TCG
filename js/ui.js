@@ -187,6 +187,26 @@ const renderKeywordTags = (card) => {
   return keywords.map((keyword) => `<span>${keyword}</span>`).join("");
 };
 
+const renderCardInnerHtml = (card, { showEffectSummary } = {}) => {
+  const stats = renderCardStats(card)
+    .map(
+      (stat) =>
+        `<span class="card-stat ${stat.className}">${stat.label} ${stat.value}</span>`
+    )
+    .join("");
+  const effectSummary = showEffectSummary ? getCardEffectSummary(card) : "";
+  const effectRow = effectSummary
+    ? `<div class="card-effect"><strong>Effect:</strong> ${effectSummary}</div>`
+    : "";
+  return `
+    <div class="card-name">${card.name}</div>
+    <div class="card-type-label">${card.type}</div>
+    <div class="card-stats-row">${stats}</div>
+    <div class="card-keywords">${renderKeywordTags(card)}</div>
+    ${effectRow}
+  `;
+};
+
 const renderCard = (card, options = {}) => {
   const {
     showPlay = false,
@@ -211,24 +231,7 @@ const renderCard = (card, options = {}) => {
   const inner = document.createElement("div");
   inner.className = "card-inner";
 
-  const stats = renderCardStats(card)
-    .map(
-      (stat) =>
-        `<span class="card-stat ${stat.className}">${stat.label} ${stat.value}</span>`
-    )
-    .join("");
-  const effectSummary = showEffectSummary ? getCardEffectSummary(card) : "";
-  const effectRow = effectSummary
-    ? `<div class="card-effect"><strong>Effect:</strong> ${effectSummary}</div>`
-    : "";
-
-  inner.innerHTML = `
-    <div class="card-name">${card.name}</div>
-    <div class="card-type-label">${card.type}</div>
-    <div class="card-stats-row">${stats}</div>
-    <div class="card-keywords">${renderKeywordTags(card)}</div>
-    ${effectRow}
-  `;
+  inner.innerHTML = renderCardInnerHtml(card, { showEffectSummary });
 
   if (showPlay || showAttack) {
     const actions = document.createElement("div");
@@ -281,23 +284,9 @@ const renderDeckCard = (card, options = {}) => {
   cardElement.className = `card deck-card ${highlighted ? "highlighted" : ""} ${
     selected ? "selected" : ""
   } ${cardTypeClass(card)}`;
-  const stats = renderCardStats(card)
-    .map(
-      (stat) =>
-        `<span class="card-stat ${stat.className}">${stat.label} ${stat.value}</span>`
-    )
-    .join("");
-  const effectSummary = getCardEffectSummary(card);
-  const effectRow = effectSummary
-    ? `<div class="card-effect"><strong>Effect:</strong> ${effectSummary}</div>`
-    : "";
   cardElement.innerHTML = `
     <div class="card-inner">
-      <div class="card-name">${card.name}</div>
-      <div class="card-type-label">${card.type}</div>
-      <div class="card-stats-row">${stats}</div>
-      <div class="card-keywords">${renderKeywordTags(card)}</div>
-      ${effectRow}
+      ${renderCardInnerHtml(card, { showEffectSummary: true })}
     </div>
   `;
   cardElement.addEventListener("click", () => onClick?.());
