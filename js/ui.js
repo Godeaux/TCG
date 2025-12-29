@@ -38,10 +38,11 @@ const deckConfirm = document.getElementById("deck-confirm");
 const deckRandom = document.getElementById("deck-random");
 const deckInspectorPanel = document.getElementById("deck-inspector");
 const pagesContainer = document.getElementById("pages-container");
-const mobileTabs = document.getElementById("mobile-tabs");
 const pageDots = document.getElementById("page-dots");
 const navLeft = document.getElementById("nav-left");
 const navRight = document.getElementById("nav-right");
+const infoToggle = document.getElementById("info-toggle");
+const infoBack = document.getElementById("info-back");
 
 let pendingConsumption = null;
 let pendingAttack = null;
@@ -59,6 +60,28 @@ const clearPanel = (panel) => {
     return;
   }
   panel.innerHTML = "";
+};
+
+const updateHandOverlap = (handGrid) => {
+  if (!handGrid) {
+    return;
+  }
+  const cards = Array.from(handGrid.querySelectorAll(".card"));
+  if (cards.length === 0) {
+    handGrid.style.setProperty("--hand-overlap", "0px");
+    return;
+  }
+  const handWidth = handGrid.clientWidth;
+  const cardWidth = cards[0].getBoundingClientRect().width;
+  if (!handWidth || !cardWidth) {
+    return;
+  }
+  const totalWidth = cardWidth * cards.length;
+  const overlapNeeded =
+    totalWidth > handWidth ? (totalWidth - handWidth) / Math.max(1, cards.length - 1) : 0;
+  const maxOverlap = cardWidth * 0.45;
+  const overlap = Math.min(Math.max(overlapNeeded, 0), maxOverlap);
+  handGrid.style.setProperty("--hand-overlap", `${overlap}px`);
 };
 
 const appendLog = (state) => {
@@ -336,6 +359,7 @@ const initHandPreview = () => {
     }
   });
   handGrid.addEventListener("pointerleave", clearFocus);
+  window.addEventListener("resize", () => updateHandOverlap(handGrid));
 };
 
 const renderDeckCard = (card, options = {}) => {
@@ -569,6 +593,7 @@ const renderHand = (state, onPlay, onUpdate, hideCards) => {
     player.hand.forEach(() => {
       handGrid.appendChild(renderCard({}, { showBack: true }));
     });
+    requestAnimationFrame(() => updateHandOverlap(handGrid));
     return;
   }
 
@@ -586,6 +611,7 @@ const renderHand = (state, onPlay, onUpdate, hideCards) => {
     });
     handGrid.appendChild(cardElement);
   });
+  requestAnimationFrame(() => updateHandOverlap(handGrid));
 };
 
 const renderSelectionPanel = ({ title, items, onConfirm, confirmLabel = "Confirm" }) => {
@@ -1357,9 +1383,6 @@ const navigateToPage = (pageIndex) => {
   const dots = Array.from(pageDots?.querySelectorAll(".page-dot") ?? []);
   dots.forEach((dot) => dot.classList.toggle("active", Number(dot.dataset.page) === nextIndex));
 
-  const tabs = Array.from(mobileTabs?.querySelectorAll(".mobile-tab") ?? []);
-  tabs.forEach((tab) => tab.classList.toggle("active", Number(tab.dataset.page) === nextIndex));
-
   currentPage = nextIndex;
   updateNavButtons();
 };
@@ -1377,9 +1400,8 @@ const initNavigation = () => {
     dot.addEventListener("click", () => navigateToPage(Number(dot.dataset.page)));
   });
 
-  mobileTabs?.querySelectorAll(".mobile-tab").forEach((tab) => {
-    tab.addEventListener("click", () => navigateToPage(Number(tab.dataset.page)));
-  });
+  infoToggle?.addEventListener("click", () => navigateToPage(1));
+  infoBack?.addEventListener("click", () => navigateToPage(0));
 
   document.querySelectorAll(".deck-tab").forEach((tab) => {
     tab.addEventListener("click", () => {

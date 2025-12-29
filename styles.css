@@ -82,7 +82,7 @@ button {
   display: flex;
   flex-direction: column;
   padding-top: calc(12px + var(--safe-top));
-  padding-bottom: calc(54px + var(--safe-bottom));
+  padding-bottom: calc(12px + var(--safe-bottom));
 }
 
 .top-bar {
@@ -239,6 +239,7 @@ button {
 }
 
 .field-divider {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -270,6 +271,33 @@ button {
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
+  width: 100%;
+  padding-right: 46px;
+}
+
+.info-toggle {
+  position: absolute;
+  right: 0;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.info-toggle:hover {
+  color: var(--gold-light);
+  border-color: var(--border-gold);
+}
+
+.info-toggle--back {
+  position: static;
+  padding: 4px 10px;
+  font-size: 11px;
 }
 
 .hand-panel {
@@ -321,11 +349,11 @@ button {
 
 .hand-grid .card {
   flex: 0 0 auto;
-  width: clamp(78px, 18vw, 130px);
+  width: clamp(98px, 22vw, 160px);
   aspect-ratio: 3 / 4;
-  margin-left: -18px;
+  margin-left: calc(var(--hand-overlap, 0px) * -1);
   transform-origin: bottom center;
-  transform: translateY(12px) scale(0.96);
+  transform: translateY(8px) scale(0.98);
   transition: transform var(--transition-fast), box-shadow var(--transition-fast), z-index 0.2s;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35);
 }
@@ -336,21 +364,21 @@ button {
 
 .hand-grid .card.hand-focus {
   z-index: 5;
-  transform: translateY(0) scale(1.02);
+  transform: translateY(0) scale(1.04);
   box-shadow: 0 14px 28px rgba(0, 0, 0, 0.45);
 }
 
 .hand-grid .card:hover {
   z-index: 4;
-  transform: translateY(0) scale(1.01);
+  transform: translateY(0) scale(1.02);
 }
 
 .hand-grid .card .card-name {
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .hand-grid .card .card-inner {
-  padding: 8px;
+  padding: 10px;
 }
 
 .hand-grid .card .card-actions {
@@ -358,8 +386,8 @@ button {
 }
 
 .hand-grid .card .card-actions button {
-  font-size: 10px;
-  padding: 3px 4px;
+  font-size: 11px;
+  padding: 4px 6px;
 }
 
 .info-container {
@@ -367,6 +395,19 @@ button {
   flex-direction: column;
   gap: 16px;
   height: 100%;
+}
+
+.info-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.info-header h3 {
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  color: var(--gold-light);
 }
 
 .info-section {
@@ -421,44 +462,11 @@ button {
   margin-top: 4px;
 }
 
-.mobile-tabs {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  background: rgba(10, 14, 20, 0.95);
-  border-top: 1px solid var(--border-subtle);
-  padding-bottom: var(--safe-bottom);
-  z-index: 10;
-}
-
-.mobile-tab {
-  flex: 1;
-  padding: 10px 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  color: var(--text-muted);
-  font-size: 11px;
-  transition: color var(--transition-fast);
-}
-
-.mobile-tab svg {
-  width: 22px;
-  height: 22px;
-}
-
-.mobile-tab.active {
-  color: var(--gold-light);
-}
-
 .action-bar {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 54px;
+  bottom: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -742,7 +750,7 @@ button {
 
 .card-actions button {
   flex: 1;
-  padding: 4px 6px;
+  padding: 5px 6px;
   border-radius: 6px;
   font-size: 11px;
   background: var(--bg-card-hover);
@@ -983,10 +991,6 @@ button {
 }
 
 @media (min-width: 768px) {
-  .mobile-tabs {
-    display: none;
-  }
-
   .page-nav,
   .page-dots {
     display: flex;
@@ -1017,8 +1021,7 @@ button {
   }
 
   .hand-grid .card {
-    width: clamp(90px, 14vw, 150px);
-    margin-left: -22px;
+    width: clamp(110px, 16vw, 180px);
   }
 
   .overlay-content {

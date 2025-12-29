@@ -110,6 +110,7 @@
                   <p class="field-divider-text">
                     Food Chain™ (C) Food Chain TCG. All rights reserved.
                   </p>
+                  <button class="info-toggle" id="info-toggle" type="button">Info</button>
                 </div>
                 <div class="field-row player-field">
                   <div class="field-slot" data-slot="0"></div>
@@ -132,6 +133,12 @@
 
         <section class="page page-info" data-page="1">
           <div class="info-container">
+            <div class="info-header">
+              <h3>Info</h3>
+              <button class="info-toggle info-toggle--back" id="info-back" type="button">
+                Field
+              </button>
+            </div>
             <div class="info-section inspector-section">
               <h3>Card Inspector</h3>
               <div class="inspector-content" id="card-inspector"></div>
@@ -160,21 +167,6 @@
           </div>
         </section>
       </div>
-
-      <nav class="mobile-tabs" id="mobile-tabs">
-        <button class="mobile-tab active" data-page="0">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3 7h18v10H3z" fill="none" stroke="currentColor" stroke-width="2" />
-          </svg>
-          <span>Field</span>
-        </button>
-        <button class="mobile-tab" data-page="1">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M5 4h14v16H5z" fill="none" stroke="currentColor" stroke-width="2" />
-          </svg>
-          <span>Info</span>
-        </button>
-      </nav>
 
       <footer class="action-bar" id="action-bar">
         <div class="selection-panel" id="selection-panel"></div>
