@@ -370,7 +370,7 @@ button {
 
 .hand-grid .card.hand-focus {
   z-index: 5;
-  transform: translateY(0) scale(1.04);
+  transform: translateY(-8px) scale(1.16);
   box-shadow: 0 14px 28px rgba(0, 0, 0, 0.45);
 }
 
@@ -484,7 +484,8 @@ button {
   background: transparent;
 }
 
-.action-bar.has-selection {
+.action-bar.has-selection,
+.action-bar.has-actions {
   padding: 10px 14px 16px;
   height: auto;
   pointer-events: auto;
@@ -533,6 +534,12 @@ button {
   flex-direction: column;
   gap: 8px;
   font-size: 13px;
+}
+
+.action-panel .action-title {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-secondary);
 }
 
 @keyframes active-breathe {

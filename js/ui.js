@@ -19,6 +19,7 @@ import { resolveEffectResult } from "./effects.js";
 
 const selectionPanel = document.getElementById("selection-panel");
 const actionBar = document.getElementById("action-bar");
+const actionPanel = document.getElementById("action-panel");
 const logPanel = document.getElementById("log-panel");
 const passOverlay = document.getElementById("pass-overlay");
 const passTitle = document.getElementById("pass-title");
@@ -52,8 +53,10 @@ let currentPage = 0;
 let navigationInitialized = false;
 let deckActiveTab = "catalog";
 let latestState = null;
+let latestCallbacks = {};
 const TOTAL_PAGES = 2;
 let handPreviewInitialized = false;
+let selectedHandCardId = null;
 
 const clearPanel = (panel) => {
   if (!panel) {
@@ -82,6 +85,60 @@ const updateHandOverlap = (handGrid) => {
   const maxOverlap = cardWidth * 0.45;
   const overlap = Math.min(Math.max(overlapNeeded, 0), maxOverlap);
   handGrid.style.setProperty("--hand-overlap", `${overlap}px`);
+};
+
+const updateActionPanel = (state, callbacks = {}) => {
+  if (!actionPanel || !actionBar) {
+    return;
+  }
+  clearPanel(actionPanel);
+  const player = getActivePlayer(state);
+  const selectedCard = player.hand.find((card) => card.instanceId === selectedHandCardId);
+  if (!selectedCard) {
+    actionBar.classList.remove("has-actions");
+    return;
+  }
+
+  const title = document.createElement("div");
+  title.className = "action-title";
+  title.textContent = selectedCard.name;
+  actionPanel.appendChild(title);
+
+  const actions = document.createElement("div");
+  actions.className = "action-buttons";
+
+  const isFree =
+    selectedCard.type === "Free Spell" || selectedCard.type === "Trap" || isFreePlay(selectedCard);
+  const playDisabled =
+    !canPlayCard(state) || (!isFree && !cardLimitAvailable(state));
+
+  const playButton = document.createElement("button");
+  playButton.className = "action-btn primary";
+  playButton.textContent = "Play";
+  playButton.disabled = playDisabled;
+  playButton.onclick = () => {
+    selectedHandCardId = null;
+    handlePlayCard(state, selectedCard, callbacks.onUpdate);
+  };
+  actions.appendChild(playButton);
+
+  const canDiscard =
+    selectedCard.discardEffect &&
+    selectedCard.discardEffect.timing === "main" &&
+    canPlayCard(state);
+  if (canDiscard) {
+    const discardButton = document.createElement("button");
+    discardButton.className = "action-btn";
+    discardButton.textContent = "Discard";
+    discardButton.onclick = () => {
+      selectedHandCardId = null;
+      handleDiscardEffect(state, selectedCard, callbacks.onUpdate);
+    };
+    actions.appendChild(discardButton);
+  }
+
+  actionPanel.appendChild(actions);
+  actionBar.classList.add("has-actions");
 };
 
 const appendLog = (state) => {
@@ -340,7 +397,9 @@ const initHandPreview = () => {
       .find((handCard) => handCard.instanceId === instanceId);
     if (card) {
       inspectedCardId = card.instanceId;
+      selectedHandCardId = card.instanceId;
       setInspectorContent(card);
+      updateActionPanel(latestState, latestCallbacks);
     }
   };
 
@@ -581,7 +640,7 @@ const renderField = (state, playerIndex, isOpponent, onAttack) => {
   });
 };
 
-const renderHand = (state, onPlay, onUpdate, hideCards) => {
+const renderHand = (state, onSelect, onUpdate, hideCards) => {
   const handGrid = document.getElementById("active-hand");
   if (!handGrid) {
     return;
@@ -598,16 +657,12 @@ const renderHand = (state, onPlay, onUpdate, hideCards) => {
   }
 
   player.hand.forEach((card) => {
-    const showDiscard =
-      card.discardEffect &&
-      card.discardEffect.timing === "main" &&
-      canPlayCard(state);
     const cardElement = renderCard(card, {
-      showPlay: true,
       showEffectSummary: true,
-      showDiscard,
-      onPlay,
-      onDiscard: (discardCard) => handleDiscardEffect(state, discardCard, onUpdate),
+      onClick: (selectedCard) => {
+        selectedHandCardId = selectedCard.instanceId;
+        onSelect?.(selectedCard);
+      },
     });
     handGrid.appendChild(cardElement);
   });
@@ -1454,6 +1509,7 @@ const processBeforeCombatQueue = (state, onUpdate) => {
 
 export const renderGame = (state, callbacks = {}) => {
   latestState = state;
+  latestCallbacks = callbacks;
   initNavigation();
   initHandPreview();
 
@@ -1471,12 +1527,8 @@ export const renderGame = (state, callbacks = {}) => {
   renderField(state, activeIndex, false, (card) =>
     handleAttackSelection(state, card, callbacks.onUpdate)
   );
-  renderHand(
-    state,
-    (card) => handlePlayCard(state, card, callbacks.onUpdate),
-    callbacks.onUpdate,
-    passPending
-  );
+  renderHand(state, () => updateActionPanel(state, callbacks), callbacks.onUpdate, passPending);
+  updateActionPanel(state, callbacks);
   updateActionBar(callbacks.onNextPhase);
   appendLog(state);
   processBeforeCombatQueue(state, callbacks.onUpdate);
