@@ -192,6 +192,7 @@ const renderCard = (card, options = {}) => {
     showPlay = false,
     showAttack = false,
     showDiscard = false,
+    showEffectSummary = false,
     onPlay,
     onAttack,
     onDiscard,
@@ -216,12 +217,17 @@ const renderCard = (card, options = {}) => {
         `<span class="card-stat ${stat.className}">${stat.label} ${stat.value}</span>`
     )
     .join("");
+  const effectSummary = showEffectSummary ? getCardEffectSummary(card) : "";
+  const effectRow = effectSummary
+    ? `<div class="card-effect"><strong>Effect:</strong> ${effectSummary}</div>`
+    : "";
 
   inner.innerHTML = `
     <div class="card-name">${card.name}</div>
     <div class="card-type-label">${card.type}</div>
     <div class="card-stats-row">${stats}</div>
     <div class="card-keywords">${renderKeywordTags(card)}</div>
+    ${effectRow}
   `;
 
   if (showPlay || showAttack) {
@@ -369,7 +375,7 @@ const setInspectorContentFor = (panel, card) => {
       <div class="meta">${card.type}${stats ? ` • ${stats}` : ""}</div>
       ${keywordLabel ? `<div class="meta">${keywordLabel}</div>` : ""}
       ${effectBlock}
-      ${keywordBlock}
+      ${keywordBlock || `<div class="meta muted">No keyword glossary entries for this card.</div>`}
     </div>
   `;
 };
@@ -524,6 +530,7 @@ const renderHand = (state, onPlay, onUpdate, hideCards) => {
       canPlayCard(state);
     const cardElement = renderCard(card, {
       showPlay: true,
+      showEffectSummary: true,
       showDiscard,
       onPlay,
       onDiscard: (discardCard) => handleDiscardEffect(state, discardCard, onUpdate),
