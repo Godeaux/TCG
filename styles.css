@@ -445,6 +445,8 @@ button {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  overflow-y: auto;
+  padding-right: 6px;
 }
 
 .piles-grid {
