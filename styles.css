@@ -841,6 +841,111 @@ button {
   transform: scale(1);
 }
 
+.deck-select-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.deck-select-header {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.deck-select-icon {
+  font-size: 32px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-subtle);
+}
+
+.deck-select-header h2 {
+  font-family: var(--font-display);
+  letter-spacing: 0.05em;
+  margin: 0 0 6px;
+}
+
+.deck-select-header p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.deck-select-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.deck-select-panel {
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid transparent;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+  color: #f4f4f4;
+  background: rgba(255, 255, 255, 0.06);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.deck-select-panel .deck-emoji {
+  font-size: 28px;
+}
+
+.deck-select-panel .deck-name {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.deck-select-panel .deck-status {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.deck-select-panel .deck-meta {
+  margin-top: auto;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.deck-select-panel:hover:not(.disabled),
+.deck-select-panel:focus-visible:not(.disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.deck-select-panel.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-style: dashed;
+}
+
+.deck-select-panel--fish {
+  background: linear-gradient(135deg, rgba(54, 108, 180, 0.9), rgba(18, 40, 72, 0.95));
+}
+
+.deck-select-panel--bird {
+  background: linear-gradient(135deg, rgba(200, 160, 40, 0.85), rgba(83, 52, 12, 0.95));
+}
+
+.deck-select-panel--mammal {
+  background: linear-gradient(135deg, rgba(140, 92, 68, 0.85), rgba(60, 36, 24, 0.95));
+}
+
+.deck-select-panel--reptile {
+  background: linear-gradient(135deg, rgba(60, 142, 74, 0.85), rgba(22, 66, 35, 0.95));
+}
+
+.deck-select-panel--amphibian {
+  background: linear-gradient(135deg, rgba(92, 180, 116, 0.85), rgba(26, 92, 54, 0.95));
+}
+
 .deck-builder {
   display: flex;
   flex-direction: column;
