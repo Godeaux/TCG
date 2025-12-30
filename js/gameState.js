@@ -1,5 +1,3 @@
-import { cardCatalog } from "./cards.js";
-
 const shuffle = (array) => {
   for (let i = array.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -21,11 +19,6 @@ const createPlayer = (name) => ({
 
 export const createGameState = () => {
   const players = [createPlayer("Player 1"), createPlayer("Player 2")];
-  const catalogOrder = cardCatalog.map((card) => card.id);
-  const catalogCopies = [
-    cardCatalog.map((card) => ({ ...card })),
-    cardCatalog.map((card) => ({ ...card })),
-  ];
   return {
     players,
     activePlayerIndex: 0,
@@ -53,8 +46,8 @@ export const createGameState = () => {
     deckBuilder: {
       stage: "p1",
       selections: [[], []],
-      available: catalogCopies,
-      catalogOrder,
+      available: [[], []],
+      catalogOrder: [[], []],
     },
     log: [],
     combat: {
