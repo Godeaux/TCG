@@ -1,5 +1,6 @@
 import { drawCard, logMessage } from "./gameState.js";
 import { createCardInstance } from "./cardTypes.js";
+import { consumePrey } from "./consumption.js";
 import { isImmune } from "./keywords.js";
 
 const findCardOwnerIndex = (state, card) =>
@@ -203,6 +204,11 @@ export const resolveEffectResult = (state, result, context) => {
         creature.hasBarrier = true;
       }
     });
+  }
+
+  if (result.consumeEnemyPrey) {
+    const { predator, prey, opponentIndex } = result.consumeEnemyPrey;
+    consumePrey({ predator, preyList: [prey], state, playerIndex: opponentIndex });
   }
 
   if (result.grantBarrier) {

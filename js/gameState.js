@@ -38,6 +38,9 @@ export const createGameState = () => {
     fieldSpell: null,
     beforeCombatQueue: [],
     beforeCombatProcessing: false,
+    endOfTurnQueue: [],
+    endOfTurnProcessing: false,
+    endOfTurnFinalized: false,
     setup: {
       stage: "rolling",
       rolls: [null, null],
