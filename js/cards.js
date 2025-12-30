@@ -211,16 +211,27 @@ const fishCards = [
     nutrition: 1,
     keywords: ["Passive", "Immune"],
     effectText: "End of turn, eat target enemy prey.",
-    onEnd: ({ log, opponent }) => {
-      const target = opponent.field.find(
-        (creature) => creature && creature.type === "Prey" && !isInvisible(creature)
+    onEnd: ({ log, player, opponent, state, opponentIndex, creature }) => {
+      const targets = opponent.field.filter(
+        (card) => card && card.type === "Prey" && !isInvisible(card)
       );
-      if (!target) {
+      if (targets.length === 0) {
         log("Blobfish effect: no enemy prey to eat.");
         return null;
       }
-      log(`Blobfish eats ${target.name}.`);
-      return { killTargets: [target] };
+      return makeTargetedSelection({
+        title: "Blobfish: choose an enemy prey to consume",
+        candidates: targets.map((target) => ({
+          label: target.name,
+          value: target,
+          card: target,
+        })),
+        renderCards: true,
+        onSelect: (target) =>
+          handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+            consumeEnemyPrey: { predator: creature, prey: target, opponentIndex },
+          },
+      });
     },
   },
   {
@@ -1076,10 +1087,11 @@ const fishCards = [
     type: "Trap",
     trigger: "rivalPlaysPred",
     effectText: "When rival plays a pred it loses abilities.",
-    effect: ({ log, target }) => {
+    effect: ({ log, target, attacker }) => {
       log("Cramp triggered: predator loses its abilities.");
-      if (target?.card) {
-        return { removeAbilities: target.card };
+      const creature = target?.card ?? attacker;
+      if (creature) {
+        return { removeAbilities: creature };
       }
       return null;
     },

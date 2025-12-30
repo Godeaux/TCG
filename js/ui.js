@@ -1,5 +1,5 @@
 import { getActivePlayer, getOpponentPlayer, logMessage, drawCard } from "./gameState.js";
-import { canPlayCard, cardLimitAvailable } from "./turnManager.js";
+import { canPlayCard, cardLimitAvailable, finalizeEndPhase } from "./turnManager.js";
 import { createCardInstance } from "./cardTypes.js";
 import { consumePrey } from "./consumption.js";
 import {
@@ -531,7 +531,7 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete) => {
   let nextResult = restResult;
 
   if (revealHand) {
-    const { playerIndex, durationMs = 3000 } = revealHand;
+    const { playerIndex } = revealHand;
     const handOwner = state.players[playerIndex];
     const items = [];
     if (handOwner.hand.length === 0) {
@@ -542,8 +542,15 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete) => {
     } else {
       handOwner.hand.forEach((card) => {
         const item = document.createElement("label");
-        item.className = "selection-item";
-        item.textContent = card.name;
+        item.className = "selection-item selection-card";
+        const cardElement = renderCard(card, {
+          showEffectSummary: true,
+          onClick: () => {
+            inspectedCardId = card.instanceId;
+            setInspectorContent(card);
+          },
+        });
+        item.appendChild(cardElement);
         items.push(item);
       });
     }
@@ -551,14 +558,12 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete) => {
     renderSelectionPanel({
       title: `${handOwner.name}'s hand`,
       items,
-      onConfirm: () => {},
-      confirmLabel: null,
+      onConfirm: () => {
+        clearSelectionPanel();
+        onUpdate?.();
+      },
+      confirmLabel: "OK",
     });
-
-    setTimeout(() => {
-      clearSelectionPanel();
-      onUpdate?.();
-    }, durationMs);
   }
 
   if (nextResult.selectTarget) {
@@ -1518,6 +1523,72 @@ const processBeforeCombatQueue = (state, onUpdate) => {
   );
 };
 
+const processEndOfTurnQueue = (state, onUpdate) => {
+  if (state.phase !== "End") {
+    return;
+  }
+  if (state.endOfTurnProcessing) {
+    return;
+  }
+  if (state.endOfTurnQueue.length === 0) {
+    finalizeEndPhase(state);
+    onUpdate?.();
+    return;
+  }
+
+  const creature = state.endOfTurnQueue.shift();
+  if (!creature) {
+    finalizeEndPhase(state);
+    onUpdate?.();
+    return;
+  }
+  state.endOfTurnProcessing = true;
+
+  const playerIndex = state.activePlayerIndex;
+  const opponentIndex = (playerIndex + 1) % 2;
+  const player = state.players[playerIndex];
+  const opponent = state.players[opponentIndex];
+
+  const finishCreature = () => {
+    if (creature.endOfTurnSummon) {
+      resolveEffectResult(state, {
+        summonTokens: { playerIndex, tokens: [creature.endOfTurnSummon] },
+      }, {
+        playerIndex,
+        opponentIndex,
+        card: creature,
+      });
+      creature.endOfTurnSummon = null;
+    }
+    cleanupDestroyed(state);
+    state.endOfTurnProcessing = false;
+    onUpdate?.();
+    processEndOfTurnQueue(state, onUpdate);
+  };
+
+  if (!creature.onEnd) {
+    finishCreature();
+    return;
+  }
+
+  const result = creature.onEnd({
+    log: (message) => logMessage(state, message),
+    player,
+    opponent,
+    creature,
+    state,
+    playerIndex,
+    opponentIndex,
+  });
+  resolveEffectChain(
+    state,
+    result,
+    { playerIndex, opponentIndex, card: creature },
+    onUpdate,
+    finishCreature
+  );
+};
+
 export const renderGame = (state, callbacks = {}) => {
   latestState = state;
   latestCallbacks = callbacks;
@@ -1543,6 +1614,7 @@ export const renderGame = (state, callbacks = {}) => {
   updateActionBar(callbacks.onNextPhase);
   appendLog(state);
   processBeforeCombatQueue(state, callbacks.onUpdate);
+  processEndOfTurnQueue(state, callbacks.onUpdate);
 
   if (passPending) {
     passTitle.textContent = `Pass to ${state.players[activeIndex].name}`;

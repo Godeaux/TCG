@@ -1,6 +1,5 @@
 import { drawCard, logMessage, resetCombat } from "./gameState.js";
 import { cleanupDestroyed } from "./combat.js";
-import { resolveEffectResult } from "./effects.js";
 
 const PHASES = ["Start", "Draw", "Main 1", "Before Combat", "Combat", "Main 2", "End"];
 
@@ -39,40 +38,13 @@ const runStartOfTurnEffects = (state) => {
   // Field spells live on the field and are handled in the loop above.
 };
 
-const runEndOfTurnEffects = (state) => {
+const queueEndOfTurnEffects = (state) => {
   const player = state.players[state.activePlayerIndex];
-  const playerIndex = state.activePlayerIndex;
-  const opponentIndex = (state.activePlayerIndex + 1) % 2;
-  player.field.forEach((creature) => {
-    if (creature?.onEnd) {
-      const result = creature.onEnd({
-        log: (message) => logMessage(state, message),
-        player,
-        opponent: state.players[opponentIndex],
-        creature,
-        state,
-        playerIndex,
-        opponentIndex,
-      });
-      resolveEffectResult(state, result, {
-        playerIndex,
-        opponentIndex,
-        card: creature,
-      });
-    }
-    if (creature?.endOfTurnSummon) {
-      resolveEffectResult(state, {
-        summonTokens: { playerIndex: state.activePlayerIndex, tokens: [creature.endOfTurnSummon] },
-      }, {
-        playerIndex: state.activePlayerIndex,
-        opponentIndex: (state.activePlayerIndex + 1) % 2,
-        card: creature,
-      });
-      creature.endOfTurnSummon = null;
-    }
-  });
-
-  // Field spells live on the field and are handled in the loop above.
+  state.endOfTurnQueue = player.field.filter(
+    (creature) => creature?.onEnd || creature?.endOfTurnSummon
+  );
+  state.endOfTurnProcessing = false;
+  state.endOfTurnFinalized = false;
 };
 
 const handleFrozenDeaths = (state) => {
@@ -138,10 +110,7 @@ export const advancePhase = (state) => {
   }
 
   if (state.phase === "End") {
-    runEndOfTurnEffects(state);
-    handleFrozenDeaths(state);
-    cleanupDestroyed(state);
-    logMessage(state, `${state.players[state.activePlayerIndex].name} ends their turn.`);
+    queueEndOfTurnEffects(state);
   }
 };
 
@@ -149,6 +118,9 @@ export const endTurn = (state) => {
   if (state.setup?.stage !== "complete") {
     logMessage(state, "Complete the opening roll before ending the turn.");
     return;
+  }
+  if (state.phase === "End") {
+    finalizeEndPhase(state);
   }
 
   state.activePlayerIndex = (state.activePlayerIndex + 1) % 2;
@@ -165,6 +137,16 @@ export const canPlayCard = (state) => {
     return false;
   }
   return state.phase === "Main 1" || state.phase === "Main 2";
+};
+
+export const finalizeEndPhase = (state) => {
+  if (state.endOfTurnFinalized) {
+    return;
+  }
+  handleFrozenDeaths(state);
+  cleanupDestroyed(state);
+  logMessage(state, `${state.players[state.activePlayerIndex].name} ends their turn.`);
+  state.endOfTurnFinalized = true;
 };
 
 export const cardLimitAvailable = (state) => !state.cardPlayedThisTurn;
