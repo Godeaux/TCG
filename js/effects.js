@@ -86,6 +86,7 @@ export const stripAbilities = (card) => {
   card.endOfTurnSummon = null;
   card.transformOnStart = null;
   card.hasBarrier = false;
+  card.abilitiesCancelled = true;
 };
 
 export const resolveEffectResult = (state, result, context) => {

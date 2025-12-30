@@ -244,6 +244,9 @@ const getStatusIndicators = (card) => {
   if (card.dryDropped) {
     indicators.push("🍂");
   }
+  if (card.abilitiesCancelled) {
+    indicators.push("🚫");
+  }
   if (card.hasBarrier) {
     indicators.push("🛡️");
   }
@@ -486,7 +489,15 @@ const setInspectorContentFor = (panel, card) => {
     .map((stat) => `${stat.label} ${stat.value}`)
     .join(" • ");
   const effectSummary = getCardEffectSummary(card);
+  const statusTags = [
+    card.dryDropped ? "🍂 Dry dropped" : null,
+    card.abilitiesCancelled ? "🚫 Abilities canceled" : null,
+    card.hasBarrier ? "🛡️ Barrier" : null,
+    card.frozen ? "❄️ Frozen" : null,
+    card.isToken ? "⚪ Token" : null,
+  ].filter(Boolean);
   const keywordLabel = keywords ? `Keywords: ${keywords}` : "";
+  const statusLabel = statusTags.length ? `Status: ${statusTags.join(" • ")}` : "";
   const keywordBlock = keywordDetails
     ? `<div class="keyword-glossary">
         <strong>Keyword Glossary</strong>
@@ -501,6 +512,7 @@ const setInspectorContentFor = (panel, card) => {
       <h4>${card.name}</h4>
       <div class="meta">${card.type}${stats ? ` • ${stats}` : ""}</div>
       ${keywordLabel ? `<div class="meta">${keywordLabel}</div>` : ""}
+      ${statusLabel ? `<div class="meta">${statusLabel}</div>` : ""}
       ${effectBlock}
       ${keywordBlock || `<div class="meta muted">No keyword glossary entries for this card.</div>`}
     </div>
@@ -914,6 +926,10 @@ const handlePlayCard = (state, card, onUpdate) => {
       playerIndex,
       opponentIndex,
     });
+    if (result == null) {
+      onUpdate?.();
+      return;
+    }
     resolveEffectChain(state, result, {
       playerIndex,
       opponentIndex,
