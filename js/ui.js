@@ -19,6 +19,7 @@ import { resolveEffectResult } from "./effects.js";
 
 const selectionPanel = document.getElementById("selection-panel");
 const actionBar = document.getElementById("action-bar");
+const actionPanel = document.getElementById("action-panel");
 const logPanel = document.getElementById("log-panel");
 const passOverlay = document.getElementById("pass-overlay");
 const passTitle = document.getElementById("pass-title");
@@ -38,10 +39,11 @@ const deckConfirm = document.getElementById("deck-confirm");
 const deckRandom = document.getElementById("deck-random");
 const deckInspectorPanel = document.getElementById("deck-inspector");
 const pagesContainer = document.getElementById("pages-container");
-const mobileTabs = document.getElementById("mobile-tabs");
 const pageDots = document.getElementById("page-dots");
 const navLeft = document.getElementById("nav-left");
 const navRight = document.getElementById("nav-right");
+const infoToggle = document.getElementById("info-toggle");
+const infoBack = document.getElementById("info-back");
 
 let pendingConsumption = null;
 let pendingAttack = null;
@@ -51,14 +53,87 @@ let currentPage = 0;
 let navigationInitialized = false;
 let deckActiveTab = "catalog";
 let latestState = null;
+let latestCallbacks = {};
 const TOTAL_PAGES = 2;
 let handPreviewInitialized = false;
+let selectedHandCardId = null;
 
 const clearPanel = (panel) => {
   if (!panel) {
     return;
   }
   panel.innerHTML = "";
+};
+
+const updateHandOverlap = (handGrid) => {
+  if (!handGrid) {
+    return;
+  }
+  const cards = Array.from(handGrid.querySelectorAll(".card"));
+  if (cards.length === 0) {
+    handGrid.style.setProperty("--hand-overlap", "0px");
+    return;
+  }
+  const handWidth = handGrid.clientWidth;
+  const cardWidth = cards[0].getBoundingClientRect().width;
+  if (!handWidth || !cardWidth) {
+    return;
+  }
+  const totalWidth = cardWidth * cards.length;
+  const overlapNeeded =
+    totalWidth > handWidth ? (totalWidth - handWidth) / Math.max(1, cards.length - 1) : 0;
+  const maxOverlap = cardWidth * 0.45;
+  const overlap = Math.min(Math.max(overlapNeeded, 0), maxOverlap);
+  handGrid.style.setProperty("--hand-overlap", `${overlap}px`);
+};
+
+const updateActionPanel = (state, callbacks = {}) => {
+  if (!actionPanel || !actionBar) {
+    return;
+  }
+  clearPanel(actionPanel);
+  const player = getActivePlayer(state);
+  const selectedCard = player.hand.find((card) => card.instanceId === selectedHandCardId);
+  if (!selectedCard) {
+    actionBar.classList.remove("has-actions");
+    return;
+  }
+
+  const actions = document.createElement("div");
+  actions.className = "action-buttons";
+
+  const isFree =
+    selectedCard.type === "Free Spell" || selectedCard.type === "Trap" || isFreePlay(selectedCard);
+  const playDisabled =
+    !canPlayCard(state) || (!isFree && !cardLimitAvailable(state));
+
+  const playButton = document.createElement("button");
+  playButton.className = "action-btn primary";
+  playButton.textContent = "Play";
+  playButton.disabled = playDisabled;
+  playButton.onclick = () => {
+    selectedHandCardId = null;
+    handlePlayCard(state, selectedCard, callbacks.onUpdate);
+  };
+  actions.appendChild(playButton);
+
+  const canDiscard =
+    selectedCard.discardEffect &&
+    selectedCard.discardEffect.timing === "main" &&
+    canPlayCard(state);
+  if (canDiscard) {
+    const discardButton = document.createElement("button");
+    discardButton.className = "action-btn";
+    discardButton.textContent = "Discard";
+    discardButton.onclick = () => {
+      selectedHandCardId = null;
+      handleDiscardEffect(state, selectedCard, callbacks.onUpdate);
+    };
+    actions.appendChild(discardButton);
+  }
+
+  actionPanel.appendChild(actions);
+  actionBar.classList.add("has-actions");
 };
 
 const appendLog = (state) => {
@@ -317,7 +392,9 @@ const initHandPreview = () => {
       .find((handCard) => handCard.instanceId === instanceId);
     if (card) {
       inspectedCardId = card.instanceId;
+      selectedHandCardId = card.instanceId;
       setInspectorContent(card);
+      updateActionPanel(latestState, latestCallbacks);
     }
   };
 
@@ -336,6 +413,7 @@ const initHandPreview = () => {
     }
   });
   handGrid.addEventListener("pointerleave", clearFocus);
+  window.addEventListener("resize", () => updateHandOverlap(handGrid));
 };
 
 const renderDeckCard = (card, options = {}) => {
@@ -557,7 +635,7 @@ const renderField = (state, playerIndex, isOpponent, onAttack) => {
   });
 };
 
-const renderHand = (state, onPlay, onUpdate, hideCards) => {
+const renderHand = (state, onSelect, onUpdate, hideCards) => {
   const handGrid = document.getElementById("active-hand");
   if (!handGrid) {
     return;
@@ -569,23 +647,21 @@ const renderHand = (state, onPlay, onUpdate, hideCards) => {
     player.hand.forEach(() => {
       handGrid.appendChild(renderCard({}, { showBack: true }));
     });
+    requestAnimationFrame(() => updateHandOverlap(handGrid));
     return;
   }
 
   player.hand.forEach((card) => {
-    const showDiscard =
-      card.discardEffect &&
-      card.discardEffect.timing === "main" &&
-      canPlayCard(state);
     const cardElement = renderCard(card, {
-      showPlay: true,
       showEffectSummary: true,
-      showDiscard,
-      onPlay,
-      onDiscard: (discardCard) => handleDiscardEffect(state, discardCard, onUpdate),
+      onClick: (selectedCard) => {
+        selectedHandCardId = selectedCard.instanceId;
+        onSelect?.(selectedCard);
+      },
     });
     handGrid.appendChild(cardElement);
   });
+  requestAnimationFrame(() => updateHandOverlap(handGrid));
 };
 
 const renderSelectionPanel = ({ title, items, onConfirm, confirmLabel = "Confirm" }) => {
@@ -1357,9 +1433,6 @@ const navigateToPage = (pageIndex) => {
   const dots = Array.from(pageDots?.querySelectorAll(".page-dot") ?? []);
   dots.forEach((dot) => dot.classList.toggle("active", Number(dot.dataset.page) === nextIndex));
 
-  const tabs = Array.from(mobileTabs?.querySelectorAll(".mobile-tab") ?? []);
-  tabs.forEach((tab) => tab.classList.toggle("active", Number(tab.dataset.page) === nextIndex));
-
   currentPage = nextIndex;
   updateNavButtons();
 };
@@ -1377,9 +1450,8 @@ const initNavigation = () => {
     dot.addEventListener("click", () => navigateToPage(Number(dot.dataset.page)));
   });
 
-  mobileTabs?.querySelectorAll(".mobile-tab").forEach((tab) => {
-    tab.addEventListener("click", () => navigateToPage(Number(tab.dataset.page)));
-  });
+  infoToggle?.addEventListener("click", () => navigateToPage(1));
+  infoBack?.addEventListener("click", () => navigateToPage(0));
 
   document.querySelectorAll(".deck-tab").forEach((tab) => {
     tab.addEventListener("click", () => {
@@ -1432,6 +1504,7 @@ const processBeforeCombatQueue = (state, onUpdate) => {
 
 export const renderGame = (state, callbacks = {}) => {
   latestState = state;
+  latestCallbacks = callbacks;
   initNavigation();
   initHandPreview();
 
@@ -1449,12 +1522,8 @@ export const renderGame = (state, callbacks = {}) => {
   renderField(state, activeIndex, false, (card) =>
     handleAttackSelection(state, card, callbacks.onUpdate)
   );
-  renderHand(
-    state,
-    (card) => handlePlayCard(state, card, callbacks.onUpdate),
-    callbacks.onUpdate,
-    passPending
-  );
+  renderHand(state, () => updateActionPanel(state, callbacks), callbacks.onUpdate, passPending);
+  updateActionPanel(state, callbacks);
   updateActionBar(callbacks.onNextPhase);
   appendLog(state);
   processBeforeCombatQueue(state, callbacks.onUpdate);
