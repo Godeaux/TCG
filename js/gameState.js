@@ -46,6 +46,10 @@ export const createGameState = () => {
       rolls: [null, null],
       winnerIndex: null,
     },
+    deckSelection: {
+      stage: "p1",
+      selections: [null, null],
+    },
     deckBuilder: {
       stage: "p1",
       selections: [[], []],

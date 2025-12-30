@@ -30,6 +30,10 @@ const setupTitle = document.getElementById("setup-title");
 const setupSubtitle = document.getElementById("setup-subtitle");
 const setupRolls = document.getElementById("setup-rolls");
 const setupActions = document.getElementById("setup-actions");
+const deckSelectOverlay = document.getElementById("deck-select-overlay");
+const deckSelectTitle = document.getElementById("deck-select-title");
+const deckSelectSubtitle = document.getElementById("deck-select-subtitle");
+const deckSelectGrid = document.getElementById("deck-select-grid");
 const deckOverlay = document.getElementById("deck-overlay");
 const deckTitle = document.getElementById("deck-title");
 const deckStatus = document.getElementById("deck-status");
@@ -57,6 +61,44 @@ let latestCallbacks = {};
 const TOTAL_PAGES = 2;
 let handPreviewInitialized = false;
 let selectedHandCardId = null;
+
+const DECK_OPTIONS = [
+  {
+    id: "fish",
+    name: "Fish",
+    emoji: "🐟",
+    panelClass: "deck-select-panel--fish",
+    available: true,
+  },
+  {
+    id: "bird",
+    name: "Bird",
+    emoji: "🐦",
+    panelClass: "deck-select-panel--bird",
+    available: false,
+  },
+  {
+    id: "mammal",
+    name: "Mammal",
+    emoji: "🐻",
+    panelClass: "deck-select-panel--mammal",
+    available: false,
+  },
+  {
+    id: "reptile",
+    name: "Reptile",
+    emoji: "🦎",
+    panelClass: "deck-select-panel--reptile",
+    available: false,
+  },
+  {
+    id: "amphibian",
+    name: "Amphibian",
+    emoji: "🐸",
+    panelClass: "deck-select-panel--amphibian",
+    available: false,
+  },
+];
 
 const clearPanel = (panel) => {
   if (!panel) {
@@ -1234,11 +1276,62 @@ const updateDeckTabs = () => {
   });
 };
 
+const renderDeckSelectionOverlay = (state, callbacks) => {
+  if (!state.deckSelection || state.deckSelection.stage === "complete") {
+    deckSelectOverlay?.classList.remove("active");
+    deckSelectOverlay?.setAttribute("aria-hidden", "true");
+    return;
+  }
+
+  deckSelectOverlay?.classList.add("active");
+  deckSelectOverlay?.setAttribute("aria-hidden", "false");
+
+  const isPlayerOne = state.deckSelection.stage === "p1";
+  const playerIndex = isPlayerOne ? 0 : 1;
+  const player = state.players[playerIndex];
+  if (deckSelectTitle) {
+    deckSelectTitle.textContent = `${player.name} Deck Selection`;
+  }
+  if (deckSelectSubtitle) {
+    deckSelectSubtitle.textContent = `Choose the animal category for ${player.name}.`;
+  }
+  clearPanel(deckSelectGrid);
+
+  DECK_OPTIONS.forEach((option) => {
+    const panel = document.createElement("button");
+    panel.type = "button";
+    panel.className = `deck-select-panel ${option.panelClass} ${
+      option.available ? "" : "disabled"
+    }`;
+    panel.disabled = !option.available;
+    panel.innerHTML = `
+      <div class="deck-emoji">${option.emoji}</div>
+      <div class="deck-name">${option.name}</div>
+      <div class="deck-status">${option.available ? "Available now" : "Not implemented"}</div>
+      <div class="deck-meta">${option.available ? "Select deck" : "Coming soon"}</div>
+    `;
+    if (option.available) {
+      panel.onclick = () => {
+        state.deckSelection.selections[playerIndex] = option.id;
+        state.deckSelection.stage = "complete";
+        logMessage(state, `${player.name} selected the ${option.name} deck.`);
+        callbacks.onUpdate?.();
+      };
+    }
+    deckSelectGrid?.appendChild(panel);
+  });
+};
+
 const renderDeckBuilderOverlay = (state, callbacks) => {
   if (!state.deckBuilder || state.deckBuilder.stage === "complete") {
     deckOverlay.classList.remove("active");
     deckOverlay.setAttribute("aria-hidden", "true");
     deckHighlighted = null;
+    return;
+  }
+  if (state.deckSelection?.stage !== "complete") {
+    deckOverlay.classList.remove("active");
+    deckOverlay.setAttribute("aria-hidden", "true");
     return;
   }
 
@@ -1362,7 +1455,10 @@ const renderSetupOverlay = (state, callbacks) => {
     setupOverlay.setAttribute("aria-hidden", "true");
     return;
   }
-  if (state.deckBuilder?.stage !== "complete") {
+  if (
+    state.deckSelection?.stage !== "complete" ||
+    state.deckBuilder?.stage !== "complete"
+  ) {
     setupOverlay.classList.remove("active");
     setupOverlay.setAttribute("aria-hidden", "true");
     return;
@@ -1599,10 +1695,11 @@ export const renderGame = (state, callbacks = {}) => {
   const opponentIndex = (state.activePlayerIndex + 1) % 2;
   const passPending = Boolean(state.passPending);
   const setupPending = state.setup?.stage !== "complete";
+  const deckSelectionPending = state.deckSelection?.stage !== "complete";
   const deckBuilding = state.deckBuilder?.stage !== "complete";
   document.body.classList.toggle("deck-building", deckBuilding);
   document.documentElement.classList.toggle("deck-building", deckBuilding);
-  updateIndicators(state, passPending || setupPending || deckBuilding);
+  updateIndicators(state, passPending || setupPending || deckSelectionPending || deckBuilding);
   updatePlayerStats(state, 0, "player1");
   updatePlayerStats(state, 1, "player2");
   renderField(state, opponentIndex, true, null);
@@ -1626,6 +1723,7 @@ export const renderGame = (state, callbacks = {}) => {
     passOverlay.setAttribute("aria-hidden", "true");
   }
 
+  renderDeckSelectionOverlay(state, callbacks);
   renderSetupOverlay(state, callbacks);
   renderDeckBuilderOverlay(state, callbacks);
 
