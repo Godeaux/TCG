@@ -1033,7 +1033,7 @@ const handlePlayCard = (state, card, onUpdate) => {
               slot && (slot.type === "Prey" || (slot.type === "Predator" && isEdible(slot)))
           )
         : [];
-      if (ediblePrey.length > 0 || availableCarrion.length > 0) {
+      const startConsumptionSelection = () => {
         pendingConsumption = {
           predator: creature,
           playerIndex: state.activePlayerIndex,
@@ -1129,12 +1129,52 @@ const handlePlayCard = (state, card, onUpdate) => {
           },
         });
         onUpdate?.();
+      };
+
+      if (ediblePrey.length > 0 || availableCarrion.length > 0) {
+        const items = [];
+        const dryDropButton = document.createElement("button");
+        dryDropButton.className = "secondary";
+        dryDropButton.textContent = "Dry drop";
+        dryDropButton.onclick = () => {
+          if (emptySlot === -1) {
+            logMessage(state, "You must consume a field prey to make room.");
+            onUpdate?.();
+            return;
+          }
+          player.field[emptySlot] = creature;
+          creature.dryDropped = true;
+          logMessage(state, `${creature.name} enters play with no consumption.`);
+          clearSelectionPanel();
+          triggerPlayTraps(state, creature, onUpdate, () => {
+            if (!isFree) {
+              state.cardPlayedThisTurn = true;
+            }
+            onUpdate?.();
+          });
+        };
+        items.push(dryDropButton);
+
+        const consumeButton = document.createElement("button");
+        consumeButton.textContent = "Consume";
+        consumeButton.onclick = () => {
+          clearSelectionPanel();
+          startConsumptionSelection();
+        };
+        items.push(consumeButton);
+
+        renderSelectionPanel({
+          title: "Play predator",
+          items,
+          confirmLabel: null,
+        });
+        onUpdate?.();
         return;
       }
     }
 
     player.field[emptySlot] = creature;
-    if (card.type === "Predator" && creature.onConsume) {
+    if (card.type === "Predator") {
       logMessage(state, `${creature.name} enters play with no consumption.`);
       creature.dryDropped = true;
     }
