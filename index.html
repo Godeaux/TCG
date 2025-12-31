@@ -47,6 +47,7 @@
         </div>
         <div class="deck-inspector" id="deck-inspector"></div>
         <div class="deck-actions">
+          <button class="deck-save" id="deck-save" type="button">Save Deck</button>
           <button class="deck-random" id="deck-random" type="button">Random</button>
           <button class="btn-primary" id="deck-confirm" type="button">Confirm Deck</button>
         </div>
@@ -69,6 +70,102 @@
         <h2 id="pass-title">Pass to Player 2</h2>
         <p>Hand the device to the next player, then tap OK when ready.</p>
         <button class="btn-primary" id="pass-confirm">OK</button>
+      </div>
+    </div>
+
+    <div class="overlay menu-overlay" id="menu-overlay" aria-hidden="true">
+      <div class="overlay-content menu-card">
+        <div class="menu-header">
+          <div class="menu-icon">🍽️</div>
+          <div>
+            <h2>Food Chain TCG</h2>
+            <p class="muted">Choose how you want to play.</p>
+          </div>
+        </div>
+        <div class="menu-status" id="menu-status"></div>
+        <div class="menu-actions">
+          <button class="btn-primary" id="menu-play">Play (one device)</button>
+          <button class="btn-secondary" id="menu-login">Login</button>
+          <button class="btn-secondary" id="menu-catalog" disabled>Catalog</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay login-overlay" id="login-overlay" aria-hidden="true">
+      <div class="overlay-content menu-card login-card">
+        <div class="menu-header">
+          <div class="menu-icon">🔐</div>
+          <div>
+            <h2>Quick Login</h2>
+            <p class="muted">Enter a username to save decks and join lobbies.</p>
+          </div>
+        </div>
+        <form class="menu-form" id="login-form">
+          <label class="menu-label" for="login-username">Username</label>
+          <input
+            class="menu-input"
+            id="login-username"
+            name="username"
+            autocomplete="username"
+            placeholder="e.g. KrakenQueen"
+            required
+          />
+          <div class="menu-error" id="login-error" role="alert"></div>
+          <div class="menu-actions">
+            <button class="btn-primary" type="submit" id="login-submit">Continue</button>
+            <button class="btn-secondary" type="button" id="login-cancel">Back</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="overlay multiplayer-overlay" id="multiplayer-overlay" aria-hidden="true">
+      <div class="overlay-content menu-card">
+        <div class="menu-header">
+          <div class="menu-icon">🌐</div>
+          <div>
+            <h2>Multiplayer</h2>
+            <p class="muted">Create or join a lobby with a friend.</p>
+          </div>
+        </div>
+        <div class="menu-actions">
+          <button class="btn-primary" id="lobby-create">Create Lobby</button>
+          <button class="btn-secondary" id="lobby-join">Join Lobby</button>
+          <button class="btn-secondary" id="multiplayer-back">Back</button>
+        </div>
+        <form class="menu-form" id="lobby-join-form">
+          <label class="menu-label" for="lobby-code">Lobby Code</label>
+          <input
+            class="menu-input"
+            id="lobby-code"
+            name="code"
+            autocomplete="off"
+            placeholder="ABC123"
+          />
+          <div class="menu-error" id="lobby-error" role="alert"></div>
+          <div class="menu-actions">
+            <button class="btn-primary" type="submit">Join</button>
+            <button class="btn-secondary" type="button" id="lobby-join-cancel">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="overlay lobby-overlay" id="lobby-overlay" aria-hidden="true">
+      <div class="overlay-content menu-card">
+        <div class="menu-header">
+          <div class="menu-icon">🧩</div>
+          <div>
+            <h2>Lobby</h2>
+            <p class="muted" id="lobby-status">Waiting for opponent...</p>
+          </div>
+        </div>
+        <div class="lobby-code" id="lobby-code-display">----</div>
+        <div class="menu-actions">
+          <button class="btn-primary" id="lobby-continue">Continue to Game</button>
+          <button class="btn-secondary" id="lobby-leave">Leave Lobby</button>
+        </div>
+        <div class="menu-error" id="lobby-live-error" role="alert"></div>
       </div>
     </div>
 

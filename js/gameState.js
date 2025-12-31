@@ -49,6 +49,14 @@ export const createGameState = () => {
       available: [[], []],
       catalogOrder: [[], []],
     },
+    menu: {
+      stage: "main",
+      mode: null,
+      profile: null,
+      lobby: null,
+      error: null,
+      loading: false,
+    },
     log: [],
     combat: {
       declaredAttacks: [],

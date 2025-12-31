@@ -17,6 +17,16 @@ import {
 } from "./keywords.js";
 import { resolveEffectResult } from "./effects.js";
 import { deckCatalogs } from "./cards.js";
+import {
+  signInWithUsername,
+  fetchProfile,
+  saveDeck,
+  createLobby,
+  joinLobbyByCode,
+  closeLobby,
+  subscribeToLobby,
+  unsubscribeChannel,
+} from "./supabaseApi.js";
 
 const selectionPanel = document.getElementById("selection-panel");
 const actionBar = document.getElementById("action-bar");
@@ -49,6 +59,32 @@ const navLeft = document.getElementById("nav-left");
 const navRight = document.getElementById("nav-right");
 const infoToggle = document.getElementById("info-toggle");
 const infoBack = document.getElementById("info-back");
+const menuOverlay = document.getElementById("menu-overlay");
+const menuStatus = document.getElementById("menu-status");
+const menuPlay = document.getElementById("menu-play");
+const menuLogin = document.getElementById("menu-login");
+const menuCatalog = document.getElementById("menu-catalog");
+const loginOverlay = document.getElementById("login-overlay");
+const loginForm = document.getElementById("login-form");
+const loginUsername = document.getElementById("login-username");
+const loginError = document.getElementById("login-error");
+const loginCancel = document.getElementById("login-cancel");
+const loginSubmit = document.getElementById("login-submit");
+const multiplayerOverlay = document.getElementById("multiplayer-overlay");
+const lobbyCreate = document.getElementById("lobby-create");
+const lobbyJoin = document.getElementById("lobby-join");
+const lobbyJoinForm = document.getElementById("lobby-join-form");
+const lobbyJoinCancel = document.getElementById("lobby-join-cancel");
+const lobbyCodeInput = document.getElementById("lobby-code");
+const lobbyError = document.getElementById("lobby-error");
+const multiplayerBack = document.getElementById("multiplayer-back");
+const lobbyOverlay = document.getElementById("lobby-overlay");
+const lobbyStatus = document.getElementById("lobby-status");
+const lobbyCodeDisplay = document.getElementById("lobby-code-display");
+const lobbyContinue = document.getElementById("lobby-continue");
+const lobbyLeave = document.getElementById("lobby-leave");
+const lobbyLiveError = document.getElementById("lobby-live-error");
+const deckSave = document.getElementById("deck-save");
 
 let pendingConsumption = null;
 let pendingAttack = null;
@@ -62,6 +98,9 @@ let latestCallbacks = {};
 const TOTAL_PAGES = 2;
 let handPreviewInitialized = false;
 let selectedHandCardId = null;
+let lobbyChannel = null;
+let profileLoaded = false;
+let activeLobbyId = null;
 
 const DECK_OPTIONS = [
   {
@@ -108,6 +147,29 @@ const clearPanel = (panel) => {
   panel.innerHTML = "";
 };
 
+const setMenuError = (state, message) => {
+  state.menu.error = message;
+};
+
+const updateMenuStatus = (state) => {
+  if (!menuStatus) {
+    return;
+  }
+  if (state.menu.loading) {
+    menuStatus.textContent = "Connecting to Supabase...";
+    return;
+  }
+  if (state.menu.error) {
+    menuStatus.textContent = state.menu.error;
+    return;
+  }
+  if (state.menu.profile?.username) {
+    menuStatus.textContent = `Logged in as ${state.menu.profile.username}.`;
+    return;
+  }
+  menuStatus.textContent = "Not logged in yet. Login to save decks or join lobbies.";
+};
+
 const updateHandOverlap = (handGrid) => {
   if (!handGrid) {
     return;
@@ -128,6 +190,199 @@ const updateHandOverlap = (handGrid) => {
   const maxOverlap = cardWidth * 0.45;
   const overlap = Math.min(Math.max(overlapNeeded, 0), maxOverlap);
   handGrid.style.setProperty("--hand-overlap", `${overlap}px`);
+};
+
+const setMenuStage = (state, stage) => {
+  state.menu.stage = stage;
+  state.menu.error = null;
+};
+
+const applyMenuLoading = (state, isLoading) => {
+  state.menu.loading = isLoading;
+};
+
+const ensureProfileLoaded = async (state) => {
+  if (profileLoaded) {
+    return;
+  }
+  profileLoaded = true;
+  applyMenuLoading(state, true);
+  latestCallbacks.onUpdate?.();
+  try {
+    const profile = await fetchProfile();
+    if (profile) {
+      state.menu.profile = profile;
+      state.players[0].name = profile.username;
+    } else {
+      state.menu.profile = null;
+    }
+  } catch (error) {
+    state.menu.profile = null;
+    setMenuError(state, error.message || "Unable to load profile.");
+  } finally {
+    applyMenuLoading(state, false);
+    latestCallbacks.onUpdate?.();
+  }
+};
+
+const handleLoginSubmit = async (state) => {
+  const username = loginUsername?.value ?? "";
+  applyMenuLoading(state, true);
+  setMenuError(state, null);
+  if (loginError) {
+    loginError.textContent = "";
+  }
+  latestCallbacks.onUpdate?.();
+  try {
+    const profile = await signInWithUsername(username);
+    state.menu.profile = profile;
+    state.players[0].name = profile.username;
+    setMenuStage(state, "main");
+    if (loginUsername) {
+      loginUsername.value = "";
+    }
+  } catch (error) {
+    const message = error.message || "Login failed.";
+    setMenuError(state, message);
+    if (loginError) {
+      loginError.textContent = message;
+    }
+  } finally {
+    applyMenuLoading(state, false);
+    latestCallbacks.onUpdate?.();
+  }
+};
+
+const handleCreateLobby = async (state) => {
+  if (!state.menu.profile) {
+    setMenuError(state, "Login required to create a lobby.");
+    return;
+  }
+  applyMenuLoading(state, true);
+  setMenuError(state, null);
+  if (lobbyError) {
+    lobbyError.textContent = "";
+  }
+  latestCallbacks.onUpdate?.();
+  try {
+    const lobby = await createLobby({ hostId: state.menu.profile.id });
+    state.menu.lobby = lobby;
+    setMenuStage(state, "lobby");
+  } catch (error) {
+    const message = error.message || "Failed to create lobby.";
+    setMenuError(state, message);
+    if (lobbyError) {
+      lobbyError.textContent = message;
+    }
+  } finally {
+    applyMenuLoading(state, false);
+    latestCallbacks.onUpdate?.();
+  }
+};
+
+const handleJoinLobby = async (state) => {
+  if (!state.menu.profile) {
+    setMenuError(state, "Login required to join a lobby.");
+    return;
+  }
+  const code = lobbyCodeInput?.value ?? "";
+  applyMenuLoading(state, true);
+  setMenuError(state, null);
+  if (lobbyError) {
+    lobbyError.textContent = "";
+  }
+  latestCallbacks.onUpdate?.();
+  try {
+    const lobby = await joinLobbyByCode({ code, guestId: state.menu.profile.id });
+    state.menu.lobby = lobby;
+    setMenuStage(state, "lobby");
+  } catch (error) {
+    const message = error.message || "Failed to join lobby.";
+    setMenuError(state, message);
+    if (lobbyError) {
+      lobbyError.textContent = message;
+    }
+  } finally {
+    applyMenuLoading(state, false);
+    latestCallbacks.onUpdate?.();
+  }
+};
+
+const handleLeaveLobby = async (state) => {
+  if (!state.menu.lobby || !state.menu.profile) {
+    setMenuStage(state, "multiplayer");
+    state.menu.lobby = null;
+    return;
+  }
+  applyMenuLoading(state, true);
+  setMenuError(state, null);
+  latestCallbacks.onUpdate?.();
+  try {
+    await closeLobby({ lobbyId: state.menu.lobby.id, userId: state.menu.profile.id });
+  } catch (error) {
+    const message = error.message || "Failed to leave lobby.";
+    setMenuError(state, message);
+    if (lobbyLiveError) {
+      lobbyLiveError.textContent = message;
+    }
+  } finally {
+    state.menu.lobby = null;
+    applyMenuLoading(state, false);
+    setMenuStage(state, "multiplayer");
+    latestCallbacks.onUpdate?.();
+  }
+};
+
+const updateLobbySubscription = (state) => {
+  const lobbyId = state.menu.lobby?.id ?? null;
+  if (activeLobbyId === lobbyId) {
+    return;
+  }
+  activeLobbyId = lobbyId;
+  if (lobbyChannel) {
+    unsubscribeChannel(lobbyChannel);
+    lobbyChannel = null;
+  }
+  if (!lobbyId) {
+    return;
+  }
+  lobbyChannel = subscribeToLobby({
+    lobbyId,
+    onUpdate: (lobby) => {
+      state.menu.lobby = lobby;
+      latestCallbacks.onUpdate?.();
+    },
+  });
+};
+
+const handleSaveDeck = async (state, playerIndex, selections) => {
+  if (!state.menu.profile) {
+    setMenuError(state, "Login required to save decks.");
+    return;
+  }
+  const deckName = window.prompt("Deck name:", `${state.players[playerIndex].name}'s Deck`);
+  if (!deckName) {
+    return;
+  }
+  applyMenuLoading(state, true);
+  setMenuError(state, null);
+  latestCallbacks.onUpdate?.();
+  try {
+    const deckPayload = selections.map((card) => card.id);
+    await saveDeck({
+      ownerId: state.menu.profile.id,
+      name: deckName,
+      deck: deckPayload,
+    });
+    logMessage(state, `Saved deck "${deckName}" to your account.`);
+  } catch (error) {
+    const message = error.message || "Failed to save deck.";
+    setMenuError(state, message);
+    logMessage(state, message);
+  } finally {
+    applyMenuLoading(state, false);
+    latestCallbacks.onUpdate?.();
+  }
 };
 
 const updateActionPanel = (state, callbacks = {}) => {
@@ -1327,6 +1582,11 @@ const isDeckSelectionComplete = (state) =>
 const cloneDeckCatalog = (deck) => deck.map((card) => ({ ...card }));
 
 const renderDeckSelectionOverlay = (state, callbacks) => {
+  if (state.menu?.stage !== "ready") {
+    deckSelectOverlay?.classList.remove("active");
+    deckSelectOverlay?.setAttribute("aria-hidden", "true");
+    return;
+  }
   if (!state.deckSelection || !["p1", "p2"].includes(state.deckSelection.stage)) {
     deckSelectOverlay?.classList.remove("active");
     deckSelectOverlay?.setAttribute("aria-hidden", "true");
@@ -1377,6 +1637,11 @@ const renderDeckSelectionOverlay = (state, callbacks) => {
 };
 
 const renderDeckBuilderOverlay = (state, callbacks) => {
+  if (state.menu?.stage !== "ready") {
+    deckOverlay.classList.remove("active");
+    deckOverlay.setAttribute("aria-hidden", "true");
+    return;
+  }
   if (!state.deckBuilder || state.deckBuilder.stage === "complete") {
     deckOverlay.classList.remove("active");
     deckOverlay.setAttribute("aria-hidden", "true");
@@ -1490,6 +1755,12 @@ const renderDeckBuilderOverlay = (state, callbacks) => {
     callbacks.onUpdate?.();
   };
 
+  if (deckSave) {
+    deckSave.classList.toggle("hidden", !state.menu.profile);
+    deckSave.disabled = !hasValidCount || !preyRuleValid || state.menu.loading;
+    deckSave.onclick = () => handleSaveDeck(state, playerIndex, selected);
+  }
+
   if (deckRandom) {
     deckRandom.onclick = () => {
       buildRandomDeck({
@@ -1505,6 +1776,11 @@ const renderDeckBuilderOverlay = (state, callbacks) => {
 };
 
 const renderSetupOverlay = (state, callbacks) => {
+  if (state.menu?.stage !== "ready") {
+    setupOverlay.classList.remove("active");
+    setupOverlay.setAttribute("aria-hidden", "true");
+    return;
+  }
   if (!state.setup || state.setup.stage === "complete") {
     setupOverlay.classList.remove("active");
     setupOverlay.setAttribute("aria-hidden", "true");
@@ -1582,6 +1858,101 @@ const renderSetupOverlay = (state, callbacks) => {
   }
 };
 
+const renderMenuOverlays = (state) => {
+  if (!state.menu) {
+    return;
+  }
+  updateMenuStatus(state);
+
+  const stage = state.menu.stage;
+  const showMain = stage === "main";
+  const showLogin = stage === "login";
+  const showMultiplayer = stage === "multiplayer";
+  const showLobby = stage === "lobby";
+
+  menuOverlay?.classList.toggle("active", showMain);
+  menuOverlay?.setAttribute("aria-hidden", showMain ? "false" : "true");
+
+  loginOverlay?.classList.toggle("active", showLogin);
+  loginOverlay?.setAttribute("aria-hidden", showLogin ? "false" : "true");
+
+  multiplayerOverlay?.classList.toggle("active", showMultiplayer);
+  multiplayerOverlay?.setAttribute("aria-hidden", showMultiplayer ? "false" : "true");
+
+  lobbyOverlay?.classList.toggle("active", showLobby);
+  lobbyOverlay?.setAttribute("aria-hidden", showLobby ? "false" : "true");
+
+  if (!showMultiplayer) {
+    lobbyJoinForm?.classList.remove("active");
+  }
+  if (showLogin) {
+    loginUsername?.focus();
+  }
+
+  if (menuLogin) {
+    menuLogin.textContent = state.menu.profile ? "Multiplayer" : "Login";
+  }
+  if (menuPlay) {
+    menuPlay.disabled = state.menu.loading;
+  }
+  if (menuLogin) {
+    menuLogin.disabled = state.menu.loading;
+  }
+  if (menuCatalog) {
+    menuCatalog.disabled = true;
+  }
+
+  if (loginSubmit) {
+    loginSubmit.disabled = state.menu.loading;
+  }
+  if (lobbyCreate) {
+    lobbyCreate.disabled = state.menu.loading;
+  }
+  if (lobbyJoin) {
+    lobbyJoin.disabled = state.menu.loading;
+  }
+  if (lobbyJoinCancel) {
+    lobbyJoinCancel.disabled = state.menu.loading;
+  }
+  if (multiplayerBack) {
+    multiplayerBack.disabled = state.menu.loading;
+  }
+  if (loginError) {
+    loginError.textContent = state.menu.error ?? "";
+  }
+  if (lobbyError) {
+    lobbyError.textContent = state.menu.error ?? "";
+  }
+  if (lobbyLiveError) {
+    lobbyLiveError.textContent = state.menu.error ?? "";
+  }
+
+  if (lobbyStatus) {
+    const lobby = state.menu.lobby;
+    if (!lobby) {
+      lobbyStatus.textContent = "Waiting for opponent...";
+    } else if (lobby.status === "full") {
+      lobbyStatus.textContent = "Opponent joined. Ready to start.";
+    } else if (lobby.status === "closed") {
+      lobbyStatus.textContent = "Lobby closed.";
+    } else {
+      lobbyStatus.textContent = "Waiting for opponent...";
+    }
+  }
+  if (lobbyCodeDisplay) {
+    lobbyCodeDisplay.textContent = state.menu.lobby?.code ?? "----";
+  }
+  if (lobbyContinue) {
+    const lobbyClosed = state.menu.lobby?.status === "closed";
+    lobbyContinue.disabled = state.menu.loading || lobbyClosed;
+  }
+  if (lobbyLeave) {
+    lobbyLeave.disabled = state.menu.loading;
+  }
+
+  updateLobbySubscription(state);
+};
+
 const updateNavButtons = () => {
   if (navLeft) {
     navLeft.disabled = currentPage === 0;
@@ -1630,6 +2001,97 @@ const initNavigation = () => {
       deckActiveTab = tab.dataset.tab;
       updateDeckTabs();
     });
+  });
+
+  menuPlay?.addEventListener("click", () => {
+    if (!latestState) {
+      return;
+    }
+    latestState.menu.mode = "local";
+    setMenuStage(latestState, "ready");
+    latestCallbacks.onUpdate?.();
+  });
+
+  menuLogin?.addEventListener("click", () => {
+    if (!latestState) {
+      return;
+    }
+    if (latestState.menu.profile) {
+      setMenuStage(latestState, "multiplayer");
+    } else {
+      setMenuStage(latestState, "login");
+    }
+    latestCallbacks.onUpdate?.();
+  });
+
+  loginForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!latestState) {
+      return;
+    }
+    handleLoginSubmit(latestState);
+  });
+
+  loginCancel?.addEventListener("click", () => {
+    if (!latestState) {
+      return;
+    }
+    setMenuStage(latestState, "main");
+    latestCallbacks.onUpdate?.();
+  });
+
+  lobbyCreate?.addEventListener("click", () => {
+    if (!latestState) {
+      return;
+    }
+    handleCreateLobby(latestState);
+  });
+
+  lobbyJoin?.addEventListener("click", () => {
+    if (!latestState) {
+      return;
+    }
+    lobbyJoinForm?.classList.add("active");
+    lobbyCodeInput?.focus();
+  });
+
+  lobbyJoinCancel?.addEventListener("click", () => {
+    lobbyJoinForm?.classList.remove("active");
+    if (lobbyError) {
+      lobbyError.textContent = "";
+    }
+  });
+
+  lobbyJoinForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!latestState) {
+      return;
+    }
+    handleJoinLobby(latestState);
+  });
+
+  multiplayerBack?.addEventListener("click", () => {
+    if (!latestState) {
+      return;
+    }
+    setMenuStage(latestState, "main");
+    latestCallbacks.onUpdate?.();
+  });
+
+  lobbyContinue?.addEventListener("click", () => {
+    if (!latestState) {
+      return;
+    }
+    latestState.menu.mode = "online";
+    setMenuStage(latestState, "ready");
+    latestCallbacks.onUpdate?.();
+  });
+
+  lobbyLeave?.addEventListener("click", () => {
+    if (!latestState) {
+      return;
+    }
+    handleLeaveLobby(latestState);
   });
 
   updateNavButtons();
@@ -1745,6 +2207,7 @@ export const renderGame = (state, callbacks = {}) => {
   latestCallbacks = callbacks;
   initNavigation();
   initHandPreview();
+  ensureProfileLoaded(state);
 
   const activeIndex = state.activePlayerIndex;
   const opponentIndex = (state.activePlayerIndex + 1) % 2;
@@ -1752,9 +2215,13 @@ export const renderGame = (state, callbacks = {}) => {
   const setupPending = state.setup?.stage !== "complete";
   const deckSelectionPending = !isDeckSelectionComplete(state);
   const deckBuilding = state.deckBuilder?.stage !== "complete";
+  const menuPending = state.menu?.stage !== "ready";
   document.body.classList.toggle("deck-building", deckBuilding);
   document.documentElement.classList.toggle("deck-building", deckBuilding);
-  updateIndicators(state, passPending || setupPending || deckSelectionPending || deckBuilding);
+  updateIndicators(
+    state,
+    passPending || setupPending || deckSelectionPending || deckBuilding || menuPending
+  );
   updatePlayerStats(state, 0, "player1");
   updatePlayerStats(state, 1, "player2");
   renderField(state, opponentIndex, true, null);
@@ -1781,6 +2248,7 @@ export const renderGame = (state, callbacks = {}) => {
   renderDeckSelectionOverlay(state, callbacks);
   renderSetupOverlay(state, callbacks);
   renderDeckBuilderOverlay(state, callbacks);
+  renderMenuOverlays(state);
 
   const inspectedCard = state.players
     .flatMap((player) => player.field.concat(player.hand))
