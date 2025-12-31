@@ -17,16 +17,8 @@ import {
 } from "./keywords.js";
 import { resolveEffectResult } from "./effects.js";
 import { deckCatalogs } from "./cards.js";
-import {
-  signInWithUsername,
-  fetchProfile,
-  saveDeck,
-  createLobby,
-  joinLobbyByCode,
-  closeLobby,
-  subscribeToLobby,
-  unsubscribeChannel,
-} from "./supabaseApi.js";
+let supabaseApi = null;
+let supabaseLoadError = null;
 
 const selectionPanel = document.getElementById("selection-panel");
 const actionBar = document.getElementById("action-bar");
@@ -151,6 +143,27 @@ const setMenuError = (state, message) => {
   state.menu.error = message;
 };
 
+const loadSupabaseApi = async (state) => {
+  if (supabaseApi) {
+    return supabaseApi;
+  }
+  if (supabaseLoadError) {
+    throw supabaseLoadError;
+  }
+  try {
+    supabaseApi = await import("./supabaseApi.js");
+    return supabaseApi;
+  } catch (error) {
+    supabaseLoadError = error;
+    const message =
+      error?.message?.includes("Failed to fetch")
+        ? "Supabase failed to load. Check your connection."
+        : "Supabase failed to load.";
+    setMenuError(state, message);
+    throw error;
+  }
+};
+
 const updateMenuStatus = (state) => {
   if (!menuStatus) {
     return;
@@ -209,7 +222,8 @@ const ensureProfileLoaded = async (state) => {
   applyMenuLoading(state, true);
   latestCallbacks.onUpdate?.();
   try {
-    const profile = await fetchProfile();
+    const api = await loadSupabaseApi(state);
+    const profile = await api.fetchProfile();
     if (profile) {
       state.menu.profile = profile;
       state.players[0].name = profile.username;
@@ -234,7 +248,8 @@ const handleLoginSubmit = async (state) => {
   }
   latestCallbacks.onUpdate?.();
   try {
-    const profile = await signInWithUsername(username);
+    const api = await loadSupabaseApi(state);
+    const profile = await api.signInWithUsername(username);
     state.menu.profile = profile;
     state.players[0].name = profile.username;
     setMenuStage(state, "main");
@@ -265,9 +280,11 @@ const handleCreateLobby = async (state) => {
   }
   latestCallbacks.onUpdate?.();
   try {
-    const lobby = await createLobby({ hostId: state.menu.profile.id });
+    const api = await loadSupabaseApi(state);
+    const lobby = await api.createLobby({ hostId: state.menu.profile.id });
     state.menu.lobby = lobby;
     setMenuStage(state, "lobby");
+    updateLobbySubscription(state);
   } catch (error) {
     const message = error.message || "Failed to create lobby.";
     setMenuError(state, message);
@@ -293,9 +310,11 @@ const handleJoinLobby = async (state) => {
   }
   latestCallbacks.onUpdate?.();
   try {
-    const lobby = await joinLobbyByCode({ code, guestId: state.menu.profile.id });
+    const api = await loadSupabaseApi(state);
+    const lobby = await api.joinLobbyByCode({ code, guestId: state.menu.profile.id });
     state.menu.lobby = lobby;
     setMenuStage(state, "lobby");
+    updateLobbySubscription(state);
   } catch (error) {
     const message = error.message || "Failed to join lobby.";
     setMenuError(state, message);
@@ -312,13 +331,15 @@ const handleLeaveLobby = async (state) => {
   if (!state.menu.lobby || !state.menu.profile) {
     setMenuStage(state, "multiplayer");
     state.menu.lobby = null;
+    updateLobbySubscription(state);
     return;
   }
   applyMenuLoading(state, true);
   setMenuError(state, null);
   latestCallbacks.onUpdate?.();
   try {
-    await closeLobby({ lobbyId: state.menu.lobby.id, userId: state.menu.profile.id });
+    const api = await loadSupabaseApi(state);
+    await api.closeLobby({ lobbyId: state.menu.lobby.id, userId: state.menu.profile.id });
   } catch (error) {
     const message = error.message || "Failed to leave lobby.";
     setMenuError(state, message);
@@ -329,6 +350,7 @@ const handleLeaveLobby = async (state) => {
     state.menu.lobby = null;
     applyMenuLoading(state, false);
     setMenuStage(state, "multiplayer");
+    updateLobbySubscription(state);
     latestCallbacks.onUpdate?.();
   }
 };
@@ -340,13 +362,16 @@ const updateLobbySubscription = (state) => {
   }
   activeLobbyId = lobbyId;
   if (lobbyChannel) {
-    unsubscribeChannel(lobbyChannel);
+    supabaseApi?.unsubscribeChannel?.(lobbyChannel);
     lobbyChannel = null;
   }
   if (!lobbyId) {
     return;
   }
-  lobbyChannel = subscribeToLobby({
+  if (!supabaseApi) {
+    return;
+  }
+  lobbyChannel = supabaseApi.subscribeToLobby({
     lobbyId,
     onUpdate: (lobby) => {
       state.menu.lobby = lobby;
@@ -368,8 +393,9 @@ const handleSaveDeck = async (state, playerIndex, selections) => {
   setMenuError(state, null);
   latestCallbacks.onUpdate?.();
   try {
+    const api = await loadSupabaseApi(state);
     const deckPayload = selections.map((card) => card.id);
-    await saveDeck({
+    await api.saveDeck({
       ownerId: state.menu.profile.id,
       name: deckName,
       deck: deckPayload,
