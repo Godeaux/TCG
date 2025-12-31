@@ -1,4 +1,4 @@
-import { cardCatalog } from "./cards.js";
+import { cardCatalog, branches } from "./cards.js";
 
 const shuffle = (array) => {
   for (let i = array.length - 1; i > 0; i -= 1) {
@@ -45,6 +45,7 @@ export const createGameState = () => {
       selections: [[], []],
       available: catalogCopies,
       catalogOrder,
+      selectedBranch: ["fish", "fish"],
     },
     log: [],
     combat: {

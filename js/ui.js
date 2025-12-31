@@ -14,6 +14,7 @@ import {
   cleanupDestroyed,
 } from "./combat.js";
 import { isFreePlay, isEdible, isPassive, KEYWORD_DESCRIPTIONS } from "./keywords.js";
+import { branches } from "./cards.js";
 
 const selectionPanel = document.getElementById("selection-panel");
 const actionPanel = document.getElementById("action-panel");
@@ -35,6 +36,7 @@ const deckAddedRow = document.getElementById("deck-added-row");
 const deckConfirm = document.getElementById("deck-confirm");
 const deckRandom = document.getElementById("deck-random");
 const deckInspectorPanel = document.getElementById("deck-inspector");
+const branchButtons = document.getElementById("branch-buttons");
 const pagesContainer = document.getElementById("pages-container");
 const mobileTabs = document.getElementById("mobile-tabs");
 const pageDots = document.getElementById("page-dots");
@@ -287,9 +289,9 @@ const buildRandomDeck = ({ available, selected, catalogOrder }) => {
     });
   };
 
-  takeCards((card) => card.type === "predator", 6);
-  takeCards((card) => card.type === "prey", 7);
-  takeCards((card) => ["spell", "freespell", "trap"].includes(card.type), 7);
+  takeCards((card) => card.type === "Predator", 6);
+  takeCards((card) => card.type === "Prey", 7);
+  takeCards((card) => ["Spell", "Free Spell", "Trap"].includes(card.type), 7);
 
   selected.push(...picks);
 };
@@ -799,6 +801,35 @@ const renderDeckBuilderOverlay = (state, callbacks) => {
       Prey: <strong>${preyCount}</strong> • Predators: <strong>${predatorCount}</strong>
     </div>
   `;
+
+  // Render branch selector
+  if (branchButtons) {
+    clearPanel(branchButtons);
+    const selectedBranch = state.deckBuilder.selectedBranch[playerIndex];
+    Object.keys(branches).forEach((branchKey) => {
+      const branch = branches[branchKey];
+      const button = document.createElement("button");
+      button.className = `branch-button ${selectedBranch === branchKey ? "active" : ""}`;
+      button.innerHTML = `
+        <span class="branch-icon">${branch.icon}</span>
+        <span class="branch-name">${branch.name}</span>
+      `;
+      button.onclick = () => {
+        if (selected.length > 0) {
+          logMessage(state, "Clear your deck before switching branches.");
+          callbacks.onUpdate?.();
+          return;
+        }
+        state.deckBuilder.selectedBranch[playerIndex] = branchKey;
+        state.deckBuilder.available[playerIndex] = branches[branchKey].cards.map((card) => ({ ...card }));
+        state.deckBuilder.catalogOrder = branches[branchKey].cards.map((card) => card.id);
+        deckHighlighted = null;
+        setDeckInspectorContent(null);
+        callbacks.onUpdate?.();
+      };
+      branchButtons.appendChild(button);
+    });
+  }
 
   updateDeckTabs();
   clearPanel(deckFullRow);

@@ -492,6 +492,94 @@ const fishCards = [
   },
 ];
 
-export const getStarterDeck = () => [...fishCards];
+const mammalCards = [
+  {
+    id: "mammal-placeholder-1",
+    name: "Placeholder Mammal 1",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: [],
+  },
+  {
+    id: "mammal-placeholder-2",
+    name: "Placeholder Mammal 2",
+    type: "Predator",
+    atk: 2,
+    hp: 2,
+    keywords: [],
+  },
+];
+
+const birdCards = [
+  {
+    id: "bird-placeholder-1",
+    name: "Placeholder Bird 1",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: [],
+  },
+  {
+    id: "bird-placeholder-2",
+    name: "Placeholder Bird 2",
+    type: "Predator",
+    atk: 2,
+    hp: 2,
+    keywords: [],
+  },
+];
+
+const reptileCards = [
+  {
+    id: "reptile-placeholder-1",
+    name: "Placeholder Reptile 1",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: [],
+  },
+  {
+    id: "reptile-placeholder-2",
+    name: "Placeholder Reptile 2",
+    type: "Predator",
+    atk: 2,
+    hp: 2,
+    keywords: [],
+  },
+];
+
+const amphibianCards = [
+  {
+    id: "amphibian-placeholder-1",
+    name: "Placeholder Amphibian 1",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: [],
+  },
+  {
+    id: "amphibian-placeholder-2",
+    name: "Placeholder Amphibian 2",
+    type: "Predator",
+    atk: 2,
+    hp: 2,
+    keywords: [],
+  },
+];
+
+export const branches = {
+  fish: { name: "Fish", cards: fishCards, icon: "🐟" },
+  mammal: { name: "Mammal", cards: mammalCards, icon: "🦁" },
+  bird: { name: "Bird", cards: birdCards, icon: "🦅" },
+  reptile: { name: "Reptile", cards: reptileCards, icon: "🦎" },
+  amphibian: { name: "Amphibian", cards: amphibianCards, icon: "🐸" },
+};
+
+export const getStarterDeck = (branch = "fish") => [...branches[branch].cards];
 
 export const cardCatalog = fishCards;
