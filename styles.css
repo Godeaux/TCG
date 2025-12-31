@@ -841,6 +841,106 @@ button {
   transform: scale(1);
 }
 
+.menu-card {
+  width: min(520px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.menu-header {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.menu-icon {
+  font-size: 32px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-subtle);
+}
+
+.menu-status {
+  font-size: 14px;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-subtle);
+}
+
+.menu-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 600;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.btn-primary:hover:not(:disabled),
+.btn-secondary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+}
+
+.menu-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.multiplayer-overlay .menu-form {
+  display: none;
+}
+
+.multiplayer-overlay .menu-form.active {
+  display: flex;
+}
+
+.menu-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.menu-input {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--text-primary);
+}
+
+.menu-input:focus {
+  outline: 2px solid rgba(240, 208, 120, 0.5);
+  outline-offset: 2px;
+}
+
+.menu-error {
+  min-height: 20px;
+  font-size: 13px;
+  color: #f87171;
+}
+
+.lobby-code {
+  font-family: var(--font-display);
+  font-size: 28px;
+  letter-spacing: 0.2em;
+  text-align: center;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.06);
+}
+
 .deck-select-card {
   display: flex;
   flex-direction: column;
@@ -1054,6 +1154,19 @@ button {
 .deck-actions {
   display: flex;
   gap: 12px;
+}
+
+.deck-save {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.deck-save.hidden {
+  display: none;
 }
 
 .deck-actions .btn-primary {
