@@ -1127,6 +1127,966 @@ const fishCards = [
   },
 ];
 
-export const getStarterDeck = () => [...fishCards];
+const cubanBrownAnoleToken = {
+  id: "token-cuban-brown-anole",
+  name: "Cuban Brown Anole",
+  type: "Prey",
+  atk: 1,
+  hp: 1,
+  nutrition: 1,
+  keywords: [],
+  effectText: "Play Brown Anole.",
+  onPlay: ({ log, playerIndex }) => {
+    log("Cuban Brown Anole summons a Brown Anole.");
+    return { summonTokens: { playerIndex, tokens: [brownAnoleToken] } };
+  },
+};
 
-export const cardCatalog = fishCards;
+const brownAnoleToken = {
+  id: "token-brown-anole",
+  name: "Brown Anole",
+  type: "Prey",
+  atk: 1,
+  hp: 1,
+  nutrition: 1,
+  keywords: [],
+  effectText: "End of turn, play Cuban Brown Anole.",
+  onEnd: ({ log, playerIndex }) => {
+    log("Brown Anole summons a Cuban Brown Anole.");
+    return { summonTokens: { playerIndex, tokens: [cubanBrownAnoleToken] } };
+  },
+};
+
+const europeanGlassLizardToken = {
+  id: "token-european-glass-lizard",
+  name: "European Glass Lizard",
+  type: "Prey",
+  atk: 1,
+  hp: 1,
+  nutrition: 1,
+  keywords: [],
+  effectText: "Slain, become Tailless.",
+  onSlain: ({ log, playerIndex }) => {
+    log("European Glass Lizard is slain and becomes Tailless.");
+    return { summonTokens: { playerIndex, tokens: [taillessToken] } };
+  },
+};
+
+const taillessToken = {
+  id: "token-tailless",
+  name: "Tailless",
+  type: "Prey",
+  atk: 1,
+  hp: 1,
+  nutrition: 1,
+  keywords: [],
+  effectText: "Start of turn, become European Glass Lizard. End of turn, become European Glass Lizard.",
+  transformOnStart: europeanGlassLizardToken,
+  onEnd: ({ log, creature }) => {
+    log("Tailless regrows into a European Glass Lizard.");
+    return { transformCard: { card: creature, newCardData: europeanGlassLizardToken } };
+  },
+};
+
+const lavaLizardToken = {
+  id: "token-lava-lizard",
+  name: "Lava Lizard",
+  type: "Prey",
+  atk: 1,
+  hp: 1,
+  nutrition: 1,
+  keywords: [],
+  effectText: "Deal 1 damage to rival.",
+  onPlay: ({ log }) => {
+    log("Lava Lizard scorches the rival for 1.");
+    return { damageOpponent: 1 };
+  },
+};
+
+const carolinaAnoleToken = {
+  id: "token-carolina-anole",
+  name: "Carolina Anole",
+  type: "Prey",
+  atk: 1,
+  hp: 1,
+  nutrition: 1,
+  keywords: [],
+  effectText: "Add Hand Egg to hand.",
+  onPlay: ({ log, playerIndex }) => {
+    log("Carolina Anole adds Hand Egg to hand.");
+    return { addToHand: { playerIndex, card: handEggCard } };
+  },
+};
+
+const anoleEggToken = {
+  id: "token-anole-egg",
+  name: "Anole Egg",
+  type: "Prey",
+  atk: 0,
+  hp: 1,
+  nutrition: 0,
+  keywords: [],
+  effectText: "Start of turn, become Green Anole.",
+  transformOnStart: {
+    id: "token-green-anole",
+    name: "Green Anole",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: [],
+    effectText: "End of turn, play Carolina Anole.",
+    onEnd: ({ log, playerIndex }) => {
+      log("Green Anole summons Carolina Anole.");
+      return { summonTokens: { playerIndex, tokens: [carolinaAnoleToken] } };
+    },
+  },
+};
+
+const handEggCard = {
+  id: "reptile-free-spell-hand-egg",
+  name: "Hand Egg",
+  type: "Free Spell",
+  effectText: "Play Anole Egg.",
+  effect: ({ log, playerIndex }) => {
+    log("Hand Egg hatches into an Anole Egg.");
+    return { summonTokens: { playerIndex, tokens: [anoleEggToken] } };
+  },
+};
+
+const goldenTeguEggToken = {
+  id: "token-golden-tegu-egg",
+  name: "Golden Tegu Egg",
+  type: "Prey",
+  atk: 0,
+  hp: 1,
+  nutrition: 0,
+  keywords: ["Barrier", "Hidden"],
+  effectText: "Harmless (Not yet implemented). Draw 1. Barrier. Hidden.",
+  onPlay: ({ log }) => {
+    log("Golden Tegu Egg: draw 1.");
+    return { draw: 1 };
+  },
+};
+
+const giantTortoiseToken = {
+  id: "token-giant-tortoise",
+  name: "Giant Tortoise",
+  type: "Prey",
+  atk: 2,
+  hp: 3,
+  nutrition: 3,
+  keywords: [],
+};
+
+const poisonousSnakeToken = {
+  id: "token-poisonous-snake",
+  name: "Poisonous Snake",
+  type: "Prey",
+  atk: 1,
+  hp: 1,
+  nutrition: 1,
+  keywords: [],
+  effectText: "Poisonous (Not yet implemented).",
+};
+
+const snakeNestFieldSpell = {
+  id: "reptile-field-snake-nest",
+  name: "Snake Nest",
+  type: "Spell",
+  effectText: "End of turn, play Poisonous Snake.",
+  onEnd: ({ log, playerIndex }) => {
+    log("Snake Nest releases a Poisonous Snake.");
+    return { summonTokens: { playerIndex, tokens: [poisonousSnakeToken] } };
+  },
+};
+
+const alligatorSkinCard = {
+  id: "reptile-free-spell-alligator-skin",
+  name: "Alligator Skin",
+  type: "Free Spell",
+  effectText: "Target creature gains Barrier.",
+  effect: ({ log, player, opponent, state }) => {
+    const candidates = [
+      ...player.field
+        .filter((card) => isCreatureCard(card) && !isInvisible(card))
+        .map((card) => ({ label: card.name, value: card })),
+      ...opponent.field
+        .filter((card) => isCreatureCard(card) && !isInvisible(card))
+        .map((card) => ({ label: card.name, value: card })),
+    ];
+    if (candidates.length === 0) {
+      log("Alligator Skin: no creature to protect.");
+      return null;
+    }
+    return makeTargetedSelection({
+      title: "Alligator Skin: choose a creature to gain Barrier",
+      candidates,
+      onSelect: (target) =>
+        handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+          addKeyword: { creature: target, keyword: "Barrier" },
+        },
+    });
+  },
+};
+
+const snakesToken = {
+  id: "token-snakes",
+  name: "Snakes",
+  type: "Prey",
+  atk: 2,
+  hp: 2,
+  nutrition: 2,
+  keywords: [],
+};
+
+const reptileCards = [
+  {
+    id: "reptile-prey-cuban-brown-anole",
+    name: "Cuban Brown Anole",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: [],
+    effectText: "Play Brown Anole.",
+    onPlay: ({ log, playerIndex }) => {
+      log("Cuban Brown Anole summons a Brown Anole.");
+      return { summonTokens: { playerIndex, tokens: [brownAnoleToken] } };
+    },
+  },
+  {
+    id: "reptile-prey-european-glass-lizard",
+    name: "European Glass Lizard",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: [],
+    effectText: "Slain, become Tailless.",
+    onSlain: ({ log, playerIndex }) => {
+      log("European Glass Lizard is slain and becomes Tailless.");
+      return { summonTokens: { playerIndex, tokens: [taillessToken] } };
+    },
+  },
+  {
+    id: "reptile-prey-yucatan-neotropical-rattlesnake",
+    name: "Yucatan Neotropical Rattlesnake",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Barrier", "Lure"],
+    effectText: "Barrier. Lure. Poisonous (Not yet implemented). Slain, heal 3.",
+    onSlain: ({ log }) => {
+      log("Yucatan Neotropical Rattlesnake is slain: heal 3.");
+      return { heal: 3 };
+    },
+  },
+  {
+    id: "reptile-prey-frosts-iguana",
+    name: "Frost's Iguana",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: [],
+    effectText: "Not yet implemented.",
+  },
+  {
+    id: "reptile-prey-galapagos-lava-lizards",
+    name: "Galápagos Lava Lizards",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: [],
+    effectText: "Play 2 Lava Lizards. Deal 1 damage to rival.",
+    onPlay: ({ log, playerIndex }) => {
+      log("Galápagos Lava Lizards summon two Lava Lizards and scorch the rival.");
+      return {
+        summonTokens: { playerIndex, tokens: [lavaLizardToken, lavaLizardToken] },
+        damageOpponent: 1,
+      };
+    },
+  },
+  {
+    id: "reptile-prey-great-flying-dragon",
+    name: "Great Flying Dragon",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Immune", "Hidden"],
+  },
+  {
+    id: "reptile-prey-green-anole",
+    name: "Green Anole",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: [],
+    effectText: "End of turn, play Carolina Anole.",
+    onEnd: ({ log, playerIndex }) => {
+      log("Green Anole summons a Carolina Anole.");
+      return { summonTokens: { playerIndex, tokens: [carolinaAnoleToken] } };
+    },
+  },
+  {
+    id: "reptile-prey-gold-dust-day-gecko",
+    name: "Gold Dust Day Gecko",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: [],
+    effectText: "Draw 3.",
+    onPlay: ({ log }) => {
+      log("Gold Dust Day Gecko draws 3 cards.");
+      return { draw: 3 };
+    },
+  },
+  {
+    id: "reptile-prey-gold-flying-snake",
+    name: "Gold Flying Snake",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Free Play"],
+    effectText: "Draw 1.",
+    onPlay: ({ log }) => {
+      log("Gold Flying Snake draws 1 card.");
+      return { draw: 1 };
+    },
+  },
+  {
+    id: "reptile-prey-golden-lancehead",
+    name: "Golden Lancehead",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: [],
+    effectText: "Draw 1. Toxic (Not yet implemented).",
+    onPlay: ({ log }) => {
+      log("Golden Lancehead draws 1 card.");
+      return { draw: 1 };
+    },
+  },
+  {
+    id: "reptile-prey-cryptic-golden-tegu",
+    name: "Cryptic Golden Tegu",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: [],
+    effectText: "Draw 1. Play Golden Tegu Egg.",
+    onPlay: ({ log, playerIndex }) => {
+      log("Cryptic Golden Tegu draws 1 and summons Golden Tegu Egg.");
+      return { draw: 1, summonTokens: { playerIndex, tokens: [goldenTeguEggToken] } };
+    },
+  },
+  {
+    id: "reptile-prey-phantastic-leaf-tailed-gecko",
+    name: "Phantastic Leaf-tailed Gecko",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Invisible"],
+    effectText: "Start of turn, deal 1 damage to rival. End of turn, deal 1 damage to rival.",
+    onStart: ({ log }) => {
+      log("Phantastic Leaf-tailed Gecko nips the rival for 1.");
+      return { damageOpponent: 1 };
+    },
+    onEnd: ({ log }) => {
+      log("Phantastic Leaf-tailed Gecko nips the rival for 1.");
+      return { damageOpponent: 1 };
+    },
+  },
+  {
+    id: "reptile-prey-pygmy-rock-monitor",
+    name: "Pygmy Rock Monitor",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Barrier", "Invisible"],
+  },
+  {
+    id: "reptile-prey-solomons-coral-snake",
+    name: "Solomons Coral Snake",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Barrier", "Neurotoxic"],
+    effectText: "Barrier. Neurotoxic when defending.",
+  },
+  {
+    id: "reptile-prey-plumed-basilisk",
+    name: "Plumed Basilisk",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Free Play"],
+    effectText: "Freeze target enemy (Not yet implemented).",
+  },
+  {
+    id: "reptile-prey-veiled-chameleon",
+    name: "Veiled Chameleon",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: [],
+    effectText: "Copy abilities of target animal.",
+    onPlay: ({ log, player, opponent, creature }) => {
+      const candidates = [
+        ...player.field.filter((card) => isCreatureCard(card)),
+        ...opponent.field.filter((card) => isCreatureCard(card)),
+      ];
+      if (candidates.length === 0) {
+        log("Veiled Chameleon: no creatures to copy.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Veiled Chameleon: choose a creature to copy",
+        candidates: candidates.map((target) => ({ label: target.name, value: target })),
+        onSelect: (target) => ({ copyAbilities: { target: creature, source: target } }),
+      });
+    },
+  },
+  {
+    id: "reptile-prey-central-american-snapping-turtle",
+    name: "Central American Snapping Turtle",
+    type: "Prey",
+    atk: 1,
+    hp: 3,
+    nutrition: 2,
+    keywords: [],
+    effectText: "Before combat, deal 2 damage.",
+    onBeforeCombat: ({ log, opponent }) => {
+      const targets = opponent.field.filter((card) => isCreatureCard(card));
+      if (targets.length === 0) {
+        log("Central American Snapping Turtle: no enemy to bite.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Central American Snapping Turtle: choose a target",
+        candidates: targets.map((target) => ({ label: target.name, value: target })),
+        onSelect: (target) => ({ damageCreature: { creature: target, amount: 2 } }),
+      });
+    },
+  },
+  {
+    id: "reptile-prey-south-american-snapping-turtle",
+    name: "South American Snapping Turtle",
+    type: "Prey",
+    atk: 1,
+    hp: 3,
+    nutrition: 2,
+    keywords: [],
+    effectText: "Defending before combat, deal 2 damage.",
+    onDefend: ({ log, attacker }) => {
+      log("South American Snapping Turtle counters for 2 damage.");
+      return { damageCreature: { creature: attacker, amount: 2 } };
+    },
+  },
+  {
+    id: "reptile-prey-gaboon-viper",
+    name: "Gaboon Viper",
+    type: "Prey",
+    atk: 2,
+    hp: 2,
+    nutrition: 2,
+    keywords: ["Hidden"],
+    effectText: "Toxic (Not yet implemented).",
+  },
+  {
+    id: "reptile-prey-king-brown-snake",
+    name: "King Brown Snake",
+    type: "Prey",
+    atk: 2,
+    hp: 2,
+    nutrition: 2,
+    keywords: [],
+    effectText: "Toxic (Not yet implemented). Add a card from deck to hand.",
+    onPlay: ({ log, player, playerIndex }) => {
+      if (player.deck.length === 0) {
+        log("King Brown Snake: deck is empty.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "King Brown Snake: choose a card to add to hand",
+        candidates: () => player.deck.map((card) => ({ label: card.name, value: card })),
+        onSelect: (card) => ({ addToHand: { playerIndex, card, fromDeck: true } }),
+      });
+    },
+  },
+  {
+    id: "reptile-prey-alcedo-giant-tortoise",
+    name: "Alcedo Giant Tortoise",
+    type: "Prey",
+    atk: 2,
+    hp: 3,
+    nutrition: 3,
+    keywords: [],
+    effectText: "Start of turn, play Giant Tortoise.",
+    onStart: ({ log, playerIndex }) => {
+      log("Alcedo Giant Tortoise summons a Giant Tortoise.");
+      return { summonTokens: { playerIndex, tokens: [giantTortoiseToken] } };
+    },
+  },
+  {
+    id: "reptile-prey-giant-tortoise",
+    name: "Giant Tortoise",
+    type: "Prey",
+    atk: 2,
+    hp: 3,
+    nutrition: 3,
+    keywords: [],
+  },
+  {
+    id: "reptile-prey-darwin-volcano-giant-tortoise",
+    name: "Darwin Volcano Giant Tortoise",
+    type: "Prey",
+    atk: 2,
+    hp: 3,
+    nutrition: 3,
+    keywords: [],
+    effectText: "Deal 2 damage to players & other animals.",
+    onPlay: ({ log }) => {
+      log("Darwin Volcano Giant Tortoise erupts for 2 damage to all.");
+      return { damageAllCreatures: 2, damageBothPlayers: 2 };
+    },
+  },
+  {
+    id: "reptile-prey-wolf-volcano-giant-tortoise",
+    name: "Wolf Volcano Giant Tortoise",
+    type: "Prey",
+    atk: 2,
+    hp: 3,
+    nutrition: 3,
+    keywords: [],
+    effectText: "Deal 2 damage to enemies.",
+    onPlay: ({ log }) => {
+      log("Wolf Volcano Giant Tortoise blasts enemies for 2.");
+      return { damageEnemyCreatures: 2, damageOpponent: 2 };
+    },
+  },
+  {
+    id: "reptile-prey-black-mamba",
+    name: "Black Mamba",
+    type: "Prey",
+    atk: 3,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Ambush", "Neurotoxic"],
+  },
+  {
+    id: "reptile-predator-papuan-monitor",
+    name: "Papuan Monitor",
+    type: "Predator",
+    atk: 2,
+    hp: 3,
+    keywords: [],
+    effectText: "Deal 2 damage to opponents.",
+    onConsume: ({ log }) => {
+      log("Papuan Monitor lashes the rival for 2.");
+      return { damageOpponent: 2 };
+    },
+  },
+  {
+    id: "reptile-predator-gharial",
+    name: "Gharial",
+    type: "Predator",
+    atk: 2,
+    hp: 4,
+    keywords: [],
+    effectText: "Kill enemy prey.",
+    onConsume: ({ log, player, opponent, state }) => {
+      const targets = opponent.field.filter((card) => card?.type === "Prey" && !isInvisible(card));
+      if (targets.length === 0) {
+        log("Gharial effect: no enemy prey to target.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Gharial: choose an enemy prey to kill",
+        candidates: targets.map((target) => ({ label: target.name, value: target })),
+        onSelect: (target) =>
+          handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+            killTargets: [target],
+          },
+      });
+    },
+  },
+  {
+    id: "reptile-predator-king-cobra",
+    name: "King Cobra",
+    type: "Predator",
+    atk: 3,
+    hp: 2,
+    keywords: ["Neurotoxic"],
+    effectText: "Slain, deal 3 damage to rival.",
+    onSlain: ({ log }) => {
+      log("King Cobra is slain and lashes the rival for 3.");
+      return { damageOpponent: 3 };
+    },
+  },
+  {
+    id: "reptile-predator-boa-constrictor",
+    name: "Boa Constrictor",
+    type: "Predator",
+    atk: 3,
+    hp: 3,
+    keywords: [],
+    effectText: "Not yet implemented.",
+  },
+  {
+    id: "reptile-predator-chinese-alligator",
+    name: "Chinese Alligator",
+    type: "Predator",
+    atk: 3,
+    hp: 3,
+    keywords: [],
+    effectText: "Either draw 3, heal 3, or deal 3 damage to rival.",
+    onConsume: ({ log }) =>
+      makeTargetedSelection({
+        title: "Chinese Alligator: choose an effect",
+        candidates: [
+          { label: "Draw 3", value: "draw" },
+          { label: "Heal 3", value: "heal" },
+          { label: "Deal 3 damage to rival", value: "damage" },
+        ],
+        onSelect: (choice) => {
+          if (choice === "draw") {
+            log("Chinese Alligator draws 3.");
+            return { draw: 3 };
+          }
+          if (choice === "heal") {
+            log("Chinese Alligator heals 3.");
+            return { heal: 3 };
+          }
+          log("Chinese Alligator deals 3 damage to the rival.");
+          return { damageOpponent: 3 };
+        },
+      }),
+  },
+  {
+    id: "reptile-predator-american-alligator",
+    name: "American Alligator",
+    type: "Predator",
+    atk: 4,
+    hp: 4,
+    keywords: [],
+    effectText: "Slain, add Alligator Skin to hand.",
+    onSlain: ({ log, playerIndex }) => {
+      log("American Alligator is slain: add Alligator Skin to hand.");
+      return { addToHand: { playerIndex, card: alligatorSkinCard } };
+    },
+  },
+  {
+    id: "reptile-predator-american-crocodile",
+    name: "American Crocodile",
+    type: "Predator",
+    atk: 4,
+    hp: 4,
+    keywords: ["Barrier"],
+  },
+  {
+    id: "reptile-predator-black-caiman",
+    name: "Black Caiman",
+    type: "Predator",
+    atk: 4,
+    hp: 4,
+    keywords: ["Ambush"],
+  },
+  {
+    id: "reptile-predator-burmese-python",
+    name: "Burmese Python",
+    type: "Predator",
+    atk: 4,
+    hp: 4,
+    keywords: [],
+    effectText: "Copy abilities of a carrion pred.",
+    onConsume: ({ log, player, creature }) => {
+      const carrionPreds = player.carrion.filter((card) => card?.type === "Predator");
+      if (carrionPreds.length === 0) {
+        log("Burmese Python effect: no predator in carrion to copy.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Burmese Python: choose a carrion predator to copy",
+        candidates: carrionPreds.map((card) => ({ label: card.name, value: card })),
+        onSelect: (target) => {
+          log(`Burmese Python copies ${target.name}'s abilities.`);
+          return { copyAbilities: { target: creature, source: target } };
+        },
+      });
+    },
+  },
+  {
+    id: "reptile-predator-green-anaconda",
+    name: "Green Anaconda",
+    type: "Predator",
+    atk: 4,
+    hp: 4,
+    keywords: [],
+    effectText: "Heal 2. Add a card from deck to hand.",
+    onConsume: ({ log, player, playerIndex }) => {
+      if (player.deck.length === 0) {
+        log("Green Anaconda: deck is empty.");
+        return { heal: 2 };
+      }
+      return {
+        heal: 2,
+        selectTarget: {
+          title: "Green Anaconda: choose a card to add to hand",
+          candidates: () => player.deck.map((card) => ({ label: card.name, value: card })),
+          onSelect: (card) => ({ addToHand: { playerIndex, card, fromDeck: true } }),
+        },
+      };
+    },
+  },
+  {
+    id: "reptile-predator-komodo-dragon",
+    name: "Komodo Dragon",
+    type: "Predator",
+    atk: 4,
+    hp: 4,
+    keywords: ["Immune"],
+    effectText: "Toxic (Not yet implemented).",
+  },
+  {
+    id: "reptile-predator-nile-crocodile",
+    name: "Nile Crocodile",
+    type: "Predator",
+    atk: 5,
+    hp: 5,
+    keywords: [],
+    effectText: "Deal 3 damage to any target. Slain, heal 3.",
+    onConsume: ({ log, player, opponent, state }) => {
+      const candidates = [
+        ...opponent.field.filter((card) => isCreatureCard(card) && !isInvisible(card)),
+        { name: opponent.name, isPlayer: true },
+      ];
+      return makeTargetedSelection({
+        title: "Nile Crocodile: choose a target",
+        candidates: candidates.map((target) => ({
+          label: target.name,
+          value: target,
+        })),
+        onSelect: (target) => {
+          if (target.isPlayer) {
+            log("Nile Crocodile bites the rival for 3.");
+            return { damageOpponent: 3 };
+          }
+          return (
+            handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+              damageCreature: { creature: target, amount: 3 },
+            }
+          );
+        },
+      });
+    },
+    onSlain: ({ log }) => {
+      log("Nile Crocodile is slain: heal 3.");
+      return { heal: 3 };
+    },
+  },
+  {
+    id: "reptile-predator-saltwater-crocodile",
+    name: "Saltwater Crocodile",
+    type: "Predator",
+    atk: 6,
+    hp: 6,
+    keywords: [],
+    effectText: "Kill target enemy.",
+    onConsume: ({ log, player, opponent, state }) => {
+      const targets = opponent.field.filter((card) => isCreatureCard(card));
+      if (targets.length === 0) {
+        log("Saltwater Crocodile effect: no enemy creatures to target.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Saltwater Crocodile: choose an enemy creature to kill",
+        candidates: targets.map((target) => ({ label: target.name, value: target })),
+        onSelect: (target) =>
+          handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+            killTargets: [target],
+          },
+      });
+    },
+  },
+  {
+    id: "reptile-spell-scythian-arrows",
+    name: "Scythian Arrows",
+    type: "Spell",
+    effectText: "Discard 1. Kill enemies.",
+    effect: ({ log, player, playerIndex, opponentIndex }) => {
+      if (player.hand.length === 0) {
+        log("Scythian Arrows: no cards to discard.");
+        return { killEnemyCreatures: opponentIndex };
+      }
+      return {
+        selectTarget: {
+          title: "Scythian Arrows: choose a card to discard",
+          candidates: player.hand.map((card) => ({ label: card.name, value: card })),
+          onSelect: (card) => ({
+            discardCards: { playerIndex, cards: [card] },
+            killEnemyCreatures: opponentIndex,
+          }),
+        },
+      };
+    },
+  },
+  {
+    id: "reptile-spell-meteor",
+    name: "Meteor",
+    type: "Spell",
+    effectText: "Destroy field spells. Kill animals.",
+    effect: ({ log }) => {
+      log("Meteor crashes down, destroying the field.");
+      return { killAllCreatures: true, removeFieldSpell: true };
+    },
+  },
+  {
+    id: "reptile-spell-snake-wine",
+    name: "Snake Wine",
+    type: "Spell",
+    effectText: "Heal 7.",
+    effect: ({ log }) => {
+      log("Snake Wine heals 7.");
+      return { heal: 7 };
+    },
+  },
+  {
+    id: "reptile-spell-paralyze",
+    name: "Paralyze",
+    type: "Spell",
+    effectText: "Not yet implemented.",
+  },
+  {
+    id: "reptile-spell-sunshine",
+    name: "Sunshine",
+    type: "Spell",
+    effectText: "Creatures gain +2/+2.",
+    effect: ({ log, player }) => {
+      log("Sunshine buffs friendly creatures.");
+      return { teamBuff: { player, atk: 2, hp: 2 } };
+    },
+  },
+  {
+    id: "reptile-free-spell-shed",
+    name: "Shed",
+    type: "Free Spell",
+    effectText: "Regen target creature.",
+    effect: ({ log, player, opponent, state }) => {
+      const candidates = [
+        ...player.field
+          .filter((card) => isCreatureCard(card) && !isInvisible(card))
+          .map((card) => ({ label: card.name, value: card })),
+        ...opponent.field
+          .filter((card) => isCreatureCard(card) && !isInvisible(card))
+          .map((card) => ({ label: card.name, value: card })),
+      ];
+      if (candidates.length === 0) {
+        log("Shed: no creature to regenerate.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Shed: choose a creature to regenerate",
+        candidates,
+        onSelect: (target) =>
+          handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+            restoreCreature: { creature: target },
+          },
+      });
+    },
+  },
+  {
+    id: "reptile-free-spell-spite",
+    name: "Spite",
+    type: "Free Spell",
+    effectText: "Not yet implemented.",
+  },
+  {
+    id: "reptile-free-spell-survivor",
+    name: "Survivor",
+    type: "Free Spell",
+    effectText: "Target creature gains +1/+1.",
+    effect: ({ log, player, opponent, state }) => {
+      const candidates = [
+        ...player.field
+          .filter((card) => isCreatureCard(card) && !isInvisible(card))
+          .map((card) => ({ label: card.name, value: card })),
+        ...opponent.field
+          .filter((card) => isCreatureCard(card) && !isInvisible(card))
+          .map((card) => ({ label: card.name, value: card })),
+      ];
+      if (candidates.length === 0) {
+        log("Survivor: no creature to empower.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Survivor: choose a creature to gain +1/+1",
+        candidates,
+        onSelect: (target) =>
+          handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+            buffCreature: { creature: target, atk: 1, hp: 1 },
+          },
+      });
+    },
+  },
+  {
+    id: "reptile-spell-snake-nest",
+    name: "Snake Nest",
+    type: "Spell",
+    isFieldSpell: true,
+    effectText: "End of turn, play Poisonous Snake.",
+    effect: ({ log, playerIndex }) => {
+      log("Snake Nest takes the field.");
+      return { setFieldSpell: { ownerIndex: playerIndex, cardData: snakeNestFieldSpell } };
+    },
+  },
+  {
+    id: "reptile-trap-scales",
+    name: "Scales",
+    type: "Trap",
+    trigger: "attacked",
+    effectText: "Not yet implemented.",
+  },
+  {
+    id: "reptile-trap-snake-oil",
+    name: "Snake Oil",
+    type: "Trap",
+    trigger: "rivalDraws",
+    effectText: "Not yet implemented.",
+  },
+  {
+    id: "reptile-trap-snake-pit",
+    name: "Snake Pit",
+    type: "Trap",
+    trigger: "directAttack",
+    effectText: "When target enemy attacks directly, negate attack. Play Snakes.",
+    effect: ({ log, defenderIndex }) => {
+      log("Snake Pit triggers: negate attack and unleash snakes.");
+      return {
+        negateAttack: true,
+        summonTokens: { playerIndex: defenderIndex, tokens: [snakesToken] },
+      };
+    },
+  },
+];
+
+export const deckCatalogs = {
+  fish: fishCards,
+  reptile: reptileCards,
+};
+
+export const getStarterDeck = (deckId = "fish") => [...(deckCatalogs[deckId] ?? fishCards)];

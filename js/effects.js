@@ -147,6 +147,15 @@ export const resolveEffectResult = (state, result, context) => {
     });
   }
 
+  if (result.damageEnemyCreatures) {
+    const enemy = state.players[context.opponentIndex];
+    enemy.field.forEach((creature) => {
+      if (creature && (creature.type === "Predator" || creature.type === "Prey")) {
+        applyEffectDamage(state, creature, result.damageEnemyCreatures, "effect");
+      }
+    });
+  }
+
   if (result.damageBothPlayers) {
     state.players.forEach((player) => {
       player.hp -= result.damageBothPlayers;
@@ -453,6 +462,14 @@ export const resolveEffectResult = (state, result, context) => {
     owner.field[emptySlot] = instance;
     state.fieldSpell = { ownerIndex, card: instance };
     logMessage(state, `${owner.name} plays the field spell ${cardData.name}.`);
+  }
+
+  if (result.removeFieldSpell && state.fieldSpell) {
+    const previousOwner = state.players[state.fieldSpell.ownerIndex];
+    removeCardFromField(state, state.fieldSpell.card);
+    previousOwner.exile.push(state.fieldSpell.card);
+    logMessage(state, `${state.fieldSpell.card.name} is destroyed.`);
+    state.fieldSpell = null;
   }
 };
 

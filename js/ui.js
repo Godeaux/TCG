@@ -16,6 +16,7 @@ import {
   KEYWORD_DESCRIPTIONS,
 } from "./keywords.js";
 import { resolveEffectResult } from "./effects.js";
+import { deckCatalogs } from "./cards.js";
 
 const selectionPanel = document.getElementById("selection-panel");
 const actionBar = document.getElementById("action-bar");
@@ -89,7 +90,7 @@ const DECK_OPTIONS = [
     name: "Reptile",
     emoji: "🦎",
     panelClass: "deck-select-panel--reptile",
-    available: false,
+    available: true,
   },
   {
     id: "amphibian",
@@ -827,6 +828,8 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
         log: (message) => logMessage(state, message),
         attacker,
         target,
+        defenderIndex: pendingAttack.defenderIndex,
+        state,
       });
       resolveEffectChain(state, result, {
         playerIndex: pendingAttack.defenderIndex,
@@ -1219,6 +1222,8 @@ const triggerPlayTraps = (state, creature, onUpdate, onResolved) => {
       const result = trap.effect({
         log: (message) => logMessage(state, message),
         target: { type: "creature", card: creature },
+        defenderIndex: opponentIndex,
+        state,
       });
       resolveEffectChain(state, result, {
         playerIndex: opponentIndex,
@@ -1276,8 +1281,13 @@ const updateDeckTabs = () => {
   });
 };
 
+const isDeckSelectionComplete = (state) =>
+  state.deckSelection?.selections?.every((selection) => Boolean(selection));
+
+const cloneDeckCatalog = (deck) => deck.map((card) => ({ ...card }));
+
 const renderDeckSelectionOverlay = (state, callbacks) => {
-  if (!state.deckSelection || state.deckSelection.stage === "complete") {
+  if (!state.deckSelection || !["p1", "p2"].includes(state.deckSelection.stage)) {
     deckSelectOverlay?.classList.remove("active");
     deckSelectOverlay?.setAttribute("aria-hidden", "true");
     return;
@@ -1307,13 +1317,17 @@ const renderDeckSelectionOverlay = (state, callbacks) => {
     panel.innerHTML = `
       <div class="deck-emoji">${option.emoji}</div>
       <div class="deck-name">${option.name}</div>
-      <div class="deck-status">${option.available ? "Available now" : "Not implemented"}</div>
+      <div class="deck-status">${option.available ? "Available" : "Not implemented"}</div>
       <div class="deck-meta">${option.available ? "Select deck" : "Coming soon"}</div>
     `;
     if (option.available) {
       panel.onclick = () => {
+        const catalog = deckCatalogs[option.id] ?? [];
         state.deckSelection.selections[playerIndex] = option.id;
-        state.deckSelection.stage = "complete";
+        state.deckBuilder.available[playerIndex] = cloneDeckCatalog(catalog);
+        state.deckBuilder.catalogOrder[playerIndex] = catalog.map((card) => card.id);
+        state.deckBuilder.selections[playerIndex] = [];
+        state.deckSelection.stage = isPlayerOne ? "p1-selected" : "complete";
         logMessage(state, `${player.name} selected the ${option.name} deck.`);
         callbacks.onUpdate?.();
       };
@@ -1329,17 +1343,17 @@ const renderDeckBuilderOverlay = (state, callbacks) => {
     deckHighlighted = null;
     return;
   }
-  if (state.deckSelection?.stage !== "complete") {
+  const isPlayerOne = state.deckBuilder.stage === "p1";
+  const playerIndex = isPlayerOne ? 0 : 1;
+  if (!state.deckSelection?.selections?.[playerIndex]) {
     deckOverlay.classList.remove("active");
     deckOverlay.setAttribute("aria-hidden", "true");
     return;
   }
-
-  const isPlayerOne = state.deckBuilder.stage === "p1";
-  const playerIndex = isPlayerOne ? 0 : 1;
   const player = state.players[playerIndex];
   const available = state.deckBuilder.available[playerIndex];
   const selected = state.deckBuilder.selections[playerIndex];
+  const catalogOrder = state.deckBuilder.catalogOrder[playerIndex] ?? [];
   const predatorCount = selected.filter((card) => card.type === "Predator").length;
   const preyCount = selected.filter((card) => card.type === "Prey").length;
   const totalCount = selected.length;
@@ -1399,8 +1413,8 @@ const renderDeckBuilderOverlay = (state, callbacks) => {
           available.push(card);
           available.sort(
             (a, b) =>
-              state.deckBuilder.catalogOrder.indexOf(a.id) -
-              state.deckBuilder.catalogOrder.indexOf(b.id)
+              catalogOrder.indexOf(a.id) -
+              catalogOrder.indexOf(b.id)
           );
           deckHighlighted = null;
           callbacks.onUpdate?.();
@@ -1422,6 +1436,7 @@ const renderDeckBuilderOverlay = (state, callbacks) => {
     }
     if (isPlayerOne) {
       state.deckBuilder.stage = "p2";
+      state.deckSelection.stage = "p2";
       logMessage(state, "Player 1 deck locked in. Hand off to Player 2.");
       deckHighlighted = null;
       setDeckInspectorContent(null);
@@ -1440,7 +1455,7 @@ const renderDeckBuilderOverlay = (state, callbacks) => {
       buildRandomDeck({
         available,
         selected,
-        catalogOrder: state.deckBuilder.catalogOrder,
+        catalogOrder,
       });
       deckHighlighted = null;
       setDeckInspectorContent(null);
@@ -1456,7 +1471,7 @@ const renderSetupOverlay = (state, callbacks) => {
     return;
   }
   if (
-    state.deckSelection?.stage !== "complete" ||
+    !isDeckSelectionComplete(state) ||
     state.deckBuilder?.stage !== "complete"
   ) {
     setupOverlay.classList.remove("active");
@@ -1695,7 +1710,7 @@ export const renderGame = (state, callbacks = {}) => {
   const opponentIndex = (state.activePlayerIndex + 1) % 2;
   const passPending = Boolean(state.passPending);
   const setupPending = state.setup?.stage !== "complete";
-  const deckSelectionPending = state.deckSelection?.stage !== "complete";
+  const deckSelectionPending = !isDeckSelectionComplete(state);
   const deckBuilding = state.deckBuilder?.stage !== "complete";
   document.body.classList.toggle("deck-building", deckBuilding);
   document.documentElement.classList.toggle("deck-building", deckBuilding);
