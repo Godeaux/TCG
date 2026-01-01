@@ -1034,6 +1034,8 @@ const clearSelectionPanel = () => {
   actionBar?.classList.remove("has-selection");
 };
 
+const isSelectionActive = () => Boolean(selectionPanel?.childElementCount) || Boolean(pendingAttack);
+
 const resolveAttack = (state, attacker, target, negateAttack = false) => {
   if (negateAttack) {
     logMessage(state, `${attacker.name}'s attack was negated.`);
@@ -1191,6 +1193,10 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
 };
 
 const handleAttackSelection = (state, attacker, onUpdate) => {
+  if (isSelectionActive()) {
+    logMessage(state, "Resolve the current combat choice before declaring another attack.");
+    return;
+  }
   const opponent = getOpponentPlayer(state);
   const validTargets = getValidTargets(state, attacker, opponent);
 
@@ -2244,9 +2250,24 @@ export const renderGame = (state, callbacks = {}) => {
   const menuPending = state.menu?.stage !== "ready";
   document.body.classList.toggle("deck-building", deckBuilding);
   document.documentElement.classList.toggle("deck-building", deckBuilding);
+  const selectionActive = isSelectionActive();
+  const beforeCombatPending =
+    state.phase === "Before Combat" &&
+    (state.beforeCombatProcessing || state.beforeCombatQueue.length > 0);
+  const endOfTurnPending =
+    state.phase === "End" &&
+    !state.endOfTurnFinalized &&
+    (state.endOfTurnProcessing || state.endOfTurnQueue.length > 0);
   updateIndicators(
     state,
-    passPending || setupPending || deckSelectionPending || deckBuilding || menuPending
+    passPending ||
+      setupPending ||
+      deckSelectionPending ||
+      deckBuilding ||
+      menuPending ||
+      selectionActive ||
+      beforeCombatPending ||
+      endOfTurnPending
   );
   updatePlayerStats(state, 0, "player1");
   updatePlayerStats(state, 1, "player2");
