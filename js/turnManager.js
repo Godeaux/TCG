@@ -1,5 +1,6 @@
 import { drawCard, logMessage, resetCombat } from "./gameState.js";
 import { cleanupDestroyed } from "./combat.js";
+import { resolveEffectResult } from "./effects.js";
 
 const PHASES = ["Start", "Draw", "Main 1", "Before Combat", "Combat", "Main 2", "End"];
 
@@ -70,6 +71,13 @@ export const advancePhase = (state) => {
     logMessage(state, "Finish the opening roll before advancing phases.");
     return;
   }
+  if (
+    state.phase === "Before Combat" &&
+    (state.beforeCombatProcessing || state.beforeCombatQueue.length > 0)
+  ) {
+    logMessage(state, "Resolve before-combat effects before advancing.");
+    return;
+  }
 
   const currentIndex = PHASES.indexOf(state.phase);
   const nextIndex = (currentIndex + 1) % PHASES.length;
@@ -117,6 +125,14 @@ export const advancePhase = (state) => {
 export const endTurn = (state) => {
   if (state.setup?.stage !== "complete") {
     logMessage(state, "Complete the opening roll before ending the turn.");
+    return;
+  }
+  if (
+    state.phase === "End" &&
+    !state.endOfTurnFinalized &&
+    (state.endOfTurnProcessing || state.endOfTurnQueue.length > 0)
+  ) {
+    logMessage(state, "Resolve end-of-turn effects before ending the turn.");
     return;
   }
   if (state.phase === "End") {
