@@ -200,7 +200,7 @@ const updateHandOverlap = (handGrid) => {
   const totalWidth = cardWidth * cards.length;
   const overlapNeeded =
     totalWidth > handWidth ? (totalWidth - handWidth) / Math.max(1, cards.length - 1) : 0;
-  const maxOverlap = cardWidth * 0.45;
+  const maxOverlap = cardWidth * 0.7;
   const overlap = Math.min(Math.max(overlapNeeded, 0), maxOverlap);
   handGrid.style.setProperty("--hand-overlap", `${overlap}px`);
 };
