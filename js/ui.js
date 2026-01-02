@@ -1095,6 +1095,7 @@ const updateActionPanel = (state, callbacks = {}) => {
   const selectedCard = player.hand.find((card) => card.instanceId === selectedHandCardId);
   if (!selectedCard) {
     actionBar.classList.remove("has-actions");
+    syncActionBarInset();
     return;
   }
 
@@ -1135,6 +1136,15 @@ const updateActionPanel = (state, callbacks = {}) => {
 
   actionPanel.appendChild(actions);
   actionBar.classList.add("has-actions");
+  syncActionBarInset();
+};
+
+const syncActionBarInset = () => {
+  if (!actionBar) {
+    return;
+  }
+  const height = actionBar.offsetHeight || 0;
+  document.documentElement.style.setProperty("--action-bar-height", `${height}px`);
 };
 
 const appendLog = (state) => {
@@ -1503,7 +1513,10 @@ const initHandPreview = () => {
     }
   });
   handGrid.addEventListener("pointerleave", clearFocus);
-  window.addEventListener("resize", () => updateHandOverlap(handGrid));
+  window.addEventListener("resize", () => {
+    updateHandOverlap(handGrid);
+    syncActionBarInset();
+  });
 };
 
 const renderDeckCard = (card, options = {}) => {
@@ -1821,11 +1834,13 @@ const renderSelectionPanel = ({ title, items, onConfirm, confirmLabel = "Confirm
     selectionPanel.appendChild(confirmButton);
   }
   actionBar?.classList.add("has-selection");
+  syncActionBarInset();
 };
 
 const clearSelectionPanel = () => {
   clearPanel(selectionPanel);
   actionBar?.classList.remove("has-selection");
+  syncActionBarInset();
 };
 
 const isSelectionActive = () => Boolean(selectionPanel?.childElementCount) || Boolean(pendingAttack);
