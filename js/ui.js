@@ -15,8 +15,8 @@ import {
   hasScavenge,
   KEYWORD_DESCRIPTIONS,
 } from "./keywords.js";
-import { resolveEffectResult } from "./effects.js";
-import { deckCatalogs } from "./cards.js";
+import { resolveEffectResult, stripAbilities } from "./effects.js";
+import { deckCatalogs, getCardDefinitionById } from "./cards.js";
 let supabaseApi = null;
 let supabaseLoadError = null;
 
@@ -96,6 +96,91 @@ let activeLobbyId = null;
 let lobbyRefreshTimeout = null;
 let lobbyRefreshInFlight = false;
 
+const serializeCardSnapshot = (card) => {
+  if (!card) {
+    return null;
+  }
+  return {
+    id: card.id,
+    instanceId: card.instanceId ?? null,
+    currentAtk: card.currentAtk ?? null,
+    currentHp: card.currentHp ?? null,
+    summonedTurn: card.summonedTurn ?? null,
+    hasAttacked: card.hasAttacked ?? false,
+    hasBarrier: card.hasBarrier ?? false,
+    frozen: card.frozen ?? false,
+    frozenDiesTurn: card.frozenDiesTurn ?? null,
+    dryDropped: card.dryDropped ?? false,
+    isToken: card.isToken ?? false,
+    abilitiesCancelled: card.abilitiesCancelled ?? false,
+    keywords: Array.isArray(card.keywords) ? [...card.keywords] : null,
+  };
+};
+
+const hydrateCardSnapshot = (snapshot, fallbackTurn) => {
+  if (!snapshot) {
+    return null;
+  }
+  const definition = getCardDefinitionById(snapshot.id);
+  if (!definition) {
+    return null;
+  }
+  const instance = createCardInstance(
+    { ...definition, isToken: snapshot.isToken ?? definition.isToken },
+    snapshot.summonedTurn ?? fallbackTurn
+  );
+  if (snapshot.instanceId) {
+    instance.instanceId = snapshot.instanceId;
+  }
+  if (snapshot.currentAtk !== null && snapshot.currentAtk !== undefined) {
+    instance.currentAtk = snapshot.currentAtk;
+  }
+  if (snapshot.currentHp !== null && snapshot.currentHp !== undefined) {
+    instance.currentHp = snapshot.currentHp;
+  }
+  if (snapshot.summonedTurn !== null && snapshot.summonedTurn !== undefined) {
+    instance.summonedTurn = snapshot.summonedTurn;
+  }
+  instance.hasAttacked = snapshot.hasAttacked ?? instance.hasAttacked;
+  instance.hasBarrier = snapshot.hasBarrier ?? instance.hasBarrier;
+  instance.frozen = snapshot.frozen ?? instance.frozen;
+  instance.frozenDiesTurn = snapshot.frozenDiesTurn ?? instance.frozenDiesTurn;
+  instance.dryDropped = snapshot.dryDropped ?? false;
+  instance.isToken = snapshot.isToken ?? instance.isToken;
+  if (Array.isArray(snapshot.keywords)) {
+    instance.keywords = [...snapshot.keywords];
+  }
+  if (snapshot.abilitiesCancelled) {
+    stripAbilities(instance);
+  }
+  return instance;
+};
+
+const hydrateZoneSnapshots = (snapshots, size, fallbackTurn) => {
+  if (!Array.isArray(snapshots)) {
+    return size ? Array.from({ length: size }, () => null) : [];
+  }
+  const hydrated = snapshots.map((card) => hydrateCardSnapshot(card, fallbackTurn));
+  if (size) {
+    const padded = hydrated.slice(0, size);
+    while (padded.length < size) {
+      padded.push(null);
+    }
+    return padded;
+  }
+  return hydrated;
+};
+
+const hydrateDeckSnapshots = (deckIds) => {
+  if (!Array.isArray(deckIds)) {
+    return [];
+  }
+  return deckIds
+    .map((id) => getCardDefinitionById(id))
+    .filter(Boolean)
+    .map((card) => ({ ...card }));
+};
+
 const buildLobbySyncPayload = (state) => ({
   deckSelection: {
     stage: state.deckSelection?.stage ?? null,
@@ -114,6 +199,22 @@ const buildLobbySyncPayload = (state) => ({
     turn: state.turn,
     cardPlayedThisTurn: state.cardPlayedThisTurn,
     passPending: state.passPending,
+    fieldSpell: state.fieldSpell
+      ? {
+          ownerIndex: state.fieldSpell.ownerIndex,
+          instanceId: state.fieldSpell.card?.instanceId ?? null,
+        }
+      : null,
+    players: state.players.map((player) => ({
+      name: player.name,
+      hp: player.hp,
+      deck: player.deck.map((card) => card.id),
+      hand: player.hand.map((card) => serializeCardSnapshot(card)),
+      field: player.field.map((card) => serializeCardSnapshot(card)),
+      carrion: player.carrion.map((card) => serializeCardSnapshot(card)),
+      exile: player.exile.map((card) => serializeCardSnapshot(card)),
+      traps: player.traps.map((card) => serializeCardSnapshot(card)),
+    })),
   },
   deckBuilder: {
     stage: state.deckBuilder?.stage ?? null,
@@ -137,6 +238,13 @@ const sendLobbyBroadcast = (event, payload) => {
     event,
     payload,
   });
+};
+
+const broadcastSyncState = (state) => {
+  if (!isOnlineMode(state)) {
+    return;
+  }
+  sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
 };
 
 const DECK_OPTIONS = [
@@ -511,6 +619,48 @@ const applyLobbySyncPayload = (state, payload) => {
     }
     if (payload.game.passPending !== undefined) {
       state.passPending = payload.game.passPending;
+    }
+    if (Array.isArray(payload.game.players)) {
+      payload.game.players.forEach((playerSnapshot, index) => {
+        const player = state.players[index];
+        if (!player || !playerSnapshot) {
+          return;
+        }
+        if (playerSnapshot.name) {
+          player.name = playerSnapshot.name;
+        }
+        if (typeof playerSnapshot.hp === "number") {
+          player.hp = playerSnapshot.hp;
+        }
+        if (Array.isArray(playerSnapshot.deck)) {
+          player.deck = hydrateDeckSnapshots(playerSnapshot.deck);
+        }
+        if (Array.isArray(playerSnapshot.hand)) {
+          player.hand = hydrateZoneSnapshots(playerSnapshot.hand, null, state.turn);
+        }
+        if (Array.isArray(playerSnapshot.field)) {
+          player.field = hydrateZoneSnapshots(playerSnapshot.field, 3, state.turn);
+        }
+        if (Array.isArray(playerSnapshot.carrion)) {
+          player.carrion = hydrateZoneSnapshots(playerSnapshot.carrion, null, state.turn);
+        }
+        if (Array.isArray(playerSnapshot.exile)) {
+          player.exile = hydrateZoneSnapshots(playerSnapshot.exile, null, state.turn);
+        }
+        if (Array.isArray(playerSnapshot.traps)) {
+          player.traps = hydrateZoneSnapshots(playerSnapshot.traps, null, state.turn);
+        }
+      });
+    }
+    if (payload.game.fieldSpell && payload.game.fieldSpell.instanceId) {
+      const ownerIndex = payload.game.fieldSpell.ownerIndex;
+      const owner = state.players[ownerIndex];
+      const fieldCard = owner?.field?.find(
+        (card) => card?.instanceId === payload.game.fieldSpell.instanceId
+      );
+      state.fieldSpell = fieldCard ? { ownerIndex, card: fieldCard } : null;
+    } else if (payload.game.fieldSpell === null) {
+      state.fieldSpell = null;
     }
   }
 
@@ -1592,6 +1742,7 @@ const handlePlayCard = (state, card, onUpdate) => {
       state.cardPlayedThisTurn = true;
     }
     onUpdate?.();
+    broadcastSyncState(state);
     return;
   }
 
@@ -1600,6 +1751,7 @@ const handlePlayCard = (state, card, onUpdate) => {
     player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
     logMessage(state, `${player.name} sets a trap.`);
     onUpdate?.();
+    broadcastSyncState(state);
     return;
   }
 
@@ -1724,6 +1876,7 @@ const handlePlayCard = (state, card, onUpdate) => {
               }
               pendingConsumption = null;
               onUpdate?.();
+              broadcastSyncState(state);
             });
             onUpdate?.();
           },
@@ -1751,6 +1904,7 @@ const handlePlayCard = (state, card, onUpdate) => {
               state.cardPlayedThisTurn = true;
             }
             onUpdate?.();
+            broadcastSyncState(state);
           });
         };
         items.push(dryDropButton);
@@ -1805,6 +1959,7 @@ const handlePlayCard = (state, card, onUpdate) => {
         state.cardPlayedThisTurn = true;
       }
       onUpdate?.();
+      broadcastSyncState(state);
     });
   }
 };
@@ -1844,6 +1999,7 @@ const handleDiscardEffect = (state, card, onUpdate) => {
   );
   cleanupDestroyed(state);
   onUpdate?.();
+  broadcastSyncState(state);
 };
 
 const triggerPlayTraps = (state, creature, onUpdate, onResolved) => {
@@ -2627,6 +2783,7 @@ const processBeforeCombatQueue = (state, onUpdate) => {
       cleanupDestroyed(state);
       state.beforeCombatProcessing = false;
       onUpdate?.();
+      broadcastSyncState(state);
       processBeforeCombatQueue(state, onUpdate);
     }
   );
@@ -2642,6 +2799,7 @@ const processEndOfTurnQueue = (state, onUpdate) => {
   if (state.endOfTurnQueue.length === 0) {
     finalizeEndPhase(state);
     onUpdate?.();
+    broadcastSyncState(state);
     return;
   }
 
@@ -2649,6 +2807,7 @@ const processEndOfTurnQueue = (state, onUpdate) => {
   if (!creature) {
     finalizeEndPhase(state);
     onUpdate?.();
+    broadcastSyncState(state);
     return;
   }
   state.endOfTurnProcessing = true;
@@ -2672,6 +2831,7 @@ const processEndOfTurnQueue = (state, onUpdate) => {
     cleanupDestroyed(state);
     state.endOfTurnProcessing = false;
     onUpdate?.();
+    broadcastSyncState(state);
     processEndOfTurnQueue(state, onUpdate);
   };
 
@@ -2728,6 +2888,7 @@ export const renderGame = (state, callbacks = {}) => {
     !state.endOfTurnFinalized &&
     (state.endOfTurnProcessing || state.endOfTurnQueue.length > 0);
   const isLocalTurn = isLocalPlayersTurn(state);
+  const shouldProcessQueues = !isOnline || isLocalTurn;
   updateIndicators(
     state,
     passPending ||
@@ -2759,8 +2920,10 @@ export const renderGame = (state, callbacks = {}) => {
   };
   updateActionBar(handleNextPhase);
   appendLog(state);
-  processBeforeCombatQueue(state, callbacks.onUpdate);
-  processEndOfTurnQueue(state, callbacks.onUpdate);
+  if (shouldProcessQueues) {
+    processBeforeCombatQueue(state, callbacks.onUpdate);
+    processEndOfTurnQueue(state, callbacks.onUpdate);
+  }
 
   if (passPending) {
     passTitle.textContent = `Pass to ${state.players[activeIndex].name}`;
