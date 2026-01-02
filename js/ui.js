@@ -94,6 +94,7 @@ const battleEffectsLayer = document.getElementById("battle-effects");
 
 let pendingConsumption = null;
 let pendingAttack = null;
+let trapWaitingPanelActive = false;
 let inspectedCardId = null;
 let deckHighlighted = null;
 let currentPage = 0;
@@ -1925,6 +1926,7 @@ const resolveAttack = (state, attacker, target, negateAttack = false) => {
 
 const renderTrapDecision = (state, defender, attacker, target, onUpdate) => {
   pendingAttack = { attacker, target, defenderIndex: state.players.indexOf(defender) };
+  trapWaitingPanelActive = false;
 
   const items = defender.traps.map((trap, index) => {
     const item = document.createElement("label");
@@ -1961,6 +1963,7 @@ const renderTrapDecision = (state, defender, attacker, target, onUpdate) => {
       resolveAttack(state, attacker, target, negate);
       pendingAttack = null;
       state.pendingTrapDecision = null;
+      trapWaitingPanelActive = false;
       onUpdate?.();
       broadcastSyncState(state);
     };
@@ -1977,6 +1980,7 @@ const renderTrapDecision = (state, defender, attacker, target, onUpdate) => {
     resolveAttack(state, attacker, target, false);
     pendingAttack = null;
     state.pendingTrapDecision = null;
+    trapWaitingPanelActive = false;
     onUpdate?.();
     broadcastSyncState(state);
   };
@@ -2012,6 +2016,7 @@ const renderTrapDecision = (state, defender, attacker, target, onUpdate) => {
         resolveAttack(state, attacker, target, Boolean(result?.negateAttack));
         pendingAttack = null;
         state.pendingTrapDecision = null;
+        trapWaitingPanelActive = false;
         onUpdate?.();
         broadcastSyncState(state);
       };
@@ -2059,6 +2064,10 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
 
 const handlePendingTrapDecision = (state, onUpdate) => {
   if (!state.pendingTrapDecision) {
+    if (trapWaitingPanelActive) {
+      clearSelectionPanel();
+      trapWaitingPanelActive = false;
+    }
     return;
   }
   const { defenderIndex, attackerId, targetType, targetPlayerIndex, targetCardId } =
@@ -2067,6 +2076,10 @@ const handlePendingTrapDecision = (state, onUpdate) => {
   const defender = state.players[defenderIndex];
   if (!defender) {
     state.pendingTrapDecision = null;
+    if (trapWaitingPanelActive) {
+      clearSelectionPanel();
+      trapWaitingPanelActive = false;
+    }
     return;
   }
   if (defenderIndex !== localIndex) {
@@ -2076,8 +2089,10 @@ const handlePendingTrapDecision = (state, onUpdate) => {
       onConfirm: () => {},
       confirmLabel: null,
     });
+    trapWaitingPanelActive = true;
     return;
   }
+  trapWaitingPanelActive = false;
   const attacker = attackerId ? findCardByInstanceId(state, attackerId) : null;
   const target =
     targetType === "player"
@@ -2091,6 +2106,10 @@ const handlePendingTrapDecision = (state, onUpdate) => {
         };
   if (!attacker || (target.type === "creature" && !target.card)) {
     state.pendingTrapDecision = null;
+    if (trapWaitingPanelActive) {
+      clearSelectionPanel();
+      trapWaitingPanelActive = false;
+    }
     return;
   }
   renderTrapDecision(state, defender, attacker, target, onUpdate);
@@ -3834,6 +3853,13 @@ const processBeforeCombatQueue = (state, onUpdate) => {
       onUpdate?.();
       broadcastSyncState(state);
       processBeforeCombatQueue(state, onUpdate);
+    },
+    () => {
+      cleanupDestroyed(state);
+      state.beforeCombatProcessing = false;
+      onUpdate?.();
+      broadcastSyncState(state);
+      processBeforeCombatQueue(state, onUpdate);
     }
   );
 };
@@ -3903,7 +3929,10 @@ const processEndOfTurnQueue = (state, onUpdate) => {
     result,
     { playerIndex, opponentIndex, card: creature },
     onUpdate,
-    finishCreature
+    finishCreature,
+    () => {
+      finishCreature();
+    }
   );
 };
 
