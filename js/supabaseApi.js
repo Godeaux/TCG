@@ -64,6 +64,23 @@ export const fetchProfile = async () => {
   return data ?? null;
 };
 
+export const fetchProfilesByIds = async (ids = []) => {
+  const uniqueIds = Array.from(new Set(ids.filter(Boolean)));
+  if (uniqueIds.length === 0) {
+    return [];
+  }
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, username")
+    .in("id", uniqueIds);
+
+  if (error) {
+    throw error;
+  }
+
+  return data ?? [];
+};
+
 export const saveDeck = async ({ ownerId, name, deck }) => {
   if (!ownerId) {
     throw new Error("Missing owner id.");

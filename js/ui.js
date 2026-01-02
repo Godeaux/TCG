@@ -105,6 +105,11 @@ const buildLobbySyncPayload = (state) => ({
     stage: state.deckBuilder?.stage ?? null,
     deckIds: state.deckBuilder?.selections?.map((cards) => cards.map((card) => card.id)) ?? [],
   },
+  setup: {
+    stage: state.setup?.stage ?? null,
+    rolls: state.setup?.rolls ?? [],
+    winnerIndex: state.setup?.winnerIndex ?? null,
+  },
   senderId: state.menu?.profile?.id ?? null,
   timestamp: Date.now(),
 });
@@ -249,6 +254,13 @@ const getLocalPlayerIndex = (state) => {
   return 0;
 };
 
+const getOpponentDisplayName = (state) => {
+  const localIndex = getLocalPlayerIndex(state);
+  const opponentIndex = (localIndex + 1) % 2;
+  const opponentName = state.players?.[opponentIndex]?.name;
+  return opponentName || "Opponent";
+};
+
 const isLobbyReady = (lobby) => Boolean(lobby?.guest_id && lobby?.status === "full");
 
 const setMenuStage = (state, stage) => {
@@ -258,6 +270,27 @@ const setMenuStage = (state, stage) => {
 
 const applyMenuLoading = (state, isLoading) => {
   state.menu.loading = isLoading;
+};
+
+const updateLobbyPlayerNames = async (state, lobby = state.menu?.lobby) => {
+  if (!lobby) {
+    return;
+  }
+  try {
+    const api = await loadSupabaseApi(state);
+    const profiles = await api.fetchProfilesByIds([lobby.host_id, lobby.guest_id]);
+    const profileMap = new Map(profiles.map((profile) => [profile.id, profile.username]));
+    if (lobby.host_id && profileMap.has(lobby.host_id)) {
+      state.players[0].name = profileMap.get(lobby.host_id);
+    }
+    if (lobby.guest_id && profileMap.has(lobby.guest_id)) {
+      state.players[1].name = profileMap.get(lobby.guest_id);
+    }
+    latestCallbacks.onUpdate?.();
+  } catch (error) {
+    setMenuError(state, error.message || "Unable to load lobby profiles.");
+    latestCallbacks.onUpdate?.();
+  }
 };
 
 const ensureProfileLoaded = async (state) => {
@@ -272,7 +305,8 @@ const ensureProfileLoaded = async (state) => {
     const profile = await api.fetchProfile();
     if (profile) {
       state.menu.profile = profile;
-      state.players[0].name = profile.username;
+      const localIndex = getLocalPlayerIndex(state);
+      state.players[localIndex].name = profile.username;
     } else {
       state.menu.profile = null;
     }
@@ -331,6 +365,7 @@ const handleCreateLobby = async (state) => {
     state.menu.lobby = lobby;
     setMenuStage(state, "lobby");
     updateLobbySubscription(state);
+    updateLobbyPlayerNames(state, lobby);
   } catch (error) {
     const message = error.message || "Failed to create lobby.";
     setMenuError(state, message);
@@ -361,6 +396,7 @@ const handleJoinLobby = async (state) => {
     state.menu.lobby = lobby;
     setMenuStage(state, "lobby");
     updateLobbySubscription(state);
+    updateLobbyPlayerNames(state, lobby);
   } catch (error) {
     const message = error.message || "Failed to join lobby.";
     setMenuError(state, message);
@@ -441,7 +477,8 @@ const applyLobbySyncPayload = (state, payload) => {
     }
     if (Array.isArray(payload.deckSelection.selections)) {
       payload.deckSelection.selections.forEach((selection, index) => {
-        if (index === localIndex) {
+        const localSelection = state.deckSelection.selections[index];
+        if (index === localIndex && localSelection) {
           return;
         }
         state.deckSelection.selections[index] = selection;
@@ -462,7 +499,8 @@ const applyLobbySyncPayload = (state, payload) => {
         if (!Array.isArray(deckIds) || deckIds.length === 0) {
           return;
         }
-        if (index === localIndex) {
+        const localSelection = state.deckBuilder.selections[index];
+        if (index === localIndex && localSelection?.length) {
           return;
         }
         const deckId = state.deckSelection?.selections?.[index];
@@ -471,6 +509,31 @@ const applyLobbySyncPayload = (state, payload) => {
         }
         state.deckBuilder.selections[index] = mapDeckIdsToCards(deckId, deckIds);
       });
+    }
+    state.deckBuilder.selections.forEach((_, index) => {
+      rehydrateDeckBuilderCatalog(state, index);
+    });
+  }
+
+  if (payload.setup && state.setup) {
+    const setupOrder = ["rolling", "choice", "complete"];
+    if (payload.setup.stage) {
+      const incomingRank = getStageRank(setupOrder, payload.setup.stage);
+      const currentRank = getStageRank(setupOrder, state.setup.stage);
+      if (incomingRank > currentRank) {
+        state.setup.stage = payload.setup.stage;
+      }
+    }
+    if (Array.isArray(payload.setup.rolls)) {
+      payload.setup.rolls.forEach((roll, index) => {
+        if (roll === null || roll === undefined) {
+          return;
+        }
+        state.setup.rolls[index] = roll;
+      });
+    }
+    if (payload.setup.winnerIndex !== undefined && payload.setup.winnerIndex !== null) {
+      state.setup.winnerIndex = payload.setup.winnerIndex;
     }
   }
 
@@ -512,6 +575,9 @@ const updateLobbySubscription = (state, { force = false } = {}) => {
     if (lobby?.status === "closed") {
       setMenuError(state, "Lobby closed.");
     }
+    if (lobby) {
+      updateLobbyPlayerNames(state, lobby);
+    }
     latestCallbacks.onUpdate?.();
   };
   lobbyChannel = supabaseApi.subscribeToLobby({
@@ -548,6 +614,7 @@ const refreshLobbyState = async (state, { silent = false } = {}) => {
       if (lobby.status === "closed") {
         setMenuError(state, "Lobby closed.");
       }
+      updateLobbyPlayerNames(state, lobby);
       latestCallbacks.onUpdate?.();
     }
   } catch (error) {
@@ -1798,6 +1865,29 @@ const isDeckSelectionComplete = (state) =>
 
 const cloneDeckCatalog = (deck) => deck.map((card) => ({ ...card }));
 
+const rehydrateDeckBuilderCatalog = (state, playerIndex) => {
+  const deckId = state.deckSelection?.selections?.[playerIndex];
+  if (!deckId || !state.deckBuilder) {
+    return;
+  }
+  const catalog = deckCatalogs[deckId] ?? [];
+  if (catalog.length === 0) {
+    return;
+  }
+  const selected = state.deckBuilder.selections?.[playerIndex] ?? [];
+  const selectedIds = new Set(selected.map((card) => card.id));
+  const hasCatalogOrder = (state.deckBuilder.catalogOrder?.[playerIndex] ?? []).length > 0;
+  const hasAvailable = (state.deckBuilder.available?.[playerIndex] ?? []).length > 0;
+  if (!hasCatalogOrder) {
+    state.deckBuilder.catalogOrder[playerIndex] = catalog.map((card) => card.id);
+  }
+  if (!hasAvailable) {
+    state.deckBuilder.available[playerIndex] = cloneDeckCatalog(catalog).filter(
+      (card) => !selectedIds.has(card.id)
+    );
+  }
+};
+
 const renderDeckSelectionOverlay = (state, callbacks) => {
   if (state.menu?.stage !== "ready") {
     deckSelectOverlay?.classList.remove("active");
@@ -1819,11 +1909,12 @@ const renderDeckSelectionOverlay = (state, callbacks) => {
   const isLocalTurn = state.menu?.mode !== "online" || playerIndex === localIndex;
   const player = state.players[playerIndex];
   if (!isLocalTurn) {
+    const opponentName = getOpponentDisplayName(state);
     if (deckSelectTitle) {
-      deckSelectTitle.textContent = "Opponent is choosing a deck";
+      deckSelectTitle.textContent = `${opponentName} is choosing a deck`;
     }
     if (deckSelectSubtitle) {
-      deckSelectSubtitle.textContent = "Waiting for your opponent to pick their deck.";
+      deckSelectSubtitle.textContent = `Waiting for ${opponentName} to pick their deck.`;
     }
     clearPanel(deckSelectGrid);
     return;
@@ -1890,11 +1981,12 @@ const renderDeckBuilderOverlay = (state, callbacks) => {
     return;
   }
   if (!isLocalTurn) {
+    const opponentName = getOpponentDisplayName(state);
     deckOverlay.classList.add("active");
     deckOverlay.setAttribute("aria-hidden", "false");
-    deckTitle.textContent = "Opponent is choosing a deck";
+    deckTitle.textContent = `${opponentName} is choosing a deck`;
     deckStatus.innerHTML = `
-      <div class="deck-status-item">Waiting for your opponent to finish deck selection.</div>
+      <div class="deck-status-item">Waiting for ${opponentName} to finish deck selection.</div>
     `;
     clearPanel(deckFullRow);
     clearPanel(deckAddedRow);
@@ -2078,17 +2170,37 @@ const renderSetupOverlay = (state, callbacks) => {
   if (state.setup.stage === "rolling") {
     const rollButtons = document.createElement("div");
     rollButtons.className = "setup-button-row";
+    const localIndex = getLocalPlayerIndex(state);
+    const isOnline = state.menu?.mode === "online";
+    const canRollP1 = !isOnline || localIndex === 0;
+    const canRollP2 = !isOnline || localIndex === 1;
 
     const rollP1 = document.createElement("button");
     rollP1.textContent = "Roll for Player 1";
-    rollP1.onclick = () => callbacks.onSetupRoll?.(0);
-    rollP1.disabled = state.setup.rolls[0] !== null;
+    rollP1.onclick = () => {
+      if (!canRollP1) {
+        return;
+      }
+      callbacks.onSetupRoll?.(0);
+      if (isOnline) {
+        sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
+      }
+    };
+    rollP1.disabled = state.setup.rolls[0] !== null || !canRollP1;
     rollButtons.appendChild(rollP1);
 
     const rollP2 = document.createElement("button");
     rollP2.textContent = "Roll for Player 2";
-    rollP2.onclick = () => callbacks.onSetupRoll?.(1);
-    rollP2.disabled = state.setup.rolls[1] !== null;
+    rollP2.onclick = () => {
+      if (!canRollP2) {
+        return;
+      }
+      callbacks.onSetupRoll?.(1);
+      if (isOnline) {
+        sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
+      }
+    };
+    rollP2.disabled = state.setup.rolls[1] !== null || !canRollP2;
     rollButtons.appendChild(rollP2);
 
     setupActions.appendChild(rollButtons);
@@ -2107,13 +2219,22 @@ const renderSetupOverlay = (state, callbacks) => {
 
     const chooseSelf = document.createElement("button");
     chooseSelf.textContent = `${winnerName} goes first`;
-    chooseSelf.onclick = () => callbacks.onSetupChoose?.(state.setup.winnerIndex);
+    chooseSelf.onclick = () => {
+      callbacks.onSetupChoose?.(state.setup.winnerIndex);
+      if (state.menu?.mode === "online") {
+        sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
+      }
+    };
     choiceButtons.appendChild(chooseSelf);
 
     const chooseOther = document.createElement("button");
     chooseOther.textContent = `${state.players[(state.setup.winnerIndex + 1) % 2].name} goes first`;
-    chooseOther.onclick = () =>
+    chooseOther.onclick = () => {
       callbacks.onSetupChoose?.((state.setup.winnerIndex + 1) % 2);
+      if (state.menu?.mode === "online") {
+        sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
+      }
+    };
     choiceButtons.appendChild(chooseOther);
 
     setupActions.appendChild(choiceButtons);
@@ -2191,14 +2312,15 @@ const renderMenuOverlays = (state) => {
 
   if (lobbyStatus) {
     const lobby = state.menu.lobby;
+    const opponentName = getOpponentDisplayName(state);
     if (!lobby) {
-      lobbyStatus.textContent = "Waiting for opponent...";
+      lobbyStatus.textContent = `Waiting for ${opponentName}...`;
     } else if (lobby.status === "full") {
-      lobbyStatus.textContent = "Opponent joined. Ready to start.";
+      lobbyStatus.textContent = `${opponentName} joined. Ready to start.`;
     } else if (lobby.status === "closed") {
       lobbyStatus.textContent = "Lobby closed.";
     } else {
-      lobbyStatus.textContent = "Waiting for opponent...";
+      lobbyStatus.textContent = `Waiting for ${opponentName}...`;
     }
   }
   if (lobbyCodeDisplay) {
@@ -2346,7 +2468,10 @@ const initNavigation = () => {
       return;
     }
     if (!isLobbyReady(latestState.menu.lobby)) {
-      setMenuError(latestState, "Waiting for opponent to join the lobby.");
+      setMenuError(
+        latestState,
+        `Waiting for ${getOpponentDisplayName(latestState)} to join the lobby.`
+      );
       latestCallbacks.onUpdate?.();
       return;
     }
