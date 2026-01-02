@@ -205,6 +205,26 @@ const updateHandOverlap = (handGrid) => {
   handGrid.style.setProperty("--hand-overlap", `${overlap}px`);
 };
 
+const getLocalPlayerIndex = (state) => {
+  if (state.menu?.mode !== "online") {
+    return 0;
+  }
+  const profileId = state.menu.profile?.id;
+  const lobby = state.menu.lobby;
+  if (!profileId || !lobby) {
+    return 0;
+  }
+  if (lobby.host_id === profileId) {
+    return 0;
+  }
+  if (lobby.guest_id === profileId) {
+    return 1;
+  }
+  return 0;
+};
+
+const isLobbyReady = (lobby) => Boolean(lobby?.guest_id && lobby?.status === "full");
+
 const setMenuStage = (state, stage) => {
   state.menu.stage = stage;
   state.menu.error = null;
@@ -1630,7 +1650,19 @@ const renderDeckSelectionOverlay = (state, callbacks) => {
 
   const isPlayerOne = state.deckSelection.stage === "p1";
   const playerIndex = isPlayerOne ? 0 : 1;
+  const localIndex = getLocalPlayerIndex(state);
+  const isLocalTurn = state.menu?.mode !== "online" || playerIndex === localIndex;
   const player = state.players[playerIndex];
+  if (!isLocalTurn) {
+    if (deckSelectTitle) {
+      deckSelectTitle.textContent = "Opponent is choosing a deck";
+    }
+    if (deckSelectSubtitle) {
+      deckSelectSubtitle.textContent = "Waiting for your opponent to pick their deck.";
+    }
+    clearPanel(deckSelectGrid);
+    return;
+  }
   if (deckSelectTitle) {
     deckSelectTitle.textContent = `${player.name} Deck Selection`;
   }
@@ -1682,9 +1714,31 @@ const renderDeckBuilderOverlay = (state, callbacks) => {
   }
   const isPlayerOne = state.deckBuilder.stage === "p1";
   const playerIndex = isPlayerOne ? 0 : 1;
+  const localIndex = getLocalPlayerIndex(state);
+  const isLocalTurn = state.menu?.mode !== "online" || playerIndex === localIndex;
   if (!state.deckSelection?.selections?.[playerIndex]) {
     deckOverlay.classList.remove("active");
     deckOverlay.setAttribute("aria-hidden", "true");
+    return;
+  }
+  if (!isLocalTurn) {
+    deckOverlay.classList.add("active");
+    deckOverlay.setAttribute("aria-hidden", "false");
+    deckTitle.textContent = "Opponent is choosing a deck";
+    deckStatus.innerHTML = `
+      <div class="deck-status-item">Waiting for your opponent to finish deck selection.</div>
+    `;
+    clearPanel(deckFullRow);
+    clearPanel(deckAddedRow);
+    setDeckInspectorContent(null);
+    if (deckSave) {
+      deckSave.classList.add("hidden");
+      deckSave.disabled = true;
+    }
+    if (deckRandom) {
+      deckRandom.disabled = true;
+    }
+    deckConfirm.disabled = true;
     return;
   }
   const player = state.players[playerIndex];
@@ -1794,6 +1848,7 @@ const renderDeckBuilderOverlay = (state, callbacks) => {
   }
 
   if (deckRandom) {
+    deckRandom.disabled = state.menu.loading;
     deckRandom.onclick = () => {
       buildRandomDeck({
         available,
@@ -1976,7 +2031,8 @@ const renderMenuOverlays = (state) => {
   }
   if (lobbyContinue) {
     const lobbyClosed = state.menu.lobby?.status === "closed";
-    lobbyContinue.disabled = state.menu.loading || lobbyClosed;
+    const lobbyReady = isLobbyReady(state.menu.lobby);
+    lobbyContinue.disabled = state.menu.loading || lobbyClosed || !lobbyReady;
   }
   if (lobbyLeave) {
     lobbyLeave.disabled = state.menu.loading;
@@ -2112,6 +2168,11 @@ const initNavigation = () => {
 
   lobbyContinue?.addEventListener("click", () => {
     if (!latestState) {
+      return;
+    }
+    if (!isLobbyReady(latestState.menu.lobby)) {
+      setMenuError(latestState, "Waiting for opponent to join the lobby.");
+      latestCallbacks.onUpdate?.();
       return;
     }
     latestState.menu.mode = "online";

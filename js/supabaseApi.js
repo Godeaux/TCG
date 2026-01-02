@@ -144,11 +144,16 @@ export const joinLobbyByCode = async ({ code, guestId }) => {
     .from("lobbies")
     .update({ guest_id: guestId, status: "full" })
     .eq("id", lobby.id)
+    .is("guest_id", null)
+    .eq("status", "open")
     .select("id, code, status, host_id, guest_id")
-    .single();
+    .maybeSingle();
 
   if (error) {
     throw error;
+  }
+  if (!data) {
+    throw new Error("Lobby join failed. The lobby may already be full.");
   }
   return data;
 };
