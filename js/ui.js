@@ -101,6 +101,20 @@ const buildLobbySyncPayload = (state) => ({
     stage: state.deckSelection?.stage ?? null,
     selections: state.deckSelection?.selections ?? [],
   },
+  playerProfile: {
+    index: getLocalPlayerIndex(state),
+    name:
+      state.menu?.profile?.username ??
+      state.players?.[getLocalPlayerIndex(state)]?.name ??
+      null,
+  },
+  game: {
+    activePlayerIndex: state.activePlayerIndex,
+    phase: state.phase,
+    turn: state.turn,
+    cardPlayedThisTurn: state.cardPlayedThisTurn,
+    passPending: state.passPending,
+  },
   deckBuilder: {
     stage: state.deckBuilder?.stage ?? null,
     deckIds: state.deckBuilder?.selections?.map((cards) => cards.map((card) => card.id)) ?? [],
@@ -236,8 +250,10 @@ const updateHandOverlap = (handGrid) => {
   handGrid.style.setProperty("--hand-overlap", `${overlap}px`);
 };
 
+const isOnlineMode = (state) => state.menu?.mode === "online";
+
 const getLocalPlayerIndex = (state) => {
-  if (state.menu?.mode !== "online") {
+  if (!isOnlineMode(state)) {
     return 0;
   }
   const profileId = state.menu.profile?.id;
@@ -253,6 +269,9 @@ const getLocalPlayerIndex = (state) => {
   }
   return 0;
 };
+
+const isLocalPlayersTurn = (state) =>
+  !isOnlineMode(state) || state.activePlayerIndex === getLocalPlayerIndex(state);
 
 const getOpponentDisplayName = (state) => {
   const localIndex = getLocalPlayerIndex(state);
@@ -455,10 +474,16 @@ const applyLobbySyncPayload = (state, payload) => {
     return;
   }
   const timestamp = payload.timestamp ?? 0;
-  if (timestamp <= (state.menu?.lastLobbySyncAt ?? 0)) {
-    return;
+  if (!state.menu.lastLobbySyncBySender) {
+    state.menu.lastLobbySyncBySender = {};
   }
-  state.menu.lastLobbySyncAt = timestamp;
+  if (senderId && timestamp) {
+    const lastSync = state.menu.lastLobbySyncBySender[senderId] ?? 0;
+    if (timestamp <= lastSync) {
+      return;
+    }
+    state.menu.lastLobbySyncBySender[senderId] = timestamp;
+  }
   const localIndex = getLocalPlayerIndex(state);
   const deckSelectionOrder = ["p1", "p1-selected", "p2", "complete"];
   const deckBuilderOrder = ["p1", "p2", "complete"];
@@ -466,6 +491,28 @@ const applyLobbySyncPayload = (state, payload) => {
     const index = order.indexOf(stage);
     return index === -1 ? -1 : index;
   };
+
+  if (payload.playerProfile?.name && Number.isInteger(payload.playerProfile.index)) {
+    state.players[payload.playerProfile.index].name = payload.playerProfile.name;
+  }
+
+  if (payload.game) {
+    if (payload.game.activePlayerIndex !== undefined && payload.game.activePlayerIndex !== null) {
+      state.activePlayerIndex = payload.game.activePlayerIndex;
+    }
+    if (payload.game.phase) {
+      state.phase = payload.game.phase;
+    }
+    if (payload.game.turn !== undefined && payload.game.turn !== null) {
+      state.turn = payload.game.turn;
+    }
+    if (payload.game.cardPlayedThisTurn !== undefined) {
+      state.cardPlayedThisTurn = payload.game.cardPlayedThisTurn;
+    }
+    if (payload.game.passPending !== undefined) {
+      state.passPending = payload.game.passPending;
+    }
+  }
 
   if (payload.deckSelection && state.deckSelection) {
     if (payload.deckSelection.stage) {
@@ -668,7 +715,8 @@ const updateActionPanel = (state, callbacks = {}) => {
     return;
   }
   clearPanel(actionPanel);
-  const player = getActivePlayer(state);
+  const playerIndex = isOnlineMode(state) ? getLocalPlayerIndex(state) : state.activePlayerIndex;
+  const player = state.players[playerIndex];
   const selectedCard = player.hand.find((card) => card.instanceId === selectedHandCardId);
   if (!selectedCard) {
     actionBar.classList.remove("has-actions");
@@ -677,11 +725,12 @@ const updateActionPanel = (state, callbacks = {}) => {
 
   const actions = document.createElement("div");
   actions.className = "action-buttons";
+  const isLocalTurn = isLocalPlayersTurn(state);
 
   const isFree =
     selectedCard.type === "Free Spell" || selectedCard.type === "Trap" || isFreePlay(selectedCard);
   const playDisabled =
-    !canPlayCard(state) || (!isFree && !cardLimitAvailable(state));
+    !isLocalTurn || !canPlayCard(state) || (!isFree && !cardLimitAvailable(state));
 
   const playButton = document.createElement("button");
   playButton.className = "action-btn primary";
@@ -694,6 +743,7 @@ const updateActionPanel = (state, callbacks = {}) => {
   actions.appendChild(playButton);
 
   const canDiscard =
+    isLocalTurn &&
     selectedCard.discardEffect &&
     selectedCard.discardEffect.timing === "main" &&
     canPlayCard(state);
@@ -1213,15 +1263,16 @@ const renderField = (state, playerIndex, isOpponent, onAttack) => {
       return;
     }
     const isCreature = card.type === "Predator" || card.type === "Prey";
-    const showAttack =
+    const canAttack =
       !isOpponent &&
+      isLocalPlayersTurn(state) &&
       state.phase === "Combat" &&
       !card.hasAttacked &&
       !isPassive(card) &&
       !card.frozen &&
       isCreature;
     const cardElement = renderCard(card, {
-      showAttack,
+      showAttack: canAttack,
       onAttack,
     });
     slot.appendChild(cardElement);
@@ -1234,7 +1285,8 @@ const renderHand = (state, onSelect, onUpdate, hideCards) => {
     return;
   }
   clearPanel(handGrid);
-  const player = getActivePlayer(state);
+  const playerIndex = isOnlineMode(state) ? getLocalPlayerIndex(state) : state.activePlayerIndex;
+  const player = state.players[playerIndex];
 
   if (hideCards) {
     player.hand.forEach(() => {
@@ -1445,6 +1497,10 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
 };
 
 const handleAttackSelection = (state, attacker, onUpdate) => {
+  if (!isLocalPlayersTurn(state)) {
+    logMessage(state, "Wait for your turn to declare attacks.");
+    return;
+  }
   if (isSelectionActive()) {
     logMessage(state, "Resolve the current combat choice before declaring another attack.");
     return;
@@ -1488,6 +1544,11 @@ const handleAttackSelection = (state, attacker, onUpdate) => {
 };
 
 const handlePlayCard = (state, card, onUpdate) => {
+  if (!isLocalPlayersTurn(state)) {
+    logMessage(state, "Wait for your turn to play cards.");
+    onUpdate?.();
+    return;
+  }
   if (!canPlayCard(state)) {
     logMessage(state, "Cards may only be played during a main phase.");
     onUpdate?.();
@@ -1749,6 +1810,11 @@ const handlePlayCard = (state, card, onUpdate) => {
 };
 
 const handleDiscardEffect = (state, card, onUpdate) => {
+  if (!isLocalPlayersTurn(state)) {
+    logMessage(state, "Wait for your turn to discard cards.");
+    onUpdate?.();
+    return;
+  }
   if (!card.discardEffect) {
     return;
   }
@@ -2216,25 +2282,36 @@ const renderSetupOverlay = (state, callbacks) => {
 
     const choiceButtons = document.createElement("div");
     choiceButtons.className = "setup-button-row";
+    const isOnline = state.menu?.mode === "online";
+    const localIndex = getLocalPlayerIndex(state);
+    const canChoose = !isOnline || localIndex === state.setup.winnerIndex;
 
     const chooseSelf = document.createElement("button");
     chooseSelf.textContent = `${winnerName} goes first`;
     chooseSelf.onclick = () => {
+      if (!canChoose) {
+        return;
+      }
       callbacks.onSetupChoose?.(state.setup.winnerIndex);
       if (state.menu?.mode === "online") {
         sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
       }
     };
+    chooseSelf.disabled = !canChoose;
     choiceButtons.appendChild(chooseSelf);
 
     const chooseOther = document.createElement("button");
     chooseOther.textContent = `${state.players[(state.setup.winnerIndex + 1) % 2].name} goes first`;
     chooseOther.onclick = () => {
+      if (!canChoose) {
+        return;
+      }
       callbacks.onSetupChoose?.((state.setup.winnerIndex + 1) % 2);
       if (state.menu?.mode === "online") {
         sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
       }
     };
+    chooseOther.disabled = !canChoose;
     choiceButtons.appendChild(chooseOther);
 
     setupActions.appendChild(choiceButtons);
@@ -2313,14 +2390,27 @@ const renderMenuOverlays = (state) => {
   if (lobbyStatus) {
     const lobby = state.menu.lobby;
     const opponentName = getOpponentDisplayName(state);
+    const localProfileId = state.menu.profile?.id ?? null;
+    const hostName = state.players?.[0]?.name || "Host";
+    const guestName = state.players?.[1]?.name || "Guest";
+    const isHost = Boolean(lobby?.host_id && lobby.host_id === localProfileId);
+    const isGuest = Boolean(lobby?.guest_id && lobby.guest_id === localProfileId);
     if (!lobby) {
       lobbyStatus.textContent = `Waiting for ${opponentName}...`;
     } else if (lobby.status === "full") {
-      lobbyStatus.textContent = `${opponentName} joined. Ready to start.`;
+      if (isGuest) {
+        lobbyStatus.textContent = `Joined ${hostName}'s lobby. Ready to start.`;
+      } else if (isHost) {
+        lobbyStatus.textContent = `${guestName} joined. Ready to start.`;
+      } else {
+        lobbyStatus.textContent = `${opponentName} joined. Ready to start.`;
+      }
     } else if (lobby.status === "closed") {
       lobbyStatus.textContent = "Lobby closed.";
     } else {
-      lobbyStatus.textContent = `Waiting for ${opponentName}...`;
+      lobbyStatus.textContent = isHost
+        ? `Waiting for ${guestName}...`
+        : `Joined ${hostName}'s lobby. Waiting to start.`;
     }
   }
   if (lobbyCodeDisplay) {
@@ -2615,9 +2705,14 @@ export const renderGame = (state, callbacks = {}) => {
   initHandPreview();
   ensureProfileLoaded(state);
 
-  const activeIndex = state.activePlayerIndex;
-  const opponentIndex = (state.activePlayerIndex + 1) % 2;
-  const passPending = Boolean(state.passPending);
+  const isOnline = isOnlineMode(state);
+  if (isOnline && state.passPending) {
+    state.passPending = false;
+  }
+  const localIndex = getLocalPlayerIndex(state);
+  const activeIndex = isOnline ? localIndex : state.activePlayerIndex;
+  const opponentIndex = isOnline ? (localIndex + 1) % 2 : (state.activePlayerIndex + 1) % 2;
+  const passPending = !isOnline && Boolean(state.passPending);
   const setupPending = state.setup?.stage !== "complete";
   const deckSelectionPending = !isDeckSelectionComplete(state);
   const deckBuilding = state.deckBuilder?.stage !== "complete";
@@ -2632,6 +2727,7 @@ export const renderGame = (state, callbacks = {}) => {
     state.phase === "End" &&
     !state.endOfTurnFinalized &&
     (state.endOfTurnProcessing || state.endOfTurnQueue.length > 0);
+  const isLocalTurn = isLocalPlayersTurn(state);
   updateIndicators(
     state,
     passPending ||
@@ -2641,7 +2737,8 @@ export const renderGame = (state, callbacks = {}) => {
       menuPending ||
       selectionActive ||
       beforeCombatPending ||
-      endOfTurnPending
+      endOfTurnPending ||
+      (!isLocalTurn && isOnline)
   );
   updatePlayerStats(state, 0, "player1");
   updatePlayerStats(state, 1, "player2");
@@ -2651,7 +2748,16 @@ export const renderGame = (state, callbacks = {}) => {
   );
   renderHand(state, () => updateActionPanel(state, callbacks), callbacks.onUpdate, passPending);
   updateActionPanel(state, callbacks);
-  updateActionBar(callbacks.onNextPhase);
+  const handleNextPhase = () => {
+    if (!isLocalPlayersTurn(state)) {
+      return;
+    }
+    callbacks.onNextPhase?.();
+    if (isOnline) {
+      sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
+    }
+  };
+  updateActionBar(handleNextPhase);
   appendLog(state);
   processBeforeCombatQueue(state, callbacks.onUpdate);
   processEndOfTurnQueue(state, callbacks.onUpdate);
