@@ -154,6 +154,7 @@ const magnificentSeaAnemoneFieldSpell = {
   name: "Magnificent Sea Anemone",
   type: "Spell",
   effectText: "End of turn, play Oscellaris Clownfish.",
+  summons: [clownfishToken],
   onEnd: ({ log, playerIndex }) => {
     log("Magnificent Sea Anemone summons an Oscellaris Clownfish.");
     return { summonTokens: { playerIndex, tokens: [clownfishToken] } };
@@ -188,6 +189,7 @@ const fishCards = [
     nutrition: 1,
     keywords: ["Haste"],
     effectText: "Play Flying Fish.",
+    summons: [flyingFishToken],
     onPlay: ({ log, playerIndex }) => {
       log("Atlantic Flying Fish summons a Flying Fish token.");
       return { summonTokens: { playerIndex, tokens: [flyingFishToken] } };
@@ -288,6 +290,7 @@ const fishCards = [
     nutrition: 1,
     keywords: ["Barrier"],
     effectText: "Slain: play Catfish.",
+    summons: [catfishToken],
     onSlain: ({ log, playerIndex }) => {
       log("Hardhead Catfish is slain: summon a Catfish token.");
       return { summonTokens: { playerIndex, tokens: [catfishToken] } };
@@ -302,6 +305,7 @@ const fishCards = [
     nutrition: 1,
     keywords: ["Invisible"],
     effectText: "Start of turn, play Leafy.",
+    summons: [leafyToken],
     onStart: ({ log, playerIndex }) => {
       log("Leafy Seadragon summons a Leafy token.");
       return { summonTokens: { playerIndex, tokens: [leafyToken] } };
@@ -316,6 +320,7 @@ const fishCards = [
     nutrition: 1,
     keywords: ["Passive"],
     effectText: "Play 2 Portuguese Man O' War. Defending before combat, deal 1 damage.",
+    summons: [manOWarToken],
     onPlay: ({ log, playerIndex }) => {
       log("Portuguese Man O' War Legion summons two Man O' War tokens.");
       return { summonTokens: { playerIndex, tokens: [manOWarToken, manOWarToken] } };
@@ -379,6 +384,7 @@ const fishCards = [
     nutrition: 1,
     keywords: [],
     effectText: "Play 2 Sardines. Heal 1. Slain: play Sardine.",
+    summons: [sardineToken],
     onPlay: ({ log, playerIndex }) => {
       log("Rainbow Sardines: summon two Sardines and heal 1.");
       return {
@@ -470,6 +476,7 @@ const fishCards = [
     keywords: [],
     effectText:
       "Draw 2. Target pred gains end of turn, play Golden Trevally. Discard: target pred gains end of turn, play Golden Trevally.",
+    summons: [goldenTrevallyToken],
     onPlay: ({ log, player }) => {
       log("Golden Kingfish: draw 2, then empower a predator.");
       const preds = player.field.filter((card) => card?.type === "Predator");
@@ -510,6 +517,7 @@ const fishCards = [
     nutrition: 2,
     keywords: [],
     effectText: "Either play Lancetfish or gain +2/+2.",
+    summons: [lancetfishToken],
     onPlay: ({ log, playerIndex }) =>
       makeTargetedSelection({
         title: "Cannibal Fish: choose an outcome",
@@ -550,6 +558,7 @@ const fishCards = [
     nutrition: 2,
     keywords: ["Lure"],
     effectText: "Play 2 Angler Eggs.",
+    summons: [anglerEggToken],
     onPlay: ({ log, playerIndex }) => {
       log("Deep-sea Angler summons two Angler Eggs.");
       return { summonTokens: { playerIndex, tokens: [anglerEggToken, anglerEggToken] } };
@@ -684,6 +693,7 @@ const fishCards = [
     hp: 3,
     keywords: ["Edible"],
     effectText: "Play 2 Tuna Eggs.",
+    summons: [tunaEggToken],
     onConsume: ({ log, playerIndex }) => {
       log("Atlantic Bluefin Tuna effect: summon two Tuna Eggs.");
       return {
@@ -1076,6 +1086,7 @@ const fishCards = [
     type: "Spell",
     isFieldSpell: true,
     effectText: "End of turn, play Oscellaris Clownfish.",
+    summons: [clownfishToken],
     effect: ({ log, playerIndex }) => {
       log("Magnificent Sea Anemone takes the field.");
       return { setFieldSpell: { ownerIndex: playerIndex, cardData: magnificentSeaAnemoneFieldSpell } };
@@ -1157,6 +1168,9 @@ const brownAnoleToken = {
   },
 };
 
+cubanBrownAnoleToken.summons = [brownAnoleToken];
+brownAnoleToken.summons = [cubanBrownAnoleToken];
+
 const europeanGlassLizardToken = {
   id: "token-european-glass-lizard",
   name: "European Glass Lizard",
@@ -1187,6 +1201,8 @@ const taillessToken = {
     return { transformCard: { card: creature, newCardData: europeanGlassLizardToken } };
   },
 };
+
+europeanGlassLizardToken.summons = [taillessToken];
 
 const lavaLizardToken = {
   id: "token-lava-lizard",
@@ -1236,6 +1252,7 @@ const anoleEggToken = {
     nutrition: 1,
     keywords: [],
     effectText: "End of turn, play Carolina Anole.",
+    summons: [carolinaAnoleToken],
     onEnd: ({ log, playerIndex }) => {
       log("Green Anole summons Carolina Anole.");
       return { summonTokens: { playerIndex, tokens: [carolinaAnoleToken] } };
@@ -1248,6 +1265,7 @@ const handEggCard = {
   name: "Hand Egg",
   type: "Free Spell",
   effectText: "Play Anole Egg.",
+  summons: [anoleEggToken],
   effect: ({ log, playerIndex }) => {
     log("Hand Egg hatches into an Anole Egg.");
     return { summonTokens: { playerIndex, tokens: [anoleEggToken] } };
@@ -1295,6 +1313,7 @@ const snakeNestFieldSpell = {
   name: "Snake Nest",
   type: "Spell",
   effectText: "End of turn, play Poisonous Snake.",
+  summons: [poisonousSnakeToken],
   onEnd: ({ log, playerIndex }) => {
     log("Snake Nest releases a Poisonous Snake.");
     return { summonTokens: { playerIndex, tokens: [poisonousSnakeToken] } };
@@ -1350,6 +1369,7 @@ const reptileCards = [
     nutrition: 1,
     keywords: [],
     effectText: "Play Brown Anole.",
+    summons: [brownAnoleToken],
     onPlay: ({ log, playerIndex }) => {
       log("Cuban Brown Anole summons a Brown Anole.");
       return { summonTokens: { playerIndex, tokens: [brownAnoleToken] } };
@@ -1364,6 +1384,7 @@ const reptileCards = [
     nutrition: 1,
     keywords: [],
     effectText: "Slain, become Tailless.",
+    summons: [taillessToken],
     onSlain: ({ log, playerIndex }) => {
       log("European Glass Lizard is slain and becomes Tailless.");
       return { summonTokens: { playerIndex, tokens: [taillessToken] } };
@@ -1402,6 +1423,7 @@ const reptileCards = [
     nutrition: 1,
     keywords: [],
     effectText: "Play 2 Lava Lizards. Deal 1 damage to rival.",
+    summons: [lavaLizardToken],
     onPlay: ({ log, playerIndex }) => {
       log("Galápagos Lava Lizards summon two Lava Lizards and scorch the rival.");
       return {
@@ -1428,6 +1450,7 @@ const reptileCards = [
     nutrition: 1,
     keywords: [],
     effectText: "End of turn, play Carolina Anole.",
+    summons: [carolinaAnoleToken],
     onEnd: ({ log, playerIndex }) => {
       log("Green Anole summons a Carolina Anole.");
       return { summonTokens: { playerIndex, tokens: [carolinaAnoleToken] } };
@@ -1484,6 +1507,7 @@ const reptileCards = [
     nutrition: 1,
     keywords: [],
     effectText: "Draw 1. Play Golden Tegu Egg.",
+    summons: [goldenTeguEggToken],
     onPlay: ({ log, playerIndex }) => {
       log("Cryptic Golden Tegu draws 1 and summons Golden Tegu Egg.");
       return { draw: 1, summonTokens: { playerIndex, tokens: [goldenTeguEggToken] } };
@@ -1637,6 +1661,7 @@ const reptileCards = [
     nutrition: 3,
     keywords: [],
     effectText: "Start of turn, play Giant Tortoise.",
+    summons: [giantTortoiseToken],
     onStart: ({ log, playerIndex }) => {
       log("Alcedo Giant Tortoise summons a Giant Tortoise.");
       return { summonTokens: { playerIndex, tokens: [giantTortoiseToken] } };
@@ -2049,6 +2074,7 @@ const reptileCards = [
     type: "Spell",
     isFieldSpell: true,
     effectText: "End of turn, play Poisonous Snake.",
+    summons: [poisonousSnakeToken],
     effect: ({ log, playerIndex }) => {
       log("Snake Nest takes the field.");
       return { setFieldSpell: { ownerIndex: playerIndex, cardData: snakeNestFieldSpell } };
@@ -2074,6 +2100,7 @@ const reptileCards = [
     type: "Trap",
     trigger: "directAttack",
     effectText: "When target enemy attacks directly, negate attack. Play Snakes.",
+    summons: [snakesToken],
     effect: ({ log, defenderIndex }) => {
       log("Snake Pit triggers: negate attack and unleash snakes.");
       return {

@@ -1213,29 +1213,115 @@ const renderCardStats = (card) => {
   return stats;
 };
 
-const getCardEffectSummary = (card) => {
-  if (card.effectText) {
-    return card.effectText;
+const repeatingEffectPattern = /(start of turn|end of turn|before combat)/i;
+
+const applyRepeatingIndicator = (summary, card) => {
+  if (!summary || summary.includes("🔂")) {
+    return summary;
   }
-  const effectFn = card.effect ?? card.onPlay ?? card.onConsume ?? card.onEnd ?? card.onStart;
-  if (!effectFn) {
-    return "";
+  if (card?.onStart || card?.onEnd || card?.onBeforeCombat || repeatingEffectPattern.test(summary)) {
+    return `🔂 ${summary}`;
   }
-  let summary = "";
-  const log = (message) => {
-    if (!summary) {
-      summary = message.replace(/^.*?\b(?:effect|triggers|summons|takes the field)\b:\s*/i, "");
-    }
-  };
-  try {
-    effectFn({
-      log,
-      player: {},
-      opponent: {},
-      attacker: {},
+  return summary;
+};
+
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const appendKeywordDetails = (summary, card) => {
+  if (!summary) {
+    return summary;
+  }
+  const cardKeywords = new Set((card.keywords ?? []).map((keyword) => keyword.toLowerCase()));
+  const keywordEntries = Object.entries(KEYWORD_DESCRIPTIONS);
+  const sentences = summary.split(/(?<=\.)\s+/);
+  const updatedSentences = sentences.map((sentence) => {
+    const lowerSentence = sentence.toLowerCase();
+    const matches = keywordEntries.filter(([keyword]) => {
+      const normalizedKeyword = keyword.toLowerCase();
+      if (cardKeywords.has(normalizedKeyword)) {
+        return false;
+      }
+      const pattern = new RegExp(`\\b${escapeRegExp(normalizedKeyword).replace(/\\s+/g, "\\\\s+")}\\b`, "i");
+      return pattern.test(lowerSentence);
     });
-  } catch {
-    summary = "";
+    if (!matches.length) {
+      return sentence;
+    }
+    const details = matches
+      .map(([keyword, description]) => `${keyword}: ${description}`)
+      .join(" ");
+    const trimmed = sentence.trim();
+    if (trimmed.endsWith(".")) {
+      return `${trimmed.slice(0, -1)} (${details}).`;
+    }
+    return `${trimmed} (${details})`;
+  });
+  return updatedSentences.join(" ");
+};
+
+const formatTokenStats = (card) => {
+  if (card.type === "Predator" || card.type === "Prey") {
+    const base = `${card.atk}/${card.hp}`;
+    if (card.type === "Prey") {
+      return `${base} (NUT ${card.nutrition})`;
+    }
+    return base;
+  }
+  return "";
+};
+
+const formatTokenSummary = (token) => {
+  const stats = formatTokenStats(token);
+  const keywords = token.keywords?.length ? `Keywords: ${token.keywords.join(", ")}` : "";
+  const effect = getCardEffectSummary(token, { includeKeywordDetails: true });
+  const parts = [
+    `${token.name} — ${token.type}${stats ? ` ${stats}` : ""}`,
+    keywords,
+    effect ? `Effect: ${effect}` : "",
+  ].filter(Boolean);
+  return parts.join(" — ");
+};
+
+const appendTokenDetails = (summary, card) => {
+  if (!card?.summons?.length) {
+    return summary;
+  }
+  const tokenSummaries = card.summons.map((token) => formatTokenSummary(token));
+  return `${summary}<br>***<br>${tokenSummaries.join("<br>")}`;
+};
+
+const getCardEffectSummary = (card, options = {}) => {
+  const { includeKeywordDetails = false, includeTokenDetails = false } = options;
+  let summary = "";
+  if (card.effectText) {
+    summary = card.effectText;
+  } else {
+    const effectFn = card.effect ?? card.onPlay ?? card.onConsume ?? card.onEnd ?? card.onStart;
+    if (!effectFn) {
+      return "";
+    }
+    const log = (message) => {
+      if (!summary) {
+        summary = message.replace(/^.*?\b(?:effect|triggers|summons|takes the field)\b:\s*/i, "");
+      }
+    };
+    try {
+      effectFn({
+        log,
+        player: {},
+        opponent: {},
+        attacker: {},
+      });
+    } catch {
+      summary = "";
+    }
+  }
+  summary = applyRepeatingIndicator(summary, card);
+  if (includeKeywordDetails) {
+    summary = appendKeywordDetails(summary, card);
+  }
+  if (includeTokenDetails) {
+    summary = appendTokenDetails(summary, card);
   }
   return summary;
 };
@@ -1489,7 +1575,10 @@ const setInspectorContentFor = (panel, card) => {
   const stats = renderCardStats(card)
     .map((stat) => `${stat.label} ${stat.value}`)
     .join(" • ");
-  const effectSummary = getCardEffectSummary(card);
+  const effectSummary = getCardEffectSummary(card, {
+    includeKeywordDetails: true,
+    includeTokenDetails: true,
+  });
   const statusTags = [
     card.dryDropped ? "🍂 Dry dropped" : null,
     card.abilitiesCancelled ? "🚫 Abilities canceled" : null,
