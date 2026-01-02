@@ -2028,16 +2028,155 @@ body.ui-mode-mobile .ui--desktop {
   letter-spacing: 0.08em;
 }
 
+.desktop-main {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(280px, 3fr);
+  gap: 24px;
+}
+
+.desktop-gameplay {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.desktop-info {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.desktop-card--hover {
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.desktop-card--hover:hover {
+  transform: translateY(-8px) scale(1.08);
+  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.4);
+  z-index: 2;
+}
+
+.desktop-card__mana {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 229, 184, 0.9);
+  color: #2b1808;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+
+.desktop-card__name {
+  margin-top: 18px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.desktop-card__text {
+  font-size: 11px;
+  text-align: center;
+  opacity: 0.7;
+  padding: 0 10px;
+}
+
+.desktop-deckbuilder {
+  background: rgba(20, 12, 6, 0.92);
+  border-radius: 20px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.desktop-deckbuilder__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.desktop-deckbuilder__filters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.desktop-filter {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 229, 184, 0.4);
+  background: rgba(36, 22, 10, 0.8);
+  color: inherit;
+  padding: 6px 14px;
+  font-weight: 600;
+}
+
+.desktop-deckbuilder__content {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) minmax(240px, 1fr);
+  gap: 20px;
+}
+
+.desktop-catalog__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+}
+
+.desktop-card--catalog {
+  height: 190px;
+}
+
+.desktop-deck {
+  background: rgba(14, 8, 4, 0.9);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.desktop-deck__header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+}
+
+.desktop-deck__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.desktop-deck__list li {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 229, 184, 0.08);
+  padding-bottom: 6px;
+}
+
+.desktop-deck__cta {
+  align-self: stretch;
+}
+
 @media (max-width: 1100px) {
-  .desktop-board {
+  .desktop-main {
     grid-template-columns: 1fr;
   }
 
-  .desktop-side {
-    flex-direction: row;
+  .desktop-deckbuilder__header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  .desktop-field {
-    grid-template-columns: repeat(3, minmax(90px, 1fr));
+  .desktop-deckbuilder__content {
+    grid-template-columns: 1fr;
   }
 }
