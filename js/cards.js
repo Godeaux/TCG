@@ -2089,4 +2089,35 @@ export const deckCatalogs = {
   reptile: reptileCards,
 };
 
+const tokenCatalog = [
+  flyingFishToken,
+  catfishToken,
+  manOWarToken,
+  leafyToken,
+  sardineToken,
+  anglerEggToken,
+  tunaToken,
+  tunaEggToken,
+  goldenTrevallyToken,
+  lancetfishToken,
+  clownfishToken,
+  cubanBrownAnoleToken,
+  brownAnoleToken,
+  europeanGlassLizardToken,
+  taillessToken,
+  lavaLizardToken,
+  carolinaAnoleToken,
+  anoleEggToken,
+  goldenTeguEggToken,
+  giantTortoiseToken,
+  poisonousSnakeToken,
+  snakesToken,
+];
+
+const cardCatalogById = new Map(
+  [...fishCards, ...reptileCards, ...tokenCatalog].map((card) => [card.id, card])
+);
+
+export const getCardDefinitionById = (id) => cardCatalogById.get(id) ?? null;
+
 export const getStarterDeck = (deckId = "fish") => [...(deckCatalogs[deckId] ?? fishCards)];
