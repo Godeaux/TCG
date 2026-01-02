@@ -158,6 +158,23 @@ export const joinLobbyByCode = async ({ code, guestId }) => {
   return data;
 };
 
+export const fetchLobbyById = async ({ lobbyId }) => {
+  if (!lobbyId) {
+    return null;
+  }
+  const { data, error } = await supabase
+    .from("lobbies")
+    .select("id, code, status, host_id, guest_id")
+    .eq("id", lobbyId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data ?? null;
+};
+
 export const closeLobby = async ({ lobbyId, userId }) => {
   if (!lobbyId || !userId) {
     return null;

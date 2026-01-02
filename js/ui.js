@@ -93,6 +93,8 @@ let selectedHandCardId = null;
 let lobbyChannel = null;
 let profileLoaded = false;
 let activeLobbyId = null;
+let lobbyRefreshTimeout = null;
+let lobbyRefreshInFlight = false;
 
 const DECK_OPTIONS = [
   {
@@ -375,12 +377,16 @@ const handleLeaveLobby = async (state) => {
   }
 };
 
-const updateLobbySubscription = (state) => {
+const updateLobbySubscription = (state, { force = false } = {}) => {
   const lobbyId = state.menu.lobby?.id ?? null;
-  if (activeLobbyId === lobbyId) {
+  if (!force && activeLobbyId === lobbyId) {
     return;
   }
   activeLobbyId = lobbyId;
+  if (lobbyRefreshTimeout) {
+    window.clearTimeout(lobbyRefreshTimeout);
+    lobbyRefreshTimeout = null;
+  }
   if (lobbyChannel) {
     supabaseApi?.unsubscribeChannel?.(lobbyChannel);
     lobbyChannel = null;
@@ -391,13 +397,49 @@ const updateLobbySubscription = (state) => {
   if (!supabaseApi) {
     return;
   }
+  const applyLobbyUpdate = (lobby) => {
+    state.menu.lobby = lobby;
+    if (lobby?.status === "closed") {
+      setMenuError(state, "Lobby closed.");
+    }
+    latestCallbacks.onUpdate?.();
+  };
   lobbyChannel = supabaseApi.subscribeToLobby({
     lobbyId,
-    onUpdate: (lobby) => {
-      state.menu.lobby = lobby;
-      latestCallbacks.onUpdate?.();
-    },
+    onUpdate: applyLobbyUpdate,
   });
+  refreshLobbyState(state, { silent: true });
+};
+
+const refreshLobbyState = async (state, { silent = false } = {}) => {
+  if (!state.menu?.lobby?.id || !supabaseApi || lobbyRefreshInFlight) {
+    return;
+  }
+  lobbyRefreshInFlight = true;
+  try {
+    const lobby = await supabaseApi.fetchLobbyById({
+      lobbyId: state.menu.lobby.id,
+    });
+    if (lobby) {
+      state.menu.lobby = lobby;
+      if (lobby.status === "closed") {
+        setMenuError(state, "Lobby closed.");
+      }
+      latestCallbacks.onUpdate?.();
+    }
+  } catch (error) {
+    if (!silent) {
+      setMenuError(state, error.message || "Failed to refresh lobby.");
+      latestCallbacks.onUpdate?.();
+    }
+  } finally {
+    lobbyRefreshInFlight = false;
+    if (!silent && state.menu?.lobby?.id) {
+      lobbyRefreshTimeout = window.setTimeout(() => {
+        refreshLobbyState(state, { silent: true });
+      }, 2000);
+    }
+  }
 };
 
 const handleSaveDeck = async (state, playerIndex, selections) => {
@@ -2185,6 +2227,16 @@ const initNavigation = () => {
       return;
     }
     handleLeaveLobby(latestState);
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible" || !latestState) {
+      return;
+    }
+    if (latestState.menu?.lobby?.id) {
+      updateLobbySubscription(latestState, { force: true });
+      refreshLobbyState(latestState, { silent: false });
+    }
   });
 
   updateNavButtons();
