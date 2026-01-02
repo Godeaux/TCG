@@ -423,22 +423,41 @@ const applyLobbySyncPayload = (state, payload) => {
     return;
   }
   state.menu.lastLobbySyncAt = timestamp;
+  const localIndex = getLocalPlayerIndex(state);
+  const deckSelectionOrder = ["p1", "p1-selected", "p2", "complete"];
+  const deckBuilderOrder = ["p1", "p2", "complete"];
+  const getStageRank = (order, stage) => {
+    const index = order.indexOf(stage);
+    return index === -1 ? -1 : index;
+  };
 
   if (payload.deckSelection && state.deckSelection) {
     if (payload.deckSelection.stage) {
-      state.deckSelection.stage = payload.deckSelection.stage;
+      const incomingRank = getStageRank(deckSelectionOrder, payload.deckSelection.stage);
+      const currentRank = getStageRank(deckSelectionOrder, state.deckSelection.stage);
+      if (incomingRank > currentRank) {
+        state.deckSelection.stage = payload.deckSelection.stage;
+      }
     }
     if (Array.isArray(payload.deckSelection.selections)) {
-      state.deckSelection.selections = payload.deckSelection.selections.slice();
+      payload.deckSelection.selections.forEach((selection, index) => {
+        if (index === localIndex) {
+          return;
+        }
+        state.deckSelection.selections[index] = selection;
+      });
     }
   }
 
   if (payload.deckBuilder && state.deckBuilder) {
     if (payload.deckBuilder.stage) {
-      state.deckBuilder.stage = payload.deckBuilder.stage;
+      const incomingRank = getStageRank(deckBuilderOrder, payload.deckBuilder.stage);
+      const currentRank = getStageRank(deckBuilderOrder, state.deckBuilder.stage);
+      if (incomingRank > currentRank) {
+        state.deckBuilder.stage = payload.deckBuilder.stage;
+      }
     }
     if (Array.isArray(payload.deckBuilder.deckIds)) {
-      const localIndex = getLocalPlayerIndex(state);
       payload.deckBuilder.deckIds.forEach((deckIds, index) => {
         if (!Array.isArray(deckIds) || deckIds.length === 0) {
           return;
