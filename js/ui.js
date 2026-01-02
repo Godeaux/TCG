@@ -1572,6 +1572,23 @@ const setInspectorContentFor = (panel, card) => {
         })
         .join("")
     : "";
+  const tokenKeywordDetails = card.summons
+    ?.filter((token) => token.keywords?.length)
+    .map((token) => {
+      const tokenDetails = token.keywords
+        .map((keyword) => {
+          const detail = KEYWORD_DESCRIPTIONS[keyword] ?? "No description available.";
+          return `<li><strong>${keyword}:</strong> ${detail}</li>`;
+        })
+        .join("");
+      return `
+        <div class="token-keyword-group">
+          <div class="meta">${token.name} — ${token.type} keywords</div>
+          <ul>${tokenDetails}</ul>
+        </div>
+      `;
+    })
+    .join("");
   const stats = renderCardStats(card)
     .map((stat) => `${stat.label} ${stat.value}`)
     .join(" • ");
@@ -1588,12 +1605,18 @@ const setInspectorContentFor = (panel, card) => {
   ].filter(Boolean);
   const keywordLabel = keywords ? `Keywords: ${keywords}` : "";
   const statusLabel = statusTags.length ? `Status: ${statusTags.join(" • ")}` : "";
-  const keywordBlock = keywordDetails
-    ? `<div class="keyword-glossary">
-        <strong>Keyword Glossary</strong>
-        <ul>${keywordDetails}</ul>
-      </div>`
-    : "";
+  const keywordBlock =
+    keywordDetails || tokenKeywordDetails
+      ? `<div class="keyword-glossary">
+          <strong>Keyword Glossary</strong>
+          ${keywordDetails ? `<ul>${keywordDetails}</ul>` : ""}
+          ${
+            tokenKeywordDetails
+              ? `<div class="keyword-divider">***</div>${tokenKeywordDetails}`
+              : ""
+          }
+        </div>`
+      : "";
   const effectBlock = effectSummary
     ? `<div class="effect"><strong>Effect:</strong> ${effectSummary}</div>`
     : "";
