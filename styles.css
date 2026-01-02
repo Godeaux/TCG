@@ -845,6 +845,12 @@ button {
   z-index: 4;
 }
 
+.attack-ghost--slot {
+  border-radius: var(--card-radius);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+}
+
 .impact-ring {
   position: absolute;
   width: 60px;

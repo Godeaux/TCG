@@ -219,6 +219,9 @@ const buildLobbySyncPayload = (state) => ({
     passPending: state.passPending,
     log: Array.isArray(state.log) ? [...state.log] : [],
     visualEffects: Array.isArray(state.visualEffects) ? [...state.visualEffects] : [],
+    pendingTrapDecision: state.pendingTrapDecision
+      ? { ...state.pendingTrapDecision }
+      : null,
     fieldSpell: state.fieldSpell
       ? {
           ownerIndex: state.fieldSpell.ownerIndex,
@@ -315,6 +318,35 @@ const clearPanel = (panel) => {
 const getPlayerBadgeByIndex = (playerIndex) =>
   document.querySelector(`.player-badge[data-player-index="${playerIndex}"]`);
 
+const findCardOwnerIndex = (state, instanceId) =>
+  state.players.findIndex((player) =>
+    player.field.some((card) => card?.instanceId === instanceId)
+  );
+
+const findCardSlotIndex = (state, instanceId) => {
+  const ownerIndex = findCardOwnerIndex(state, instanceId);
+  if (ownerIndex === -1) {
+    return { ownerIndex: -1, slotIndex: -1 };
+  }
+  const slotIndex = state.players[ownerIndex].field.findIndex(
+    (card) => card?.instanceId === instanceId
+  );
+  return { ownerIndex, slotIndex };
+};
+
+const getFieldSlotElement = (state, ownerIndex, slotIndex) => {
+  if (ownerIndex === -1 || slotIndex === -1) {
+    return null;
+  }
+  const localIndex = getLocalPlayerIndex(state);
+  const isOpponent = ownerIndex !== localIndex;
+  const row = document.querySelector(isOpponent ? ".opponent-field" : ".player-field");
+  if (!row) {
+    return null;
+  }
+  return row.querySelector(`.field-slot[data-slot="${slotIndex}"]`);
+};
+
 const createDamagePop = (target, amount) => {
   if (!target || amount <= 0) {
     return;
@@ -351,32 +383,47 @@ const pruneProcessedEffects = () => {
   });
 };
 
-const playAttackEffect = (effect) => {
+const playAttackEffect = (effect, state) => {
   if (!battleEffectsLayer) {
     return;
   }
   const attackerElement = effect.attackerId
     ? document.querySelector(`.card[data-instance-id="${effect.attackerId}"]`)
     : null;
+  const attackerSlotElement = getFieldSlotElement(
+    state,
+    effect.attackerOwnerIndex ?? -1,
+    effect.attackerSlotIndex ?? -1
+  );
   const targetElement =
     effect.targetType === "player"
       ? getPlayerBadgeByIndex(effect.targetPlayerIndex)
       : effect.defenderId
       ? document.querySelector(`.card[data-instance-id="${effect.defenderId}"]`)
       : null;
+  const defenderSlotElement =
+    effect.targetType === "creature"
+      ? getFieldSlotElement(state, effect.defenderOwnerIndex ?? -1, effect.defenderSlotIndex ?? -1)
+      : null;
   if (!attackerElement || !targetElement) {
-    return;
+    if (!attackerElement && !attackerSlotElement) {
+      return;
+    }
+    if (!targetElement && !defenderSlotElement) {
+      return;
+    }
   }
   const layerRect = battleEffectsLayer.getBoundingClientRect();
-  const attackerRect = attackerElement.getBoundingClientRect();
-  const targetRect = targetElement.getBoundingClientRect();
+  const attackerRect = (attackerElement ?? attackerSlotElement)?.getBoundingClientRect();
+  const targetRect = (targetElement ?? defenderSlotElement)?.getBoundingClientRect();
   if (!layerRect.width || !layerRect.height) {
     return;
   }
 
-  const ghost = attackerElement.cloneNode(true);
+  const ghost = attackerElement ? attackerElement.cloneNode(true) : document.createElement("div");
   ghost.classList.add("attack-ghost");
-  ghost.querySelectorAll(".card-actions").forEach((node) => node.remove());
+  ghost.classList.toggle("attack-ghost--slot", !attackerElement);
+  ghost.querySelectorAll?.(".card-actions").forEach((node) => node.remove());
   ghost.style.width = `${attackerRect.width}px`;
   ghost.style.height = `${attackerRect.height}px`;
   ghost.style.left = `${attackerRect.left - layerRect.left + attackerRect.width / 2}px`;
@@ -402,14 +449,16 @@ const playAttackEffect = (effect) => {
 
   const finishImpact = () => {
     ghost.remove();
-    targetElement.classList.add("card-hit");
-    setTimeout(() => targetElement.classList.remove("card-hit"), 380);
+    if (targetElement) {
+      targetElement.classList.add("card-hit");
+      setTimeout(() => targetElement.classList.remove("card-hit"), 380);
+    }
     createImpactRing(targetRect, layerRect);
     if (effect.damageToTarget) {
-      createDamagePop(targetElement, effect.damageToTarget);
+      createDamagePop(targetElement ?? defenderSlotElement, effect.damageToTarget);
     }
     if (effect.damageToAttacker) {
-      createDamagePop(attackerElement, effect.damageToAttacker);
+      createDamagePop(attackerElement ?? attackerSlotElement, effect.damageToAttacker);
     }
   };
 
@@ -435,7 +484,7 @@ const processVisualEffects = (state) => {
     }
     markEffectProcessed(effect.id, createdAt);
     if (effect.type === "attack") {
-      requestAnimationFrame(() => playAttackEffect(effect));
+      requestAnimationFrame(() => playAttackEffect(effect, state));
     }
   });
   pruneProcessedEffects();
@@ -821,6 +870,11 @@ const applyLobbySyncPayload = (state, payload) => {
     }
     if (Array.isArray(payload.game.visualEffects)) {
       state.visualEffects = payload.game.visualEffects.map((effect) => ({ ...effect }));
+    }
+    if (payload.game.pendingTrapDecision !== undefined) {
+      state.pendingTrapDecision = payload.game.pendingTrapDecision
+        ? { ...payload.game.pendingTrapDecision }
+        : null;
     }
     if (Array.isArray(payload.game.players)) {
       payload.game.players.forEach((playerSnapshot, index) => {
@@ -1469,7 +1523,7 @@ const setInspectorContentFor = (panel, card) => {
 const setInspectorContent = (card) => setInspectorContentFor(inspectorPanel, card);
 const setDeckInspectorContent = (card) => setInspectorContentFor(deckInspectorPanel, card);
 
-const resolveEffectChain = (state, result, context, onUpdate, onComplete) => {
+const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCancel) => {
   if (!result) {
     onComplete?.();
     return;
@@ -1558,7 +1612,10 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete) => {
     renderSelectionPanel({
       title,
       items,
-      onConfirm: clearSelectionPanel,
+      onConfirm: () => {
+        clearSelectionPanel();
+        onCancel?.();
+      },
       confirmLabel: "Cancel",
     });
     return;
@@ -1661,6 +1718,11 @@ const clearSelectionPanel = () => {
 
 const isSelectionActive = () => Boolean(selectionPanel?.childElementCount) || Boolean(pendingAttack);
 
+const findCardByInstanceId = (state, instanceId) =>
+  state.players
+    .flatMap((player) => player.field.concat(player.hand, player.carrion, player.exile))
+    .find((card) => card?.instanceId === instanceId);
+
 const resolveAttack = (state, attacker, target, negateAttack = false) => {
   if (negateAttack) {
     logMessage(state, `${attacker.name}'s attack was negated.`);
@@ -1706,11 +1768,17 @@ const resolveAttack = (state, attacker, target, negateAttack = false) => {
   }
 
   let effect = null;
+  const { ownerIndex: attackerOwnerIndex, slotIndex: attackerSlotIndex } = findCardSlotIndex(
+    state,
+    attacker.instanceId
+  );
   if (target.type === "player") {
     const damage = resolveDirectAttack(state, attacker, target.player);
     effect = queueVisualEffect(state, {
       type: "attack",
       attackerId: attacker.instanceId,
+      attackerOwnerIndex,
+      attackerSlotIndex,
       targetType: "player",
       targetPlayerIndex: state.players.indexOf(target.player),
       damageToTarget: damage,
@@ -1718,31 +1786,32 @@ const resolveAttack = (state, attacker, target, negateAttack = false) => {
     });
   } else {
     const { attackerDamage, defenderDamage } = resolveCreatureCombat(state, attacker, target.card);
+    const { ownerIndex: defenderOwnerIndex, slotIndex: defenderSlotIndex } = findCardSlotIndex(
+      state,
+      target.card.instanceId
+    );
     effect = queueVisualEffect(state, {
       type: "attack",
       attackerId: attacker.instanceId,
+      attackerOwnerIndex,
+      attackerSlotIndex,
       targetType: "creature",
       defenderId: target.card.instanceId,
+      defenderOwnerIndex,
+      defenderSlotIndex,
       damageToTarget: defenderDamage,
       damageToAttacker: attackerDamage,
     });
   }
   if (effect) {
     markEffectProcessed(effect.id, effect.createdAt);
-    playAttackEffect(effect);
+    playAttackEffect(effect, state);
   }
   attacker.hasAttacked = true;
   cleanupDestroyed(state);
 };
 
-const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
-  if (defender.traps.length === 0) {
-    resolveAttack(state, attacker, target, false);
-    onUpdate?.();
-    broadcastSyncState(state);
-    return;
-  }
-
+const renderTrapDecision = (state, defender, attacker, target, onUpdate) => {
   pendingAttack = { attacker, target, defenderIndex: state.players.indexOf(defender) };
 
   const items = defender.traps.map((trap, index) => {
@@ -1770,6 +1839,7 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
         logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
         clearSelectionPanel();
         pendingAttack = null;
+        state.pendingTrapDecision = null;
         onUpdate?.();
         broadcastSyncState(state);
         return;
@@ -1778,6 +1848,7 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
       clearSelectionPanel();
       resolveAttack(state, attacker, target, negate);
       pendingAttack = null;
+      state.pendingTrapDecision = null;
       onUpdate?.();
       broadcastSyncState(state);
     };
@@ -1793,6 +1864,7 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
     clearSelectionPanel();
     resolveAttack(state, attacker, target, false);
     pendingAttack = null;
+    state.pendingTrapDecision = null;
     onUpdate?.();
     broadcastSyncState(state);
   };
@@ -1827,6 +1899,7 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
         clearSelectionPanel();
         resolveAttack(state, attacker, target, Boolean(result?.negateAttack));
         pendingAttack = null;
+        state.pendingTrapDecision = null;
         onUpdate?.();
         broadcastSyncState(state);
       };
@@ -1841,6 +1914,74 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
     onConfirm: () => {},
     confirmLabel: null,
   });
+};
+
+const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
+  if (defender.traps.length === 0) {
+    resolveAttack(state, attacker, target, false);
+    onUpdate?.();
+    broadcastSyncState(state);
+    return;
+  }
+
+  if (isOnlineMode(state)) {
+    const defenderIndex = state.players.indexOf(defender);
+    const localIndex = getLocalPlayerIndex(state);
+    if (defenderIndex !== localIndex) {
+      state.pendingTrapDecision = {
+        defenderIndex,
+        attackerId: attacker.instanceId,
+        targetType: target.type,
+        targetPlayerIndex:
+          target.type === "player" ? state.players.indexOf(target.player) : null,
+        targetCardId: target.type === "creature" ? target.card.instanceId : null,
+      };
+      onUpdate?.();
+      broadcastSyncState(state);
+      return;
+    }
+  }
+
+  renderTrapDecision(state, defender, attacker, target, onUpdate);
+};
+
+const handlePendingTrapDecision = (state, onUpdate) => {
+  if (!state.pendingTrapDecision) {
+    return;
+  }
+  const { defenderIndex, attackerId, targetType, targetPlayerIndex, targetCardId } =
+    state.pendingTrapDecision;
+  const localIndex = getLocalPlayerIndex(state);
+  const defender = state.players[defenderIndex];
+  if (!defender) {
+    state.pendingTrapDecision = null;
+    return;
+  }
+  if (defenderIndex !== localIndex) {
+    renderSelectionPanel({
+      title: `${getOpponentDisplayName(state)} is deciding whether to play a trap...`,
+      items: [],
+      onConfirm: () => {},
+      confirmLabel: null,
+    });
+    return;
+  }
+  const attacker = attackerId ? findCardByInstanceId(state, attackerId) : null;
+  const target =
+    targetType === "player"
+      ? {
+          type: "player",
+          player: state.players[targetPlayerIndex ?? (defenderIndex + 1) % 2],
+        }
+      : {
+          type: "creature",
+          card: targetCardId ? findCardByInstanceId(state, targetCardId) : null,
+        };
+  if (!attacker || (target.type === "creature" && !target.card)) {
+    state.pendingTrapDecision = null;
+    return;
+  }
+  renderTrapDecision(state, defender, attacker, target, onUpdate);
 };
 
 const handleAttackSelection = (state, attacker, onUpdate) => {
@@ -1927,19 +2068,29 @@ const handlePlayCard = (state, card, onUpdate) => {
       onUpdate?.();
       return;
     }
-    resolveEffectChain(state, result, {
-      playerIndex,
-      opponentIndex,
-    }, onUpdate, () => cleanupDestroyed(state));
-    if (!card.isFieldSpell) {
-      player.exile.push(card);
-    }
-    player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
-    if (!isFree) {
-      state.cardPlayedThisTurn = true;
-    }
-    onUpdate?.();
-    broadcastSyncState(state);
+    const finalizePlay = () => {
+      cleanupDestroyed(state);
+      if (!card.isFieldSpell) {
+        player.exile.push(card);
+      }
+      player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
+      if (!isFree) {
+        state.cardPlayedThisTurn = true;
+      }
+      onUpdate?.();
+      broadcastSyncState(state);
+    };
+    resolveEffectChain(
+      state,
+      result,
+      {
+        playerIndex,
+        opponentIndex,
+      },
+      onUpdate,
+      finalizePlay,
+      () => onUpdate?.()
+    );
     return;
   }
 
@@ -3695,6 +3846,7 @@ export const renderGame = (state, callbacks = {}) => {
   );
   renderHand(state, () => updateActionPanel(state, callbacks), callbacks.onUpdate, passPending);
   updateActionPanel(state, callbacks);
+  handlePendingTrapDecision(state, callbacks.onUpdate);
   processVisualEffects(state);
   const handleNextPhase = () => {
     if (!isLocalPlayersTurn(state)) {
