@@ -102,11 +102,11 @@ export const resolveDirectAttack = (state, attacker, opponent) => {
   return attacker.currentAtk;
 };
 
-export const cleanupDestroyed = (state) => {
+export const cleanupDestroyed = (state, { silent = false } = {}) => {
   state.players.forEach((player) => {
     player.field = player.field.map((card) => {
       if (card && card.currentHp <= 0) {
-        if (card.onSlain && card.diedInCombat) {
+        if (!silent && card.onSlain && card.diedInCombat) {
           const result = card.onSlain({
             log: (message) => logMessage(state, message),
             player,
@@ -122,7 +122,9 @@ export const cleanupDestroyed = (state) => {
           });
         }
         player.carrion.push(card);
-        logMessage(state, `${card.name} is destroyed and sent to carrion.`);
+        if (!silent) {
+          logMessage(state, `${card.name} is destroyed and sent to carrion.`);
+        }
         if (state.fieldSpell?.card?.instanceId === card.instanceId) {
           state.fieldSpell = null;
         }

@@ -908,6 +908,7 @@ const applyLobbySyncPayload = (state, payload) => {
           player.traps = hydrateZoneSnapshots(playerSnapshot.traps, null, state.turn);
         }
       });
+      cleanupDestroyed(state, { silent: true });
     }
     if (payload.game.fieldSpell && payload.game.fieldSpell.instanceId) {
       const ownerIndex = payload.game.fieldSpell.ownerIndex;
