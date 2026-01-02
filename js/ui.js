@@ -96,6 +96,30 @@ let activeLobbyId = null;
 let lobbyRefreshTimeout = null;
 let lobbyRefreshInFlight = false;
 
+const buildLobbySyncPayload = (state) => ({
+  deckSelection: {
+    stage: state.deckSelection?.stage ?? null,
+    selections: state.deckSelection?.selections ?? [],
+  },
+  deckBuilder: {
+    stage: state.deckBuilder?.stage ?? null,
+    deckIds: state.deckBuilder?.selections?.map((cards) => cards.map((card) => card.id)) ?? [],
+  },
+  senderId: state.menu?.profile?.id ?? null,
+  timestamp: Date.now(),
+});
+
+const sendLobbyBroadcast = (event, payload) => {
+  if (!lobbyChannel) {
+    return;
+  }
+  lobbyChannel.send({
+    type: "broadcast",
+    event,
+    payload,
+  });
+};
+
 const DECK_OPTIONS = [
   {
     id: "fish",
@@ -377,6 +401,73 @@ const handleLeaveLobby = async (state) => {
   }
 };
 
+const mapDeckIdsToCards = (deckId, deckIds = []) => {
+  const catalog = deckCatalogs[deckId] ?? [];
+  const catalogMap = new Map(catalog.map((card) => [card.id, card]));
+  return deckIds
+    .map((id) => catalogMap.get(id))
+    .filter(Boolean)
+    .map((card) => ({ ...card }));
+};
+
+const applyLobbySyncPayload = (state, payload) => {
+  if (!payload) {
+    return;
+  }
+  const senderId = payload.senderId ?? null;
+  if (senderId && senderId === state.menu?.profile?.id) {
+    return;
+  }
+  const timestamp = payload.timestamp ?? 0;
+  if (timestamp <= (state.menu?.lastLobbySyncAt ?? 0)) {
+    return;
+  }
+  state.menu.lastLobbySyncAt = timestamp;
+
+  if (payload.deckSelection && state.deckSelection) {
+    if (payload.deckSelection.stage) {
+      state.deckSelection.stage = payload.deckSelection.stage;
+    }
+    if (Array.isArray(payload.deckSelection.selections)) {
+      state.deckSelection.selections = payload.deckSelection.selections.slice();
+    }
+  }
+
+  if (payload.deckBuilder && state.deckBuilder) {
+    if (payload.deckBuilder.stage) {
+      state.deckBuilder.stage = payload.deckBuilder.stage;
+    }
+    if (Array.isArray(payload.deckBuilder.deckIds)) {
+      const localIndex = getLocalPlayerIndex(state);
+      payload.deckBuilder.deckIds.forEach((deckIds, index) => {
+        if (!Array.isArray(deckIds) || deckIds.length === 0) {
+          return;
+        }
+        if (index === localIndex) {
+          return;
+        }
+        const deckId = state.deckSelection?.selections?.[index];
+        if (!deckId) {
+          return;
+        }
+        state.deckBuilder.selections[index] = mapDeckIdsToCards(deckId, deckIds);
+      });
+    }
+  }
+
+  if (
+    state.menu?.mode === "online" &&
+    !state.menu.onlineDecksReady &&
+    state.deckBuilder?.stage === "complete" &&
+    state.deckBuilder.selections?.every((selection) => selection.length === 20)
+  ) {
+    state.menu.onlineDecksReady = true;
+    latestCallbacks.onDeckComplete?.(state.deckBuilder.selections);
+  }
+
+  latestCallbacks.onUpdate?.();
+};
+
 const updateLobbySubscription = (state, { force = false } = {}) => {
   const lobbyId = state.menu.lobby?.id ?? null;
   if (!force && activeLobbyId === lobbyId) {
@@ -408,7 +499,20 @@ const updateLobbySubscription = (state, { force = false } = {}) => {
     lobbyId,
     onUpdate: applyLobbyUpdate,
   });
+  lobbyChannel.on("broadcast", { event: "deck_update" }, ({ payload }) => {
+    applyLobbySyncPayload(state, payload);
+  });
+  lobbyChannel.on("broadcast", { event: "sync_request" }, ({ payload }) => {
+    if (payload?.senderId === state.menu?.profile?.id) {
+      return;
+    }
+    sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
+  });
+  lobbyChannel.on("broadcast", { event: "sync_state" }, ({ payload }) => {
+    applyLobbySyncPayload(state, payload);
+  });
   refreshLobbyState(state, { silent: true });
+  sendLobbyBroadcast("sync_request", { senderId: state.menu?.profile?.id ?? null });
 };
 
 const refreshLobbyState = async (state, { silent = false } = {}) => {
@@ -1735,6 +1839,9 @@ const renderDeckSelectionOverlay = (state, callbacks) => {
         state.deckBuilder.selections[playerIndex] = [];
         state.deckSelection.stage = isPlayerOne ? "p1-selected" : "complete";
         logMessage(state, `${player.name} selected the ${option.name} deck.`);
+        if (state.menu?.mode === "online") {
+          sendLobbyBroadcast("deck_update", buildLobbySyncPayload(state));
+        }
         callbacks.onUpdate?.();
       };
     }
@@ -1873,12 +1980,19 @@ const renderDeckBuilderOverlay = (state, callbacks) => {
       logMessage(state, "Player 1 deck locked in. Hand off to Player 2.");
       deckHighlighted = null;
       setDeckInspectorContent(null);
+      if (state.menu?.mode === "online") {
+        sendLobbyBroadcast("deck_update", buildLobbySyncPayload(state));
+      }
       callbacks.onUpdate?.();
       return;
     }
     state.deckBuilder.stage = "complete";
     deckHighlighted = null;
     setDeckInspectorContent(null);
+    if (state.menu?.mode === "online") {
+      state.menu.onlineDecksReady = true;
+      sendLobbyBroadcast("deck_update", buildLobbySyncPayload(state));
+    }
     callbacks.onDeckComplete?.(state.deckBuilder.selections);
     callbacks.onUpdate?.();
   };
@@ -2236,6 +2350,9 @@ const initNavigation = () => {
     if (latestState.menu?.lobby?.id) {
       updateLobbySubscription(latestState, { force: true });
       refreshLobbyState(latestState, { silent: false });
+      sendLobbyBroadcast("sync_request", {
+        senderId: latestState.menu?.profile?.id ?? null,
+      });
     }
   });
 
