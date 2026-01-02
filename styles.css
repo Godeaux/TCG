@@ -37,6 +37,10 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+.hidden {
+  display: none;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -1098,6 +1102,10 @@ button {
   border-color: var(--border-gold);
 }
 
+.deck-tab.hidden {
+  display: none;
+}
+
 .deck-content {
   flex: 1;
   display: grid;
@@ -1154,6 +1162,16 @@ button {
 .deck-actions {
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
+}
+
+.deck-exit {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 
 .deck-save {
@@ -1167,6 +1185,75 @@ button {
 
 .deck-save.hidden {
   display: none;
+}
+
+.deck-load {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.deck-load.hidden {
+  display: none;
+}
+
+.deck-load-list,
+.deck-manage-list {
+  display: grid;
+  gap: 12px;
+  max-height: 280px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.deck-slot {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.deck-slot-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 600;
+}
+
+.deck-slot-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.deck-slot-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.deck-slot-actions button {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card-hover);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.deck-slot-actions button.primary {
+  color: var(--text-primary);
+  border-color: var(--border-gold);
+}
+
+.deck-slot-actions button.danger {
+  color: var(--hp-red);
+  border-color: rgba(255, 89, 89, 0.6);
 }
 
 .deck-actions .btn-primary {

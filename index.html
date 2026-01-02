@@ -36,6 +36,8 @@
         <div class="deck-tabs">
           <button class="deck-tab active" data-tab="catalog">Catalog</button>
           <button class="deck-tab" data-tab="deck">My Deck</button>
+          <button class="deck-tab" data-tab="load">Load Deck</button>
+          <button class="deck-tab" data-tab="manage">Manage Decks</button>
         </div>
         <div class="deck-content">
           <div class="deck-panel deck-catalog-panel active">
@@ -44,11 +46,19 @@
           <div class="deck-panel deck-added-panel">
             <div class="deck-grid" id="deck-added-row"></div>
           </div>
+          <div class="deck-panel deck-load-panel">
+            <div class="deck-load-list" id="deck-load-list"></div>
+          </div>
+          <div class="deck-panel deck-manage-panel">
+            <div class="deck-manage-list" id="deck-manage-list"></div>
+          </div>
         </div>
         <div class="deck-inspector" id="deck-inspector"></div>
         <div class="deck-actions">
+          <button class="deck-exit" id="deck-exit" type="button">Back</button>
           <button class="deck-save" id="deck-save" type="button">Save Deck</button>
           <button class="deck-random" id="deck-random" type="button">Random</button>
+          <button class="deck-load" id="deck-load" type="button">Load Deck</button>
           <button class="btn-primary" id="deck-confirm" type="button">Confirm Deck</button>
         </div>
       </div>
