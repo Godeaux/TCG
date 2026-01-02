@@ -59,6 +59,16 @@ export const createGameState = () => {
       lastLobbySyncAt: 0,
       lastLobbySyncBySender: {},
       onlineDecksReady: false,
+      decks: [],
+    },
+    catalogBuilder: {
+      stage: null,
+      deckId: null,
+      selections: [],
+      available: [],
+      catalogOrder: [],
+      editingDeckId: null,
+      editingDeckName: null,
     },
     log: [],
     combat: {

@@ -105,6 +105,73 @@ export const saveDeck = async ({ ownerId, name, deck }) => {
   return data;
 };
 
+export const fetchDecksByOwner = async ({ ownerId }) => {
+  if (!ownerId) {
+    throw new Error("Missing owner id.");
+  }
+  const { data, error } = await supabase
+    .from("decks")
+    .select("id, name, deck_json, created_at")
+    .eq("owner_id", ownerId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+  return data ?? [];
+};
+
+export const updateDeck = async ({ deckId, ownerId, name, deck }) => {
+  if (!deckId) {
+    throw new Error("Missing deck id.");
+  }
+  if (!ownerId) {
+    throw new Error("Missing owner id.");
+  }
+  const updatePayload = {};
+  if (name !== undefined) {
+    const trimmedName = name?.trim();
+    if (!trimmedName) {
+      throw new Error("Enter a deck name.");
+    }
+    updatePayload.name = trimmedName;
+  }
+  if (deck !== undefined) {
+    updatePayload.deck_json = deck;
+  }
+  const { data, error } = await supabase
+    .from("decks")
+    .update(updatePayload)
+    .eq("id", deckId)
+    .eq("owner_id", ownerId)
+    .select("id, name")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+export const deleteDeck = async ({ deckId, ownerId }) => {
+  if (!deckId) {
+    throw new Error("Missing deck id.");
+  }
+  if (!ownerId) {
+    throw new Error("Missing owner id.");
+  }
+  const { error } = await supabase
+    .from("decks")
+    .delete()
+    .eq("id", deckId)
+    .eq("owner_id", ownerId);
+
+  if (error) {
+    throw error;
+  }
+  return true;
+};
+
 export const createLobby = async ({ hostId }) => {
   if (!hostId) {
     throw new Error("Missing host id.");

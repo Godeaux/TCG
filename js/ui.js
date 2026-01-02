@@ -45,6 +45,9 @@ const deckAddedRow = document.getElementById("deck-added-row");
 const deckConfirm = document.getElementById("deck-confirm");
 const deckRandom = document.getElementById("deck-random");
 const deckInspectorPanel = document.getElementById("deck-inspector");
+const deckLoadList = document.getElementById("deck-load-list");
+const deckManageList = document.getElementById("deck-manage-list");
+const deckExit = document.getElementById("deck-exit");
 const pagesContainer = document.getElementById("pages-container");
 const pageDots = document.getElementById("page-dots");
 const navLeft = document.getElementById("nav-left");
@@ -77,6 +80,7 @@ const lobbyContinue = document.getElementById("lobby-continue");
 const lobbyLeave = document.getElementById("lobby-leave");
 const lobbyLiveError = document.getElementById("lobby-live-error");
 const deckSave = document.getElementById("deck-save");
+const deckLoad = document.getElementById("deck-load");
 
 let pendingConsumption = null;
 let pendingAttack = null;
@@ -85,6 +89,8 @@ let deckHighlighted = null;
 let currentPage = 0;
 let navigationInitialized = false;
 let deckActiveTab = "catalog";
+let decksLoaded = false;
+let decksLoading = false;
 let latestState = null;
 let latestCallbacks = {};
 const TOTAL_PAGES = 2;
@@ -360,6 +366,7 @@ const updateHandOverlap = (handGrid) => {
 };
 
 const isOnlineMode = (state) => state.menu?.mode === "online";
+const isCatalogMode = (state) => state.menu?.stage === "catalog";
 
 const getLocalPlayerIndex = (state) => {
   if (!isOnlineMode(state)) {
@@ -435,6 +442,7 @@ const ensureProfileLoaded = async (state) => {
       state.menu.profile = profile;
       const localIndex = getLocalPlayerIndex(state);
       state.players[localIndex].name = profile.username;
+      ensureDecksLoaded(state);
     } else {
       state.menu.profile = null;
     }
@@ -443,6 +451,35 @@ const ensureProfileLoaded = async (state) => {
     setMenuError(state, error.message || "Unable to load profile.");
   } finally {
     applyMenuLoading(state, false);
+    latestCallbacks.onUpdate?.();
+  }
+};
+
+const ensureDecksLoaded = async (state, { force = false } = {}) => {
+  if (!state.menu?.profile) {
+    return;
+  }
+  if (decksLoading) {
+    return;
+  }
+  if (decksLoaded && !force) {
+    return;
+  }
+  decksLoading = true;
+  try {
+    const api = await loadSupabaseApi(state);
+    const decks = await api.fetchDecksByOwner({ ownerId: state.menu.profile.id });
+    state.menu.decks = decks.map((deck) => ({
+      id: deck.id,
+      name: deck.name,
+      deck: deck.deck_json ?? [],
+      createdAt: deck.created_at ?? null,
+    }));
+    decksLoaded = true;
+  } catch (error) {
+    setMenuError(state, error.message || "Unable to load decks.");
+  } finally {
+    decksLoading = false;
     latestCallbacks.onUpdate?.();
   }
 };
@@ -460,6 +497,8 @@ const handleLoginSubmit = async (state) => {
     const profile = await api.signInWithUsername(username);
     state.menu.profile = profile;
     state.players[0].name = profile.username;
+    decksLoaded = false;
+    ensureDecksLoaded(state, { force: true });
     setMenuStage(state, "main");
     if (loginUsername) {
       loginUsername.value = "";
@@ -573,6 +612,20 @@ const mapDeckIdsToCards = (deckId, deckIds = []) => {
     .filter(Boolean)
     .map((card) => ({ ...card }));
 };
+
+const findDeckCatalogId = (deckIds = []) => {
+  const ids = deckIds.filter(Boolean);
+  if (ids.length === 0) {
+    return "fish";
+  }
+  return (
+    Object.entries(deckCatalogs).find(([_, catalog]) => {
+      const catalogIds = new Set(catalog.map((card) => card.id));
+      return ids.every((id) => catalogIds.has(id));
+    })?.[0] ?? "fish"
+  );
+};
+
 
 const applyLobbySyncPayload = (state, payload) => {
   if (!payload) {
@@ -830,37 +883,6 @@ const refreshLobbyState = async (state, { silent = false } = {}) => {
         refreshLobbyState(state, { silent: true });
       }, 2000);
     }
-  }
-};
-
-const handleSaveDeck = async (state, playerIndex, selections) => {
-  if (!state.menu.profile) {
-    setMenuError(state, "Login required to save decks.");
-    return;
-  }
-  const deckName = window.prompt("Deck name:", `${state.players[playerIndex].name}'s Deck`);
-  if (!deckName) {
-    return;
-  }
-  applyMenuLoading(state, true);
-  setMenuError(state, null);
-  latestCallbacks.onUpdate?.();
-  try {
-    const api = await loadSupabaseApi(state);
-    const deckPayload = selections.map((card) => card.id);
-    await api.saveDeck({
-      ownerId: state.menu.profile.id,
-      name: deckName,
-      deck: deckPayload,
-    });
-    logMessage(state, `Saved deck "${deckName}" to your account.`);
-  } catch (error) {
-    const message = error.message || "Failed to save deck.";
-    setMenuError(state, message);
-    logMessage(state, message);
-  } finally {
-    applyMenuLoading(state, false);
-    latestCallbacks.onUpdate?.();
   }
 };
 
@@ -2075,18 +2097,42 @@ const updateActionBar = (onNextPhase) => {
   }
 };
 
-const updateDeckTabs = () => {
+const updateDeckTabs = (state) => {
   const deckTabs = Array.from(document.querySelectorAll(".deck-tab"));
   const deckPanels = Array.from(document.querySelectorAll(".deck-panel"));
+  const showLoad = isOnlineMode(state) && !isCatalogMode(state);
+  const showManage = isCatalogMode(state);
+  const allowedTabs = new Set(["catalog", "deck"]);
+  if (showLoad) {
+    allowedTabs.add("load");
+  }
+  if (showManage) {
+    allowedTabs.add("manage");
+  }
+
+  if (!allowedTabs.has(deckActiveTab)) {
+    deckActiveTab = "catalog";
+  }
+
   deckTabs.forEach((tab) => {
-    tab.classList.toggle("active", tab.dataset.tab === deckActiveTab);
+    const tabKey = tab.dataset.tab;
+    const shouldShow = allowedTabs.has(tabKey);
+    tab.classList.toggle("hidden", !shouldShow);
+    tab.classList.toggle("active", tabKey === deckActiveTab);
   });
+
   deckPanels.forEach((panel) => {
     if (panel.classList.contains("deck-catalog-panel")) {
       panel.classList.toggle("active", deckActiveTab === "catalog");
     }
     if (panel.classList.contains("deck-added-panel")) {
       panel.classList.toggle("active", deckActiveTab === "deck");
+    }
+    if (panel.classList.contains("deck-load-panel")) {
+      panel.classList.toggle("active", deckActiveTab === "load");
+    }
+    if (panel.classList.contains("deck-manage-panel")) {
+      panel.classList.toggle("active", deckActiveTab === "manage");
     }
   });
 };
@@ -2095,6 +2141,33 @@ const isDeckSelectionComplete = (state) =>
   state.deckSelection?.selections?.every((selection) => Boolean(selection));
 
 const cloneDeckCatalog = (deck) => deck.map((card) => ({ ...card }));
+
+const applyDeckToBuilder = (state, playerIndex, deckIds) => {
+  const deckId = findDeckCatalogId(deckIds);
+  const catalog = deckCatalogs[deckId] ?? [];
+  const selected = mapDeckIdsToCards(deckId, deckIds);
+  state.deckSelection.selections[playerIndex] = deckId;
+  state.deckBuilder.selections[playerIndex] = selected;
+  state.deckBuilder.available[playerIndex] = cloneDeckCatalog(catalog).filter(
+    (card) => !selected.some((picked) => picked.id === card.id)
+  );
+  state.deckBuilder.catalogOrder[playerIndex] = catalog.map((card) => card.id);
+};
+
+const initCatalogBuilder = (builder) => {
+  if (!builder?.deckId) {
+    return;
+  }
+  const catalog = deckCatalogs[builder.deckId] ?? [];
+  if (!builder.catalogOrder?.length) {
+    builder.catalogOrder = catalog.map((card) => card.id);
+  }
+  if (!builder.available?.length) {
+    builder.available = cloneDeckCatalog(catalog).filter(
+      (card) => !builder.selections.some((picked) => picked.id === card.id)
+    );
+  }
+};
 
 const rehydrateDeckBuilderCatalog = (state, playerIndex) => {
   const deckId = state.deckSelection?.selections?.[playerIndex];
@@ -2120,6 +2193,54 @@ const rehydrateDeckBuilderCatalog = (state, playerIndex) => {
 };
 
 const renderDeckSelectionOverlay = (state, callbacks) => {
+  if (isCatalogMode(state)) {
+    if (!state.catalogBuilder || state.catalogBuilder.stage !== "select") {
+      deckSelectOverlay?.classList.remove("active");
+      deckSelectOverlay?.setAttribute("aria-hidden", "true");
+      return;
+    }
+    deckSelectOverlay?.classList.add("active");
+    deckSelectOverlay?.setAttribute("aria-hidden", "false");
+    if (deckSelectTitle) {
+      deckSelectTitle.textContent = "Deck Catalog";
+    }
+    if (deckSelectSubtitle) {
+      deckSelectSubtitle.textContent = "Choose an animal category to build a new deck.";
+    }
+    clearPanel(deckSelectGrid);
+    DECK_OPTIONS.forEach((option) => {
+      const panel = document.createElement("button");
+      panel.type = "button";
+      panel.className = `deck-select-panel ${option.panelClass} ${
+        option.available ? "" : "disabled"
+      }`;
+      panel.disabled = !option.available;
+      panel.innerHTML = `
+        <div class="deck-emoji">${option.emoji}</div>
+        <div class="deck-name">${option.name}</div>
+        <div class="deck-status">${option.available ? "Available" : "Not implemented"}</div>
+        <div class="deck-meta">${option.available ? "Select deck" : "Coming soon"}</div>
+      `;
+      if (option.available) {
+        panel.onclick = () => {
+          const catalog = deckCatalogs[option.id] ?? [];
+          state.catalogBuilder.deckId = option.id;
+          state.catalogBuilder.stage = "build";
+          state.catalogBuilder.selections = [];
+          state.catalogBuilder.available = cloneDeckCatalog(catalog);
+          state.catalogBuilder.catalogOrder = catalog.map((card) => card.id);
+          state.catalogBuilder.editingDeckId = null;
+          state.catalogBuilder.editingDeckName = null;
+          deckActiveTab = "catalog";
+          deckHighlighted = null;
+          setDeckInspectorContent(null);
+          callbacks.onUpdate?.();
+        };
+      }
+      deckSelectGrid?.appendChild(panel);
+    });
+    return;
+  }
   if (state.menu?.stage !== "ready") {
     deckSelectOverlay?.classList.remove("active");
     deckSelectOverlay?.setAttribute("aria-hidden", "true");
@@ -2150,6 +2271,56 @@ const renderDeckSelectionOverlay = (state, callbacks) => {
     clearPanel(deckSelectGrid);
     return;
   }
+  if (isOnlineMode(state)) {
+    ensureDecksLoaded(state);
+    if (deckSelectTitle) {
+      deckSelectTitle.textContent = `${player.name} Load Deck`;
+    }
+    if (deckSelectSubtitle) {
+      deckSelectSubtitle.textContent =
+        "Choose one of your saved decks (up to 3 available in multiplayer).";
+    }
+    clearPanel(deckSelectGrid);
+    const decks = (state.menu.decks ?? []).slice(0, 3);
+    if (decks.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "deck-slot";
+      empty.textContent = "No saved decks available. Build decks in Catalog.";
+      deckSelectGrid?.appendChild(empty);
+      return;
+    }
+    decks.forEach((deck) => {
+      const slot = document.createElement("div");
+      slot.className = "deck-slot";
+      const loadButton = document.createElement("button");
+      loadButton.type = "button";
+      loadButton.className = "primary";
+      loadButton.textContent = "Load Deck";
+      loadButton.onclick = () => {
+        applyDeckToBuilder(state, playerIndex, deck.deck);
+        state.deckSelection.stage = isPlayerOne ? "p1-selected" : "complete";
+        logMessage(state, `${player.name} loaded "${deck.name}".`);
+        if (state.menu?.mode === "online") {
+          sendLobbyBroadcast("deck_update", buildLobbySyncPayload(state));
+        }
+        callbacks.onUpdate?.();
+      };
+      slot.innerHTML = `
+        <div class="deck-slot-header">
+          <span>${deck.name}</span>
+          <span class="deck-slot-meta">20 cards</span>
+        </div>
+        <div class="deck-slot-meta">Multiplayer Slot</div>
+      `;
+      const actions = document.createElement("div");
+      actions.className = "deck-slot-actions";
+      actions.appendChild(loadButton);
+      slot.appendChild(actions);
+      deckSelectGrid?.appendChild(slot);
+    });
+    return;
+  }
+
   if (deckSelectTitle) {
     deckSelectTitle.textContent = `${player.name} Deck Selection`;
   }
@@ -2190,52 +2361,205 @@ const renderDeckSelectionOverlay = (state, callbacks) => {
   });
 };
 
-const renderDeckBuilderOverlay = (state, callbacks) => {
-  if (state.menu?.stage !== "ready") {
-    deckOverlay.classList.remove("active");
-    deckOverlay.setAttribute("aria-hidden", "true");
+const renderDeckLoadPanel = (state, playerIndex, callbacks) => {
+  if (!deckLoadList) {
     return;
   }
-  if (!state.deckBuilder || state.deckBuilder.stage === "complete") {
-    deckOverlay.classList.remove("active");
-    deckOverlay.setAttribute("aria-hidden", "true");
-    deckHighlighted = null;
+  ensureDecksLoaded(state);
+  clearPanel(deckLoadList);
+  const decks = (state.menu.decks ?? []).slice(0, 3);
+  if (decks.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "deck-slot";
+    empty.textContent = "No saved decks available. Build decks in Catalog.";
+    deckLoadList.appendChild(empty);
     return;
   }
-  const isPlayerOne = state.deckBuilder.stage === "p1";
-  const playerIndex = isPlayerOne ? 0 : 1;
-  const localIndex = getLocalPlayerIndex(state);
-  const isLocalTurn = state.menu?.mode !== "online" || playerIndex === localIndex;
-  if (!state.deckSelection?.selections?.[playerIndex]) {
-    deckOverlay.classList.remove("active");
-    deckOverlay.setAttribute("aria-hidden", "true");
-    return;
-  }
-  if (!isLocalTurn) {
-    const opponentName = getOpponentDisplayName(state);
-    deckOverlay.classList.add("active");
-    deckOverlay.setAttribute("aria-hidden", "false");
-    deckTitle.textContent = `${opponentName} is choosing a deck`;
-    deckStatus.innerHTML = `
-      <div class="deck-status-item">Waiting for ${opponentName} to finish deck selection.</div>
+  decks.forEach((deck) => {
+    const slot = document.createElement("div");
+    slot.className = "deck-slot";
+    slot.innerHTML = `
+      <div class="deck-slot-header">
+        <span>${deck.name}</span>
+        <span class="deck-slot-meta">20 cards</span>
+      </div>
+      <div class="deck-slot-meta">Multiplayer Slot</div>
     `;
-    clearPanel(deckFullRow);
-    clearPanel(deckAddedRow);
-    setDeckInspectorContent(null);
-    if (deckSave) {
-      deckSave.classList.add("hidden");
-      deckSave.disabled = true;
-    }
-    if (deckRandom) {
-      deckRandom.disabled = true;
-    }
-    deckConfirm.disabled = true;
+    const actions = document.createElement("div");
+    actions.className = "deck-slot-actions";
+    const loadButton = document.createElement("button");
+    loadButton.type = "button";
+    loadButton.className = "primary";
+    loadButton.textContent = "Load Deck";
+    loadButton.onclick = () => {
+      applyDeckToBuilder(state, playerIndex, deck.deck);
+      logMessage(state, `${state.players[playerIndex].name} loaded "${deck.name}".`);
+      if (state.menu?.mode === "online") {
+        sendLobbyBroadcast("deck_update", buildLobbySyncPayload(state));
+      }
+      callbacks.onUpdate?.();
+    };
+    actions.appendChild(loadButton);
+    slot.appendChild(actions);
+    deckLoadList.appendChild(slot);
+  });
+};
+
+const renderDeckManagePanel = (state, callbacks) => {
+  if (!deckManageList) {
     return;
   }
-  const player = state.players[playerIndex];
-  const available = state.deckBuilder.available[playerIndex];
-  const selected = state.deckBuilder.selections[playerIndex];
-  const catalogOrder = state.deckBuilder.catalogOrder[playerIndex] ?? [];
+  clearPanel(deckManageList);
+  if (!state.menu.profile) {
+    const message = document.createElement("div");
+    message.className = "deck-slot";
+    message.textContent = "Login to manage decks.";
+    deckManageList.appendChild(message);
+    return;
+  }
+  ensureDecksLoaded(state);
+  const decks = state.menu.decks ?? [];
+  const slots = Array.from({ length: 5 }, (_, index) => decks[index] ?? null);
+
+  const newDeckButton = document.createElement("button");
+  newDeckButton.type = "button";
+  newDeckButton.className = "primary";
+  newDeckButton.textContent = "Start New Deck";
+  newDeckButton.onclick = () => {
+    state.catalogBuilder.stage = "select";
+    state.catalogBuilder.deckId = null;
+    state.catalogBuilder.selections = [];
+    state.catalogBuilder.available = [];
+    state.catalogBuilder.catalogOrder = [];
+    state.catalogBuilder.editingDeckId = null;
+    state.catalogBuilder.editingDeckName = null;
+    deckActiveTab = "catalog";
+    deckHighlighted = null;
+    callbacks.onUpdate?.();
+  };
+  const newDeckSlot = document.createElement("div");
+  newDeckSlot.className = "deck-slot";
+  newDeckSlot.innerHTML = `
+    <div class="deck-slot-header">
+      <span>Deck Slots</span>
+      <span class="deck-slot-meta">${decks.length}/5 used</span>
+    </div>
+    <div class="deck-slot-meta">Save up to five decks per account.</div>
+  `;
+  const newDeckActions = document.createElement("div");
+  newDeckActions.className = "deck-slot-actions";
+  newDeckActions.appendChild(newDeckButton);
+  newDeckSlot.appendChild(newDeckActions);
+  deckManageList.appendChild(newDeckSlot);
+
+  slots.forEach((deck, index) => {
+    const slot = document.createElement("div");
+    slot.className = "deck-slot";
+    if (!deck) {
+      slot.innerHTML = `
+        <div class="deck-slot-header">
+          <span>Empty Slot ${index + 1}</span>
+          <span class="deck-slot-meta">Available</span>
+        </div>
+        <div class="deck-slot-meta">Build and save a deck to fill this slot.</div>
+      `;
+      deckManageList.appendChild(slot);
+      return;
+    }
+    slot.innerHTML = `
+      <div class="deck-slot-header">
+        <span>${deck.name}</span>
+        <span class="deck-slot-meta">Slot ${index + 1}</span>
+      </div>
+      <div class="deck-slot-meta">20 cards</div>
+    `;
+    const actions = document.createElement("div");
+    actions.className = "deck-slot-actions";
+    const editButton = document.createElement("button");
+    editButton.type = "button";
+    editButton.className = "primary";
+    editButton.textContent = "Edit";
+    editButton.onclick = () => {
+      const deckId = findDeckCatalogId(deck.deck);
+      state.catalogBuilder.deckId = deckId;
+      state.catalogBuilder.stage = "build";
+      state.catalogBuilder.selections = mapDeckIdsToCards(deckId, deck.deck);
+      state.catalogBuilder.available = [];
+      state.catalogBuilder.catalogOrder = [];
+      state.catalogBuilder.editingDeckId = deck.id;
+      state.catalogBuilder.editingDeckName = deck.name;
+      initCatalogBuilder(state.catalogBuilder);
+      deckActiveTab = "catalog";
+      deckHighlighted = null;
+      callbacks.onUpdate?.();
+    };
+    const renameButton = document.createElement("button");
+    renameButton.type = "button";
+    renameButton.textContent = "Rename";
+    renameButton.onclick = async () => {
+      const name = window.prompt("New deck name:", deck.name);
+      if (!name) {
+        return;
+      }
+      applyMenuLoading(state, true);
+      try {
+        const api = await loadSupabaseApi(state);
+        await api.updateDeck({
+          deckId: deck.id,
+          ownerId: state.menu.profile.id,
+          name,
+        });
+        await ensureDecksLoaded(state, { force: true });
+      } catch (error) {
+        setMenuError(state, error.message || "Failed to rename deck.");
+      } finally {
+        applyMenuLoading(state, false);
+        callbacks.onUpdate?.();
+      }
+    };
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "danger";
+    deleteButton.textContent = "Delete";
+    deleteButton.onclick = async () => {
+      if (!window.confirm(`Delete "${deck.name}"?`)) {
+        return;
+      }
+      applyMenuLoading(state, true);
+      try {
+        const api = await loadSupabaseApi(state);
+        await api.deleteDeck({ deckId: deck.id, ownerId: state.menu.profile.id });
+        await ensureDecksLoaded(state, { force: true });
+      } catch (error) {
+        setMenuError(state, error.message || "Failed to delete deck.");
+      } finally {
+        applyMenuLoading(state, false);
+        callbacks.onUpdate?.();
+      }
+    };
+    actions.appendChild(editButton);
+    actions.appendChild(renameButton);
+    actions.appendChild(deleteButton);
+    slot.appendChild(actions);
+    deckManageList.appendChild(slot);
+  });
+};
+
+const renderCatalogBuilderOverlay = (state, callbacks) => {
+  if (state.menu?.stage !== "catalog") {
+    deckOverlay.classList.remove("active");
+    deckOverlay.setAttribute("aria-hidden", "true");
+    return;
+  }
+  if (!state.catalogBuilder || state.catalogBuilder.stage !== "build") {
+    deckOverlay.classList.remove("active");
+    deckOverlay.setAttribute("aria-hidden", "true");
+    return;
+  }
+  initCatalogBuilder(state.catalogBuilder);
+  const available = state.catalogBuilder.available;
+  const selected = state.catalogBuilder.selections;
+  const catalogOrder = state.catalogBuilder.catalogOrder ?? [];
   const predatorCount = selected.filter((card) => card.type === "Predator").length;
   const preyCount = selected.filter((card) => card.type === "Prey").length;
   const totalCount = selected.length;
@@ -2244,7 +2568,7 @@ const renderDeckBuilderOverlay = (state, callbacks) => {
 
   deckOverlay.classList.add("active");
   deckOverlay.setAttribute("aria-hidden", "false");
-  deckTitle.textContent = `${player.name} Deck Builder`;
+  deckTitle.textContent = "Deck Catalog Builder";
   deckStatus.innerHTML = `
     <div class="deck-status-item">Cards selected: <strong>${totalCount}/20</strong></div>
     <div class="deck-status-item ${preyRuleValid ? "" : "invalid"}">
@@ -2252,7 +2576,7 @@ const renderDeckBuilderOverlay = (state, callbacks) => {
     </div>
   `;
 
-  updateDeckTabs();
+  updateDeckTabs(state);
   clearPanel(deckFullRow);
   clearPanel(deckAddedRow);
   if (!deckHighlighted) {
@@ -2310,8 +2634,231 @@ const renderDeckBuilderOverlay = (state, callbacks) => {
     deckAddedRow.appendChild(cardElement);
   });
 
+  renderDeckManagePanel(state, callbacks);
+
+  if (deckSave) {
+    const isSaveTab = deckActiveTab === "catalog";
+    deckSave.classList.toggle("hidden", !state.menu.profile);
+    deckSave.textContent = state.catalogBuilder.editingDeckId ? "Update Deck" : "Save Deck";
+    deckSave.disabled =
+      !hasValidCount || !preyRuleValid || !isSaveTab || state.menu.loading;
+    deckSave.onclick = async () => {
+      if (!hasValidCount || !preyRuleValid || !isSaveTab) {
+        return;
+      }
+      if (!state.menu.profile) {
+        setMenuError(state, "Login required to save decks.");
+        callbacks.onUpdate?.();
+        return;
+      }
+      if (!state.catalogBuilder.editingDeckId && (state.menu.decks ?? []).length >= 5) {
+        setMenuError(state, "Deck slots full. Delete a deck to save a new one.");
+        callbacks.onUpdate?.();
+        return;
+      }
+      applyMenuLoading(state, true);
+      setMenuError(state, null);
+      callbacks.onUpdate?.();
+      try {
+        const api = await loadSupabaseApi(state);
+        const deckPayload = selected.map((card) => card.id);
+        if (state.catalogBuilder.editingDeckId) {
+          await api.updateDeck({
+            deckId: state.catalogBuilder.editingDeckId,
+            ownerId: state.menu.profile.id,
+            name: state.catalogBuilder.editingDeckName,
+            deck: deckPayload,
+          });
+          logMessage(state, `Updated deck "${state.catalogBuilder.editingDeckName}".`);
+        } else {
+          const deckName = window.prompt("Deck name:", "New Deck");
+          if (!deckName) {
+            applyMenuLoading(state, false);
+            callbacks.onUpdate?.();
+            return;
+          }
+          await api.saveDeck({
+            ownerId: state.menu.profile.id,
+            name: deckName,
+            deck: deckPayload,
+          });
+          logMessage(state, `Saved deck "${deckName}" to your account.`);
+        }
+        await ensureDecksLoaded(state, { force: true });
+      } catch (error) {
+        const message = error.message || "Failed to save deck.";
+        setMenuError(state, message);
+        logMessage(state, message);
+      } finally {
+        applyMenuLoading(state, false);
+        callbacks.onUpdate?.();
+      }
+    };
+  }
+
+  if (deckRandom) {
+    deckRandom.disabled = state.menu.loading;
+    deckRandom.onclick = () => {
+      buildRandomDeck({
+        available,
+        selected,
+        catalogOrder,
+      });
+      deckHighlighted = null;
+      setDeckInspectorContent(null);
+      callbacks.onUpdate?.();
+    };
+  }
+
+  if (deckConfirm) {
+    deckConfirm.classList.add("hidden");
+  }
+  if (deckLoad) {
+    deckLoad.classList.add("hidden");
+  }
+  if (deckExit) {
+    deckExit.classList.remove("hidden");
+    deckExit.disabled = state.menu.loading;
+  }
+};
+
+const renderDeckBuilderOverlay = (state, callbacks) => {
+  if (isCatalogMode(state)) {
+    renderCatalogBuilderOverlay(state, callbacks);
+    return;
+  }
+  if (state.menu?.stage !== "ready") {
+    deckOverlay.classList.remove("active");
+    deckOverlay.setAttribute("aria-hidden", "true");
+    return;
+  }
+  if (!state.deckBuilder || state.deckBuilder.stage === "complete") {
+    deckOverlay.classList.remove("active");
+    deckOverlay.setAttribute("aria-hidden", "true");
+    deckHighlighted = null;
+    return;
+  }
+  const isPlayerOne = state.deckBuilder.stage === "p1";
+  const playerIndex = isPlayerOne ? 0 : 1;
+  const localIndex = getLocalPlayerIndex(state);
+  const isLocalTurn = state.menu?.mode !== "online" || playerIndex === localIndex;
+  if (!state.deckSelection?.selections?.[playerIndex]) {
+    deckOverlay.classList.remove("active");
+    deckOverlay.setAttribute("aria-hidden", "true");
+    return;
+  }
+  if (!isLocalTurn) {
+    const opponentName = getOpponentDisplayName(state);
+    deckOverlay.classList.add("active");
+    deckOverlay.setAttribute("aria-hidden", "false");
+    deckTitle.textContent = `${opponentName} is choosing a deck`;
+    deckStatus.innerHTML = `
+      <div class="deck-status-item">Waiting for ${opponentName} to finish deck selection.</div>
+    `;
+    clearPanel(deckFullRow);
+    clearPanel(deckAddedRow);
+    setDeckInspectorContent(null);
+    if (deckSave) {
+      deckSave.classList.add("hidden");
+      deckSave.disabled = true;
+    }
+    if (deckLoad) {
+      deckLoad.classList.add("hidden");
+      deckLoad.disabled = true;
+    }
+    if (deckExit) {
+      deckExit.classList.add("hidden");
+      deckExit.disabled = true;
+    }
+    if (deckRandom) {
+      deckRandom.disabled = true;
+    }
+    deckConfirm.disabled = true;
+    return;
+  }
+  const player = state.players[playerIndex];
+  const available = state.deckBuilder.available[playerIndex];
+  const selected = state.deckBuilder.selections[playerIndex];
+  const catalogOrder = state.deckBuilder.catalogOrder[playerIndex] ?? [];
+  const predatorCount = selected.filter((card) => card.type === "Predator").length;
+  const preyCount = selected.filter((card) => card.type === "Prey").length;
+  const totalCount = selected.length;
+  const hasValidCount = totalCount === 20;
+  const preyRuleValid = preyCount > predatorCount;
+
+  deckOverlay.classList.add("active");
+  deckOverlay.setAttribute("aria-hidden", "false");
+  deckTitle.textContent = `${player.name} Deck Builder`;
+  deckStatus.innerHTML = `
+    <div class="deck-status-item">Cards selected: <strong>${totalCount}/20</strong></div>
+    <div class="deck-status-item ${preyRuleValid ? "" : "invalid"}">
+      Prey: <strong>${preyCount}</strong> • Predators: <strong>${predatorCount}</strong>
+    </div>
+  `;
+
+  updateDeckTabs(state);
+  clearPanel(deckFullRow);
+  clearPanel(deckAddedRow);
+  if (!deckHighlighted) {
+    setDeckInspectorContent(null);
+  }
+
+  available.forEach((card, index) => {
+    const isHighlighted = deckHighlighted?.list === "available" && deckHighlighted?.id === card.id;
+    const cardElement = renderDeckCard(card, {
+      highlighted: isHighlighted,
+      onClick: () => {
+        if (deckHighlighted?.list === "available" && deckHighlighted?.id === card.id) {
+          if (selected.length >= 20) {
+            logMessage(state, "Deck is full. Remove a card before adding another.");
+            callbacks.onUpdate?.();
+            return;
+          }
+          selected.push(card);
+          available.splice(index, 1);
+          deckHighlighted = null;
+          callbacks.onUpdate?.();
+          return;
+        }
+        deckHighlighted = { list: "available", id: card.id };
+        setDeckInspectorContent(card);
+        callbacks.onUpdate?.();
+      },
+    });
+    deckFullRow.appendChild(cardElement);
+  });
+
+  selected.forEach((card, index) => {
+    const isHighlighted = deckHighlighted?.list === "selected" && deckHighlighted?.id === card.id;
+    const cardElement = renderDeckCard(card, {
+      highlighted: isHighlighted,
+      selected: true,
+      onClick: () => {
+        if (deckHighlighted?.list === "selected" && deckHighlighted?.id === card.id) {
+          selected.splice(index, 1);
+          available.push(card);
+          available.sort(
+            (a, b) =>
+              catalogOrder.indexOf(a.id) -
+              catalogOrder.indexOf(b.id)
+          );
+          deckHighlighted = null;
+          callbacks.onUpdate?.();
+          return;
+        }
+        deckHighlighted = { list: "selected", id: card.id };
+        setDeckInspectorContent(card);
+        callbacks.onUpdate?.();
+      },
+    });
+    deckAddedRow.appendChild(cardElement);
+  });
+
+  renderDeckLoadPanel(state, playerIndex, callbacks);
+
   deckConfirm.disabled = !(hasValidCount && preyRuleValid);
   deckConfirm.textContent = isPlayerOne ? "Confirm Player 1 Deck" : "Confirm Player 2 Deck";
+  deckConfirm.classList.remove("hidden");
   deckConfirm.onclick = () => {
     if (!hasValidCount || !preyRuleValid) {
       return;
@@ -2340,9 +2887,8 @@ const renderDeckBuilderOverlay = (state, callbacks) => {
   };
 
   if (deckSave) {
-    deckSave.classList.toggle("hidden", !state.menu.profile);
-    deckSave.disabled = !hasValidCount || !preyRuleValid || state.menu.loading;
-    deckSave.onclick = () => handleSaveDeck(state, playerIndex, selected);
+    deckSave.classList.add("hidden");
+    deckSave.disabled = true;
   }
 
   if (deckRandom) {
@@ -2357,6 +2903,19 @@ const renderDeckBuilderOverlay = (state, callbacks) => {
       setDeckInspectorContent(null);
       callbacks.onUpdate?.();
     };
+  }
+
+  if (deckLoad) {
+    deckLoad.classList.toggle("hidden", !isOnlineMode(state));
+    deckLoad.disabled = state.menu.loading || !isOnlineMode(state);
+    deckLoad.onclick = () => {
+      deckActiveTab = "load";
+      updateDeckTabs(state);
+      callbacks.onUpdate?.();
+    };
+  }
+  if (deckExit) {
+    deckExit.classList.add("hidden");
   }
 };
 
@@ -2524,7 +3083,7 @@ const renderMenuOverlays = (state) => {
     menuLogin.disabled = state.menu.loading;
   }
   if (menuCatalog) {
-    menuCatalog.disabled = true;
+    menuCatalog.disabled = state.menu.loading || !state.menu.profile;
   }
 
   if (loginSubmit) {
@@ -2639,7 +3198,7 @@ const initNavigation = () => {
   document.querySelectorAll(".deck-tab").forEach((tab) => {
     tab.addEventListener("click", () => {
       deckActiveTab = tab.dataset.tab;
-      updateDeckTabs();
+      updateDeckTabs(latestState);
     });
   });
 
@@ -2661,6 +3220,27 @@ const initNavigation = () => {
     } else {
       setMenuStage(latestState, "login");
     }
+    latestCallbacks.onUpdate?.();
+  });
+
+  menuCatalog?.addEventListener("click", () => {
+    if (!latestState || !latestState.menu.profile) {
+      return;
+    }
+    latestState.menu.mode = null;
+    setMenuStage(latestState, "catalog");
+    latestState.catalogBuilder = {
+      stage: "select",
+      deckId: null,
+      selections: [],
+      available: [],
+      catalogOrder: [],
+      editingDeckId: null,
+      editingDeckName: null,
+    };
+    deckActiveTab = "catalog";
+    deckHighlighted = null;
+    ensureDecksLoaded(latestState, { force: true });
     latestCallbacks.onUpdate?.();
   });
 
@@ -2740,6 +3320,17 @@ const initNavigation = () => {
       return;
     }
     handleLeaveLobby(latestState);
+  });
+
+  deckExit?.addEventListener("click", () => {
+    if (!latestState) {
+      return;
+    }
+    if (latestState.menu?.stage === "catalog") {
+      setMenuStage(latestState, "main");
+      latestState.catalogBuilder.stage = null;
+      latestCallbacks.onUpdate?.();
+    }
   });
 
   document.addEventListener("visibilitychange", () => {
