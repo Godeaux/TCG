@@ -101,6 +101,13 @@ const buildLobbySyncPayload = (state) => ({
     stage: state.deckSelection?.stage ?? null,
     selections: state.deckSelection?.selections ?? [],
   },
+  playerProfile: {
+    index: getLocalPlayerIndex(state),
+    name:
+      state.menu?.profile?.username ??
+      state.players?.[getLocalPlayerIndex(state)]?.name ??
+      null,
+  },
   game: {
     activePlayerIndex: state.activePlayerIndex,
     phase: state.phase,
@@ -467,10 +474,16 @@ const applyLobbySyncPayload = (state, payload) => {
     return;
   }
   const timestamp = payload.timestamp ?? 0;
-  if (timestamp <= (state.menu?.lastLobbySyncAt ?? 0)) {
-    return;
+  if (!state.menu.lastLobbySyncBySender) {
+    state.menu.lastLobbySyncBySender = {};
   }
-  state.menu.lastLobbySyncAt = timestamp;
+  if (senderId && timestamp) {
+    const lastSync = state.menu.lastLobbySyncBySender[senderId] ?? 0;
+    if (timestamp <= lastSync) {
+      return;
+    }
+    state.menu.lastLobbySyncBySender[senderId] = timestamp;
+  }
   const localIndex = getLocalPlayerIndex(state);
   const deckSelectionOrder = ["p1", "p1-selected", "p2", "complete"];
   const deckBuilderOrder = ["p1", "p2", "complete"];
@@ -478,6 +491,10 @@ const applyLobbySyncPayload = (state, payload) => {
     const index = order.indexOf(stage);
     return index === -1 ? -1 : index;
   };
+
+  if (payload.playerProfile?.name && Number.isInteger(payload.playerProfile.index)) {
+    state.players[payload.playerProfile.index].name = payload.playerProfile.name;
+  }
 
   if (payload.game) {
     if (payload.game.activePlayerIndex !== undefined && payload.game.activePlayerIndex !== null) {

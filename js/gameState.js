@@ -57,6 +57,7 @@ export const createGameState = () => {
       error: null,
       loading: false,
       lastLobbySyncAt: 0,
+      lastLobbySyncBySender: {},
       onlineDecksReady: false,
     },
     log: [],
