@@ -59,6 +59,9 @@ const menuStatus = document.getElementById("menu-status");
 const menuPlay = document.getElementById("menu-play");
 const menuLogin = document.getElementById("menu-login");
 const menuCatalog = document.getElementById("menu-catalog");
+const menuTutorial = document.getElementById("menu-tutorial");
+const tutorialOverlay = document.getElementById("tutorial-overlay");
+const tutorialClose = document.getElementById("tutorial-close");
 const loginOverlay = document.getElementById("login-overlay");
 const loginForm = document.getElementById("login-form");
 const loginUsername = document.getElementById("login-username");
@@ -3053,6 +3056,7 @@ const renderMenuOverlays = (state) => {
   const showLogin = stage === "login";
   const showMultiplayer = stage === "multiplayer";
   const showLobby = stage === "lobby";
+  const showTutorial = stage === "tutorial";
 
   menuOverlay?.classList.toggle("active", showMain);
   menuOverlay?.setAttribute("aria-hidden", showMain ? "false" : "true");
@@ -3065,6 +3069,9 @@ const renderMenuOverlays = (state) => {
 
   lobbyOverlay?.classList.toggle("active", showLobby);
   lobbyOverlay?.setAttribute("aria-hidden", showLobby ? "false" : "true");
+
+  tutorialOverlay?.classList.toggle("active", showTutorial);
+  tutorialOverlay?.setAttribute("aria-hidden", showTutorial ? "false" : "true");
 
   if (!showMultiplayer) {
     lobbyJoinForm?.classList.remove("active");
@@ -3244,6 +3251,14 @@ const initNavigation = () => {
     latestCallbacks.onUpdate?.();
   });
 
+  menuTutorial?.addEventListener("click", () => {
+    if (!latestState) {
+      return;
+    }
+    setMenuStage(latestState, "tutorial");
+    latestCallbacks.onUpdate?.();
+  });
+
   loginForm?.addEventListener("submit", (event) => {
     event.preventDefault();
     if (!latestState) {
@@ -3253,6 +3268,14 @@ const initNavigation = () => {
   });
 
   loginCancel?.addEventListener("click", () => {
+    if (!latestState) {
+      return;
+    }
+    setMenuStage(latestState, "main");
+    latestCallbacks.onUpdate?.();
+  });
+
+  tutorialClose?.addEventListener("click", () => {
     if (!latestState) {
       return;
     }
