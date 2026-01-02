@@ -402,10 +402,11 @@
       </div>
     </div>
 
-    <div class="game-container">
-      <header class="top-bar">
-        <div class="player-badge player-left" data-player-index="0">
-          <div class="player-info">
+    <div class="ui-root ui--mobile" id="ui-mobile">
+      <div class="game-container">
+        <header class="top-bar">
+          <div class="player-badge player-left" data-player-index="0">
+            <div class="player-info">
             <span class="player-name" id="player1-name">Player 1</span>
             <div class="player-stats">
               <span id="player1-hp">HP: 10</span>
@@ -519,6 +520,122 @@
       <div class="page-dots" id="page-dots">
         <button class="page-dot active" data-page="0"></button>
         <button class="page-dot" data-page="1"></button>
+      </div>
+    </div>
+    </div>
+
+    <div class="ui-root ui--desktop" id="ui-desktop">
+      <div class="desktop-shell">
+        <header class="desktop-topbar">
+          <div class="desktop-brand">
+            <span class="desktop-brand__icon">🍽️</span>
+            <div>
+              <p class="desktop-brand__eyebrow">Food Chain™ TCG</p>
+              <h1 class="desktop-brand__title">Hearthstone-Style Battle Layout</h1>
+            </div>
+          </div>
+          <div class="desktop-topbar__actions">
+            <button class="desktop-button">Collection</button>
+            <button class="desktop-button">Decks</button>
+            <button class="desktop-button desktop-button--primary">Play</button>
+          </div>
+        </header>
+
+        <main class="desktop-board">
+          <section class="desktop-side desktop-side--left">
+            <div class="desktop-panel">
+              <h2>Quest Log</h2>
+              <p>Track active objectives and rewards.</p>
+              <div class="desktop-panel__item">Win a match → 50 XP</div>
+              <div class="desktop-panel__item">Consume 3 prey → 25 XP</div>
+            </div>
+            <div class="desktop-panel">
+              <h2>Rival Tracker</h2>
+              <p>Opponent HP, cards in hand, and active effects.</p>
+              <div class="desktop-stat-row">
+                <span>Rival HP</span>
+                <strong>10</strong>
+              </div>
+              <div class="desktop-stat-row">
+                <span>Rival Hand</span>
+                <strong>5</strong>
+              </div>
+            </div>
+          </section>
+
+          <section class="desktop-arena">
+            <div class="desktop-arena__opponent">
+              <div class="desktop-hero">
+                <div class="desktop-hero__portrait">Opponent</div>
+                <div class="desktop-hero__stats">
+                  <span>HP 10</span>
+                  <span>Deck 20</span>
+                </div>
+              </div>
+              <div class="desktop-field">
+                <div class="desktop-slot">Slot</div>
+                <div class="desktop-slot">Slot</div>
+                <div class="desktop-slot">Slot</div>
+              </div>
+            </div>
+
+            <div class="desktop-arena__center">
+              <div class="desktop-centerpiece">
+                <div class="desktop-centerpiece__badge">Turn 1</div>
+                <p>Phase: Main</p>
+                <button class="desktop-button desktop-button--glow">End Turn</button>
+              </div>
+            </div>
+
+            <div class="desktop-arena__player">
+              <div class="desktop-field">
+                <div class="desktop-slot">Slot</div>
+                <div class="desktop-slot">Slot</div>
+                <div class="desktop-slot">Slot</div>
+              </div>
+              <div class="desktop-hero desktop-hero--player">
+                <div class="desktop-hero__portrait">You</div>
+                <div class="desktop-hero__stats">
+                  <span>HP 10</span>
+                  <span>Deck 20</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="desktop-side desktop-side--right">
+            <div class="desktop-panel">
+              <h2>Inspector</h2>
+              <p>Hover a card to preview details.</p>
+              <div class="desktop-inspector">
+                <div class="desktop-inspector__card">Card Preview</div>
+                <div class="desktop-inspector__details">
+                  <p>Name: Atlantic Flying Fish</p>
+                  <p>Effect: Summon a 1/1 token.</p>
+                </div>
+              </div>
+            </div>
+            <div class="desktop-panel">
+              <h2>Combat Log</h2>
+              <p>Recent actions appear here.</p>
+              <ul class="desktop-log">
+                <li>Player 1 drew a card.</li>
+                <li>Player 1 played Rainbow Sardines.</li>
+              </ul>
+            </div>
+          </section>
+        </main>
+
+        <footer class="desktop-hand">
+          <div class="desktop-hand__label">Your Hand</div>
+          <div class="desktop-hand__cards">
+            <div class="desktop-card">Card</div>
+            <div class="desktop-card">Card</div>
+            <div class="desktop-card">Card</div>
+            <div class="desktop-card">Card</div>
+            <div class="desktop-card">Card</div>
+          </div>
+        </footer>
       </div>
     </div>
 

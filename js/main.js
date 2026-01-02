@@ -10,6 +10,16 @@ import { renderGame, setupInitialDraw } from "./ui.js";
 
 const state = createGameState();
 
+const setUIMode = () => {
+  const aspectRatio = window.innerWidth / window.innerHeight;
+  const useDesktop = aspectRatio >= 1;
+  document.body.classList.toggle("ui-mode-desktop", useDesktop);
+  document.body.classList.toggle("ui-mode-mobile", !useDesktop);
+};
+
+setUIMode();
+window.addEventListener("resize", setUIMode);
+
 const checkWinCondition = () => {
   state.players.forEach((player, index) => {
     if (player.hp <= 0) {
