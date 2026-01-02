@@ -881,6 +881,260 @@ button {
   gap: 12px;
 }
 
+.tutorial-card {
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+}
+
+.tutorial-overlay {
+  padding: 0;
+}
+
+.tutorial-overlay .overlay-content {
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+}
+
+.tutorial-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.tutorial-header h2 {
+  margin: 6px 0 4px;
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+}
+
+.tutorial-eyebrow {
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.tutorial-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.tutorial-section {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.tutorial-section h3 {
+  margin-top: 0;
+  font-size: 20px;
+}
+
+.tutorial-diagram {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.focus-diagram .focus-card {
+  flex: 1;
+  min-width: 180px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 14px;
+  padding: 16px;
+  border: 1px solid var(--border-subtle);
+}
+
+.focus-card-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+}
+
+.focus-card-value {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 8px 0;
+}
+
+.focus-card-caption {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.focus-arrow {
+  font-size: 20px;
+  color: var(--text-muted);
+}
+
+.card-anatomy .stat-card {
+  background: rgba(12, 14, 20, 0.7);
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid var(--border-subtle);
+  min-width: 180px;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 14px;
+}
+
+.stat-label {
+  color: var(--text-muted);
+}
+
+.stat-value {
+  font-weight: 700;
+  color: #f9d77e;
+}
+
+.stat-footer {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.stat-explain {
+  flex: 1;
+  min-width: 200px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.stat-pulse {
+  position: relative;
+}
+
+.stat-pulse::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 12px;
+  border: 1px solid rgba(249, 215, 126, 0.6);
+  box-shadow: 0 0 12px rgba(249, 215, 126, 0.6);
+  animation: statPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes statPulse {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.02);
+  }
+}
+
+.zone-diagram .zone-block,
+.spell-diagram .spell-card {
+  flex: 1;
+  min-width: 180px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.turn-flow {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.flow-step {
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 999px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-subtle);
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.flow-arrow {
+  color: var(--text-muted);
+  font-size: 18px;
+}
+
+.tutorial-note {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.combat-diagram {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.combat-card {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-subtle);
+}
+
+.combat-connector {
+  text-align: center;
+  font-size: 22px;
+}
+
+.combat-result {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.consume-diagram {
+  flex-wrap: wrap;
+}
+
+.consume-prey,
+.consume-predator {
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-subtle);
+}
+
+.consume-predator {
+  background: rgba(76, 29, 149, 0.35);
+  border-color: rgba(240, 208, 120, 0.4);
+}
+
+.tutorial-list {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text-secondary);
+}
+
+.tutorial-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
 .btn-secondary {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--border-subtle);

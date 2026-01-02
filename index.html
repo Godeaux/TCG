@@ -97,6 +97,229 @@
           <button class="btn-primary" id="menu-play">Play (one device)</button>
           <button class="btn-secondary" id="menu-login">Login</button>
           <button class="btn-secondary" id="menu-catalog" disabled>Catalog</button>
+          <button class="btn-secondary" id="menu-tutorial">Tutorial</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay tutorial-overlay" id="tutorial-overlay" aria-hidden="true">
+      <div class="overlay-content tutorial-card">
+        <div class="tutorial-header">
+          <div>
+            <p class="tutorial-eyebrow">Rules &amp; Reference</p>
+            <h2>Food Chain™ TCG Tutorial</h2>
+            <p class="muted">
+              A living rules guide from basics to advanced interactions. Scroll to explore.
+            </p>
+          </div>
+          <button class="btn-secondary" id="tutorial-close" type="button">Back</button>
+        </div>
+        <div class="tutorial-scroll">
+          <section class="tutorial-section">
+            <h3>1) The Goal</h3>
+            <p>
+              Reduce your rival from <strong>10 HP</strong> to <strong>0 HP</strong> using creatures,
+              spells, and clever consumption combos.
+            </p>
+            <div class="tutorial-diagram focus-diagram">
+              <div class="focus-card">
+                <div class="focus-card-title">Rival HP</div>
+                <div class="focus-card-value stat-pulse">10 → 0</div>
+                <div class="focus-card-caption">Win when it hits zero.</div>
+              </div>
+              <div class="focus-arrow">➜</div>
+              <div class="focus-card">
+                <div class="focus-card-title">Your Creatures</div>
+                <div class="focus-card-value">ATK pushes damage</div>
+                <div class="focus-card-caption">Attack directly or remove defenders.</div>
+              </div>
+            </div>
+          </section>
+
+          <section class="tutorial-section">
+            <h3>2) Card Anatomy</h3>
+            <p>
+              Creatures have <strong>ATK</strong> (damage dealt), <strong>HP</strong> (how much they can
+              take), and prey have <strong>NUT</strong> (nutrition for predators).
+            </p>
+            <div class="tutorial-diagram card-anatomy">
+              <div class="stat-card">
+                <div class="stat-row">
+                  <span class="stat-label">ATK</span>
+                  <span class="stat-value stat-pulse">3</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-label">HP</span>
+                  <span class="stat-value stat-pulse">2</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-label">NUT</span>
+                  <span class="stat-value stat-pulse">1</span>
+                </div>
+                <div class="stat-footer">Prey Example</div>
+              </div>
+              <div class="stat-explain">
+                <p>
+                  <strong>ATK</strong> = damage in combat.<br />
+                  <strong>HP</strong> = survivability (think defense).<br />
+                  <strong>NUT</strong> = how much power predators gain when consuming.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section class="tutorial-section">
+            <h3>3) Board Zones</h3>
+            <div class="tutorial-diagram zone-diagram">
+              <div class="zone-block">
+                <h4>Hand</h4>
+                <p>Private cards. No size limit.</p>
+              </div>
+              <div class="zone-block">
+                <h4>Field (Max 3)</h4>
+                <p>Creatures &amp; field spells. Where combat happens.</p>
+              </div>
+              <div class="zone-block">
+                <h4>Carrion / Exile</h4>
+                <p>Destroyed creatures → carrion. Used spells → exile.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="tutorial-section">
+            <h3>4) Turn Flow (Start → End)</h3>
+            <div class="tutorial-diagram turn-flow">
+              <div class="flow-step">Start Phase</div>
+              <div class="flow-arrow">➜</div>
+              <div class="flow-step">Draw Phase</div>
+              <div class="flow-arrow">➜</div>
+              <div class="flow-step">Main 1 (Play 1)</div>
+              <div class="flow-arrow">➜</div>
+              <div class="flow-step">Before Combat</div>
+              <div class="flow-arrow">➜</div>
+              <div class="flow-step">Combat</div>
+              <div class="flow-arrow">➜</div>
+              <div class="flow-step">Main 2 (if none)</div>
+              <div class="flow-arrow">➜</div>
+              <div class="flow-step">End Phase</div>
+            </div>
+            <p class="tutorial-note">
+              Only <strong>one</strong> non-free-spell card can be played per turn across both main
+              phases.
+            </p>
+          </section>
+
+          <section class="tutorial-section">
+            <h3>5) Combat Quick View</h3>
+            <div class="tutorial-diagram combat-diagram">
+              <div class="combat-card">
+                <div class="combat-title">Attacker</div>
+                <div class="combat-stats">ATK 3 / HP 2</div>
+              </div>
+              <div class="combat-connector">⚔️</div>
+              <div class="combat-card">
+                <div class="combat-title">Defender</div>
+                <div class="combat-stats">ATK 2 / HP 3</div>
+              </div>
+              <div class="combat-result">
+                Both deal damage simultaneously. HP ≤ 0 goes to carrion.
+              </div>
+            </div>
+          </section>
+
+          <section class="tutorial-section">
+            <h3>6) Consumption System</h3>
+            <p>
+              Predators may consume <strong>0-3</strong> friendly prey (or edible predators) when played.
+              Each nutrition point grants <strong>+1 ATK/+1 HP</strong> and activates the predator’s
+              consume effect.
+            </p>
+            <div class="tutorial-diagram consume-diagram">
+              <div class="consume-prey">Prey (NUT 2)</div>
+              <div class="flow-arrow">➜</div>
+              <div class="consume-prey">Prey (NUT 1)</div>
+              <div class="flow-arrow">➜</div>
+              <div class="consume-predator">
+                Predator enters<br />
+                +3 ATK / +3 HP
+              </div>
+            </div>
+            <p class="tutorial-note">
+              Dry drop = play a predator without consuming. Effect does not trigger.
+            </p>
+          </section>
+
+          <section class="tutorial-section">
+            <h3>7) Spells, Free Spells, Traps</h3>
+            <div class="tutorial-diagram spell-diagram">
+              <div class="spell-card">
+                <h4>Spell</h4>
+                <p>Counts toward the 1-card-per-turn limit.</p>
+              </div>
+              <div class="spell-card">
+                <h4>Free Spell</h4>
+                <p>Does not count toward the limit.</p>
+              </div>
+              <div class="spell-card">
+                <h4>Trap</h4>
+                <p>Set in main phase, triggers on opponent’s turn.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="tutorial-section">
+            <h3>8) Advanced Mechanics Highlights</h3>
+            <ul class="tutorial-list">
+              <li><strong>Summoning Exhaustion:</strong> Can’t attack rival directly until next turn.</li>
+              <li><strong>Barrier:</strong> Prevents the first damage instance, then breaks.</li>
+              <li><strong>Frozen:</strong> Can’t attack or be consumed; dies at end of controller’s turn.</li>
+              <li><strong>Slain:</strong> Only triggers when dying in combat vs a creature.</li>
+              <li><strong>Scavenge:</strong> May consume from carrion pile when played.</li>
+              <li><strong>Discard:</strong> Some cards can be discarded for alternate effects.</li>
+            </ul>
+          </section>
+
+          <section class="tutorial-section">
+            <h3>9) Keyword Glossary</h3>
+            <div class="tutorial-grid">
+              <div><strong>Haste</strong> — Can attack rival directly on the turn it is played.</div>
+              <div><strong>Free Play</strong> — Doesn’t count toward the one-card limit.</div>
+              <div><strong>Hidden</strong> — Can’t be targeted by attacks.</div>
+              <div><strong>Invisible</strong> — Can’t be targeted by attacks or spells.</div>
+              <div><strong>Lure</strong> — Must be attacked if able.</div>
+              <div><strong>Immune</strong> — Only takes damage from direct creature attacks.</div>
+              <div><strong>Barrier</strong> — Blocks first instance of damage.</div>
+              <div><strong>Passive</strong> — Cannot attack.</div>
+              <div><strong>Edible</strong> — Predator can be consumed as nutrition.</div>
+              <div><strong>Scavenge</strong> — Can consume from carrion pile.</div>
+              <div><strong>Acuity</strong> — Can target hidden/invisible creatures.</div>
+              <div><strong>Neurotoxic</strong> — Combat damage freezes target until it dies.</div>
+              <div><strong>Ambush</strong> — Reserved for future implementation.</div>
+              <div><strong>Frozen</strong> — Cannot attack or be consumed; dies end of turn.</div>
+            </div>
+          </section>
+
+          <section class="tutorial-section">
+            <h3>10) Effect &amp; Timing Glossary</h3>
+            <div class="tutorial-grid">
+              <div><strong>On Play</strong> — Triggers when the card is played to the field.</div>
+              <div><strong>On Consume</strong> — Triggers when a predator consumes at least 1 target.</div>
+              <div><strong>Before Combat</strong> — Fires between Main 1 and Combat.</div>
+              <div><strong>When Defending</strong> — Fires when chosen as an attack target.</div>
+              <div><strong>Start of Turn</strong> — Triggers before the draw phase.</div>
+              <div><strong>End of Turn</strong> — Triggers before turn passes.</div>
+              <div><strong>Kill</strong> — Instantly destroys target regardless of HP.</div>
+              <div><strong>Play/Summon</strong> — Creates a token without on-play triggers.</div>
+            </div>
+          </section>
+
+          <section class="tutorial-section">
+            <h3>11) Quick Reference: Card Limit</h3>
+            <p>
+              One non-free-spell card per turn across both main phases. Free spells are unlimited in
+              the main phases.
+            </p>
+          </section>
         </div>
       </div>
     </div>
