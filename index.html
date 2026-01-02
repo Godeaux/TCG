@@ -404,7 +404,7 @@
 
     <div class="game-container">
       <header class="top-bar">
-        <div class="player-badge player-left">
+        <div class="player-badge player-left" data-player-index="0">
           <div class="player-info">
             <span class="player-name" id="player1-name">Player 1</span>
             <div class="player-stats">
@@ -417,7 +417,7 @@
           <span class="turn-number" id="turn-number">Turn 1</span>
           <span class="phase-label" id="phase-label">Main</span>
         </button>
-        <div class="player-badge player-right">
+        <div class="player-badge player-right" data-player-index="1">
           <div class="player-info right">
             <span class="player-name" id="player2-name">Player 2</span>
             <div class="player-stats">
@@ -461,6 +461,7 @@
                   <div class="field-slot" data-slot="2"></div>
                 </div>
               </div>
+              <div class="battle-effects" id="battle-effects" aria-hidden="true"></div>
             </div>
             <div class="hand-panel">
               <div class="hand-container">

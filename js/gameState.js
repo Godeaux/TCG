@@ -34,6 +34,7 @@ export const createGameState = () => {
     endOfTurnQueue: [],
     endOfTurnProcessing: false,
     endOfTurnFinalized: false,
+    visualEffects: [],
     setup: {
       stage: "rolling",
       rolls: [null, null],
@@ -92,6 +93,22 @@ export const logMessage = (state, message) => {
   if (state.log.length > 50) {
     state.log.pop();
   }
+};
+
+export const queueVisualEffect = (state, effect) => {
+  if (!state.visualEffects) {
+    state.visualEffects = [];
+  }
+  const entry = {
+    id: crypto.randomUUID(),
+    createdAt: Date.now(),
+    ...effect,
+  };
+  state.visualEffects.push(entry);
+  if (state.visualEffects.length > 30) {
+    state.visualEffects.shift();
+  }
+  return entry;
 };
 
 export const setPlayerDeck = (state, playerIndex, deck) => {

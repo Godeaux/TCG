@@ -42,22 +42,24 @@ export const getValidTargets = (state, attacker, opponent) => {
 
 const applyDamage = (creature, amount) => {
   if (amount <= 0) {
-    return;
+    return 0;
   }
   if (creature.hasBarrier) {
     creature.hasBarrier = false;
-    return;
+    return 0;
   }
   creature.currentHp -= amount;
+  return amount;
 };
 
 export const resolveCreatureCombat = (state, attacker, defender) => {
   const ambushAttack = hasAmbush(attacker);
-  applyDamage(defender, attacker.currentAtk);
+  const defenderDamage = applyDamage(defender, attacker.currentAtk);
   const defenderSurvived = defender.currentHp > 0;
   const defenderDealsDamage = !ambushAttack || defenderSurvived;
+  let attackerDamage = 0;
   if (defenderDealsDamage) {
-    applyDamage(attacker, defender.currentAtk);
+    attackerDamage = applyDamage(attacker, defender.currentAtk);
   }
 
   if (hasNeurotoxic(attacker) && attacker.currentAtk > 0) {
@@ -85,17 +87,19 @@ export const resolveCreatureCombat = (state, attacker, defender) => {
       state,
       `${attacker.name} ambushes ${defender.name} and avoids damage (${attacker.currentAtk}/${attacker.currentHp}).`
     );
-    return;
+    return { attackerDamage, defenderDamage };
   }
   logMessage(
     state,
     `${attacker.name} and ${defender.name} trade blows (${attacker.currentAtk}/${attacker.currentHp} vs ${defender.currentAtk}/${defender.currentHp}).`
   );
+  return { attackerDamage, defenderDamage };
 };
 
 export const resolveDirectAttack = (state, attacker, opponent) => {
   opponent.hp -= attacker.currentAtk;
   logMessage(state, `${attacker.name} hits ${opponent.name} for ${attacker.currentAtk} HP.`);
+  return attacker.currentAtk;
 };
 
 export const cleanupDestroyed = (state) => {

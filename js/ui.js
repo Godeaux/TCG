@@ -1,4 +1,10 @@
-import { getActivePlayer, getOpponentPlayer, logMessage, drawCard } from "./gameState.js";
+import {
+  getActivePlayer,
+  getOpponentPlayer,
+  logMessage,
+  drawCard,
+  queueVisualEffect,
+} from "./gameState.js";
 import { canPlayCard, cardLimitAvailable, finalizeEndPhase } from "./turnManager.js";
 import { createCardInstance } from "./cardTypes.js";
 import { consumePrey } from "./consumption.js";
@@ -84,6 +90,7 @@ const lobbyLeave = document.getElementById("lobby-leave");
 const lobbyLiveError = document.getElementById("lobby-live-error");
 const deckSave = document.getElementById("deck-save");
 const deckLoad = document.getElementById("deck-load");
+const battleEffectsLayer = document.getElementById("battle-effects");
 
 let pendingConsumption = null;
 let pendingAttack = null;
@@ -104,6 +111,8 @@ let profileLoaded = false;
 let activeLobbyId = null;
 let lobbyRefreshTimeout = null;
 let lobbyRefreshInFlight = false;
+const processedVisualEffects = new Map();
+const VISUAL_EFFECT_TTL_MS = 9000;
 
 const serializeCardSnapshot = (card) => {
   if (!card) {
@@ -209,6 +218,7 @@ const buildLobbySyncPayload = (state) => ({
     cardPlayedThisTurn: state.cardPlayedThisTurn,
     passPending: state.passPending,
     log: Array.isArray(state.log) ? [...state.log] : [],
+    visualEffects: Array.isArray(state.visualEffects) ? [...state.visualEffects] : [],
     fieldSpell: state.fieldSpell
       ? {
           ownerIndex: state.fieldSpell.ownerIndex,
@@ -300,6 +310,135 @@ const clearPanel = (panel) => {
     return;
   }
   panel.innerHTML = "";
+};
+
+const getPlayerBadgeByIndex = (playerIndex) =>
+  document.querySelector(`.player-badge[data-player-index="${playerIndex}"]`);
+
+const createDamagePop = (target, amount) => {
+  if (!target || amount <= 0) {
+    return;
+  }
+  const pop = document.createElement("div");
+  pop.className = "damage-pop";
+  pop.textContent = `-${amount}`;
+  target.appendChild(pop);
+  pop.addEventListener("animationend", () => pop.remove());
+};
+
+const createImpactRing = (targetRect, layerRect) => {
+  if (!battleEffectsLayer || !targetRect || !layerRect) {
+    return;
+  }
+  const ring = document.createElement("div");
+  ring.className = "impact-ring";
+  ring.style.left = `${targetRect.left - layerRect.left + targetRect.width / 2}px`;
+  ring.style.top = `${targetRect.top - layerRect.top + targetRect.height / 2}px`;
+  battleEffectsLayer.appendChild(ring);
+  ring.addEventListener("animationend", () => ring.remove());
+};
+
+const markEffectProcessed = (effectId, createdAt) => {
+  processedVisualEffects.set(effectId, createdAt ?? Date.now());
+};
+
+const pruneProcessedEffects = () => {
+  const now = Date.now();
+  processedVisualEffects.forEach((timestamp, effectId) => {
+    if (now - timestamp > VISUAL_EFFECT_TTL_MS) {
+      processedVisualEffects.delete(effectId);
+    }
+  });
+};
+
+const playAttackEffect = (effect) => {
+  if (!battleEffectsLayer) {
+    return;
+  }
+  const attackerElement = effect.attackerId
+    ? document.querySelector(`.card[data-instance-id="${effect.attackerId}"]`)
+    : null;
+  const targetElement =
+    effect.targetType === "player"
+      ? getPlayerBadgeByIndex(effect.targetPlayerIndex)
+      : effect.defenderId
+      ? document.querySelector(`.card[data-instance-id="${effect.defenderId}"]`)
+      : null;
+  if (!attackerElement || !targetElement) {
+    return;
+  }
+  const layerRect = battleEffectsLayer.getBoundingClientRect();
+  const attackerRect = attackerElement.getBoundingClientRect();
+  const targetRect = targetElement.getBoundingClientRect();
+  if (!layerRect.width || !layerRect.height) {
+    return;
+  }
+
+  const ghost = attackerElement.cloneNode(true);
+  ghost.classList.add("attack-ghost");
+  ghost.querySelectorAll(".card-actions").forEach((node) => node.remove());
+  ghost.style.width = `${attackerRect.width}px`;
+  ghost.style.height = `${attackerRect.height}px`;
+  ghost.style.left = `${attackerRect.left - layerRect.left + attackerRect.width / 2}px`;
+  ghost.style.top = `${attackerRect.top - layerRect.top + attackerRect.height / 2}px`;
+  battleEffectsLayer.appendChild(ghost);
+
+  const deltaX = targetRect.left - attackerRect.left + (targetRect.width - attackerRect.width) / 2;
+  const deltaY = targetRect.top - attackerRect.top + (targetRect.height - attackerRect.height) / 2;
+  const animation = ghost.animate(
+    [
+      { transform: "translate(-50%, -50%) scale(1)", opacity: 0.95 },
+      { transform: "translate(-50%, -50%) scale(1.08)", opacity: 1, offset: 0.7 },
+      {
+        transform: `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(0.95)`,
+        opacity: 0.2,
+      },
+    ],
+    {
+      duration: 420,
+      easing: "cubic-bezier(0.2, 0.85, 0.35, 1)",
+    }
+  );
+
+  const finishImpact = () => {
+    ghost.remove();
+    targetElement.classList.add("card-hit");
+    setTimeout(() => targetElement.classList.remove("card-hit"), 380);
+    createImpactRing(targetRect, layerRect);
+    if (effect.damageToTarget) {
+      createDamagePop(targetElement, effect.damageToTarget);
+    }
+    if (effect.damageToAttacker) {
+      createDamagePop(attackerElement, effect.damageToAttacker);
+    }
+  };
+
+  animation.addEventListener("finish", finishImpact);
+};
+
+const processVisualEffects = (state) => {
+  if (!state?.visualEffects?.length) {
+    pruneProcessedEffects();
+    return;
+  }
+  const now = Date.now();
+  state.visualEffects.forEach((effect) => {
+    if (!effect?.id) {
+      return;
+    }
+    const createdAt = effect.createdAt ?? now;
+    if (now - createdAt > VISUAL_EFFECT_TTL_MS) {
+      return;
+    }
+    if (processedVisualEffects.has(effect.id)) {
+      return;
+    }
+    markEffectProcessed(effect.id, createdAt);
+    if (effect.type === "attack") {
+      requestAnimationFrame(() => playAttackEffect(effect));
+    }
+  });
+  pruneProcessedEffects();
 };
 
 const setMenuError = (state, message) => {
@@ -679,6 +818,9 @@ const applyLobbySyncPayload = (state, payload) => {
     }
     if (Array.isArray(payload.game.log)) {
       state.log = [...payload.game.log];
+    }
+    if (Array.isArray(payload.game.visualEffects)) {
+      state.visualEffects = payload.game.visualEffects.map((effect) => ({ ...effect }));
     }
     if (Array.isArray(payload.game.players)) {
       payload.game.players.forEach((playerSnapshot, index) => {
@@ -1563,10 +1705,31 @@ const resolveAttack = (state, attacker, target, negateAttack = false) => {
     }
   }
 
+  let effect = null;
   if (target.type === "player") {
-    resolveDirectAttack(state, attacker, target.player);
+    const damage = resolveDirectAttack(state, attacker, target.player);
+    effect = queueVisualEffect(state, {
+      type: "attack",
+      attackerId: attacker.instanceId,
+      targetType: "player",
+      targetPlayerIndex: state.players.indexOf(target.player),
+      damageToTarget: damage,
+      damageToAttacker: 0,
+    });
   } else {
-    resolveCreatureCombat(state, attacker, target.card);
+    const { attackerDamage, defenderDamage } = resolveCreatureCombat(state, attacker, target.card);
+    effect = queueVisualEffect(state, {
+      type: "attack",
+      attackerId: attacker.instanceId,
+      targetType: "creature",
+      defenderId: target.card.instanceId,
+      damageToTarget: defenderDamage,
+      damageToAttacker: attackerDamage,
+    });
+  }
+  if (effect) {
+    markEffectProcessed(effect.id, effect.createdAt);
+    playAttackEffect(effect);
   }
   attacker.hasAttacked = true;
   cleanupDestroyed(state);
@@ -3532,6 +3695,7 @@ export const renderGame = (state, callbacks = {}) => {
   );
   renderHand(state, () => updateActionPanel(state, callbacks), callbacks.onUpdate, passPending);
   updateActionPanel(state, callbacks);
+  processVisualEffects(state);
   const handleNextPhase = () => {
     if (!isLocalPlayersTurn(state)) {
       return;
