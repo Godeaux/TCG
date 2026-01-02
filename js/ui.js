@@ -199,6 +199,7 @@ const buildLobbySyncPayload = (state) => ({
     turn: state.turn,
     cardPlayedThisTurn: state.cardPlayedThisTurn,
     passPending: state.passPending,
+    log: Array.isArray(state.log) ? [...state.log] : [],
     fieldSpell: state.fieldSpell
       ? {
           ownerIndex: state.fieldSpell.ownerIndex,
@@ -353,7 +354,7 @@ const updateHandOverlap = (handGrid) => {
   const totalWidth = cardWidth * cards.length;
   const overlapNeeded =
     totalWidth > handWidth ? (totalWidth - handWidth) / Math.max(1, cards.length - 1) : 0;
-  const maxOverlap = cardWidth * 0.45;
+  const maxOverlap = cardWidth * 0.7;
   const overlap = Math.min(Math.max(overlapNeeded, 0), maxOverlap);
   handGrid.style.setProperty("--hand-overlap", `${overlap}px`);
 };
@@ -619,6 +620,9 @@ const applyLobbySyncPayload = (state, payload) => {
     }
     if (payload.game.passPending !== undefined) {
       state.passPending = payload.game.passPending;
+    }
+    if (Array.isArray(payload.game.log)) {
+      state.log = [...payload.game.log];
     }
     if (Array.isArray(payload.game.players)) {
       payload.game.players.forEach((playerSnapshot, index) => {
@@ -1547,6 +1551,7 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
   if (defender.traps.length === 0) {
     resolveAttack(state, attacker, target, false);
     onUpdate?.();
+    broadcastSyncState(state);
     return;
   }
 
@@ -1578,6 +1583,7 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
         clearSelectionPanel();
         pendingAttack = null;
         onUpdate?.();
+        broadcastSyncState(state);
         return;
       }
       const negate = Boolean(result?.negateAttack);
@@ -1585,6 +1591,7 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
       resolveAttack(state, attacker, target, negate);
       pendingAttack = null;
       onUpdate?.();
+      broadcastSyncState(state);
     };
     item.appendChild(button);
     return item;
@@ -1599,6 +1606,7 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
     resolveAttack(state, attacker, target, false);
     pendingAttack = null;
     onUpdate?.();
+    broadcastSyncState(state);
   };
   skipButton.appendChild(skipAction);
   items.push(skipButton);
@@ -1632,6 +1640,7 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
         resolveAttack(state, attacker, target, Boolean(result?.negateAttack));
         pendingAttack = null;
         onUpdate?.();
+        broadcastSyncState(state);
       };
       item.appendChild(button);
       items.push(item);
