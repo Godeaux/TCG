@@ -1,11 +1,13 @@
 import {
   createGameState,
   logMessage,
+  getLocalPlayerIndex,
+  isOnlineMode,
   rollSetupDie,
   chooseFirstPlayer,
   setPlayerDeck,
-} from "./gameState.js";
-import { advancePhase, endTurn, startTurn } from "./turnManager.js";
+} from "./core/gameState.js";
+import { advancePhase, endTurn, startTurn } from "./core/turnManager.js";
 import { renderGame, setupInitialDraw } from "./ui.js";
 
 const state = createGameState();

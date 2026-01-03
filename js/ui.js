@@ -4,25 +4,33 @@ import {
   logMessage,
   drawCard,
   queueVisualEffect,
-} from "./gameState.js";
-import { canPlayCard, cardLimitAvailable, finalizeEndPhase } from "./turnManager.js";
-import { createCardInstance } from "./cardTypes.js";
-import { consumePrey } from "./consumption.js";
+  isLocalPlayersTurn,
+  findCardByInstanceId,
+  findCardSlotIndex,
+  isOnlineMode,
+  getLocalPlayerIndex,
+} from "./core/gameState.js";
+import { canPlayCard, cardLimitAvailable, finalizeEndPhase } from "./core/turnManager.js";
+import { createCardInstance } from "./core/cardTypes.js";
+import { consumePrey } from "./core/consumption.js";
 import {
   getValidTargets,
   resolveCreatureCombat,
   resolveDirectAttack,
   cleanupDestroyed,
-} from "./combat.js";
+} from "./core/combat.js";
 import {
   isFreePlay,
   isEdible,
   isPassive,
   hasScavenge,
   KEYWORD_DESCRIPTIONS,
-} from "./keywords.js";
-import { resolveEffectResult, stripAbilities } from "./effects.js";
-import { deckCatalogs, getCardDefinitionById } from "./cards.js";
+} from "./core/keywords.js";
+import { resolveEffectResult, stripAbilities } from "./core/effects.js";
+import { deckCatalogs, getCardDefinitionById } from "./core/cards.js";
+import { ActionTypes, playCard, declareAttack, endTurn } from "./core/actions.js";
+import { validateAction } from "./core/validation.js";
+import { applyAction } from "./core/reducer.js";
 let supabaseApi = null;
 let supabaseLoadError = null;
 
@@ -324,16 +332,6 @@ const findCardOwnerIndex = (state, instanceId) =>
     player.field.some((card) => card?.instanceId === instanceId)
   );
 
-const findCardSlotIndex = (state, instanceId) => {
-  const ownerIndex = findCardOwnerIndex(state, instanceId);
-  if (ownerIndex === -1) {
-    return { ownerIndex: -1, slotIndex: -1 };
-  }
-  const slotIndex = state.players[ownerIndex].field.findIndex(
-    (card) => card?.instanceId === instanceId
-  );
-  return { ownerIndex, slotIndex };
-};
 
 const getFieldSlotElement = (state, ownerIndex, slotIndex) => {
   if (ownerIndex === -1 || slotIndex === -1) {
@@ -557,29 +555,7 @@ const updateHandOverlap = (handGrid) => {
   handGrid.style.setProperty("--hand-overlap", `${overlap}px`);
 };
 
-const isOnlineMode = (state) => state.menu?.mode === "online";
 const isCatalogMode = (state) => state.menu?.stage === "catalog";
-
-const getLocalPlayerIndex = (state) => {
-  if (!isOnlineMode(state)) {
-    return 0;
-  }
-  const profileId = state.menu.profile?.id;
-  const lobby = state.menu.lobby;
-  if (!profileId || !lobby) {
-    return 0;
-  }
-  if (lobby.host_id === profileId) {
-    return 0;
-  }
-  if (lobby.guest_id === profileId) {
-    return 1;
-  }
-  return 0;
-};
-
-const isLocalPlayersTurn = (state) =>
-  !isOnlineMode(state) || state.activePlayerIndex === getLocalPlayerIndex(state);
 
 const getOpponentDisplayName = (state) => {
   const localIndex = getLocalPlayerIndex(state);
@@ -1170,11 +1146,28 @@ const updateIndicators = (state, controlsLocked) => {
   }
 };
 
-const updatePlayerStats = (state, index, role) => {
+const updatePlayerStats = (state, index, role, hide = false) => {
   const player = state.players[index];
   const nameEl = document.getElementById(`${role}-name`);
   const hpEl = document.getElementById(`${role}-hp`);
   const deckEl = document.getElementById(`${role}-deck`);
+  
+  if (hide) {
+    if (nameEl) nameEl.textContent = "";
+    if (hpEl) hpEl.textContent = "";
+    if (deckEl) deckEl.textContent = "";
+    
+    if (role === "active") {
+      const carrionEl = document.getElementById("active-carrion");
+      const exileEl = document.getElementById("active-exile");
+      const trapsEl = document.getElementById("active-traps");
+      if (carrionEl) carrionEl.textContent = "";
+      if (exileEl) exileEl.textContent = "";
+      if (trapsEl) trapsEl.textContent = "";
+    }
+    return;
+  }
+  
   if (nameEl) {
     nameEl.textContent = player.name;
   }
@@ -1830,12 +1823,28 @@ const clearSelectionPanel = () => {
   actionBar?.classList.remove("has-selection");
 };
 
-const isSelectionActive = () => Boolean(selectionPanel?.childElementCount) || Boolean(pendingAttack);
+const clearFieldElements = () => {
+  const playerField = document.querySelector(".player-field");
+  const opponentField = document.querySelector(".opponent-field");
+  if (playerField) playerField.innerHTML = "";
+  if (opponentField) opponentField.innerHTML = "";
+};
 
-const findCardByInstanceId = (state, instanceId) =>
-  state.players
-    .flatMap((player) => player.field.concat(player.hand, player.carrion, player.exile))
-    .find((card) => card?.instanceId === instanceId);
+const clearHandElement = () => {
+  const handGrid = document.getElementById("active-hand");
+  if (handGrid) handGrid.innerHTML = "";
+};
+
+const clearActionPanel = () => {
+  clearPanel(actionPanel);
+};
+
+const clearActionBar = () => {
+  const actionBar = document.getElementById("action-bar");
+  if (actionBar) actionBar.innerHTML = "";
+};
+
+const isSelectionActive = () => Boolean(selectionPanel?.childElementCount) || Boolean(pendingAttack);
 
 const resolveAttack = (state, attacker, target, negateAttack = false) => {
   if (negateAttack) {
@@ -3980,40 +3989,54 @@ export const renderGame = (state, callbacks = {}) => {
       endOfTurnPending ||
       (!isLocalTurn && isOnline)
   );
-  updatePlayerStats(state, 0, "player1");
-  updatePlayerStats(state, 1, "player2");
-  renderField(state, opponentIndex, true, null);
-  renderField(state, activeIndex, false, (card) =>
-    handleAttackSelection(state, card, callbacks.onUpdate)
-  );
-  renderHand(state, () => updateActionPanel(state, callbacks), callbacks.onUpdate, passPending);
-  updateActionPanel(state, callbacks);
-  handlePendingTrapDecision(state, callbacks.onUpdate);
-  processVisualEffects(state);
-  const handleNextPhase = () => {
-    if (!isLocalPlayersTurn(state)) {
-      return;
+  
+  // Only render battle UI when game is ready (menu.stage === "ready")
+  const gameInProgress = state.menu?.stage === "ready";
+  
+  if (gameInProgress) {
+    updatePlayerStats(state, 0, "player1");
+    updatePlayerStats(state, 1, "player2");
+    renderField(state, opponentIndex, true, null);
+    renderField(state, activeIndex, false, (card) =>
+      handleAttackSelection(state, card, callbacks.onUpdate)
+    );
+    renderHand(state, () => updateActionPanel(state, callbacks), callbacks.onUpdate, passPending);
+    updateActionPanel(state, callbacks);
+    handlePendingTrapDecision(state, callbacks.onUpdate);
+    processVisualEffects(state);
+    const handleNextPhase = () => {
+      if (!isLocalPlayersTurn(state)) {
+        return;
+      }
+      callbacks.onNextPhase?.();
+      if (isOnline) {
+        sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
+      }
+    };
+    updateActionBar(handleNextPhase);
+    appendLog(state);
+    if (shouldProcessQueues) {
+      processBeforeCombatQueue(state, callbacks.onUpdate);
+      processEndOfTurnQueue(state, callbacks.onUpdate);
     }
-    callbacks.onNextPhase?.();
-    if (isOnline) {
-      sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
-    }
-  };
-  updateActionBar(handleNextPhase);
-  appendLog(state);
-  if (shouldProcessQueues) {
-    processBeforeCombatQueue(state, callbacks.onUpdate);
-    processEndOfTurnQueue(state, callbacks.onUpdate);
-  }
 
-  if (passPending) {
-    passTitle.textContent = `Pass to ${state.players[activeIndex].name}`;
-    passOverlay.classList.add("active");
-    passOverlay.setAttribute("aria-hidden", "false");
-    passConfirm.onclick = callbacks.onConfirmPass;
+    if (passPending) {
+      passTitle.textContent = `Pass to ${state.players[activeIndex].name}`;
+      passOverlay.classList.add("active");
+      passOverlay.setAttribute("aria-hidden", "false");
+      passConfirm.onclick = callbacks.onConfirmPass;
+    } else {
+      passOverlay.classList.remove("active");
+      passOverlay.setAttribute("aria-hidden", "true");
+    }
   } else {
-    passOverlay.classList.remove("active");
-    passOverlay.setAttribute("aria-hidden", "true");
+    // Hide battle UI elements when game is not ready
+    updatePlayerStats(state, 0, "player1", true);
+    updatePlayerStats(state, 1, "player2", true);
+    clearFieldElements();
+    clearHandElement();
+    clearActionPanel();
+    clearActionBar();
   }
 
   renderDeckSelectionOverlay(state, callbacks);
