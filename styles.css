@@ -2214,3 +2214,317 @@ idden;
     border: 2px dashed #c0392b;
   }
 }
+
+/* Epic Victory Screen Styles */
+.victory-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.95) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 1s ease, visibility 1s ease;
+}
+
+.victory-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.victory-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1000px;
+}
+
+.victory-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.victory-rays {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200%;
+  height: 200%;
+  transform: translate(-50%, -50%);
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(212, 168, 83, 0.1) 10deg,
+    rgba(212, 168, 83, 0.3) 20deg,
+    transparent 30deg,
+    transparent 60deg,
+    rgba(212, 168, 83, 0.1) 70deg,
+    rgba(212, 168, 83, 0.3) 80deg,
+    transparent 90deg,
+    transparent 120deg,
+    rgba(212, 168, 83, 0.1) 130deg,
+    rgba(212, 168, 83, 0.3) 140deg,
+    transparent 150deg,
+    transparent 180deg,
+    rgba(212, 168, 83, 0.1) 190deg,
+    rgba(212, 168, 83, 0.3) 200deg,
+    transparent 210deg,
+    transparent 240deg,
+    rgba(212, 168, 83, 0.1) 250deg,
+    rgba(212, 168, 83, 0.3) 260deg,
+    transparent 270deg,
+    transparent 300deg,
+    rgba(212, 168, 83, 0.1) 310deg,
+    rgba(212, 168, 83, 0.3) 320deg,
+    transparent 330deg,
+    transparent 360deg
+  );
+  animation: victory-rotate 20s linear infinite;
+  opacity: 0;
+  transition: opacity 2s ease;
+}
+
+.victory-overlay.show .victory-rays {
+  opacity: 1;
+}
+
+@keyframes victory-rotate {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+.victory-particles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.victory-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: var(--gold);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--gold);
+  animation: victory-particle-float 3s ease-in-out infinite;
+}
+
+@keyframes victory-particle-float {
+  0%, 100% {
+    transform: translateY(100vh) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.victory-content {
+  position: relative;
+  text-align: center;
+  color: var(--text-primary);
+  z-index: 10;
+  transform: scale(0.5) rotateX(90deg);
+  opacity: 0;
+  transition: all 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.victory-overlay.show .victory-content {
+  transform: scale(1) rotateX(0deg);
+  opacity: 1;
+}
+
+.victory-crown {
+  font-size: 120px;
+  margin-bottom: 20px;
+  animation: victory-crown-bounce 2s ease-in-out infinite;
+  text-shadow: 0 0 30px var(--gold), 0 0 60px var(--gold);
+  filter: drop-shadow(0 0 20px var(--gold));
+}
+
+@keyframes victory-crown-bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-30px);
+  }
+  60% {
+    transform: translateY(-15px);
+  }
+}
+
+.victory-title {
+  font-family: var(--font-display);
+  font-size: 6rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  margin: 0 0 20px 0;
+  background: linear-gradient(45deg, var(--gold), var(--gold-light), var(--gold));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 30px rgba(212, 168, 83, 0.5);
+  animation: victory-title-glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes victory-title-glow {
+  from {
+    filter: drop-shadow(0 0 20px var(--gold));
+  }
+  to {
+    filter: drop-shadow(0 0 40px var(--gold-light)) drop-shadow(0 0 60px var(--gold));
+  }
+}
+
+.victory-winner {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 600;
+  margin: 0 0 10px 0;
+  color: var(--gold-light);
+  text-shadow: 0 0 20px var(--gold);
+}
+
+.victory-subtitle {
+  font-size: 1.5rem;
+  margin: 0 0 40px 0;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.victory-stats {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin: 40px 0;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 1s ease 0.5s;
+}
+
+.victory-overlay.show .victory-stats {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid var(--border-gold);
+  border-radius: 15px;
+  backdrop-filter: blur(10px);
+  min-width: 120px;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--gold);
+  text-shadow: 0 0 10px var(--gold);
+}
+
+.victory-actions {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 1s ease 1s;
+}
+
+.victory-overlay.show .victory-actions {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.victory-rematch, .victory-menu {
+  padding: 15px 40px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.victory-rematch {
+  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+  color: #2e2211;
+  box-shadow: 0 10px 30px rgba(212, 168, 83, 0.3);
+}
+
+.victory-rematch:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 40px rgba(212, 168, 83, 0.5);
+}
+
+.victory-menu {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  border: 2px solid var(--border-gold);
+  backdrop-filter: blur(10px);
+}
+
+.victory-menu:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+/* Victory screen entrance animations */
+.victory-overlay.show .victory-crown {
+  animation-delay: 0.5s;
+}
+
+.victory-overlay.show .victory-title {
+  animation-delay: 0.8s;
+}
+
+.victory-overlay.show .victory-winner {
+  animation-delay: 1.1s;
+}
+
+.victory-overlay.show .victory-subtitle {
+  animation-delay: 1.4s;
+}

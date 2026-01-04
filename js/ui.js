@@ -92,6 +92,13 @@ const lobbyLiveError = document.getElementById("lobby-live-error");
 const deckSave = document.getElementById("deck-save");
 const deckLoad = document.getElementById("deck-load");
 const battleEffectsLayer = document.getElementById("battle-effects");
+const victoryOverlay = document.getElementById("victory-overlay");
+const victoryWinnerName = document.getElementById("victory-winner-name");
+const victoryTurns = document.getElementById("victory-turns");
+const victoryCards = document.getElementById("victory-cards");
+const victoryKills = document.getElementById("victory-kills");
+const victoryRematch = document.getElementById("victory-rematch");
+const victoryMenu = document.getElementById("victory-menu");
 
 let pendingConsumption = null;
 let pendingAttack = null;
@@ -1928,6 +1935,9 @@ const handleDrop = (event) => {
   if (!card) return;
   
   const dropTarget = event.target.closest('.field-slot, .player-badge, .card');
+  
+  // Clear visuals immediately
+  clearDragVisuals();
   
   if (dropTarget?.classList.contains('field-slot')) {
     // Handle dropping on field slot (play card)
@@ -4854,6 +4864,11 @@ const processEndOfTurnQueue = (state, onUpdate) => {
 };
 
 export const renderGame = (state, callbacks = {}) => {
+  // Check for victory before rendering anything
+  if (checkForVictory(state)) {
+    return; // Don't render the game if it's over
+  }
+  
   latestState = state;
   latestCallbacks = callbacks;
   // Attach broadcast hook so downstream systems (effects) can broadcast after mutations
@@ -4963,4 +4978,111 @@ export const setupInitialDraw = (state, count) => {
 
 export const handleCombatPass = (state) => {
   logMessage(state, `${getActivePlayer(state).name} passes combat.`);
+};
+
+// Victory Screen Functions
+const createVictoryParticles = () => {
+  const particlesContainer = victoryOverlay.querySelector('.victory-particles');
+  particlesContainer.innerHTML = '';
+  
+  for (let i = 0; i < 50; i++) {
+    const particle = document.createElement('div');
+    particle.className = 'victory-particle';
+    particle.style.left = Math.random() * 100 + '%';
+    particle.style.animationDelay = Math.random() * 3 + 's';
+    particle.style.animationDuration = (3 + Math.random() * 2) + 's';
+    particlesContainer.appendChild(particle);
+  }
+};
+
+const showVictoryScreen = (winner, stats = {}) => {
+  if (!victoryOverlay) return;
+  
+  // Set winner name
+  victoryWinnerName.textContent = winner.name || 'Unknown Champion';
+  
+  // Set stats
+  victoryTurns.textContent = stats.turns || 0;
+  victoryCards.textContent = stats.cardsPlayed || 0;
+  victoryKills.textContent = stats.creaturesDefeated || 0;
+  
+  // Create particles
+  createVictoryParticles();
+  
+  // Show overlay
+  victoryOverlay.classList.add('show');
+  victoryOverlay.setAttribute('aria-hidden', 'false');
+  
+  // Add event listeners
+  victoryRematch.onclick = () => hideVictoryScreen(() => {
+    // Trigger rematch logic
+    if (latestCallbacks.onRematch) {
+      latestCallbacks.onRematch();
+    }
+  });
+  
+  victoryMenu.onclick = () => hideVictoryScreen(() => {
+    // Return to main menu
+    if (latestCallbacks.onReturnToMenu) {
+      latestCallbacks.onReturnToMenu();
+    }
+  });
+};
+
+const hideVictoryScreen = (callback) => {
+  if (!victoryOverlay) return;
+  
+  victoryOverlay.classList.remove('show');
+  victoryOverlay.setAttribute('aria-hidden', 'true');
+  
+  setTimeout(() => {
+    if (callback) callback();
+  }, 1000); // Wait for fade out animation
+};
+
+const checkForVictory = (state) => {
+  // Check if any player has 0 or less HP
+  const winner = state.players.find(player => player.hp > 0);
+  const loser = state.players.find(player => player.hp <= 0);
+  
+  if (winner && loser) {
+    // Calculate stats
+    const stats = {
+      turns: state.turn || 1,
+      cardsPlayed: calculateCardsPlayed(state),
+      creaturesDefeated: calculateCreaturesDefeated(state)
+    };
+    
+    // Show victory screen
+    showVictoryScreen(winner, stats);
+    
+    return true; // Game over
+  }
+  
+  return false; // Game continues
+};
+
+const calculateCardsPlayed = (state) => {
+  // Count cards in exile (played spells) and carrion (destroyed creatures)
+  let cardsPlayed = 0;
+  
+  state.players.forEach(player => {
+    cardsPlayed += player.exile?.length || 0;
+    cardsPlayed += player.carrion?.length || 0;
+  });
+  
+  return cardsPlayed;
+};
+
+const calculateCreaturesDefeated = (state) => {
+  // Count creatures in carrion pile
+  let creaturesDefeated = 0;
+  
+  state.players.forEach(player => {
+    creaturesDefeated += player.carrion?.filter(card => 
+      card.type === 'Predator' || card.type === 'Prey'
+    ).length || 0;
+  });
+  
+  return creaturesDefeated;
 };

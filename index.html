@@ -402,6 +402,39 @@
       </div>
     </div>
 
+    <div class="overlay victory-overlay" id="victory-overlay" aria-hidden="true">
+      <div class="victory-container">
+        <div class="victory-background">
+          <div class="victory-particles"></div>
+          <div class="victory-rays"></div>
+        </div>
+        <div class="victory-content">
+          <div class="victory-crown">👑</div>
+          <h1 class="victory-title">VICTORY</h1>
+          <div class="victory-winner" id="victory-winner-name">Player Name</div>
+          <div class="victory-subtitle">has conquered the Food Chain!</div>
+          <div class="victory-stats">
+            <div class="stat-item">
+              <span class="stat-label">Turns</span>
+              <span class="stat-value" id="victory-turns">0</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Cards Played</span>
+              <span class="stat-value" id="victory-cards">0</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Enemies Defeated</span>
+              <span class="stat-value" id="victory-kills">0</span>
+            </div>
+          </div>
+          <div class="victory-actions">
+            <button class="btn-primary victory-rematch" id="victory-rematch">Rematch</button>
+            <button class="btn-secondary victory-menu" id="victory-menu">Main Menu</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="game-container">
       <header class="top-bar">
         <div class="player-badge player-left" data-player-index="0">
