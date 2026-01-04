@@ -86,7 +86,8 @@ button {
 }
 
 .game-container {
-  position: relative;
+  position: fixed;
+  inset: 0;
   z-index: 1;
   height: 100vh;
   max-height: 100vh;
@@ -226,6 +227,7 @@ button {
   grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
   gap: clamp(10px, 1.5vw, 18px);
   height: 100%;
+  max-height: 100%;
   min-height: 0;
   width: 100%;
   max-width: 100%;
@@ -240,7 +242,6 @@ button {
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
-  padding-bottom: var(--action-bar-safe);
 }
 
 .battlefield-center-column {
@@ -249,7 +250,6 @@ button {
   min-width: 0;
   width: 100%;
   max-width: 100%;
-  padding-bottom: var(--action-bar-safe);
   height: 100%;
   position: relative;
   overflow-x: hidden;
@@ -578,6 +578,7 @@ button {
   overflow: hidden;
   width: 100%;
   max-width: 100%;
+  font: 30px;
   box-sizing: border-box;
 }
 
@@ -602,7 +603,7 @@ button {
   flex: 1;
   overflow-y: auto;
   padding-right: 6px;
-  font-size: 13px;
+  font-size: 30px;
   color: var(--text-secondary);
 }
 

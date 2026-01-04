@@ -31,7 +31,25 @@ export const KEYWORD_DESCRIPTIONS = {
     "If it kills its target when attacking, it takes no damage; otherwise it takes damage normally.",
 };
 
-export const hasKeyword = (card, keyword) => card.keywords?.includes(keyword);
+/**
+ * Check if a creature's keyword abilities are active.
+ * Dry-dropped predators have their keywords suppressed.
+ */
+export const areAbilitiesActive = (card) => {
+  if (!card) return false;
+  // Dry-dropped predators lose all keyword abilities
+  if (card.type === "Predator" && card.dryDropped === true) {
+    return false;
+  }
+  return true;
+};
+
+export const hasKeyword = (card, keyword) => {
+  if (!areAbilitiesActive(card)) {
+    return false;
+  }
+  return card.keywords?.includes(keyword);
+};
 
 export const isHidden = (card) => hasKeyword(card, KEYWORDS.HIDDEN);
 

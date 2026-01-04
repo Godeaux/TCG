@@ -1,7 +1,7 @@
 import { drawCard, logMessage } from "./gameState.js";
 import { createCardInstance } from "./cardTypes.js";
 import { consumePrey } from "./consumption.js";
-import { isImmune } from "./keywords.js";
+import { isImmune, areAbilitiesActive } from "./keywords.js";
 
 const findCardOwnerIndex = (state, card) =>
   state.players.findIndex((player) =>
@@ -29,7 +29,7 @@ const applyEffectDamage = (state, creature, amount, sourceLabel = "effect") => {
     logMessage(state, `${creature.name} is immune to ${sourceLabel} damage.`);
     return;
   }
-  if (creature.hasBarrier) {
+  if (creature.hasBarrier && areAbilitiesActive(creature)) {
     creature.hasBarrier = false;
     logMessage(state, `${creature.name}'s barrier blocks the damage.`);
     return;

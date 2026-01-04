@@ -7,6 +7,7 @@ import {
   isPassive,
   hasNeurotoxic,
   hasAmbush,
+  areAbilitiesActive,
 } from "./keywords.js";
 import { logMessage } from "./gameState.js";
 import { resolveEffectResult } from "./effects.js";
@@ -44,7 +45,7 @@ const applyDamage = (creature, amount) => {
   if (amount <= 0) {
     return 0;
   }
-  if (creature.hasBarrier) {
+  if (creature.hasBarrier && areAbilitiesActive(creature)) {
     creature.hasBarrier = false;
     return 0;
   }

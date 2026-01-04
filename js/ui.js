@@ -2075,6 +2075,7 @@ const renderField = (state, playerIndex, isOpponent, onAttack) => {
       isCreature;
     const cardElement = renderCard(card, {
       showAttack: canAttack,
+      showEffectSummary: true,
       onAttack,
     });
     slot.appendChild(cardElement);
@@ -2771,8 +2772,8 @@ const handlePlayCard = (state, card, onUpdate) => {
             onUpdate?.();
             return;
           }
-          player.field[emptySlot] = creature;
           creature.dryDropped = true;
+          player.field[emptySlot] = creature;
           logMessage(state, `${creature.name} enters play with no consumption.`);
           clearSelectionPanel();
           triggerPlayTraps(state, creature, onUpdate, () => {
@@ -2803,11 +2804,11 @@ const handlePlayCard = (state, card, onUpdate) => {
       }
     }
 
-    player.field[emptySlot] = creature;
     if (card.type === "Predator") {
-      logMessage(state, `${creature.name} enters play with no consumption.`);
       creature.dryDropped = true;
+      logMessage(state, `${creature.name} enters play with no consumption.`);
     }
+    player.field[emptySlot] = creature;
     triggerPlayTraps(state, creature, onUpdate, () => {
       if (card.type === "Prey" && creature.onPlay) {
         const result = creature.onPlay({
