@@ -143,23 +143,41 @@ export const resetCombat = (state) => {
 
 export const rollSetupDie = (state, playerIndex) => {
   if (!state.setup || state.setup.stage !== "rolling") {
+    console.warn(`Cannot roll - invalid setup state. Stage: ${state.setup?.stage}`);
     return null;
   }
+  
   if (state.setup.rolls[playerIndex] !== null) {
+    console.log(`Player ${playerIndex + 1} already rolled: ${state.setup.rolls[playerIndex]}`);
     return state.setup.rolls[playerIndex];
   }
+  
+  // Validate rolls array before proceeding
+  const rollsAreValid = state.setup.rolls.every(roll => 
+    roll === null || (typeof roll === 'number' && roll >= 1 && roll <= 10)
+  );
+  
+  if (!rollsAreValid) {
+    console.error("Invalid rolls array detected, resetting:", state.setup.rolls);
+    state.setup.rolls = [null, null];
+  }
+  
   const roll = Math.floor(Math.random() * 10) + 1;
   state.setup.rolls[playerIndex] = roll;
+  
+  console.log(`${state.players[playerIndex].name} rolls a ${roll}.`);
   logMessage(state, `${state.players[playerIndex].name} rolls a ${roll}.`);
 
   const [p1Roll, p2Roll] = state.setup.rolls;
   if (p1Roll !== null && p2Roll !== null) {
     if (p1Roll === p2Roll) {
+      console.log("Tie detected - rerolling");
       logMessage(state, "Tie! Reroll the dice to determine who chooses first.");
       state.setup.rolls = [null, null];
     } else {
       state.setup.winnerIndex = p1Roll > p2Roll ? 0 : 1;
       state.setup.stage = "choice";
+      console.log(`${state.players[state.setup.winnerIndex].name} wins the roll`);
       logMessage(
         state,
         `${state.players[state.setup.winnerIndex].name} wins the roll and chooses who goes first.`

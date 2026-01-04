@@ -32,6 +32,10 @@
   --card-radius: 8px;
   --transition-fast: 0.15s ease;
   --transition-medium: 0.25s ease;
+  --action-bar-safe: clamp(170px, 18vh, 240px);
+  --field-max-height: min(66vh, 700px);
+  --field-gap: clamp(8px, 1.5vw, 16px);
+  --hand-overlap: clamp(24px, 3vw, 48px);
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -189,7 +193,7 @@ button {
 .pages-container {
   flex: 1;
   position: relative;
-  overflow: hidden;
+  overflow: visible; /* Allow cards to overflow */
   padding: clamp(12px, 2vw, 20px) clamp(8px, 1vw, 14px) 0;
   width: 100%;
   max-width: 100%;
@@ -203,6 +207,7 @@ button {
   transform: translateX(20px);
   transition: opacity var(--transition-medium), transform var(--transition-medium);
   pointer-events: none;
+  overflow: visible; /* Allow hand cards to overflow upward */
 }
 
 .page.active {
@@ -218,13 +223,13 @@ button {
 
 .battlefield-layout-three-column {
   display: grid;
-  grid-template-columns: 1fr 2fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
   gap: clamp(10px, 1.5vw, 18px);
   height: 100%;
   min-height: 0;
   width: 100%;
   max-width: 100%;
-  overflow: hidden;
+  overflow: visible; /* Allow hand cards to overflow upward */
 }
 
 .battlefield-left-column,
@@ -235,6 +240,7 @@ button {
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
+  padding-bottom: var(--action-bar-safe);
 }
 
 .battlefield-center-column {
@@ -243,9 +249,11 @@ button {
   min-width: 0;
   width: 100%;
   max-width: 100%;
+  padding-bottom: var(--action-bar-safe);
   height: 100%;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: visible; /* Allow cards to overflow upward */
 }
 
 .battlefield-layout {
@@ -253,13 +261,24 @@ button {
   grid-template-rows: minmax(0, 2fr) minmax(0, 1fr);
   gap: clamp(8px, 1.2vw, 14px);
   height: 100%;
+  min-height: 0;
   min-width: 0;
   width: 100%;
+  overflow-x: hidden;
+  overflow-y: visible;
 }
 
 .battlefield-region {
   min-height: 0;
+  min-width: 0;
+  max-height: 100%;
+  max-height: var(--field-max-height);
   position: relative;
+  overflow-x: hidden; /* Contain battlefield horizontally */
+  overflow-y: hidden; /* Contain battlefield vertically */
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .battle-effects {
@@ -272,8 +291,11 @@ button {
 .battlefield {
   display: flex;
   flex-direction: column;
-  gap: clamp(8px, 1.2vw, 14px);
+  gap: var(--field-gap);
+  flex: 1;
+  min-height: 0;
   height: 100%;
+  max-height: 100%;
   justify-content: space-between;
   width: 100%;
   max-width: 100%;
@@ -282,7 +304,8 @@ button {
 .field-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(8px, 1.5vw, 16px);
+  gap: var(--field-gap);
+  max-height: calc((var(--field-max-height) - var(--field-gap)) / 2);
   width: 100%;
 }
 
@@ -291,6 +314,7 @@ button {
   border: 1px dashed var(--border-subtle);
   border-radius: var(--card-radius);
   aspect-ratio: 3 / 4;
+  max-height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -370,10 +394,14 @@ button {
   border-top: 1px solid var(--border-subtle);
   box-shadow: 0 -12px 24px rgba(0, 0, 0, 0.35);
   border-radius: clamp(12px, 2vw, 20px) clamp(12px, 2vw, 20px) 0 0;
-  overflow: hidden;
+  overflow-x: hidden; /* Prevent horizontal growth beyond center column */
+  overflow-y: visible !important; /* Allow upward hover/expansion */
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+  min-height: 120px;
+  transform: translateY(-8px);
+  min-width: 0;
 }
 
 .hand-container {
@@ -385,7 +413,7 @@ button {
   min-height: 0;
   min-width: 0;
   max-width: 100%;
-  overflow: hidden;
+  overflow: visible !important; /* Force visible to prevent card cutoff */
 }
 
 .hand-header {
@@ -393,6 +421,34 @@ button {
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
+}
+
+.hand-expand-toggle {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 4px 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.hand-expand-toggle:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--gold-light);
+  border-color: var(--border-gold);
+  transform: translateY(-1px);
+}
+
+.hand-expand-toggle:active {
+  transform: translateY(0);
+}
+
+.battlefield-center-column.hand-expanded .hand-expand-toggle .expand-icon {
+  transform: rotate(180deg);
+  display: inline-block;
 }
 
 .hand-title {
@@ -409,27 +465,58 @@ button {
 .hand-grid {
   display: flex;
   align-items: flex-end;
-  justify-content: center;
+  justify-content: center; /* Center the card fan like Hearthstone/Balatro */
   gap: 0;
-  overflow: hidden;
-  padding: 0 clamp(4px, 0.8vw, 8px) clamp(4px, 0.8vw, 8px);
+  overflow: visible !important; /* Force visible to prevent override */
+  padding: 0 clamp(4px, 0.8vw, 8px) clamp(8px, 1.2vw, 16px);
   min-height: 0;
   width: 100%;
-  max-width: 100%;
+  flex: 1;
   min-width: 0;
+  max-width: 100%;
   box-sizing: border-box;
+  position: relative;
+  z-index: 1; /* Create stacking context for cards */
 }
 
 .hand-grid .card {
   flex: 0 0 auto;
-  width: clamp(60px, min(15vw, 120px), 140px);
+  flex-shrink: 0;
+  width: clamp(70px, min(18vw, 140px), 160px);
   aspect-ratio: 3 / 4;
-  margin-left: calc(var(--hand-overlap, 0px) * -1);
+  margin-left: calc(var(--hand-overlap) * -1.2);
   transform-origin: bottom center;
   transform: translateY(8px) scale(0.98);
   transition: transform var(--transition-fast), box-shadow var(--transition-fast), z-index 0.2s;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35);
   max-width: 100%;
+  position: relative;
+  z-index: 10; /* Base z-index for hand cards */
+  min-width: 0;
+}
+
+/* Dynamic hand expansion mode */
+.battlefield-center-column.hand-expanded .battlefield-layout {
+  grid-template-rows: minmax(180px, 2fr) minmax(200px, 1fr);
+}
+
+.battlefield-center-column.hand-expanded .hand-panel {
+  overflow: visible;
+  min-height: 200px;
+}
+
+.battlefield-center-column.hand-expanded .hand-grid {
+  align-items: center;
+  min-height: 180px;
+}
+
+.battlefield-center-column.hand-expanded .hand-grid .card {
+  width: clamp(80px, min(20vw, 160px), 180px);
+}
+
+.battlefield-center-column.hand-expanded .hand-grid .card.hand-focus {
+  transform: translateY(-40px) scale(1.4);
+  z-index: 3000; /* Highest z-index for expanded focused cards */
 }
 
 .hand-grid .card:first-child {
@@ -437,18 +524,18 @@ button {
 }
 
 .hand-grid .card.hand-focus {
-  z-index: 5;
-  transform: translateY(-28px) scale(1.32);
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.45);
+  z-index: 2000; /* Highest z-index for focused cards */
+  transform: translateY(-25px) scale(1.15);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
 }
 
 .hand-grid .card:hover {
-  z-index: 4;
-  transform: translateY(0) scale(1.02);
+  z-index: 1000; /* High z-index for hovered cards */
+  transform: translateY(-15px) scale(1.05);
 }
 
 .hand-grid .card .card-name {
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .hand-grid .card .card-inner {
@@ -679,18 +766,22 @@ button {
   display: flex;
   flex-direction: column;
   gap: clamp(6px, 1vw, 12px);
-  z-index: 9;
   padding: clamp(4px, 0.8vw, 8px) clamp(10px, 1.5vw, 20px) clamp(6px, 1vw, 12px);
   height: 0;
   pointer-events: none;
   border-top: none;
   background: transparent;
-  margin-top: clamp(6px, 1vw, 12px);
-  width: 100%;
+  width: clamp(320px, 42vw, 680px);
   max-width: 100%;
-  position: relative;
+  position: fixed;
+  bottom: calc(0px + var(--safe-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  right: auto;
   overflow: hidden;
   box-sizing: border-box;
+  transform-origin: bottom center;
+  z-index: 12;
 }
 
 .action-bar.has-selection,
@@ -700,8 +791,6 @@ button {
   pointer-events: auto;
   background: rgba(10, 14, 20, 0.96);
   border-top: 1px solid var(--border-subtle);
-  width: 100%;
-  max-width: 100%;
   overflow: hidden;
   box-sizing: border-box;
 }
@@ -1914,18 +2003,6 @@ button {
 
   .action-bar {
     padding: clamp(8px, 1.5vw, 16px) clamp(30px, 4vw, 80px) clamp(12px, 2vw, 24px);
-    bottom: 0;
-  }
-
-  .battlefield {
-    max-width: min(760px, 90vw);
-    margin: 0 auto;
-    gap: clamp(12px, 1.5vw, 20px);
-  }
-
-  .hand-grid {
-    max-width: min(760px, 90vw);
-    margin: 0 auto;
   }
 
   .hand-panel {

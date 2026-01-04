@@ -673,12 +673,10 @@ const updateMenuStatus = (state) => {
 };
 
 const updateHandOverlap = (handGrid) => {
-  if (!handGrid) {
-    return;
-  }
   const cards = Array.from(handGrid.querySelectorAll(".card"));
   if (cards.length === 0) {
     handGrid.style.setProperty("--hand-overlap", "0px");
+    handGrid.style.overflow = "visible"; // Force visible
     return;
   }
   const handWidth = handGrid.clientWidth;
@@ -686,12 +684,25 @@ const updateHandOverlap = (handGrid) => {
   if (!handWidth || !cardWidth) {
     return;
   }
-  const totalWidth = cardWidth * cards.length;
-  const overlapNeeded =
-    totalWidth > handWidth ? (totalWidth - handWidth) / Math.max(1, cards.length - 1) : 0;
-  const maxOverlap = cardWidth * 0.7;
-  const overlap = Math.min(Math.max(overlapNeeded, 0), maxOverlap);
+
+  // Calculate total width if cards are laid out with no overlap
+  const totalWidthNoOverlap = cardWidth * cards.length;
+
+  // Only apply overlap if cards would overflow the container
+  let overlap = 0;
+  if (totalWidthNoOverlap > handWidth) {
+    // Calculate how much overlap is needed to fit all cards
+    overlap = (totalWidthNoOverlap - handWidth) / Math.max(1, cards.length - 1);
+
+    // Cap at 75% max overlap to keep cards readable
+    const maxOverlap = cardWidth * 0.75;
+    overlap = Math.min(overlap, maxOverlap);
+  }
+
   handGrid.style.setProperty("--hand-overlap", `${overlap}px`);
+  handGrid.style.overflow = "visible"; // Force visible after setting overlap
+
+  console.log(`📊 Hand overlap: ${overlap.toFixed(1)}px (${cards.length} cards, card width: ${cardWidth.toFixed(1)}px, total needed: ${totalWidthNoOverlap.toFixed(1)}px, container: ${handWidth.toFixed(1)}px)`);
 };
 
 const isOnlineMode = (state) => state.menu?.mode === "online";
@@ -979,10 +990,63 @@ const findDeckCatalogId = (deckIds = []) => {
 };
 
 
-const applyLobbySyncPayload = (state, payload, options = {}) => {
-  if (!payload) {
-    return;
+// Add recovery mechanism for stuck dice rolling
+const checkAndRecoverSetupState = (state) => {
+  if (!state.setup || state.setup.stage !== "rolling") {
+    return false;
   }
+  
+  // Check if both players have valid rolls but stage is still "rolling"
+  const hasValidRolls = state.setup.rolls.every(roll => 
+    roll !== null && typeof roll === 'number' && roll >= 1 && roll <= 10
+  );
+  
+  if (hasValidRolls) {
+    console.warn("Recovery: Both players have rolls but stage is still 'rolling'", state.setup.rolls);
+    
+    const [p1Roll, p2Roll] = state.setup.rolls;
+    if (p1Roll === p2Roll) {
+      // Handle tie case
+      logMessage(state, "Tie detected during recovery! Reroll the dice.");
+      state.setup.rolls = [null, null];
+    } else {
+      // Advance to choice stage
+      state.setup.winnerIndex = p1Roll > p2Roll ? 0 : 1;
+      state.setup.stage = "choice";
+      logMessage(state, `Recovery: ${state.players[state.setup.winnerIndex].name} wins the roll and chooses who goes first.`);
+    }
+    
+    // Broadcast the recovery
+    if (state.menu?.mode === "online") {
+      sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
+      saveGameStateToDatabase(state);
+    }
+    
+    return true;
+  }
+  
+  // Check if rolls have been invalid for too long (stuck state)
+  const hasInvalidRolls = state.setup.rolls.some(roll => 
+    roll !== null && (typeof roll !== 'number' || roll < 1 || roll > 10)
+  );
+  
+  if (hasInvalidRolls) {
+    console.warn("Recovery: Invalid rolls detected, resetting", state.setup.rolls);
+    state.setup.rolls = [null, null];
+    
+    // Broadcast the recovery
+    if (state.menu?.mode === "online") {
+      sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
+      saveGameStateToDatabase(state);
+    }
+    
+    return true;
+  }
+  
+  return false;
+};
+
+const applyLobbySyncPayload = (state, payload, options = {}) => {
   const { forceApply = false, skipDeckComplete = false } = options;
   const senderId = payload.senderId ?? null;
   // Skip sender check when loading from database (force apply)
@@ -1170,12 +1234,46 @@ const applyLobbySyncPayload = (state, payload, options = {}) => {
       }
     }
     if (Array.isArray(payload.setup.rolls)) {
+      console.log("Processing roll sync:", payload.setup.rolls);
       payload.setup.rolls.forEach((roll, index) => {
+        // Enhanced validation with logging
         if (roll === null || roll === undefined) {
+          console.log(`Received null/undefined roll for Player ${index + 1}`);
+          // Only apply if current state is also null/undefined or if this is a reset
+          if (state.setup.rolls[index] !== null) {
+            console.log(`Clearing roll for Player ${index + 1} due to sync`);
+            state.setup.rolls[index] = null;
+          }
           return;
         }
-        state.setup.rolls[index] = roll;
+        
+        // Validate roll is a number within valid range
+        if (typeof roll === 'number' && roll >= 1 && roll <= 10) {
+          if (state.setup.rolls[index] !== roll) {
+            console.log(`Applying roll for Player ${index + 1}: ${roll}`);
+            state.setup.rolls[index] = roll;
+          } else {
+            console.log(`Roll for Player ${index + 1} already matches: ${roll}`);
+          }
+        } else {
+          console.warn(`Invalid roll value for Player ${index + 1}:`, roll, "Type:", typeof roll);
+          // Don't apply invalid rolls, but don't clear existing valid ones
+        }
       });
+      
+      // Verify rolls array consistency after sync
+      const validRolls = state.setup.rolls.every(roll => 
+        roll === null || (typeof roll === 'number' && roll >= 1 && roll <= 10)
+      );
+      
+      if (!validRolls) {
+        console.error("Roll validation failed after sync, resetting invalid rolls");
+        state.setup.rolls = state.setup.rolls.map(roll => 
+          (typeof roll === 'number' && roll >= 1 && roll <= 10) ? roll : null
+        );
+      }
+    } else {
+      console.warn("Received non-array rolls data:", payload.setup?.rolls);
     }
     if (payload.setup.winnerIndex !== undefined && payload.setup.winnerIndex !== null) {
       state.setup.winnerIndex = payload.setup.winnerIndex;
@@ -1200,6 +1298,9 @@ const applyLobbySyncPayload = (state, payload, options = {}) => {
       gameHasStarted,
     });
   }
+
+  // Check for recovery opportunities after sync
+  checkAndRecoverSetupState(state);
 
   latestCallbacks.onUpdate?.();
 };
@@ -1989,6 +2090,25 @@ const renderHand = (state, onSelect, onUpdate, hideCards) => {
   const playerIndex = isOnlineMode(state) ? getLocalPlayerIndex(state) : state.activePlayerIndex;
   const player = state.players[playerIndex];
 
+  // Dynamic hand expansion based on card count
+  const centerColumn = document.querySelector(".battlefield-center-column");
+  if (centerColumn) {
+    const cardCount = player.hand.length;
+    if (cardCount >= 7) {
+      centerColumn.classList.add("hand-expanded");
+    } else {
+      centerColumn.classList.remove("hand-expanded");
+    }
+  }
+
+  // Setup hand expansion toggle
+  const toggleButton = document.getElementById("hand-expand-toggle");
+  if (toggleButton && centerColumn) {
+    toggleButton.onclick = () => {
+      centerColumn.classList.toggle("hand-expanded");
+    };
+  }
+
   if (hideCards) {
     player.hand.forEach(() => {
       handGrid.appendChild(renderCard({}, { showBack: true }));
@@ -2008,10 +2128,70 @@ const renderHand = (state, onSelect, onUpdate, hideCards) => {
     handGrid.appendChild(cardElement);
   });
   requestAnimationFrame(() => updateHandOverlap(handGrid));
+
+  // Force overflow to visible to prevent card cutoff - set immediately and persistently
+  const setOverflowVisible = () => {
+    console.log('🔧 Setting overflow to visible...');
+
+    console.log('Before - handGrid overflow:', window.getComputedStyle(handGrid).overflow);
+    handGrid.style.overflow = 'visible';
+    console.log('After - handGrid overflow:', window.getComputedStyle(handGrid).overflow);
+
+    const handPanel = handGrid.closest('.hand-panel');
+    if (handPanel) {
+      console.log('Before - handPanel overflow:', window.getComputedStyle(handPanel).overflow);
+      handPanel.style.overflow = 'visible';
+      console.log('After - handPanel overflow:', window.getComputedStyle(handPanel).overflow);
+    }
+
+    const handContainer = handGrid.closest('.hand-container');
+    if (handContainer) {
+      console.log('Before - handContainer overflow:', window.getComputedStyle(handContainer).overflow);
+      handContainer.style.overflow = 'visible';
+      console.log('After - handContainer overflow:', window.getComputedStyle(handContainer).overflow);
+    }
+
+    const centerColumn = handGrid.closest('.battlefield-center-column');
+    if (centerColumn) {
+      console.log('Before - centerColumn overflow:', window.getComputedStyle(centerColumn).overflow);
+      centerColumn.style.overflow = 'visible';
+      console.log('After - centerColumn overflow:', window.getComputedStyle(centerColumn).overflow);
+    }
+
+    console.log('✅ Overflow setting complete');
+  };
+
+  // Set immediately
+  console.log('⏰ Immediate setOverflowVisible call');
+  setOverflowVisible();
+
+  // Set again after a delay to ensure it sticks
+  requestAnimationFrame(() => {
+    console.log('⏰ requestAnimationFrame setOverflowVisible call');
+    setOverflowVisible();
+  });
+
+  setTimeout(() => {
+    console.log('⏰ setTimeout(100ms) setOverflowVisible call');
+    setOverflowVisible();
+  }, 100);
+
+  // Monitor for changes to overflow
+  setTimeout(() => {
+    console.log('🔍 Final check after 500ms:');
+    console.log('handGrid overflow:', window.getComputedStyle(handGrid).overflow);
+    const handPanel = handGrid.closest('.hand-panel');
+    if (handPanel) console.log('handPanel overflow:', window.getComputedStyle(handPanel).overflow);
+    const handContainer = handGrid.closest('.hand-container');
+    if (handContainer) console.log('handContainer overflow:', window.getComputedStyle(handContainer).overflow);
+    const centerColumn = handGrid.closest('.battlefield-center-column');
+    if (centerColumn) console.log('centerColumn overflow:', window.getComputedStyle(centerColumn).overflow);
+  }, 500);
 };
 
 const renderSelectionPanel = ({ title, items, onConfirm, confirmLabel = "Confirm" }) => {
   clearPanel(selectionPanel);
+  // ... rest of the code remains the same ...
   if (!selectionPanel) {
     return;
   }
@@ -3635,13 +3815,38 @@ const renderSetupOverlay = (state, callbacks) => {
 
     const rollP1 = document.createElement("button");
     rollP1.textContent = "Roll for Player 1";
-    rollP1.onclick = () => {
+    rollP1.onclick = async () => {
       if (!canRollP1) {
         return;
       }
+      
+      // Validate state before rolling
+      if (!state.setup || state.setup.stage !== "rolling") {
+        console.error("Invalid setup state for rolling");
+        return;
+      }
+      
       callbacks.onSetupRoll?.(0);
+      
       if (isOnline) {
-        sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
+        try {
+          // Enhanced broadcasting with error handling
+          const payload = buildLobbySyncPayload(state);
+          console.log("Broadcasting P1 roll:", payload.setup?.rolls);
+          
+          sendLobbyBroadcast("sync_state", payload);
+          
+          // Also save to database as backup
+          await saveGameStateToDatabase(state);
+          
+          console.log("P1 roll broadcast successful");
+        } catch (error) {
+          console.error("Failed to broadcast P1 roll:", error);
+          // Attempt recovery by requesting sync
+          setTimeout(() => {
+            sendLobbyBroadcast("sync_request", { senderId: state.menu?.profile?.id ?? null });
+          }, 1000);
+        }
       }
     };
     rollP1.disabled = state.setup.rolls[0] !== null || !canRollP1;
@@ -3649,13 +3854,38 @@ const renderSetupOverlay = (state, callbacks) => {
 
     const rollP2 = document.createElement("button");
     rollP2.textContent = "Roll for Player 2";
-    rollP2.onclick = () => {
+    rollP2.onclick = async () => {
       if (!canRollP2) {
         return;
       }
+      
+      // Validate state before rolling
+      if (!state.setup || state.setup.stage !== "rolling") {
+        console.error("Invalid setup state for rolling");
+        return;
+      }
+      
       callbacks.onSetupRoll?.(1);
+      
       if (isOnline) {
-        sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
+        try {
+          // Enhanced broadcasting with error handling
+          const payload = buildLobbySyncPayload(state);
+          console.log("Broadcasting P2 roll:", payload.setup?.rolls);
+          
+          sendLobbyBroadcast("sync_state", payload);
+          
+          // Also save to database as backup
+          await saveGameStateToDatabase(state);
+          
+          console.log("P2 roll broadcast successful");
+        } catch (error) {
+          console.error("Failed to broadcast P2 roll:", error);
+          // Attempt recovery by requesting sync
+          setTimeout(() => {
+            sendLobbyBroadcast("sync_request", { senderId: state.menu?.profile?.id ?? null });
+          }, 1000);
+        }
       }
     };
     rollP2.disabled = state.setup.rolls[1] !== null || !canRollP2;
