@@ -470,6 +470,31 @@ export const resolveEffectResult = (state, result, context) => {
     logMessage(state, `${state.fieldSpell.card.name} is destroyed.`);
     state.fieldSpell = null;
   }
+
+  if (result.freezeCreature) {
+    const { creature } = result.freezeCreature;
+    creature.frozen = true;
+    creature.frozenDiesTurn = state.turn + 1;
+    logMessage(state, `${creature.name} is frozen.`);
+  }
+
+  if (result.freezeEnemyCreatures) {
+    const enemy = state.players[context.opponentIndex];
+    enemy.field.forEach((creature) => {
+      if (creature && (creature.type === "Predator" || creature.type === "Prey")) {
+        creature.frozen = true;
+        creature.frozenDiesTurn = state.turn + 1;
+        logMessage(state, `${creature.name} is frozen.`);
+      }
+    });
+  }
+
+  if (result.paralyzeCreature) {
+    const { creature } = result.paralyzeCreature;
+    creature.paralyzed = true;
+    creature.paralyzedUntilTurn = state.turn + 1;
+    logMessage(state, `${creature.name} is paralyzed.`);
+  }
 };
 
 export const findCreatureOwnerIndex = findCardOwnerIndex;

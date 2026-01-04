@@ -491,6 +491,7 @@ button {
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35);
   max-width: 100%;
   position: relative;
+  font-size: 20px;
   z-index: 10; /* Base z-index for hand cards */
   min-width: 0;
 }
@@ -562,6 +563,7 @@ button {
   overflow: hidden;
   min-height: 0;
   width: 100%;
+  font-size: 40px;
   max-width: 100%;
   box-sizing: border-box;
 }
@@ -578,7 +580,7 @@ button {
   overflow: hidden;
   width: 100%;
   max-width: 100%;
-  font: 30px;
+  font: 65px;
   box-sizing: border-box;
 }
 
@@ -595,7 +597,7 @@ button {
   font-family: var(--font-display);
   letter-spacing: 0.04em;
   color: var(--gold-light);
-  font-size: 16px;
+  font-size: 80px;
   margin: 0;
 }
 
@@ -603,7 +605,7 @@ button {
   flex: 1;
   overflow-y: auto;
   padding-right: 6px;
-  font-size: 30px;
+  font-size: 65px;
   color: var(--text-secondary);
 }
 
@@ -614,6 +616,7 @@ button {
   height: 100%;
   color: var(--text-muted);
   font-style: italic;
+  font-size: 65px;
 }
 
 .log-content {
@@ -625,12 +628,12 @@ button {
   gap: 6px;
   min-height: 0;
   margin-top: 10px;
-  font-size: clamp(11px, 1.2vw, 14px);
+  font-size: 40px;
   color: var(--text-secondary);
 }
 
 .log-entry {
-  font-size: clamp(10px, 1.1vw, 12px);
+  font-size: 25px;
   color: var(--text-secondary);
   padding: 4px 6px;
   background: rgba(255, 255, 255, 0.02);
@@ -730,6 +733,7 @@ button {
   font-size: 13px;
   color: var(--text-secondary);
   max-height: 900px;
+  font-size: 40px;
   overflow: hidden;
 }
 

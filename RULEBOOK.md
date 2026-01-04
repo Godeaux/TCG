@@ -148,8 +148,8 @@ If both players reach 0 HP simultaneously, the game is a **draw**.
 - Perfect for combos!
 
 #### **Trap**
-- Hidden reactive cards played during your turn
-- Trigger automatically during your **opponent's turn** when conditions are met
+- Cards that can be played during your enemy's turn from the trap-holding player's hand
+- Trigger for trap-holding player to decide automatically triggers during your **opponent's turn** when conditions are met
 - Resolve **before** the triggering action completes
 - Goes to **Exile** after triggering
 

@@ -19,6 +19,7 @@ import {
   isEdible,
   isPassive,
   hasScavenge,
+  isHarmless,
   KEYWORD_DESCRIPTIONS,
 } from "./keywords.js";
 import { resolveEffectResult, stripAbilities } from "./effects.js";
@@ -2071,7 +2072,9 @@ const renderField = (state, playerIndex, isOpponent, onAttack) => {
       state.phase === "Combat" &&
       !card.hasAttacked &&
       !isPassive(card) &&
+      !isHarmless(card) &&
       !card.frozen &&
+      !card.paralyzed &&
       isCreature;
     const cardElement = renderCard(card, {
       showAttack: canAttack,

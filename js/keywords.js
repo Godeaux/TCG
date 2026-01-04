@@ -12,6 +12,9 @@ export const KEYWORDS = {
   SCAVENGE: "Scavenge",
   NEUROTOXIC: "Neurotoxic",
   AMBUSH: "Ambush",
+  TOXIC: "Toxic",
+  POISONOUS: "Poisonous",
+  HARMLESS: "Harmless",
 };
 
 export const KEYWORD_DESCRIPTIONS = {
@@ -29,6 +32,9 @@ export const KEYWORD_DESCRIPTIONS = {
   [KEYWORDS.NEUROTOXIC]: "Combat damage freezes the target until it dies next turn.",
   [KEYWORDS.AMBUSH]:
     "If it kills its target when attacking, it takes no damage; otherwise it takes damage normally.",
+  [KEYWORDS.TOXIC]: "Kills any creature it damages in combat regardless of HP.",
+  [KEYWORDS.POISONOUS]: "Deals 1 damage to opponent at end of their turn.",
+  [KEYWORDS.HARMLESS]: "Cannot attack (0 attack permanently).",
 };
 
 /**
@@ -76,3 +82,9 @@ export const hasScavenge = (card) => hasKeyword(card, KEYWORDS.SCAVENGE);
 export const hasNeurotoxic = (card) => hasKeyword(card, KEYWORDS.NEUROTOXIC);
 
 export const hasAmbush = (card) => hasKeyword(card, KEYWORDS.AMBUSH);
+
+export const hasToxic = (card) => hasKeyword(card, KEYWORDS.TOXIC);
+
+export const hasPoisonous = (card) => hasKeyword(card, KEYWORDS.POISONOUS);
+
+export const isHarmless = (card) => hasKeyword(card, KEYWORDS.HARMLESS);

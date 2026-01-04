@@ -1283,8 +1283,8 @@ const goldenTeguEggToken = {
   atk: 0,
   hp: 1,
   nutrition: 0,
-  keywords: ["Barrier", "Hidden"],
-  effectText: "Harmless (Not yet implemented). Draw 1. Barrier. Hidden.",
+  keywords: ["Barrier", "Hidden", "Harmless"],
+  effectText: "Harmless. Draw 1. Barrier. Hidden.",
   onPlay: ({ log }) => {
     log("Golden Tegu Egg: draw 1.");
     return { draw: 1 };
@@ -1308,8 +1308,8 @@ const poisonousSnakeToken = {
   atk: 1,
   hp: 1,
   nutrition: 1,
-  keywords: [],
-  effectText: "Poisonous (Not yet implemented).",
+  keywords: ["Poisonous"],
+  effectText: "Poisonous.",
 };
 
 const snakeNestFieldSpell = {
@@ -1401,8 +1401,8 @@ const reptileCards = [
     atk: 1,
     hp: 1,
     nutrition: 1,
-    keywords: ["Barrier", "Lure"],
-    effectText: "Barrier. Lure. Poisonous (Not yet implemented). Slain, heal 3.",
+    keywords: ["Barrier", "Lure", "Poisonous"],
+    effectText: "Barrier. Lure. Poisonous. Slain, heal 3.",
     onSlain: ({ log }) => {
       log("Yucatan Neotropical Rattlesnake is slain: heal 3.");
       return { heal: 3 };
@@ -1416,7 +1416,11 @@ const reptileCards = [
     hp: 1,
     nutrition: 1,
     keywords: [],
-    effectText: "Not yet implemented.",
+    effectText: "Freeze all enemy creatures.",
+    onPlay: ({ log, opponentIndex }) => {
+      log("Frost's Iguana freezes all enemy creatures.");
+      return { freezeEnemyCreatures: true };
+    },
   },
   {
     id: "reptile-prey-galapagos-lava-lizards",
@@ -1495,8 +1499,8 @@ const reptileCards = [
     atk: 1,
     hp: 1,
     nutrition: 1,
-    keywords: [],
-    effectText: "Draw 1. Toxic (Not yet implemented).",
+    keywords: ["Toxic"],
+    effectText: "Draw 1. Toxic.",
     onPlay: ({ log }) => {
       log("Golden Lancehead draws 1 card.");
       return { draw: 1 };
@@ -1562,7 +1566,22 @@ const reptileCards = [
     hp: 1,
     nutrition: 1,
     keywords: ["Free Play"],
-    effectText: "Freeze target enemy (Not yet implemented).",
+    effectText: "Freeze target enemy creature.",
+    onPlay: ({ log, opponent, state }) => {
+      const targets = opponent.field.filter((card) => isCreatureCard(card));
+      if (targets.length === 0) {
+        log("Plumed Basilisk: no enemy creatures to freeze.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Plumed Basilisk: choose an enemy creature to freeze",
+        candidates: targets.map((target) => ({ label: target.name, value: target })),
+        onSelect: (target) =>
+          handleTargetedResponse({ target, source: null, log, opponent, state }) || {
+            freezeCreature: { creature: target },
+          },
+      });
+    },
   },
   {
     id: "reptile-prey-veiled-chameleon",
@@ -1632,8 +1651,8 @@ const reptileCards = [
     atk: 2,
     hp: 2,
     nutrition: 2,
-    keywords: ["Hidden"],
-    effectText: "Toxic (Not yet implemented).",
+    keywords: ["Hidden", "Toxic"],
+    effectText: "Hidden. Toxic.",
   },
   {
     id: "reptile-prey-king-brown-snake",
@@ -1642,8 +1661,8 @@ const reptileCards = [
     atk: 2,
     hp: 2,
     nutrition: 2,
-    keywords: [],
-    effectText: "Toxic (Not yet implemented). Add a card from deck to hand.",
+    keywords: ["Toxic"],
+    effectText: "Toxic. Add a card from deck to hand.",
     onPlay: ({ log, player, playerIndex }) => {
       if (player.deck.length === 0) {
         log("King Brown Snake: deck is empty.");
@@ -1774,7 +1793,14 @@ const reptileCards = [
     atk: 3,
     hp: 3,
     keywords: [],
-    effectText: "Not yet implemented.",
+    effectText: "If attacked in combat, during Main 2 phase: regen itself and heal player 2 HP.",
+    onBeforeCombat: ({ creature }) => {
+      // Track that this creature is about to attack
+      creature.attackedThisTurn = true;
+      return null;
+    },
+    // This effect triggers in Main 2 phase after combat
+    boaConstrictorEffect: true, // Flag to identify this special effect
   },
   {
     id: "reptile-predator-chinese-alligator",
@@ -1888,8 +1914,8 @@ const reptileCards = [
     type: "Predator",
     atk: 4,
     hp: 4,
-    keywords: ["Immune"],
-    effectText: "Toxic (Not yet implemented).",
+    keywords: ["Immune", "Toxic"],
+    effectText: "Immune. Toxic.",
   },
   {
     id: "reptile-predator-nile-crocodile",
@@ -1998,7 +2024,22 @@ const reptileCards = [
     id: "reptile-spell-paralyze",
     name: "Paralyze",
     type: "Spell",
-    effectText: "Not yet implemented.",
+    effectText: "Paralyze target enemy creature (cannot attack but can still be consumed).",
+    effect: ({ log, opponent, state }) => {
+      const targets = opponent.field.filter((card) => isCreatureCard(card));
+      if (targets.length === 0) {
+        log("Paralyze: no enemy creatures to paralyze.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Paralyze: choose an enemy creature",
+        candidates: targets.map((target) => ({ label: target.name, value: target })),
+        onSelect: (target) =>
+          handleTargetedResponse({ target, source: null, log, opponent, state }) || {
+            paralyzeCreature: { creature: target },
+          },
+      });
+    },
   },
   {
     id: "reptile-spell-sunshine",
@@ -2042,7 +2083,29 @@ const reptileCards = [
     id: "reptile-free-spell-spite",
     name: "Spite",
     type: "Free Spell",
-    effectText: "Not yet implemented.",
+    effectText: "Target creature gains Poisonous.",
+    effect: ({ log, player, opponent, state }) => {
+      const candidates = [
+        ...player.field
+          .filter((card) => isCreatureCard(card) && !isInvisible(card))
+          .map((card) => ({ label: card.name, value: card })),
+        ...opponent.field
+          .filter((card) => isCreatureCard(card) && !isInvisible(card))
+          .map((card) => ({ label: card.name, value: card })),
+      ];
+      if (candidates.length === 0) {
+        log("Spite: no creature to target.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Spite: choose a creature to gain Poisonous",
+        candidates,
+        onSelect: (target) =>
+          handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+            addKeyword: { creature: target, keyword: "Poisonous" },
+          },
+      });
+    },
   },
   {
     id: "reptile-free-spell-survivor",
@@ -2088,15 +2151,42 @@ const reptileCards = [
     id: "reptile-trap-scales",
     name: "Scales",
     type: "Trap",
-    trigger: "attacked",
-    effectText: "Not yet implemented.",
+    trigger: "indirectDamage",
+    effectText: "When you receive indirect damage, negate it and heal 3 HP.",
+    effect: ({ log, defenderIndex }) => {
+      log("Scales activates: damage negated and player heals 3 HP.");
+      return {
+        negateDamage: true,
+        heal: 3,
+      };
+    },
   },
   {
     id: "reptile-trap-snake-oil",
     name: "Snake Oil",
     type: "Trap",
     trigger: "rivalDraws",
-    effectText: "Not yet implemented.",
+    effectText: "When rival draws, they must discard 1 card, then you draw 1 card.",
+    effect: ({ log, defenderIndex, state }) => {
+      const opponentIndex = (defenderIndex + 1) % 2;
+      const opponent = state.players[opponentIndex];
+
+      if (opponent.hand.length === 0) {
+        log("Snake Oil: rival has no cards to discard.");
+        return { draw: 1 };
+      }
+
+      return {
+        selectTarget: {
+          title: "Snake Oil: choose a card to discard",
+          candidates: () => opponent.hand.map((card) => ({ label: card.name, value: card })),
+          onSelect: (card) => ({
+            discardCards: { playerIndex: opponentIndex, cards: [card] },
+            draw: 1,
+          }),
+        },
+      };
+    },
   },
   {
     id: "reptile-trap-snake-pit",
