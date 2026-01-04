@@ -1829,41 +1829,79 @@ const renderCard = (card, options = {}) => {
     onClick?.(card);
   });
 
-  // Auto-shrink text to fit in content area (optimized to prevent spastic re-renders)
+  // Auto-shrink text to fit (optimized to prevent spastic re-renders)
   const adjustTextToFit = () => {
+    const nameElement = inner.querySelector('.card-name');
     const contentArea = inner.querySelector('.card-content-area');
+    const statsRow = inner.querySelector('.card-stats-row');
+    const keywordsElement = inner.querySelector('.card-keywords');
     const effectElement = inner.querySelector('.card-effect');
-    
-    if (!contentArea || !effectElement) return;
-    
+
     // Skip if already adjusted to prevent repeated calculations
-    if (effectElement.dataset.textAdjusted === 'true') return;
-    
-    // Check if content overflows
-    const isOverflowing = contentArea.scrollHeight > contentArea.clientHeight;
-    
-    if (isOverflowing) {
-      // Start with base font size and reduce until it fits
-      let fontSize = 11;
-      const minFontSize = 8;
+    if (nameElement?.dataset.textAdjusted === 'true') return;
+
+    // Adjust card name to fit on one line
+    if (nameElement && nameElement.scrollWidth > nameElement.clientWidth) {
+      let fontSize = 13;
+      const minFontSize = 7;
       const step = 0.5;
-      
-      while (fontSize > minFontSize && contentArea.scrollHeight > contentArea.clientHeight) {
+
+      while (fontSize > minFontSize && nameElement.scrollWidth > nameElement.clientWidth) {
         fontSize -= step;
-        effectElement.style.fontSize = `${fontSize}px`;
-      }
-      
-      // If still overflowing at minimum size, enable more aggressive truncation
-      if (contentArea.scrollHeight > contentArea.clientHeight) {
-        effectElement.style.webkitLineClamp = '2';
-        effectElement.style.lineClamp = '2';
+        nameElement.style.fontSize = `${fontSize}px`;
       }
     }
-    
+
+    // Adjust stats row to fit without horizontal overflow
+    if (statsRow && statsRow.scrollWidth > statsRow.clientWidth) {
+      let fontSize = 11;
+      const minFontSize = 6;
+      const step = 0.5;
+
+      const statElements = statsRow.querySelectorAll('.card-stat');
+      while (fontSize > minFontSize && statsRow.scrollWidth > statsRow.clientWidth) {
+        fontSize -= step;
+        statElements.forEach(stat => {
+          stat.style.fontSize = `${fontSize}px`;
+          stat.style.padding = `${Math.max(1, fontSize * 0.18)}px ${Math.max(3, fontSize * 0.55)}px`;
+        });
+      }
+    }
+
+    // Adjust keywords and effect area to fit without overflow
+    if (contentArea && (keywordsElement || effectElement)) {
+      // Check if content overflows vertically
+      let attempts = 0;
+      const maxAttempts = 20;
+
+      while (contentArea.scrollHeight > contentArea.clientHeight && attempts < maxAttempts) {
+        attempts++;
+        let fontSize = parseFloat(effectElement?.style.fontSize || keywordsElement?.style.fontSize) || 11;
+        const minFontSize = 6;
+
+        if (fontSize <= minFontSize) break;
+
+        fontSize = Math.max(minFontSize, fontSize - 0.5);
+
+        if (keywordsElement) {
+          keywordsElement.style.fontSize = `${fontSize}px`;
+          const keywordSpans = keywordsElement.querySelectorAll('span');
+          keywordSpans.forEach(span => {
+            span.style.fontSize = `${fontSize}px`;
+            span.style.padding = `${Math.max(1, fontSize * 0.18)}px ${Math.max(3, fontSize * 0.55)}px`;
+          });
+        }
+        if (effectElement) {
+          effectElement.style.fontSize = `${fontSize}px`;
+          effectElement.style.lineHeight = '1.2';
+        }
+      }
+    }
+
     // Mark as adjusted to prevent repeated calculations
-    effectElement.dataset.textAdjusted = 'true';
+    if (nameElement) nameElement.dataset.textAdjusted = 'true';
   };
-  
+
   // Run adjustment after DOM is rendered with a small delay to batch operations
   setTimeout(() => requestAnimationFrame(adjustTextToFit), 10);
 
@@ -2391,6 +2429,84 @@ const renderDeckCard = (card, options = {}) => {
     </div>
   `;
   cardElement.addEventListener("click", () => onClick?.());
+
+  // Auto-shrink text to fit (same as renderCard)
+  const adjustTextToFit = () => {
+    const inner = cardElement.querySelector('.card-inner');
+    const nameElement = inner?.querySelector('.card-name');
+    const contentArea = inner?.querySelector('.card-content-area');
+    const statsRow = inner?.querySelector('.card-stats-row');
+    const keywordsElement = inner?.querySelector('.card-keywords');
+    const effectElement = inner?.querySelector('.card-effect');
+
+    // Skip if already adjusted to prevent repeated calculations
+    if (nameElement?.dataset.textAdjusted === 'true') return;
+
+    // Adjust card name to fit on one line
+    if (nameElement && nameElement.scrollWidth > nameElement.clientWidth) {
+      let fontSize = 13;
+      const minFontSize = 7;
+      const step = 0.5;
+
+      while (fontSize > minFontSize && nameElement.scrollWidth > nameElement.clientWidth) {
+        fontSize -= step;
+        nameElement.style.fontSize = `${fontSize}px`;
+      }
+    }
+
+    // Adjust stats row to fit without horizontal overflow
+    if (statsRow && statsRow.scrollWidth > statsRow.clientWidth) {
+      let fontSize = 11;
+      const minFontSize = 6;
+      const step = 0.5;
+
+      const statElements = statsRow.querySelectorAll('.card-stat');
+      while (fontSize > minFontSize && statsRow.scrollWidth > statsRow.clientWidth) {
+        fontSize -= step;
+        statElements.forEach(stat => {
+          stat.style.fontSize = `${fontSize}px`;
+          stat.style.padding = `${Math.max(1, fontSize * 0.18)}px ${Math.max(3, fontSize * 0.55)}px`;
+        });
+      }
+    }
+
+    // Adjust keywords and effect area to fit without overflow
+    if (contentArea && (keywordsElement || effectElement)) {
+      // Check if content overflows vertically
+      let attempts = 0;
+      const maxAttempts = 20;
+
+      while (contentArea.scrollHeight > contentArea.clientHeight && attempts < maxAttempts) {
+        attempts++;
+        let fontSize = parseFloat(effectElement?.style.fontSize || keywordsElement?.style.fontSize) || 11;
+        const minFontSize = 6;
+
+        if (fontSize <= minFontSize) break;
+
+        fontSize = Math.max(minFontSize, fontSize - 0.5);
+
+        if (keywordsElement) {
+          keywordsElement.style.fontSize = `${fontSize}px`;
+          const keywordSpans = keywordsElement.querySelectorAll('span');
+          keywordSpans.forEach(span => {
+            span.style.fontSize = `${fontSize}px`;
+            span.style.padding = `${Math.max(1, fontSize * 0.18)}px ${Math.max(3, fontSize * 0.55)}px`;
+          });
+        }
+        if (effectElement) {
+          effectElement.style.fontSize = `${fontSize}px`;
+          effectElement.style.lineHeight = '1.2';
+        }
+      }
+    }
+
+    // Mark as adjusted to prevent repeated calculations
+    if (nameElement) nameElement.dataset.textAdjusted = 'true';
+  };
+
+  // Run adjustment after DOM is rendered with a small delay to batch operations
+  setTimeout(() => requestAnimationFrame(adjustTextToFit), 10);
+
   return cardElement;
 };
 
