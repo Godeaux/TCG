@@ -4832,9 +4832,26 @@ const processEndOfTurnQueue = (state, onUpdate) => {
   if (state.phase !== "End") {
     return;
   }
+  
+  // If there's an active selection, don't process but also don't get stuck
+  if (isSelectionActive()) {
+    // Reset processing flag if we're waiting for selection but it's not our turn
+    if (state.endOfTurnProcessing && !isLocalPlayersTurn(state)) {
+      state.endOfTurnProcessing = false;
+    }
+    return;
+  }
+  
+  // Reset processing flag if it was stuck waiting for a selection
+  if (state.endOfTurnProcessing && !isSelectionActive()) {
+    console.log("Resetting stuck endOfTurnProcessing flag");
+    state.endOfTurnProcessing = false;
+  }
+  
   if (state.endOfTurnProcessing) {
     return;
   }
+  
   if (state.endOfTurnQueue.length === 0) {
     finalizeEndPhase(state);
     broadcastSyncState(state);
