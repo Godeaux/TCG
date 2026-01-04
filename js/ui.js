@@ -1059,12 +1059,18 @@ const applyLobbySyncPayload = (state, payload, options = {}) => {
           return;
         }
 
-        // Do not overwrite local player's state with opponent broadcasts unless forceApply (DB load)
-        if (!forceApply && index === localIndex) {
-          return;
-        }
+        const isProtectedLocalSnapshot = !forceApply && index === localIndex;
 
-        console.log("Applying player data for index:", index, "localIndex:", localIndex, "forceApply:", forceApply);
+        console.log(
+          "Applying player data for index:",
+          index,
+          "localIndex:",
+          localIndex,
+          "forceApply:",
+          forceApply,
+          "protectedLocalSnapshot:",
+          isProtectedLocalSnapshot
+        );
 
         if (playerSnapshot.name) {
           player.name = playerSnapshot.name;
@@ -1072,10 +1078,11 @@ const applyLobbySyncPayload = (state, payload, options = {}) => {
         if (typeof playerSnapshot.hp === "number") {
           player.hp = playerSnapshot.hp;
         }
-        if (Array.isArray(playerSnapshot.deck)) {
+
+        if (!isProtectedLocalSnapshot && Array.isArray(playerSnapshot.deck)) {
           player.deck = hydrateDeckSnapshots(playerSnapshot.deck);
         }
-        if (Array.isArray(playerSnapshot.hand)) {
+        if (!isProtectedLocalSnapshot && Array.isArray(playerSnapshot.hand)) {
           player.hand = hydrateZoneSnapshots(playerSnapshot.hand, null, state.turn);
         }
         if (Array.isArray(playerSnapshot.field)) {
@@ -1087,7 +1094,7 @@ const applyLobbySyncPayload = (state, payload, options = {}) => {
         if (Array.isArray(playerSnapshot.exile)) {
           player.exile = hydrateZoneSnapshots(playerSnapshot.exile, null, state.turn);
         }
-        if (Array.isArray(playerSnapshot.traps)) {
+        if (!isProtectedLocalSnapshot && Array.isArray(playerSnapshot.traps)) {
           player.traps = hydrateZoneSnapshots(playerSnapshot.traps, null, state.turn);
         }
       });
@@ -4109,7 +4116,6 @@ const processEndOfTurnQueue = (state, onUpdate) => {
   }
   if (state.endOfTurnQueue.length === 0) {
     finalizeEndPhase(state);
-    onUpdate?.();
     broadcastSyncState(state);
     return;
   }
@@ -4117,7 +4123,6 @@ const processEndOfTurnQueue = (state, onUpdate) => {
   const creature = state.endOfTurnQueue.shift();
   if (!creature) {
     finalizeEndPhase(state);
-    onUpdate?.();
     broadcastSyncState(state);
     return;
   }
@@ -4141,7 +4146,6 @@ const processEndOfTurnQueue = (state, onUpdate) => {
     }
     cleanupDestroyed(state);
     state.endOfTurnProcessing = false;
-    onUpdate?.();
     broadcastSyncState(state);
     processEndOfTurnQueue(state, onUpdate);
   };
