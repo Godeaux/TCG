@@ -37,8 +37,29 @@
   --field-gap: clamp(8px, 1.5vw, 16px);
   --hand-overlap: clamp(24px, 3vw, 48px);
 
+  /* Minimum heights for zoom stability */
+  --min-container-height: 600px;
+  --min-pages-height: 500px;
+  --min-battlefield-height: 480px;
+  --min-hand-height: clamp(100px, 15vh, 140px);
+  --min-inspector-height: 200px;
+  --min-log-height: 150px;
+  --min-piles-height: 80px;
+
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Adjust minimums for extreme zoom scenarios */
+@media (max-height: 500px) {
+  :root {
+    --min-container-height: 500px;
+    --min-battlefield-height: 380px;
+    --min-hand-height: 80px;
+    --min-inspector-height: 120px;
+    --min-log-height: 120px;
+    --min-piles-height: 60px;
+  }
 }
 
 .hidden {
@@ -91,6 +112,7 @@ button {
   z-index: 1;
   height: 100vh;
   max-height: 100vh;
+  min-height: var(--min-container-height); /* Prevent total collapse on extreme zoom */
   display: flex;
   flex-direction: column;
   padding-top: calc(12px + var(--safe-top));
@@ -198,7 +220,7 @@ button {
   padding: clamp(12px, 2vw, 20px) clamp(8px, 1vw, 14px) 0;
   width: 100%;
   max-width: 100%;
-  min-height: 0;
+  min-height: var(--min-pages-height); /* Ensure content area doesn't collapse */
 }
 
 .page {
@@ -228,7 +250,7 @@ button {
   gap: clamp(10px, 1.5vw, 18px);
   height: 100%;
   max-height: 100%;
-  min-height: 0;
+  min-height: var(--min-battlefield-height); /* Prevent collapse at high zoom */
   width: 100%;
   max-width: 100%;
   overflow: visible; /* Allow hand cards to overflow upward */
@@ -241,7 +263,9 @@ button {
   gap: clamp(8px, 1.2vw, 16px);
   min-width: 0;
   max-width: 100%;
-  overflow: hidden;
+  min-height: 0;
+  overflow-y: auto; /* Enable scrolling if content is too tall for viewport */
+  overflow-x: hidden;
 }
 
 .battlefield-center-column {
@@ -251,6 +275,7 @@ button {
   width: 100%;
   max-width: 100%;
   height: 100%;
+  min-height: 0;
   position: relative;
   overflow-x: hidden;
   overflow-y: visible; /* Allow cards to overflow upward */
@@ -258,14 +283,14 @@ button {
 
 .battlefield-layout {
   display: grid;
-  grid-template-rows: minmax(0, 2fr) minmax(0, 1fr);
+  grid-template-rows: minmax(200px, 2fr) minmax(140px, 1fr); /* Enforce minimum heights */
   gap: clamp(8px, 1.2vw, 14px);
   height: 100%;
-  min-height: 0;
+  min-height: 340px; /* Sum of minimum row heights */
   min-width: 0;
   width: 100%;
   overflow-x: hidden;
-  overflow-y: visible;
+  overflow-y: auto; /* Allow scrolling if battlefield is too tall */
 }
 
 .battlefield-region {
@@ -399,9 +424,11 @@ button {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  min-height: 120px;
+  min-height: var(--min-hand-height); /* Scale with viewport but enforce minimums */
+  max-height: 40vh; /* Prevent hand from taking too much space */
   transform: translateY(-8px);
   min-width: 0;
+  flex-shrink: 0; /* Prevent hand from being crushed by flex layout */
 }
 
 .hand-container {
@@ -498,12 +525,13 @@ button {
 
 /* Dynamic hand expansion mode */
 .battlefield-center-column.hand-expanded .battlefield-layout {
-  grid-template-rows: minmax(180px, 2fr) minmax(200px, 1fr);
+  grid-template-rows: minmax(160px, 1.5fr) minmax(180px, 1fr); /* Adjusted for better space balance */
 }
 
 .battlefield-center-column.hand-expanded .hand-panel {
   overflow: visible;
-  min-height: 200px;
+  min-height: clamp(160px, 25vh, 240px); /* More responsive expanded height */
+  max-height: 50vh; /* Allow more space when expanded */
 }
 
 .battlefield-center-column.hand-expanded .hand-grid {
@@ -560,10 +588,11 @@ button {
   display: flex;
   flex-direction: column;
   flex: 1;
-  overflow: hidden;
-  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto; /* Allow scrolling if log content is too tall */
+  min-height: var(--min-log-height); /* Ensure minimum visibility */
+  max-height: 100%; /* Don't exceed parent */
   width: 100%;
-  font-size: 40px;
   max-width: 100%;
   box-sizing: border-box;
 }
@@ -576,11 +605,13 @@ button {
   display: flex;
   flex-direction: column;
   gap: clamp(6px, 1vw, 10px);
-  height: 100%;
-  overflow: hidden;
+  flex: 1; /* Allow to grow but can shrink */
+  min-height: var(--min-inspector-height); /* Ensure minimum visibility */
+  max-height: 100%; /* Don't exceed parent */
+  overflow-x: hidden;
+  overflow-y: auto; /* Allow scrolling if content is too tall */
   width: 100%;
   max-width: 100%;
-  font: 65px;
   box-sizing: border-box;
 }
 
@@ -603,7 +634,7 @@ button {
 
 .inspector-content {
   flex: 1;
-  overflow-y: auto;
+  overflow-y: auto; /* Allow scrolling if content is too tall */
   padding-right: 6px;
   font-size: 65px;
   color: var(--text-secondary);
@@ -656,7 +687,8 @@ button {
   border-radius: clamp(8px, 1.2vw, 12px);
   padding: clamp(8px, 1.2vw, 14px);
   margin-top: clamp(8px, 1.2vw, 14px);
-  flex-shrink: 0;
+  flex-shrink: 0; /* Don't allow shrinking */
+  min-height: var(--min-piles-height); /* Ensure piles remain visible */
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -734,7 +766,7 @@ button {
   color: var(--text-secondary);
   max-height: 900px;
   font-size: 40px;
-  overflow: hidden;
+  overflow-y: auto; /* Allow scrolling if content is too tall */
 }
 
 .log-content {
@@ -744,7 +776,7 @@ button {
   max-height: 900px;
   padding-right: 6px;
 }
-
+idden;
 .piles-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1977,22 +2009,59 @@ button {
   padding: 8px 12px;
 }
 
+/* Extreme zoom / very small viewports */
+@media (max-height: 500px) {
+  .game-container {
+    min-height: 500px; /* Force minimum height */
+    overflow-y: auto; /* Allow vertical scrolling when extremely zoomed */
+  }
+
+  .battlefield-layout {
+    grid-template-rows: minmax(140px, 2fr) minmax(100px, 1fr); /* Reduce minimums for extreme zoom */
+  }
+
+  .hand-panel {
+    min-height: 80px; /* Compact hand at extreme zoom */
+    max-height: 30vh;
+  }
+
+  .card-inspector-panel,
+  .game-log-panel {
+    min-height: 120px; /* Reduce minimum heights */
+  }
+
+  .piles-section {
+    min-height: 60px; /* Compact piles */
+  }
+}
+
 @media (max-width: 767px) {
   .battlefield-layout-three-column {
     grid-template-columns: 1fr 2fr 1fr;
     min-width: 100vw;
+    min-height: 400px; /* Ensure minimum height on mobile */
     overflow-x: auto;
   }
-  
+
   .battlefield-left-column,
   .battlefield-center-column,
   .battlefield-right-column {
     min-width: 280px;
   }
-  
+
   .pages-container {
     padding: 14px 0 0;
+    min-height: 450px; /* Ensure content area stays visible */
     overflow-x: auto;
+  }
+
+  .hand-panel {
+    min-height: clamp(90px, 12vh, 120px); /* Smaller on mobile */
+  }
+
+  .card-inspector-panel,
+  .game-log-panel {
+    min-height: 150px; /* Ensure panels stay visible on mobile */
   }
 }
 
