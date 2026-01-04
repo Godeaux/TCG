@@ -1869,10 +1869,6 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
         item.className = "selection-item selection-card";
         const cardElement = renderCard(card, {
           showEffectSummary: true,
-          onClick: () => {
-            inspectedCardId = card.instanceId;
-            setInspectorContent(card);
-          },
         });
         item.appendChild(cardElement);
         items.push(item);
@@ -1914,16 +1910,14 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
     const items = candidates.map((candidate) => {
       const item = document.createElement("label");
       item.className = "selection-item";
-      if (renderCards && candidate.card) {
+      const candidateCard = candidate.card ?? candidate.value;
+      if (renderCards && candidateCard && typeof candidateCard === "object") {
         item.classList.add("selection-card");
-        const cardElement = renderCard(candidate.card, {
+        const cardElement = renderCard(candidateCard, {
+          showEffectSummary: true,
           onClick: () => handleSelection(candidate.value),
         });
-        const button = document.createElement("button");
-        button.textContent = `Select ${candidate.label}`;
-        button.onclick = () => handleSelection(candidate.value);
         item.appendChild(cardElement);
-        item.appendChild(button);
       } else {
         const button = document.createElement("button");
         button.textContent = candidate.label;
