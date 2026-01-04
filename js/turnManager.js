@@ -119,6 +119,7 @@ export const advancePhase = (state) => {
 
   if (state.phase === "End") {
     queueEndOfTurnEffects(state);
+    state.broadcast?.(state);
   }
 };
 
@@ -163,6 +164,7 @@ export const finalizeEndPhase = (state) => {
   cleanupDestroyed(state);
   logMessage(state, `${state.players[state.activePlayerIndex].name} ends their turn.`);
   state.endOfTurnFinalized = true;
+  state.broadcast?.(state);
 };
 
 export const cardLimitAvailable = (state) => !state.cardPlayedThisTurn;

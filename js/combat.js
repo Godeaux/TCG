@@ -133,4 +133,7 @@ export const cleanupDestroyed = (state, { silent = false } = {}) => {
       return card;
     });
   });
+  if (!silent) {
+    state.broadcast?.(state);
+  }
 };

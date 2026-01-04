@@ -281,7 +281,6 @@ export const resolveEffectResult = (state, result, context) => {
 
   if (result.removeAbilities) {
     stripAbilities(result.removeAbilities);
-    logMessage(state, `${result.removeAbilities.name} loses all abilities.`);
   }
 
   if (result.removeAbilitiesAll) {

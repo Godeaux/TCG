@@ -8,7 +8,14 @@ const getNutritionValue = (card) => {
   return card.nutrition ?? 0;
 };
 
-export const consumePrey = ({ predator, preyList, carrionList = [], state, playerIndex }) => {
+export const consumePrey = ({
+  predator,
+  preyList,
+  carrionList = [],
+  state,
+  playerIndex,
+  onBroadcast,
+}) => {
   if (!preyList.length && !carrionList.length) {
     return;
   }
@@ -41,4 +48,5 @@ export const consumePrey = ({ predator, preyList, carrionList = [], state, playe
     state,
     `${predator.name} consumes ${preyList.length + carrionList.length} prey for +${totalNutrition}/+${totalNutrition}.`
   );
+  onBroadcast?.(state);
 };

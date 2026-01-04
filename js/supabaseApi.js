@@ -172,10 +172,44 @@ export const deleteDeck = async ({ deckId, ownerId }) => {
   return true;
 };
 
-export const createLobby = async ({ hostId }) => {
+export const createLobby = async ({ hostId, forceNew = false, checkGameInProgress = null }) => {
   if (!hostId) {
     throw new Error("Missing host id.");
   }
+
+  // Check if host already has an active lobby (for reconnection)
+  if (!forceNew) {
+    const { data: existingLobby } = await supabase
+      .from("lobbies")
+      .select("id, code, status, host_id, guest_id")
+      .eq("host_id", hostId)
+      .neq("status", "closed")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingLobby) {
+      // If checkGameInProgress is provided, use it to determine if we should rejoin
+      // This allows the caller to check if there's actually a game in progress
+      if (checkGameInProgress) {
+        const hasGame = await checkGameInProgress(existingLobby.id);
+        if (hasGame) {
+          // Host is reconnecting to their existing lobby with an active game
+          return existingLobby;
+        }
+        // No active game, close the old lobby and create a new one
+        await supabase
+          .from("lobbies")
+          .update({ status: "closed" })
+          .eq("id", existingLobby.id);
+      } else {
+        // No check function provided, just return existing lobby
+        return existingLobby;
+      }
+    }
+  }
+
+  // Create a new lobby
   let attempts = 0;
   while (attempts < 5) {
     attempts += 1;
@@ -220,10 +254,22 @@ export const joinLobbyByCode = async ({ code, guestId }) => {
   if (!lobby) {
     throw new Error("Lobby not found.");
   }
+
+  // Allow rejoining if you're already the guest or host
+  const isRejoiningAsGuest = lobby.guest_id === guestId;
+  const isHost = lobby.host_id === guestId;
+
+  if (isRejoiningAsGuest || isHost) {
+    // Player is reconnecting to their own lobby
+    return lobby;
+  }
+
+  // Check if lobby is available for new players
   if (lobby.status !== "open" || lobby.guest_id) {
     throw new Error("Lobby is already full.");
   }
 
+  // New player joining - update the lobby
   const { data, error } = await supabase
     .from("lobbies")
     .update({ guest_id: guestId, status: "full" })
@@ -298,4 +344,63 @@ export const unsubscribeChannel = (channel) => {
     return;
   }
   supabase.removeChannel(channel);
+};
+
+/**
+ * Save game state to database for reconnection support
+ * @param {Object} params
+ * @param {number} params.lobbyId - The lobby ID
+ * @param {Object} params.gameState - The complete game state object
+ * @param {number} params.actionSequence - Current action sequence number (for Phase 3)
+ * @returns {Promise<Object>} The saved game session data
+ */
+export const saveGameState = async ({ lobbyId, gameState, actionSequence = 0 }) => {
+  if (!lobbyId) {
+    throw new Error("Missing lobby id.");
+  }
+  if (!gameState) {
+    throw new Error("Missing game state.");
+  }
+
+  const { data, error } = await supabase
+    .from("game_sessions")
+    .upsert(
+      {
+        lobby_id: lobbyId,
+        game_state: gameState,
+        action_sequence: actionSequence,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "lobby_id" }
+    )
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+/**
+ * Load game state from database for reconnection
+ * @param {Object} params
+ * @param {number} params.lobbyId - The lobby ID
+ * @returns {Promise<Object|null>} The game state and action sequence, or null if not found
+ */
+export const loadGameState = async ({ lobbyId }) => {
+  if (!lobbyId) {
+    throw new Error("Missing lobby id.");
+  }
+
+  const { data, error } = await supabase
+    .from("game_sessions")
+    .select("game_state, action_sequence")
+    .eq("lobby_id", lobbyId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+  return data ?? null;
 };
