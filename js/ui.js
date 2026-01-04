@@ -97,7 +97,6 @@ const victoryWinnerName = document.getElementById("victory-winner-name");
 const victoryTurns = document.getElementById("victory-turns");
 const victoryCards = document.getElementById("victory-cards");
 const victoryKills = document.getElementById("victory-kills");
-const victoryRematch = document.getElementById("victory-rematch");
 const victoryMenu = document.getElementById("victory-menu");
 
 let pendingConsumption = null;
@@ -1901,12 +1900,13 @@ const handleDragOver = (event) => {
       target.classList.add('invalid-target');
     }
   } else if (target?.classList.contains('player-badge')) {
-    // Check if can attack this player
+    // Check if can attack this player (only during combat phase)
+    const isCombatPhase = latestState.phase === "Combat";
     const playerIndex = parseInt(target.dataset.playerIndex);
     const targetPlayer = latestState.players[playerIndex];
     const attackerPlayer = latestState.players.find(p => p.field.includes(draggedCard));
     
-    if (targetPlayer && attackerPlayer && attackerPlayer !== targetPlayer && 
+    if (isCombatPhase && targetPlayer && attackerPlayer && attackerPlayer !== targetPlayer && 
         (draggedCard.type === 'Predator' || draggedCard.type === 'Prey')) {
       target.classList.add('valid-drop-zone');
       console.log('Valid player target:', targetPlayer.name);
@@ -1914,9 +1914,10 @@ const handleDragOver = (event) => {
       target.classList.add('invalid-target');
     }
   } else if (target?.classList.contains('card')) {
-    // Check if can attack this creature
+    // Check if can attack this creature (only during combat phase)
+    const isCombatPhase = latestState.phase === "Combat";
     const targetCard = getCardFromInstanceId(target.dataset.instanceId, latestState);
-    if (targetCard && isValidAttackTarget(draggedCard, targetCard, latestState)) {
+    if (isCombatPhase && targetCard && isValidAttackTarget(draggedCard, targetCard, latestState)) {
       target.classList.add('valid-target');
       console.log('Valid creature target:', targetCard.name);
     } else {
@@ -2166,17 +2167,30 @@ const handlePlayerDrop = (card, playerBadge) => {
     return;
   }
   
-  // Check if this is a valid attack
-  if (card.type === 'Predator' || card.type === 'Prey') {
-    const attackerPlayer = latestState.players.find(p => p.field.includes(card));
-    if (attackerPlayer && attackerPlayer !== targetPlayer) {
-      // Execute the attack using existing system
-      handleTrapResponse(latestState, targetPlayer, card, { type: 'player', player: targetPlayer }, latestCallbacks.onUpdate);
-      return;
-    }
+  // Use the same validation as the existing attack system
+  const isOpponent = playerIndex !== getLocalPlayerIndex(latestState);
+  const isCreature = card.type === "Predator" || card.type === "Prey";
+  const canAttack =
+    !isOpponent &&
+    isLocalPlayersTurn(latestState) &&
+    latestState.phase === "Combat" &&
+    !card.hasAttacked &&
+    !isPassive(card) &&
+    !isHarmless(card) &&
+    !card.frozen &&
+    !card.paralyzed &&
+    isCreature;
+  
+  console.log('Player attack attempt - Current phase:', latestState.phase, 'Can attack:', canAttack);
+  
+  if (!canAttack) {
+    logMessage(latestState, "Combat can only be declared during the Combat phase.");
+    revertCardToOriginalPosition();
+    return;
   }
   
-  revertCardToOriginalPosition();
+  // Execute the attack using the existing system
+  handleTrapResponse(latestState, targetPlayer, card, { type: 'player', player: targetPlayer }, latestCallbacks.onUpdate);
 };
 
 const handleCreatureDrop = (attacker, target) => {
@@ -2185,9 +2199,29 @@ const handleCreatureDrop = (attacker, target) => {
     return;
   }
   
+  // Use the same validation as the existing attack system
+  const isCreature = attacker.type === "Predator" || attacker.type === "Prey";
+  const canAttack =
+    isLocalPlayersTurn(latestState) &&
+    latestState.phase === "Combat" &&
+    !attacker.hasAttacked &&
+    !isPassive(attacker) &&
+    !isHarmless(attacker) &&
+    !attacker.frozen &&
+    !attacker.paralyzed &&
+    isCreature;
+  
+  console.log('Creature attack attempt - Current phase:', latestState.phase, 'Can attack:', canAttack);
+  
+  if (!canAttack) {
+    logMessage(latestState, "Combat can only be declared during the Combat phase.");
+    revertCardToOriginalPosition();
+    return;
+  }
+  
   const targetPlayer = latestState.players.find(p => p.field.includes(target));
   if (targetPlayer) {
-    // Execute the attack using existing system
+    // Execute the attack using the existing system
     handleTrapResponse(latestState, targetPlayer, attacker, { type: 'creature', card: target }, latestCallbacks.onUpdate);
     return;
   }
@@ -5013,19 +5047,10 @@ const showVictoryScreen = (winner, stats = {}) => {
   victoryOverlay.classList.add('show');
   victoryOverlay.setAttribute('aria-hidden', 'false');
   
-  // Add event listeners
-  victoryRematch.onclick = () => hideVictoryScreen(() => {
-    // Trigger rematch logic
-    if (latestCallbacks.onRematch) {
-      latestCallbacks.onRematch();
-    }
-  });
-  
+  // Add event listener for main menu
   victoryMenu.onclick = () => hideVictoryScreen(() => {
-    // Return to main menu
-    if (latestCallbacks.onReturnToMenu) {
-      latestCallbacks.onReturnToMenu();
-    }
+    // Return to main menu - reload the page for now
+    window.location.reload();
   });
 };
 
@@ -5063,24 +5088,29 @@ const checkForVictory = (state) => {
 };
 
 const calculateCardsPlayed = (state) => {
-  // Count cards in exile (played spells) and carrion (destroyed creatures)
   let cardsPlayed = 0;
   
   state.players.forEach(player => {
+    // Count cards in exile (played spells, free spells, used traps)
     cardsPlayed += player.exile?.length || 0;
-    cardsPlayed += player.carrion?.length || 0;
+    
+    // Count creatures currently on field (they were played from hand)
+    cardsPlayed += player.field?.filter(card => card && !card.isToken).length || 0;
+    
+    // Count creatures that were destroyed and sent to carrion
+    cardsPlayed += player.carrion?.filter(card => card && !card.isToken).length || 0;
   });
   
   return cardsPlayed;
 };
 
 const calculateCreaturesDefeated = (state) => {
-  // Count creatures in carrion pile
   let creaturesDefeated = 0;
   
   state.players.forEach(player => {
+    // Count all creatures in carrion (includes tokens and consumed creatures)
     creaturesDefeated += player.carrion?.filter(card => 
-      card.type === 'Predator' || card.type === 'Prey'
+      card && (card.type === 'Predator' || card.type === 'Prey')
     ).length || 0;
   });
   

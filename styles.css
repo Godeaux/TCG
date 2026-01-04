@@ -2254,6 +2254,7 @@ idden;
   width: 100%;
   height: 100%;
   overflow: hidden;
+  pointer-events: none;
 }
 
 .victory-rays {
@@ -2325,6 +2326,7 @@ idden;
   border-radius: 50%;
   box-shadow: 0 0 6px var(--gold);
   animation: victory-particle-float 3s ease-in-out infinite;
+  pointer-events: none;
 }
 
 @keyframes victory-particle-float {
@@ -2352,6 +2354,7 @@ idden;
   transform: scale(0.5) rotateX(90deg);
   opacity: 0;
   transition: all 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: auto;
 }
 
 .victory-overlay.show .victory-content {
@@ -2475,7 +2478,10 @@ idden;
   transform: translateY(0);
 }
 
-.victory-rematch, .victory-menu {
+.victory-menu {
+  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+  color: #2e2211;
+  box-shadow: 0 10px 30px rgba(212, 168, 83, 0.3);
   padding: 15px 40px;
   font-size: 1.1rem;
   font-weight: 600;
@@ -2487,29 +2493,13 @@ idden;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
-}
-
-.victory-rematch {
-  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
-  color: #2e2211;
-  box-shadow: 0 10px 30px rgba(212, 168, 83, 0.3);
-}
-
-.victory-rematch:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 15px 40px rgba(212, 168, 83, 0.5);
-}
-
-.victory-menu {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text-primary);
-  border: 2px solid var(--border-gold);
-  backdrop-filter: blur(10px);
+  z-index: 100;
+  pointer-events: auto;
 }
 
 .victory-menu:hover {
-  background: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
+  box-shadow: 0 15px 40px rgba(212, 168, 83, 0.5);
 }
 
 /* Victory screen entrance animations */
