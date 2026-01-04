@@ -626,7 +626,7 @@ button {
   font-family: var(--font-display);
   letter-spacing: 0.04em;
   color: var(--gold-light);
-  font-size: 80px;
+  font-size: 30px;
   margin: 0;
 }
 
@@ -2138,5 +2138,79 @@ idden;
   }
   100% {
     box-shadow: 0 0 8px rgba(212, 168, 83, 0.3);
+  }
+}
+
+/* Drag and Drop Styles */
+.draggable-card {
+  cursor: grab;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.draggable-card:hover {
+  transform: translateY(-2px);
+}
+
+.draggable-card.dragging {
+  cursor: grabbing;
+  opacity: 0.8;
+  transform: rotate(5deg) scale(1.05);
+  z-index: 1000;
+  pointer-events: none;
+}
+
+/* Valid target highlighting */
+.valid-target {
+  box-shadow: 0 0 20px rgba(231, 76, 60, 0.8), inset 0 0 20px rgba(231, 76, 60, 0.3);
+  border: 2px solid #e74c3c;
+  animation: target-pulse 1s infinite;
+}
+
+.invalid-target {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+@keyframes target-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(231, 76, 60, 0.8), inset 0 0 20px rgba(231, 76, 60, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(231, 76, 60, 1), inset 0 0 30px rgba(231, 76, 60, 0.5);
+  }
+}
+
+/* Drop zone styles */
+.field-slot.valid-drop-zone {
+  background: rgba(46, 204, 113, 0.2);
+  border: 2px dashed #2ecc71;
+  animation: drop-zone-pulse 1s infinite;
+}
+
+.player-badge.valid-drop-zone {
+  background: rgba(231, 76, 60, 0.2);
+  border: 2px dashed #e74c3c;
+  animation: player-target-pulse 1s infinite;
+}
+
+@keyframes drop-zone-pulse {
+  0%, 100% {
+    background: rgba(46, 204, 113, 0.2);
+    border: 2px dashed #2ecc71;
+  }
+  50% {
+    background: rgba(46, 204, 113, 0.4);
+    border: 2px dashed #27ae60;
+  }
+}
+
+@keyframes player-target-pulse {
+  0%, 100% {
+    background: rgba(231, 76, 60, 0.2);
+    border: 2px dashed #e74c3c;
+  }
+  50% {
+    background: rgba(231, 76, 60, 0.4);
+    border: 2px dashed #c0392b;
   }
 }

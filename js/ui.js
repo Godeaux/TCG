@@ -1759,6 +1759,27 @@ const renderCard = (card, options = {}) => {
   }
 
   cardElement.appendChild(inner);
+  // Add drag and drop functionality
+  if (!showBack && card.instanceId) {
+    cardElement.draggable = true;
+    cardElement.classList.add('draggable-card');
+    
+    // Store original position for reversion
+    cardElement.dataset.originalPosition = JSON.stringify({
+      parent: cardElement.parentElement?.className || '',
+      index: Array.from(cardElement.parentElement?.children || []).indexOf(cardElement)
+    });
+  }
+
+  cardElement.addEventListener("dragstart", (event) => {
+    event.dataTransfer.setData("text", card.instanceId);
+    event.dataTransfer.effectAllowed = "move";
+  });
+
+  cardElement.addEventListener("dragend", (event) => {
+    event.preventDefault();
+  });
+
   cardElement.addEventListener("click", (event) => {
     if (event.target.closest("button")) {
       return;
@@ -1769,6 +1790,419 @@ const renderCard = (card, options = {}) => {
   });
 
   return cardElement;
+};
+
+// Drag and Drop System
+let draggedCard = null;
+let draggedCardElement = null;
+let originalParent = null;
+let originalIndex = -1;
+
+const clearDragVisuals = () => {
+  document.querySelectorAll('.valid-target, .invalid-target, .valid-drop-zone').forEach(el => {
+    el.classList.remove('valid-target', 'invalid-target', 'valid-drop-zone');
+  });
+};
+
+const getCardFromInstanceId = (instanceId, state) => {
+  if (!state || !instanceId) return null;
+  
+  // Search in player field
+  for (const player of state.players) {
+    if (player.field) {
+      const fieldCard = player.field.find(card => card && card.instanceId === instanceId);
+      if (fieldCard) return fieldCard;
+    }
+  }
+  
+  // Search in hands
+  for (const player of state.players) {
+    if (player.hand) {
+      const handCard = player.hand.find(card => card && card.instanceId === instanceId);
+      if (handCard) return handCard;
+    }
+  }
+  
+  return null;
+};
+
+const isValidAttackTarget = (attacker, target, state) => {
+  if (!attacker || !target) return false;
+  
+  // Can't attack own cards
+  const attackerPlayer = state.players.find(p => p.field.includes(attacker));
+  if (!attackerPlayer) return false;
+  
+  const targetPlayer = state.players.find(p => p.field.includes(target));
+  if (targetPlayer === attackerPlayer) return false;
+  
+  // Check if target can be attacked (keywords like Hidden, Invisible, etc.)
+  // For now, basic validation - can be expanded with keyword checks
+  return true;
+};
+
+const handleDragStart = (event) => {
+  const cardElement = event.target.closest('.draggable-card');
+  if (!cardElement) return;
+  
+  const instanceId = cardElement.dataset.instanceId;
+  if (!instanceId) return;
+  
+  console.log('Drag start - instanceId:', instanceId);
+  
+  draggedCardElement = cardElement;
+  draggedCard = getCardFromInstanceId(instanceId, latestState);
+  
+  console.log('Drag start - found card:', draggedCard);
+  
+  originalParent = cardElement.parentElement;
+  originalIndex = Array.from(originalParent.children).indexOf(cardElement);
+  
+  cardElement.classList.add('dragging');
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('text/plain', instanceId);
+};
+
+const handleDragEnd = (event) => {
+  if (draggedCardElement) {
+    draggedCardElement.classList.remove('dragging');
+  }
+  clearDragVisuals();
+  draggedCard = null;
+  draggedCardElement = null;
+  originalParent = null;
+  originalIndex = -1;
+};
+
+const handleDragOver = (event) => {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+  
+  // Handle visual feedback when hovering over valid targets
+  if (!draggedCardElement || !draggedCard || !latestState) return;
+  
+  const target = event.target.closest('.field-slot, .player-badge, .card');
+  
+  clearDragVisuals();
+  
+  if (target?.classList.contains('field-slot')) {
+    // Check if field slot is empty and valid for playing
+    if (!target.firstChild && draggedCard.type !== 'Trap') {
+      target.classList.add('valid-drop-zone');
+      console.log('Valid field slot target:', target);
+    } else {
+      target.classList.add('invalid-target');
+    }
+  } else if (target?.classList.contains('player-badge')) {
+    // Check if can attack this player
+    const playerIndex = parseInt(target.dataset.playerIndex);
+    const targetPlayer = latestState.players[playerIndex];
+    const attackerPlayer = latestState.players.find(p => p.field.includes(draggedCard));
+    
+    if (targetPlayer && attackerPlayer && attackerPlayer !== targetPlayer && 
+        (draggedCard.type === 'Predator' || draggedCard.type === 'Prey')) {
+      target.classList.add('valid-drop-zone');
+      console.log('Valid player target:', targetPlayer.name);
+    } else {
+      target.classList.add('invalid-target');
+    }
+  } else if (target?.classList.contains('card')) {
+    // Check if can attack this creature
+    const targetCard = getCardFromInstanceId(target.dataset.instanceId, latestState);
+    if (targetCard && isValidAttackTarget(draggedCard, targetCard, latestState)) {
+      target.classList.add('valid-target');
+      console.log('Valid creature target:', targetCard.name);
+    } else {
+      target.classList.add('invalid-target');
+    }
+  }
+};
+
+const handleDrop = (event) => {
+  event.preventDefault();
+  
+  const instanceId = event.dataTransfer.getData('text/plain');
+  if (!instanceId || !latestState) return;
+  
+  const card = getCardFromInstanceId(instanceId, latestState);
+  if (!card) return;
+  
+  const dropTarget = event.target.closest('.field-slot, .player-badge, .card');
+  
+  if (dropTarget?.classList.contains('field-slot')) {
+    // Handle dropping on field slot (play card)
+    handleFieldDrop(card, dropTarget);
+  } else if (dropTarget?.classList.contains('player-badge')) {
+    // Handle dropping on player (attack player)
+    handlePlayerDrop(card, dropTarget);
+  } else if (dropTarget?.classList.contains('card')) {
+    // Handle dropping on card (attack creature)
+    const targetCard = getCardFromInstanceId(dropTarget.dataset.instanceId, latestState);
+    if (targetCard) {
+      handleCreatureDrop(card, targetCard);
+    }
+  } else {
+    // Invalid drop - revert to original position
+    revertCardToOriginalPosition();
+  }
+};
+
+const handleFieldDrop = (card, fieldSlot) => {
+  // Check if card is in hand and can be played
+  const activePlayer = getActivePlayer(latestState);
+  if (!activePlayer.hand.includes(card)) {
+    revertCardToOriginalPosition();
+    return;
+  }
+  
+  // Check if it's the player's turn
+  if (!isLocalPlayersTurn(latestState)) {
+    logMessage(latestState, "Wait for your turn to play cards.");
+    revertCardToOriginalPosition();
+    return;
+  }
+  
+  // Check if player can play a card this turn
+  if (!canPlayCard(latestState)) {
+    logMessage(latestState, "You've already played a card this turn.");
+    revertCardToOriginalPosition();
+    return;
+  }
+  
+  // Find the specific slot index being dropped on
+  const slotIndex = parseInt(fieldSlot.dataset.slot);
+  if (isNaN(slotIndex)) {
+    revertCardToOriginalPosition();
+    return;
+  }
+  
+  // Check if slot is empty
+  if (activePlayer.field[slotIndex]) {
+    logMessage(latestState, "That slot is already occupied.");
+    revertCardToOriginalPosition();
+    return;
+  }
+  
+  // Handle different card types
+  if (card.type === "Spell" || card.type === "Free Spell") {
+    // Handle spells using existing logic
+    handlePlayCard(latestState, card, latestCallbacks.onUpdate);
+    return;
+  }
+  
+  if (card.type === "Trap") {
+    // Handle traps using existing logic
+    handlePlayCard(latestState, card, latestCallbacks.onUpdate);
+    return;
+  }
+  
+  if (card.type === "Predator" || card.type === "Prey") {
+    // Place creature in the specific slot
+    placeCreatureInSpecificSlot(card, slotIndex);
+    return;
+  }
+  
+  revertCardToOriginalPosition();
+};
+
+const placeCreatureInSpecificSlot = (card, slotIndex) => {
+  const state = latestState;
+  const player = getActivePlayer(state);
+  const opponent = getOpponentPlayer(state);
+  const playerIndex = state.activePlayerIndex;
+  const opponentIndex = (state.activePlayerIndex + 1) % 2;
+  
+  const isFree = card.type === "Free Spell" || card.type === "Trap" || isFreePlay(card);
+  if (!isFree && !cardLimitAvailable(state)) {
+    logMessage(state, "You have already played a card this turn.");
+    latestCallbacks.onUpdate?.();
+    return;
+  }
+  
+  // Remove card from hand
+  player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
+  const creature = createCardInstance(card, state.turn);
+  
+  if (card.type === "Predator") {
+    // Check for available prey for consumption
+    const availablePrey = player.field.filter(
+      (slot) => slot && (slot.type === "Prey" || (slot.type === "Predator" && isEdible(slot)))
+    );
+    const ediblePrey = availablePrey.filter((slot) => !slot.frozen);
+    
+    if (ediblePrey.length > 0) {
+      // Start consumption selection for predator
+      startConsumptionForSpecificSlot(creature, slotIndex, ediblePrey);
+      return;
+    }
+    
+    // No prey available, dry drop
+    creature.dryDropped = true;
+    logMessage(state, `${creature.name} enters play with no consumption.`);
+  }
+  
+  // Place prey or dry-dropped predator in the specific slot
+  player.field[slotIndex] = creature;
+  
+  // Trigger traps and finalize
+  triggerPlayTraps(state, creature, latestCallbacks.onUpdate, () => {
+    if (!isFree) {
+      state.cardPlayedThisTurn = true;
+    }
+    latestCallbacks.onUpdate?.();
+    broadcastSyncState(state);
+  });
+};
+
+const startConsumptionForSpecificSlot = (predator, slotIndex, ediblePrey) => {
+  const state = latestState;
+  const player = getActivePlayer(state);
+  
+  pendingConsumption = {
+    predator: predator,
+    playerIndex: state.activePlayerIndex,
+    slotIndex: slotIndex, // Use the specific slot we dropped on
+  };
+  
+  const items = ediblePrey.map((prey) => {
+    const item = document.createElement("label");
+    item.className = "selection-item";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.value = prey.instanceId;
+    const label = document.createElement("span");
+    const nutrition = prey.nutrition ?? prey.currentAtk ?? prey.atk ?? 0;
+    label.textContent = `${prey.name} (Field, Nutrition ${nutrition})`;
+    item.appendChild(checkbox);
+    item.appendChild(label);
+    return item;
+  });
+  
+  renderSelectionPanel({
+    title: "Select up to 3 prey to consume",
+    items,
+    onConfirm: () => {
+      const selectedIds = Array.from(selectionPanel.querySelectorAll("input:checked")).map(
+        (input) => input.value
+      );
+      const preyToConsume = ediblePrey.filter((prey) =>
+        selectedIds.includes(prey.instanceId)
+      );
+      const totalSelected = preyToConsume.length;
+      
+      if (totalSelected > 3) {
+        logMessage(state, "You can consume up to 3 prey.");
+        latestCallbacks.onUpdate?.();
+        return;
+      }
+      
+      // Consume prey and place in specific slot
+      consumePrey({
+        predator: predator,
+        preyList: preyToConsume,
+        carrionList: [],
+        state,
+        playerIndex: state.activePlayerIndex,
+        onBroadcast: broadcastSyncState,
+      });
+      
+      player.field[slotIndex] = predator; // Place in the specific slot
+      clearSelectionPanel();
+      
+      triggerPlayTraps(state, predator, latestCallbacks.onUpdate, () => {
+        if (totalSelected > 0 && predator.onConsume) {
+          const result = predator.onConsume({
+            log: (message) => logMessage(state, message),
+            player,
+            opponent: getOpponentPlayer(state),
+            creature: predator,
+            state,
+            playerIndex: state.activePlayerIndex,
+            opponentIndex: (state.activePlayerIndex + 1) % 2,
+          });
+          resolveEffectChain(
+            state,
+            result,
+            {
+              playerIndex: state.activePlayerIndex,
+              opponentIndex: (state.activePlayerIndex + 1) % 2,
+              card: predator,
+            },
+            latestCallbacks.onUpdate,
+            () => cleanupDestroyed(state)
+          );
+        }
+        
+        const isFree = predator.type === "Free Spell" || predator.type === "Trap" || isFreePlay(predator);
+        if (!isFree) {
+          state.cardPlayedThisTurn = true;
+        }
+        pendingConsumption = null;
+        latestCallbacks.onUpdate?.();
+        broadcastSyncState(state);
+      });
+      latestCallbacks.onUpdate?.();
+    },
+  });
+  latestCallbacks.onUpdate?.();
+};
+
+const handlePlayerDrop = (card, playerBadge) => {
+  const playerIndex = parseInt(playerBadge.dataset.playerIndex);
+  const targetPlayer = latestState.players[playerIndex];
+  
+  if (!targetPlayer) {
+    revertCardToOriginalPosition();
+    return;
+  }
+  
+  // Check if this is a valid attack
+  if (card.type === 'Predator' || card.type === 'Prey') {
+    const attackerPlayer = latestState.players.find(p => p.field.includes(card));
+    if (attackerPlayer && attackerPlayer !== targetPlayer) {
+      // Execute the attack using existing system
+      handleTrapResponse(latestState, targetPlayer, card, { type: 'player', player: targetPlayer }, latestCallbacks.onUpdate);
+      return;
+    }
+  }
+  
+  revertCardToOriginalPosition();
+};
+
+const handleCreatureDrop = (attacker, target) => {
+  if (!isValidAttackTarget(attacker, target, latestState)) {
+    revertCardToOriginalPosition();
+    return;
+  }
+  
+  const targetPlayer = latestState.players.find(p => p.field.includes(target));
+  if (targetPlayer) {
+    // Execute the attack using existing system
+    handleTrapResponse(latestState, targetPlayer, attacker, { type: 'creature', card: target }, latestCallbacks.onUpdate);
+    return;
+  }
+  
+  revertCardToOriginalPosition();
+};
+
+const revertCardToOriginalPosition = () => {
+  if (draggedCardElement && originalParent && originalIndex >= 0) {
+    const children = Array.from(originalParent.children);
+    if (originalIndex < children.length) {
+      originalParent.insertBefore(draggedCardElement, children[originalIndex]);
+    } else {
+      originalParent.appendChild(draggedCardElement);
+    }
+  }
+};
+
+// Initialize drag and drop listeners
+const initDragAndDrop = () => {
+  document.addEventListener('dragstart', handleDragStart);
+  document.addEventListener('dragend', handleDragEnd);
+  document.addEventListener('dragover', handleDragOver);
+  document.addEventListener('drop', handleDrop);
+  document.addEventListener('dragleave', clearDragVisuals);
 };
 
 const initHandPreview = () => {
@@ -4426,6 +4860,7 @@ export const renderGame = (state, callbacks = {}) => {
   state.broadcast = broadcastSyncState;
   initNavigation();
   initHandPreview();
+  initDragAndDrop();
   ensureProfileLoaded(state);
 
   const isOnline = isOnlineMode(state);
