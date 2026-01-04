@@ -4,7 +4,6 @@ import {
   logMessage,
   drawCard,
   queueVisualEffect,
-  broadcastSyncState
 } from "./gameState.js";
 import { canPlayCard, cardLimitAvailable, finalizeEndPhase } from "./turnManager.js";
 import { createCardInstance } from "./cardTypes.js";
@@ -1060,6 +1059,11 @@ const applyLobbySyncPayload = (state, payload, options = {}) => {
           return;
         }
 
+        // Do not overwrite local player's state with opponent broadcasts unless forceApply (DB load)
+        if (!forceApply && index === localIndex) {
+          return;
+        }
+
         console.log("Applying player data for index:", index, "localIndex:", localIndex, "forceApply:", forceApply);
 
         if (playerSnapshot.name) {
@@ -2042,6 +2046,8 @@ const resolveAttack = (state, attacker, target, negateAttack = false) => {
   if (negateAttack) {
     logMessage(state, `${attacker.name}'s attack was negated.`);
     attacker.hasAttacked = true;
+    state.broadcast?.(state);
+    cleanupDestroyed(state);
     return;
   }
 
@@ -2073,15 +2079,17 @@ const resolveAttack = (state, attacker, target, negateAttack = false) => {
     if (attacker.currentHp <= 0) {
       logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
       attacker.hasAttacked = true;
+      state.broadcast?.(state);
       return;
     }
     if (result?.returnToHand) {
       attacker.hasAttacked = true;
       cleanupDestroyed(state);
+      state.broadcast?.(state);
       return;
     }
   }
-
+  // --- Normal combat resolution ---
   let effect = null;
   const { ownerIndex: attackerOwnerIndex, slotIndex: attackerSlotIndex } = findCardSlotIndex(
     state,
@@ -2124,6 +2132,8 @@ const resolveAttack = (state, attacker, target, negateAttack = false) => {
   }
   attacker.hasAttacked = true;
   cleanupDestroyed(state);
+  state.broadcast?.(state);
+  return effect;
 };
 
 const renderTrapDecision = (state, defender, attacker, target, onUpdate) => {
@@ -2518,6 +2528,7 @@ const handlePlayCard = (state, card, onUpdate) => {
               carrionList: carrionToConsume,
               state,
               playerIndex: state.activePlayerIndex,
+              onBroadcast: broadcastSyncState,
             });
             const placementSlot =
               pendingConsumption.slotIndex ?? player.field.findIndex((slot) => slot === null);
@@ -4164,6 +4175,8 @@ const processEndOfTurnQueue = (state, onUpdate) => {
 export const renderGame = (state, callbacks = {}) => {
   latestState = state;
   latestCallbacks = callbacks;
+  // Attach broadcast hook so downstream systems (effects) can broadcast after mutations
+  state.broadcast = broadcastSyncState;
   initNavigation();
   initHandPreview();
   ensureProfileLoaded(state);
