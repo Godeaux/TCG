@@ -4,10 +4,10 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover"
+      content="width=device-width, initial-scale=1.0, minimum-scale=0.5, maximum-scale=5.0, viewport-fit=cover"
     />
     <title>Food Chain TCG Prototype</title>
-    <link rel="stylesheet" href="styles.css?v=1.2" />
+    <link rel="stylesheet" href="styles.css?v=2.0" />
     <link
       href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Bebas+Neue&display=swap"
       rel="stylesheet"
@@ -477,6 +477,11 @@
                   </div>
                 </div>
               </div>
+              <!-- Action Bar constrained to center column -->
+              <footer class="action-bar" id="action-bar">
+                <div class="selection-panel" id="selection-panel"></div>
+                <div class="action-panel" id="action-panel"></div>
+              </footer>
             </div>
 
             <!-- Right Column: Game History Log -->
@@ -486,26 +491,23 @@
                   <h3>Game History</h3>
                 </div>
                 <div class="log-content" id="game-history-log">
-                  <div class="log-entry">
-                    <span class="log-turn">Turn 1:</span>
-                    <span class="log-action">Game started</span>
-                  </div>
+                  <!-- Game log entries will be populated here -->
                 </div>
-                <!-- Piles Information -->
-                <div class="piles-section">
-                  <div class="piles-grid">
-                    <div class="pile-item">
-                      <span>Carrion</span>
-                      <strong id="active-carrion">0</strong>
-                    </div>
-                    <div class="pile-item">
-                      <span>Exile</span>
-                      <strong id="active-exile">0</strong>
-                    </div>
-                    <div class="pile-item">
-                      <span>Traps</span>
-                      <strong id="active-traps">0</strong>
-                    </div>
+              </div>
+              <!-- Piles Information - anchored to bottom -->
+              <div class="piles-section">
+                <div class="piles-grid">
+                  <div class="pile-item">
+                    <span>Carrion</span>
+                    <strong id="active-carrion">0</strong>
+                  </div>
+                  <div class="pile-item">
+                    <span>Exile</span>
+                    <strong id="active-exile">0</strong>
+                  </div>
+                  <div class="pile-item">
+                    <span>Traps</span>
+                    <strong id="active-traps">0</strong>
                   </div>
                 </div>
               </div>
@@ -513,11 +515,6 @@
           </div>
         </section>
       </div>
-
-      <footer class="action-bar" id="action-bar">
-        <div class="selection-panel" id="selection-panel"></div>
-        <div class="action-panel" id="action-panel"></div>
-      </footer>
 
     <script type="module" src="js/main.js"></script>
   </body>

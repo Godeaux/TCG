@@ -29,7 +29,7 @@ let supabaseLoadError = null;
 const selectionPanel = document.getElementById("selection-panel");
 const actionBar = document.getElementById("action-bar");
 const actionPanel = document.getElementById("action-panel");
-const logPanel = document.getElementById("log-panel");
+const gameHistoryLog = document.getElementById("game-history-log");
 const passOverlay = document.getElementById("pass-overlay");
 const passTitle = document.getElementById("pass-title");
 const passConfirm = document.getElementById("pass-confirm");
@@ -1301,10 +1301,13 @@ const updateActionPanel = (state, callbacks = {}) => {
     return;
   }
   clearPanel(actionPanel);
-  const playerIndex = isOnlineMode(state) ? getLocalPlayerIndex(state) : state.activePlayerIndex;
+  
+  // Clear action bar if no card is selected or if it's the End phase
+  const playerIndex = isLocalPlayersTurn(state) ? state.activePlayerIndex : (state.activePlayerIndex + 1) % 2;
   const player = state.players[playerIndex];
   const selectedCard = player.hand.find((card) => card.instanceId === selectedHandCardId);
-  if (!selectedCard) {
+  
+  if (!selectedCard || state.phase === "End") {
     actionBar.classList.remove("has-actions");
     return;
   }
@@ -1349,10 +1352,10 @@ const updateActionPanel = (state, callbacks = {}) => {
 };
 
 const appendLog = (state) => {
-  if (!logPanel) {
+  if (!gameHistoryLog) {
     return;
   }
-  logPanel.innerHTML = state.log.map((entry) => `<div>${entry}</div>`).join("");
+  gameHistoryLog.innerHTML = state.log.map((entry) => `<div class="log-entry"><span class="log-action">${entry}</span></div>`).join("");
 };
 
 const updateIndicators = (state, controlsLocked) => {
