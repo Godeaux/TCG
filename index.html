@@ -7,7 +7,7 @@
       content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
     <title>Food Chain TCG Prototype</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=1.2" />
     <link
       href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Bebas+Neue&display=swap"
       rel="stylesheet"
@@ -428,82 +428,85 @@
         </div>
       </header>
 
-      <button class="page-nav page-nav-left" id="nav-left" aria-label="Previous page">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" />
-        </svg>
-      </button>
-      <button class="page-nav page-nav-right" id="nav-right" aria-label="Next page">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" />
-        </svg>
-      </button>
-
       <div class="pages-container" id="pages-container">
         <section class="page page-battlefield active" data-page="0">
-          <div class="battlefield-layout">
-            <div class="battlefield-region">
-              <div class="battlefield">
-                <div class="field-row opponent-field">
-                  <div class="field-slot" data-slot="0"></div>
-                  <div class="field-slot" data-slot="1"></div>
-                  <div class="field-slot" data-slot="2"></div>
+          <div class="battlefield-layout-three-column">
+            <!-- Left Column: Card Inspector -->
+            <div class="battlefield-left-column">
+              <div class="card-inspector-panel">
+                <div class="inspector-header">
+                  <h3>Card Inspector</h3>
                 </div>
-                <div class="field-divider">
-                  <p class="field-divider-text">
-                    Food Chain™ (C) Food Chain TCG. All rights reserved.
-                  </p>
-                  <button class="info-toggle" id="info-toggle" type="button">Info</button>
-                </div>
-                <div class="field-row player-field">
-                  <div class="field-slot" data-slot="0"></div>
-                  <div class="field-slot" data-slot="1"></div>
-                  <div class="field-slot" data-slot="2"></div>
+                <div class="inspector-content" id="card-inspector">
+                  <div class="inspector-placeholder">
+                    <p>Click on a card to see details</p>
+                  </div>
                 </div>
               </div>
-              <div class="battle-effects" id="battle-effects" aria-hidden="true"></div>
             </div>
-            <div class="hand-panel">
-              <div class="hand-container">
-                <div class="hand-header">
-                  <h3 class="hand-title">Your Hand</h3>
-                </div>
-                <div class="hand-grid" id="active-hand"></div>
-              </div>
-            </div>
-          </div>
-        </section>
 
-        <section class="page page-info" data-page="1">
-          <div class="info-container">
-            <div class="info-header">
-              <h3>Info</h3>
-              <button class="info-toggle info-toggle--back" id="info-back" type="button">
-                Field
-              </button>
-            </div>
-            <div class="info-section inspector-section">
-              <h3>Card Inspector</h3>
-              <div class="inspector-content" id="card-inspector"></div>
-            </div>
-            <div class="info-section log-section">
-              <h3>Game Log</h3>
-              <div class="log-content" id="log-panel"></div>
-            </div>
-            <div class="info-section piles-section">
-              <h3>Piles</h3>
-              <div class="piles-grid">
-                <div class="pile-item">
-                  <span>Carrion</span>
-                  <strong id="active-carrion">0</strong>
+            <!-- Center Column: Battlefield and Hand -->
+            <div class="battlefield-center-column">
+              <div class="battlefield-layout">
+                <div class="battlefield-region">
+                  <div class="battlefield">
+                    <div class="field-row opponent-field">
+                      <div class="field-slot" data-slot="0"></div>
+                      <div class="field-slot" data-slot="1"></div>
+                      <div class="field-slot" data-slot="2"></div>
+                    </div>
+                    <div class="field-divider">
+                      <p class="field-divider-text">
+                        Food Chain™ (C) Food Chain TCG. All rights reserved.
+                      </p>
+                    </div>
+                    <div class="field-row player-field">
+                      <div class="field-slot" data-slot="0"></div>
+                      <div class="field-slot" data-slot="1"></div>
+                      <div class="field-slot" data-slot="2"></div>
+                    </div>
+                  </div>
+                  <div class="battle-effects" id="battle-effects" aria-hidden="true"></div>
                 </div>
-                <div class="pile-item">
-                  <span>Exile</span>
-                  <strong id="active-exile">0</strong>
+                <div class="hand-panel">
+                  <div class="hand-container">
+                    <div class="hand-header">
+                      <h3 class="hand-title">Your Hand</h3>
+                    </div>
+                    <div class="hand-grid" id="active-hand"></div>
+                  </div>
                 </div>
-                <div class="pile-item">
-                  <span>Traps</span>
-                  <strong id="active-traps">0</strong>
+              </div>
+            </div>
+
+            <!-- Right Column: Game History Log -->
+            <div class="battlefield-right-column">
+              <div class="game-log-panel">
+                <div class="log-header">
+                  <h3>Game History</h3>
+                </div>
+                <div class="log-content" id="game-history-log">
+                  <div class="log-entry">
+                    <span class="log-turn">Turn 1:</span>
+                    <span class="log-action">Game started</span>
+                  </div>
+                </div>
+                <!-- Piles Information -->
+                <div class="piles-section">
+                  <div class="piles-grid">
+                    <div class="pile-item">
+                      <span>Carrion</span>
+                      <strong id="active-carrion">0</strong>
+                    </div>
+                    <div class="pile-item">
+                      <span>Exile</span>
+                      <strong id="active-exile">0</strong>
+                    </div>
+                    <div class="pile-item">
+                      <span>Traps</span>
+                      <strong id="active-traps">0</strong>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -515,12 +518,6 @@
         <div class="selection-panel" id="selection-panel"></div>
         <div class="action-panel" id="action-panel"></div>
       </footer>
-
-      <div class="page-dots" id="page-dots">
-        <button class="page-dot active" data-page="0"></button>
-        <button class="page-dot" data-page="1"></button>
-      </div>
-    </div>
 
     <script type="module" src="js/main.js"></script>
   </body>
