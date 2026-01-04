@@ -4,6 +4,7 @@ import {
   logMessage,
   drawCard,
   queueVisualEffect,
+  broadcastSyncState
 } from "./gameState.js";
 import { canPlayCard, cardLimitAvailable, finalizeEndPhase } from "./turnManager.js";
 import { createCardInstance } from "./cardTypes.js";
@@ -1059,14 +1060,6 @@ const applyLobbySyncPayload = (state, payload, options = {}) => {
           return;
         }
 
-        // When applying broadcasts (not forceApply), only update opponent's data
-        // Never overwrite your own player data with opponent's stale view
-        // Exception: forceApply is true when loading from database (source of truth)
-        if (!forceApply && index === localIndex) {
-          console.log("Skipping own player data from broadcast, index:", index, "localIndex:", localIndex);
-          return;
-        }
-
         console.log("Applying player data for index:", index, "localIndex:", localIndex, "forceApply:", forceApply);
 
         if (playerSnapshot.name) {
@@ -1905,6 +1898,7 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
       resolveEffectChain(state, followUp, context, onUpdate, onComplete);
       cleanupDestroyed(state);
       onUpdate?.();
+      broadcastSyncState(state);
     };
     const items = candidates.map((candidate) => {
       const item = document.createElement("label");
@@ -1941,6 +1935,8 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
   }
 
   resolveEffectResult(state, nextResult, context);
+  onUpdate?.();
+  broadcastSyncState(state);
   onComplete?.();
 };
 
