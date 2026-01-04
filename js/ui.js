@@ -3609,6 +3609,7 @@ const initCatalogBuilder = (builder) => {
     return;
   }
   const catalog = deckCatalogs[builder.deckId] ?? [];
+  console.log('initCatalogBuilder - deckId:', builder.deckId, 'catalog length:', catalog.length);
   if (!builder.catalogOrder?.length) {
     builder.catalogOrder = catalog.map((card) => card.id);
   }
@@ -3616,6 +3617,7 @@ const initCatalogBuilder = (builder) => {
     builder.available = cloneDeckCatalog(catalog).filter(
       (card) => !builder.selections.some((picked) => picked.id === card.id)
     );
+    console.log('initCatalogBuilder - available length after setup:', builder.available.length);
   }
 };
 
@@ -3664,29 +3666,27 @@ const renderDeckSelectionOverlay = (state, callbacks) => {
       panel.className = `deck-select-panel ${option.panelClass} ${
         option.available ? "" : "disabled"
       }`;
-      panel.disabled = !option.available;
+      panel.disabled = false; // Make all decks clickable per user request
       panel.innerHTML = `
         <div class="deck-emoji">${option.emoji}</div>
         <div class="deck-name">${option.name}</div>
-        <div class="deck-status">${option.available ? "Available" : "Not implemented"}</div>
-        <div class="deck-meta">${option.available ? "Select deck" : "Coming soon"}</div>
+        <div class="deck-status">${option.available ? "Available" : "Not Implemented"}</div>
+        <div class="deck-meta">${option.available ? "Select deck" : "Theorycraft only"}</div>
       `;
-      if (option.available) {
-        panel.onclick = () => {
-          const catalog = deckCatalogs[option.id] ?? [];
-          state.catalogBuilder.deckId = option.id;
-          state.catalogBuilder.stage = "build";
-          state.catalogBuilder.selections = [];
-          state.catalogBuilder.available = cloneDeckCatalog(catalog);
-          state.catalogBuilder.catalogOrder = catalog.map((card) => card.id);
-          state.catalogBuilder.editingDeckId = null;
-          state.catalogBuilder.editingDeckName = null;
-          deckActiveTab = "catalog";
-          deckHighlighted = null;
-          setDeckInspectorContent(null);
-          callbacks.onUpdate?.();
-        };
-      }
+      panel.onclick = () => {
+        const catalog = deckCatalogs[option.id] ?? [];
+        state.catalogBuilder.deckId = option.id;
+        state.catalogBuilder.stage = "build";
+        state.catalogBuilder.selections = [];
+        state.catalogBuilder.available = cloneDeckCatalog(catalog);
+        state.catalogBuilder.catalogOrder = catalog.map((card) => card.id);
+        state.catalogBuilder.editingDeckId = null;
+        state.catalogBuilder.editingDeckName = null;
+        deckActiveTab = "catalog";
+        deckHighlighted = null;
+        setDeckInspectorContent(null);
+        callbacks.onUpdate?.();
+      };
       deckSelectGrid?.appendChild(panel);
     });
     return;
@@ -3785,28 +3785,26 @@ const renderDeckSelectionOverlay = (state, callbacks) => {
     panel.className = `deck-select-panel ${option.panelClass} ${
       option.available ? "" : "disabled"
     }`;
-    panel.disabled = !option.available;
+    panel.disabled = false; // Make all decks clickable per user request
     panel.innerHTML = `
       <div class="deck-emoji">${option.emoji}</div>
       <div class="deck-name">${option.name}</div>
-      <div class="deck-status">${option.available ? "Available" : "Not implemented"}</div>
-      <div class="deck-meta">${option.available ? "Select deck" : "Coming soon"}</div>
+      <div class="deck-status">${option.available ? "Available" : "Not Implemented"}</div>
+      <div class="deck-meta">${option.available ? "Select deck" : "Theorycraft only"}</div>
     `;
-    if (option.available) {
-      panel.onclick = () => {
-        const catalog = deckCatalogs[option.id] ?? [];
-        state.deckSelection.selections[playerIndex] = option.id;
-        state.deckBuilder.available[playerIndex] = cloneDeckCatalog(catalog);
-        state.deckBuilder.catalogOrder[playerIndex] = catalog.map((card) => card.id);
-        state.deckBuilder.selections[playerIndex] = [];
-        state.deckSelection.stage = isPlayerOne ? "p1-selected" : "complete";
-        logMessage(state, `${player.name} selected the ${option.name} deck.`);
-        if (state.menu?.mode === "online") {
-          sendLobbyBroadcast("deck_update", buildLobbySyncPayload(state));
-        }
-        callbacks.onUpdate?.();
-      };
-    }
+    panel.onclick = () => {
+      const catalog = deckCatalogs[option.id] ?? [];
+      state.deckSelection.selections[playerIndex] = option.id;
+      state.deckBuilder.available[playerIndex] = cloneDeckCatalog(catalog);
+      state.deckBuilder.catalogOrder[playerIndex] = catalog.map((card) => card.id);
+      state.deckBuilder.selections[playerIndex] = [];
+      state.deckSelection.stage = isPlayerOne ? "p1-selected" : "complete";
+      logMessage(state, `${player.name} selected the ${option.name} deck.`);
+      if (state.menu?.mode === "online") {
+        sendLobbyBroadcast("deck_update", buildLobbySyncPayload(state));
+      }
+      callbacks.onUpdate?.();
+    };
     deckSelectGrid?.appendChild(panel);
   });
 };
@@ -4010,6 +4008,7 @@ const renderCatalogBuilderOverlay = (state, callbacks) => {
   const available = state.catalogBuilder.available;
   const selected = state.catalogBuilder.selections;
   const catalogOrder = state.catalogBuilder.catalogOrder ?? [];
+  console.log('renderCatalogBuilderOverlay - available length:', available.length, 'selected length:', selected.length);
   const predatorCount = selected.filter((card) => card.type === "Predator").length;
   const preyCount = selected.filter((card) => card.type === "Prey").length;
   const totalCount = selected.length;

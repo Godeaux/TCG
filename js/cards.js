@@ -2205,9 +2205,1737 @@ const reptileCards = [
   },
 ];
 
+const amphibianCards = [
+  // Amphibian Prey
+  {
+    id: "amphibian-prey-chernobyl-tree-frogs",
+    name: "Chernobyl Tree Frogs",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Immune"],
+    effectText: "Play 2 Radiated Tree Frogs.",
+    // TODO: Implement summon tokens
+  },
+  {
+    id: "amphibian-prey-radiated-tree-frogs",
+    name: "Radiated Tree Frogs",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Immune"],
+  },
+  {
+    id: "amphibian-prey-confusing-rocket-frog",
+    name: "Confusing Rocket Frog",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Free Play"],
+    effectText: "Rival discards 1.",
+    // TODO: Implement discard effect
+  },
+  {
+    id: "amphibian-prey-desert-rain-frog",
+    name: "Desert Rain Frog",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "Add a card from deck to hand. Play a spell.",
+    // TODO: Implement deck search and spell play
+  },
+  {
+    id: "amphibian-prey-emperor-newt",
+    name: "Emperor Newt",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Poisonous"],
+    effectText: "End of turn, play Empress Newt.",
+    // TODO: Implement end of turn summon
+  },
+  {
+    id: "amphibian-prey-empress-newt",
+    name: "Empress Newt",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Poisonous"],
+  },
+  {
+    id: "amphibian-prey-fire-salamander",
+    name: "Fire Salamander",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Immune", "Poisonous"],
+    effectText: "Deal 2 damage to rival.",
+    // TODO: Implement damage effect
+  },
+  {
+    id: "amphibian-prey-frosts-toad",
+    name: "Frost's Toad",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "Enemies gain frozen.",
+    // TODO: Implement freeze effect
+  },
+  {
+    id: "amphibian-prey-golden-flecked-glass-frog",
+    name: "Golden-flecked Glass Frog",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Invisible"],
+    effectText: "Draw 1. Rival reveals hand.",
+    // TODO: Implement draw and reveal effects
+  },
+  {
+    id: "amphibian-prey-golden-mantellas",
+    name: "Golden Mantellas",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "Draw 1. Play Golden Mantella.",
+    // TODO: Implement draw and summon
+  },
+  {
+    id: "amphibian-prey-golden-mantella",
+    name: "Golden Mantella",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Poisonous"],
+    effectText: "Draw 1.",
+    // TODO: Implement draw effect
+  },
+  {
+    id: "amphibian-prey-golden-poison-frog",
+    name: "Golden Poison Frog",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Poisonous"],
+    effectText: "Draw 1. Sacrifice; add Golden Blowdart to hand.",
+    // TODO: Implement sacrifice and add to hand
+  },
+  {
+    id: "amphibian-prey-java-flying-frog",
+    name: "Java Flying Frog",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Immune", "Hidden"],
+  },
+  {
+    id: "amphibian-prey-monte-iberia-eleuth",
+    name: "Monte Iberia Eleuth",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Poisonous"],
+    effectText: "End of turn play Hidden Egg.",
+    // TODO: Implement end of turn summon
+  },
+  {
+    id: "amphibian-prey-hidden-eleuth-egg",
+    name: "Hidden Eleuth Egg",
+    type: "Prey",
+    atk: 0,
+    hp: 1,
+    nutrition: 0,
+    keywords: ["Hidden"],
+    effectText: "Start of turn, become Monte Iberia Eleuth.",
+    // TODO: Implement transform effect
+  },
+  {
+    id: "amphibian-prey-panamanian-golden-frog",
+    name: "Panamanian Golden Frog",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Poisonous"],
+    effectText: "Draw 2. Slain, draw 1.",
+    // TODO: Implement draw and slain effects
+  },
+  {
+    id: "amphibian-prey-phantasmal-poison-frog",
+    name: "Phantasmal Poison Frog",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Poisonous"],
+    effectText: "Sacrifice, add Phantasmal Darts to hand.",
+    // TODO: Implement sacrifice and add to hand
+  },
+  {
+    id: "amphibian-prey-purple-frog",
+    name: "Purple Frog",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "Deal 2 damage to opponents.",
+    // TODO: Implement damage effect
+  },
+  {
+    id: "amphibian-prey-red-tailed-knobby-newts",
+    name: "Red-tailed Knobby Newts",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "Play 2 Red-tailed Knobby Newts.",
+    // TODO: Implement summon tokens
+  },
+  {
+    id: "amphibian-prey-red-tailed-knobby-newt",
+    name: "Red-tailed Knobby Newt",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "Defending, neurotoxic.",
+    // TODO: Implement defending neurotoxic
+  },
+  {
+    id: "amphibian-prey-siberian-salamander",
+    name: "Siberian Salamander",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "Deal 2 damage to players & other animals. Animals gain frozen.",
+    // TODO: Implement damage and freeze effects
+  },
+  {
+    id: "amphibian-prey-turtle-frog",
+    name: "Turtle Frog",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Free Play", "Hidden"],
+    effectText: "Play Turtle Froglet.",
+    // TODO: Implement summon
+  },
+  {
+    id: "amphibian-prey-turtle-froglet",
+    name: "Turtle Froglet",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Passive", "Hidden"],
+  },
+  {
+    id: "amphibian-prey-tomato-frog",
+    name: "Tomato Frog",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 2,
+    effectText: "Discard add Tomato to hand. Defending, attacking enemy gains frozen.",
+    // TODO: Implement discard and freeze effects
+  },
+  {
+    id: "amphibian-prey-hippo-frog",
+    name: "Hippo Frog",
+    type: "Prey",
+    atk: 1,
+    hp: 2,
+    nutrition: 2,
+    effectText: "Instead of attacking; may eat target prey.",
+    // TODO: Implement special eating ability
+  },
+  {
+    id: "amphibian-prey-surinam-toad",
+    name: "Surinam Toad",
+    type: "Prey",
+    atk: 1,
+    hp: 2,
+    nutrition: 2,
+    effectText: "Slain, play 3 Froglets.",
+    // TODO: Implement slain summon
+  },
+  {
+    id: "amphibian-prey-froglet",
+    name: "Froglet",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+  },
+  {
+    id: "amphibian-prey-axolotl",
+    name: "Axolotl",
+    type: "Prey",
+    atk: 2,
+    hp: 2,
+    nutrition: 2,
+    effectText: "Heal 4. End of turn, regen.",
+    // TODO: Implement heal and regen effects
+  },
+  {
+    id: "amphibian-prey-bigfoot-leopard-frog",
+    name: "Bigfoot Leopard Frog",
+    type: "Prey",
+    atk: 2,
+    hp: 2,
+    nutrition: 2,
+    effectText: "End of turn, play Bigfoot Tadpole.",
+    // TODO: Implement end of turn summon
+  },
+  {
+    id: "amphibian-prey-bigfoot-tadpole",
+    name: "Bigfoot Tadpole",
+    type: "Prey",
+    atk: 0,
+    hp: 1,
+    nutrition: 0,
+    effectText: "Start of turn, become Bigfoot Leopard Frog.",
+    // TODO: Implement transform effect
+  },
+
+  // Amphibian Predators
+  {
+    id: "amphibian-predator-indian-bullfrogs",
+    name: "Indian Bullfrogs",
+    type: "Predator",
+    atk: 2,
+    hp: 2,
+    effectText: "Play Indian BullFrog.",
+    // TODO: Implement summon
+  },
+  {
+    id: "amphibian-predator-tiger-frog",
+    name: "Tiger Frog",
+    type: "Predator",
+    atk: 2,
+    hp: 2,
+    effectText: "Deal 2 damage to rival.",
+    // TODO: Implement damage effect
+  },
+  {
+    id: "amphibian-predator-american-bullfrogs",
+    name: "American Bullfrogs",
+    type: "Predator",
+    atk: 3,
+    hp: 3,
+    effectText: "Play American Bullfrog.",
+    // TODO: Implement summon
+  },
+  {
+    id: "amphibian-predator-american-bullfrog",
+    name: "American Bullfrog",
+    type: "Predator",
+    atk: 3,
+    hp: 3,
+  },
+  {
+    id: "amphibian-predator-mountain-chicken",
+    name: "Mountain Chicken",
+    type: "Predator",
+    atk: 3,
+    hp: 3,
+    keywords: ["Edible"],
+    effectText: "End of turn, play Mountain Chicken Egg.",
+    // TODO: Implement end of turn summon
+  },
+  {
+    id: "amphibian-predator-mountain-chicken-egg",
+    name: "Mountain Chicken Egg",
+    type: "Prey",
+    atk: 0,
+    hp: 1,
+    nutrition: 0,
+    keywords: ["Hidden"],
+    effectText: "Start of turn, become Mountain Chicken.",
+    // TODO: Implement transform effect
+  },
+  {
+    id: "amphibian-predator-titicaca-water-frog",
+    name: "Titicaca Water Frog",
+    type: "Predator",
+    atk: 3,
+    hp: 3,
+    effectText: "Add Titicaca Water to hand.",
+    // TODO: Implement add to hand
+  },
+  {
+    id: "amphibian-predator-african-bullfrog",
+    name: "African Bullfrog",
+    type: "Predator",
+    atk: 4,
+    hp: 4,
+    effectText: "Play Pixie Frog.",
+    // TODO: Implement summon
+  },
+  {
+    id: "amphibian-predator-pixie-frog",
+    name: "Pixie Frog",
+    type: "Predator",
+    atk: 2,
+    hp: 2,
+  },
+  {
+    id: "amphibian-predator-cane-toad",
+    name: "Cane Toad",
+    type: "Predator",
+    atk: 4,
+    hp: 4,
+    keywords: ["Poisonous"],
+    effectText: "Play 2 Poisonous Eggs.",
+    // TODO: Implement summon
+  },
+  {
+    id: "amphibian-prey-poisonous-egg",
+    name: "Poisonous Egg",
+    type: "Prey",
+    atk: 0,
+    hp: 1,
+    nutrition: 0,
+    keywords: ["Poisonous"],
+  },
+  {
+    id: "amphibian-predator-goliath-frog",
+    name: "Goliath Frog",
+    type: "Predator",
+    atk: 4,
+    hp: 4,
+    effectText: "Deal 4 damage to enemies. End turn.",
+    // TODO: Implement damage effect
+  },
+  {
+    id: "amphibian-predator-hellbender-salamander",
+    name: "Hellbender Salamander",
+    type: "Predator",
+    atk: 4,
+    hp: 4,
+    effectText: "Deal 4 damage to rival.",
+    // TODO: Implement damage effect
+  },
+  {
+    id: "amphibian-predator-helmeted-water-toad",
+    name: "Helmeted Water Toad",
+    type: "Predator",
+    atk: 4,
+    hp: 4,
+    keywords: ["Barrier"],
+  },
+  {
+    id: "amphibian-predator-lake-junin-giant-frog",
+    name: "Lake Junin Giant Frog",
+    type: "Predator",
+    atk: 4,
+    hp: 4,
+    effectText: "Regen other creatures. Heal 4.",
+    // TODO: Implement regen and heal effects
+  },
+  {
+    id: "amphibian-predator-japanese-giant-salamander",
+    name: "Japanese Giant Salamander",
+    type: "Predator",
+    atk: 5,
+    hp: 5,
+    effectText: "After combat, deal 2 damage to enemies.",
+    // TODO: Implement after combat damage
+  },
+  {
+    id: "amphibian-predator-chinese-giant-salamander",
+    name: "Chinese Giant Salamander",
+    type: "Predator",
+    atk: 6,
+    hp: 6,
+    keywords: ["Lure"],
+    effectText: "Play Chinese Salamander.",
+    // TODO: Implement summon
+  },
+  {
+    id: "amphibian-prey-chinese-salamander",
+    name: "Chinese Salamander",
+    type: "Prey",
+    atk: 2,
+    hp: 2,
+    nutrition: 2,
+    effectText: "Heal 2.",
+    // TODO: Implement heal effect
+  },
+
+  // Amphibian Support
+  {
+    id: "amphibian-spell-ambiguity",
+    name: "Ambiguity",
+    type: "Spell",
+    effectText: "Either draw 3, heal 3, or deal 3 damage to rival.",
+    // TODO: Implement choice effect
+  },
+  {
+    id: "amphibian-spell-bounce",
+    name: "Bounce",
+    type: "Spell",
+    effectText: "Return enemies to hand.",
+    // TODO: Implement return to hand
+  },
+  {
+    id: "amphibian-spell-leapfrog",
+    name: "Leapfrog",
+    type: "Spell",
+    effectText: "Deal 3 damage to rival. Deal 3 damage to target enemy.",
+    // TODO: Implement damage effects
+  },
+  {
+    id: "amphibian-spell-monsoon",
+    name: "Monsoon",
+    type: "Spell",
+    effectText: "Deal 2 damage to opponents. Add Rainbow to hand.",
+    // TODO: Implement damage and add to hand
+  },
+  {
+    id: "amphibian-spell-pacify",
+    name: "Pacify",
+    type: "Spell",
+    effectText: "Target enemy gains passive.",
+    // TODO: Implement passive keyword
+  },
+  {
+    id: "amphibian-spell-pounce-plummet",
+    name: "Pounce Plummet",
+    type: "Spell",
+    effectText: "Deal 2 damage to enemies. Deal 2 damage to enemies.",
+    // TODO: Implement damage effects
+  },
+  {
+    id: "amphibian-spell-shower",
+    name: "Shower",
+    type: "Spell",
+    effectText: "Creatures gain +2/+2.",
+    // TODO: Implement buff effect
+  },
+  {
+    id: "amphibian-spell-terrain-shift",
+    name: "Terrain Shift",
+    type: "Spell",
+    effectText: "Destroy target field spells. Kill enemy tokens.",
+    // TODO: Implement field spell and token destruction
+  },
+  {
+    id: "amphibian-spell-whitewater",
+    name: "Whitewater",
+    type: "Spell",
+    effectText: "Deal 3 damage to any target. Heal 3.",
+    // TODO: Implement damage and heal effects
+  },
+  {
+    id: "amphibian-free-spell-metamorphosis",
+    name: "Metamorphosis",
+    type: "Free Spell",
+    effectText: "Target prey creature gains +2/+2.",
+    // TODO: Implement buff effect
+  },
+  {
+    id: "amphibian-free-spell-newt",
+    name: "Newt",
+    type: "Free Spell",
+    effectText: "Target animal becomes Newt.",
+    // TODO: Implement transform effect
+  },
+  {
+    id: "amphibian-prey-newt-token",
+    name: "Newt",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+  },
+  {
+    id: "amphibian-free-spell-sleight-of-hand",
+    name: "Sleight of Hand",
+    type: "Free Spell",
+    effectText: "Draw 2.",
+    // TODO: Implement draw effect
+  },
+  {
+    id: "amphibian-free-spell-slime",
+    name: "Slime",
+    type: "Free Spell",
+    effectText: "Either draw 1, heal 1, or deal 1 damage to rival.",
+    // TODO: Implement choice effect
+  },
+  {
+    id: "amphibian-free-spell-spell-overload",
+    name: "Spell Overload",
+    type: "Free Spell",
+    effectText: "Play a spell. Play a spell.",
+    // TODO: Implement spell play effects
+  },
+  {
+    id: "amphibian-field-spell-wishing-well",
+    name: "Wishing Well",
+    type: "Spell",
+    isFieldSpell: true,
+    effectText: "End of turn, regen target creature.",
+    // TODO: Implement field spell effect
+  },
+  {
+    id: "amphibian-trap-blowdart",
+    name: "Blowdart",
+    type: "Trap",
+    trigger: "directAttack",
+    effectText: "When target enemy attacks directly, negate attack & kill it.",
+    // TODO: Implement trap effect
+  },
+  {
+    id: "amphibian-trap-rebound",
+    name: "Rebound",
+    type: "Trap",
+    trigger: "rivalPlaysCard",
+    effectText: "When rival plays a card, negate play. Rival may play a different card.",
+    // TODO: Implement trap effect
+  },
+  {
+    id: "amphibian-trap-slip",
+    name: "Slip",
+    type: "Trap",
+    trigger: "defending",
+    effectText: "When target creature is defending, negate combat.",
+    // TODO: Implement trap effect
+  },
+];
+
+const birdCards = [
+  // Bird Prey
+  {
+    id: "bird-prey-kakapo",
+    name: "Kākāpō",
+    type: "Prey",
+    atk: 0,
+    hp: 2,
+    nutrition: 2,
+    keywords: ["Invisible"],
+    effectText: "Slain, add Kākāpō Feathers to hand.",
+    // TODO: Implement slain effect
+  },
+  {
+    id: "bird-prey-carrier-pigeon",
+    name: "Carrier Pigeon",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "Rival reveals hand. Add a card from deck to hand.",
+    // TODO: Implement reveal and deck search
+  },
+  {
+    id: "bird-prey-carrion-crow",
+    name: "Carrion Crow",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Scavenge"],
+  },
+  {
+    id: "bird-prey-common-swift",
+    name: "Common Swift",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Free Play", "Haste"],
+  },
+  {
+    id: "bird-prey-doves",
+    name: "Doves",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "Play Dove. Heal 3.",
+    // TODO: Implement summon and heal
+  },
+  {
+    id: "bird-prey-dove",
+    name: "Dove",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Passive"],
+    effectText: "Heal 3.",
+    // TODO: Implement heal effect
+  },
+  {
+    id: "bird-prey-eurasian-magpie",
+    name: "Eurasian Magpie",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "End of turn, either heal 4 or deal 2 damage to opponents.",
+    // TODO: Implement choice effect
+  },
+  {
+    id: "bird-prey-florida-grasshopper-sparrow",
+    name: "Florida Grasshopper Sparrow",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Free Play"],
+    effectText: "Play Sparrow Egg.",
+    // TODO: Implement summon
+  },
+  {
+    id: "bird-prey-sparrow-egg",
+    name: "Sparrow Egg",
+    type: "Prey",
+    atk: 0,
+    hp: 1,
+    nutrition: 0,
+    effectText: "Start of turn, become Sparrow.",
+    // TODO: Implement transform effect
+  },
+  {
+    id: "bird-prey-sparrow",
+    name: "Sparrow",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "End of turn, play Sparrow Egg.",
+    // TODO: Implement end of turn summon
+  },
+  {
+    id: "bird-prey-golden-song-sparrows",
+    name: "Golden Song Sparrows",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "Play 2 Golden Song Sparrows. Draw 1.",
+    // TODO: Implement summon and draw
+  },
+  {
+    id: "bird-prey-golden-song-sparrow",
+    name: "Golden Song Sparrow",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "Draw 1.",
+    // TODO: Implement draw effect
+  },
+  {
+    id: "bird-prey-mexican-violetear",
+    name: "Mexican Violetear",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "Copy abilities of a carrion.",
+    // TODO: Implement copy abilities
+  },
+  {
+    id: "bird-prey-mockingbird",
+    name: "Mockingbird",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "Copy stats of target animal.",
+    // TODO: Implement copy stats
+  },
+  {
+    id: "bird-prey-moluccan-cockatoo",
+    name: "Moluccan Cockatoo",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "Copy abilities of target animal.",
+    // TODO: Implement copy abilities
+  },
+  {
+    id: "bird-prey-oriental-magpies",
+    name: "Oriental Magpies",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "Play Oriental Magpie. Heal 2. Regen target creature.",
+    // TODO: Implement summon, heal, and regen
+  },
+  {
+    id: "bird-prey-oriental-magpie",
+    name: "Oriental Magpie",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "Heal 2.",
+    // TODO: Implement heal effect
+  },
+  {
+    id: "bird-prey-quetzal",
+    name: "Quetzal",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "Discard, creatures gains +1/+0. Creatures gains +1/+0.",
+    // TODO: Implement discard and buff
+  },
+  {
+    id: "bird-prey-raven",
+    name: "Raven",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "Copy stats of a carrion.",
+    // TODO: Implement copy stats
+  },
+  {
+    id: "bird-prey-robin",
+    name: "Robin",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "End of turn, play 2 Blue Eggs.",
+    // TODO: Implement end of turn summon
+  },
+  {
+    id: "bird-prey-blue-egg",
+    name: "Blue Egg",
+    type: "Prey",
+    atk: 0,
+    hp: 1,
+    nutrition: 0,
+    keywords: ["Hidden"],
+    effectText: "Start of turn, become Robin.",
+    // TODO: Implement transform effect
+  },
+  {
+    id: "bird-prey-seagull",
+    name: "Seagull",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "Eat target enemy prey.",
+    // TODO: Implement eat prey
+  },
+  {
+    id: "bird-prey-white-bellbird",
+    name: "White Bellbird",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "End of turn, deal 3 damage to any target.",
+    // TODO: Implement damage effect
+  },
+  {
+    id: "bird-prey-hoatzin",
+    name: "Hoatzin",
+    type: "Prey",
+    atk: 2,
+    hp: 1,
+    nutrition: 1,
+    effectText: "After combat, deal 2 damage. End of turn, deal 2 damage to rival.",
+    // TODO: Implement damage effects
+  },
+  {
+    id: "bird-prey-golden-goose",
+    name: "Golden Goose",
+    type: "Prey",
+    atk: 2,
+    hp: 2,
+    nutrition: 2,
+    effectText: "Draw 1. End of turn, play Golden Egg.",
+    // TODO: Implement draw and summon
+  },
+  {
+    id: "bird-prey-golden-egg",
+    name: "Golden Egg",
+    type: "Prey",
+    atk: 0,
+    hp: 1,
+    nutrition: 0,
+    effectText: "Draw 1.",
+    // TODO: Implement draw effect
+  },
+  {
+    id: "bird-prey-indian-peacock",
+    name: "Indian Peacock",
+    type: "Prey",
+    atk: 2,
+    hp: 2,
+    nutrition: 2,
+    keywords: ["Barrier", "Lure"],
+    effectText: "Slain, add Rainbow Feathers to hand.",
+    // TODO: Implement slain effect
+  },
+  {
+    id: "bird-prey-jersey-giant",
+    name: "Jersey Giant",
+    type: "Prey",
+    atk: 2,
+    hp: 2,
+    nutrition: 2,
+    effectText: "Slain, play Hen.",
+    // TODO: Implement slain summon
+  },
+  {
+    id: "bird-prey-hen",
+    name: "Hen",
+    type: "Prey",
+    atk: 1,
+    hp: 2,
+    nutrition: 2,
+    effectText: "Start of turn, play Egg.",
+    // TODO: Implement start of turn summon
+  },
+  {
+    id: "bird-prey-egg",
+    name: "Egg",
+    type: "Prey",
+    atk: 0,
+    hp: 1,
+    nutrition: 0,
+  },
+  {
+    id: "bird-prey-pileated-woodpecker",
+    name: "Pileated Woodpecker",
+    type: "Prey",
+    atk: 3,
+    hp: 1,
+    nutrition: 1,
+    effectText: "Can attack three times.",
+    // TODO: Implement multi-attack
+  },
+  {
+    id: "bird-prey-black-swan",
+    name: "Black Swan",
+    type: "Prey",
+    atk: 3,
+    hp: 3,
+    nutrition: 3,
+    keywords: ["Ambush"],
+    effectText: "Heal 3.",
+    // TODO: Implement heal effect
+  },
+  {
+    id: "bird-prey-eastern-wild-turkey",
+    name: "Eastern Wild Turkey",
+    type: "Prey",
+    atk: 3,
+    hp: 3,
+    nutrition: 3,
+    effectText: "Add Feed to hand.",
+    // TODO: Implement add to hand
+  },
+
+  // Bird Predators
+  {
+    id: "bird-predator-black-and-white-hawk-eagle",
+    name: "Black-and-white Hawk-eagle",
+    type: "Predator",
+    atk: 2,
+    hp: 2,
+    keywords: ["Ambush"],
+    effectText: "After combat, heal 2.",
+    // TODO: Implement after combat heal
+  },
+  {
+    id: "bird-predator-firehawk",
+    name: "Firehawk",
+    type: "Predator",
+    atk: 2,
+    hp: 2,
+    effectText: "Kill enemy prey. Destroy target field spell.",
+    // TODO: Implement kill and destroy effects
+  },
+  {
+    id: "bird-predator-great-gray-owl",
+    name: "Great Gray Owl",
+    type: "Predator",
+    atk: 2,
+    hp: 2,
+    effectText: "Add a carrion to hand. Add a card from deck to hand.",
+    // TODO: Implement add to hand effects
+  },
+  {
+    id: "bird-predator-short-toed-snake-eagle",
+    name: "Short-toed Snake Eagle",
+    type: "Predator",
+    atk: 2,
+    hp: 2,
+    effectText: "Play 2 Toxic Snakes.",
+    // TODO: Implement summon
+  },
+  {
+    id: "bird-prey-toxic-snake",
+    name: "Toxic Snake",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Toxic"],
+  },
+  {
+    id: "bird-predator-wolf-hawk",
+    name: "Wolf Hawk",
+    type: "Predator",
+    atk: 2,
+    hp: 2,
+    effectText: "Play Wolf Hawk.",
+    // TODO: Implement summon
+  },
+  {
+    id: "bird-predator-peregrine-falcon",
+    name: "Peregrine Falcon",
+    type: "Predator",
+    atk: 3,
+    hp: 1,
+    keywords: ["Free Play", "Haste"],
+  },
+  {
+    id: "bird-predator-red-tailed-hawk",
+    name: "Red-tailed Hawk",
+    type: "Predator",
+    atk: 3,
+    hp: 2,
+    effectText: "Add Red Tailfeathers to hand.",
+    // TODO: Implement add to hand
+  },
+  {
+    id: "bird-predator-bald-eagle",
+    name: "Bald Eagle",
+    type: "Predator",
+    atk: 3,
+    hp: 3,
+    keywords: ["Scavenge"],
+  },
+  {
+    id: "bird-predator-monkey-eating-eagle",
+    name: "Monkey-eating Eagle",
+    type: "Predator",
+    atk: 3,
+    hp: 3,
+    effectText: "Eat target enemy prey.",
+    // TODO: Implement eat prey
+  },
+  {
+    id: "bird-predator-gyrfalcon",
+    name: "Gyrfalcon",
+    type: "Predator",
+    atk: 4,
+    hp: 2,
+    keywords: ["Haste"],
+  },
+  {
+    id: "bird-predator-golden-eagle",
+    name: "Golden Eagle",
+    type: "Predator",
+    atk: 4,
+    hp: 4,
+    effectText: "Draw 4.",
+    // TODO: Implement draw effect
+  },
+  {
+    id: "bird-predator-martial-eagle",
+    name: "Martial Eagle",
+    type: "Predator",
+    atk: 4,
+    hp: 4,
+    effectText: "End of turn, kill target enemy.",
+    // TODO: Implement end of turn kill
+  },
+  {
+    id: "bird-predator-harpy-eagle",
+    name: "Harpy Eagle",
+    type: "Predator",
+    atk: 5,
+    hp: 5,
+    effectText: "Add target enemy to hand.",
+    // TODO: Implement return to hand
+  },
+  {
+    id: "bird-predator-pacific-sea-eagle",
+    name: "Pacific Sea Eagle",
+    type: "Predator",
+    atk: 6,
+    hp: 6,
+    keywords: ["Immune"],
+  },
+
+  // Bird Support
+  {
+    id: "bird-spell-bird-food",
+    name: "Bird Food",
+    type: "Spell",
+    effectText: "Creatures gain +2/+2.",
+    // TODO: Implement buff effect
+  },
+  {
+    id: "bird-spell-birds-of-a-feather",
+    name: "Birds of a Feather",
+    type: "Spell",
+    effectText: "Play copy of target creature.",
+    // TODO: Implement copy creature
+  },
+  {
+    id: "bird-spell-shotgun",
+    name: "Shotgun",
+    type: "Spell",
+    effectText: "Either deal 2 damage to opponents or deal 6 damage to target enemy.",
+    // TODO: Implement choice damage
+  },
+  {
+    id: "bird-spell-swan-song",
+    name: "Swan Song",
+    type: "Spell",
+    effectText: "Heal 3. Gain barrier.",
+    // TODO: Implement heal and barrier
+  },
+  {
+    id: "bird-free-spell-birds-eye-view",
+    name: "Bird's Eye View",
+    type: "Free Spell",
+    effectText: "Rival reveals hand.",
+    // TODO: Implement reveal hand
+  },
+  {
+    id: "bird-free-spell-clouds",
+    name: "Clouds",
+    type: "Free Spell",
+    effectText: "Target creature gains immune.",
+    // TODO: Implement immune keyword
+  },
+  {
+    id: "bird-free-spell-tailwind",
+    name: "Tailwind",
+    type: "Free Spell",
+    effectText: "Target creature gains haste.",
+    // TODO: Implement haste keyword
+  },
+  {
+    id: "bird-free-spell-white-missile",
+    name: "White Missile",
+    type: "Free Spell",
+    effectText: "Deal 1 damage to any target.",
+    // TODO: Implement damage effect
+  },
+  {
+    id: "bird-field-spell-bird-feeder",
+    name: "Bird Feeder",
+    type: "Spell",
+    isFieldSpell: true,
+    effectText: "End of turn, target creature gains +1/+1.",
+    // TODO: Implement field spell effect
+  },
+  {
+    id: "bird-trap-alleyway-mobbing",
+    name: "Alleyway Mobbing",
+    type: "Trap",
+    trigger: "directAttack",
+    effectText: "When target enemy attacks directly, negate attack. Play 3 Bushtits.",
+    // TODO: Implement trap and summon
+  },
+  {
+    id: "bird-prey-bushtit",
+    name: "Bushtit",
+    type: "Prey",
+    atk: 0,
+    hp: 1,
+    nutrition: 1,
+  },
+  {
+    id: "bird-trap-fly-off",
+    name: "Fly Off",
+    type: "Trap",
+    trigger: "defending",
+    effectText: "When target creature is defending, return it to hand.",
+    // TODO: Implement trap effect
+  },
+  {
+    id: "bird-trap-icarus",
+    name: "Icarus",
+    type: "Trap",
+    trigger: "lifeZero",
+    effectText: "When life is 0, heal 1.",
+    // TODO: Implement trap effect
+  },
+];
+
+const mammalCards = [
+  // Mammal Prey
+  {
+    id: "mammal-prey-western-harvest-mouse",
+    name: "Western Harvest Mouse",
+    type: "Prey",
+    atk: 0,
+    hp: 1,
+    nutrition: 0,
+    keywords: ["Free Play"],
+    effectText: "Play 2 Pups.",
+    // TODO: Implement summon
+  },
+  {
+    id: "mammal-prey-pup",
+    name: "Pup",
+    type: "Prey",
+    atk: 0,
+    hp: 1,
+    nutrition: 0,
+  },
+  {
+    id: "mammal-prey-arctic-ground-squirrels",
+    name: "Arctic Ground Squirrels",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "Play 2 Arctic Ground Squirrels. Target enemy gains frozen.",
+    // TODO: Implement summon and freeze
+  },
+  {
+    id: "mammal-prey-arctic-ground-squirrel",
+    name: "Arctic Ground Squirrel",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Frozen"],
+    effectText: "Target enemy gains frozen.",
+    // TODO: Implement freeze effect
+  },
+  {
+    id: "mammal-prey-arctic-hare",
+    name: "Arctic Hare",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Hidden"],
+    effectText: "Target enemy gains frozen. Start of turn, play Arctic Hare.",
+    // TODO: Implement freeze and summon
+  },
+  {
+    id: "mammal-prey-bobcat",
+    name: "Bobcat",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "Rival reveals hand. Kill target prey.",
+    // TODO: Implement reveal and kill
+  },
+  {
+    id: "mammal-prey-florida-white-rabbit",
+    name: "Florida White Rabbit",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "End of turn, play 2 Kits.",
+    // TODO: Implement end of turn summon
+  },
+  {
+    id: "mammal-prey-kit",
+    name: "Kit",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "Start of turn, become Florida White Rabbit.",
+    // TODO: Implement transform effect
+  },
+  {
+    id: "mammal-prey-giant-golden-mole",
+    name: "Giant Golden Mole",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Free Play"],
+    effectText: "Draw 1.",
+    // TODO: Implement draw effect
+  },
+  {
+    id: "mammal-prey-japanese-weasel",
+    name: "Japanese Weasel",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "Deal 3 damage to any target.",
+    // TODO: Implement damage effect
+  },
+  {
+    id: "mammal-prey-meerkat-matriarch",
+    name: "Meerkat Matriarch",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "Play 2 Pups. Slain, play 3 Pups.",
+    // TODO: Implement summon and slain effects
+  },
+  {
+    id: "mammal-prey-north-american-opossum",
+    name: "North American Opossum",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "Slain, revive.",
+    // TODO: Implement revive effect
+  },
+  {
+    id: "mammal-prey-northern-koala",
+    name: "Northern Koala",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Hidden"],
+    effectText: "Slain, play Joey.",
+    // TODO: Implement slain summon
+  },
+  {
+    id: "mammal-prey-joey",
+    name: "Joey",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+  },
+  {
+    id: "mammal-prey-platypus",
+    name: "Platypus",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Poisonous"],
+    effectText: "Play 2 Mammal Eggs.",
+    // TODO: Implement summon
+  },
+  {
+    id: "mammal-prey-mammal-egg",
+    name: "Mammal Egg",
+    type: "Prey",
+    atk: 0,
+    hp: 1,
+    nutrition: 0,
+    keywords: ["Passive", "Barrier", "Hidden"],
+  },
+  {
+    id: "mammal-prey-red-handed-howler",
+    name: "Red-handed Howler",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    effectText: "Rival discards 1. Add a card from deck to hand.",
+    // TODO: Implement discard and deck search
+  },
+  {
+    id: "mammal-prey-pronghorn",
+    name: "Pronghorn",
+    type: "Prey",
+    atk: 1,
+    hp: 2,
+    nutrition: 2,
+    effectText: "Deal 2 damage to any target.",
+    // TODO: Implement damage effect
+  },
+  {
+    id: "mammal-prey-golden-takin",
+    name: "Golden Takin",
+    type: "Prey",
+    atk: 2,
+    hp: 2,
+    nutrition: 2,
+    effectText: "End of turn, draw 2.",
+    // TODO: Implement draw effect
+  },
+  {
+    id: "mammal-prey-holstein-friesian",
+    name: "Holstein Friesian",
+    type: "Prey",
+    atk: 1,
+    hp: 3,
+    nutrition: 3,
+    effectText: "End of turn, add Fresh Milk to hand.",
+    // TODO: Implement add to hand
+  },
+  {
+    id: "mammal-prey-hart",
+    name: "Hart",
+    type: "Prey",
+    atk: 2,
+    hp: 2,
+    nutrition: 2,
+    effectText: "Add a carrion to hand.",
+    // TODO: Implement add to hand
+  },
+  {
+    id: "mammal-prey-malayan-tapir",
+    name: "Malayan Tapir",
+    type: "Prey",
+    atk: 2,
+    hp: 2,
+    nutrition: 2,
+    effectText: "Return enemies to hand.",
+    // TODO: Implement return to hand
+  },
+  {
+    id: "mammal-prey-imperial-zebra",
+    name: "Imperial Zebra",
+    type: "Prey",
+    atk: 2,
+    hp: 2,
+    nutrition: 2,
+    effectText: "Either deal 2 damage to rival or heal 2.",
+    // TODO: Implement choice effect
+  },
+  {
+    id: "mammal-prey-reindeer-rudolph",
+    name: "Reindeer, Rudolph",
+    type: "Prey",
+    atk: 2,
+    hp: 2,
+    nutrition: 2,
+    effectText: "Add Present to hand.",
+    // TODO: Implement add to hand
+  },
+  {
+    id: "mammal-prey-muskox",
+    name: "Muskox",
+    type: "Prey",
+    atk: 2,
+    hp: 2,
+    nutrition: 2,
+    keywords: ["Immune"],
+    effectText: "Slain, add Qiviut to hand.",
+    // TODO: Implement slain effect
+  },
+  {
+    id: "mammal-prey-giant-forest-hog",
+    name: "Giant Forest Hog",
+    type: "Prey",
+    atk: 3,
+    hp: 2,
+    nutrition: 2,
+    keywords: ["Haste"],
+  },
+  {
+    id: "mammal-prey-alaskan-moose",
+    name: "Alaskan Moose",
+    type: "Prey",
+    atk: 3,
+    hp: 3,
+    nutrition: 3,
+    keywords: ["Barrier"],
+  },
+  {
+    id: "mammal-prey-american-aberdeen",
+    name: "American Aberdeen",
+    type: "Prey",
+    atk: 3,
+    hp: 3,
+    nutrition: 3,
+    effectText: "Slain; add Angus to hand.",
+    // TODO: Implement slain effect
+  },
+
+  // Mammal Predators
+  {
+    id: "mammal-predator-dholes",
+    name: "Dholes",
+    type: "Predator",
+    atk: 1,
+    hp: 1,
+    effectText: "Play 2 Dholes. Kill target enemy.",
+    // TODO: Implement summon and kill
+  },
+  {
+    id: "mammal-predator-dhole",
+    name: "Dhole",
+    type: "Predator",
+    atk: 1,
+    hp: 1,
+  },
+  {
+    id: "mammal-predator-eurasian-lynx",
+    name: "Eurasian Lynx",
+    type: "Predator",
+    atk: 2,
+    hp: 1,
+    keywords: ["Free Play"],
+    effectText: "Rival reveals hand.",
+    // TODO: Implement reveal hand
+  },
+  {
+    id: "mammal-predator-gray-wolf",
+    name: "Gray Wolf",
+    type: "Predator",
+    atk: 2,
+    hp: 2,
+    effectText: "Play Gray Wolf.",
+    // TODO: Implement summon
+  },
+  {
+    id: "mammal-predator-black-leopards",
+    name: "Black Leopards",
+    type: "Predator",
+    atk: 3,
+    hp: 2,
+    keywords: ["Ambush"],
+    effectText: "Slain, play Black Leopard.",
+    // TODO: Implement slain summon
+  },
+  {
+    id: "mammal-predator-black-leopard",
+    name: "Black Leopard",
+    type: "Predator",
+    atk: 3,
+    hp: 2,
+    keywords: ["Ambush"],
+  },
+  {
+    id: "mammal-predator-jaguar",
+    name: "Jaguar",
+    type: "Predator",
+    atk: 3,
+    hp: 3,
+    effectText: "Sacrifice; play a carrion.",
+    // TODO: Implement sacrifice and summon
+  },
+  {
+    id: "mammal-predator-north-american-cougar",
+    name: "North American Cougar",
+    type: "Predator",
+    atk: 3,
+    hp: 3,
+    effectText: "Attacking before combat, deal 3 damage.",
+    // TODO: Implement before combat damage
+  },
+  {
+    id: "mammal-predator-malayan-tiger",
+    name: "Malayan Tiger",
+    type: "Predator",
+    atk: 3,
+    hp: 3,
+    keywords: ["Barrier", "Immune"],
+  },
+  {
+    id: "mammal-predator-southern-african-lion",
+    name: "Southern African Lion",
+    type: "Predator",
+    atk: 3,
+    hp: 3,
+    effectText: "Creatures gain +1/+1.",
+    // TODO: Implement buff effect
+  },
+  {
+    id: "mammal-predator-sumatran-tiger",
+    name: "Sumatran Tiger",
+    type: "Predator",
+    atk: 3,
+    hp: 3,
+    effectText: "Copy abilities of a carrion.",
+    // TODO: Implement copy abilities
+  },
+  {
+    id: "mammal-predator-cheetah",
+    name: "Cheetah",
+    type: "Predator",
+    atk: 4,
+    hp: 2,
+    keywords: ["Haste"],
+  },
+  {
+    id: "mammal-predator-grizzly-bear",
+    name: "Grizzly Bear",
+    type: "Predator",
+    atk: 4,
+    hp: 4,
+    effectText: "End of turn, regen.",
+    // TODO: Implement end of turn regen
+  },
+  {
+    id: "mammal-predator-kodiak-bear",
+    name: "Kodiak Bear",
+    type: "Predator",
+    atk: 5,
+    hp: 5,
+    effectText: "Add Salmon to hand.",
+    // TODO: Implement add to hand
+  },
+  {
+    id: "mammal-prey-salmon",
+    name: "Salmon",
+    type: "Prey",
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ["Free Play"],
+  },
+  {
+    id: "mammal-predator-polar-bear",
+    name: "Polar Bear",
+    type: "Predator",
+    atk: 5,
+    hp: 5,
+    effectText: "Freeze enemies.",
+    // TODO: Implement freeze effect
+  },
+  {
+    id: "mammal-predator-hippopotamus",
+    name: "Hippopotamus",
+    type: "Predator",
+    atk: 6,
+    hp: 6,
+    effectText: "Kill target enemy.",
+    // TODO: Implement kill effect
+  },
+
+  // Mammal Support
+  {
+    id: "mammal-spell-blizzard",
+    name: "Blizzard",
+    type: "Spell",
+    effectText: "Deal 2 damage to opponents. Enemies gain frozen.",
+    // TODO: Implement damage and freeze effects
+  },
+  {
+    id: "mammal-spell-milk",
+    name: "Milk",
+    type: "Spell",
+    effectText: "Creatures gain +2/+2.",
+    // TODO: Implement buff effect
+  },
+  {
+    id: "mammal-spell-silver-bullet",
+    name: "Silver Bullet",
+    type: "Spell",
+    effectText: "Discard 1. Draw 1. Kill target enemy.",
+    // TODO: Implement discard, draw, and kill
+  },
+  {
+    id: "mammal-spell-six-layered-neocortex",
+    name: "Six-layered Neocortex",
+    type: "Spell",
+    effectText: "Play a creature from deck it gains frozen.",
+    // TODO: Implement deck play and freeze
+  },
+  {
+    id: "mammal-spell-white-hart",
+    name: "White Hart",
+    type: "Spell",
+    effectText: "Play a carrion it gains frozen.",
+    // TODO: Implement summon and freeze
+  },
+  {
+    id: "mammal-free-spell-curiosity",
+    name: "Curiosity",
+    type: "Free Spell",
+    effectText: "Sacrifice target creature, draw 3.",
+    // TODO: Implement sacrifice and draw
+  },
+  {
+    id: "mammal-free-spell-tranquilizer",
+    name: "Tranquilizer",
+    type: "Free Spell",
+    effectText: "Target enemy gains frozen.",
+    // TODO: Implement freeze effect
+  },
+  {
+    id: "mammal-free-spell-warm-blood",
+    name: "Warm Blood",
+    type: "Free Spell",
+    effectText: "Creatures lose frozen.",
+    // TODO: Implement remove frozen
+  },
+  {
+    id: "mammal-field-spell-wolves-den",
+    name: "Wolves Den",
+    type: "Spell",
+    isFieldSpell: true,
+    effectText: "End of turn, play Wolf.",
+    // TODO: Implement field spell effect
+  },
+  {
+    id: "mammal-prey-wolf",
+    name: "Wolf",
+    type: "Prey",
+    atk: 2,
+    hp: 2,
+    nutrition: 2,
+  },
+  {
+    id: "mammal-trap-animal-rights",
+    name: "Animal Rights",
+    type: "Trap",
+    trigger: "targeted",
+    effectText: "When target creature is targeted, return it to hand.",
+    // TODO: Implement trap effect
+  },
+  {
+    id: "mammal-trap-pitfall",
+    name: "Pitfall",
+    type: "Trap",
+    trigger: "directAttack",
+    effectText: "When target enemy attacks directly, negate attack. Enemies gain frozen.",
+    // TODO: Implement trap and freeze
+  },
+  {
+    id: "mammal-trap-snow-squall",
+    name: "Snow Squall",
+    type: "Trap",
+    trigger: "indirectDamage",
+    effectText: "When damaged indirectly, negate damage. Enemies gain frozen.",
+    // TODO: Implement trap and freeze
+  },
+  {
+    id: "mammal-trap-burial-ground",
+    name: "Burial Ground",
+    type: "Trap",
+    trigger: "slain",
+    effectText: "When target defending creature is slain, play a carrion it gains frozen.",
+    // TODO: Implement trap and summon
+  },
+];
+
 export const deckCatalogs = {
   fish: fishCards,
   reptile: reptileCards,
+  amphibian: amphibianCards,
+  bird: birdCards,
+  mammal: mammalCards,
 };
 
 const tokenCatalog = [
@@ -2236,7 +3964,7 @@ const tokenCatalog = [
 ];
 
 const cardCatalogById = new Map(
-  [...fishCards, ...reptileCards, ...tokenCatalog].map((card) => [card.id, card])
+  [...fishCards, ...reptileCards, ...amphibianCards, ...birdCards, ...mammalCards, ...tokenCatalog].map((card) => [card.id, card])
 );
 
 export const getCardDefinitionById = (id) => cardCatalogById.get(id) ?? null;
