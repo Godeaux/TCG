@@ -161,8 +161,8 @@ const magnificentSeaAnemoneFieldSpell = {
   },
 };
 
-const makeTargetedSelection = ({ title, candidates, onSelect }) => ({
-  selectTarget: { title, candidates, onSelect },
+const makeTargetedSelection = ({ title, candidates, onSelect, renderCards = false }) => ({
+  selectTarget: { title, candidates, onSelect, renderCards },
 });
 
 const handleTargetedResponse = ({ target, source, log, player, opponent, state }) => {
@@ -988,28 +988,32 @@ const fishCards = [
     effectText: "Either play a prey or add a prey from deck to hand.",
     effect: ({ log, player, playerIndex }) => {
       const preyInDeck = player.deck.filter((card) => card.type === "Prey");
+      const preyInHand = player.hand.filter((card) => card.type === "Prey");
       const deckCandidates = preyInDeck.map((card) => ({
         label: card.name,
         value: card,
         card,
       }));
-      if (preyInDeck.length === 0) {
-        log("Angler: no prey in deck.");
+      if (preyInDeck.length === 0 && preyInHand.length === 0) {
+        log("Angler: no prey in deck or hand.");
         return null;
       }
       return makeTargetedSelection({
         title: "Angler: choose an option",
         candidates: [
-          { label: "Play a prey", value: "play" },
-          { label: "Add a prey from deck to hand", value: "add" },
+          ...(preyInHand.length ? [{ label: "Play a prey from hand", value: "play" }] : []),
+          ...(preyInDeck.length ? [{ label: "Add a prey from deck to hand", value: "add" }] : []),
         ],
         onSelect: (choice) => {
           if (choice === "play") {
             return makeTargetedSelection({
-              title: "Angler: choose a prey to play",
-              candidates: deckCandidates,
+              title: "Angler: choose a prey to play from hand",
+              candidates: player.hand.filter((card) => card.type === "Prey").map((card) => ({
+                label: card.name,
+                value: card,
+              })),
               renderCards: true,
-              onSelect: (card) => ({ playFromDeck: { playerIndex, card } }),
+              onSelect: (card) => ({ playFromHand: { playerIndex, card } }),
             });
           }
           return makeTargetedSelection({
