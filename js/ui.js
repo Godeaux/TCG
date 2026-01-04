@@ -1529,6 +1529,13 @@ const renderCardStats = (card) => {
   return stats;
 };
 
+const isCardLike = (value) =>
+  value &&
+  typeof value === "object" &&
+  typeof value.name === "string" &&
+  typeof value.type === "string" &&
+  typeof value.id === "string";
+
 const repeatingEffectPattern = /(start of turn|end of turn|before combat)/i;
 
 const applyRepeatingIndicator = (summary, card) => {
@@ -2002,8 +2009,12 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
       onSelect,
       renderCards = false,
     } = selectTarget;
-    const candidates =
+    const resolvedCandidates =
       typeof candidatesInput === "function" ? candidatesInput() : candidatesInput;
+    const candidates = Array.isArray(resolvedCandidates) ? resolvedCandidates : [];
+    const shouldRenderCards =
+      renderCards ||
+      candidates.some((candidate) => isCardLike(candidate.card ?? candidate.value));
     const handleSelection = (value) => {
       clearSelectionPanel();
       const followUp = onSelect(value);
@@ -2016,7 +2027,8 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
       const item = document.createElement("label");
       item.className = "selection-item";
       const candidateCard = candidate.card ?? candidate.value;
-      if (renderCards && candidateCard && typeof candidateCard === "object") {
+      const canRenderCard = shouldRenderCards && isCardLike(candidateCard);
+      if (canRenderCard) {
         item.classList.add("selection-card");
         const cardElement = renderCard(candidateCard, {
           showEffectSummary: true,

@@ -271,6 +271,7 @@ button {
 .battlefield-center-column {
   display: flex;
   flex-direction: column;
+  gap: clamp(8px, 1.2vw, 16px); /* Add gap between battlefield and hand */
   min-width: 0;
   width: 100%;
   max-width: 100%;
@@ -283,24 +284,20 @@ button {
 
 .battlefield-layout {
   display: grid;
-  grid-template-rows: minmax(200px, 2fr) minmax(140px, 1fr); /* Enforce minimum heights */
-  gap: clamp(8px, 1.2vw, 14px);
-  height: 100%;
-  min-height: 340px; /* Sum of minimum row heights */
+  grid-template-rows: minmax(0, 1.8fr) minmax(0, 1fr); /* Flexible rows, no hard minimums */
+  gap: clamp(6px, 1vw, 12px); /* Tighter gap for better packing */
+  flex: 1; /* Take available space and shrink as needed */
+  min-height: 0; /* Allow to shrink completely if needed */
   min-width: 0;
   width: 100%;
-  overflow-x: hidden;
-  overflow-y: auto; /* Allow scrolling if battlefield is too tall */
+  overflow: visible; /* No scrolling, let it pack tightly */
 }
 
 .battlefield-region {
   min-height: 0;
   min-width: 0;
-  max-height: 100%;
-  max-height: var(--field-max-height);
   position: relative;
-  overflow-x: hidden; /* Contain battlefield horizontally */
-  overflow-y: hidden; /* Contain battlefield vertically */
+  overflow: visible; /* Allow cards to overflow */
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -330,8 +327,9 @@ button {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--field-gap);
-  max-height: calc((var(--field-max-height) - var(--field-gap)) / 2);
   width: 100%;
+  min-height: 0; /* Allow flexbox to manage height */
+  flex: 1; /* Take equal space in parent grid */
 }
 
 .field-slot {
@@ -339,14 +337,14 @@ button {
   border: 1px dashed var(--border-subtle);
   border-radius: var(--card-radius);
   aspect-ratio: 3 / 4;
-  max-height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--text-muted);
-  font-size: clamp(10px, 1.5vw, 14px);
+  font-size: clamp(8px, 1.2vw, 13px); /* Slightly smaller font for tight packing */
   width: 100%;
-  min-height: clamp(80px, 12vh, 140px);
+  height: 100%; /* Fill parent row height */
+  min-height: 0; /* No hard minimum - pack tightly */
 }
 
 .field-divider {
@@ -426,7 +424,6 @@ button {
   box-sizing: border-box;
   min-height: var(--min-hand-height); /* Scale with viewport but enforce minimums */
   max-height: 40vh; /* Prevent hand from taking too much space */
-  transform: translateY(-8px);
   min-width: 0;
   flex-shrink: 0; /* Prevent hand from being crushed by flex layout */
 }
@@ -525,13 +522,14 @@ button {
 
 /* Dynamic hand expansion mode */
 .battlefield-center-column.hand-expanded .battlefield-layout {
-  grid-template-rows: minmax(160px, 1.5fr) minmax(180px, 1fr); /* Adjusted for better space balance */
+  grid-template-rows: minmax(140px, 1.2fr) minmax(140px, 0.8fr); /* Compact battlefield when hand expanded */
+  flex: 0 1 auto; /* Allow more shrinking to make room for hand */
 }
 
 .battlefield-center-column.hand-expanded .hand-panel {
   overflow: visible;
-  min-height: clamp(160px, 25vh, 240px); /* More responsive expanded height */
-  max-height: 50vh; /* Allow more space when expanded */
+  min-height: clamp(180px, 28vh, 260px); /* Taller expanded height */
+  max-height: 55vh; /* Allow more space when expanded */
 }
 
 .battlefield-center-column.hand-expanded .hand-grid {
@@ -2017,12 +2015,21 @@ idden;
   }
 
   .battlefield-layout {
-    grid-template-rows: minmax(140px, 2fr) minmax(100px, 1fr); /* Reduce minimums for extreme zoom */
+    grid-template-rows: minmax(120px, 1.5fr) minmax(100px, 1fr); /* Ensure player field stays visible */
+    min-height: 220px; /* Reduced but still visible */
+  }
+
+  .battlefield-center-column {
+    gap: clamp(6px, 1vw, 12px); /* Tighter gap at extreme zoom */
   }
 
   .hand-panel {
-    min-height: 80px; /* Compact hand at extreme zoom */
-    max-height: 30vh;
+    min-height: 70px; /* Very compact hand at extreme zoom */
+    max-height: 25vh; /* Reduce max to prioritize battlefield */
+  }
+
+  .field-slot {
+    min-height: clamp(60px, 10vh, 100px); /* Smaller but still usable */
   }
 
   .card-inspector-panel,
