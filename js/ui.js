@@ -24,6 +24,18 @@ import {
 } from "./keywords.js";
 import { resolveEffectResult, stripAbilities } from "./effects.js";
 import { deckCatalogs, getCardDefinitionById } from "./cards.js";
+import { getCardImagePath, hasCardImage, getCachedCardImage, isCardImageCached, preloadCardImages } from "./cardImages.js";
+
+// Preload all card images at startup to prevent loading flicker
+const preloadAllCardImages = () => {
+  const allCardIds = Object.values(deckCatalogs)
+    .flat()
+    .map(card => card.id);
+  preloadCardImages(allCardIds);
+};
+
+// Initialize preloading
+preloadAllCardImages();
 let supabaseApi = null;
 let supabaseLoadError = null;
 
@@ -1694,12 +1706,34 @@ const renderCardInnerHtml = (card, { showEffectSummary } = {}) => {
   const effectRow = effectSummary
     ? `<div class="card-effect"><strong>Effect:</strong> ${effectSummary}</div>`
     : "";
+  
+  // Check if card has an image
+  const hasImage = hasCardImage(card.id);
+  const isCached = hasImage && isCardImageCached(card.id);
+  const cachedImage = hasImage ? getCachedCardImage(card.id) : null;
+  
+  // Generate image HTML - use cached image if available, otherwise preload
+  const imageHtml = hasImage && (isCached || cachedImage) 
+    ? `<img src="${getCardImagePath(card.id)}" alt="${card.name}" class="card-image" style="display: ${cachedImage ? 'block' : 'none'};" onload="this.style.display='block'; this.nextElementSibling.style.display='none';" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+       <div class="card-image-placeholder" style="display: ${cachedImage ? 'none' : 'flex'};">🎨</div>`
+    : hasImage ? `<div class="card-image-placeholder">🎨</div>` : '';
+  
+  // Preload image if not cached
+  if (hasImage && !isCached) {
+    preloadCardImages([card.id]);
+  }
+  
   return `
     <div class="card-name">${card.name}</div>
+    <div class="card-image-container">
+      ${imageHtml}
+    </div>
     <div class="card-type-label">${card.type}</div>
-    <div class="card-stats-row">${stats}</div>
-    <div class="card-keywords">${renderKeywordTags(card)}</div>
-    ${effectRow}
+    <div class="card-content-area">
+      <div class="card-stats-row">${stats}</div>
+      <div class="card-keywords">${renderKeywordTags(card)}</div>
+      ${effectRow}
+    </div>
   `;
 };
 
@@ -1794,6 +1828,44 @@ const renderCard = (card, options = {}) => {
     setInspectorContent(card);
     onClick?.(card);
   });
+
+  // Auto-shrink text to fit in content area (optimized to prevent spastic re-renders)
+  const adjustTextToFit = () => {
+    const contentArea = inner.querySelector('.card-content-area');
+    const effectElement = inner.querySelector('.card-effect');
+    
+    if (!contentArea || !effectElement) return;
+    
+    // Skip if already adjusted to prevent repeated calculations
+    if (effectElement.dataset.textAdjusted === 'true') return;
+    
+    // Check if content overflows
+    const isOverflowing = contentArea.scrollHeight > contentArea.clientHeight;
+    
+    if (isOverflowing) {
+      // Start with base font size and reduce until it fits
+      let fontSize = 11;
+      const minFontSize = 8;
+      const step = 0.5;
+      
+      while (fontSize > minFontSize && contentArea.scrollHeight > contentArea.clientHeight) {
+        fontSize -= step;
+        effectElement.style.fontSize = `${fontSize}px`;
+      }
+      
+      // If still overflowing at minimum size, enable more aggressive truncation
+      if (contentArea.scrollHeight > contentArea.clientHeight) {
+        effectElement.style.webkitLineClamp = '2';
+        effectElement.style.lineClamp = '2';
+      }
+    }
+    
+    // Mark as adjusted to prevent repeated calculations
+    effectElement.dataset.textAdjusted = 'true';
+  };
+  
+  // Run adjustment after DOM is rendered with a small delay to batch operations
+  setTimeout(() => requestAnimationFrame(adjustTextToFit), 10);
 
   return cardElement;
 };
@@ -2356,7 +2428,7 @@ const buildRandomDeck = ({ available, selected, catalogOrder }) => {
   selected.push(...picks);
 };
 
-const setInspectorContentFor = (panel, card) => {
+const setInspectorContentFor = (panel, card, showImage = true) => {
   if (!panel) {
     return;
   }
@@ -2421,20 +2493,59 @@ const setInspectorContentFor = (panel, card) => {
   const effectBlock = effectSummary
     ? `<div class="effect"><strong>Effect:</strong> ${effectSummary}</div>`
     : "";
-  panel.innerHTML = `
-    <div class="inspector-card">
-      <h4>${card.name}</h4>
-      <div class="meta">${card.type}${stats ? ` • ${stats}` : ""}</div>
-      ${keywordLabel ? `<div class="meta">${keywordLabel}</div>` : ""}
-      ${statusLabel ? `<div class="meta">${statusLabel}</div>` : ""}
-      ${effectBlock}
-      ${keywordBlock || `<div class="meta muted">No keyword glossary entries for this card.</div>`}
-    </div>
-  `;
+  
+  // Check if card has an image and if we should show it
+  const hasImage = showImage && hasCardImage(card.id);
+  const isCached = hasImage && isCardImageCached(card.id);
+  const cachedImage = hasImage ? getCachedCardImage(card.id) : null;
+  
+  // Generate inspector image HTML only if showImage is true
+  const inspectorImageHtml = showImage && hasImage && (isCached || cachedImage) 
+    ? `<img src="${getCardImagePath(card.id)}" alt="${card.name}" class="inspector-card-image-img" style="display: ${cachedImage ? 'block' : 'none'};" onload="this.style.display='block'; this.nextElementSibling.style.display='none';" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+       <div class="inspector-image-placeholder" style="display: ${cachedImage ? 'none' : 'flex'};">🎨</div>`
+    : showImage && hasImage ? `<div class="inspector-image-placeholder">🎨</div>` : '';
+  
+  // Preload image if not cached and we're showing it
+  if (showImage && hasImage && !isCached) {
+    preloadCardImages([card.id]);
+  }
+  
+  // Build layout based on whether we show image
+  if (showImage) {
+    panel.innerHTML = `
+      <div class="inspector-card-layout">
+        <div class="inspector-card-image">
+          <div class="inspector-image-container">
+            ${inspectorImageHtml}
+          </div>
+        </div>
+        <div class="inspector-card-content">
+          <h4>${card.name}</h4>
+          <div class="meta">${card.type}${stats ? ` • ${stats}` : ""}</div>
+          ${keywordLabel ? `<div class="meta">${keywordLabel}</div>` : ""}
+          ${statusLabel ? `<div class="meta">${statusLabel}</div>` : ""}
+          ${effectBlock}
+          ${keywordBlock || `<div class="meta muted">No keyword glossary entries for this card.</div>`}
+        </div>
+      </div>
+    `;
+  } else {
+    // Deck construction mode - no image, more space for content
+    panel.innerHTML = `
+      <div class="inspector-card-content inspector-deck-mode">
+        <h4>${card.name}</h4>
+        <div class="meta">${card.type}${stats ? ` • ${stats}` : ""}</div>
+        ${keywordLabel ? `<div class="meta">${keywordLabel}</div>` : ""}
+        ${statusLabel ? `<div class="meta">${statusLabel}</div>` : ""}
+        ${effectBlock}
+        ${keywordBlock || `<div class="meta muted">No keyword glossary entries for this card.</div>`}
+      </div>
+    `;
+  }
 };
 
-const setInspectorContent = (card) => setInspectorContentFor(inspectorPanel, card);
-const setDeckInspectorContent = (card) => setInspectorContentFor(deckInspectorPanel, card);
+const setInspectorContent = (card) => setInspectorContentFor(inspectorPanel, card, true); // Show image during battle
+const setDeckInspectorContent = (card) => setInspectorContentFor(deckInspectorPanel, card, false); // Hide image during deck construction
 
 const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCancel) => {
   if (!result) {
