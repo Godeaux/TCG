@@ -3,7 +3,7 @@
   --bg-card: #1a1f2e;
   --bg-card-hover: #252b3d;
   --bg-field: #12161f;
-  --bg-overlay: rgba(5, 8, 12, 0.95);
+  --bg-overlay: rgba(5, 8, 12, 0.7);
 
   --gold: #d4a853;
   --gold-light: #f0d078;
@@ -1370,6 +1370,11 @@ button {
 .card:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+.card.card-selected {
+  border: 3px solid var(--gold);
+  box-shadow: 0 0 20px rgba(212, 168, 83, 0.8), 0 6px 16px rgba(0, 0, 0, 0.35);
 }
 
 .card.back {

@@ -1748,6 +1748,7 @@ const renderCard = (card, options = {}) => {
     onDiscard,
     onClick,
     showBack = false,
+    isSelected = false,
   } = options;
   const cardElement = document.createElement("div");
 
@@ -1757,7 +1758,7 @@ const renderCard = (card, options = {}) => {
     return cardElement;
   }
 
-  cardElement.className = `card ${cardTypeClass(card)}`;
+  cardElement.className = `card ${cardTypeClass(card)}${isSelected ? ' card-selected' : ''}`;
   if (card.instanceId) {
     cardElement.dataset.instanceId = card.instanceId;
   }
@@ -2393,9 +2394,8 @@ const initHandPreview = () => {
       .find((handCard) => handCard.instanceId === instanceId);
     if (card) {
       inspectedCardId = card.instanceId;
-      selectedHandCardId = card.instanceId;
+      // Don't update selectedHandCardId on hover - only on click
       setInspectorContent(card);
-      updateActionPanel(latestState, latestCallbacks);
     }
   };
 
@@ -2841,9 +2841,14 @@ const renderHand = (state, onSelect, onUpdate, hideCards) => {
   player.hand.forEach((card) => {
     const cardElement = renderCard(card, {
       showEffectSummary: true,
+      isSelected: selectedHandCardId === card.instanceId,
       onClick: (selectedCard) => {
         selectedHandCardId = selectedCard.instanceId;
         onSelect?.(selectedCard);
+        // Update action panel to show play/discard buttons
+        updateActionPanel(state, { onUpdate });
+        // Re-render hand to update selection highlights
+        renderHand(state, onSelect, onUpdate, hideCards);
       },
     });
     handGrid.appendChild(cardElement);

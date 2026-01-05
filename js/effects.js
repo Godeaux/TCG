@@ -104,18 +104,23 @@ export const resolveEffectResult = (state, result, context) => {
 
   if (result.heal) {
     if (typeof result.heal === "number") {
-      state.players[context.playerIndex].hp += result.heal;
-      logMessage(state, `${state.players[context.playerIndex].name} heals ${result.heal} HP.`);
+      const player = state.players[context.playerIndex];
+      const actualHeal = Math.min(result.heal, 10 - player.hp);
+      player.hp = Math.min(10, player.hp + result.heal);
+      logMessage(state, `${player.name} heals ${actualHeal} HP.`);
     } else {
       const { player, amount } = result.heal;
-      player.hp += amount;
-      logMessage(state, `${player.name} heals ${amount} HP.`);
+      const actualHeal = Math.min(amount, 10 - player.hp);
+      player.hp = Math.min(10, player.hp + amount);
+      logMessage(state, `${player.name} heals ${actualHeal} HP.`);
     }
   }
 
   if (result.gainHp) {
-    state.players[context.playerIndex].hp += result.gainHp;
-    logMessage(state, `${state.players[context.playerIndex].name} gains ${result.gainHp} HP.`);
+    const player = state.players[context.playerIndex];
+    const actualGain = Math.min(result.gainHp, 10 - player.hp);
+    player.hp = Math.min(10, player.hp + result.gainHp);
+    logMessage(state, `${player.name} gains ${actualGain} HP.`);
   }
 
   if (result.damageOpponent) {
