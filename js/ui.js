@@ -1522,7 +1522,8 @@ const updatePlayerStats = (state, index, role) => {
     const exileEl = document.getElementById("active-exile");
     const trapsEl = document.getElementById("active-traps");
     if (carrionEl) {
-      carrionEl.textContent = player.carrion.length;
+      const opponent = state.players[(index + 1) % 2];
+      carrionEl.innerHTML = `<span style="color: var(--prey);">${player.carrion.length}</span> / <span style="color: var(--hp-red);">${opponent.carrion.length}</span>`;
     }
     if (exileEl) {
       exileEl.textContent = player.exile.length;
@@ -5145,12 +5146,72 @@ const processEndOfTurnQueue = (state, onUpdate) => {
   );
 };
 
+const showCarrionPilePopup = (player, opponent, onUpdate) => {
+  const items = [];
+
+  // Player's carrion pile section
+  if (player.carrion.length > 0) {
+    const playerHeader = document.createElement("div");
+    playerHeader.className = "selection-item";
+    playerHeader.innerHTML = `<strong style="color: var(--prey);">${player.name}'s Carrion Pile:</strong>`;
+    items.push(playerHeader);
+
+    player.carrion.forEach((card) => {
+      const item = document.createElement("label");
+      item.className = "selection-item selection-card";
+      const cardElement = renderCard(card, {
+        showEffectSummary: true,
+      });
+      item.appendChild(cardElement);
+      items.push(item);
+    });
+  } else {
+    const item = document.createElement("label");
+    item.className = "selection-item";
+    item.innerHTML = `<strong style="color: var(--prey);">${player.name}'s Carrion Pile:</strong> (Empty)`;
+    items.push(item);
+  }
+
+  // Opponent's carrion pile section
+  if (opponent.carrion.length > 0) {
+    const opponentHeader = document.createElement("div");
+    opponentHeader.className = "selection-item";
+    opponentHeader.innerHTML = `<strong style="color: var(--hp-red);">${opponent.name}'s Carrion Pile:</strong>`;
+    items.push(opponentHeader);
+
+    opponent.carrion.forEach((card) => {
+      const item = document.createElement("label");
+      item.className = "selection-item selection-card";
+      const cardElement = renderCard(card, {
+        showEffectSummary: true,
+      });
+      item.appendChild(cardElement);
+      items.push(item);
+    });
+  } else {
+    const item = document.createElement("label");
+    item.className = "selection-item";
+    item.innerHTML = `<strong style="color: var(--hp-red);">${opponent.name}'s Carrion Pile:</strong> (Empty)`;
+    items.push(item);
+  }
+
+  renderSelectionPanel({
+    title: "Carrion Piles",
+    items,
+    onConfirm: () => {
+      clearSelectionPanel();
+      onUpdate?.();
+    },
+    confirmLabel: "OK",
+  });
+};
+
 export const renderGame = (state, callbacks = {}) => {
   // Check for victory before rendering anything
   if (checkForVictory(state)) {
     return; // Don't render the game if it's over
   }
-  
+
   latestState = state;
   latestCallbacks = callbacks;
   // Attach broadcast hook so downstream systems (effects) can broadcast after mutations
@@ -5236,6 +5297,17 @@ export const renderGame = (state, callbacks = {}) => {
   renderSetupOverlay(state, callbacks);
   renderDeckBuilderOverlay(state, callbacks);
   renderMenuOverlays(state);
+
+  // Setup carrion pile click handler
+  const carrionEl = document.getElementById("active-carrion");
+  if (carrionEl) {
+    carrionEl.style.cursor = "pointer";
+    carrionEl.onclick = () => {
+      const player = state.players[activeIndex];
+      const opponent = state.players[opponentIndex];
+      showCarrionPilePopup(player, opponent, callbacks.onUpdate);
+    };
+  }
 
   const inspectedCard = state.players
     .flatMap((player) => player.field.concat(player.hand))

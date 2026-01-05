@@ -233,6 +233,7 @@ export const resolveEffectResult = (state, result, context) => {
         if (!creature.keywords.includes("Barrier")) {
           creature.keywords.push("Barrier");
         }
+        logMessage(state, `${creature.name} gains Barrier.`);
       }
     });
   }
@@ -240,6 +241,7 @@ export const resolveEffectResult = (state, result, context) => {
   if (result.tempBuff && context.card) {
     context.card.currentAtk += result.tempBuff.atk;
     context.card.currentHp += result.tempBuff.hp;
+    logMessage(state, `${context.card.name} gains +${result.tempBuff.atk}/+${result.tempBuff.hp}.`);
   }
 
   if (result.buffCreature) {
