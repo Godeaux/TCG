@@ -4,6 +4,109 @@
 
 ---
 
+## REFACTOR PROGRESS TRACKER
+
+**Last Updated**: 2026-01-05
+**Current Phase**: Phase 1 - Extract Card Data to JSON (Foundation)
+**Overall Status**: IN PROGRESS
+
+### Phase Completion Checklist
+
+- [x] **Phase 0: Planning** - Master plan created
+- [ ] **Phase 1: Extract Card Data to JSON** - IN PROGRESS
+  - [ ] Create `cards/data/tokens.json`
+  - [ ] Create `cards/data/fish.json`
+  - [ ] Create `cards/data/bird.json`
+  - [ ] Create `cards/data/reptile.json`
+  - [ ] Create `cards/data/mammal.json`
+  - [ ] Create `cards/data/amphibian.json`
+  - [ ] Create `cards/effectHandlers.js`
+  - [ ] Create `cards/registry.js`
+  - [ ] Create `cards/index.js`
+  - [ ] Update `cards.js` to use registry
+  - [ ] Test all cards work identically
+- [ ] **Phase 2: Centralize State Management**
+  - [ ] Create `state/uiState.js`
+  - [ ] Create `state/selectors.js`
+  - [ ] Create `state/actions.js`
+  - [ ] Create `state/index.js`
+  - [ ] Move UI variables to centralized state
+  - [ ] Update `ui.js` to use centralized state
+  - [ ] Test all UI interactions
+- [ ] **Phase 3: Create Game Controller**
+  - [ ] Create `game/controller.js`
+  - [ ] Create `game/index.js`
+  - [ ] Move `handlePlayCard` to controller
+  - [ ] Move `resolveEffectChain` to controller
+  - [ ] Move consumption flow to controller
+  - [ ] Move attack flow to controller
+  - [ ] Update drag-and-drop to use controller
+  - [ ] Test click and drag-and-drop paths
+- [ ] **Phase 4: Extract Network Module**
+  - [ ] Create `network/serialization.js`
+  - [ ] Create `network/sync.js`
+  - [ ] Create `network/reconnection.js`
+  - [ ] Create `network/index.js`
+  - [ ] Move serialization from `ui.js`
+  - [ ] Move broadcast logic from `ui.js`
+  - [ ] Test multiplayer functionality
+- [ ] **Phase 5: Extract UI Components**
+  - [ ] Create `ui/components/Card.js`
+  - [ ] Create `ui/components/Field.js`
+  - [ ] Create `ui/components/Hand.js`
+  - [ ] Create `ui/components/ActionPanel.js`
+  - [ ] Create `ui/components/SelectionPanel.js`
+  - [ ] Create `ui/components/Inspector.js`
+  - [ ] Create `ui/components/PlayerBadge.js`
+  - [ ] Test all rendering
+- [ ] **Phase 6: Extract Overlays**
+  - [ ] Create `ui/overlays/MenuOverlay.js`
+  - [ ] Create `ui/overlays/DeckBuilderOverlay.js`
+  - [ ] Create `ui/overlays/SetupOverlay.js`
+  - [ ] Create `ui/overlays/LobbyOverlay.js`
+  - [ ] Create `ui/overlays/TutorialOverlay.js`
+  - [ ] Create `ui/overlays/PassOverlay.js`
+  - [ ] Create `ui/overlays/VictoryOverlay.js`
+  - [ ] Test all overlays
+- [ ] **Phase 7: Extract Input Handling**
+  - [ ] Create `ui/input/inputRouter.js`
+  - [ ] Create `ui/input/dragAndDrop.js`
+  - [ ] Create `ui/input/clickHandlers.js`
+  - [ ] Move drag-and-drop logic
+  - [ ] Move click handlers
+  - [ ] Test all input methods
+- [ ] **Phase 8: Final Cleanup**
+  - [ ] Create `ui/renderer.js`
+  - [ ] Update `main.js` imports
+  - [ ] Update HTML script imports
+  - [ ] Delete deprecated `ui.js`
+  - [ ] Final testing
+
+### Current Work Log
+
+**2026-01-05**: Starting Phase 1 - Extract Card Data to JSON
+- ✅ Created cards/data/ directory structure
+- ✅ Extracted all 23 token definitions to tokens.json
+- ✅ Created initial effectHandlers.js with token handlers
+- ✅ Extracted all 52 fish cards to fish.json (24 prey, 13 predator, 10 spell, 3 trap, 2 free spell)
+- ✅ Added all 47 fish effect handlers to effectHandlers.js
+- ⏳ Extracting reptile cards to reptile.json
+- ⏳ Extracting amphibian cards to amphibian.json
+- ⏳ Extracting bird cards to bird.json
+- ⏳ Extracting mammal cards to mammal.json
+
+### Issues & Blockers
+
+None currently.
+
+### Notes for Next Session
+
+- Continue Phase 1: Complete all card data extraction
+- Validate that effect handlers work correctly
+- Ensure backward compatibility with existing `cards.js`
+
+---
+
 ## Table of Contents
 
 1. [Executive Summary](#1-executive-summary)
