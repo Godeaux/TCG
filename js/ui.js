@@ -14,17 +14,90 @@ import {
   resolveDirectAttack,
   cleanupDestroyed,
 } from "./combat.js";
-import {
-  isFreePlay,
-  isEdible,
-  isPassive,
-  hasScavenge,
-  isHarmless,
-  KEYWORD_DESCRIPTIONS,
-} from "./keywords.js";
+import { isFreePlay, isEdible, isPassive, hasScavenge, isHarmless } from "./keywords.js";
 import { resolveEffectResult, stripAbilities } from "./effects.js";
 import { deckCatalogs, getCardDefinitionById } from "./cards.js";
-import { getCardImagePath, hasCardImage, getCachedCardImage, isCardImageCached, preloadCardImages } from "./cardImages.js";
+import { preloadCardImages } from "./cardImages.js";
+import {
+  isCardLike,
+  renderCard,
+  renderDeckCard,
+} from "./ui/cardRenderer.js";
+import { setInspectorContentFor } from "./ui/inspector.js";
+import { createDragAndDrop } from "./ui/dragAndDrop.js";
+import {
+  actionBar,
+  actionPanel,
+  battleEffectsLayer,
+  deckAddedRow,
+  deckConfirm,
+  deckExit,
+  deckFullRow,
+  deckInspectorPanel,
+  deckLoad,
+  deckLoadList,
+  deckManageList,
+  deckOverlay,
+  deckRandom,
+  deckSave,
+  deckSelectGrid,
+  deckSelectOverlay,
+  deckSelectSubtitle,
+  deckSelectTitle,
+  deckStatus,
+  deckTitle,
+  gameHistoryLog,
+  infoBack,
+  infoToggle,
+  inspectorPanel,
+  lobbyCodeDisplay,
+  lobbyCodeInput,
+  lobbyContinue,
+  lobbyCreate,
+  lobbyError,
+  lobbyJoin,
+  lobbyJoinCancel,
+  lobbyJoinForm,
+  lobbyLeave,
+  lobbyLiveError,
+  lobbyOverlay,
+  lobbyStatus,
+  loginCancel,
+  loginError,
+  loginForm,
+  loginOverlay,
+  loginSubmit,
+  loginUsername,
+  menuCatalog,
+  menuLogin,
+  menuOverlay,
+  menuPlay,
+  menuStatus,
+  menuTutorial,
+  multiplayerBack,
+  multiplayerOverlay,
+  navLeft,
+  navRight,
+  pageDots,
+  pagesContainer,
+  passConfirm,
+  passOverlay,
+  passTitle,
+  selectionPanel,
+  setupActions,
+  setupOverlay,
+  setupRolls,
+  setupSubtitle,
+  setupTitle,
+  tutorialClose,
+  tutorialOverlay,
+  victoryCards,
+  victoryKills,
+  victoryMenu,
+  victoryOverlay,
+  victoryTurns,
+  victoryWinnerName,
+} from "./ui/dom.js";
 
 // Preload all card images at startup to prevent loading flicker
 const preloadAllCardImages = () => {
@@ -39,77 +112,6 @@ preloadAllCardImages();
 let supabaseApi = null;
 let supabaseLoadError = null;
 
-const selectionPanel = document.getElementById("selection-panel");
-const actionBar = document.getElementById("action-bar");
-const actionPanel = document.getElementById("action-panel");
-const gameHistoryLog = document.getElementById("game-history-log");
-const passOverlay = document.getElementById("pass-overlay");
-const passTitle = document.getElementById("pass-title");
-const passConfirm = document.getElementById("pass-confirm");
-const inspectorPanel = document.getElementById("card-inspector");
-const setupOverlay = document.getElementById("setup-overlay");
-const setupTitle = document.getElementById("setup-title");
-const setupSubtitle = document.getElementById("setup-subtitle");
-const setupRolls = document.getElementById("setup-rolls");
-const setupActions = document.getElementById("setup-actions");
-const deckSelectOverlay = document.getElementById("deck-select-overlay");
-const deckSelectTitle = document.getElementById("deck-select-title");
-const deckSelectSubtitle = document.getElementById("deck-select-subtitle");
-const deckSelectGrid = document.getElementById("deck-select-grid");
-const deckOverlay = document.getElementById("deck-overlay");
-const deckTitle = document.getElementById("deck-title");
-const deckStatus = document.getElementById("deck-status");
-const deckFullRow = document.getElementById("deck-full-row");
-const deckAddedRow = document.getElementById("deck-added-row");
-const deckConfirm = document.getElementById("deck-confirm");
-const deckRandom = document.getElementById("deck-random");
-const deckInspectorPanel = document.getElementById("deck-inspector");
-const deckLoadList = document.getElementById("deck-load-list");
-const deckManageList = document.getElementById("deck-manage-list");
-const deckExit = document.getElementById("deck-exit");
-const pagesContainer = document.getElementById("pages-container");
-const pageDots = document.getElementById("page-dots");
-const navLeft = document.getElementById("nav-left");
-const navRight = document.getElementById("nav-right");
-const infoToggle = document.getElementById("info-toggle");
-const infoBack = document.getElementById("info-back");
-const menuOverlay = document.getElementById("menu-overlay");
-const menuStatus = document.getElementById("menu-status");
-const menuPlay = document.getElementById("menu-play");
-const menuLogin = document.getElementById("menu-login");
-const menuCatalog = document.getElementById("menu-catalog");
-const menuTutorial = document.getElementById("menu-tutorial");
-const tutorialOverlay = document.getElementById("tutorial-overlay");
-const tutorialClose = document.getElementById("tutorial-close");
-const loginOverlay = document.getElementById("login-overlay");
-const loginForm = document.getElementById("login-form");
-const loginUsername = document.getElementById("login-username");
-const loginError = document.getElementById("login-error");
-const loginCancel = document.getElementById("login-cancel");
-const loginSubmit = document.getElementById("login-submit");
-const multiplayerOverlay = document.getElementById("multiplayer-overlay");
-const lobbyCreate = document.getElementById("lobby-create");
-const lobbyJoin = document.getElementById("lobby-join");
-const lobbyJoinForm = document.getElementById("lobby-join-form");
-const lobbyJoinCancel = document.getElementById("lobby-join-cancel");
-const lobbyCodeInput = document.getElementById("lobby-code");
-const lobbyError = document.getElementById("lobby-error");
-const multiplayerBack = document.getElementById("multiplayer-back");
-const lobbyOverlay = document.getElementById("lobby-overlay");
-const lobbyStatus = document.getElementById("lobby-status");
-const lobbyCodeDisplay = document.getElementById("lobby-code-display");
-const lobbyContinue = document.getElementById("lobby-continue");
-const lobbyLeave = document.getElementById("lobby-leave");
-const lobbyLiveError = document.getElementById("lobby-live-error");
-const deckSave = document.getElementById("deck-save");
-const deckLoad = document.getElementById("deck-load");
-const battleEffectsLayer = document.getElementById("battle-effects");
-const victoryOverlay = document.getElementById("victory-overlay");
-const victoryWinnerName = document.getElementById("victory-winner-name");
-const victoryTurns = document.getElementById("victory-turns");
-const victoryCards = document.getElementById("victory-cards");
-const victoryKills = document.getElementById("victory-kills");
-const victoryMenu = document.getElementById("victory-menu");
 
 let pendingConsumption = null;
 let pendingAttack = null;
@@ -1533,794 +1535,6 @@ const updatePlayerStats = (state, index, role) => {
   }
 };
 
-const cardTypeClass = (card) => `type-${card.type.toLowerCase().replace(" ", "-")}`;
-
-const renderCardStats = (card) => {
-  const stats = [];
-  if (card.type === "Predator" || card.type === "Prey") {
-    stats.push({ label: "ATK", value: card.currentAtk ?? card.atk, className: "atk" });
-    stats.push({ label: "HP", value: card.currentHp ?? card.hp, className: "hp" });
-  }
-  if (card.type === "Prey") {
-    stats.push({ label: "NUT", value: card.nutrition, className: "nut" });
-  }
-  return stats;
-};
-
-const isCardLike = (value) =>
-  value &&
-  typeof value === "object" &&
-  typeof value.name === "string" &&
-  typeof value.type === "string" &&
-  typeof value.id === "string";
-
-const repeatingEffectPattern = /(start of turn|end of turn|before combat)/i;
-
-const applyRepeatingIndicator = (summary, card) => {
-  if (!summary || summary.includes("🔂")) {
-    return summary;
-  }
-  if (card?.onStart || card?.onEnd || card?.onBeforeCombat || repeatingEffectPattern.test(summary)) {
-    return `🔂 ${summary}`;
-  }
-  return summary;
-};
-
-const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-const appendKeywordDetails = (summary, card) => {
-  if (!summary) {
-    return summary;
-  }
-  const cardKeywords = new Set((card.keywords ?? []).map((keyword) => keyword.toLowerCase()));
-  const keywordEntries = Object.entries(KEYWORD_DESCRIPTIONS);
-  const sentences = summary.split(/(?<=\.)\s+/);
-  const updatedSentences = sentences.map((sentence) => {
-    const lowerSentence = sentence.toLowerCase();
-    const matches = keywordEntries.filter(([keyword]) => {
-      const normalizedKeyword = keyword.toLowerCase();
-      if (cardKeywords.has(normalizedKeyword)) {
-        return false;
-      }
-      const pattern = new RegExp(`\\b${escapeRegExp(normalizedKeyword).replace(/\\s+/g, "\\\\s+")}\\b`, "i");
-      return pattern.test(lowerSentence);
-    });
-    if (!matches.length) {
-      return sentence;
-    }
-    const details = matches
-      .map(([keyword, description]) => `${keyword}: ${description}`)
-      .join(" ");
-    const trimmed = sentence.trim();
-    if (trimmed.endsWith(".")) {
-      return `${trimmed.slice(0, -1)} (${details}).`;
-    }
-    return `${trimmed} (${details})`;
-  });
-  return updatedSentences.join(" ");
-};
-
-const formatTokenStats = (card) => {
-  if (card.type === "Predator" || card.type === "Prey") {
-    const base = `${card.atk}/${card.hp}`;
-    if (card.type === "Prey") {
-      return `${base} (NUT ${card.nutrition})`;
-    }
-    return base;
-  }
-  return "";
-};
-
-const formatTokenSummary = (token) => {
-  const stats = formatTokenStats(token);
-  const keywords = token.keywords?.length ? `Keywords: ${token.keywords.join(", ")}` : "";
-  const effect = getCardEffectSummary(token, { includeKeywordDetails: true });
-  const parts = [
-    `${token.name} — ${token.type}${stats ? ` ${stats}` : ""}`,
-    keywords,
-    effect ? `Effect: ${effect}` : "",
-  ].filter(Boolean);
-  return parts.join(" — ");
-};
-
-const appendTokenDetails = (summary, card) => {
-  if (!card?.summons?.length) {
-    return summary;
-  }
-  const tokenSummaries = card.summons.map((token) => formatTokenSummary(token));
-  return `${summary}<br>***<br>${tokenSummaries.join("<br>")}`;
-};
-
-const getCardEffectSummary = (card, options = {}) => {
-  const { includeKeywordDetails = false, includeTokenDetails = false } = options;
-  let summary = "";
-  if (card.effectText) {
-    summary = card.effectText;
-  } else {
-    const effectFn = card.effect ?? card.onPlay ?? card.onConsume ?? card.onEnd ?? card.onStart;
-    if (!effectFn) {
-      return "";
-    }
-    const log = (message) => {
-      if (!summary) {
-        summary = message.replace(/^.*?\b(?:effect|triggers|summons|takes the field)\b:\s*/i, "");
-      }
-    };
-    try {
-      effectFn({
-        log,
-        player: {},
-        opponent: {},
-        attacker: {},
-      });
-    } catch {
-      summary = "";
-    }
-  }
-  summary = applyRepeatingIndicator(summary, card);
-  if (includeKeywordDetails) {
-    summary = appendKeywordDetails(summary, card);
-  }
-  if (includeTokenDetails) {
-    summary = appendTokenDetails(summary, card);
-  }
-  return summary;
-};
-
-const getStatusIndicators = (card) => {
-  const indicators = [];
-  if (card.dryDropped) {
-    indicators.push("🍂");
-  }
-  if (card.abilitiesCancelled) {
-    indicators.push("🚫");
-  }
-  if (card.hasBarrier) {
-    indicators.push("🛡️");
-  }
-  if (card.frozen) {
-    indicators.push("❄️");
-  }
-  if (card.isToken) {
-    indicators.push("⚪");
-  }
-  return indicators.join(" ");
-};
-
-const renderKeywordTags = (card) => {
-  if (!card.keywords?.length) {
-    return "";
-  }
-  const keywords = card.keywords;
-  return keywords.map((keyword) => `<span>${keyword}</span>`).join("");
-};
-
-const renderCardInnerHtml = (card, { showEffectSummary } = {}) => {
-  const stats = renderCardStats(card)
-    .map(
-      (stat) =>
-        `<span class="card-stat ${stat.className}">${stat.label} ${stat.value}</span>`
-    )
-    .join("");
-  const effectSummary = showEffectSummary ? getCardEffectSummary(card) : "";
-  const effectRow = effectSummary
-    ? `<div class="card-effect"><strong>Effect:</strong> ${effectSummary}</div>`
-    : "";
-  
-  // Check if card has an image
-  const hasImage = hasCardImage(card.id);
-  const isCached = hasImage && isCardImageCached(card.id);
-  const cachedImage = hasImage ? getCachedCardImage(card.id) : null;
-  
-  // Generate image HTML - use cached image if available, otherwise preload
-  const imageHtml = hasImage && (isCached || cachedImage) 
-    ? `<img src="${getCardImagePath(card.id)}" alt="${card.name}" class="card-image" style="display: ${cachedImage ? 'block' : 'none'};" onload="this.style.display='block'; this.nextElementSibling.style.display='none';" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-       <div class="card-image-placeholder" style="display: ${cachedImage ? 'none' : 'flex'};">🎨</div>`
-    : hasImage ? `<div class="card-image-placeholder">🎨</div>` : '';
-  
-  // Preload image if not cached
-  if (hasImage && !isCached) {
-    preloadCardImages([card.id]);
-  }
-  
-  return `
-    <div class="card-name">${card.name}</div>
-    <div class="card-image-container">
-      ${imageHtml}
-    </div>
-    <div class="card-type-label">${card.type}</div>
-    <div class="card-content-area">
-      <div class="card-stats-row">${stats}</div>
-      <div class="card-keywords">${renderKeywordTags(card)}</div>
-      ${effectRow}
-    </div>
-  `;
-};
-
-const renderCard = (card, options = {}) => {
-  const {
-    showPlay = false,
-    showAttack = false,
-    showDiscard = false,
-    showEffectSummary = false,
-    onPlay,
-    onAttack,
-    onDiscard,
-    onClick,
-    showBack = false,
-  } = options;
-  const cardElement = document.createElement("div");
-
-  if (showBack) {
-    cardElement.className = "card back";
-    cardElement.textContent = "Card Back";
-    return cardElement;
-  }
-
-  cardElement.className = `card ${cardTypeClass(card)}`;
-  if (card.instanceId) {
-    cardElement.dataset.instanceId = card.instanceId;
-  }
-  const inner = document.createElement("div");
-  inner.className = "card-inner";
-
-  inner.innerHTML = renderCardInnerHtml(card, { showEffectSummary });
-
-  if (showPlay || showAttack) {
-    const actions = document.createElement("div");
-    actions.className = "card-actions";
-    if (showPlay) {
-      const playButton = document.createElement("button");
-      playButton.textContent = "Play";
-      playButton.onclick = () => onPlay?.(card);
-      actions.appendChild(playButton);
-    }
-    if (showAttack) {
-      const attackButton = document.createElement("button");
-      attackButton.textContent = "Attack";
-      attackButton.onclick = () => onAttack?.(card);
-      actions.appendChild(attackButton);
-    }
-    if (showDiscard) {
-      const discardButton = document.createElement("button");
-      discardButton.textContent = "Discard";
-      discardButton.onclick = () => onDiscard?.(card);
-      actions.appendChild(discardButton);
-    }
-    inner.appendChild(actions);
-  }
-
-  const status = getStatusIndicators(card);
-  if (status) {
-    const indicator = document.createElement("div");
-    indicator.className = "card-status";
-    indicator.textContent = status;
-    cardElement.appendChild(indicator);
-  }
-
-  cardElement.appendChild(inner);
-  // Add drag and drop functionality
-  if (!showBack && card.instanceId) {
-    cardElement.draggable = true;
-    cardElement.classList.add('draggable-card');
-    
-    // Store original position for reversion
-    cardElement.dataset.originalPosition = JSON.stringify({
-      parent: cardElement.parentElement?.className || '',
-      index: Array.from(cardElement.parentElement?.children || []).indexOf(cardElement)
-    });
-  }
-
-  cardElement.addEventListener("dragstart", (event) => {
-    event.dataTransfer.setData("text", card.instanceId);
-    event.dataTransfer.effectAllowed = "move";
-  });
-
-  cardElement.addEventListener("dragend", (event) => {
-    event.preventDefault();
-  });
-
-  cardElement.addEventListener("click", (event) => {
-    if (event.target.closest("button")) {
-      return;
-    }
-    inspectedCardId = card.instanceId;
-    setInspectorContent(card);
-    onClick?.(card);
-  });
-
-  // Auto-shrink text to fit in content area (optimized to prevent spastic re-renders)
-  const adjustTextToFit = () => {
-    const contentArea = inner.querySelector('.card-content-area');
-    const effectElement = inner.querySelector('.card-effect');
-    
-    if (!contentArea || !effectElement) return;
-    
-    // Skip if already adjusted to prevent repeated calculations
-    if (effectElement.dataset.textAdjusted === 'true') return;
-    
-    // Check if content overflows
-    const isOverflowing = contentArea.scrollHeight > contentArea.clientHeight;
-    
-    if (isOverflowing) {
-      // Start with base font size and reduce until it fits
-      let fontSize = 11;
-      const minFontSize = 8;
-      const step = 0.5;
-      
-      while (fontSize > minFontSize && contentArea.scrollHeight > contentArea.clientHeight) {
-        fontSize -= step;
-        effectElement.style.fontSize = `${fontSize}px`;
-      }
-      
-      // If still overflowing at minimum size, enable more aggressive truncation
-      if (contentArea.scrollHeight > contentArea.clientHeight) {
-        effectElement.style.webkitLineClamp = '2';
-        effectElement.style.lineClamp = '2';
-      }
-    }
-    
-    // Mark as adjusted to prevent repeated calculations
-    effectElement.dataset.textAdjusted = 'true';
-  };
-  
-  // Run adjustment after DOM is rendered with a small delay to batch operations
-  setTimeout(() => requestAnimationFrame(adjustTextToFit), 10);
-
-  return cardElement;
-};
-
-// Drag and Drop System
-let draggedCard = null;
-let draggedCardElement = null;
-let originalParent = null;
-let originalIndex = -1;
-
-const clearDragVisuals = () => {
-  document.querySelectorAll('.valid-target, .invalid-target, .valid-drop-zone').forEach(el => {
-    el.classList.remove('valid-target', 'invalid-target', 'valid-drop-zone');
-  });
-};
-
-const getCardFromInstanceId = (instanceId, state) => {
-  if (!state || !instanceId) return null;
-  
-  // Search in player field
-  for (const player of state.players) {
-    if (player.field) {
-      const fieldCard = player.field.find(card => card && card.instanceId === instanceId);
-      if (fieldCard) return fieldCard;
-    }
-  }
-  
-  // Search in hands
-  for (const player of state.players) {
-    if (player.hand) {
-      const handCard = player.hand.find(card => card && card.instanceId === instanceId);
-      if (handCard) return handCard;
-    }
-  }
-  
-  return null;
-};
-
-const isValidAttackTarget = (attacker, target, state) => {
-  if (!attacker || !target) return false;
-  
-  // Can't attack own cards
-  const attackerPlayer = state.players.find(p => p.field.includes(attacker));
-  if (!attackerPlayer) return false;
-  
-  const targetPlayer = state.players.find(p => p.field.includes(target));
-  if (targetPlayer === attackerPlayer) return false;
-  
-  // Check if target can be attacked (keywords like Hidden, Invisible, etc.)
-  // For now, basic validation - can be expanded with keyword checks
-  return true;
-};
-
-const handleDragStart = (event) => {
-  const cardElement = event.target.closest('.draggable-card');
-  if (!cardElement) return;
-  
-  const instanceId = cardElement.dataset.instanceId;
-  if (!instanceId) return;
-  
-  console.log('Drag start - instanceId:', instanceId);
-  
-  draggedCardElement = cardElement;
-  draggedCard = getCardFromInstanceId(instanceId, latestState);
-  
-  console.log('Drag start - found card:', draggedCard);
-  
-  originalParent = cardElement.parentElement;
-  originalIndex = Array.from(originalParent.children).indexOf(cardElement);
-  
-  cardElement.classList.add('dragging');
-  event.dataTransfer.effectAllowed = 'move';
-  event.dataTransfer.setData('text/plain', instanceId);
-};
-
-const handleDragEnd = (event) => {
-  if (draggedCardElement) {
-    draggedCardElement.classList.remove('dragging');
-  }
-  clearDragVisuals();
-  draggedCard = null;
-  draggedCardElement = null;
-  originalParent = null;
-  originalIndex = -1;
-};
-
-const handleDragOver = (event) => {
-  event.preventDefault();
-  event.dataTransfer.dropEffect = 'move';
-  
-  // Handle visual feedback when hovering over valid targets
-  if (!draggedCardElement || !draggedCard || !latestState) return;
-  
-  const target = event.target.closest('.field-slot, .player-badge, .card');
-  
-  clearDragVisuals();
-  
-  if (target?.classList.contains('field-slot')) {
-    // Check if field slot is empty and valid for playing
-    if (!target.firstChild && draggedCard.type !== 'Trap') {
-      target.classList.add('valid-drop-zone');
-      console.log('Valid field slot target:', target);
-    } else {
-      target.classList.add('invalid-target');
-    }
-  } else if (target?.classList.contains('player-badge')) {
-    // Check if can attack this player (only during combat phase)
-    const isCombatPhase = latestState.phase === "Combat";
-    const playerIndex = parseInt(target.dataset.playerIndex);
-    const targetPlayer = latestState.players[playerIndex];
-    const attackerPlayer = latestState.players.find(p => p.field.includes(draggedCard));
-    
-    if (isCombatPhase && targetPlayer && attackerPlayer && attackerPlayer !== targetPlayer && 
-        (draggedCard.type === 'Predator' || draggedCard.type === 'Prey')) {
-      target.classList.add('valid-drop-zone');
-      console.log('Valid player target:', targetPlayer.name);
-    } else {
-      target.classList.add('invalid-target');
-    }
-  } else if (target?.classList.contains('card')) {
-    // Check if can attack this creature (only during combat phase)
-    const isCombatPhase = latestState.phase === "Combat";
-    const targetCard = getCardFromInstanceId(target.dataset.instanceId, latestState);
-    if (isCombatPhase && targetCard && isValidAttackTarget(draggedCard, targetCard, latestState)) {
-      target.classList.add('valid-target');
-      console.log('Valid creature target:', targetCard.name);
-    } else {
-      target.classList.add('invalid-target');
-    }
-  }
-};
-
-const handleDrop = (event) => {
-  event.preventDefault();
-  
-  const instanceId = event.dataTransfer.getData('text/plain');
-  if (!instanceId || !latestState) return;
-  
-  const card = getCardFromInstanceId(instanceId, latestState);
-  if (!card) return;
-  
-  const dropTarget = event.target.closest('.field-slot, .player-badge, .card');
-  
-  // Clear visuals immediately
-  clearDragVisuals();
-  
-  if (dropTarget?.classList.contains('field-slot')) {
-    // Handle dropping on field slot (play card)
-    handleFieldDrop(card, dropTarget);
-  } else if (dropTarget?.classList.contains('player-badge')) {
-    // Handle dropping on player (attack player)
-    handlePlayerDrop(card, dropTarget);
-  } else if (dropTarget?.classList.contains('card')) {
-    // Handle dropping on card (attack creature)
-    const targetCard = getCardFromInstanceId(dropTarget.dataset.instanceId, latestState);
-    if (targetCard) {
-      handleCreatureDrop(card, targetCard);
-    }
-  } else {
-    // Invalid drop - revert to original position
-    revertCardToOriginalPosition();
-  }
-};
-
-const handleFieldDrop = (card, fieldSlot) => {
-  // Check if card is in hand and can be played
-  const activePlayer = getActivePlayer(latestState);
-  if (!activePlayer.hand.includes(card)) {
-    revertCardToOriginalPosition();
-    return;
-  }
-  
-  // Check if it's the player's turn
-  if (!isLocalPlayersTurn(latestState)) {
-    logMessage(latestState, "Wait for your turn to play cards.");
-    revertCardToOriginalPosition();
-    return;
-  }
-  
-  // Check if player can play a card this turn
-  if (!canPlayCard(latestState)) {
-    logMessage(latestState, "You've already played a card this turn.");
-    revertCardToOriginalPosition();
-    return;
-  }
-  
-  // Find the specific slot index being dropped on
-  const slotIndex = parseInt(fieldSlot.dataset.slot);
-  if (isNaN(slotIndex)) {
-    revertCardToOriginalPosition();
-    return;
-  }
-  
-  // Check if slot is empty
-  if (activePlayer.field[slotIndex]) {
-    logMessage(latestState, "That slot is already occupied.");
-    revertCardToOriginalPosition();
-    return;
-  }
-  
-  // Handle different card types
-  if (card.type === "Spell" || card.type === "Free Spell") {
-    // Handle spells using existing logic
-    handlePlayCard(latestState, card, latestCallbacks.onUpdate);
-    return;
-  }
-  
-  if (card.type === "Trap") {
-    // Handle traps using existing logic
-    handlePlayCard(latestState, card, latestCallbacks.onUpdate);
-    return;
-  }
-  
-  if (card.type === "Predator" || card.type === "Prey") {
-    // Place creature in the specific slot
-    placeCreatureInSpecificSlot(card, slotIndex);
-    return;
-  }
-  
-  revertCardToOriginalPosition();
-};
-
-const placeCreatureInSpecificSlot = (card, slotIndex) => {
-  const state = latestState;
-  const player = getActivePlayer(state);
-  const opponent = getOpponentPlayer(state);
-  const playerIndex = state.activePlayerIndex;
-  const opponentIndex = (state.activePlayerIndex + 1) % 2;
-  
-  const isFree = card.type === "Free Spell" || card.type === "Trap" || isFreePlay(card);
-  if (!isFree && !cardLimitAvailable(state)) {
-    logMessage(state, "You have already played a card this turn.");
-    latestCallbacks.onUpdate?.();
-    return;
-  }
-  
-  // Remove card from hand
-  player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
-  const creature = createCardInstance(card, state.turn);
-  
-  if (card.type === "Predator") {
-    // Check for available prey for consumption
-    const availablePrey = player.field.filter(
-      (slot) => slot && (slot.type === "Prey" || (slot.type === "Predator" && isEdible(slot)))
-    );
-    const ediblePrey = availablePrey.filter((slot) => !slot.frozen);
-    
-    if (ediblePrey.length > 0) {
-      // Start consumption selection for predator
-      startConsumptionForSpecificSlot(creature, slotIndex, ediblePrey);
-      return;
-    }
-    
-    // No prey available, dry drop
-    creature.dryDropped = true;
-    logMessage(state, `${creature.name} enters play with no consumption.`);
-  }
-  
-  // Place prey or dry-dropped predator in the specific slot
-  player.field[slotIndex] = creature;
-  
-  // Trigger traps and finalize
-  triggerPlayTraps(state, creature, latestCallbacks.onUpdate, () => {
-    if (!isFree) {
-      state.cardPlayedThisTurn = true;
-    }
-    latestCallbacks.onUpdate?.();
-    broadcastSyncState(state);
-  });
-};
-
-const startConsumptionForSpecificSlot = (predator, slotIndex, ediblePrey) => {
-  const state = latestState;
-  const player = getActivePlayer(state);
-  
-  pendingConsumption = {
-    predator: predator,
-    playerIndex: state.activePlayerIndex,
-    slotIndex: slotIndex, // Use the specific slot we dropped on
-  };
-  
-  const items = ediblePrey.map((prey) => {
-    const item = document.createElement("label");
-    item.className = "selection-item";
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.value = prey.instanceId;
-    const label = document.createElement("span");
-    const nutrition = prey.nutrition ?? prey.currentAtk ?? prey.atk ?? 0;
-    label.textContent = `${prey.name} (Field, Nutrition ${nutrition})`;
-    item.appendChild(checkbox);
-    item.appendChild(label);
-    return item;
-  });
-  
-  renderSelectionPanel({
-    title: "Select up to 3 prey to consume",
-    items,
-    onConfirm: () => {
-      const selectedIds = Array.from(selectionPanel.querySelectorAll("input:checked")).map(
-        (input) => input.value
-      );
-      const preyToConsume = ediblePrey.filter((prey) =>
-        selectedIds.includes(prey.instanceId)
-      );
-      const totalSelected = preyToConsume.length;
-      
-      if (totalSelected > 3) {
-        logMessage(state, "You can consume up to 3 prey.");
-        latestCallbacks.onUpdate?.();
-        return;
-      }
-      
-      // Consume prey and place in specific slot
-      consumePrey({
-        predator: predator,
-        preyList: preyToConsume,
-        carrionList: [],
-        state,
-        playerIndex: state.activePlayerIndex,
-        onBroadcast: broadcastSyncState,
-      });
-      
-      player.field[slotIndex] = predator; // Place in the specific slot
-      clearSelectionPanel();
-      
-      triggerPlayTraps(state, predator, latestCallbacks.onUpdate, () => {
-        if (totalSelected > 0 && predator.onConsume) {
-          const result = predator.onConsume({
-            log: (message) => logMessage(state, message),
-            player,
-            opponent: getOpponentPlayer(state),
-            creature: predator,
-            state,
-            playerIndex: state.activePlayerIndex,
-            opponentIndex: (state.activePlayerIndex + 1) % 2,
-          });
-          resolveEffectChain(
-            state,
-            result,
-            {
-              playerIndex: state.activePlayerIndex,
-              opponentIndex: (state.activePlayerIndex + 1) % 2,
-              card: predator,
-            },
-            latestCallbacks.onUpdate,
-            () => cleanupDestroyed(state)
-          );
-        }
-        
-        const isFree = predator.type === "Free Spell" || predator.type === "Trap" || isFreePlay(predator);
-        if (!isFree) {
-          state.cardPlayedThisTurn = true;
-        }
-        pendingConsumption = null;
-        latestCallbacks.onUpdate?.();
-        broadcastSyncState(state);
-      });
-      latestCallbacks.onUpdate?.();
-    },
-  });
-  latestCallbacks.onUpdate?.();
-};
-
-const handlePlayerDrop = (card, playerBadge) => {
-  const playerIndex = parseInt(playerBadge.dataset.playerIndex);
-  const targetPlayer = latestState.players[playerIndex];
-  
-  if (!targetPlayer) {
-    revertCardToOriginalPosition();
-    return;
-  }
-  
-  // Use the same validation as the existing attack system
-  const isOpponent = playerIndex !== getLocalPlayerIndex(latestState);
-  const isCreature = card.type === "Predator" || card.type === "Prey";
-  const canAttack =
-    !isOpponent &&
-    isLocalPlayersTurn(latestState) &&
-    latestState.phase === "Combat" &&
-    !card.hasAttacked &&
-    !isPassive(card) &&
-    !isHarmless(card) &&
-    !card.frozen &&
-    !card.paralyzed &&
-    isCreature;
-  
-  console.log('Player attack attempt - Current phase:', latestState.phase, 'Can attack:', canAttack);
-  
-  if (!canAttack) {
-    logMessage(latestState, "Combat can only be declared during the Combat phase.");
-    revertCardToOriginalPosition();
-    return;
-  }
-  
-  // Execute the attack using the existing system
-  handleTrapResponse(latestState, targetPlayer, card, { type: 'player', player: targetPlayer }, latestCallbacks.onUpdate);
-};
-
-const handleCreatureDrop = (attacker, target) => {
-  if (!isValidAttackTarget(attacker, target, latestState)) {
-    revertCardToOriginalPosition();
-    return;
-  }
-  
-  // Use the same validation as the existing attack system
-  const isCreature = attacker.type === "Predator" || attacker.type === "Prey";
-  const canAttack =
-    isLocalPlayersTurn(latestState) &&
-    latestState.phase === "Combat" &&
-    !attacker.hasAttacked &&
-    !isPassive(attacker) &&
-    !isHarmless(attacker) &&
-    !attacker.frozen &&
-    !attacker.paralyzed &&
-    isCreature;
-  
-  console.log('Creature attack attempt - Current phase:', latestState.phase, 'Can attack:', canAttack);
-  
-  if (!canAttack) {
-    logMessage(latestState, "Combat can only be declared during the Combat phase.");
-    revertCardToOriginalPosition();
-    return;
-  }
-  
-  const targetPlayer = latestState.players.find(p => p.field.includes(target));
-  if (targetPlayer) {
-    // Execute the attack using the existing system
-    handleTrapResponse(latestState, targetPlayer, attacker, { type: 'creature', card: target }, latestCallbacks.onUpdate);
-    return;
-  }
-  
-  revertCardToOriginalPosition();
-};
-
-const revertCardToOriginalPosition = () => {
-  if (draggedCardElement && originalParent && originalIndex >= 0) {
-    const children = Array.from(originalParent.children);
-    if (originalIndex < children.length) {
-      originalParent.insertBefore(draggedCardElement, children[originalIndex]);
-    } else {
-      originalParent.appendChild(draggedCardElement);
-    }
-  }
-};
-
-// Initialize drag and drop listeners
-const initDragAndDrop = () => {
-  document.addEventListener('dragstart', handleDragStart);
-  document.addEventListener('dragend', handleDragEnd);
-  document.addEventListener('dragover', handleDragOver);
-  document.addEventListener('drop', handleDrop);
-  document.addEventListener('dragleave', clearDragVisuals);
-};
-
 const initHandPreview = () => {
   if (handPreviewInitialized) {
     return;
@@ -2379,21 +1593,6 @@ const initHandPreview = () => {
   window.addEventListener("resize", () => updateHandOverlap(handGrid));
 };
 
-const renderDeckCard = (card, options = {}) => {
-  const { highlighted = false, selected = false, onClick } = options;
-  const cardElement = document.createElement("div");
-  cardElement.className = `card deck-card ${highlighted ? "highlighted" : ""} ${
-    selected ? "selected" : ""
-  } ${cardTypeClass(card)}`;
-  cardElement.innerHTML = `
-    <div class="card-inner">
-      ${renderCardInnerHtml(card, { showEffectSummary: true })}
-    </div>
-  `;
-  cardElement.addEventListener("click", () => onClick?.());
-  return cardElement;
-};
-
 const shuffle = (items) => {
   const copy = [...items];
   for (let i = copy.length - 1; i > 0; i -= 1) {
@@ -2428,124 +1627,12 @@ const buildRandomDeck = ({ available, selected, catalogOrder }) => {
   selected.push(...picks);
 };
 
-const setInspectorContentFor = (panel, card, showImage = true) => {
-  if (!panel) {
-    return;
-  }
-  if (!card) {
-    panel.innerHTML = `<p class="muted">Tap a card to see its full details.</p>`;
-    return;
-  }
-  const keywords = card.keywords?.length ? card.keywords.join(", ") : "";
-  const keywordDetails = card.keywords?.length
-    ? card.keywords
-        .map((keyword) => {
-          const detail = KEYWORD_DESCRIPTIONS[keyword] ?? "No description available.";
-          return `<li><strong>${keyword}:</strong> ${detail}</li>`;
-        })
-        .join("")
-    : "";
-  const tokenKeywordDetails = card.summons
-    ?.filter((token) => token.keywords?.length)
-    .map((token) => {
-      const tokenDetails = token.keywords
-        .map((keyword) => {
-          const detail = KEYWORD_DESCRIPTIONS[keyword] ?? "No description available.";
-          return `<li><strong>${keyword}:</strong> ${detail}</li>`;
-        })
-        .join("");
-      return `
-        <div class="token-keyword-group">
-          <div class="meta">${token.name} — ${token.type} keywords</div>
-          <ul>${tokenDetails}</ul>
-        </div>
-      `;
-    })
-    .join("");
-  const stats = renderCardStats(card)
-    .map((stat) => `${stat.label} ${stat.value}`)
-    .join(" • ");
-  const effectSummary = getCardEffectSummary(card, {
-    includeKeywordDetails: true,
-    includeTokenDetails: true,
-  });
-  const statusTags = [
-    card.dryDropped ? "🍂 Dry dropped" : null,
-    card.abilitiesCancelled ? "🚫 Abilities canceled" : null,
-    card.hasBarrier ? "🛡️ Barrier" : null,
-    card.frozen ? "❄️ Frozen" : null,
-    card.isToken ? "⚪ Token" : null,
-  ].filter(Boolean);
-  const keywordLabel = keywords ? `Keywords: ${keywords}` : "";
-  const statusLabel = statusTags.length ? `Status: ${statusTags.join(" • ")}` : "";
-  const keywordBlock =
-    keywordDetails || tokenKeywordDetails
-      ? `<div class="keyword-glossary">
-          <strong>Keyword Glossary</strong>
-          ${keywordDetails ? `<ul>${keywordDetails}</ul>` : ""}
-          ${
-            tokenKeywordDetails
-              ? `<div class="keyword-divider">***</div>${tokenKeywordDetails}`
-              : ""
-          }
-        </div>`
-      : "";
-  const effectBlock = effectSummary
-    ? `<div class="effect"><strong>Effect:</strong> ${effectSummary}</div>`
-    : "";
-  
-  // Check if card has an image and if we should show it
-  const hasImage = showImage && hasCardImage(card.id);
-  const isCached = hasImage && isCardImageCached(card.id);
-  const cachedImage = hasImage ? getCachedCardImage(card.id) : null;
-  
-  // Generate inspector image HTML only if showImage is true
-  const inspectorImageHtml = showImage && hasImage && (isCached || cachedImage) 
-    ? `<img src="${getCardImagePath(card.id)}" alt="${card.name}" class="inspector-card-image-img" style="display: ${cachedImage ? 'block' : 'none'};" onload="this.style.display='block'; this.nextElementSibling.style.display='none';" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-       <div class="inspector-image-placeholder" style="display: ${cachedImage ? 'none' : 'flex'};">🎨</div>`
-    : showImage && hasImage ? `<div class="inspector-image-placeholder">🎨</div>` : '';
-  
-  // Preload image if not cached and we're showing it
-  if (showImage && hasImage && !isCached) {
-    preloadCardImages([card.id]);
-  }
-  
-  // Build layout based on whether we show image
-  if (showImage) {
-    panel.innerHTML = `
-      <div class="inspector-card-layout">
-        <div class="inspector-card-image">
-          <div class="inspector-image-container">
-            ${inspectorImageHtml}
-          </div>
-        </div>
-        <div class="inspector-card-content">
-          <h4>${card.name}</h4>
-          <div class="meta">${card.type}${stats ? ` • ${stats}` : ""}</div>
-          ${keywordLabel ? `<div class="meta">${keywordLabel}</div>` : ""}
-          ${statusLabel ? `<div class="meta">${statusLabel}</div>` : ""}
-          ${effectBlock}
-          ${keywordBlock || `<div class="meta muted">No keyword glossary entries for this card.</div>`}
-        </div>
-      </div>
-    `;
-  } else {
-    // Deck construction mode - no image, more space for content
-    panel.innerHTML = `
-      <div class="inspector-card-content inspector-deck-mode">
-        <h4>${card.name}</h4>
-        <div class="meta">${card.type}${stats ? ` • ${stats}` : ""}</div>
-        ${keywordLabel ? `<div class="meta">${keywordLabel}</div>` : ""}
-        ${statusLabel ? `<div class="meta">${statusLabel}</div>` : ""}
-        ${effectBlock}
-        ${keywordBlock || `<div class="meta muted">No keyword glossary entries for this card.</div>`}
-      </div>
-    `;
-  }
-};
-
 const setInspectorContent = (card) => setInspectorContentFor(inspectorPanel, card, true); // Show image during battle
 const setDeckInspectorContent = (card) => setInspectorContentFor(deckInspectorPanel, card, false); // Hide image during deck construction
+const handleInspectCard = (card) => {
+  inspectedCardId = card.instanceId;
+  setInspectorContent(card);
+};
 
 const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCancel) => {
   if (!result) {
@@ -2570,6 +1657,7 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
         item.className = "selection-item selection-card";
         const cardElement = renderCard(card, {
           showEffectSummary: true,
+          onInspect: handleInspectCard,
         });
         item.appendChild(cardElement);
         items.push(item);
@@ -2622,6 +1710,7 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
         const cardElement = renderCard(candidateCard, {
           showEffectSummary: true,
           onClick: () => handleSelection(candidate.value),
+          onInspect: handleInspectCard,
         });
         item.appendChild(cardElement);
       } else {
@@ -2681,6 +1770,7 @@ const renderField = (state, playerIndex, isOpponent, onAttack) => {
       showAttack: canAttack,
       showEffectSummary: true,
       onAttack,
+      onInspect: handleInspectCard,
     });
     slot.appendChild(cardElement);
   });
@@ -2729,6 +1819,7 @@ const renderHand = (state, onSelect, onUpdate, hideCards) => {
         selectedHandCardId = selectedCard.instanceId;
         onSelect?.(selectedCard);
       },
+      onInspect: handleInspectCard,
     });
     handGrid.appendChild(cardElement);
   });
@@ -2825,6 +1916,43 @@ const clearSelectionPanel = () => {
 };
 
 const isSelectionActive = () => Boolean(selectionPanel?.childElementCount) || Boolean(pendingAttack);
+
+let dragAndDrop = null;
+const getDragAndDrop = () => {
+  if (dragAndDrop) {
+    return dragAndDrop;
+  }
+  dragAndDrop = createDragAndDrop({
+    getState: () => latestState,
+    getCallbacks: () => latestCallbacks,
+    setPendingConsumption: (value) => {
+      pendingConsumption = value;
+    },
+    selectionPanel,
+    renderSelectionPanel,
+    clearSelectionPanel,
+    broadcastSyncState,
+    logMessage,
+    canPlayCard,
+    cardLimitAvailable,
+    isLocalPlayersTurn,
+    getLocalPlayerIndex,
+    getActivePlayer,
+    getOpponentPlayer,
+    isFreePlay,
+    isEdible,
+    isPassive,
+    isHarmless,
+    createCardInstance,
+    consumePrey,
+    handlePlayCard,
+    triggerPlayTraps,
+    resolveEffectChain,
+    cleanupDestroyed,
+    handleTrapResponse,
+  });
+  return dragAndDrop;
+};
 
 const findCardByInstanceId = (state, instanceId) =>
   state.players
@@ -5036,7 +4164,7 @@ export const renderGame = (state, callbacks = {}) => {
   state.broadcast = broadcastSyncState;
   initNavigation();
   initHandPreview();
-  initDragAndDrop();
+  getDragAndDrop().initDragAndDrop();
   ensureProfileLoaded(state);
 
   const isOnline = isOnlineMode(state);
