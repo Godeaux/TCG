@@ -24,7 +24,87 @@ import {
 } from "./keywords.js";
 import { resolveEffectResult, stripAbilities } from "./effects.js";
 import { deckCatalogs, getCardDefinitionById } from "./cards.js";
-import { getCardImagePath, hasCardImage, getCachedCardImage, isCardImageCached, preloadCardImages } from "./cardImages.js";
+import { preloadCardImages } from "./cardImages.js";
+import {
+  getCardEffectSummary,
+  isCardLike,
+  renderCard,
+  renderCardStats,
+  renderDeckCard,
+} from "./ui/cardRenderer.js";
+import {
+  actionBar,
+  actionPanel,
+  battleEffectsLayer,
+  deckAddedRow,
+  deckConfirm,
+  deckExit,
+  deckFullRow,
+  deckInspectorPanel,
+  deckLoad,
+  deckLoadList,
+  deckManageList,
+  deckOverlay,
+  deckRandom,
+  deckSave,
+  deckSelectGrid,
+  deckSelectOverlay,
+  deckSelectSubtitle,
+  deckSelectTitle,
+  deckStatus,
+  deckTitle,
+  gameHistoryLog,
+  infoBack,
+  infoToggle,
+  inspectorPanel,
+  lobbyCodeDisplay,
+  lobbyCodeInput,
+  lobbyContinue,
+  lobbyCreate,
+  lobbyError,
+  lobbyJoin,
+  lobbyJoinCancel,
+  lobbyJoinForm,
+  lobbyLeave,
+  lobbyLiveError,
+  lobbyOverlay,
+  lobbyStatus,
+  loginCancel,
+  loginError,
+  loginForm,
+  loginOverlay,
+  loginSubmit,
+  loginUsername,
+  menuCatalog,
+  menuLogin,
+  menuOverlay,
+  menuPlay,
+  menuStatus,
+  menuTutorial,
+  multiplayerBack,
+  multiplayerOverlay,
+  navLeft,
+  navRight,
+  pageDots,
+  pagesContainer,
+  passConfirm,
+  passOverlay,
+  passTitle,
+  selectionPanel,
+  setupActions,
+  setupOverlay,
+  setupRolls,
+  setupSubtitle,
+  setupTitle,
+  tutorialClose,
+  tutorialOverlay,
+  victoryCards,
+  victoryKills,
+  victoryMenu,
+  victoryOverlay,
+  victoryTurns,
+  victoryWinnerName,
+} from "./ui/dom.js";
 
 // Preload all card images at startup to prevent loading flicker
 const preloadAllCardImages = () => {
@@ -39,77 +119,6 @@ preloadAllCardImages();
 let supabaseApi = null;
 let supabaseLoadError = null;
 
-const selectionPanel = document.getElementById("selection-panel");
-const actionBar = document.getElementById("action-bar");
-const actionPanel = document.getElementById("action-panel");
-const gameHistoryLog = document.getElementById("game-history-log");
-const passOverlay = document.getElementById("pass-overlay");
-const passTitle = document.getElementById("pass-title");
-const passConfirm = document.getElementById("pass-confirm");
-const inspectorPanel = document.getElementById("card-inspector");
-const setupOverlay = document.getElementById("setup-overlay");
-const setupTitle = document.getElementById("setup-title");
-const setupSubtitle = document.getElementById("setup-subtitle");
-const setupRolls = document.getElementById("setup-rolls");
-const setupActions = document.getElementById("setup-actions");
-const deckSelectOverlay = document.getElementById("deck-select-overlay");
-const deckSelectTitle = document.getElementById("deck-select-title");
-const deckSelectSubtitle = document.getElementById("deck-select-subtitle");
-const deckSelectGrid = document.getElementById("deck-select-grid");
-const deckOverlay = document.getElementById("deck-overlay");
-const deckTitle = document.getElementById("deck-title");
-const deckStatus = document.getElementById("deck-status");
-const deckFullRow = document.getElementById("deck-full-row");
-const deckAddedRow = document.getElementById("deck-added-row");
-const deckConfirm = document.getElementById("deck-confirm");
-const deckRandom = document.getElementById("deck-random");
-const deckInspectorPanel = document.getElementById("deck-inspector");
-const deckLoadList = document.getElementById("deck-load-list");
-const deckManageList = document.getElementById("deck-manage-list");
-const deckExit = document.getElementById("deck-exit");
-const pagesContainer = document.getElementById("pages-container");
-const pageDots = document.getElementById("page-dots");
-const navLeft = document.getElementById("nav-left");
-const navRight = document.getElementById("nav-right");
-const infoToggle = document.getElementById("info-toggle");
-const infoBack = document.getElementById("info-back");
-const menuOverlay = document.getElementById("menu-overlay");
-const menuStatus = document.getElementById("menu-status");
-const menuPlay = document.getElementById("menu-play");
-const menuLogin = document.getElementById("menu-login");
-const menuCatalog = document.getElementById("menu-catalog");
-const menuTutorial = document.getElementById("menu-tutorial");
-const tutorialOverlay = document.getElementById("tutorial-overlay");
-const tutorialClose = document.getElementById("tutorial-close");
-const loginOverlay = document.getElementById("login-overlay");
-const loginForm = document.getElementById("login-form");
-const loginUsername = document.getElementById("login-username");
-const loginError = document.getElementById("login-error");
-const loginCancel = document.getElementById("login-cancel");
-const loginSubmit = document.getElementById("login-submit");
-const multiplayerOverlay = document.getElementById("multiplayer-overlay");
-const lobbyCreate = document.getElementById("lobby-create");
-const lobbyJoin = document.getElementById("lobby-join");
-const lobbyJoinForm = document.getElementById("lobby-join-form");
-const lobbyJoinCancel = document.getElementById("lobby-join-cancel");
-const lobbyCodeInput = document.getElementById("lobby-code");
-const lobbyError = document.getElementById("lobby-error");
-const multiplayerBack = document.getElementById("multiplayer-back");
-const lobbyOverlay = document.getElementById("lobby-overlay");
-const lobbyStatus = document.getElementById("lobby-status");
-const lobbyCodeDisplay = document.getElementById("lobby-code-display");
-const lobbyContinue = document.getElementById("lobby-continue");
-const lobbyLeave = document.getElementById("lobby-leave");
-const lobbyLiveError = document.getElementById("lobby-live-error");
-const deckSave = document.getElementById("deck-save");
-const deckLoad = document.getElementById("deck-load");
-const battleEffectsLayer = document.getElementById("battle-effects");
-const victoryOverlay = document.getElementById("victory-overlay");
-const victoryWinnerName = document.getElementById("victory-winner-name");
-const victoryTurns = document.getElementById("victory-turns");
-const victoryCards = document.getElementById("victory-cards");
-const victoryKills = document.getElementById("victory-kills");
-const victoryMenu = document.getElementById("victory-menu");
 
 let pendingConsumption = null;
 let pendingAttack = null;
@@ -1533,343 +1542,6 @@ const updatePlayerStats = (state, index, role) => {
   }
 };
 
-const cardTypeClass = (card) => `type-${card.type.toLowerCase().replace(" ", "-")}`;
-
-const renderCardStats = (card) => {
-  const stats = [];
-  if (card.type === "Predator" || card.type === "Prey") {
-    stats.push({ label: "ATK", value: card.currentAtk ?? card.atk, className: "atk" });
-    stats.push({ label: "HP", value: card.currentHp ?? card.hp, className: "hp" });
-  }
-  if (card.type === "Prey") {
-    stats.push({ label: "NUT", value: card.nutrition, className: "nut" });
-  }
-  return stats;
-};
-
-const isCardLike = (value) =>
-  value &&
-  typeof value === "object" &&
-  typeof value.name === "string" &&
-  typeof value.type === "string" &&
-  typeof value.id === "string";
-
-const repeatingEffectPattern = /(start of turn|end of turn|before combat)/i;
-
-const applyRepeatingIndicator = (summary, card) => {
-  if (!summary || summary.includes("🔂")) {
-    return summary;
-  }
-  if (card?.onStart || card?.onEnd || card?.onBeforeCombat || repeatingEffectPattern.test(summary)) {
-    return `🔂 ${summary}`;
-  }
-  return summary;
-};
-
-const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-const appendKeywordDetails = (summary, card) => {
-  if (!summary) {
-    return summary;
-  }
-  const cardKeywords = new Set((card.keywords ?? []).map((keyword) => keyword.toLowerCase()));
-  const keywordEntries = Object.entries(KEYWORD_DESCRIPTIONS);
-  const sentences = summary.split(/(?<=\.)\s+/);
-  const updatedSentences = sentences.map((sentence) => {
-    const lowerSentence = sentence.toLowerCase();
-    const matches = keywordEntries.filter(([keyword]) => {
-      const normalizedKeyword = keyword.toLowerCase();
-      if (cardKeywords.has(normalizedKeyword)) {
-        return false;
-      }
-      const pattern = new RegExp(`\\b${escapeRegExp(normalizedKeyword).replace(/\\s+/g, "\\\\s+")}\\b`, "i");
-      return pattern.test(lowerSentence);
-    });
-    if (!matches.length) {
-      return sentence;
-    }
-    const details = matches
-      .map(([keyword, description]) => `${keyword}: ${description}`)
-      .join(" ");
-    const trimmed = sentence.trim();
-    if (trimmed.endsWith(".")) {
-      return `${trimmed.slice(0, -1)} (${details}).`;
-    }
-    return `${trimmed} (${details})`;
-  });
-  return updatedSentences.join(" ");
-};
-
-const formatTokenStats = (card) => {
-  if (card.type === "Predator" || card.type === "Prey") {
-    const base = `${card.atk}/${card.hp}`;
-    if (card.type === "Prey") {
-      return `${base} (NUT ${card.nutrition})`;
-    }
-    return base;
-  }
-  return "";
-};
-
-const formatTokenSummary = (token) => {
-  const stats = formatTokenStats(token);
-  const keywords = token.keywords?.length ? `Keywords: ${token.keywords.join(", ")}` : "";
-  const effect = getCardEffectSummary(token, { includeKeywordDetails: true });
-  const parts = [
-    `${token.name} — ${token.type}${stats ? ` ${stats}` : ""}`,
-    keywords,
-    effect ? `Effect: ${effect}` : "",
-  ].filter(Boolean);
-  return parts.join(" — ");
-};
-
-const appendTokenDetails = (summary, card) => {
-  if (!card?.summons?.length) {
-    return summary;
-  }
-  const tokenSummaries = card.summons.map((token) => formatTokenSummary(token));
-  return `${summary}<br>***<br>${tokenSummaries.join("<br>")}`;
-};
-
-const getCardEffectSummary = (card, options = {}) => {
-  const { includeKeywordDetails = false, includeTokenDetails = false } = options;
-  let summary = "";
-  if (card.effectText) {
-    summary = card.effectText;
-  } else {
-    const effectFn = card.effect ?? card.onPlay ?? card.onConsume ?? card.onEnd ?? card.onStart;
-    if (!effectFn) {
-      return "";
-    }
-    const log = (message) => {
-      if (!summary) {
-        summary = message.replace(/^.*?\b(?:effect|triggers|summons|takes the field)\b:\s*/i, "");
-      }
-    };
-    try {
-      effectFn({
-        log,
-        player: {},
-        opponent: {},
-        attacker: {},
-      });
-    } catch {
-      summary = "";
-    }
-  }
-  summary = applyRepeatingIndicator(summary, card);
-  if (includeKeywordDetails) {
-    summary = appendKeywordDetails(summary, card);
-  }
-  if (includeTokenDetails) {
-    summary = appendTokenDetails(summary, card);
-  }
-  return summary;
-};
-
-const getStatusIndicators = (card) => {
-  const indicators = [];
-  if (card.dryDropped) {
-    indicators.push("🍂");
-  }
-  if (card.abilitiesCancelled) {
-    indicators.push("🚫");
-  }
-  if (card.hasBarrier) {
-    indicators.push("🛡️");
-  }
-  if (card.frozen) {
-    indicators.push("❄️");
-  }
-  if (card.isToken) {
-    indicators.push("⚪");
-  }
-  return indicators.join(" ");
-};
-
-const renderKeywordTags = (card) => {
-  if (!card.keywords?.length) {
-    return "";
-  }
-  const keywords = card.keywords;
-  return keywords.map((keyword) => `<span>${keyword}</span>`).join("");
-};
-
-const renderCardInnerHtml = (card, { showEffectSummary } = {}) => {
-  const stats = renderCardStats(card)
-    .map(
-      (stat) =>
-        `<span class="card-stat ${stat.className}">${stat.label} ${stat.value}</span>`
-    )
-    .join("");
-  const effectSummary = showEffectSummary ? getCardEffectSummary(card) : "";
-  const effectRow = effectSummary
-    ? `<div class="card-effect"><strong>Effect:</strong> ${effectSummary}</div>`
-    : "";
-  
-  // Check if card has an image
-  const hasImage = hasCardImage(card.id);
-  const isCached = hasImage && isCardImageCached(card.id);
-  const cachedImage = hasImage ? getCachedCardImage(card.id) : null;
-  
-  // Generate image HTML - use cached image if available, otherwise preload
-  const imageHtml = hasImage && (isCached || cachedImage) 
-    ? `<img src="${getCardImagePath(card.id)}" alt="${card.name}" class="card-image" style="display: ${cachedImage ? 'block' : 'none'};" onload="this.style.display='block'; this.nextElementSibling.style.display='none';" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-       <div class="card-image-placeholder" style="display: ${cachedImage ? 'none' : 'flex'};">🎨</div>`
-    : hasImage ? `<div class="card-image-placeholder">🎨</div>` : '';
-  
-  // Preload image if not cached
-  if (hasImage && !isCached) {
-    preloadCardImages([card.id]);
-  }
-  
-  return `
-    <div class="card-name">${card.name}</div>
-    <div class="card-image-container">
-      ${imageHtml}
-    </div>
-    <div class="card-type-label">${card.type}</div>
-    <div class="card-content-area">
-      <div class="card-stats-row">${stats}</div>
-      <div class="card-keywords">${renderKeywordTags(card)}</div>
-      ${effectRow}
-    </div>
-  `;
-};
-
-const renderCard = (card, options = {}) => {
-  const {
-    showPlay = false,
-    showAttack = false,
-    showDiscard = false,
-    showEffectSummary = false,
-    onPlay,
-    onAttack,
-    onDiscard,
-    onClick,
-    showBack = false,
-  } = options;
-  const cardElement = document.createElement("div");
-
-  if (showBack) {
-    cardElement.className = "card back";
-    cardElement.textContent = "Card Back";
-    return cardElement;
-  }
-
-  cardElement.className = `card ${cardTypeClass(card)}`;
-  if (card.instanceId) {
-    cardElement.dataset.instanceId = card.instanceId;
-  }
-  const inner = document.createElement("div");
-  inner.className = "card-inner";
-
-  inner.innerHTML = renderCardInnerHtml(card, { showEffectSummary });
-
-  if (showPlay || showAttack) {
-    const actions = document.createElement("div");
-    actions.className = "card-actions";
-    if (showPlay) {
-      const playButton = document.createElement("button");
-      playButton.textContent = "Play";
-      playButton.onclick = () => onPlay?.(card);
-      actions.appendChild(playButton);
-    }
-    if (showAttack) {
-      const attackButton = document.createElement("button");
-      attackButton.textContent = "Attack";
-      attackButton.onclick = () => onAttack?.(card);
-      actions.appendChild(attackButton);
-    }
-    if (showDiscard) {
-      const discardButton = document.createElement("button");
-      discardButton.textContent = "Discard";
-      discardButton.onclick = () => onDiscard?.(card);
-      actions.appendChild(discardButton);
-    }
-    inner.appendChild(actions);
-  }
-
-  const status = getStatusIndicators(card);
-  if (status) {
-    const indicator = document.createElement("div");
-    indicator.className = "card-status";
-    indicator.textContent = status;
-    cardElement.appendChild(indicator);
-  }
-
-  cardElement.appendChild(inner);
-  // Add drag and drop functionality
-  if (!showBack && card.instanceId) {
-    cardElement.draggable = true;
-    cardElement.classList.add('draggable-card');
-    
-    // Store original position for reversion
-    cardElement.dataset.originalPosition = JSON.stringify({
-      parent: cardElement.parentElement?.className || '',
-      index: Array.from(cardElement.parentElement?.children || []).indexOf(cardElement)
-    });
-  }
-
-  cardElement.addEventListener("dragstart", (event) => {
-    event.dataTransfer.setData("text", card.instanceId);
-    event.dataTransfer.effectAllowed = "move";
-  });
-
-  cardElement.addEventListener("dragend", (event) => {
-    event.preventDefault();
-  });
-
-  cardElement.addEventListener("click", (event) => {
-    if (event.target.closest("button")) {
-      return;
-    }
-    inspectedCardId = card.instanceId;
-    setInspectorContent(card);
-    onClick?.(card);
-  });
-
-  // Auto-shrink text to fit in content area (optimized to prevent spastic re-renders)
-  const adjustTextToFit = () => {
-    const contentArea = inner.querySelector('.card-content-area');
-    const effectElement = inner.querySelector('.card-effect');
-    
-    if (!contentArea || !effectElement) return;
-    
-    // Skip if already adjusted to prevent repeated calculations
-    if (effectElement.dataset.textAdjusted === 'true') return;
-    
-    // Check if content overflows
-    const isOverflowing = contentArea.scrollHeight > contentArea.clientHeight;
-    
-    if (isOverflowing) {
-      // Start with base font size and reduce until it fits
-      let fontSize = 11;
-      const minFontSize = 8;
-      const step = 0.5;
-      
-      while (fontSize > minFontSize && contentArea.scrollHeight > contentArea.clientHeight) {
-        fontSize -= step;
-        effectElement.style.fontSize = `${fontSize}px`;
-      }
-      
-      // If still overflowing at minimum size, enable more aggressive truncation
-      if (contentArea.scrollHeight > contentArea.clientHeight) {
-        effectElement.style.webkitLineClamp = '2';
-        effectElement.style.lineClamp = '2';
-      }
-    }
-    
-    // Mark as adjusted to prevent repeated calculations
-    effectElement.dataset.textAdjusted = 'true';
-  };
-  
-  // Run adjustment after DOM is rendered with a small delay to batch operations
-  setTimeout(() => requestAnimationFrame(adjustTextToFit), 10);
-
-  return cardElement;
-};
-
 // Drag and Drop System
 let draggedCard = null;
 let draggedCardElement = null;
@@ -2379,21 +2051,6 @@ const initHandPreview = () => {
   window.addEventListener("resize", () => updateHandOverlap(handGrid));
 };
 
-const renderDeckCard = (card, options = {}) => {
-  const { highlighted = false, selected = false, onClick } = options;
-  const cardElement = document.createElement("div");
-  cardElement.className = `card deck-card ${highlighted ? "highlighted" : ""} ${
-    selected ? "selected" : ""
-  } ${cardTypeClass(card)}`;
-  cardElement.innerHTML = `
-    <div class="card-inner">
-      ${renderCardInnerHtml(card, { showEffectSummary: true })}
-    </div>
-  `;
-  cardElement.addEventListener("click", () => onClick?.());
-  return cardElement;
-};
-
 const shuffle = (items) => {
   const copy = [...items];
   for (let i = copy.length - 1; i > 0; i -= 1) {
@@ -2546,6 +2203,10 @@ const setInspectorContentFor = (panel, card, showImage = true) => {
 
 const setInspectorContent = (card) => setInspectorContentFor(inspectorPanel, card, true); // Show image during battle
 const setDeckInspectorContent = (card) => setInspectorContentFor(deckInspectorPanel, card, false); // Hide image during deck construction
+const handleInspectCard = (card) => {
+  inspectedCardId = card.instanceId;
+  setInspectorContent(card);
+};
 
 const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCancel) => {
   if (!result) {
@@ -2570,6 +2231,7 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
         item.className = "selection-item selection-card";
         const cardElement = renderCard(card, {
           showEffectSummary: true,
+          onInspect: handleInspectCard,
         });
         item.appendChild(cardElement);
         items.push(item);
@@ -2622,6 +2284,7 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
         const cardElement = renderCard(candidateCard, {
           showEffectSummary: true,
           onClick: () => handleSelection(candidate.value),
+          onInspect: handleInspectCard,
         });
         item.appendChild(cardElement);
       } else {
@@ -2681,6 +2344,7 @@ const renderField = (state, playerIndex, isOpponent, onAttack) => {
       showAttack: canAttack,
       showEffectSummary: true,
       onAttack,
+      onInspect: handleInspectCard,
     });
     slot.appendChild(cardElement);
   });
@@ -2729,6 +2393,7 @@ const renderHand = (state, onSelect, onUpdate, hideCards) => {
         selectedHandCardId = selectedCard.instanceId;
         onSelect?.(selectedCard);
       },
+      onInspect: handleInspectCard,
     });
     handGrid.appendChild(cardElement);
   });
