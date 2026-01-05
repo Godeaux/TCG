@@ -62,6 +62,7 @@ export const createGameState = () => {
       lastLobbySyncBySender: {},
       onlineDecksReady: false,
       decks: [],
+      multiplayerHydrated: false,
     },
     catalogBuilder: {
       stage: null,
