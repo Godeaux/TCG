@@ -2,6 +2,7 @@ import { drawCard, logMessage } from "./gameState.js";
 import { createCardInstance } from "./cardTypes.js";
 import { consumePrey } from "./consumption.js";
 import { isImmune, areAbilitiesActive } from "./keywords.js";
+import { getTokenById } from "./cards/index.js";
 
 const findCardOwnerIndex = (state, card) =>
   state.players.findIndex((player) =>
@@ -299,8 +300,22 @@ export const resolveEffectResult = (state, result, context) => {
 
   if (result.summonTokens) {
     const { playerIndex, tokens } = result.summonTokens;
-    tokens.forEach((tokenData) => {
+    console.log(`🎯 [effects.js summonTokens] playerIndex: ${playerIndex}, tokens:`, tokens);
+    tokens.forEach((tokenIdOrData) => {
+      // Resolve token ID to token definition if it's a string
+      const tokenData = typeof tokenIdOrData === 'string'
+        ? getTokenById(tokenIdOrData)
+        : tokenIdOrData;
+
+      console.log(`  → Attempting to summon token:`, tokenIdOrData, `→ resolved to:`, tokenData?.name);
+
+      if (!tokenData) {
+        console.error(`  ✗ Token not found: ${tokenIdOrData}`);
+        return;
+      }
+
       const summoned = placeToken(state, playerIndex, tokenData);
+      console.log(`  → Summoned:`, summoned ? summoned.name : 'FAILED');
       if (summoned?.onPlay) {
         const opponentIndex = (playerIndex + 1) % 2;
         const resultOnPlay = summoned.onPlay({

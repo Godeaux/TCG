@@ -194,16 +194,19 @@ export const resolveCardEffect = (card, effectType, context) => {
   try {
     // NEW SYSTEM: Array of effects (composite)
     if (Array.isArray(effectDef)) {
+      console.log(`🆕 [NEW SYSTEM] ${card.name} ${effectType} - Array of ${effectDef.length} effects`);
       return resolveEffect(effectDef, context);
     }
 
     // NEW SYSTEM: Object-based effect definition with type and params
     if (typeof effectDef === 'object' && effectDef.type) {
+      console.log(`🆕 [NEW SYSTEM] ${card.name} ${effectType} - ${effectDef.type}`);
       return resolveEffect(effectDef, context);
     }
 
     // LEGACY SYSTEM: String-based effect ID
     if (typeof effectDef === 'string') {
+      console.log(`⚠️  [LEGACY SYSTEM] ${card.name} ${effectType} - ${effectDef}`);
       const handler = getEffectHandler(effectDef);
       if (!handler) {
         console.warn(`[Card Registry] Effect handler not found: ${effectDef} (${card.name} ${effectType})`);
