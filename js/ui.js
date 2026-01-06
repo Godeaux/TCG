@@ -5175,6 +5175,151 @@ const showCarrionPilePopup = (player, opponent, onUpdate) => {
   });
 };
 
+// ==================== MOBILE NAVIGATION ====================
+// Setup mobile tab navigation
+const setupMobileNavigation = () => {
+  const navLeft = document.getElementById('mobile-nav-left');
+  const navRight = document.getElementById('mobile-nav-right');
+  const battlefieldLayout = document.querySelector('.battlefield-layout-three-column');
+
+  if (!navLeft || !navRight || !battlefieldLayout) return;
+
+  navLeft.addEventListener('click', () => {
+    battlefieldLayout.classList.toggle('show-inspector');
+    battlefieldLayout.classList.remove('show-history');
+  });
+
+  navRight.addEventListener('click', () => {
+    battlefieldLayout.classList.toggle('show-history');
+    battlefieldLayout.classList.remove('show-inspector');
+  });
+};
+
+// ==================== TOUCH EVENTS ====================
+// Setup touch-based card interaction (Hearthstone-style)
+const setupTouchEvents = () => {
+  let touchedCard = null;
+  let touchStartPos = { x: 0, y: 0 };
+  let isDragging = false;
+  let dragThreshold = 10; // pixels to move before considering it a drag
+
+  const handleTouchStart = (e) => {
+    const card = e.target.closest('.card');
+    if (!card || card.classList.contains('back')) return;
+
+    // Only handle cards in hand
+    const handGrid = card.closest('#active-hand');
+    if (!handGrid) return;
+
+    touchedCard = card;
+    touchStartPos = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY
+    };
+    isDragging = false;
+
+    // Focus the card on touch (like hover)
+    focusCardElement(card);
+
+    // Prevent default to avoid scrolling while touching card
+    e.preventDefault();
+  };
+
+  const handleTouchMove = (e) => {
+    if (!touchedCard) return;
+
+    const touch = e.touches[0];
+    const dx = touch.clientX - touchStartPos.x;
+    const dy = touch.clientY - touchStartPos.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    // Start dragging if moved beyond threshold
+    if (!isDragging && distance > dragThreshold) {
+      isDragging = true;
+      touchedCard.classList.add('dragging');
+
+      // Trigger dragstart event for existing drag-and-drop logic
+      const dragStartEvent = new DragEvent('dragstart', {
+        bubbles: true,
+        cancelable: true,
+        dataTransfer: new DataTransfer()
+      });
+      touchedCard.dispatchEvent(dragStartEvent);
+    }
+
+    if (isDragging) {
+      e.preventDefault();
+
+      // Update visual feedback for drag targets
+      const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+      updateDragVisuals(elementBelow);
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    if (!touchedCard) return;
+
+    if (isDragging) {
+      const touch = e.changedTouches[0];
+      const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+
+      // Trigger drop event for existing drag-and-drop logic
+      if (elementBelow) {
+        const dropEvent = new DragEvent('drop', {
+          bubbles: true,
+          cancelable: true,
+          dataTransfer: new DataTransfer()
+        });
+        elementBelow.dispatchEvent(dropEvent);
+      }
+
+      // Trigger dragend event
+      const dragEndEvent = new DragEvent('dragend', {
+        bubbles: true,
+        cancelable: true
+      });
+      touchedCard.dispatchEvent(dragEndEvent);
+
+      touchedCard.classList.remove('dragging');
+      clearDragVisuals();
+    }
+
+    touchedCard = null;
+    isDragging = false;
+  };
+
+  const handleTouchCancel = (e) => {
+    if (touchedCard) {
+      touchedCard.classList.remove('dragging');
+      clearDragVisuals();
+      touchedCard = null;
+      isDragging = false;
+    }
+  };
+
+  // Add touch event listeners to the hand grid
+  const handGrid = document.getElementById('active-hand');
+  if (handGrid) {
+    handGrid.addEventListener('touchstart', handleTouchStart, { passive: false });
+    handGrid.addEventListener('touchmove', handleTouchMove, { passive: false });
+    handGrid.addEventListener('touchend', handleTouchEnd);
+    handGrid.addEventListener('touchcancel', handleTouchCancel);
+  }
+};
+
+// Initialize mobile features when DOM is ready
+if (typeof window !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      setupMobileNavigation();
+      setupTouchEvents();
+    });
+  } else {
+    setupMobileNavigation();
+    setupTouchEvents();
+  }
+}
+
 export const renderGame = (state, callbacks = {}) => {
   // Check for victory before rendering anything
   if (checkForVictory(state)) {
