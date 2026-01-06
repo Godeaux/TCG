@@ -41,65 +41,66 @@ import {
 
 // Victory overlay (extracted module)
 import {
-  showVictoryScreen as showVictoryScreenNew,
-  hideVictoryScreen as hideVictoryScreenNew,
-  checkForVictory as checkForVictoryNew,
+  showVictoryScreen,
+  hideVictoryScreen,
+  checkForVictory,
 } from "./ui/overlays/VictoryOverlay.js";
 
 // Pass overlay (extracted module)
 import {
-  renderPassOverlay as renderPassOverlayNew,
-  hidePassOverlay as hidePassOverlayNew,
+  renderPassOverlay,
+  hidePassOverlay,
 } from "./ui/overlays/PassOverlay.js";
 
 // Menu overlays (extracted module)
 import {
-  renderMenuOverlays as renderMenuOverlaysNew,
+  renderMenuOverlays,
 } from "./ui/overlays/MenuOverlay.js";
 
 // Setup overlay (extracted module)
 import {
-  renderSetupOverlay as renderSetupOverlayNew,
+  renderSetupOverlay,
 } from "./ui/overlays/SetupOverlay.js";
 
 // Deck builder overlays (extracted module)
 import {
-  renderDeckSelectionOverlay as renderDeckSelectionOverlayNew,
-  renderDeckBuilderOverlay as renderDeckBuilderOverlayNew,
+  renderDeckSelectionOverlay,
+  renderDeckBuilderOverlay,
 } from "./ui/overlays/DeckBuilderOverlay.js";
 
 // UI Components (extracted modules)
 import {
-  renderCard as renderCardNew,
-  renderDeckCard as renderDeckCardNew,
-  renderCardStats as renderCardStatsNew,
-  getCardEffectSummary as getCardEffectSummaryNew,
-  cardTypeClass as cardTypeClassNew,
-  renderCardInnerHtml as renderCardInnerHtmlNew,
+  renderCard,
+  renderDeckCard,
+  renderCardStats,
+  getCardEffectSummary,
+  cardTypeClass,
+  renderCardInnerHtml,
 } from "./ui/components/Card.js";
 import {
-  renderField as renderFieldNew,
+  renderField,
 } from "./ui/components/Field.js";
 import {
-  renderHand as renderHandNew,
-  updateHandOverlap as updateHandOverlapNew,
+  renderHand,
+  updateHandOverlap,
 } from "./ui/components/Hand.js";
 import {
-  renderSelectionPanel as renderSelectionPanelNew,
-  clearSelectionPanel as clearSelectionPanelNew,
-  isSelectionActive as isSelectionActiveNew,
+  renderSelectionPanel,
+  clearSelectionPanel,
+  isSelectionActive as isSelectionActiveFromModule,
   createSelectionItem,
   createCardSelectionItem,
 } from "./ui/components/SelectionPanel.js";
 
 // Network serialization (extracted module)
+// Note: applyLobbySyncPayload is defined locally because it needs UI-specific
+// callbacks (checkAndRecoverSetupState, latestCallbacks.onUpdate, etc.)
 import {
-  serializeCardSnapshot as serializeCardSnapshotNew,
-  hydrateCardSnapshot as hydrateCardSnapshotNew,
-  hydrateZoneSnapshots as hydrateZoneSnapshotsNew,
-  hydrateDeckSnapshots as hydrateDeckSnapshotsNew,
-  buildLobbySyncPayload as buildLobbySyncPayloadNew,
-  applyLobbySyncPayload as applyLobbySyncPayloadNew,
+  serializeCardSnapshot,
+  hydrateCardSnapshot,
+  hydrateZoneSnapshots,
+  hydrateDeckSnapshots,
+  buildLobbySyncPayload,
 } from "./network/serialization.js";
 
 // Helper to get discardEffect and timing for both old and new card formats
@@ -240,7 +241,7 @@ const VISUAL_EFFECT_TTL_MS = 9000;
 // MOVED TO: ./network/serialization.js
 // Functions: serializeCardSnapshot, hydrateCardSnapshot, hydrateZoneSnapshots,
 //            hydrateDeckSnapshots, buildLobbySyncPayload, applyLobbySyncPayload
-// Import: serializeCardSnapshotNew, hydrateCardSnapshotNew, etc.
+// Import: serializeCardSnapshot, hydrateCardSnapshot, etc.
 // ============================================================================
 
 const sendLobbyBroadcast = (event, payload) => {
@@ -258,7 +259,7 @@ const broadcastSyncState = (state) => {
   if (!isOnlineMode(state)) {
     return;
   }
-  const payload = buildLobbySyncPayloadNew(state);
+  const payload = buildLobbySyncPayload(state);
   console.log("Broadcasting sync state, payload structure:", {
     hasGame: !!payload.game,
     hasPlayers: !!payload.game?.players,
@@ -286,7 +287,7 @@ const saveGameStateToDatabase = async (state) => {
   // This ensures the database always has the most up-to-date state from both players
   try {
     const api = await loadSupabaseApi(state);
-    const payload = buildLobbySyncPayloadNew(state);
+    const payload = buildLobbySyncPayload(state);
     console.log("Saving game state to DB for lobby:", state.menu.lobby.id);
     console.log("Game state payload structure:", {
       hasGame: !!payload.game,
@@ -354,7 +355,7 @@ const loadGameStateFromDatabase = async (state) => {
       state.menu.gameInProgress = hasGameStarted;
 
       // Now apply the saved game state (forceApply to bypass sender check)
-      applyLobbySyncPayloadNew(state, savedGame.game_state, { forceApply: true });
+      applyLobbySyncPayload(state, savedGame.game_state, { forceApply: true });
 
       // Ensure deckBuilder stage is set to "complete" if decks are already built
       if (savedGame.game_state.deckBuilder?.stage === "complete") {
@@ -975,7 +976,7 @@ const checkAndRecoverSetupState = (state) => {
     
     // Broadcast the recovery
     if (state.menu?.mode === "online") {
-      sendLobbyBroadcast("sync_state", buildLobbySyncPayloadNew(state));
+      sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
       saveGameStateToDatabase(state);
     }
     
@@ -993,7 +994,7 @@ const checkAndRecoverSetupState = (state) => {
     
     // Broadcast the recovery
     if (state.menu?.mode === "online") {
-      sendLobbyBroadcast("sync_state", buildLobbySyncPayloadNew(state));
+      sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
       saveGameStateToDatabase(state);
     }
     
@@ -1090,22 +1091,22 @@ const applyLobbySyncPayload = (state, payload, options = {}) => {
         }
 
         if (!isProtectedLocalSnapshot && Array.isArray(playerSnapshot.deck)) {
-          player.deck = hydrateDeckSnapshotsNew(playerSnapshot.deck);
+          player.deck = hydrateDeckSnapshots(playerSnapshot.deck);
         }
         if (!isProtectedLocalSnapshot && Array.isArray(playerSnapshot.hand)) {
-          player.hand = hydrateZoneSnapshotsNew(playerSnapshot.hand, null, state.turn);
+          player.hand = hydrateZoneSnapshots(playerSnapshot.hand, null, state.turn);
         }
         if (Array.isArray(playerSnapshot.field)) {
-          player.field = hydrateZoneSnapshotsNew(playerSnapshot.field, 3, state.turn);
+          player.field = hydrateZoneSnapshots(playerSnapshot.field, 3, state.turn);
         }
         if (Array.isArray(playerSnapshot.carrion)) {
-          player.carrion = hydrateZoneSnapshotsNew(playerSnapshot.carrion, null, state.turn);
+          player.carrion = hydrateZoneSnapshots(playerSnapshot.carrion, null, state.turn);
         }
         if (Array.isArray(playerSnapshot.exile)) {
-          player.exile = hydrateZoneSnapshotsNew(playerSnapshot.exile, null, state.turn);
+          player.exile = hydrateZoneSnapshots(playerSnapshot.exile, null, state.turn);
         }
         if (!isProtectedLocalSnapshot && Array.isArray(playerSnapshot.traps)) {
-          player.traps = hydrateZoneSnapshotsNew(playerSnapshot.traps, null, state.turn);
+          player.traps = hydrateZoneSnapshots(playerSnapshot.traps, null, state.turn);
         }
       });
       cleanupDestroyed(state, { silent: true });
@@ -1280,18 +1281,18 @@ const updateLobbySubscription = (state, { force = false } = {}) => {
     onUpdate: applyLobbyUpdate,
   });
   lobbyChannel.on("broadcast", { event: "deck_update" }, ({ payload }) => {
-    applyLobbySyncPayloadNew(state, payload);
+    applyLobbySyncPayload(state, payload);
   });
   lobbyChannel.on("broadcast", { event: "sync_request" }, ({ payload }) => {
     if (payload?.senderId === state.menu?.profile?.id) {
       return;
     }
     // Respond with current state so reconnecting player gets opponent's latest data
-    sendLobbyBroadcast("sync_state", buildLobbySyncPayloadNew(state));
+    sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
   });
   lobbyChannel.on("broadcast", { event: "sync_state" }, ({ payload }) => {
     // Apply sync state but only opponent's data (own data protected in applyLobbySyncPayload)
-    applyLobbySyncPayloadNew(state, payload);
+    applyLobbySyncPayload(state, payload);
   });
   refreshLobbyState(state, { silent: true });
 
@@ -1458,7 +1459,7 @@ const updatePlayerStats = (state, index, role) => {
 // MOVED TO: ./ui/components/Card.js
 // Functions: renderCard, renderCardStats, getCardEffectSummary, cardTypeClass,
 //            renderCardInnerHtml, getStatusIndicators, renderKeywordTags
-// Import: renderCardNew, renderCardStatsNew, getCardEffectSummaryNew, etc.
+// Import: renderCard, renderCardStats, getCardEffectSummary, etc.
 // ============================================================================
 
 // Drag and Drop System
@@ -1835,7 +1836,7 @@ const startConsumptionForSpecificSlot = (predator, slotIndex, ediblePrey) => {
     return item;
   });
   
-  renderSelectionPanelNew({
+  renderSelectionPanel({
     title: "Select up to 3 prey to consume",
     items,
     onConfirm: () => {
@@ -1864,7 +1865,7 @@ const startConsumptionForSpecificSlot = (predator, slotIndex, ediblePrey) => {
       });
       
       player.field[slotIndex] = predator; // Place in the specific slot
-      clearSelectionPanelNew();
+      clearSelectionPanel();
       
       triggerPlayTraps(state, predator, latestCallbacks.onUpdate, () => {
         if (totalSelected > 0 && (predator.onConsume || predator.effects?.onConsume)) {
@@ -2221,10 +2222,10 @@ const setInspectorContentFor = (panel, card, showImage = true) => {
       `;
     })
     .join("");
-  const stats = renderCardStatsNew(card)
+  const stats = renderCardStats(card)
     .map((stat) => `${stat.label} ${stat.value}`)
     .join(" • ");
-  const effectSummary = getCardEffectSummaryNew(card, {
+  const effectSummary = getCardEffectSummary(card, {
     includeKeywordDetails: true,
     includeTokenDetails: true,
   });
@@ -2317,7 +2318,7 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
       handOwner.hand.forEach((card) => {
         const item = document.createElement("label");
         item.className = "selection-item selection-card";
-        const cardElement = renderCardNew(card, {
+        const cardElement = renderCard(card, {
           showEffectSummary: true,
         });
         item.appendChild(cardElement);
@@ -2325,11 +2326,11 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
       });
     }
 
-    renderSelectionPanelNew({
+    renderSelectionPanel({
       title: `${handOwner.name}'s hand`,
       items,
       onConfirm: () => {
-        clearSelectionPanelNew();
+        clearSelectionPanel();
         onUpdate?.();
       },
       confirmLabel: "OK",
@@ -2354,7 +2355,7 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
       renderCards ||
       candidates.some((candidate) => isCardLike(candidate.card ?? candidate.value));
     const handleSelection = (value) => {
-      clearSelectionPanelNew();
+      clearSelectionPanel();
       const followUp = onSelect(value);
       resolveEffectChain(state, followUp, context, onUpdate, onComplete);
       cleanupDestroyed(state);
@@ -2368,7 +2369,7 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
       const canRenderCard = shouldRenderCards && isCardLike(candidateCard);
       if (canRenderCard) {
         item.classList.add("selection-card");
-        const cardElement = renderCardNew(candidateCard, {
+        const cardElement = renderCard(candidateCard, {
           showEffectSummary: true,
           onClick: () => handleSelection(candidate.value),
         });
@@ -2382,11 +2383,11 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
       return item;
     });
 
-    renderSelectionPanelNew({
+    renderSelectionPanel({
       title,
       items,
       onConfirm: () => {
-        clearSelectionPanelNew();
+        clearSelectionPanel();
         onCancel?.();
       },
       confirmLabel: "Cancel",
@@ -2404,21 +2405,21 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
 // FIELD RENDERING
 // MOVED TO: ./ui/components/Field.js
 // Functions: renderField
-// Import: renderFieldNew
+// Import: renderField
 // ============================================================================
 
 // ============================================================================
 // HAND RENDERING
 // MOVED TO: ./ui/components/Hand.js
 // Functions: renderHand, updateHandOverlap
-// Import: renderHandNew, updateHandOverlapNew
+// Import: renderHand, updateHandOverlapNew
 // ============================================================================
 
 // Selection panel functions moved to: ./ui/components/SelectionPanel.js
-// Import: renderSelectionPanelNew, clearSelectionPanelNew, isSelectionActiveNew
+// Import: renderSelectionPanel, clearSelectionPanel, isSelectionActiveFromModule
 
 // Keep local isSelectionActive for pendingAttack check (module-scoped state)
-const isSelectionActive = () => isSelectionActiveNew() || Boolean(pendingAttack);
+const isSelectionActive = () => isSelectionActiveFromModule() || Boolean(pendingAttack);
 
 const findCardByInstanceId = (state, instanceId) =>
   state.players
@@ -2550,7 +2551,7 @@ const renderTrapDecision = (state, defender, attacker, target, onUpdate) => {
       cleanupDestroyed(state);
       if (attacker.currentHp <= 0) {
         logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
-        clearSelectionPanelNew();
+        clearSelectionPanel();
         pendingAttack = null;
         state.pendingTrapDecision = null;
         onUpdate?.();
@@ -2558,7 +2559,7 @@ const renderTrapDecision = (state, defender, attacker, target, onUpdate) => {
         return;
       }
       const negate = Boolean(result?.negateAttack);
-      clearSelectionPanelNew();
+      clearSelectionPanel();
       resolveAttack(state, attacker, target, negate);
       pendingAttack = null;
       state.pendingTrapDecision = null;
@@ -2575,7 +2576,7 @@ const renderTrapDecision = (state, defender, attacker, target, onUpdate) => {
   const skipAction = document.createElement("button");
   skipAction.textContent = "Skip Trap";
   skipAction.onclick = () => {
-    clearSelectionPanelNew();
+    clearSelectionPanel();
     resolveAttack(state, attacker, target, false);
     pendingAttack = null;
     state.pendingTrapDecision = null;
@@ -2611,7 +2612,7 @@ const renderTrapDecision = (state, defender, attacker, target, onUpdate) => {
           playerIndex: pendingAttack.defenderIndex,
           opponentIndex: (pendingAttack.defenderIndex + 1) % 2,
         });
-        clearSelectionPanelNew();
+        clearSelectionPanel();
         resolveAttack(state, attacker, target, Boolean(result?.negateAttack));
         pendingAttack = null;
         state.pendingTrapDecision = null;
@@ -2624,7 +2625,7 @@ const renderTrapDecision = (state, defender, attacker, target, onUpdate) => {
     });
   }
 
-  renderSelectionPanelNew({
+  renderSelectionPanel({
     title: `${defender.name} may trigger a trap`,
     items,
     onConfirm: () => {},
@@ -2666,7 +2667,7 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
 const handlePendingTrapDecision = (state, onUpdate) => {
   if (!state.pendingTrapDecision) {
     if (trapWaitingPanelActive) {
-      clearSelectionPanelNew();
+      clearSelectionPanel();
       trapWaitingPanelActive = false;
     }
     return;
@@ -2678,13 +2679,13 @@ const handlePendingTrapDecision = (state, onUpdate) => {
   if (!defender) {
     state.pendingTrapDecision = null;
     if (trapWaitingPanelActive) {
-      clearSelectionPanelNew();
+      clearSelectionPanel();
       trapWaitingPanelActive = false;
     }
     return;
   }
   if (defenderIndex !== localIndex) {
-    renderSelectionPanelNew({
+    renderSelectionPanel({
       title: `${getOpponentDisplayName(state)} is deciding whether to play a trap...`,
       items: [],
       onConfirm: () => {},
@@ -2708,7 +2709,7 @@ const handlePendingTrapDecision = (state, onUpdate) => {
   if (!attacker || (target.type === "creature" && !target.card)) {
     state.pendingTrapDecision = null;
     if (trapWaitingPanelActive) {
-      clearSelectionPanelNew();
+      clearSelectionPanel();
       trapWaitingPanelActive = false;
     }
     return;
@@ -2735,7 +2736,7 @@ const handleAttackSelection = (state, attacker, onUpdate) => {
     const button = document.createElement("button");
     button.textContent = `Attack ${creature.name}`;
     button.onclick = () => {
-      clearSelectionPanelNew();
+      clearSelectionPanel();
       handleTrapResponse(state, opponent, attacker, { type: "creature", card: creature }, onUpdate);
     };
     item.appendChild(button);
@@ -2748,14 +2749,14 @@ const handleAttackSelection = (state, attacker, onUpdate) => {
     const button = document.createElement("button");
     button.textContent = `Attack ${opponent.name}`;
     button.onclick = () => {
-      clearSelectionPanelNew();
+      clearSelectionPanel();
       handleTrapResponse(state, opponent, attacker, { type: "player", player: opponent }, onUpdate);
     };
     item.appendChild(button);
     items.push(item);
   }
 
-  renderSelectionPanelNew({
+  renderSelectionPanel({
     title: `Select target for ${attacker.name}`,
     items,
     onConfirm: clearSelectionPanel,
@@ -2886,7 +2887,7 @@ const handlePlayCard = (state, card, onUpdate) => {
           return item;
         });
 
-        renderSelectionPanelNew({
+        renderSelectionPanel({
           title: "Select up to 3 prey to consume",
           items,
           onConfirm: () => {
@@ -2922,12 +2923,12 @@ const handlePlayCard = (state, card, onUpdate) => {
               pendingConsumption.slotIndex ?? player.field.findIndex((slot) => slot === null);
             if (placementSlot === -1) {
               logMessage(state, "No empty field slots available.");
-              clearSelectionPanelNew();
+              clearSelectionPanel();
               onUpdate?.();
               return;
             }
             player.field[placementSlot] = creature;
-            clearSelectionPanelNew();
+            clearSelectionPanel();
             triggerPlayTraps(state, creature, onUpdate, () => {
               if (totalSelected > 0 && (creature.onConsume || creature.effects?.onConsume)) {
                 const result = resolveCardEffect(creature, 'onConsume', {
@@ -2978,7 +2979,7 @@ const handlePlayCard = (state, card, onUpdate) => {
           creature.dryDropped = true;
           player.field[emptySlot] = creature;
           logMessage(state, `${creature.name} enters play with no consumption.`);
-          clearSelectionPanelNew();
+          clearSelectionPanel();
           triggerPlayTraps(state, creature, onUpdate, () => {
             if (!isFree) {
               state.cardPlayedThisTurn = true;
@@ -2992,12 +2993,12 @@ const handlePlayCard = (state, card, onUpdate) => {
         const consumeButton = document.createElement("button");
         consumeButton.textContent = "Consume";
         consumeButton.onclick = () => {
-          clearSelectionPanelNew();
+          clearSelectionPanel();
           startConsumptionSelection();
         };
         items.push(consumeButton);
 
-        renderSelectionPanelNew({
+        renderSelectionPanel({
           title: "Play predator",
           items,
           confirmLabel: null,
@@ -3113,7 +3114,7 @@ const triggerPlayTraps = (state, creature, onUpdate, onResolved) => {
         opponentIndex: state.activePlayerIndex,
       });
       cleanupDestroyed(state);
-      clearSelectionPanelNew();
+      clearSelectionPanel();
       onUpdate?.();
       onResolved?.();
     };
@@ -3126,14 +3127,14 @@ const triggerPlayTraps = (state, creature, onUpdate, onResolved) => {
   const skipAction = document.createElement("button");
   skipAction.textContent = "Skip Trap";
   skipAction.onclick = () => {
-    clearSelectionPanelNew();
+    clearSelectionPanel();
     onUpdate?.();
     onResolved?.();
   };
   skipButton.appendChild(skipAction);
   items.push(skipButton);
 
-  renderSelectionPanelNew({
+  renderSelectionPanel({
     title: `${opponent.name} may trigger a trap`,
     items,
     onConfirm: () => {},
@@ -3249,7 +3250,7 @@ const rehydrateDeckBuilderCatalog = (state, playerIndex) => {
 // DECK SELECTION OVERLAY
 // MOVED TO: ./ui/overlays/DeckBuilderOverlay.js
 // Functions: renderDeckSelectionOverlay
-// Import: renderDeckSelectionOverlayNew
+// Import: renderDeckSelectionOverlay
 // ============================================================================
 
 // ============================================================================
@@ -3268,21 +3269,21 @@ const rehydrateDeckBuilderCatalog = (state, playerIndex) => {
 // DECK BUILDER OVERLAY
 // MOVED TO: ./ui/overlays/DeckBuilderOverlay.js
 // Functions: renderDeckBuilderOverlay, renderCatalogBuilderOverlay
-// Import: renderDeckBuilderOverlayNew
+// Import: renderDeckBuilderOverlay
 // ============================================================================
 
 // ============================================================================
 // SETUP OVERLAY
 // MOVED TO: ./ui/overlays/SetupOverlay.js
 // Functions: renderSetupOverlay
-// Import: renderSetupOverlayNew
+// Import: renderSetupOverlay
 // ============================================================================
 
 // ============================================================================
 // MENU OVERLAYS
 // MOVED TO: ./ui/overlays/MenuOverlay.js
 // Functions: renderMenuOverlays, updateMenuStatus
-// Import: renderMenuOverlaysNew
+// Import: renderMenuOverlays
 // ============================================================================
 
 const updateNavButtons = () => {
@@ -3654,7 +3655,7 @@ const showCarrionPilePopup = (player, opponent, onUpdate) => {
     player.carrion.forEach((card) => {
       const item = document.createElement("label");
       item.className = "selection-item selection-card";
-      const cardElement = renderCardNew(card, {
+      const cardElement = renderCard(card, {
         showEffectSummary: true,
       });
       item.appendChild(cardElement);
@@ -3677,7 +3678,7 @@ const showCarrionPilePopup = (player, opponent, onUpdate) => {
     opponent.carrion.forEach((card) => {
       const item = document.createElement("label");
       item.className = "selection-item selection-card";
-      const cardElement = renderCardNew(card, {
+      const cardElement = renderCard(card, {
         showEffectSummary: true,
       });
       item.appendChild(cardElement);
@@ -3690,11 +3691,11 @@ const showCarrionPilePopup = (player, opponent, onUpdate) => {
     items.push(item);
   }
 
-  renderSelectionPanelNew({
+  renderSelectionPanel({
     title: "Carrion Piles",
     items,
     onConfirm: () => {
-      clearSelectionPanelNew();
+      clearSelectionPanel();
       onUpdate?.();
     },
     confirmLabel: "OK",
@@ -3981,7 +3982,7 @@ if (typeof window !== 'undefined') {
 
 export const renderGame = (state, callbacks = {}) => {
   // Check for victory before rendering anything (uses extracted VictoryOverlay module)
-  if (checkForVictoryNew(state)) {
+  if (checkForVictory(state)) {
     return; // Don't render the game if it's over
   }
 
@@ -4033,12 +4034,12 @@ export const renderGame = (state, callbacks = {}) => {
   updatePlayerStats(state, 0, "player1");
   updatePlayerStats(state, 1, "player2");
   // Field rendering (uses extracted Field component)
-  renderFieldNew(state, opponentIndex, true, null);
-  renderFieldNew(state, activeIndex, false, (card) =>
+  renderField(state, opponentIndex, true, null);
+  renderField(state, activeIndex, false, (card) =>
     handleAttackSelection(state, card, callbacks.onUpdate)
   );
   // Hand rendering (uses extracted Hand component)
-  renderHandNew(state, {
+  renderHand(state, {
     onSelect: (card) => {
       selectedHandCardId = card.instanceId;
       updateActionPanel(state, callbacks);
@@ -4056,7 +4057,7 @@ export const renderGame = (state, callbacks = {}) => {
     }
     callbacks.onNextPhase?.();
     if (isOnline) {
-      sendLobbyBroadcast("sync_state", buildLobbySyncPayloadNew(state));
+      sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
     }
   };
   updateActionBar(handleNextPhase);
@@ -4067,14 +4068,14 @@ export const renderGame = (state, callbacks = {}) => {
   }
 
   // Pass overlay (uses extracted PassOverlay module)
-  renderPassOverlayNew(state, passPending, callbacks);
+  renderPassOverlay(state, passPending, callbacks);
 
   // Deck/Setup overlays (uses extracted overlay modules)
-  renderDeckSelectionOverlayNew(state, callbacks);
-  renderSetupOverlayNew(state, callbacks);
-  renderDeckBuilderOverlayNew(state, callbacks);
+  renderDeckSelectionOverlay(state, callbacks);
+  renderSetupOverlay(state, callbacks);
+  renderDeckBuilderOverlay(state, callbacks);
   // Menu overlays (uses extracted MenuOverlay module)
-  renderMenuOverlaysNew(state);
+  renderMenuOverlays(state);
   // The extracted module doesn't handle lobby subscriptions, so call it separately
   updateLobbySubscription(state);
 
@@ -4119,5 +4120,5 @@ export const handleCombatPass = (state) => {
 // MOVED TO: ./ui/overlays/VictoryOverlay.js
 // Functions: showVictoryScreen, hideVictoryScreen, checkForVictory,
 //            calculateCardsPlayed, calculateCreaturesDefeated
-// Import: checkForVictoryNew, showVictoryScreenNew, hideVictoryScreenNew
+// Import: checkForVictory, showVictoryScreen, hideVictoryScreen
 // ============================================================================
