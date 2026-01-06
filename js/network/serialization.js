@@ -17,7 +17,7 @@
 import { getCardDefinitionById } from '../cards/registry.js';
 import { createCardInstance } from '../cardTypes.js';
 import { getLocalPlayerIndex } from '../state/selectors.js';
-import { stripAbilities } from '../keywords.js';
+import { stripAbilities } from '../effects.js';
 import { cleanupDestroyed } from '../combat.js';
 
 // ============================================================================
