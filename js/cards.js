@@ -2205,6 +2205,227 @@ const reptileCards = [
   },
 ];
 
+// Amphibian tokens
+const radiatedTreeFrogToken = {
+  id: "token-radiated-tree-frog",
+  name: "Radiated Tree Frog",
+  type: "Prey",
+  atk: 1,
+  hp: 1,
+  nutrition: 1,
+  keywords: ["Immune"],
+};
+
+const empressNewtToken = {
+  id: "token-empress-newt",
+  name: "Empress Newt",
+  type: "Prey",
+  atk: 1,
+  hp: 1,
+  nutrition: 1,
+  keywords: ["Poisonous"],
+};
+
+const hiddenEleuthEggToken = {
+  id: "token-hidden-eleuth-egg",
+  name: "Hidden Eleuth Egg",
+  type: "Prey",
+  atk: 0,
+  hp: 1,
+  nutrition: 0,
+  keywords: ["Hidden"],
+};
+
+const goldenMantellaToken = {
+  id: "token-golden-mantella",
+  name: "Golden Mantella",
+  type: "Prey",
+  atk: 1,
+  hp: 1,
+  nutrition: 1,
+  keywords: ["Poisonous"],
+};
+
+const turtleFrogletToken = {
+  id: "token-turtle-froglet",
+  name: "Turtle Froglet",
+  type: "Prey",
+  atk: 1,
+  hp: 1,
+  nutrition: 1,
+  keywords: ["Passive", "Hidden"],
+};
+
+const frogletToken = {
+  id: "token-froglet",
+  name: "Froglet",
+  type: "Prey",
+  atk: 1,
+  hp: 1,
+  nutrition: 1,
+};
+
+const bigfootTadpoleToken = {
+  id: "token-bigfoot-tadpole",
+  name: "Bigfoot Tadpole",
+  type: "Prey",
+  atk: 0,
+  hp: 1,
+  nutrition: 0,
+};
+
+const indianBullfrogToken = {
+  id: "token-indian-bullfrog",
+  name: "Indian Bullfrog",
+  type: "Predator",
+  atk: 2,
+  hp: 2,
+};
+
+const americanBullfrogToken = {
+  id: "token-american-bullfrog",
+  name: "American Bullfrog",
+  type: "Predator",
+  atk: 3,
+  hp: 3,
+};
+
+const mountainChickenEggToken = {
+  id: "token-mountain-chicken-egg",
+  name: "Mountain Chicken Egg",
+  type: "Prey",
+  atk: 0,
+  hp: 1,
+  nutrition: 0,
+  keywords: ["Hidden"],
+};
+
+const pixieFrogToken = {
+  id: "token-pixie-frog",
+  name: "Pixie Frog",
+  type: "Predator",
+  atk: 2,
+  hp: 2,
+};
+
+const poisonousEggToken = {
+  id: "token-poisonous-egg",
+  name: "Poisonous Egg",
+  type: "Prey",
+  atk: 0,
+  hp: 1,
+  nutrition: 0,
+  keywords: ["Poisonous"],
+};
+
+const chineseSalamanderToken = {
+  id: "token-chinese-salamander",
+  name: "Chinese Salamander",
+  type: "Prey",
+  atk: 2,
+  hp: 2,
+  nutrition: 2,
+  effectText: "Heal 2.",
+  onPlay: ({ log }) => {
+    log("Chinese Salamander heals 2.");
+    return { heal: 2 };
+  },
+};
+
+const newtToken = {
+  id: "token-newt",
+  name: "Newt",
+  type: "Prey",
+  atk: 1,
+  hp: 1,
+  nutrition: 1,
+};
+
+const rainbowFrogToken = {
+  id: "token-rainbow-frog",
+  name: "Rainbow",
+  type: "Prey",
+  atk: 1,
+  hp: 1,
+  nutrition: 1,
+  keywords: ["Poisonous"],
+};
+
+// Amphibian special cards for adding to hand
+const goldenBlowdartCard = {
+  id: "amphibian-free-spell-golden-blowdart",
+  name: "Golden Blowdart",
+  type: "Free Spell",
+  effectText: "Kill target enemy creature.",
+  effect: ({ log, opponent, state }) => {
+    const targets = opponent.field.filter((card) => isCreatureCard(card) && !isInvisible(card));
+    if (targets.length === 0) {
+      log("Golden Blowdart: no enemy creatures to target.");
+      return null;
+    }
+    return makeTargetedSelection({
+      title: "Golden Blowdart: choose an enemy to kill",
+      candidates: targets.map((target) => ({ label: target.name, value: target })),
+      onSelect: (target) => ({ killCreature: target }),
+    });
+  },
+};
+
+const phantasmalDartsCard = {
+  id: "amphibian-free-spell-phantasmal-darts",
+  name: "Phantasmal Darts",
+  type: "Free Spell",
+  effectText: "Deal 3 damage to opponent.",
+  effect: ({ log }) => {
+    log("Phantasmal Darts deals 3 damage to opponent.");
+    return { damageOpponent: 3 };
+  },
+};
+
+const titicacaWaterCard = {
+  id: "amphibian-spell-titicaca-water",
+  name: "Titicaca Water",
+  type: "Spell",
+  effectText: "Heal 6.",
+  effect: ({ log }) => {
+    log("Titicaca Water heals 6 HP.");
+    return { heal: 6 };
+  },
+};
+
+const tomatoCard = {
+  id: "amphibian-prey-tomato-token",
+  name: "Tomato",
+  type: "Prey",
+  atk: 1,
+  hp: 1,
+  nutrition: 1,
+  keywords: [],
+};
+
+// Field spell for Wishing Well
+const wishingWellFieldSpell = {
+  id: "amphibian-field-wishing-well",
+  name: "Wishing Well",
+  type: "Spell",
+  effectText: "End of turn, regen target creature.",
+  onEnd: ({ log, player, playerIndex, state }) => {
+    const targets = player.field.filter((card) => isCreatureCard(card));
+    if (targets.length === 0) {
+      log("Wishing Well: no creatures to regenerate.");
+      return null;
+    }
+    return makeTargetedSelection({
+      title: "Wishing Well: choose a creature to regenerate",
+      candidates: targets.map((target) => ({ label: target.name, value: target })),
+      onSelect: (target) => {
+        log(`Wishing Well regenerates ${target.name}.`);
+        return { restoreCreature: target };
+      },
+    });
+  },
+};
+
 const amphibianCards = [
   // Amphibian Prey
   {
@@ -2216,7 +2437,11 @@ const amphibianCards = [
     nutrition: 1,
     keywords: ["Immune"],
     effectText: "Play 2 Radiated Tree Frogs.",
-    // TODO: Implement summon tokens
+    summons: [radiatedTreeFrogToken],
+    onPlay: ({ log, playerIndex }) => {
+      log("Chernobyl Tree Frogs summons 2 Radiated Tree Frogs.");
+      return { summonTokens: { playerIndex, tokens: [radiatedTreeFrogToken, radiatedTreeFrogToken] } };
+    },
   },
   {
     id: "amphibian-prey-radiated-tree-frogs",
@@ -2236,7 +2461,20 @@ const amphibianCards = [
     nutrition: 1,
     keywords: ["Free Play"],
     effectText: "Rival discards 1.",
-    // TODO: Implement discard effect
+    onPlay: ({ log, opponent, opponentIndex, state }) => {
+      if (opponent.hand.length === 0) {
+        log("Confusing Rocket Frog: rival has no cards to discard.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Rival must discard a card",
+        candidates: opponent.hand.map((card) => ({ label: card.name, value: card })),
+        onSelect: (card) => {
+          log(`Rival discards ${card.name}.`);
+          return { discardCards: { playerIndex: opponentIndex, cards: [card] } };
+        },
+      });
+    },
   },
   {
     id: "amphibian-prey-desert-rain-frog",
@@ -2246,7 +2484,21 @@ const amphibianCards = [
     hp: 1,
     nutrition: 1,
     effectText: "Add a card from deck to hand. Play a spell.",
-    // TODO: Implement deck search and spell play
+    onPlay: ({ log, player, playerIndex, state }) => {
+      if (player.deck.length === 0) {
+        log("Desert Rain Frog: no cards in deck.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Desert Rain Frog: choose a card from deck",
+        candidates: player.deck.map((card) => ({ label: card.name, value: card })),
+        renderCards: true,
+        onSelect: (card) => {
+          log(`Desert Rain Frog adds ${card.name} to hand.`);
+          return { addToHand: { playerIndex, card, fromDeck: true } };
+        },
+      });
+    },
   },
   {
     id: "amphibian-prey-emperor-newt",
@@ -2257,7 +2509,11 @@ const amphibianCards = [
     nutrition: 1,
     keywords: ["Poisonous"],
     effectText: "End of turn, play Empress Newt.",
-    // TODO: Implement end of turn summon
+    summons: [empressNewtToken],
+    onEnd: ({ log, playerIndex }) => {
+      log("Emperor Newt summons an Empress Newt.");
+      return { summonTokens: { playerIndex, tokens: [empressNewtToken] } };
+    },
   },
   {
     id: "amphibian-prey-empress-newt",
@@ -2277,7 +2533,10 @@ const amphibianCards = [
     nutrition: 1,
     keywords: ["Immune", "Poisonous"],
     effectText: "Deal 2 damage to rival.",
-    // TODO: Implement damage effect
+    onPlay: ({ log }) => {
+      log("Fire Salamander deals 2 damage to rival.");
+      return { damageOpponent: 2 };
+    },
   },
   {
     id: "amphibian-prey-frosts-toad",
@@ -2287,7 +2546,15 @@ const amphibianCards = [
     hp: 1,
     nutrition: 1,
     effectText: "Enemies gain frozen.",
-    // TODO: Implement freeze effect
+    onPlay: ({ log, opponent }) => {
+      const targets = opponent.field.filter((card) => isCreatureCard(card));
+      if (targets.length === 0) {
+        log("Frost's Toad: no enemies to freeze.");
+        return null;
+      }
+      log("Frost's Toad freezes all enemies.");
+      return { freezeCreatures: targets };
+    },
   },
   {
     id: "amphibian-prey-golden-flecked-glass-frog",
@@ -2298,7 +2565,10 @@ const amphibianCards = [
     nutrition: 1,
     keywords: ["Invisible"],
     effectText: "Draw 1. Rival reveals hand.",
-    // TODO: Implement draw and reveal effects
+    onPlay: ({ log, opponentIndex }) => {
+      log("Golden-flecked Glass Frog: draw 1 and reveal rival's hand.");
+      return { draw: 1, revealHand: { playerIndex: opponentIndex, durationMs: 3000 } };
+    },
   },
   {
     id: "amphibian-prey-golden-mantellas",
@@ -2308,7 +2578,11 @@ const amphibianCards = [
     hp: 1,
     nutrition: 1,
     effectText: "Draw 1. Play Golden Mantella.",
-    // TODO: Implement draw and summon
+    summons: [goldenMantellaToken],
+    onPlay: ({ log, playerIndex }) => {
+      log("Golden Mantellas: draw 1 and summon Golden Mantella.");
+      return { draw: 1, summonTokens: { playerIndex, tokens: [goldenMantellaToken] } };
+    },
   },
   {
     id: "amphibian-prey-golden-mantella",
@@ -2319,7 +2593,10 @@ const amphibianCards = [
     nutrition: 1,
     keywords: ["Poisonous"],
     effectText: "Draw 1.",
-    // TODO: Implement draw effect
+    onPlay: ({ log }) => {
+      log("Golden Mantella: draw 1.");
+      return { draw: 1 };
+    },
   },
   {
     id: "amphibian-prey-golden-poison-frog",
@@ -2330,7 +2607,29 @@ const amphibianCards = [
     nutrition: 1,
     keywords: ["Poisonous"],
     effectText: "Draw 1. Sacrifice; add Golden Blowdart to hand.",
-    // TODO: Implement sacrifice and add to hand
+    onPlay: ({ log, playerIndex, creature }) => {
+      log("Golden Poison Frog: draw 1. May sacrifice to add Golden Blowdart.");
+      return {
+        draw: 1,
+        selectTarget: {
+          title: "Sacrifice Golden Poison Frog for Golden Blowdart?",
+          candidates: [
+            { label: "Sacrifice", value: "sacrifice" },
+            { label: "Keep", value: "keep" },
+          ],
+          onSelect: (choice) => {
+            if (choice === "sacrifice") {
+              log("Golden Poison Frog is sacrificed for Golden Blowdart.");
+              return {
+                killCreature: creature,
+                addToHand: { playerIndex, card: goldenBlowdartCard },
+              };
+            }
+            return null;
+          },
+        },
+      };
+    },
   },
   {
     id: "amphibian-prey-java-flying-frog",
@@ -2350,7 +2649,11 @@ const amphibianCards = [
     nutrition: 1,
     keywords: ["Poisonous"],
     effectText: "End of turn play Hidden Egg.",
-    // TODO: Implement end of turn summon
+    summons: [hiddenEleuthEggToken],
+    onEnd: ({ log, playerIndex }) => {
+      log("Monte Iberia Eleuth lays a Hidden Egg.");
+      return { summonTokens: { playerIndex, tokens: [hiddenEleuthEggToken] } };
+    },
   },
   {
     id: "amphibian-prey-hidden-eleuth-egg",
@@ -2361,7 +2664,15 @@ const amphibianCards = [
     nutrition: 0,
     keywords: ["Hidden"],
     effectText: "Start of turn, become Monte Iberia Eleuth.",
-    // TODO: Implement transform effect
+    transformOnStart: {
+      id: "amphibian-prey-monte-iberia-eleuth",
+      name: "Monte Iberia Eleuth",
+      type: "Prey",
+      atk: 1,
+      hp: 1,
+      nutrition: 1,
+      keywords: ["Poisonous"],
+    },
   },
   {
     id: "amphibian-prey-panamanian-golden-frog",
@@ -2372,7 +2683,14 @@ const amphibianCards = [
     nutrition: 1,
     keywords: ["Poisonous"],
     effectText: "Draw 2. Slain, draw 1.",
-    // TODO: Implement draw and slain effects
+    onPlay: ({ log }) => {
+      log("Panamanian Golden Frog: draw 2.");
+      return { draw: 2 };
+    },
+    onSlain: ({ log }) => {
+      log("Panamanian Golden Frog slain: draw 1.");
+      return { draw: 1 };
+    },
   },
   {
     id: "amphibian-prey-phantasmal-poison-frog",
@@ -2383,7 +2701,25 @@ const amphibianCards = [
     nutrition: 1,
     keywords: ["Poisonous"],
     effectText: "Sacrifice, add Phantasmal Darts to hand.",
-    // TODO: Implement sacrifice and add to hand
+    onPlay: ({ log, playerIndex, creature }) => {
+      return makeTargetedSelection({
+        title: "Sacrifice Phantasmal Poison Frog?",
+        candidates: [
+          { label: "Sacrifice for Phantasmal Darts", value: "sacrifice" },
+          { label: "Keep", value: "keep" },
+        ],
+        onSelect: (choice) => {
+          if (choice === "sacrifice") {
+            log("Phantasmal Poison Frog sacrificed for Phantasmal Darts.");
+            return {
+              killCreature: creature,
+              addToHand: { playerIndex, card: phantasmalDartsCard },
+            };
+          }
+          return null;
+        },
+      });
+    },
   },
   {
     id: "amphibian-prey-purple-frog",
@@ -2393,7 +2729,10 @@ const amphibianCards = [
     hp: 1,
     nutrition: 1,
     effectText: "Deal 2 damage to opponents.",
-    // TODO: Implement damage effect
+    onPlay: ({ log }) => {
+      log("Purple Frog deals 2 damage to opponent.");
+      return { damageOpponent: 2 };
+    },
   },
   {
     id: "amphibian-prey-red-tailed-knobby-newts",
@@ -2403,7 +2742,12 @@ const amphibianCards = [
     hp: 1,
     nutrition: 1,
     effectText: "Play 2 Red-tailed Knobby Newts.",
-    // TODO: Implement summon tokens
+    summons: [{ id: "token-red-tailed-knobby-newt", name: "Red-tailed Knobby Newt", type: "Prey", atk: 1, hp: 1, nutrition: 1, keywords: ["Neurotoxic"] }],
+    onPlay: ({ log, playerIndex }) => {
+      const newt = { id: "token-red-tailed-knobby-newt", name: "Red-tailed Knobby Newt", type: "Prey", atk: 1, hp: 1, nutrition: 1, keywords: ["Neurotoxic"] };
+      log("Red-tailed Knobby Newts summons 2 Red-tailed Knobby Newts.");
+      return { summonTokens: { playerIndex, tokens: [newt, newt] } };
+    },
   },
   {
     id: "amphibian-prey-red-tailed-knobby-newt",
@@ -2413,7 +2757,7 @@ const amphibianCards = [
     hp: 1,
     nutrition: 1,
     effectText: "Defending, neurotoxic.",
-    // TODO: Implement defending neurotoxic
+    keywords: ["Neurotoxic"],
   },
   {
     id: "amphibian-prey-siberian-salamander",
@@ -2423,7 +2767,15 @@ const amphibianCards = [
     hp: 1,
     nutrition: 1,
     effectText: "Deal 2 damage to players & other animals. Animals gain frozen.",
-    // TODO: Implement damage and freeze effects
+    onPlay: ({ log, player, opponent, state }) => {
+      log("Siberian Salamander deals 2 damage to all and freezes animals.");
+      const allCreatures = [...player.field, ...opponent.field].filter((card) => isCreatureCard(card));
+      return {
+        damageBothPlayers: 2,
+        damageAllCreatures: 2,
+        freezeCreatures: allCreatures,
+      };
+    },
   },
   {
     id: "amphibian-prey-turtle-frog",
@@ -2434,7 +2786,11 @@ const amphibianCards = [
     nutrition: 1,
     keywords: ["Free Play", "Hidden"],
     effectText: "Play Turtle Froglet.",
-    // TODO: Implement summon
+    summons: [turtleFrogletToken],
+    onPlay: ({ log, playerIndex }) => {
+      log("Turtle Frog summons a Turtle Froglet.");
+      return { summonTokens: { playerIndex, tokens: [turtleFrogletToken] } };
+    },
   },
   {
     id: "amphibian-prey-turtle-froglet",
@@ -2453,7 +2809,17 @@ const amphibianCards = [
     hp: 1,
     nutrition: 2,
     effectText: "Discard add Tomato to hand. Defending, attacking enemy gains frozen.",
-    // TODO: Implement discard and freeze effects
+    discardEffect: {
+      timing: "any",
+      effect: ({ log, playerIndex }) => {
+        log("Tomato Frog discarded: add Tomato to hand.");
+        return { addToHand: { playerIndex, card: tomatoCard } };
+      },
+    },
+    onDefend: ({ log, attacker }) => {
+      log("Tomato Frog defends: attacker gains frozen.");
+      return { freezeCreature: attacker };
+    },
   },
   {
     id: "amphibian-prey-hippo-frog",
@@ -2463,7 +2829,7 @@ const amphibianCards = [
     hp: 2,
     nutrition: 2,
     effectText: "Instead of attacking; may eat target prey.",
-    // TODO: Implement special eating ability
+    keywords: ["Predatory"],
   },
   {
     id: "amphibian-prey-surinam-toad",
@@ -2473,7 +2839,11 @@ const amphibianCards = [
     hp: 2,
     nutrition: 2,
     effectText: "Slain, play 3 Froglets.",
-    // TODO: Implement slain summon
+    summons: [frogletToken],
+    onSlain: ({ log, playerIndex }) => {
+      log("Surinam Toad slain: summons 3 Froglets.");
+      return { summonTokens: { playerIndex, tokens: [frogletToken, frogletToken, frogletToken] } };
+    },
   },
   {
     id: "amphibian-prey-froglet",
@@ -2491,7 +2861,14 @@ const amphibianCards = [
     hp: 2,
     nutrition: 2,
     effectText: "Heal 4. End of turn, regen.",
-    // TODO: Implement heal and regen effects
+    onPlay: ({ log }) => {
+      log("Axolotl heals 4.");
+      return { heal: 4 };
+    },
+    onEnd: ({ log, creature }) => {
+      log("Axolotl regenerates.");
+      return { restoreCreature: creature };
+    },
   },
   {
     id: "amphibian-prey-bigfoot-leopard-frog",
@@ -2501,7 +2878,11 @@ const amphibianCards = [
     hp: 2,
     nutrition: 2,
     effectText: "End of turn, play Bigfoot Tadpole.",
-    // TODO: Implement end of turn summon
+    summons: [bigfootTadpoleToken],
+    onEnd: ({ log, playerIndex }) => {
+      log("Bigfoot Leopard Frog lays a Bigfoot Tadpole.");
+      return { summonTokens: { playerIndex, tokens: [bigfootTadpoleToken] } };
+    },
   },
   {
     id: "amphibian-prey-bigfoot-tadpole",
@@ -2511,7 +2892,14 @@ const amphibianCards = [
     hp: 1,
     nutrition: 0,
     effectText: "Start of turn, become Bigfoot Leopard Frog.",
-    // TODO: Implement transform effect
+    transformOnStart: {
+      id: "amphibian-prey-bigfoot-leopard-frog",
+      name: "Bigfoot Leopard Frog",
+      type: "Prey",
+      atk: 2,
+      hp: 2,
+      nutrition: 2,
+    },
   },
 
   // Amphibian Predators
@@ -2522,7 +2910,11 @@ const amphibianCards = [
     atk: 2,
     hp: 2,
     effectText: "Play Indian BullFrog.",
-    // TODO: Implement summon
+    summons: [indianBullfrogToken],
+    onPlay: ({ log, playerIndex }) => {
+      log("Indian Bullfrogs summons an Indian Bullfrog.");
+      return { summonTokens: { playerIndex, tokens: [indianBullfrogToken] } };
+    },
   },
   {
     id: "amphibian-predator-tiger-frog",
@@ -2531,7 +2923,10 @@ const amphibianCards = [
     atk: 2,
     hp: 2,
     effectText: "Deal 2 damage to rival.",
-    // TODO: Implement damage effect
+    onPlay: ({ log }) => {
+      log("Tiger Frog deals 2 damage to rival.");
+      return { damageOpponent: 2 };
+    },
   },
   {
     id: "amphibian-predator-american-bullfrogs",
@@ -2540,7 +2935,11 @@ const amphibianCards = [
     atk: 3,
     hp: 3,
     effectText: "Play American Bullfrog.",
-    // TODO: Implement summon
+    summons: [americanBullfrogToken],
+    onPlay: ({ log, playerIndex }) => {
+      log("American Bullfrogs summons an American Bullfrog.");
+      return { summonTokens: { playerIndex, tokens: [americanBullfrogToken] } };
+    },
   },
   {
     id: "amphibian-predator-american-bullfrog",
@@ -2557,7 +2956,11 @@ const amphibianCards = [
     hp: 3,
     keywords: ["Edible"],
     effectText: "End of turn, play Mountain Chicken Egg.",
-    // TODO: Implement end of turn summon
+    summons: [mountainChickenEggToken],
+    onEnd: ({ log, playerIndex }) => {
+      log("Mountain Chicken lays a Mountain Chicken Egg.");
+      return { summonTokens: { playerIndex, tokens: [mountainChickenEggToken] } };
+    },
   },
   {
     id: "amphibian-predator-mountain-chicken-egg",
@@ -2568,7 +2971,14 @@ const amphibianCards = [
     nutrition: 0,
     keywords: ["Hidden"],
     effectText: "Start of turn, become Mountain Chicken.",
-    // TODO: Implement transform effect
+    transformOnStart: {
+      id: "amphibian-predator-mountain-chicken",
+      name: "Mountain Chicken",
+      type: "Predator",
+      atk: 3,
+      hp: 3,
+      keywords: ["Edible"],
+    },
   },
   {
     id: "amphibian-predator-titicaca-water-frog",
@@ -2577,7 +2987,10 @@ const amphibianCards = [
     atk: 3,
     hp: 3,
     effectText: "Add Titicaca Water to hand.",
-    // TODO: Implement add to hand
+    onPlay: ({ log, playerIndex }) => {
+      log("Titicaca Water Frog adds Titicaca Water to hand.");
+      return { addToHand: { playerIndex, card: titicacaWaterCard } };
+    },
   },
   {
     id: "amphibian-predator-african-bullfrog",
@@ -2586,7 +2999,11 @@ const amphibianCards = [
     atk: 4,
     hp: 4,
     effectText: "Play Pixie Frog.",
-    // TODO: Implement summon
+    summons: [pixieFrogToken],
+    onPlay: ({ log, playerIndex }) => {
+      log("African Bullfrog summons a Pixie Frog.");
+      return { summonTokens: { playerIndex, tokens: [pixieFrogToken] } };
+    },
   },
   {
     id: "amphibian-predator-pixie-frog",
@@ -2603,7 +3020,11 @@ const amphibianCards = [
     hp: 4,
     keywords: ["Poisonous"],
     effectText: "Play 2 Poisonous Eggs.",
-    // TODO: Implement summon
+    summons: [poisonousEggToken],
+    onPlay: ({ log, playerIndex }) => {
+      log("Cane Toad summons 2 Poisonous Eggs.");
+      return { summonTokens: { playerIndex, tokens: [poisonousEggToken, poisonousEggToken] } };
+    },
   },
   {
     id: "amphibian-prey-poisonous-egg",
@@ -2621,7 +3042,14 @@ const amphibianCards = [
     atk: 4,
     hp: 4,
     effectText: "Deal 4 damage to enemies. End turn.",
-    // TODO: Implement damage effect
+    onPlay: ({ log, opponent, state }) => {
+      const targets = opponent.field.filter((card) => isCreatureCard(card));
+      log("Goliath Frog deals 4 damage to all enemy creatures.");
+      return {
+        damageCreatures: targets.map((t) => ({ creature: t, amount: 4, sourceLabel: "Goliath Frog" })),
+        endTurn: true,
+      };
+    },
   },
   {
     id: "amphibian-predator-hellbender-salamander",
@@ -2630,7 +3058,10 @@ const amphibianCards = [
     atk: 4,
     hp: 4,
     effectText: "Deal 4 damage to rival.",
-    // TODO: Implement damage effect
+    onPlay: ({ log }) => {
+      log("Hellbender Salamander deals 4 damage to rival.");
+      return { damageOpponent: 4 };
+    },
   },
   {
     id: "amphibian-predator-helmeted-water-toad",
@@ -2647,7 +3078,14 @@ const amphibianCards = [
     atk: 4,
     hp: 4,
     effectText: "Regen other creatures. Heal 4.",
-    // TODO: Implement regen and heal effects
+    onPlay: ({ log, player, creature }) => {
+      log("Lake Junin Giant Frog heals 4 and regenerates other creatures.");
+      const otherCreatures = player.field.filter((card) => isCreatureCard(card) && card.instanceId !== creature?.instanceId);
+      return {
+        heal: 4,
+        restoreCreatures: otherCreatures,
+      };
+    },
   },
   {
     id: "amphibian-predator-japanese-giant-salamander",
@@ -2656,7 +3094,15 @@ const amphibianCards = [
     atk: 5,
     hp: 5,
     effectText: "After combat, deal 2 damage to enemies.",
-    // TODO: Implement after combat damage
+    onAfterCombat: ({ log, opponent }) => {
+      const targets = opponent.field.filter((card) => isCreatureCard(card));
+      if (targets.length === 0) {
+        log("Japanese Giant Salamander: no enemies to damage.");
+        return null;
+      }
+      log("Japanese Giant Salamander deals 2 damage to all enemies after combat.");
+      return { damageCreatures: targets.map((t) => ({ creature: t, amount: 2, sourceLabel: "Japanese Giant Salamander" })) };
+    },
   },
   {
     id: "amphibian-predator-chinese-giant-salamander",
@@ -2666,7 +3112,11 @@ const amphibianCards = [
     hp: 6,
     keywords: ["Lure"],
     effectText: "Play Chinese Salamander.",
-    // TODO: Implement summon
+    summons: [chineseSalamanderToken],
+    onPlay: ({ log, playerIndex }) => {
+      log("Chinese Giant Salamander summons a Chinese Salamander.");
+      return { summonTokens: { playerIndex, tokens: [chineseSalamanderToken] } };
+    },
   },
   {
     id: "amphibian-prey-chinese-salamander",
@@ -2676,7 +3126,10 @@ const amphibianCards = [
     hp: 2,
     nutrition: 2,
     effectText: "Heal 2.",
-    // TODO: Implement heal effect
+    onPlay: ({ log }) => {
+      log("Chinese Salamander heals 2.");
+      return { heal: 2 };
+    },
   },
 
   // Amphibian Support
@@ -2685,77 +3138,218 @@ const amphibianCards = [
     name: "Ambiguity",
     type: "Spell",
     effectText: "Either draw 3, heal 3, or deal 3 damage to rival.",
-    // TODO: Implement choice effect
+    effect: ({ log }) => {
+      return makeTargetedSelection({
+        title: "Ambiguity: choose an effect",
+        candidates: [
+          { label: "Draw 3 cards", value: "draw" },
+          { label: "Heal 3 HP", value: "heal" },
+          { label: "Deal 3 damage to rival", value: "damage" },
+        ],
+        onSelect: (choice) => {
+          if (choice === "draw") {
+            log("Ambiguity: draw 3 cards.");
+            return { draw: 3 };
+          }
+          if (choice === "heal") {
+            log("Ambiguity: heal 3 HP.");
+            return { heal: 3 };
+          }
+          log("Ambiguity: deal 3 damage to rival.");
+          return { damageOpponent: 3 };
+        },
+      });
+    },
   },
   {
     id: "amphibian-spell-bounce",
     name: "Bounce",
     type: "Spell",
     effectText: "Return enemies to hand.",
-    // TODO: Implement return to hand
+    effect: ({ log, opponent, opponentIndex }) => {
+      const targets = opponent.field.filter((card) => isCreatureCard(card));
+      if (targets.length === 0) {
+        log("Bounce: no enemies to return.");
+        return null;
+      }
+      log("Bounce returns all enemies to hand.");
+      return { returnToHand: { playerIndex: opponentIndex, creatures: targets } };
+    },
   },
   {
     id: "amphibian-spell-leapfrog",
     name: "Leapfrog",
     type: "Spell",
     effectText: "Deal 3 damage to rival. Deal 3 damage to target enemy.",
-    // TODO: Implement damage effects
+    effect: ({ log, opponent }) => {
+      const targets = opponent.field.filter((card) => isCreatureCard(card) && !isInvisible(card));
+      if (targets.length === 0) {
+        log("Leapfrog deals 3 damage to rival.");
+        return { damageOpponent: 3 };
+      }
+      return makeTargetedSelection({
+        title: "Leapfrog: choose an enemy to damage",
+        candidates: targets.map((target) => ({ label: target.name, value: target })),
+        onSelect: (target) => {
+          log(`Leapfrog deals 3 damage to rival and 3 damage to ${target.name}.`);
+          return {
+            damageOpponent: 3,
+            damageCreature: { creature: target, amount: 3, sourceLabel: "Leapfrog" },
+          };
+        },
+      });
+    },
   },
   {
     id: "amphibian-spell-monsoon",
     name: "Monsoon",
     type: "Spell",
     effectText: "Deal 2 damage to opponents. Add Rainbow to hand.",
-    // TODO: Implement damage and add to hand
+    effect: ({ log, opponent, playerIndex }) => {
+      log("Monsoon deals 2 damage to opponent and adds Rainbow to hand.");
+      const targets = opponent.field.filter((card) => isCreatureCard(card));
+      return {
+        damageOpponent: 2,
+        damageCreatures: targets.map((t) => ({ creature: t, amount: 2, sourceLabel: "Monsoon" })),
+        addToHand: { playerIndex, card: rainbowFrogToken },
+      };
+    },
   },
   {
     id: "amphibian-spell-pacify",
     name: "Pacify",
     type: "Spell",
     effectText: "Target enemy gains passive.",
-    // TODO: Implement passive keyword
+    effect: ({ log, opponent }) => {
+      const targets = opponent.field.filter((card) => isCreatureCard(card) && !isInvisible(card));
+      if (targets.length === 0) {
+        log("Pacify: no enemies to target.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Pacify: choose an enemy to gain Passive",
+        candidates: targets.map((target) => ({ label: target.name, value: target })),
+        onSelect: (target) => {
+          log(`Pacify gives ${target.name} the Passive keyword.`);
+          return { addKeyword: { creature: target, keyword: "Passive" } };
+        },
+      });
+    },
   },
   {
     id: "amphibian-spell-pounce-plummet",
     name: "Pounce Plummet",
     type: "Spell",
     effectText: "Deal 2 damage to enemies. Deal 2 damage to enemies.",
-    // TODO: Implement damage effects
+    effect: ({ log, opponent }) => {
+      const targets = opponent.field.filter((card) => isCreatureCard(card));
+      if (targets.length === 0) {
+        log("Pounce Plummet: no enemies to damage.");
+        return null;
+      }
+      log("Pounce Plummet deals 4 damage total to all enemies.");
+      return {
+        damageCreatures: targets.flatMap((t) => [
+          { creature: t, amount: 2, sourceLabel: "Pounce" },
+          { creature: t, amount: 2, sourceLabel: "Plummet" },
+        ]),
+      };
+    },
   },
   {
     id: "amphibian-spell-shower",
     name: "Shower",
     type: "Spell",
     effectText: "Creatures gain +2/+2.",
-    // TODO: Implement buff effect
+    effect: ({ log, player }) => {
+      const targets = player.field.filter((card) => isCreatureCard(card));
+      if (targets.length === 0) {
+        log("Shower: no creatures to buff.");
+        return null;
+      }
+      log("Shower gives all friendly creatures +2/+2.");
+      return { buffCreatures: targets.map((t) => ({ creature: t, attack: 2, health: 2 })) };
+    },
   },
   {
     id: "amphibian-spell-terrain-shift",
     name: "Terrain Shift",
     type: "Spell",
     effectText: "Destroy target field spells. Kill enemy tokens.",
-    // TODO: Implement field spell and token destruction
+    effect: ({ log, opponent, state }) => {
+      const tokens = opponent.field.filter((card) => card?.id?.startsWith("token-"));
+      log("Terrain Shift destroys field spell and kills enemy tokens.");
+      return {
+        removeFieldSpell: true,
+        killCreatures: tokens,
+      };
+    },
   },
   {
     id: "amphibian-spell-whitewater",
     name: "Whitewater",
     type: "Spell",
     effectText: "Deal 3 damage to any target. Heal 3.",
-    // TODO: Implement damage and heal effects
+    effect: ({ log, player, opponent }) => {
+      const targets = [
+        { label: "Opponent", value: { type: "player" } },
+        ...opponent.field.filter((card) => isCreatureCard(card) && !isInvisible(card)).map((c) => ({ label: c.name, value: { type: "creature", card: c } })),
+      ];
+      return makeTargetedSelection({
+        title: "Whitewater: choose a target for 3 damage",
+        candidates: targets,
+        onSelect: (target) => {
+          if (target.type === "player") {
+            log("Whitewater deals 3 damage to opponent and heals 3.");
+            return { damageOpponent: 3, heal: 3 };
+          }
+          log(`Whitewater deals 3 damage to ${target.card.name} and heals 3.`);
+          return { damageCreature: { creature: target.card, amount: 3, sourceLabel: "Whitewater" }, heal: 3 };
+        },
+      });
+    },
   },
   {
     id: "amphibian-free-spell-metamorphosis",
     name: "Metamorphosis",
     type: "Free Spell",
     effectText: "Target prey creature gains +2/+2.",
-    // TODO: Implement buff effect
+    effect: ({ log, player }) => {
+      const targets = player.field.filter((card) => card?.type === "Prey");
+      if (targets.length === 0) {
+        log("Metamorphosis: no prey to buff.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Metamorphosis: choose a prey to gain +2/+2",
+        candidates: targets.map((target) => ({ label: target.name, value: target })),
+        onSelect: (target) => {
+          log(`Metamorphosis gives ${target.name} +2/+2.`);
+          return { buffCreature: { creature: target, attack: 2, health: 2 } };
+        },
+      });
+    },
   },
   {
     id: "amphibian-free-spell-newt",
     name: "Newt",
     type: "Free Spell",
     effectText: "Target animal becomes Newt.",
-    // TODO: Implement transform effect
+    effect: ({ log, player, opponent }) => {
+      const allCreatures = [...player.field, ...opponent.field].filter((card) => isCreatureCard(card) && !isInvisible(card));
+      if (allCreatures.length === 0) {
+        log("Newt: no creatures to transform.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Newt: choose an animal to transform",
+        candidates: allCreatures.map((target) => ({ label: target.name, value: target })),
+        onSelect: (target) => {
+          log(`${target.name} transforms into a Newt.`);
+          return { transformCreature: { target, replacement: newtToken } };
+        },
+      });
+    },
   },
   {
     id: "amphibian-prey-newt-token",
@@ -2770,21 +3364,60 @@ const amphibianCards = [
     name: "Sleight of Hand",
     type: "Free Spell",
     effectText: "Draw 2.",
-    // TODO: Implement draw effect
+    effect: ({ log }) => {
+      log("Sleight of Hand: draw 2 cards.");
+      return { draw: 2 };
+    },
   },
   {
     id: "amphibian-free-spell-slime",
     name: "Slime",
     type: "Free Spell",
     effectText: "Either draw 1, heal 1, or deal 1 damage to rival.",
-    // TODO: Implement choice effect
+    effect: ({ log }) => {
+      return makeTargetedSelection({
+        title: "Slime: choose an effect",
+        candidates: [
+          { label: "Draw 1 card", value: "draw" },
+          { label: "Heal 1 HP", value: "heal" },
+          { label: "Deal 1 damage to rival", value: "damage" },
+        ],
+        onSelect: (choice) => {
+          if (choice === "draw") {
+            log("Slime: draw 1 card.");
+            return { draw: 1 };
+          }
+          if (choice === "heal") {
+            log("Slime: heal 1 HP.");
+            return { heal: 1 };
+          }
+          log("Slime: deal 1 damage to rival.");
+          return { damageOpponent: 1 };
+        },
+      });
+    },
   },
   {
     id: "amphibian-free-spell-spell-overload",
     name: "Spell Overload",
     type: "Free Spell",
     effectText: "Play a spell. Play a spell.",
-    // TODO: Implement spell play effects
+    effect: ({ log, player, playerIndex }) => {
+      const spells = player.hand.filter((card) => card.type === "Spell");
+      if (spells.length === 0) {
+        log("Spell Overload: no spells in hand.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Spell Overload: choose first spell to play",
+        candidates: spells.map((card) => ({ label: card.name, value: card })),
+        renderCards: true,
+        onSelect: (spell1) => {
+          log(`Spell Overload plays ${spell1.name}.`);
+          return { playFromHand: { playerIndex, card: spell1, freePlay: true } };
+        },
+      });
+    },
   },
   {
     id: "amphibian-field-spell-wishing-well",
@@ -2792,7 +3425,10 @@ const amphibianCards = [
     type: "Spell",
     isFieldSpell: true,
     effectText: "End of turn, regen target creature.",
-    // TODO: Implement field spell effect
+    effect: ({ log, playerIndex }) => {
+      log("Wishing Well takes the field.");
+      return { setFieldSpell: { ownerIndex: playerIndex, cardData: wishingWellFieldSpell } };
+    },
   },
   {
     id: "amphibian-trap-blowdart",
@@ -2800,7 +3436,13 @@ const amphibianCards = [
     type: "Trap",
     trigger: "directAttack",
     effectText: "When target enemy attacks directly, negate attack & kill it.",
-    // TODO: Implement trap effect
+    effect: ({ log, attacker }) => {
+      log("Blowdart activates: negate attack and kill attacker.");
+      return {
+        negateAttack: true,
+        killCreature: attacker,
+      };
+    },
   },
   {
     id: "amphibian-trap-rebound",
@@ -2808,7 +3450,13 @@ const amphibianCards = [
     type: "Trap",
     trigger: "rivalPlaysCard",
     effectText: "When rival plays a card, negate play. Rival may play a different card.",
-    // TODO: Implement trap effect
+    effect: ({ log, target }) => {
+      log("Rebound activates: play negated.");
+      return {
+        negatePlay: true,
+        allowReplay: true,
+      };
+    },
   },
   {
     id: "amphibian-trap-slip",
@@ -2816,9 +3464,245 @@ const amphibianCards = [
     type: "Trap",
     trigger: "defending",
     effectText: "When target creature is defending, negate combat.",
-    // TODO: Implement trap effect
+    effect: ({ log }) => {
+      log("Slip activates: combat negated.");
+      return { negateCombat: true };
+    },
   },
 ];
+
+// Bird tokens and special cards
+const kakapoFeathersCard = {
+  id: "bird-free-spell-kakapo-feathers",
+  name: "Kākāpō Feathers",
+  type: "Free Spell",
+  effectText: "Target creature gains Invisible.",
+  effect: ({ log, player, opponent }) => {
+    const allCreatures = [...player.field, ...opponent.field].filter((card) => isCreatureCard(card));
+    if (allCreatures.length === 0) {
+      log("Kākāpō Feathers: no creatures to target.");
+      return null;
+    }
+    return makeTargetedSelection({
+      title: "Choose a creature to gain Invisible",
+      candidates: allCreatures.map((target) => ({ label: target.name, value: target })),
+      onSelect: (target) => {
+        log(`${target.name} gains Invisible.`);
+        return { addKeyword: { creature: target, keyword: "Invisible" } };
+      },
+    });
+  },
+};
+
+const doveToken = {
+  id: "token-dove",
+  name: "Dove",
+  type: "Prey",
+  atk: 1,
+  hp: 1,
+  nutrition: 1,
+  keywords: ["Passive"],
+  effectText: "Heal 3.",
+  onPlay: ({ log }) => {
+    log("Dove heals 3.");
+    return { heal: 3 };
+  },
+};
+
+const sparrowEggToken = {
+  id: "token-sparrow-egg",
+  name: "Sparrow Egg",
+  type: "Prey",
+  atk: 0,
+  hp: 1,
+  nutrition: 0,
+};
+
+const goldenSongSparrowToken = {
+  id: "token-golden-song-sparrow",
+  name: "Golden Song Sparrow",
+  type: "Prey",
+  atk: 1,
+  hp: 1,
+  nutrition: 1,
+  effectText: "Draw 1.",
+  onPlay: ({ log }) => {
+    log("Golden Song Sparrow: draw 1.");
+    return { draw: 1 };
+  },
+};
+
+const orientalMagpieToken = {
+  id: "token-oriental-magpie",
+  name: "Oriental Magpie",
+  type: "Prey",
+  atk: 1,
+  hp: 1,
+  nutrition: 1,
+  effectText: "Heal 2.",
+  onPlay: ({ log }) => {
+    log("Oriental Magpie heals 2.");
+    return { heal: 2 };
+  },
+};
+
+const blueEggToken = {
+  id: "token-blue-egg",
+  name: "Blue Egg",
+  type: "Prey",
+  atk: 0,
+  hp: 1,
+  nutrition: 0,
+  keywords: ["Hidden"],
+};
+
+const goldenEggToken = {
+  id: "token-golden-egg",
+  name: "Golden Egg",
+  type: "Prey",
+  atk: 0,
+  hp: 1,
+  nutrition: 0,
+  effectText: "Draw 1.",
+  onPlay: ({ log }) => {
+    log("Golden Egg: draw 1.");
+    return { draw: 1 };
+  },
+};
+
+const rainbowFeathersCard = {
+  id: "bird-free-spell-rainbow-feathers",
+  name: "Rainbow Feathers",
+  type: "Free Spell",
+  effectText: "Creature gains +2/+2 and Barrier.",
+  effect: ({ log, player }) => {
+    const targets = player.field.filter((card) => isCreatureCard(card));
+    if (targets.length === 0) {
+      log("Rainbow Feathers: no creatures to target.");
+      return null;
+    }
+    return makeTargetedSelection({
+      title: "Choose a creature to gain +2/+2 and Barrier",
+      candidates: targets.map((target) => ({ label: target.name, value: target })),
+      onSelect: (target) => {
+        log(`${target.name} gains +2/+2 and Barrier.`);
+        return {
+          buffCreature: { creature: target, attack: 2, health: 2 },
+          addKeyword: { creature: target, keyword: "Barrier" },
+        };
+      },
+    });
+  },
+};
+
+const henToken = {
+  id: "token-hen",
+  name: "Hen",
+  type: "Prey",
+  atk: 1,
+  hp: 2,
+  nutrition: 2,
+};
+
+const eggToken = {
+  id: "token-egg",
+  name: "Egg",
+  type: "Prey",
+  atk: 0,
+  hp: 1,
+  nutrition: 0,
+};
+
+const feedCard = {
+  id: "bird-spell-feed",
+  name: "Feed",
+  type: "Spell",
+  effectText: "Creatures gain +1/+1.",
+  effect: ({ log, player }) => {
+    const targets = player.field.filter((card) => isCreatureCard(card));
+    if (targets.length === 0) {
+      log("Feed: no creatures to buff.");
+      return null;
+    }
+    log("Feed: all creatures gain +1/+1.");
+    return { buffCreatures: targets.map((t) => ({ creature: t, attack: 1, health: 1 })) };
+  },
+};
+
+const toxicSnakeToken = {
+  id: "token-toxic-snake",
+  name: "Toxic Snake",
+  type: "Prey",
+  atk: 1,
+  hp: 1,
+  nutrition: 1,
+  keywords: ["Toxic"],
+};
+
+const wolfHawkToken = {
+  id: "token-wolf-hawk",
+  name: "Wolf Hawk",
+  type: "Predator",
+  atk: 2,
+  hp: 2,
+};
+
+const redTailfeathersCard = {
+  id: "bird-free-spell-red-tailfeathers",
+  name: "Red Tailfeathers",
+  type: "Free Spell",
+  effectText: "Target creature gains Haste and +1/+0.",
+  effect: ({ log, player }) => {
+    const targets = player.field.filter((card) => isCreatureCard(card));
+    if (targets.length === 0) {
+      log("Red Tailfeathers: no creatures to target.");
+      return null;
+    }
+    return makeTargetedSelection({
+      title: "Choose a creature to gain Haste and +1/+0",
+      candidates: targets.map((target) => ({ label: target.name, value: target })),
+      onSelect: (target) => {
+        log(`${target.name} gains Haste and +1/+0.`);
+        return {
+          buffCreature: { creature: target, attack: 1, health: 0 },
+          addKeyword: { creature: target, keyword: "Haste" },
+        };
+      },
+    });
+  },
+};
+
+const bushtitToken = {
+  id: "token-bushtit",
+  name: "Bushtit",
+  type: "Prey",
+  atk: 0,
+  hp: 1,
+  nutrition: 0,
+};
+
+// Bird Field Spell
+const birdFeederFieldSpell = {
+  id: "bird-field-bird-feeder",
+  name: "Bird Feeder",
+  type: "Spell",
+  effectText: "End of turn, target creature gains +1/+1.",
+  onEnd: ({ log, player }) => {
+    const targets = player.field.filter((card) => isCreatureCard(card));
+    if (targets.length === 0) {
+      log("Bird Feeder: no creatures to buff.");
+      return null;
+    }
+    return makeTargetedSelection({
+      title: "Bird Feeder: choose a creature to gain +1/+1",
+      candidates: targets.map((target) => ({ label: target.name, value: target })),
+      onSelect: (target) => {
+        log(`Bird Feeder gives ${target.name} +1/+1.`);
+        return { buffCreature: { creature: target, attack: 1, health: 1 } };
+      },
+    });
+  },
+};
 
 const birdCards = [
   // Bird Prey
@@ -2831,7 +3715,10 @@ const birdCards = [
     nutrition: 2,
     keywords: ["Invisible"],
     effectText: "Slain, add Kākāpō Feathers to hand.",
-    // TODO: Implement slain effect
+    onSlain: ({ log, playerIndex }) => {
+      log("Kākāpō slain: add Kākāpō Feathers to hand.");
+      return { addToHand: { playerIndex, card: kakapoFeathersCard } };
+    },
   },
   {
     id: "bird-prey-carrier-pigeon",
@@ -2841,7 +3728,24 @@ const birdCards = [
     hp: 1,
     nutrition: 1,
     effectText: "Rival reveals hand. Add a card from deck to hand.",
-    // TODO: Implement reveal and deck search
+    onPlay: ({ log, player, playerIndex, opponentIndex }) => {
+      log("Carrier Pigeon: reveal rival hand and search deck.");
+      if (player.deck.length === 0) {
+        return { revealHand: { playerIndex: opponentIndex, durationMs: 3000 } };
+      }
+      return {
+        revealHand: { playerIndex: opponentIndex, durationMs: 3000 },
+        selectTarget: {
+          title: "Choose a card from deck",
+          candidates: player.deck.map((card) => ({ label: card.name, value: card })),
+          renderCards: true,
+          onSelect: (card) => {
+            log(`Carrier Pigeon adds ${card.name} to hand.`);
+            return { addToHand: { playerIndex, card, fromDeck: true } };
+          },
+        },
+      };
+    },
   },
   {
     id: "bird-prey-carrion-crow",
@@ -2869,7 +3773,11 @@ const birdCards = [
     hp: 1,
     nutrition: 1,
     effectText: "Play Dove. Heal 3.",
-    // TODO: Implement summon and heal
+    summons: [doveToken],
+    onPlay: ({ log, playerIndex }) => {
+      log("Doves summons a Dove and heals 3.");
+      return { summonTokens: { playerIndex, tokens: [doveToken] }, heal: 3 };
+    },
   },
   {
     id: "bird-prey-dove",
@@ -2880,7 +3788,10 @@ const birdCards = [
     nutrition: 1,
     keywords: ["Passive"],
     effectText: "Heal 3.",
-    // TODO: Implement heal effect
+    onPlay: ({ log }) => {
+      log("Dove heals 3.");
+      return { heal: 3 };
+    },
   },
   {
     id: "bird-prey-eurasian-magpie",
@@ -2890,7 +3801,27 @@ const birdCards = [
     hp: 1,
     nutrition: 1,
     effectText: "End of turn, either heal 4 or deal 2 damage to opponents.",
-    // TODO: Implement choice effect
+    onEnd: ({ log, opponent }) => {
+      return makeTargetedSelection({
+        title: "Eurasian Magpie: choose an effect",
+        candidates: [
+          { label: "Heal 4 HP", value: "heal" },
+          { label: "Deal 2 damage to opponents", value: "damage" },
+        ],
+        onSelect: (choice) => {
+          if (choice === "heal") {
+            log("Eurasian Magpie heals 4.");
+            return { heal: 4 };
+          }
+          log("Eurasian Magpie deals 2 damage to opponent and enemies.");
+          const targets = opponent.field.filter((card) => isCreatureCard(card));
+          return {
+            damageOpponent: 2,
+            damageCreatures: targets.map((t) => ({ creature: t, amount: 2, sourceLabel: "Eurasian Magpie" })),
+          };
+        },
+      });
+    },
   },
   {
     id: "bird-prey-florida-grasshopper-sparrow",
@@ -2901,7 +3832,11 @@ const birdCards = [
     nutrition: 1,
     keywords: ["Free Play"],
     effectText: "Play Sparrow Egg.",
-    // TODO: Implement summon
+    summons: [sparrowEggToken],
+    onPlay: ({ log, playerIndex }) => {
+      log("Florida Grasshopper Sparrow lays a Sparrow Egg.");
+      return { summonTokens: { playerIndex, tokens: [sparrowEggToken] } };
+    },
   },
   {
     id: "bird-prey-sparrow-egg",
@@ -2911,7 +3846,14 @@ const birdCards = [
     hp: 1,
     nutrition: 0,
     effectText: "Start of turn, become Sparrow.",
-    // TODO: Implement transform effect
+    transformOnStart: {
+      id: "bird-prey-sparrow",
+      name: "Sparrow",
+      type: "Prey",
+      atk: 1,
+      hp: 1,
+      nutrition: 1,
+    },
   },
   {
     id: "bird-prey-sparrow",
@@ -2921,7 +3863,11 @@ const birdCards = [
     hp: 1,
     nutrition: 1,
     effectText: "End of turn, play Sparrow Egg.",
-    // TODO: Implement end of turn summon
+    summons: [sparrowEggToken],
+    onEnd: ({ log, playerIndex }) => {
+      log("Sparrow lays a Sparrow Egg.");
+      return { summonTokens: { playerIndex, tokens: [sparrowEggToken] } };
+    },
   },
   {
     id: "bird-prey-golden-song-sparrows",
@@ -2931,7 +3877,11 @@ const birdCards = [
     hp: 1,
     nutrition: 1,
     effectText: "Play 2 Golden Song Sparrows. Draw 1.",
-    // TODO: Implement summon and draw
+    summons: [goldenSongSparrowToken],
+    onPlay: ({ log, playerIndex }) => {
+      log("Golden Song Sparrows summons 2 Golden Song Sparrows and draws 1.");
+      return { summonTokens: { playerIndex, tokens: [goldenSongSparrowToken, goldenSongSparrowToken] }, draw: 1 };
+    },
   },
   {
     id: "bird-prey-golden-song-sparrow",
@@ -2941,7 +3891,10 @@ const birdCards = [
     hp: 1,
     nutrition: 1,
     effectText: "Draw 1.",
-    // TODO: Implement draw effect
+    onPlay: ({ log }) => {
+      log("Golden Song Sparrow: draw 1.");
+      return { draw: 1 };
+    },
   },
   {
     id: "bird-prey-mexican-violetear",
@@ -2951,7 +3904,20 @@ const birdCards = [
     hp: 1,
     nutrition: 1,
     effectText: "Copy abilities of a carrion.",
-    // TODO: Implement copy abilities
+    onPlay: ({ log, player, creature }) => {
+      if (player.carrion.length === 0) {
+        log("Mexican Violetear: no carrion to copy.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Copy abilities from carrion",
+        candidates: player.carrion.map((card) => ({ label: card.name, value: card })),
+        onSelect: (source) => {
+          log(`Mexican Violetear copies abilities from ${source.name}.`);
+          return { copyAbilities: { target: creature, source } };
+        },
+      });
+    },
   },
   {
     id: "bird-prey-mockingbird",
@@ -2961,7 +3927,21 @@ const birdCards = [
     hp: 1,
     nutrition: 1,
     effectText: "Copy stats of target animal.",
-    // TODO: Implement copy stats
+    onPlay: ({ log, player, opponent, creature }) => {
+      const allCreatures = [...player.field, ...opponent.field].filter((card) => isCreatureCard(card) && card.instanceId !== creature?.instanceId);
+      if (allCreatures.length === 0) {
+        log("Mockingbird: no animals to copy stats from.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Copy stats from animal",
+        candidates: allCreatures.map((card) => ({ label: card.name, value: card })),
+        onSelect: (source) => {
+          log(`Mockingbird copies stats from ${source.name}.`);
+          return { copyStats: { target: creature, source } };
+        },
+      });
+    },
   },
   {
     id: "bird-prey-moluccan-cockatoo",
@@ -2971,7 +3951,21 @@ const birdCards = [
     hp: 1,
     nutrition: 1,
     effectText: "Copy abilities of target animal.",
-    // TODO: Implement copy abilities
+    onPlay: ({ log, player, opponent, creature }) => {
+      const allCreatures = [...player.field, ...opponent.field].filter((card) => isCreatureCard(card) && card.instanceId !== creature?.instanceId);
+      if (allCreatures.length === 0) {
+        log("Moluccan Cockatoo: no animals to copy abilities from.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Copy abilities from animal",
+        candidates: allCreatures.map((card) => ({ label: card.name, value: card })),
+        onSelect: (source) => {
+          log(`Moluccan Cockatoo copies abilities from ${source.name}.`);
+          return { copyAbilities: { target: creature, source } };
+        },
+      });
+    },
   },
   {
     id: "bird-prey-oriental-magpies",
@@ -2981,7 +3975,22 @@ const birdCards = [
     hp: 1,
     nutrition: 1,
     effectText: "Play Oriental Magpie. Heal 2. Regen target creature.",
-    // TODO: Implement summon, heal, and regen
+    summons: [orientalMagpieToken],
+    onPlay: ({ log, playerIndex, player }) => {
+      const targets = player.field.filter((card) => isCreatureCard(card));
+      if (targets.length === 0) {
+        log("Oriental Magpies summons and heals 2.");
+        return { summonTokens: { playerIndex, tokens: [orientalMagpieToken] }, heal: 2 };
+      }
+      return makeTargetedSelection({
+        title: "Choose a creature to regenerate",
+        candidates: targets.map((card) => ({ label: card.name, value: card })),
+        onSelect: (target) => {
+          log(`Oriental Magpies summons, heals 2, and regenerates ${target.name}.`);
+          return { summonTokens: { playerIndex, tokens: [orientalMagpieToken] }, heal: 2, restoreCreature: target };
+        },
+      });
+    },
   },
   {
     id: "bird-prey-oriental-magpie",
@@ -2991,7 +4000,10 @@ const birdCards = [
     hp: 1,
     nutrition: 1,
     effectText: "Heal 2.",
-    // TODO: Implement heal effect
+    onPlay: ({ log }) => {
+      log("Oriental Magpie heals 2.");
+      return { heal: 2 };
+    },
   },
   {
     id: "bird-prey-quetzal",
@@ -3001,7 +4013,19 @@ const birdCards = [
     hp: 1,
     nutrition: 1,
     effectText: "Discard, creatures gains +1/+0. Creatures gains +1/+0.",
-    // TODO: Implement discard and buff
+    discardEffect: {
+      timing: "any",
+      effect: ({ log, player }) => {
+        const targets = player.field.filter((card) => isCreatureCard(card));
+        log("Quetzal discarded: creatures gain +1/+0.");
+        return { buffCreatures: targets.map((t) => ({ creature: t, attack: 1, health: 0 })) };
+      },
+    },
+    onPlay: ({ log, player }) => {
+      const targets = player.field.filter((card) => isCreatureCard(card));
+      log("Quetzal: creatures gain +1/+0.");
+      return { buffCreatures: targets.map((t) => ({ creature: t, attack: 1, health: 0 })) };
+    },
   },
   {
     id: "bird-prey-raven",
@@ -3011,7 +4035,20 @@ const birdCards = [
     hp: 1,
     nutrition: 1,
     effectText: "Copy stats of a carrion.",
-    // TODO: Implement copy stats
+    onPlay: ({ log, player, creature }) => {
+      if (player.carrion.length === 0) {
+        log("Raven: no carrion to copy stats from.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Copy stats from carrion",
+        candidates: player.carrion.map((card) => ({ label: card.name, value: card })),
+        onSelect: (source) => {
+          log(`Raven copies stats from ${source.name}.`);
+          return { copyStats: { target: creature, source } };
+        },
+      });
+    },
   },
   {
     id: "bird-prey-robin",
@@ -3021,7 +4058,11 @@ const birdCards = [
     hp: 1,
     nutrition: 1,
     effectText: "End of turn, play 2 Blue Eggs.",
-    // TODO: Implement end of turn summon
+    summons: [blueEggToken],
+    onEnd: ({ log, playerIndex }) => {
+      log("Robin lays 2 Blue Eggs.");
+      return { summonTokens: { playerIndex, tokens: [blueEggToken, blueEggToken] } };
+    },
   },
   {
     id: "bird-prey-blue-egg",
@@ -3032,7 +4073,14 @@ const birdCards = [
     nutrition: 0,
     keywords: ["Hidden"],
     effectText: "Start of turn, become Robin.",
-    // TODO: Implement transform effect
+    transformOnStart: {
+      id: "bird-prey-robin",
+      name: "Robin",
+      type: "Prey",
+      atk: 1,
+      hp: 1,
+      nutrition: 1,
+    },
   },
   {
     id: "bird-prey-seagull",
@@ -3042,7 +4090,21 @@ const birdCards = [
     hp: 1,
     nutrition: 1,
     effectText: "Eat target enemy prey.",
-    // TODO: Implement eat prey
+    onPlay: ({ log, opponent, opponentIndex, creature }) => {
+      const targets = opponent.field.filter((card) => card?.type === "Prey" && !isInvisible(card));
+      if (targets.length === 0) {
+        log("Seagull: no enemy prey to eat.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Choose enemy prey to eat",
+        candidates: targets.map((card) => ({ label: card.name, value: card })),
+        onSelect: (target) => {
+          log(`Seagull eats ${target.name}.`);
+          return { consumeEnemyPrey: { predator: creature, prey: target, opponentIndex } };
+        },
+      });
+    },
   },
   {
     id: "bird-prey-white-bellbird",
@@ -3052,7 +4114,24 @@ const birdCards = [
     hp: 1,
     nutrition: 1,
     effectText: "End of turn, deal 3 damage to any target.",
-    // TODO: Implement damage effect
+    onEnd: ({ log, opponent }) => {
+      const targets = [
+        { label: "Opponent", value: { type: "player" } },
+        ...opponent.field.filter((card) => isCreatureCard(card) && !isInvisible(card)).map((c) => ({ label: c.name, value: { type: "creature", card: c } })),
+      ];
+      return makeTargetedSelection({
+        title: "White Bellbird: deal 3 damage to target",
+        candidates: targets,
+        onSelect: (target) => {
+          if (target.type === "player") {
+            log("White Bellbird deals 3 damage to opponent.");
+            return { damageOpponent: 3 };
+          }
+          log(`White Bellbird deals 3 damage to ${target.card.name}.`);
+          return { damageCreature: { creature: target.card, amount: 3, sourceLabel: "White Bellbird" } };
+        },
+      });
+    },
   },
   {
     id: "bird-prey-hoatzin",
@@ -3062,7 +4141,14 @@ const birdCards = [
     hp: 1,
     nutrition: 1,
     effectText: "After combat, deal 2 damage. End of turn, deal 2 damage to rival.",
-    // TODO: Implement damage effects
+    onAfterCombat: ({ log }) => {
+      log("Hoatzin deals 2 damage after combat.");
+      return { damageOpponent: 2 };
+    },
+    onEnd: ({ log }) => {
+      log("Hoatzin deals 2 damage to rival at end of turn.");
+      return { damageOpponent: 2 };
+    },
   },
   {
     id: "bird-prey-golden-goose",
@@ -3072,7 +4158,15 @@ const birdCards = [
     hp: 2,
     nutrition: 2,
     effectText: "Draw 1. End of turn, play Golden Egg.",
-    // TODO: Implement draw and summon
+    summons: [goldenEggToken],
+    onPlay: ({ log }) => {
+      log("Golden Goose: draw 1.");
+      return { draw: 1 };
+    },
+    onEnd: ({ log, playerIndex }) => {
+      log("Golden Goose lays a Golden Egg.");
+      return { summonTokens: { playerIndex, tokens: [goldenEggToken] } };
+    },
   },
   {
     id: "bird-prey-golden-egg",
@@ -3082,7 +4176,10 @@ const birdCards = [
     hp: 1,
     nutrition: 0,
     effectText: "Draw 1.",
-    // TODO: Implement draw effect
+    onPlay: ({ log }) => {
+      log("Golden Egg: draw 1.");
+      return { draw: 1 };
+    },
   },
   {
     id: "bird-prey-indian-peacock",
@@ -3093,7 +4190,10 @@ const birdCards = [
     nutrition: 2,
     keywords: ["Barrier", "Lure"],
     effectText: "Slain, add Rainbow Feathers to hand.",
-    // TODO: Implement slain effect
+    onSlain: ({ log, playerIndex }) => {
+      log("Indian Peacock slain: add Rainbow Feathers to hand.");
+      return { addToHand: { playerIndex, card: rainbowFeathersCard } };
+    },
   },
   {
     id: "bird-prey-jersey-giant",
@@ -3103,7 +4203,11 @@ const birdCards = [
     hp: 2,
     nutrition: 2,
     effectText: "Slain, play Hen.",
-    // TODO: Implement slain summon
+    summons: [henToken],
+    onSlain: ({ log, playerIndex }) => {
+      log("Jersey Giant slain: summons a Hen.");
+      return { summonTokens: { playerIndex, tokens: [henToken] } };
+    },
   },
   {
     id: "bird-prey-hen",
@@ -3113,7 +4217,11 @@ const birdCards = [
     hp: 2,
     nutrition: 2,
     effectText: "Start of turn, play Egg.",
-    // TODO: Implement start of turn summon
+    summons: [eggToken],
+    onStart: ({ log, playerIndex }) => {
+      log("Hen lays an Egg.");
+      return { summonTokens: { playerIndex, tokens: [eggToken] } };
+    },
   },
   {
     id: "bird-prey-egg",
@@ -3131,7 +4239,7 @@ const birdCards = [
     hp: 1,
     nutrition: 1,
     effectText: "Can attack three times.",
-    // TODO: Implement multi-attack
+    keywords: ["Multiattack3"],
   },
   {
     id: "bird-prey-black-swan",
@@ -3142,7 +4250,10 @@ const birdCards = [
     nutrition: 3,
     keywords: ["Ambush"],
     effectText: "Heal 3.",
-    // TODO: Implement heal effect
+    onPlay: ({ log }) => {
+      log("Black Swan heals 3.");
+      return { heal: 3 };
+    },
   },
   {
     id: "bird-prey-eastern-wild-turkey",
@@ -3152,7 +4263,10 @@ const birdCards = [
     hp: 3,
     nutrition: 3,
     effectText: "Add Feed to hand.",
-    // TODO: Implement add to hand
+    onPlay: ({ log, playerIndex }) => {
+      log("Eastern Wild Turkey adds Feed to hand.");
+      return { addToHand: { playerIndex, card: feedCard } };
+    },
   },
 
   // Bird Predators
@@ -3164,7 +4278,10 @@ const birdCards = [
     hp: 2,
     keywords: ["Ambush"],
     effectText: "After combat, heal 2.",
-    // TODO: Implement after combat heal
+    onAfterCombat: ({ log }) => {
+      log("Black-and-white Hawk-eagle heals 2 after combat.");
+      return { heal: 2 };
+    },
   },
   {
     id: "bird-predator-firehawk",
@@ -3173,7 +4290,25 @@ const birdCards = [
     atk: 2,
     hp: 2,
     effectText: "Kill enemy prey. Destroy target field spell.",
-    // TODO: Implement kill and destroy effects
+    onPlay: ({ log, opponent, state }) => {
+      const preyTargets = opponent.field.filter((card) => card?.type === "Prey" && !isInvisible(card));
+      if (preyTargets.length === 0) {
+        log("Firehawk: no enemy prey to kill.");
+        if (state.fieldSpell) {
+          log("Firehawk destroys the field spell.");
+          return { removeFieldSpell: true };
+        }
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Firehawk: choose enemy prey to kill",
+        candidates: preyTargets.map((card) => ({ label: card.name, value: card })),
+        onSelect: (target) => {
+          log(`Firehawk kills ${target.name}.`);
+          return { killCreature: target, removeFieldSpell: true };
+        },
+      });
+    },
   },
   {
     id: "bird-predator-great-gray-owl",
@@ -3182,7 +4317,31 @@ const birdCards = [
     atk: 2,
     hp: 2,
     effectText: "Add a carrion to hand. Add a card from deck to hand.",
-    // TODO: Implement add to hand effects
+    onPlay: ({ log, player, playerIndex }) => {
+      if (player.carrion.length === 0 && player.deck.length === 0) {
+        log("Great Gray Owl: no carrion or deck cards.");
+        return null;
+      }
+      if (player.carrion.length === 0) {
+        return makeTargetedSelection({
+          title: "Choose a card from deck",
+          candidates: player.deck.map((card) => ({ label: card.name, value: card })),
+          renderCards: true,
+          onSelect: (card) => {
+            log(`Great Gray Owl adds ${card.name} from deck.`);
+            return { addToHand: { playerIndex, card, fromDeck: true } };
+          },
+        });
+      }
+      return makeTargetedSelection({
+        title: "Choose a carrion to add to hand",
+        candidates: player.carrion.map((card) => ({ label: card.name, value: card })),
+        onSelect: (carrionCard) => {
+          log(`Great Gray Owl retrieves ${carrionCard.name} from carrion.`);
+          return { addCarrionToHand: { playerIndex, card: carrionCard } };
+        },
+      });
+    },
   },
   {
     id: "bird-predator-short-toed-snake-eagle",
@@ -3191,7 +4350,11 @@ const birdCards = [
     atk: 2,
     hp: 2,
     effectText: "Play 2 Toxic Snakes.",
-    // TODO: Implement summon
+    summons: [toxicSnakeToken],
+    onPlay: ({ log, playerIndex }) => {
+      log("Short-toed Snake Eagle summons 2 Toxic Snakes.");
+      return { summonTokens: { playerIndex, tokens: [toxicSnakeToken, toxicSnakeToken] } };
+    },
   },
   {
     id: "bird-prey-toxic-snake",
@@ -3209,7 +4372,11 @@ const birdCards = [
     atk: 2,
     hp: 2,
     effectText: "Play Wolf Hawk.",
-    // TODO: Implement summon
+    summons: [wolfHawkToken],
+    onPlay: ({ log, playerIndex }) => {
+      log("Wolf Hawk summons another Wolf Hawk.");
+      return { summonTokens: { playerIndex, tokens: [wolfHawkToken] } };
+    },
   },
   {
     id: "bird-predator-peregrine-falcon",

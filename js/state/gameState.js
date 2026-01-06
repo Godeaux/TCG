@@ -14,8 +14,16 @@ const createPlayer = (name) => ({
   field: [null, null, null],
   carrion: [],
   exile: [],
-  traps: [],
+  traps: [], // Kept for backward compatibility - traps now trigger from hand
 });
+
+// Helper to get traps that can trigger from a player's hand
+export const getTrapsFromHand = (player, triggerType) => {
+  if (!player?.hand) return [];
+  return player.hand.filter(
+    (card) => card.type === "Trap" && card.trigger === triggerType
+  );
+};
 
 export const createGameState = () => {
   const players = [createPlayer("Player 1"), createPlayer("Player 2")];

@@ -4,6 +4,7 @@ import {
   logMessage,
   drawCard,
   queueVisualEffect,
+  getTrapsFromHand,
 } from "./gameState.js";
 import { canPlayCard, cardLimitAvailable, finalizeEndPhase } from "./turnManager.js";
 import { createCardInstance } from "./cardTypes.js";
@@ -3147,14 +3148,18 @@ const renderTrapDecision = (state, defender, attacker, target, onUpdate) => {
   pendingAttack = { attacker, target, defenderIndex: state.players.indexOf(defender) };
   trapWaitingPanelActive = false;
 
-  const items = defender.traps.map((trap, index) => {
+  // Get traps that can trigger from hand for direct attacks
+  const availableTraps = getTrapsFromHand(defender, "directAttack");
+
+  const items = availableTraps.map((trap) => {
     const item = document.createElement("label");
     item.className = "selection-item";
     const button = document.createElement("button");
     button.className = "secondary";
     button.textContent = `Trigger ${trap.name}`;
     button.onclick = () => {
-      defender.traps.splice(index, 1);
+      // Remove trap from hand and move to exile
+      defender.hand = defender.hand.filter((card) => card.instanceId !== trap.instanceId);
       defender.exile.push(trap);
       const result = trap.effect({
         log: (message) => logMessage(state, message),
@@ -3253,7 +3258,9 @@ const renderTrapDecision = (state, defender, attacker, target, onUpdate) => {
 };
 
 const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
-  if (defender.traps.length === 0) {
+  // Check for traps in hand that can trigger on direct attacks
+  const availableTraps = getTrapsFromHand(defender, "directAttack");
+  if (availableTraps.length === 0) {
     resolveAttack(state, attacker, target, false);
     onUpdate?.();
     broadcastSyncState(state);
@@ -3445,11 +3452,10 @@ const handlePlayCard = (state, card, onUpdate) => {
   }
 
   if (card.type === "Trap") {
-    player.traps.push(card);
-    player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
-    logMessage(state, `${player.name} sets a trap.`);
+    // Traps cannot be "played" - they remain in hand and trigger automatically
+    // when their condition is met on the opponent's turn
+    logMessage(state, `Traps trigger automatically from hand when conditions are met.`);
     onUpdate?.();
-    broadcastSyncState(state);
     return;
   }
 
@@ -3705,7 +3711,8 @@ const triggerPlayTraps = (state, creature, onUpdate, onResolved) => {
   const opponentIndex = (state.activePlayerIndex + 1) % 2;
   const opponent = state.players[opponentIndex];
   const triggerKey = creature.type === "Predator" ? "rivalPlaysPred" : "rivalPlaysPrey";
-  const relevantTraps = opponent.traps.filter((trap) => trap.trigger === triggerKey);
+  // Get traps from hand that can trigger on this creature type being played
+  const relevantTraps = getTrapsFromHand(opponent, triggerKey);
   if (relevantTraps.length === 0) {
     onResolved?.();
     return;
@@ -3717,7 +3724,8 @@ const triggerPlayTraps = (state, creature, onUpdate, onResolved) => {
     button.className = "secondary";
     button.textContent = `Trigger ${trap.name}`;
     button.onclick = () => {
-      opponent.traps = opponent.traps.filter((itemTrap) => itemTrap.instanceId !== trap.instanceId);
+      // Remove trap from hand and move to exile
+      opponent.hand = opponent.hand.filter((card) => card.instanceId !== trap.instanceId);
       opponent.exile.push(trap);
       const result = trap.effect({
         log: (message) => logMessage(state, message),

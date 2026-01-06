@@ -42,6 +42,7 @@ import {
   rollSetupDie,
   chooseFirstPlayer,
   setPlayerDeck,
+  getTrapsFromHand,
 } from '../state/gameState.js';
 import { resolveCardEffect, getCardDefinitionById } from '../cards/index.js';
 import { isCreatureCard, createCardInstance } from '../cardTypes.js';
@@ -297,17 +298,13 @@ export class GameController {
   }
 
   handlePlayTrap(card) {
-    const player = getActivePlayer(this.state);
-
-    player.traps.push(card);
-    player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
-
-    logMessage(this.state, `${player.name} sets a trap.`);
+    // Traps cannot be "played" - they remain in hand and trigger automatically
+    // when their condition is met on the opponent's turn
+    logMessage(this.state, `Traps trigger automatically from hand when conditions are met.`);
 
     this.notifyStateChange();
-    this.broadcast();
 
-    return { success: true };
+    return { success: false, error: 'Traps trigger automatically from hand' };
   }
 
   handlePlayCreature(card, slotIndex, isFree) {
@@ -538,28 +535,30 @@ export class GameController {
     const opponent = getOpponentPlayer(this.state);
     const opponentIndex = (this.state.activePlayerIndex + 1) % 2;
 
-    opponent.traps.forEach((trap) => {
-      if (trap.trigger === triggerType) {
-        logMessage(this.state, `${opponent.name}'s ${trap.name} trap activates!`);
+    // Get traps from hand that can trigger
+    const relevantTraps = getTrapsFromHand(opponent, triggerType);
 
-        const trapResult = resolveCardEffect(trap, 'effect', {
-          log: (message) => logMessage(this.state, message),
-          player: getActivePlayer(this.state),
-          opponent,
-          state: this.state,
-          target: { card: creature },
-          attacker: creature,
-          playerIndex: this.state.activePlayerIndex,
-          opponentIndex,
-        });
+    relevantTraps.forEach((trap) => {
+      logMessage(this.state, `${opponent.name}'s ${trap.name} trap activates!`);
 
-        if (trapResult) {
-          this.applyEffectResult(trapResult, { playerIndex: opponentIndex });
-        }
+      const trapResult = resolveCardEffect(trap, 'effect', {
+        log: (message) => logMessage(this.state, message),
+        player: getActivePlayer(this.state),
+        opponent,
+        state: this.state,
+        target: { card: creature },
+        attacker: creature,
+        playerIndex: this.state.activePlayerIndex,
+        opponentIndex,
+      });
 
-        // Remove trap after use
-        opponent.traps = opponent.traps.filter((t) => t.instanceId !== trap.instanceId);
+      if (trapResult) {
+        this.applyEffectResult(trapResult, { playerIndex: opponentIndex });
       }
+
+      // Remove trap from hand and move to exile
+      opponent.hand = opponent.hand.filter((card) => card.instanceId !== trap.instanceId);
+      opponent.exile.push(trap);
     });
   }
 
@@ -627,11 +626,10 @@ export class GameController {
   }
 
   handleSetTrap({ playerIndex, trap }) {
-    const player = this.state.players[playerIndex];
-    player.traps.push(trap);
-    logMessage(this.state, `${player.name} sets a trap.`);
+    // Traps are no longer "set" - they trigger automatically from hand
+    // This function is kept for backward compatibility but doesn't move traps
+    logMessage(this.state, `Traps trigger automatically from hand when conditions are met.`);
     this.notifyStateChange();
-    this.broadcast();
     return { success: true };
   }
 
