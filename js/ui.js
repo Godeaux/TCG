@@ -1663,33 +1663,46 @@ const renderKeywordTags = (card) => {
 };
 
 const renderCardInnerHtml = (card, { showEffectSummary } = {}) => {
-  const stats = renderCardStats(card)
-    .map(
-      (stat) =>
-        `<span class="card-stat ${stat.className}">${stat.label} ${stat.value}</span>`
-    )
-    .join("");
-  const effectSummary = showEffectSummary ? getCardEffectSummary(card) : "";
-  const effectRow = effectSummary
-    ? `<div class="card-effect"><strong>Effect:</strong> ${effectSummary}</div>`
+  // Get stats for the card
+  const stats = renderCardStats(card);
+
+  // Build stat boxes (ATK, NUT if prey, HP)
+  const statBoxes = stats.map(stat =>
+    `<div class="card-stat-box ${stat.className}">
+      <div class="stat-label">${stat.label}</div>
+      <div class="stat-value">${stat.value}</div>
+    </div>`
+  ).join("");
+
+  // Get keywords
+  const keywords = card.keywords?.length
+    ? card.keywords.join(", ")
     : "";
 
-  // Card image with error handling (hides entire container on 404)
+  // Get effect summary
+  const effectSummary = showEffectSummary ? getCardEffectSummary(card) : "";
+
+  // Combine keywords and effect for bottom text area
+  const bottomText = [keywords, effectSummary].filter(Boolean).join(" • ");
+
+  // Card image with error handling
   const imageHtml = hasCardImage(card.id)
     ? `<img src="${getCardImagePath(card.id)}" alt="" class="card-image"
          onerror="this.parentElement.style.display='none';">`
     : '';
-  
+
   return `
-    <div class="card-name">${card.name}</div>
+    <div class="card-header">
+      <div class="card-name">${card.name}</div>
+    </div>
     <div class="card-image-container">
       ${imageHtml}
     </div>
-    <div class="card-type-label">${card.type}</div>
-    <div class="card-content-area">
-      <div class="card-stats-row">${stats}</div>
-      <div class="card-keywords">${renderKeywordTags(card)}</div>
-      ${effectRow}
+    <div class="card-footer">
+      <div class="card-stats-row">
+        ${statBoxes}
+      </div>
+      ${bottomText ? `<div class="card-text-area">${bottomText}</div>` : ''}
     </div>
   `;
 };
