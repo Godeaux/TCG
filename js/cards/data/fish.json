@@ -64,7 +64,10 @@
       "keywords": ["Ambush", "Hidden"],
       "effectText": "Discard: negate direct attack.",
       "effects": {
-        "discardEffect": "ghost-eel-negate-attack-discard"
+        "discardEffect": {
+          "type": "negateAttack",
+          "params": {}
+        }
       }
     },
     {
@@ -185,7 +188,12 @@
       "summons": ["token-sardine"],
       "effects": {
         "onPlay": "rainbow-sardines-summon-heal-onplay",
-        "onSlain": "rainbow-sardines-summon-onslain"
+        "onSlain": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": ["token-sardine"]
+          }
+        }
       }
     },
     {
@@ -325,7 +333,12 @@
       "keywords": [],
       "effectText": "Slain: add Salmon to hand.",
       "effects": {
-        "onSlain": "king-salmon-add-salmon-onslain"
+        "onSlain": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "fish-prey-salmon"
+          }
+        }
       }
     },
     {
@@ -375,7 +388,12 @@
       "keywords": ["Barrier"],
       "effectText": "Slain: add Scale Arrows to hand.",
       "effects": {
-        "onSlain": "alligator-gar-add-scale-arrows-onslain"
+        "onSlain": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "fish-free-spell-scale-arrows"
+          }
+        }
       }
     },
     {

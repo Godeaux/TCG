@@ -151,3 +151,74 @@ Common fish patterns:
 - Batch 3: Tackle composite and conditional effects
 - Document patterns for complex effects
 
+
+### Batch 2: More Simple Fish Effects (COMPLETED ✅)
+
+**Date**: 2026-01-06
+
+**Migrated Effects**: 4 additional effects (14/43 total = 33%)
+
+**Cards Migrated**:
+1. **King Salmon** - addToHand('fish-prey-salmon')
+2. **Alligator Gar** - addToHand('fish-free-spell-scale-arrows')
+3. **Rainbow Sardines (onSlain)** - summonTokens(['token-sardine'])
+4. **Ghost Eel** - negateAttack()
+
+**Effect Types Migrated**:
+- addToHand: 2 effects
+- summonTokens: 1 effect  
+- negateAttack: 1 effect
+
+**Testing**: ✅ All migrated effects tested and working correctly
+
+**Cumulative Progress**:
+- Tokens: 11/11 (100%) ✅
+- Fish: 14/43 (33%) ⏳
+- **Total: 25/262 effects (9.5%)**
+
+---
+
+## Complex Fish Effects Requiring Design Decisions
+
+The following fish effects have complex patterns that need architectural decisions:
+
+### 1. **Composite Effects** (Multiple effects in one trigger)
+These return multiple effect keys simultaneously:
+
+- **Rainbow Sardines (onPlay)**: summon 2 sardines + heal 1
+- **Rainbow Trout (onPlay)**: heal 4 + regen target creature  
+- **Celestial Eye Goldfish (onPlay)**: draw 2 + reveal opponent hand
+- **Golden Angelfish (onPlay)**: draw 1 + grant barrier to all creatures
+
+**Question**: Should we:
+a) Create a JSON array format for composite effects?
+b) Have the effect library merge results from multiple effect keys?
+c) Create specific composite handlers for common patterns?
+
+### 2. **Selection-Based Effects** (Require user input)
+These need to present choices to the player:
+
+- **Blobfish (onEnd)**: Select target enemy prey to consume
+- **Spearfish Remora (discardEffect)**: Select target predator to grant Ambush
+- **Many consume effects**: Select cards from hand/field for consumption
+
+**Question**: How should selection effects integrate with the parameterized system?
+
+### 3. **Sequential Multi-Step Effects**
+These have dependent steps that must occur in order:
+
+- **Silver King (onPlay)**: Draw 3 cards, THEN discard 1
+- **Golden Kingfish**: Draw + empower target predator with end-of-turn effect
+
+**Question**: Should these use a special "sequential" effect type?
+
+### 4. **Choice Effects** (Player chooses one option)
+- **Cannibal Fish**: Choose: summon Lancetfish OR gain +2/+2
+
+**Question**: How to represent either/or choices in JSON?
+
+### 5. **Team Buff Effects**
+- **Black Drum**: All friendly creatures gain +1/+0
+
+Already supported via `buffStats('all-friendly', { attack: 1, health: 0 })`
+
