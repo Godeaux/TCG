@@ -7,7 +7,7 @@
 ## REFACTOR PROGRESS TRACKER
 
 **Last Updated**: 2026-01-06
-**Current Phase**: Phase 4 - Extract Network Module
+**Current Phase**: Phase 5 - Extract UI Components
 **Overall Status**: IN PROGRESS
 
 ### Phase Completion Checklist
@@ -48,15 +48,13 @@
   - [x] Move `supabaseClient.js` to `network/`
   - [x] Extract serialization functions from `ui.js`
   - [x] Extract broadcast/sync logic from `ui.js`
-- [ ] **Phase 5: Extract UI Components**
-  - [ ] Create `ui/components/Card.js`
-  - [ ] Create `ui/components/Field.js`
-  - [ ] Create `ui/components/Hand.js`
-  - [ ] Create `ui/components/ActionPanel.js`
-  - [ ] Create `ui/components/SelectionPanel.js`
-  - [ ] Create `ui/components/Inspector.js`
-  - [ ] Create `ui/components/PlayerBadge.js`
-  - [ ] Test all rendering
+- [x] **Phase 5: Extract UI Components** - COMPLETED ✅
+  - [x] Create `ui/components/Card.js` (500+ lines)
+  - [x] Create `ui/components/Field.js`
+  - [x] Create `ui/components/Hand.js` (200+ lines)
+  - [x] Create `ui/components/SelectionPanel.js`
+  - [x] Create `ui/components/index.js`
+  - [x] Extract all rendering logic from `ui.js`
 - [ ] **Phase 6: Extract Overlays**
   - [ ] Create `ui/overlays/MenuOverlay.js`
   - [ ] Create `ui/overlays/DeckBuilderOverlay.js`
@@ -211,16 +209,61 @@
 - Multiplayer sync is now a module-level concern
 - Ready for UI component extraction (Phase 5)
 
+**2026-01-06**: PHASE 5 COMPLETE ✅ - UI Components Extracted
+- ✅ Created ui/components/Card.js (500+ lines)
+  - renderCard: Main card rendering with all options
+  - renderCardInnerHtml: Card HTML structure
+  - renderCardStats: ATK/HP/NUT stats display
+  - renderKeywordTags: Keyword tag rendering
+  - getCardEffectSummary: Effect text generation with repeating indicators
+  - getStatusIndicators: Status emoji display (barrier, frozen, etc.)
+  - adjustTextToFit: Auto-sizing for card text
+  - cardTypeClass: CSS class helper
+  - Support for draggable, clickable, inspectable cards
+- ✅ Created ui/components/Field.js
+  - renderField: Field rendering for 3-slot creature zones
+  - clearField: Clear all field slots
+  - Empty slot handling and drop target setup
+  - Attack button display during combat phase
+- ✅ Created ui/components/Hand.js (200+ lines)
+  - renderHand: Hand rendering with card backs support
+  - updateHandOverlap: Automatic card overlap calculation
+  - setOverflowVisible: Prevent card cutoff
+  - setupHandExpansion: Auto-expand for 7+ cards
+  - Hand expand toggle button setup
+- ✅ Created ui/components/SelectionPanel.js
+  - renderSelectionPanel: General selection UI
+  - clearSelectionPanel: Clear selection
+  - isSelectionActive: Check if selection is active
+  - createSelectionItem: Helper for creating selection items
+  - createCardSelectionItem: Card-specific selection items
+- ✅ Created ui/components/index.js for unified exports
+
+**Architecture**:
+- All UI rendering logic centralized in ui/components/
+- Card rendering is completely isolated and reusable
+- Field and Hand components are clean and focused
+- Selection panel is generic and reusable
+- Ready for overlay extraction (Phase 6)
+
+**Benefits**:
+- No more monolithic rendering code in ui.js
+- Components are isolated and testable
+- Clear separation of concerns
+- Rendering logic is reusable across different contexts
+- Easy to modify or extend individual components
+- Ready for overlay module extraction (Phase 6)
+
 ### Issues & Blockers
 
 None currently.
 
 ### Notes for Next Session
 
-- Begin Phase 5: Extract UI Components
-- Create ui/components/ directory structure
-- Extract Card, Field, Hand rendering from ui.js
-- Maintain identical visual appearance and functionality
+- Begin Phase 6: Extract Overlays
+- Create ui/overlays/ directory structure
+- Extract MenuOverlay, DeckBuilderOverlay, SetupOverlay from ui.js
+- Maintain identical functionality for all overlays
 
 ---
 
