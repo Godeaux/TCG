@@ -10,7 +10,7 @@ import {
   areAbilitiesActive,
   hasToxic,
 } from "./keywords.js";
-import { logMessage } from "./gameState.js";
+import { logMessage } from "./state/gameState.js";
 import { resolveEffectResult } from "./effects.js";
 import { isCreatureCard } from "./cardTypes.js";
 

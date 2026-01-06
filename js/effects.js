@@ -1,4 +1,4 @@
-import { drawCard, logMessage } from "./gameState.js";
+import { drawCard, logMessage } from "./state/gameState.js";
 import { createCardInstance } from "./cardTypes.js";
 import { consumePrey } from "./consumption.js";
 import { isImmune, areAbilitiesActive } from "./keywords.js";
