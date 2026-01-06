@@ -1674,9 +1674,9 @@ const renderCardInnerHtml = (card, { showEffectSummary } = {}) => {
     </div>`
   ).join("");
 
-  // Get keywords (bold, underlined)
+  // Get keywords (bold, underlined individually, separated by 3 spaces)
   const keywords = card.keywords?.length
-    ? `<u><strong>${card.keywords.join(", ")}</strong></u>`
+    ? card.keywords.map(k => `<u><strong>${k}</strong></u>`).join("   ")
     : "";
 
   // Get effect summary (bold)
