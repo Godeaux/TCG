@@ -447,33 +447,7 @@ button {
   gap: 12px;
 }
 
-.hand-expand-toggle {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid var(--border-subtle);
-  border-radius: 6px;
-  padding: 4px 8px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  font-size: 14px;
-  line-height: 1;
-}
-
-.hand-expand-toggle:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: var(--gold-light);
-  border-color: var(--border-gold);
-  transform: translateY(-1px);
-}
-
-.hand-expand-toggle:active {
-  transform: translateY(0);
-}
-
-.battlefield-center-column.hand-expanded .hand-expand-toggle .expand-icon {
-  transform: rotate(180deg);
-  display: inline-block;
-}
+/* Hand expansion toggle removed - using compact hand by default */
 
 .hand-title {
   font-family: var(--font-display);

@@ -2812,24 +2812,7 @@ const renderHand = (state, onSelect, onUpdate, hideCards) => {
   const playerIndex = isOnlineMode(state) ? getLocalPlayerIndex(state) : state.activePlayerIndex;
   const player = state.players[playerIndex];
 
-  // Dynamic hand expansion based on card count
-  const centerColumn = document.querySelector(".battlefield-center-column");
-  if (centerColumn) {
-    const cardCount = player.hand.length;
-    if (cardCount >= 7) {
-      centerColumn.classList.add("hand-expanded");
-    } else {
-      centerColumn.classList.remove("hand-expanded");
-    }
-  }
-
-  // Setup hand expansion toggle
-  const toggleButton = document.getElementById("hand-expand-toggle");
-  if (toggleButton && centerColumn) {
-    toggleButton.onclick = () => {
-      centerColumn.classList.toggle("hand-expanded");
-    };
-  }
+  // Keep hand compact (removed toggle button and auto-expansion)
 
   if (hideCards) {
     player.hand.forEach(() => {
