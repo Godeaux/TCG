@@ -148,77 +148,31 @@ const preloadAllCardImages = () => {
 // Initialize preloading
 preloadAllCardImages();
 
+// Supabase API reference (populated by loadSupabaseApi)
+let supabaseApi = null;
+
 const selectionPanel = document.getElementById("selection-panel");
 const actionBar = document.getElementById("action-bar");
 const actionPanel = document.getElementById("action-panel");
 const gameHistoryLog = document.getElementById("game-history-log");
-const passOverlay = document.getElementById("pass-overlay");
-const passTitle = document.getElementById("pass-title");
-const passConfirm = document.getElementById("pass-confirm");
 const inspectorPanel = document.getElementById("card-inspector");
-const setupOverlay = document.getElementById("setup-overlay");
-const setupTitle = document.getElementById("setup-title");
-const setupSubtitle = document.getElementById("setup-subtitle");
-const setupRolls = document.getElementById("setup-rolls");
-const setupActions = document.getElementById("setup-actions");
-const deckSelectOverlay = document.getElementById("deck-select-overlay");
-const deckSelectTitle = document.getElementById("deck-select-title");
-const deckSelectSubtitle = document.getElementById("deck-select-subtitle");
-const deckSelectGrid = document.getElementById("deck-select-grid");
-const deckOverlay = document.getElementById("deck-overlay");
-const deckTitle = document.getElementById("deck-title");
-const deckStatus = document.getElementById("deck-status");
-const deckFullRow = document.getElementById("deck-full-row");
-const deckAddedRow = document.getElementById("deck-added-row");
-const deckConfirm = document.getElementById("deck-confirm");
-const deckRandom = document.getElementById("deck-random");
-const deckInspectorPanel = document.getElementById("deck-inspector");
-const deckLoadList = document.getElementById("deck-load-list");
-const deckManageList = document.getElementById("deck-manage-list");
-const deckExit = document.getElementById("deck-exit");
+// Note: passOverlay, setupOverlay, deckOverlay elements moved to respective overlay modules
+// Navigation elements (still used by updateNavButtons, navigateToPage)
 const pagesContainer = document.getElementById("pages-container");
 const pageDots = document.getElementById("page-dots");
 const navLeft = document.getElementById("nav-left");
 const navRight = document.getElementById("nav-right");
-const infoToggle = document.getElementById("info-toggle");
-const infoBack = document.getElementById("info-back");
-const menuOverlay = document.getElementById("menu-overlay");
-const menuStatus = document.getElementById("menu-status");
-const menuPlay = document.getElementById("menu-play");
-const menuLogin = document.getElementById("menu-login");
-const menuCatalog = document.getElementById("menu-catalog");
-const menuTutorial = document.getElementById("menu-tutorial");
-const tutorialOverlay = document.getElementById("tutorial-overlay");
-const tutorialClose = document.getElementById("tutorial-close");
-const loginOverlay = document.getElementById("login-overlay");
-const loginForm = document.getElementById("login-form");
+// Note: menuOverlay, loginOverlay, multiplayerOverlay, tutorialOverlay, lobbyOverlay,
+// victoryOverlay elements moved to respective overlay modules (MenuOverlay.js, VictoryOverlay.js)
+
+// Login/lobby elements still used by handleLoginSubmit, handleJoinLobby, etc.
 const loginUsername = document.getElementById("login-username");
 const loginError = document.getElementById("login-error");
-const loginCancel = document.getElementById("login-cancel");
-const loginSubmit = document.getElementById("login-submit");
-const multiplayerOverlay = document.getElementById("multiplayer-overlay");
-const lobbyCreate = document.getElementById("lobby-create");
-const lobbyJoin = document.getElementById("lobby-join");
-const lobbyJoinForm = document.getElementById("lobby-join-form");
-const lobbyJoinCancel = document.getElementById("lobby-join-cancel");
 const lobbyCodeInput = document.getElementById("lobby-code");
 const lobbyError = document.getElementById("lobby-error");
-const multiplayerBack = document.getElementById("multiplayer-back");
-const lobbyOverlay = document.getElementById("lobby-overlay");
-const lobbyStatus = document.getElementById("lobby-status");
-const lobbyCodeDisplay = document.getElementById("lobby-code-display");
-const lobbyContinue = document.getElementById("lobby-continue");
-const lobbyLeave = document.getElementById("lobby-leave");
-const lobbyLiveError = document.getElementById("lobby-live-error");
-const deckSave = document.getElementById("deck-save");
-const deckLoad = document.getElementById("deck-load");
+
+// Battle effects layer (used for combat animations)
 const battleEffectsLayer = document.getElementById("battle-effects");
-const victoryOverlay = document.getElementById("victory-overlay");
-const victoryWinnerName = document.getElementById("victory-winner-name");
-const victoryTurns = document.getElementById("victory-turns");
-const victoryCards = document.getElementById("victory-cards");
-const victoryKills = document.getElementById("victory-kills");
-const victoryMenu = document.getElementById("victory-menu");
 
 let pendingConsumption = null;
 let pendingAttack = null;
@@ -616,7 +570,9 @@ const setMenuError = (state, message) => {
 };
 
 const loadSupabaseApi = async (state) => {
-  return getSupabaseApi((message) => setMenuError(state, message));
+  const api = await getSupabaseApi((message) => setMenuError(state, message));
+  supabaseApi = api; // Store reference for direct access
+  return api;
 };
 
 // updateMenuStatus moved to ./ui/overlays/MenuOverlay.js
@@ -1676,7 +1632,7 @@ const setInspectorContentFor = (panel, card, showImage = true) => {
 };
 
 const setInspectorContent = (card) => setInspectorContentFor(inspectorPanel, card, true); // Show image during battle
-const setDeckInspectorContent = (card) => setInspectorContentFor(deckInspectorPanel, card, false); // Hide image during deck construction
+// setDeckInspectorContent moved to DeckBuilderOverlay.js
 
 const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCancel) => {
   if (!result) {
