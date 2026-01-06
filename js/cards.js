@@ -4393,7 +4393,10 @@ const birdCards = [
     atk: 3,
     hp: 2,
     effectText: "Add Red Tailfeathers to hand.",
-    // TODO: Implement add to hand
+    onPlay: ({ log, playerIndex }) => {
+      log("Red-tailed Hawk adds Red Tailfeathers to hand.");
+      return { addToHand: { playerIndex, card: redTailfeathersCard } };
+    },
   },
   {
     id: "bird-predator-bald-eagle",
@@ -4410,7 +4413,21 @@ const birdCards = [
     atk: 3,
     hp: 3,
     effectText: "Eat target enemy prey.",
-    // TODO: Implement eat prey
+    onPlay: ({ log, opponent, opponentIndex, creature }) => {
+      const targets = opponent.field.filter((card) => card?.type === "Prey" && !isInvisible(card));
+      if (targets.length === 0) {
+        log("Monkey-eating Eagle: no enemy prey to eat.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Choose enemy prey to eat",
+        candidates: targets.map((card) => ({ label: card.name, value: card })),
+        onSelect: (target) => {
+          log(`Monkey-eating Eagle eats ${target.name}.`);
+          return { consumeEnemyPrey: { predator: creature, prey: target, opponentIndex } };
+        },
+      });
+    },
   },
   {
     id: "bird-predator-gyrfalcon",
@@ -4427,7 +4444,10 @@ const birdCards = [
     atk: 4,
     hp: 4,
     effectText: "Draw 4.",
-    // TODO: Implement draw effect
+    onPlay: ({ log }) => {
+      log("Golden Eagle: draw 4 cards.");
+      return { draw: 4 };
+    },
   },
   {
     id: "bird-predator-martial-eagle",
@@ -4436,7 +4456,21 @@ const birdCards = [
     atk: 4,
     hp: 4,
     effectText: "End of turn, kill target enemy.",
-    // TODO: Implement end of turn kill
+    onEnd: ({ log, opponent }) => {
+      const targets = opponent.field.filter((card) => isCreatureCard(card) && !isInvisible(card));
+      if (targets.length === 0) {
+        log("Martial Eagle: no enemies to kill.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Martial Eagle: choose enemy to kill",
+        candidates: targets.map((card) => ({ label: card.name, value: card })),
+        onSelect: (target) => {
+          log(`Martial Eagle kills ${target.name}.`);
+          return { killCreature: target };
+        },
+      });
+    },
   },
   {
     id: "bird-predator-harpy-eagle",
@@ -4445,7 +4479,21 @@ const birdCards = [
     atk: 5,
     hp: 5,
     effectText: "Add target enemy to hand.",
-    // TODO: Implement return to hand
+    onPlay: ({ log, opponent, opponentIndex }) => {
+      const targets = opponent.field.filter((card) => isCreatureCard(card) && !isInvisible(card));
+      if (targets.length === 0) {
+        log("Harpy Eagle: no enemies to return.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Harpy Eagle: choose enemy to return to hand",
+        candidates: targets.map((card) => ({ label: card.name, value: card })),
+        onSelect: (target) => {
+          log(`Harpy Eagle returns ${target.name} to opponent's hand.`);
+          return { returnToHand: { playerIndex: opponentIndex, creatures: [target] } };
+        },
+      });
+    },
   },
   {
     id: "bird-predator-pacific-sea-eagle",
@@ -4462,56 +4510,155 @@ const birdCards = [
     name: "Bird Food",
     type: "Spell",
     effectText: "Creatures gain +2/+2.",
-    // TODO: Implement buff effect
+    effect: ({ log, player }) => {
+      const targets = player.field.filter((card) => isCreatureCard(card));
+      if (targets.length === 0) {
+        log("Bird Food: no creatures to buff.");
+        return null;
+      }
+      log("Bird Food gives all creatures +2/+2.");
+      return { buffCreatures: targets.map((t) => ({ creature: t, attack: 2, health: 2 })) };
+    },
   },
   {
     id: "bird-spell-birds-of-a-feather",
     name: "Birds of a Feather",
     type: "Spell",
     effectText: "Play copy of target creature.",
-    // TODO: Implement copy creature
+    effect: ({ log, player, playerIndex }) => {
+      const targets = player.field.filter((card) => isCreatureCard(card));
+      if (targets.length === 0) {
+        log("Birds of a Feather: no creatures to copy.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Choose a creature to copy",
+        candidates: targets.map((card) => ({ label: card.name, value: card })),
+        onSelect: (target) => {
+          log(`Birds of a Feather creates a copy of ${target.name}.`);
+          return { summonTokens: { playerIndex, tokens: [{ ...target, id: `token-copy-${target.id}` }] } };
+        },
+      });
+    },
   },
   {
     id: "bird-spell-shotgun",
     name: "Shotgun",
     type: "Spell",
     effectText: "Either deal 2 damage to opponents or deal 6 damage to target enemy.",
-    // TODO: Implement choice damage
+    effect: ({ log, opponent }) => {
+      const enemyTargets = opponent.field.filter((card) => isCreatureCard(card) && !isInvisible(card));
+      return makeTargetedSelection({
+        title: "Shotgun: choose effect",
+        candidates: [
+          { label: "Deal 2 damage to all opponents", value: "aoe" },
+          ...(enemyTargets.length > 0 ? [{ label: "Deal 6 damage to target enemy", value: "single" }] : []),
+        ],
+        onSelect: (choice) => {
+          if (choice === "aoe") {
+            log("Shotgun deals 2 damage to opponent and all enemies.");
+            return {
+              damageOpponent: 2,
+              damageCreatures: opponent.field.filter((c) => isCreatureCard(c)).map((t) => ({ creature: t, amount: 2, sourceLabel: "Shotgun" })),
+            };
+          }
+          return makeTargetedSelection({
+            title: "Choose enemy to deal 6 damage",
+            candidates: enemyTargets.map((card) => ({ label: card.name, value: card })),
+            onSelect: (target) => {
+              log(`Shotgun deals 6 damage to ${target.name}.`);
+              return { damageCreature: { creature: target, amount: 6, sourceLabel: "Shotgun" } };
+            },
+          });
+        },
+      });
+    },
   },
   {
     id: "bird-spell-swan-song",
     name: "Swan Song",
     type: "Spell",
     effectText: "Heal 3. Gain barrier.",
-    // TODO: Implement heal and barrier
+    effect: ({ log, player }) => {
+      log("Swan Song heals 3 and gives all creatures barrier.");
+      return { heal: 3, grantBarrier: { player } };
+    },
   },
   {
     id: "bird-free-spell-birds-eye-view",
     name: "Bird's Eye View",
     type: "Free Spell",
     effectText: "Rival reveals hand.",
-    // TODO: Implement reveal hand
+    effect: ({ log, opponentIndex }) => {
+      log("Bird's Eye View reveals rival's hand.");
+      return { revealHand: { playerIndex: opponentIndex, durationMs: 3000 } };
+    },
   },
   {
     id: "bird-free-spell-clouds",
     name: "Clouds",
     type: "Free Spell",
     effectText: "Target creature gains immune.",
-    // TODO: Implement immune keyword
+    effect: ({ log, player, opponent }) => {
+      const allCreatures = [...player.field, ...opponent.field].filter((card) => isCreatureCard(card));
+      if (allCreatures.length === 0) {
+        log("Clouds: no creatures to target.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Choose creature to gain Immune",
+        candidates: allCreatures.map((card) => ({ label: card.name, value: card })),
+        onSelect: (target) => {
+          log(`${target.name} gains Immune.`);
+          return { addKeyword: { creature: target, keyword: "Immune" } };
+        },
+      });
+    },
   },
   {
     id: "bird-free-spell-tailwind",
     name: "Tailwind",
     type: "Free Spell",
     effectText: "Target creature gains haste.",
-    // TODO: Implement haste keyword
+    effect: ({ log, player }) => {
+      const targets = player.field.filter((card) => isCreatureCard(card));
+      if (targets.length === 0) {
+        log("Tailwind: no creatures to target.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Choose creature to gain Haste",
+        candidates: targets.map((card) => ({ label: card.name, value: card })),
+        onSelect: (target) => {
+          log(`${target.name} gains Haste.`);
+          return { addKeyword: { creature: target, keyword: "Haste" } };
+        },
+      });
+    },
   },
   {
     id: "bird-free-spell-white-missile",
     name: "White Missile",
     type: "Free Spell",
     effectText: "Deal 1 damage to any target.",
-    // TODO: Implement damage effect
+    effect: ({ log, opponent }) => {
+      const targets = [
+        { label: "Opponent", value: { type: "player" } },
+        ...opponent.field.filter((card) => isCreatureCard(card) && !isInvisible(card)).map((c) => ({ label: c.name, value: { type: "creature", card: c } })),
+      ];
+      return makeTargetedSelection({
+        title: "White Missile: deal 1 damage",
+        candidates: targets,
+        onSelect: (target) => {
+          if (target.type === "player") {
+            log("White Missile deals 1 damage to opponent.");
+            return { damageOpponent: 1 };
+          }
+          log(`White Missile deals 1 damage to ${target.card.name}.`);
+          return { damageCreature: { creature: target.card, amount: 1, sourceLabel: "White Missile" } };
+        },
+      });
+    },
   },
   {
     id: "bird-field-spell-bird-feeder",
@@ -4519,7 +4666,10 @@ const birdCards = [
     type: "Spell",
     isFieldSpell: true,
     effectText: "End of turn, target creature gains +1/+1.",
-    // TODO: Implement field spell effect
+    effect: ({ log, playerIndex }) => {
+      log("Bird Feeder takes the field.");
+      return { setFieldSpell: { ownerIndex: playerIndex, cardData: birdFeederFieldSpell } };
+    },
   },
   {
     id: "bird-trap-alleyway-mobbing",
@@ -4527,7 +4677,14 @@ const birdCards = [
     type: "Trap",
     trigger: "directAttack",
     effectText: "When target enemy attacks directly, negate attack. Play 3 Bushtits.",
-    // TODO: Implement trap and summon
+    summons: [bushtitToken],
+    effect: ({ log, defenderIndex }) => {
+      log("Alleyway Mobbing: negate attack and summon 3 Bushtits.");
+      return {
+        negateAttack: true,
+        summonTokens: { playerIndex: defenderIndex, tokens: [bushtitToken, bushtitToken, bushtitToken] },
+      };
+    },
   },
   {
     id: "bird-prey-bushtit",
@@ -4543,7 +4700,10 @@ const birdCards = [
     type: "Trap",
     trigger: "defending",
     effectText: "When target creature is defending, return it to hand.",
-    // TODO: Implement trap effect
+    effect: ({ log, target, defenderIndex }) => {
+      log(`Fly Off returns ${target?.card?.name || "defender"} to hand.`);
+      return { returnToHand: { playerIndex: defenderIndex, creatures: [target?.card].filter(Boolean) } };
+    },
   },
   {
     id: "bird-trap-icarus",
@@ -4551,9 +4711,219 @@ const birdCards = [
     type: "Trap",
     trigger: "lifeZero",
     effectText: "When life is 0, heal 1.",
-    // TODO: Implement trap effect
+    effect: ({ log }) => {
+      log("Icarus activates: heal 1 HP.");
+      return { heal: 1 };
+    },
   },
 ];
+
+// Mammal tokens
+const pupToken = {
+  id: "token-pup",
+  name: "Pup",
+  type: "Prey",
+  atk: 0,
+  hp: 1,
+  nutrition: 0,
+};
+
+const arcticGroundSquirrelToken = {
+  id: "token-arctic-ground-squirrel",
+  name: "Arctic Ground Squirrel",
+  type: "Prey",
+  atk: 1,
+  hp: 1,
+  nutrition: 1,
+  keywords: ["Frozen"],
+};
+
+const kitToken = {
+  id: "token-kit",
+  name: "Kit",
+  type: "Prey",
+  atk: 1,
+  hp: 1,
+  nutrition: 1,
+};
+
+// Forward declare floridaWhiteRabbitToken for Kit's transform
+let floridaWhiteRabbitToken;
+
+const joeyToken = {
+  id: "token-joey",
+  name: "Joey",
+  type: "Prey",
+  atk: 1,
+  hp: 1,
+  nutrition: 1,
+};
+
+const mammalEggToken = {
+  id: "token-mammal-egg",
+  name: "Mammal Egg",
+  type: "Prey",
+  atk: 0,
+  hp: 1,
+  nutrition: 0,
+  keywords: ["Passive", "Barrier", "Hidden"],
+};
+
+const dholeToken = {
+  id: "token-dhole",
+  name: "Dhole",
+  type: "Predator",
+  atk: 1,
+  hp: 1,
+};
+
+const grayWolfToken = {
+  id: "token-gray-wolf",
+  name: "Gray Wolf",
+  type: "Predator",
+  atk: 2,
+  hp: 2,
+};
+
+const blackLeopardToken = {
+  id: "token-black-leopard",
+  name: "Black Leopard",
+  type: "Predator",
+  atk: 3,
+  hp: 2,
+  keywords: ["Ambush"],
+};
+
+const wolfToken = {
+  id: "token-wolf",
+  name: "Wolf",
+  type: "Prey",
+  atk: 2,
+  hp: 2,
+  nutrition: 2,
+};
+
+const salmonToken = {
+  id: "token-salmon",
+  name: "Salmon",
+  type: "Prey",
+  atk: 1,
+  hp: 1,
+  nutrition: 1,
+  keywords: ["Free Play"],
+};
+
+// Define floridaWhiteRabbitToken for Kit's transform
+floridaWhiteRabbitToken = {
+  id: "token-florida-white-rabbit",
+  name: "Florida White Rabbit",
+  type: "Prey",
+  atk: 1,
+  hp: 1,
+  nutrition: 1,
+  effectText: "End of turn, play 2 Kits.",
+  summons: [kitToken],
+  onEnd: ({ log, playerIndex }) => {
+    log("Florida White Rabbit plays 2 Kits.");
+    return { summonTokens: { playerIndex, tokens: [kitToken, kitToken] } };
+  },
+};
+
+// Update kitToken with transformOnStart reference
+kitToken.effectText = "Start of turn, become Florida White Rabbit.";
+kitToken.transformOnStart = floridaWhiteRabbitToken;
+
+const opossumToken = {
+  id: "token-north-american-opossum",
+  name: "North American Opossum",
+  type: "Prey",
+  atk: 1,
+  hp: 1,
+  nutrition: 1,
+  effectText: "Slain, revive.",
+};
+// Self-referential onSlain for revive effect
+opossumToken.onSlain = ({ log, playerIndex }) => {
+  log("North American Opossum plays dead and revives!");
+  return { summonTokens: { playerIndex, tokens: [opossumToken] } };
+};
+
+// Mammal special cards
+const freshMilkCard = {
+  id: "mammal-free-spell-fresh-milk",
+  name: "Fresh Milk",
+  type: "Free Spell",
+  effectText: "Heal 2.",
+  effect: ({ log }) => {
+    log("Fresh Milk heals 2.");
+    return { heal: 2 };
+  },
+};
+
+const presentCard = {
+  id: "mammal-spell-present",
+  name: "Present",
+  type: "Spell",
+  effectText: "Draw 2. Heal 2.",
+  effect: ({ log }) => {
+    log("Present: draw 2 and heal 2.");
+    return { draw: 2, heal: 2 };
+  },
+};
+
+const qiviutCard = {
+  id: "mammal-free-spell-qiviut",
+  name: "Qiviut",
+  type: "Free Spell",
+  effectText: "Target creature gains Barrier and Immune.",
+  effect: ({ log, player }) => {
+    const targets = player.field.filter((card) => isCreatureCard(card));
+    if (targets.length === 0) {
+      log("Qiviut: no creatures to target.");
+      return null;
+    }
+    return makeTargetedSelection({
+      title: "Choose creature to gain Barrier and Immune",
+      candidates: targets.map((card) => ({ label: card.name, value: card })),
+      onSelect: (target) => {
+        log(`${target.name} gains Barrier and Immune.`);
+        return {
+          addKeyword: { creature: target, keyword: "Barrier" },
+          addKeywords: [{ creature: target, keyword: "Immune" }],
+        };
+      },
+    });
+  },
+};
+
+const angusCard = {
+  id: "mammal-spell-angus",
+  name: "Angus",
+  type: "Spell",
+  effectText: "Creatures gain +3/+3.",
+  effect: ({ log, player }) => {
+    const targets = player.field.filter((card) => isCreatureCard(card));
+    if (targets.length === 0) {
+      log("Angus: no creatures to buff.");
+      return null;
+    }
+    log("Angus gives all creatures +3/+3.");
+    return { buffCreatures: targets.map((t) => ({ creature: t, attack: 3, health: 3 })) };
+  },
+};
+
+// Mammal Field Spell
+const wolvesDenFieldSpell = {
+  id: "mammal-field-wolves-den",
+  name: "Wolves Den",
+  type: "Spell",
+  effectText: "End of turn, play Gray Wolf.",
+  summons: [grayWolfToken],
+  onEnd: ({ log, playerIndex }) => {
+    log("Wolves Den summons a Gray Wolf.");
+    return { summonTokens: { playerIndex, tokens: [grayWolfToken] } };
+  },
+};
 
 const mammalCards = [
   // Mammal Prey
@@ -4566,7 +4936,11 @@ const mammalCards = [
     nutrition: 0,
     keywords: ["Free Play"],
     effectText: "Play 2 Pups.",
-    // TODO: Implement summon
+    summons: [pupToken],
+    onPlay: ({ log, playerIndex }) => {
+      log("Western Harvest Mouse plays 2 Pups.");
+      return { summonTokens: { playerIndex, tokens: [pupToken, pupToken] } };
+    },
   },
   {
     id: "mammal-prey-pup",
@@ -4584,7 +4958,25 @@ const mammalCards = [
     hp: 1,
     nutrition: 1,
     effectText: "Play 2 Arctic Ground Squirrels. Target enemy gains frozen.",
-    // TODO: Implement summon and freeze
+    summons: [arcticGroundSquirrelToken],
+    onPlay: ({ log, playerIndex, opponent, state }) => {
+      const targets = opponent.field.filter((card) => isCreatureCard(card) && !isInvisible(card));
+      if (targets.length === 0) {
+        log("Arctic Ground Squirrels play 2 tokens.");
+        return { summonTokens: { playerIndex, tokens: [arcticGroundSquirrelToken, arcticGroundSquirrelToken] } };
+      }
+      return {
+        summonTokens: { playerIndex, tokens: [arcticGroundSquirrelToken, arcticGroundSquirrelToken] },
+        selectTarget: {
+          title: "Choose an enemy to freeze",
+          candidates: targets.map((card) => ({ label: card.name, value: card })),
+          onSelect: (target) => {
+            log(`Arctic Ground Squirrels freeze ${target.name}.`);
+            return { freezeCreature: { creature: target } };
+          },
+        },
+      };
+    },
   },
   {
     id: "mammal-prey-arctic-ground-squirrel",
@@ -4595,7 +4987,21 @@ const mammalCards = [
     nutrition: 1,
     keywords: ["Frozen"],
     effectText: "Target enemy gains frozen.",
-    // TODO: Implement freeze effect
+    onPlay: ({ log, opponent, state }) => {
+      const targets = opponent.field.filter((card) => isCreatureCard(card) && !isInvisible(card));
+      if (targets.length === 0) {
+        log("Arctic Ground Squirrel: no enemies to freeze.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Choose an enemy to freeze",
+        candidates: targets.map((card) => ({ label: card.name, value: card })),
+        onSelect: (target) => {
+          log(`Arctic Ground Squirrel freezes ${target.name}.`);
+          return { freezeCreature: { creature: target } };
+        },
+      });
+    },
   },
   {
     id: "mammal-prey-arctic-hare",
@@ -4606,7 +5012,25 @@ const mammalCards = [
     nutrition: 1,
     keywords: ["Hidden"],
     effectText: "Target enemy gains frozen. Start of turn, play Arctic Hare.",
-    // TODO: Implement freeze and summon
+    onPlay: ({ log, opponent, state }) => {
+      const targets = opponent.field.filter((card) => isCreatureCard(card) && !isInvisible(card));
+      if (targets.length === 0) {
+        log("Arctic Hare: no enemies to freeze.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Choose an enemy to freeze",
+        candidates: targets.map((card) => ({ label: card.name, value: card })),
+        onSelect: (target) => {
+          log(`Arctic Hare freezes ${target.name}.`);
+          return { freezeCreature: { creature: target } };
+        },
+      });
+    },
+    onStart: ({ log, playerIndex, creature }) => {
+      log("Arctic Hare reproduces!");
+      return { summonTokens: { playerIndex, tokens: [{ ...creature, instanceId: undefined }] } };
+    },
   },
   {
     id: "mammal-prey-bobcat",
@@ -4616,7 +5040,26 @@ const mammalCards = [
     hp: 1,
     nutrition: 1,
     effectText: "Rival reveals hand. Kill target prey.",
-    // TODO: Implement reveal and kill
+    onPlay: ({ log, opponent, opponentIndex, player, state }) => {
+      const targets = opponent.field.filter(
+        (card) => isCreatureCard(card) && card.type === "Prey" && !isInvisible(card)
+      );
+      if (targets.length === 0) {
+        log("Bobcat reveals rival's hand but finds no prey to hunt.");
+        return { revealHand: { playerIndex: opponentIndex, durationMs: 3000 } };
+      }
+      return {
+        revealHand: { playerIndex: opponentIndex, durationMs: 3000 },
+        selectTarget: {
+          title: "Bobcat: choose a prey to kill",
+          candidates: targets.map((card) => ({ label: card.name, value: card })),
+          onSelect: (target) =>
+            handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+              killTargets: [target],
+            },
+        },
+      };
+    },
   },
   {
     id: "mammal-prey-florida-white-rabbit",
@@ -4626,7 +5069,11 @@ const mammalCards = [
     hp: 1,
     nutrition: 1,
     effectText: "End of turn, play 2 Kits.",
-    // TODO: Implement end of turn summon
+    summons: [kitToken],
+    onEnd: ({ log, playerIndex }) => {
+      log("Florida White Rabbit plays 2 Kits.");
+      return { summonTokens: { playerIndex, tokens: [kitToken, kitToken] } };
+    },
   },
   {
     id: "mammal-prey-kit",
@@ -4636,7 +5083,7 @@ const mammalCards = [
     hp: 1,
     nutrition: 1,
     effectText: "Start of turn, become Florida White Rabbit.",
-    // TODO: Implement transform effect
+    transformOnStart: floridaWhiteRabbitToken,
   },
   {
     id: "mammal-prey-giant-golden-mole",
@@ -4647,7 +5094,10 @@ const mammalCards = [
     nutrition: 1,
     keywords: ["Free Play"],
     effectText: "Draw 1.",
-    // TODO: Implement draw effect
+    onPlay: ({ log }) => {
+      log("Giant Golden Mole: draw 1.");
+      return { draw: 1 };
+    },
   },
   {
     id: "mammal-prey-japanese-weasel",
@@ -4657,7 +5107,37 @@ const mammalCards = [
     hp: 1,
     nutrition: 1,
     effectText: "Deal 3 damage to any target.",
-    // TODO: Implement damage effect
+    onPlay: ({ log, player, opponent, state }) => {
+      const creatures = [
+        ...player.field.filter((card) => isCreatureCard(card)),
+        ...opponent.field.filter((card) => isCreatureCard(card) && !isInvisible(card)),
+      ];
+      const candidates = creatures.map((creature) => ({
+        label: creature.name,
+        value: { type: "creature", creature },
+      }));
+      candidates.push({ label: `Rival (${opponent.name})`, value: { type: "player" } });
+      return makeTargetedSelection({
+        title: "Japanese Weasel: choose a target for 3 damage",
+        candidates,
+        onSelect: (selection) => {
+          if (selection.type === "player") {
+            log("Japanese Weasel strikes the rival for 3 damage.");
+            return { damageOpponent: 3 };
+          }
+          return (
+            handleTargetedResponse({
+              target: selection.creature,
+              source: null,
+              log,
+              player,
+              opponent,
+              state,
+            }) || { damageCreature: { creature: selection.creature, amount: 3 } }
+          );
+        },
+      });
+    },
   },
   {
     id: "mammal-prey-meerkat-matriarch",
@@ -4667,7 +5147,15 @@ const mammalCards = [
     hp: 1,
     nutrition: 1,
     effectText: "Play 2 Pups. Slain, play 3 Pups.",
-    // TODO: Implement summon and slain effects
+    summons: [pupToken],
+    onPlay: ({ log, playerIndex }) => {
+      log("Meerkat Matriarch plays 2 Pups.");
+      return { summonTokens: { playerIndex, tokens: [pupToken, pupToken] } };
+    },
+    onSlain: ({ log, playerIndex }) => {
+      log("Meerkat Matriarch slain: play 3 Pups.");
+      return { summonTokens: { playerIndex, tokens: [pupToken, pupToken, pupToken] } };
+    },
   },
   {
     id: "mammal-prey-north-american-opossum",
@@ -4677,7 +5165,10 @@ const mammalCards = [
     hp: 1,
     nutrition: 1,
     effectText: "Slain, revive.",
-    // TODO: Implement revive effect
+    onSlain: ({ log, playerIndex }) => {
+      log("North American Opossum plays dead and revives!");
+      return { summonTokens: { playerIndex, tokens: [opossumToken] } };
+    },
   },
   {
     id: "mammal-prey-northern-koala",
@@ -4688,7 +5179,11 @@ const mammalCards = [
     nutrition: 1,
     keywords: ["Hidden"],
     effectText: "Slain, play Joey.",
-    // TODO: Implement slain summon
+    summons: [joeyToken],
+    onSlain: ({ log, playerIndex }) => {
+      log("Northern Koala slain: plays Joey.");
+      return { summonTokens: { playerIndex, tokens: [joeyToken] } };
+    },
   },
   {
     id: "mammal-prey-joey",
@@ -4707,7 +5202,11 @@ const mammalCards = [
     nutrition: 1,
     keywords: ["Poisonous"],
     effectText: "Play 2 Mammal Eggs.",
-    // TODO: Implement summon
+    summons: [mammalEggToken],
+    onPlay: ({ log, playerIndex }) => {
+      log("Platypus plays 2 Mammal Eggs.");
+      return { summonTokens: { playerIndex, tokens: [mammalEggToken, mammalEggToken] } };
+    },
   },
   {
     id: "mammal-prey-mammal-egg",
@@ -4726,7 +5225,40 @@ const mammalCards = [
     hp: 1,
     nutrition: 1,
     effectText: "Rival discards 1. Add a card from deck to hand.",
-    // TODO: Implement discard and deck search
+    onPlay: ({ log, player, opponent, playerIndex, opponentIndex }) => {
+      if (opponent.hand.length === 0 && player.deck.length === 0) {
+        log("Red-handed Howler: rival has no cards to discard and deck is empty.");
+        return null;
+      }
+      if (opponent.hand.length === 0) {
+        return makeTargetedSelection({
+          title: "Choose a card from deck",
+          candidates: player.deck.map((card) => ({ label: card.name, value: card })),
+          onSelect: (card) => {
+            log(`Red-handed Howler adds ${card.name} from deck.`);
+            return { addToHand: { playerIndex, card, fromDeck: true } };
+          },
+        });
+      }
+      return makeTargetedSelection({
+        title: "Rival must discard a card",
+        candidates: opponent.hand.map((card) => ({ label: card.name, value: card })),
+        onSelect: (discarded) => {
+          log(`Rival discards ${discarded.name}.`);
+          if (player.deck.length === 0) {
+            return { discardCards: { playerIndex: opponentIndex, cards: [discarded] } };
+          }
+          return {
+            discardCards: { playerIndex: opponentIndex, cards: [discarded] },
+            selectTarget: {
+              title: "Choose a card from deck",
+              candidates: player.deck.map((card) => ({ label: card.name, value: card })),
+              onSelect: (card) => ({ addToHand: { playerIndex, card, fromDeck: true } }),
+            },
+          };
+        },
+      });
+    },
   },
   {
     id: "mammal-prey-pronghorn",
@@ -4736,7 +5268,37 @@ const mammalCards = [
     hp: 2,
     nutrition: 2,
     effectText: "Deal 2 damage to any target.",
-    // TODO: Implement damage effect
+    onPlay: ({ log, player, opponent, state }) => {
+      const creatures = [
+        ...player.field.filter((card) => isCreatureCard(card)),
+        ...opponent.field.filter((card) => isCreatureCard(card) && !isInvisible(card)),
+      ];
+      const candidates = creatures.map((creature) => ({
+        label: creature.name,
+        value: { type: "creature", creature },
+      }));
+      candidates.push({ label: `Rival (${opponent.name})`, value: { type: "player" } });
+      return makeTargetedSelection({
+        title: "Pronghorn: choose a target for 2 damage",
+        candidates,
+        onSelect: (selection) => {
+          if (selection.type === "player") {
+            log("Pronghorn charges the rival for 2 damage.");
+            return { damageOpponent: 2 };
+          }
+          return (
+            handleTargetedResponse({
+              target: selection.creature,
+              source: null,
+              log,
+              player,
+              opponent,
+              state,
+            }) || { damageCreature: { creature: selection.creature, amount: 2 } }
+          );
+        },
+      });
+    },
   },
   {
     id: "mammal-prey-golden-takin",
@@ -4746,7 +5308,10 @@ const mammalCards = [
     hp: 2,
     nutrition: 2,
     effectText: "End of turn, draw 2.",
-    // TODO: Implement draw effect
+    onEnd: ({ log }) => {
+      log("Golden Takin: draw 2.");
+      return { draw: 2 };
+    },
   },
   {
     id: "mammal-prey-holstein-friesian",
@@ -4756,7 +5321,10 @@ const mammalCards = [
     hp: 3,
     nutrition: 3,
     effectText: "End of turn, add Fresh Milk to hand.",
-    // TODO: Implement add to hand
+    onEnd: ({ log, playerIndex }) => {
+      log("Holstein Friesian produces Fresh Milk.");
+      return { addToHand: { playerIndex, card: freshMilkCard } };
+    },
   },
   {
     id: "mammal-prey-hart",
@@ -4766,7 +5334,21 @@ const mammalCards = [
     hp: 2,
     nutrition: 2,
     effectText: "Add a carrion to hand.",
-    // TODO: Implement add to hand
+    onPlay: ({ log, player, playerIndex }) => {
+      const carrionCards = player.carrion.filter((card) => card);
+      if (carrionCards.length === 0) {
+        log("Hart: no carrion available.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Hart: choose a carrion to add to hand",
+        candidates: carrionCards.map((card) => ({ label: card.name, value: card })),
+        onSelect: (card) => {
+          log(`Hart adds ${card.name} from carrion to hand.`);
+          return { addToHand: { playerIndex, card, fromCarrion: true } };
+        },
+      });
+    },
   },
   {
     id: "mammal-prey-malayan-tapir",
@@ -4776,7 +5358,15 @@ const mammalCards = [
     hp: 2,
     nutrition: 2,
     effectText: "Return enemies to hand.",
-    // TODO: Implement return to hand
+    onPlay: ({ log, opponent }) => {
+      const enemies = opponent.field.filter((card) => isCreatureCard(card) && !isInvisible(card));
+      if (enemies.length === 0) {
+        log("Malayan Tapir: no enemies to return.");
+        return null;
+      }
+      log("Malayan Tapir returns all enemies to hand!");
+      return { returnToHand: enemies };
+    },
   },
   {
     id: "mammal-prey-imperial-zebra",
@@ -4786,7 +5376,22 @@ const mammalCards = [
     hp: 2,
     nutrition: 2,
     effectText: "Either deal 2 damage to rival or heal 2.",
-    // TODO: Implement choice effect
+    onPlay: ({ log }) =>
+      makeTargetedSelection({
+        title: "Imperial Zebra: choose an effect",
+        candidates: [
+          { label: "Deal 2 damage to rival", value: "damage" },
+          { label: "Heal 2", value: "heal" },
+        ],
+        onSelect: (choice) => {
+          if (choice === "damage") {
+            log("Imperial Zebra kicks the rival for 2 damage.");
+            return { damageOpponent: 2 };
+          }
+          log("Imperial Zebra heals 2.");
+          return { heal: 2 };
+        },
+      }),
   },
   {
     id: "mammal-prey-reindeer-rudolph",
@@ -4796,7 +5401,10 @@ const mammalCards = [
     hp: 2,
     nutrition: 2,
     effectText: "Add Present to hand.",
-    // TODO: Implement add to hand
+    onPlay: ({ log, playerIndex }) => {
+      log("Reindeer, Rudolph delivers a Present!");
+      return { addToHand: { playerIndex, card: presentCard } };
+    },
   },
   {
     id: "mammal-prey-muskox",
@@ -4807,7 +5415,10 @@ const mammalCards = [
     nutrition: 2,
     keywords: ["Immune"],
     effectText: "Slain, add Qiviut to hand.",
-    // TODO: Implement slain effect
+    onSlain: ({ log, playerIndex }) => {
+      log("Muskox slain: add Qiviut to hand.");
+      return { addToHand: { playerIndex, card: qiviutCard } };
+    },
   },
   {
     id: "mammal-prey-giant-forest-hog",
@@ -4835,7 +5446,10 @@ const mammalCards = [
     hp: 3,
     nutrition: 3,
     effectText: "Slain; add Angus to hand.",
-    // TODO: Implement slain effect
+    onSlain: ({ log, playerIndex }) => {
+      log("American Aberdeen slain: add Angus to hand.");
+      return { addToHand: { playerIndex, card: angusCard } };
+    },
   },
 
   // Mammal Predators
@@ -4846,7 +5460,25 @@ const mammalCards = [
     atk: 1,
     hp: 1,
     effectText: "Play 2 Dholes. Kill target enemy.",
-    // TODO: Implement summon and kill
+    summons: [dholeToken],
+    onPlay: ({ log, playerIndex, opponent, player, state }) => {
+      const targets = opponent.field.filter((card) => isCreatureCard(card) && !isInvisible(card));
+      if (targets.length === 0) {
+        log("Dholes play 2 pack members.");
+        return { summonTokens: { playerIndex, tokens: [dholeToken, dholeToken] } };
+      }
+      return {
+        summonTokens: { playerIndex, tokens: [dholeToken, dholeToken] },
+        selectTarget: {
+          title: "Dholes: choose an enemy to kill",
+          candidates: targets.map((card) => ({ label: card.name, value: card })),
+          onSelect: (target) =>
+            handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+              killTargets: [target],
+            },
+        },
+      };
+    },
   },
   {
     id: "mammal-predator-dhole",
@@ -4863,7 +5495,10 @@ const mammalCards = [
     hp: 1,
     keywords: ["Free Play"],
     effectText: "Rival reveals hand.",
-    // TODO: Implement reveal hand
+    onPlay: ({ log, opponentIndex }) => {
+      log("Eurasian Lynx reveals rival's hand.");
+      return { revealHand: { playerIndex: opponentIndex, durationMs: 3000 } };
+    },
   },
   {
     id: "mammal-predator-gray-wolf",
@@ -4872,7 +5507,11 @@ const mammalCards = [
     atk: 2,
     hp: 2,
     effectText: "Play Gray Wolf.",
-    // TODO: Implement summon
+    summons: [grayWolfToken],
+    onPlay: ({ log, playerIndex }) => {
+      log("Gray Wolf calls the pack.");
+      return { summonTokens: { playerIndex, tokens: [grayWolfToken] } };
+    },
   },
   {
     id: "mammal-predator-black-leopards",
@@ -4882,7 +5521,11 @@ const mammalCards = [
     hp: 2,
     keywords: ["Ambush"],
     effectText: "Slain, play Black Leopard.",
-    // TODO: Implement slain summon
+    summons: [blackLeopardToken],
+    onSlain: ({ log, playerIndex }) => {
+      log("Black Leopards slain: play Black Leopard.");
+      return { summonTokens: { playerIndex, tokens: [blackLeopardToken] } };
+    },
   },
   {
     id: "mammal-predator-black-leopard",
@@ -4899,7 +5542,26 @@ const mammalCards = [
     atk: 3,
     hp: 3,
     effectText: "Sacrifice; play a carrion.",
-    // TODO: Implement sacrifice and summon
+    onConsume: ({ log, player, playerIndex, creature }) => {
+      const carrionCreatures = player.carrion.filter(
+        (card) => card && (card.type === "Prey" || card.type === "Predator")
+      );
+      if (carrionCreatures.length === 0) {
+        log("Jaguar: no creatures in carrion to summon.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Jaguar: sacrifice self to summon a carrion creature",
+        candidates: carrionCreatures.map((card) => ({ label: card.name, value: card })),
+        onSelect: (card) => {
+          log(`Jaguar sacrifices itself to summon ${card.name} from carrion.`);
+          return {
+            killTargets: [creature],
+            playFromCarrion: { playerIndex, card },
+          };
+        },
+      });
+    },
   },
   {
     id: "mammal-predator-north-american-cougar",
@@ -4908,7 +5570,14 @@ const mammalCards = [
     atk: 3,
     hp: 3,
     effectText: "Attacking before combat, deal 3 damage.",
-    // TODO: Implement before combat damage
+    onBeforeCombat: ({ log, opponent, target }) => {
+      if (!target) {
+        log("North American Cougar pounces on the rival for 3 damage!");
+        return { damageOpponent: 3 };
+      }
+      log(`North American Cougar pounces on ${target.name} for 3 damage!`);
+      return { damageCreature: { creature: target, amount: 3 } };
+    },
   },
   {
     id: "mammal-predator-malayan-tiger",
@@ -4925,7 +5594,15 @@ const mammalCards = [
     atk: 3,
     hp: 3,
     effectText: "Creatures gain +1/+1.",
-    // TODO: Implement buff effect
+    onConsume: ({ log, player }) => {
+      const targets = player.field.filter((card) => isCreatureCard(card));
+      if (targets.length === 0) {
+        log("Southern African Lion: no creatures to buff.");
+        return null;
+      }
+      log("Southern African Lion roars: creatures gain +1/+1.");
+      return { buffCreatures: targets.map((t) => ({ creature: t, attack: 1, health: 1 })) };
+    },
   },
   {
     id: "mammal-predator-sumatran-tiger",
@@ -4934,7 +5611,23 @@ const mammalCards = [
     atk: 3,
     hp: 3,
     effectText: "Copy abilities of a carrion.",
-    // TODO: Implement copy abilities
+    onConsume: ({ log, player, creature }) => {
+      const carrionWithAbilities = player.carrion.filter(
+        (card) => card && (card.keywords?.length > 0 || card.onPlay || card.onEnd || card.onSlain || card.onDefend)
+      );
+      if (carrionWithAbilities.length === 0) {
+        log("Sumatran Tiger: no carrion with abilities to copy.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Sumatran Tiger: choose a carrion to copy abilities from",
+        candidates: carrionWithAbilities.map((card) => ({ label: card.name, value: card })),
+        onSelect: (target) => {
+          log(`Sumatran Tiger copies ${target.name}'s abilities.`);
+          return { copyAbilities: { target: creature, source: target } };
+        },
+      });
+    },
   },
   {
     id: "mammal-predator-cheetah",
@@ -4951,7 +5644,10 @@ const mammalCards = [
     atk: 4,
     hp: 4,
     effectText: "End of turn, regen.",
-    // TODO: Implement end of turn regen
+    onEnd: ({ log, creature }) => {
+      log("Grizzly Bear regenerates.");
+      return { regen: { creature } };
+    },
   },
   {
     id: "mammal-predator-kodiak-bear",
@@ -4960,7 +5656,10 @@ const mammalCards = [
     atk: 5,
     hp: 5,
     effectText: "Add Salmon to hand.",
-    // TODO: Implement add to hand
+    onConsume: ({ log, playerIndex }) => {
+      log("Kodiak Bear catches a Salmon!");
+      return { addToHand: { playerIndex, card: salmonToken } };
+    },
   },
   {
     id: "mammal-prey-salmon",
@@ -4978,7 +5677,15 @@ const mammalCards = [
     atk: 5,
     hp: 5,
     effectText: "Freeze enemies.",
-    // TODO: Implement freeze effect
+    onConsume: ({ log, opponent }) => {
+      const enemies = opponent.field.filter((card) => isCreatureCard(card));
+      if (enemies.length === 0) {
+        log("Polar Bear: no enemies to freeze.");
+        return null;
+      }
+      log("Polar Bear freezes all enemies!");
+      return { freezeCreatures: enemies };
+    },
   },
   {
     id: "mammal-predator-hippopotamus",
@@ -4987,7 +5694,21 @@ const mammalCards = [
     atk: 6,
     hp: 6,
     effectText: "Kill target enemy.",
-    // TODO: Implement kill effect
+    onConsume: ({ log, opponent, player, state }) => {
+      const targets = opponent.field.filter((card) => isCreatureCard(card) && !isInvisible(card));
+      if (targets.length === 0) {
+        log("Hippopotamus: no enemies to kill.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Hippopotamus: choose an enemy to kill",
+        candidates: targets.map((card) => ({ label: card.name, value: card })),
+        onSelect: (target) =>
+          handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+            killTargets: [target],
+          },
+      });
+    },
   },
 
   // Mammal Support
@@ -4996,56 +5717,191 @@ const mammalCards = [
     name: "Blizzard",
     type: "Spell",
     effectText: "Deal 2 damage to opponents. Enemies gain frozen.",
-    // TODO: Implement damage and freeze effects
+    effect: ({ log, opponent }) => {
+      const enemies = opponent.field.filter((card) => isCreatureCard(card));
+      log("Blizzard deals 2 damage to rival and freezes all enemies!");
+      return {
+        damageOpponent: 2,
+        freezeCreatures: enemies,
+      };
+    },
   },
   {
     id: "mammal-spell-milk",
     name: "Milk",
     type: "Spell",
     effectText: "Creatures gain +2/+2.",
-    // TODO: Implement buff effect
+    effect: ({ log, player }) => {
+      const targets = player.field.filter((card) => isCreatureCard(card));
+      if (targets.length === 0) {
+        log("Milk: no creatures to buff.");
+        return null;
+      }
+      log("Milk nourishes creatures: +2/+2.");
+      return { buffCreatures: targets.map((t) => ({ creature: t, attack: 2, health: 2 })) };
+    },
   },
   {
     id: "mammal-spell-silver-bullet",
     name: "Silver Bullet",
     type: "Spell",
     effectText: "Discard 1. Draw 1. Kill target enemy.",
-    // TODO: Implement discard, draw, and kill
+    effect: ({ log, player, opponent, playerIndex, state }) => {
+      const targets = opponent.field.filter((card) => isCreatureCard(card) && !isInvisible(card));
+      if (player.hand.length === 0) {
+        if (targets.length === 0) {
+          log("Silver Bullet: no cards to discard and no enemies to kill.");
+          return { draw: 1 };
+        }
+        return {
+          draw: 1,
+          selectTarget: {
+            title: "Silver Bullet: choose an enemy to kill",
+            candidates: targets.map((card) => ({ label: card.name, value: card })),
+            onSelect: (target) =>
+              handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+                killTargets: [target],
+              },
+          },
+        };
+      }
+      return makeTargetedSelection({
+        title: "Silver Bullet: choose a card to discard",
+        candidates: player.hand.map((card) => ({ label: card.name, value: card })),
+        onSelect: (discardCard) => {
+          if (targets.length === 0) {
+            log(`Silver Bullet: discard ${discardCard.name}, draw 1, no enemy to kill.`);
+            return {
+              discardCards: { playerIndex, cards: [discardCard] },
+              draw: 1,
+            };
+          }
+          return {
+            discardCards: { playerIndex, cards: [discardCard] },
+            draw: 1,
+            selectTarget: {
+              title: "Silver Bullet: choose an enemy to kill",
+              candidates: targets.map((card) => ({ label: card.name, value: card })),
+              onSelect: (target) =>
+                handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+                  killTargets: [target],
+                },
+            },
+          };
+        },
+      });
+    },
   },
   {
     id: "mammal-spell-six-layered-neocortex",
     name: "Six-layered Neocortex",
     type: "Spell",
     effectText: "Play a creature from deck it gains frozen.",
-    // TODO: Implement deck play and freeze
+    effect: ({ log, player, playerIndex }) => {
+      const creatures = player.deck.filter(
+        (card) => card.type === "Prey" || card.type === "Predator"
+      );
+      if (creatures.length === 0) {
+        log("Six-layered Neocortex: no creatures in deck.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Six-layered Neocortex: choose a creature from deck",
+        candidates: creatures.map((card) => ({ label: card.name, value: card })),
+        onSelect: (card) => {
+          log(`Six-layered Neocortex summons ${card.name} from deck with frozen.`);
+          return {
+            playFromDeck: { playerIndex, card },
+            addKeywordToPlayed: { keyword: "Frozen" },
+          };
+        },
+      });
+    },
   },
   {
     id: "mammal-spell-white-hart",
     name: "White Hart",
     type: "Spell",
     effectText: "Play a carrion it gains frozen.",
-    // TODO: Implement summon and freeze
+    effect: ({ log, player, playerIndex }) => {
+      const carrionCreatures = player.carrion.filter(
+        (card) => card && (card.type === "Prey" || card.type === "Predator")
+      );
+      if (carrionCreatures.length === 0) {
+        log("White Hart: no creatures in carrion.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "White Hart: choose a carrion creature to summon",
+        candidates: carrionCreatures.map((card) => ({ label: card.name, value: card })),
+        onSelect: (card) => {
+          log(`White Hart summons ${card.name} from carrion with frozen.`);
+          return {
+            playFromCarrion: { playerIndex, card },
+            addKeywordToPlayed: { keyword: "Frozen" },
+          };
+        },
+      });
+    },
   },
   {
     id: "mammal-free-spell-curiosity",
     name: "Curiosity",
     type: "Free Spell",
     effectText: "Sacrifice target creature, draw 3.",
-    // TODO: Implement sacrifice and draw
+    effect: ({ log, player }) => {
+      const targets = player.field.filter((card) => isCreatureCard(card));
+      if (targets.length === 0) {
+        log("Curiosity: no creatures to sacrifice.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Curiosity: choose a creature to sacrifice",
+        candidates: targets.map((card) => ({ label: card.name, value: card })),
+        onSelect: (target) => {
+          log(`Curiosity sacrifices ${target.name}: draw 3.`);
+          return { killTargets: [target], draw: 3 };
+        },
+      });
+    },
   },
   {
     id: "mammal-free-spell-tranquilizer",
     name: "Tranquilizer",
     type: "Free Spell",
     effectText: "Target enemy gains frozen.",
-    // TODO: Implement freeze effect
+    effect: ({ log, opponent, state }) => {
+      const targets = opponent.field.filter((card) => isCreatureCard(card) && !isInvisible(card));
+      if (targets.length === 0) {
+        log("Tranquilizer: no enemies to freeze.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Tranquilizer: choose an enemy to freeze",
+        candidates: targets.map((card) => ({ label: card.name, value: card })),
+        onSelect: (target) => {
+          log(`Tranquilizer freezes ${target.name}.`);
+          return { freezeCreature: { creature: target } };
+        },
+      });
+    },
   },
   {
     id: "mammal-free-spell-warm-blood",
     name: "Warm Blood",
     type: "Free Spell",
     effectText: "Creatures lose frozen.",
-    // TODO: Implement remove frozen
+    effect: ({ log, player }) => {
+      const frozen = player.field.filter(
+        (card) => isCreatureCard(card) && card.keywords?.includes("Frozen")
+      );
+      if (frozen.length === 0) {
+        log("Warm Blood: no frozen creatures.");
+        return null;
+      }
+      log("Warm Blood thaws all frozen creatures!");
+      return { removeFrozen: frozen };
+    },
   },
   {
     id: "mammal-field-spell-wolves-den",
@@ -5053,7 +5909,11 @@ const mammalCards = [
     type: "Spell",
     isFieldSpell: true,
     effectText: "End of turn, play Wolf.",
-    // TODO: Implement field spell effect
+    summons: [wolfToken],
+    onEnd: ({ log, playerIndex }) => {
+      log("Wolves Den summons a Wolf.");
+      return { summonTokens: { playerIndex, tokens: [wolfToken] } };
+    },
   },
   {
     id: "mammal-prey-wolf",
@@ -5069,7 +5929,10 @@ const mammalCards = [
     type: "Trap",
     trigger: "targeted",
     effectText: "When target creature is targeted, return it to hand.",
-    // TODO: Implement trap effect
+    effect: ({ log, target }) => {
+      log(`Animal Rights returns ${target.name} to hand.`);
+      return { returnToHand: [target] };
+    },
   },
   {
     id: "mammal-trap-pitfall",
@@ -5077,7 +5940,14 @@ const mammalCards = [
     type: "Trap",
     trigger: "directAttack",
     effectText: "When target enemy attacks directly, negate attack. Enemies gain frozen.",
-    // TODO: Implement trap and freeze
+    effect: ({ log, opponent }) => {
+      const enemies = opponent.field.filter((card) => isCreatureCard(card));
+      log("Pitfall negates the attack and freezes all enemies!");
+      return {
+        negateAttack: true,
+        freezeCreatures: enemies,
+      };
+    },
   },
   {
     id: "mammal-trap-snow-squall",
@@ -5085,7 +5955,14 @@ const mammalCards = [
     type: "Trap",
     trigger: "indirectDamage",
     effectText: "When damaged indirectly, negate damage. Enemies gain frozen.",
-    // TODO: Implement trap and freeze
+    effect: ({ log, opponent }) => {
+      const enemies = opponent.field.filter((card) => isCreatureCard(card));
+      log("Snow Squall negates the damage and freezes all enemies!");
+      return {
+        negateDamage: true,
+        freezeCreatures: enemies,
+      };
+    },
   },
   {
     id: "mammal-trap-burial-ground",
@@ -5093,7 +5970,26 @@ const mammalCards = [
     type: "Trap",
     trigger: "slain",
     effectText: "When target defending creature is slain, play a carrion it gains frozen.",
-    // TODO: Implement trap and summon
+    effect: ({ log, player, playerIndex }) => {
+      const carrionCreatures = player.carrion.filter(
+        (card) => card && (card.type === "Prey" || card.type === "Predator")
+      );
+      if (carrionCreatures.length === 0) {
+        log("Burial Ground: no creatures in carrion to summon.");
+        return null;
+      }
+      return makeTargetedSelection({
+        title: "Burial Ground: choose a carrion creature to summon",
+        candidates: carrionCreatures.map((card) => ({ label: card.name, value: card })),
+        onSelect: (card) => {
+          log(`Burial Ground summons ${card.name} from carrion with frozen.`);
+          return {
+            playFromCarrion: { playerIndex, card },
+            addKeywordToPlayed: { keyword: "Frozen" },
+          };
+        },
+      });
+    },
   },
 ];
 
