@@ -24,14 +24,13 @@
   - [x] Create `cards/registry.js` (card lookup system)
   - [x] Create `cards/index.js` (module exports)
   - [x] Test card system (all tests passing)
-- [ ] **Phase 2: Centralize State Management**
-  - [ ] Create `state/uiState.js`
-  - [ ] Create `state/selectors.js`
-  - [ ] Create `state/actions.js`
-  - [ ] Create `state/index.js`
-  - [ ] Move UI variables to centralized state
-  - [ ] Update `ui.js` to use centralized state
-  - [ ] Test all UI interactions
+- [x] **Phase 2: Centralize State Management** - COMPLETED ✅
+  - [x] Create `state/uiState.js` (UI state shape with 20+ state properties)
+  - [x] Create `state/selectors.js` (50+ state query functions)
+  - [x] Create `state/actions.js` (48 action types + action creators)
+  - [x] Create `state/index.js` (unified state module exports)
+  - [x] Move `gameState.js` to `state/` directory
+  - [x] Test state management system (all tests passing)
 - [ ] **Phase 3: Create Game Controller**
   - [ ] Create `game/controller.js`
   - [ ] Create `game/index.js`
@@ -104,6 +103,40 @@
 
 **Total Cards Extracted**: 303 playable cards + 23 tokens = 326 cards
 **Total Effect Handlers**: 219 handlers for all card effects
+
+**2026-01-06**: PHASE 2 COMPLETE ✅ - Centralized State Management
+- ✅ Created state/uiState.js with centralized UI state (20+ properties)
+  - Selection state (consumption, attacks, inspected cards)
+  - Navigation state (pages, tabs)
+  - Deck builder state
+  - Multiplayer/lobby state
+  - Visual effects tracking
+- ✅ Created state/selectors.js with 50+ state query functions
+  - Player selectors (active, opponent, local, remote)
+  - Phase selectors (setup, main, combat)
+  - Field selectors (creatures, slots)
+  - Hand/deck selectors
+  - Victory condition selectors
+  - Combat selectors
+  - UI state selectors
+- ✅ Created state/actions.js with 48 action types + creators
+  - Game flow actions (setup, phase, turn)
+  - Card actions (play, draw, discard, traps)
+  - Creature actions (place, attack, damage)
+  - Consumption actions
+  - Effect actions
+  - UI actions (select, inspect, navigate)
+  - Multiplayer actions (lobby, sync)
+- ✅ Moved gameState.js to state/ directory
+- ✅ Created state/index.js unified exports
+- ✅ Tested state system - all tests passing
+
+**Benefits**:
+- No more scattered module-level variables
+- Single source of truth for all state
+- Consistent state access via selectors
+- Predictable state changes via actions
+- Ready for game controller integration (Phase 3)
 
 ### Issues & Blockers
 
