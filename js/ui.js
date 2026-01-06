@@ -72,6 +72,10 @@ import {
 import {
   renderCard as renderCardNew,
   renderDeckCard as renderDeckCardNew,
+  renderCardStats as renderCardStatsNew,
+  getCardEffectSummary as getCardEffectSummaryNew,
+  cardTypeClass as cardTypeClassNew,
+  renderCardInnerHtml as renderCardInnerHtmlNew,
 } from "./ui/components/Card.js";
 import {
   renderField as renderFieldNew,
@@ -80,6 +84,13 @@ import {
   renderHand as renderHandNew,
   updateHandOverlap as updateHandOverlapNew,
 } from "./ui/components/Hand.js";
+import {
+  renderSelectionPanel as renderSelectionPanelNew,
+  clearSelectionPanel as clearSelectionPanelNew,
+  isSelectionActive as isSelectionActiveNew,
+  createSelectionItem,
+  createCardSelectionItem,
+} from "./ui/components/SelectionPanel.js";
 
 // Helper to get discardEffect and timing for both old and new card formats
 const getDiscardEffectInfo = (card) => {
@@ -1564,390 +1575,13 @@ const updatePlayerStats = (state, index, role) => {
   }
 };
 
-const cardTypeClass = (card) => `type-${card.type.toLowerCase().replace(" ", "-")}`;
-
-const renderCardStats = (card) => {
-  const stats = [];
-  if (card.type === "Predator" || card.type === "Prey") {
-    stats.push({ emoji: "⚔️", value: card.currentAtk ?? card.atk, className: "atk" });
-    stats.push({ emoji: "❤️", value: card.currentHp ?? card.hp, className: "hp" });
-  }
-  if (card.type === "Prey") {
-    stats.push({ emoji: "🍖", value: card.nutrition, className: "nut" });
-  }
-  return stats;
-};
-
-const isCardLike = (value) =>
-  value &&
-  typeof value === "object" &&
-  typeof value.name === "string" &&
-  typeof value.type === "string" &&
-  typeof value.id === "string";
-
-const repeatingEffectPattern = /(start of turn|end of turn|before combat)/i;
-
-const applyRepeatingIndicator = (summary, card) => {
-  if (!summary || summary.includes("🔂")) {
-    return summary;
-  }
-  if (card?.onStart || card?.onEnd || card?.onBeforeCombat || repeatingEffectPattern.test(summary)) {
-    return `🔂 ${summary}`;
-  }
-  return summary;
-};
-
-const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-const appendKeywordDetails = (summary, card) => {
-  if (!summary) {
-    return summary;
-  }
-  const cardKeywords = new Set((card.keywords ?? []).map((keyword) => keyword.toLowerCase()));
-  const keywordEntries = Object.entries(KEYWORD_DESCRIPTIONS);
-  const sentences = summary.split(/(?<=\.)\s+/);
-  const updatedSentences = sentences.map((sentence) => {
-    const lowerSentence = sentence.toLowerCase();
-    const matches = keywordEntries.filter(([keyword]) => {
-      const normalizedKeyword = keyword.toLowerCase();
-      if (cardKeywords.has(normalizedKeyword)) {
-        return false;
-      }
-      const pattern = new RegExp(`\\b${escapeRegExp(normalizedKeyword).replace(/\\s+/g, "\\\\s+")}\\b`, "i");
-      return pattern.test(lowerSentence);
-    });
-    if (!matches.length) {
-      return sentence;
-    }
-    const details = matches
-      .map(([keyword, description]) => `${keyword}: ${description}`)
-      .join(" ");
-    const trimmed = sentence.trim();
-    if (trimmed.endsWith(".")) {
-      return `${trimmed.slice(0, -1)} (${details}).`;
-    }
-    return `${trimmed} (${details})`;
-  });
-  return updatedSentences.join(" ");
-};
-
-const formatTokenStats = (card) => {
-  if (card.type === "Predator" || card.type === "Prey") {
-    const base = `${card.atk}/${card.hp}`;
-    if (card.type === "Prey") {
-      return `${base} (NUT ${card.nutrition})`;
-    }
-    return base;
-  }
-  return "";
-};
-
-const formatTokenSummary = (token) => {
-  const stats = formatTokenStats(token);
-  const keywords = token.keywords?.length ? `Keywords: ${token.keywords.join(", ")}` : "";
-  const effect = getCardEffectSummary(token, { includeKeywordDetails: true });
-  const parts = [
-    `${token.name} — ${token.type}${stats ? ` ${stats}` : ""}`,
-    keywords,
-    effect ? `Effect: ${effect}` : "",
-  ].filter(Boolean);
-  return parts.join(" — ");
-};
-
-const appendTokenDetails = (summary, card) => {
-  if (!card?.summons?.length) {
-    return summary;
-  }
-  const tokenSummaries = card.summons.map((token) => formatTokenSummary(token));
-  return `${summary}<br>***<br>${tokenSummaries.join("<br>")}`;
-};
-
-const getCardEffectSummary = (card, options = {}) => {
-  const { includeKeywordDetails = false, includeTokenDetails = false } = options;
-  let summary = "";
-  if (card.effectText) {
-    // New JSON cards have effectText directly
-    summary = card.effectText;
-  } else if (card.effects) {
-    // New system cards with effects object but no effectText - shouldn't happen
-    // but fallback gracefully
-    return "";
-  } else {
-    // Legacy cards with inline effect functions
-    const effectFn = card.effect ?? card.onPlay ?? card.onConsume ?? card.onEnd ?? card.onStart;
-    if (!effectFn) {
-      return "";
-    }
-    const log = (message) => {
-      if (!summary) {
-        summary = message.replace(/^.*?\b(?:effect|triggers|summons|takes the field)\b:\s*/i, "");
-      }
-    };
-    try {
-      effectFn({
-        log,
-        player: {},
-        opponent: {},
-        attacker: {},
-      });
-    } catch {
-      summary = "";
-    }
-  }
-  summary = applyRepeatingIndicator(summary, card);
-  if (includeKeywordDetails) {
-    summary = appendKeywordDetails(summary, card);
-  }
-  if (includeTokenDetails) {
-    summary = appendTokenDetails(summary, card);
-  }
-  return summary;
-};
-
-const getStatusIndicators = (card) => {
-  const indicators = [];
-  if (card.dryDropped) {
-    indicators.push("🍂");
-  }
-  if (card.abilitiesCancelled) {
-    indicators.push("🚫");
-  }
-  if (card.hasBarrier) {
-    indicators.push("🛡️");
-  }
-  if (card.frozen) {
-    indicators.push("❄️");
-  }
-  if (card.isToken) {
-    indicators.push("⚪");
-  }
-  return indicators.join(" ");
-};
-
-const renderKeywordTags = (card) => {
-  if (!card.keywords?.length) {
-    return "";
-  }
-  const keywords = card.keywords;
-  return keywords.map((keyword) => `<span>${keyword}</span>`).join("");
-};
-
-const renderCardInnerHtml = (card, { showEffectSummary } = {}) => {
-  // Get stats for the card
-  const stats = renderCardStats(card);
-
-  // Build stat boxes with emoji + value
-  const statBoxes = stats.map(stat =>
-    `<div class="card-stat-box ${stat.className}">
-      <span class="stat-emoji">${stat.emoji}</span>
-      <span class="stat-value">${stat.value}</span>
-    </div>`
-  ).join("");
-
-  // Get keywords (bold, underlined individually, separated by 3 spaces)
-  const keywords = card.keywords?.length
-    ? card.keywords.map(k => `<u><strong>${k}</strong></u>`).join("   ")
-    : "";
-
-  // Get effect summary (bold)
-  const effectSummary = showEffectSummary ? `<strong>${getCardEffectSummary(card)}</strong>` : "";
-
-  // Combine keywords and effect, separated by single newline if both exist
-  const bottomText = [keywords, effectSummary].filter(Boolean).join("\n");
-
-  // Card image with error handling
-  const imageHtml = hasCardImage(card.id)
-    ? `<img src="${getCardImagePath(card.id)}" alt="" class="card-image"
-         onerror="this.parentElement.style.display='none';">`
-    : '';
-
-  return `
-    <div class="card-header">
-      <div class="card-name">${card.name}</div>
-    </div>
-    <div class="card-image-container">
-      ${imageHtml}
-    </div>
-    <div class="card-footer">
-      <div class="card-stats-row">
-        ${statBoxes}
-      </div>
-      ${bottomText ? `<div class="card-text-area">${bottomText}</div>` : ''}
-    </div>
-  `;
-};
-
-const renderCard = (card, options = {}) => {
-  const {
-    showPlay = false,
-    showAttack = false,
-    showDiscard = false,
-    showEffectSummary = false,
-    onPlay,
-    onAttack,
-    onDiscard,
-    onClick,
-    showBack = false,
-    isSelected = false,
-  } = options;
-  const cardElement = document.createElement("div");
-
-  if (showBack) {
-    cardElement.className = "card back";
-    cardElement.textContent = "Card Back";
-    return cardElement;
-  }
-
-  cardElement.className = `card ${cardTypeClass(card)}${isSelected ? ' card-selected' : ''}`;
-  if (card.instanceId) {
-    cardElement.dataset.instanceId = card.instanceId;
-  }
-  const inner = document.createElement("div");
-  inner.className = "card-inner";
-
-  inner.innerHTML = renderCardInnerHtml(card, { showEffectSummary });
-
-  if (showPlay || showAttack) {
-    const actions = document.createElement("div");
-    actions.className = "card-actions";
-    if (showPlay) {
-      const playButton = document.createElement("button");
-      playButton.textContent = "Play";
-      playButton.onclick = () => onPlay?.(card);
-      actions.appendChild(playButton);
-    }
-    if (showAttack) {
-      const attackButton = document.createElement("button");
-      attackButton.textContent = "Attack";
-      attackButton.onclick = () => onAttack?.(card);
-      actions.appendChild(attackButton);
-    }
-    if (showDiscard) {
-      const discardButton = document.createElement("button");
-      discardButton.textContent = "Discard";
-      discardButton.onclick = () => onDiscard?.(card);
-      actions.appendChild(discardButton);
-    }
-    inner.appendChild(actions);
-  }
-
-  const status = getStatusIndicators(card);
-  if (status) {
-    const indicator = document.createElement("div");
-    indicator.className = "card-status";
-    indicator.textContent = status;
-    cardElement.appendChild(indicator);
-  }
-
-  cardElement.appendChild(inner);
-  // Add drag and drop functionality
-  if (!showBack && card.instanceId) {
-    cardElement.draggable = true;
-    cardElement.classList.add('draggable-card');
-    
-    // Store original position for reversion
-    cardElement.dataset.originalPosition = JSON.stringify({
-      parent: cardElement.parentElement?.className || '',
-      index: Array.from(cardElement.parentElement?.children || []).indexOf(cardElement)
-    });
-  }
-
-  cardElement.addEventListener("dragstart", (event) => {
-    event.dataTransfer.setData("text", card.instanceId);
-    event.dataTransfer.effectAllowed = "move";
-  });
-
-  cardElement.addEventListener("dragend", (event) => {
-    event.preventDefault();
-  });
-
-  cardElement.addEventListener("click", (event) => {
-    if (event.target.closest("button")) {
-      return;
-    }
-    inspectedCardId = card.instanceId;
-    setInspectorContent(card);
-    onClick?.(card);
-  });
-
-  // Auto-shrink text to fit (optimized to prevent spastic re-renders)
-  const adjustTextToFit = () => {
-    const nameElement = inner.querySelector('.card-name');
-    const contentArea = inner.querySelector('.card-content-area');
-    const statsRow = inner.querySelector('.card-stats-row');
-    const keywordsElement = inner.querySelector('.card-keywords');
-    const effectElement = inner.querySelector('.card-effect');
-
-    // Skip if already adjusted to prevent repeated calculations
-    if (nameElement?.dataset.textAdjusted === 'true') return;
-
-    // Adjust card name to fit on one line
-    if (nameElement && nameElement.scrollWidth > nameElement.clientWidth) {
-      let fontSize = 13;
-      const minFontSize = 7;
-      const step = 0.5;
-
-      while (fontSize > minFontSize && nameElement.scrollWidth > nameElement.clientWidth) {
-        fontSize -= step;
-        nameElement.style.fontSize = `${fontSize}px`;
-      }
-    }
-
-    // Adjust stats row to fit without horizontal overflow
-    if (statsRow && statsRow.scrollWidth > statsRow.clientWidth) {
-      let fontSize = 11;
-      const minFontSize = 6;
-      const step = 0.5;
-
-      const statElements = statsRow.querySelectorAll('.card-stat');
-      while (fontSize > minFontSize && statsRow.scrollWidth > statsRow.clientWidth) {
-        fontSize -= step;
-        statElements.forEach(stat => {
-          stat.style.fontSize = `${fontSize}px`;
-          stat.style.padding = `${Math.max(1, fontSize * 0.18)}px ${Math.max(3, fontSize * 0.55)}px`;
-        });
-      }
-    }
-
-    // Adjust keywords and effect area to fit without overflow
-    if (contentArea && (keywordsElement || effectElement)) {
-      // Check if content overflows vertically
-      let attempts = 0;
-      const maxAttempts = 20;
-
-      while (contentArea.scrollHeight > contentArea.clientHeight && attempts < maxAttempts) {
-        attempts++;
-        let fontSize = parseFloat(effectElement?.style.fontSize || keywordsElement?.style.fontSize) || 11;
-        const minFontSize = 6;
-
-        if (fontSize <= minFontSize) break;
-
-        fontSize = Math.max(minFontSize, fontSize - 0.5);
-
-        if (keywordsElement) {
-          keywordsElement.style.fontSize = `${fontSize}px`;
-          const keywordSpans = keywordsElement.querySelectorAll('span');
-          keywordSpans.forEach(span => {
-            span.style.fontSize = `${fontSize}px`;
-            span.style.padding = `${Math.max(1, fontSize * 0.18)}px ${Math.max(3, fontSize * 0.55)}px`;
-          });
-        }
-        if (effectElement) {
-          effectElement.style.fontSize = `${fontSize}px`;
-          effectElement.style.lineHeight = '1.2';
-        }
-      }
-    }
-
-    // Mark as adjusted to prevent repeated calculations
-    if (nameElement) nameElement.dataset.textAdjusted = 'true';
-  };
-
-  // Run adjustment after DOM is rendered with a small delay to batch operations
-  setTimeout(() => requestAnimationFrame(adjustTextToFit), 10);
-
-  return cardElement;
-};
+// ============================================================================
+// CARD RENDERING
+// MOVED TO: ./ui/components/Card.js
+// Functions: renderCard, renderCardStats, getCardEffectSummary, cardTypeClass,
+//            renderCardInnerHtml, getStatusIndicators, renderKeywordTags
+// Import: renderCardNew, renderCardStatsNew, getCardEffectSummaryNew, etc.
+// ============================================================================
 
 // Drag and Drop System
 let draggedCard = null;
@@ -2323,7 +1957,7 @@ const startConsumptionForSpecificSlot = (predator, slotIndex, ediblePrey) => {
     return item;
   });
   
-  renderSelectionPanel({
+  renderSelectionPanelNew({
     title: "Select up to 3 prey to consume",
     items,
     onConfirm: () => {
@@ -2352,7 +1986,7 @@ const startConsumptionForSpecificSlot = (predator, slotIndex, ediblePrey) => {
       });
       
       player.field[slotIndex] = predator; // Place in the specific slot
-      clearSelectionPanel();
+      clearSelectionPanelNew();
       
       triggerPlayTraps(state, predator, latestCallbacks.onUpdate, () => {
         if (totalSelected > 0 && (predator.onConsume || predator.effects?.onConsume)) {
@@ -2638,98 +2272,8 @@ const initHandPreview = () => {
   window.addEventListener("resize", () => updateHandOverlap(handGrid));
 };
 
-const renderDeckCard = (card, options = {}) => {
-  const { highlighted = false, selected = false, onClick } = options;
-  const cardElement = document.createElement("div");
-  cardElement.className = `card deck-card ${highlighted ? "highlighted" : ""} ${
-    selected ? "selected" : ""
-  } ${cardTypeClass(card)}`;
-  cardElement.innerHTML = `
-    <div class="card-inner">
-      ${renderCardInnerHtml(card, { showEffectSummary: true })}
-    </div>
-  `;
-  cardElement.addEventListener("click", () => onClick?.());
-
-  // Auto-shrink text to fit (same as renderCard)
-  const adjustTextToFit = () => {
-    const inner = cardElement.querySelector('.card-inner');
-    const nameElement = inner?.querySelector('.card-name');
-    const contentArea = inner?.querySelector('.card-content-area');
-    const statsRow = inner?.querySelector('.card-stats-row');
-    const keywordsElement = inner?.querySelector('.card-keywords');
-    const effectElement = inner?.querySelector('.card-effect');
-
-    // Skip if already adjusted to prevent repeated calculations
-    if (nameElement?.dataset.textAdjusted === 'true') return;
-
-    // Adjust card name to fit on one line
-    if (nameElement && nameElement.scrollWidth > nameElement.clientWidth) {
-      let fontSize = 13;
-      const minFontSize = 7;
-      const step = 0.5;
-
-      while (fontSize > minFontSize && nameElement.scrollWidth > nameElement.clientWidth) {
-        fontSize -= step;
-        nameElement.style.fontSize = `${fontSize}px`;
-      }
-    }
-
-    // Adjust stats row to fit without horizontal overflow
-    if (statsRow && statsRow.scrollWidth > statsRow.clientWidth) {
-      let fontSize = 11;
-      const minFontSize = 6;
-      const step = 0.5;
-
-      const statElements = statsRow.querySelectorAll('.card-stat');
-      while (fontSize > minFontSize && statsRow.scrollWidth > statsRow.clientWidth) {
-        fontSize -= step;
-        statElements.forEach(stat => {
-          stat.style.fontSize = `${fontSize}px`;
-          stat.style.padding = `${Math.max(1, fontSize * 0.18)}px ${Math.max(3, fontSize * 0.55)}px`;
-        });
-      }
-    }
-
-    // Adjust keywords and effect area to fit without overflow
-    if (contentArea && (keywordsElement || effectElement)) {
-      // Check if content overflows vertically
-      let attempts = 0;
-      const maxAttempts = 20;
-
-      while (contentArea.scrollHeight > contentArea.clientHeight && attempts < maxAttempts) {
-        attempts++;
-        let fontSize = parseFloat(effectElement?.style.fontSize || keywordsElement?.style.fontSize) || 11;
-        const minFontSize = 6;
-
-        if (fontSize <= minFontSize) break;
-
-        fontSize = Math.max(minFontSize, fontSize - 0.5);
-
-        if (keywordsElement) {
-          keywordsElement.style.fontSize = `${fontSize}px`;
-          const keywordSpans = keywordsElement.querySelectorAll('span');
-          keywordSpans.forEach(span => {
-            span.style.fontSize = `${fontSize}px`;
-            span.style.padding = `${Math.max(1, fontSize * 0.18)}px ${Math.max(3, fontSize * 0.55)}px`;
-          });
-        }
-        if (effectElement) {
-          effectElement.style.fontSize = `${fontSize}px`;
-          effectElement.style.lineHeight = '1.2';
-        }
-      }
-    }
-
-    // Mark as adjusted to prevent repeated calculations
-    if (nameElement) nameElement.dataset.textAdjusted = 'true';
-  };
-
-  // Run adjustment after DOM is rendered with a small delay to batch operations
-  setTimeout(() => requestAnimationFrame(adjustTextToFit), 10);
-
-  return cardElement;
-};
+// renderDeckCard moved to: ./ui/components/Card.js
+// Import: renderDeckCardNew
 
 const shuffle = (items) => {
   const copy = [...items];
@@ -2799,10 +2343,10 @@ const setInspectorContentFor = (panel, card, showImage = true) => {
       `;
     })
     .join("");
-  const stats = renderCardStats(card)
+  const stats = renderCardStatsNew(card)
     .map((stat) => `${stat.label} ${stat.value}`)
     .join(" • ");
-  const effectSummary = getCardEffectSummary(card, {
+  const effectSummary = getCardEffectSummaryNew(card, {
     includeKeywordDetails: true,
     includeTokenDetails: true,
   });
@@ -2903,11 +2447,11 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
       });
     }
 
-    renderSelectionPanel({
+    renderSelectionPanelNew({
       title: `${handOwner.name}'s hand`,
       items,
       onConfirm: () => {
-        clearSelectionPanel();
+        clearSelectionPanelNew();
         onUpdate?.();
       },
       confirmLabel: "OK",
@@ -2932,7 +2476,7 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
       renderCards ||
       candidates.some((candidate) => isCardLike(candidate.card ?? candidate.value));
     const handleSelection = (value) => {
-      clearSelectionPanel();
+      clearSelectionPanelNew();
       const followUp = onSelect(value);
       resolveEffectChain(state, followUp, context, onUpdate, onComplete);
       cleanupDestroyed(state);
@@ -2960,11 +2504,11 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
       return item;
     });
 
-    renderSelectionPanel({
+    renderSelectionPanelNew({
       title,
       items,
       onConfirm: () => {
-        clearSelectionPanel();
+        clearSelectionPanelNew();
         onCancel?.();
       },
       confirmLabel: "Cancel",
@@ -2992,37 +2536,11 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
 // Import: renderHandNew, updateHandOverlapNew
 // ============================================================================
 
-const renderSelectionPanel = ({ title, items, onConfirm, confirmLabel = "Confirm" }) => {
-  clearPanel(selectionPanel);
-  // ... rest of the code remains the same ...
-  if (!selectionPanel) {
-    return;
-  }
-  const titleElement = document.createElement("strong");
-  titleElement.textContent = title;
-  selectionPanel.appendChild(titleElement);
+// Selection panel functions moved to: ./ui/components/SelectionPanel.js
+// Import: renderSelectionPanelNew, clearSelectionPanelNew, isSelectionActiveNew
 
-  const list = document.createElement("div");
-  list.className = "selection-list";
-  items.forEach((item) => list.appendChild(item));
-  selectionPanel.appendChild(list);
-
-  if (confirmLabel) {
-    const confirmButton = document.createElement("button");
-    confirmButton.className = "secondary";
-    confirmButton.textContent = confirmLabel;
-    confirmButton.onclick = onConfirm;
-    selectionPanel.appendChild(confirmButton);
-  }
-  actionBar?.classList.add("has-selection");
-};
-
-const clearSelectionPanel = () => {
-  clearPanel(selectionPanel);
-  actionBar?.classList.remove("has-selection");
-};
-
-const isSelectionActive = () => Boolean(selectionPanel?.childElementCount) || Boolean(pendingAttack);
+// Keep local isSelectionActive for pendingAttack check (module-scoped state)
+const isSelectionActive = () => isSelectionActiveNew() || Boolean(pendingAttack);
 
 const findCardByInstanceId = (state, instanceId) =>
   state.players
@@ -3154,7 +2672,7 @@ const renderTrapDecision = (state, defender, attacker, target, onUpdate) => {
       cleanupDestroyed(state);
       if (attacker.currentHp <= 0) {
         logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
-        clearSelectionPanel();
+        clearSelectionPanelNew();
         pendingAttack = null;
         state.pendingTrapDecision = null;
         onUpdate?.();
@@ -3162,7 +2680,7 @@ const renderTrapDecision = (state, defender, attacker, target, onUpdate) => {
         return;
       }
       const negate = Boolean(result?.negateAttack);
-      clearSelectionPanel();
+      clearSelectionPanelNew();
       resolveAttack(state, attacker, target, negate);
       pendingAttack = null;
       state.pendingTrapDecision = null;
@@ -3179,7 +2697,7 @@ const renderTrapDecision = (state, defender, attacker, target, onUpdate) => {
   const skipAction = document.createElement("button");
   skipAction.textContent = "Skip Trap";
   skipAction.onclick = () => {
-    clearSelectionPanel();
+    clearSelectionPanelNew();
     resolveAttack(state, attacker, target, false);
     pendingAttack = null;
     state.pendingTrapDecision = null;
@@ -3215,7 +2733,7 @@ const renderTrapDecision = (state, defender, attacker, target, onUpdate) => {
           playerIndex: pendingAttack.defenderIndex,
           opponentIndex: (pendingAttack.defenderIndex + 1) % 2,
         });
-        clearSelectionPanel();
+        clearSelectionPanelNew();
         resolveAttack(state, attacker, target, Boolean(result?.negateAttack));
         pendingAttack = null;
         state.pendingTrapDecision = null;
@@ -3228,7 +2746,7 @@ const renderTrapDecision = (state, defender, attacker, target, onUpdate) => {
     });
   }
 
-  renderSelectionPanel({
+  renderSelectionPanelNew({
     title: `${defender.name} may trigger a trap`,
     items,
     onConfirm: () => {},
@@ -3270,7 +2788,7 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
 const handlePendingTrapDecision = (state, onUpdate) => {
   if (!state.pendingTrapDecision) {
     if (trapWaitingPanelActive) {
-      clearSelectionPanel();
+      clearSelectionPanelNew();
       trapWaitingPanelActive = false;
     }
     return;
@@ -3282,13 +2800,13 @@ const handlePendingTrapDecision = (state, onUpdate) => {
   if (!defender) {
     state.pendingTrapDecision = null;
     if (trapWaitingPanelActive) {
-      clearSelectionPanel();
+      clearSelectionPanelNew();
       trapWaitingPanelActive = false;
     }
     return;
   }
   if (defenderIndex !== localIndex) {
-    renderSelectionPanel({
+    renderSelectionPanelNew({
       title: `${getOpponentDisplayName(state)} is deciding whether to play a trap...`,
       items: [],
       onConfirm: () => {},
@@ -3312,7 +2830,7 @@ const handlePendingTrapDecision = (state, onUpdate) => {
   if (!attacker || (target.type === "creature" && !target.card)) {
     state.pendingTrapDecision = null;
     if (trapWaitingPanelActive) {
-      clearSelectionPanel();
+      clearSelectionPanelNew();
       trapWaitingPanelActive = false;
     }
     return;
@@ -3339,7 +2857,7 @@ const handleAttackSelection = (state, attacker, onUpdate) => {
     const button = document.createElement("button");
     button.textContent = `Attack ${creature.name}`;
     button.onclick = () => {
-      clearSelectionPanel();
+      clearSelectionPanelNew();
       handleTrapResponse(state, opponent, attacker, { type: "creature", card: creature }, onUpdate);
     };
     item.appendChild(button);
@@ -3352,14 +2870,14 @@ const handleAttackSelection = (state, attacker, onUpdate) => {
     const button = document.createElement("button");
     button.textContent = `Attack ${opponent.name}`;
     button.onclick = () => {
-      clearSelectionPanel();
+      clearSelectionPanelNew();
       handleTrapResponse(state, opponent, attacker, { type: "player", player: opponent }, onUpdate);
     };
     item.appendChild(button);
     items.push(item);
   }
 
-  renderSelectionPanel({
+  renderSelectionPanelNew({
     title: `Select target for ${attacker.name}`,
     items,
     onConfirm: clearSelectionPanel,
@@ -3490,7 +3008,7 @@ const handlePlayCard = (state, card, onUpdate) => {
           return item;
         });
 
-        renderSelectionPanel({
+        renderSelectionPanelNew({
           title: "Select up to 3 prey to consume",
           items,
           onConfirm: () => {
@@ -3526,12 +3044,12 @@ const handlePlayCard = (state, card, onUpdate) => {
               pendingConsumption.slotIndex ?? player.field.findIndex((slot) => slot === null);
             if (placementSlot === -1) {
               logMessage(state, "No empty field slots available.");
-              clearSelectionPanel();
+              clearSelectionPanelNew();
               onUpdate?.();
               return;
             }
             player.field[placementSlot] = creature;
-            clearSelectionPanel();
+            clearSelectionPanelNew();
             triggerPlayTraps(state, creature, onUpdate, () => {
               if (totalSelected > 0 && (creature.onConsume || creature.effects?.onConsume)) {
                 const result = resolveCardEffect(creature, 'onConsume', {
@@ -3582,7 +3100,7 @@ const handlePlayCard = (state, card, onUpdate) => {
           creature.dryDropped = true;
           player.field[emptySlot] = creature;
           logMessage(state, `${creature.name} enters play with no consumption.`);
-          clearSelectionPanel();
+          clearSelectionPanelNew();
           triggerPlayTraps(state, creature, onUpdate, () => {
             if (!isFree) {
               state.cardPlayedThisTurn = true;
@@ -3596,12 +3114,12 @@ const handlePlayCard = (state, card, onUpdate) => {
         const consumeButton = document.createElement("button");
         consumeButton.textContent = "Consume";
         consumeButton.onclick = () => {
-          clearSelectionPanel();
+          clearSelectionPanelNew();
           startConsumptionSelection();
         };
         items.push(consumeButton);
 
-        renderSelectionPanel({
+        renderSelectionPanelNew({
           title: "Play predator",
           items,
           confirmLabel: null,
@@ -3717,7 +3235,7 @@ const triggerPlayTraps = (state, creature, onUpdate, onResolved) => {
         opponentIndex: state.activePlayerIndex,
       });
       cleanupDestroyed(state);
-      clearSelectionPanel();
+      clearSelectionPanelNew();
       onUpdate?.();
       onResolved?.();
     };
@@ -3730,14 +3248,14 @@ const triggerPlayTraps = (state, creature, onUpdate, onResolved) => {
   const skipAction = document.createElement("button");
   skipAction.textContent = "Skip Trap";
   skipAction.onclick = () => {
-    clearSelectionPanel();
+    clearSelectionPanelNew();
     onUpdate?.();
     onResolved?.();
   };
   skipButton.appendChild(skipAction);
   items.push(skipButton);
 
-  renderSelectionPanel({
+  renderSelectionPanelNew({
     title: `${opponent.name} may trigger a trap`,
     items,
     onConfirm: () => {},
@@ -4294,11 +3812,11 @@ const showCarrionPilePopup = (player, opponent, onUpdate) => {
     items.push(item);
   }
 
-  renderSelectionPanel({
+  renderSelectionPanelNew({
     title: "Carrion Piles",
     items,
     onConfirm: () => {
-      clearSelectionPanel();
+      clearSelectionPanelNew();
       onUpdate?.();
     },
     confirmLabel: "OK",
