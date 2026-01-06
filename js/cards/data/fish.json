@@ -1,0 +1,815 @@
+{
+  "cards": [
+    {
+      "id": "fish-prey-atlantic-flying-fish",
+      "name": "Atlantic Flying Fish",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Haste"],
+      "effectText": "Play Flying Fish.",
+      "summons": ["token-flying-fish"],
+      "effects": {
+        "onPlay": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": ["token-flying-fish"]
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-prey-black-mullet",
+      "name": "Black Mullet",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Free Play", "Ambush"]
+    },
+    {
+      "id": "fish-prey-blobfish",
+      "name": "Blobfish",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Passive", "Immune"],
+      "effectText": "End of turn, eat target enemy prey.",
+      "effects": {
+        "onEnd": {
+          "type": "selectEnemyPreyToConsume",
+          "params": {}
+        }
+      }
+    },
+    {
+      "id": "fish-prey-celestial-eye-goldfish",
+      "name": "Celestial Eye Goldfish",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "effectText": "Draw 2. Rival reveals hand.",
+      "effects": {
+        "onPlay": [
+          {
+            "type": "draw",
+            "params": {
+              "count": 2
+            }
+          },
+          {
+            "type": "revealHand",
+            "params": {
+              "durationMs": 3000
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "fish-prey-ghost-eel",
+      "name": "Ghost Eel",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Ambush", "Hidden"],
+      "effectText": "Discard: negate direct attack.",
+      "effects": {
+        "discardEffect": {
+          "type": "negateAttack",
+          "params": {}
+        }
+      }
+    },
+    {
+      "id": "fish-prey-golden-angelfish",
+      "name": "Golden Angelfish",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "effectText": "Draw 1. Creatures gain barrier.",
+      "effects": {
+        "onPlay": [
+          {
+            "type": "draw",
+            "params": {
+              "count": 1
+            }
+          },
+          {
+            "type": "grantBarrier",
+            "params": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "fish-prey-hardhead-catfish",
+      "name": "Hardhead Catfish",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Barrier"],
+      "effectText": "Slain: play Catfish.",
+      "summons": ["token-catfish"],
+      "effects": {
+        "onSlain": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": ["token-catfish"]
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-prey-leafy-seadragon",
+      "name": "Leafy Seadragon",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Invisible"],
+      "effectText": "Start of turn, play Leafy.",
+      "summons": ["token-leafy"],
+      "effects": {
+        "onStart": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": ["token-leafy"]
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-prey-portuguese-man-o-war-legion",
+      "name": "Portuguese Man O' War Legion",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Passive"],
+      "effectText": "Play 2 Portuguese Man O' War. Defending before combat, deal 1 damage.",
+      "summons": ["token-man-o-war"],
+      "effects": {
+        "onPlay": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": ["token-man-o-war", "token-man-o-war"]
+          }
+        },
+        "onDefend": {
+          "type": "damageCreature",
+          "params": {
+            "targetType": "attacker",
+            "amount": 1,
+            "sourceLabel": "sting"
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-prey-psychedelic-frogfish",
+      "name": "Psychedelic Frogfish",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Ambush", "Invisible"]
+    },
+    {
+      "id": "fish-prey-rainbow-mantis-shrimp",
+      "name": "Rainbow Mantis Shrimp",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "effectText": "Heal 1. Before combat, deal 3 damage.",
+      "effects": {
+        "onPlay": {
+          "type": "heal",
+          "params": {
+            "amount": 1
+          }
+        },
+        "onBeforeCombat": {
+          "type": "selectCreatureForDamage",
+          "params": {
+            "amount": 3,
+            "label": "strike"
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-prey-rainbow-sardines",
+      "name": "Rainbow Sardines",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "effectText": "Play 2 Sardines. Heal 1. Slain: play Sardine.",
+      "summons": ["token-sardine"],
+      "effects": {
+        "onPlay": [
+          {
+            "type": "summonTokens",
+            "params": {
+              "tokenIds": ["token-sardine", "token-sardine"]
+            }
+          },
+          {
+            "type": "heal",
+            "params": {
+              "amount": 1
+            }
+          }
+        ],
+        "onSlain": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": ["token-sardine"]
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-prey-rainbow-trout",
+      "name": "Rainbow Trout",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "effectText": "Heal 4. Regen target creature.",
+      "effects": {
+        "onPlay": [
+          {
+            "type": "heal",
+            "params": {
+              "amount": 4
+            }
+          },
+          {
+            "type": "selectCreatureToRestore",
+            "params": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "fish-prey-spearfish-remora",
+      "name": "Spearfish Remora",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Free Play"],
+      "effectText": "Discard: target pred gains Ambush.",
+      "effects": {
+        "discardEffect": {
+          "type": "selectPredatorForKeyword",
+          "params": {
+            "keyword": "Ambush"
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-prey-blue-ringed-octopus",
+      "name": "Blue-ringed Octopus",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Invisible", "Neurotoxic"]
+    },
+    {
+      "id": "fish-prey-golden-kingfish",
+      "name": "Golden Kingfish",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": [],
+      "effectText": "Draw 2. Target pred gains end of turn, play Golden Trevally. Discard: target pred gains end of turn, play Golden Trevally.",
+      "summons": ["token-golden-trevally"],
+      "effects": {
+        "onPlay": "golden-kingfish-draw-empower-onplay",
+        "discardEffect": "golden-kingfish-empower-discard"
+      }
+    },
+    {
+      "id": "fish-prey-cannibal-fish",
+      "name": "Cannibal Fish",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 1,
+      "nutrition": 2,
+      "keywords": [],
+      "effectText": "Either play Lancetfish or gain +2/+2.",
+      "summons": ["token-lancetfish"],
+      "effects": {
+        "onPlay": "cannibal-fish-choice-onplay"
+      }
+    },
+    {
+      "id": "fish-prey-black-drum",
+      "name": "Black Drum",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": ["Ambush"],
+      "effectText": "Creatures gain +1/+0.",
+      "effects": {
+        "onPlay": {
+          "type": "buffStats",
+          "params": {
+            "targetType": "all-friendly",
+            "stats": {
+              "attack": 1,
+              "health": 0
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-prey-deep-sea-angler",
+      "name": "Deep-sea Angler",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": ["Lure"],
+      "effectText": "Play 2 Angler Eggs.",
+      "summons": ["token-angler-egg"],
+      "effects": {
+        "onPlay": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": ["token-angler-egg", "token-angler-egg"]
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-prey-electric-eel",
+      "name": "Electric Eel",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": [],
+      "effectText": "Before combat, deal 2 damage.",
+      "effects": {
+        "onBeforeCombat": {
+          "type": "selectCreatureForDamage",
+          "params": {
+            "amount": 2,
+            "label": "shock"
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-prey-golden-dorado",
+      "name": "Golden Dorado",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": [],
+      "effectText": "Draw 2.",
+      "effects": {
+        "onPlay": {
+          "type": "draw",
+          "params": {
+            "count": 2
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-prey-king-salmon",
+      "name": "King Salmon",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": [],
+      "effectText": "Slain: add Salmon to hand.",
+      "effects": {
+        "onSlain": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "fish-prey-salmon"
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-prey-kingfish",
+      "name": "Kingfish",
+      "type": "Prey",
+      "atk": 3,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": ["Haste"]
+    },
+    {
+      "id": "fish-prey-silver-king",
+      "name": "Silver King",
+      "type": "Prey",
+      "atk": 3,
+      "hp": 3,
+      "nutrition": 3,
+      "keywords": [],
+      "effectText": "Draw 3, then discard 1.",
+      "effects": {
+        "onPlay": [
+          {
+            "type": "draw",
+            "params": {
+              "count": 3
+            }
+          },
+          {
+            "type": "selectCardToDiscard",
+            "params": {
+              "count": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "fish-predator-sailfish",
+      "name": "Sailfish",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 1,
+      "keywords": ["Free Play", "Haste"]
+    },
+    {
+      "id": "fish-predator-wahoo",
+      "name": "Wahoo",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 2,
+      "keywords": ["Haste", "Edible"]
+    },
+    {
+      "id": "fish-predator-alligator-gar",
+      "name": "Alligator Gar",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 3,
+      "keywords": ["Barrier"],
+      "effectText": "Slain: add Scale Arrows to hand.",
+      "effects": {
+        "onSlain": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "fish-free-spell-scale-arrows"
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-predator-atlantic-bluefin-tuna",
+      "name": "Atlantic Bluefin Tuna",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 3,
+      "keywords": ["Edible"],
+      "effectText": "Play 2 Tuna Eggs.",
+      "summons": ["token-tuna-egg"],
+      "effects": {
+        "onConsume": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": ["token-tuna-egg", "token-tuna-egg"]
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-predator-goliath-grouper",
+      "name": "Goliath Grouper",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 3,
+      "keywords": ["Edible"],
+      "effectText": "Kill target prey.",
+      "effects": {
+        "onConsume": {
+          "type": "selectEnemyPreyToKill",
+          "params": {}
+        }
+      }
+    },
+    {
+      "id": "fish-predator-shortfin-mako",
+      "name": "Shortfin Mako",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 3,
+      "keywords": [],
+      "effectText": "Deal 3 damage to any target.",
+      "effects": {
+        "onConsume": {
+          "type": "selectTargetForDamage",
+          "params": {
+            "amount": 3,
+            "label": "damage"
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-predator-swordfish",
+      "name": "Swordfish",
+      "type": "Predator",
+      "atk": 4,
+      "hp": 2,
+      "keywords": ["Haste"]
+    },
+    {
+      "id": "fish-predator-beluga-whale",
+      "name": "Beluga Whale",
+      "type": "Predator",
+      "atk": 4,
+      "hp": 4,
+      "keywords": [],
+      "effectText": "Play a prey.",
+      "effects": {
+        "onConsume": {
+          "type": "selectPreyFromHandToPlay",
+          "params": {}
+        }
+      }
+    },
+    {
+      "id": "fish-predator-narwhal",
+      "name": "Narwhal",
+      "type": "Predator",
+      "atk": 4,
+      "hp": 4,
+      "keywords": [],
+      "effectText": "Creatures gain Immune.",
+      "effects": {
+        "onConsume": {
+          "type": "grantKeyword",
+          "params": {
+            "targetType": "all-friendly",
+            "keyword": "Immune"
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-predator-tiger-shark",
+      "name": "Tiger Shark",
+      "type": "Predator",
+      "atk": 4,
+      "hp": 4,
+      "keywords": [],
+      "effectText": "Copy abilities of a carrion pred.",
+      "effects": {
+        "onConsume": {
+          "type": "selectCarrionPredToCopyAbilities",
+          "params": {}
+        }
+      }
+    },
+    {
+      "id": "fish-predator-black-marlin",
+      "name": "Black Marlin",
+      "type": "Predator",
+      "atk": 5,
+      "hp": 3,
+      "keywords": ["Ambush"]
+    },
+    {
+      "id": "fish-predator-great-white-shark",
+      "name": "Great White Shark",
+      "type": "Predator",
+      "atk": 5,
+      "hp": 5,
+      "keywords": ["Acuity"],
+      "effectText": "Kill target enemy.",
+      "effects": {
+        "onConsume": {
+          "type": "selectEnemyToKill",
+          "params": {}
+        }
+      }
+    },
+    {
+      "id": "fish-predator-orca",
+      "name": "Orca",
+      "type": "Predator",
+      "atk": 6,
+      "hp": 6,
+      "keywords": [],
+      "effectText": "Add a card from deck to hand.",
+      "effects": {
+        "onConsume": {
+          "type": "tutorFromDeck",
+          "params": {
+            "cardType": "any"
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-spell-net",
+      "name": "Net",
+      "type": "Spell",
+      "effectText": "Kill enemy prey.",
+      "effects": {
+        "effect": {
+          "type": "selectEnemyPreyToKill",
+          "params": {}
+        }
+      }
+    },
+    {
+      "id": "fish-spell-fish-food",
+      "name": "Fish Food",
+      "type": "Spell",
+      "effectText": "Creatures gain +2/+2.",
+      "effects": {
+        "effect": {
+          "type": "buffStats",
+          "params": {
+            "targetType": "all-friendly",
+            "stats": {
+              "attack": 2,
+              "health": 2
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-spell-flood",
+      "name": "Flood",
+      "type": "Spell",
+      "effectText": "Kill animals.",
+      "effects": {
+        "effect": {
+          "type": "killAll",
+          "params": {
+            "targetType": "all"
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-spell-harpoon",
+      "name": "Harpoon",
+      "type": "Spell",
+      "effectText": "Deal 4 damage to target enemy then gain control of it.",
+      "effects": {
+        "effect": "harpoon-damage-steal-effect"
+      }
+    },
+    {
+      "id": "fish-spell-ship-of-gold",
+      "name": "Ship of Gold",
+      "type": "Spell",
+      "effectText": "Draw 4.",
+      "effects": {
+        "effect": {
+          "type": "draw",
+          "params": {
+            "count": 4
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-free-spell-angler",
+      "name": "Angler",
+      "type": "Free Spell",
+      "effectText": "Either play a prey or add a prey from deck to hand.",
+      "effects": {
+        "effect": "angler-prey-choice-effect"
+      }
+    },
+    {
+      "id": "fish-free-spell-edible",
+      "name": "Edible",
+      "type": "Free Spell",
+      "effectText": "Target pred gains Edible.",
+      "effects": {
+        "effect": {
+          "type": "selectPredatorForKeyword",
+          "params": {
+            "keyword": "Edible"
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-spell-washout",
+      "name": "Washout",
+      "type": "Spell",
+      "effectText": "Enemies lose abilities.",
+      "effects": {
+        "effect": {
+          "type": "removeAbilitiesAll",
+          "params": {}
+        }
+      }
+    },
+    {
+      "id": "fish-free-spell-undertow",
+      "name": "Undertow",
+      "type": "Free Spell",
+      "effectText": "Target enemy loses abilities.",
+      "effects": {
+        "effect": {
+          "type": "selectEnemyToStripAbilities",
+          "params": {}
+        }
+      }
+    },
+    {
+      "id": "fish-spell-magnificent-sea-anemone",
+      "name": "Magnificent Sea Anemone",
+      "type": "Spell",
+      "isFieldSpell": true,
+      "effectText": "End of turn, play Oscellaris Clownfish.",
+      "summons": ["token-oscellaris-clownfish"],
+      "effects": {
+        "effect": "magnificent-sea-anemone-field-spell-effect"
+      }
+    },
+    {
+      "id": "fish-trap-cramp",
+      "name": "Cramp",
+      "type": "Trap",
+      "trigger": "rivalPlaysPred",
+      "effectText": "When rival plays a pred it loses abilities.",
+      "effects": {
+        "effect": "cramp-strip-pred-effect"
+      }
+    },
+    {
+      "id": "fish-trap-riptide",
+      "name": "Riptide",
+      "type": "Trap",
+      "trigger": "rivalPlaysPrey",
+      "effectText": "When rival plays a prey it loses abilities.",
+      "effects": {
+        "effect": "riptide-strip-prey-effect"
+      }
+    },
+    {
+      "id": "fish-trap-maelstrom",
+      "name": "Maelstrom",
+      "type": "Trap",
+      "trigger": "directAttack",
+      "effectText": "When target enemy attacks directly, negate attack. Deal 2 damage to players & animals.",
+      "effects": {
+        "effect": "maelstrom-negate-damage-all-effect"
+      }
+    },
+    {
+      "id": "fish-prey-salmon",
+      "name": "Salmon",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Free Play"]
+    },
+    {
+      "id": "fish-free-spell-scale-arrows",
+      "name": "Scale Arrows",
+      "type": "Free Spell",
+      "effectText": "Kill enemies.",
+      "effects": {
+        "effect": {
+          "type": "killAll",
+          "params": {
+            "targetType": "all-enemy"
+          }
+        }
+      }
+    }
+  ]
+}

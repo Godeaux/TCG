@@ -1,0 +1,739 @@
+{
+  "cards": [
+    {
+      "id": "token-cuban-brown-anole",
+      "name": "Cuban Brown Anole",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "effectText": "Play Brown Anole.",
+      "summons": ["token-brown-anole"],
+      "effects": {
+        "onPlay": "cuban-brown-anole-summon-brown-anole-onplay"
+      }
+    },
+    {
+      "id": "token-brown-anole",
+      "name": "Brown Anole",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "effectText": "End of turn, play Cuban Brown Anole.",
+      "summons": ["token-cuban-brown-anole"],
+      "effects": {
+        "onEnd": "brown-anole-summon-cuban-brown-anole-onend"
+      }
+    },
+    {
+      "id": "token-european-glass-lizard",
+      "name": "European Glass Lizard",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "effectText": "Slain, become Tailless.",
+      "summons": ["token-tailless"],
+      "effects": {
+        "onSlain": "european-glass-lizard-become-tailless-onslain"
+      }
+    },
+    {
+      "id": "token-tailless",
+      "name": "Tailless",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "effectText": "Start of turn, become European Glass Lizard. End of turn, become European Glass Lizard.",
+      "effects": {
+        "onEnd": "tailless-become-european-glass-lizard-onend"
+      }
+    },
+    {
+      "id": "token-lava-lizard",
+      "name": "Lava Lizard",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "effectText": "Deal 1 damage to rival.",
+      "effects": {
+        "onPlay": "lava-lizard-damage-rival-onplay"
+      }
+    },
+    {
+      "id": "token-carolina-anole",
+      "name": "Carolina Anole",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "effectText": "Add Hand Egg to hand.",
+      "effects": {
+        "onPlay": "carolina-anole-add-hand-egg-onplay"
+      }
+    },
+    {
+      "id": "token-anole-egg",
+      "name": "Anole Egg",
+      "type": "Prey",
+      "atk": 0,
+      "hp": 1,
+      "nutrition": 0,
+      "keywords": [],
+      "effectText": "Start of turn, become Green Anole."
+    },
+    {
+      "id": "token-green-anole",
+      "name": "Green Anole",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "effectText": "End of turn, play Carolina Anole.",
+      "summons": ["token-carolina-anole"],
+      "effects": {
+        "onEnd": "green-anole-summon-carolina-anole-onend"
+      }
+    },
+    {
+      "id": "reptile-free-spell-hand-egg",
+      "name": "Hand Egg",
+      "type": "Free Spell",
+      "effectText": "Play Anole Egg.",
+      "summons": ["token-anole-egg"],
+      "effects": {
+        "effect": "hand-egg-summon-anole-egg-effect"
+      }
+    },
+    {
+      "id": "token-golden-tegu-egg",
+      "name": "Golden Tegu Egg",
+      "type": "Prey",
+      "atk": 0,
+      "hp": 1,
+      "nutrition": 0,
+      "keywords": ["Barrier", "Hidden", "Harmless"],
+      "effectText": "Harmless. Draw 1. Barrier. Hidden.",
+      "effects": {
+        "onPlay": "golden-tegu-egg-draw-onplay"
+      }
+    },
+    {
+      "id": "token-giant-tortoise",
+      "name": "Giant Tortoise",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 3,
+      "nutrition": 3,
+      "keywords": []
+    },
+    {
+      "id": "token-poisonous-snake",
+      "name": "Poisonous Snake",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Poisonous"],
+      "effectText": "Poisonous."
+    },
+    {
+      "id": "reptile-free-spell-alligator-skin",
+      "name": "Alligator Skin",
+      "type": "Free Spell",
+      "effectText": "Target creature gains Barrier.",
+      "effects": {
+        "effect": "alligator-skin-grant-barrier-effect"
+      }
+    },
+    {
+      "id": "token-snakes",
+      "name": "Snakes",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": []
+    },
+    {
+      "id": "reptile-prey-cuban-brown-anole",
+      "name": "Cuban Brown Anole",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "effectText": "Play Brown Anole.",
+      "summons": ["token-brown-anole"],
+      "effects": {
+        "onPlay": "cuban-brown-anole-summon-onplay"
+      }
+    },
+    {
+      "id": "reptile-prey-european-glass-lizard",
+      "name": "European Glass Lizard",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "effectText": "Slain, become Tailless.",
+      "summons": ["token-tailless"],
+      "effects": {
+        "onSlain": "european-glass-lizard-slain-onslain"
+      }
+    },
+    {
+      "id": "reptile-prey-yucatan-neotropical-rattlesnake",
+      "name": "Yucatan Neotropical Rattlesnake",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Barrier", "Lure", "Poisonous"],
+      "effectText": "Barrier. Lure. Poisonous. Slain, heal 3.",
+      "effects": {
+        "onSlain": "yucatan-neotropical-rattlesnake-heal-onslain"
+      }
+    },
+    {
+      "id": "reptile-prey-frosts-iguana",
+      "name": "Frost's Iguana",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "effectText": "Freeze all enemy creatures.",
+      "effects": {
+        "onPlay": "frosts-iguana-freeze-all-onplay"
+      }
+    },
+    {
+      "id": "reptile-prey-galapagos-lava-lizards",
+      "name": "Galápagos Lava Lizards",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "effectText": "Play 2 Lava Lizards. Deal 1 damage to rival.",
+      "summons": ["token-lava-lizard"],
+      "effects": {
+        "onPlay": "galapagos-lava-lizards-summon-damage-onplay"
+      }
+    },
+    {
+      "id": "reptile-prey-great-flying-dragon",
+      "name": "Great Flying Dragon",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Immune", "Hidden"]
+    },
+    {
+      "id": "reptile-prey-green-anole",
+      "name": "Green Anole",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "effectText": "End of turn, play Carolina Anole.",
+      "summons": ["token-carolina-anole"],
+      "effects": {
+        "onEnd": "green-anole-summon-onend"
+      }
+    },
+    {
+      "id": "reptile-prey-gold-dust-day-gecko",
+      "name": "Gold Dust Day Gecko",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "effectText": "Draw 3.",
+      "effects": {
+        "onPlay": "gold-dust-day-gecko-draw-onplay"
+      }
+    },
+    {
+      "id": "reptile-prey-gold-flying-snake",
+      "name": "Gold Flying Snake",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Free Play"],
+      "effectText": "Draw 1.",
+      "effects": {
+        "onPlay": "gold-flying-snake-draw-onplay"
+      }
+    },
+    {
+      "id": "reptile-prey-golden-lancehead",
+      "name": "Golden Lancehead",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Toxic"],
+      "effectText": "Draw 1. Toxic.",
+      "effects": {
+        "onPlay": "golden-lancehead-draw-onplay"
+      }
+    },
+    {
+      "id": "reptile-prey-cryptic-golden-tegu",
+      "name": "Cryptic Golden Tegu",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "effectText": "Draw 1. Play Golden Tegu Egg.",
+      "summons": ["token-golden-tegu-egg"],
+      "effects": {
+        "onPlay": "cryptic-golden-tegu-draw-summon-onplay"
+      }
+    },
+    {
+      "id": "reptile-prey-phantastic-leaf-tailed-gecko",
+      "name": "Phantastic Leaf-tailed Gecko",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Invisible"],
+      "effectText": "Start of turn, deal 1 damage to rival. End of turn, deal 1 damage to rival.",
+      "effects": {
+        "onStart": "phantastic-leaf-tailed-gecko-damage-onstart",
+        "onEnd": "phantastic-leaf-tailed-gecko-damage-onend"
+      }
+    },
+    {
+      "id": "reptile-prey-pygmy-rock-monitor",
+      "name": "Pygmy Rock Monitor",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Barrier", "Invisible"]
+    },
+    {
+      "id": "reptile-prey-solomons-coral-snake",
+      "name": "Solomons Coral Snake",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Barrier", "Neurotoxic"],
+      "effectText": "Barrier. Neurotoxic when defending."
+    },
+    {
+      "id": "reptile-prey-plumed-basilisk",
+      "name": "Plumed Basilisk",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Free Play"],
+      "effectText": "Freeze target enemy creature.",
+      "effects": {
+        "onPlay": "plumed-basilisk-freeze-target-onplay"
+      }
+    },
+    {
+      "id": "reptile-prey-veiled-chameleon",
+      "name": "Veiled Chameleon",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "effectText": "Copy abilities of target animal.",
+      "effects": {
+        "onPlay": "veiled-chameleon-copy-abilities-onplay"
+      }
+    },
+    {
+      "id": "reptile-prey-central-american-snapping-turtle",
+      "name": "Central American Snapping Turtle",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 3,
+      "nutrition": 2,
+      "keywords": [],
+      "effectText": "Before combat, deal 2 damage.",
+      "effects": {
+        "onBeforeCombat": "central-american-snapping-turtle-damage-onbeforecombat"
+      }
+    },
+    {
+      "id": "reptile-prey-south-american-snapping-turtle",
+      "name": "South American Snapping Turtle",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 3,
+      "nutrition": 2,
+      "keywords": [],
+      "effectText": "Defending before combat, deal 2 damage.",
+      "effects": {
+        "onDefend": "south-american-snapping-turtle-counter-ondefend"
+      }
+    },
+    {
+      "id": "reptile-prey-gaboon-viper",
+      "name": "Gaboon Viper",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": ["Hidden", "Toxic"],
+      "effectText": "Hidden. Toxic."
+    },
+    {
+      "id": "reptile-prey-king-brown-snake",
+      "name": "King Brown Snake",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": ["Toxic"],
+      "effectText": "Toxic. Add a card from deck to hand.",
+      "effects": {
+        "onPlay": "king-brown-snake-tutor-onplay"
+      }
+    },
+    {
+      "id": "reptile-prey-alcedo-giant-tortoise",
+      "name": "Alcedo Giant Tortoise",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 3,
+      "nutrition": 3,
+      "keywords": [],
+      "effectText": "Start of turn, play Giant Tortoise.",
+      "summons": ["token-giant-tortoise"],
+      "effects": {
+        "onStart": "alcedo-giant-tortoise-summon-onstart"
+      }
+    },
+    {
+      "id": "reptile-prey-giant-tortoise",
+      "name": "Giant Tortoise",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 3,
+      "nutrition": 3,
+      "keywords": []
+    },
+    {
+      "id": "reptile-prey-darwin-volcano-giant-tortoise",
+      "name": "Darwin Volcano Giant Tortoise",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 3,
+      "nutrition": 3,
+      "keywords": [],
+      "effectText": "Deal 2 damage to players & other animals.",
+      "effects": {
+        "onPlay": "darwin-volcano-giant-tortoise-damage-all-onplay"
+      }
+    },
+    {
+      "id": "reptile-prey-wolf-volcano-giant-tortoise",
+      "name": "Wolf Volcano Giant Tortoise",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 3,
+      "nutrition": 3,
+      "keywords": [],
+      "effectText": "Deal 2 damage to enemies.",
+      "effects": {
+        "onPlay": "wolf-volcano-giant-tortoise-damage-enemies-onplay"
+      }
+    },
+    {
+      "id": "reptile-prey-black-mamba",
+      "name": "Black Mamba",
+      "type": "Prey",
+      "atk": 3,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Ambush", "Neurotoxic"]
+    },
+    {
+      "id": "reptile-predator-papuan-monitor",
+      "name": "Papuan Monitor",
+      "type": "Predator",
+      "atk": 2,
+      "hp": 3,
+      "keywords": [],
+      "effectText": "Deal 2 damage to opponents.",
+      "effects": {
+        "onConsume": "papuan-monitor-damage-onconsume"
+      }
+    },
+    {
+      "id": "reptile-predator-gharial",
+      "name": "Gharial",
+      "type": "Predator",
+      "atk": 2,
+      "hp": 4,
+      "keywords": [],
+      "effectText": "Kill enemy prey.",
+      "effects": {
+        "onConsume": "gharial-kill-prey-onconsume"
+      }
+    },
+    {
+      "id": "reptile-predator-king-cobra",
+      "name": "King Cobra",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 2,
+      "keywords": ["Neurotoxic"],
+      "effectText": "Slain, deal 3 damage to rival.",
+      "effects": {
+        "onSlain": "king-cobra-damage-onslain"
+      }
+    },
+    {
+      "id": "reptile-predator-boa-constrictor",
+      "name": "Boa Constrictor",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 3,
+      "keywords": [],
+      "effectText": "If attacked in combat, during Main 2 phase: regen itself and heal player 2 HP.",
+      "effects": {
+        "onBeforeCombat": "boa-constrictor-track-attack-onbeforecombat"
+      }
+    },
+    {
+      "id": "reptile-predator-chinese-alligator",
+      "name": "Chinese Alligator",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 3,
+      "keywords": [],
+      "effectText": "Either draw 3, heal 3, or deal 3 damage to rival.",
+      "effects": {
+        "onConsume": "chinese-alligator-choice-onconsume"
+      }
+    },
+    {
+      "id": "reptile-predator-american-alligator",
+      "name": "American Alligator",
+      "type": "Predator",
+      "atk": 4,
+      "hp": 4,
+      "keywords": [],
+      "effectText": "Slain, add Alligator Skin to hand.",
+      "effects": {
+        "onSlain": "american-alligator-add-skin-onslain"
+      }
+    },
+    {
+      "id": "reptile-predator-american-crocodile",
+      "name": "American Crocodile",
+      "type": "Predator",
+      "atk": 4,
+      "hp": 4,
+      "keywords": ["Barrier"]
+    },
+    {
+      "id": "reptile-predator-black-caiman",
+      "name": "Black Caiman",
+      "type": "Predator",
+      "atk": 4,
+      "hp": 4,
+      "keywords": ["Ambush"]
+    },
+    {
+      "id": "reptile-predator-burmese-python",
+      "name": "Burmese Python",
+      "type": "Predator",
+      "atk": 4,
+      "hp": 4,
+      "keywords": [],
+      "effectText": "Copy abilities of a carrion pred.",
+      "effects": {
+        "onConsume": "burmese-python-copy-carrion-onconsume"
+      }
+    },
+    {
+      "id": "reptile-predator-green-anaconda",
+      "name": "Green Anaconda",
+      "type": "Predator",
+      "atk": 4,
+      "hp": 4,
+      "keywords": [],
+      "effectText": "Heal 2. Add a card from deck to hand.",
+      "effects": {
+        "onConsume": "green-anaconda-heal-tutor-onconsume"
+      }
+    },
+    {
+      "id": "reptile-predator-komodo-dragon",
+      "name": "Komodo Dragon",
+      "type": "Predator",
+      "atk": 4,
+      "hp": 4,
+      "keywords": ["Immune", "Toxic"],
+      "effectText": "Immune. Toxic."
+    },
+    {
+      "id": "reptile-predator-nile-crocodile",
+      "name": "Nile Crocodile",
+      "type": "Predator",
+      "atk": 5,
+      "hp": 5,
+      "keywords": [],
+      "effectText": "Deal 3 damage to any target. Slain, heal 3.",
+      "effects": {
+        "onConsume": "nile-crocodile-damage-onconsume",
+        "onSlain": "nile-crocodile-heal-onslain"
+      }
+    },
+    {
+      "id": "reptile-predator-saltwater-crocodile",
+      "name": "Saltwater Crocodile",
+      "type": "Predator",
+      "atk": 6,
+      "hp": 6,
+      "keywords": [],
+      "effectText": "Kill target enemy.",
+      "effects": {
+        "onConsume": "saltwater-crocodile-kill-enemy-onconsume"
+      }
+    },
+    {
+      "id": "reptile-spell-scythian-arrows",
+      "name": "Scythian Arrows",
+      "type": "Spell",
+      "effectText": "Discard 1. Kill enemies.",
+      "effects": {
+        "effect": "scythian-arrows-discard-kill-effect"
+      }
+    },
+    {
+      "id": "reptile-spell-meteor",
+      "name": "Meteor",
+      "type": "Spell",
+      "effectText": "Destroy field spells. Kill animals.",
+      "effects": {
+        "effect": "meteor-destroy-all-effect"
+      }
+    },
+    {
+      "id": "reptile-spell-snake-wine",
+      "name": "Snake Wine",
+      "type": "Spell",
+      "effectText": "Heal 7.",
+      "effects": {
+        "effect": "snake-wine-heal-effect"
+      }
+    },
+    {
+      "id": "reptile-spell-paralyze",
+      "name": "Paralyze",
+      "type": "Spell",
+      "effectText": "Paralyze target enemy creature (cannot attack but can still be consumed).",
+      "effects": {
+        "effect": "paralyze-target-effect"
+      }
+    },
+    {
+      "id": "reptile-spell-sunshine",
+      "name": "Sunshine",
+      "type": "Spell",
+      "effectText": "Creatures gain +2/+2.",
+      "effects": {
+        "effect": "sunshine-team-buff-effect"
+      }
+    },
+    {
+      "id": "reptile-free-spell-shed",
+      "name": "Shed",
+      "type": "Free Spell",
+      "effectText": "Regen target creature.",
+      "effects": {
+        "effect": "shed-regen-target-effect"
+      }
+    },
+    {
+      "id": "reptile-free-spell-spite",
+      "name": "Spite",
+      "type": "Free Spell",
+      "effectText": "Target creature gains Poisonous.",
+      "effects": {
+        "effect": "spite-grant-poisonous-effect"
+      }
+    },
+    {
+      "id": "reptile-free-spell-survivor",
+      "name": "Survivor",
+      "type": "Free Spell",
+      "effectText": "Target creature gains +1/+1.",
+      "effects": {
+        "effect": "survivor-buff-target-effect"
+      }
+    },
+    {
+      "id": "reptile-spell-snake-nest",
+      "name": "Snake Nest",
+      "type": "Spell",
+      "isFieldSpell": true,
+      "effectText": "End of turn, play Poisonous Snake.",
+      "summons": ["token-poisonous-snake"],
+      "effects": {
+        "effect": "snake-nest-field-spell-effect"
+      }
+    },
+    {
+      "id": "reptile-trap-scales",
+      "name": "Scales",
+      "type": "Trap",
+      "trigger": "indirectDamage",
+      "effectText": "When you receive indirect damage, negate it and heal 3 HP.",
+      "effects": {
+        "effect": "scales-negate-heal-effect"
+      }
+    },
+    {
+      "id": "reptile-trap-snake-oil",
+      "name": "Snake Oil",
+      "type": "Trap",
+      "trigger": "rivalDraws",
+      "effectText": "When rival draws, they must discard 1 card, then you draw 1 card.",
+      "effects": {
+        "effect": "snake-oil-discard-draw-effect"
+      }
+    },
+    {
+      "id": "reptile-trap-snake-pit",
+      "name": "Snake Pit",
+      "type": "Trap",
+      "trigger": "directAttack",
+      "effectText": "When target enemy attacks directly, negate attack. Play Snakes.",
+      "summons": ["token-snakes"],
+      "effects": {
+        "effect": "snake-pit-negate-summon-effect"
+      }
+    }
+  ]
+}

@@ -1,0 +1,683 @@
+{
+  "cards": [
+    {
+      "id": "bird-prey-kakapo",
+      "name": "Kākāpō",
+      "type": "Prey",
+      "atk": 0,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": ["Invisible"],
+      "effectText": "Slain, add Kākāpō Feathers to hand.",
+      "effects": {
+        "onSlain": "kakapo-add-feathers-onslain"
+      }
+    },
+    {
+      "id": "bird-prey-carrier-pigeon",
+      "name": "Carrier Pigeon",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "effectText": "Rival reveals hand. Add a card from deck to hand.",
+      "effects": {
+        "onPlay": "carrier-pigeon-reveal-tutor-onplay"
+      }
+    },
+    {
+      "id": "bird-prey-carrion-crow",
+      "name": "Carrion Crow",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Scavenge"]
+    },
+    {
+      "id": "bird-prey-common-swift",
+      "name": "Common Swift",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Free Play", "Haste"]
+    },
+    {
+      "id": "bird-prey-doves",
+      "name": "Doves",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "effectText": "Play Dove. Heal 3.",
+      "summons": ["token-dove"],
+      "effects": {
+        "onPlay": "doves-summon-heal-onplay"
+      }
+    },
+    {
+      "id": "bird-prey-dove",
+      "name": "Dove",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Passive"],
+      "effectText": "Heal 3.",
+      "effects": {
+        "onPlay": "dove-heal-onplay"
+      }
+    },
+    {
+      "id": "bird-prey-eurasian-magpie",
+      "name": "Eurasian Magpie",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "effectText": "End of turn, either heal 4 or deal 2 damage to opponents.",
+      "effects": {
+        "onEnd": "eurasian-magpie-choice-onend"
+      }
+    },
+    {
+      "id": "bird-prey-florida-grasshopper-sparrow",
+      "name": "Florida Grasshopper Sparrow",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Free Play"],
+      "effectText": "Play Sparrow Egg.",
+      "summons": ["token-sparrow-egg"],
+      "effects": {
+        "onPlay": "florida-grasshopper-sparrow-summon-onplay"
+      }
+    },
+    {
+      "id": "bird-prey-sparrow-egg",
+      "name": "Sparrow Egg",
+      "type": "Prey",
+      "atk": 0,
+      "hp": 1,
+      "nutrition": 0,
+      "effectText": "Start of turn, become Sparrow.",
+      "effects": {
+        "onStart": "sparrow-egg-transform-onstart"
+      }
+    },
+    {
+      "id": "bird-prey-sparrow",
+      "name": "Sparrow",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "effectText": "End of turn, play Sparrow Egg.",
+      "summons": ["token-sparrow-egg"],
+      "effects": {
+        "onEnd": "sparrow-summon-egg-onend"
+      }
+    },
+    {
+      "id": "bird-prey-golden-song-sparrows",
+      "name": "Golden Song Sparrows",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "effectText": "Play 2 Golden Song Sparrows. Draw 1.",
+      "summons": ["token-golden-song-sparrow"],
+      "effects": {
+        "onPlay": "golden-song-sparrows-summon-draw-onplay"
+      }
+    },
+    {
+      "id": "bird-prey-golden-song-sparrow",
+      "name": "Golden Song Sparrow",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "effectText": "Draw 1.",
+      "effects": {
+        "onPlay": "golden-song-sparrow-draw-onplay"
+      }
+    },
+    {
+      "id": "bird-prey-mexican-violetear",
+      "name": "Mexican Violetear",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "effectText": "Copy abilities of a carrion.",
+      "effects": {
+        "onPlay": "mexican-violetear-copy-carrion-abilities-onplay"
+      }
+    },
+    {
+      "id": "bird-prey-mockingbird",
+      "name": "Mockingbird",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "effectText": "Copy stats of target animal.",
+      "effects": {
+        "onPlay": "mockingbird-copy-stats-onplay"
+      }
+    },
+    {
+      "id": "bird-prey-moluccan-cockatoo",
+      "name": "Moluccan Cockatoo",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "effectText": "Copy abilities of target animal.",
+      "effects": {
+        "onPlay": "moluccan-cockatoo-copy-abilities-onplay"
+      }
+    },
+    {
+      "id": "bird-prey-oriental-magpies",
+      "name": "Oriental Magpies",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "effectText": "Play Oriental Magpie. Heal 2. Regen target creature.",
+      "summons": ["token-oriental-magpie"],
+      "effects": {
+        "onPlay": "oriental-magpies-summon-heal-regen-onplay"
+      }
+    },
+    {
+      "id": "bird-prey-oriental-magpie",
+      "name": "Oriental Magpie",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "effectText": "Heal 2.",
+      "effects": {
+        "onPlay": "oriental-magpie-heal-onplay"
+      }
+    },
+    {
+      "id": "bird-prey-quetzal",
+      "name": "Quetzal",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "effectText": "Discard, creatures gains +1/+0. Creatures gains +1/+0.",
+      "effects": {
+        "onPlay": "quetzal-team-buff-onplay",
+        "discardEffect": "quetzal-team-buff-discard"
+      }
+    },
+    {
+      "id": "bird-prey-raven",
+      "name": "Raven",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "effectText": "Copy stats of a carrion.",
+      "effects": {
+        "onPlay": "raven-copy-carrion-stats-onplay"
+      }
+    },
+    {
+      "id": "bird-prey-robin",
+      "name": "Robin",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "effectText": "End of turn, play 2 Blue Eggs.",
+      "summons": ["token-blue-egg"],
+      "effects": {
+        "onEnd": "robin-summon-eggs-onend"
+      }
+    },
+    {
+      "id": "bird-prey-blue-egg",
+      "name": "Blue Egg",
+      "type": "Prey",
+      "atk": 0,
+      "hp": 1,
+      "nutrition": 0,
+      "keywords": ["Hidden"],
+      "effectText": "Start of turn, become Robin.",
+      "effects": {
+        "onStart": "blue-egg-transform-onstart"
+      }
+    },
+    {
+      "id": "bird-prey-seagull",
+      "name": "Seagull",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "effectText": "Eat target enemy prey.",
+      "effects": {
+        "onPlay": "seagull-eat-enemy-prey-onplay"
+      }
+    },
+    {
+      "id": "bird-prey-white-bellbird",
+      "name": "White Bellbird",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "effectText": "End of turn, deal 3 damage to any target.",
+      "effects": {
+        "onEnd": "white-bellbird-damage-onend"
+      }
+    },
+    {
+      "id": "bird-prey-hoatzin",
+      "name": "Hoatzin",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 1,
+      "nutrition": 1,
+      "effectText": "After combat, deal 2 damage. End of turn, deal 2 damage to rival.",
+      "effects": {
+        "onAfterCombat": "hoatzin-damage-aftercombat",
+        "onEnd": "hoatzin-damage-rival-onend"
+      }
+    },
+    {
+      "id": "bird-prey-golden-goose",
+      "name": "Golden Goose",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "effectText": "Draw 1. End of turn, play Golden Egg.",
+      "summons": ["token-golden-egg"],
+      "effects": {
+        "onPlay": "golden-goose-draw-onplay",
+        "onEnd": "golden-goose-summon-egg-onend"
+      }
+    },
+    {
+      "id": "bird-prey-golden-egg",
+      "name": "Golden Egg",
+      "type": "Prey",
+      "atk": 0,
+      "hp": 1,
+      "nutrition": 0,
+      "effectText": "Draw 1.",
+      "effects": {
+        "onPlay": "golden-egg-draw-onplay"
+      }
+    },
+    {
+      "id": "bird-prey-indian-peacock",
+      "name": "Indian Peacock",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": ["Barrier", "Lure"],
+      "effectText": "Slain, add Rainbow Feathers to hand.",
+      "effects": {
+        "onSlain": "indian-peacock-add-feathers-onslain"
+      }
+    },
+    {
+      "id": "bird-prey-jersey-giant",
+      "name": "Jersey Giant",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "effectText": "Slain, play Hen.",
+      "summons": ["token-hen"],
+      "effects": {
+        "onSlain": "jersey-giant-summon-hen-onslain"
+      }
+    },
+    {
+      "id": "bird-prey-hen",
+      "name": "Hen",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 2,
+      "nutrition": 2,
+      "effectText": "Start of turn, play Egg.",
+      "summons": ["token-egg"],
+      "effects": {
+        "onStart": "hen-summon-egg-onstart"
+      }
+    },
+    {
+      "id": "bird-prey-egg",
+      "name": "Egg",
+      "type": "Prey",
+      "atk": 0,
+      "hp": 1,
+      "nutrition": 0
+    },
+    {
+      "id": "bird-prey-pileated-woodpecker",
+      "name": "Pileated Woodpecker",
+      "type": "Prey",
+      "atk": 3,
+      "hp": 1,
+      "nutrition": 1,
+      "effectText": "Can attack three times.",
+      "effects": {
+        "multiAttack": "pileated-woodpecker-triple-attack"
+      }
+    },
+    {
+      "id": "bird-prey-black-swan",
+      "name": "Black Swan",
+      "type": "Prey",
+      "atk": 3,
+      "hp": 3,
+      "nutrition": 3,
+      "keywords": ["Ambush"],
+      "effectText": "Heal 3.",
+      "effects": {
+        "onPlay": "black-swan-heal-onplay"
+      }
+    },
+    {
+      "id": "bird-prey-eastern-wild-turkey",
+      "name": "Eastern Wild Turkey",
+      "type": "Prey",
+      "atk": 3,
+      "hp": 3,
+      "nutrition": 3,
+      "effectText": "Add Feed to hand.",
+      "effects": {
+        "onPlay": "eastern-wild-turkey-add-feed-onplay"
+      }
+    },
+    {
+      "id": "bird-predator-black-and-white-hawk-eagle",
+      "name": "Black-and-white Hawk-eagle",
+      "type": "Predator",
+      "atk": 2,
+      "hp": 2,
+      "keywords": ["Ambush"],
+      "effectText": "After combat, heal 2.",
+      "effects": {
+        "onAfterCombat": "black-and-white-hawk-eagle-heal-aftercombat"
+      }
+    },
+    {
+      "id": "bird-predator-firehawk",
+      "name": "Firehawk",
+      "type": "Predator",
+      "atk": 2,
+      "hp": 2,
+      "effectText": "Kill enemy prey. Destroy target field spell.",
+      "effects": {
+        "onConsume": "firehawk-kill-destroy-onconsume"
+      }
+    },
+    {
+      "id": "bird-predator-great-gray-owl",
+      "name": "Great Gray Owl",
+      "type": "Predator",
+      "atk": 2,
+      "hp": 2,
+      "effectText": "Add a carrion to hand. Add a card from deck to hand.",
+      "effects": {
+        "onConsume": "great-gray-owl-add-carrion-tutor-onconsume"
+      }
+    },
+    {
+      "id": "bird-predator-short-toed-snake-eagle",
+      "name": "Short-toed Snake Eagle",
+      "type": "Predator",
+      "atk": 2,
+      "hp": 2,
+      "effectText": "Play 2 Toxic Snakes.",
+      "summons": ["token-toxic-snake"],
+      "effects": {
+        "onConsume": "short-toed-snake-eagle-summon-snakes-onconsume"
+      }
+    },
+    {
+      "id": "bird-prey-toxic-snake",
+      "name": "Toxic Snake",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Toxic"]
+    },
+    {
+      "id": "bird-predator-wolf-hawk",
+      "name": "Wolf Hawk",
+      "type": "Predator",
+      "atk": 2,
+      "hp": 2,
+      "effectText": "Play Wolf Hawk.",
+      "summons": ["token-wolf-hawk"],
+      "effects": {
+        "onConsume": "wolf-hawk-summon-onconsume"
+      }
+    },
+    {
+      "id": "bird-predator-peregrine-falcon",
+      "name": "Peregrine Falcon",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 1,
+      "keywords": ["Free Play", "Haste"]
+    },
+    {
+      "id": "bird-predator-red-tailed-hawk",
+      "name": "Red-tailed Hawk",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 2,
+      "effectText": "Add Red Tailfeathers to hand.",
+      "effects": {
+        "onConsume": "red-tailed-hawk-add-tailfeathers-onconsume"
+      }
+    },
+    {
+      "id": "bird-predator-bald-eagle",
+      "name": "Bald Eagle",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 3,
+      "keywords": ["Scavenge"]
+    },
+    {
+      "id": "bird-predator-monkey-eating-eagle",
+      "name": "Monkey-eating Eagle",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 3,
+      "effectText": "Eat target enemy prey.",
+      "effects": {
+        "onConsume": "monkey-eating-eagle-eat-prey-onconsume"
+      }
+    },
+    {
+      "id": "bird-predator-gyrfalcon",
+      "name": "Gyrfalcon",
+      "type": "Predator",
+      "atk": 4,
+      "hp": 2,
+      "keywords": ["Haste"]
+    },
+    {
+      "id": "bird-predator-golden-eagle",
+      "name": "Golden Eagle",
+      "type": "Predator",
+      "atk": 4,
+      "hp": 4,
+      "effectText": "Draw 4.",
+      "effects": {
+        "onConsume": "golden-eagle-draw-onconsume"
+      }
+    },
+    {
+      "id": "bird-predator-martial-eagle",
+      "name": "Martial Eagle",
+      "type": "Predator",
+      "atk": 4,
+      "hp": 4,
+      "effectText": "End of turn, kill target enemy.",
+      "effects": {
+        "onEnd": "martial-eagle-kill-enemy-onend"
+      }
+    },
+    {
+      "id": "bird-predator-harpy-eagle",
+      "name": "Harpy Eagle",
+      "type": "Predator",
+      "atk": 5,
+      "hp": 5,
+      "effectText": "Add target enemy to hand.",
+      "effects": {
+        "onConsume": "harpy-eagle-return-to-hand-onconsume"
+      }
+    },
+    {
+      "id": "bird-predator-pacific-sea-eagle",
+      "name": "Pacific Sea Eagle",
+      "type": "Predator",
+      "atk": 6,
+      "hp": 6,
+      "keywords": ["Immune"]
+    },
+    {
+      "id": "bird-spell-bird-food",
+      "name": "Bird Food",
+      "type": "Spell",
+      "effectText": "Creatures gain +2/+2.",
+      "effects": {
+        "effect": "bird-food-team-buff-effect"
+      }
+    },
+    {
+      "id": "bird-spell-birds-of-a-feather",
+      "name": "Birds of a Feather",
+      "type": "Spell",
+      "effectText": "Play copy of target creature.",
+      "effects": {
+        "effect": "birds-of-a-feather-copy-creature-effect"
+      }
+    },
+    {
+      "id": "bird-spell-shotgun",
+      "name": "Shotgun",
+      "type": "Spell",
+      "effectText": "Either deal 2 damage to opponents or deal 6 damage to target enemy.",
+      "effects": {
+        "effect": "shotgun-choice-damage-effect"
+      }
+    },
+    {
+      "id": "bird-spell-swan-song",
+      "name": "Swan Song",
+      "type": "Spell",
+      "effectText": "Heal 3. Gain barrier.",
+      "effects": {
+        "effect": "swan-song-heal-barrier-effect"
+      }
+    },
+    {
+      "id": "bird-free-spell-birds-eye-view",
+      "name": "Bird's Eye View",
+      "type": "Free Spell",
+      "effectText": "Rival reveals hand.",
+      "effects": {
+        "effect": "birds-eye-view-reveal-hand-effect"
+      }
+    },
+    {
+      "id": "bird-free-spell-clouds",
+      "name": "Clouds",
+      "type": "Free Spell",
+      "effectText": "Target creature gains immune.",
+      "effects": {
+        "effect": "clouds-grant-immune-effect"
+      }
+    },
+    {
+      "id": "bird-free-spell-tailwind",
+      "name": "Tailwind",
+      "type": "Free Spell",
+      "effectText": "Target creature gains haste.",
+      "effects": {
+        "effect": "tailwind-grant-haste-effect"
+      }
+    },
+    {
+      "id": "bird-free-spell-white-missile",
+      "name": "White Missile",
+      "type": "Free Spell",
+      "effectText": "Deal 1 damage to any target.",
+      "effects": {
+        "effect": "white-missile-damage-effect"
+      }
+    },
+    {
+      "id": "bird-field-spell-bird-feeder",
+      "name": "Bird Feeder",
+      "type": "Spell",
+      "isFieldSpell": true,
+      "effectText": "End of turn, target creature gains +1/+1.",
+      "effects": {
+        "effect": "bird-feeder-field-spell-effect"
+      }
+    },
+    {
+      "id": "bird-trap-alleyway-mobbing",
+      "name": "Alleyway Mobbing",
+      "type": "Trap",
+      "trigger": "directAttack",
+      "effectText": "When target enemy attacks directly, negate attack. Play 3 Bushtits.",
+      "summons": ["token-bushtit"],
+      "effects": {
+        "effect": "alleyway-mobbing-negate-summon-effect"
+      }
+    },
+    {
+      "id": "bird-prey-bushtit",
+      "name": "Bushtit",
+      "type": "Prey",
+      "atk": 0,
+      "hp": 1,
+      "nutrition": 1
+    },
+    {
+      "id": "bird-trap-fly-off",
+      "name": "Fly Off",
+      "type": "Trap",
+      "trigger": "defending",
+      "effectText": "When target creature is defending, return it to hand.",
+      "effects": {
+        "effect": "fly-off-return-to-hand-effect"
+      }
+    },
+    {
+      "id": "bird-trap-icarus",
+      "name": "Icarus",
+      "type": "Trap",
+      "trigger": "lifeZero",
+      "effectText": "When life is 0, heal 1.",
+      "effects": {
+        "effect": "icarus-heal-effect"
+      }
+    }
+  ]
+}
