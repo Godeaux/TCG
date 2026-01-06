@@ -1679,11 +1679,11 @@ const renderCardInnerHtml = (card, { showEffectSummary } = {}) => {
     ? card.keywords.join(", ")
     : "";
 
-  // Get effect summary
-  const effectSummary = showEffectSummary ? getCardEffectSummary(card) : "";
+  // Get effect summary (bold)
+  const effectSummary = showEffectSummary ? `<strong>${getCardEffectSummary(card)}</strong>` : "";
 
-  // Combine keywords and effect, separated by blank line if both exist
-  const bottomText = [keywords, effectSummary].filter(Boolean).join("\n\n");
+  // Combine keywords and effect, separated by single newline if both exist
+  const bottomText = [keywords, effectSummary].filter(Boolean).join("\n");
 
   // Card image with error handling
   const imageHtml = hasCardImage(card.id)

@@ -1410,24 +1410,8 @@ button {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 4px 8px;
-  border-radius: 12px;
+  padding: 2px 4px;
   min-width: 0;
-}
-
-.card-stat-box.atk {
-  background: var(--atk-yellow);
-  color: #2e2211;
-}
-
-.card-stat-box.hp {
-  background: var(--hp-red);
-  color: #fff;
-}
-
-.card-stat-box.nut {
-  background: var(--prey);
-  color: #fff;
 }
 
 .card-stat-box .stat-emoji {
@@ -1439,6 +1423,16 @@ button {
   font-size: 14px;
   font-weight: 700;
   line-height: 1;
+  color: #fff;
+  text-shadow:
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000,
+    -2px 0 0 #000,
+    2px 0 0 #000,
+    0 -2px 0 #000,
+    0 2px 0 #000;
 }
 
 .card-text-area {
@@ -1449,11 +1443,12 @@ button {
   white-space: pre-line;
   word-wrap: break-word;
   overflow-wrap: break-word;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  min-height: 0;
+  padding: 2px 4px;
+}
+
+.card-text-area strong {
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .card-content-area {
