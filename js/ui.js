@@ -1868,13 +1868,27 @@ let draggedCard = null;
 let draggedCardElement = null;
 let originalParent = null;
 let originalIndex = -1;
-let currentDragTarget = null; // Track current hover target to prevent flickering
+let currentDragTargetId = null; // Track current hover target ID to prevent flickering
+
+const getTargetId = (element) => {
+  if (!element) return null;
+  if (element.classList.contains('field-slot')) {
+    return `slot-${element.dataset.slot}-${element.closest('.player-field, .opponent-field')?.className}`;
+  }
+  if (element.classList.contains('player-badge')) {
+    return `player-${element.dataset.playerIndex}`;
+  }
+  if (element.classList.contains('card') && element.dataset.instanceId) {
+    return `card-${element.dataset.instanceId}`;
+  }
+  return null;
+};
 
 const clearDragVisuals = () => {
   document.querySelectorAll('.valid-target, .invalid-target, .valid-drop-zone').forEach(el => {
     el.classList.remove('valid-target', 'invalid-target', 'valid-drop-zone');
   });
-  currentDragTarget = null;
+  currentDragTargetId = null;
 };
 
 const getCardFromInstanceId = (instanceId, state) => {
@@ -1952,14 +1966,21 @@ const handleDragOver = (event) => {
 
   const target = event.target.closest('.field-slot, .player-badge, .card');
 
+  // Ignore if hovering over the dragged card itself
+  if (target === draggedCardElement || target?.contains(draggedCardElement)) {
+    return;
+  }
+
+  const targetId = getTargetId(target);
+
   // Only update visuals if target changed (prevents flickering)
-  if (target === currentDragTarget) {
+  if (targetId === currentDragTargetId) {
     return;
   }
 
   // Clear previous target visuals
   clearDragVisuals();
-  currentDragTarget = target;
+  currentDragTargetId = targetId;
 
   if (!target) {
     return;
@@ -1967,7 +1988,10 @@ const handleDragOver = (event) => {
 
   if (target.classList.contains('field-slot')) {
     // Check if field slot is empty and valid for playing
-    if (!target.firstChild && draggedCard.type !== 'Trap') {
+    // A slot is empty if it has no card children (ignore text nodes)
+    const hasCard = Array.from(target.children).some(child => child.classList.contains('card'));
+
+    if (!hasCard && draggedCard.type !== 'Trap') {
       target.classList.add('valid-drop-zone');
     } else {
       target.classList.add('invalid-target');
@@ -1986,6 +2010,11 @@ const handleDragOver = (event) => {
       target.classList.add('invalid-target');
     }
   } else if (target.classList.contains('card')) {
+    // Ignore the dragged card itself
+    if (target.dataset.instanceId === draggedCard.instanceId) {
+      return;
+    }
+
     // Check if can attack this creature (only during combat phase)
     const isCombatPhase = latestState.phase === "Combat";
     const targetCard = getCardFromInstanceId(target.dataset.instanceId, latestState);
