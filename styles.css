@@ -1080,10 +1080,12 @@ button {
 .action-bar.has-actions {
   padding: clamp(6px, 1vw, 12px) clamp(10px, 1.5vw, 20px) clamp(8px, 1.2vw, 16px);
   height: auto;
+  max-height: 50vh;
   pointer-events: auto;
   background: rgba(10, 14, 20, 0.96);
   border-top: 1px solid var(--border-subtle);
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   box-sizing: border-box;
 }
 
@@ -1189,11 +1191,12 @@ button {
 
 .selection-item.selection-card {
   flex-direction: column;
-  align-items: stretch;
+  align-items: center;
 }
 
 .selection-item.selection-card .card {
-  width: 100%;
+  width: clamp(140px, 35vw, 200px);
+  max-width: 200px;
 }
 
 .selection-item button {
