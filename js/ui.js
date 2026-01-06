@@ -92,6 +92,16 @@ import {
   createCardSelectionItem,
 } from "./ui/components/SelectionPanel.js";
 
+// Network serialization (extracted module)
+import {
+  serializeCardSnapshot as serializeCardSnapshotNew,
+  hydrateCardSnapshot as hydrateCardSnapshotNew,
+  hydrateZoneSnapshots as hydrateZoneSnapshotsNew,
+  hydrateDeckSnapshots as hydrateDeckSnapshotsNew,
+  buildLobbySyncPayload as buildLobbySyncPayloadNew,
+  applyLobbySyncPayload as applyLobbySyncPayloadNew,
+} from "./network/serialization.js";
+
 // Helper to get discardEffect and timing for both old and new card formats
 const getDiscardEffectInfo = (card) => {
   // Old format: card.discardEffect = { timing, effect }
@@ -225,145 +235,13 @@ let lobbyRefreshInFlight = false;
 const processedVisualEffects = new Map();
 const VISUAL_EFFECT_TTL_MS = 9000;
 
-const serializeCardSnapshot = (card) => {
-  if (!card) {
-    return null;
-  }
-  return {
-    id: card.id,
-    instanceId: card.instanceId ?? null,
-    currentAtk: card.currentAtk ?? null,
-    currentHp: card.currentHp ?? null,
-    summonedTurn: card.summonedTurn ?? null,
-    hasAttacked: card.hasAttacked ?? false,
-    hasBarrier: card.hasBarrier ?? false,
-    frozen: card.frozen ?? false,
-    frozenDiesTurn: card.frozenDiesTurn ?? null,
-    dryDropped: card.dryDropped ?? false,
-    isToken: card.isToken ?? false,
-    abilitiesCancelled: card.abilitiesCancelled ?? false,
-    keywords: Array.isArray(card.keywords) ? [...card.keywords] : null,
-  };
-};
-
-const hydrateCardSnapshot = (snapshot, fallbackTurn) => {
-  if (!snapshot) {
-    return null;
-  }
-  const definition = getCardDefinitionById(snapshot.id);
-  if (!definition) {
-    console.error("❌ Failed to find card definition for ID:", snapshot.id, "Full snapshot:", snapshot);
-    return null;
-  }
-  const instance = createCardInstance(
-    { ...definition, isToken: snapshot.isToken ?? definition.isToken },
-    snapshot.summonedTurn ?? fallbackTurn
-  );
-  if (snapshot.instanceId) {
-    instance.instanceId = snapshot.instanceId;
-  }
-  if (snapshot.currentAtk !== null && snapshot.currentAtk !== undefined) {
-    instance.currentAtk = snapshot.currentAtk;
-  }
-  if (snapshot.currentHp !== null && snapshot.currentHp !== undefined) {
-    instance.currentHp = snapshot.currentHp;
-  }
-  if (snapshot.summonedTurn !== null && snapshot.summonedTurn !== undefined) {
-    instance.summonedTurn = snapshot.summonedTurn;
-  }
-  instance.hasAttacked = snapshot.hasAttacked ?? instance.hasAttacked;
-  instance.hasBarrier = snapshot.hasBarrier ?? instance.hasBarrier;
-  instance.frozen = snapshot.frozen ?? instance.frozen;
-  instance.frozenDiesTurn = snapshot.frozenDiesTurn ?? instance.frozenDiesTurn;
-  instance.dryDropped = snapshot.dryDropped ?? false;
-  instance.isToken = snapshot.isToken ?? instance.isToken;
-  if (Array.isArray(snapshot.keywords)) {
-    instance.keywords = [...snapshot.keywords];
-  }
-  if (snapshot.abilitiesCancelled) {
-    stripAbilities(instance);
-  }
-  return instance;
-};
-
-const hydrateZoneSnapshots = (snapshots, size, fallbackTurn) => {
-  if (!Array.isArray(snapshots)) {
-    console.warn("⚠️ hydrateZoneSnapshots: snapshots is not an array:", snapshots);
-    return size ? Array.from({ length: size }, () => null) : [];
-  }
-  const hydrated = snapshots.map((card) => hydrateCardSnapshot(card, fallbackTurn));
-  if (size) {
-    const padded = hydrated.slice(0, size);
-    while (padded.length < size) {
-      padded.push(null);
-    }
-    return padded;
-  }
-  return hydrated;
-};
-
-const hydrateDeckSnapshots = (deckIds) => {
-  if (!Array.isArray(deckIds)) {
-    return [];
-  }
-  return deckIds
-    .map((id) => getCardDefinitionById(id))
-    .filter(Boolean)
-    .map((card) => ({ ...card }));
-};
-
-const buildLobbySyncPayload = (state) => ({
-  deckSelection: {
-    stage: state.deckSelection?.stage ?? null,
-    selections: state.deckSelection?.selections ?? [],
-  },
-  playerProfile: {
-    index: getLocalPlayerIndex(state),
-    name:
-      state.menu?.profile?.username ??
-      state.players?.[getLocalPlayerIndex(state)]?.name ??
-      null,
-  },
-  game: {
-    activePlayerIndex: state.activePlayerIndex,
-    phase: state.phase,
-    turn: state.turn,
-    cardPlayedThisTurn: state.cardPlayedThisTurn,
-    passPending: state.passPending,
-    log: Array.isArray(state.log) ? [...state.log] : [],
-    visualEffects: Array.isArray(state.visualEffects) ? [...state.visualEffects] : [],
-    pendingTrapDecision: state.pendingTrapDecision
-      ? { ...state.pendingTrapDecision }
-      : null,
-    fieldSpell: state.fieldSpell
-      ? {
-          ownerIndex: state.fieldSpell.ownerIndex,
-          instanceId: state.fieldSpell.card?.instanceId ?? null,
-        }
-      : null,
-    players: state.players.map((player) => ({
-      name: player.name,
-      hp: player.hp,
-      deck: player.deck.map((card) => card.id),
-      hand: player.hand.map((card) => serializeCardSnapshot(card)),
-      field: player.field.map((card) => serializeCardSnapshot(card)),
-      carrion: player.carrion.map((card) => serializeCardSnapshot(card)),
-      exile: player.exile.map((card) => serializeCardSnapshot(card)),
-      traps: player.traps.map((card) => serializeCardSnapshot(card)),
-    })),
-  },
-  deckBuilder: {
-    stage: state.deckBuilder?.stage ?? null,
-    deckIds: state.deckBuilder?.selections?.map((cards) => cards.map((card) => card.id)) ?? [],
-  },
-  setup: {
-    stage: state.setup?.stage ?? null,
-    rolls: state.setup?.rolls ?? [],
-    winnerIndex: state.setup?.winnerIndex ?? null,
-  },
-  senderId: state.menu?.profile?.id ?? null,
-  timestamp: Date.now(),
-});
+// ============================================================================
+// SERIALIZATION
+// MOVED TO: ./network/serialization.js
+// Functions: serializeCardSnapshot, hydrateCardSnapshot, hydrateZoneSnapshots,
+//            hydrateDeckSnapshots, buildLobbySyncPayload, applyLobbySyncPayload
+// Import: serializeCardSnapshotNew, hydrateCardSnapshotNew, etc.
+// ============================================================================
 
 const sendLobbyBroadcast = (event, payload) => {
   if (!lobbyChannel) {
@@ -380,7 +258,7 @@ const broadcastSyncState = (state) => {
   if (!isOnlineMode(state)) {
     return;
   }
-  const payload = buildLobbySyncPayload(state);
+  const payload = buildLobbySyncPayloadNew(state);
   console.log("Broadcasting sync state, payload structure:", {
     hasGame: !!payload.game,
     hasPlayers: !!payload.game?.players,
@@ -408,7 +286,7 @@ const saveGameStateToDatabase = async (state) => {
   // This ensures the database always has the most up-to-date state from both players
   try {
     const api = await loadSupabaseApi(state);
-    const payload = buildLobbySyncPayload(state);
+    const payload = buildLobbySyncPayloadNew(state);
     console.log("Saving game state to DB for lobby:", state.menu.lobby.id);
     console.log("Game state payload structure:", {
       hasGame: !!payload.game,
@@ -476,7 +354,7 @@ const loadGameStateFromDatabase = async (state) => {
       state.menu.gameInProgress = hasGameStarted;
 
       // Now apply the saved game state (forceApply to bypass sender check)
-      applyLobbySyncPayload(state, savedGame.game_state, { forceApply: true });
+      applyLobbySyncPayloadNew(state, savedGame.game_state, { forceApply: true });
 
       // Ensure deckBuilder stage is set to "complete" if decks are already built
       if (savedGame.game_state.deckBuilder?.stage === "complete") {
@@ -1097,7 +975,7 @@ const checkAndRecoverSetupState = (state) => {
     
     // Broadcast the recovery
     if (state.menu?.mode === "online") {
-      sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
+      sendLobbyBroadcast("sync_state", buildLobbySyncPayloadNew(state));
       saveGameStateToDatabase(state);
     }
     
@@ -1115,7 +993,7 @@ const checkAndRecoverSetupState = (state) => {
     
     // Broadcast the recovery
     if (state.menu?.mode === "online") {
-      sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
+      sendLobbyBroadcast("sync_state", buildLobbySyncPayloadNew(state));
       saveGameStateToDatabase(state);
     }
     
@@ -1212,22 +1090,22 @@ const applyLobbySyncPayload = (state, payload, options = {}) => {
         }
 
         if (!isProtectedLocalSnapshot && Array.isArray(playerSnapshot.deck)) {
-          player.deck = hydrateDeckSnapshots(playerSnapshot.deck);
+          player.deck = hydrateDeckSnapshotsNew(playerSnapshot.deck);
         }
         if (!isProtectedLocalSnapshot && Array.isArray(playerSnapshot.hand)) {
-          player.hand = hydrateZoneSnapshots(playerSnapshot.hand, null, state.turn);
+          player.hand = hydrateZoneSnapshotsNew(playerSnapshot.hand, null, state.turn);
         }
         if (Array.isArray(playerSnapshot.field)) {
-          player.field = hydrateZoneSnapshots(playerSnapshot.field, 3, state.turn);
+          player.field = hydrateZoneSnapshotsNew(playerSnapshot.field, 3, state.turn);
         }
         if (Array.isArray(playerSnapshot.carrion)) {
-          player.carrion = hydrateZoneSnapshots(playerSnapshot.carrion, null, state.turn);
+          player.carrion = hydrateZoneSnapshotsNew(playerSnapshot.carrion, null, state.turn);
         }
         if (Array.isArray(playerSnapshot.exile)) {
-          player.exile = hydrateZoneSnapshots(playerSnapshot.exile, null, state.turn);
+          player.exile = hydrateZoneSnapshotsNew(playerSnapshot.exile, null, state.turn);
         }
         if (!isProtectedLocalSnapshot && Array.isArray(playerSnapshot.traps)) {
-          player.traps = hydrateZoneSnapshots(playerSnapshot.traps, null, state.turn);
+          player.traps = hydrateZoneSnapshotsNew(playerSnapshot.traps, null, state.turn);
         }
       });
       cleanupDestroyed(state, { silent: true });
@@ -1402,18 +1280,18 @@ const updateLobbySubscription = (state, { force = false } = {}) => {
     onUpdate: applyLobbyUpdate,
   });
   lobbyChannel.on("broadcast", { event: "deck_update" }, ({ payload }) => {
-    applyLobbySyncPayload(state, payload);
+    applyLobbySyncPayloadNew(state, payload);
   });
   lobbyChannel.on("broadcast", { event: "sync_request" }, ({ payload }) => {
     if (payload?.senderId === state.menu?.profile?.id) {
       return;
     }
     // Respond with current state so reconnecting player gets opponent's latest data
-    sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
+    sendLobbyBroadcast("sync_state", buildLobbySyncPayloadNew(state));
   });
   lobbyChannel.on("broadcast", { event: "sync_state" }, ({ payload }) => {
     // Apply sync state but only opponent's data (own data protected in applyLobbySyncPayload)
-    applyLobbySyncPayload(state, payload);
+    applyLobbySyncPayloadNew(state, payload);
   });
   refreshLobbyState(state, { silent: true });
 
@@ -4178,7 +4056,7 @@ export const renderGame = (state, callbacks = {}) => {
     }
     callbacks.onNextPhase?.();
     if (isOnline) {
-      sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
+      sendLobbyBroadcast("sync_state", buildLobbySyncPayloadNew(state));
     }
   };
   updateActionBar(handleNextPhase);
