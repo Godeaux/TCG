@@ -92,12 +92,12 @@ import {
   createCardSelectionItem,
 } from "./ui/components/SelectionPanel.js";
 
-// Drag and drop (extracted module)
+// Input handling (extracted module - drag-and-drop + navigation)
 import {
-  initDragAndDrop,
-  updateDragState,
-  updateDragCallbacks,
-} from "./ui/input/dragAndDrop.js";
+  initializeInput,
+  updateInputState,
+  updateInputCallbacks,
+} from "./ui/input/index.js";
 
 // Network serialization (extracted module)
 // Note: applyLobbySyncPayload is defined locally because it needs UI-specific
@@ -226,7 +226,6 @@ let trapWaitingPanelActive = false;
 let inspectedCardId = null;
 let deckHighlighted = null;
 let currentPage = 0;
-let navigationInitialized = false;
 let deckActiveTab = "catalog";
 let decksLoaded = false;
 let decksLoading = false;
@@ -234,7 +233,7 @@ let latestState = null;
 let latestCallbacks = {};
 const TOTAL_PAGES = 2;
 let handPreviewInitialized = false;
-let dragAndDropInitialized = false;
+let inputInitialized = false;
 let selectedHandCardId = null;
 let lobbyChannel = null;
 let profileLoaded = false;
@@ -1423,11 +1422,10 @@ const updatePlayerStats = (state, index, role) => {
 // ============================================================================
 
 // ============================================================================
-// DRAG AND DROP
-// MOVED TO: ./ui/input/dragAndDrop.js
-// Functions: initDragAndDrop, handleDragStart, handleDragEnd, handleDragOver,
-//            handleDrop, handleFieldDrop, handlePlayerDrop, handleCreatureDrop
-// Import: initDragAndDrop, updateDragState, updateDragCallbacks
+// DRAG AND DROP & NAVIGATION INPUT
+// MOVED TO: ./ui/input/ (dragAndDrop.js, inputRouter.js)
+// Entry point: ./ui/input/index.js
+// Import: initializeInput, updateInputState, updateInputCallbacks
 // ============================================================================
 
 // Helper wrapper for applyEffectResult (used by drag-and-drop module)
@@ -1445,14 +1443,12 @@ const applyEffectResult = (result, state, onUpdate) => {
   );
 };
 
-// NOTE: The following functions have been moved to ui/input/dragAndDrop.js:
-// - getTargetId, clearDragVisuals, getCardFromInstanceId, isValidAttackTarget
-// - canConsumePreyDirectly, getConsumablePrey, handleDragStart, handleDragEnd
-// - handleDragOver, handleDrop, handleFieldDrop, placeCreatureInSpecificSlot
-// - startConsumptionForSpecificSlot, handlePlayerDrop, handleCreatureDrop
-// - handleDirectConsumption, revertCardToOriginalPosition, initDragAndDrop
-
-// (Drag and drop code removed - now in ui/input/dragAndDrop.js)
+// NOTE: The following functions have been moved to ui/input/:
+// dragAndDrop.js: getTargetId, clearDragVisuals, getCardFromInstanceId,
+//   isValidAttackTarget, canConsumePreyDirectly, getConsumablePrey, handleDragStart,
+//   handleDragEnd, handleDragOver, handleDrop, handleFieldDrop, handlePlayerDrop,
+//   handleCreatureDrop, handleDirectConsumption, revertCardToOriginalPosition
+// inputRouter.js: initNavigation (menu handlers, form submissions, visibility change)
 
 const initHandPreview = () => {
   if (handPreviewInitialized) {
@@ -2698,201 +2694,8 @@ const navigateToPage = (pageIndex) => {
   updateNavButtons();
 };
 
-const initNavigation = () => {
-  if (navigationInitialized) {
-    return;
-  }
-  navigationInitialized = true;
-
-  navLeft?.addEventListener("click", () => navigateToPage(currentPage - 1));
-  navRight?.addEventListener("click", () => navigateToPage(currentPage + 1));
-
-  pageDots?.querySelectorAll(".page-dot").forEach((dot) => {
-    dot.addEventListener("click", () => navigateToPage(Number(dot.dataset.page)));
-  });
-
-  infoToggle?.addEventListener("click", () => navigateToPage(1));
-  infoBack?.addEventListener("click", () => navigateToPage(0));
-
-  document.querySelectorAll(".deck-tab").forEach((tab) => {
-    tab.addEventListener("click", () => {
-      deckActiveTab = tab.dataset.tab;
-      updateDeckTabs(latestState);
-    });
-  });
-
-  menuPlay?.addEventListener("click", () => {
-    if (!latestState) {
-      return;
-    }
-    latestState.menu.mode = "local";
-    setMenuStage(latestState, "ready");
-    latestCallbacks.onUpdate?.();
-  });
-
-  menuLogin?.addEventListener("click", () => {
-    if (!latestState) {
-      return;
-    }
-    if (latestState.menu.profile) {
-      setMenuStage(latestState, "multiplayer");
-    } else {
-      setMenuStage(latestState, "login");
-    }
-    latestCallbacks.onUpdate?.();
-  });
-
-  menuCatalog?.addEventListener("click", () => {
-    if (!latestState || !latestState.menu.profile) {
-      return;
-    }
-    latestState.menu.mode = null;
-    setMenuStage(latestState, "catalog");
-    latestState.catalogBuilder = {
-      stage: "select",
-      deckId: null,
-      selections: [],
-      available: [],
-      catalogOrder: [],
-      editingDeckId: null,
-      editingDeckName: null,
-    };
-    deckActiveTab = "catalog";
-    deckHighlighted = null;
-    ensureDecksLoaded(latestState, { force: true });
-    latestCallbacks.onUpdate?.();
-  });
-
-  menuTutorial?.addEventListener("click", () => {
-    if (!latestState) {
-      return;
-    }
-    setMenuStage(latestState, "tutorial");
-    latestCallbacks.onUpdate?.();
-  });
-
-  loginForm?.addEventListener("submit", (event) => {
-    event.preventDefault();
-    if (!latestState) {
-      return;
-    }
-    handleLoginSubmit(latestState);
-  });
-
-  loginCancel?.addEventListener("click", () => {
-    if (!latestState) {
-      return;
-    }
-    setMenuStage(latestState, "main");
-    latestCallbacks.onUpdate?.();
-  });
-
-  tutorialClose?.addEventListener("click", () => {
-    if (!latestState) {
-      return;
-    }
-    setMenuStage(latestState, "main");
-    latestCallbacks.onUpdate?.();
-  });
-
-  lobbyCreate?.addEventListener("click", () => {
-    if (!latestState) {
-      return;
-    }
-    handleCreateLobby(latestState);
-  });
-
-  lobbyJoin?.addEventListener("click", () => {
-    if (!latestState) {
-      return;
-    }
-    lobbyJoinForm?.classList.add("active");
-    lobbyCodeInput?.focus();
-  });
-
-  lobbyJoinCancel?.addEventListener("click", () => {
-    lobbyJoinForm?.classList.remove("active");
-    if (lobbyError) {
-      lobbyError.textContent = "";
-    }
-  });
-
-  lobbyJoinForm?.addEventListener("submit", (event) => {
-    event.preventDefault();
-    if (!latestState) {
-      return;
-    }
-    handleJoinLobby(latestState);
-  });
-
-  multiplayerBack?.addEventListener("click", () => {
-    if (!latestState) {
-      return;
-    }
-    setMenuStage(latestState, "main");
-    latestCallbacks.onUpdate?.();
-  });
-
-  lobbyContinue?.addEventListener("click", async () => {
-    if (!latestState) {
-      return;
-    }
-    if (!isLobbyReady(latestState.menu.lobby)) {
-      setMenuError(
-        latestState,
-        `Waiting for ${getOpponentDisplayName(latestState)} to join the lobby.`
-      );
-      latestCallbacks.onUpdate?.();
-      return;
-    }
-
-    // Set online mode BEFORE trying to load state
-    latestState.menu.mode = "online";
-
-    // Try to restore game state from database (for reconnection)
-    await loadGameStateFromDatabase(latestState);
-
-    // If no game was restored, proceed with normal game start
-    if (!latestState.menu.gameInProgress) {
-      setMenuStage(latestState, "ready");
-    }
-
-    latestCallbacks.onUpdate?.();
-  });
-
-  lobbyLeave?.addEventListener("click", () => {
-    if (!latestState) {
-      return;
-    }
-    handleLeaveLobby(latestState);
-  });
-
-  deckExit?.addEventListener("click", () => {
-    if (!latestState) {
-      return;
-    }
-    if (latestState.menu?.stage === "catalog") {
-      setMenuStage(latestState, "main");
-      latestState.catalogBuilder.stage = null;
-      latestCallbacks.onUpdate?.();
-    }
-  });
-
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState !== "visible" || !latestState) {
-      return;
-    }
-    if (latestState.menu?.lobby?.id) {
-      updateLobbySubscription(latestState, { force: true });
-      refreshLobbyState(latestState, { silent: false });
-      sendLobbyBroadcast("sync_request", {
-        senderId: latestState.menu?.profile?.id ?? null,
-      });
-    }
-  });
-
-  updateNavButtons();
-};
+// initNavigation moved to ./ui/input/inputRouter.js
+// Now initialized via initializeInput() from ./ui/input/index.js
 
 const processBeforeCombatQueue = (state, onUpdate) => {
   if (state.phase !== "Before Combat") {
@@ -3375,15 +3178,32 @@ export const renderGame = (state, callbacks = {}) => {
   latestCallbacks = callbacks;
   // Attach broadcast hook so downstream systems (effects) can broadcast after mutations
   state.broadcast = broadcastSyncState;
-  initNavigation();
   initHandPreview();
 
-  // Initialize or update drag-and-drop module
-  if (!dragAndDropInitialized) {
-    initDragAndDrop({
+  // Initialize or update input handling (navigation + drag-and-drop)
+  if (!inputInitialized) {
+    initializeInput({
       state,
       callbacks,
       helpers: {
+        // Navigation helpers
+        setMenuStage,
+        setMenuError,
+        handleLoginSubmit,
+        handleCreateLobby,
+        handleJoinLobby,
+        handleLeaveLobby,
+        ensureDecksLoaded,
+        getOpponentDisplayName,
+        loadGameStateFromDatabase,
+        updateLobbySubscription,
+        refreshLobbyState,
+        sendLobbyBroadcast,
+        isLobbyReady,
+        navigateToPage,
+        updateNavButtons,
+        updateDeckTabs,
+        // Drag-and-drop helpers
         getLocalPlayerIndex,
         isLocalPlayersTurn,
         broadcastSyncState,
@@ -3396,11 +3216,16 @@ export const renderGame = (state, callbacks = {}) => {
         applyEffectResult,
         selectionPanelElement: selectionPanel,
       },
+      uiState: {
+        currentPage,
+        deckActiveTab,
+        deckHighlighted,
+      },
     });
-    dragAndDropInitialized = true;
+    inputInitialized = true;
   } else {
-    updateDragState(state);
-    updateDragCallbacks(callbacks);
+    updateInputState(state);
+    updateInputCallbacks(callbacks);
   }
 
   ensureProfileLoaded(state);
