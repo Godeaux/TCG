@@ -1505,11 +1505,11 @@ const cardTypeClass = (card) => `type-${card.type.toLowerCase().replace(" ", "-"
 const renderCardStats = (card) => {
   const stats = [];
   if (card.type === "Predator" || card.type === "Prey") {
-    stats.push({ label: "ATK", value: card.currentAtk ?? card.atk, className: "atk" });
-    stats.push({ label: "HP", value: card.currentHp ?? card.hp, className: "hp" });
+    stats.push({ emoji: "⚔️", value: card.currentAtk ?? card.atk, className: "atk" });
+    stats.push({ emoji: "❤️", value: card.currentHp ?? card.hp, className: "hp" });
   }
   if (card.type === "Prey") {
-    stats.push({ label: "NUT", value: card.nutrition, className: "nut" });
+    stats.push({ emoji: "🍖", value: card.nutrition, className: "nut" });
   }
   return stats;
 };
@@ -1666,11 +1666,11 @@ const renderCardInnerHtml = (card, { showEffectSummary } = {}) => {
   // Get stats for the card
   const stats = renderCardStats(card);
 
-  // Build stat boxes (ATK, NUT if prey, HP)
+  // Build stat boxes with emoji + value
   const statBoxes = stats.map(stat =>
     `<div class="card-stat-box ${stat.className}">
-      <div class="stat-label">${stat.label}</div>
-      <div class="stat-value">${stat.value}</div>
+      <span class="stat-emoji">${stat.emoji}</span>
+      <span class="stat-value">${stat.value}</span>
     </div>`
   ).join("");
 
@@ -1682,8 +1682,8 @@ const renderCardInnerHtml = (card, { showEffectSummary } = {}) => {
   // Get effect summary
   const effectSummary = showEffectSummary ? getCardEffectSummary(card) : "";
 
-  // Combine keywords and effect for bottom text area
-  const bottomText = [keywords, effectSummary].filter(Boolean).join(" • ");
+  // Combine keywords and effect, separated by blank line if both exist
+  const bottomText = [keywords, effectSummary].filter(Boolean).join("\n\n");
 
   // Card image with error handling
   const imageHtml = hasCardImage(card.id)
