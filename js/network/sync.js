@@ -16,6 +16,7 @@
 
 import { buildLobbySyncPayload, applyLobbySyncPayload } from './serialization.js';
 import { isOnlineMode } from '../state/selectors.js';
+import * as supabaseApi from './supabaseApi.js';
 
 // Module-level variable for lobby channel (set externally)
 let lobbyChannel = null;
@@ -89,9 +90,6 @@ export const saveGameStateToDatabase = async (state) => {
   // Save on EVERY action, not just active player's turn
   // This ensures the database always has the most up-to-date state from both players
   try {
-    // Load Supabase API dynamically to avoid circular dependencies
-    const { loadSupabaseApi } = await import('./supabaseApi.js');
-    const api = await loadSupabaseApi(state);
     const payload = buildLobbySyncPayload(state);
     console.log("Saving game state to DB for lobby:", state.menu.lobby.id);
     console.log("Game state payload structure:", {
@@ -104,7 +102,7 @@ export const saveGameStateToDatabase = async (state) => {
       turn: payload.game?.turn,
       phase: payload.game?.phase,
     });
-    await api.saveGameState({
+    await supabaseApi.saveGameState({
       lobbyId: state.menu.lobby.id,
       gameState: payload,
       actionSequence: 0, // Will be used for future conflict resolution
@@ -129,11 +127,8 @@ export const loadGameStateFromDatabase = async (state) => {
   }
 
   try {
-    // Load Supabase API dynamically
-    const { loadSupabaseApi } = await import('./supabaseApi.js');
-    const api = await loadSupabaseApi(state);
     console.log("Loading game state for lobby ID:", state.menu.lobby.id);
-    const savedGame = await api.loadGameState({ lobbyId: state.menu.lobby.id });
+    const savedGame = await supabaseApi.loadGameState({ lobbyId: state.menu.lobby.id });
     console.log("Saved game from DB:", savedGame);
 
     if (savedGame && savedGame.game_state) {

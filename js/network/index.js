@@ -49,4 +49,4 @@ export {
 // ============================================================================
 
 export { supabase } from './supabaseClient.js';
-export { loadSupabaseApi } from './supabaseApi.js';
+// Note: loadSupabaseApi stays in ui.js - it has UI-specific error handling (setMenuError)
