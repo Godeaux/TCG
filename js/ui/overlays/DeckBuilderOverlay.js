@@ -13,7 +13,7 @@
  * - renderCatalogBuilderOverlay: Deck catalog management
  */
 
-import { deckCatalogs } from '../../cards.js';
+import { deckCatalogs } from '../../cards/index.js';
 import { logMessage } from '../../state/gameState.js';
 import { buildLobbySyncPayload, sendLobbyBroadcast } from '../../network/index.js';
 import { getLocalPlayerIndex } from '../../state/selectors.js';
