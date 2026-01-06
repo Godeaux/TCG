@@ -782,6 +782,77 @@ export const tutorFromDeck = (cardType = 'any') => (context) => {
   });
 };
 
+/**
+ * Select any creature to deal damage to (before combat)
+ * @param {number} amount - Damage amount
+ * @param {string} label - Damage source label (e.g., "strike", "shock")
+ */
+export const selectCreatureForDamage = (amount, label = "damage") => (context) => {
+  const { log, player, opponent, state } = context;
+  const candidates = [
+    ...player.field.filter(c => c && (c.type === 'Prey' || c.type === 'Predator' || c.type === 'prey' || c.type === 'predator') && !isInvisible(c, state)),
+    ...opponent.field.filter(c => c && (c.type === 'Prey' || c.type === 'Predator' || c.type === 'prey' || c.type === 'predator') && !isInvisible(c, state))
+  ];
+
+  if (candidates.length === 0) {
+    log(`No valid targets for ${label}.`);
+    return {};
+  }
+
+  return makeTargetedSelection({
+    title: `Choose a target for ${amount} ${label}`,
+    candidates: candidates.map(c => ({ label: c.name, value: c })),
+    onSelect: (target) =>
+      handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+        damageCreature: { creature: target, amount, sourceLabel: label }
+      }
+  });
+};
+
+/**
+ * Select any target (creature or player) to deal damage to
+ * @param {number} amount - Damage amount
+ * @param {string} label - Damage source label
+ */
+export const selectTargetForDamage = (amount, label = "damage") => (context) => {
+  const { log, player, opponent, state } = context;
+  const creatures = [
+    ...player.field.filter(c => c && (c.type === 'Prey' || c.type === 'Predator' || c.type === 'prey' || c.type === 'predator') && !isInvisible(c, state)),
+    ...opponent.field.filter(c => c && (c.type === 'Prey' || c.type === 'Predator' || c.type === 'prey' || c.type === 'predator') && !isInvisible(c, state))
+  ];
+
+  const candidates = creatures.map(c => ({
+    label: c.name,
+    value: { type: 'creature', creature: c }
+  }));
+
+  candidates.push({
+    label: `Rival (${opponent.name || 'Opponent'})`,
+    value: { type: 'player' }
+  });
+
+  return makeTargetedSelection({
+    title: `Choose a target for ${amount} ${label}`,
+    candidates,
+    onSelect: (selection) => {
+      if (selection.type === 'player') {
+        log(`Deals ${amount} ${label} to rival.`);
+        return { damageOpponent: amount };
+      }
+      return handleTargetedResponse({
+        target: selection.creature,
+        source: null,
+        log,
+        player,
+        opponent,
+        state
+      }) || {
+        damageCreature: { creature: selection.creature, amount, sourceLabel: label }
+      };
+    }
+  });
+};
+
 // ============================================================================
 // EFFECT REGISTRY
 // ============================================================================
@@ -839,6 +910,8 @@ export const effectRegistry = {
   selectEnemyPreyToKill,
   selectEnemyToKill,
   tutorFromDeck,
+  selectCreatureForDamage,
+  selectTargetForDamage,
 };
 
 // ============================================================================
@@ -995,6 +1068,12 @@ export const resolveEffect = (effectDef, context) => {
       break;
     case 'tutorFromDeck':
       specificEffect = effectFn(params.cardType);
+      break;
+    case 'selectCreatureForDamage':
+      specificEffect = effectFn(params.amount, params.label);
+      break;
+    case 'selectTargetForDamage':
+      specificEffect = effectFn(params.amount, params.label);
       break;
     default:
       console.warn(`No parameter mapping for effect type: ${effectDef.type}`);

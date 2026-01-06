@@ -197,7 +197,13 @@
             "amount": 1
           }
         },
-        "onBeforeCombat": "rainbow-mantis-shrimp-damage-onbeforecombat"
+        "onBeforeCombat": {
+          "type": "selectCreatureForDamage",
+          "params": {
+            "amount": 3,
+            "label": "strike"
+          }
+        }
       }
     },
     {
@@ -353,7 +359,13 @@
       "keywords": [],
       "effectText": "Before combat, deal 2 damage.",
       "effects": {
-        "onBeforeCombat": "electric-eel-shock-onbeforecombat"
+        "onBeforeCombat": {
+          "type": "selectCreatureForDamage",
+          "params": {
+            "amount": 2,
+            "label": "shock"
+          }
+        }
       }
     },
     {
@@ -502,7 +514,13 @@
       "keywords": [],
       "effectText": "Deal 3 damage to any target.",
       "effects": {
-        "onConsume": "shortfin-mako-damage-onconsume"
+        "onConsume": {
+          "type": "selectTargetForDamage",
+          "params": {
+            "amount": 3,
+            "label": "damage"
+          }
+        }
       }
     },
     {
