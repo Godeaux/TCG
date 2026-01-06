@@ -68,6 +68,21 @@ import {
   renderDeckBuilderOverlay as renderDeckBuilderOverlayNew,
 } from "./ui/overlays/DeckBuilderOverlay.js";
 
+// UI Components (extracted modules)
+import {
+  renderCard as renderCardNew,
+  renderDeckCard as renderDeckCardNew,
+  renderCardStats,
+  getCardEffectSummary,
+} from "./ui/components/Card.js";
+import {
+  renderField as renderFieldNew,
+} from "./ui/components/Field.js";
+import {
+  renderHand as renderHandNew,
+  updateHandOverlap as updateHandOverlapNew,
+} from "./ui/components/Hand.js";
+
 // Helper to get discardEffect and timing for both old and new card formats
 const getDiscardEffectInfo = (card) => {
   // Old format: card.discardEffect = { timing, effect }
@@ -2965,109 +2980,19 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
   onComplete?.();
 };
 
-const renderField = (state, playerIndex, isOpponent, onAttack) => {
-  const fieldRow = document.querySelector(isOpponent ? ".opponent-field" : ".player-field");
-  if (!fieldRow) {
-    return;
-  }
-  const slots = Array.from(fieldRow.querySelectorAll(".field-slot"));
-  const player = state.players[playerIndex];
+// ============================================================================
+// FIELD RENDERING
+// MOVED TO: ./ui/components/Field.js
+// Functions: renderField
+// Import: renderFieldNew
+// ============================================================================
 
-  slots.forEach((slot, index) => {
-    slot.innerHTML = "";
-    const card = player.field[index] ?? null;
-    if (!card) {
-      slot.textContent = "Empty Slot";
-      return;
-    }
-    const isCreature = card.type === "Predator" || card.type === "Prey";
-    const canAttack =
-      !isOpponent &&
-      isLocalPlayersTurn(state) &&
-      state.phase === "Combat" &&
-      !card.hasAttacked &&
-      !isPassive(card) &&
-      !isHarmless(card) &&
-      !card.frozen &&
-      !card.paralyzed &&
-      isCreature;
-    const cardElement = renderCard(card, {
-      showAttack: canAttack,
-      showEffectSummary: true,
-      onAttack,
-    });
-    slot.appendChild(cardElement);
-  });
-};
-
-const renderHand = (state, onSelect, onUpdate, hideCards) => {
-  const handGrid = document.getElementById("active-hand");
-  if (!handGrid) {
-    return;
-  }
-  clearPanel(handGrid);
-  const playerIndex = isOnlineMode(state) ? getLocalPlayerIndex(state) : state.activePlayerIndex;
-  const player = state.players[playerIndex];
-
-  // Keep hand compact (removed toggle button and auto-expansion)
-
-  if (hideCards) {
-    player.hand.forEach(() => {
-      handGrid.appendChild(renderCard({}, { showBack: true }));
-    });
-    requestAnimationFrame(() => updateHandOverlap(handGrid));
-    return;
-  }
-
-  player.hand.forEach((card) => {
-    const cardElement = renderCard(card, {
-      showEffectSummary: true,
-      isSelected: selectedHandCardId === card.instanceId,
-      onClick: (selectedCard) => {
-        selectedHandCardId = selectedCard.instanceId;
-        onSelect?.(selectedCard);
-        // Update action panel to show play/discard buttons
-        updateActionPanel(state, { onUpdate });
-        // Re-render hand to update selection highlights
-        renderHand(state, onSelect, onUpdate, hideCards);
-      },
-    });
-    handGrid.appendChild(cardElement);
-  });
-  requestAnimationFrame(() => updateHandOverlap(handGrid));
-
-  // Force overflow to visible to prevent card cutoff - set immediately and persistently
-  const setOverflowVisible = () => {
-    handGrid.style.overflow = 'visible';
-
-    const handPanel = handGrid.closest('.hand-panel');
-    if (handPanel) {
-      handPanel.style.overflow = 'visible';
-    }
-
-    const handContainer = handGrid.closest('.hand-container');
-    if (handContainer) {
-      handContainer.style.overflow = 'visible';
-    }
-
-    const centerColumn = handGrid.closest('.battlefield-center-column');
-    if (centerColumn) {
-      centerColumn.style.overflow = 'visible';
-    }
-  };
-
-  // Set immediately
-  setOverflowVisible();
-
-  // Set again after a delay to ensure it sticks
-  requestAnimationFrame(() => {
-    setOverflowVisible();
-  });
-
-  setTimeout(() => {
-    setOverflowVisible();
-  }, 100);
-};
+// ============================================================================
+// HAND RENDERING
+// MOVED TO: ./ui/components/Hand.js
+// Functions: renderHand, updateHandOverlap
+// Import: renderHandNew, updateHandOverlapNew
+// ============================================================================
 
 const renderSelectionPanel = ({ title, items, onConfirm, confirmLabel = "Confirm" }) => {
   clearPanel(selectionPanel);
@@ -4713,11 +4638,21 @@ export const renderGame = (state, callbacks = {}) => {
   );
   updatePlayerStats(state, 0, "player1");
   updatePlayerStats(state, 1, "player2");
-  renderField(state, opponentIndex, true, null);
-  renderField(state, activeIndex, false, (card) =>
+  // Field rendering (uses extracted Field component)
+  renderFieldNew(state, opponentIndex, true, null);
+  renderFieldNew(state, activeIndex, false, (card) =>
     handleAttackSelection(state, card, callbacks.onUpdate)
   );
-  renderHand(state, () => updateActionPanel(state, callbacks), callbacks.onUpdate, passPending);
+  // Hand rendering (uses extracted Hand component)
+  renderHandNew(state, {
+    onSelect: (card) => {
+      selectedHandCardId = card.instanceId;
+      updateActionPanel(state, callbacks);
+    },
+    onUpdate: callbacks.onUpdate,
+    hideCards: passPending,
+    selectedCardId: selectedHandCardId,
+  });
   updateActionPanel(state, callbacks);
   handlePendingTrapDecision(state, callbacks.onUpdate);
   processVisualEffects(state);
