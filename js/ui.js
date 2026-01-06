@@ -72,8 +72,6 @@ import {
 import {
   renderCard as renderCardNew,
   renderDeckCard as renderDeckCardNew,
-  renderCardStats,
-  getCardEffectSummary,
 } from "./ui/components/Card.js";
 import {
   renderField as renderFieldNew,
@@ -2897,7 +2895,7 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
       handOwner.hand.forEach((card) => {
         const item = document.createElement("label");
         item.className = "selection-item selection-card";
-        const cardElement = renderCard(card, {
+        const cardElement = renderCardNew(card, {
           showEffectSummary: true,
         });
         item.appendChild(cardElement);
@@ -2948,7 +2946,7 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
       const canRenderCard = shouldRenderCards && isCardLike(candidateCard);
       if (canRenderCard) {
         item.classList.add("selection-card");
-        const cardElement = renderCard(candidateCard, {
+        const cardElement = renderCardNew(candidateCard, {
           showEffectSummary: true,
           onClick: () => handleSelection(candidate.value),
         });
@@ -4260,7 +4258,7 @@ const showCarrionPilePopup = (player, opponent, onUpdate) => {
     player.carrion.forEach((card) => {
       const item = document.createElement("label");
       item.className = "selection-item selection-card";
-      const cardElement = renderCard(card, {
+      const cardElement = renderCardNew(card, {
         showEffectSummary: true,
       });
       item.appendChild(cardElement);
@@ -4283,7 +4281,7 @@ const showCarrionPilePopup = (player, opponent, onUpdate) => {
     opponent.carrion.forEach((card) => {
       const item = document.createElement("label");
       item.className = "selection-item selection-card";
-      const cardElement = renderCard(card, {
+      const cardElement = renderCardNew(card, {
         showEffectSummary: true,
       });
       item.appendChild(cardElement);
