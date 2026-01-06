@@ -200,10 +200,7 @@ const hydrateZoneSnapshots = (snapshots, size, fallbackTurn) => {
     console.warn("⚠️ hydrateZoneSnapshots: snapshots is not an array:", snapshots);
     return size ? Array.from({ length: size }, () => null) : [];
   }
-  console.log("🔄 Hydrating zone with", snapshots.length, "snapshots, size:", size, "fallbackTurn:", fallbackTurn);
-  console.log("  Input snapshots:", snapshots);
   const hydrated = snapshots.map((card) => hydrateCardSnapshot(card, fallbackTurn));
-  console.log("  Hydrated result:", hydrated);
   if (size) {
     const padded = hydrated.slice(0, size);
     while (padded.length < size) {
@@ -388,22 +385,12 @@ const loadGameStateFromDatabase = async (state) => {
       state.menu.gameInProgress = hasGameStarted;
 
       // Now apply the saved game state (forceApply to bypass sender check)
-      console.log("Applying saved state with forceApply=true");
       applyLobbySyncPayload(state, savedGame.game_state, { forceApply: true });
 
       // Ensure deckBuilder stage is set to "complete" if decks are already built
       if (savedGame.game_state.deckBuilder?.stage === "complete") {
         state.deckBuilder.stage = "complete";
       }
-
-      console.log("DeckBuilder stage after:", state.deckBuilder?.stage);
-      console.log("Game in progress:", hasGameStarted);
-      console.log("Local state after applying DB:");
-      console.log("  Player 0 hand:", state.players?.[0]?.hand);
-      console.log("  Player 0 field:", state.players?.[0]?.field);
-      console.log("  Player 1 hand:", state.players?.[1]?.hand);
-      console.log("  Player 1 field:", state.players?.[1]?.field);
-      console.log("  Turn:", state.turn, "Phase:", state.phase);
 
       if (hasGameStarted) {
         setMenuStage(state, "ready");
@@ -720,9 +707,8 @@ const updateHandOverlap = (handGrid) => {
 
   handGrid.style.setProperty("--hand-overlap", `${overlap}px`);
   handGrid.style.overflow = "visible"; // Force visible after setting overlap
-
-  console.log(`📊 Hand overlap: ${overlap.toFixed(1)}px (${cards.length} cards, card width: ${cardWidth.toFixed(1)}px, total needed: ${totalWidthNoOverlap.toFixed(1)}px, container: ${handWidth.toFixed(1)}px)`);
 };
+
 
 const isOnlineMode = (state) => state.menu?.mode === "online";
 const isCatalogMode = (state) => state.menu?.stage === "catalog";
@@ -1144,17 +1130,6 @@ const applyLobbySyncPayload = (state, payload, options = {}) => {
 
         const isProtectedLocalSnapshot = !forceApply && index === localIndex;
 
-        console.log(
-          "Applying player data for index:",
-          index,
-          "localIndex:",
-          localIndex,
-          "forceApply:",
-          forceApply,
-          "protectedLocalSnapshot:",
-          isProtectedLocalSnapshot
-        );
-
         if (playerSnapshot.name) {
           player.name = playerSnapshot.name;
         }
@@ -1253,26 +1228,20 @@ const applyLobbySyncPayload = (state, payload, options = {}) => {
       }
     }
     if (Array.isArray(payload.setup.rolls)) {
-      console.log("Processing roll sync:", payload.setup.rolls);
       payload.setup.rolls.forEach((roll, index) => {
-        // Enhanced validation with logging
+        // Enhanced validation
         if (roll === null || roll === undefined) {
-          console.log(`Received null/undefined roll for Player ${index + 1}`);
           // Only apply if current state is also null/undefined or if this is a reset
           if (state.setup.rolls[index] !== null) {
-            console.log(`Clearing roll for Player ${index + 1} due to sync`);
             state.setup.rolls[index] = null;
           }
           return;
         }
-        
+
         // Validate roll is a number within valid range
         if (typeof roll === 'number' && roll >= 1 && roll <= 10) {
           if (state.setup.rolls[index] !== roll) {
-            console.log(`Applying roll for Player ${index + 1}: ${roll}`);
             state.setup.rolls[index] = roll;
-          } else {
-            console.log(`Roll for Player ${index + 1} already matches: ${roll}`);
           }
         } else {
           console.warn(`Invalid roll value for Player ${index + 1}:`, roll, "Type:", typeof roll);
@@ -1369,9 +1338,6 @@ const updateLobbySubscription = (state, { force = false } = {}) => {
     sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
   });
   lobbyChannel.on("broadcast", { event: "sync_state" }, ({ payload }) => {
-    console.log("Received sync_state broadcast from sender:", payload?.senderId);
-    console.log("My profile ID:", state.menu?.profile?.id);
-    console.log("My local player index:", getLocalPlayerIndex(state));
     // Apply sync state but only opponent's data (own data protected in applyLobbySyncPayload)
     applyLobbySyncPayload(state, payload);
   });
@@ -4719,12 +4685,6 @@ const renderMenuOverlays = (state) => {
     const lobbyClosed = state.menu.lobby?.status === "closed";
     const lobbyReady = isLobbyReady(state.menu.lobby);
     const gameInProgress = state.menu.gameInProgress === true;
-
-    // Debug logging
-    console.log("Lobby status:", state.menu.lobby?.status);
-    console.log("Lobby guest_id:", state.menu.lobby?.guest_id);
-    console.log("Lobby ready:", lobbyReady);
-    console.log("Game in progress:", gameInProgress);
 
     // Update button text based on whether game is in progress
     lobbyContinue.textContent = gameInProgress ? "Continue Game" : "Start Game";
