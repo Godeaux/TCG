@@ -2480,6 +2480,7 @@ button {
 
   .battlefield-center-column {
     width: 100%;
+    overflow-x: hidden; /* Prevent cards from bleeding off edges */
   }
 
   .mobile-nav-left,
@@ -2495,6 +2496,16 @@ button {
   .hand-panel {
     min-height: clamp(120px, 20vh, 200px);
     max-height: 45vh;
+    overflow-x: hidden; /* Clip cards that extend beyond edges */
+  }
+
+  .hand-container {
+    overflow-x: hidden !important; /* Override visible overflow on mobile */
+  }
+
+  .hand-grid {
+    overflow-x: hidden !important; /* Override visible overflow on mobile */
+    padding: 0 clamp(8px, 2vw, 16px); /* Add padding to prevent edge clipping */
   }
 
   .hand-grid .card {
@@ -2510,6 +2521,13 @@ button {
   .game-log-panel {
     min-height: 150px;
     height: 100%;
+  }
+
+  /* Fix action bar visibility on mobile */
+  .action-bar.has-selection,
+  .action-bar.has-actions {
+    max-height: 45vh; /* Reduce from 50vh to account for mobile browser chrome */
+    padding-bottom: clamp(12px, 2vh, 20px); /* Ensure bottom content is visible */
   }
 }
 

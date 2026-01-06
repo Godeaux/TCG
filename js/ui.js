@@ -5380,6 +5380,9 @@ const setupTouchEvents = () => {
   const handleTouchMove = (e) => {
     if (!touchedCard) return;
 
+    // Prevent default immediately to stop browser back/forward gestures
+    e.preventDefault();
+
     const touch = e.touches[0];
     currentTouchPos = {
       x: touch.clientX,
@@ -5412,8 +5415,6 @@ const setupTouchEvents = () => {
     }
 
     if (isDragging) {
-      e.preventDefault();
-
       // Update visual feedback for drag targets
       const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
       updateDragVisuals(elementBelow);
