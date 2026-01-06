@@ -27,6 +27,36 @@ import { resolveEffectResult, stripAbilities } from "./effects.js";
 import { deckCatalogs, getCardDefinitionById, resolveCardEffect } from "./cards/index.js";
 import { getCardImagePath, hasCardImage, getCachedCardImage, isCardImageCached, preloadCardImages } from "./cardImages.js";
 
+// ============================================================================
+// IMPORTS FROM NEW REFACTORED MODULES
+// These imports replace duplicate code that was previously in this file
+// ============================================================================
+
+// State selectors (centralized state queries)
+// Note: getLocalPlayerIndex and isLocalPlayersTurn have different signatures in new module
+// (they take uiState as second param), so we keep local versions for now
+import {
+  isOnlineMode,  // Same signature, can replace local version
+} from "./state/selectors.js";
+
+// Victory overlay (extracted module)
+import {
+  showVictoryScreen as showVictoryScreenNew,
+  hideVictoryScreen as hideVictoryScreenNew,
+  checkForVictory as checkForVictoryNew,
+} from "./ui/overlays/VictoryOverlay.js";
+
+// Pass overlay (extracted module)
+import {
+  renderPassOverlay as renderPassOverlayNew,
+  hidePassOverlay as hidePassOverlayNew,
+} from "./ui/overlays/PassOverlay.js";
+
+// Menu overlays (extracted module)
+import {
+  renderMenuOverlays as renderMenuOverlaysNew,
+} from "./ui/overlays/MenuOverlay.js";
+
 // Helper to get discardEffect and timing for both old and new card formats
 const getDiscardEffectInfo = (card) => {
   // Old format: card.discardEffect = { timing, effect }
@@ -685,24 +715,7 @@ const loadSupabaseApi = async (state) => {
   }
 };
 
-const updateMenuStatus = (state) => {
-  if (!menuStatus) {
-    return;
-  }
-  if (state.menu.loading) {
-    menuStatus.textContent = "Connecting to Supabase...";
-    return;
-  }
-  if (state.menu.error) {
-    menuStatus.textContent = state.menu.error;
-    return;
-  }
-  if (state.menu.profile?.username) {
-    menuStatus.textContent = `Logged in as ${state.menu.profile.username}.`;
-    return;
-  }
-  menuStatus.textContent = "Not logged in yet. Login to save decks or join lobbies.";
-};
+// updateMenuStatus moved to ./ui/overlays/MenuOverlay.js
 
 const updateHandOverlap = (handGrid) => {
   const cards = Array.from(handGrid.querySelectorAll(".card"));
@@ -736,7 +749,7 @@ const updateHandOverlap = (handGrid) => {
 };
 
 
-const isOnlineMode = (state) => state.menu?.mode === "online";
+// isOnlineMode is now imported from ./state/selectors.js
 const isCatalogMode = (state) => state.menu?.stage === "catalog";
 
 const getLocalPlayerIndex = (state) => {
@@ -4802,123 +4815,12 @@ const renderSetupOverlay = (state, callbacks) => {
   }
 };
 
-const renderMenuOverlays = (state) => {
-  if (!state.menu) {
-    return;
-  }
-  updateMenuStatus(state);
-
-  const stage = state.menu.stage;
-  const showMain = stage === "main";
-  const showLogin = stage === "login";
-  const showMultiplayer = stage === "multiplayer";
-  const showLobby = stage === "lobby";
-  const showTutorial = stage === "tutorial";
-
-  menuOverlay?.classList.toggle("active", showMain);
-  menuOverlay?.setAttribute("aria-hidden", showMain ? "false" : "true");
-
-  loginOverlay?.classList.toggle("active", showLogin);
-  loginOverlay?.setAttribute("aria-hidden", showLogin ? "false" : "true");
-
-  multiplayerOverlay?.classList.toggle("active", showMultiplayer);
-  multiplayerOverlay?.setAttribute("aria-hidden", showMultiplayer ? "false" : "true");
-
-  lobbyOverlay?.classList.toggle("active", showLobby);
-  lobbyOverlay?.setAttribute("aria-hidden", showLobby ? "false" : "true");
-
-  tutorialOverlay?.classList.toggle("active", showTutorial);
-  tutorialOverlay?.setAttribute("aria-hidden", showTutorial ? "false" : "true");
-
-  if (!showMultiplayer) {
-    lobbyJoinForm?.classList.remove("active");
-  }
-  if (showLogin) {
-    loginUsername?.focus();
-  }
-
-  if (menuLogin) {
-    menuLogin.textContent = state.menu.profile ? "Multiplayer" : "Login";
-  }
-  if (menuPlay) {
-    menuPlay.disabled = state.menu.loading;
-  }
-  if (menuLogin) {
-    menuLogin.disabled = state.menu.loading;
-  }
-  if (menuCatalog) {
-    menuCatalog.disabled = state.menu.loading || !state.menu.profile;
-  }
-
-  if (loginSubmit) {
-    loginSubmit.disabled = state.menu.loading;
-  }
-  if (lobbyCreate) {
-    lobbyCreate.disabled = state.menu.loading;
-  }
-  if (lobbyJoin) {
-    lobbyJoin.disabled = state.menu.loading;
-  }
-  if (lobbyJoinCancel) {
-    lobbyJoinCancel.disabled = state.menu.loading;
-  }
-  if (multiplayerBack) {
-    multiplayerBack.disabled = state.menu.loading;
-  }
-  if (loginError) {
-    loginError.textContent = state.menu.error ?? "";
-  }
-  if (lobbyError) {
-    lobbyError.textContent = state.menu.error ?? "";
-  }
-  if (lobbyLiveError) {
-    lobbyLiveError.textContent = state.menu.error ?? "";
-  }
-
-  if (lobbyStatus) {
-    const lobby = state.menu.lobby;
-    const opponentName = getOpponentDisplayName(state);
-    const localProfileId = state.menu.profile?.id ?? null;
-    const hostName = state.players?.[0]?.name || "Host";
-    const guestName = state.players?.[1]?.name || "Guest";
-    const isHost = Boolean(lobby?.host_id && lobby.host_id === localProfileId);
-    const isGuest = Boolean(lobby?.guest_id && lobby.guest_id === localProfileId);
-    if (!lobby) {
-      lobbyStatus.textContent = `Waiting for ${opponentName}...`;
-    } else if (lobby.status === "full") {
-      if (isGuest) {
-        lobbyStatus.textContent = `Joined ${hostName}'s lobby. Ready to start.`;
-      } else if (isHost) {
-        lobbyStatus.textContent = `${guestName} joined. Ready to start.`;
-      } else {
-        lobbyStatus.textContent = `${opponentName} joined. Ready to start.`;
-      }
-    } else if (lobby.status === "closed") {
-      lobbyStatus.textContent = "Lobby closed.";
-    } else {
-      lobbyStatus.textContent = isHost
-        ? `Waiting for ${guestName}...`
-        : `Joined ${hostName}'s lobby. Waiting to start.`;
-    }
-  }
-  if (lobbyCodeDisplay) {
-    lobbyCodeDisplay.textContent = state.menu.lobby?.code ?? "----";
-  }
-  if (lobbyContinue) {
-    const lobbyClosed = state.menu.lobby?.status === "closed";
-    const lobbyReady = isLobbyReady(state.menu.lobby);
-    const gameInProgress = state.menu.gameInProgress === true;
-
-    // Update button text based on whether game is in progress
-    lobbyContinue.textContent = gameInProgress ? "Continue Game" : "Start Game";
-    lobbyContinue.disabled = state.menu.loading || lobbyClosed || !lobbyReady;
-  }
-  if (lobbyLeave) {
-    lobbyLeave.disabled = state.menu.loading;
-  }
-
-  updateLobbySubscription(state);
-};
+// ============================================================================
+// MENU OVERLAYS
+// MOVED TO: ./ui/overlays/MenuOverlay.js
+// Functions: renderMenuOverlays, updateMenuStatus
+// Import: renderMenuOverlaysNew
+// ============================================================================
 
 const updateNavButtons = () => {
   if (navLeft) {
@@ -5615,8 +5517,8 @@ if (typeof window !== 'undefined') {
 }
 
 export const renderGame = (state, callbacks = {}) => {
-  // Check for victory before rendering anything
-  if (checkForVictory(state)) {
+  // Check for victory before rendering anything (uses extracted VictoryOverlay module)
+  if (checkForVictoryNew(state)) {
     return; // Don't render the game if it's over
   }
 
@@ -5691,20 +5593,16 @@ export const renderGame = (state, callbacks = {}) => {
     processEndOfTurnQueue(state, callbacks.onUpdate);
   }
 
-  if (passPending) {
-    passTitle.textContent = `Pass to ${state.players[activeIndex].name}`;
-    passOverlay.classList.add("active");
-    passOverlay.setAttribute("aria-hidden", "false");
-    passConfirm.onclick = callbacks.onConfirmPass;
-  } else {
-    passOverlay.classList.remove("active");
-    passOverlay.setAttribute("aria-hidden", "true");
-  }
+  // Pass overlay (uses extracted PassOverlay module)
+  renderPassOverlayNew(state, passPending, callbacks);
 
   renderDeckSelectionOverlay(state, callbacks);
   renderSetupOverlay(state, callbacks);
   renderDeckBuilderOverlay(state, callbacks);
-  renderMenuOverlays(state);
+  // Menu overlays (uses extracted MenuOverlay module)
+  renderMenuOverlaysNew(state);
+  // The extracted module doesn't handle lobby subscriptions, so call it separately
+  updateLobbySubscription(state);
 
   // Setup carrion pile click handler
   const carrionEl = document.getElementById("active-carrion");
@@ -5742,105 +5640,10 @@ export const handleCombatPass = (state) => {
   logMessage(state, `${getActivePlayer(state).name} passes combat.`);
 };
 
-// Victory Screen Functions
-const createVictoryParticles = () => {
-  const particlesContainer = victoryOverlay.querySelector('.victory-particles');
-  particlesContainer.innerHTML = '';
-  
-  for (let i = 0; i < 50; i++) {
-    const particle = document.createElement('div');
-    particle.className = 'victory-particle';
-    particle.style.left = Math.random() * 100 + '%';
-    particle.style.animationDelay = Math.random() * 3 + 's';
-    particle.style.animationDuration = (3 + Math.random() * 2) + 's';
-    particlesContainer.appendChild(particle);
-  }
-};
-
-const showVictoryScreen = (winner, stats = {}) => {
-  if (!victoryOverlay) return;
-  
-  // Set winner name
-  victoryWinnerName.textContent = winner.name || 'Unknown Champion';
-  
-  // Set stats
-  victoryTurns.textContent = stats.turns || 0;
-  victoryCards.textContent = stats.cardsPlayed || 0;
-  victoryKills.textContent = stats.creaturesDefeated || 0;
-  
-  // Create particles
-  createVictoryParticles();
-  
-  // Show overlay
-  victoryOverlay.classList.add('show');
-  victoryOverlay.setAttribute('aria-hidden', 'false');
-  
-  // Add event listener for main menu
-  victoryMenu.onclick = () => hideVictoryScreen(() => {
-    // Return to main menu - reload the page for now
-    window.location.reload();
-  });
-};
-
-const hideVictoryScreen = (callback) => {
-  if (!victoryOverlay) return;
-  
-  victoryOverlay.classList.remove('show');
-  victoryOverlay.setAttribute('aria-hidden', 'true');
-  
-  setTimeout(() => {
-    if (callback) callback();
-  }, 1000); // Wait for fade out animation
-};
-
-const checkForVictory = (state) => {
-  // Check if any player has 0 or less HP
-  const winner = state.players.find(player => player.hp > 0);
-  const loser = state.players.find(player => player.hp <= 0);
-  
-  if (winner && loser) {
-    // Calculate stats
-    const stats = {
-      turns: state.turn || 1,
-      cardsPlayed: calculateCardsPlayed(state),
-      creaturesDefeated: calculateCreaturesDefeated(state)
-    };
-    
-    // Show victory screen
-    showVictoryScreen(winner, stats);
-    
-    return true; // Game over
-  }
-  
-  return false; // Game continues
-};
-
-const calculateCardsPlayed = (state) => {
-  let cardsPlayed = 0;
-  
-  state.players.forEach(player => {
-    // Count cards in exile (played spells, free spells, used traps)
-    cardsPlayed += player.exile?.length || 0;
-    
-    // Count creatures currently on field (they were played from hand)
-    cardsPlayed += player.field?.filter(card => card && !card.isToken).length || 0;
-    
-    // Count creatures that were destroyed and sent to carrion
-    cardsPlayed += player.carrion?.filter(card => card && !card.isToken).length || 0;
-  });
-  
-  return cardsPlayed;
-};
-
-const calculateCreaturesDefeated = (state) => {
-  let creaturesDefeated = 0;
-  
-  state.players.forEach(player => {
-    // Count all creatures in carrion (includes tokens and consumed creatures)
-    creaturesDefeated += player.carrion?.filter(card => 
-      card && (card.type === 'Predator' || card.type === 'Prey')
-    ).length || 0;
-  });
-  
-  return creaturesDefeated;
-};
+// ============================================================================
+// VICTORY SCREEN FUNCTIONS
+// MOVED TO: ./ui/overlays/VictoryOverlay.js
+// Functions: showVictoryScreen, hideVictoryScreen, checkForVictory,
+//            calculateCardsPlayed, calculateCreaturesDefeated
+// Import: checkForVictoryNew, showVictoryScreenNew, hideVictoryScreenNew
+// ============================================================================
