@@ -7,7 +7,7 @@
 ## REFACTOR PROGRESS TRACKER
 
 **Last Updated**: 2026-01-06
-**Current Phase**: Phase 5 - Extract UI Components
+**Current Phase**: Phase 6 - Extract Overlays
 **Overall Status**: IN PROGRESS
 
 ### Phase Completion Checklist
@@ -55,15 +55,14 @@
   - [x] Create `ui/components/SelectionPanel.js`
   - [x] Create `ui/components/index.js`
   - [x] Extract all rendering logic from `ui.js`
-- [ ] **Phase 6: Extract Overlays**
-  - [ ] Create `ui/overlays/MenuOverlay.js`
-  - [ ] Create `ui/overlays/DeckBuilderOverlay.js`
-  - [ ] Create `ui/overlays/SetupOverlay.js`
-  - [ ] Create `ui/overlays/LobbyOverlay.js`
-  - [ ] Create `ui/overlays/TutorialOverlay.js`
-  - [ ] Create `ui/overlays/PassOverlay.js`
-  - [ ] Create `ui/overlays/VictoryOverlay.js`
-  - [ ] Test all overlays
+- [x] **Phase 6: Extract Overlays** - COMPLETED ✅
+  - [x] Create `ui/overlays/MenuOverlay.js` (210+ lines)
+  - [x] Create `ui/overlays/DeckBuilderOverlay.js` (1400+ lines)
+  - [x] Create `ui/overlays/SetupOverlay.js` (240+ lines)
+  - [x] Create `ui/overlays/PassOverlay.js` (60+ lines)
+  - [x] Create `ui/overlays/VictoryOverlay.js` (170+ lines)
+  - [x] Create `ui/overlays/index.js`
+  - [x] Extract all overlay logic from `ui.js`
 - [ ] **Phase 7: Extract Input Handling**
   - [ ] Create `ui/input/inputRouter.js`
   - [ ] Create `ui/input/dragAndDrop.js`
@@ -254,16 +253,65 @@
 - Easy to modify or extend individual components
 - Ready for overlay module extraction (Phase 6)
 
+**2026-01-06**: PHASE 6 COMPLETE ✅ - Overlays Extracted
+- ✅ Created ui/overlays/MenuOverlay.js (210+ lines)
+  - renderMenuOverlays: Main menu overlay coordinator
+  - hideAllMenuOverlays: Hide all menu overlays
+  - Handles: main menu, login, multiplayer lobby, tutorial
+  - Updates button states, error messages, lobby status
+  - Manages loading states across all overlays
+- ✅ Created ui/overlays/SetupOverlay.js (240+ lines)
+  - renderSetupOverlay: Opening roll overlay
+  - Rolling phase: Each player rolls d10
+  - Choice phase: Winner picks who goes first
+  - Integrated with network sync for multiplayer
+  - Roll broadcasting and database persistence
+- ✅ Created ui/overlays/DeckBuilderOverlay.js (1400+ lines)
+  - renderDeckSelectionOverlay: Deck category selection
+  - renderDeckBuilderOverlay: In-game deck building (20 cards)
+  - renderCatalogBuilderOverlay: Deck catalog management
+  - Deck management: Load, edit, rename, delete saved decks
+  - Random deck builder (6 predators, 7 prey, 4 spells, 2 free spells, 1 trap)
+  - Deck validation: 20 cards total, prey > predators
+  - Integration with Supabase for deck persistence
+- ✅ Created ui/overlays/PassOverlay.js (60+ lines)
+  - renderPassOverlay: Local mode turn pass confirmation
+  - Only shown in offline mode (not online)
+  - hidePassOverlay: Hide pass overlay
+- ✅ Created ui/overlays/VictoryOverlay.js (170+ lines)
+  - showVictoryScreen: Victory screen with stats
+  - hideVictoryScreen: Hide victory screen
+  - checkForVictory: Victory condition check
+  - Animated particle effects
+  - Game statistics: turns, cards played, creatures defeated
+- ✅ Created ui/overlays/index.js for unified exports
+
+**Architecture**:
+- All overlay logic centralized in ui/overlays/
+- Menu navigation is isolated and manageable
+- Deck builder is complex but contained
+- Setup and pass overlays are simple and focused
+- Victory overlay is self-contained with stats calculation
+- Ready for input handling extraction (Phase 7)
+
+**Benefits**:
+- No more scattered overlay code in ui.js
+- Overlays are isolated and maintainable
+- Clear separation between different UI screens
+- Deck builder logic is contained in one module
+- Victory condition logic is extracted
+- Ready for input handling module (Phase 7)
+
 ### Issues & Blockers
 
 None currently.
 
 ### Notes for Next Session
 
-- Begin Phase 6: Extract Overlays
-- Create ui/overlays/ directory structure
-- Extract MenuOverlay, DeckBuilderOverlay, SetupOverlay from ui.js
-- Maintain identical functionality for all overlays
+- Begin Phase 7: Extract Input Handling
+- Create ui/input/ directory structure
+- Extract input routing, drag-and-drop, click handlers from ui.js
+- Unify all input methods to use same controller actions
 
 ---
 
