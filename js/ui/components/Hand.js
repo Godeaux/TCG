@@ -31,6 +31,7 @@ export const updateHandOverlap = (handGrid) => {
   const cards = Array.from(handGrid.querySelectorAll(".card"));
   if (cards.length === 0) {
     handGrid.style.setProperty("--hand-overlap", "0px");
+    handGrid.style.setProperty("--mobile-card-scale", "1");
     handGrid.style.overflow = "visible";
     return;
   }
@@ -41,24 +42,54 @@ export const updateHandOverlap = (handGrid) => {
     return;
   }
 
+  // Check if we're on mobile portrait mode
+  const isMobilePortrait = window.matchMedia("(max-width: 767px) and (orientation: portrait)").matches;
+  const minVisibleWidth = 20; // Minimum visible pixels per card
+
   // Calculate total width if cards are laid out with no overlap
   const totalWidthNoOverlap = cardWidth * cards.length;
 
   // Only apply overlap if cards would overflow the container
   let overlap = 0;
+  let scale = 1;
+
   if (totalWidthNoOverlap > handWidth) {
     // Calculate how much overlap is needed to fit all cards
     overlap = (totalWidthNoOverlap - handWidth) / Math.max(1, cards.length - 1);
 
-    // Cap at 75% max overlap to keep cards readable
-    const maxOverlap = cardWidth * 0.75;
-    overlap = Math.min(overlap, maxOverlap);
+    // Calculate visible width per card with this overlap
+    const visibleWidth = cardWidth - overlap;
+
+    // If on mobile and visible width is less than minimum
+    if (isMobilePortrait && visibleWidth < minVisibleWidth && cards.length > 1) {
+      // Calculate what scale would be needed to show minVisibleWidth per card
+      // Total width needed = minVisibleWidth * (cards.length - 1) + cardWidth
+      const totalWidthNeeded = minVisibleWidth * (cards.length - 1) + cardWidth;
+
+      if (totalWidthNeeded > handWidth) {
+        // Scale down cards to fit
+        scale = handWidth / totalWidthNeeded;
+        const scaledCardWidth = cardWidth * scale;
+
+        // Recalculate overlap with scaled cards
+        const scaledTotalWidth = scaledCardWidth * cards.length;
+        overlap = (scaledTotalWidth - handWidth) / Math.max(1, cards.length - 1);
+      } else {
+        // No scaling needed, just set overlap to show minVisibleWidth
+        overlap = cardWidth - minVisibleWidth;
+      }
+    } else {
+      // Cap at 75% max overlap to keep cards readable (non-mobile or acceptable overlap)
+      const maxOverlap = cardWidth * 0.75;
+      overlap = Math.min(overlap, maxOverlap);
+    }
   }
 
   handGrid.style.setProperty("--hand-overlap", `${overlap}px`);
+  handGrid.style.setProperty("--mobile-card-scale", `${scale}`);
   handGrid.style.overflow = "visible";
 
-  console.log(`📊 Hand overlap: ${overlap.toFixed(1)}px (${cards.length} cards, card width: ${cardWidth.toFixed(1)}px, total needed: ${totalWidthNoOverlap.toFixed(1)}px, container: ${handWidth.toFixed(1)}px)`);
+  console.log(`📊 Hand overlap: ${overlap.toFixed(1)}px, scale: ${scale.toFixed(2)}x (${cards.length} cards, card width: ${cardWidth.toFixed(1)}px, visible: ${(cardWidth * scale - overlap).toFixed(1)}px, container: ${handWidth.toFixed(1)}px)`);
 };
 
 /**

@@ -5324,6 +5324,36 @@ const setupTouchEvents = () => {
   let currentTouchPos = { x: 0, y: 0 };
   let isDragging = false;
   let verticalDragThreshold = 30; // pixels to move upward before dragging to play
+  let dragPreview = null; // Ghost element for mobile dragging
+
+  const createDragPreview = (card, x, y) => {
+    // Clone the card element for the drag preview
+    const preview = card.cloneNode(true);
+    preview.classList.add('mobile-drag-preview');
+    preview.style.position = 'fixed';
+    preview.style.left = `${x}px`;
+    preview.style.top = `${y}px`;
+    preview.style.transform = 'translate(-50%, -50%)';
+    preview.style.opacity = '0.7';
+    preview.style.pointerEvents = 'none';
+    preview.style.zIndex = '10000';
+    preview.style.width = `${card.offsetWidth}px`;
+    preview.style.height = `${card.offsetHeight}px`;
+    document.body.appendChild(preview);
+    return preview;
+  };
+
+  const updateDragPreviewPosition = (preview, x, y) => {
+    if (!preview) return;
+    preview.style.left = `${x}px`;
+    preview.style.top = `${y}px`;
+  };
+
+  const removeDragPreview = (preview) => {
+    if (preview && preview.parentNode) {
+      preview.parentNode.removeChild(preview);
+    }
+  };
 
   const getCardAtPosition = (x, y) => {
     const handGrid = document.getElementById('active-hand');
@@ -5398,6 +5428,21 @@ const setupTouchEvents = () => {
       isDragging = true;
       touchedCard.classList.add('dragging');
 
+      // Create drag preview
+      dragPreview = createDragPreview(touchedCard, touch.clientX, touch.clientY);
+
+      // Allow overflow on hand containers for mobile dragging
+      const handGrid = document.getElementById('active-hand');
+      if (handGrid) {
+        handGrid.classList.add('is-dragging');
+        const handPanel = handGrid.closest('.hand-panel');
+        const handContainer = handGrid.closest('.hand-container');
+        const centerColumn = handGrid.closest('.battlefield-center-column');
+        if (handPanel) handPanel.classList.add('is-dragging');
+        if (handContainer) handContainer.classList.add('is-dragging');
+        if (centerColumn) centerColumn.classList.add('is-dragging');
+      }
+
       // Trigger dragstart event for existing drag-and-drop logic
       const dragStartEvent = new DragEvent('dragstart', {
         bubbles: true,
@@ -5415,6 +5460,9 @@ const setupTouchEvents = () => {
     }
 
     if (isDragging) {
+      // Update drag preview position
+      updateDragPreviewPosition(dragPreview, touch.clientX, touch.clientY);
+
       // Update visual feedback for drag targets
       const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
       updateDragVisuals(elementBelow);
@@ -5428,25 +5476,49 @@ const setupTouchEvents = () => {
       const touch = e.changedTouches[0];
       const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
 
-      // Trigger drop event for existing drag-and-drop logic
-      if (elementBelow) {
-        const dropEvent = new DragEvent('drop', {
-          bubbles: true,
-          cancelable: true,
-          dataTransfer: new DataTransfer()
-        });
-        elementBelow.dispatchEvent(dropEvent);
-      }
+      // Handle drop directly instead of triggering events
+      if (elementBelow && touchedCard.dataset.instanceId) {
+        const card = getCardFromInstanceId(touchedCard.dataset.instanceId, latestState);
+        if (card) {
+          const dropTarget = elementBelow.closest('.field-slot, .player-badge, .card');
 
-      // Trigger dragend event
-      const dragEndEvent = new DragEvent('dragend', {
-        bubbles: true,
-        cancelable: true
-      });
-      touchedCard.dispatchEvent(dragEndEvent);
+          if (dropTarget?.classList.contains('field-slot')) {
+            // Handle dropping on field slot (play card)
+            handleFieldDrop(card, dropTarget);
+          } else if (dropTarget?.classList.contains('player-badge')) {
+            // Handle dropping on player (attack player)
+            handlePlayerDrop(card, dropTarget);
+          } else if (dropTarget?.classList.contains('card')) {
+            // Handle dropping on card (attack creature or consumption)
+            const targetCard = getCardFromInstanceId(dropTarget.dataset.instanceId, latestState);
+            if (targetCard) {
+              handleCreatureDrop(card, targetCard);
+            }
+          } else {
+            // Invalid drop - just clear
+            revertCardToOriginalPosition();
+          }
+        }
+      }
 
       touchedCard.classList.remove('dragging');
       clearDragVisuals();
+
+      // Remove drag preview
+      removeDragPreview(dragPreview);
+      dragPreview = null;
+
+      // Remove is-dragging class from containers
+      const handGrid = document.getElementById('active-hand');
+      if (handGrid) {
+        handGrid.classList.remove('is-dragging');
+        const handPanel = handGrid.closest('.hand-panel');
+        const handContainer = handGrid.closest('.hand-container');
+        const centerColumn = handGrid.closest('.battlefield-center-column');
+        if (handPanel) handPanel.classList.remove('is-dragging');
+        if (handContainer) handContainer.classList.remove('is-dragging');
+        if (centerColumn) centerColumn.classList.remove('is-dragging');
+      }
     }
 
     touchedCard = null;
@@ -5457,6 +5529,23 @@ const setupTouchEvents = () => {
     if (touchedCard) {
       touchedCard.classList.remove('dragging');
       clearDragVisuals();
+
+      // Remove drag preview
+      removeDragPreview(dragPreview);
+      dragPreview = null;
+
+      // Remove is-dragging class from containers
+      const handGrid = document.getElementById('active-hand');
+      if (handGrid) {
+        handGrid.classList.remove('is-dragging');
+        const handPanel = handGrid.closest('.hand-panel');
+        const handContainer = handGrid.closest('.hand-container');
+        const centerColumn = handGrid.closest('.battlefield-center-column');
+        if (handPanel) handPanel.classList.remove('is-dragging');
+        if (handContainer) handContainer.classList.remove('is-dragging');
+        if (centerColumn) centerColumn.classList.remove('is-dragging');
+      }
+
       touchedCard = null;
       isDragging = false;
     }

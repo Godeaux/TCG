@@ -2499,8 +2499,16 @@ button {
     overflow-x: hidden; /* Clip cards that extend beyond edges */
   }
 
+  .hand-panel.is-dragging {
+    overflow: visible !important; /* Allow cards to be visible when dragging */
+  }
+
   .hand-container {
     overflow-x: hidden !important; /* Override visible overflow on mobile */
+  }
+
+  .hand-container.is-dragging {
+    overflow: visible !important; /* Allow cards to be visible when dragging */
   }
 
   .hand-grid {
@@ -2508,13 +2516,22 @@ button {
     padding: 0 clamp(8px, 2vw, 16px); /* Add padding to prevent edge clipping */
   }
 
+  .hand-grid.is-dragging {
+    overflow: visible !important; /* Allow cards to be visible when dragging */
+  }
+
+  .battlefield-center-column.is-dragging {
+    overflow: visible !important; /* Allow cards to be visible when dragging */
+  }
+
   .hand-grid .card {
     width: clamp(140px, 35vw, 200px);
     margin-left: calc(var(--hand-overlap) * -2);
+    transform: translateY(8px) scale(calc(0.98 * var(--mobile-card-scale, 1)));
   }
 
   .hand-grid .card.hand-focus {
-    transform: translateY(-40px) scale(1.2);
+    transform: translateY(-40px) scale(calc(1.2 * var(--mobile-card-scale, 1)));
   }
 
   .card-inspector-panel,
