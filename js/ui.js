@@ -99,6 +99,14 @@ import {
   updateInputCallbacks,
 } from "./ui/input/index.js";
 
+// Battle effects (extracted module)
+import {
+  initBattleEffects,
+  processVisualEffects,
+  markEffectProcessed,
+  playAttackEffect,
+} from "./ui/effects/index.js";
+
 // Network serialization (extracted module)
 // Note: applyLobbySyncPayload is defined locally because it needs UI-specific
 // callbacks (checkAndRecoverSetupState, latestCallbacks.onUpdate, etc.)
@@ -171,9 +179,6 @@ const loginError = document.getElementById("login-error");
 const lobbyCodeInput = document.getElementById("lobby-code");
 const lobbyError = document.getElementById("lobby-error");
 
-// Battle effects layer (used for combat animations)
-const battleEffectsLayer = document.getElementById("battle-effects");
-
 let pendingConsumption = null;
 let pendingAttack = null;
 let trapWaitingPanelActive = false;
@@ -194,8 +199,7 @@ let profileLoaded = false;
 let activeLobbyId = null;
 let lobbyRefreshTimeout = null;
 let lobbyRefreshInFlight = false;
-const processedVisualEffects = new Map();
-const VISUAL_EFFECT_TTL_MS = 9000;
+let battleEffectsInitialized = false;
 
 // ============================================================================
 // SERIALIZATION
@@ -420,149 +424,6 @@ const getFieldSlotElement = (state, ownerIndex, slotIndex) => {
     return null;
   }
   return row.querySelector(`.field-slot[data-slot="${slotIndex}"]`);
-};
-
-const createDamagePop = (target, amount) => {
-  if (!target || amount <= 0) {
-    return;
-  }
-  const pop = document.createElement("div");
-  pop.className = "damage-pop";
-  pop.textContent = `-${amount}`;
-  target.appendChild(pop);
-  pop.addEventListener("animationend", () => pop.remove());
-};
-
-const createImpactRing = (targetRect, layerRect) => {
-  if (!battleEffectsLayer || !targetRect || !layerRect) {
-    return;
-  }
-  const ring = document.createElement("div");
-  ring.className = "impact-ring";
-  ring.style.left = `${targetRect.left - layerRect.left + targetRect.width / 2}px`;
-  ring.style.top = `${targetRect.top - layerRect.top + targetRect.height / 2}px`;
-  battleEffectsLayer.appendChild(ring);
-  ring.addEventListener("animationend", () => ring.remove());
-};
-
-const markEffectProcessed = (effectId, createdAt) => {
-  processedVisualEffects.set(effectId, createdAt ?? Date.now());
-};
-
-const pruneProcessedEffects = () => {
-  const now = Date.now();
-  processedVisualEffects.forEach((timestamp, effectId) => {
-    if (now - timestamp > VISUAL_EFFECT_TTL_MS) {
-      processedVisualEffects.delete(effectId);
-    }
-  });
-};
-
-const playAttackEffect = (effect, state) => {
-  if (!battleEffectsLayer) {
-    return;
-  }
-  const attackerElement = effect.attackerId
-    ? document.querySelector(`.card[data-instance-id="${effect.attackerId}"]`)
-    : null;
-  const attackerSlotElement = getFieldSlotElement(
-    state,
-    effect.attackerOwnerIndex ?? -1,
-    effect.attackerSlotIndex ?? -1
-  );
-  const targetElement =
-    effect.targetType === "player"
-      ? getPlayerBadgeByIndex(effect.targetPlayerIndex)
-      : effect.defenderId
-      ? document.querySelector(`.card[data-instance-id="${effect.defenderId}"]`)
-      : null;
-  const defenderSlotElement =
-    effect.targetType === "creature"
-      ? getFieldSlotElement(state, effect.defenderOwnerIndex ?? -1, effect.defenderSlotIndex ?? -1)
-      : null;
-  if (!attackerElement || !targetElement) {
-    if (!attackerElement && !attackerSlotElement) {
-      return;
-    }
-    if (!targetElement && !defenderSlotElement) {
-      return;
-    }
-  }
-  const layerRect = battleEffectsLayer.getBoundingClientRect();
-  const attackerRect = (attackerElement ?? attackerSlotElement)?.getBoundingClientRect();
-  const targetRect = (targetElement ?? defenderSlotElement)?.getBoundingClientRect();
-  if (!layerRect.width || !layerRect.height) {
-    return;
-  }
-
-  const ghost = attackerElement ? attackerElement.cloneNode(true) : document.createElement("div");
-  ghost.classList.add("attack-ghost");
-  ghost.classList.toggle("attack-ghost--slot", !attackerElement);
-  ghost.querySelectorAll?.(".card-actions").forEach((node) => node.remove());
-  ghost.style.width = `${attackerRect.width}px`;
-  ghost.style.height = `${attackerRect.height}px`;
-  ghost.style.left = `${attackerRect.left - layerRect.left + attackerRect.width / 2}px`;
-  ghost.style.top = `${attackerRect.top - layerRect.top + attackerRect.height / 2}px`;
-  battleEffectsLayer.appendChild(ghost);
-
-  const deltaX = targetRect.left - attackerRect.left + (targetRect.width - attackerRect.width) / 2;
-  const deltaY = targetRect.top - attackerRect.top + (targetRect.height - attackerRect.height) / 2;
-  const animation = ghost.animate(
-    [
-      { transform: "translate(-50%, -50%) scale(1)", opacity: 0.95 },
-      { transform: "translate(-50%, -50%) scale(1.08)", opacity: 1, offset: 0.7 },
-      {
-        transform: `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(0.95)`,
-        opacity: 0.2,
-      },
-    ],
-    {
-      duration: 420,
-      easing: "cubic-bezier(0.2, 0.85, 0.35, 1)",
-    }
-  );
-
-  const finishImpact = () => {
-    ghost.remove();
-    if (targetElement) {
-      targetElement.classList.add("card-hit");
-      setTimeout(() => targetElement.classList.remove("card-hit"), 380);
-    }
-    createImpactRing(targetRect, layerRect);
-    if (effect.damageToTarget) {
-      createDamagePop(targetElement ?? defenderSlotElement, effect.damageToTarget);
-    }
-    if (effect.damageToAttacker) {
-      createDamagePop(attackerElement ?? attackerSlotElement, effect.damageToAttacker);
-    }
-  };
-
-  animation.addEventListener("finish", finishImpact);
-};
-
-const processVisualEffects = (state) => {
-  if (!state?.visualEffects?.length) {
-    pruneProcessedEffects();
-    return;
-  }
-  const now = Date.now();
-  state.visualEffects.forEach((effect) => {
-    if (!effect?.id) {
-      return;
-    }
-    const createdAt = effect.createdAt ?? now;
-    if (now - createdAt > VISUAL_EFFECT_TTL_MS) {
-      return;
-    }
-    if (processedVisualEffects.has(effect.id)) {
-      return;
-    }
-    markEffectProcessed(effect.id, createdAt);
-    if (effect.type === "attack") {
-      requestAnimationFrame(() => playAttackEffect(effect, state));
-    }
-  });
-  pruneProcessedEffects();
 };
 
 const setMenuError = (state, message) => {
@@ -3111,6 +2972,14 @@ export const renderGame = (state, callbacks = {}) => {
   } else {
     updateInputState(state);
     updateInputCallbacks(callbacks);
+  }
+
+  // Initialize battle effects module
+  if (!battleEffectsInitialized) {
+    initBattleEffects({
+      getLocalPlayerIndex: (s) => getLocalPlayerIndex(s),
+    });
+    battleEffectsInitialized = true;
   }
 
   ensureProfileLoaded(state);
