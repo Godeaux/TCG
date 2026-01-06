@@ -2490,7 +2490,17 @@ button {
   }
 
   .hand-panel {
-    min-height: clamp(90px, 12vh, 120px);
+    min-height: clamp(120px, 20vh, 200px);
+    max-height: 45vh;
+  }
+
+  .hand-grid .card {
+    width: clamp(140px, 35vw, 200px);
+    margin-left: calc(var(--hand-overlap) * -2);
+  }
+
+  .hand-grid .card.hand-focus {
+    transform: translateY(-40px) scale(1.2);
   }
 
   .card-inspector-panel,

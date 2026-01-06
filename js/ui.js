@@ -5200,28 +5200,59 @@ const setupMobileNavigation = () => {
 const setupTouchEvents = () => {
   let touchedCard = null;
   let touchStartPos = { x: 0, y: 0 };
+  let currentTouchPos = { x: 0, y: 0 };
   let isDragging = false;
-  let dragThreshold = 10; // pixels to move before considering it a drag
+  let verticalDragThreshold = 30; // pixels to move upward before dragging to play
+
+  const getCardAtPosition = (x, y) => {
+    const handGrid = document.getElementById('active-hand');
+    if (!handGrid) return null;
+
+    const cards = Array.from(handGrid.querySelectorAll('.card'));
+    let closestCard = null;
+    let closestDistance = Infinity;
+
+    cards.forEach(card => {
+      const rect = card.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const dx = x - centerX;
+      const dy = y - centerY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestCard = card;
+      }
+    });
+
+    return closestCard;
+  };
 
   const handleTouchStart = (e) => {
-    const card = e.target.closest('.card');
-    if (!card || card.classList.contains('back')) return;
-
-    // Only handle cards in hand
-    const handGrid = card.closest('#active-hand');
+    const handGrid = document.getElementById('active-hand');
     if (!handGrid) return;
 
-    touchedCard = card;
+    // Check if touch is within hand area
+    const touch = e.touches[0];
+    const handRect = handGrid.getBoundingClientRect();
+    if (touch.clientY < handRect.top || touch.clientY > handRect.bottom) return;
+
     touchStartPos = {
-      x: e.touches[0].clientX,
-      y: e.touches[0].clientY
+      x: touch.clientX,
+      y: touch.clientY
     };
+    currentTouchPos = { ...touchStartPos };
     isDragging = false;
 
-    // Focus the card on touch (like hover)
-    focusCardElement(card);
+    // Find closest card and focus it
+    const card = getCardAtPosition(touch.clientX, touch.clientY);
+    if (card && !card.classList.contains('back')) {
+      touchedCard = card;
+      focusCardElement(card);
+    }
 
-    // Prevent default to avoid scrolling while touching card
+    // Prevent default to avoid scrolling while touching card area
     e.preventDefault();
   };
 
@@ -5229,12 +5260,17 @@ const setupTouchEvents = () => {
     if (!touchedCard) return;
 
     const touch = e.touches[0];
-    const dx = touch.clientX - touchStartPos.x;
-    const dy = touch.clientY - touchStartPos.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
+    currentTouchPos = {
+      x: touch.clientX,
+      y: touch.clientY
+    };
 
-    // Start dragging if moved beyond threshold
-    if (!isDragging && distance > dragThreshold) {
+    const dx = currentTouchPos.x - touchStartPos.x;
+    const dy = currentTouchPos.y - touchStartPos.y;
+
+    // Check if moving vertically upward past threshold
+    if (!isDragging && dy < -verticalDragThreshold) {
+      // Start dragging to play
       isDragging = true;
       touchedCard.classList.add('dragging');
 
@@ -5245,6 +5281,13 @@ const setupTouchEvents = () => {
         dataTransfer: new DataTransfer()
       });
       touchedCard.dispatchEvent(dragStartEvent);
+    } else if (!isDragging) {
+      // Horizontal browsing - update focused card based on position
+      const newCard = getCardAtPosition(currentTouchPos.x, currentTouchPos.y);
+      if (newCard && newCard !== touchedCard && !newCard.classList.contains('back')) {
+        touchedCard = newCard;
+        focusCardElement(newCard);
+      }
     }
 
     if (isDragging) {
