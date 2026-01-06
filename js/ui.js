@@ -1674,10 +1674,10 @@ const renderCardInnerHtml = (card, { showEffectSummary } = {}) => {
     ? `<div class="card-effect"><strong>Effect:</strong> ${effectSummary}</div>`
     : "";
 
-  // Card image with error handling (hides on 404)
+  // Card image with error handling (hides entire container on 404)
   const imageHtml = hasCardImage(card.id)
-    ? `<img src="${getCardImagePath(card.id)}" alt="${card.name}" class="card-image"
-         onerror="this.style.display='none';">`
+    ? `<img src="${getCardImagePath(card.id)}" alt="" class="card-image"
+         onerror="this.parentElement.style.display='none';">`
     : '';
   
   return `
@@ -2629,8 +2629,8 @@ const setInspectorContentFor = (panel, card, showImage = true) => {
 
   // Inspector card image with error handling (hides on 404)
   const inspectorImageHtml = showImage && hasCardImage(card.id)
-    ? `<img src="${getCardImagePath(card.id)}" alt="${card.name}" class="inspector-card-image-img"
-         onerror="this.style.display='none';">`
+    ? `<img src="${getCardImagePath(card.id)}" alt="" class="inspector-card-image-img"
+         onerror="this.parentElement.style.display='none';">`
     : '';
   
   // Build layout based on whether we show image
