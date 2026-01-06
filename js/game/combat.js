@@ -9,10 +9,10 @@ import {
   hasAmbush,
   areAbilitiesActive,
   hasToxic,
-} from "./keywords.js";
-import { logMessage } from "./state/gameState.js";
+} from "../keywords.js";
+import { logMessage } from "../state/gameState.js";
 import { resolveEffectResult } from "./effects.js";
-import { isCreatureCard } from "./cardTypes.js";
+import { isCreatureCard } from "../cardTypes.js";
 
 const canAttackPlayer = (attacker, state) => {
   if (hasHaste(attacker)) {

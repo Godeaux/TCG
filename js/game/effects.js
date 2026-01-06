@@ -1,8 +1,8 @@
-import { drawCard, logMessage } from "./state/gameState.js";
-import { createCardInstance } from "./cardTypes.js";
+import { drawCard, logMessage } from "../state/gameState.js";
+import { createCardInstance } from "../cardTypes.js";
 import { consumePrey } from "./consumption.js";
-import { isImmune, areAbilitiesActive } from "./keywords.js";
-import { getTokenById } from "./cards/index.js";
+import { isImmune, areAbilitiesActive } from "../keywords.js";
+import { getTokenById } from "../cards/index.js";
 
 const findCardOwnerIndex = (state, card) =>
   state.players.findIndex((player) =>

@@ -14,7 +14,7 @@
  */
 
 import { deckCatalogs } from '../../cards.js';
-import { logMessage } from '../../gameState.js';
+import { logMessage } from '../../state/gameState.js';
 import { buildLobbySyncPayload, sendLobbyBroadcast } from '../../network/index.js';
 import { getLocalPlayerIndex } from '../../state/selectors.js';
 import { renderDeckCard, renderCardStats, getCardEffectSummary } from '../components/Card.js';

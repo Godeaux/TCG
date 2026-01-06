@@ -1,5 +1,5 @@
-import { logMessage } from "./state/gameState.js";
-import { isEdible } from "./keywords.js";
+import { logMessage } from "../state/gameState.js";
+import { isEdible } from "../keywords.js";
 
 const getNutritionValue = (card) => {
   if (card.type === "Predator" && isEdible(card)) {
