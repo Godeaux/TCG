@@ -17,8 +17,8 @@
 import { getCardDefinitionById } from '../cards/registry.js';
 import { createCardInstance } from '../cardTypes.js';
 import { getLocalPlayerIndex } from '../state/selectors.js';
-import { stripAbilities } from '../effects.js';
-import { cleanupDestroyed } from '../combat.js';
+import { stripAbilities } from '../game/effects.js';
+import { cleanupDestroyed } from '../game/combat.js';
 
 // ============================================================================
 // CARD SERIALIZATION

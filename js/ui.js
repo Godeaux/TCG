@@ -6,15 +6,15 @@ import {
   queueVisualEffect,
   getTrapsFromHand,
 } from "./state/gameState.js";
-import { canPlayCard, cardLimitAvailable, finalizeEndPhase } from "./turnManager.js";
+import { canPlayCard, cardLimitAvailable, finalizeEndPhase } from "./game/turnManager.js";
 import { createCardInstance } from "./cardTypes.js";
-import { consumePrey } from "./consumption.js";
+import { consumePrey } from "./game/consumption.js";
 import {
   getValidTargets,
   resolveCreatureCombat,
   resolveDirectAttack,
   cleanupDestroyed,
-} from "./combat.js";
+} from "./game/combat.js";
 import {
   isFreePlay,
   isEdible,
@@ -23,7 +23,7 @@ import {
   isHarmless,
   KEYWORD_DESCRIPTIONS,
 } from "./keywords.js";
-import { resolveEffectResult, stripAbilities } from "./effects.js";
+import { resolveEffectResult, stripAbilities } from "./game/effects.js";
 import { deckCatalogs, getCardDefinitionById, resolveCardEffect } from "./cards/index.js";
 import { getCardImagePath, hasCardImage, getCachedCardImage, isCardImageCached, preloadCardImages } from "./cardImages.js";
 

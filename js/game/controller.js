@@ -46,9 +46,9 @@ import {
 } from '../state/gameState.js';
 import { resolveCardEffect, getCardDefinitionById } from '../cards/index.js';
 import { isCreatureCard, createCardInstance } from '../cardTypes.js';
-import { resolveEffectResult as applyEffect } from '../effects.js';
+import { resolveEffectResult as applyEffect } from './effects.js';
 import { isFreePlay, isEdible } from '../keywords.js';
-import { advancePhase, endTurn } from '../turnManager.js';
+import { advancePhase, endTurn } from './turnManager.js';
 
 // ============================================================================
 // GAME CONTROLLER CLASS

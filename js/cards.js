@@ -1,6 +1,6 @@
 import { isInvisible } from "./keywords.js";
 import { isCreatureCard } from "./cardTypes.js";
-import { findCreatureOwnerIndex } from "./effects.js";
+import { findCreatureOwnerIndex } from "./game/effects.js";
 
 const flyingFishToken = {
   id: "token-flying-fish",
