@@ -551,7 +551,16 @@
       "type": "Spell",
       "effectText": "Creatures gain +2/+2.",
       "effects": {
-        "effect": "fish-food-team-buff-effect"
+        "effect": {
+          "type": "buffStats",
+          "params": {
+            "targetType": "all-friendly",
+            "stats": {
+              "attack": 2,
+              "health": 2
+            }
+          }
+        }
       }
     },
     {
@@ -560,7 +569,12 @@
       "type": "Spell",
       "effectText": "Kill animals.",
       "effects": {
-        "effect": "flood-kill-all-effect"
+        "effect": {
+          "type": "killAll",
+          "params": {
+            "targetType": "all"
+          }
+        }
       }
     },
     {
@@ -678,7 +692,12 @@
       "type": "Free Spell",
       "effectText": "Kill enemies.",
       "effects": {
-        "effect": "scale-arrows-kill-all-enemies-effect"
+        "effect": {
+          "type": "killAll",
+          "params": {
+            "targetType": "all-enemy"
+          }
+        }
       }
     }
   ]
