@@ -1708,21 +1708,8 @@ const renderCardInnerHtml = (card, { showEffectSummary } = {}) => {
     ? `<div class="card-effect"><strong>Effect:</strong> ${effectSummary}</div>`
     : "";
   
-  // Check if card has an image
-  const hasImage = hasCardImage(card.id);
-  const isCached = hasImage && isCardImageCached(card.id);
-  const cachedImage = hasImage ? getCachedCardImage(card.id) : null;
-  
-  // Generate image HTML - use cached image if available, otherwise preload
-  const imageHtml = hasImage && (isCached || cachedImage) 
-    ? `<img src="${getCardImagePath(card.id)}" alt="${card.name}" class="card-image" style="display: ${cachedImage ? 'block' : 'none'};" onload="this.style.display='block'; this.nextElementSibling.style.display='none';" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-       <div class="card-image-placeholder" style="display: ${cachedImage ? 'none' : 'flex'};">🎨</div>`
-    : hasImage ? `<div class="card-image-placeholder">🎨</div>` : '';
-  
-  // Preload image if not cached
-  if (hasImage && !isCached) {
-    preloadCardImages([card.id]);
-  }
+  // Disable image loading - only show placeholder (prevents 404 spam)
+  const imageHtml = '';
   
   return `
     <div class="card-name">${card.name}</div>
@@ -2611,21 +2598,8 @@ const setInspectorContentFor = (panel, card, showImage = true) => {
     ? `<div class="effect"><strong>Effect:</strong> ${effectSummary}</div>`
     : "";
   
-  // Check if card has an image and if we should show it
-  const hasImage = showImage && hasCardImage(card.id);
-  const isCached = hasImage && isCardImageCached(card.id);
-  const cachedImage = hasImage ? getCachedCardImage(card.id) : null;
-  
-  // Generate inspector image HTML only if showImage is true
-  const inspectorImageHtml = showImage && hasImage && (isCached || cachedImage) 
-    ? `<img src="${getCardImagePath(card.id)}" alt="${card.name}" class="inspector-card-image-img" style="display: ${cachedImage ? 'block' : 'none'};" onload="this.style.display='block'; this.nextElementSibling.style.display='none';" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-       <div class="inspector-image-placeholder" style="display: ${cachedImage ? 'none' : 'flex'};">🎨</div>`
-    : showImage && hasImage ? `<div class="inspector-image-placeholder">🎨</div>` : '';
-  
-  // Preload image if not cached and we're showing it
-  if (showImage && hasImage && !isCached) {
-    preloadCardImages([card.id]);
-  }
+  // Disable image loading - only show placeholder (prevents 404 spam)
+  const inspectorImageHtml = '';
   
   // Build layout based on whether we show image
   if (showImage) {
@@ -2858,62 +2832,35 @@ const renderHand = (state, onSelect, onUpdate, hideCards) => {
 
   // Force overflow to visible to prevent card cutoff - set immediately and persistently
   const setOverflowVisible = () => {
-    console.log('🔧 Setting overflow to visible...');
-
-    console.log('Before - handGrid overflow:', window.getComputedStyle(handGrid).overflow);
     handGrid.style.overflow = 'visible';
-    console.log('After - handGrid overflow:', window.getComputedStyle(handGrid).overflow);
 
     const handPanel = handGrid.closest('.hand-panel');
     if (handPanel) {
-      console.log('Before - handPanel overflow:', window.getComputedStyle(handPanel).overflow);
       handPanel.style.overflow = 'visible';
-      console.log('After - handPanel overflow:', window.getComputedStyle(handPanel).overflow);
     }
 
     const handContainer = handGrid.closest('.hand-container');
     if (handContainer) {
-      console.log('Before - handContainer overflow:', window.getComputedStyle(handContainer).overflow);
       handContainer.style.overflow = 'visible';
-      console.log('After - handContainer overflow:', window.getComputedStyle(handContainer).overflow);
     }
 
     const centerColumn = handGrid.closest('.battlefield-center-column');
     if (centerColumn) {
-      console.log('Before - centerColumn overflow:', window.getComputedStyle(centerColumn).overflow);
       centerColumn.style.overflow = 'visible';
-      console.log('After - centerColumn overflow:', window.getComputedStyle(centerColumn).overflow);
     }
-
-    console.log('✅ Overflow setting complete');
   };
 
   // Set immediately
-  console.log('⏰ Immediate setOverflowVisible call');
   setOverflowVisible();
 
   // Set again after a delay to ensure it sticks
   requestAnimationFrame(() => {
-    console.log('⏰ requestAnimationFrame setOverflowVisible call');
     setOverflowVisible();
   });
 
   setTimeout(() => {
-    console.log('⏰ setTimeout(100ms) setOverflowVisible call');
     setOverflowVisible();
   }, 100);
-
-  // Monitor for changes to overflow
-  setTimeout(() => {
-    console.log('🔍 Final check after 500ms:');
-    console.log('handGrid overflow:', window.getComputedStyle(handGrid).overflow);
-    const handPanel = handGrid.closest('.hand-panel');
-    if (handPanel) console.log('handPanel overflow:', window.getComputedStyle(handPanel).overflow);
-    const handContainer = handGrid.closest('.hand-container');
-    if (handContainer) console.log('handContainer overflow:', window.getComputedStyle(handContainer).overflow);
-    const centerColumn = handGrid.closest('.battlefield-center-column');
-    if (centerColumn) console.log('centerColumn overflow:', window.getComputedStyle(centerColumn).overflow);
-  }, 500);
 };
 
 const renderSelectionPanel = ({ title, items, onConfirm, confirmLabel = "Confirm" }) => {
