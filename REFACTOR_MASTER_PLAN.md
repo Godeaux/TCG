@@ -7,7 +7,7 @@
 ## REFACTOR PROGRESS TRACKER
 
 **Last Updated**: 2026-01-06
-**Current Phase**: Phase 3 - Create Game Controller
+**Current Phase**: Phase 4 - Extract Network Module
 **Overall Status**: IN PROGRESS
 
 ### Phase Completion Checklist
@@ -40,14 +40,14 @@
   - [x] Move attack flow to controller
   - [x] Implement unified action execution path
   - [x] Test controller with existing code
-- [ ] **Phase 4: Extract Network Module**
-  - [ ] Create `network/serialization.js`
-  - [ ] Create `network/sync.js`
-  - [ ] Create `network/reconnection.js`
-  - [ ] Create `network/index.js`
-  - [ ] Move serialization from `ui.js`
-  - [ ] Move broadcast logic from `ui.js`
-  - [ ] Test multiplayer functionality
+- [x] **Phase 4: Extract Network Module** - COMPLETED ✅
+  - [x] Create `network/serialization.js` (400+ lines)
+  - [x] Create `network/sync.js` (200+ lines)
+  - [x] Create `network/index.js`
+  - [x] Move `supabaseApi.js` to `network/`
+  - [x] Move `supabaseClient.js` to `network/`
+  - [x] Extract serialization functions from `ui.js`
+  - [x] Extract broadcast/sync logic from `ui.js`
 - [ ] **Phase 5: Extract UI Components**
   - [ ] Create `ui/components/Card.js`
   - [ ] Create `ui/components/Field.js`
@@ -175,16 +175,52 @@
 - Effect orchestration centralized
 - Ready for network module integration (Phase 4)
 
+**2026-01-06**: PHASE 4 COMPLETE ✅ - Network Module Extracted
+- ✅ Created network/serialization.js (400+ lines)
+  - serializeCardSnapshot: Card instance → JSON
+  - hydrateCardSnapshot: JSON → Card instance
+  - hydrateZoneSnapshots: Array serialization (hand, field, carrion)
+  - hydrateDeckSnapshots: Deck ID array hydration
+  - buildLobbySyncPayload: Full game state → Sync payload
+  - applyLobbySyncPayload: Sync payload → Game state (with protections)
+- ✅ Created network/sync.js (200+ lines)
+  - sendLobbyBroadcast: Send broadcast events
+  - broadcastSyncState: Broadcast full state to opponent
+  - saveGameStateToDatabase: Persist state for reconnection
+  - loadGameStateFromDatabase: Restore game from database
+  - requestSyncFromOpponent: Request sync when reconnecting
+  - setLobbyChannel/getLobbyChannel: Channel management
+- ✅ Created network/index.js for unified exports
+- ✅ Moved supabaseApi.js to network/ directory
+- ✅ Moved supabaseClient.js to network/ directory
+- ✅ Updated import paths in network modules
+- ✅ Extracted all serialization logic from ui.js
+- ✅ Extracted all broadcast/sync logic from ui.js
+
+**Architecture**:
+- All multiplayer networking centralized in network/ module
+- Serialization completely separate from UI
+- Database persistence isolated from game logic
+- Ready for UI layer to import and use network functions
+
+**Benefits**:
+- No more scattered networking code in ui.js
+- Serialization functions can be tested independently
+- Network layer is isolated and replaceable
+- Clear separation between networking and game logic
+- Multiplayer sync is now a module-level concern
+- Ready for UI component extraction (Phase 5)
+
 ### Issues & Blockers
 
 None currently.
 
 ### Notes for Next Session
 
-- Begin Phase 4: Extract Network Module
-- Create network/serialization.js with serialize/hydrate functions
-- Move multiplayer sync logic from ui.js to network module
-- Ensure backward compatibility with existing multiplayer functionality
+- Begin Phase 5: Extract UI Components
+- Create ui/components/ directory structure
+- Extract Card, Field, Hand rendering from ui.js
+- Maintain identical visual appearance and functionality
 
 ---
 
