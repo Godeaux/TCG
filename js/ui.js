@@ -1868,11 +1868,13 @@ let draggedCard = null;
 let draggedCardElement = null;
 let originalParent = null;
 let originalIndex = -1;
+let currentDragTarget = null; // Track current hover target to prevent flickering
 
 const clearDragVisuals = () => {
   document.querySelectorAll('.valid-target, .invalid-target, .valid-drop-zone').forEach(el => {
     el.classList.remove('valid-target', 'invalid-target', 'valid-drop-zone');
   });
+  currentDragTarget = null;
 };
 
 const getCardFromInstanceId = (instanceId, state) => {
@@ -1915,20 +1917,16 @@ const isValidAttackTarget = (attacker, target, state) => {
 const handleDragStart = (event) => {
   const cardElement = event.target.closest('.draggable-card');
   if (!cardElement) return;
-  
+
   const instanceId = cardElement.dataset.instanceId;
   if (!instanceId) return;
-  
-  console.log('Drag start - instanceId:', instanceId);
-  
+
   draggedCardElement = cardElement;
   draggedCard = getCardFromInstanceId(instanceId, latestState);
-  
-  console.log('Drag start - found card:', draggedCard);
-  
+
   originalParent = cardElement.parentElement;
   originalIndex = Array.from(originalParent.children).indexOf(cardElement);
-  
+
   cardElement.classList.add('dragging');
   event.dataTransfer.effectAllowed = 'move';
   event.dataTransfer.setData('text/plain', instanceId);
@@ -1948,43 +1946,51 @@ const handleDragEnd = (event) => {
 const handleDragOver = (event) => {
   event.preventDefault();
   event.dataTransfer.dropEffect = 'move';
-  
+
   // Handle visual feedback when hovering over valid targets
   if (!draggedCardElement || !draggedCard || !latestState) return;
-  
+
   const target = event.target.closest('.field-slot, .player-badge, .card');
-  
+
+  // Only update visuals if target changed (prevents flickering)
+  if (target === currentDragTarget) {
+    return;
+  }
+
+  // Clear previous target visuals
   clearDragVisuals();
-  
-  if (target?.classList.contains('field-slot')) {
+  currentDragTarget = target;
+
+  if (!target) {
+    return;
+  }
+
+  if (target.classList.contains('field-slot')) {
     // Check if field slot is empty and valid for playing
     if (!target.firstChild && draggedCard.type !== 'Trap') {
       target.classList.add('valid-drop-zone');
-      console.log('Valid field slot target:', target);
     } else {
       target.classList.add('invalid-target');
     }
-  } else if (target?.classList.contains('player-badge')) {
+  } else if (target.classList.contains('player-badge')) {
     // Check if can attack this player (only during combat phase)
     const isCombatPhase = latestState.phase === "Combat";
     const playerIndex = parseInt(target.dataset.playerIndex);
     const targetPlayer = latestState.players[playerIndex];
     const attackerPlayer = latestState.players.find(p => p.field.includes(draggedCard));
-    
-    if (isCombatPhase && targetPlayer && attackerPlayer && attackerPlayer !== targetPlayer && 
+
+    if (isCombatPhase && targetPlayer && attackerPlayer && attackerPlayer !== targetPlayer &&
         (draggedCard.type === 'Predator' || draggedCard.type === 'Prey')) {
       target.classList.add('valid-drop-zone');
-      console.log('Valid player target:', targetPlayer.name);
     } else {
       target.classList.add('invalid-target');
     }
-  } else if (target?.classList.contains('card')) {
+  } else if (target.classList.contains('card')) {
     // Check if can attack this creature (only during combat phase)
     const isCombatPhase = latestState.phase === "Combat";
     const targetCard = getCardFromInstanceId(target.dataset.instanceId, latestState);
     if (isCombatPhase && targetCard && isValidAttackTarget(draggedCard, targetCard, latestState)) {
       target.classList.add('valid-target');
-      console.log('Valid creature target:', targetCard.name);
     } else {
       target.classList.add('invalid-target');
     }
