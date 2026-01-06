@@ -241,6 +241,31 @@ Already supported via `buffStats('all-friendly', { attack: 1, health: 0 })`
 
 ---
 
+### Batch 6: Special Composite Effects (COMPLETED ✅)
+
+**Date**: 2026-01-06
+
+**Migrated Effects**: 3 additional effects (23/43 total = 53%)
+
+**Cards Migrated**:
+1. **Celestial Eye Goldfish (onPlay)** - [draw(2), revealHand(3000ms)]
+2. **Golden Angelfish (onPlay)** - [draw(1), grantBarrier()]
+3. **Washout (spell)** - removeAbilitiesAll()
+
+**New Effect Primitives Added**:
+- `revealHand(durationMs)` - Reveal opponent's entire hand with a duration
+- `grantBarrier()` - Grant Barrier keyword to all friendly creatures
+- `removeAbilitiesAll()` - Strip abilities from all enemy creatures
+
+**Testing**: ✅ All three effects tested and working correctly
+
+**Cumulative Progress**:
+- Tokens: 11/11 (100%) ✅
+- **Fish: 23/43 (53%) - Simple + Special Composites Complete** ⏳
+- **Total: 34/262 effects (13%)**
+
+---
+
 ## Simple Fish Effects: COMPLETE ✅ (20/43)
 
 All straightforward effects that map directly to effect library primitives have been migrated!
@@ -259,7 +284,7 @@ All straightforward effects that map directly to effect library primitives have 
 
 ---
 
-## Complex Fish Effects: REMAINING (23/43)
+## Complex Fish Effects: REMAINING (20/43)
 
 These effects require additional infrastructure:
 
@@ -278,18 +303,16 @@ Require UI for player to choose targets/cards:
 - **Net** (spell): Select enemy prey to kill
 - **Edible** (spell): Select predator to grant Edible keyword
 
-### 2. **Special Composite Effects** (3 effects)
-Use non-primitive effects:
+### 2. **Special Composite Effects** (1 effect) ⏳
+~~Celestial Eye Goldfish~~ ✅, ~~Golden Angelfish~~ ✅, remaining:
 
-- **Celestial Eye Goldfish** (onPlay): draw 2 + revealHand (temp reveal with duration)
-- **Golden Angelfish** (onPlay): draw 1 + grantBarrier (special barrier granting)
 - **Golden Kingfish** (onPlay/discard): draw + empower predator with end-turn effect
 
 ### 3. **Damage Effects** (3 effects)
 Before-combat or complex damage:
 
-- **Rainbow Mantis Shrimp** (onBeforeCombat): Deal 3 damage before combat
-- **Electric Eel** (onBeforeCombat): Deal 2 damage before combat
+- **Rainbow Mantis Shrimp** (onBeforeCombat): Deal 3 damage before combat (selection)
+- **Electric Eel** (onBeforeCombat): Deal 2 damage before combat (selection)
 - **Shortfin Mako** (onConsume): Deal 3 damage to any target (selection)
 
 ### 4. **Choice Effects** (2 effects)
@@ -298,30 +321,32 @@ Player chooses one of multiple options:
 - **Cannibal Fish** (onPlay): Choose: summon Lancetfish OR gain +2/+2
 - **Angler** (spell): Choose: play prey OR add prey from deck to hand
 
-### 5. **Ability Manipulation** (3 effects)
-Strip/modify creature abilities:
+### 5. **Ability Manipulation** (2 effects) ⏳
+~~Washout~~ ✅, remaining:
 
-- **Washout** (spell): Remove all enemy abilities
-- **Undertow** (spell): Select enemy to strip abilities
+- **Undertow** (spell): Select enemy to strip abilities (selection + ability strip)
 - **Magnificent Sea Anemone** (field spell): End-turn summon effect
 
-### 6. **Trap Cards** (3 effects)
+### 6. **Trap Cards** (4 effects)
 Triggered by opponent actions:
 
 - **Cramp** (trap): When rival plays pred, it loses abilities
 - **Riptide** (trap): When rival plays prey, it loses abilities
 - **Maelstrom** (trap): Negate attack + AoE damage
-- **Harpoon** (spell): Damage + steal creature
+- **Harpoon** (spell): Damage + steal creature (selection)
 
 ---
 
 ## Recommendation for Complex Effects
 
-These 23 effects should be migrated AFTER:
-1. Building selection UI infrastructure
-2. Implementing choice UI system
-3. Creating special effect handlers for revealHand, grantBarrier, etc.
-4. Designing trap card effect format
+~~These 23 effects~~ **These 20 remaining effects** should be migrated AFTER:
+1. ~~Creating special effect handlers for revealHand, grantBarrier, etc.~~ ✅ **DONE in Batch 6**
+2. Building selection UI infrastructure (for 11+ selection-based effects)
+3. Implementing choice UI system (for 2 choice effects)
+4. Designing trap card effect format (for 4 trap cards)
+5. Creating empowerment/end-turn trigger system (Golden Kingfish, Magnificent Sea Anemone)
 
-For now, **MOVE TO PHASE 11 (REPTILES)** and apply lessons learned from simple fish effects to reptile cards. Return to complex fish effects after gaining more experience with other categories.
+**Progress**: 23/43 fish effects migrated (53%). Remaining 20 effects require UI infrastructure.
+
+For now, consider **MOVING TO PHASE 11 (REPTILES)** to apply lessons learned, or continue building selection/choice UI infrastructure to complete fish 100%.
 

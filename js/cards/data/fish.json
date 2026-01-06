@@ -51,7 +51,20 @@
       "keywords": [],
       "effectText": "Draw 2. Rival reveals hand.",
       "effects": {
-        "onPlay": "celestial-eye-goldfish-draw-reveal-onplay"
+        "onPlay": [
+          {
+            "type": "draw",
+            "params": {
+              "count": 2
+            }
+          },
+          {
+            "type": "revealHand",
+            "params": {
+              "durationMs": 3000
+            }
+          }
+        ]
       }
     },
     {
@@ -80,7 +93,18 @@
       "keywords": [],
       "effectText": "Draw 1. Creatures gain barrier.",
       "effects": {
-        "onPlay": "golden-angelfish-draw-barrier-onplay"
+        "onPlay": [
+          {
+            "type": "draw",
+            "params": {
+              "count": 1
+            }
+          },
+          {
+            "type": "grantBarrier",
+            "params": {}
+          }
+        ]
       }
     },
     {
@@ -630,7 +654,10 @@
       "type": "Spell",
       "effectText": "Enemies lose abilities.",
       "effects": {
-        "effect": "washout-strip-all-effect"
+        "effect": {
+          "type": "removeAbilitiesAll",
+          "params": {}
+        }
       }
     },
     {

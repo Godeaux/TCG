@@ -541,6 +541,65 @@ export const killAll = (targetType) => (context) => {
   return { killAllCreatures: targets };
 };
 
+/**
+ * Reveal opponent's entire hand with a duration
+ * @param {number} durationMs - Duration in milliseconds to show the hand
+ */
+export const revealHand = (durationMs = 3000) => ({ log, opponentIndex }) => {
+  log(`Rival's hand is revealed.`);
+  return { revealHand: { playerIndex: opponentIndex, durationMs } };
+};
+
+/**
+ * Grant Barrier keyword to all friendly creatures
+ */
+export const grantBarrier = () => ({ log, player }) => {
+  const creatures = player.field.filter(c => c);
+  if (creatures.length === 0) {
+    log(`No creatures to grant Barrier.`);
+    return {};
+  }
+  log(`All friendly creatures gain Barrier.`);
+  return { grantBarrier: { player } };
+};
+
+/**
+ * Remove abilities from a target creature
+ * @param {string} targetType - 'self' | 'target'
+ */
+export const removeAbilities = (targetType) => (context) => {
+  const { log, creature, target } = context;
+
+  if (targetType === 'self') {
+    log(`${creature.name} loses all abilities.`);
+    return { removeAbilities: creature };
+  } else if (targetType === 'target') {
+    if (!target) {
+      return {};
+    }
+    log(`${target.name} loses all abilities.`);
+    return { removeAbilities: target };
+  }
+
+  return {};
+};
+
+/**
+ * Remove abilities from all enemy creatures
+ */
+export const removeAbilitiesAll = () => (context) => {
+  const { log, opponent } = context;
+  const targets = opponent.field.filter(c => c && (c.type === 'Prey' || c.type === 'Predator' || c.type === 'prey' || c.type === 'predator'));
+
+  if (targets.length === 0) {
+    log(`No enemy creatures to strip abilities.`);
+    return {};
+  }
+
+  log(`All enemy creatures lose their abilities.`);
+  return { removeAbilitiesAll: targets };
+};
+
 // ============================================================================
 // EFFECT REGISTRY
 // ============================================================================
@@ -586,6 +645,10 @@ export const effectRegistry = {
   copyAbilities,
   stealCreature,
   killAll,
+  revealHand,
+  grantBarrier,
+  removeAbilities,
+  removeAbilitiesAll,
 };
 
 // ============================================================================
@@ -712,6 +775,18 @@ export const resolveEffect = (effectDef, context) => {
       break;
     case 'opponentHasCreatures':
       specificEffect = effectFn(params.minCount);
+      break;
+    case 'revealHand':
+      specificEffect = effectFn(params.durationMs);
+      break;
+    case 'grantBarrier':
+      specificEffect = effectFn();
+      break;
+    case 'removeAbilities':
+      specificEffect = effectFn(params.targetType);
+      break;
+    case 'removeAbilitiesAll':
+      specificEffect = effectFn();
       break;
     default:
       console.warn(`No parameter mapping for effect type: ${effectDef.type}`);
