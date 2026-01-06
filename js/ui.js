@@ -849,18 +849,7 @@ const mapDeckIdsToCards = (deckId, deckIds = []) => {
     .map((card) => ({ ...card }));
 };
 
-const findDeckCatalogId = (deckIds = []) => {
-  const ids = deckIds.filter(Boolean);
-  if (ids.length === 0) {
-    return "fish";
-  }
-  return (
-    Object.entries(deckCatalogs).find(([_, catalog]) => {
-      const catalogIds = new Set(catalog.map((card) => card.id));
-      return ids.every((id) => catalogIds.has(id));
-    })?.[0] ?? "fish"
-  );
-};
+// findDeckCatalogId moved to DeckBuilderOverlay.js
 
 
 // Add recovery mechanism for stuck dice rolling
@@ -1491,39 +1480,7 @@ const initHandPreview = () => {
 // renderDeckCard moved to: ./ui/components/Card.js
 // Import: renderDeckCardNew
 
-const shuffle = (items) => {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-};
-
-const buildRandomDeck = ({ available, selected, catalogOrder }) => {
-  available.push(...selected.splice(0, selected.length));
-  available.sort((a, b) => catalogOrder.indexOf(a.id) - catalogOrder.indexOf(b.id));
-
-  const picks = [];
-  const takeCards = (filterFn, count) => {
-    const candidates = shuffle(available.filter(filterFn)).slice(0, count);
-    candidates.forEach((card) => {
-      const index = available.findIndex((entry) => entry.id === card.id);
-      if (index >= 0) {
-        available.splice(index, 1);
-      }
-      picks.push(card);
-    });
-  };
-
-  takeCards((card) => card.type === "Predator", 6);
-  takeCards((card) => card.type === "Prey", 7);
-  takeCards((card) => card.type === "Spell", 4);
-  takeCards((card) => card.type === "Free Spell", 2);
-  takeCards((card) => card.type === "Trap", 1);
-
-  selected.push(...picks);
-};
+// shuffle and buildRandomDeck moved to DeckBuilderOverlay.js
 
 const setInspectorContentFor = (panel, card, showImage = true) => {
   if (!panel) {
@@ -2530,35 +2487,7 @@ const isDeckSelectionComplete = (state) =>
   state.deckSelection?.selections?.every((selection) => Boolean(selection));
 
 const cloneDeckCatalog = (deck) => deck.map((card) => ({ ...card }));
-
-const applyDeckToBuilder = (state, playerIndex, deckIds) => {
-  const deckId = findDeckCatalogId(deckIds);
-  const catalog = deckCatalogs[deckId] ?? [];
-  const selected = mapDeckIdsToCards(deckId, deckIds);
-  state.deckSelection.selections[playerIndex] = deckId;
-  state.deckBuilder.selections[playerIndex] = selected;
-  state.deckBuilder.available[playerIndex] = cloneDeckCatalog(catalog).filter(
-    (card) => !selected.some((picked) => picked.id === card.id)
-  );
-  state.deckBuilder.catalogOrder[playerIndex] = catalog.map((card) => card.id);
-};
-
-const initCatalogBuilder = (builder) => {
-  if (!builder?.deckId) {
-    return;
-  }
-  const catalog = deckCatalogs[builder.deckId] ?? [];
-  console.log('initCatalogBuilder - deckId:', builder.deckId, 'catalog length:', catalog.length);
-  if (!builder.catalogOrder?.length) {
-    builder.catalogOrder = catalog.map((card) => card.id);
-  }
-  if (!builder.available?.length) {
-    builder.available = cloneDeckCatalog(catalog).filter(
-      (card) => !builder.selections.some((picked) => picked.id === card.id)
-    );
-    console.log('initCatalogBuilder - available length after setup:', builder.available.length);
-  }
-};
+// applyDeckToBuilder and initCatalogBuilder moved to DeckBuilderOverlay.js
 
 const rehydrateDeckBuilderCatalog = (state, playerIndex) => {
   const deckId = state.deckSelection?.selections?.[playerIndex];
