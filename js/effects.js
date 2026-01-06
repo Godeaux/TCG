@@ -2,7 +2,7 @@ import { drawCard, logMessage } from "./gameState.js";
 import { createCardInstance } from "./cardTypes.js";
 import { consumePrey } from "./consumption.js";
 import { isImmune, areAbilitiesActive } from "./keywords.js";
-import { getTokenById } from "./cards/index.js";
+import { getCardDefinitionById } from "./cards.js";
 
 const findCardOwnerIndex = (state, card) =>
   state.players.findIndex((player) =>
@@ -304,7 +304,7 @@ export const resolveEffectResult = (state, result, context) => {
     tokens.forEach((tokenIdOrData) => {
       // Resolve token ID to token definition if it's a string
       const tokenData = typeof tokenIdOrData === 'string'
-        ? getTokenById(tokenIdOrData)
+        ? getCardDefinitionById(tokenIdOrData)
         : tokenIdOrData;
 
       console.log(`  → Attempting to summon token:`, tokenIdOrData, `→ resolved to:`, tokenData?.name);

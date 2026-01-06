@@ -14,7 +14,7 @@
  * - applyLobbySyncPayload: Sync payload → Game state (with protection)
  */
 
-import { getCardDefinitionById } from '../cards/registry.js';
+import { getCardDefinitionById } from '../cards.js';
 import { createCardInstance } from '../cardTypes.js';
 import { getLocalPlayerIndex } from '../state/selectors.js';
 import { stripAbilities } from '../keywords.js';
