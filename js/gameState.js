@@ -130,14 +130,6 @@ export const getActivePlayer = (state) => state.players[state.activePlayerIndex]
 export const getOpponentPlayer = (state) =>
   state.players[(state.activePlayerIndex + 1) % 2];
 
-// Helper to get traps that can trigger from a player's hand
-export const getTrapsFromHand = (player, triggerType) => {
-  if (!player?.hand) return [];
-  return player.hand.filter(
-    (card) => card.type === "Trap" && card.trigger === triggerType
-  );
-};
-
 export const resetCombat = (state) => {
   state.combat.declaredAttacks = [];
   state.players.forEach((player) => {

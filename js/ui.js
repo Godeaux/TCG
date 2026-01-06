@@ -5,7 +5,7 @@ import {
   drawCard,
   queueVisualEffect,
   getTrapsFromHand,
-} from "./gameState.js";
+} from "./state/gameState.js";
 import { canPlayCard, cardLimitAvailable, finalizeEndPhase } from "./turnManager.js";
 import { createCardInstance } from "./cardTypes.js";
 import { consumePrey } from "./consumption.js";
