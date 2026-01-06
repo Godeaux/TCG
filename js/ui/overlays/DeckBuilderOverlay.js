@@ -168,7 +168,7 @@ const loadSupabaseApi = async (state) => {
     throw supabaseLoadError;
   }
   try {
-    supabaseApi = await import("../../supabaseApi.js");
+    supabaseApi = await import("../../network/supabaseApi.js");
     return supabaseApi;
   } catch (error) {
     supabaseLoadError = error;
