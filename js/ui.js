@@ -24,8 +24,33 @@ import {
   KEYWORD_DESCRIPTIONS,
 } from "./keywords.js";
 import { resolveEffectResult, stripAbilities } from "./effects.js";
-import { deckCatalogs, getCardDefinitionById } from "./cards.js";
+import { deckCatalogs, getCardDefinitionById, resolveCardEffect } from "./cards/index.js";
 import { getCardImagePath, hasCardImage, getCachedCardImage, isCardImageCached, preloadCardImages } from "./cardImages.js";
+
+// Helper to get discardEffect and timing for both old and new card formats
+const getDiscardEffectInfo = (card) => {
+  // Old format: card.discardEffect = { timing, effect }
+  if (card.discardEffect) {
+    return {
+      hasEffect: true,
+      timing: card.discardEffect.timing || "main",
+    };
+  }
+  // New format: card.effects.discardEffect = { type, params } or string
+  if (card.effects?.discardEffect) {
+    const effect = card.effects.discardEffect;
+    // Infer timing from effect type
+    if (typeof effect === 'object' && effect.type === 'negateAttack') {
+      return { hasEffect: true, timing: "directAttack" };
+    }
+    if (typeof effect === 'string' && effect.includes('negate')) {
+      return { hasEffect: true, timing: "directAttack" };
+    }
+    // Default to main phase for other discard effects
+    return { hasEffect: true, timing: "main" };
+  }
+  return { hasEffect: false, timing: null };
+};
 
 // Preload all card images at startup to prevent loading flicker
 const preloadAllCardImages = () => {
@@ -1418,10 +1443,11 @@ const updateActionPanel = (state, callbacks = {}) => {
   };
   actions.appendChild(playButton);
 
+  const discardInfo = getDiscardEffectInfo(selectedCard);
   const canDiscard =
     isLocalTurn &&
-    selectedCard.discardEffect &&
-    selectedCard.discardEffect.timing === "main" &&
+    discardInfo.hasEffect &&
+    discardInfo.timing === "main" &&
     canPlayCard(state);
   if (canDiscard) {
     const discardButton = document.createElement("button");
@@ -1603,8 +1629,14 @@ const getCardEffectSummary = (card, options = {}) => {
   const { includeKeywordDetails = false, includeTokenDetails = false } = options;
   let summary = "";
   if (card.effectText) {
+    // New JSON cards have effectText directly
     summary = card.effectText;
+  } else if (card.effects) {
+    // New system cards with effects object but no effectText - shouldn't happen
+    // but fallback gracefully
+    return "";
   } else {
+    // Legacy cards with inline effect functions
     const effectFn = card.effect ?? card.onPlay ?? card.onConsume ?? card.onEnd ?? card.onStart;
     if (!effectFn) {
       return "";
@@ -2286,8 +2318,8 @@ const startConsumptionForSpecificSlot = (predator, slotIndex, ediblePrey) => {
       clearSelectionPanel();
       
       triggerPlayTraps(state, predator, latestCallbacks.onUpdate, () => {
-        if (totalSelected > 0 && predator.onConsume) {
-          const result = predator.onConsume({
+        if (totalSelected > 0 && (predator.onConsume || predator.effects?.onConsume)) {
+          const result = resolveCardEffect(predator, 'onConsume', {
             log: (message) => logMessage(state, message),
             player,
             opponent: getOpponentPlayer(state),
@@ -2445,8 +2477,8 @@ const handleDirectConsumption = (predator, prey, slotIndex) => {
 
   // Trigger traps and finalize
   triggerPlayTraps(state, predatorInstance, latestCallbacks.onUpdate, () => {
-    if (predatorInstance.onConsume) {
-      const result = predatorInstance.onConsume({
+    if (predatorInstance.onConsume || predatorInstance.effects?.onConsume) {
+      const result = resolveCardEffect(predatorInstance, 'onConsume', {
         log: (message) => logMessage(state, message),
         player,
         opponent: getOpponentPlayer(state),
@@ -3059,11 +3091,11 @@ const resolveAttack = (state, attacker, target, negateAttack = false) => {
     return;
   }
 
-  if (target.type === "creature" && target.card.onDefend) {
+  if (target.type === "creature" && (target.card.onDefend || target.card.effects?.onDefend)) {
     const defender = target.card;
     const playerIndex = state.activePlayerIndex;
     const opponentIndex = (state.activePlayerIndex + 1) % 2;
-    const result = defender.onDefend({
+    const result = resolveCardEffect(defender, 'onDefend', {
       log: (message) => logMessage(state, message),
       attacker,
       defender,
@@ -3161,7 +3193,7 @@ const renderTrapDecision = (state, defender, attacker, target, onUpdate) => {
       // Remove trap from hand and move to exile
       defender.hand = defender.hand.filter((card) => card.instanceId !== trap.instanceId);
       defender.exile.push(trap);
-      const result = trap.effect({
+      const result = resolveCardEffect(trap, 'effect', {
         log: (message) => logMessage(state, message),
         attacker,
         target,
@@ -3213,7 +3245,7 @@ const renderTrapDecision = (state, defender, attacker, target, onUpdate) => {
 
   if (target.type === "player") {
     const discardOptions = defender.hand.filter(
-      (card) => card.discardEffect?.timing === "directAttack"
+      (card) => getDiscardEffectInfo(card).timing === "directAttack"
     );
     discardOptions.forEach((card) => {
       const item = document.createElement("label");
@@ -3227,7 +3259,7 @@ const renderTrapDecision = (state, defender, attacker, target, onUpdate) => {
         } else {
           defender.exile.push(card);
         }
-        const result = card.discardEffect.effect({
+        const result = resolveCardEffect(card, 'discardEffect', {
           log: (message) => logMessage(state, message),
           attacker,
           defender,
@@ -3554,8 +3586,8 @@ const handlePlayCard = (state, card, onUpdate) => {
             player.field[placementSlot] = creature;
             clearSelectionPanel();
             triggerPlayTraps(state, creature, onUpdate, () => {
-              if (totalSelected > 0 && creature.onConsume) {
-                const result = creature.onConsume({
+              if (totalSelected > 0 && (creature.onConsume || creature.effects?.onConsume)) {
+                const result = resolveCardEffect(creature, 'onConsume', {
                   log: (message) => logMessage(state, message),
                   player,
                   opponent,
@@ -3638,8 +3670,8 @@ const handlePlayCard = (state, card, onUpdate) => {
     }
     player.field[emptySlot] = creature;
     triggerPlayTraps(state, creature, onUpdate, () => {
-      if (card.type === "Prey" && creature.onPlay) {
-        const result = creature.onPlay({
+      if (card.type === "Prey" && (creature.onPlay || creature.effects?.onPlay)) {
+        const result = resolveCardEffect(creature, 'onPlay', {
           log: (message) => logMessage(state, message),
           player,
           opponent,
@@ -3675,7 +3707,7 @@ const handleDiscardEffect = (state, card, onUpdate) => {
     onUpdate?.();
     return;
   }
-  if (!card.discardEffect) {
+  if (!getDiscardEffectInfo(card).hasEffect) {
     return;
   }
   const playerIndex = state.activePlayerIndex;
@@ -3688,7 +3720,7 @@ const handleDiscardEffect = (state, card, onUpdate) => {
   } else {
     player.exile.push(card);
   }
-  const result = card.discardEffect.effect({
+  const result = resolveCardEffect(card, 'discardEffect', {
     log: (message) => logMessage(state, message),
     player,
     opponent,
@@ -3727,7 +3759,7 @@ const triggerPlayTraps = (state, creature, onUpdate, onResolved) => {
       // Remove trap from hand and move to exile
       opponent.hand = opponent.hand.filter((card) => card.instanceId !== trap.instanceId);
       opponent.exile.push(trap);
-      const result = trap.effect({
+      const result = resolveCardEffect(trap, 'effect', {
         log: (message) => logMessage(state, message),
         target: { type: "creature", card: creature },
         defenderIndex: opponentIndex,
@@ -5218,12 +5250,12 @@ const processEndOfTurnQueue = (state, onUpdate) => {
     processEndOfTurnQueue(state, onUpdate);
   };
 
-  if (!creature.onEnd) {
+  if (!creature.onEnd && !creature.effects?.onEnd) {
     finishCreature();
     return;
   }
 
-  const result = creature.onEnd({
+  const result = resolveCardEffect(creature, 'onEnd', {
     log: (message) => logMessage(state, message),
     player,
     opponent,
