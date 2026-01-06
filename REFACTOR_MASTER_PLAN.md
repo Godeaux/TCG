@@ -7,8 +7,8 @@
 ## REFACTOR PROGRESS TRACKER
 
 **Last Updated**: 2026-01-06
-**Current Phase**: Phase 9 - Effect System Optimization
-**Overall Status**: Phase 9 COMPLETE ✅
+**Current Phase**: Phase 10 - Integration & Legacy Sync
+**Overall Status**: Phase 9 COMPLETE ✅ → Phase 10 IN PROGRESS
 
 ### Phase Completion Checklist
 
@@ -83,6 +83,31 @@
   - [x] Migrate 11 token effects to new system
   - [x] Test new effect system (all tests passing)
   - [x] Document effect library architecture
+- [ ] **Phase 10: Integration & Legacy Sync** - IN PROGRESS 🔄
+  - [ ] **10.1: Port recent UI improvements to refactor code**
+    - [ ] Port emoji card stats (⚔️❤️🍖) from `ui.js` to `Card.js`
+    - [ ] Port yellow glow consumption targeting to `dragAndDrop.js`
+    - [ ] Port direct consumption feature (drag predator onto prey)
+    - [ ] Add `canConsumePreyDirectly()` and `getConsumablePrey()` helpers
+    - [ ] Add `handleDirectConsumption()` handler
+  - [ ] **10.2: Wire up refactored modules in main.js**
+    - [ ] Update `main.js` to import from new module structure
+    - [ ] Initialize card registry from `cards/registry.js`
+    - [ ] Initialize input handlers from `ui/input/`
+    - [ ] Connect GameController to UI rendering
+  - [ ] **10.3: Transition rendering to use refactor components**
+    - [ ] Replace inline card rendering with `Card.js` component
+    - [ ] Replace inline field rendering with `Field.js` component
+    - [ ] Replace inline hand rendering with `Hand.js` component
+    - [ ] Replace inline overlay rendering with overlay modules
+  - [ ] **10.4: Transition game logic to use controller**
+    - [ ] Route click-to-play through GameController
+    - [ ] Route drag-and-drop through GameController
+    - [ ] Route multiplayer sync through GameController
+  - [ ] **10.5: Deprecate legacy ui.js code**
+    - [ ] Mark deprecated sections with comments
+    - [ ] Remove deprecated code after verification
+    - [ ] Final cleanup and testing
 
 ### Current Work Log
 
@@ -392,6 +417,29 @@
   - Registry integration tested (both old and new formats)
   - Token effects verified (11 tokens migrated successfully)
 
+**2026-01-06**: PHASE 10 STARTED 🔄 - Integration & Legacy Sync
+- ⚠️ **CRITICAL FINDING**: Recent UI improvements exist in legacy `ui.js` but NOT in refactored modules
+- 📋 **Analysis completed** - identified features needing to be ported:
+
+**Feature Gap Analysis**:
+| Feature | Legacy `ui.js` | Refactored Module | Status |
+|---------|---------------|-------------------|--------|
+| Emoji card stats (⚔️❤️🍖) | ✅ Lines 1505-1515 | ❌ `Card.js` uses text labels | **NEEDS PORT** |
+| Yellow glow consumption | ✅ `consumption-target` class | ❌ Not in `dragAndDrop.js` | **NEEDS PORT** |
+| Direct consumption (drag predator → prey) | ✅ `handleDirectConsumption()` | ❌ Not implemented | **NEEDS PORT** |
+| `canConsumePreyDirectly()` helper | ✅ Present | ❌ Missing | **NEEDS PORT** |
+| `getConsumablePrey()` helper | ✅ Present | ❌ Missing | **NEEDS PORT** |
+
+**Root Cause**: The refactored modules were extracted BEFORE recent UI improvements were added to legacy code. The refactored code represents an older snapshot.
+
+**Action Plan**:
+1. Port emoji stats from `ui.js:1505-1515` → `ui/components/Card.js:55-65`
+2. Port consumption glow from `ui.js:2068-2081` → `ui/input/dragAndDrop.js`
+3. Port direct consumption from `ui.js:2360-2467` → `ui/input/dragAndDrop.js`
+4. Wire up refactored modules in `main.js`
+5. Transition to using refactored modules
+6. Phase out legacy `ui.js`
+
 **Architecture**:
 - All 9 phases completed successfully
 - 39 new modules created (~6,600+ lines extracted)
@@ -427,28 +475,50 @@
 
 ### Issues & Blockers
 
-None. All phases complete! 🎉
+**Phase 10 Blockers** (must resolve before integration):
+1. ⚠️ `Card.js` uses text labels instead of emojis for stats - needs porting
+2. ⚠️ `dragAndDrop.js` missing yellow glow consumption feature - needs porting
+3. ⚠️ `dragAndDrop.js` missing direct consumption shortcut - needs porting
 
 ### Notes for Next Session
 
-**Refactoring is complete!** The extracted modules are ready for integration.
+**Phase 10 is now in progress!** The extracted modules need recent features ported before integration.
 
-**Effect System Migration Path**:
-- 11 tokens migrated to new system (proof of concept)
+**PRIORITY 1: Port Recent UI Improvements** (must do first)
+The refactored modules are missing features that were added to legacy `ui.js` after extraction:
+
+1. **Port emoji card stats** (`ui.js:1505-1515` → `Card.js:55-65`)
+   - Change `{ label: "ATK", ... }` to `{ emoji: "⚔️", ... }`
+   - Change `{ label: "HP", ... }` to `{ emoji: "❤️", ... }`
+   - Change `{ label: "NUT", ... }` to `{ emoji: "🍖", ... }`
+   - Update HTML template to use `stat-emoji` span instead of text label
+
+2. **Port consumption glow & direct consumption** (`ui.js:2068-2467` → `dragAndDrop.js`)
+   - Add `canConsumePreyDirectly()` helper function
+   - Add `getConsumablePrey()` helper function
+   - Add yellow glow (`consumption-target` class) during drag over
+   - Add `handleDirectConsumption()` for single-prey shortcut
+   - Update `handleCreatureDrop()` to check for consumption before attack
+
+**PRIORITY 2: Integration Steps** (after porting)
+1. Update `main.js` to import from new module structure
+2. Initialize card registry from `cards/registry.js`
+3. Initialize input handlers from `ui/input/`
+4. Update `renderGame()` in ui.js to use extracted components
+5. Route all game actions through GameController
+6. Test all features end-to-end
+
+**PRIORITY 3: Cleanup** (after integration verified)
+1. Mark deprecated code in `ui.js`
+2. Remove deprecated code after verification
+3. Final testing of all features
+
+**Effect System Migration Path** (ongoing, lower priority):
+- 11 tokens migrated to new parameterized system
 - Remaining 208 effect handlers can be migrated gradually
 - Both old and new systems coexist during migration
-- No breaking changes to existing cards
 
-Next steps (for a future session):
-1. Continue migrating card effects to new system (optional, gradual)
-2. Test extracted modules (import and verify exports)
-3. Update `renderGame()` in ui.js to use extracted components
-4. Initialize input systems (call `initializeInput()`)
-5. Integration testing (test all features end-to-end)
-6. Remove deprecated code from ui.js
-6. Performance optimization and testing
-
-See `REFACTORING_COMPLETE.md` for comprehensive details.
+See `REFACTORING_COMPLETE.md` for module details.
 
 ---
 
