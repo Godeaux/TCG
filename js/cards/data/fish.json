@@ -11,7 +11,12 @@
       "effectText": "Play Flying Fish.",
       "summons": ["token-flying-fish"],
       "effects": {
-        "onPlay": "atlantic-flying-fish-summon-onplay"
+        "onPlay": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": ["token-flying-fish"]
+          }
+        }
       }
     },
     {
@@ -86,7 +91,12 @@
       "effectText": "Slain: play Catfish.",
       "summons": ["token-catfish"],
       "effects": {
-        "onSlain": "hardhead-catfish-summon-catfish-onslain"
+        "onSlain": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": ["token-catfish"]
+          }
+        }
       }
     },
     {
@@ -100,7 +110,12 @@
       "effectText": "Start of turn, play Leafy.",
       "summons": ["token-leafy"],
       "effects": {
-        "onStart": "leafy-seadragon-summon-leafy-onstart"
+        "onStart": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": ["token-leafy"]
+          }
+        }
       }
     },
     {
@@ -114,8 +129,20 @@
       "effectText": "Play 2 Portuguese Man O' War. Defending before combat, deal 1 damage.",
       "summons": ["token-man-o-war"],
       "effects": {
-        "onPlay": "man-o-war-legion-summon-onplay",
-        "onDefend": "man-o-war-legion-sting-ondefend"
+        "onPlay": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": ["token-man-o-war", "token-man-o-war"]
+          }
+        },
+        "onDefend": {
+          "type": "damageCreature",
+          "params": {
+            "targetType": "attacker",
+            "amount": 1,
+            "sourceLabel": "sting"
+          }
+        }
       }
     },
     {
@@ -137,7 +164,12 @@
       "keywords": [],
       "effectText": "Heal 1. Before combat, deal 3 damage.",
       "effects": {
-        "onPlay": "rainbow-mantis-shrimp-heal-onplay",
+        "onPlay": {
+          "type": "heal",
+          "params": {
+            "amount": 1
+          }
+        },
         "onBeforeCombat": "rainbow-mantis-shrimp-damage-onbeforecombat"
       }
     },
@@ -244,7 +276,12 @@
       "effectText": "Play 2 Angler Eggs.",
       "summons": ["token-angler-egg"],
       "effects": {
-        "onPlay": "deep-sea-angler-summon-eggs-onplay"
+        "onPlay": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": ["token-angler-egg", "token-angler-egg"]
+          }
+        }
       }
     },
     {
@@ -270,7 +307,12 @@
       "keywords": [],
       "effectText": "Draw 2.",
       "effects": {
-        "onPlay": "golden-dorado-draw-onplay"
+        "onPlay": {
+          "type": "draw",
+          "params": {
+            "count": 2
+          }
+        }
       }
     },
     {
@@ -346,7 +388,12 @@
       "effectText": "Play 2 Tuna Eggs.",
       "summons": ["token-tuna-egg"],
       "effects": {
-        "onConsume": "atlantic-bluefin-tuna-summon-eggs-onconsume"
+        "onConsume": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": ["token-tuna-egg", "token-tuna-egg"]
+          }
+        }
       }
     },
     {
@@ -491,7 +538,12 @@
       "type": "Spell",
       "effectText": "Draw 4.",
       "effects": {
-        "effect": "ship-of-gold-draw-effect"
+        "effect": {
+          "type": "draw",
+          "params": {
+            "count": 4
+          }
+        }
       }
     },
     {
