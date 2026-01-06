@@ -630,38 +630,7 @@ const loadSupabaseApi = async (state) => {
 };
 
 // updateMenuStatus moved to ./ui/overlays/MenuOverlay.js
-
-const updateHandOverlap = (handGrid) => {
-  const cards = Array.from(handGrid.querySelectorAll(".card"));
-  if (cards.length === 0) {
-    handGrid.style.setProperty("--hand-overlap", "0px");
-    handGrid.style.overflow = "visible"; // Force visible
-    return;
-  }
-  const handWidth = handGrid.clientWidth;
-  const cardWidth = cards[0].getBoundingClientRect().width;
-  if (!handWidth || !cardWidth) {
-    return;
-  }
-
-  // Calculate total width if cards are laid out with no overlap
-  const totalWidthNoOverlap = cardWidth * cards.length;
-
-  // Only apply overlap if cards would overflow the container
-  let overlap = 0;
-  if (totalWidthNoOverlap > handWidth) {
-    // Calculate how much overlap is needed to fit all cards
-    overlap = (totalWidthNoOverlap - handWidth) / Math.max(1, cards.length - 1);
-
-    // Cap at 75% max overlap to keep cards readable
-    const maxOverlap = cardWidth * 0.75;
-    overlap = Math.min(overlap, maxOverlap);
-  }
-
-  handGrid.style.setProperty("--hand-overlap", `${overlap}px`);
-  handGrid.style.overflow = "visible"; // Force visible after setting overlap
-};
-
+// updateHandOverlap moved to ./ui/components/Hand.js
 
 // isOnlineMode is now imported from ./state/selectors.js
 const isCatalogMode = (state) => state.menu?.stage === "catalog";
