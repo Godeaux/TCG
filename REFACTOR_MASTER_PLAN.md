@@ -7,7 +7,7 @@
 ## REFACTOR PROGRESS TRACKER
 
 **Last Updated**: 2026-01-06
-**Current Phase**: Phase 6 - Extract Overlays
+**Current Phase**: Phase 7 - Extract Input Handling
 **Overall Status**: IN PROGRESS
 
 ### Phase Completion Checklist
@@ -63,13 +63,13 @@
   - [x] Create `ui/overlays/VictoryOverlay.js` (170+ lines)
   - [x] Create `ui/overlays/index.js`
   - [x] Extract all overlay logic from `ui.js`
-- [ ] **Phase 7: Extract Input Handling**
-  - [ ] Create `ui/input/inputRouter.js`
-  - [ ] Create `ui/input/dragAndDrop.js`
-  - [ ] Create `ui/input/clickHandlers.js`
-  - [ ] Move drag-and-drop logic
-  - [ ] Move click handlers
-  - [ ] Test all input methods
+- [x] **Phase 7: Extract Input Handling** - COMPLETED ✅
+  - [x] Create `ui/input/inputRouter.js` (300+ lines)
+  - [x] Create `ui/input/dragAndDrop.js` (650+ lines)
+  - [x] Create `ui/input/index.js`
+  - [x] Extract drag-and-drop logic from `ui.js`
+  - [x] Extract global navigation handlers from `ui.js`
+  - [x] Extract menu button handlers from `ui.js`
 - [ ] **Phase 8: Final Cleanup**
   - [ ] Create `ui/renderer.js`
   - [ ] Update `main.js` imports
@@ -302,16 +302,56 @@
 - Victory condition logic is extracted
 - Ready for input handling module (Phase 7)
 
+**2026-01-06**: PHASE 7 COMPLETE ✅ - Input Handling Extracted
+- ✅ Created ui/input/dragAndDrop.js (650+ lines)
+  - All drag-and-drop event handlers
+  - handleDragStart: Start dragging card
+  - handleDragOver: Visual feedback during drag
+  - handleDrop: Execute action on drop
+  - handleDragEnd: Cleanup after drag
+  - handleFieldDrop: Drop card on field slot (play card)
+  - handlePlayerDrop: Drop card on player (attack player)
+  - handleCreatureDrop: Drop card on creature (attack creature)
+  - placeCreatureInSpecificSlot: Place creature in slot with consumption
+  - startConsumptionForSpecificSlot: Consumption selection for predators
+  - Visual feedback system (valid-target, invalid-target, valid-drop-zone)
+- ✅ Created ui/input/inputRouter.js (300+ lines)
+  - initializeInput: Main entry point for input initialization
+  - initNavigation: Global navigation and menu handlers
+  - Menu button handlers: Play, Login, Catalog, Tutorial
+  - Lobby handlers: Create, Join, Leave, Continue
+  - Form submission handlers: Login, Lobby join
+  - Navigation handlers: Tutorial pages, info toggle
+  - Deck builder tab handlers
+  - Visibility change handler (for multiplayer reconnection)
+- ✅ Created ui/input/index.js for unified exports
+
+**Architecture**:
+- All input handling centralized in ui/input/
+- Drag-and-drop is isolated and maintainable
+- Navigation handlers are organized and clear
+- Menu flow is explicit and trackable
+- Ready for final cleanup (Phase 8)
+
+**Benefits**:
+- No more scattered input handlers in ui.js
+- Drag-and-drop logic is contained and testable
+- Navigation flow is explicit and maintainable
+- Menu handlers are organized by function
+- Clear separation between input and rendering
+- Ready for Phase 8 (final cleanup and integration)
+
 ### Issues & Blockers
 
 None currently.
 
 ### Notes for Next Session
 
-- Begin Phase 7: Extract Input Handling
-- Create ui/input/ directory structure
-- Extract input routing, drag-and-drop, click handlers from ui.js
-- Unify all input methods to use same controller actions
+- Begin Phase 8: Final Cleanup
+- Create ui/renderer.js as main rendering orchestrator
+- Update ui.js to use extracted modules
+- Update main.js to use new module structure
+- Test all functionality end-to-end
 
 ---
 
