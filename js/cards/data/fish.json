@@ -187,7 +187,20 @@
       "effectText": "Play 2 Sardines. Heal 1. Slain: play Sardine.",
       "summons": ["token-sardine"],
       "effects": {
-        "onPlay": "rainbow-sardines-summon-heal-onplay",
+        "onPlay": [
+          {
+            "type": "summonTokens",
+            "params": {
+              "tokenIds": ["token-sardine", "token-sardine"]
+            }
+          },
+          {
+            "type": "heal",
+            "params": {
+              "amount": 1
+            }
+          }
+        ],
         "onSlain": {
           "type": "summonTokens",
           "params": {
@@ -270,7 +283,16 @@
       "keywords": ["Ambush"],
       "effectText": "Creatures gain +1/+0.",
       "effects": {
-        "onPlay": "black-drum-team-buff-onplay"
+        "onPlay": {
+          "type": "buffStats",
+          "params": {
+            "targetType": "all-friendly",
+            "stats": {
+              "attack": 1,
+              "health": 0
+            }
+          }
+        }
       }
     },
     {

@@ -192,6 +192,11 @@ export const resolveCardEffect = (card, effectType, context) => {
   if (!effectDef) return null;
 
   try {
+    // NEW SYSTEM: Array of effects (composite)
+    if (Array.isArray(effectDef)) {
+      return resolveEffect(effectDef, context);
+    }
+
     // NEW SYSTEM: Object-based effect definition with type and params
     if (typeof effectDef === 'object' && effectDef.type) {
       return resolveEffect(effectDef, context);

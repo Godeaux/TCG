@@ -594,10 +594,32 @@ export const effectRegistry = {
 
 /**
  * Resolve an effect from JSON definition
- * @param {Object} effectDef - Effect definition from card JSON
+ * @param {Object|Array} effectDef - Effect definition from card JSON (single or array)
  * @param {Object} context - Effect context
  */
 export const resolveEffect = (effectDef, context) => {
+  // Handle array of effects (composite)
+  if (Array.isArray(effectDef)) {
+    const results = [];
+    for (const singleEffect of effectDef) {
+      const result = resolveEffect(singleEffect, context);
+      if (result && Object.keys(result).length > 0) {
+        results.push(result);
+      }
+    }
+
+    // Merge all results into a single object
+    if (results.length === 0) {
+      return {};
+    }
+    if (results.length === 1) {
+      return results[0];
+    }
+    // Multiple results - merge them
+    return Object.assign({}, ...results);
+  }
+
+  // Handle single effect object
   if (!effectDef || !effectDef.type) {
     return {};
   }
