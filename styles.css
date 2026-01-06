@@ -2640,12 +2640,27 @@ button {
   pointer-events: none;
 }
 
+.consumption-target {
+  box-shadow: 0 0 20px rgba(241, 196, 15, 0.8), inset 0 0 20px rgba(241, 196, 15, 0.3);
+  border: 2px solid #f1c40f;
+  animation: consumption-pulse 1s infinite;
+}
+
 @keyframes target-pulse {
   0%, 100% {
     box-shadow: 0 0 20px rgba(231, 76, 60, 0.8), inset 0 0 20px rgba(231, 76, 60, 0.3);
   }
   50% {
     box-shadow: 0 0 30px rgba(231, 76, 60, 1), inset 0 0 30px rgba(231, 76, 60, 0.5);
+  }
+}
+
+@keyframes consumption-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(241, 196, 15, 0.8), inset 0 0 20px rgba(241, 196, 15, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(241, 196, 15, 1), inset 0 0 30px rgba(241, 196, 15, 0.5);
   }
 }
 
