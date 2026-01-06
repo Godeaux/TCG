@@ -49,4 +49,33 @@ export {
 // ============================================================================
 
 export { supabase } from './supabaseClient.js';
-// Note: loadSupabaseApi stays in ui.js - it has UI-specific error handling (setMenuError)
+
+// Lazy-loaded supabase API module (shared cache)
+let supabaseApiModule = null;
+let supabaseApiError = null;
+
+/**
+ * Lazy load the Supabase API module
+ * @param {Function} onError - Optional error callback (receives error message)
+ * @returns {Promise<Object>} The supabaseApi module
+ */
+export const getSupabaseApi = async (onError) => {
+  if (supabaseApiModule) {
+    return supabaseApiModule;
+  }
+  if (supabaseApiError) {
+    throw supabaseApiError;
+  }
+  try {
+    supabaseApiModule = await import('./supabaseApi.js');
+    return supabaseApiModule;
+  } catch (error) {
+    supabaseApiError = error;
+    const message =
+      error?.message?.includes("Failed to fetch")
+        ? "Supabase failed to load. Check your connection."
+        : "Supabase failed to load.";
+    onError?.(message);
+    throw error;
+  }
+};
