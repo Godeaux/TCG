@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Code Version Diagnostic</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #0f0; }
+        .pass { color: #0f0; }
+        .fail { color: #f00; }
+        .section { margin: 20px 0; padding: 10px; border: 1px solid #333; }
+        pre { background: #000; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔍 TCG Code Version Diagnostic</h1>
+    <div id="results"></div>
+
+    <script type="module">
+        const results = document.getElementById('results');
+
+        function addResult(title, status, details) {
+            const section = document.createElement('div');
+            section.className = 'section';
+            section.innerHTML = `
+                <h3 class="${status}">${status === 'pass' ? '✅' : '❌'} ${title}</h3>
+                <pre>${details}</pre>
+            `;
+            results.appendChild(section);
+        }
+
+        // Check 1: Load registry.js and check for debugging code
+        try {
+            const response = await fetch('./js/cards/registry.js?nocache=' + Date.now());
+            const text = await response.text();
+
+            const hasNewSystemLog = text.includes('🆕 [NEW SYSTEM]');
+            const hasLegacySystemLog = text.includes('⚠️  [LEGACY SYSTEM]');
+
+            addResult(
+                'Registry.js - Debugging Logs',
+                hasNewSystemLog && hasLegacySystemLog ? 'pass' : 'fail',
+                `NEW SYSTEM log found: ${hasNewSystemLog}\nLEGACY SYSTEM log found: ${hasLegacySystemLog}\n\nIf both are false, browser is serving OLD cached version!`
+            );
+        } catch (e) {
+            addResult('Registry.js - Load Test', 'fail', `Error: ${e.message}`);
+        }
+
+        // Check 2: Load effects.js and check for token fix
+        try {
+            const response = await fetch('./js/effects.js?nocache=' + Date.now());
+            const text = await response.text();
+
+            const hasTokenImport = text.includes('getTokenById');
+            const hasTokenResolution = text.includes('typeof tokenIdOrData');
+
+            addResult(
+                'Effects.js - Token Fix',
+                hasTokenImport && hasTokenResolution ? 'pass' : 'fail',
+                `getTokenById import found: ${hasTokenImport}\nToken resolution code found: ${hasTokenResolution}\n\nIf both are false, browser is serving OLD cached version!`
+            );
+        } catch (e) {
+            addResult('Effects.js - Load Test', 'fail', `Error: ${e.message}`);
+        }
+
+        // Check 3: Load effectLibrary.js and check for debugging
+        try {
+            const response = await fetch('./js/cards/effectLibrary.js?nocache=' + Date.now());
+            const text = await response.text();
+
+            const hasResolveLog = text.includes('🔧 [resolveEffect]');
+            const hasSummonLog = text.includes('✨ [summonTokens]');
+
+            addResult(
+                'EffectLibrary.js - Debugging Logs',
+                hasResolveLog && hasSummonLog ? 'pass' : 'fail',
+                `resolveEffect log found: ${hasResolveLog}\nsummonTokens log found: ${hasSummonLog}\n\nIf both are false, browser is serving OLD cached version!`
+            );
+        } catch (e) {
+            addResult('EffectLibrary.js - Load Test', 'fail', `Error: ${e.message}`);
+        }
+
+        // Check 4: Service Worker status
+        if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            addResult(
+                'Service Worker Check',
+                registrations.length === 0 ? 'pass' : 'fail',
+                registrations.length === 0
+                    ? 'No service workers found (good!)'
+                    : `${registrations.length} service worker(s) found - these may be caching old code!\n\nTo fix: Open DevTools → Application → Service Workers → Unregister all`
+            );
+        }
+
+        // Check 5: Cache API
+        if ('caches' in window) {
+            const cacheNames = await caches.keys();
+            addResult(
+                'Cache API Check',
+                cacheNames.length === 0 ? 'pass' : 'fail',
+                cacheNames.length === 0
+                    ? 'No caches found (good!)'
+                    : `${cacheNames.length} cache(s) found:\n${cacheNames.join('\n')}\n\nTo fix: Open DevTools → Application → Cache Storage → Delete all`
+            );
+        }
+
+        // Instructions
+        const instructions = document.createElement('div');
+        instructions.className = 'section';
+        instructions.innerHTML = `
+            <h3>🔧 How to Fix Browser Cache Issues:</h3>
+            <pre>
+1. Hard Refresh (try this first):
+   - Chrome/Firefox: Ctrl+Shift+R (Windows/Linux) or Cmd+Shift+R (Mac)
+   - This forces browser to reload all files
+
+2. Clear Cache in DevTools:
+   - F12 to open DevTools
+   - Right-click the refresh button
+   - Click "Empty Cache and Hard Reload"
+
+3. Disable Cache (while debugging):
+   - F12 to open DevTools
+   - Go to Network tab
+   - Check "Disable cache" checkbox
+   - Keep DevTools open while testing
+
+4. Clear Browser Data:
+   - Chrome: Settings → Privacy → Clear browsing data
+   - Select "Cached images and files"
+   - Time range: "Last hour"
+
+5. If using Service Worker/Cache API:
+   - F12 → Application tab
+   - Service Workers: Unregister all
+   - Cache Storage: Delete all caches
+            </pre>
+        `;
+        results.appendChild(instructions);
+    </script>
+</body>
+</html>
