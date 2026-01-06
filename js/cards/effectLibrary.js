@@ -853,6 +853,100 @@ export const selectTargetForDamage = (amount, label = "damage") => (context) => 
   });
 };
 
+/**
+ * Select enemy prey to consume (special consume mechanic)
+ */
+export const selectEnemyPreyToConsume = () => (context) => {
+  const { log, opponent, player, state, opponentIndex, creature } = context;
+  const targets = opponent.field.filter(c => c && (c.type === 'Prey' || c.type === 'prey') && !isInvisible(c, state));
+
+  if (targets.length === 0) {
+    log(`No enemy prey to consume.`);
+    return {};
+  }
+
+  return makeTargetedSelection({
+    title: "Choose an enemy prey to consume",
+    candidates: targets.map(t => ({ label: t.name, value: t, card: t })),
+    onSelect: (target) =>
+      handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+        consumeEnemyPrey: { predator: creature, prey: target, opponentIndex }
+      },
+    renderCards: true
+  });
+};
+
+/**
+ * Select a creature to restore to full HP
+ */
+export const selectCreatureToRestore = () => (context) => {
+  const { log, player, opponent, state } = context;
+  const candidates = [
+    ...player.field.filter(c => c && (c.type === 'Prey' || c.type === 'Predator' || c.type === 'prey' || c.type === 'predator') && !isInvisible(c, state)),
+    ...opponent.field.filter(c => c && (c.type === 'Prey' || c.type === 'Predator' || c.type === 'prey' || c.type === 'predator') && !isInvisible(c, state))
+  ];
+
+  if (candidates.length === 0) {
+    log(`No creatures to restore.`);
+    return {};
+  }
+
+  return makeTargetedSelection({
+    title: "Choose a creature to regenerate",
+    candidates: candidates.map(c => ({ label: c.name, value: c, card: c })),
+    onSelect: (target) =>
+      handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+        restoreCreature: { creature: target }
+      },
+    renderCards: true
+  });
+};
+
+/**
+ * Select a prey from hand to play
+ */
+export const selectPreyFromHandToPlay = () => (context) => {
+  const { log, player, playerIndex } = context;
+  const preyInHand = player.hand.filter(card => card.type === 'Prey' || card.type === 'prey');
+
+  if (preyInHand.length === 0) {
+    log(`No prey in hand to play.`);
+    return {};
+  }
+
+  return makeTargetedSelection({
+    title: "Choose a prey to play",
+    candidates: preyInHand.map(card => ({ label: card.name, value: card, card: card })),
+    onSelect: (card) => ({
+      playFromHand: { playerIndex, card }
+    }),
+    renderCards: true
+  });
+};
+
+/**
+ * Select a carrion predator to copy abilities from
+ */
+export const selectCarrionPredToCopyAbilities = () => (context) => {
+  const { log, player, creature } = context;
+  const carrionPreds = player.carrion.filter(card => card && (card.type === 'Predator' || card.type === 'predator'));
+
+  if (carrionPreds.length === 0) {
+    log(`No predator in carrion to copy.`);
+    return {};
+  }
+
+  return makeTargetedSelection({
+    title: "Choose a carrion predator to copy",
+    candidates: carrionPreds.map(card => ({ label: card.name, value: card, card: card })),
+    onSelect: (target) => {
+      log(`Copies ${target.name}'s abilities.`);
+      return { copyAbilities: { target: creature, source: target } };
+    },
+    renderCards: true
+  });
+};
+
 // ============================================================================
 // EFFECT REGISTRY
 // ============================================================================
@@ -912,6 +1006,10 @@ export const effectRegistry = {
   tutorFromDeck,
   selectCreatureForDamage,
   selectTargetForDamage,
+  selectEnemyPreyToConsume,
+  selectCreatureToRestore,
+  selectPreyFromHandToPlay,
+  selectCarrionPredToCopyAbilities,
 };
 
 // ============================================================================
@@ -1074,6 +1172,18 @@ export const resolveEffect = (effectDef, context) => {
       break;
     case 'selectTargetForDamage':
       specificEffect = effectFn(params.amount, params.label);
+      break;
+    case 'selectEnemyPreyToConsume':
+      specificEffect = effectFn();
+      break;
+    case 'selectCreatureToRestore':
+      specificEffect = effectFn();
+      break;
+    case 'selectPreyFromHandToPlay':
+      specificEffect = effectFn();
+      break;
+    case 'selectCarrionPredToCopyAbilities':
+      specificEffect = effectFn();
       break;
     default:
       console.warn(`No parameter mapping for effect type: ${effectDef.type}`);

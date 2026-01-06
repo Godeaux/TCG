@@ -38,7 +38,10 @@
       "keywords": ["Passive", "Immune"],
       "effectText": "End of turn, eat target enemy prey.",
       "effects": {
-        "onEnd": "blobfish-consume-enemy-prey-onend"
+        "onEnd": {
+          "type": "selectEnemyPreyToConsume",
+          "params": {}
+        }
       }
     },
     {
@@ -249,7 +252,18 @@
       "keywords": [],
       "effectText": "Heal 4. Regen target creature.",
       "effects": {
-        "onPlay": "rainbow-trout-heal-regen-onplay"
+        "onPlay": [
+          {
+            "type": "heal",
+            "params": {
+              "amount": 4
+            }
+          },
+          {
+            "type": "selectCreatureToRestore",
+            "params": {}
+          }
+        ]
       }
     },
     {
@@ -540,7 +554,10 @@
       "keywords": [],
       "effectText": "Play a prey.",
       "effects": {
-        "onConsume": "beluga-whale-play-prey-onconsume"
+        "onConsume": {
+          "type": "selectPreyFromHandToPlay",
+          "params": {}
+        }
       }
     },
     {
@@ -570,7 +587,10 @@
       "keywords": [],
       "effectText": "Copy abilities of a carrion pred.",
       "effects": {
-        "onConsume": "tiger-shark-copy-abilities-onconsume"
+        "onConsume": {
+          "type": "selectCarrionPredToCopyAbilities",
+          "params": {}
+        }
       }
     },
     {
