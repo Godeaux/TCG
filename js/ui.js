@@ -110,6 +110,8 @@ import {
   buildLobbySyncPayload,
 } from "./network/serialization.js";
 
+import { getSupabaseApi } from "./network/index.js";
+
 // Helper to get discardEffect and timing for both old and new card formats
 const getDiscardEffectInfo = (card) => {
   // Old format: card.discardEffect = { timing, effect }
@@ -145,8 +147,6 @@ const preloadAllCardImages = () => {
 
 // Initialize preloading
 preloadAllCardImages();
-let supabaseApi = null;
-let supabaseLoadError = null;
 
 const selectionPanel = document.getElementById("selection-panel");
 const actionBar = document.getElementById("action-bar");
@@ -617,24 +617,7 @@ const setMenuError = (state, message) => {
 };
 
 const loadSupabaseApi = async (state) => {
-  if (supabaseApi) {
-    return supabaseApi;
-  }
-  if (supabaseLoadError) {
-    throw supabaseLoadError;
-  }
-  try {
-    supabaseApi = await import("./network/supabaseApi.js");
-    return supabaseApi;
-  } catch (error) {
-    supabaseLoadError = error;
-    const message =
-      error?.message?.includes("Failed to fetch")
-        ? "Supabase failed to load. Check your connection."
-        : "Supabase failed to load.";
-    setMenuError(state, message);
-    throw error;
-  }
+  return getSupabaseApi((message) => setMenuError(state, message));
 };
 
 // updateMenuStatus moved to ./ui/overlays/MenuOverlay.js
