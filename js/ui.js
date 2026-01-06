@@ -1673,9 +1673,12 @@ const renderCardInnerHtml = (card, { showEffectSummary } = {}) => {
   const effectRow = effectSummary
     ? `<div class="card-effect"><strong>Effect:</strong> ${effectSummary}</div>`
     : "";
-  
-  // Disable image loading - only show placeholder (prevents 404 spam)
-  const imageHtml = '';
+
+  // Card image with error handling (hides on 404)
+  const imageHtml = hasCardImage(card.id)
+    ? `<img src="${getCardImagePath(card.id)}" alt="${card.name}" class="card-image"
+         onerror="this.style.display='none';">`
+    : '';
   
   return `
     <div class="card-name">${card.name}</div>
@@ -2623,9 +2626,12 @@ const setInspectorContentFor = (panel, card, showImage = true) => {
   const effectBlock = effectSummary
     ? `<div class="effect"><strong>Effect:</strong> ${effectSummary}</div>`
     : "";
-  
-  // Disable image loading - only show placeholder (prevents 404 spam)
-  const inspectorImageHtml = '';
+
+  // Inspector card image with error handling (hides on 404)
+  const inspectorImageHtml = showImage && hasCardImage(card.id)
+    ? `<img src="${getCardImagePath(card.id)}" alt="${card.name}" class="inspector-card-image-img"
+         onerror="this.style.display='none';">`
+    : '';
   
   // Build layout based on whether we show image
   if (showImage) {
