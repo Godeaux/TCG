@@ -701,6 +701,87 @@ export const selectCardToDiscard = (count = 1) => (context) => {
   });
 };
 
+/**
+ * Select an enemy prey to kill
+ */
+export const selectEnemyPreyToKill = () => (context) => {
+  const { log, opponent, player, state } = context;
+  const targets = opponent.field.filter(c => c && (c.type === 'Prey' || c.type === 'prey') && !isInvisible(c, state));
+
+  if (targets.length === 0) {
+    log(`No enemy prey to kill.`);
+    return {};
+  }
+
+  return makeTargetedSelection({
+    title: "Choose an enemy prey to kill",
+    candidates: targets.map(t => ({ label: t.name, value: t })),
+    onSelect: (target) =>
+      handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+        killTargets: [target]
+      }
+  });
+};
+
+/**
+ * Select any enemy creature to kill
+ */
+export const selectEnemyToKill = () => (context) => {
+  const { log, opponent, player, state } = context;
+  const targets = opponent.field.filter(c => c && (c.type === 'Prey' || c.type === 'Predator' || c.type === 'prey' || c.type === 'predator'));
+
+  if (targets.length === 0) {
+    log(`No enemy creatures to kill.`);
+    return {};
+  }
+
+  return makeTargetedSelection({
+    title: "Choose an enemy creature to kill",
+    candidates: targets.map(t => ({ label: t.name, value: t })),
+    onSelect: (target) =>
+      handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+        killTargets: [target]
+      }
+  });
+};
+
+/**
+ * Tutor: Select a card from deck to add to hand
+ * @param {string} cardType - 'prey' | 'predator' | 'spell' | 'any'
+ */
+export const tutorFromDeck = (cardType = 'any') => (context) => {
+  const { log, player, playerIndex } = context;
+
+  if (player.deck.length === 0) {
+    log(`Deck is empty.`);
+    return {};
+  }
+
+  let validCards = player.deck;
+  if (cardType !== 'any') {
+    validCards = player.deck.filter(c => {
+      if (cardType === 'prey') return c.type === 'Prey' || c.type === 'prey';
+      if (cardType === 'predator') return c.type === 'Predator' || c.type === 'predator';
+      if (cardType === 'spell') return c.type === 'Spell' || c.type === 'spell';
+      return true;
+    });
+  }
+
+  if (validCards.length === 0) {
+    log(`No valid cards in deck.`);
+    return {};
+  }
+
+  return makeTargetedSelection({
+    title: `Choose a card to add to hand`,
+    candidates: () => validCards.map(card => ({ label: card.name, value: card })),
+    onSelect: (card) => ({
+      addToHand: { playerIndex, card, fromDeck: true }
+    }),
+    renderCards: true
+  });
+};
+
 // ============================================================================
 // EFFECT REGISTRY
 // ============================================================================
@@ -755,6 +836,9 @@ export const effectRegistry = {
   selectPredatorForKeyword,
   selectEnemyToStripAbilities,
   selectCardToDiscard,
+  selectEnemyPreyToKill,
+  selectEnemyToKill,
+  tutorFromDeck,
 };
 
 // ============================================================================
@@ -902,6 +986,15 @@ export const resolveEffect = (effectDef, context) => {
       break;
     case 'selectCardToDiscard':
       specificEffect = effectFn(params.count);
+      break;
+    case 'selectEnemyPreyToKill':
+      specificEffect = effectFn();
+      break;
+    case 'selectEnemyToKill':
+      specificEffect = effectFn();
+      break;
+    case 'tutorFromDeck':
+      specificEffect = effectFn(params.cardType);
       break;
     default:
       console.warn(`No parameter mapping for effect type: ${effectDef.type}`);

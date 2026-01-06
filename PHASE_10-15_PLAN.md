@@ -292,6 +292,33 @@ Already supported via `buffStats('all-friendly', { attack: 1, health: 0 })`
 
 ---
 
+### Batch 8: More Selection Effects (COMPLETED ✅)
+
+**Date**: 2026-01-06
+
+**Migrated Effects**: 5 additional effects (31/43 total = 72%)
+
+**Cards Migrated**:
+1. **Net (spell)** - selectEnemyPreyToKill()
+2. **Goliath Grouper (onConsume)** - selectEnemyPreyToKill()
+3. **Great White Shark (onConsume)** - selectEnemyToKill()
+4. **Orca (onConsume)** - tutorFromDeck('any')
+5. **Spearfish Remora (discardEffect)** - selectPredatorForKeyword('Ambush')
+
+**New Selection Primitives Added**:
+- `selectEnemyPreyToKill()` - Select enemy prey creature to destroy
+- `selectEnemyToKill()` - Select any enemy creature to destroy
+- `tutorFromDeck(cardType)` - Search deck for a card to add to hand
+
+**Testing**: ✅ All five selection effects tested and working correctly
+
+**Cumulative Progress**:
+- Tokens: 11/11 (100%) ✅
+- **Fish: 31/43 (72%) - Most Selection Complete!** ⏳
+- **Total: 42/262 effects (16%)**
+
+---
+
 ## Simple Fish Effects: COMPLETE ✅ (20/43)
 
 All straightforward effects that map directly to effect library primitives have been migrated!
@@ -310,21 +337,18 @@ All straightforward effects that map directly to effect library primitives have 
 
 ---
 
-## Complex Fish Effects: REMAINING (17/43)
+## Complex Fish Effects: REMAINING (12/43)
 
 These effects require additional infrastructure:
 
-### 1. **Selection-Based Effects** (8 effects) ⏳
-~~Edible~~ ✅, ~~Undertow~~ ✅, ~~Silver King~~ ✅, remaining require custom selection logic:
+### 1. **Selection-Based Effects** (3 effects) ⏳
+~~Edible~~ ✅, ~~Undertow~~ ✅, ~~Silver King~~ ✅, ~~Spearfish Remora~~ ✅, ~~Goliath Grouper~~ ✅, ~~Great White Shark~~ ✅, ~~Orca~~ ✅, ~~Net~~ ✅
 
-- **Blobfish** (onEnd): Select enemy prey to consume
-- **Rainbow Trout** (onPlay): heal 4 + select creature to regen
-- **Spearfish Remora** (discard): Select predator to grant Ambush
-- **Goliath Grouper** (onConsume): Select prey to kill
-- **Beluga Whale** (onConsume): Select prey to play
-- **Tiger Shark** (onConsume): Select carrion pred to copy abilities
-- **Great White Shark** (onConsume): Select enemy to kill
-- **Orca** (onConsume): Tutor (select card from deck)
+Remaining require truly complex selection logic:
+- **Blobfish** (onEnd): Select enemy prey to consume (special consume logic)
+- **Rainbow Trout** (onPlay): heal 4 + select creature to regen (restore mechanic)
+- **Beluga Whale** (onConsume): Select prey from hand to play (play from hand)
+- **Tiger Shark** (onConsume): Select carrion pred to copy abilities (copy from carrion)
 
 ### 2. **Special Composite Effects** (1 effect) ⏳
 ~~Celestial Eye Goldfish~~ ✅, ~~Golden Angelfish~~ ✅, remaining:
@@ -357,30 +381,29 @@ Triggered by opponent actions:
 - **Maelstrom** (trap): Negate attack + AoE damage
 - **Harpoon** (spell): Damage + steal creature (selection)
 
-### 7. **Net Spell** (1 effect)
-- **Net** (spell): Select enemy prey to kill
-
 ---
 
 ## Recommendation for Complex Effects
 
-~~These 23 effects~~ **These 17 remaining effects** should be migrated AFTER:
+~~These 23 effects~~ **These 12 remaining effects** should be migrated AFTER:
 1. ~~Creating special effect handlers for revealHand, grantBarrier, etc.~~ ✅ **DONE in Batch 6**
-2. Building selection UI infrastructure (for 11+ selection-based effects)
-3. Implementing choice UI system (for 2 choice effects)
-4. Designing trap card effect format (for 4 trap cards)
-5. Creating empowerment/end-turn trigger system (Golden Kingfish, Magnificent Sea Anemone)
+2. ~~Building selection UI infrastructure~~ ✅ **DONE in Batches 7-8**
+3. Building complex game logic handlers (consume, play from hand, restore, copy from carrion)
+4. Implementing choice UI system (for 2 choice effects)
+5. Designing trap card effect format (for 4 trap cards)
+6. Creating empowerment/end-turn trigger system (Golden Kingfish, Magnificent Sea Anemone)
 
-**Progress**: 26/43 fish effects migrated (60%). Remaining 17 effects require custom selection logic or special infrastructure.
+**Progress**: 31/43 fish effects migrated (72%). Remaining 12 effects require complex game logic or special infrastructure.
 
 Status:
-- ✅ Simple effects (20): Complete
-- ✅ Special composites (2/3): revealHand, grantBarrier (Golden Kingfish remaining)
-- ✅ Basic selection (3/11): Edible, Undertow, Silver King
-- ⏳ Custom selection (8): Need specialized selection primitives
+- ✅ Simple effects (20/20): Complete
+- ✅ Special composites (2/3): revealHand, grantBarrier done
+- ✅ Selection effects (8/11): Most complete
+- ⏳ Complex selection (3): Require special game logic (consume, restore, play from hand)
+- ⏳ Damage selection (3): Rainbow Mantis Shrimp, Electric Eel, Shortfin Mako
 - ⏳ Choice UI (2): Need choice system
 - ⏳ Trap cards (4): Need trap infrastructure
-- ⏳ Field spells (1): Need end-turn trigger system
+- ⏳ Special effects (2): Golden Kingfish, Magnificent Sea Anemone
 
-For now, consider **MOVING TO PHASE 11 (REPTILES)** to apply lessons learned, or continue building custom selection primitives to tackle the remaining 8 selection-based fish effects.
+**Recommendation**: Fish is 72% complete. Consider **MOVING TO PHASE 11 (REPTILES)** to apply lessons learned to reptile effects, or continue tackling the remaining 12 complex fish effects.
 

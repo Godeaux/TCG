@@ -256,7 +256,12 @@
       "keywords": ["Free Play"],
       "effectText": "Discard: target pred gains Ambush.",
       "effects": {
-        "discardEffect": "spearfish-remora-grant-ambush-discard"
+        "discardEffect": {
+          "type": "selectPredatorForKeyword",
+          "params": {
+            "keyword": "Ambush"
+          }
+        }
       }
     },
     {
@@ -482,7 +487,10 @@
       "keywords": ["Edible"],
       "effectText": "Kill target prey.",
       "effects": {
-        "onConsume": "goliath-grouper-kill-prey-onconsume"
+        "onConsume": {
+          "type": "selectEnemyPreyToKill",
+          "params": {}
+        }
       }
     },
     {
@@ -564,7 +572,10 @@
       "keywords": ["Acuity"],
       "effectText": "Kill target enemy.",
       "effects": {
-        "onConsume": "great-white-shark-kill-enemy-onconsume"
+        "onConsume": {
+          "type": "selectEnemyToKill",
+          "params": {}
+        }
       }
     },
     {
@@ -576,7 +587,12 @@
       "keywords": [],
       "effectText": "Add a card from deck to hand.",
       "effects": {
-        "onConsume": "orca-tutor-onconsume"
+        "onConsume": {
+          "type": "tutorFromDeck",
+          "params": {
+            "cardType": "any"
+          }
+        }
       }
     },
     {
@@ -585,7 +601,10 @@
       "type": "Spell",
       "effectText": "Kill enemy prey.",
       "effects": {
-        "effect": "net-kill-prey-effect"
+        "effect": {
+          "type": "selectEnemyPreyToKill",
+          "params": {}
+        }
       }
     },
     {
