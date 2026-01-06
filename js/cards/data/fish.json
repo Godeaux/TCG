@@ -489,7 +489,13 @@
       "keywords": [],
       "effectText": "Creatures gain Immune.",
       "effects": {
-        "onConsume": "narwhal-grant-immune-onconsume"
+        "onConsume": {
+          "type": "grantKeyword",
+          "params": {
+            "targetType": "all-friendly",
+            "keyword": "Immune"
+          }
+        }
       }
     },
     {
