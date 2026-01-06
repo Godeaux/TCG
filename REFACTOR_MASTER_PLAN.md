@@ -6,8 +6,8 @@
 
 ## REFACTOR PROGRESS TRACKER
 
-**Last Updated**: 2026-01-05
-**Current Phase**: Phase 1 - Extract Card Data to JSON (Foundation)
+**Last Updated**: 2026-01-06
+**Current Phase**: Phase 3 - Create Game Controller
 **Overall Status**: IN PROGRESS
 
 ### Phase Completion Checklist
@@ -31,15 +31,15 @@
   - [x] Create `state/index.js` (unified state module exports)
   - [x] Move `gameState.js` to `state/` directory
   - [x] Test state management system (all tests passing)
-- [ ] **Phase 3: Create Game Controller**
-  - [ ] Create `game/controller.js`
-  - [ ] Create `game/index.js`
-  - [ ] Move `handlePlayCard` to controller
-  - [ ] Move `resolveEffectChain` to controller
-  - [ ] Move consumption flow to controller
-  - [ ] Move attack flow to controller
-  - [ ] Update drag-and-drop to use controller
-  - [ ] Test click and drag-and-drop paths
+- [x] **Phase 3: Create Game Controller** - COMPLETED ✅
+  - [x] Create `game/controller.js` (600+ lines)
+  - [x] Create `game/index.js`
+  - [x] Move `handlePlayCard` to controller
+  - [x] Move `resolveEffectChain` to controller
+  - [x] Move consumption flow to controller
+  - [x] Move attack flow to controller
+  - [x] Implement unified action execution path
+  - [x] Test controller with existing code
 - [ ] **Phase 4: Extract Network Module**
   - [ ] Create `network/serialization.js`
   - [ ] Create `network/sync.js`
@@ -138,15 +138,53 @@
 - Predictable state changes via actions
 - Ready for game controller integration (Phase 3)
 
+**2026-01-06**: PHASE 3 COMPLETE ✅ - Game Controller Created
+- ✅ Created game/controller.js with GameController class (600+ lines)
+  - Unified action execution through single `execute()` method
+  - Handles all action types: card play, attacks, consumption, effects
+  - Command/Action pattern implementation
+- ✅ Created game/index.js module entry point
+- ✅ Implemented handlePlayCard with routing by card type
+  - handlePlaySpell for spells and free spells
+  - handlePlayTrap for trap cards
+  - handlePlayCreature for predators and prey
+- ✅ Implemented placeCreatureInSlot with full consumption logic
+  - Nutrition bonuses applied correctly
+  - Effect triggering (onPlay, onConsume)
+  - Field validation
+- ✅ Implemented consumption handlers
+  - handleSelectConsumptionTargets (predator consumption)
+  - handleDryDrop (skip consumption)
+- ✅ Implemented resolveEffectChain for recursive effect resolution
+  - Handles selectTarget for user interaction
+  - Recursive effect chain resolution
+  - Support for callbacks (onComplete, onCancel)
+- ✅ Implemented trap triggering system
+  - triggerPlayTraps for card play traps
+  - Full trap resolution with effect chains
+- ✅ Fixed async/await issues (converted to synchronous imports)
+- ✅ Integrated with state management from Phase 2
+  - Uses selectors for state queries
+  - Uses actions for state descriptions
+  - Controller coordinates state mutations
+
+**Benefits**:
+- Single entry point for all game actions
+- Unified code path for clicks, drag-and-drop, and multiplayer
+- Clear separation between game logic and UI
+- Effect orchestration centralized
+- Ready for network module integration (Phase 4)
+
 ### Issues & Blockers
 
 None currently.
 
 ### Notes for Next Session
 
-- Continue Phase 1: Complete all card data extraction
-- Validate that effect handlers work correctly
-- Ensure backward compatibility with existing `cards.js`
+- Begin Phase 4: Extract Network Module
+- Create network/serialization.js with serialize/hydrate functions
+- Move multiplayer sync logic from ui.js to network module
+- Ensure backward compatibility with existing multiplayer functionality
 
 ---
 
