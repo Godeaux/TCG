@@ -406,7 +406,20 @@
       "keywords": [],
       "effectText": "Draw 3, then discard 1.",
       "effects": {
-        "onPlay": "silver-king-draw-discard-onplay"
+        "onPlay": [
+          {
+            "type": "draw",
+            "params": {
+              "count": 3
+            }
+          },
+          {
+            "type": "selectCardToDiscard",
+            "params": {
+              "count": 1
+            }
+          }
+        ]
       }
     },
     {
@@ -645,7 +658,12 @@
       "type": "Free Spell",
       "effectText": "Target pred gains Edible.",
       "effects": {
-        "effect": "edible-grant-keyword-effect"
+        "effect": {
+          "type": "selectPredatorForKeyword",
+          "params": {
+            "keyword": "Edible"
+          }
+        }
       }
     },
     {
@@ -666,7 +684,10 @@
       "type": "Free Spell",
       "effectText": "Target enemy loses abilities.",
       "effects": {
-        "effect": "undertow-strip-target-effect"
+        "effect": {
+          "type": "selectEnemyToStripAbilities",
+          "params": {}
+        }
       }
     },
     {

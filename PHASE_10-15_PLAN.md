@@ -266,6 +266,32 @@ Already supported via `buffStats('all-friendly', { attack: 1, health: 0 })`
 
 ---
 
+### Batch 7: Selection-Based Effects (COMPLETED ✅)
+
+**Date**: 2026-01-06
+
+**Migrated Effects**: 3 additional effects (26/43 total = 60%)
+
+**Cards Migrated**:
+1. **Edible (spell)** - selectPredatorForKeyword('Edible')
+2. **Undertow (spell)** - selectEnemyToStripAbilities()
+3. **Silver King (onPlay)** - [draw(3), selectCardToDiscard(1)]
+
+**New Selection Primitives Added**:
+- `selectPredatorForKeyword(keyword)` - Select friendly predator to grant keyword
+- `selectEnemyToStripAbilities()` - Select enemy to strip abilities
+- `selectCardToDiscard(count)` - Select card(s) from hand to discard
+- `makeTargetedSelection({ title, candidates, onSelect })` - Helper for selection UI
+
+**Testing**: ✅ All three selection effects tested and working correctly
+
+**Cumulative Progress**:
+- Tokens: 11/11 (100%) ✅
+- **Fish: 26/43 (60%) - Simple, Special, + Some Selection** ⏳
+- **Total: 37/262 effects (14%)**
+
+---
+
 ## Simple Fish Effects: COMPLETE ✅ (20/43)
 
 All straightforward effects that map directly to effect library primitives have been migrated!
@@ -284,24 +310,21 @@ All straightforward effects that map directly to effect library primitives have 
 
 ---
 
-## Complex Fish Effects: REMAINING (20/43)
+## Complex Fish Effects: REMAINING (17/43)
 
 These effects require additional infrastructure:
 
-### 1. **Selection-Based Effects** (11 effects)
-Require UI for player to choose targets/cards:
+### 1. **Selection-Based Effects** (8 effects) ⏳
+~~Edible~~ ✅, ~~Undertow~~ ✅, ~~Silver King~~ ✅, remaining require custom selection logic:
 
 - **Blobfish** (onEnd): Select enemy prey to consume
 - **Rainbow Trout** (onPlay): heal 4 + select creature to regen
 - **Spearfish Remora** (discard): Select predator to grant Ambush
-- **Silver King** (onPlay): Draw 3, then select card to discard
 - **Goliath Grouper** (onConsume): Select prey to kill
 - **Beluga Whale** (onConsume): Select prey to play
 - **Tiger Shark** (onConsume): Select carrion pred to copy abilities
 - **Great White Shark** (onConsume): Select enemy to kill
 - **Orca** (onConsume): Tutor (select card from deck)
-- **Net** (spell): Select enemy prey to kill
-- **Edible** (spell): Select predator to grant Edible keyword
 
 ### 2. **Special Composite Effects** (1 effect) ⏳
 ~~Celestial Eye Goldfish~~ ✅, ~~Golden Angelfish~~ ✅, remaining:
@@ -321,10 +344,9 @@ Player chooses one of multiple options:
 - **Cannibal Fish** (onPlay): Choose: summon Lancetfish OR gain +2/+2
 - **Angler** (spell): Choose: play prey OR add prey from deck to hand
 
-### 5. **Ability Manipulation** (2 effects) ⏳
-~~Washout~~ ✅, remaining:
+### 5. **Ability Manipulation** (1 effect) ⏳
+~~Washout~~ ✅, ~~Undertow~~ ✅, remaining:
 
-- **Undertow** (spell): Select enemy to strip abilities (selection + ability strip)
 - **Magnificent Sea Anemone** (field spell): End-turn summon effect
 
 ### 6. **Trap Cards** (4 effects)
@@ -335,18 +357,30 @@ Triggered by opponent actions:
 - **Maelstrom** (trap): Negate attack + AoE damage
 - **Harpoon** (spell): Damage + steal creature (selection)
 
+### 7. **Net Spell** (1 effect)
+- **Net** (spell): Select enemy prey to kill
+
 ---
 
 ## Recommendation for Complex Effects
 
-~~These 23 effects~~ **These 20 remaining effects** should be migrated AFTER:
+~~These 23 effects~~ **These 17 remaining effects** should be migrated AFTER:
 1. ~~Creating special effect handlers for revealHand, grantBarrier, etc.~~ ✅ **DONE in Batch 6**
 2. Building selection UI infrastructure (for 11+ selection-based effects)
 3. Implementing choice UI system (for 2 choice effects)
 4. Designing trap card effect format (for 4 trap cards)
 5. Creating empowerment/end-turn trigger system (Golden Kingfish, Magnificent Sea Anemone)
 
-**Progress**: 23/43 fish effects migrated (53%). Remaining 20 effects require UI infrastructure.
+**Progress**: 26/43 fish effects migrated (60%). Remaining 17 effects require custom selection logic or special infrastructure.
 
-For now, consider **MOVING TO PHASE 11 (REPTILES)** to apply lessons learned, or continue building selection/choice UI infrastructure to complete fish 100%.
+Status:
+- ✅ Simple effects (20): Complete
+- ✅ Special composites (2/3): revealHand, grantBarrier (Golden Kingfish remaining)
+- ✅ Basic selection (3/11): Edible, Undertow, Silver King
+- ⏳ Custom selection (8): Need specialized selection primitives
+- ⏳ Choice UI (2): Need choice system
+- ⏳ Trap cards (4): Need trap infrastructure
+- ⏳ Field spells (1): Need end-turn trigger system
+
+For now, consider **MOVING TO PHASE 11 (REPTILES)** to apply lessons learned, or continue building custom selection primitives to tackle the remaining 8 selection-based fish effects.
 

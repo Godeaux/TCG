@@ -33,6 +33,36 @@ import { isInvisible } from "../keywords.js";
 import { isCreatureCard } from "../cardTypes.js";
 
 // ============================================================================
+// SELECTION HELPERS
+// ============================================================================
+
+/**
+ * Helper to create targeted selection UI
+ * @param {Object} params - { title, candidates, onSelect, renderCards }
+ * @returns {Object} - Selection effect result
+ */
+export const makeTargetedSelection = ({ title, candidates, onSelect, renderCards = false }) => ({
+  selectTarget: { title, candidates, onSelect, renderCards },
+});
+
+/**
+ * Helper to handle targeted responses (for cards with onTargeted triggers)
+ */
+export const handleTargetedResponse = ({ target, source, log, player, opponent, state }) => {
+  if (target?.onTargeted) {
+    return target.onTargeted({
+      log,
+      target,
+      source,
+      player,
+      opponent,
+      state,
+    });
+  }
+  return null;
+};
+
+// ============================================================================
 // BASIC EFFECTS
 // ============================================================================
 
@@ -601,6 +631,77 @@ export const removeAbilitiesAll = () => (context) => {
 };
 
 // ============================================================================
+// SELECTION-BASED EFFECTS
+// ============================================================================
+
+/**
+ * Select a friendly predator to grant a keyword
+ * @param {string} keyword - Keyword to grant
+ */
+export const selectPredatorForKeyword = (keyword) => (context) => {
+  const { log, player, opponent, state } = context;
+  const targets = player.field.filter(c => c && (c.type === 'Predator' || c.type === 'predator'));
+
+  if (targets.length === 0) {
+    log(`No predators to grant ${keyword}.`);
+    return {};
+  }
+
+  return makeTargetedSelection({
+    title: `Choose a predator to gain ${keyword}`,
+    candidates: targets.map(t => ({ label: t.name, value: t })),
+    onSelect: (target) =>
+      handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+        addKeyword: { creature: target, keyword }
+      }
+  });
+};
+
+/**
+ * Select an enemy creature to strip abilities
+ */
+export const selectEnemyToStripAbilities = () => (context) => {
+  const { log, opponent, player, state } = context;
+  const targets = opponent.field.filter(c => c && (c.type === 'Prey' || c.type === 'Predator' || c.type === 'prey' || c.type === 'predator') && !isInvisible(c, state));
+
+  if (targets.length === 0) {
+    log(`No enemy creatures to strip abilities.`);
+    return {};
+  }
+
+  return makeTargetedSelection({
+    title: "Choose an enemy creature to strip abilities",
+    candidates: targets.map(t => ({ label: t.name, value: t })),
+    onSelect: (target) =>
+      handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+        removeAbilities: target
+      }
+  });
+};
+
+/**
+ * Select a card from hand to discard
+ * @param {number} count - Number of cards to discard (default 1)
+ */
+export const selectCardToDiscard = (count = 1) => (context) => {
+  const { log, player, playerIndex } = context;
+
+  if (player.hand.length === 0) {
+    log(`No cards in hand to discard.`);
+    return {};
+  }
+
+  return makeTargetedSelection({
+    title: `Choose ${count} card${count > 1 ? 's' : ''} to discard`,
+    candidates: player.hand.map(card => ({ label: card.name, value: card })),
+    onSelect: (card) => ({
+      discardCards: { playerIndex, cards: [card] }
+    }),
+    renderCards: true
+  });
+};
+
+// ============================================================================
 // EFFECT REGISTRY
 // ============================================================================
 
@@ -649,6 +750,11 @@ export const effectRegistry = {
   grantBarrier,
   removeAbilities,
   removeAbilitiesAll,
+
+  // Selection-based
+  selectPredatorForKeyword,
+  selectEnemyToStripAbilities,
+  selectCardToDiscard,
 };
 
 // ============================================================================
@@ -787,6 +893,15 @@ export const resolveEffect = (effectDef, context) => {
       break;
     case 'removeAbilitiesAll':
       specificEffect = effectFn();
+      break;
+    case 'selectPredatorForKeyword':
+      specificEffect = effectFn(params.keyword);
+      break;
+    case 'selectEnemyToStripAbilities':
+      specificEffect = effectFn();
+      break;
+    case 'selectCardToDiscard':
+      specificEffect = effectFn(params.count);
       break;
     default:
       console.warn(`No parameter mapping for effect type: ${effectDef.type}`);
