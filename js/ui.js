@@ -2354,10 +2354,35 @@ const initHandPreview = () => {
   };
 
   const handlePointer = (event) => {
-    const target = document.elementFromPoint(event.clientX, event.clientY);
-    const cardElement = target?.closest(".hand-grid .card");
-    if (cardElement) {
-      focusCardElement(cardElement);
+    // Get all cards in hand
+    const cards = Array.from(handGrid.querySelectorAll('.card'));
+    if (cards.length === 0) {
+      return;
+    }
+
+    // Calculate distance from cursor to each card's center
+    let closestCard = null;
+    let closestDistance = Infinity;
+
+    cards.forEach(card => {
+      const rect = card.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      // Calculate distance from cursor to card center
+      const dx = event.clientX - centerX;
+      const dy = event.clientY - centerY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestCard = card;
+      }
+    });
+
+    // Focus the card with the closest center
+    if (closestCard) {
+      focusCardElement(closestCard);
     }
   };
 

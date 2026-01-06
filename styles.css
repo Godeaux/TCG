@@ -556,10 +556,11 @@ button {
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
 }
 
-.hand-grid .card:hover {
-  z-index: 1000; /* High z-index for hovered cards */
+/* Hover handled by JavaScript proximity detection - see hand-focus class */
+/* .hand-grid .card:hover {
+  z-index: 1000;
   transform: translateY(-15px) scale(1.05);
-}
+} */
 
 .hand-grid .card .card-name {
   font-size: 14px;
