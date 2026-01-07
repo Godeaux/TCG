@@ -241,6 +241,14 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
   }
 
   const localIndex = getLocalPlayerIndex(state);
+  console.log('[applyLobbySyncPayload] Starting sync', {
+    localIndex,
+    senderId,
+    payloadSelections: payload.deckSelection?.selections,
+    currentSelections: state.deckSelection?.selections,
+    payloadReadyStatus: payload.deckSelection?.readyStatus,
+    currentReadyStatus: state.deckSelection?.readyStatus
+  });
   const deckSelectionOrder = ["p1", "p1-selected", "p2", "complete"];
   const deckBuilderOrder = ["p1", "p2", "complete"];
   const getStageRank = (order, stage) => {
@@ -371,9 +379,20 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
     if (Array.isArray(payload.deckSelection.selections)) {
       payload.deckSelection.selections.forEach((selection, index) => {
         const localSelection = state.deckSelection.selections[index];
-        if (index === localIndex && localSelection) {
+        const isLocalSlot = index === localIndex;
+        const shouldProtect = isLocalSlot && localSelection;
+        console.log(`[applyLobbySyncPayload] Selection sync index ${index}:`, {
+          isLocalSlot,
+          localSelection,
+          incomingSelection: selection,
+          shouldProtect,
+          localIndex
+        });
+        if (shouldProtect) {
+          console.log(`[applyLobbySyncPayload] PROTECTING local selection at index ${index}`);
           return;
         }
+        console.log(`[applyLobbySyncPayload] APPLYING selection at index ${index}:`, selection);
         state.deckSelection.selections[index] = selection;
       });
     }

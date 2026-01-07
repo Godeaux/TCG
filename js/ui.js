@@ -744,6 +744,7 @@ const applyLobbySyncPayload = (state, payload, options = {}) => {
   const senderId = payload.senderId ?? null;
   // Skip sender check when loading from database (force apply)
   if (!forceApply && senderId && senderId === state.menu?.profile?.id) {
+    console.log('[ui.js applyLobbySyncPayload] SKIPPED - payload is from self', { senderId, profileId: state.menu?.profile?.id });
     return;
   }
   const timestamp = payload.timestamp ?? 0;
@@ -758,6 +759,16 @@ const applyLobbySyncPayload = (state, payload, options = {}) => {
     state.menu.lastLobbySyncBySender[senderId] = timestamp;
   }
   const localIndex = getLocalPlayerIndex(state);
+  console.log('[ui.js applyLobbySyncPayload] Starting sync', {
+    localIndex,
+    senderId,
+    profileId: state.menu?.profile?.id,
+    lobby: { host_id: state.menu?.lobby?.host_id, guest_id: state.menu?.lobby?.guest_id },
+    payloadSelections: payload.deckSelection?.selections,
+    currentSelections: state.deckSelection?.selections,
+    payloadReadyStatus: payload.deckSelection?.readyStatus,
+    currentReadyStatus: state.deckSelection?.readyStatus
+  });
   const deckSelectionOrder = ["p1", "p1-selected", "p2", "complete"];
   const deckBuilderOrder = ["p1", "p2", "complete"];
   const getStageRank = (order, stage) => {
@@ -869,10 +880,36 @@ const applyLobbySyncPayload = (state, payload, options = {}) => {
     if (Array.isArray(payload.deckSelection.selections)) {
       payload.deckSelection.selections.forEach((selection, index) => {
         const localSelection = state.deckSelection.selections[index];
-        if (index === localIndex && localSelection) {
+        const isLocalSlot = index === localIndex;
+        const shouldProtect = isLocalSlot && localSelection;
+        console.log(`[ui.js applyLobbySyncPayload] Selection sync index ${index}:`, {
+          isLocalSlot,
+          localSelection,
+          incomingSelection: selection,
+          shouldProtect,
+          localIndex
+        });
+        if (shouldProtect) {
+          console.log(`[ui.js applyLobbySyncPayload] PROTECTING local selection at index ${index}`);
           return;
         }
+        console.log(`[ui.js applyLobbySyncPayload] APPLYING selection at index ${index}:`, selection);
         state.deckSelection.selections[index] = selection;
+      });
+    }
+    // Sync ready status - only update opponent's status, protect local player's
+    if (Array.isArray(payload.deckSelection.readyStatus)) {
+      if (!state.deckSelection.readyStatus) {
+        state.deckSelection.readyStatus = [false, false];
+      }
+      payload.deckSelection.readyStatus.forEach((ready, index) => {
+        // Only update opponent's ready status
+        if (index !== localIndex) {
+          console.log(`[ui.js applyLobbySyncPayload] APPLYING opponent ready status at index ${index}:`, ready);
+          state.deckSelection.readyStatus[index] = ready;
+        } else {
+          console.log(`[ui.js applyLobbySyncPayload] PROTECTING local ready status at index ${index}`);
+        }
       });
     }
   }
@@ -1019,6 +1056,8 @@ const updateLobbySubscription = (state, { force = false } = {}) => {
   setLobbyChannel(lobbyChannel);
   lobbyChannel.on("broadcast", { event: "deck_update" }, ({ payload }) => {
     applyLobbySyncPayload(state, payload);
+    // Trigger UI update so opponent's ready status is reflected
+    latestCallbacks.onUpdate?.();
   });
   lobbyChannel.on("broadcast", { event: "sync_request" }, ({ payload }) => {
     if (payload?.senderId === state.menu?.profile?.id) {
@@ -1030,6 +1069,8 @@ const updateLobbySubscription = (state, { force = false } = {}) => {
   lobbyChannel.on("broadcast", { event: "sync_state" }, ({ payload }) => {
     // Apply sync state but only opponent's data (own data protected in applyLobbySyncPayload)
     applyLobbySyncPayload(state, payload);
+    // Trigger UI update so opponent's state changes are reflected
+    latestCallbacks.onUpdate?.();
   });
   refreshLobbyState(state, { silent: true });
 

@@ -25,13 +25,21 @@ import { isFreePlay } from '../../keywords.js';
 
 /**
  * Calculate and apply card overlap for the hand
- * This ensures all cards fit in the hand panel even when there are many cards
+ * Cards always overlap in a "fanned" style like Hearthstone/Balatro
  *
  * @param {HTMLElement} handGrid - Hand grid container
  */
 export const updateHandOverlap = (handGrid) => {
   const cards = Array.from(handGrid.querySelectorAll(".card"));
   if (cards.length === 0) {
+    handGrid.style.setProperty("--hand-overlap", "0px");
+    handGrid.style.setProperty("--mobile-card-scale", "1");
+    handGrid.style.overflow = "visible";
+    return;
+  }
+
+  // Single card - no overlap needed
+  if (cards.length === 1) {
     handGrid.style.setProperty("--hand-overlap", "0px");
     handGrid.style.setProperty("--mobile-card-scale", "1");
     handGrid.style.overflow = "visible";
@@ -48,16 +56,18 @@ export const updateHandOverlap = (handGrid) => {
   const isMobilePortrait = window.matchMedia("(max-width: 767px) and (orientation: portrait)").matches;
   const minVisibleWidth = 20; // Minimum visible pixels per card
 
-  // Calculate total width if cards are laid out with no overlap
-  const totalWidthNoOverlap = cardWidth * cards.length;
-
-  // Only apply overlap if cards would overflow the container
-  let overlap = 0;
+  // Base overlap for "fanned" look - always show cards overlapping (40% overlap)
+  const baseOverlapPercent = 0.40;
+  let overlap = cardWidth * baseOverlapPercent;
   let scale = 1;
 
-  if (totalWidthNoOverlap > handWidth) {
-    // Calculate how much overlap is needed to fit all cards
-    overlap = (totalWidthNoOverlap - handWidth) / Math.max(1, cards.length - 1);
+  // Calculate total width with base overlap
+  const totalWidthWithBaseOverlap = cardWidth + (cardWidth - overlap) * (cards.length - 1);
+
+  // If cards still overflow with base overlap, increase overlap to fit
+  if (totalWidthWithBaseOverlap > handWidth) {
+    // Calculate overlap needed to fit all cards
+    overlap = (cardWidth * cards.length - handWidth) / Math.max(1, cards.length - 1);
 
     // Calculate visible width per card with this overlap
     const visibleWidth = cardWidth - overlap;
@@ -65,7 +75,6 @@ export const updateHandOverlap = (handGrid) => {
     // If on mobile and visible width is less than minimum
     if (isMobilePortrait && visibleWidth < minVisibleWidth && cards.length > 1) {
       // Calculate what scale would be needed to show minVisibleWidth per card
-      // Total width needed = minVisibleWidth * (cards.length - 1) + cardWidth
       const totalWidthNeeded = minVisibleWidth * (cards.length - 1) + cardWidth;
 
       if (totalWidthNeeded > handWidth) {
@@ -81,8 +90,8 @@ export const updateHandOverlap = (handGrid) => {
         overlap = cardWidth - minVisibleWidth;
       }
     } else {
-      // Cap at 75% max overlap to keep cards readable (non-mobile or acceptable overlap)
-      const maxOverlap = cardWidth * 0.75;
+      // Cap at 85% max overlap to keep cards readable
+      const maxOverlap = cardWidth * 0.85;
       overlap = Math.min(overlap, maxOverlap);
     }
   }

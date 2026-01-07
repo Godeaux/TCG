@@ -305,7 +305,7 @@ button {
 
 .battlefield-layout {
   display: grid;
-  grid-template-rows: minmax(0, 1.8fr) minmax(0, 1fr); /* Flexible rows, no hard minimums */
+  grid-template-rows: minmax(0, 2.33fr) minmax(0, 1fr); /* 70% field / 30% hand ratio */
   gap: clamp(6px, 1vw, 12px); /* Tighter gap for better packing */
   flex: 1; /* Take available space and shrink as needed */
   min-height: 0; /* Allow to shrink completely if needed */
@@ -571,39 +571,38 @@ button {
   justify-content: center; /* Center the card fan like Hearthstone/Balatro */
   flex-wrap: nowrap;
   gap: 0;
-  overflow-x: auto; /* Allow horizontal scroll if needed when zoomed */
+  overflow-x: visible; /* Let cards overflow rather than scroll */
   overflow-y: visible;
   padding: 0 clamp(4px, 0.8vw, 8px) clamp(8px, 1.2vw, 16px);
   min-height: 0;
   width: 100%;
   flex: 1;
   min-width: 0;
-  max-width: 100%;
+  max-width: min(100%, 600px); /* Constrain width to force card overlap */
+  margin: 0 auto; /* Center the constrained hand-grid */
   box-sizing: border-box;
   position: relative;
   z-index: 1; /* Create stacking context for cards */
 }
 
 .hand-grid .card {
-  flex: 0 1 auto; /* Allow shrinking when needed */
-  width: clamp(70px, min(18vw, 140px), 160px);
-  min-width: 60px; /* Minimum width to remain usable */
+  flex: 0 0 auto; /* Don't shrink - use overlap instead */
+  width: clamp(100px, min(16vw, 130px), 150px);
+  min-width: 90px; /* Minimum width to remain readable */
   aspect-ratio: 5 / 7; /* Standard playing card ratio */
-  margin-left: calc(var(--hand-overlap) * -1.2);
+  margin-left: calc(var(--hand-overlap) * -1);
   transform-origin: bottom center;
   transform: translateY(8px) scale(0.98);
   transition: transform var(--transition-fast), box-shadow var(--transition-fast), z-index 0.2s;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35);
-  max-width: 100%;
   position: relative;
   font-size: 20px;
   z-index: 10; /* Base z-index for hand cards */
-  min-width: 0;
 }
 
 /* Dynamic hand expansion mode */
 .battlefield-center-column.hand-expanded .battlefield-layout {
-  grid-template-rows: minmax(140px, 1.2fr) minmax(140px, 0.8fr); /* Compact battlefield when hand expanded */
+  grid-template-rows: minmax(140px, 1.5fr) minmax(140px, 1fr); /* Expanded hand takes more space */
   flex: 0 1 auto; /* Allow more shrinking to make room for hand */
 }
 
@@ -619,7 +618,7 @@ button {
 }
 
 .battlefield-center-column.hand-expanded .hand-grid .card {
-  width: clamp(80px, min(20vw, 160px), 180px);
+  width: clamp(110px, min(18vw, 150px), 170px);
 }
 
 .battlefield-center-column.hand-expanded .hand-grid .card.hand-focus {
@@ -1099,6 +1098,12 @@ button {
   box-sizing: border-box;
 }
 
+/* Widen action bar for card selection grids */
+.action-bar.has-selection:has(.selection-card) {
+  width: clamp(360px, 85vw, 720px);
+  max-width: 90vw;
+}
+
 .action-buttons {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1272,6 +1277,95 @@ button {
   flex-wrap: wrap;
   justify-content: center;
   gap: 12px;
+}
+
+/* Selection list grid layout for card selections */
+.selection-list:has(.selection-card) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(130px, 1fr));
+  gap: 12px;
+  max-width: 100%;
+  justify-items: center;
+}
+
+/* Tablet: 2-3 columns */
+@media (min-width: 540px) {
+  .selection-list:has(.selection-card) {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 200px));
+    justify-content: center;
+  }
+}
+
+/* Desktop: 3 columns */
+@media (min-width: 768px) {
+  .selection-list:has(.selection-card) {
+    grid-template-columns: repeat(3, minmax(160px, 200px));
+    justify-content: center;
+  }
+}
+
+/* Smaller cards in grid for better fit */
+.selection-list:has(.selection-card) .selection-item.selection-card {
+  width: 100%;
+  max-width: 180px;
+  padding: 8px;
+}
+
+.selection-list:has(.selection-card) .selection-item.selection-card .card {
+  width: 100%;
+  max-width: 160px;
+}
+
+.selection-list:has(.selection-card) .selection-item.selection-card button {
+  width: 100%;
+  margin-top: 6px;
+  padding: 8px 12px;
+}
+
+/* Mobile: ensure cards don't get too small */
+@media (max-width: 480px) {
+  .selection-list:has(.selection-card) {
+    grid-template-columns: repeat(2, minmax(130px, 1fr));
+    gap: 8px;
+  }
+
+  .selection-list:has(.selection-card) .selection-item.selection-card {
+    max-width: 160px;
+    padding: 6px;
+  }
+
+  .selection-list:has(.selection-card) .selection-item.selection-card .card {
+    max-width: 140px;
+  }
+}
+
+/* Very small screens: single column */
+@media (max-width: 320px) {
+  .selection-list:has(.selection-card) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Selection panel layout for card grids */
+.selection-panel:has(.selection-card) {
+  align-items: center;
+}
+
+/* Title above card selection grid */
+.selection-panel:has(.selection-card) > strong {
+  text-align: center;
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: var(--gold-light);
+}
+
+/* Cancel/Confirm button below card selection grid */
+.selection-panel:has(.selection-card) > button {
+  margin-top: 12px;
+  width: 100%;
+  max-width: 200px;
+  align-self: center;
+  padding: 10px 20px;
 }
 
 .secondary {
@@ -3127,8 +3221,8 @@ button {
   }
 
   .battlefield-layout {
-    grid-template-rows: minmax(120px, 1.5fr) minmax(100px, 1fr); /* Ensure player field stays visible */
-    min-height: 220px; /* Reduced but still visible */
+    grid-template-rows: minmax(120px, 2.33fr) minmax(80px, 1fr); /* 70/30 ratio, ensure player field stays visible */
+    min-height: 200px; /* Reduced but still visible */
   }
 
   .battlefield-center-column {

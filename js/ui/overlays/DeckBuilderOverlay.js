@@ -1035,6 +1035,18 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
 
     const localReady = state.deckSelection.readyStatus[localIndex];
     const opponentReady = state.deckSelection.readyStatus[opponentIndex];
+
+    console.log('[DeckBuilderOverlay] Online deck selection render:', {
+      localIndex,
+      opponentIndex,
+      selections: state.deckSelection.selections,
+      localSelection: state.deckSelection.selections[localIndex],
+      readyStatus: state.deckSelection.readyStatus,
+      localReady,
+      opponentReady,
+      lobby: { host_id: state.menu?.lobby?.host_id, guest_id: state.menu?.lobby?.guest_id },
+      profileId: state.menu?.profile?.id
+    });
     const localPlayer = state.players[localIndex];
     const opponentPlayer = state.players[opponentIndex];
     const opponentName = opponentPlayer?.name || "Opponent";
@@ -1110,6 +1122,13 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
 
     const localSelection = state.deckSelection.selections[localIndex];
     const hasSelectedDeck = Boolean(localSelection);
+
+    console.log('[DeckBuilderOverlay] Deck selection check:', {
+      localIndex,
+      localSelection,
+      hasSelectedDeck,
+      allSelections: state.deckSelection.selections
+    });
 
     if (deckSelectTitle) {
       deckSelectTitle.textContent = hasSelectedDeck
