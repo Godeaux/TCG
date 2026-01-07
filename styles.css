@@ -336,23 +336,24 @@ button {
   background: var(--bg-field);
   border: 1px dashed var(--border-subtle);
   border-radius: var(--card-radius);
-  aspect-ratio: 3 / 4;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--text-muted);
-  font-size: clamp(8px, 1.2vw, 13px); /* Slightly smaller font for tight packing */
+  font-size: clamp(8px, 1.2vw, 13px);
   width: 100%;
-  height: 100%; /* Fill parent row height */
-  min-height: 0; /* No hard minimum - pack tightly */
-  padding: 8px; /* Padding around cards in slots */
+  height: 100%;
+  min-height: 0;
+  padding: 4px;
   box-sizing: border-box;
 }
 
-/* Cards in field slots should fill the slot */
+/* Cards in field slots maintain standard playing card dimensions */
 .field-slot .card {
-  width: 100%;
+  width: auto;
   height: 100%;
+  max-height: 100%;
+  aspect-ratio: 5 / 7; /* Standard playing card ratio */
   margin: 0;
   box-sizing: border-box;
 }
@@ -364,34 +365,8 @@ button {
   flex-direction: column;
 }
 
-.field-slot .card .card-header {
-  padding: 6px 8px;
-}
-
 .field-slot .card .card-name {
-  font-size: clamp(10px, 1.2vw, 13px);
-}
-
-.field-slot .card .card-footer {
-  padding: 6px 8px;
-  gap: 4px;
-}
-
-.field-slot .card .card-stat-box {
-  padding: 3px 6px;
-  gap: 3px;
-}
-
-.field-slot .card .card-stat-box .stat-emoji {
-  font-size: clamp(10px, 1.4vw, 14px);
-}
-
-.field-slot .card .card-stat-box .stat-value {
-  font-size: clamp(11px, 1.4vw, 14px);
-}
-
-.field-slot .card .card-text-area {
-  font-size: clamp(8px, 1.1vw, 10px);
+  font-size: clamp(9px, 1.1vw, 12px);
 }
 
 .field-slot .card .card-image-container {
@@ -404,9 +379,26 @@ button {
 }
 
 .field-slot .card .card-image {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.field-slot .card .card-stats-row {
+  padding: 4px 2px;
+}
+
+.field-slot .card .card-stat {
+  font-size: clamp(9px, 1vw, 11px);
+  padding: 1px 4px;
+}
+
+.field-slot .card .card-keywords {
+  font-size: clamp(8px, 0.9vw, 10px);
+}
+
+.field-slot .card .card-effect {
+  font-size: clamp(7px, 0.8vw, 9px);
 }
 
 .field-divider {
