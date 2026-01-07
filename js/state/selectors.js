@@ -419,6 +419,20 @@ export const isLocalMode = (state) => {
 };
 
 /**
+ * Check if in AI (singleplayer) mode
+ */
+export const isAIMode = (state) => {
+  return state.menu?.mode === "ai";
+};
+
+/**
+ * Get AI difficulty setting
+ */
+export const getAIDifficulty = (state) => {
+  return state.menu?.aiDifficulty || "easy";
+};
+
+/**
  * Check if game is ready (setup complete and decks selected)
  */
 export const isGameReady = (state) => {

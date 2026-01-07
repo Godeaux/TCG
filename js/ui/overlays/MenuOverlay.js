@@ -23,9 +23,11 @@ const getMenuElements = () => ({
   multiplayerOverlay: document.getElementById("multiplayer-overlay"),
   lobbyOverlay: document.getElementById("lobby-overlay"),
   tutorialOverlay: document.getElementById("tutorial-overlay"),
+  aiSetupOverlay: document.getElementById("ai-setup-overlay"),
 
   // Buttons and inputs
   menuPlay: document.getElementById("menu-play"),
+  menuAI: document.getElementById("menu-ai"),
   menuLogin: document.getElementById("menu-login"),
   menuCatalog: document.getElementById("menu-catalog"),
   loginUsername: document.getElementById("login-username"),
@@ -105,6 +107,7 @@ export const renderMenuOverlays = (state) => {
   const showMultiplayer = stage === "multiplayer";
   const showLobby = stage === "lobby";
   const showTutorial = stage === "tutorial";
+  const showAISetup = stage === "ai-setup";
 
   // Toggle overlay visibility
   elements.menuOverlay?.classList.toggle("active", showMain);
@@ -121,6 +124,9 @@ export const renderMenuOverlays = (state) => {
 
   elements.tutorialOverlay?.classList.toggle("active", showTutorial);
   elements.tutorialOverlay?.setAttribute("aria-hidden", showTutorial ? "false" : "true");
+
+  elements.aiSetupOverlay?.classList.toggle("active", showAISetup);
+  elements.aiSetupOverlay?.setAttribute("aria-hidden", showAISetup ? "false" : "true");
 
   // Hide lobby join form if not in multiplayer
   if (!showMultiplayer) {

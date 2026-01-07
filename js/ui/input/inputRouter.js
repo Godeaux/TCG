@@ -51,6 +51,66 @@ let currentPage = null;
 let deckActiveTab = null;
 let deckHighlighted = null;
 
+// AI game setup functions (set during initialization)
+let startAIGameHandler = null;
+
+// ============================================================================
+// AI SETUP HELPERS
+// ============================================================================
+
+/**
+ * Populate the AI deck selection dropdown with saved decks
+ */
+const populateAIDeckSelect = (state, selectElement) => {
+  if (!selectElement) return;
+
+  // Clear existing options
+  selectElement.innerHTML = '<option value="">Select a deck...</option>';
+
+  // Get saved decks
+  const savedDecks = state.menu?.savedDecks || [];
+
+  if (savedDecks.length === 0) {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = "No saved decks available";
+    option.disabled = true;
+    selectElement.appendChild(option);
+    return;
+  }
+
+  // Add deck options
+  savedDecks.forEach((deck) => {
+    const option = document.createElement("option");
+    option.value = deck.id;
+    option.textContent = deck.name || `Deck ${deck.id}`;
+    selectElement.appendChild(option);
+  });
+};
+
+/**
+ * Start an AI game with the current settings
+ */
+const startAIGame = (state, callbacks) => {
+  const aiSettings = state.menu.aiSettings || {
+    difficulty: "easy",
+    deckType: "random",
+    selectedDeckId: null,
+  };
+
+  console.log("[AI] Starting game with settings:", aiSettings);
+
+  // Set the game mode to AI
+  state.menu.mode = "ai";
+  state.menu.aiDifficulty = aiSettings.difficulty;
+  state.menu.aiDeckType = aiSettings.deckType;
+  state.menu.aiSelectedDeckId = aiSettings.selectedDeckId;
+
+  // Transition to deck selection for the player
+  setMenuStage(state, "ready");
+  callbacks.onUpdate?.();
+};
+
 // ============================================================================
 // DOM ELEMENTS
 // ============================================================================
@@ -64,9 +124,20 @@ const getNavigationElements = () => ({
 
   // Menu buttons
   menuPlay: document.getElementById("menu-play"),
+  menuAI: document.getElementById("menu-ai"),
   menuLogin: document.getElementById("menu-login"),
   menuCatalog: document.getElementById("menu-catalog"),
   menuTutorial: document.getElementById("menu-tutorial"),
+
+  // AI Setup
+  aiDifficultyEasy: document.getElementById("ai-difficulty-easy"),
+  aiDifficultyHard: document.getElementById("ai-difficulty-hard"),
+  aiDeckRandom: document.getElementById("ai-deck-random"),
+  aiDeckSaved: document.getElementById("ai-deck-saved"),
+  aiSavedDecks: document.getElementById("ai-saved-decks"),
+  aiDeckSelect: document.getElementById("ai-deck-select"),
+  aiStartGame: document.getElementById("ai-start-game"),
+  aiSetupBack: document.getElementById("ai-setup-back"),
 
   // Login form
   loginForm: document.getElementById("login-form"),
@@ -175,6 +246,81 @@ const initNavigation = () => {
       return;
     }
     setMenuStage(latestState, "tutorial");
+    latestCallbacks.onUpdate?.();
+  });
+
+  // Main menu: Play vs. AI
+  elements.menuAI?.addEventListener("click", () => {
+    if (!latestState) {
+      return;
+    }
+    // Initialize AI settings if not present
+    if (!latestState.menu.aiSettings) {
+      latestState.menu.aiSettings = {
+        difficulty: "easy",
+        deckType: "random",
+        selectedDeckId: null,
+      };
+    }
+    setMenuStage(latestState, "ai-setup");
+    latestCallbacks.onUpdate?.();
+  });
+
+  // AI Setup: Difficulty buttons
+  elements.aiDifficultyEasy?.addEventListener("click", () => {
+    if (!latestState) return;
+    latestState.menu.aiSettings = latestState.menu.aiSettings || {};
+    latestState.menu.aiSettings.difficulty = "easy";
+    elements.aiDifficultyEasy.classList.add("active");
+    elements.aiDifficultyHard?.classList.remove("active");
+  });
+
+  elements.aiDifficultyHard?.addEventListener("click", () => {
+    if (!latestState) return;
+    latestState.menu.aiSettings = latestState.menu.aiSettings || {};
+    latestState.menu.aiSettings.difficulty = "hard";
+    elements.aiDifficultyHard.classList.add("active");
+    elements.aiDifficultyEasy?.classList.remove("active");
+  });
+
+  // AI Setup: Deck type buttons
+  elements.aiDeckRandom?.addEventListener("click", () => {
+    if (!latestState) return;
+    latestState.menu.aiSettings = latestState.menu.aiSettings || {};
+    latestState.menu.aiSettings.deckType = "random";
+    elements.aiDeckRandom.classList.add("active");
+    elements.aiDeckSaved?.classList.remove("active");
+    elements.aiSavedDecks.style.display = "none";
+  });
+
+  elements.aiDeckSaved?.addEventListener("click", () => {
+    if (!latestState) return;
+    latestState.menu.aiSettings = latestState.menu.aiSettings || {};
+    latestState.menu.aiSettings.deckType = "saved";
+    elements.aiDeckSaved.classList.add("active");
+    elements.aiDeckRandom?.classList.remove("active");
+    elements.aiSavedDecks.style.display = "block";
+    // Populate saved decks dropdown
+    populateAIDeckSelect(latestState, elements.aiDeckSelect);
+  });
+
+  // AI Setup: Deck selection
+  elements.aiDeckSelect?.addEventListener("change", (e) => {
+    if (!latestState) return;
+    latestState.menu.aiSettings = latestState.menu.aiSettings || {};
+    latestState.menu.aiSettings.selectedDeckId = e.target.value || null;
+  });
+
+  // AI Setup: Start game
+  elements.aiStartGame?.addEventListener("click", () => {
+    if (!latestState) return;
+    startAIGame(latestState, latestCallbacks);
+  });
+
+  // AI Setup: Back button
+  elements.aiSetupBack?.addEventListener("click", () => {
+    if (!latestState) return;
+    setMenuStage(latestState, "main");
     latestCallbacks.onUpdate?.();
   });
 

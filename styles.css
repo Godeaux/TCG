@@ -2317,6 +2317,137 @@ button {
   background: rgba(255, 255, 255, 0.06);
 }
 
+/* ============================================================================
+   AI SETUP OVERLAY
+   ============================================================================ */
+
+.ai-setup-overlay .menu-card {
+  max-width: 480px;
+}
+
+.ai-setup-section {
+  margin-bottom: 20px;
+}
+
+.ai-setup-label {
+  font-family: var(--font-display);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.ai-difficulty-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-difficulty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 12px;
+  border-radius: 12px;
+  border: 2px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-difficulty:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.btn-difficulty.active {
+  border-color: var(--gold);
+  background: rgba(212, 168, 83, 0.15);
+}
+
+.difficulty-icon {
+  font-size: 28px;
+}
+
+.difficulty-name {
+  font-family: var(--font-display);
+  font-size: 16px;
+  letter-spacing: 0.05em;
+}
+
+.difficulty-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.ai-deck-options {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.btn-deck-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 2px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-deck-option:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.btn-deck-option.active {
+  border-color: var(--gold);
+  background: rgba(212, 168, 83, 0.15);
+}
+
+.deck-option-icon {
+  font-size: 22px;
+}
+
+.deck-option-name {
+  font-size: 14px;
+}
+
+.ai-saved-decks {
+  margin-top: 12px;
+}
+
+.menu-select {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.menu-select:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+.menu-select option {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
 .deck-select-card {
   display: flex;
   flex-direction: column;

@@ -121,6 +121,8 @@ export {
   isDeckBuilderOpen,
   isOnlineMode,
   isLocalMode,
+  isAIMode,
+  getAIDifficulty,
   isGameReady,
 
   // Combat selectors
