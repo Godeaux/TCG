@@ -4,9 +4,13 @@ import {
   rollSetupDie,
   chooseFirstPlayer,
   setPlayerDeck,
-} from "./gameState.js";
-import { advancePhase, endTurn, startTurn } from "./turnManager.js";
+} from "./state/index.js";
+import { advancePhase, endTurn, startTurn } from "./game/index.js";
 import { renderGame, setupInitialDraw } from "./ui.js";
+import { initializeCardRegistry } from "./cards/index.js";
+
+// Initialize the card registry (loads JSON card data)
+initializeCardRegistry();
 
 const state = createGameState();
 

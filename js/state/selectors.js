@@ -51,57 +51,57 @@ export const getAllPlayers = (state) => {
  * Get the local player index (for multiplayer games)
  * In local mode, defaults to player 0
  *
- * @param {Object} state - Game state
- * @param {Object} uiState - UI state (contains profile info)
+ * @param {Object} state - Game state (contains profile info in state.menu.profile)
  * @returns {number} Player index (0 or 1)
  */
-export const getLocalPlayerIndex = (state, uiState) => {
-  // In online mode, match by profile ID
-  if (state.menu?.mode === 'online' && uiState?.supabaseApi) {
-    const profile = state.menu.profile;
-    if (profile) {
-      // Check which player matches the profile
-      for (let i = 0; i < state.players.length; i++) {
-        if (state.players[i].profileId === profile.id) {
-          return i;
-        }
-      }
-    }
+export const getLocalPlayerIndex = (state) => {
+  // In local mode, always player 0
+  if (state.menu?.mode !== 'online') {
+    return 0;
   }
 
-  // Default to player 0 in local mode
-  return 0;
+  // In online mode, match by profile ID
+  const profileId = state.menu?.profile?.id;
+  if (!profileId) {
+    return 0;
+  }
+
+  // Find which player matches the profile
+  const matchingIndex = state.players.findIndex(
+    (player) => player.profileId === profileId
+  );
+  return matchingIndex >= 0 ? matchingIndex : 0;
 };
 
 /**
  * Get the local player object
  */
-export const getLocalPlayer = (state, uiState) => {
-  const index = getLocalPlayerIndex(state, uiState);
+export const getLocalPlayer = (state) => {
+  const index = getLocalPlayerIndex(state);
   return state.players[index];
 };
 
 /**
  * Get the remote player index (opponent in online games)
  */
-export const getRemotePlayerIndex = (state, uiState) => {
-  const localIndex = getLocalPlayerIndex(state, uiState);
+export const getRemotePlayerIndex = (state) => {
+  const localIndex = getLocalPlayerIndex(state);
   return (localIndex + 1) % 2;
 };
 
 /**
  * Get the remote player object
  */
-export const getRemotePlayer = (state, uiState) => {
-  const index = getRemotePlayerIndex(state, uiState);
+export const getRemotePlayer = (state) => {
+  const index = getRemotePlayerIndex(state);
   return state.players[index];
 };
 
 /**
  * Check if it's the local player's turn
  */
-export const isLocalPlayersTurn = (state, uiState) => {
-  const localIndex = getLocalPlayerIndex(state, uiState);
+export const isLocalPlayersTurn = (state) => {
+  const localIndex = getLocalPlayerIndex(state);
   return state.activePlayerIndex === localIndex;
 };
 

@@ -39,3 +39,13 @@ export {
   updateDragState,
   updateDragCallbacks,
 } from './dragAndDrop.js';
+
+// ============================================================================
+// TOUCH HANDLERS (Mobile)
+// ============================================================================
+
+export {
+  initTouchHandlers,
+  reattachTouchHandlers,
+  focusCardElement,
+} from './touchHandlers.js';

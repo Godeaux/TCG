@@ -48,21 +48,26 @@ export const isCardLike = (value) =>
 // ============================================================================
 
 /**
- * Render card stats (ATK, HP, NUT)
+ * Render card stats (ATK, HP, NUT) with emoji format
  * @param {Object} card - Card instance
- * @returns {Array} Array of stat objects { label, value, className }
+ * @returns {Array} Array of stat objects { emoji, value, className }
  */
 export const renderCardStats = (card) => {
   const stats = [];
   if (card.type === "Predator" || card.type === "Prey") {
-    stats.push({ label: "ATK", value: card.currentAtk ?? card.atk, className: "atk" });
-    stats.push({ label: "HP", value: card.currentHp ?? card.hp, className: "hp" });
+    stats.push({ emoji: "⚔", value: card.currentAtk ?? card.atk, className: "atk" });
+    stats.push({ emoji: "❤", value: card.currentHp ?? card.hp, className: "hp" });
   }
   if (card.type === "Prey") {
-    stats.push({ label: "NUT", value: card.nutrition, className: "nut" });
+    stats.push({ emoji: "🍖", value: card.nutrition, className: "nut" });
   }
   return stats;
 };
+
+/**
+ * Check if card has nutrition stat
+ */
+export const hasNutrition = (card) => card.type === "Prey";
 
 // ============================================================================
 // KEYWORD RENDERING
@@ -262,15 +267,20 @@ export const getStatusIndicators = (card) => {
  * @returns {string} Inner HTML for card
  */
 export const renderCardInnerHtml = (card, { showEffectSummary } = {}) => {
-  const stats = renderCardStats(card)
-    .map(
-      (stat) =>
-        `<span class="card-stat ${stat.className}">${stat.label} ${stat.value}</span>`
-    )
-    .join("");
+  const stats = renderCardStats(card);
+  const hasNut = hasNutrition(card);
+
+  // Build stats row with emoji format - if no nutrition, stats split the row in half
+  const statsHtml = stats.length > 0
+    ? stats.map(
+        (stat) =>
+          `<span class="card-stat ${stat.className}${!hasNut ? ' no-nut' : ''}">${stat.emoji} ${stat.value}</span>`
+      ).join("")
+    : "";
+
   const effectSummary = showEffectSummary ? getCardEffectSummary(card) : "";
   const effectRow = effectSummary
-    ? `<div class="card-effect"><strong>Effect:</strong> ${effectSummary}</div>`
+    ? `<div class="card-effect">${effectSummary}</div>`
     : "";
 
   // Check if card has an image
@@ -279,8 +289,9 @@ export const renderCardInnerHtml = (card, { showEffectSummary } = {}) => {
   const cachedImage = hasImage ? getCachedCardImage(card.id) : null;
 
   // Generate image HTML - use cached image if available, otherwise preload
+  // Note: draggable="false" prevents browser's native image drag from interfering with card drag
   const imageHtml = hasImage && (isCached || cachedImage)
-    ? `<img src="${getCardImagePath(card.id)}" alt="${card.name}" class="card-image" style="display: ${cachedImage ? 'block' : 'none'};" onload="this.style.display='block'; this.nextElementSibling.style.display='none';" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+    ? `<img src="${getCardImagePath(card.id)}" alt="${card.name}" class="card-image" draggable="false" style="display: ${cachedImage ? 'block' : 'none'};" onload="this.style.display='block'; this.nextElementSibling.style.display='none';" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
        <div class="card-image-placeholder" style="display: ${cachedImage ? 'none' : 'flex'};">🎨</div>`
     : hasImage ? `<div class="card-image-placeholder">🎨</div>` : '';
 
@@ -294,9 +305,8 @@ export const renderCardInnerHtml = (card, { showEffectSummary } = {}) => {
     <div class="card-image-container">
       ${imageHtml}
     </div>
-    <div class="card-type-label">${card.type}</div>
     <div class="card-content-area">
-      <div class="card-stats-row">${stats}</div>
+      <div class="card-stats-row${!hasNut && stats.length > 0 ? ' two-stats' : ''}">${statsHtml}</div>
       <div class="card-keywords">${renderKeywordTags(card)}</div>
       ${effectRow}
     </div>

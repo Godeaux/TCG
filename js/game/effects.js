@@ -1,13 +1,24 @@
-import { drawCard, logMessage } from "./gameState.js";
-import { createCardInstance } from "./cardTypes.js";
+import { drawCard, logMessage, queueVisualEffect } from "../state/gameState.js";
+import { createCardInstance } from "../cardTypes.js";
 import { consumePrey } from "./consumption.js";
-import { isImmune, areAbilitiesActive } from "./keywords.js";
-import { getTokenById } from "./cards/index.js";
+import { isImmune, areAbilitiesActive } from "../keywords.js";
+import { getTokenById } from "../cards/index.js";
 
 const findCardOwnerIndex = (state, card) =>
   state.players.findIndex((player) =>
     player.field.some((slot) => slot?.instanceId === card.instanceId)
   );
+
+const findCardSlotIndex = (state, card) => {
+  const ownerIndex = findCardOwnerIndex(state, card);
+  if (ownerIndex === -1) {
+    return { ownerIndex: -1, slotIndex: -1 };
+  }
+  const slotIndex = state.players[ownerIndex].field.findIndex(
+    (slot) => slot?.instanceId === card.instanceId
+  );
+  return { ownerIndex, slotIndex };
+};
 
 const removeCardFromField = (state, card) => {
   const ownerIndex = findCardOwnerIndex(state, card);
@@ -32,6 +43,17 @@ const applyEffectDamage = (state, creature, amount, sourceLabel = "effect") => {
   }
   if (creature.hasBarrier && areAbilitiesActive(creature)) {
     creature.hasBarrier = false;
+    // Queue barrier visual effect
+    const { ownerIndex, slotIndex } = findCardSlotIndex(state, creature);
+    if (ownerIndex >= 0) {
+      queueVisualEffect(state, {
+        type: "keyword",
+        keyword: "Barrier",
+        cardId: creature.instanceId,
+        ownerIndex,
+        slotIndex,
+      });
+    }
     logMessage(state, `${creature.name}'s barrier blocks the damage.`);
     return;
   }
@@ -516,6 +538,94 @@ export const resolveEffectResult = (state, result, context) => {
     creature.paralyzed = true;
     creature.paralyzedUntilTurn = state.turn + 1;
     logMessage(state, `${creature.name} is paralyzed.`);
+  }
+
+  // Freeze multiple creatures
+  if (result.freezeCreatures) {
+    result.freezeCreatures.forEach((creature) => {
+      if (creature) {
+        creature.frozen = true;
+        creature.frozenDiesTurn = state.turn + 1;
+        logMessage(state, `${creature.name} is frozen.`);
+      }
+    });
+  }
+
+  // Remove frozen from creatures
+  if (result.removeFrozen) {
+    result.removeFrozen.forEach((creature) => {
+      if (creature && creature.keywords) {
+        const frozenIndex = creature.keywords.indexOf("Frozen");
+        if (frozenIndex >= 0) {
+          creature.keywords.splice(frozenIndex, 1);
+        }
+        creature.frozen = false;
+        creature.frozenDiesTurn = null;
+        logMessage(state, `${creature.name} thaws out.`);
+      }
+    });
+  }
+
+  // Play a creature from carrion
+  if (result.playFromCarrion) {
+    const { playerIndex, card } = result.playFromCarrion;
+    const player = state.players[playerIndex];
+    const carrionIndex = player.carrion.findIndex((c) => c?.instanceId === card.instanceId);
+    if (carrionIndex >= 0) {
+      player.carrion.splice(carrionIndex, 1);
+      const emptySlot = player.field.findIndex((slot) => slot === null);
+      if (emptySlot >= 0) {
+        const instance = createCardInstance(card);
+        player.field[emptySlot] = instance;
+        state._lastPlayedCreature = instance;
+        logMessage(state, `${card.name} returns from the carrion.`);
+      } else {
+        logMessage(state, `No field slot available for ${card.name}.`);
+      }
+    }
+  }
+
+  // Add keyword to the most recently played creature
+  if (result.addKeywordToPlayed) {
+    const { keyword } = result.addKeywordToPlayed;
+    const creature = state._lastPlayedCreature;
+    if (creature) {
+      if (!creature.keywords) {
+        creature.keywords = [];
+      }
+      if (!creature.keywords.includes(keyword)) {
+        creature.keywords.push(keyword);
+      }
+      if (keyword === "Frozen") {
+        creature.frozen = true;
+        creature.frozenDiesTurn = state.turn + 1;
+      }
+    }
+  }
+
+  // Buff multiple creatures
+  if (result.buffCreatures) {
+    result.buffCreatures.forEach(({ creature, attack, health }) => {
+      if (creature) {
+        creature.currentAtk = (creature.currentAtk ?? creature.atk ?? 0) + (attack || 0);
+        creature.currentHp = (creature.currentHp ?? creature.hp ?? 0) + (health || 0);
+        if (attack || health) {
+          logMessage(state, `${creature.name} gains +${attack || 0}/+${health || 0}.`);
+        }
+      }
+    });
+  }
+
+  // Regenerate a creature (restore HP to base)
+  if (result.regen) {
+    const { creature } = result.regen;
+    if (creature) {
+      const baseHp = creature.hp || 1;
+      if (creature.currentHp < baseHp) {
+        creature.currentHp = baseHp;
+        logMessage(state, `${creature.name} regenerates to full health.`);
+      }
+    }
   }
 };
 

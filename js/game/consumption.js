@@ -1,5 +1,5 @@
-import { logMessage } from "./gameState.js";
-import { isEdible } from "./keywords.js";
+import { logMessage, queueVisualEffect } from "../state/gameState.js";
+import { isEdible } from "../keywords.js";
 
 const getNutritionValue = (card) => {
   if (card.type === "Predator" && isEdible(card)) {
@@ -31,6 +31,17 @@ export const consumePrey = ({
     const player = state.players[playerIndex];
     const slotIndex = player.field.findIndex((slot) => slot?.instanceId === prey.instanceId);
     if (slotIndex >= 0) {
+      // Queue consumption visual effect before removing prey
+      queueVisualEffect(state, {
+        type: "consumption",
+        preyId: prey.instanceId,
+        preyOwnerIndex: playerIndex,
+        preySlotIndex: slotIndex,
+        predatorId: predator.instanceId,
+        predatorOwnerIndex: playerIndex,
+        predatorSlotIndex: player.field.findIndex((slot) => slot?.instanceId === predator.instanceId),
+        nutritionGained: getNutritionValue(prey),
+      });
       player.field[slotIndex] = null;
       player.carrion.push(prey);
     }

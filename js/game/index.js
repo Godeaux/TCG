@@ -28,10 +28,11 @@
 // Main controller
 export { GameController } from './controller.js';
 
-// Re-export existing game logic modules for compatibility
-export * from '../turnManager.js';
-export * from '../combat.js';
-export * from '../consumption.js';
-export * from '../effects.js';
+// Re-export game logic modules (now all in game/ folder)
+export * from './turnManager.js';
+export * from './combat.js';
+export * from './consumption.js';
+export * from './effects.js';
+// These remain in root
 export * from '../keywords.js';
 export * from '../cardTypes.js';

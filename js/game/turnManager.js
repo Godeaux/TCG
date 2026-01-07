@@ -1,7 +1,7 @@
-import { drawCard, logMessage, resetCombat } from "./gameState.js";
+import { drawCard, logMessage, resetCombat } from "../state/gameState.js";
 import { cleanupDestroyed } from "./combat.js";
 import { resolveEffectResult } from "./effects.js";
-import { hasPoisonous } from "./keywords.js";
+import { hasPoisonous } from "../keywords.js";
 
 const PHASES = ["Start", "Draw", "Main 1", "Before Combat", "Combat", "Main 2", "End"];
 

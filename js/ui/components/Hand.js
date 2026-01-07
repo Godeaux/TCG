@@ -16,6 +16,8 @@
 
 import { renderCard } from './Card.js';
 import { getLocalPlayerIndex } from '../../state/selectors.js';
+import { canPlayCard, cardLimitAvailable } from '../../game/turnManager.js';
+import { isFreePlay } from '../../keywords.js';
 
 // ============================================================================
 // HAND OVERLAP CALCULATION
@@ -88,8 +90,6 @@ export const updateHandOverlap = (handGrid) => {
   handGrid.style.setProperty("--hand-overlap", `${overlap}px`);
   handGrid.style.setProperty("--mobile-card-scale", `${scale}`);
   handGrid.style.overflow = "visible";
-
-  console.log(`📊 Hand overlap: ${overlap.toFixed(1)}px, scale: ${scale.toFixed(2)}x (${cards.length} cards, card width: ${cardWidth.toFixed(1)}px, visible: ${(cardWidth * scale - overlap).toFixed(1)}px, container: ${handWidth.toFixed(1)}px)`);
 };
 
 /**
@@ -97,34 +97,22 @@ export const updateHandOverlap = (handGrid) => {
  * This prevents cards from being cut off
  */
 const setOverflowVisible = (handGrid) => {
-  console.log('🔧 Setting overflow to visible...');
-
-  console.log('Before - handGrid overflow:', window.getComputedStyle(handGrid).overflow);
   handGrid.style.overflow = 'visible';
-  console.log('After - handGrid overflow:', window.getComputedStyle(handGrid).overflow);
 
   const handPanel = handGrid.closest('.hand-panel');
   if (handPanel) {
-    console.log('Before - handPanel overflow:', window.getComputedStyle(handPanel).overflow);
     handPanel.style.overflow = 'visible';
-    console.log('After - handPanel overflow:', window.getComputedStyle(handPanel).overflow);
   }
 
   const handContainer = handGrid.closest('.hand-container');
   if (handContainer) {
-    console.log('Before - handContainer overflow:', window.getComputedStyle(handContainer).overflow);
     handContainer.style.overflow = 'visible';
-    console.log('After - handContainer overflow:', window.getComputedStyle(handContainer).overflow);
   }
 
   const centerColumn = handGrid.closest('.battlefield-center-column');
   if (centerColumn) {
-    console.log('Before - centerColumn overflow:', window.getComputedStyle(centerColumn).overflow);
     centerColumn.style.overflow = 'visible';
-    console.log('After - centerColumn overflow:', window.getComputedStyle(centerColumn).overflow);
   }
-
-  console.log('✅ Overflow setting complete');
 };
 
 // ============================================================================
@@ -214,6 +202,10 @@ export const renderHand = (state, options = {}) => {
     return;
   }
 
+  // Check if it's the player's turn (for pulse effect)
+  const isPlayerTurn = state.activePlayerIndex === playerIndex;
+  const canPlayAnyCard = isPlayerTurn && (cardLimitAvailable(state) || player.hand.some(c => isFreePlay(c)));
+
   // Render actual cards
   player.hand.forEach((card) => {
     const cardElement = renderCard(card, {
@@ -226,6 +218,12 @@ export const renderHand = (state, options = {}) => {
         onUpdate?.();
       },
     });
+
+    // Add playable pulse if card can be played this turn
+    if (canPlayAnyCard && canPlayCard(state, card)) {
+      cardElement.classList.add('playable-pulse');
+    }
+
     handGrid.appendChild(cardElement);
   });
 
@@ -233,30 +231,9 @@ export const renderHand = (state, options = {}) => {
   requestAnimationFrame(() => updateHandOverlap(handGrid));
 
   // Force overflow to visible (multiple times to ensure it sticks)
-  console.log('⏰ Immediate setOverflowVisible call');
   setOverflowVisible(handGrid);
-
-  requestAnimationFrame(() => {
-    console.log('⏰ requestAnimationFrame setOverflowVisible call');
-    setOverflowVisible(handGrid);
-  });
-
-  setTimeout(() => {
-    console.log('⏰ setTimeout(100ms) setOverflowVisible call');
-    setOverflowVisible(handGrid);
-  }, 100);
-
-  // Monitor for changes to overflow
-  setTimeout(() => {
-    console.log('🔍 Final check after 500ms:');
-    console.log('handGrid overflow:', window.getComputedStyle(handGrid).overflow);
-    const handPanel = handGrid.closest('.hand-panel');
-    if (handPanel) console.log('handPanel overflow:', window.getComputedStyle(handPanel).overflow);
-    const handContainer = handGrid.closest('.hand-container');
-    if (handContainer) console.log('handContainer overflow:', window.getComputedStyle(handContainer).overflow);
-    const centerColumn = handGrid.closest('.battlefield-center-column');
-    if (centerColumn) console.log('centerColumn overflow:', window.getComputedStyle(centerColumn).overflow);
-  }, 500);
+  requestAnimationFrame(() => setOverflowVisible(handGrid));
+  setTimeout(() => setOverflowVisible(handGrid), 100);
 };
 
 /**

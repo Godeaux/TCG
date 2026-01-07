@@ -13,9 +13,9 @@
  * - renderCatalogBuilderOverlay: Deck catalog management
  */
 
-import { deckCatalogs } from '../../cards.js';
-import { logMessage } from '../../gameState.js';
-import { buildLobbySyncPayload, sendLobbyBroadcast } from '../../network/index.js';
+import { deckCatalogs } from '../../cards/index.js';
+import { logMessage } from '../../state/gameState.js';
+import { buildLobbySyncPayload, sendLobbyBroadcast, getSupabaseApi } from '../../network/index.js';
 import { getLocalPlayerIndex } from '../../state/selectors.js';
 import { renderDeckCard, renderCardStats, getCardEffectSummary } from '../components/Card.js';
 import { KEYWORD_DESCRIPTIONS } from '../../keywords.js';
@@ -70,10 +70,6 @@ let deckActiveTab = "catalog";
 // Deck loading state
 let decksLoaded = false;
 let decksLoading = false;
-
-// Supabase API lazy loading
-let supabaseApi = null;
-let supabaseLoadError = null;
 
 // Latest callbacks reference for async operations
 let latestCallbacks = {};
@@ -158,27 +154,10 @@ const applyMenuLoading = (state, isLoading) => {
 };
 
 /**
- * Load Supabase API lazily
+ * Load Supabase API lazily (uses centralized network module)
  */
 const loadSupabaseApi = async (state) => {
-  if (supabaseApi) {
-    return supabaseApi;
-  }
-  if (supabaseLoadError) {
-    throw supabaseLoadError;
-  }
-  try {
-    supabaseApi = await import("../../network/supabaseApi.js");
-    return supabaseApi;
-  } catch (error) {
-    supabaseLoadError = error;
-    const message =
-      error?.message?.includes("Failed to fetch")
-        ? "Supabase failed to load. Check your connection."
-        : "Supabase failed to load.";
-    setMenuError(state, message);
-    throw error;
-  }
+  return getSupabaseApi((message) => setMenuError(state, message));
 };
 
 /**
