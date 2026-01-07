@@ -154,6 +154,8 @@ export class AIController {
     const player = this.getAIPlayer(state);
     const hand = player.hand;
 
+    console.log(`[AI] Hand size: ${hand.length}, Deck size: ${player.deck?.length ?? 0}`);
+
     // Filter to playable cards
     const playableCards = hand.filter(card => canPlayCard(state, card));
 

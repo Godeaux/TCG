@@ -37,6 +37,7 @@ import { getCardImagePath, hasCardImage, getCachedCardImage, isCardImageCached, 
 // to avoid circular dependencies and for performance (no module lookups)
 import {
   isOnlineMode,
+  isAIMode,
 } from "./state/selectors.js";
 
 // Victory overlay (extracted module)
@@ -2655,13 +2656,15 @@ export const renderGame = (state, callbacks = {}) => {
   ensureProfileLoaded(state);
 
   const isOnline = isOnlineMode(state);
-  if (isOnline && state.passPending) {
+  const isAI = isAIMode(state);
+  if ((isOnline || isAI) && state.passPending) {
     state.passPending = false;
   }
   const localIndex = getLocalPlayerIndex(state);
   const activeIndex = isOnline ? localIndex : state.activePlayerIndex;
   const opponentIndex = isOnline ? (localIndex + 1) % 2 : (state.activePlayerIndex + 1) % 2;
-  const passPending = !isOnline && Boolean(state.passPending);
+  // Don't show pass overlay in online or AI mode
+  const passPending = !isOnline && !isAI && Boolean(state.passPending);
   const setupPending = state.setup?.stage !== "complete";
   const deckSelectionPending = !isDeckSelectionComplete(state);
   const deckBuilding = state.deckBuilder?.stage !== "complete";
