@@ -366,16 +366,11 @@ button {
 }
 
 .field-slot .card .card-name {
-  font-size: clamp(9px, 1.1vw, 12px);
+  font-size: clamp(8px, 1vw, 11px);
 }
 
 .field-slot .card .card-image-container {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
+  /* Inherit proportions from base card styles */
 }
 
 .field-slot .card .card-image {
@@ -385,16 +380,16 @@ button {
 }
 
 .field-slot .card .card-stats-row {
-  padding: 4px 2px;
+  padding: 0 2px;
 }
 
 .field-slot .card .card-stat {
-  font-size: clamp(9px, 1vw, 11px);
-  padding: 1px 4px;
+  font-size: clamp(8px, 0.9vw, 10px);
+  padding: 0 2px;
 }
 
 .field-slot .card .card-keywords {
-  font-size: clamp(8px, 0.9vw, 10px);
+  font-size: clamp(7px, 0.8vw, 9px);
 }
 
 .field-slot .card .card-effect {
@@ -1324,29 +1319,35 @@ button {
   border-bottom: 1px solid var(--border-subtle);
 }
 
+/* Card name: ~8% of card height */
 .card-name {
   font-weight: 600;
-  font-size: 13px;
+  font-size: 12px;
   text-align: center;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  padding: 6px 8px;
-  background: rgba(0, 0, 0, 0.3);
-  flex-shrink: 0;
+  padding: 4px 6px;
+  background: rgba(0, 0, 0, 0.4);
+  flex: 0 0 8%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .card-type-label {
   display: none; /* Type info removed from card UI - handled by card border color */
 }
 
+/* Stats row: ~10% of card height */
 .card-stats-row {
   display: flex;
   gap: 0;
   flex-wrap: nowrap;
   justify-content: space-around;
-  flex-shrink: 0;
-  padding: 8px 6px;
+  align-items: center;
+  flex: 0 0 10%;
+  padding: 0 4px;
   background: rgba(0, 0, 0, 0.3);
 }
 
@@ -1385,32 +1386,30 @@ button {
 .card-keywords {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
-  font-size: 11px;
+  gap: 2px;
+  font-size: 10px;
   color: var(--text-primary);
-  flex-shrink: 0;
   justify-content: center;
   text-align: center;
+  align-items: center;
 }
 
 .card-keywords span {
   font-weight: bold;
   text-decoration: underline;
-  padding: 0 4px;
+  padding: 0 2px;
 }
 
 .card-effect {
-  font-size: 10px;
+  font-size: 9px;
   color: var(--text-secondary);
-  line-height: 1.3;
+  line-height: 1.2;
   text-align: center;
-  padding: 0 4px;
 }
 
+/* Image container: ~50% of card height */
 .card-image-container {
-  flex: 1 1 40%; /* Take up ~40% of card height, allow shrinking */
-  max-height: 45%;
-  min-height: 0;
+  flex: 0 0 50%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1504,28 +1503,34 @@ button {
   color: var(--text-primary);
 }
 
+/* Content area: ~32% of card height (stats + keywords + effect) */
 .card-content-area {
-  flex: 1 0 auto; /* Grow to fill available space */
+  flex: 0 0 32%;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0;
   overflow: hidden;
-  padding-bottom: 6px;
 }
 
 .card-content-area .card-stats-row {
-  flex-shrink: 0;
+  flex: 0 0 30%; /* ~10% of card = 30% of content area */
 }
 
 .card-content-area .card-keywords {
-  flex-shrink: 0;
-  padding: 4px 6px;
+  flex: 0 0 20%; /* Keywords section */
+  padding: 2px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .card-content-area .card-effect {
-  flex: 1;
+  flex: 1 1 50%; /* Effect takes remaining space */
   overflow: hidden;
-  padding: 2px 6px;
+  padding: 2px 4px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
 }
 
 .card-actions {
