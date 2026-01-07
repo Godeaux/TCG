@@ -26,9 +26,13 @@ import { isLocalPlayersTurn } from '../../state/selectors.js';
  * @param {Object} state - Game state
  * @param {number} playerIndex - Player index (0 or 1)
  * @param {boolean} isOpponent - Whether this is the opponent's field
- * @param {Function} onAttack - Attack callback (card) => void
+ * @param {Object} options - Rendering options
+ * @param {Function} options.onAttack - Attack callback (card) => void
+ * @param {Function} options.onInspect - Inspect callback (card) => void
  */
-export const renderField = (state, playerIndex, isOpponent, onAttack) => {
+export const renderField = (state, playerIndex, isOpponent, options = {}) => {
+  const { onAttack, onInspect } = options;
+
   const fieldRow = document.querySelector(isOpponent ? ".opponent-field" : ".player-field");
   if (!fieldRow) {
     return;
@@ -68,6 +72,7 @@ export const renderField = (state, playerIndex, isOpponent, onAttack) => {
       showEffectSummary: true,
       draggable: true,
       onAttack,
+      onInspect,
     });
 
     slot.appendChild(cardElement);

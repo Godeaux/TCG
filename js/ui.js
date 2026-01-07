@@ -2687,10 +2687,17 @@ export const renderGame = (state, callbacks = {}) => {
   updatePlayerStats(state, 0, "player1");
   updatePlayerStats(state, 1, "player2");
   // Field rendering (uses extracted Field component)
-  renderField(state, opponentIndex, true, null);
-  renderField(state, activeIndex, false, (card) =>
-    handleAttackSelection(state, card, callbacks.onUpdate)
-  );
+  const fieldInspectCallback = (card) => {
+    inspectedCardId = card.instanceId;
+    setInspectorContent(card);
+  };
+  renderField(state, opponentIndex, true, {
+    onInspect: fieldInspectCallback,
+  });
+  renderField(state, activeIndex, false, {
+    onAttack: (card) => handleAttackSelection(state, card, callbacks.onUpdate),
+    onInspect: fieldInspectCallback,
+  });
   // Hand rendering (uses extracted Hand component)
   renderHand(state, {
     onSelect: (card) => {
