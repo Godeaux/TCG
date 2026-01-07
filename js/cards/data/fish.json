@@ -304,8 +304,8 @@
       "effectText": "Draw 2. Target pred gains end of turn, play Golden Trevally. Discard: target pred gains end of turn, play Golden Trevally.",
       "summons": ["token-golden-trevally"],
       "effects": {
-        "onPlay": "golden-kingfish-draw-empower-onplay",
-        "discardEffect": "golden-kingfish-empower-discard"
+        "onPlay": { "type": "drawAndEmpowerPredator", "params": { "drawCount": 2, "tokenId": "token-golden-trevally" } },
+        "discardEffect": { "type": "drawAndEmpowerPredator", "params": { "drawCount": 0, "tokenId": "token-golden-trevally" } }
       }
     },
     {
@@ -700,7 +700,12 @@
       "type": "Spell",
       "effectText": "Deal 4 damage to target enemy then gain control of it.",
       "effects": {
-        "effect": "harpoon-damage-steal-effect"
+        "effect": {
+          "type": "selectEnemyToSteal",
+          "params": {
+            "damage": 4
+          }
+        }
       }
     },
     {
@@ -723,7 +728,24 @@
       "type": "Free Spell",
       "effectText": "Either play a prey or add a prey from deck to hand.",
       "effects": {
-        "effect": "angler-prey-choice-effect"
+        "effect": {
+          "type": "chooseOption",
+          "params": {
+            "title": "Angler: choose an option",
+            "options": [
+              {
+                "label": "Play a prey from hand",
+                "description": "Play a prey card from your hand",
+                "effect": { "type": "selectPreyFromHandToPlay", "params": {} }
+              },
+              {
+                "label": "Add a prey from deck to hand",
+                "description": "Search your deck for a prey card",
+                "effect": { "type": "tutorFromDeck", "params": { "cardType": "prey" } }
+              }
+            ]
+          }
+        }
       }
     },
     {
@@ -772,7 +794,12 @@
       "effectText": "End of turn, play Oscellaris Clownfish.",
       "summons": ["token-oscellaris-clownfish"],
       "effects": {
-        "effect": "magnificent-sea-anemone-field-spell-effect",
+        "effect": {
+          "type": "setFieldSpell",
+          "params": {
+            "cardId": "fish-field-magnificent-sea-anemone"
+          }
+        },
         "onEnd": {
           "type": "summonTokens",
           "params": {
@@ -788,7 +815,10 @@
       "trigger": "rivalPlaysPred",
       "effectText": "When rival plays a pred it loses abilities.",
       "effects": {
-        "effect": "cramp-strip-pred-effect"
+        "effect": {
+          "type": "removeTriggeredCreatureAbilities",
+          "params": {}
+        }
       }
     },
     {
@@ -798,7 +828,10 @@
       "trigger": "rivalPlaysPrey",
       "effectText": "When rival plays a prey it loses abilities.",
       "effects": {
-        "effect": "riptide-strip-prey-effect"
+        "effect": {
+          "type": "removeTriggeredCreatureAbilities",
+          "params": {}
+        }
       }
     },
     {
@@ -808,7 +841,13 @@
       "trigger": "directAttack",
       "effectText": "When target enemy attacks directly, negate attack. Deal 2 damage to players & animals.",
       "effects": {
-        "effect": "maelstrom-negate-damage-all-effect"
+        "effect": {
+          "type": "negateAndDamageAll",
+          "params": {
+            "creatureDamage": 2,
+            "playerDamage": 2
+          }
+        }
       }
     },
     {

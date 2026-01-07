@@ -18,7 +18,7 @@
 
 import { getActivePlayer, getOpponentPlayer, logMessage } from '../../state/gameState.js';
 import { canPlayCard, cardLimitAvailable } from '../../game/turnManager.js';
-import { isFreePlay, isPassive, isHarmless, isEdible } from '../../keywords.js';
+import { isFreePlay, isPassive, isHarmless, isEdible, isHidden, isInvisible, hasAcuity } from '../../keywords.js';
 import { createCardInstance } from '../../cardTypes.js';
 import { consumePrey } from '../../game/consumption.js';
 import { cleanupDestroyed } from '../../game/combat.js';
@@ -266,6 +266,11 @@ const isValidAttackTarget = (attacker, target, state) => {
 
   const targetPlayer = state.players.find(p => p.field.includes(target));
   if (targetPlayer === attackerPlayer) return false;
+
+  // Can't attack Hidden or Invisible creatures (unless attacker has Acuity)
+  if ((isHidden(target) || isInvisible(target)) && !hasAcuity(attacker)) {
+    return false;
+  }
 
   return true;
 };
@@ -609,10 +614,18 @@ const handlePlayerDrop = (card, playerBadge) => {
     return;
   }
 
-  const isOpponent = playerIndex !== getLocalPlayerIndex(latestState);
+  // Check if the dropped card is on the player's own field (attacker must be on our field)
+  const activePlayer = getActivePlayer(latestState);
+  const isCardOnOurField = activePlayer.field.includes(card);
+
+  // Check if target is the opponent (we want to attack the opponent, not ourselves)
+  const localIndex = getLocalPlayerIndex(latestState);
+  const isTargetOpponent = playerIndex !== localIndex;
+
   const isCreature = card.type === "Predator" || card.type === "Prey";
   const canAttack =
-    !isOpponent &&
+    isCardOnOurField &&
+    isTargetOpponent &&
     isLocalPlayersTurn(latestState) &&
     latestState.phase === "Combat" &&
     !card.hasAttacked &&
@@ -765,9 +778,15 @@ const handleDragOver = (event) => {
   const isSpell = draggedCard.type === 'Spell' || draggedCard.type === 'Free Spell';
 
   // For spells, also check if we're over the player field row (not just individual elements)
-  const target = isSpell
+  let target = isSpell
     ? event.target.closest('.field-slot, .player-badge, .card, .player-field')
     : event.target.closest('.field-slot, .player-badge, .card');
+
+  // If no direct target found, check if we're still within the player badge area
+  // This prevents flickering when mouse moves between child elements
+  if (!target) {
+    target = event.target.closest('.player-badge');
+  }
 
   // Ignore if hovering over the dragged card itself
   if (target === draggedCardElement || target?.contains(draggedCardElement)) {
@@ -778,6 +797,12 @@ const handleDragOver = (event) => {
 
   // Only update visuals if target changed (prevents flickering)
   if (targetId === currentDragTargetId) {
+    return;
+  }
+
+  // If target is null but we had a valid target before, preserve the visuals
+  // This prevents flickering when mouse passes over gaps between elements
+  if (!target && currentDragTargetId !== null) {
     return;
   }
 

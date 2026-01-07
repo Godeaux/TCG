@@ -154,7 +154,14 @@
       "type": "Free Spell",
       "effectText": "Target creature gains Barrier.",
       "effects": {
-        "effect": "alligator-skin-grant-barrier-effect"
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "all-creatures",
+            "title": "Choose a creature to gain Barrier",
+            "effect": { "keyword": "Barrier" }
+          }
+        }
       }
     },
     {
@@ -217,7 +224,7 @@
       "keywords": [],
       "effectText": "Freeze all enemy creatures.",
       "effects": {
-        "onPlay": "frosts-iguana-freeze-all-onplay"
+        "onPlay": { "type": "freezeAllEnemies" }
       }
     },
     {
@@ -231,7 +238,7 @@
       "effectText": "Play 2 Lava Lizards. Deal 1 damage to rival.",
       "summons": ["token-lava-lizard"],
       "effects": {
-        "onPlay": "galapagos-lava-lizards-summon-damage-onplay"
+        "onPlay": { "type": "summonAndDamageOpponent", "params": { "tokenIds": ["token-lava-lizard", "token-lava-lizard"], "damage": 1 } }
       }
     },
     {
@@ -356,7 +363,7 @@
       "keywords": ["Free Play"],
       "effectText": "Freeze target enemy creature.",
       "effects": {
-        "onPlay": "plumed-basilisk-freeze-target-onplay"
+        "onPlay": { "type": "selectEnemyToFreeze" }
       }
     },
     {
@@ -369,7 +376,7 @@
       "keywords": [],
       "effectText": "Copy abilities of target animal.",
       "effects": {
-        "onPlay": "veiled-chameleon-copy-abilities-onplay"
+        "onPlay": { "type": "selectCreatureToCopyAbilities" }
       }
     },
     {
@@ -382,7 +389,7 @@
       "keywords": [],
       "effectText": "Before combat, deal 2 damage.",
       "effects": {
-        "onBeforeCombat": "central-american-snapping-turtle-damage-onbeforecombat"
+        "onBeforeCombat": { "type": "damageCreature", "params": { "targetType": "target", "amount": 2, "sourceLabel": "snapping turtle" } }
       }
     },
     {
@@ -395,7 +402,7 @@
       "keywords": [],
       "effectText": "Defending before combat, deal 2 damage.",
       "effects": {
-        "onDefend": "south-american-snapping-turtle-counter-ondefend"
+        "onDefend": { "type": "dealDamageToAttacker", "params": { "damage": 2 } }
       }
     },
     {
@@ -418,7 +425,7 @@
       "keywords": ["Toxic"],
       "effectText": "Toxic. Add a card from deck to hand.",
       "effects": {
-        "onPlay": "king-brown-snake-tutor-onplay"
+        "onPlay": { "type": "tutorFromDeck" }
       }
     },
     {
@@ -454,7 +461,7 @@
       "keywords": [],
       "effectText": "Deal 2 damage to players & other animals.",
       "effects": {
-        "onPlay": "darwin-volcano-giant-tortoise-damage-all-onplay"
+        "onPlay": { "type": "damagePlayersAndOtherCreatures", "params": { "damage": 2 } }
       }
     },
     {
@@ -467,7 +474,7 @@
       "keywords": [],
       "effectText": "Deal 2 damage to enemies.",
       "effects": {
-        "onPlay": "wolf-volcano-giant-tortoise-damage-enemies-onplay"
+        "onPlay": { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } }
       }
     },
     {
@@ -524,7 +531,7 @@
       "keywords": [],
       "effectText": "If attacked in combat, during Main 2 phase: regen itself and heal player 2 HP.",
       "effects": {
-        "onBeforeCombat": "boa-constrictor-track-attack-onbeforecombat"
+        "onBeforeCombat": { "type": "trackAttackForRegenHeal", "params": { "healAmount": 2 } }
       }
     },
     {
@@ -536,7 +543,17 @@
       "keywords": [],
       "effectText": "Either draw 3, heal 3, or deal 3 damage to rival.",
       "effects": {
-        "onConsume": "chinese-alligator-choice-onconsume"
+        "onConsume": {
+          "type": "chooseOption",
+          "params": {
+            "title": "Choose Chinese Alligator's effect",
+            "options": [
+              { "label": "Draw 3", "description": "Draw 3 cards", "effect": { "draw": 3 } },
+              { "label": "Heal 3", "description": "Heal 3 HP", "effect": { "heal": 3 } },
+              { "label": "Deal 3 damage", "description": "Deal 3 damage to rival", "effect": { "damage": 3 } }
+            ]
+          }
+        }
       }
     },
     {
@@ -588,7 +605,7 @@
       "keywords": [],
       "effectText": "Heal 2. Add a card from deck to hand.",
       "effects": {
-        "onConsume": "green-anaconda-heal-tutor-onconsume"
+        "onConsume": { "type": "healAndTutor", "params": { "healAmount": 2 } }
       }
     },
     {
@@ -631,7 +648,12 @@
       "type": "Spell",
       "effectText": "Discard 1. Kill enemies.",
       "effects": {
-        "effect": "scythian-arrows-discard-kill-effect"
+        "effect": {
+          "type": "discardThenKillAllEnemies",
+          "params": {
+            "discardCount": 1
+          }
+        }
       }
     },
     {
@@ -640,7 +662,10 @@
       "type": "Spell",
       "effectText": "Destroy field spells. Kill animals.",
       "effects": {
-        "effect": "meteor-destroy-all-effect"
+        "effect": {
+          "type": "destroyEverything",
+          "params": {}
+        }
       }
     },
     {
@@ -658,7 +683,10 @@
       "type": "Spell",
       "effectText": "Paralyze target enemy creature (cannot attack but can still be consumed).",
       "effects": {
-        "effect": "paralyze-target-effect"
+        "effect": {
+          "type": "selectEnemyToParalyze",
+          "params": {}
+        }
       }
     },
     {
@@ -685,7 +713,14 @@
       "type": "Free Spell",
       "effectText": "Target creature gains Poisonous.",
       "effects": {
-        "effect": "spite-grant-poisonous-effect"
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "all-creatures",
+            "title": "Choose a creature to gain Poisonous",
+            "effect": { "keyword": "Poisonous" }
+          }
+        }
       }
     },
     {
@@ -694,7 +729,14 @@
       "type": "Free Spell",
       "effectText": "Target creature gains +1/+1.",
       "effects": {
-        "effect": "survivor-buff-target-effect"
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "all-creatures",
+            "title": "Choose a creature to gain +1/+1",
+            "effect": { "buff": { "attack": 1, "health": 1 } }
+          }
+        }
       }
     },
     {
@@ -705,7 +747,12 @@
       "effectText": "End of turn, play Poisonous Snake.",
       "summons": ["token-poisonous-snake"],
       "effects": {
-        "effect": "snake-nest-field-spell-effect",
+        "effect": {
+          "type": "setFieldSpell",
+          "params": {
+            "cardId": "reptile-field-snake-nest"
+          }
+        },
         "onEnd": {
           "type": "summonTokens",
           "params": {
@@ -721,7 +768,12 @@
       "trigger": "indirectDamage",
       "effectText": "When you receive indirect damage, negate it and heal 3 HP.",
       "effects": {
-        "effect": "scales-negate-heal-effect"
+        "effect": {
+          "type": "negateDamageAndHeal",
+          "params": {
+            "healAmount": 3
+          }
+        }
       }
     },
     {
@@ -731,7 +783,13 @@
       "trigger": "rivalDraws",
       "effectText": "When rival draws, they must discard 1 card, then you draw 1 card.",
       "effects": {
-        "effect": "snake-oil-discard-draw-effect"
+        "effect": {
+          "type": "forceOpponentDiscardThenDraw",
+          "params": {
+            "discardCount": 1,
+            "drawCount": 1
+          }
+        }
       }
     },
     {
@@ -742,7 +800,12 @@
       "effectText": "When target enemy attacks directly, negate attack. Play Snakes.",
       "summons": ["token-snakes"],
       "effects": {
-        "effect": "snake-pit-negate-summon-effect"
+        "effect": {
+          "type": "negateAndSummon",
+          "params": {
+            "tokenIds": ["token-snakes"]
+          }
+        }
       }
     }
   ]

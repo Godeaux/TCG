@@ -33,7 +33,7 @@
       "keywords": ["Free Play"],
       "effectText": "Rival discards 1.",
       "effects": {
-        "onPlay": "confusing-rocket-frog-discard-onplay"
+        "onPlay": { "type": "forceOpponentDiscard", "params": { "count": 1 } }
       }
     },
     {
@@ -45,7 +45,7 @@
       "nutrition": 1,
       "effectText": "Add a card from deck to hand. Play a spell.",
       "effects": {
-        "onPlay": "desert-rain-frog-tutor-play-spell-onplay"
+        "onPlay": { "type": "tutorAndPlaySpell" }
       }
     },
     {
@@ -93,7 +93,7 @@
       "nutrition": 1,
       "effectText": "Enemies gain frozen.",
       "effects": {
-        "onPlay": "frosts-toad-freeze-enemies-onplay"
+        "onPlay": { "type": "freezeAllEnemies" }
       }
     },
     {
@@ -106,7 +106,7 @@
       "keywords": ["Invisible"],
       "effectText": "Draw 1. Rival reveals hand.",
       "effects": {
-        "onPlay": "golden-flecked-glass-frog-draw-reveal-onplay"
+        "onPlay": { "type": "drawAndRevealHand", "params": { "drawCount": 1 } }
       }
     },
     {
@@ -249,7 +249,7 @@
       "nutrition": 1,
       "effectText": "Defending, neurotoxic.",
       "effects": {
-        "onDefend": "red-tailed-knobby-newt-neurotoxic-ondefend"
+        "onDefend": { "type": "applyNeurotoxicToAttacker" }
       }
     },
     {
@@ -261,7 +261,7 @@
       "nutrition": 1,
       "effectText": "Deal 2 damage to players & other animals. Animals gain frozen.",
       "effects": {
-        "onPlay": "siberian-salamander-damage-freeze-onplay"
+        "onPlay": { "type": "damageAllAndFreezeAll", "params": { "damage": 2 } }
       }
     },
     {
@@ -296,8 +296,8 @@
       "nutrition": 2,
       "effectText": "Discard add Tomato to hand. Defending, attacking enemy gains frozen.",
       "effects": {
-        "discardEffect": "tomato-frog-add-tomato-discard",
-        "onDefend": "tomato-frog-freeze-attacker-ondefend"
+        "discardEffect": { "type": "addToHand", "params": { "cardId": "amphibian-spell-tomato" } },
+        "onDefend": { "type": "freezeAttacker" }
       }
     },
     {
@@ -309,7 +309,7 @@
       "nutrition": 2,
       "effectText": "Instead of attacking; may eat target prey.",
       "effects": {
-        "attackReplacement": "hippo-frog-eat-prey-attackreplacement"
+        "attackReplacement": { "type": "eatPreyInsteadOfAttacking" }
       }
     },
     {
@@ -499,7 +499,7 @@
       "hp": 4,
       "effectText": "Deal 4 damage to enemies. End turn.",
       "effects": {
-        "onConsume": "goliath-frog-damage-end-turn-onconsume"
+        "onConsume": { "type": "damageEnemiesAndEndTurn", "params": { "damage": 4 } }
       }
     },
     {
@@ -529,7 +529,7 @@
       "hp": 4,
       "effectText": "Regen other creatures. Heal 4.",
       "effects": {
-        "onConsume": "lake-junin-giant-frog-regen-heal-onconsume"
+        "onConsume": { "type": "regenOthersAndHeal", "params": { "healAmount": 4 } }
       }
     },
     {
@@ -540,7 +540,7 @@
       "hp": 5,
       "effectText": "After combat, deal 2 damage to enemies.",
       "effects": {
-        "onAfterCombat": "japanese-giant-salamander-damage-aftercombat"
+        "onAfterCombat": { "type": "damageEnemiesAfterCombat", "params": { "damage": 2 } }
       }
     },
     {
@@ -574,7 +574,17 @@
       "type": "Spell",
       "effectText": "Either draw 3, heal 3, or deal 3 damage to rival.",
       "effects": {
-        "effect": "ambiguity-choice-effect"
+        "effect": {
+          "type": "chooseOption",
+          "params": {
+            "title": "Ambiguity: choose an outcome",
+            "options": [
+              { "label": "Draw 3 cards", "description": "Draw 3 cards from your deck", "effect": { "draw": 3 } },
+              { "label": "Heal 3", "description": "Restore 3 HP", "effect": { "heal": 3 } },
+              { "label": "Deal 3 damage to rival", "description": "Deal 3 damage to opponent", "effect": { "damage": 3 } }
+            ]
+          }
+        }
       }
     },
     {
@@ -583,7 +593,10 @@
       "type": "Spell",
       "effectText": "Return enemies to hand.",
       "effects": {
-        "effect": "bounce-return-enemies-effect"
+        "effect": {
+          "type": "returnAllEnemies",
+          "params": {}
+        }
       }
     },
     {
@@ -592,7 +605,13 @@
       "type": "Spell",
       "effectText": "Deal 3 damage to rival. Deal 3 damage to target enemy.",
       "effects": {
-        "effect": "leapfrog-damage-effect"
+        "effect": {
+          "type": "damageRivalAndSelectEnemy",
+          "params": {
+            "rivalDamage": 3,
+            "creatureDamage": 3
+          }
+        }
       }
     },
     {
@@ -601,7 +620,13 @@
       "type": "Spell",
       "effectText": "Deal 2 damage to opponents. Add Rainbow to hand.",
       "effects": {
-        "effect": "monsoon-damage-add-rainbow-effect"
+        "effect": {
+          "type": "damageOpponentsAndAddToHand",
+          "params": {
+            "damage": 2,
+            "cardId": "amphibian-free-spell-rainbow"
+          }
+        }
       }
     },
     {
@@ -610,7 +635,12 @@
       "type": "Spell",
       "effectText": "Target enemy gains passive.",
       "effects": {
-        "effect": "pacify-grant-passive-effect"
+        "effect": {
+          "type": "selectEnemyForKeyword",
+          "params": {
+            "keyword": "Passive"
+          }
+        }
       }
     },
     {
@@ -619,7 +649,13 @@
       "type": "Spell",
       "effectText": "Deal 2 damage to enemies. Deal 2 damage to enemies.",
       "effects": {
-        "effect": "pounce-plummet-double-damage-effect"
+        "effect": {
+          "type": "damageAllEnemiesMultiple",
+          "params": {
+            "amount": 2,
+            "applications": 2
+          }
+        }
       }
     },
     {
@@ -637,7 +673,10 @@
       "type": "Spell",
       "effectText": "Destroy target field spells. Kill enemy tokens.",
       "effects": {
-        "effect": "terrain-shift-destroy-field-tokens-effect"
+        "effect": {
+          "type": "destroyFieldSpellsAndKillTokens",
+          "params": {}
+        }
       }
     },
     {
@@ -646,7 +685,13 @@
       "type": "Spell",
       "effectText": "Deal 3 damage to any target. Heal 3.",
       "effects": {
-        "effect": "whitewater-damage-heal-effect"
+        "effect": {
+          "type": "healAndSelectTargetForDamage",
+          "params": {
+            "healAmount": 3,
+            "damageAmount": 3
+          }
+        }
       }
     },
     {
@@ -655,7 +700,12 @@
       "type": "Free Spell",
       "effectText": "Target prey creature gains +2/+2.",
       "effects": {
-        "effect": "metamorphosis-buff-prey-effect"
+        "effect": {
+          "type": "selectPreyForBuff",
+          "params": {
+            "stats": { "attack": 2, "health": 2 }
+          }
+        }
       }
     },
     {
@@ -664,7 +714,12 @@
       "type": "Free Spell",
       "effectText": "Target animal becomes Newt.",
       "effects": {
-        "effect": "newt-transform-effect"
+        "effect": {
+          "type": "selectCreatureToTransform",
+          "params": {
+            "newCardId": "amphibian-prey-newt-token"
+          }
+        }
       }
     },
     {
@@ -690,7 +745,17 @@
       "type": "Free Spell",
       "effectText": "Either draw 1, heal 1, or deal 1 damage to rival.",
       "effects": {
-        "effect": "slime-choice-effect"
+        "effect": {
+          "type": "chooseOption",
+          "params": {
+            "title": "Slime: choose an outcome",
+            "options": [
+              { "label": "Draw 1", "description": "Draw 1 card from your deck", "effect": { "draw": 1 } },
+              { "label": "Heal 1", "description": "Restore 1 HP", "effect": { "heal": 1 } },
+              { "label": "Deal 1 damage to rival", "description": "Deal 1 damage to opponent", "effect": { "damage": 1 } }
+            ]
+          }
+        }
       }
     },
     {
@@ -699,7 +764,12 @@
       "type": "Free Spell",
       "effectText": "Play a spell. Play a spell.",
       "effects": {
-        "effect": "spell-overload-double-spell-effect"
+        "effect": {
+          "type": "playSpellsFromHand",
+          "params": {
+            "count": 2
+          }
+        }
       }
     },
     {
@@ -709,7 +779,12 @@
       "isFieldSpell": true,
       "effectText": "End of turn, regen target creature.",
       "effects": {
-        "effect": "wishing-well-field-spell-effect"
+        "effect": {
+          "type": "setFieldSpell",
+          "params": {
+            "cardId": "amphibian-field-spell-wishing-well"
+          }
+        }
       }
     },
     {
@@ -719,7 +794,10 @@
       "trigger": "directAttack",
       "effectText": "When target enemy attacks directly, negate attack & kill it.",
       "effects": {
-        "effect": "blowdart-negate-kill-effect"
+        "effect": {
+          "type": "negateAndKillAttacker",
+          "params": {}
+        }
       }
     },
     {
@@ -729,7 +807,10 @@
       "trigger": "rivalPlaysCard",
       "effectText": "When rival plays a card, negate play. Rival may play a different card.",
       "effects": {
-        "effect": "rebound-negate-replay-effect"
+        "effect": {
+          "type": "negateAndAllowReplay",
+          "params": {}
+        }
       }
     },
     {
@@ -739,7 +820,10 @@
       "trigger": "defending",
       "effectText": "When target creature is defending, negate combat.",
       "effects": {
-        "effect": "slip-negate-combat-effect"
+        "effect": {
+          "type": "negateCombat",
+          "params": {}
+        }
       }
     }
   ]

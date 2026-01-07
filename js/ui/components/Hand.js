@@ -211,9 +211,11 @@ export const renderHand = (state, options = {}) => {
     return;
   }
 
-  // Check if it's the player's turn (for pulse effect)
+  // Check if it's the player's turn and we're in a main phase (for pulse effect)
   const isPlayerTurn = state.activePlayerIndex === playerIndex;
-  const canPlayAnyCard = isPlayerTurn && (cardLimitAvailable(state) || player.hand.some(c => isFreePlay(c)));
+  const isMainPhase = canPlayCard(state); // canPlayCard checks for Main 1 or Main 2 phase
+  const hasCardLimit = cardLimitAvailable(state); // True if no card played this turn yet
+  const hasEmptySlot = player.field.some(slot => slot === null);
 
   // Render actual cards
   player.hand.forEach((card) => {
@@ -228,9 +230,18 @@ export const renderHand = (state, options = {}) => {
       },
     });
 
-    // Add playable pulse if card can be played this turn
-    if (canPlayAnyCard && canPlayCard(state, card)) {
-      cardElement.classList.add('playable-pulse');
+    // Add playable pulse if this specific card can be played this turn
+    if (isPlayerTurn && isMainPhase) {
+      const isFreeCard = card.type === "Free Spell" || card.type === "Trap" || isFreePlay(card);
+      const canPlayThisCard = isFreeCard || hasCardLimit;
+
+      // For creatures, also check if there's somewhere to play them
+      const isCreature = card.type === "Predator" || card.type === "Prey";
+      const creatureCanBePlayed = !isCreature || hasEmptySlot;
+
+      if (canPlayThisCard && creatureCanBePlayed) {
+        cardElement.classList.add('playable-pulse');
+      }
     }
 
     handGrid.appendChild(cardElement);

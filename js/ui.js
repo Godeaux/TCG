@@ -2067,7 +2067,8 @@ const handlePlayCard = (state, card, onUpdate) => {
   }
 
   if (card.type === "Spell" || card.type === "Free Spell") {
-    const result = card.effect?.({
+    // Use resolveCardEffect to properly handle both legacy and new effect formats
+    const result = resolveCardEffect(card, 'effect', {
       log: (message) => logMessage(state, message),
       player,
       opponent,

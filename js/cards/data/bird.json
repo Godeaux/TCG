@@ -22,7 +22,7 @@
       "nutrition": 1,
       "effectText": "Rival reveals hand. Add a card from deck to hand.",
       "effects": {
-        "onPlay": "carrier-pigeon-reveal-tutor-onplay"
+        "onPlay": { "type": "revealAndTutor" }
       }
     },
     {
@@ -81,7 +81,16 @@
       "nutrition": 1,
       "effectText": "End of turn, either heal 4 or deal 2 damage to opponents.",
       "effects": {
-        "onEnd": "eurasian-magpie-choice-onend"
+        "onEnd": {
+          "type": "chooseOption",
+          "params": {
+            "title": "Choose Eurasian Magpie's effect",
+            "options": [
+              { "label": "Heal 4", "description": "Heal 4 HP", "effect": { "heal": 4 } },
+              { "label": "Deal 2 damage", "description": "Deal 2 damage to rival", "effect": { "damage": 2 } }
+            ]
+          }
+        }
       }
     },
     {
@@ -160,7 +169,7 @@
       "nutrition": 1,
       "effectText": "Copy abilities of a carrion.",
       "effects": {
-        "onPlay": "mexican-violetear-copy-carrion-abilities-onplay"
+        "onPlay": { "type": "selectCarrionToCopyAbilities" }
       }
     },
     {
@@ -172,7 +181,7 @@
       "nutrition": 1,
       "effectText": "Copy stats of target animal.",
       "effects": {
-        "onPlay": "mockingbird-copy-stats-onplay"
+        "onPlay": { "type": "selectCreatureToCopyStats" }
       }
     },
     {
@@ -184,7 +193,7 @@
       "nutrition": 1,
       "effectText": "Copy abilities of target animal.",
       "effects": {
-        "onPlay": "moluccan-cockatoo-copy-abilities-onplay"
+        "onPlay": { "type": "selectCreatureToCopyAbilities" }
       }
     },
     {
@@ -197,7 +206,7 @@
       "effectText": "Play Oriental Magpie. Heal 2. Regen target creature.",
       "summons": ["token-oriental-magpie"],
       "effects": {
-        "onPlay": "oriental-magpies-summon-heal-regen-onplay"
+        "onPlay": { "type": "summonHealAndRegen", "params": { "tokenIds": ["token-oriental-magpie"], "healAmount": 2 } }
       }
     },
     {
@@ -234,7 +243,7 @@
       "nutrition": 1,
       "effectText": "Copy stats of a carrion.",
       "effects": {
-        "onPlay": "raven-copy-carrion-stats-onplay"
+        "onPlay": { "type": "selectCarrionToCopyStats" }
       }
     },
     {
@@ -430,7 +439,7 @@
       "hp": 2,
       "effectText": "Kill enemy prey. Destroy target field spell.",
       "effects": {
-        "onConsume": "firehawk-kill-destroy-onconsume"
+        "onConsume": { "type": "killPreyAndDestroyField" }
       }
     },
     {
@@ -441,7 +450,7 @@
       "hp": 2,
       "effectText": "Add a carrion to hand. Add a card from deck to hand.",
       "effects": {
-        "onConsume": "great-gray-owl-add-carrion-tutor-onconsume"
+        "onConsume": { "type": "addCarrionAndTutor" }
       }
     },
     {
@@ -553,7 +562,7 @@
       "hp": 5,
       "effectText": "Add target enemy to hand.",
       "effects": {
-        "onConsume": "harpy-eagle-return-to-hand-onconsume"
+        "onConsume": { "type": "selectEnemyToReturnToOpponentHand" }
       }
     },
     {
@@ -579,7 +588,10 @@
       "type": "Spell",
       "effectText": "Play copy of target creature.",
       "effects": {
-        "effect": "birds-of-a-feather-copy-creature-effect"
+        "effect": {
+          "type": "selectCreatureToCopy",
+          "params": {}
+        }
       }
     },
     {
@@ -588,7 +600,24 @@
       "type": "Spell",
       "effectText": "Either deal 2 damage to opponents or deal 6 damage to target enemy.",
       "effects": {
-        "effect": "shotgun-choice-damage-effect"
+        "effect": {
+          "type": "chooseOption",
+          "params": {
+            "title": "Shotgun: choose an effect",
+            "options": [
+              {
+                "label": "Deal 2 damage to rival",
+                "description": "Deal 2 damage to the opponent",
+                "effect": { "damage": 2 }
+              },
+              {
+                "label": "Deal 6 damage to target enemy",
+                "description": "Select an enemy creature for 6 damage",
+                "effect": { "type": "selectEnemyCreatureForDamage", "params": { "amount": 6, "label": "shotgun" } }
+              }
+            ]
+          }
+        }
       }
     },
     {
@@ -597,7 +626,10 @@
       "type": "Spell",
       "effectText": "Heal 3. Gain barrier.",
       "effects": {
-        "effect": "swan-song-heal-barrier-effect"
+        "effect": [
+          { "type": "heal", "params": { "amount": 3 } },
+          { "type": "grantBarrier", "params": {} }
+        ]
       }
     },
     {
@@ -615,7 +647,14 @@
       "type": "Free Spell",
       "effectText": "Target creature gains immune.",
       "effects": {
-        "effect": "clouds-grant-immune-effect"
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "all-creatures",
+            "title": "Choose a creature to gain Immune",
+            "effect": { "keyword": "Immune" }
+          }
+        }
       }
     },
     {
@@ -624,7 +663,14 @@
       "type": "Free Spell",
       "effectText": "Target creature gains haste.",
       "effects": {
-        "effect": "tailwind-grant-haste-effect"
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "all-creatures",
+            "title": "Choose a creature to gain Haste",
+            "effect": { "keyword": "Haste" }
+          }
+        }
       }
     },
     {
@@ -643,7 +689,12 @@
       "isFieldSpell": true,
       "effectText": "End of turn, target creature gains +1/+1.",
       "effects": {
-        "effect": "bird-feeder-field-spell-effect"
+        "effect": {
+          "type": "setFieldSpell",
+          "params": {
+            "cardId": "bird-field-spell-bird-feeder"
+          }
+        }
       }
     },
     {
@@ -654,7 +705,12 @@
       "effectText": "When target enemy attacks directly, negate attack. Play 3 Bushtits.",
       "summons": ["token-bushtit"],
       "effects": {
-        "effect": "alleyway-mobbing-negate-summon-effect"
+        "effect": {
+          "type": "negateAndSummon",
+          "params": {
+            "tokenIds": ["token-bushtit", "token-bushtit", "token-bushtit"]
+          }
+        }
       }
     },
     {
@@ -672,7 +728,10 @@
       "trigger": "defending",
       "effectText": "When target creature is defending, return it to hand.",
       "effects": {
-        "effect": "fly-off-return-to-hand-effect"
+        "effect": {
+          "type": "returnTriggeredToHand",
+          "params": {}
+        }
       }
     },
     {
