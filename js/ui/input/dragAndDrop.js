@@ -521,12 +521,20 @@ const handleCreatureDrop = (attacker, target) => {
  * Handle drag start event
  */
 const handleDragStart = (event) => {
+  console.log('handleDragStart called', event.target);
   const cardElement = event.target.closest('.draggable-card');
-  if (!cardElement) return;
+  if (!cardElement) {
+    console.log('No draggable-card found');
+    return;
+  }
 
   const instanceId = cardElement.dataset.instanceId;
-  if (!instanceId) return;
+  if (!instanceId) {
+    console.log('No instanceId found');
+    return;
+  }
 
+  console.log('Starting drag for card:', instanceId);
   draggedCardElement = cardElement;
   draggedCard = getCardFromInstanceId(instanceId, latestState);
 
@@ -705,6 +713,7 @@ export const initDragAndDrop = (options = {}) => {
   applyEffectResult = helpers.applyEffectResult;
   selectionPanelElement = helpers.selectionPanelElement;
 
+  console.log('Attaching drag-and-drop event listeners to document');
   document.addEventListener('dragstart', handleDragStart);
   document.addEventListener('dragend', handleDragEnd);
   document.addEventListener('dragover', handleDragOver);
@@ -712,6 +721,7 @@ export const initDragAndDrop = (options = {}) => {
   document.addEventListener('dragleave', clearDragVisuals);
 
   dragDropInitialized = true;
+  console.log('Drag-and-drop initialized successfully');
 };
 
 /**
