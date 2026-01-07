@@ -118,7 +118,13 @@ import {
   buildLobbySyncPayload,
 } from "./network/serialization.js";
 
-import { getSupabaseApi } from "./network/index.js";
+import {
+  getSupabaseApi,
+  setLobbyChannel,
+  sendLobbyBroadcast,
+  broadcastSyncState,
+  saveGameStateToDatabase,
+} from "./network/index.js";
 
 // Helper to get discardEffect and timing for both old and new card formats
 const getDiscardEffectInfo = (card) => {
@@ -209,72 +215,12 @@ let battleEffectsInitialized = false;
 // Import: serializeCardSnapshot, hydrateCardSnapshot, etc.
 // ============================================================================
 
-const sendLobbyBroadcast = (event, payload) => {
-  if (!lobbyChannel) {
-    return;
-  }
-  lobbyChannel.send({
-    type: "broadcast",
-    event,
-    payload,
-  });
-};
-
-const broadcastSyncState = (state) => {
-  if (!isOnlineMode(state)) {
-    return;
-  }
-  const payload = buildLobbySyncPayload(state);
-  console.log("Broadcasting sync state, payload structure:", {
-    hasGame: !!payload.game,
-    hasPlayers: !!payload.game?.players,
-    playerCount: payload.game?.players?.length,
-    player0HandCount: payload.game?.players?.[0]?.hand?.length,
-    player0FieldCount: payload.game?.players?.[0]?.field?.length,
-    player0HandSample: payload.game?.players?.[0]?.hand?.[0],
-  });
-  sendLobbyBroadcast("sync_state", payload);
-
-  // Also save to database for reconnection support
-  saveGameStateToDatabase(state);
-};
-
-/**
- * Save game state to database (runs in background, doesn't block gameplay)
- */
-const saveGameStateToDatabase = async (state) => {
-  if (!isOnlineMode(state) || !state.menu?.lobby?.id) {
-    console.log("Skipping save - not online or no lobby");
-    return;
-  }
-
-  // Save on EVERY action, not just active player's turn
-  // This ensures the database always has the most up-to-date state from both players
-  try {
-    const api = await loadSupabaseApi(state);
-    const payload = buildLobbySyncPayload(state);
-    console.log("Saving game state to DB for lobby:", state.menu.lobby.id);
-    console.log("Game state payload structure:", {
-      hasGame: !!payload.game,
-      hasPlayers: !!payload.game?.players,
-      player0HandCount: payload.game?.players?.[0]?.hand?.length,
-      player0FieldCount: payload.game?.players?.[0]?.field?.length,
-      player1HandCount: payload.game?.players?.[1]?.hand?.length,
-      player1FieldCount: payload.game?.players?.[1]?.field?.length,
-      turn: payload.game?.turn,
-      phase: payload.game?.phase,
-    });
-    await api.saveGameState({
-      lobbyId: state.menu.lobby.id,
-      gameState: payload,
-      actionSequence: 0, // Will be used in Phase 3
-    });
-    console.log("Game state saved successfully");
-  } catch (error) {
-    console.error("Failed to save game state:", error);
-    // Don't throw - we don't want to break gameplay if DB save fails
-  }
-};
+// ============================================================================
+// SYNC & BROADCAST
+// MOVED TO: ./network/sync.js
+// Functions: sendLobbyBroadcast, broadcastSyncState, saveGameStateToDatabase
+// Import: sendLobbyBroadcast, broadcastSyncState, saveGameStateToDatabase
+// ============================================================================
 
 /**
  * Load saved game state from database when joining/rejoining a lobby
@@ -348,44 +294,6 @@ const loadGameStateFromDatabase = async (state) => {
     return false;
   }
 };
-
-const DECK_OPTIONS = [
-  {
-    id: "fish",
-    name: "Fish",
-    emoji: "🐟",
-    panelClass: "deck-select-panel--fish",
-    available: true,
-  },
-  {
-    id: "bird",
-    name: "Bird",
-    emoji: "🐦",
-    panelClass: "deck-select-panel--bird",
-    available: false,
-  },
-  {
-    id: "mammal",
-    name: "Mammal",
-    emoji: "🐻",
-    panelClass: "deck-select-panel--mammal",
-    available: false,
-  },
-  {
-    id: "reptile",
-    name: "Reptile",
-    emoji: "🦎",
-    panelClass: "deck-select-panel--reptile",
-    available: true,
-  },
-  {
-    id: "amphibian",
-    name: "Amphibian",
-    emoji: "🐸",
-    panelClass: "deck-select-panel--amphibian",
-    available: false,
-  },
-];
 
 const clearPanel = (panel) => {
   if (!panel) {
@@ -1024,6 +932,7 @@ const updateLobbySubscription = (state, { force = false } = {}) => {
   if (lobbyChannel) {
     supabaseApi?.unsubscribeChannel?.(lobbyChannel);
     lobbyChannel = null;
+    setLobbyChannel(null);
   }
   if (!lobbyId) {
     return;
@@ -1045,6 +954,7 @@ const updateLobbySubscription = (state, { force = false } = {}) => {
     lobbyId,
     onUpdate: applyLobbyUpdate,
   });
+  setLobbyChannel(lobbyChannel);
   lobbyChannel.on("broadcast", { event: "deck_update" }, ({ payload }) => {
     applyLobbySyncPayload(state, payload);
   });
