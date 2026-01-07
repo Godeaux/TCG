@@ -5,11 +5,15 @@
  * - Attack ghost animations (card flying to target)
  * - Impact rings on hit
  * - Damage pop numbers
+ * - Consumption animations (prey fading into predator)
+ * - Keyword trigger effects (Barrier, Ambush, etc.)
  * - Effect deduplication to prevent replay on state sync
  *
  * Key Functions:
  * - processVisualEffects: Main entry point, called each render
  * - playAttackEffect: Animate a single attack
+ * - playConsumptionEffect: Animate prey being consumed
+ * - playKeywordEffect: Animate keyword triggers
  */
 
 import {
@@ -205,6 +209,209 @@ export const playAttackEffect = (effect, state) => {
 };
 
 // ============================================================================
+// CONSUMPTION ANIMATION
+// ============================================================================
+
+/**
+ * Play consumption visual effect
+ * Animates prey shrinking and fading into the predator
+ */
+export const playConsumptionEffect = (effect, state) => {
+  if (!battleEffectsLayer) {
+    return;
+  }
+
+  const preyElement = effect.preyId
+    ? document.querySelector(`.card[data-instance-id="${effect.preyId}"]`)
+    : null;
+  const predatorElement = effect.predatorId
+    ? document.querySelector(`.card[data-instance-id="${effect.predatorId}"]`)
+    : null;
+  const preySlotElement = getFieldSlotElement(
+    state,
+    effect.preyOwnerIndex ?? -1,
+    effect.preySlotIndex ?? -1
+  );
+  const predatorSlotElement = getFieldSlotElement(
+    state,
+    effect.predatorOwnerIndex ?? -1,
+    effect.predatorSlotIndex ?? -1
+  );
+
+  const preySource = preyElement ?? preySlotElement;
+  const predatorTarget = predatorElement ?? predatorSlotElement;
+
+  if (!preySource || !predatorTarget) {
+    return;
+  }
+
+  const layerRect = battleEffectsLayer.getBoundingClientRect();
+  const preyRect = preySource.getBoundingClientRect();
+  const predatorRect = predatorTarget.getBoundingClientRect();
+
+  if (!layerRect.width || !layerRect.height) {
+    return;
+  }
+
+  // Create ghost of prey card
+  const ghost = preyElement ? preyElement.cloneNode(true) : document.createElement("div");
+  ghost.classList.add("consumption-ghost");
+  ghost.classList.toggle("consumption-ghost--slot", !preyElement);
+  ghost.querySelectorAll?.(".card-actions").forEach((node) => node.remove());
+  ghost.style.width = `${preyRect.width}px`;
+  ghost.style.height = `${preyRect.height}px`;
+  ghost.style.left = `${preyRect.left - layerRect.left + preyRect.width / 2}px`;
+  ghost.style.top = `${preyRect.top - layerRect.top + preyRect.height / 2}px`;
+  battleEffectsLayer.appendChild(ghost);
+
+  // Calculate movement to predator
+  const deltaX = predatorRect.left - preyRect.left + (predatorRect.width - preyRect.width) / 2;
+  const deltaY = predatorRect.top - preyRect.top + (predatorRect.height - preyRect.height) / 2;
+
+  const animation = ghost.animate(
+    [
+      { transform: "translate(-50%, -50%) scale(1)", opacity: 0.9, filter: "brightness(1)" },
+      { transform: "translate(-50%, -50%) scale(1.1)", opacity: 1, filter: "brightness(1.2)", offset: 0.15 },
+      { transform: `translate(calc(-50% + ${deltaX * 0.5}px), calc(-50% + ${deltaY * 0.5}px)) scale(0.7)`, opacity: 0.7, filter: "brightness(0.9)", offset: 0.5 },
+      { transform: `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(0.1)`, opacity: 0, filter: "brightness(0.5)" },
+    ],
+    {
+      duration: 600,
+      easing: "cubic-bezier(0.4, 0, 0.2, 1)",
+    }
+  );
+
+  animation.addEventListener("finish", () => {
+    ghost.remove();
+    // Add nutrition pop on predator
+    if (effect.nutritionGained && predatorTarget) {
+      createNutritionPop(predatorTarget, effect.nutritionGained);
+    }
+    // Flash predator to show power gain
+    predatorTarget?.classList.add("consumption-complete");
+    setTimeout(() => predatorTarget?.classList.remove("consumption-complete"), 400);
+  });
+};
+
+/**
+ * Create a nutrition gain pop animation on predator
+ */
+const createNutritionPop = (target, amount) => {
+  if (!target || amount <= 0) {
+    return;
+  }
+  const pop = document.createElement("div");
+  pop.className = "nutrition-pop";
+  pop.textContent = `+${amount}/+${amount}`;
+  target.appendChild(pop);
+  pop.addEventListener("animationend", () => pop.remove());
+};
+
+// ============================================================================
+// KEYWORD TRIGGER EFFECTS
+// ============================================================================
+
+/**
+ * Keyword effect configurations
+ * Each keyword has unique visual styling
+ */
+const KEYWORD_EFFECTS = {
+  Barrier: {
+    className: "keyword-barrier",
+    emoji: "🛡️",
+    color: "#4fc3f7",
+    duration: 600,
+  },
+  Ambush: {
+    className: "keyword-ambush",
+    emoji: "🎯",
+    color: "#ff7043",
+    duration: 500,
+  },
+  Toxic: {
+    className: "keyword-toxic",
+    emoji: "☠️",
+    color: "#76ff03",
+    duration: 600,
+  },
+  Neurotoxic: {
+    className: "keyword-neurotoxic",
+    emoji: "❄️",
+    color: "#80deea",
+    duration: 700,
+  },
+  Scavenge: {
+    className: "keyword-scavenge",
+    emoji: "🦴",
+    color: "#a1887f",
+    duration: 500,
+  },
+  Haste: {
+    className: "keyword-haste",
+    emoji: "⚡",
+    color: "#ffeb3b",
+    duration: 400,
+  },
+  Lure: {
+    className: "keyword-lure",
+    emoji: "🎣",
+    color: "#f06292",
+    duration: 500,
+  },
+};
+
+/**
+ * Play keyword trigger visual effect
+ * Shows a distinct animation when a keyword ability activates
+ */
+export const playKeywordEffect = (effect, state) => {
+  if (!battleEffectsLayer) {
+    return;
+  }
+
+  const cardElement = effect.cardId
+    ? document.querySelector(`.card[data-instance-id="${effect.cardId}"]`)
+    : null;
+  const slotElement = getFieldSlotElement(
+    state,
+    effect.ownerIndex ?? -1,
+    effect.slotIndex ?? -1
+  );
+
+  const target = cardElement ?? slotElement;
+  if (!target) {
+    return;
+  }
+
+  const keywordConfig = KEYWORD_EFFECTS[effect.keyword];
+  if (!keywordConfig) {
+    // Fallback for unknown keywords
+    target.classList.add("keyword-trigger-generic");
+    setTimeout(() => target.classList.remove("keyword-trigger-generic"), 500);
+    return;
+  }
+
+  const layerRect = battleEffectsLayer.getBoundingClientRect();
+  const targetRect = target.getBoundingClientRect();
+
+  // Add glow class to card
+  target.classList.add(keywordConfig.className);
+  setTimeout(() => target.classList.remove(keywordConfig.className), keywordConfig.duration);
+
+  // Create floating emoji indicator
+  const indicator = document.createElement("div");
+  indicator.className = "keyword-indicator";
+  indicator.textContent = keywordConfig.emoji;
+  indicator.style.left = `${targetRect.left - layerRect.left + targetRect.width / 2}px`;
+  indicator.style.top = `${targetRect.top - layerRect.top + targetRect.height / 2}px`;
+  indicator.style.color = keywordConfig.color;
+  indicator.style.textShadow = `0 0 10px ${keywordConfig.color}, 0 0 20px ${keywordConfig.color}`;
+  battleEffectsLayer.appendChild(indicator);
+
+  indicator.addEventListener("animationend", () => indicator.remove());
+};
+
+// ============================================================================
 // MAIN ENTRY POINT
 // ============================================================================
 
@@ -232,8 +439,16 @@ export const processVisualEffects = (state) => {
       return;
     }
     markEffectProcessed(effect.id, createdAt);
-    if (effect.type === "attack") {
-      requestAnimationFrame(() => playAttackEffect(effect, state));
+    switch (effect.type) {
+      case "attack":
+        requestAnimationFrame(() => playAttackEffect(effect, state));
+        break;
+      case "consumption":
+        requestAnimationFrame(() => playConsumptionEffect(effect, state));
+        break;
+      case "keyword":
+        requestAnimationFrame(() => playKeywordEffect(effect, state));
+        break;
     }
   });
   pruneProcessedEffects();

@@ -75,6 +75,11 @@ export const renderField = (state, playerIndex, isOpponent, options = {}) => {
       onInspect,
     });
 
+    // Add attack pulse if creature can attack
+    if (canAttack) {
+      cardElement.classList.add('can-attack-pulse');
+    }
+
     slot.appendChild(cardElement);
   });
 };

@@ -10,9 +10,24 @@ import {
   areAbilitiesActive,
   hasToxic,
 } from "../keywords.js";
-import { logMessage } from "../state/gameState.js";
+import { logMessage, queueVisualEffect } from "../state/gameState.js";
 import { resolveEffectResult } from "./effects.js";
 import { isCreatureCard } from "../cardTypes.js";
+
+/**
+ * Queue a keyword trigger visual effect
+ */
+const queueKeywordEffect = (state, card, keyword, ownerIndex) => {
+  const player = state.players[ownerIndex];
+  const slotIndex = player?.field?.findIndex((slot) => slot?.instanceId === card.instanceId) ?? -1;
+  queueVisualEffect(state, {
+    type: "keyword",
+    keyword,
+    cardId: card.instanceId,
+    ownerIndex,
+    slotIndex,
+  });
+};
 
 const canAttackPlayer = (attacker, state) => {
   if (hasHaste(attacker)) {
@@ -42,57 +57,70 @@ export const getValidTargets = (state, attacker, opponent) => {
   return { creatures: targetableCreatures, player: canDirect };
 };
 
-const applyDamage = (creature, amount) => {
+const applyDamage = (creature, amount, state, ownerIndex) => {
   if (amount <= 0) {
-    return 0;
+    return { damage: 0, barrierBlocked: false };
   }
   if (creature.hasBarrier && areAbilitiesActive(creature)) {
     creature.hasBarrier = false;
-    return 0;
+    if (state && ownerIndex !== undefined) {
+      queueKeywordEffect(state, creature, "Barrier", ownerIndex);
+    }
+    return { damage: 0, barrierBlocked: true };
   }
   creature.currentHp -= amount;
-  return amount;
+  return { damage: amount, barrierBlocked: false };
 };
 
-export const resolveCreatureCombat = (state, attacker, defender) => {
+export const resolveCreatureCombat = (state, attacker, defender, attackerOwnerIndex, defenderOwnerIndex) => {
   logMessage(state, `⚔️ COMBAT: ${attacker.name} (${attacker.currentAtk}/${attacker.currentHp}) attacks ${defender.name} (${defender.currentAtk}/${defender.currentHp})`);
 
   const ambushAttack = hasAmbush(attacker);
   const attackerPreHp = attacker.currentHp;
   const defenderPreHp = defender.currentHp;
 
-  const defenderDamage = applyDamage(defender, attacker.currentAtk);
+  const defenderResult = applyDamage(defender, attacker.currentAtk, state, defenderOwnerIndex);
+  const defenderDamage = defenderResult.damage;
   const defenderSurvived = defender.currentHp > 0;
   const defenderDealsDamage = !ambushAttack || defenderSurvived;
   let attackerDamage = 0;
 
-  if (defenderDamage > 0) {
+  if (defenderResult.barrierBlocked) {
+    logMessage(state, `  🛡️ ${defender.name}'s barrier blocks the attack!`);
+  } else if (defenderDamage > 0) {
     logMessage(state, `  → ${attacker.name} deals ${defenderDamage} damage to ${defender.name} (${defenderPreHp} → ${defender.currentHp})`);
   }
 
   if (defenderDealsDamage) {
-    attackerDamage = applyDamage(attacker, defender.currentAtk);
-    if (attackerDamage > 0) {
+    const attackerResult = applyDamage(attacker, defender.currentAtk, state, attackerOwnerIndex);
+    attackerDamage = attackerResult.damage;
+    if (attackerResult.barrierBlocked) {
+      logMessage(state, `  🛡️ ${attacker.name}'s barrier blocks the counter-attack!`);
+    } else if (attackerDamage > 0) {
       logMessage(state, `  → ${defender.name} deals ${attackerDamage} damage to ${attacker.name} (${attackerPreHp} → ${attacker.currentHp})`);
     }
   }
 
   // Toxic kills any creature it damages, regardless of HP
   if (hasToxic(attacker) && defenderDamage > 0 && defender.currentHp > 0) {
+    queueKeywordEffect(state, attacker, "Toxic", attackerOwnerIndex);
     defender.currentHp = 0;
     logMessage(state, `  💀 TOXIC: ${defender.name} is killed by ${attacker.name}'s toxic venom!`);
   }
   if (defenderDealsDamage && hasToxic(defender) && attackerDamage > 0 && attacker.currentHp > 0) {
+    queueKeywordEffect(state, defender, "Toxic", defenderOwnerIndex);
     attacker.currentHp = 0;
     logMessage(state, `  💀 TOXIC: ${attacker.name} is killed by ${defender.name}'s toxic venom!`);
   }
 
   if (hasNeurotoxic(attacker) && attacker.currentAtk > 0) {
+    queueKeywordEffect(state, attacker, "Neurotoxic", attackerOwnerIndex);
     defender.frozen = true;
     defender.frozenDiesTurn = state.turn + 1;
     logMessage(state, `  ❄️ ${defender.name} is frozen by neurotoxin (dies turn ${state.turn + 1}).`);
   }
   if (defenderDealsDamage && hasNeurotoxic(defender) && defender.currentAtk > 0) {
+    queueKeywordEffect(state, defender, "Neurotoxic", defenderOwnerIndex);
     attacker.frozen = true;
     attacker.frozenDiesTurn = state.turn + 1;
     logMessage(state, `  ❄️ ${attacker.name} is frozen by neurotoxin (dies turn ${state.turn + 1}).`);
@@ -110,6 +138,7 @@ export const resolveCreatureCombat = (state, attacker, defender) => {
   }
 
   if (ambushAttack && !defenderSurvived) {
+    queueKeywordEffect(state, attacker, "Ambush", attackerOwnerIndex);
     logMessage(state, `  🎯 AMBUSH: ${attacker.name} avoids all damage!`);
   }
 

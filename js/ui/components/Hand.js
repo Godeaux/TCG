@@ -16,6 +16,8 @@
 
 import { renderCard } from './Card.js';
 import { getLocalPlayerIndex } from '../../state/selectors.js';
+import { canPlayCard, cardLimitAvailable } from '../../game/turnManager.js';
+import { isFreePlay } from '../../keywords.js';
 
 // ============================================================================
 // HAND OVERLAP CALCULATION
@@ -200,6 +202,10 @@ export const renderHand = (state, options = {}) => {
     return;
   }
 
+  // Check if it's the player's turn (for pulse effect)
+  const isPlayerTurn = state.activePlayerIndex === playerIndex;
+  const canPlayAnyCard = isPlayerTurn && (cardLimitAvailable(state) || player.hand.some(c => isFreePlay(c)));
+
   // Render actual cards
   player.hand.forEach((card) => {
     const cardElement = renderCard(card, {
@@ -212,6 +218,12 @@ export const renderHand = (state, options = {}) => {
         onUpdate?.();
       },
     });
+
+    // Add playable pulse if card can be played this turn
+    if (canPlayAnyCard && canPlayCard(state, card)) {
+      cardElement.classList.add('playable-pulse');
+    }
+
     handGrid.appendChild(cardElement);
   });
 

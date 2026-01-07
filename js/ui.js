@@ -1539,10 +1539,16 @@ const resolveAttack = (state, attacker, target, negateAttack = false) => {
       damageToAttacker: 0,
     });
   } else {
-    const { attackerDamage, defenderDamage } = resolveCreatureCombat(state, attacker, target.card);
     const { ownerIndex: defenderOwnerIndex, slotIndex: defenderSlotIndex } = findCardSlotIndex(
       state,
       target.card.instanceId
+    );
+    const { attackerDamage, defenderDamage } = resolveCreatureCombat(
+      state,
+      attacker,
+      target.card,
+      attackerOwnerIndex,
+      defenderOwnerIndex
     );
     effect = queueVisualEffect(state, {
       type: "attack",

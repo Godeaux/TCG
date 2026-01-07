@@ -1,4 +1,4 @@
-import { drawCard, logMessage } from "../state/gameState.js";
+import { drawCard, logMessage, queueVisualEffect } from "../state/gameState.js";
 import { createCardInstance } from "../cardTypes.js";
 import { consumePrey } from "./consumption.js";
 import { isImmune, areAbilitiesActive } from "../keywords.js";
@@ -8,6 +8,17 @@ const findCardOwnerIndex = (state, card) =>
   state.players.findIndex((player) =>
     player.field.some((slot) => slot?.instanceId === card.instanceId)
   );
+
+const findCardSlotIndex = (state, card) => {
+  const ownerIndex = findCardOwnerIndex(state, card);
+  if (ownerIndex === -1) {
+    return { ownerIndex: -1, slotIndex: -1 };
+  }
+  const slotIndex = state.players[ownerIndex].field.findIndex(
+    (slot) => slot?.instanceId === card.instanceId
+  );
+  return { ownerIndex, slotIndex };
+};
 
 const removeCardFromField = (state, card) => {
   const ownerIndex = findCardOwnerIndex(state, card);
@@ -32,6 +43,17 @@ const applyEffectDamage = (state, creature, amount, sourceLabel = "effect") => {
   }
   if (creature.hasBarrier && areAbilitiesActive(creature)) {
     creature.hasBarrier = false;
+    // Queue barrier visual effect
+    const { ownerIndex, slotIndex } = findCardSlotIndex(state, creature);
+    if (ownerIndex >= 0) {
+      queueVisualEffect(state, {
+        type: "keyword",
+        keyword: "Barrier",
+        cardId: creature.instanceId,
+        ownerIndex,
+        slotIndex,
+      });
+    }
     logMessage(state, `${creature.name}'s barrier blocks the damage.`);
     return;
   }
