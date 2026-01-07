@@ -1331,6 +1331,9 @@ button {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
 }
 
 .card-type-label {
@@ -1343,7 +1346,7 @@ button {
   flex-wrap: nowrap;
   justify-content: space-around;
   flex-shrink: 0;
-  padding: 6px 4px;
+  padding: 8px 6px;
   background: rgba(0, 0, 0, 0.3);
 }
 
@@ -1405,7 +1408,8 @@ button {
 }
 
 .card-image-container {
-  flex: 1;
+  flex: 1 1 40%; /* Take up ~40% of card height, allow shrinking */
+  max-height: 45%;
   min-height: 0;
   display: flex;
   align-items: center;
@@ -1501,12 +1505,12 @@ button {
 }
 
 .card-content-area {
-  flex-shrink: 0;
+  flex: 1 0 auto; /* Grow to fill available space */
   display: flex;
   flex-direction: column;
   gap: 2px;
   overflow: hidden;
-  padding-bottom: 4px;
+  padding-bottom: 6px;
 }
 
 .card-content-area .card-stats-row {
@@ -1515,12 +1519,13 @@ button {
 
 .card-content-area .card-keywords {
   flex-shrink: 0;
-  padding: 2px 4px;
+  padding: 4px 6px;
 }
 
 .card-content-area .card-effect {
-  flex-shrink: 0;
+  flex: 1;
   overflow: hidden;
+  padding: 2px 6px;
 }
 
 .card-actions {
