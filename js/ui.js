@@ -92,11 +92,12 @@ import {
   createCardSelectionItem,
 } from "./ui/components/SelectionPanel.js";
 
-// Input handling (extracted module - drag-and-drop + navigation)
+// Input handling (extracted module - drag-and-drop + navigation + touch)
 import {
   initializeInput,
   updateInputState,
   updateInputCallbacks,
+  initTouchHandlers,
 } from "./ui/input/index.js";
 
 // Battle effects (extracted module)
@@ -206,6 +207,7 @@ let activeLobbyId = null;
 let lobbyRefreshTimeout = null;
 let lobbyRefreshInFlight = false;
 let battleEffectsInitialized = false;
+let touchInitialized = false;
 
 // ============================================================================
 // SERIALIZATION
@@ -2567,260 +2569,19 @@ const setupMobileNavigation = () => {
 };
 
 // ==================== TOUCH EVENTS ====================
-// Setup touch-based card interaction (Hearthstone-style)
-const setupTouchEvents = () => {
-  let touchedCard = null;
-  let touchStartPos = { x: 0, y: 0 };
-  let currentTouchPos = { x: 0, y: 0 };
-  let isDragging = false;
-  let verticalDragThreshold = 30; // pixels to move upward before dragging to play
-  let dragPreview = null; // Ghost element for mobile dragging
-
-  const createDragPreview = (card, x, y) => {
-    // Clone the card element for the drag preview
-    const preview = card.cloneNode(true);
-    preview.classList.add('mobile-drag-preview');
-    preview.style.position = 'fixed';
-    preview.style.left = `${x}px`;
-    preview.style.top = `${y}px`;
-    preview.style.transform = 'translate(-50%, -50%)';
-    preview.style.opacity = '0.7';
-    preview.style.pointerEvents = 'none';
-    preview.style.zIndex = '10000';
-    preview.style.width = `${card.offsetWidth}px`;
-    preview.style.height = `${card.offsetHeight}px`;
-    document.body.appendChild(preview);
-    return preview;
-  };
-
-  const updateDragPreviewPosition = (preview, x, y) => {
-    if (!preview) return;
-    preview.style.left = `${x}px`;
-    preview.style.top = `${y}px`;
-  };
-
-  const removeDragPreview = (preview) => {
-    if (preview && preview.parentNode) {
-      preview.parentNode.removeChild(preview);
-    }
-  };
-
-  const getCardAtPosition = (x, y) => {
-    const handGrid = document.getElementById('active-hand');
-    if (!handGrid) return null;
-
-    const cards = Array.from(handGrid.querySelectorAll('.card'));
-    let closestCard = null;
-    let closestDistance = Infinity;
-
-    cards.forEach(card => {
-      const rect = card.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      const dx = x - centerX;
-      const dy = y - centerY;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-
-      if (distance < closestDistance) {
-        closestDistance = distance;
-        closestCard = card;
-      }
-    });
-
-    return closestCard;
-  };
-
-  const handleTouchStart = (e) => {
-    const handGrid = document.getElementById('active-hand');
-    if (!handGrid) return;
-
-    // Check if touch is within hand area
-    const touch = e.touches[0];
-    const handRect = handGrid.getBoundingClientRect();
-    if (touch.clientY < handRect.top || touch.clientY > handRect.bottom) return;
-
-    touchStartPos = {
-      x: touch.clientX,
-      y: touch.clientY
-    };
-    currentTouchPos = { ...touchStartPos };
-    isDragging = false;
-
-    // Find closest card and focus it
-    const card = getCardAtPosition(touch.clientX, touch.clientY);
-    if (card && !card.classList.contains('back')) {
-      touchedCard = card;
-      focusCardElement(card);
-    }
-
-    // Prevent default to avoid scrolling while touching card area
-    e.preventDefault();
-  };
-
-  const handleTouchMove = (e) => {
-    if (!touchedCard) return;
-
-    // Prevent default immediately to stop browser back/forward gestures
-    e.preventDefault();
-
-    const touch = e.touches[0];
-    currentTouchPos = {
-      x: touch.clientX,
-      y: touch.clientY
-    };
-
-    const dx = currentTouchPos.x - touchStartPos.x;
-    const dy = currentTouchPos.y - touchStartPos.y;
-
-    // Check if moving vertically upward past threshold
-    if (!isDragging && dy < -verticalDragThreshold) {
-      // Start dragging to play
-      isDragging = true;
-      touchedCard.classList.add('dragging');
-
-      // Create drag preview
-      dragPreview = createDragPreview(touchedCard, touch.clientX, touch.clientY);
-
-      // Allow overflow on hand containers for mobile dragging
-      const handGrid = document.getElementById('active-hand');
-      if (handGrid) {
-        handGrid.classList.add('is-dragging');
-        const handPanel = handGrid.closest('.hand-panel');
-        const handContainer = handGrid.closest('.hand-container');
-        const centerColumn = handGrid.closest('.battlefield-center-column');
-        if (handPanel) handPanel.classList.add('is-dragging');
-        if (handContainer) handContainer.classList.add('is-dragging');
-        if (centerColumn) centerColumn.classList.add('is-dragging');
-      }
-
-      // Trigger dragstart event for existing drag-and-drop logic
-      const dragStartEvent = new DragEvent('dragstart', {
-        bubbles: true,
-        cancelable: true,
-        dataTransfer: new DataTransfer()
-      });
-      touchedCard.dispatchEvent(dragStartEvent);
-    } else if (!isDragging) {
-      // Horizontal browsing - update focused card based on position
-      const newCard = getCardAtPosition(currentTouchPos.x, currentTouchPos.y);
-      if (newCard && newCard !== touchedCard && !newCard.classList.contains('back')) {
-        touchedCard = newCard;
-        focusCardElement(newCard);
-      }
-    }
-
-    if (isDragging) {
-      // Update drag preview position
-      updateDragPreviewPosition(dragPreview, touch.clientX, touch.clientY);
-
-      // Update visual feedback for drag targets
-      const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
-      updateDragVisuals(elementBelow);
-    }
-  };
-
-  const handleTouchEnd = (e) => {
-    if (!touchedCard) return;
-
-    if (isDragging) {
-      const touch = e.changedTouches[0];
-      const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
-
-      // Handle drop directly instead of triggering events
-      if (elementBelow && touchedCard.dataset.instanceId) {
-        const card = getCardFromInstanceId(touchedCard.dataset.instanceId, latestState);
-        if (card) {
-          const dropTarget = elementBelow.closest('.field-slot, .player-badge, .card');
-
-          if (dropTarget?.classList.contains('field-slot')) {
-            // Handle dropping on field slot (play card)
-            handleFieldDrop(card, dropTarget);
-          } else if (dropTarget?.classList.contains('player-badge')) {
-            // Handle dropping on player (attack player)
-            handlePlayerDrop(card, dropTarget);
-          } else if (dropTarget?.classList.contains('card')) {
-            // Handle dropping on card (attack creature or consumption)
-            const targetCard = getCardFromInstanceId(dropTarget.dataset.instanceId, latestState);
-            if (targetCard) {
-              handleCreatureDrop(card, targetCard);
-            }
-          } else {
-            // Invalid drop - just clear
-            revertCardToOriginalPosition();
-          }
-        }
-      }
-
-      touchedCard.classList.remove('dragging');
-      clearDragVisuals();
-
-      // Remove drag preview
-      removeDragPreview(dragPreview);
-      dragPreview = null;
-
-      // Remove is-dragging class from containers
-      const handGrid = document.getElementById('active-hand');
-      if (handGrid) {
-        handGrid.classList.remove('is-dragging');
-        const handPanel = handGrid.closest('.hand-panel');
-        const handContainer = handGrid.closest('.hand-container');
-        const centerColumn = handGrid.closest('.battlefield-center-column');
-        if (handPanel) handPanel.classList.remove('is-dragging');
-        if (handContainer) handContainer.classList.remove('is-dragging');
-        if (centerColumn) centerColumn.classList.remove('is-dragging');
-      }
-    }
-
-    touchedCard = null;
-    isDragging = false;
-  };
-
-  const handleTouchCancel = (e) => {
-    if (touchedCard) {
-      touchedCard.classList.remove('dragging');
-      clearDragVisuals();
-
-      // Remove drag preview
-      removeDragPreview(dragPreview);
-      dragPreview = null;
-
-      // Remove is-dragging class from containers
-      const handGrid = document.getElementById('active-hand');
-      if (handGrid) {
-        handGrid.classList.remove('is-dragging');
-        const handPanel = handGrid.closest('.hand-panel');
-        const handContainer = handGrid.closest('.hand-container');
-        const centerColumn = handGrid.closest('.battlefield-center-column');
-        if (handPanel) handPanel.classList.remove('is-dragging');
-        if (handContainer) handContainer.classList.remove('is-dragging');
-        if (centerColumn) centerColumn.classList.remove('is-dragging');
-      }
-
-      touchedCard = null;
-      isDragging = false;
-    }
-  };
-
-  // Add touch event listeners to the hand grid
-  const handGrid = document.getElementById('active-hand');
-  if (handGrid) {
-    handGrid.addEventListener('touchstart', handleTouchStart, { passive: false });
-    handGrid.addEventListener('touchmove', handleTouchMove, { passive: false });
-    handGrid.addEventListener('touchend', handleTouchEnd);
-    handGrid.addEventListener('touchcancel', handleTouchCancel);
-  }
-};
+// MOVED TO: ./ui/input/touchHandlers.js
+// Functions: initTouchHandlers, focusCardElement, reattachTouchHandlers
+// Import: initTouchHandlers from './ui/input/index.js'
+// ============================================================================
 
 // Initialize mobile features when DOM is ready
 if (typeof window !== 'undefined') {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       setupMobileNavigation();
-      setupTouchEvents();
     });
   } else {
     setupMobileNavigation();
-    setupTouchEvents();
   }
 }
 
@@ -2890,6 +2651,19 @@ export const renderGame = (state, callbacks = {}) => {
       getLocalPlayerIndex: (s) => getLocalPlayerIndex(s),
     });
     battleEffectsInitialized = true;
+  }
+
+  // Initialize touch handlers for mobile (Hearthstone-style drag to play)
+  if (!touchInitialized) {
+    initTouchHandlers({
+      onCardFocus: (card, element) => {
+        if (card) {
+          inspectedCardId = card.instanceId;
+          setInspectorContent(card);
+        }
+      },
+    });
+    touchInitialized = true;
   }
 
   ensureProfileLoaded(state);

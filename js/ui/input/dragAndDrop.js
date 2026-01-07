@@ -713,3 +713,128 @@ export const updateDragState = (state) => {
 export const updateDragCallbacks = (callbacks) => {
   latestCallbacks = callbacks;
 };
+
+// ============================================================================
+// SHARED EXPORTS FOR TOUCH HANDLERS
+// These functions are also used by touchHandlers.js for mobile touch support
+// ============================================================================
+
+/**
+ * Get card object from instance ID (searches all zones)
+ */
+export { getCardFromInstanceId };
+
+/**
+ * Clear all drag/drop visual indicators
+ */
+export { clearDragVisuals };
+
+/**
+ * Get current state reference
+ */
+export const getLatestState = () => latestState;
+
+/**
+ * Get current callbacks reference
+ */
+export const getLatestCallbacks = () => latestCallbacks;
+
+/**
+ * Handle dropping a card on a field slot
+ */
+export { handleFieldDrop };
+
+/**
+ * Handle dropping a card on a player badge (direct attack)
+ */
+export { handlePlayerDrop };
+
+/**
+ * Handle dropping a card on another card (attack or consume)
+ */
+export { handleCreatureDrop };
+
+/**
+ * Revert dragged card to original position
+ */
+export { revertCardToOriginalPosition };
+
+/**
+ * Update drop target visuals based on element under cursor/touch
+ * @param {HTMLElement} elementBelow - Element under the cursor/touch point
+ * @param {Object} draggedCard - The card being dragged
+ * @param {HTMLElement} draggedCardElement - The DOM element of the dragged card
+ */
+export const updateDropTargetVisuals = (elementBelow, card, cardElement) => {
+  if (!card || !latestState) return;
+
+  const target = elementBelow?.closest('.field-slot, .player-badge, .card');
+
+  // Ignore if hovering over the dragged card itself
+  if (target === cardElement || target?.contains(cardElement)) {
+    return;
+  }
+
+  const targetId = getTargetId(target);
+
+  // Only update visuals if target changed (prevents flickering)
+  if (targetId === currentDragTargetId) {
+    return;
+  }
+
+  clearDragVisuals();
+  currentDragTargetId = targetId;
+
+  if (!target) {
+    return;
+  }
+
+  if (target.classList.contains('field-slot')) {
+    const hasCard = Array.from(target.children).some(child => child.classList.contains('card'));
+
+    if (!hasCard && card.type !== 'Trap') {
+      target.classList.add('valid-drop-zone');
+    } else {
+      target.classList.add('invalid-target');
+    }
+  } else if (target.classList.contains('player-badge')) {
+    const isCombatPhase = latestState.phase === "Combat";
+    const playerIndex = parseInt(target.dataset.playerIndex);
+    const targetPlayer = latestState.players[playerIndex];
+    const attackerPlayer = latestState.players.find(p => p.field.includes(card));
+
+    if (isCombatPhase && targetPlayer && attackerPlayer && attackerPlayer !== targetPlayer &&
+        (card.type === 'Predator' || card.type === 'Prey')) {
+      target.classList.add('valid-drop-zone');
+    } else {
+      target.classList.add('invalid-target');
+    }
+  } else if (target.classList.contains('card')) {
+    if (target.dataset.instanceId === card.instanceId) {
+      return;
+    }
+
+    const targetCard = getCardFromInstanceId(target.dataset.instanceId, latestState);
+    if (!targetCard) return;
+
+    // Check for consumption scenario
+    const activePlayer = getActivePlayer(latestState);
+    const isPredatorFromHand = card.type === 'Predator' && activePlayer.hand.includes(card);
+    const isPreyOnField = activePlayer.field.includes(targetCard);
+
+    if (isPredatorFromHand && isPreyOnField && canConsumePreyDirectly(card, targetCard, latestState)) {
+      const consumablePrey = getConsumablePrey(card, latestState);
+      if (consumablePrey.length === 1 && consumablePrey[0] === targetCard) {
+        target.classList.add('consumption-target');
+        return;
+      }
+    }
+
+    // Check for valid attack target
+    if (isValidAttackTarget(card, targetCard, latestState)) {
+      target.classList.add('valid-target');
+    } else {
+      target.classList.add('invalid-target');
+    }
+  }
+};
