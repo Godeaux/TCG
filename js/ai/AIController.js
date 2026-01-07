@@ -32,6 +32,9 @@ const AI_DELAYS = {
   END_TURN: 400,      // Delay before ending turn
 };
 
+// Slow mode multiplier (4x slower)
+const SLOW_MODE_MULTIPLIER = 4;
+
 // ============================================================================
 // AI CONTROLLER CLASS
 // ============================================================================
@@ -84,14 +87,14 @@ export class AIController {
 
     try {
       // Initial thinking delay
-      await this.delay(AI_DELAYS.THINKING);
+      await this.delay(AI_DELAYS.THINKING, state);
 
       // Advance through early phases to get to Main 1
       // Phase order: Start → Draw → Main 1 → Before Combat → Combat → Main 2 → End
       while (state.phase === 'Start' || state.phase === 'Draw') {
         console.log(`[AI] Advancing from ${state.phase}`);
         callbacks.onAdvancePhase?.();
-        await this.delay(300); // Short delay between phase advances
+        await this.delay(300, state); // Short delay between phase advances
       }
 
       // Now we should be in Main 1
@@ -106,7 +109,7 @@ export class AIController {
       while (state.phase === 'Main 1' || state.phase === 'Before Combat') {
         console.log(`[AI] Advancing from ${state.phase} to Combat`);
         callbacks.onAdvancePhase?.();
-        await this.delay(300);
+        await this.delay(300, state);
       }
 
       // Combat phase actions
@@ -117,12 +120,12 @@ export class AIController {
       // Advance to Main 2 (could play more cards here in future)
       if (state.phase === 'Combat') {
         callbacks.onAdvancePhase?.();
-        await this.delay(300);
+        await this.delay(300, state);
       }
 
       // End turn
       console.log('[AI] Ending turn');
-      await this.delay(AI_DELAYS.END_TURN);
+      await this.delay(AI_DELAYS.END_TURN, state);
       callbacks.onEndTurn?.();
 
     } catch (error) {
@@ -166,7 +169,7 @@ export class AIController {
         break;
       }
 
-      await this.delay(AI_DELAYS.BETWEEN_ACTIONS);
+      await this.delay(AI_DELAYS.BETWEEN_ACTIONS, state);
     }
   }
 
@@ -550,7 +553,7 @@ export class AIController {
       // Notify callbacks
       callbacks.onAttack?.(attacker, target);
 
-      await this.delay(AI_DELAYS.BETWEEN_ACTIONS);
+      await this.delay(AI_DELAYS.BETWEEN_ACTIONS, state);
     }
   }
 
@@ -690,9 +693,12 @@ export class AIController {
 
   /**
    * Utility delay function
+   * @param {number} ms - Base delay in milliseconds
+   * @param {Object} state - Game state to check for slow mode
    */
-  delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+  delay(ms, state = null) {
+    const multiplier = state?.menu?.aiSlowMode ? SLOW_MODE_MULTIPLIER : 1;
+    return new Promise(resolve => setTimeout(resolve, ms * multiplier));
   }
 }
 

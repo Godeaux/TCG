@@ -24,6 +24,64 @@ import { KEYWORD_DESCRIPTIONS } from '../../keywords.js';
 // MODULE-LEVEL STATE
 // ============================================================================
 
+// Effect types that are implemented in effectLibrary.js
+const IMPLEMENTED_EFFECTS = new Set([
+  'draw', 'heal', 'damageOpponent', 'damagePlayer', 'buffStats', 'buffCreature',
+  'summonTokens', 'killAll', 'selectEnemyPreyToKill', 'selectEnemyToKill',
+  'selectCreatureForDamage', 'selectTargetForDamage', 'selectCreatureToRestore',
+  'grantKeyword', 'grantBarrier', 'removeAbilities', 'selectEnemyToStripAbilities',
+  'selectEnemyPreyToConsume', 'selectPredatorForKeyword', 'tutorFromDeck',
+  'selectPreyFromHandToPlay', 'selectCarrionPredToCopyAbilities', 'selectFromGroup',
+  'chooseOption', 'addToHand', 'transformCard', 'freeze', 'spawnFromPool',
+  'discardRandom', 'discard', 'selectEnemyToAddToHand'
+]);
+
+/**
+ * Check if an effect definition is implemented
+ */
+const isEffectImplemented = (effect) => {
+  if (!effect) return true;
+  if (typeof effect === 'string') return false; // String placeholder = not implemented
+  if (Array.isArray(effect)) {
+    return effect.every(e => isEffectImplemented(e));
+  }
+  if (typeof effect === 'object') {
+    if (effect.type) {
+      return IMPLEMENTED_EFFECTS.has(effect.type);
+    }
+    for (const key of Object.keys(effect)) {
+      if (!isEffectImplemented(effect[key])) return false;
+    }
+    return true;
+  }
+  return true;
+};
+
+/**
+ * Check if a card is fully implemented
+ */
+const isCardImplemented = (card) => {
+  if (!card.effects) return true;
+  const triggers = ['onPlay', 'onConsume', 'onSlain', 'onStart', 'onEnd', 'effect', 'onAttack', 'onDamage'];
+  for (const trigger of triggers) {
+    if (card.effects[trigger] && !isEffectImplemented(card.effects[trigger])) {
+      return false;
+    }
+  }
+  return true;
+};
+
+/**
+ * Get implementation progress for a deck
+ * @returns {{ implemented: number, total: number }}
+ */
+const getDeckProgress = (deckId) => {
+  const catalog = deckCatalogs[deckId] ?? [];
+  const nonTokens = catalog.filter(c => !c.id.startsWith('token-'));
+  const implemented = nonTokens.filter(c => isCardImplemented(c)).length;
+  return { implemented, total: nonTokens.length };
+};
+
 // Deck options available for selection
 const DECK_OPTIONS = [
   {
@@ -144,6 +202,57 @@ const isDeckSelectionComplete = (state) =>
  */
 const setMenuError = (state, message) => {
   state.menu.error = message;
+};
+
+/**
+ * Set menu success message (auto-clears after delay)
+ */
+const setMenuSuccess = (state, message, callbacks, delay = 3000) => {
+  state.menu.success = message;
+  callbacks?.onUpdate?.();
+  if (message) {
+    setTimeout(() => {
+      state.menu.success = null;
+      callbacks?.onUpdate?.();
+    }, delay);
+  }
+};
+
+/**
+ * Card type sort order for deck organization
+ * Prey > Predator > Spell > Free Spell > Trap
+ */
+const CARD_TYPE_ORDER = {
+  'Prey': 0,
+  'prey': 0,
+  'Predator': 1,
+  'predator': 1,
+  'Spell': 2,
+  'spell': 2,
+  'Free Spell': 3,
+  'free spell': 3,
+  'Trap': 4,
+  'trap': 4,
+};
+
+/**
+ * Sort deck cards by type category and then by catalog order
+ * @param {Array} cards - Array of cards to sort
+ * @param {Array} catalogOrder - Original catalog order (card IDs)
+ */
+const sortDeckByCategory = (cards, catalogOrder) => {
+  return cards.sort((a, b) => {
+    // First sort by card type
+    const typeOrderA = CARD_TYPE_ORDER[a.type] ?? 99;
+    const typeOrderB = CARD_TYPE_ORDER[b.type] ?? 99;
+    if (typeOrderA !== typeOrderB) {
+      return typeOrderA - typeOrderB;
+    }
+    // Then sort by catalog order within same type
+    const catalogIndexA = catalogOrder.indexOf(a.id);
+    const catalogIndexB = catalogOrder.indexOf(b.id);
+    return catalogIndexA - catalogIndexB;
+  });
 };
 
 /**
@@ -429,29 +538,40 @@ const updateDeckTabs = (state) => {
     allowedTabs.add("manage");
   }
 
-  if (!allowedTabs.has(deckActiveTab)) {
+  // Read from state for cross-module sync, fall back to local variable
+  let currentTab = state.catalogBuilder?.activeTab ?? deckActiveTab;
+
+  if (!allowedTabs.has(currentTab)) {
+    currentTab = "catalog";
+    // Update both local and state variable
     deckActiveTab = "catalog";
+    if (state.catalogBuilder) {
+      state.catalogBuilder.activeTab = "catalog";
+    }
+  } else {
+    // Sync local variable with state
+    deckActiveTab = currentTab;
   }
 
   deckTabs.forEach((tab) => {
     const tabKey = tab.dataset.tab;
     const shouldShow = allowedTabs.has(tabKey);
     tab.classList.toggle("hidden", !shouldShow);
-    tab.classList.toggle("active", tabKey === deckActiveTab);
+    tab.classList.toggle("active", tabKey === currentTab);
   });
 
   deckPanels.forEach((panel) => {
     if (panel.classList.contains("deck-catalog-panel")) {
-      panel.classList.toggle("active", deckActiveTab === "catalog");
+      panel.classList.toggle("active", currentTab === "catalog");
     }
     if (panel.classList.contains("deck-added-panel")) {
-      panel.classList.toggle("active", deckActiveTab === "deck");
+      panel.classList.toggle("active", currentTab === "deck");
     }
     if (panel.classList.contains("deck-load-panel")) {
-      panel.classList.toggle("active", deckActiveTab === "load");
+      panel.classList.toggle("active", currentTab === "load");
     }
     if (panel.classList.contains("deck-manage-panel")) {
-      panel.classList.toggle("active", deckActiveTab === "manage");
+      panel.classList.toggle("active", currentTab === "manage");
     }
   });
 };
@@ -548,6 +668,7 @@ const renderDeckManagePanel = (state, callbacks) => {
     state.catalogBuilder.catalogOrder = [];
     state.catalogBuilder.editingDeckId = null;
     state.catalogBuilder.editingDeckName = null;
+    state.catalogBuilder.activeTab = "catalog";
     deckActiveTab = "catalog";
     deckHighlighted = null;
     callbacks.onUpdate?.();
@@ -604,6 +725,7 @@ const renderDeckManagePanel = (state, callbacks) => {
       state.catalogBuilder.editingDeckId = deck.id;
       state.catalogBuilder.editingDeckName = deck.name;
       initCatalogBuilder(state.catalogBuilder);
+      state.catalogBuilder.activeTab = "catalog";
       deckActiveTab = "catalog";
       deckHighlighted = null;
       callbacks.onUpdate?.();
@@ -683,22 +805,175 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
   // Store callbacks for async operations
   latestCallbacks = callbacks;
 
-  // Catalog mode: deck category selection for catalog builder
+  // Catalog mode: deck management home screen or category selection
   if (isCatalogMode(state)) {
-    if (!state.catalogBuilder || state.catalogBuilder.stage !== "select") {
+    // Home stage: show deck management overview with card-based layout
+    if (state.catalogBuilder?.stage === "home") {
+      deckSelectOverlay?.classList.add("active");
+      deckSelectOverlay?.setAttribute("aria-hidden", "false");
+      if (deckSelectTitle) {
+        deckSelectTitle.textContent = "My Decks";
+      }
+      if (deckSelectSubtitle) {
+        deckSelectSubtitle.textContent = "Manage your deck collection";
+      }
+      clearPanel(deckSelectGrid);
+
+      // Ensure decks are loaded
+      ensureDecksLoaded(state);
+      const decks = state.menu.decks ?? [];
+
+      // Create card-style grid container
+      deckSelectGrid.className = "deck-select-grid deck-catalog-home";
+
+      // 1. "View All Cards" option
+      const viewAllCard = document.createElement("button");
+      viewAllCard.type = "button";
+      viewAllCard.className = "deck-catalog-card deck-catalog-card--view-all";
+      viewAllCard.innerHTML = `
+        <div class="deck-catalog-card__icon">📚</div>
+        <div class="deck-catalog-card__title">View All Cards</div>
+        <div class="deck-catalog-card__subtitle">Browse the complete card catalog</div>
+      `;
+      viewAllCard.onclick = () => {
+        state.catalogBuilder.stage = "select";
+        state.catalogBuilder.viewOnly = true;
+        callbacks.onUpdate?.();
+      };
+      deckSelectGrid.appendChild(viewAllCard);
+
+      // 2. Existing deck slots (up to 5)
+      const maxSlots = 5;
+      for (let i = 0; i < maxSlots; i++) {
+        const deck = decks[i];
+        const card = document.createElement("div");
+        card.className = "deck-catalog-card" + (deck ? " deck-catalog-card--filled" : " deck-catalog-card--empty");
+
+        if (deck) {
+          // Filled deck slot
+          card.innerHTML = `
+            <div class="deck-catalog-card__icon">🃏</div>
+            <div class="deck-catalog-card__title">${deck.name}</div>
+            <div class="deck-catalog-card__subtitle">20 cards</div>
+            <div class="deck-catalog-card__actions">
+              <button type="button" class="deck-catalog-card__btn deck-catalog-card__btn--edit" title="Edit deck">✏️</button>
+              <button type="button" class="deck-catalog-card__btn deck-catalog-card__btn--delete" title="Delete deck">🗑️</button>
+            </div>
+          `;
+
+          // Edit button handler
+          const editBtn = card.querySelector(".deck-catalog-card__btn--edit");
+          editBtn.onclick = (e) => {
+            e.stopPropagation();
+            const deckId = findDeckCatalogId(deck.deck);
+            state.catalogBuilder.deckId = deckId;
+            state.catalogBuilder.stage = "build";
+            state.catalogBuilder.selections = mapDeckIdsToCards(deckId, deck.deck);
+            state.catalogBuilder.available = [];
+            state.catalogBuilder.catalogOrder = [];
+            state.catalogBuilder.editingDeckId = deck.id;
+            state.catalogBuilder.editingDeckName = deck.name;
+            initCatalogBuilder(state.catalogBuilder);
+            state.catalogBuilder.activeTab = "catalog";
+            deckActiveTab = "catalog";
+            deckHighlighted = null;
+            callbacks.onUpdate?.();
+          };
+
+          // Delete button handler
+          const deleteBtn = card.querySelector(".deck-catalog-card__btn--delete");
+          deleteBtn.onclick = async (e) => {
+            e.stopPropagation();
+            if (!window.confirm(`Delete "${deck.name}"?`)) {
+              return;
+            }
+            applyMenuLoading(state, true);
+            try {
+              const api = await loadSupabaseApi(state);
+              await api.deleteDeck({ deckId: deck.id, ownerId: state.menu.profile.id });
+              await ensureDecksLoaded(state, { force: true });
+            } catch (error) {
+              setMenuError(state, error.message || "Failed to delete deck.");
+            } finally {
+              applyMenuLoading(state, false);
+              callbacks.onUpdate?.();
+            }
+          };
+
+          // Clicking the card itself also opens edit
+          card.onclick = (e) => {
+            if (e.target === editBtn || e.target === deleteBtn) return;
+            editBtn.click();
+          };
+          card.style.cursor = "pointer";
+        } else {
+          // Empty deck slot - "Create New Deck"
+          card.innerHTML = `
+            <div class="deck-catalog-card__icon">➕</div>
+            <div class="deck-catalog-card__title">Create New Deck</div>
+            <div class="deck-catalog-card__subtitle">Slot ${i + 1} available</div>
+          `;
+          card.style.cursor = "pointer";
+          card.onclick = () => {
+            state.catalogBuilder.stage = "select";
+            state.catalogBuilder.viewOnly = false;
+            callbacks.onUpdate?.();
+          };
+        }
+
+        deckSelectGrid.appendChild(card);
+      }
+
+      // Back button
+      const backContainer = document.createElement("div");
+      backContainer.className = "deck-catalog-back-container";
+      const backBtn = document.createElement("button");
+      backBtn.type = "button";
+      backBtn.className = "deck-catalog-back-btn";
+      backBtn.textContent = "Back to Menu";
+      backBtn.onclick = () => {
+        state.menu.stage = "main";
+        state.catalogBuilder.stage = null;
+        callbacks.onUpdate?.();
+      };
+      backContainer.appendChild(backBtn);
+      deckSelectGrid.appendChild(backContainer);
+
+      return;
+    }
+
+    // Select stage: category selection for new deck or viewing cards
+    if (state.catalogBuilder?.stage !== "select") {
       deckSelectOverlay?.classList.remove("active");
       deckSelectOverlay?.setAttribute("aria-hidden", "true");
       return;
     }
     deckSelectOverlay?.classList.add("active");
     deckSelectOverlay?.setAttribute("aria-hidden", "false");
+
+    const isViewOnly = state.catalogBuilder.viewOnly;
     if (deckSelectTitle) {
-      deckSelectTitle.textContent = "Deck Catalog";
+      deckSelectTitle.textContent = isViewOnly ? "Card Catalog" : "New Deck";
     }
     if (deckSelectSubtitle) {
-      deckSelectSubtitle.textContent = "Choose an animal category to build a new deck.";
+      deckSelectSubtitle.textContent = isViewOnly
+        ? "Choose an animal category to browse cards."
+        : "Choose an animal category to build a new deck.";
     }
     clearPanel(deckSelectGrid);
+    deckSelectGrid.className = "deck-select-grid";
+
+    // Back to home button
+    const backToHomeBtn = document.createElement("button");
+    backToHomeBtn.type = "button";
+    backToHomeBtn.className = "deck-select-back-btn";
+    backToHomeBtn.innerHTML = "← Back";
+    backToHomeBtn.onclick = () => {
+      state.catalogBuilder.stage = "home";
+      callbacks.onUpdate?.();
+    };
+    deckSelectGrid.appendChild(backToHomeBtn);
+
     DECK_OPTIONS.forEach((option) => {
       const panel = document.createElement("button");
       panel.type = "button";
@@ -706,11 +981,13 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
         option.available ? "" : "disabled"
       }`;
       panel.disabled = false; // Make all decks clickable per user request
+      const progress = getDeckProgress(option.id);
+      const progressText = `${progress.implemented}/${progress.total} Done`;
       panel.innerHTML = `
         <div class="deck-emoji">${option.emoji}</div>
         <div class="deck-name">${option.name}</div>
-        <div class="deck-status">${option.available ? "Available" : "Not Implemented"}</div>
-        <div class="deck-meta">${option.available ? "Select deck" : "Theorycraft only"}</div>
+        <div class="deck-status">${option.available ? "Available" : progressText}</div>
+        <div class="deck-meta">${option.available ? "Select deck" : "Theorycraft"}</div>
       `;
       panel.onclick = () => {
         const catalog = deckCatalogs[option.id] ?? [];
@@ -721,6 +998,7 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
         state.catalogBuilder.catalogOrder = catalog.map((card) => card.id);
         state.catalogBuilder.editingDeckId = null;
         state.catalogBuilder.editingDeckName = null;
+        state.catalogBuilder.activeTab = "catalog";
         deckActiveTab = "catalog";
         deckHighlighted = null;
         setDeckInspectorContent(null);
@@ -739,45 +1017,112 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
   }
 
   // Hide if deck selection not in progress
-  if (!state.deckSelection || !["p1", "p2"].includes(state.deckSelection.stage)) {
+  if (!state.deckSelection || !["p1", "p1-selected", "p2"].includes(state.deckSelection.stage)) {
     deckSelectOverlay?.classList.remove("active");
     deckSelectOverlay?.setAttribute("aria-hidden", "true");
     return;
   }
 
-  deckSelectOverlay?.classList.add("active");
-  deckSelectOverlay?.setAttribute("aria-hidden", "false");
-
-  const isPlayerOne = state.deckSelection.stage === "p1";
-  const playerIndex = isPlayerOne ? 0 : 1;
   const localIndex = getLocalPlayerIndex(state);
-  const isLocalTurn = state.menu?.mode !== "online" || playerIndex === localIndex;
-  const player = state.players[playerIndex];
+  const opponentIndex = (localIndex + 1) % 2;
 
-  // Show waiting message if not local player's turn
-  if (!isLocalTurn) {
-    const opponentName = getOpponentDisplayName(state);
-    if (deckSelectTitle) {
-      deckSelectTitle.textContent = `${opponentName} is choosing a deck`;
-    }
-    if (deckSelectSubtitle) {
-      deckSelectSubtitle.textContent = `Waiting for ${opponentName} to pick their deck.`;
-    }
-    clearPanel(deckSelectGrid);
-    return;
-  }
-
-  // Online mode: show saved decks
+  // Online mode: parallel deck selection with ready status
   if (isOnlineMode(state)) {
+    // Initialize readyStatus if not present
+    if (!state.deckSelection.readyStatus) {
+      state.deckSelection.readyStatus = [false, false];
+    }
+
+    const localReady = state.deckSelection.readyStatus[localIndex];
+    const opponentReady = state.deckSelection.readyStatus[opponentIndex];
+    const localPlayer = state.players[localIndex];
+    const opponentPlayer = state.players[opponentIndex];
+    const opponentName = opponentPlayer?.name || "Opponent";
+
+    // If both players are ready, proceed to setup
+    if (localReady && opponentReady) {
+      if (state.deckSelection.stage !== "complete" || state.deckBuilder.stage !== "complete") {
+        state.deckSelection.stage = "complete";
+        state.deckBuilder.stage = "complete";
+        callbacks.onDeckComplete?.(state.deckBuilder.selections);
+      }
+      deckSelectOverlay?.classList.remove("active");
+      deckSelectOverlay?.setAttribute("aria-hidden", "true");
+      return;
+    }
+
+    // If local player is ready, show waiting screen with status boxes
+    if (localReady) {
+      deckSelectOverlay?.classList.add("active");
+      deckSelectOverlay?.setAttribute("aria-hidden", "false");
+      if (deckSelectTitle) {
+        deckSelectTitle.textContent = "Waiting for Players";
+      }
+      if (deckSelectSubtitle) {
+        deckSelectSubtitle.textContent = "Both players must confirm their deck to start the game.";
+      }
+      clearPanel(deckSelectGrid);
+
+      // Create player status boxes
+      const statusContainer = document.createElement("div");
+      statusContainer.className = "player-ready-status";
+      statusContainer.style.cssText = "display: flex; justify-content: center; gap: 2rem; margin-top: 1rem;";
+
+      // Local player box (always on left from their perspective)
+      const localBox = document.createElement("div");
+      localBox.className = "player-status-box";
+      localBox.style.cssText = "display: flex; flex-direction: column; align-items: center; padding: 1.5rem 2rem; border: 2px solid var(--color-border); border-radius: 8px; min-width: 140px;";
+      localBox.innerHTML = `
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;">${localReady ? "✓" : "⏳"}</div>
+        <div style="font-weight: bold; margin-bottom: 0.25rem;">${localPlayer?.name || "You"}</div>
+        <div style="font-size: 0.85rem; color: var(--color-text-muted);">${localReady ? "Ready" : "Choosing..."}</div>
+      `;
+      if (localReady) {
+        localBox.style.borderColor = "var(--color-success, #4ade80)";
+        localBox.style.backgroundColor = "rgba(74, 222, 128, 0.1)";
+      }
+
+      // Opponent player box
+      const opponentBox = document.createElement("div");
+      opponentBox.className = "player-status-box";
+      opponentBox.style.cssText = "display: flex; flex-direction: column; align-items: center; padding: 1.5rem 2rem; border: 2px solid var(--color-border); border-radius: 8px; min-width: 140px;";
+      opponentBox.innerHTML = `
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;">${opponentReady ? "✓" : "⏳"}</div>
+        <div style="font-weight: bold; margin-bottom: 0.25rem;">${opponentName}</div>
+        <div style="font-size: 0.85rem; color: var(--color-text-muted);">${opponentReady ? "Ready" : "Choosing..."}</div>
+      `;
+      if (opponentReady) {
+        opponentBox.style.borderColor = "var(--color-success, #4ade80)";
+        opponentBox.style.backgroundColor = "rgba(74, 222, 128, 0.1)";
+      }
+
+      statusContainer.appendChild(localBox);
+      statusContainer.appendChild(opponentBox);
+      deckSelectGrid?.appendChild(statusContainer);
+      return;
+    }
+
+    // Local player hasn't confirmed yet - show deck selection
+    deckSelectOverlay?.classList.add("active");
+    deckSelectOverlay?.setAttribute("aria-hidden", "false");
+
     ensureDecksLoaded(state);
+
+    const localSelection = state.deckSelection.selections[localIndex];
+    const hasSelectedDeck = Boolean(localSelection);
+
     if (deckSelectTitle) {
-      deckSelectTitle.textContent = `${player.name} Load Deck`;
+      deckSelectTitle.textContent = hasSelectedDeck
+        ? `Deck Selected - Confirm to Continue`
+        : `${localPlayer?.name || "Player"} Load Deck`;
     }
     if (deckSelectSubtitle) {
-      deckSelectSubtitle.textContent =
-        "Choose one of your saved decks (up to 3 available in multiplayer).";
+      deckSelectSubtitle.textContent = hasSelectedDeck
+        ? "Your deck is loaded. Click Confirm when ready to play."
+        : "Choose one of your saved decks (up to 3 available in multiplayer).";
     }
     clearPanel(deckSelectGrid);
+
     const decks = (state.menu.decks ?? []).slice(0, 3);
     if (decks.length === 0) {
       const empty = document.createElement("div");
@@ -786,26 +1131,34 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       deckSelectGrid?.appendChild(empty);
       return;
     }
+
+    // Show deck options
     decks.forEach((deck) => {
+      const isSelected = localSelection && state.deckBuilder.selections[localIndex]?.length > 0
+        && deck.deck.every((id, i) => state.deckBuilder.selections[localIndex][i]?.id === id ||
+           state.deckBuilder.selections[localIndex].some(card => card.id === id));
+
       const slot = document.createElement("div");
-      slot.className = "deck-slot";
+      slot.className = "deck-slot" + (isSelected ? " selected" : "");
+      if (isSelected) {
+        slot.style.borderColor = "var(--color-primary, #3b82f6)";
+        slot.style.backgroundColor = "rgba(59, 130, 246, 0.1)";
+      }
+
       const loadButton = document.createElement("button");
       loadButton.type = "button";
-      loadButton.className = "primary";
-      loadButton.textContent = "Load Deck";
+      loadButton.className = isSelected ? "btn-secondary" : "primary";
+      loadButton.textContent = isSelected ? "Selected" : "Select Deck";
+      loadButton.disabled = isSelected;
       loadButton.onclick = () => {
-        applyDeckToBuilder(state, playerIndex, deck.deck);
-        state.deckSelection.stage = isPlayerOne ? "p1-selected" : "complete";
-        logMessage(state, `${player.name} loaded "${deck.name}".`);
-        if (state.menu?.mode === "online") {
-          sendLobbyBroadcast("deck_update", buildLobbySyncPayload(state));
-        }
+        applyDeckToBuilder(state, localIndex, deck.deck);
+        logMessage(state, `${localPlayer?.name || "Player"} selected "${deck.name}".`);
         callbacks.onUpdate?.();
       };
       slot.innerHTML = `
         <div class="deck-slot-header">
           <span>${deck.name}</span>
-          <span class="deck-slot-meta">20 cards</span>
+          <span class="deck-slot-meta">${isSelected ? "✓ Selected" : "20 cards"}</span>
         </div>
         <div class="deck-slot-meta">Multiplayer Slot</div>
       `;
@@ -815,6 +1168,49 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       slot.appendChild(actions);
       deckSelectGrid?.appendChild(slot);
     });
+
+    // Add confirm button if deck is selected
+    if (hasSelectedDeck) {
+      const confirmContainer = document.createElement("div");
+      confirmContainer.style.cssText = "margin-top: 1.5rem; text-align: center;";
+
+      const confirmButton = document.createElement("button");
+      confirmButton.type = "button";
+      confirmButton.className = "btn-primary";
+      confirmButton.style.cssText = "padding: 0.75rem 2rem; font-size: 1.1rem;";
+      confirmButton.textContent = "Confirm Deck & Ready Up";
+      confirmButton.onclick = () => {
+        state.deckSelection.readyStatus[localIndex] = true;
+        logMessage(state, `${localPlayer?.name || "Player"} is ready!`);
+        sendLobbyBroadcast("deck_update", buildLobbySyncPayload(state));
+        callbacks.onUpdate?.();
+      };
+
+      confirmContainer.appendChild(confirmButton);
+      deckSelectGrid?.appendChild(confirmContainer);
+    }
+    return;
+  }
+
+  // Local/AI mode: sequential deck selection
+  deckSelectOverlay?.classList.add("active");
+  deckSelectOverlay?.setAttribute("aria-hidden", "false");
+
+  const isPlayerOne = state.deckSelection.stage === "p1";
+  const playerIndex = isPlayerOne ? 0 : 1;
+  const isLocalTurn = playerIndex === localIndex || state.menu?.mode !== "online";
+  const player = state.players[playerIndex];
+
+  // Show waiting message if not local player's turn (for local mode hand-off)
+  if (!isLocalTurn) {
+    const opponentName = getOpponentDisplayName(state);
+    if (deckSelectTitle) {
+      deckSelectTitle.textContent = `${opponentName} is choosing a deck`;
+    }
+    if (deckSelectSubtitle) {
+      deckSelectSubtitle.textContent = `Waiting for ${opponentName} to pick their deck.`;
+    }
+    clearPanel(deckSelectGrid);
     return;
   }
 
@@ -834,11 +1230,13 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       option.available ? "" : "disabled"
     }`;
     panel.disabled = false; // Make all decks clickable per user request
+    const progress = getDeckProgress(option.id);
+    const progressText = `${progress.implemented}/${progress.total} Done`;
     panel.innerHTML = `
       <div class="deck-emoji">${option.emoji}</div>
       <div class="deck-name">${option.name}</div>
-      <div class="deck-status">${option.available ? "Available" : "Not Implemented"}</div>
-      <div class="deck-meta">${option.available ? "Select deck" : "Theorycraft only"}</div>
+      <div class="deck-status">${option.available ? "Available" : progressText}</div>
+      <div class="deck-meta">${option.available ? "Select deck" : "Theorycraft"}</div>
     `;
     panel.onclick = () => {
       const catalog = deckCatalogs[option.id] ?? [];
@@ -910,12 +1308,21 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
   deckOverlay.classList.add("active");
   deckOverlay.setAttribute("aria-hidden", "false");
   deckTitle.textContent = "Deck Catalog Builder";
-  deckStatus.innerHTML = `
+
+  // Build status HTML with success/error messages
+  let statusHtml = `
     <div class="deck-status-item">Cards selected: <strong>${totalCount}/20</strong></div>
     <div class="deck-status-item ${preyRuleValid ? "" : "invalid"}">
       Prey: <strong>${preyCount}</strong> • Predators: <strong>${predatorCount}</strong>
     </div>
   `;
+  if (state.menu?.success) {
+    statusHtml += `<div class="deck-status-item deck-status-success">${state.menu.success}</div>`;
+  }
+  if (state.menu?.error) {
+    statusHtml += `<div class="deck-status-item deck-status-error">${state.menu.error}</div>`;
+  }
+  deckStatus.innerHTML = statusHtml;
 
   updateDeckTabs(state);
   clearPanel(deckFullRow);
@@ -937,6 +1344,8 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
           }
           selected.push(card);
           available.splice(index, 1);
+          // Sort deck by category (Prey > Predator > Spell > Free Spell > Trap)
+          sortDeckByCategory(selected, catalogOrder);
           deckHighlighted = null;
           callbacks.onUpdate?.();
           return;
@@ -1003,6 +1412,7 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
       try {
         const api = await loadSupabaseApi(state);
         const deckPayload = selected.map((card) => card.id);
+        let savedDeckName;
         if (state.catalogBuilder.editingDeckId) {
           await api.updateDeck({
             deckId: state.catalogBuilder.editingDeckId,
@@ -1010,7 +1420,8 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
             name: state.catalogBuilder.editingDeckName,
             deck: deckPayload,
           });
-          logMessage(state, `Updated deck "${state.catalogBuilder.editingDeckName}".`);
+          savedDeckName = state.catalogBuilder.editingDeckName;
+          logMessage(state, `Updated deck "${savedDeckName}".`);
         } else {
           const deckName = window.prompt("Deck name:", "New Deck");
           if (!deckName) {
@@ -1023,14 +1434,17 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
             name: deckName,
             deck: deckPayload,
           });
-          logMessage(state, `Saved deck "${deckName}" to your account.`);
+          savedDeckName = deckName;
+          logMessage(state, `Saved deck "${savedDeckName}" to your account.`);
         }
         await ensureDecksLoaded(state, { force: true });
+        // Show success message
+        applyMenuLoading(state, false);
+        setMenuSuccess(state, `Deck "${savedDeckName}" saved successfully!`, callbacks);
       } catch (error) {
         const message = error.message || "Failed to save deck.";
         setMenuError(state, message);
         logMessage(state, message);
-      } finally {
         applyMenuLoading(state, false);
         callbacks.onUpdate?.();
       }
@@ -1115,10 +1529,18 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
     return;
   }
 
+  // Online mode: deck builder is skipped (players load saved decks directly)
+  // Hide overlay if we're in online mode and still in deck selection
+  if (isOnlineMode(state)) {
+    deckOverlay.classList.remove("active");
+    deckOverlay.setAttribute("aria-hidden", "true");
+    return;
+  }
+
   const isPlayerOne = state.deckBuilder.stage === "p1";
   const playerIndex = isPlayerOne ? 0 : 1;
   const localIndex = getLocalPlayerIndex(state);
-  const isLocalTurn = state.menu?.mode !== "online" || playerIndex === localIndex;
+  const isLocalTurn = playerIndex === localIndex;
 
   // Hide if no deck selection made yet
   if (!state.deckSelection?.selections?.[playerIndex]) {
@@ -1198,6 +1620,8 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
           }
           selected.push(card);
           available.splice(index, 1);
+          // Sort deck by category (Prey > Predator > Spell > Free Spell > Trap)
+          sortDeckByCategory(selected, catalogOrder);
           deckHighlighted = null;
           callbacks.onUpdate?.();
           return;
@@ -1305,6 +1729,9 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
     deckLoad.classList.toggle("hidden", !isOnlineMode(state));
     deckLoad.disabled = state.menu.loading || !isOnlineMode(state);
     deckLoad.onclick = () => {
+      if (state.catalogBuilder) {
+        state.catalogBuilder.activeTab = "load";
+      }
       deckActiveTab = "load";
       updateDeckTabs(state);
       callbacks.onUpdate?.();

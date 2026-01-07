@@ -11,7 +11,7 @@
       "effectText": "Play Brown Anole.",
       "summons": ["token-brown-anole"],
       "effects": {
-        "onPlay": "cuban-brown-anole-summon-brown-anole-onplay"
+        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-brown-anole"] } }
       }
     },
     {
@@ -25,7 +25,7 @@
       "effectText": "End of turn, play Cuban Brown Anole.",
       "summons": ["token-cuban-brown-anole"],
       "effects": {
-        "onEnd": "brown-anole-summon-cuban-brown-anole-onend"
+        "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-cuban-brown-anole"] } }
       }
     },
     {
@@ -39,7 +39,7 @@
       "effectText": "Slain, become Tailless.",
       "summons": ["token-tailless"],
       "effects": {
-        "onSlain": "european-glass-lizard-become-tailless-onslain"
+        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["token-tailless"] } }
       }
     },
     {
@@ -52,7 +52,8 @@
       "keywords": [],
       "effectText": "Start of turn, become European Glass Lizard. End of turn, become European Glass Lizard.",
       "effects": {
-        "onEnd": "tailless-become-european-glass-lizard-onend"
+        "onStart": { "type": "transformCard", "params": { "targetType": "self", "newCardId": "token-european-glass-lizard" } },
+        "onEnd": { "type": "transformCard", "params": { "targetType": "self", "newCardId": "token-european-glass-lizard" } }
       }
     },
     {
@@ -65,7 +66,7 @@
       "keywords": [],
       "effectText": "Deal 1 damage to rival.",
       "effects": {
-        "onPlay": "lava-lizard-damage-rival-onplay"
+        "onPlay": { "type": "damageOpponent", "params": { "amount": 1 } }
       }
     },
     {
@@ -78,7 +79,7 @@
       "keywords": [],
       "effectText": "Add Hand Egg to hand.",
       "effects": {
-        "onPlay": "carolina-anole-add-hand-egg-onplay"
+        "onPlay": { "type": "addToHand", "params": { "cardId": "reptile-free-spell-hand-egg" } }
       }
     },
     {
@@ -102,7 +103,7 @@
       "effectText": "End of turn, play Carolina Anole.",
       "summons": ["token-carolina-anole"],
       "effects": {
-        "onEnd": "green-anole-summon-carolina-anole-onend"
+        "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-carolina-anole"] } }
       }
     },
     {
@@ -112,7 +113,7 @@
       "effectText": "Play Anole Egg.",
       "summons": ["token-anole-egg"],
       "effects": {
-        "effect": "hand-egg-summon-anole-egg-effect"
+        "effect": { "type": "summonTokens", "params": { "tokenIds": ["token-anole-egg"] } }
       }
     },
     {
@@ -125,7 +126,7 @@
       "keywords": ["Barrier", "Hidden", "Harmless"],
       "effectText": "Harmless. Draw 1. Barrier. Hidden.",
       "effects": {
-        "onPlay": "golden-tegu-egg-draw-onplay"
+        "onPlay": { "type": "draw", "params": { "count": 1 } }
       }
     },
     {
@@ -176,7 +177,7 @@
       "effectText": "Play Brown Anole.",
       "summons": ["token-brown-anole"],
       "effects": {
-        "onPlay": "cuban-brown-anole-summon-onplay"
+        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-brown-anole"] } }
       }
     },
     {
@@ -190,7 +191,7 @@
       "effectText": "Slain, become Tailless.",
       "summons": ["token-tailless"],
       "effects": {
-        "onSlain": "european-glass-lizard-slain-onslain"
+        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["token-tailless"] } }
       }
     },
     {
@@ -203,7 +204,7 @@
       "keywords": ["Barrier", "Lure", "Poisonous"],
       "effectText": "Barrier. Lure. Poisonous. Slain, heal 3.",
       "effects": {
-        "onSlain": "yucatan-neotropical-rattlesnake-heal-onslain"
+        "onSlain": { "type": "heal", "params": { "amount": 3 } }
       }
     },
     {
@@ -253,7 +254,7 @@
       "effectText": "End of turn, play Carolina Anole.",
       "summons": ["token-carolina-anole"],
       "effects": {
-        "onEnd": "green-anole-summon-onend"
+        "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-carolina-anole"] } }
       }
     },
     {
@@ -266,7 +267,7 @@
       "keywords": [],
       "effectText": "Draw 3.",
       "effects": {
-        "onPlay": "gold-dust-day-gecko-draw-onplay"
+        "onPlay": { "type": "draw", "params": { "count": 3 } }
       }
     },
     {
@@ -279,7 +280,7 @@
       "keywords": ["Free Play"],
       "effectText": "Draw 1.",
       "effects": {
-        "onPlay": "gold-flying-snake-draw-onplay"
+        "onPlay": { "type": "draw", "params": { "count": 1 } }
       }
     },
     {
@@ -292,7 +293,7 @@
       "keywords": ["Toxic"],
       "effectText": "Draw 1. Toxic.",
       "effects": {
-        "onPlay": "golden-lancehead-draw-onplay"
+        "onPlay": { "type": "draw", "params": { "count": 1 } }
       }
     },
     {
@@ -306,7 +307,10 @@
       "effectText": "Draw 1. Play Golden Tegu Egg.",
       "summons": ["token-golden-tegu-egg"],
       "effects": {
-        "onPlay": "cryptic-golden-tegu-draw-summon-onplay"
+        "onPlay": [
+          { "type": "draw", "params": { "count": 1 } },
+          { "type": "summonTokens", "params": { "tokenIds": ["token-golden-tegu-egg"] } }
+        ]
       }
     },
     {
@@ -319,8 +323,8 @@
       "keywords": ["Invisible"],
       "effectText": "Start of turn, deal 1 damage to rival. End of turn, deal 1 damage to rival.",
       "effects": {
-        "onStart": "phantastic-leaf-tailed-gecko-damage-onstart",
-        "onEnd": "phantastic-leaf-tailed-gecko-damage-onend"
+        "onStart": { "type": "damageOpponent", "params": { "amount": 1 } },
+        "onEnd": { "type": "damageOpponent", "params": { "amount": 1 } }
       }
     },
     {
@@ -428,7 +432,7 @@
       "effectText": "Start of turn, play Giant Tortoise.",
       "summons": ["token-giant-tortoise"],
       "effects": {
-        "onStart": "alcedo-giant-tortoise-summon-onstart"
+        "onStart": { "type": "summonTokens", "params": { "tokenIds": ["token-giant-tortoise"] } }
       }
     },
     {
@@ -484,7 +488,7 @@
       "keywords": [],
       "effectText": "Deal 2 damage to opponents.",
       "effects": {
-        "onConsume": "papuan-monitor-damage-onconsume"
+        "onConsume": { "type": "damageOpponent", "params": { "amount": 2 } }
       }
     },
     {
@@ -496,7 +500,7 @@
       "keywords": [],
       "effectText": "Kill enemy prey.",
       "effects": {
-        "onConsume": "gharial-kill-prey-onconsume"
+        "onConsume": { "type": "selectEnemyPreyToKill" }
       }
     },
     {
@@ -508,7 +512,7 @@
       "keywords": ["Neurotoxic"],
       "effectText": "Slain, deal 3 damage to rival.",
       "effects": {
-        "onSlain": "king-cobra-damage-onslain"
+        "onSlain": { "type": "damageOpponent", "params": { "amount": 3 } }
       }
     },
     {
@@ -544,7 +548,7 @@
       "keywords": [],
       "effectText": "Slain, add Alligator Skin to hand.",
       "effects": {
-        "onSlain": "american-alligator-add-skin-onslain"
+        "onSlain": { "type": "addToHand", "params": { "cardId": "reptile-free-spell-alligator-skin" } }
       }
     },
     {
@@ -572,7 +576,7 @@
       "keywords": [],
       "effectText": "Copy abilities of a carrion pred.",
       "effects": {
-        "onConsume": "burmese-python-copy-carrion-onconsume"
+        "onConsume": { "type": "selectCarrionPredToCopyAbilities" }
       }
     },
     {
@@ -605,8 +609,8 @@
       "keywords": [],
       "effectText": "Deal 3 damage to any target. Slain, heal 3.",
       "effects": {
-        "onConsume": "nile-crocodile-damage-onconsume",
-        "onSlain": "nile-crocodile-heal-onslain"
+        "onConsume": { "type": "selectCreatureForDamage", "params": { "amount": 3, "label": "chomp" } },
+        "onSlain": { "type": "heal", "params": { "amount": 3 } }
       }
     },
     {
@@ -618,7 +622,7 @@
       "keywords": [],
       "effectText": "Kill target enemy.",
       "effects": {
-        "onConsume": "saltwater-crocodile-kill-enemy-onconsume"
+        "onConsume": { "type": "selectEnemyToKill" }
       }
     },
     {
@@ -645,7 +649,7 @@
       "type": "Spell",
       "effectText": "Heal 7.",
       "effects": {
-        "effect": "snake-wine-heal-effect"
+        "effect": { "type": "heal", "params": { "amount": 7 } }
       }
     },
     {
@@ -663,7 +667,7 @@
       "type": "Spell",
       "effectText": "Creatures gain +2/+2.",
       "effects": {
-        "effect": "sunshine-team-buff-effect"
+        "effect": { "type": "buffStats", "params": { "targetType": "all-friendly", "stats": { "attack": 2, "health": 2 } } }
       }
     },
     {
@@ -672,7 +676,7 @@
       "type": "Free Spell",
       "effectText": "Regen target creature.",
       "effects": {
-        "effect": "shed-regen-target-effect"
+        "effect": { "type": "selectCreatureToRestore" }
       }
     },
     {
@@ -701,7 +705,13 @@
       "effectText": "End of turn, play Poisonous Snake.",
       "summons": ["token-poisonous-snake"],
       "effects": {
-        "effect": "snake-nest-field-spell-effect"
+        "effect": "snake-nest-field-spell-effect",
+        "onEnd": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": ["token-poisonous-snake"]
+          }
+        }
       }
     },
     {

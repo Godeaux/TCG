@@ -77,6 +77,7 @@ import {
   getCardEffectSummary,
   cardTypeClass,
   renderCardInnerHtml,
+  isCardLike,
 } from "./ui/components/Card.js";
 import {
   renderField,
@@ -366,6 +367,31 @@ const isLobbyReady = (lobby) => Boolean(lobby?.guest_id && lobby?.status === "fu
 const setMenuStage = (state, stage) => {
   state.menu.stage = stage;
   state.menu.error = null;
+
+  // When entering multiplayer screen, check for existing lobby
+  if (stage === "multiplayer" && state.menu.profile) {
+    checkExistingLobby(state);
+  }
+};
+
+/**
+ * Check if user has an existing active lobby and store in state
+ */
+const checkExistingLobby = async (state) => {
+  if (!state.menu.profile) {
+    state.menu.existingLobby = null;
+    return;
+  }
+
+  try {
+    const api = await loadSupabaseApi(state);
+    const existingLobby = await api.findExistingLobby({ userId: state.menu.profile.id });
+    state.menu.existingLobby = existingLobby;
+    latestCallbacks.onUpdate?.();
+  } catch (error) {
+    console.error("Failed to check for existing lobby:", error);
+    state.menu.existingLobby = null;
+  }
 };
 
 const applyMenuLoading = (state, isLoading) => {
@@ -494,22 +520,31 @@ const handleCreateLobby = async (state) => {
   try {
     const api = await loadSupabaseApi(state);
 
-    // Create a helper function to check if a game is actually in progress
-    const checkGameInProgress = async (lobbyId) => {
-      const savedGame = await api.loadGameState({ lobbyId });
-      if (!savedGame || !savedGame.game_state) return false;
+    let lobby;
 
-      const setupCompleted = savedGame.game_state.setup?.stage === "complete";
-      const hasGameStarted = setupCompleted || savedGame.game_state.game?.turn > 1;
-      return hasGameStarted;
-    };
+    // If we already found an existing lobby, use it directly (rejoin)
+    if (state.menu.existingLobby) {
+      lobby = state.menu.existingLobby;
+      console.log("Rejoining existing lobby:", lobby.code);
+    } else {
+      // Create a helper function to check if a game is actually in progress
+      const checkGameInProgress = async (lobbyId) => {
+        const savedGame = await api.loadGameState({ lobbyId });
+        if (!savedGame || !savedGame.game_state) return false;
 
-    const lobby = await api.createLobby({
-      hostId: state.menu.profile.id,
-      checkGameInProgress
-    });
+        const setupCompleted = savedGame.game_state.setup?.stage === "complete";
+        const hasGameStarted = setupCompleted || savedGame.game_state.game?.turn > 1;
+        return hasGameStarted;
+      };
+
+      lobby = await api.createLobby({
+        hostId: state.menu.profile.id,
+        checkGameInProgress
+      });
+    }
 
     state.menu.lobby = lobby;
+    state.menu.existingLobby = null; // Clear after use
     state.menu.gameInProgress = false; // Will be set to true if game state is restored
     setMenuStage(state, "lobby");
     updateLobbySubscription(state);
@@ -564,7 +599,7 @@ const handleJoinLobby = async (state) => {
   }
 };
 
-const handleLeaveLobby = async (state) => {
+const handleBackFromLobby = async (state) => {
   if (!state.menu.lobby || !state.menu.profile) {
     setMenuStage(state, "multiplayer");
     state.menu.lobby = null;
@@ -588,6 +623,50 @@ const handleLeaveLobby = async (state) => {
     applyMenuLoading(state, false);
     setMenuStage(state, "multiplayer");
     updateLobbySubscription(state);
+    latestCallbacks.onUpdate?.();
+  }
+};
+
+const handleLeaveLobby = async (state) => {
+  if (!state.menu.lobby || !state.menu.profile) {
+    setMenuStage(state, "multiplayer");
+    state.menu.lobby = null;
+    updateLobbySubscription(state);
+    return;
+  }
+  applyMenuLoading(state, true);
+  setMenuError(state, null);
+  latestCallbacks.onUpdate?.();
+  try {
+    const api = await loadSupabaseApi(state);
+    // Close the current lobby
+    await api.closeLobby({ lobbyId: state.menu.lobby.id, userId: state.menu.profile.id });
+    state.menu.lobby = null;
+    updateLobbySubscription(state);
+
+    // Create a new lobby with a fresh code
+    const lobby = await api.createLobby({
+      hostId: state.menu.profile.id,
+      checkGameInProgress: async () => false // New lobby, no game in progress
+    });
+
+    state.menu.lobby = lobby;
+    state.menu.existingLobby = null;
+    state.menu.gameInProgress = false;
+    updateLobbySubscription(state);
+    updateLobbyPlayerNames(state, lobby);
+  } catch (error) {
+    const message = error.message || "Failed to reset lobby.";
+    setMenuError(state, message);
+    if (lobbyLiveError) {
+      lobbyLiveError.textContent = message;
+    }
+    // On error, go back to multiplayer menu
+    state.menu.lobby = null;
+    setMenuStage(state, "multiplayer");
+    updateLobbySubscription(state);
+  } finally {
+    applyMenuLoading(state, false);
     latestCallbacks.onUpdate?.();
   }
 };
@@ -1080,13 +1159,31 @@ const updateIndicators = (state, controlsLocked) => {
   }
 };
 
-const updatePlayerStats = (state, index, role) => {
+const updatePlayerStats = (state, index, role, onUpdate = null) => {
   const player = state.players[index];
   const nameEl = document.getElementById(`${role}-name`);
   const hpEl = document.getElementById(`${role}-hp`);
   const deckEl = document.getElementById(`${role}-deck`);
   if (nameEl) {
     nameEl.textContent = player.name;
+
+    // Add AI speed toggle button next to AI's name (player2 in AI mode)
+    if (role === "player2" && isAIMode(state)) {
+      let speedBtn = document.getElementById("ai-speed-toggle");
+      if (!speedBtn) {
+        speedBtn = document.createElement("button");
+        speedBtn.id = "ai-speed-toggle";
+        speedBtn.className = "ai-speed-toggle";
+        speedBtn.title = "Toggle AI speed";
+        nameEl.parentNode.insertBefore(speedBtn, nameEl.nextSibling);
+      }
+      speedBtn.textContent = state.menu.aiSlowMode ? "\u{1F422}" : "\u{1F407}";
+      speedBtn.onclick = (e) => {
+        e.stopPropagation();
+        state.menu.aiSlowMode = !state.menu.aiSlowMode;
+        if (onUpdate) onUpdate();
+      };
+    }
   }
   if (hpEl) {
     hpEl.textContent = `HP: ${player.hp}`;
@@ -1159,10 +1256,17 @@ const initHandPreview = () => {
   }
   handPreviewInitialized = true;
 
+  // Track currently focused card for hysteresis
+  let currentFocusedCard = null;
+  // Hysteresis margin - new card must be this much closer to steal focus
+  // Lower value = easier to switch focus, higher value = more stable but harder to switch
+  const HYSTERESIS_MARGIN = 8;
+
   const clearFocus = () => {
     handGrid.querySelectorAll(".card.hand-focus").forEach((card) => {
       card.classList.remove("hand-focus");
     });
+    currentFocusedCard = null;
   };
 
   const focusCardElement = (cardElement) => {
@@ -1174,6 +1278,7 @@ const initHandPreview = () => {
     }
     clearFocus();
     cardElement.classList.add("hand-focus");
+    currentFocusedCard = cardElement;
     const instanceId = cardElement.dataset.instanceId;
     if (!instanceId) {
       return;
@@ -1188,6 +1293,24 @@ const initHandPreview = () => {
     }
   };
 
+  // Get base position of card (without focus transform applied)
+  const getCardBaseRect = (card) => {
+    const rect = card.getBoundingClientRect();
+    // If this card has focus, compensate for the transform offset
+    if (card.classList.contains("hand-focus")) {
+      // hand-focus applies translateY(-25px) scale(1.15)
+      // Approximate the original position
+      return {
+        left: rect.left + (rect.width * 0.075), // compensate for scale
+        right: rect.right - (rect.width * 0.075),
+        width: rect.width / 1.15,
+        height: rect.height / 1.15,
+        top: rect.top + 25 + (rect.height * 0.075), // compensate for translateY and scale
+      };
+    }
+    return rect;
+  };
+
   const handlePointer = (event) => {
     // Get all cards in hand
     const cards = Array.from(handGrid.querySelectorAll('.card'));
@@ -1195,27 +1318,39 @@ const initHandPreview = () => {
       return;
     }
 
-    // Calculate distance from cursor to each card's center
+    // Calculate horizontal distance from cursor to each card's center
+    // Use horizontal distance primarily since cards are laid out horizontally
     let closestCard = null;
     let closestDistance = Infinity;
+    let currentFocusDistance = Infinity;
 
     cards.forEach(card => {
-      const rect = card.getBoundingClientRect();
+      const rect = getCardBaseRect(card);
       const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
 
-      // Calculate distance from cursor to card center
-      const dx = event.clientX - centerX;
-      const dy = event.clientY - centerY;
-      const distance = Math.sqrt(dx * dx + dy * dy);
+      // Use primarily horizontal distance for hand cards
+      const dx = Math.abs(event.clientX - centerX);
 
-      if (distance < closestDistance) {
-        closestDistance = distance;
+      if (dx < closestDistance) {
+        closestDistance = dx;
         closestCard = card;
+      }
+
+      // Track distance to currently focused card
+      if (card === currentFocusedCard) {
+        currentFocusDistance = dx;
       }
     });
 
-    // Focus the card with the closest center
+    // Apply hysteresis: only switch if new card is significantly closer
+    if (currentFocusedCard && currentFocusedCard !== closestCard) {
+      // Keep current focus unless new card is HYSTERESIS_MARGIN pixels closer
+      if (currentFocusDistance - closestDistance < HYSTERESIS_MARGIN) {
+        return; // Don't switch focus
+      }
+    }
+
+    // Focus the closest card
     if (closestCard) {
       focusCardElement(closestCard);
     }
@@ -1254,7 +1389,8 @@ const setInspectorContentFor = (panel, card, showImage = true) => {
         .join("")
     : "";
   const tokenKeywordDetails = card.summons
-    ?.filter((token) => token.keywords?.length)
+    ?.map((tokenId) => getCardDefinitionById(tokenId))
+    .filter((token) => token && token.keywords?.length)
     .map((token) => {
       const tokenDetails = token.keywords
         .map((keyword) => {
@@ -1271,7 +1407,7 @@ const setInspectorContentFor = (panel, card, showImage = true) => {
     })
     .join("");
   const stats = renderCardStats(card)
-    .map((stat) => `${stat.label} ${stat.value}`)
+    .map((stat) => `${stat.emoji} ${stat.value}`)
     .join(" • ");
   const effectSummary = getCardEffectSummary(card, {
     includeKeywordDetails: true,
@@ -1346,7 +1482,8 @@ const setInspectorContent = (card) => setInspectorContentFor(inspectorPanel, car
 // setDeckInspectorContent moved to DeckBuilderOverlay.js
 
 const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCancel) => {
-  if (!result) {
+  // Handle null, undefined, or empty object results - immediately complete
+  if (!result || (typeof result === 'object' && Object.keys(result).length === 0)) {
     onComplete?.();
     return;
   }
@@ -1428,6 +1565,52 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
         button.onclick = () => handleSelection(candidate.value);
         item.appendChild(button);
       }
+      return item;
+    });
+
+    renderSelectionPanel({
+      title,
+      items,
+      onConfirm: () => {
+        clearSelectionPanel();
+        onCancel?.();
+      },
+      confirmLabel: "Cancel",
+    });
+    return;
+  }
+
+  // Handle option selection (bubble text choices)
+  if (nextResult.selectOption) {
+    const { selectOption, ...rest } = nextResult;
+    if (Object.keys(rest).length > 0) {
+      resolveEffectResult(state, rest, context);
+    }
+    const { title, options, onSelect } = selectOption;
+
+    const handleOptionSelection = (option) => {
+      clearSelectionPanel();
+      const followUp = onSelect(option);
+      resolveEffectChain(state, followUp, context, onUpdate, onComplete);
+      cleanupDestroyed(state);
+      onUpdate?.();
+      broadcastSyncState(state);
+    };
+
+    // Create bubble-style option buttons
+    const items = options.map((option) => {
+      const item = document.createElement("label");
+      item.className = "selection-item option-bubble";
+
+      const button = document.createElement("button");
+      button.className = "option-bubble-btn";
+      button.innerHTML = `
+        <span class="option-label">${option.label}</span>
+        ${option.description ? `<span class="option-description">${option.description}</span>` : ''}
+      `;
+      button.onclick = () => handleOptionSelection(option);
+
+      item.appendChild(button);
       return item;
     });
 
@@ -2203,7 +2386,7 @@ const updateActionBar = (onNextPhase) => {
   }
 };
 
-const updateDeckTabs = (state) => {
+const updateDeckTabs = (state, newTab = null) => {
   const deckTabs = Array.from(document.querySelectorAll(".deck-tab"));
   const deckPanels = Array.from(document.querySelectorAll(".deck-panel"));
   const showLoad = isOnlineMode(state) && !isCatalogMode(state);
@@ -2214,6 +2397,11 @@ const updateDeckTabs = (state) => {
   }
   if (showManage) {
     allowedTabs.add("manage");
+  }
+
+  // If a new tab was passed, update the module-level variable
+  if (newTab && allowedTabs.has(newTab)) {
+    deckActiveTab = newTab;
   }
 
   if (!allowedTabs.has(deckActiveTab)) {
@@ -2350,7 +2538,10 @@ const processBeforeCombatQueue = (state, onUpdate) => {
     return;
   }
   const creature = state.beforeCombatQueue.shift();
-  if (!creature?.onBeforeCombat) {
+  // Check for both legacy function and new JSON-based effects
+  if (!creature?.onBeforeCombat && !creature?.effects?.onBeforeCombat) {
+    // No effect to process, try next creature in queue
+    processBeforeCombatQueue(state, onUpdate);
     return;
   }
   state.beforeCombatProcessing = true;
@@ -2358,7 +2549,9 @@ const processBeforeCombatQueue = (state, onUpdate) => {
   const opponentIndex = (playerIndex + 1) % 2;
   const player = state.players[playerIndex];
   const opponent = state.players[opponentIndex];
-  const result = creature.onBeforeCombat({
+
+  // Use resolveCardEffect for both legacy and new systems
+  const result = resolveCardEffect(creature, 'onBeforeCombat', {
     log: (message) => logMessage(state, message),
     player,
     opponent,
@@ -2597,6 +2790,7 @@ export const renderGame = (state, callbacks = {}) => {
         handleCreateLobby,
         handleJoinLobby,
         handleLeaveLobby,
+        handleBackFromLobby,
         ensureDecksLoaded,
         getOpponentDisplayName,
         loadGameStateFromDatabase,
@@ -2694,7 +2888,7 @@ export const renderGame = (state, callbacks = {}) => {
       (!isLocalTurn && isOnline)
   );
   updatePlayerStats(state, 0, "player1");
-  updatePlayerStats(state, 1, "player2");
+  updatePlayerStats(state, 1, "player2", callbacks.onUpdate);
   // Field rendering (uses extracted Field component)
   const fieldInspectCallback = (card) => {
     inspectedCardId = card.instanceId;

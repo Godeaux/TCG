@@ -152,6 +152,7 @@ export const buildLobbySyncPayload = (state) => ({
   deckSelection: {
     stage: state.deckSelection?.stage ?? null,
     selections: state.deckSelection?.selections ?? [],
+    readyStatus: state.deckSelection?.readyStatus ?? [false, false],
   },
   playerProfile: {
     index: getLocalPlayerIndex(state),
@@ -374,6 +375,18 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
           return;
         }
         state.deckSelection.selections[index] = selection;
+      });
+    }
+    // Sync ready status - only update opponent's status, protect local player's
+    if (Array.isArray(payload.deckSelection.readyStatus)) {
+      if (!state.deckSelection.readyStatus) {
+        state.deckSelection.readyStatus = [false, false];
+      }
+      payload.deckSelection.readyStatus.forEach((ready, index) => {
+        // Only update opponent's ready status
+        if (index !== localIndex) {
+          state.deckSelection.readyStatus[index] = ready;
+        }
       });
     }
   }

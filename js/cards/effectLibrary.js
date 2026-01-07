@@ -949,6 +949,287 @@ export const selectCarrionPredToCopyAbilities = () => (context) => {
 };
 
 // ============================================================================
+// FLEXIBLE TARGET GROUP SELECTION
+// ============================================================================
+
+/**
+ * Build target candidates based on a target group
+ * @param {string} targetGroup - Target group identifier
+ * @param {Object} context - Effect context with player, opponent, state
+ * @returns {Array} Array of candidates with label, value, and optional card
+ */
+const buildTargetCandidates = (targetGroup, context) => {
+  const { player, opponent, state, playerIndex, opponentIndex } = context;
+  let candidates = [];
+
+  switch (targetGroup) {
+    case 'friendly-creatures':
+      candidates = player.field
+        .filter(c => c && isCreatureCard(c))
+        .map(c => ({ label: c.name, value: { type: 'creature', creature: c, ownerIndex: playerIndex }, card: c }));
+      break;
+
+    case 'enemy-creatures':
+      candidates = opponent.field
+        .filter(c => c && isCreatureCard(c) && !isInvisible(c, state))
+        .map(c => ({ label: c.name, value: { type: 'creature', creature: c, ownerIndex: opponentIndex }, card: c }));
+      break;
+
+    case 'all-creatures':
+      candidates = [
+        ...player.field
+          .filter(c => c && isCreatureCard(c))
+          .map(c => ({ label: c.name, value: { type: 'creature', creature: c, ownerIndex: playerIndex }, card: c })),
+        ...opponent.field
+          .filter(c => c && isCreatureCard(c) && !isInvisible(c, state))
+          .map(c => ({ label: c.name, value: { type: 'creature', creature: c, ownerIndex: opponentIndex }, card: c }))
+      ];
+      break;
+
+    case 'friendly-entities':
+      candidates = [
+        { label: `${player.name || 'Self'}`, value: { type: 'player', playerIndex } },
+        ...player.field
+          .filter(c => c && isCreatureCard(c))
+          .map(c => ({ label: c.name, value: { type: 'creature', creature: c, ownerIndex: playerIndex }, card: c }))
+      ];
+      break;
+
+    case 'enemy-entities':
+      candidates = [
+        { label: `${opponent.name || 'Rival'}`, value: { type: 'player', playerIndex: opponentIndex } },
+        ...opponent.field
+          .filter(c => c && isCreatureCard(c) && !isInvisible(c, state))
+          .map(c => ({ label: c.name, value: { type: 'creature', creature: c, ownerIndex: opponentIndex }, card: c }))
+      ];
+      break;
+
+    case 'all-entities':
+      candidates = [
+        { label: `${player.name || 'Self'}`, value: { type: 'player', playerIndex } },
+        { label: `${opponent.name || 'Rival'}`, value: { type: 'player', playerIndex: opponentIndex } },
+        ...player.field
+          .filter(c => c && isCreatureCard(c))
+          .map(c => ({ label: c.name, value: { type: 'creature', creature: c, ownerIndex: playerIndex }, card: c })),
+        ...opponent.field
+          .filter(c => c && isCreatureCard(c) && !isInvisible(c, state))
+          .map(c => ({ label: c.name, value: { type: 'creature', creature: c, ownerIndex: opponentIndex }, card: c }))
+      ];
+      break;
+
+    case 'rival':
+      candidates = [
+        { label: `${opponent.name || 'Rival'}`, value: { type: 'player', playerIndex: opponentIndex } }
+      ];
+      break;
+
+    case 'self':
+      candidates = [
+        { label: `${player.name || 'Self'}`, value: { type: 'player', playerIndex } }
+      ];
+      break;
+
+    default:
+      console.warn(`Unknown target group: ${targetGroup}`);
+  }
+
+  return candidates;
+};
+
+/**
+ * Flexible target selection from configurable groups
+ * @param {Object} params - Selection parameters
+ * @param {string} params.targetGroup - Target group ('friendly-creatures', 'enemy-creatures', 'all-creatures', 'friendly-entities', 'enemy-entities', 'all-entities', 'rival', 'self')
+ * @param {string} params.title - Selection prompt title
+ * @param {Object} params.effect - Effect to apply to selected target (resolved via resolveEffect)
+ * @param {boolean} params.renderCards - Whether to render card previews (default: true for creatures)
+ */
+export const selectFromGroup = (params) => (context) => {
+  const { log, player, opponent, state } = context;
+  const { targetGroup, title, effect, renderCards = true } = params;
+
+  const candidates = buildTargetCandidates(targetGroup, context);
+
+  if (candidates.length === 0) {
+    log(`No valid targets available.`);
+    return {};
+  }
+
+  // If only one candidate, auto-select it
+  if (candidates.length === 1) {
+    const selection = candidates[0].value;
+    return applyEffectToSelection(selection, effect, context);
+  }
+
+  return makeTargetedSelection({
+    title: title || `Choose a target`,
+    candidates,
+    onSelect: (selection) => {
+      const targetResponse = selection.type === 'creature'
+        ? handleTargetedResponse({ target: selection.creature, source: null, log, player, opponent, state })
+        : null;
+
+      if (targetResponse) return targetResponse;
+      return applyEffectToSelection(selection, effect, context);
+    },
+    renderCards: renderCards && candidates.some(c => c.card)
+  });
+};
+
+/**
+ * Apply an effect definition to a selected target
+ * @param {Object} selection - Selected target { type, creature?, playerIndex? }
+ * @param {Object} effectDef - Effect definition to apply
+ * @param {Object} context - Effect context
+ */
+const applyEffectToSelection = (selection, effectDef, context) => {
+  const { log } = context;
+
+  // Simple effect shortcuts for common patterns
+  if (effectDef.damage) {
+    if (selection.type === 'creature') {
+      log(`Deals ${effectDef.damage} damage to ${selection.creature.name}.`);
+      return { damageCreature: { creature: selection.creature, amount: effectDef.damage, sourceLabel: effectDef.label || 'damage' } };
+    } else if (selection.type === 'player') {
+      log(`Deals ${effectDef.damage} damage to rival.`);
+      return { damageOpponent: effectDef.damage };
+    }
+  }
+
+  if (effectDef.heal) {
+    if (selection.type === 'creature') {
+      log(`Restores ${effectDef.heal} HP to ${selection.creature.name}.`);
+      return { healCreature: { creature: selection.creature, amount: effectDef.heal } };
+    } else if (selection.type === 'player') {
+      log(`Heals ${effectDef.heal} HP.`);
+      return { heal: effectDef.heal };
+    }
+  }
+
+  if (effectDef.kill && selection.type === 'creature') {
+    log(`${selection.creature.name} is destroyed.`);
+    return { killCreature: selection.creature };
+  }
+
+  if (effectDef.buff && selection.type === 'creature') {
+    const { attack = 0, health = 0 } = effectDef.buff;
+    log(`${selection.creature.name} gains +${attack}/+${health}.`);
+    return { buffCreature: { creature: selection.creature, attack, health } };
+  }
+
+  if (effectDef.keyword && selection.type === 'creature') {
+    log(`${selection.creature.name} gains ${effectDef.keyword}.`);
+    return { addKeyword: { creature: selection.creature, keyword: effectDef.keyword } };
+  }
+
+  // For complex effects, resolve them with extended context
+  if (effectDef.type) {
+    const extendedContext = {
+      ...context,
+      selectedTarget: selection,
+      target: selection.type === 'creature' ? selection.creature : null
+    };
+    return resolveEffect(effectDef, extendedContext);
+  }
+
+  return {};
+};
+
+// ============================================================================
+// OPTION CHOICE SELECTION (BUBBLE TEXT)
+// ============================================================================
+
+/**
+ * Present discrete effect options as bubble text choices
+ * @param {Object} params - Choice parameters
+ * @param {string} params.title - Choice prompt title
+ * @param {Array} params.options - Array of { label, description, effect }
+ */
+export const chooseOption = (params) => (context) => {
+  const { log } = context;
+  const { title, options } = params;
+
+  if (!options || options.length === 0) {
+    log(`No options available.`);
+    return {};
+  }
+
+  // If only one option, auto-select it
+  if (options.length === 1) {
+    log(`${options[0].label}`);
+    return resolveOptionEffect(options[0].effect, context);
+  }
+
+  return {
+    selectOption: {
+      title: title || 'Choose an option',
+      options: options.map((opt, index) => ({
+        id: index,
+        label: opt.label,
+        description: opt.description || '',
+        effect: opt.effect
+      })),
+      onSelect: (selectedOption) => {
+        log(`Chose: ${selectedOption.label}`);
+        return resolveOptionEffect(selectedOption.effect, context);
+      }
+    }
+  };
+};
+
+/**
+ * Resolve an option's effect
+ * @param {Object} effectDef - Effect definition from option
+ * @param {Object} context - Effect context
+ */
+const resolveOptionEffect = (effectDef, context) => {
+  if (!effectDef) return {};
+
+  // Handle simple effect shortcuts
+  if (effectDef.summonTokens) {
+    const { log, playerIndex } = context;
+    const tokens = Array.isArray(effectDef.summonTokens) ? effectDef.summonTokens : [effectDef.summonTokens];
+    log(`Summons ${tokens.length} token${tokens.length > 1 ? 's' : ''}.`);
+    return { summonTokens: { playerIndex, tokens } };
+  }
+
+  if (effectDef.buff) {
+    const { log, creature } = context;
+    const { attack = 0, health = 0 } = effectDef.buff;
+    if (creature) {
+      log(`${creature.name} gains +${attack}/+${health}.`);
+      return { buffCreature: { creature, attack, health } };
+    }
+  }
+
+  if (effectDef.heal) {
+    const { log } = context;
+    log(`Heals ${effectDef.heal} HP.`);
+    return { heal: effectDef.heal };
+  }
+
+  if (effectDef.draw) {
+    const { log } = context;
+    log(`Draws ${effectDef.draw} card${effectDef.draw > 1 ? 's' : ''}.`);
+    return { draw: effectDef.draw };
+  }
+
+  if (effectDef.damage) {
+    const { log } = context;
+    log(`Deals ${effectDef.damage} damage to rival.`);
+    return { damageOpponent: effectDef.damage };
+  }
+
+  // For complex effects with type, resolve them
+  if (effectDef.type) {
+    return resolveEffect(effectDef, context);
+  }
+
+  // Return the effect definition directly if it's already a result format
+  return effectDef;
+};
+
+// ============================================================================
 // EFFECT REGISTRY
 // ============================================================================
 
@@ -1011,6 +1292,10 @@ export const effectRegistry = {
   selectCreatureToRestore,
   selectPreyFromHandToPlay,
   selectCarrionPredToCopyAbilities,
+
+  // Flexible selection primitives
+  selectFromGroup,
+  chooseOption,
 };
 
 // ============================================================================
@@ -1186,6 +1471,14 @@ export const resolveEffect = (effectDef, context) => {
       break;
     case 'selectCarrionPredToCopyAbilities':
       specificEffect = effectFn();
+      break;
+    case 'selectFromGroup':
+      // Pass the entire params object to selectFromGroup
+      specificEffect = effectFn(params);
+      break;
+    case 'chooseOption':
+      // Pass the entire params object to chooseOption
+      specificEffect = effectFn(params);
       break;
     default:
       console.warn(`No parameter mapping for effect type: ${effectDef.type}`);

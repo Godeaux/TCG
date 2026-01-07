@@ -51,7 +51,7 @@ const runStartOfTurnEffects = (state) => {
 const queueEndOfTurnEffects = (state) => {
   const player = state.players[state.activePlayerIndex];
   state.endOfTurnQueue = player.field.filter(
-    (creature) => creature?.onEnd || creature?.endOfTurnSummon
+    (creature) => creature?.onEnd || creature?.effects?.onEnd || creature?.endOfTurnSummon
   );
   state.endOfTurnProcessing = false;
   state.endOfTurnFinalized = false;
@@ -153,7 +153,7 @@ export const advancePhase = (state) => {
 
   if (state.phase === "Before Combat") {
     const player = state.players[state.activePlayerIndex];
-    state.beforeCombatQueue = player.field.filter((creature) => creature?.onBeforeCombat);
+    state.beforeCombatQueue = player.field.filter((creature) => creature?.onBeforeCombat || creature?.effects?.onBeforeCombat);
     state.beforeCombatProcessing = false;
     if (state.beforeCombatQueue.length > 0) {
       logMessage(state, `[Before Combat] ${state.beforeCombatQueue.length} effect(s) queued: ${state.beforeCombatQueue.map(c => c.name).join(', ')}`);
@@ -194,7 +194,7 @@ export const advancePhase = (state) => {
 
   if (state.phase === "End") {
     const player = state.players[state.activePlayerIndex];
-    const endEffectCreatures = player.field.filter(c => c?.onEnd || c?.endOfTurnSummon);
+    const endEffectCreatures = player.field.filter(c => c?.onEnd || c?.effects?.onEnd || c?.endOfTurnSummon);
     if (endEffectCreatures.length > 0) {
       logMessage(state, `[End] Queuing ${endEffectCreatures.length} end-of-turn effect(s): ${endEffectCreatures.map(c => c.name).join(', ')}`);
     }

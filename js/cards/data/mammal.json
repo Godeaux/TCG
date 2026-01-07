@@ -11,7 +11,7 @@
       "effectText": "Play 2 Pups.",
       "summons": ["mammal-prey-pup"],
       "effects": {
-        "onPlay": "western-harvest-mouse-summon-pups-onplay"
+        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["mammal-prey-pup", "mammal-prey-pup"] } }
       }
     },
     {
@@ -85,7 +85,7 @@
       "effectText": "End of turn, play 2 Kits.",
       "summons": ["mammal-prey-kit"],
       "effects": {
-        "onEnd": "florida-white-rabbit-summon-kits-onend"
+        "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["mammal-prey-kit", "mammal-prey-kit"] } }
       }
     },
     {
@@ -97,7 +97,7 @@
       "nutrition": 1,
       "effectText": "Start of turn, become Florida White Rabbit.",
       "effects": {
-        "onStart": "kit-transform-onstart"
+        "onStart": { "type": "transformCard", "params": { "targetType": "self", "newCardId": "mammal-prey-florida-white-rabbit" } }
       }
     },
     {
@@ -110,7 +110,7 @@
       "keywords": ["Free Play"],
       "effectText": "Draw 1.",
       "effects": {
-        "onPlay": "giant-golden-mole-draw-onplay"
+        "onPlay": { "type": "draw", "params": { "count": 1 } }
       }
     },
     {
@@ -122,7 +122,7 @@
       "nutrition": 1,
       "effectText": "Deal 3 damage to any target.",
       "effects": {
-        "onPlay": "japanese-weasel-damage-onplay"
+        "onPlay": { "type": "selectCreatureForDamage", "params": { "amount": 3, "label": "weasel" } }
       }
     },
     {
@@ -135,8 +135,8 @@
       "effectText": "Play 2 Pups. Slain, play 3 Pups.",
       "summons": ["mammal-prey-pup"],
       "effects": {
-        "onPlay": "meerkat-matriarch-summon-pups-onplay",
-        "onSlain": "meerkat-matriarch-summon-pups-onslain"
+        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["mammal-prey-pup", "mammal-prey-pup"] } },
+        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["mammal-prey-pup", "mammal-prey-pup", "mammal-prey-pup"] } }
       }
     },
     {
@@ -162,7 +162,7 @@
       "effectText": "Slain, play Joey.",
       "summons": ["mammal-prey-joey"],
       "effects": {
-        "onSlain": "northern-koala-summon-joey-onslain"
+        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["mammal-prey-joey"] } }
       }
     },
     {
@@ -184,7 +184,7 @@
       "effectText": "Play 2 Mammal Eggs.",
       "summons": ["mammal-prey-mammal-egg"],
       "effects": {
-        "onPlay": "platypus-summon-eggs-onplay"
+        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["mammal-prey-mammal-egg", "mammal-prey-mammal-egg"] } }
       }
     },
     {
@@ -217,7 +217,7 @@
       "nutrition": 2,
       "effectText": "Deal 2 damage to any target.",
       "effects": {
-        "onPlay": "pronghorn-damage-onplay"
+        "onPlay": { "type": "selectCreatureForDamage", "params": { "amount": 2, "label": "pronghorn" } }
       }
     },
     {
@@ -229,7 +229,7 @@
       "nutrition": 2,
       "effectText": "End of turn, draw 2.",
       "effects": {
-        "onEnd": "golden-takin-draw-onend"
+        "onEnd": { "type": "draw", "params": { "count": 2 } }
       }
     },
     {
@@ -241,7 +241,7 @@
       "nutrition": 3,
       "effectText": "End of turn, add Fresh Milk to hand.",
       "effects": {
-        "onEnd": "holstein-friesian-add-milk-onend"
+        "onEnd": { "type": "addToHand", "params": { "cardId": "mammal-spell-fresh-milk" } }
       }
     },
     {
@@ -289,7 +289,7 @@
       "nutrition": 2,
       "effectText": "Add Present to hand.",
       "effects": {
-        "onPlay": "reindeer-rudolph-add-present-onplay"
+        "onPlay": { "type": "addToHand", "params": { "cardId": "mammal-spell-present" } }
       }
     },
     {
@@ -302,7 +302,7 @@
       "keywords": ["Immune"],
       "effectText": "Slain, add Qiviut to hand.",
       "effects": {
-        "onSlain": "muskox-add-qiviut-onslain"
+        "onSlain": { "type": "addToHand", "params": { "cardId": "mammal-spell-qiviut" } }
       }
     },
     {
@@ -332,7 +332,7 @@
       "nutrition": 3,
       "effectText": "Slain; add Angus to hand.",
       "effects": {
-        "onSlain": "american-aberdeen-add-angus-onslain"
+        "onSlain": { "type": "addToHand", "params": { "cardId": "mammal-spell-angus" } }
       }
     },
     {
@@ -363,7 +363,7 @@
       "keywords": ["Free Play"],
       "effectText": "Rival reveals hand.",
       "effects": {
-        "onConsume": "eurasian-lynx-reveal-onconsume"
+        "onConsume": { "type": "revealHand", "params": { "durationMs": 5000 } }
       }
     },
     {
@@ -375,7 +375,7 @@
       "effectText": "Play Gray Wolf.",
       "summons": ["mammal-predator-gray-wolf"],
       "effects": {
-        "onConsume": "gray-wolf-summon-onconsume"
+        "onConsume": { "type": "summonTokens", "params": { "tokenIds": ["mammal-predator-gray-wolf"] } }
       }
     },
     {
@@ -388,7 +388,7 @@
       "effectText": "Slain, play Black Leopard.",
       "summons": ["mammal-predator-black-leopard"],
       "effects": {
-        "onSlain": "black-leopards-summon-onslain"
+        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["mammal-predator-black-leopard"] } }
       }
     },
     {
@@ -418,7 +418,7 @@
       "hp": 3,
       "effectText": "Attacking before combat, deal 3 damage.",
       "effects": {
-        "onBeforeCombat": "north-american-cougar-damage-onbeforecombat"
+        "onBeforeCombat": { "type": "damageCreature", "params": { "targetType": "target", "amount": 3, "sourceLabel": "cougar" } }
       }
     },
     {
@@ -437,7 +437,7 @@
       "hp": 3,
       "effectText": "Creatures gain +1/+1.",
       "effects": {
-        "onConsume": "southern-african-lion-buff-onconsume"
+        "onConsume": { "type": "buffStats", "params": { "targetType": "all-friendly", "stats": { "attack": 1, "health": 1 } } }
       }
     },
     {
@@ -448,7 +448,7 @@
       "hp": 3,
       "effectText": "Copy abilities of a carrion.",
       "effects": {
-        "onConsume": "sumatran-tiger-copy-abilities-onconsume"
+        "onConsume": { "type": "selectCarrionPredToCopyAbilities" }
       }
     },
     {
@@ -478,7 +478,7 @@
       "hp": 5,
       "effectText": "Add Salmon to hand.",
       "effects": {
-        "onConsume": "kodiak-bear-add-salmon-onconsume"
+        "onConsume": { "type": "addToHand", "params": { "cardId": "mammal-prey-salmon" } }
       }
     },
     {
@@ -509,7 +509,7 @@
       "hp": 6,
       "effectText": "Kill target enemy.",
       "effects": {
-        "onConsume": "hippopotamus-kill-onconsume"
+        "onConsume": { "type": "selectEnemyToKill" }
       }
     },
     {
@@ -527,7 +527,7 @@
       "type": "Spell",
       "effectText": "Creatures gain +2/+2.",
       "effects": {
-        "effect": "milk-buff-effect"
+        "effect": { "type": "buffStats", "params": { "targetType": "all-friendly", "stats": { "attack": 2, "health": 2 } } }
       }
     },
     {
@@ -592,7 +592,13 @@
       "effectText": "End of turn, play Wolf.",
       "summons": ["mammal-prey-wolf"],
       "effects": {
-        "effect": "wolves-den-field-spell-effect"
+        "effect": "wolves-den-field-spell-effect",
+        "onEnd": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": ["mammal-prey-wolf"]
+          }
+        }
       }
     },
     {

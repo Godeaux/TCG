@@ -35,6 +35,7 @@ let handleLoginSubmit = null;
 let handleCreateLobby = null;
 let handleJoinLobby = null;
 let handleLeaveLobby = null;
+let handleBackFromLobby = null;
 let ensureDecksLoaded = null;
 let getOpponentDisplayName = null;
 let loadGameStateFromDatabase = null;
@@ -156,6 +157,7 @@ const getNavigationElements = () => ({
   multiplayerBack: document.getElementById("multiplayer-back"),
   lobbyContinue: document.getElementById("lobby-continue"),
   lobbyLeave: document.getElementById("lobby-leave"),
+  lobbyBack: document.getElementById("lobby-back"),
 
   // Deck builder
   deckExit: document.getElementById("deck-exit"),
@@ -190,8 +192,29 @@ const initNavigation = () => {
   // Deck builder tabs
   document.querySelectorAll(".deck-tab").forEach((tab) => {
     tab.addEventListener("click", () => {
-      deckActiveTab = tab.dataset.tab;
-      updateDeckTabs(latestState);
+      const newTab = tab.dataset.tab;
+
+      // In catalog mode, "manage" tab should go back to home screen
+      if (newTab === "manage" && latestState?.menu?.stage === "catalog") {
+        latestState.catalogBuilder.stage = "home";
+        latestState.catalogBuilder.deckId = null;
+        latestState.catalogBuilder.selections = [];
+        latestState.catalogBuilder.available = [];
+        latestState.catalogBuilder.editingDeckId = null;
+        latestState.catalogBuilder.editingDeckName = null;
+        latestCallbacks.onUpdate?.();
+        return;
+      }
+
+      deckActiveTab = newTab;
+      // Store in state for sync across modules
+      if (latestState?.catalogBuilder) {
+        latestState.catalogBuilder.activeTab = newTab;
+      }
+      // Pass the new tab value to updateDeckTabs so it can update ui.js's variable
+      updateDeckTabs(latestState, newTab);
+      // Trigger re-render to update panel contents
+      latestCallbacks.onUpdate?.();
     });
   });
 
@@ -226,13 +249,14 @@ const initNavigation = () => {
     latestState.menu.mode = null;
     setMenuStage(latestState, "catalog");
     latestState.catalogBuilder = {
-      stage: "select",
+      stage: "home",  // Show deck management home screen first
       deckId: null,
       selections: [],
       available: [],
       catalogOrder: [],
       editingDeckId: null,
       editingDeckName: null,
+      activeTab: "catalog",  // Store activeTab in state for sync across modules
     };
     deckActiveTab = "catalog";
     deckHighlighted = null;
@@ -422,7 +446,7 @@ const initNavigation = () => {
     latestCallbacks.onUpdate?.();
   });
 
-  // Lobby leave
+  // Lobby leave (reset to new code)
   elements.lobbyLeave?.addEventListener("click", () => {
     if (!latestState) {
       return;
@@ -430,14 +454,27 @@ const initNavigation = () => {
     handleLeaveLobby(latestState);
   });
 
-  // Deck catalog exit
+  // Lobby back (return to multiplayer menu)
+  elements.lobbyBack?.addEventListener("click", () => {
+    if (!latestState) {
+      return;
+    }
+    handleBackFromLobby(latestState);
+  });
+
+  // Deck catalog exit - go back to home screen instead of main menu
   elements.deckExit?.addEventListener("click", () => {
     if (!latestState) {
       return;
     }
     if (latestState.menu?.stage === "catalog") {
-      setMenuStage(latestState, "main");
-      latestState.catalogBuilder.stage = null;
+      // Return to deck catalog home screen instead of main menu
+      latestState.catalogBuilder.stage = "home";
+      latestState.catalogBuilder.deckId = null;
+      latestState.catalogBuilder.selections = [];
+      latestState.catalogBuilder.available = [];
+      latestState.catalogBuilder.editingDeckId = null;
+      latestState.catalogBuilder.editingDeckName = null;
       latestCallbacks.onUpdate?.();
     }
   });
@@ -491,6 +528,7 @@ export const initializeInput = (options = {}) => {
   handleCreateLobby = helpers.handleCreateLobby;
   handleJoinLobby = helpers.handleJoinLobby;
   handleLeaveLobby = helpers.handleLeaveLobby;
+  handleBackFromLobby = helpers.handleBackFromLobby;
   ensureDecksLoaded = helpers.ensureDecksLoaded;
   getOpponentDisplayName = helpers.getOpponentDisplayName;
   loadGameStateFromDatabase = helpers.loadGameStateFromDatabase;

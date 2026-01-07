@@ -158,6 +158,9 @@ export const renderMenuOverlays = (state) => {
   }
   if (elements.lobbyCreate) {
     elements.lobbyCreate.disabled = state.menu.loading;
+    // Update button text based on whether user has an existing lobby
+    const hasExistingLobby = Boolean(state.menu.existingLobby);
+    elements.lobbyCreate.textContent = hasExistingLobby ? "Rejoin Lobby" : "Create Lobby";
   }
   if (elements.lobbyJoin) {
     elements.lobbyJoin.disabled = state.menu.loading;

@@ -148,8 +148,21 @@ export const updateDeck = async ({ deckId, ownerId, name, deck }) => {
     .single();
 
   if (error) {
+    // Provide more specific error messages for common issues
+    if (error.code === 'PGRST116') {
+      throw new Error("Deck not found or you don't have permission to update it. Check Supabase RLS policies.");
+    }
+    if (error.code === '42501') {
+      throw new Error("Permission denied. Check Supabase RLS policies for UPDATE on decks table.");
+    }
     throw error;
   }
+
+  // Verify data was returned (update succeeded)
+  if (!data) {
+    throw new Error("Update failed - no data returned. Check Supabase RLS policies allow UPDATE.");
+  }
+
   return data;
 };
 
@@ -303,6 +316,52 @@ export const fetchLobbyById = async ({ lobbyId }) => {
   }
 
   return data ?? null;
+};
+
+/**
+ * Find an existing active lobby for a user (as host or guest)
+ * @param {Object} params
+ * @param {string} params.userId - The user ID to check
+ * @returns {Promise<Object|null>} The existing lobby or null if not found
+ */
+export const findExistingLobby = async ({ userId }) => {
+  if (!userId) {
+    return null;
+  }
+
+  // First check if user is a host of an active lobby
+  const { data: hostLobby, error: hostError } = await supabase
+    .from("lobbies")
+    .select("id, code, status, host_id, guest_id")
+    .eq("host_id", userId)
+    .neq("status", "closed")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (hostError) {
+    throw hostError;
+  }
+
+  if (hostLobby) {
+    return hostLobby;
+  }
+
+  // Check if user is a guest of an active lobby
+  const { data: guestLobby, error: guestError } = await supabase
+    .from("lobbies")
+    .select("id, code, status, host_id, guest_id")
+    .eq("guest_id", userId)
+    .neq("status", "closed")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (guestError) {
+    throw guestError;
+  }
+
+  return guestLobby ?? null;
 };
 
 export const closeLobby = async ({ lobbyId, userId }) => {

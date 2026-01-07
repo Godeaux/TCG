@@ -181,7 +181,19 @@ const renderRollingPhase = (state, elements, callbacks) => {
  * Render the choice phase (winner picks who goes first)
  */
 const renderChoicePhase = (state, elements, callbacks) => {
-  const { actions } = elements;
+  const { rolls, actions } = elements;
+
+  // Update the rolls display to show final values
+  clearPanel(rolls);
+  const rollSummary = document.createElement("div");
+  rollSummary.className = "setup-roll-summary";
+  const p1Roll = state.setup.rolls[0];
+  const p2Roll = state.setup.rolls[1];
+  rollSummary.innerHTML = `
+    <div>Player 1 roll: <strong>${p1Roll ?? "-"}</strong></div>
+    <div>Player 2 roll: <strong>${p2Roll ?? "-"}</strong></div>
+  `;
+  rolls.appendChild(rollSummary);
 
   clearPanel(actions);
 

@@ -319,7 +319,24 @@
       "effectText": "Either play Lancetfish or gain +2/+2.",
       "summons": ["token-lancetfish"],
       "effects": {
-        "onPlay": "cannibal-fish-choice-onplay"
+        "onPlay": {
+          "type": "chooseOption",
+          "params": {
+            "title": "Choose Cannibal Fish's effect",
+            "options": [
+              {
+                "label": "Summon Lancetfish",
+                "description": "Play a 2/2 Lancetfish token",
+                "effect": { "summonTokens": ["token-lancetfish"] }
+              },
+              {
+                "label": "Grow Stronger",
+                "description": "This creature gains +2/+2",
+                "effect": { "buff": { "attack": 2, "health": 2 } }
+              }
+            ]
+          }
+        }
       }
     },
     {
@@ -755,7 +772,13 @@
       "effectText": "End of turn, play Oscellaris Clownfish.",
       "summons": ["token-oscellaris-clownfish"],
       "effects": {
-        "effect": "magnificent-sea-anemone-field-spell-effect"
+        "effect": "magnificent-sea-anemone-field-spell-effect",
+        "onEnd": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": ["token-oscellaris-clownfish"]
+          }
+        }
       }
     },
     {
