@@ -578,7 +578,7 @@ button {
   flex: 0 0 auto;
   flex-shrink: 0;
   width: clamp(70px, min(18vw, 140px), 160px);
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 5 / 7; /* Standard playing card ratio */
   margin-left: calc(var(--hand-overlap) * -1.2);
   transform-origin: bottom center;
   transform: translateY(8px) scale(0.98);
@@ -1283,7 +1283,7 @@ button {
   position: relative;
   overflow: hidden;
   transition: transform var(--transition-fast), box-shadow var(--transition-fast);
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 5 / 7; /* Standard playing card ratio */
   width: 100%;
 }
 
@@ -1342,27 +1342,37 @@ button {
 }
 
 .card-type-label {
-  font-size: 11px;
-  color: var(--text-muted);
-  flex-shrink: 0;
-  text-align: center;
-  height: auto;
+  display: none; /* Type info removed from card UI - handled by card border color */
 }
 
 .card-stats-row {
   display: flex;
-  gap: 6px;
+  gap: 0;
   flex-wrap: nowrap;
-  justify-content: center;
+  justify-content: space-around;
   flex-shrink: 0;
+  padding: 6px 4px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* When only 2 stats (no nutrition), split row in half */
+.card-stats-row.two-stats {
+  justify-content: space-around;
+}
+
+.card-stats-row.two-stats .card-stat {
+  flex: 1;
+  text-align: center;
 }
 
 .card-stat {
-  font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
+  font-size: 12px;
+  padding: 2px 8px;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 
 .card-stat.atk {
@@ -1381,21 +1391,25 @@ button {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  font-size: 10px;
-  color: var(--text-secondary);
+  font-size: 11px;
+  color: var(--text-primary);
   flex-shrink: 0;
+  justify-content: center;
+  text-align: center;
 }
 
 .card-keywords span {
-  padding: 2px 6px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.05);
+  font-weight: bold;
+  text-decoration: underline;
+  padding: 0 4px;
 }
 
 .card-effect {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-secondary);
-  line-height: 1.2;
+  line-height: 1.3;
+  text-align: center;
+  padding: 0 4px;
 }
 
 .card-image-container {
@@ -1495,12 +1509,12 @@ button {
 }
 
 .card-content-area {
-  flex: 1;
-  min-height: 0;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   overflow: hidden;
+  padding-bottom: 4px;
 }
 
 .card-content-area .card-stats-row {
@@ -1509,11 +1523,11 @@ button {
 
 .card-content-area .card-keywords {
   flex-shrink: 0;
+  padding: 2px 4px;
 }
 
 .card-content-area .card-effect {
-  flex: 1;
-  min-height: 0;
+  flex-shrink: 0;
   overflow: hidden;
 }
 
