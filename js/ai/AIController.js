@@ -15,9 +15,12 @@
  */
 
 import { canPlayCard, cardLimitAvailable } from '../game/turnManager.js';
-import { getValidTargets } from '../game/combat.js';
-import { isFreePlay, isPassive, isHarmless, isEdible } from '../keywords.js';
-import { isCreatureCard } from '../cardTypes.js';
+import { getValidTargets, resolveCreatureCombat, resolveDirectAttack, cleanupDestroyed } from '../game/combat.js';
+import { isFreePlay, isPassive, isHarmless, isEdible, hasScavenge } from '../keywords.js';
+import { isCreatureCard, createCardInstance } from '../cardTypes.js';
+import { logMessage, queueVisualEffect } from '../state/gameState.js';
+import { consumePrey } from '../game/consumption.js';
+import { resolveCardEffect } from '../cards/index.js';
 
 // ============================================================================
 // AI CONFIGURATION
@@ -248,16 +251,86 @@ export class AIController {
 
   /**
    * Execute a card play action
+   * Actually modifies game state to play the card
    */
   async executeCardPlay(state, card, slotIndex, callbacks) {
     const player = this.getAIPlayer(state);
+    const opponent = this.getHumanPlayer(state);
+    const playerIndex = this.playerIndex;
+    const opponentIndex = 1 - this.playerIndex;
+    const isFree = card.type === "Free Spell" || card.type === "Trap" || isFreePlay(card);
 
-    // For creatures, we need to handle consumption
-    if (card.type === 'Predator') {
+    // Handle spells
+    if (card.type === "Spell" || card.type === "Free Spell") {
+      logMessage(state, `${player.name} casts ${card.name}.`);
+
+      // Execute spell effect
+      const result = resolveCardEffect(card, 'effect', {
+        log: (message) => logMessage(state, message),
+        player,
+        opponent,
+        state,
+        playerIndex,
+        opponentIndex,
+      });
+
+      // Remove from hand and exile
+      player.hand = player.hand.filter(c => c.instanceId !== card.instanceId);
+      if (!card.isFieldSpell) {
+        player.exile.push(card);
+      }
+
+      if (!isFree) {
+        state.cardPlayedThisTurn = true;
+      }
+
+      cleanupDestroyed(state);
+      callbacks.onPlayCard?.(card, slotIndex);
+      return { success: true };
+    }
+
+    // Handle traps (AI doesn't play traps, they trigger automatically)
+    if (card.type === "Trap") {
+      return { success: false, error: 'Traps trigger automatically' };
+    }
+
+    // Handle creatures
+    if (card.type === "Predator") {
       return this.executePredatorPlay(state, card, slotIndex, callbacks);
     }
 
-    // For prey and spells, straightforward play
+    if (card.type === "Prey") {
+      return this.executePreyPlay(state, card, slotIndex, callbacks);
+    }
+
+    return { success: false, error: 'Unknown card type' };
+  }
+
+  /**
+   * Execute prey play - simple placement
+   */
+  async executePreyPlay(state, card, slotIndex, callbacks) {
+    const player = this.getAIPlayer(state);
+    const isFree = isFreePlay(card);
+
+    // Remove from hand
+    player.hand = player.hand.filter(c => c.instanceId !== card.instanceId);
+
+    // Create card instance
+    const creature = createCardInstance(card, state.turn);
+
+    // Place on field
+    player.field[slotIndex] = creature;
+
+    logMessage(state, `${player.name} plays ${creature.name}.`);
+
+    if (!isFree) {
+      state.cardPlayedThisTurn = true;
+    }
+
+    // Trigger onPlay effect if any
+    this.triggerOnPlayEffect(state, creature);
+
     callbacks.onPlayCard?.(card, slotIndex);
     return { success: true };
   }
@@ -267,14 +340,30 @@ export class AIController {
    */
   async executePredatorPlay(state, card, slotIndex, callbacks) {
     const player = this.getAIPlayer(state);
+    const isFree = isFreePlay(card);
 
-    // Find available prey to consume
+    // Find available prey to consume (not frozen)
     const availablePrey = player.field.filter(c =>
-      c && (c.type === 'Prey' || (c.type === 'Predator' && isEdible(c)))
+      c && !c.frozen && (c.type === 'Prey' || (c.type === 'Predator' && isEdible(c)))
     );
+
+    // Remove from hand
+    player.hand = player.hand.filter(c => c.instanceId !== card.instanceId);
+
+    // Create card instance
+    const creature = createCardInstance(card, state.turn);
 
     if (availablePrey.length === 0) {
       // Dry drop - play without consumption
+      player.field[slotIndex] = creature;
+      creature.dryDropped = true;
+      logMessage(state, `${player.name} plays ${creature.name} (dry drop - no prey to consume).`);
+
+      if (!isFree) {
+        state.cardPlayedThisTurn = true;
+      }
+
+      this.triggerOnPlayEffect(state, creature);
       callbacks.onPlayCard?.(card, slotIndex, { dryDrop: true });
       return { success: true };
     }
@@ -282,11 +371,87 @@ export class AIController {
     // Select best prey to consume
     const preyToConsume = this.selectPreyToConsume(state, availablePrey);
 
-    callbacks.onPlayCard?.(card, slotIndex, {
-      consumeTargets: preyToConsume
+    // Consume the prey
+    consumePrey({
+      predator: creature,
+      preyList: preyToConsume,
+      carrionList: [],
+      state,
+      playerIndex: this.playerIndex,
     });
 
+    // Find slot (may have changed if we consumed from the target slot)
+    const actualSlot = slotIndex !== null && player.field[slotIndex] === null
+      ? slotIndex
+      : player.field.findIndex(s => s === null);
+
+    if (actualSlot === -1) {
+      logMessage(state, `[AI] ERROR: No slot available after consumption`);
+      return { success: false, error: 'No slot available' };
+    }
+
+    player.field[actualSlot] = creature;
+    logMessage(state, `${player.name} plays ${creature.name}.`);
+
+    if (!isFree) {
+      state.cardPlayedThisTurn = true;
+    }
+
+    // Trigger onPlay and onConsume effects
+    this.triggerOnPlayEffect(state, creature);
+    this.triggerOnConsumeEffect(state, creature, preyToConsume);
+
+    callbacks.onPlayCard?.(card, actualSlot, { consumeTargets: preyToConsume });
     return { success: true };
+  }
+
+  /**
+   * Trigger onPlay effect for a creature
+   */
+  triggerOnPlayEffect(state, creature) {
+    const player = this.getAIPlayer(state);
+    const opponent = this.getHumanPlayer(state);
+
+    if (creature.onPlay || creature.effects?.onPlay) {
+      const result = resolveCardEffect(creature, 'onPlay', {
+        log: (message) => logMessage(state, message),
+        player,
+        opponent,
+        creature,
+        state,
+        playerIndex: this.playerIndex,
+        opponentIndex: 1 - this.playerIndex,
+      });
+
+      if (result) {
+        cleanupDestroyed(state);
+      }
+    }
+  }
+
+  /**
+   * Trigger onConsume effect for a creature
+   */
+  triggerOnConsumeEffect(state, creature, consumedPrey) {
+    const player = this.getAIPlayer(state);
+    const opponent = this.getHumanPlayer(state);
+
+    if ((creature.onConsume || creature.effects?.onConsume) && !creature.dryDropped) {
+      const result = resolveCardEffect(creature, 'onConsume', {
+        log: (message) => logMessage(state, message),
+        player,
+        opponent,
+        creature,
+        state,
+        playerIndex: this.playerIndex,
+        opponentIndex: 1 - this.playerIndex,
+        consumedPrey,
+      });
+
+      if (result) {
+        cleanupDestroyed(state);
+      }
+    }
   }
 
   /**
@@ -338,13 +503,39 @@ export class AIController {
         break;
       }
 
-      console.log(`[AI] ${attacker.name} attacks ${target.name || 'player'}`);
+      console.log(`[AI] ${attacker.name} attacks ${target.type === 'player' ? 'player' : target.card?.name}`);
 
-      // Execute attack
+      // Execute the attack
+      this.executeAttack(state, attacker, target);
+
+      // Mark attacker as having attacked
+      attacker.hasAttacked = true;
+
+      // Notify callbacks
       callbacks.onAttack?.(attacker, target);
 
       await this.delay(AI_DELAYS.BETWEEN_ACTIONS);
     }
+  }
+
+  /**
+   * Execute an attack action
+   * Actually resolves combat and modifies game state
+   */
+  executeAttack(state, attacker, target) {
+    const attackerOwnerIndex = this.playerIndex;
+    const defenderOwnerIndex = 1 - this.playerIndex;
+
+    if (target.type === 'player') {
+      // Direct attack on player
+      resolveDirectAttack(state, attacker, target.player);
+    } else if (target.type === 'creature') {
+      // Creature combat
+      resolveCreatureCombat(state, attacker, target.card, attackerOwnerIndex, defenderOwnerIndex);
+    }
+
+    // Clean up destroyed creatures
+    cleanupDestroyed(state);
   }
 
   /**

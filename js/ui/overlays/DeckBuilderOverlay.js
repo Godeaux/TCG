@@ -16,7 +16,7 @@
 import { deckCatalogs } from '../../cards/index.js';
 import { logMessage } from '../../state/gameState.js';
 import { buildLobbySyncPayload, sendLobbyBroadcast, getSupabaseApi } from '../../network/index.js';
-import { getLocalPlayerIndex } from '../../state/selectors.js';
+import { getLocalPlayerIndex, isAIMode } from '../../state/selectors.js';
 import { renderDeckCard, renderCardStats, getCardEffectSummary } from '../components/Card.js';
 import { KEYWORD_DESCRIPTIONS } from '../../keywords.js';
 
@@ -298,6 +298,34 @@ const buildRandomDeck = ({ available, selected, catalogOrder }) => {
   takeCards((card) => card.type === "Trap", 1);
 
   selected.push(...picks);
+};
+
+/**
+ * Generate a random deck for AI player
+ * Uses one of the available deck catalogs
+ */
+const generateAIDeck = (state) => {
+  // Pick a random available deck category for AI
+  const availableDecks = DECK_OPTIONS.filter(opt => opt.available);
+  const randomOption = availableDecks[Math.floor(Math.random() * availableDecks.length)];
+  const deckId = randomOption?.id ?? 'fish';
+
+  const catalog = deckCatalogs[deckId] ?? [];
+  const available = cloneDeckCatalog(catalog);
+  const selected = [];
+  const catalogOrder = catalog.map((card) => card.id);
+
+  // Build random deck for AI
+  buildRandomDeck({ available, selected, catalogOrder });
+
+  // Set up AI's deck in state (player index 1)
+  state.deckSelection.selections[1] = deckId;
+  state.deckBuilder.selections[1] = selected;
+  state.deckBuilder.available[1] = available;
+  state.deckBuilder.catalogOrder[1] = catalogOrder;
+
+  console.log(`[AI] Generated random ${randomOption?.name ?? 'Fish'} deck with ${selected.length} cards`);
+  return selected;
 };
 
 /**
@@ -1218,6 +1246,19 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
       return;
     }
     if (isPlayerOne) {
+      // In AI mode, auto-generate AI's deck and skip to complete
+      if (isAIMode(state)) {
+        logMessage(state, "Your deck is locked in. Generating AI deck...");
+        generateAIDeck(state);
+        state.deckBuilder.stage = "complete";
+        deckHighlighted = null;
+        setDeckInspectorContent(null);
+        callbacks.onDeckComplete?.(state.deckBuilder.selections);
+        callbacks.onUpdate?.();
+        return;
+      }
+
+      // Normal local multiplayer: hand off to Player 2
       state.deckBuilder.stage = "p2";
       state.deckSelection.stage = "p2";
       logMessage(state, "Player 1 deck locked in. Hand off to Player 2.");
