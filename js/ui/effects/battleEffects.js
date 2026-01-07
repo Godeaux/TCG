@@ -12,6 +12,11 @@
  * - playAttackEffect: Animate a single attack
  */
 
+import {
+  getPlayerBadgeByIndex,
+  getFieldSlotElement as getFieldSlotElementShared,
+} from '../dom/helpers.js';
+
 // ============================================================================
 // MODULE-LEVEL STATE
 // ============================================================================
@@ -45,26 +50,10 @@ export const initBattleEffects = (options = {}) => {
 // ============================================================================
 
 /**
- * Get player badge element by player index
+ * Wrapper for getFieldSlotElement that uses the injected getLocalPlayerIndex
  */
-const getPlayerBadgeByIndex = (playerIndex) =>
-  document.querySelector(`.player-badge[data-player-index="${playerIndex}"]`);
-
-/**
- * Get field slot element by owner and slot index
- */
-const getFieldSlotElement = (state, ownerIndex, slotIndex) => {
-  if (ownerIndex === -1 || slotIndex === -1) {
-    return null;
-  }
-  const localIndex = getLocalPlayerIndex?.(state) ?? 0;
-  const isOpponent = ownerIndex !== localIndex;
-  const row = document.querySelector(isOpponent ? ".opponent-field" : ".player-field");
-  if (!row) {
-    return null;
-  }
-  return row.querySelector(`.field-slot[data-slot="${slotIndex}"]`);
-};
+const getFieldSlotElement = (state, ownerIndex, slotIndex) =>
+  getFieldSlotElementShared(state, ownerIndex, slotIndex, getLocalPlayerIndex);
 
 /**
  * Create a damage pop animation on target

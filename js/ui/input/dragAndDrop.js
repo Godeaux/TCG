@@ -28,6 +28,9 @@ import { resolveCardEffect } from '../../cards/index.js';
 // MODULE-LEVEL STATE
 // ============================================================================
 
+// Initialization flag to prevent duplicate event listeners
+let dragDropInitialized = false;
+
 // Current drag operation state
 let draggedCard = null;
 let draggedCardElement = null;
@@ -672,6 +675,15 @@ const handleDrop = (event) => {
  * @param {Object} options.helpers - Helper functions from ui.js
  */
 export const initDragAndDrop = (options = {}) => {
+  // Prevent duplicate event listener registration
+  if (dragDropInitialized) {
+    // Just update state/callbacks if already initialized
+    const { state, callbacks = {} } = options;
+    if (state) latestState = state;
+    if (Object.keys(callbacks).length > 0) latestCallbacks = callbacks;
+    return;
+  }
+
   const {
     state,
     callbacks = {},
@@ -698,6 +710,8 @@ export const initDragAndDrop = (options = {}) => {
   document.addEventListener('dragover', handleDragOver);
   document.addEventListener('drop', handleDrop);
   document.addEventListener('dragleave', clearDragVisuals);
+
+  dragDropInitialized = true;
 };
 
 /**

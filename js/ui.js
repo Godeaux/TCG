@@ -33,10 +33,10 @@ import { getCardImagePath, hasCardImage, getCachedCardImage, isCardImageCached, 
 // ============================================================================
 
 // State selectors (centralized state queries)
-// Note: getLocalPlayerIndex and isLocalPlayersTurn have different signatures in new module
-// (they take uiState as second param), so we keep local versions for now
+// Note: ui.js keeps local versions of getLocalPlayerIndex and isLocalPlayersTurn
+// to avoid circular dependencies and for performance (no module lookups)
 import {
-  isOnlineMode,  // Same signature, can replace local version
+  isOnlineMode,
 } from "./state/selectors.js";
 
 // Victory overlay (extracted module)
@@ -107,6 +107,14 @@ import {
   markEffectProcessed,
   playAttackEffect,
 } from "./ui/effects/index.js";
+
+// DOM helpers (shared utilities)
+import {
+  getPlayerBadgeByIndex,
+  getFieldSlotElement as getFieldSlotElementShared,
+  findCardOwnerIndex,
+  findCardSlotIndex,
+} from "./ui/dom/helpers.js";
 
 // Network serialization (extracted module)
 // Note: applyLobbySyncPayload is defined locally because it needs UI-specific
@@ -304,37 +312,9 @@ const clearPanel = (panel) => {
   panel.innerHTML = "";
 };
 
-const getPlayerBadgeByIndex = (playerIndex) =>
-  document.querySelector(`.player-badge[data-player-index="${playerIndex}"]`);
-
-const findCardOwnerIndex = (state, instanceId) =>
-  state.players.findIndex((player) =>
-    player.field.some((card) => card?.instanceId === instanceId)
-  );
-
-const findCardSlotIndex = (state, instanceId) => {
-  const ownerIndex = findCardOwnerIndex(state, instanceId);
-  if (ownerIndex === -1) {
-    return { ownerIndex: -1, slotIndex: -1 };
-  }
-  const slotIndex = state.players[ownerIndex].field.findIndex(
-    (card) => card?.instanceId === instanceId
-  );
-  return { ownerIndex, slotIndex };
-};
-
-const getFieldSlotElement = (state, ownerIndex, slotIndex) => {
-  if (ownerIndex === -1 || slotIndex === -1) {
-    return null;
-  }
-  const localIndex = getLocalPlayerIndex(state);
-  const isOpponent = ownerIndex !== localIndex;
-  const row = document.querySelector(isOpponent ? ".opponent-field" : ".player-field");
-  if (!row) {
-    return null;
-  }
-  return row.querySelector(`.field-slot[data-slot="${slotIndex}"]`);
-};
+// Wrapper for getFieldSlotElement that uses local getLocalPlayerIndex
+const getFieldSlotElement = (state, ownerIndex, slotIndex) =>
+  getFieldSlotElementShared(state, ownerIndex, slotIndex, getLocalPlayerIndex);
 
 const setMenuError = (state, message) => {
   state.menu.error = message;
