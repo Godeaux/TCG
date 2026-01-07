@@ -15,7 +15,7 @@
  * - initNavigation: Set up menu/navigation handlers
  */
 
-import { initDragAndDrop } from './dragAndDrop.js';
+import { initDragAndDrop, updateDragState, updateDragCallbacks } from './dragAndDrop.js';
 
 // ============================================================================
 // MODULE-LEVEL STATE
@@ -377,6 +377,8 @@ export const initializeInput = (options = {}) => {
  */
 export const updateInputState = (state) => {
   latestState = state;
+  // Propagate to drag-and-drop module
+  updateDragState(state);
 };
 
 /**
@@ -384,4 +386,6 @@ export const updateInputState = (state) => {
  */
 export const updateInputCallbacks = (callbacks) => {
   latestCallbacks = callbacks;
+  // Propagate to drag-and-drop module
+  updateDragCallbacks(callbacks);
 };
