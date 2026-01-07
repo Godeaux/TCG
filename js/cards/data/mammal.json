@@ -11,7 +11,7 @@
       "effectText": "Play 2 Pups.",
       "summons": ["mammal-prey-pup"],
       "effects": {
-        "onPlay": "western-harvest-mouse-summon-pups-onplay"
+        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["mammal-prey-pup", "mammal-prey-pup"] } }
       }
     },
     {
@@ -32,7 +32,10 @@
       "effectText": "Play 2 Arctic Ground Squirrels. Target enemy gains frozen.",
       "summons": ["mammal-prey-arctic-ground-squirrel"],
       "effects": {
-        "onPlay": "arctic-ground-squirrels-summon-freeze-onplay"
+        "onPlay": {
+          "type": "summonAndSelectEnemyToFreeze",
+          "params": { "tokenIds": ["mammal-prey-arctic-ground-squirrel", "mammal-prey-arctic-ground-squirrel"] }
+        }
       }
     },
     {
@@ -45,7 +48,7 @@
       "keywords": ["Frozen"],
       "effectText": "Target enemy gains frozen.",
       "effects": {
-        "onPlay": "arctic-ground-squirrel-freeze-onplay"
+        "onPlay": { "type": "selectEnemyToFreeze" }
       }
     },
     {
@@ -59,8 +62,8 @@
       "effectText": "Target enemy gains frozen. Start of turn, play Arctic Hare.",
       "summons": ["mammal-prey-arctic-hare"],
       "effects": {
-        "onPlay": "arctic-hare-freeze-onplay",
-        "onStart": "arctic-hare-summon-onstart"
+        "onPlay": { "type": "selectEnemyToFreeze" },
+        "onStart": { "type": "summonTokens", "params": { "tokenIds": ["mammal-prey-arctic-hare"] } }
       }
     },
     {
@@ -72,7 +75,7 @@
       "nutrition": 1,
       "effectText": "Rival reveals hand. Kill target prey.",
       "effects": {
-        "onPlay": "bobcat-reveal-kill-onplay"
+        "onPlay": { "type": "revealHandAndSelectPreyToKill" }
       }
     },
     {
@@ -85,7 +88,7 @@
       "effectText": "End of turn, play 2 Kits.",
       "summons": ["mammal-prey-kit"],
       "effects": {
-        "onEnd": "florida-white-rabbit-summon-kits-onend"
+        "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["mammal-prey-kit", "mammal-prey-kit"] } }
       }
     },
     {
@@ -97,7 +100,7 @@
       "nutrition": 1,
       "effectText": "Start of turn, become Florida White Rabbit.",
       "effects": {
-        "onStart": "kit-transform-onstart"
+        "onStart": { "type": "transformCard", "params": { "targetType": "self", "newCardId": "mammal-prey-florida-white-rabbit" } }
       }
     },
     {
@@ -110,7 +113,7 @@
       "keywords": ["Free Play"],
       "effectText": "Draw 1.",
       "effects": {
-        "onPlay": "giant-golden-mole-draw-onplay"
+        "onPlay": { "type": "draw", "params": { "count": 1 } }
       }
     },
     {
@@ -122,7 +125,7 @@
       "nutrition": 1,
       "effectText": "Deal 3 damage to any target.",
       "effects": {
-        "onPlay": "japanese-weasel-damage-onplay"
+        "onPlay": { "type": "selectCreatureForDamage", "params": { "amount": 3, "label": "weasel" } }
       }
     },
     {
@@ -135,8 +138,8 @@
       "effectText": "Play 2 Pups. Slain, play 3 Pups.",
       "summons": ["mammal-prey-pup"],
       "effects": {
-        "onPlay": "meerkat-matriarch-summon-pups-onplay",
-        "onSlain": "meerkat-matriarch-summon-pups-onslain"
+        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["mammal-prey-pup", "mammal-prey-pup"] } },
+        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["mammal-prey-pup", "mammal-prey-pup", "mammal-prey-pup"] } }
       }
     },
     {
@@ -148,7 +151,7 @@
       "nutrition": 1,
       "effectText": "Slain, revive.",
       "effects": {
-        "onSlain": "north-american-opossum-revive-onslain"
+        "onSlain": { "type": "reviveCreature" }
       }
     },
     {
@@ -162,7 +165,7 @@
       "effectText": "Slain, play Joey.",
       "summons": ["mammal-prey-joey"],
       "effects": {
-        "onSlain": "northern-koala-summon-joey-onslain"
+        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["mammal-prey-joey"] } }
       }
     },
     {
@@ -184,7 +187,7 @@
       "effectText": "Play 2 Mammal Eggs.",
       "summons": ["mammal-prey-mammal-egg"],
       "effects": {
-        "onPlay": "platypus-summon-eggs-onplay"
+        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["mammal-prey-mammal-egg", "mammal-prey-mammal-egg"] } }
       }
     },
     {
@@ -205,7 +208,7 @@
       "nutrition": 1,
       "effectText": "Rival discards 1. Add a card from deck to hand.",
       "effects": {
-        "onPlay": "red-handed-howler-discard-tutor-onplay"
+        "onPlay": { "type": "forceDiscardAndTutor", "params": { "discardCount": 1 } }
       }
     },
     {
@@ -217,7 +220,7 @@
       "nutrition": 2,
       "effectText": "Deal 2 damage to any target.",
       "effects": {
-        "onPlay": "pronghorn-damage-onplay"
+        "onPlay": { "type": "selectCreatureForDamage", "params": { "amount": 2, "label": "pronghorn" } }
       }
     },
     {
@@ -229,7 +232,7 @@
       "nutrition": 2,
       "effectText": "End of turn, draw 2.",
       "effects": {
-        "onEnd": "golden-takin-draw-onend"
+        "onEnd": { "type": "draw", "params": { "count": 2 } }
       }
     },
     {
@@ -241,7 +244,7 @@
       "nutrition": 3,
       "effectText": "End of turn, add Fresh Milk to hand.",
       "effects": {
-        "onEnd": "holstein-friesian-add-milk-onend"
+        "onEnd": { "type": "addToHand", "params": { "cardId": "mammal-spell-fresh-milk" } }
       }
     },
     {
@@ -253,7 +256,7 @@
       "nutrition": 2,
       "effectText": "Add a carrion to hand.",
       "effects": {
-        "onPlay": "hart-add-carrion-onplay"
+        "onPlay": { "type": "selectCarrionToAddToHand" }
       }
     },
     {
@@ -265,7 +268,7 @@
       "nutrition": 2,
       "effectText": "Return enemies to hand.",
       "effects": {
-        "onPlay": "malayan-tapir-bounce-enemies-onplay"
+        "onPlay": { "type": "returnAllEnemies" }
       }
     },
     {
@@ -277,7 +280,16 @@
       "nutrition": 2,
       "effectText": "Either deal 2 damage to rival or heal 2.",
       "effects": {
-        "onPlay": "imperial-zebra-choice-onplay"
+        "onPlay": {
+          "type": "chooseOption",
+          "params": {
+            "title": "Choose an effect",
+            "options": [
+              { "label": "Deal 2 damage", "description": "Deal 2 damage to rival", "effect": { "damage": 2 } },
+              { "label": "Heal 2", "description": "Heal 2 HP", "effect": { "heal": 2 } }
+            ]
+          }
+        }
       }
     },
     {
@@ -289,7 +301,7 @@
       "nutrition": 2,
       "effectText": "Add Present to hand.",
       "effects": {
-        "onPlay": "reindeer-rudolph-add-present-onplay"
+        "onPlay": { "type": "addToHand", "params": { "cardId": "mammal-spell-present" } }
       }
     },
     {
@@ -302,7 +314,7 @@
       "keywords": ["Immune"],
       "effectText": "Slain, add Qiviut to hand.",
       "effects": {
-        "onSlain": "muskox-add-qiviut-onslain"
+        "onSlain": { "type": "addToHand", "params": { "cardId": "mammal-spell-qiviut" } }
       }
     },
     {
@@ -332,7 +344,7 @@
       "nutrition": 3,
       "effectText": "Slain; add Angus to hand.",
       "effects": {
-        "onSlain": "american-aberdeen-add-angus-onslain"
+        "onSlain": { "type": "addToHand", "params": { "cardId": "mammal-spell-angus" } }
       }
     },
     {
@@ -344,7 +356,10 @@
       "effectText": "Play 2 Dholes. Kill target enemy.",
       "summons": ["mammal-predator-dhole"],
       "effects": {
-        "onConsume": "dholes-summon-kill-onconsume"
+        "onConsume": {
+          "type": "summonAndSelectEnemyToKill",
+          "params": { "tokenIds": ["mammal-predator-dhole", "mammal-predator-dhole"] }
+        }
       }
     },
     {
@@ -363,7 +378,7 @@
       "keywords": ["Free Play"],
       "effectText": "Rival reveals hand.",
       "effects": {
-        "onConsume": "eurasian-lynx-reveal-onconsume"
+        "onConsume": { "type": "revealHand", "params": { "durationMs": 5000 } }
       }
     },
     {
@@ -375,7 +390,7 @@
       "effectText": "Play Gray Wolf.",
       "summons": ["mammal-predator-gray-wolf"],
       "effects": {
-        "onConsume": "gray-wolf-summon-onconsume"
+        "onConsume": { "type": "summonTokens", "params": { "tokenIds": ["mammal-predator-gray-wolf"] } }
       }
     },
     {
@@ -388,7 +403,7 @@
       "effectText": "Slain, play Black Leopard.",
       "summons": ["mammal-predator-black-leopard"],
       "effects": {
-        "onSlain": "black-leopards-summon-onslain"
+        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["mammal-predator-black-leopard"] } }
       }
     },
     {
@@ -407,7 +422,7 @@
       "hp": 3,
       "effectText": "Sacrifice; play a carrion.",
       "effects": {
-        "onConsume": "jaguar-sacrifice-summon-carrion-onconsume"
+        "onConsume": { "type": "selectCarrionToPlayWithKeyword", "params": { "keyword": null } }
       }
     },
     {
@@ -418,7 +433,7 @@
       "hp": 3,
       "effectText": "Attacking before combat, deal 3 damage.",
       "effects": {
-        "onBeforeCombat": "north-american-cougar-damage-onbeforecombat"
+        "onBeforeCombat": { "type": "damageCreature", "params": { "targetType": "target", "amount": 3, "sourceLabel": "cougar" } }
       }
     },
     {
@@ -437,7 +452,7 @@
       "hp": 3,
       "effectText": "Creatures gain +1/+1.",
       "effects": {
-        "onConsume": "southern-african-lion-buff-onconsume"
+        "onConsume": { "type": "buffStats", "params": { "targetType": "all-friendly", "stats": { "attack": 1, "health": 1 } } }
       }
     },
     {
@@ -448,7 +463,7 @@
       "hp": 3,
       "effectText": "Copy abilities of a carrion.",
       "effects": {
-        "onConsume": "sumatran-tiger-copy-abilities-onconsume"
+        "onConsume": { "type": "selectCarrionPredToCopyAbilities" }
       }
     },
     {
@@ -467,7 +482,7 @@
       "hp": 4,
       "effectText": "End of turn, regen.",
       "effects": {
-        "onEnd": "grizzly-bear-regen-onend"
+        "onEnd": { "type": "selectCreatureToRegen" }
       }
     },
     {
@@ -478,7 +493,7 @@
       "hp": 5,
       "effectText": "Add Salmon to hand.",
       "effects": {
-        "onConsume": "kodiak-bear-add-salmon-onconsume"
+        "onConsume": { "type": "addToHand", "params": { "cardId": "mammal-prey-salmon" } }
       }
     },
     {
@@ -498,7 +513,7 @@
       "hp": 5,
       "effectText": "Freeze enemies.",
       "effects": {
-        "onConsume": "polar-bear-freeze-onconsume"
+        "onConsume": { "type": "freezeAllEnemies" }
       }
     },
     {
@@ -509,7 +524,7 @@
       "hp": 6,
       "effectText": "Kill target enemy.",
       "effects": {
-        "onConsume": "hippopotamus-kill-onconsume"
+        "onConsume": { "type": "selectEnemyToKill" }
       }
     },
     {
@@ -518,7 +533,7 @@
       "type": "Spell",
       "effectText": "Deal 2 damage to opponents. Enemies gain frozen.",
       "effects": {
-        "effect": "blizzard-damage-freeze-effect"
+        "effect": { "type": "damageOpponentAndFreezeEnemies", "params": { "damage": 2 } }
       }
     },
     {
@@ -527,7 +542,7 @@
       "type": "Spell",
       "effectText": "Creatures gain +2/+2.",
       "effects": {
-        "effect": "milk-buff-effect"
+        "effect": { "type": "buffStats", "params": { "targetType": "all-friendly", "stats": { "attack": 2, "health": 2 } } }
       }
     },
     {
@@ -536,7 +551,7 @@
       "type": "Spell",
       "effectText": "Discard 1. Draw 1. Kill target enemy.",
       "effects": {
-        "effect": "silver-bullet-discard-draw-kill-effect"
+        "effect": { "type": "discardDrawAndKillEnemy" }
       }
     },
     {
@@ -545,7 +560,7 @@
       "type": "Spell",
       "effectText": "Play a creature from deck it gains frozen.",
       "effects": {
-        "effect": "six-layered-neocortex-deck-play-freeze-effect"
+        "effect": { "type": "selectCreatureFromDeckWithKeyword", "params": { "keyword": "Frozen" } }
       }
     },
     {
@@ -554,7 +569,7 @@
       "type": "Spell",
       "effectText": "Play a carrion it gains frozen.",
       "effects": {
-        "effect": "white-hart-summon-carrion-freeze-effect"
+        "effect": { "type": "selectCarrionToPlayWithKeyword", "params": { "keyword": "Frozen" } }
       }
     },
     {
@@ -563,7 +578,7 @@
       "type": "Free Spell",
       "effectText": "Sacrifice target creature, draw 3.",
       "effects": {
-        "effect": "curiosity-sacrifice-draw-effect"
+        "effect": { "type": "selectCreatureToSacrificeAndDraw", "params": { "drawCount": 3 } }
       }
     },
     {
@@ -572,7 +587,7 @@
       "type": "Free Spell",
       "effectText": "Target enemy gains frozen.",
       "effects": {
-        "effect": "tranquilizer-freeze-effect"
+        "effect": { "type": "selectEnemyToFreeze" }
       }
     },
     {
@@ -581,7 +596,7 @@
       "type": "Free Spell",
       "effectText": "Creatures lose frozen.",
       "effects": {
-        "effect": "warm-blood-remove-frozen-effect"
+        "effect": { "type": "removeFrozenFromFriendlies" }
       }
     },
     {
@@ -592,7 +607,13 @@
       "effectText": "End of turn, play Wolf.",
       "summons": ["mammal-prey-wolf"],
       "effects": {
-        "effect": "wolves-den-field-spell-effect"
+        "effect": { "type": "setFieldSpell", "params": { "cardId": "mammal-field-spell-wolves-den" } },
+        "onEnd": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": ["mammal-prey-wolf"]
+          }
+        }
       }
     },
     {
@@ -610,7 +631,7 @@
       "trigger": "targeted",
       "effectText": "When target creature is targeted, return it to hand.",
       "effects": {
-        "effect": "animal-rights-bounce-effect"
+        "effect": { "type": "returnTargetedToHand" }
       }
     },
     {
@@ -620,7 +641,7 @@
       "trigger": "directAttack",
       "effectText": "When target enemy attacks directly, negate attack. Enemies gain frozen.",
       "effects": {
-        "effect": "pitfall-negate-freeze-effect"
+        "effect": { "type": "negateAndFreezeEnemies" }
       }
     },
     {
@@ -630,7 +651,7 @@
       "trigger": "indirectDamage",
       "effectText": "When damaged indirectly, negate damage. Enemies gain frozen.",
       "effects": {
-        "effect": "snow-squall-negate-freeze-effect"
+        "effect": { "type": "negateDamageAndFreezeEnemies" }
       }
     },
     {
@@ -640,7 +661,7 @@
       "trigger": "slain",
       "effectText": "When target defending creature is slain, play a carrion it gains frozen.",
       "effects": {
-        "effect": "burial-ground-summon-carrion-freeze-effect"
+        "effect": { "type": "selectCarrionToPlayWithKeyword", "params": { "keyword": "Frozen" } }
       }
     }
   ]

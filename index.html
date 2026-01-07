@@ -53,7 +53,7 @@
             <div class="deck-manage-list" id="deck-manage-list"></div>
           </div>
         </div>
-        <div class="deck-inspector" id="deck-inspector"></div>
+        <div class="deck-inspector" id="deck-inspector-panel"></div>
         <div class="deck-actions">
           <button class="deck-exit" id="deck-exit" type="button">Back</button>
           <button class="deck-save" id="deck-save" type="button">Save Deck</button>
@@ -95,6 +95,7 @@
         <div class="menu-status" id="menu-status"></div>
         <div class="menu-actions">
           <button class="btn-primary" id="menu-play">Play (one device)</button>
+          <button class="btn-primary" id="menu-ai">Play vs. AI</button>
           <button class="btn-secondary" id="menu-login">Login</button>
           <button class="btn-secondary" id="menu-catalog" disabled>Catalog</button>
           <button class="btn-secondary" id="menu-tutorial">Tutorial</button>
@@ -396,9 +397,62 @@
         <div class="lobby-code" id="lobby-code-display">----</div>
         <div class="menu-actions">
           <button class="btn-primary" id="lobby-continue">Continue to Game</button>
-          <button class="btn-secondary" id="lobby-leave">Leave Lobby</button>
+          <button class="btn-secondary" id="lobby-leave">New Code</button>
+          <button class="btn-secondary" id="lobby-back">Back</button>
         </div>
         <div class="menu-error" id="lobby-live-error" role="alert"></div>
+      </div>
+    </div>
+
+    <div class="overlay ai-setup-overlay" id="ai-setup-overlay" aria-hidden="true">
+      <div class="overlay-content menu-card">
+        <div class="menu-header">
+          <div class="menu-icon">🤖</div>
+          <div>
+            <h2>Play vs. AI</h2>
+            <p class="muted">Choose difficulty and decks for your match.</p>
+          </div>
+        </div>
+
+        <div class="ai-setup-section" id="ai-difficulty-section">
+          <h3 class="ai-setup-label">Difficulty</h3>
+          <div class="ai-difficulty-buttons">
+            <button class="btn-difficulty active" id="ai-difficulty-easy" data-difficulty="easy">
+              <span class="difficulty-icon">🐟</span>
+              <span class="difficulty-name">Easy</span>
+              <span class="difficulty-desc">Simple decisions, less aggressive</span>
+            </button>
+            <button class="btn-difficulty" id="ai-difficulty-hard" data-difficulty="hard">
+              <span class="difficulty-icon">🦈</span>
+              <span class="difficulty-name">Hard</span>
+              <span class="difficulty-desc">Knows your hand, optimal plays</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="ai-setup-section" id="ai-deck-section">
+          <h3 class="ai-setup-label">AI Deck</h3>
+          <div class="ai-deck-options">
+            <button class="btn-deck-option active" id="ai-deck-random" data-deck="random">
+              <span class="deck-option-icon">🎲</span>
+              <span class="deck-option-name">Random Deck</span>
+            </button>
+            <button class="btn-deck-option" id="ai-deck-saved" data-deck="saved">
+              <span class="deck-option-icon">📚</span>
+              <span class="deck-option-name">Use Saved Deck</span>
+            </button>
+          </div>
+          <div class="ai-saved-decks" id="ai-saved-decks" style="display: none;">
+            <select class="menu-select" id="ai-deck-select">
+              <option value="">Select a deck...</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="menu-actions">
+          <button class="btn-primary" id="ai-start-game">Start Game</button>
+          <button class="btn-secondary" id="ai-setup-back">Back</button>
+        </div>
       </div>
     </div>
 

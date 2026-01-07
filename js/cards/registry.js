@@ -46,6 +46,45 @@ const deckCatalogs = {
 };
 
 // ============================================================================
+// CARD TYPE ORDERING
+// ============================================================================
+
+/**
+ * Get sort priority for a card type
+ * Order: Prey → Predator → Spell → Field Spell → Free Spell → Trap
+ */
+const getCardTypePriority = (card) => {
+  const type = card.type;
+
+  // Creatures first
+  if (type === 'Prey') return 0;
+  if (type === 'Predator') return 1;
+
+  // Spells in order: Spell → Field Spell → Free Spell → Trap
+  if (type === 'Spell') {
+    // Field Spells come after regular Spells
+    return card.isFieldSpell ? 3 : 2;
+  }
+  if (type === 'Free Spell') return 4;
+  if (type === 'Trap') return 5;
+
+  // Unknown types at the end
+  return 99;
+};
+
+/**
+ * Sort cards by type priority
+ * Maintains original order within each type category
+ */
+const sortCardsByType = (cards) => {
+  return [...cards].sort((a, b) => {
+    const priorityA = getCardTypePriority(a);
+    const priorityB = getCardTypePriority(b);
+    return priorityA - priorityB;
+  });
+};
+
+// ============================================================================
 // INITIALIZATION
 // ============================================================================
 
@@ -68,31 +107,31 @@ export const initializeCardRegistry = () => {
   fishData.cards.forEach(card => {
     cardRegistry.set(card.id, card);
   });
-  deckCatalogs.fish = fishData.cards.filter(card => !card.id.includes('token'));
+  deckCatalogs.fish = sortCardsByType(fishData.cards.filter(card => !card.id.includes('token')));
 
   // Load reptile cards
   reptileData.cards.forEach(card => {
     cardRegistry.set(card.id, card);
   });
-  deckCatalogs.reptile = reptileData.cards.filter(card => !card.id.includes('token'));
+  deckCatalogs.reptile = sortCardsByType(reptileData.cards.filter(card => !card.id.includes('token')));
 
   // Load amphibian cards
   amphibianData.cards.forEach(card => {
     cardRegistry.set(card.id, card);
   });
-  deckCatalogs.amphibian = amphibianData.cards.filter(card => !card.id.includes('token'));
+  deckCatalogs.amphibian = sortCardsByType(amphibianData.cards.filter(card => !card.id.includes('token')));
 
   // Load bird cards
   birdData.cards.forEach(card => {
     cardRegistry.set(card.id, card);
   });
-  deckCatalogs.bird = birdData.cards.filter(card => !card.id.includes('token'));
+  deckCatalogs.bird = sortCardsByType(birdData.cards.filter(card => !card.id.includes('token')));
 
   // Load mammal cards
   mammalData.cards.forEach(card => {
     cardRegistry.set(card.id, card);
   });
-  deckCatalogs.mammal = mammalData.cards.filter(card => !card.id.includes('token'));
+  deckCatalogs.mammal = sortCardsByType(mammalData.cards.filter(card => !card.id.includes('token')));
 
   console.log(`[Card Registry] Initialized with ${cardRegistry.size} cards (${tokenRegistry.size} tokens)`);
 };

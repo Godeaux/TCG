@@ -11,7 +11,11 @@
  */
 
 import { buildLobbySyncPayload, sendLobbyBroadcast, saveGameStateToDatabase } from '../../network/index.js';
-import { getLocalPlayerIndex } from '../../state/selectors.js';
+import { getLocalPlayerIndex, isAIMode } from '../../state/selectors.js';
+
+// Track if AI auto-actions are pending (to prevent double-triggering)
+let aiRollPending = false;
+let aiChoicePending = false;
 
 // ============================================================================
 // DOM ELEMENTS
@@ -66,6 +70,18 @@ const renderRollingPhase = (state, elements, callbacks) => {
   `;
   rolls.appendChild(rollSummary);
 
+  // In AI mode, auto-roll for AI (player 1) after a short delay
+  if (isAIMode(state) && state.setup.rolls[1] === null && !aiRollPending) {
+    aiRollPending = true;
+    setTimeout(() => {
+      if (state.setup?.stage === "rolling" && state.setup.rolls[1] === null) {
+        console.log("[AI] Auto-rolling for AI player");
+        callbacks.onSetupRoll?.(1);
+      }
+      aiRollPending = false;
+    }, 800);
+  }
+
   // Create roll buttons
   clearPanel(actions);
   const rollButtons = document.createElement("div");
@@ -114,43 +130,45 @@ const renderRollingPhase = (state, elements, callbacks) => {
   rollP1.disabled = state.setup.rolls[0] !== null || !canRollP1;
   rollButtons.appendChild(rollP1);
 
-  // Player 2 roll button
-  const rollP2 = document.createElement("button");
-  rollP2.textContent = "Roll for Player 2";
-  rollP2.onclick = async () => {
-    if (!canRollP2) return;
+  // Player 2 roll button (hide in AI mode since AI auto-rolls)
+  if (!isAIMode(state)) {
+    const rollP2 = document.createElement("button");
+    rollP2.textContent = "Roll for Player 2";
+    rollP2.onclick = async () => {
+      if (!canRollP2) return;
 
-    // Validate state before rolling
-    if (!state.setup || state.setup.stage !== "rolling") {
-      console.error("Invalid setup state for rolling");
-      return;
-    }
-
-    callbacks.onSetupRoll?.(1);
-
-    if (isOnline) {
-      try {
-        // Enhanced broadcasting with error handling
-        const payload = buildLobbySyncPayload(state);
-        console.log("Broadcasting P2 roll:", payload.setup?.rolls);
-
-        sendLobbyBroadcast("sync_state", payload);
-
-        // Also save to database as backup
-        await saveGameStateToDatabase(state);
-
-        console.log("P2 roll broadcast successful");
-      } catch (error) {
-        console.error("Failed to broadcast P2 roll:", error);
-        // Attempt recovery by requesting sync
-        setTimeout(() => {
-          sendLobbyBroadcast("sync_request", { senderId: state.menu?.profile?.id ?? null });
-        }, 1000);
+      // Validate state before rolling
+      if (!state.setup || state.setup.stage !== "rolling") {
+        console.error("Invalid setup state for rolling");
+        return;
       }
-    }
-  };
-  rollP2.disabled = state.setup.rolls[1] !== null || !canRollP2;
-  rollButtons.appendChild(rollP2);
+
+      callbacks.onSetupRoll?.(1);
+
+      if (isOnline) {
+        try {
+          // Enhanced broadcasting with error handling
+          const payload = buildLobbySyncPayload(state);
+          console.log("Broadcasting P2 roll:", payload.setup?.rolls);
+
+          sendLobbyBroadcast("sync_state", payload);
+
+          // Also save to database as backup
+          await saveGameStateToDatabase(state);
+
+          console.log("P2 roll broadcast successful");
+        } catch (error) {
+          console.error("Failed to broadcast P2 roll:", error);
+          // Attempt recovery by requesting sync
+          setTimeout(() => {
+            sendLobbyBroadcast("sync_request", { senderId: state.menu?.profile?.id ?? null });
+          }, 1000);
+        }
+      }
+    };
+    rollP2.disabled = state.setup.rolls[1] !== null || !canRollP2;
+    rollButtons.appendChild(rollP2);
+  }
 
   actions.appendChild(rollButtons);
 };
@@ -163,7 +181,19 @@ const renderRollingPhase = (state, elements, callbacks) => {
  * Render the choice phase (winner picks who goes first)
  */
 const renderChoicePhase = (state, elements, callbacks) => {
-  const { actions } = elements;
+  const { rolls, actions } = elements;
+
+  // Update the rolls display to show final values
+  clearPanel(rolls);
+  const rollSummary = document.createElement("div");
+  rollSummary.className = "setup-roll-summary";
+  const p1Roll = state.setup.rolls[0];
+  const p2Roll = state.setup.rolls[1];
+  rollSummary.innerHTML = `
+    <div>Player 1 roll: <strong>${p1Roll ?? "-"}</strong></div>
+    <div>Player 2 roll: <strong>${p2Roll ?? "-"}</strong></div>
+  `;
+  rolls.appendChild(rollSummary);
 
   clearPanel(actions);
 
@@ -172,6 +202,20 @@ const renderChoicePhase = (state, elements, callbacks) => {
   message.className = "muted";
   message.textContent = `${winnerName} chooses who goes first.`;
   actions.appendChild(message);
+
+  // In AI mode, if AI won the roll, auto-choose to go first
+  if (isAIMode(state) && state.setup.winnerIndex === 1 && !aiChoicePending) {
+    aiChoicePending = true;
+    setTimeout(() => {
+      if (state.setup?.stage === "choice" && state.setup.winnerIndex === 1) {
+        console.log("[AI] Auto-choosing to go first");
+        // AI always chooses to go first for strategic advantage
+        callbacks.onSetupChoose?.(1);
+      }
+      aiChoicePending = false;
+    }, 800);
+    return; // Don't render choice buttons since AI is choosing
+  }
 
   const choiceButtons = document.createElement("div");
   choiceButtons.className = "setup-button-row";

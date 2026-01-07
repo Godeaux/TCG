@@ -158,10 +158,31 @@ button {
   font-size: 18px;
 }
 
+.ai-speed-toggle {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-left: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  vertical-align: middle;
+}
+
+.ai-speed-toggle:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.ai-speed-toggle:active {
+  transform: scale(0.95);
+}
+
 .player-stats {
   display: flex;
   gap: 8px;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--text-secondary);
 }
 
@@ -193,7 +214,7 @@ button {
 }
 
 .phase-label {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--text-secondary);
 }
 
@@ -284,7 +305,7 @@ button {
 
 .battlefield-layout {
   display: grid;
-  grid-template-rows: minmax(0, 1.8fr) minmax(0, 1fr); /* Flexible rows, no hard minimums */
+  grid-template-rows: minmax(0, 2.33fr) minmax(0, 1fr); /* 70% field / 30% hand ratio */
   gap: clamp(6px, 1vw, 12px); /* Tighter gap for better packing */
   flex: 1; /* Take available space and shrink as needed */
   min-height: 0; /* Allow to shrink completely if needed */
@@ -340,7 +361,7 @@ button {
   align-items: center;
   justify-content: center;
   color: var(--text-muted);
-  font-size: clamp(8px, 1.2vw, 13px);
+  font-size: clamp(10px, 1.2vw, 14px);
   width: 100%;
   height: 100%;
   min-height: 0;
@@ -366,7 +387,7 @@ button {
 }
 
 .field-slot .card .card-name {
-  font-size: clamp(8px, 1vw, 11px);
+  font-size: clamp(10px, 1.1vw, 13px);
 }
 
 .field-slot .card .card-image-container {
@@ -384,16 +405,16 @@ button {
 }
 
 .field-slot .card .card-stat {
-  font-size: clamp(8px, 0.9vw, 10px);
+  font-size: clamp(10px, 1vw, 12px);
   padding: 0 2px;
 }
 
 .field-slot .card .card-keywords {
-  font-size: clamp(7px, 0.8vw, 9px);
+  font-size: clamp(9px, 0.9vw, 11px);
 }
 
 .field-slot .card .card-effect {
-  font-size: clamp(7px, 0.8vw, 9px);
+  font-size: clamp(9px, 0.9vw, 11px);
 }
 
 .field-divider {
@@ -421,7 +442,7 @@ button {
 }
 
 .field-divider-text {
-  font-size: clamp(8px, 1.2vw, 11px);
+  font-size: clamp(10px, 1.2vw, 13px);
   letter-spacing: 0.01em;
   color: var(--text-secondary);
   text-align: center;
@@ -535,12 +556,12 @@ button {
 
 .hand-title {
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: 20px;
   letter-spacing: 0.05em;
 }
 
 .hand-hint {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text-muted);
 }
 
@@ -548,39 +569,40 @@ button {
   display: flex;
   align-items: flex-end;
   justify-content: center; /* Center the card fan like Hearthstone/Balatro */
+  flex-wrap: nowrap;
   gap: 0;
-  overflow: visible !important; /* Force visible to prevent override */
+  overflow-x: visible; /* Let cards overflow rather than scroll */
+  overflow-y: visible;
   padding: 0 clamp(4px, 0.8vw, 8px) clamp(8px, 1.2vw, 16px);
   min-height: 0;
   width: 100%;
   flex: 1;
   min-width: 0;
-  max-width: 100%;
+  max-width: min(100%, 600px); /* Constrain width to force card overlap */
+  margin: 0 auto; /* Center the constrained hand-grid */
   box-sizing: border-box;
   position: relative;
   z-index: 1; /* Create stacking context for cards */
 }
 
 .hand-grid .card {
-  flex: 0 0 auto;
-  flex-shrink: 0;
-  width: clamp(70px, min(18vw, 140px), 160px);
+  flex: 0 0 auto; /* Don't shrink - use overlap instead */
+  width: clamp(100px, min(16vw, 130px), 150px);
+  min-width: 90px; /* Minimum width to remain readable */
   aspect-ratio: 5 / 7; /* Standard playing card ratio */
-  margin-left: calc(var(--hand-overlap) * -1.2);
+  margin-left: calc(var(--hand-overlap) * -1);
   transform-origin: bottom center;
   transform: translateY(8px) scale(0.98);
   transition: transform var(--transition-fast), box-shadow var(--transition-fast), z-index 0.2s;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35);
-  max-width: 100%;
   position: relative;
   font-size: 20px;
   z-index: 10; /* Base z-index for hand cards */
-  min-width: 0;
 }
 
 /* Dynamic hand expansion mode */
 .battlefield-center-column.hand-expanded .battlefield-layout {
-  grid-template-rows: minmax(140px, 1.2fr) minmax(140px, 0.8fr); /* Compact battlefield when hand expanded */
+  grid-template-rows: minmax(140px, 1.5fr) minmax(140px, 1fr); /* Expanded hand takes more space */
   flex: 0 1 auto; /* Allow more shrinking to make room for hand */
 }
 
@@ -596,7 +618,7 @@ button {
 }
 
 .battlefield-center-column.hand-expanded .hand-grid .card {
-  width: clamp(80px, min(20vw, 160px), 180px);
+  width: clamp(110px, min(18vw, 150px), 170px);
 }
 
 .battlefield-center-column.hand-expanded .hand-grid .card.hand-focus {
@@ -621,7 +643,7 @@ button {
 } */
 
 .hand-grid .card .card-name {
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .hand-grid .card .card-header {
@@ -639,15 +661,15 @@ button {
 }
 
 .hand-grid .card .card-stat-box .stat-emoji {
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .hand-grid .card .card-stat-box .stat-value {
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .hand-grid .card .card-text-area {
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .hand-grid .card .card-actions {
@@ -655,7 +677,7 @@ button {
 }
 
 .hand-grid .card .card-actions button {
-  font-size: 11px;
+  font-size: 12px;
   padding: 4px 6px;
 }
 
@@ -784,21 +806,21 @@ button {
 .inspector-card-content h4 {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: 20px;
   color: var(--text-primary);
   letter-spacing: 0.04em;
 }
 
 .inspector-card-content .meta {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--text-secondary);
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .inspector-card-content .effect {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--text-secondary);
-  line-height: 1.4;
+  line-height: 1.5;
   margin-top: 4px;
 }
 
@@ -809,7 +831,7 @@ button {
 }
 
 .inspector-card-content .keyword-glossary strong {
-  font-size: 13px;
+  font-size: 15px;
   color: var(--text-primary);
   display: block;
   margin-bottom: 6px;
@@ -822,10 +844,10 @@ button {
 }
 
 .inspector-card-content .keyword-glossary li {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text-secondary);
   margin-bottom: 4px;
-  line-height: 1.3;
+  line-height: 1.4;
 }
 
 .inspector-card-content .keyword-glossary li strong {
@@ -1076,6 +1098,12 @@ button {
   box-sizing: border-box;
 }
 
+/* Widen action bar for card selection grids */
+.action-bar.has-selection:has(.selection-card) {
+  width: clamp(360px, 85vw, 720px);
+  max-width: 90vw;
+}
+
 .action-buttons {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1192,6 +1220,152 @@ button {
   border-radius: 8px;
   padding: 4px 8px;
   font-size: 12px;
+}
+
+/* Option bubble styles for discrete effect choices */
+.selection-item.option-bubble {
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
+}
+
+.option-bubble-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-card-hover) 100%);
+  border: 2px solid var(--border-gold);
+  border-radius: 12px;
+  padding: 12px 16px;
+  min-width: 140px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.option-bubble-btn:hover {
+  background: linear-gradient(135deg, var(--bg-card-hover) 0%, rgba(212, 168, 83, 0.15) 100%);
+  border-color: var(--gold-light);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(212, 168, 83, 0.25);
+}
+
+.option-bubble-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.option-bubble-btn .option-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gold-light);
+  text-align: center;
+}
+
+.option-bubble-btn .option-description {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.3;
+}
+
+/* Selection list layout for option bubbles */
+.selection-list:has(.option-bubble) {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* Selection list grid layout for card selections */
+.selection-list:has(.selection-card) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(130px, 1fr));
+  gap: 12px;
+  max-width: 100%;
+  justify-items: center;
+}
+
+/* Tablet: 2-3 columns */
+@media (min-width: 540px) {
+  .selection-list:has(.selection-card) {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 200px));
+    justify-content: center;
+  }
+}
+
+/* Desktop: 3 columns */
+@media (min-width: 768px) {
+  .selection-list:has(.selection-card) {
+    grid-template-columns: repeat(3, minmax(160px, 200px));
+    justify-content: center;
+  }
+}
+
+/* Smaller cards in grid for better fit */
+.selection-list:has(.selection-card) .selection-item.selection-card {
+  width: 100%;
+  max-width: 180px;
+  padding: 8px;
+}
+
+.selection-list:has(.selection-card) .selection-item.selection-card .card {
+  width: 100%;
+  max-width: 160px;
+}
+
+.selection-list:has(.selection-card) .selection-item.selection-card button {
+  width: 100%;
+  margin-top: 6px;
+  padding: 8px 12px;
+}
+
+/* Mobile: ensure cards don't get too small */
+@media (max-width: 480px) {
+  .selection-list:has(.selection-card) {
+    grid-template-columns: repeat(2, minmax(130px, 1fr));
+    gap: 8px;
+  }
+
+  .selection-list:has(.selection-card) .selection-item.selection-card {
+    max-width: 160px;
+    padding: 6px;
+  }
+
+  .selection-list:has(.selection-card) .selection-item.selection-card .card {
+    max-width: 140px;
+  }
+}
+
+/* Very small screens: single column */
+@media (max-width: 320px) {
+  .selection-list:has(.selection-card) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Selection panel layout for card grids */
+.selection-panel:has(.selection-card) {
+  align-items: center;
+}
+
+/* Title above card selection grid */
+.selection-panel:has(.selection-card) > strong {
+  text-align: center;
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: var(--gold-light);
+}
+
+/* Cancel/Confirm button below card selection grid */
+.selection-panel:has(.selection-card) > button {
+  margin-top: 12px;
+  width: 100%;
+  max-width: 200px;
+  align-self: center;
+  padding: 10px 20px;
 }
 
 .secondary {
@@ -1551,6 +1725,13 @@ button {
 .card:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+/* Disable CSS hover for hand cards - JS proximity detection handles this via .hand-focus class */
+/* Must explicitly keep base transform to prevent any hover-induced movement */
+.hand-grid .card:hover:not(.hand-focus) {
+  transform: translateY(8px) scale(0.98); /* Same as base - no change on hover */
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35); /* Same as base */
 }
 
 .card.card-selected {
@@ -2317,6 +2498,137 @@ button {
   background: rgba(255, 255, 255, 0.06);
 }
 
+/* ============================================================================
+   AI SETUP OVERLAY
+   ============================================================================ */
+
+.ai-setup-overlay .menu-card {
+  max-width: 480px;
+}
+
+.ai-setup-section {
+  margin-bottom: 20px;
+}
+
+.ai-setup-label {
+  font-family: var(--font-display);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.ai-difficulty-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-difficulty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 12px;
+  border-radius: 12px;
+  border: 2px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-difficulty:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.btn-difficulty.active {
+  border-color: var(--gold);
+  background: rgba(212, 168, 83, 0.15);
+}
+
+.difficulty-icon {
+  font-size: 28px;
+}
+
+.difficulty-name {
+  font-family: var(--font-display);
+  font-size: 16px;
+  letter-spacing: 0.05em;
+}
+
+.difficulty-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.ai-deck-options {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.btn-deck-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 2px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-deck-option:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.btn-deck-option.active {
+  border-color: var(--gold);
+  background: rgba(212, 168, 83, 0.15);
+}
+
+.deck-option-icon {
+  font-size: 22px;
+}
+
+.deck-option-name {
+  font-size: 14px;
+}
+
+.ai-saved-decks {
+  margin-top: 12px;
+}
+
+.menu-select {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.menu-select:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+.menu-select option {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
 .deck-select-card {
   display: flex;
   flex-direction: column;
@@ -2429,6 +2741,8 @@ button {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  max-height: calc(90vh - 40px);
+  overflow: hidden;
 }
 
 .deck-header {
@@ -2436,6 +2750,7 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .deck-header h2 {
@@ -2455,9 +2770,28 @@ button {
   color: var(--hp-red);
 }
 
+.deck-status-success {
+  color: #4caf50;
+  font-weight: 600;
+  padding: 4px 8px;
+  background: rgba(76, 175, 80, 0.15);
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+.deck-status-error {
+  color: var(--hp-red);
+  font-weight: 600;
+  padding: 4px 8px;
+  background: rgba(244, 67, 54, 0.15);
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
 .deck-tabs {
   display: flex;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .deck-tab {
@@ -2481,11 +2815,12 @@ button {
 .deck-content {
   flex: 1;
   display: grid;
+  min-height: 0;
+  overflow: auto;
 }
 
 .deck-panel {
   display: none;
-  overflow: hidden;
 }
 
 .deck-panel.active {
@@ -2494,11 +2829,27 @@ button {
 
 .deck-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 16px;
-  max-height: 480px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  max-height: 400px;
   overflow: auto;
   padding-right: 4px;
+  padding-bottom: 8px;
+}
+
+/* Mobile deck builder - 2 column grid with properly sized cards */
+@media (max-width: 500px) {
+  .deck-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 4px;
+  }
+
+  .deck-grid .card {
+    width: 100%;
+    min-height: 180px;
+    aspect-ratio: 5 / 7;
+  }
 }
 
 .deck-card {
@@ -2527,14 +2878,22 @@ button {
   padding: 12px;
   font-size: 12px;
   color: var(--text-secondary);
-  max-height: 200px;
+  max-height: 120px;
   overflow: auto;
+  flex-shrink: 0;
 }
 
 .deck-actions {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+  flex-shrink: 0;
+  padding-top: 8px;
+}
+
+.deck-actions button {
+  flex: 1;
+  min-width: 100px;
 }
 
 .deck-exit {
@@ -2576,7 +2935,8 @@ button {
 .deck-manage-list {
   display: grid;
   gap: 12px;
-  max-height: 480px;
+  flex: 1;
+  min-height: 0;
   overflow: auto;
   padding-right: 4px;
 }
@@ -2626,6 +2986,159 @@ button {
 .deck-slot-actions button.danger {
   color: var(--hp-red);
   border-color: rgba(255, 89, 89, 0.6);
+}
+
+/* ============================================================================
+   DECK CATALOG HOME SCREEN
+   Card-based layout for deck management
+   ============================================================================ */
+
+.deck-catalog-home {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 20px;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.deck-catalog-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px 16px;
+  min-height: 180px;
+  width: 180px;
+  flex: 0 0 180px;
+  background: var(--bg-card);
+  border: 2px solid var(--border-subtle);
+  border-radius: 16px;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.deck-catalog-card:hover {
+  border-color: var(--border-gold);
+  background: var(--bg-card-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.deck-catalog-card--view-all {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(147, 51, 234, 0.1));
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+.deck-catalog-card--view-all:hover {
+  border-color: rgba(59, 130, 246, 0.8);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(147, 51, 234, 0.2));
+}
+
+.deck-catalog-card--filled {
+  border-color: var(--border-gold);
+}
+
+.deck-catalog-card--empty {
+  border-style: dashed;
+  opacity: 0.7;
+}
+
+.deck-catalog-card--empty:hover {
+  opacity: 1;
+}
+
+.deck-catalog-card__icon {
+  font-size: 48px;
+  line-height: 1;
+}
+
+.deck-catalog-card__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.deck-catalog-card__subtitle {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.deck-catalog-card__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.deck-catalog-card__btn {
+  padding: 8px 12px;
+  font-size: 18px;
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.deck-catalog-card__btn:hover {
+  transform: scale(1.1);
+}
+
+.deck-catalog-card__btn--edit:hover {
+  border-color: var(--border-gold);
+  background: rgba(255, 215, 0, 0.1);
+}
+
+.deck-catalog-card__btn--delete:hover {
+  border-color: var(--hp-red);
+  background: rgba(255, 89, 89, 0.1);
+}
+
+.deck-catalog-back-container {
+  flex: 0 0 100%;
+  display: flex;
+  justify-content: center;
+  padding-top: 16px;
+}
+
+.deck-catalog-back-btn {
+  padding: 12px 32px;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.deck-catalog-back-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--border-gold);
+  background: var(--bg-card-hover);
+}
+
+.deck-select-back-btn {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-bottom: 8px;
+}
+
+.deck-select-back-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--border-gold);
 }
 
 .deck-actions .btn-primary {
@@ -2708,8 +3221,8 @@ button {
   }
 
   .battlefield-layout {
-    grid-template-rows: minmax(120px, 1.5fr) minmax(100px, 1fr); /* Ensure player field stays visible */
-    min-height: 220px; /* Reduced but still visible */
+    grid-template-rows: minmax(120px, 2.33fr) minmax(80px, 1fr); /* 70/30 ratio, ensure player field stays visible */
+    min-height: 200px; /* Reduced but still visible */
   }
 
   .battlefield-center-column {
@@ -3033,6 +3546,56 @@ button {
   50% {
     background: rgba(231, 76, 60, 0.4);
     border: 2px dashed #c0392b;
+  }
+}
+
+/* Spell target highlighting (blue) */
+.spell-target {
+  box-shadow: 0 0 20px rgba(52, 152, 219, 0.8), inset 0 0 20px rgba(52, 152, 219, 0.3);
+  border: 2px solid #3498db !important;
+  animation: spell-target-pulse 1s infinite;
+}
+
+.spell-target.card {
+  transform: scale(1.02);
+}
+
+@keyframes spell-target-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(52, 152, 219, 0.8), inset 0 0 20px rgba(52, 152, 219, 0.3);
+    border-color: #3498db;
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(52, 152, 219, 1), inset 0 0 30px rgba(52, 152, 219, 0.5);
+    border-color: #2980b9;
+  }
+}
+
+/* Spell drop zone (player field area) */
+.spell-drop-zone {
+  background: rgba(52, 152, 219, 0.15) !important;
+  border: 2px dashed #3498db !important;
+  animation: spell-drop-zone-pulse 1s infinite;
+  border-radius: var(--radius);
+}
+
+.player-field.spell-drop-zone {
+  background: rgba(52, 152, 219, 0.1) !important;
+  box-shadow: inset 0 0 30px rgba(52, 152, 219, 0.2);
+}
+
+.field-slot.spell-drop-zone {
+  background: rgba(52, 152, 219, 0.2) !important;
+}
+
+@keyframes spell-drop-zone-pulse {
+  0%, 100% {
+    background: rgba(52, 152, 219, 0.15);
+    border: 2px dashed #3498db;
+  }
+  50% {
+    background: rgba(52, 152, 219, 0.25);
+    border: 2px dashed #2980b9;
   }
 }
 

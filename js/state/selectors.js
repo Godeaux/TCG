@@ -60,16 +60,33 @@ export const getLocalPlayerIndex = (state) => {
     return 0;
   }
 
-  // In online mode, match by profile ID
   const profileId = state.menu?.profile?.id;
   if (!profileId) {
+    console.log('[getLocalPlayerIndex] No profileId, returning 0');
     return 0;
   }
 
-  // Find which player matches the profile
+  // Primary method: Use lobby host_id/guest_id (most reliable)
+  const lobby = state.menu?.lobby;
+  if (lobby) {
+    if (lobby.host_id === profileId) {
+      console.log('[getLocalPlayerIndex] Matched as HOST (index 0)', { profileId, host_id: lobby.host_id });
+      return 0;
+    }
+    if (lobby.guest_id === profileId) {
+      console.log('[getLocalPlayerIndex] Matched as GUEST (index 1)', { profileId, guest_id: lobby.guest_id });
+      return 1;
+    }
+    console.log('[getLocalPlayerIndex] No lobby match!', { profileId, host_id: lobby.host_id, guest_id: lobby.guest_id });
+  } else {
+    console.log('[getLocalPlayerIndex] No lobby object in state');
+  }
+
+  // Fallback: Match by player profileId (if set)
   const matchingIndex = state.players.findIndex(
     (player) => player.profileId === profileId
   );
+  console.log('[getLocalPlayerIndex] Fallback result:', matchingIndex);
   return matchingIndex >= 0 ? matchingIndex : 0;
 };
 
@@ -416,6 +433,20 @@ export const isOnlineMode = (state) => {
  */
 export const isLocalMode = (state) => {
   return state.menu?.mode === "local";
+};
+
+/**
+ * Check if in AI (singleplayer) mode
+ */
+export const isAIMode = (state) => {
+  return state.menu?.mode === "ai";
+};
+
+/**
+ * Get AI difficulty setting
+ */
+export const getAIDifficulty = (state) => {
+  return state.menu?.aiDifficulty || "easy";
 };
 
 /**

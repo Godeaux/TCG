@@ -52,6 +52,7 @@ export const createGameState = () => {
     deckSelection: {
       stage: "p1",
       selections: [null, null],
+      readyStatus: [false, false],  // Tracks if each player has confirmed their deck choice
     },
     deckBuilder: {
       stage: "p1",
@@ -64,12 +65,14 @@ export const createGameState = () => {
       mode: null,
       profile: null,
       lobby: null,
+      existingLobby: null,  // Tracks existing lobby for rejoin functionality
       error: null,
       loading: false,
       lastLobbySyncAt: 0,
       lastLobbySyncBySender: {},
       onlineDecksReady: false,
       decks: [],
+      aiSlowMode: false,  // When true, AI moves 4x slower (turtle mode)
     },
     catalogBuilder: {
       stage: null,
