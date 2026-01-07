@@ -11,7 +11,11 @@
  */
 
 import { buildLobbySyncPayload, sendLobbyBroadcast, saveGameStateToDatabase } from '../../network/index.js';
-import { getLocalPlayerIndex } from '../../state/selectors.js';
+import { getLocalPlayerIndex, isAIMode } from '../../state/selectors.js';
+
+// Track if AI auto-actions are pending (to prevent double-triggering)
+let aiRollPending = false;
+let aiChoicePending = false;
 
 // ============================================================================
 // DOM ELEMENTS
@@ -65,6 +69,18 @@ const renderRollingPhase = (state, elements, callbacks) => {
     <div>Player 2 roll: <strong>${p2Roll ?? "-"}</strong></div>
   `;
   rolls.appendChild(rollSummary);
+
+  // In AI mode, auto-roll for AI (player 1) after a short delay
+  if (isAIMode(state) && state.setup.rolls[1] === null && !aiRollPending) {
+    aiRollPending = true;
+    setTimeout(() => {
+      if (state.setup?.stage === "rolling" && state.setup.rolls[1] === null) {
+        console.log("[AI] Auto-rolling for AI player");
+        callbacks.onSetupRoll?.(1);
+      }
+      aiRollPending = false;
+    }, 800);
+  }
 
   // Create roll buttons
   clearPanel(actions);
@@ -172,6 +188,20 @@ const renderChoicePhase = (state, elements, callbacks) => {
   message.className = "muted";
   message.textContent = `${winnerName} chooses who goes first.`;
   actions.appendChild(message);
+
+  // In AI mode, if AI won the roll, auto-choose to go first
+  if (isAIMode(state) && state.setup.winnerIndex === 1 && !aiChoicePending) {
+    aiChoicePending = true;
+    setTimeout(() => {
+      if (state.setup?.stage === "choice" && state.setup.winnerIndex === 1) {
+        console.log("[AI] Auto-choosing to go first");
+        // AI always chooses to go first for strategic advantage
+        callbacks.onSetupChoose?.(1);
+      }
+      aiChoicePending = false;
+    }, 800);
+    return; // Don't render choice buttons since AI is choosing
+  }
 
   const choiceButtons = document.createElement("div");
   choiceButtons.className = "setup-button-row";

@@ -1251,6 +1251,7 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
         logMessage(state, "Your deck is locked in. Generating AI deck...");
         generateAIDeck(state);
         state.deckBuilder.stage = "complete";
+        state.deckSelection.stage = "complete";  // Must also set this for setup phase to trigger
         deckHighlighted = null;
         setDeckInspectorContent(null);
         callbacks.onDeckComplete?.(state.deckBuilder.selections);
