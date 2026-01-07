@@ -130,43 +130,45 @@ const renderRollingPhase = (state, elements, callbacks) => {
   rollP1.disabled = state.setup.rolls[0] !== null || !canRollP1;
   rollButtons.appendChild(rollP1);
 
-  // Player 2 roll button
-  const rollP2 = document.createElement("button");
-  rollP2.textContent = "Roll for Player 2";
-  rollP2.onclick = async () => {
-    if (!canRollP2) return;
+  // Player 2 roll button (hide in AI mode since AI auto-rolls)
+  if (!isAIMode(state)) {
+    const rollP2 = document.createElement("button");
+    rollP2.textContent = "Roll for Player 2";
+    rollP2.onclick = async () => {
+      if (!canRollP2) return;
 
-    // Validate state before rolling
-    if (!state.setup || state.setup.stage !== "rolling") {
-      console.error("Invalid setup state for rolling");
-      return;
-    }
-
-    callbacks.onSetupRoll?.(1);
-
-    if (isOnline) {
-      try {
-        // Enhanced broadcasting with error handling
-        const payload = buildLobbySyncPayload(state);
-        console.log("Broadcasting P2 roll:", payload.setup?.rolls);
-
-        sendLobbyBroadcast("sync_state", payload);
-
-        // Also save to database as backup
-        await saveGameStateToDatabase(state);
-
-        console.log("P2 roll broadcast successful");
-      } catch (error) {
-        console.error("Failed to broadcast P2 roll:", error);
-        // Attempt recovery by requesting sync
-        setTimeout(() => {
-          sendLobbyBroadcast("sync_request", { senderId: state.menu?.profile?.id ?? null });
-        }, 1000);
+      // Validate state before rolling
+      if (!state.setup || state.setup.stage !== "rolling") {
+        console.error("Invalid setup state for rolling");
+        return;
       }
-    }
-  };
-  rollP2.disabled = state.setup.rolls[1] !== null || !canRollP2;
-  rollButtons.appendChild(rollP2);
+
+      callbacks.onSetupRoll?.(1);
+
+      if (isOnline) {
+        try {
+          // Enhanced broadcasting with error handling
+          const payload = buildLobbySyncPayload(state);
+          console.log("Broadcasting P2 roll:", payload.setup?.rolls);
+
+          sendLobbyBroadcast("sync_state", payload);
+
+          // Also save to database as backup
+          await saveGameStateToDatabase(state);
+
+          console.log("P2 roll broadcast successful");
+        } catch (error) {
+          console.error("Failed to broadcast P2 roll:", error);
+          // Attempt recovery by requesting sync
+          setTimeout(() => {
+            sendLobbyBroadcast("sync_request", { senderId: state.menu?.profile?.id ?? null });
+          }, 1000);
+        }
+      }
+    };
+    rollP2.disabled = state.setup.rolls[1] !== null || !canRollP2;
+    rollButtons.appendChild(rollP2);
+  }
 
   actions.appendChild(rollButtons);
 };
