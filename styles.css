@@ -2632,6 +2632,21 @@ button {
   padding-right: 4px;
 }
 
+/* Mobile deck builder - 2 column grid with properly sized cards */
+@media (max-width: 500px) {
+  .deck-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 4px;
+  }
+
+  .deck-grid .card {
+    width: 100%;
+    min-height: 180px;
+    aspect-ratio: 5 / 7;
+  }
+}
+
 .deck-card {
   cursor: pointer;
 }
