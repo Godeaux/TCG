@@ -80,17 +80,25 @@ export class AIController {
     }
 
     this.isProcessing = true;
-    console.log(`[AI] Starting turn (difficulty: ${this.difficulty})`);
+    console.log(`[AI] Starting turn (difficulty: ${this.difficulty}), phase: ${state.phase}`);
 
     try {
       // Initial thinking delay
       await this.delay(AI_DELAYS.THINKING);
 
-      // Play phase actions
+      // Advance from Start phase to Main 1
+      if (state.phase === 'Start') {
+        console.log('[AI] Advancing from Start to Main 1');
+        callbacks.onAdvancePhase?.();
+        await this.delay(AI_DELAYS.BETWEEN_ACTIONS);
+      }
+
+      // Play phase actions (Main 1)
       await this.executePlayPhase(state, callbacks);
 
-      // Transition to combat if needed
-      if (state.phase === 'Main') {
+      // Transition to Combat phase
+      if (state.phase === 'Main 1' || state.phase === 'Main 2') {
+        console.log('[AI] Advancing to Combat phase');
         callbacks.onAdvancePhase?.();
         await this.delay(AI_DELAYS.BETWEEN_ACTIONS);
       }
@@ -98,7 +106,8 @@ export class AIController {
       // Combat phase actions
       await this.executeCombatPhase(state, callbacks);
 
-      // End turn
+      // Advance through remaining phases and end turn
+      console.log('[AI] Ending turn');
       await this.delay(AI_DELAYS.END_TURN);
       callbacks.onEndTurn?.();
 
@@ -154,10 +163,21 @@ export class AIController {
     const player = this.getAIPlayer(state);
     const hand = player.hand;
 
-    console.log(`[AI] Hand size: ${hand.length}, Deck size: ${player.deck?.length ?? 0}`);
+    console.log(`[AI] Hand size: ${hand.length}, Deck size: ${player.deck?.length ?? 0}, Phase: ${state.phase}`);
 
-    // Filter to playable cards
-    const playableCards = hand.filter(card => canPlayCard(state, card));
+    // Check if we can play cards in this phase
+    if (!canPlayCard(state)) {
+      console.log(`[AI] Cannot play cards in phase: ${state.phase}`);
+      return null;
+    }
+
+    // Filter to playable cards (respect card limit unless free play)
+    const playableCards = hand.filter(card => {
+      const isFree = card.type === "Free Spell" || card.type === "Trap" || isFreePlay(card);
+      return isFree || !state.cardPlayedThisTurn;
+    });
+
+    console.log(`[AI] Playable cards: ${playableCards.length}`);
 
     if (playableCards.length === 0) {
       return null;
