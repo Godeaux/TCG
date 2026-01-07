@@ -289,8 +289,9 @@ export const renderCardInnerHtml = (card, { showEffectSummary } = {}) => {
   const cachedImage = hasImage ? getCachedCardImage(card.id) : null;
 
   // Generate image HTML - use cached image if available, otherwise preload
+  // Note: draggable="false" prevents browser's native image drag from interfering with card drag
   const imageHtml = hasImage && (isCached || cachedImage)
-    ? `<img src="${getCardImagePath(card.id)}" alt="${card.name}" class="card-image" style="display: ${cachedImage ? 'block' : 'none'};" onload="this.style.display='block'; this.nextElementSibling.style.display='none';" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+    ? `<img src="${getCardImagePath(card.id)}" alt="${card.name}" class="card-image" draggable="false" style="display: ${cachedImage ? 'block' : 'none'};" onload="this.style.display='block'; this.nextElementSibling.style.display='none';" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
        <div class="card-image-placeholder" style="display: ${cachedImage ? 'none' : 'flex'};">🎨</div>`
     : hasImage ? `<div class="card-image-placeholder">🎨</div>` : '';
 

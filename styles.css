@@ -2665,16 +2665,26 @@ button {
   transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
+/* Prevent child elements from interfering with card drag */
+.draggable-card * {
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
+.draggable-card img {
+  pointer-events: none;
+}
+
 .draggable-card:hover {
   transform: translateY(-2px);
 }
 
 .draggable-card.dragging {
   cursor: grabbing;
-  opacity: 0.8;
+  opacity: 0.5;
   transform: rotate(5deg) scale(1.05);
   z-index: 1000;
-  pointer-events: none;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 /* Valid target highlighting */
