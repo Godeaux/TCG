@@ -130,12 +130,34 @@ import {
 } from "./network/serialization.js";
 
 import {
-  getSupabaseApi,
-  setLobbyChannel,
   sendLobbyBroadcast,
   broadcastSyncState,
   saveGameStateToDatabase,
 } from "./network/index.js";
+
+// Lobby manager (extracted module)
+// Note: updateLobbySubscription and refreshLobbyState remain local because they
+// call applyLobbySyncPayload which requires UI-specific state
+import {
+  registerCallbacks as registerLobbyCallbacks,
+  loadSupabaseApi,
+  getApi as getLobbyApi,
+  setMenuStage,
+  getLocalPlayerIndex,
+  isLocalPlayersTurn,
+  getOpponentDisplayName,
+  isLobbyReady,
+  mapDeckIdsToCards,
+  ensureProfileLoaded,
+  ensureDecksLoaded,
+  handleLoginSubmit as lobbyHandleLoginSubmit,
+  checkExistingLobby,
+  handleCreateLobby as lobbyHandleCreateLobby,
+  handleJoinLobby as lobbyHandleJoinLobby,
+  handleBackFromLobby as lobbyHandleBackFromLobby,
+  handleLeaveLobby as lobbyHandleLeaveLobby,
+  updateLobbyPlayerNames,
+} from "./network/lobbyManager.js";
 
 // Helper to get discardEffect and timing for both old and new card formats
 const getDiscardEffectInfo = (card) => {
@@ -173,29 +195,22 @@ const preloadAllCardImages = () => {
 // Initialize preloading
 preloadAllCardImages();
 
-// Supabase API reference (populated by loadSupabaseApi)
-let supabaseApi = null;
-
+// DOM element references
 const selectionPanel = document.getElementById("selection-panel");
 const actionBar = document.getElementById("action-bar");
 const actionPanel = document.getElementById("action-panel");
 const gameHistoryLog = document.getElementById("game-history-log");
 const inspectorPanel = document.getElementById("card-inspector");
-// Note: passOverlay, setupOverlay, deckOverlay elements moved to respective overlay modules
-// Navigation elements (still used by updateNavButtons, navigateToPage)
 const pagesContainer = document.getElementById("pages-container");
 const pageDots = document.getElementById("page-dots");
 const navLeft = document.getElementById("nav-left");
 const navRight = document.getElementById("nav-right");
-// Note: menuOverlay, loginOverlay, multiplayerOverlay, tutorialOverlay, lobbyOverlay,
-// victoryOverlay elements moved to respective overlay modules (MenuOverlay.js, VictoryOverlay.js)
-
-// Login/lobby elements still used by handleLoginSubmit, handleJoinLobby, etc.
 const loginUsername = document.getElementById("login-username");
 const loginError = document.getElementById("login-error");
 const lobbyCodeInput = document.getElementById("lobby-code");
 const lobbyError = document.getElementById("lobby-error");
 
+// UI state variables
 let pendingConsumption = null;
 let pendingAttack = null;
 let trapWaitingPanelActive = false;
@@ -203,109 +218,30 @@ let inspectedCardId = null;
 let deckHighlighted = null;
 let currentPage = 0;
 let deckActiveTab = "catalog";
-let decksLoaded = false;
-let decksLoading = false;
 let latestState = null;
 let latestCallbacks = {};
 const TOTAL_PAGES = 2;
 let handPreviewInitialized = false;
 let inputInitialized = false;
 let selectedHandCardId = null;
-let lobbyChannel = null;
-let profileLoaded = false;
-let activeLobbyId = null;
-let lobbyRefreshTimeout = null;
-let lobbyRefreshInFlight = false;
 let battleEffectsInitialized = false;
 let touchInitialized = false;
 
-// ============================================================================
-// SERIALIZATION
-// MOVED TO: ./network/serialization.js
-// Functions: serializeCardSnapshot, hydrateCardSnapshot, hydrateZoneSnapshots,
-//            hydrateDeckSnapshots, buildLobbySyncPayload, applyLobbySyncPayload
-// Import: serializeCardSnapshot, hydrateCardSnapshot, etc.
-// ============================================================================
+// Lobby subscription state (kept local because updateLobbySubscription
+// needs to call applyLobbySyncPayload which is UI-specific)
+let lobbyChannel = null;
+let activeLobbyId = null;
+let lobbyRefreshTimeout = null;
+let lobbyRefreshInFlight = false;
+
+// Note: Other lobby state (profileLoaded, decksLoaded, etc.)
+// has been moved to ./network/lobbyManager.js
 
 // ============================================================================
-// SYNC & BROADCAST
-// MOVED TO: ./network/sync.js
-// Functions: sendLobbyBroadcast, broadcastSyncState, saveGameStateToDatabase
-// Import: sendLobbyBroadcast, broadcastSyncState, saveGameStateToDatabase
+// LOBBY MANAGEMENT
+// Core lobby functions moved to ./network/lobbyManager.js
+// UI-specific wrappers remain here for DOM access
 // ============================================================================
-
-/**
- * Load saved game state from database when joining/rejoining a lobby
- * @returns {Promise<boolean>} True if a game was restored, false otherwise
- */
-const loadGameStateFromDatabase = async (state) => {
-  if (!isOnlineMode(state) || !state.menu?.lobby?.id) {
-    console.log("Skipping load - not online or no lobby ID");
-    return false;
-  }
-
-  try {
-    const api = await loadSupabaseApi(state);
-    console.log("Loading game state for lobby ID:", state.menu.lobby.id);
-    const savedGame = await api.loadGameState({ lobbyId: state.menu.lobby.id });
-    console.log("Saved game from DB:", savedGame);
-
-    if (savedGame && savedGame.game_state) {
-      console.log("Restoring saved game state from database");
-      console.log("DeckBuilder stage before:", state.deckBuilder?.stage);
-      console.log("FULL saved game state from DB:", savedGame.game_state);
-      console.log("Player 0 hand from DB (ALL):", savedGame.game_state.game?.players?.[0]?.hand);
-      console.log("Player 0 field from DB (ALL):", savedGame.game_state.game?.players?.[0]?.field);
-      console.log("Player 1 hand from DB (ALL):", savedGame.game_state.game?.players?.[1]?.hand);
-      console.log("Player 1 field from DB (ALL):", savedGame.game_state.game?.players?.[1]?.field);
-      console.log("Saved game state structure:", {
-        hasGame: !!savedGame.game_state.game,
-        hasPlayers: !!savedGame.game_state.game?.players,
-        playerCount: savedGame.game_state.game?.players?.length,
-        player0Hand: savedGame.game_state.game?.players?.[0]?.hand?.length,
-        player0Field: savedGame.game_state.game?.players?.[0]?.field?.length,
-        player1Hand: savedGame.game_state.game?.players?.[1]?.hand?.length,
-        player1Field: savedGame.game_state.game?.players?.[1]?.field?.length,
-        turn: savedGame.game_state.game?.turn,
-        phase: savedGame.game_state.game?.phase,
-      });
-
-      // Check if game has actually started (setup completed) BEFORE applying state
-      const setupCompleted = savedGame.game_state.setup?.stage === "complete";
-      const hasGameStarted = setupCompleted || savedGame.game_state.game?.turn > 1;
-
-      // Set gameInProgress BEFORE applying state to prevent deck builder from showing
-      state.menu.gameInProgress = hasGameStarted;
-
-      // Now apply the saved game state (forceApply to bypass sender check)
-      applyLobbySyncPayload(state, savedGame.game_state, { forceApply: true });
-
-      // Ensure deckBuilder stage is set to "complete" if decks are already built
-      if (savedGame.game_state.deckBuilder?.stage === "complete") {
-        state.deckBuilder.stage = "complete";
-      }
-
-      if (hasGameStarted) {
-        setMenuStage(state, "ready");
-      }
-
-      // Force immediate render
-      latestCallbacks.onUpdate?.();
-
-      // Force a second render after a small delay to ensure overlays update
-      setTimeout(() => {
-        latestCallbacks.onUpdate?.();
-      }, 50);
-
-      return hasGameStarted;
-    }
-    return false;
-  } catch (error) {
-    console.error("Failed to load game state:", error);
-    // Don't throw - if we can't load, just start fresh
-    return false;
-  }
-};
 
 const clearPanel = (panel) => {
   if (!panel) {
@@ -314,7 +250,7 @@ const clearPanel = (panel) => {
   panel.innerHTML = "";
 };
 
-// Wrapper for getFieldSlotElement that uses local getLocalPlayerIndex
+// Wrapper for getFieldSlotElement that uses imported getLocalPlayerIndex
 const getFieldSlotElement = (state, ownerIndex, slotIndex) =>
   getFieldSlotElementShared(state, ownerIndex, slotIndex, getLocalPlayerIndex);
 
@@ -322,366 +258,95 @@ const setMenuError = (state, message) => {
   state.menu.error = message;
 };
 
-const loadSupabaseApi = async (state) => {
-  const api = await getSupabaseApi((message) => setMenuError(state, message));
-  supabaseApi = api; // Store reference for direct access
-  return api;
-};
-
-// updateMenuStatus moved to ./ui/overlays/MenuOverlay.js
-// updateHandOverlap moved to ./ui/components/Hand.js
-
-// isOnlineMode is now imported from ./state/selectors.js
 const isCatalogMode = (state) => state.menu?.stage === "catalog";
 
-const getLocalPlayerIndex = (state) => {
-  if (!isOnlineMode(state)) {
-    return 0;
-  }
-  const profileId = state.menu.profile?.id;
-  const lobby = state.menu.lobby;
-  if (!profileId || !lobby) {
-    return 0;
-  }
-  if (lobby.host_id === profileId) {
-    return 0;
-  }
-  if (lobby.guest_id === profileId) {
-    return 1;
-  }
-  return 0;
-};
-
-const isLocalPlayersTurn = (state) =>
-  !isOnlineMode(state) || state.activePlayerIndex === getLocalPlayerIndex(state);
-
-const getOpponentDisplayName = (state) => {
-  const localIndex = getLocalPlayerIndex(state);
-  const opponentIndex = (localIndex + 1) % 2;
-  const opponentName = state.players?.[opponentIndex]?.name;
-  return opponentName || "Opponent";
-};
-
-const isLobbyReady = (lobby) => Boolean(lobby?.guest_id && lobby?.status === "full");
-
-const setMenuStage = (state, stage) => {
-  state.menu.stage = stage;
-  state.menu.error = null;
-
-  // When entering multiplayer screen, check for existing lobby
-  if (stage === "multiplayer" && state.menu.profile) {
-    checkExistingLobby(state);
-  }
-};
-
-/**
- * Check if user has an existing active lobby and store in state
- */
-const checkExistingLobby = async (state) => {
-  if (!state.menu.profile) {
-    state.menu.existingLobby = null;
-    return;
-  }
-
-  try {
-    const api = await loadSupabaseApi(state);
-    const existingLobby = await api.findExistingLobby({ userId: state.menu.profile.id });
-    state.menu.existingLobby = existingLobby;
-    latestCallbacks.onUpdate?.();
-  } catch (error) {
-    console.error("Failed to check for existing lobby:", error);
-    state.menu.existingLobby = null;
-  }
-};
-
-const applyMenuLoading = (state, isLoading) => {
-  state.menu.loading = isLoading;
-};
-
-const updateLobbyPlayerNames = async (state, lobby = state.menu?.lobby) => {
-  if (!lobby) {
-    return;
-  }
-  try {
-    const api = await loadSupabaseApi(state);
-    const profiles = await api.fetchProfilesByIds([lobby.host_id, lobby.guest_id]);
-    const profileMap = new Map(profiles.map((profile) => [profile.id, profile.username]));
-    if (lobby.host_id && profileMap.has(lobby.host_id)) {
-      state.players[0].name = profileMap.get(lobby.host_id);
-    }
-    if (lobby.guest_id && profileMap.has(lobby.guest_id)) {
-      state.players[1].name = profileMap.get(lobby.guest_id);
-    }
-    latestCallbacks.onUpdate?.();
-  } catch (error) {
-    setMenuError(state, error.message || "Unable to load lobby profiles.");
-    latestCallbacks.onUpdate?.();
-  }
-};
-
-const ensureProfileLoaded = async (state) => {
-  if (profileLoaded) {
-    return;
-  }
-  profileLoaded = true;
-  applyMenuLoading(state, true);
-  latestCallbacks.onUpdate?.();
-  try {
-    const api = await loadSupabaseApi(state);
-    const profile = await api.fetchProfile();
-    if (profile) {
-      state.menu.profile = profile;
-      const localIndex = getLocalPlayerIndex(state);
-      state.players[localIndex].name = profile.username;
-      ensureDecksLoaded(state);
-    } else {
-      state.menu.profile = null;
-    }
-  } catch (error) {
-    state.menu.profile = null;
-    setMenuError(state, error.message || "Unable to load profile.");
-  } finally {
-    applyMenuLoading(state, false);
-    latestCallbacks.onUpdate?.();
-  }
-};
-
-const ensureDecksLoaded = async (state, { force = false } = {}) => {
-  if (!state.menu?.profile) {
-    return;
-  }
-  if (decksLoading) {
-    return;
-  }
-  if (decksLoaded && !force) {
-    return;
-  }
-  decksLoading = true;
-  try {
-    const api = await loadSupabaseApi(state);
-    const decks = await api.fetchDecksByOwner({ ownerId: state.menu.profile.id });
-    state.menu.decks = decks.map((deck) => ({
-      id: deck.id,
-      name: deck.name,
-      deck: deck.deck_json ?? [],
-      createdAt: deck.created_at ?? null,
-    }));
-    decksLoaded = true;
-  } catch (error) {
-    setMenuError(state, error.message || "Unable to load decks.");
-  } finally {
-    decksLoading = false;
-    latestCallbacks.onUpdate?.();
-  }
-};
-
+// UI wrapper for login - extracts value from DOM and calls lobbyManager
 const handleLoginSubmit = async (state) => {
   const username = loginUsername?.value ?? "";
-  applyMenuLoading(state, true);
-  setMenuError(state, null);
   if (loginError) {
     loginError.textContent = "";
   }
-  latestCallbacks.onUpdate?.();
-  try {
-    const api = await loadSupabaseApi(state);
-    const profile = await api.signInWithUsername(username);
-    state.menu.profile = profile;
-    state.players[0].name = profile.username;
-    decksLoaded = false;
-    ensureDecksLoaded(state, { force: true });
-    setMenuStage(state, "main");
-    if (loginUsername) {
-      loginUsername.value = "";
-    }
-  } catch (error) {
-    const message = error.message || "Login failed.";
-    setMenuError(state, message);
-    if (loginError) {
-      loginError.textContent = message;
-    }
-  } finally {
-    applyMenuLoading(state, false);
-    latestCallbacks.onUpdate?.();
+  const result = await lobbyHandleLoginSubmit(state, username);
+  if (loginUsername && result.success) {
+    loginUsername.value = "";
+  }
+  if (!result.success && loginError) {
+    loginError.textContent = result.error || "";
   }
 };
 
+// UI wrapper for create lobby - handles DOM error display
 const handleCreateLobby = async (state) => {
-  if (!state.menu.profile) {
-    setMenuError(state, "Login required to create a lobby.");
-    return;
-  }
-  applyMenuLoading(state, true);
-  setMenuError(state, null);
   if (lobbyError) {
     lobbyError.textContent = "";
   }
-  latestCallbacks.onUpdate?.();
-  try {
-    const api = await loadSupabaseApi(state);
-
-    let lobby;
-
-    // If we already found an existing lobby, use it directly (rejoin)
-    if (state.menu.existingLobby) {
-      lobby = state.menu.existingLobby;
-      console.log("Rejoining existing lobby:", lobby.code);
-    } else {
-      // Create a helper function to check if a game is actually in progress
-      const checkGameInProgress = async (lobbyId) => {
-        const savedGame = await api.loadGameState({ lobbyId });
-        if (!savedGame || !savedGame.game_state) return false;
-
-        const setupCompleted = savedGame.game_state.setup?.stage === "complete";
-        const hasGameStarted = setupCompleted || savedGame.game_state.game?.turn > 1;
-        return hasGameStarted;
-      };
-
-      lobby = await api.createLobby({
-        hostId: state.menu.profile.id,
-        checkGameInProgress
-      });
-    }
-
-    state.menu.lobby = lobby;
-    state.menu.existingLobby = null; // Clear after use
-    state.menu.gameInProgress = false; // Will be set to true if game state is restored
-    setMenuStage(state, "lobby");
-    updateLobbySubscription(state);
-    updateLobbyPlayerNames(state, lobby);
-
-    // Try to restore any existing game state (in case of reconnection)
-    await loadGameStateFromDatabase(state);
-  } catch (error) {
-    const message = error.message || "Failed to create lobby.";
-    setMenuError(state, message);
-    if (lobbyError) {
-      lobbyError.textContent = message;
-    }
-  } finally {
-    applyMenuLoading(state, false);
-    latestCallbacks.onUpdate?.();
+  const result = await lobbyHandleCreateLobby(state);
+  if (!result.success && lobbyError) {
+    lobbyError.textContent = result.error || "";
   }
 };
 
+// UI wrapper for join lobby - extracts code from DOM
 const handleJoinLobby = async (state) => {
-  if (!state.menu.profile) {
-    setMenuError(state, "Login required to join a lobby.");
-    return;
-  }
   const code = lobbyCodeInput?.value ?? "";
-  applyMenuLoading(state, true);
-  setMenuError(state, null);
   if (lobbyError) {
     lobbyError.textContent = "";
   }
-  latestCallbacks.onUpdate?.();
-  try {
-    const api = await loadSupabaseApi(state);
-    const lobby = await api.joinLobbyByCode({ code, guestId: state.menu.profile.id });
-    state.menu.lobby = lobby;
-    state.menu.gameInProgress = false; // Will be set to true if game state is restored
-    setMenuStage(state, "lobby");
-    updateLobbySubscription(state);
-    updateLobbyPlayerNames(state, lobby);
-
-    // Try to restore any existing game state (in case of reconnection)
-    await loadGameStateFromDatabase(state);
-  } catch (error) {
-    const message = error.message || "Failed to join lobby.";
-    setMenuError(state, message);
-    if (lobbyError) {
-      lobbyError.textContent = message;
-    }
-  } finally {
-    applyMenuLoading(state, false);
-    latestCallbacks.onUpdate?.();
+  const result = await lobbyHandleJoinLobby(state, code);
+  if (!result.success && lobbyError) {
+    lobbyError.textContent = result.error || "";
   }
 };
 
+// UI wrapper for back from lobby
 const handleBackFromLobby = async (state) => {
-  if (!state.menu.lobby || !state.menu.profile) {
-    setMenuStage(state, "multiplayer");
-    state.menu.lobby = null;
-    updateLobbySubscription(state);
-    return;
-  }
-  applyMenuLoading(state, true);
-  setMenuError(state, null);
-  latestCallbacks.onUpdate?.();
-  try {
-    const api = await loadSupabaseApi(state);
-    await api.closeLobby({ lobbyId: state.menu.lobby.id, userId: state.menu.profile.id });
-  } catch (error) {
-    const message = error.message || "Failed to leave lobby.";
-    setMenuError(state, message);
-    if (lobbyLiveError) {
-      lobbyLiveError.textContent = message;
-    }
-  } finally {
-    state.menu.lobby = null;
-    applyMenuLoading(state, false);
-    setMenuStage(state, "multiplayer");
-    updateLobbySubscription(state);
-    latestCallbacks.onUpdate?.();
-  }
+  await lobbyHandleBackFromLobby(state);
 };
 
+// UI wrapper for leave lobby
 const handleLeaveLobby = async (state) => {
-  if (!state.menu.lobby || !state.menu.profile) {
-    setMenuStage(state, "multiplayer");
-    state.menu.lobby = null;
-    updateLobbySubscription(state);
-    return;
+  await lobbyHandleLeaveLobby(state);
+};
+
+/**
+ * Load saved game state from database (UI wrapper)
+ * Calls applyLobbySyncPayload which is defined locally for UI-specific handling
+ */
+const loadGameStateFromDatabase = async (state) => {
+  if (!isOnlineMode(state) || !state.menu?.lobby?.id) {
+    return false;
   }
-  applyMenuLoading(state, true);
-  setMenuError(state, null);
-  latestCallbacks.onUpdate?.();
+
   try {
     const api = await loadSupabaseApi(state);
-    // Close the current lobby
-    await api.closeLobby({ lobbyId: state.menu.lobby.id, userId: state.menu.profile.id });
-    state.menu.lobby = null;
-    updateLobbySubscription(state);
+    const savedGame = await api.loadGameState({ lobbyId: state.menu.lobby.id });
 
-    // Create a new lobby with a fresh code
-    const lobby = await api.createLobby({
-      hostId: state.menu.profile.id,
-      checkGameInProgress: async () => false // New lobby, no game in progress
-    });
+    if (savedGame && savedGame.game_state) {
+      const setupCompleted = savedGame.game_state.setup?.stage === "complete";
+      const hasGameStarted = setupCompleted || savedGame.game_state.game?.turn > 1;
 
-    state.menu.lobby = lobby;
-    state.menu.existingLobby = null;
-    state.menu.gameInProgress = false;
-    updateLobbySubscription(state);
-    updateLobbyPlayerNames(state, lobby);
-  } catch (error) {
-    const message = error.message || "Failed to reset lobby.";
-    setMenuError(state, message);
-    if (lobbyLiveError) {
-      lobbyLiveError.textContent = message;
+      state.menu.gameInProgress = hasGameStarted;
+      applyLobbySyncPayload(state, savedGame.game_state, { forceApply: true });
+
+      if (savedGame.game_state.deckBuilder?.stage === "complete") {
+        state.deckBuilder.stage = "complete";
+      }
+
+      if (hasGameStarted) {
+        setMenuStage(state, "ready");
+      }
+
+      latestCallbacks.onUpdate?.();
+      setTimeout(() => latestCallbacks.onUpdate?.(), 50);
+
+      return hasGameStarted;
     }
-    // On error, go back to multiplayer menu
-    state.menu.lobby = null;
-    setMenuStage(state, "multiplayer");
-    updateLobbySubscription(state);
-  } finally {
-    applyMenuLoading(state, false);
-    latestCallbacks.onUpdate?.();
+    return false;
+  } catch (error) {
+    console.error("Failed to load game state:", error);
+    return false;
   }
 };
-
-const mapDeckIdsToCards = (deckId, deckIds = []) => {
-  const catalog = deckCatalogs[deckId] ?? [];
-  const catalogMap = new Map(catalog.map((card) => [card.id, card]));
-  return deckIds
-    .map((id) => catalogMap.get(id))
-    .filter(Boolean)
-    .map((card) => ({ ...card }));
-};
-
-// findDeckCatalogId moved to DeckBuilderOverlay.js
-
 
 // Add recovery mechanism for stuck dice rolling
 const checkAndRecoverSetupState = (state) => {
@@ -1020,6 +685,8 @@ const applyLobbySyncPayload = (state, payload, options = {}) => {
 
 const updateLobbySubscription = (state, { force = false } = {}) => {
   const lobbyId = state.menu.lobby?.id ?? null;
+  const api = getLobbyApi();
+
   if (!force && activeLobbyId === lobbyId) {
     return;
   }
@@ -1029,16 +696,14 @@ const updateLobbySubscription = (state, { force = false } = {}) => {
     lobbyRefreshTimeout = null;
   }
   if (lobbyChannel) {
-    supabaseApi?.unsubscribeChannel?.(lobbyChannel);
+    api?.unsubscribeChannel?.(lobbyChannel);
     lobbyChannel = null;
     setLobbyChannel(null);
   }
-  if (!lobbyId) {
+  if (!lobbyId || !api) {
     return;
   }
-  if (!supabaseApi) {
-    return;
-  }
+
   const applyLobbyUpdate = (lobby) => {
     state.menu.lobby = lobby;
     if (lobby?.status === "closed") {
@@ -1049,45 +714,44 @@ const updateLobbySubscription = (state, { force = false } = {}) => {
     }
     latestCallbacks.onUpdate?.();
   };
-  lobbyChannel = supabaseApi.subscribeToLobby({
+
+  lobbyChannel = api.subscribeToLobby({
     lobbyId,
     onUpdate: applyLobbyUpdate,
   });
   setLobbyChannel(lobbyChannel);
+
   lobbyChannel.on("broadcast", { event: "deck_update" }, ({ payload }) => {
     applyLobbySyncPayload(state, payload);
-    // Trigger UI update so opponent's ready status is reflected
     latestCallbacks.onUpdate?.();
   });
   lobbyChannel.on("broadcast", { event: "sync_request" }, ({ payload }) => {
     if (payload?.senderId === state.menu?.profile?.id) {
       return;
     }
-    // Respond with current state so reconnecting player gets opponent's latest data
     sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
   });
   lobbyChannel.on("broadcast", { event: "sync_state" }, ({ payload }) => {
-    // Apply sync state but only opponent's data (own data protected in applyLobbySyncPayload)
     applyLobbySyncPayload(state, payload);
-    // Trigger UI update so opponent's state changes are reflected
     latestCallbacks.onUpdate?.();
   });
+
   refreshLobbyState(state, { silent: true });
 
-  // Load from database first (source of truth), then request sync for real-time updates
+  // Load from database, then request sync for real-time updates
   loadGameStateFromDatabase(state).then(() => {
-    // After loading DB state, request opponent's latest state for real-time sync
     sendLobbyBroadcast("sync_request", { senderId: state.menu?.profile?.id ?? null });
   });
 };
 
 const refreshLobbyState = async (state, { silent = false } = {}) => {
-  if (!state.menu?.lobby?.id || !supabaseApi || lobbyRefreshInFlight) {
+  const api = getLobbyApi();
+  if (!state.menu?.lobby?.id || !api || lobbyRefreshInFlight) {
     return;
   }
   lobbyRefreshInFlight = true;
   try {
-    const lobby = await supabaseApi.fetchLobbyById({
+    const lobby = await api.fetchLobbyById({
       lobbyId: state.menu.lobby.id,
     });
     if (lobby) {
@@ -2815,6 +2479,14 @@ export const renderGame = (state, callbacks = {}) => {
 
   latestState = state;
   latestCallbacks = callbacks;
+
+  // Register callbacks with lobbyManager so it can notify UI of changes
+  registerLobbyCallbacks({
+    onUpdate: () => callbacks.onUpdate?.(),
+    onDeckComplete: (selections) => callbacks.onDeckComplete?.(selections),
+    onApplySync: (s, payload, options) => applyLobbySyncPayload(s, payload, options),
+  });
+
   // Attach broadcast hook so downstream systems (effects) can broadcast after mutations
   state.broadcast = broadcastSyncState;
   initHandPreview();
