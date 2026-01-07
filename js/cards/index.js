@@ -42,9 +42,8 @@ export {
   getEffectTypes,
 } from './registry.js';
 
-// Re-export effect handler utilities
+// Re-export effect library utilities
 export {
-  getEffectHandler,
   makeTargetedSelection,
   handleTargetedResponse,
-} from './effectHandlers.js';
+} from './effectLibrary.js';

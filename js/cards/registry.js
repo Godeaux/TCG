@@ -17,7 +17,6 @@ import reptileData from './data/reptile.json' with { type: 'json' };
 import amphibianData from './data/amphibian.json' with { type: 'json' };
 import birdData from './data/bird.json' with { type: 'json' };
 import mammalData from './data/mammal.json' with { type: 'json' };
-import { getEffectHandler } from './effectHandlers.js';
 import { resolveEffect } from './effectLibrary.js';
 
 // ============================================================================
@@ -212,13 +211,7 @@ export const getDeckCategories = () => {
  * Resolve a card's effect handler at runtime
  *
  * This bridges the gap between JSON card data and JavaScript effect implementations.
- * Supports two formats:
- *
- * 1. Legacy string-based IDs (e.g., "sardineHeal")
- *    { "effects": { "onPlay": "sardineHeal" } }
- *
- * 2. New parameterized objects (e.g., { "type": "heal", "params": { "amount": 1 } })
- *    { "effects": { "onPlay": { "type": "heal", "params": { "amount": 1 } } } }
+ * Effects use parameterized objects: { "type": "heal", "params": { "amount": 1 } }
  *
  * @param {Object} card - Card definition with effects property
  * @param {string} effectType - Effect type (e.g., "onPlay", "onConsume")
@@ -226,32 +219,18 @@ export const getDeckCategories = () => {
  * @returns {any} Result from effect handler or null
  */
 export const resolveCardEffect = (card, effectType, context) => {
-  // Get effect definition from card
   const effectDef = card.effects?.[effectType];
   if (!effectDef) return null;
 
   try {
-    // NEW SYSTEM: Array of effects (composite)
+    // Array of effects (composite)
     if (Array.isArray(effectDef)) {
-      console.log(`🆕 [NEW SYSTEM] ${card.name} ${effectType} - Array of ${effectDef.length} effects`);
       return resolveEffect(effectDef, context);
     }
 
-    // NEW SYSTEM: Object-based effect definition with type and params
+    // Object-based effect definition with type and params
     if (typeof effectDef === 'object' && effectDef.type) {
-      console.log(`🆕 [NEW SYSTEM] ${card.name} ${effectType} - ${effectDef.type}`);
       return resolveEffect(effectDef, context);
-    }
-
-    // LEGACY SYSTEM: String-based effect ID
-    if (typeof effectDef === 'string') {
-      console.log(`⚠️  [LEGACY SYSTEM] ${card.name} ${effectType} - ${effectDef}`);
-      const handler = getEffectHandler(effectDef);
-      if (!handler) {
-        console.warn(`[Card Registry] Effect handler not found: ${effectDef} (${card.name} ${effectType})`);
-        return null;
-      }
-      return handler(context);
     }
 
     console.warn(`[Card Registry] Invalid effect definition for ${card.name} ${effectType}:`, effectDef);
