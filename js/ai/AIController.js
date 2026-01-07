@@ -86,27 +86,41 @@ export class AIController {
       // Initial thinking delay
       await this.delay(AI_DELAYS.THINKING);
 
-      // Advance from Start phase to Main 1
-      if (state.phase === 'Start') {
-        console.log('[AI] Advancing from Start to Main 1');
+      // Advance through early phases to get to Main 1
+      // Phase order: Start → Draw → Main 1 → Before Combat → Combat → Main 2 → End
+      while (state.phase === 'Start' || state.phase === 'Draw') {
+        console.log(`[AI] Advancing from ${state.phase}`);
         callbacks.onAdvancePhase?.();
-        await this.delay(AI_DELAYS.BETWEEN_ACTIONS);
+        await this.delay(300); // Short delay between phase advances
       }
 
-      // Play phase actions (Main 1)
-      await this.executePlayPhase(state, callbacks);
+      // Now we should be in Main 1
+      console.log(`[AI] In phase: ${state.phase}`);
 
-      // Transition to Combat phase
-      if (state.phase === 'Main 1' || state.phase === 'Main 2') {
-        console.log('[AI] Advancing to Combat phase');
+      // Play phase actions (Main 1)
+      if (state.phase === 'Main 1') {
+        await this.executePlayPhase(state, callbacks);
+      }
+
+      // Advance through Before Combat to Combat
+      while (state.phase === 'Main 1' || state.phase === 'Before Combat') {
+        console.log(`[AI] Advancing from ${state.phase} to Combat`);
         callbacks.onAdvancePhase?.();
-        await this.delay(AI_DELAYS.BETWEEN_ACTIONS);
+        await this.delay(300);
       }
 
       // Combat phase actions
-      await this.executeCombatPhase(state, callbacks);
+      if (state.phase === 'Combat') {
+        await this.executeCombatPhase(state, callbacks);
+      }
 
-      // Advance through remaining phases and end turn
+      // Advance to Main 2 (could play more cards here in future)
+      if (state.phase === 'Combat') {
+        callbacks.onAdvancePhase?.();
+        await this.delay(300);
+      }
+
+      // End turn
       console.log('[AI] Ending turn');
       await this.delay(AI_DELAYS.END_TURN);
       callbacks.onEndTurn?.();
