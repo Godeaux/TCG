@@ -1,112 +1,6 @@
 {
   "cards": [
     {
-      "id": "token-cuban-brown-anole",
-      "name": "Cuban Brown Anole",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": [],
-      "effectText": "Play Brown Anole.",
-      "summons": ["token-brown-anole"],
-      "effects": {
-        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-brown-anole"] } }
-      }
-    },
-    {
-      "id": "token-brown-anole",
-      "name": "Brown Anole",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": [],
-      "effectText": "End of turn, play Cuban Brown Anole.",
-      "summons": ["token-cuban-brown-anole"],
-      "effects": {
-        "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-cuban-brown-anole"] } }
-      }
-    },
-    {
-      "id": "token-european-glass-lizard",
-      "name": "European Glass Lizard",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": [],
-      "effectText": "Slain, become Tailless.",
-      "summons": ["token-tailless"],
-      "effects": {
-        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["token-tailless"] } }
-      }
-    },
-    {
-      "id": "token-tailless",
-      "name": "Tailless",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": [],
-      "effectText": "Start of turn, become European Glass Lizard. End of turn, become European Glass Lizard.",
-      "effects": {
-        "onStart": { "type": "transformCard", "params": { "targetType": "self", "newCardId": "token-european-glass-lizard" } },
-        "onEnd": { "type": "transformCard", "params": { "targetType": "self", "newCardId": "token-european-glass-lizard" } }
-      }
-    },
-    {
-      "id": "token-lava-lizard",
-      "name": "Lava Lizard",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": [],
-      "effectText": "Deal 1 damage to rival.",
-      "effects": {
-        "onPlay": { "type": "damageOpponent", "params": { "amount": 1 } }
-      }
-    },
-    {
-      "id": "token-carolina-anole",
-      "name": "Carolina Anole",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": [],
-      "effectText": "Add Hand Egg to hand.",
-      "effects": {
-        "onPlay": { "type": "addToHand", "params": { "cardId": "reptile-free-spell-hand-egg" } }
-      }
-    },
-    {
-      "id": "token-anole-egg",
-      "name": "Anole Egg",
-      "type": "Prey",
-      "atk": 0,
-      "hp": 1,
-      "nutrition": 0,
-      "keywords": [],
-      "effectText": "Start of turn, become Green Anole."
-    },
-    {
-      "id": "token-green-anole",
-      "name": "Green Anole",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": [],
-      "effectText": "End of turn, play Carolina Anole.",
-      "summons": ["token-carolina-anole"],
-      "effects": {
-        "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-carolina-anole"] } }
-      }
-    },
-    {
       "id": "reptile-free-spell-hand-egg",
       "name": "Hand Egg",
       "type": "Free Spell",
@@ -115,38 +9,6 @@
       "effects": {
         "effect": { "type": "summonTokens", "params": { "tokenIds": ["token-anole-egg"] } }
       }
-    },
-    {
-      "id": "token-golden-tegu-egg",
-      "name": "Golden Tegu Egg",
-      "type": "Prey",
-      "atk": 0,
-      "hp": 1,
-      "nutrition": 0,
-      "keywords": ["Barrier", "Hidden", "Harmless"],
-      "effectText": "Harmless. Draw 1. Barrier. Hidden.",
-      "effects": {
-        "onPlay": { "type": "draw", "params": { "count": 1 } }
-      }
-    },
-    {
-      "id": "token-giant-tortoise",
-      "name": "Giant Tortoise",
-      "type": "Prey",
-      "atk": 2,
-      "hp": 3,
-      "nutrition": 3,
-      "keywords": []
-    },
-    {
-      "id": "token-poisonous-snake",
-      "name": "Poisonous Snake",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": ["Poisonous"],
-      "effectText": "Poisonous."
     },
     {
       "id": "reptile-free-spell-alligator-skin",
@@ -163,15 +25,6 @@
           }
         }
       }
-    },
-    {
-      "id": "token-snakes",
-      "name": "Snakes",
-      "type": "Prey",
-      "atk": 2,
-      "hp": 2,
-      "nutrition": 2,
-      "keywords": []
     },
     {
       "id": "reptile-prey-cuban-brown-anole",
@@ -350,8 +203,11 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Barrier", "Neurotoxic"],
-      "effectText": "Barrier. Neurotoxic when defending."
+      "keywords": ["Barrier"],
+      "effectText": "Neurotoxic when defending.",
+      "effects": {
+        "onDefend": { "type": "applyNeurotoxicToAttacker" }
+      }
     },
     {
       "id": "reptile-prey-plumed-basilisk",
@@ -412,8 +268,7 @@
       "atk": 2,
       "hp": 2,
       "nutrition": 2,
-      "keywords": ["Hidden", "Toxic"],
-      "effectText": "Hidden. Toxic."
+      "keywords": ["Hidden", "Toxic"]
     },
     {
       "id": "reptile-prey-king-brown-snake",
@@ -614,8 +469,7 @@
       "type": "Predator",
       "atk": 4,
       "hp": 4,
-      "keywords": ["Immune", "Toxic"],
-      "effectText": "Immune. Toxic."
+      "keywords": ["Immune", "Toxic"]
     },
     {
       "id": "reptile-predator-nile-crocodile",
