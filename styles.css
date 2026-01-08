@@ -2668,17 +2668,26 @@ button {
 
 .deck-select-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   overflow-y: auto;
   padding-right: 6px;
+  flex: 1;
+  align-content: start;
+}
+
+/* Mobile: single column */
+@media (max-width: 600px) {
+  .deck-select-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .deck-select-panel {
   border-radius: 16px;
-  padding: 16px;
+  padding: 20px;
   border: 1px solid transparent;
-  min-height: 140px;
+  min-height: 120px;
   display: flex;
   flex-direction: column;
   gap: 10px;

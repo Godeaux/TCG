@@ -478,7 +478,7 @@ const setDeckInspectorContent = (card) => {
     })
     .join("");
   const stats = renderCardStats(card)
-    .map((stat) => `${stat.label} ${stat.value}`)
+    .map((stat) => `${stat.emoji} ${stat.value}`)
     .join(" • ");
   const effectSummary = getCardEffectSummary(card, {
     includeKeywordDetails: true,
