@@ -7,7 +7,7 @@ import {
   isAIMode,
 } from "./state/index.js";
 import { advancePhase, endTurn, startTurn } from "./game/index.js";
-import { renderGame, setupInitialDraw } from "./ui.js";
+import { renderGame, setupInitialDraw, checkLifeZeroTrap } from "./ui.js";
 import { initializeCardRegistry } from "./cards/index.js";
 import {
   initializeAI,
@@ -23,6 +23,13 @@ const state = createGameState();
 const checkWinCondition = () => {
   state.players.forEach((player, index) => {
     if (player.hp <= 0) {
+      // Check for lifeZero trap before declaring game over
+      const trapSaved = checkLifeZeroTrap(state, index, refresh);
+      if (trapSaved) {
+        // Trap saved the player, don't end game
+        return;
+      }
+
       const winner = state.players[(index + 1) % 2];
       logMessage(state, `${winner.name} wins the game!`);
       // Clean up AI when game ends

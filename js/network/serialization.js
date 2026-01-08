@@ -172,6 +172,9 @@ export const buildLobbySyncPayload = (state) => ({
     pendingTrapDecision: state.pendingTrapDecision
       ? { ...state.pendingTrapDecision }
       : null,
+    pendingGenericTrapDecision: state.pendingGenericTrapDecision
+      ? { ...state.pendingGenericTrapDecision }
+      : null,
     fieldSpell: state.fieldSpell
       ? {
           ownerIndex: state.fieldSpell.ownerIndex,
@@ -298,6 +301,11 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
     if (payload.game.pendingTrapDecision !== undefined) {
       state.pendingTrapDecision = payload.game.pendingTrapDecision
         ? { ...payload.game.pendingTrapDecision }
+        : null;
+    }
+    if (payload.game.pendingGenericTrapDecision !== undefined) {
+      state.pendingGenericTrapDecision = payload.game.pendingGenericTrapDecision
+        ? { ...payload.game.pendingGenericTrapDecision }
         : null;
     }
     if (Array.isArray(payload.game.players)) {

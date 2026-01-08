@@ -1623,7 +1623,36 @@ const renderTrapDecision = (state, defender, attacker, target, onUpdate) => {
 };
 
 const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
-  // Check for traps in hand that can trigger on direct attacks
+  // If target is a creature, check for 'defending' traps first
+  if (target.type === "creature") {
+    const defenderOwnerIndex = state.players.indexOf(defender);
+    const defendingTraps = getTrapsFromHand(defender, "defending");
+
+    if (defendingTraps.length > 0) {
+      // Trigger defending trap before resolving attack
+      triggerDefendingTraps(state, target.card, attacker, defenderOwnerIndex, onUpdate, ({ negated }) => {
+        if (negated) {
+          logMessage(state, `Combat was negated by a trap.`);
+          attacker.hasAttacked = true;
+          onUpdate?.();
+          broadcastSyncState(state);
+        } else {
+          resolveAttack(state, attacker, target, false);
+          onUpdate?.();
+          broadcastSyncState(state);
+        }
+      });
+      return;
+    }
+
+    // No defending traps, just resolve the attack
+    resolveAttack(state, attacker, target, false);
+    onUpdate?.();
+    broadcastSyncState(state);
+    return;
+  }
+
+  // For player targets, check for 'directAttack' traps
   const availableTraps = getTrapsFromHand(defender, "directAttack");
   if (availableTraps.length === 0) {
     resolveAttack(state, attacker, target, false);
@@ -2284,6 +2313,384 @@ const triggerPlayTraps = (state, creature, onUpdate, onResolved) => {
   });
 };
 
+// ============================================================================
+// GENERIC TRAP TRIGGER SYSTEM
+// ============================================================================
+
+/**
+ * Generic function to trigger traps of a specific type
+ * @param {Object} state - Game state
+ * @param {string} triggerType - The trap trigger type (e.g., 'defending', 'targeted', 'slain')
+ * @param {number} trapOwnerIndex - Index of the player who owns the trap
+ * @param {Object} context - Context for the trap effect (varies by trigger type)
+ * @param {Function} onUpdate - UI update callback
+ * @param {Function} onResolved - Called after trap decision is made
+ */
+const triggerGenericTrap = (state, triggerType, trapOwnerIndex, context, onUpdate, onResolved) => {
+  const trapOwner = state.players[trapOwnerIndex];
+  const relevantTraps = getTrapsFromHand(trapOwner, triggerType);
+
+  if (relevantTraps.length === 0) {
+    onResolved?.();
+    return;
+  }
+
+  // AI auto-decides trap usage
+  if (isAIMode(state) && trapOwnerIndex === 1) {
+    const trap = relevantTraps[0];
+    trapOwner.hand = trapOwner.hand.filter((card) => card.instanceId !== trap.instanceId);
+    trapOwner.exile.push(trap);
+    logMessage(state, `${trapOwner.name} triggers ${trap.name}!`);
+    const result = resolveCardEffect(trap, 'effect', {
+      log: (message) => logMessage(state, message),
+      state,
+      trapOwnerIndex,
+      ...context,
+    });
+    resolveEffectChain(state, result, {
+      playerIndex: trapOwnerIndex,
+      opponentIndex: (trapOwnerIndex + 1) % 2,
+    });
+    cleanupDestroyed(state);
+    onUpdate?.();
+    onResolved?.(result);
+    return;
+  }
+
+  // In online mode, only the trap owner should see the decision UI
+  if (isOnlineMode(state)) {
+    const localIndex = getLocalPlayerIndex(state);
+    if (localIndex !== trapOwnerIndex) {
+      // Set pending state for the trap owner to handle
+      state.pendingGenericTrapDecision = {
+        trapOwnerIndex,
+        triggerType,
+        context,
+      };
+      onUpdate?.();
+      broadcastSyncState(state);
+      return;
+    }
+  }
+
+  const items = relevantTraps.map((trap) => {
+    const item = document.createElement("label");
+    item.className = "selection-item";
+    const button = document.createElement("button");
+    button.className = "secondary";
+    button.textContent = `Trigger ${trap.name}`;
+    button.onclick = () => {
+      trapOwner.hand = trapOwner.hand.filter((card) => card.instanceId !== trap.instanceId);
+      trapOwner.exile.push(trap);
+      logMessage(state, `${trapOwner.name} triggers ${trap.name}!`);
+      const result = resolveCardEffect(trap, 'effect', {
+        log: (message) => logMessage(state, message),
+        state,
+        trapOwnerIndex,
+        ...context,
+      });
+      resolveEffectChain(state, result, {
+        playerIndex: trapOwnerIndex,
+        opponentIndex: (trapOwnerIndex + 1) % 2,
+      });
+      cleanupDestroyed(state);
+      state.pendingGenericTrapDecision = null;
+      clearSelectionPanel();
+      onUpdate?.();
+      broadcastSyncState(state);
+      onResolved?.(result);
+    };
+    item.appendChild(button);
+    return item;
+  });
+
+  const skipButton = document.createElement("label");
+  skipButton.className = "selection-item";
+  const skipAction = document.createElement("button");
+  skipAction.textContent = "Skip Trap";
+  skipAction.onclick = () => {
+    state.pendingGenericTrapDecision = null;
+    clearSelectionPanel();
+    onUpdate?.();
+    broadcastSyncState(state);
+    onResolved?.();
+  };
+  skipButton.appendChild(skipAction);
+  items.push(skipButton);
+
+  const triggerDescriptions = {
+    defending: "creature is being attacked",
+    targeted: "creature is being targeted",
+    slain: "creature was slain",
+    indirectDamage: "receiving indirect damage",
+    rivalPlaysCard: "rival plays a card",
+    rivalDraws: "rival draws a card",
+    lifeZero: "life reaches zero",
+  };
+
+  renderSelectionPanel({
+    title: `${trapOwner.name} may trigger a trap (${triggerDescriptions[triggerType] || triggerType})`,
+    items,
+    onConfirm: () => {},
+    confirmLabel: null,
+  });
+};
+
+/**
+ * Handle pending generic trap decision (for online mode sync)
+ */
+const handlePendingGenericTrapDecision = (state, onUpdate) => {
+  if (!state.pendingGenericTrapDecision) return;
+
+  const { trapOwnerIndex, triggerType, context } = state.pendingGenericTrapDecision;
+  const localIndex = getLocalPlayerIndex(state);
+
+  if (localIndex !== trapOwnerIndex) {
+    // Show waiting panel for non-trap-owner
+    if (!trapWaitingPanelActive) {
+      trapWaitingPanelActive = true;
+      renderSelectionPanel({
+        title: `Waiting for ${state.players[trapOwnerIndex].name} to decide on trap...`,
+        items: [],
+        onConfirm: () => {},
+        confirmLabel: null,
+      });
+    }
+    return;
+  }
+
+  // Trap owner renders their decision UI
+  triggerGenericTrap(state, triggerType, trapOwnerIndex, context, onUpdate, (result) => {
+    state.pendingGenericTrapDecision = null;
+    onUpdate?.();
+  });
+};
+
+// ============================================================================
+// SPECIFIC TRAP TRIGGERS
+// ============================================================================
+
+/**
+ * Trigger 'defending' traps when a creature is about to be attacked
+ * @param {Object} state - Game state
+ * @param {Object} defender - The defending creature
+ * @param {Object} attacker - The attacking creature
+ * @param {number} defenderOwnerIndex - Index of the player who owns the defender
+ * @param {Function} onUpdate - UI update callback
+ * @param {Function} onResolved - Called after trap decision, receives {negated: boolean}
+ */
+export const triggerDefendingTraps = (state, defender, attacker, defenderOwnerIndex, onUpdate, onResolved) => {
+  const context = {
+    defender,
+    attacker,
+    defenderOwnerIndex,
+    target: { type: "creature", card: defender },
+  };
+
+  triggerGenericTrap(state, "defending", defenderOwnerIndex, context, onUpdate, (result) => {
+    // Combat is negated if explicitly negated OR if defender was returned to hand
+    const negated = Boolean(result?.negateCombat || result?.negateAttack || result?.returnToHand);
+    onResolved?.({ negated, result });
+  });
+};
+
+/**
+ * Trigger 'targeted' traps when a creature is targeted by a spell
+ * @param {Object} state - Game state
+ * @param {Object} targetCreature - The targeted creature
+ * @param {Object} spellCard - The spell targeting the creature
+ * @param {number} targetOwnerIndex - Index of the player who owns the targeted creature
+ * @param {Function} onUpdate - UI update callback
+ * @param {Function} onResolved - Called after trap decision, receives {negated: boolean}
+ */
+export const triggerTargetedTraps = (state, targetCreature, spellCard, targetOwnerIndex, onUpdate, onResolved) => {
+  const context = {
+    targetCreature,
+    spellCard,
+    targetOwnerIndex,
+    target: { type: "creature", card: targetCreature },
+  };
+
+  triggerGenericTrap(state, "targeted", targetOwnerIndex, context, onUpdate, (result) => {
+    const negated = Boolean(result?.negateSpell || result?.returnTargetedToHand);
+    onResolved?.({ negated, result });
+  });
+};
+
+/**
+ * Trigger 'slain' traps when a creature is slain
+ * @param {Object} state - Game state
+ * @param {Object} slainCreature - The creature that was slain
+ * @param {number} slainOwnerIndex - Index of the player who owned the slain creature
+ * @param {Function} onUpdate - UI update callback
+ * @param {Function} onResolved - Called after trap decision
+ */
+export const triggerSlainTraps = (state, slainCreature, slainOwnerIndex, onUpdate, onResolved) => {
+  const context = {
+    slainCreature,
+    creature: slainCreature,
+    slainOwnerIndex,
+    playerIndex: slainOwnerIndex,
+  };
+
+  triggerGenericTrap(state, "slain", slainOwnerIndex, context, onUpdate, onResolved);
+};
+
+/**
+ * Trigger 'indirectDamage' traps when a player receives non-combat damage
+ * @param {Object} state - Game state
+ * @param {number} damageAmount - Amount of damage being dealt
+ * @param {number} damagedPlayerIndex - Index of the player receiving damage
+ * @param {Function} onUpdate - UI update callback
+ * @param {Function} onResolved - Called after trap decision, receives {negated: boolean, healAmount: number}
+ */
+export const triggerIndirectDamageTraps = (state, damageAmount, damagedPlayerIndex, onUpdate, onResolved) => {
+  const context = {
+    damageAmount,
+    damagedPlayerIndex,
+    playerIndex: damagedPlayerIndex,
+  };
+
+  triggerGenericTrap(state, "indirectDamage", damagedPlayerIndex, context, onUpdate, (result) => {
+    const negated = Boolean(result?.negateDamage);
+    const healAmount = result?.heal || 0;
+    onResolved?.({ negated, healAmount, result });
+  });
+};
+
+/**
+ * Trigger 'rivalPlaysCard' traps when the opponent plays any card
+ * @param {Object} state - Game state
+ * @param {Object} playedCard - The card being played
+ * @param {number} playerPlayingIndex - Index of the player playing the card
+ * @param {Function} onUpdate - UI update callback
+ * @param {Function} onResolved - Called after trap decision, receives {negated: boolean}
+ */
+export const triggerRivalPlaysCardTraps = (state, playedCard, playerPlayingIndex, onUpdate, onResolved) => {
+  const trapOwnerIndex = (playerPlayingIndex + 1) % 2;
+  const context = {
+    playedCard,
+    playerPlayingIndex,
+    target: { type: "card", card: playedCard },
+  };
+
+  triggerGenericTrap(state, "rivalPlaysCard", trapOwnerIndex, context, onUpdate, (result) => {
+    const negated = Boolean(result?.negateAndAllowReplay);
+    onResolved?.({ negated, result });
+  });
+};
+
+/**
+ * Trigger 'rivalDraws' traps when the opponent draws a card
+ * @param {Object} state - Game state
+ * @param {number} drawingPlayerIndex - Index of the player drawing
+ * @param {Function} onUpdate - UI update callback
+ * @param {Function} onResolved - Called after trap decision
+ */
+export const triggerRivalDrawsTraps = (state, drawingPlayerIndex, onUpdate, onResolved) => {
+  const trapOwnerIndex = (drawingPlayerIndex + 1) % 2;
+  const context = {
+    drawingPlayerIndex,
+    drawingPlayer: state.players[drawingPlayerIndex],
+  };
+
+  triggerGenericTrap(state, "rivalDraws", trapOwnerIndex, context, onUpdate, onResolved);
+};
+
+/**
+ * Trigger 'lifeZero' traps when a player's life reaches zero (prevents game over)
+ * @param {Object} state - Game state
+ * @param {number} dyingPlayerIndex - Index of the player whose life hit zero
+ * @param {Function} onUpdate - UI update callback
+ * @param {Function} onResolved - Called after trap decision, receives {prevented: boolean}
+ */
+export const triggerLifeZeroTraps = (state, dyingPlayerIndex, onUpdate, onResolved) => {
+  const relevantTraps = getTrapsFromHand(state.players[dyingPlayerIndex], "lifeZero");
+
+  if (relevantTraps.length === 0) {
+    onResolved?.({ prevented: false });
+    return;
+  }
+
+  const context = {
+    dyingPlayerIndex,
+    playerIndex: dyingPlayerIndex,
+  };
+
+  // AI auto-triggers lifeZero traps (would be foolish not to)
+  if (isAIMode(state) && dyingPlayerIndex === 1) {
+    const trap = relevantTraps[0];
+    const trapOwner = state.players[dyingPlayerIndex];
+    trapOwner.hand = trapOwner.hand.filter((card) => card.instanceId !== trap.instanceId);
+    trapOwner.exile.push(trap);
+    logMessage(state, `${trapOwner.name} triggers ${trap.name} to survive!`);
+    const result = resolveCardEffect(trap, 'effect', {
+      log: (message) => logMessage(state, message),
+      state,
+      trapOwnerIndex: dyingPlayerIndex,
+      ...context,
+    });
+    resolveEffectChain(state, result, {
+      playerIndex: dyingPlayerIndex,
+      opponentIndex: (dyingPlayerIndex + 1) % 2,
+    });
+    onUpdate?.();
+    onResolved?.({ prevented: true, result });
+    return;
+  }
+
+  // For human players, auto-trigger lifeZero trap (survival instinct)
+  // This is not a decision - you'd always want to survive
+  const trap = relevantTraps[0];
+  const trapOwner = state.players[dyingPlayerIndex];
+  trapOwner.hand = trapOwner.hand.filter((card) => card.instanceId !== trap.instanceId);
+  trapOwner.exile.push(trap);
+  logMessage(state, `${trapOwner.name} triggers ${trap.name} to survive!`);
+  const result = resolveCardEffect(trap, 'effect', {
+    log: (message) => logMessage(state, message),
+    state,
+    trapOwnerIndex: dyingPlayerIndex,
+    ...context,
+  });
+  resolveEffectChain(state, result, {
+    playerIndex: dyingPlayerIndex,
+    opponentIndex: (dyingPlayerIndex + 1) % 2,
+  });
+  onUpdate?.();
+  broadcastSyncState(state);
+  onResolved?.({ prevented: true, result });
+};
+
+/**
+ * Check for lifeZero traps and potentially prevent game over
+ * Returns true if game should continue (trap prevented death), false otherwise
+ */
+export const checkLifeZeroTrap = (state, playerIndex, onUpdate) => {
+  const player = state.players[playerIndex];
+  if (player.hp > 0) return false; // Not dying
+
+  const relevantTraps = getTrapsFromHand(player, "lifeZero");
+  if (relevantTraps.length === 0) return false; // No trap to save them
+
+  // Trigger the trap synchronously (survival is automatic)
+  const trap = relevantTraps[0];
+  player.hand = player.hand.filter((card) => card.instanceId !== trap.instanceId);
+  player.exile.push(trap);
+  logMessage(state, `${player.name} triggers ${trap.name} to survive!`);
+  const result = resolveCardEffect(trap, 'effect', {
+    log: (message) => logMessage(state, message),
+    state,
+    trapOwnerIndex: playerIndex,
+    playerIndex,
+  });
+  resolveEffectChain(state, result, {
+    playerIndex,
+    opponentIndex: (playerIndex + 1) % 2,
+  });
+  onUpdate?.();
+  return player.hp > 0; // Return true if they survived
+};
+
 const updateActionBar = (onNextPhase) => {
   const turnBadge = document.getElementById("turn-badge");
   if (turnBadge) {
@@ -2827,6 +3234,7 @@ export const renderGame = (state, callbacks = {}) => {
   updateActionPanel(state, callbacks);
   handlePendingTrapDecision(state, callbacks.onUpdate);
   handlePendingPlayTrapDecision(state, callbacks.onUpdate);
+  handlePendingGenericTrapDecision(state, callbacks.onUpdate);
   processVisualEffects(state);
   const handleNextPhase = () => {
     if (!isLocalPlayersTurn(state)) {
