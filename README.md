@@ -2,7 +2,7 @@
 
 A web-based two-player trading card game featuring a unique consumption mechanic where predator creatures gain power by consuming prey.
 
-**Play now:** [Live Demo](#) | **Version:** 1.0
+**Play now:** [Live Demo](https://godeaux.github.io/TCG/) | **Version:** 0.1
 
 ---
 
