@@ -787,12 +787,37 @@ const updateActionPanel = (state, callbacks = {}) => {
     return;
   }
   clearPanel(actionPanel);
-  
+
+  const isLocalTurn = isLocalPlayersTurn(state);
+  const activePlayer = getActivePlayer(state);
+
+  // Check for inspected field card with sacrifice effect
+  const inspectedFieldCard = activePlayer.field.find(
+    (card) => card && card.instanceId === inspectedCardId
+  );
+
+  if (inspectedFieldCard && inspectedFieldCard.effects?.sacrificeEffect && isLocalTurn) {
+    const actions = document.createElement("div");
+    actions.className = "action-buttons";
+
+    const sacrificeButton = document.createElement("button");
+    sacrificeButton.className = "action-btn action-sacrifice";
+    sacrificeButton.textContent = "💀 Sacrifice";
+    sacrificeButton.onclick = () => {
+      handleSacrifice(state, inspectedFieldCard, callbacks.onUpdate);
+    };
+    actions.appendChild(sacrificeButton);
+
+    actionPanel.appendChild(actions);
+    actionBar.classList.add("has-actions");
+    return;
+  }
+
   // Clear action bar if no card is selected or if it's the End phase
   const playerIndex = isLocalPlayersTurn(state) ? state.activePlayerIndex : (state.activePlayerIndex + 1) % 2;
   const player = state.players[playerIndex];
   const selectedCard = player.hand.find((card) => card.instanceId === selectedHandCardId);
-  
+
   if (!selectedCard || state.phase === "End") {
     actionBar.classList.remove("has-actions");
     return;
@@ -800,7 +825,6 @@ const updateActionPanel = (state, callbacks = {}) => {
 
   const actions = document.createElement("div");
   actions.className = "action-buttons";
-  const isLocalTurn = isLocalPlayersTurn(state);
 
   const isFree =
     selectedCard.type === "Free Spell" || selectedCard.type === "Trap" || isFreePlay(selectedCard);
@@ -2207,6 +2231,73 @@ const handleDiscardEffect = (state, card, onUpdate) => {
   cleanupDestroyed(state);
   onUpdate?.();
   broadcastSyncState(state);
+};
+
+/**
+ * Handle sacrifice action from the action bar
+ * Moves creature from field to carrion and triggers sacrificeEffect
+ */
+const handleSacrifice = (state, card, onUpdate) => {
+  if (!isLocalPlayersTurn(state)) {
+    logMessage(state, "Wait for your turn to sacrifice creatures.");
+    onUpdate?.();
+    return;
+  }
+
+  if (!card.effects?.sacrificeEffect) {
+    logMessage(state, "This creature cannot be sacrificed.");
+    onUpdate?.();
+    return;
+  }
+
+  const playerIndex = state.activePlayerIndex;
+  const opponentIndex = (playerIndex + 1) % 2;
+  const player = state.players[playerIndex];
+  const opponent = state.players[opponentIndex];
+
+  // Find and remove from field
+  const fieldIndex = player.field.findIndex((c) => c && c.instanceId === card.instanceId);
+  if (fieldIndex === -1) {
+    logMessage(state, "Creature is not on the field.");
+    onUpdate?.();
+    return;
+  }
+
+  player.field[fieldIndex] = null;
+  player.carrion.push(card);
+
+  logMessage(state, `${player.name} sacrifices ${card.name}.`);
+
+  // Trigger sacrifice effect
+  const result = resolveCardEffect(card, 'sacrificeEffect', {
+    log: (message) => logMessage(state, message),
+    player,
+    opponent,
+    creature: card,
+    state,
+    playerIndex,
+    opponentIndex,
+  });
+
+  if (result) {
+    resolveEffectChain(
+      state,
+      result,
+      { playerIndex, opponentIndex, card },
+      onUpdate,
+      () => {
+        cleanupDestroyed(state);
+        inspectedCardId = null;
+        onUpdate?.();
+        broadcastSyncState(state);
+      }
+    );
+  } else {
+    cleanupDestroyed(state);
+    inspectedCardId = null;
+    onUpdate?.();
+    broadcastSyncState(state);
+  }
 };
 
 const triggerPlayTraps = (state, creature, onUpdate, onResolved) => {

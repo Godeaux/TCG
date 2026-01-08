@@ -311,12 +311,33 @@ const getConsumablePrey = (predator, state) => {
 };
 
 /**
+ * Check if a card has a sacrifice effect
+ */
+const hasSacrificeEffect = (card) => {
+  return card && card.effects && card.effects.sacrificeEffect;
+};
+
+/**
+ * Check if a card is on the field and owned by the active player
+ */
+const isOwnedFieldCreature = (card, state) => {
+  if (!card || !state) return false;
+  const activePlayer = getActivePlayer(state);
+  return activePlayer.field.includes(card);
+};
+
+/**
  * Clear all drag visual indicators
  */
 const clearDragVisuals = () => {
-  document.querySelectorAll('.valid-target, .invalid-target, .valid-drop-zone, .consumption-target, .spell-target, .spell-drop-zone').forEach(el => {
-    el.classList.remove('valid-target', 'invalid-target', 'valid-drop-zone', 'consumption-target', 'spell-target', 'spell-drop-zone');
+  document.querySelectorAll('.valid-target, .invalid-target, .valid-drop-zone, .consumption-target, .spell-target, .spell-drop-zone, .sacrifice-target').forEach(el => {
+    el.classList.remove('valid-target', 'invalid-target', 'valid-drop-zone', 'consumption-target', 'spell-target', 'spell-drop-zone', 'sacrifice-target');
   });
+  // Hide mobile sacrifice zone
+  const sacrificeZone = document.getElementById('sacrifice-zone');
+  if (sacrificeZone) {
+    sacrificeZone.classList.remove('visible');
+  }
   currentDragTargetId = null;
 };
 
@@ -547,6 +568,144 @@ const handleDirectConsumption = (predator, prey, slotIndex) => {
 };
 
 // ============================================================================
+// SACRIFICE HANDLING
+// ============================================================================
+
+/**
+ * Create or get the mobile sacrifice zone element
+ */
+const getOrCreateSacrificeZone = () => {
+  let zone = document.getElementById('sacrifice-zone');
+  if (!zone) {
+    zone = document.createElement('div');
+    zone.id = 'sacrifice-zone';
+    zone.className = 'sacrifice-zone';
+    zone.innerHTML = '<span class="sacrifice-zone-icon">💀</span><span class="sacrifice-zone-label">Sacrifice</span>';
+    // Insert in the top bar, on the active player's side
+    const topBar = document.querySelector('.top-bar');
+    if (topBar) {
+      topBar.appendChild(zone);
+    }
+  }
+  return zone;
+};
+
+/**
+ * Show the sacrifice zone for a card being dragged (mobile)
+ */
+const showSacrificeZone = (card, state) => {
+  if (!hasSacrificeEffect(card) || !isOwnedFieldCreature(card, state)) return;
+
+  const zone = getOrCreateSacrificeZone();
+  // Position on the active player's side
+  const localIndex = getLocalPlayerIndex ? getLocalPlayerIndex(state) : state.activePlayerIndex;
+  zone.classList.toggle('right-side', localIndex === 1);
+  zone.classList.add('visible');
+};
+
+/**
+ * Highlight the carrion pile as a sacrifice target (desktop)
+ */
+const highlightSacrificeTargets = (card, state) => {
+  if (!hasSacrificeEffect(card) || !isOwnedFieldCreature(card, state)) return;
+
+  // Find the carrion pile item in the piles section
+  const pilesSection = document.querySelector('.piles-section');
+  if (pilesSection) {
+    const carrionPile = pilesSection.querySelector('.pile-item:first-child');
+    if (carrionPile) {
+      carrionPile.classList.add('sacrifice-target');
+    }
+  }
+
+  // Also show mobile sacrifice zone
+  showSacrificeZone(card, state);
+};
+
+/**
+ * Handle sacrifice drop - move creature to carrion and trigger effect
+ */
+const handleSacrificeDrop = (card) => {
+  const state = latestState;
+  if (!state) return;
+
+  if (!hasSacrificeEffect(card) || !isOwnedFieldCreature(card, state)) {
+    revertCardToOriginalPosition();
+    return;
+  }
+
+  if (!isLocalPlayersTurn(state)) {
+    logMessage(state, "Wait for your turn to sacrifice creatures.");
+    revertCardToOriginalPosition();
+    return;
+  }
+
+  const player = getActivePlayer(state);
+  const playerIndex = state.activePlayerIndex;
+  const opponentIndex = (playerIndex + 1) % 2;
+
+  // Remove from field
+  const fieldIndex = player.field.findIndex(c => c && c.instanceId === card.instanceId);
+  if (fieldIndex === -1) {
+    revertCardToOriginalPosition();
+    return;
+  }
+
+  player.field[fieldIndex] = null;
+
+  // Add to carrion
+  player.carrion.push(card);
+
+  logMessage(state, `${player.name} sacrifices ${card.name}.`);
+
+  // Trigger sacrifice effect
+  const result = resolveCardEffect(card, 'sacrificeEffect', {
+    log: (message) => logMessage(state, message),
+    player,
+    opponent: getOpponentPlayer(state),
+    creature: card,
+    state,
+    playerIndex,
+    opponentIndex,
+  });
+
+  if (result) {
+    resolveEffectChain(
+      state,
+      result,
+      {
+        playerIndex,
+        opponentIndex,
+        card,
+      },
+      latestCallbacks.onUpdate,
+      () => {
+        cleanupDestroyed(state);
+        latestCallbacks.onUpdate?.();
+        broadcastSyncState(state);
+      }
+    );
+  } else {
+    cleanupDestroyed(state);
+    latestCallbacks.onUpdate?.();
+    broadcastSyncState(state);
+  }
+};
+
+/**
+ * Check if a drop target is the sacrifice zone or carrion pile
+ */
+const isSacrificeDropTarget = (element) => {
+  if (!element) return false;
+  // Mobile sacrifice zone
+  if (element.closest('#sacrifice-zone')) return true;
+  // Desktop carrion pile
+  const pileItem = element.closest('.pile-item');
+  if (pileItem && pileItem.classList.contains('sacrifice-target')) return true;
+  return false;
+};
+
+// ============================================================================
 // DROP HANDLERS
 // ============================================================================
 
@@ -717,6 +876,11 @@ const handleDragStart = (event) => {
   cardElement.classList.add('dragging');
   event.dataTransfer.effectAllowed = 'move';
   event.dataTransfer.setData('text/plain', instanceId);
+
+  // If card has sacrifice effect and is on field, show sacrifice targets
+  if (draggedCard && hasSacrificeEffect(draggedCard) && isOwnedFieldCreature(draggedCard, latestState)) {
+    highlightSacrificeTargets(draggedCard, latestState);
+  }
 };
 
 /**
@@ -912,6 +1076,13 @@ const handleDrop = (event) => {
 
   const card = getCardFromInstanceId(instanceId, latestState);
   if (!card) return;
+
+  // Check for sacrifice drop first (before clearing visuals)
+  if (isSacrificeDropTarget(event.target) && hasSacrificeEffect(card) && isOwnedFieldCreature(card, latestState)) {
+    clearDragVisuals();
+    handleSacrificeDrop(card);
+    return;
+  }
 
   const isSpell = card.type === 'Spell' || card.type === 'Free Spell';
 

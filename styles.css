@@ -3613,6 +3613,105 @@ button {
   }
 }
 
+/* ============================================================================
+   SACRIFICE SYSTEM STYLES
+   ============================================================================ */
+
+/* Mobile sacrifice zone - appears in top bar when dragging a sacrificeable card */
+.sacrifice-zone {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 8px;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(139, 69, 19, 0.9);
+  border: 2px dashed #d35400;
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 100;
+  animation: sacrifice-zone-pulse 1s infinite;
+  cursor: pointer;
+}
+
+.sacrifice-zone.right-side {
+  left: auto;
+  right: 8px;
+}
+
+.sacrifice-zone.visible {
+  display: flex;
+}
+
+.sacrifice-zone-icon {
+  font-size: 18px;
+}
+
+.sacrifice-zone-label {
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+@keyframes sacrifice-zone-pulse {
+  0%, 100% {
+    background: rgba(139, 69, 19, 0.9);
+    border-color: #d35400;
+    box-shadow: 0 0 15px rgba(211, 84, 0, 0.5);
+  }
+  50% {
+    background: rgba(160, 82, 25, 0.95);
+    border-color: #e67e22;
+    box-shadow: 0 0 25px rgba(230, 126, 34, 0.7);
+  }
+}
+
+/* Desktop carrion pile sacrifice target highlight */
+.pile-item.sacrifice-target {
+  background: rgba(139, 69, 19, 0.3);
+  border: 2px dashed #d35400;
+  border-radius: 8px;
+  animation: sacrifice-target-pulse 1s infinite;
+  cursor: pointer;
+  transform: scale(1.05);
+}
+
+@keyframes sacrifice-target-pulse {
+  0%, 100% {
+    background: rgba(139, 69, 19, 0.3);
+    border-color: #d35400;
+    box-shadow: 0 0 15px rgba(211, 84, 0, 0.5);
+  }
+  50% {
+    background: rgba(160, 82, 25, 0.4);
+    border-color: #e67e22;
+    box-shadow: 0 0 25px rgba(230, 126, 34, 0.7);
+  }
+}
+
+/* Action bar sacrifice button */
+.action-sacrifice {
+  background: linear-gradient(135deg, #8b4513 0%, #d35400 100%);
+  border: 1px solid #e67e22;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.action-sacrifice:hover {
+  background: linear-gradient(135deg, #a0522d 0%, #e67e22 100%);
+  transform: scale(1.02);
+  box-shadow: 0 0 15px rgba(230, 126, 34, 0.5);
+}
+
 /* Epic Victory Screen Styles */
 .victory-overlay {
   position: fixed;
