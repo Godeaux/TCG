@@ -13,7 +13,7 @@ This document outlines the current implementation of keywords, effect hooks, and
 | **Haste** | Creature can attack the rival player directly on the turn it is played. Without Haste, creatures must wait one turn before attacking players (but can still attack creatures). |
 | **Ambush** | When attacking: if the attacker kills its target, the attacker takes no counter-damage. If the target survives, combat proceeds normally. |
 | **Toxic** | Any creature damaged by this creature in combat dies immediately, regardless of remaining HP. |
-| **Neurotoxic** | Combat damage applies a "frozen" status to the target. Frozen creatures die at the end of their controller's next turn. |
+| **Neurotoxic** | Combat damage applies a "frozen" status to the target. Frozen creatures die at the end of their controller's current turn. |
 | **Lure** | Enemies must attack this creature if able. Multiple Lure creatures allow the attacker to choose among them. |
 | **Passive** | Cannot declare attacks, but can still block/defend and can be consumed as prey. |
 | **Harmless** | Cannot attack (0 attack permanently). Functionally similar to Passive but explicitly sets ATK to 0. |
@@ -117,14 +117,11 @@ This document outlines the current implementation of keywords, effect hooks, and
 
 ---
 
-### Q4: Frozen creature death timing
+### Q4: Frozen creature death timing ✅ RESOLVED
 
-**Current behavior:** Creatures frozen by Neurotoxic die at the END of their controller's turn, during the End Phase finalization step.
+**Answer:** Frozen creatures die at the end of their controller's current turn (the turn they received the frozen status).
 
-**Question:** Should frozen creatures die at:
-- End of their controller's turn (current)
-- Start of their controller's next turn
-- End of the turn AFTER they were frozen (regardless of whose turn)
+**Implementation:** `frozenDiesTurn = state.turn` (same turn, not +1)
 
 ---
 
