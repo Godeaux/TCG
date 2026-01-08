@@ -147,16 +147,14 @@ const getNavigationElements = () => ({
   // Tutorial
   tutorialClose: document.getElementById("tutorial-close"),
 
-  // Lobby
+  // Lobby (combined UI)
   lobbyCreate: document.getElementById("lobby-create"),
+  lobbyRejoin: document.getElementById("lobby-rejoin"),
   lobbyJoin: document.getElementById("lobby-join"),
   lobbyJoinForm: document.getElementById("lobby-join-form"),
   lobbyJoinCancel: document.getElementById("lobby-join-cancel"),
-  lobbyCodeInput: document.getElementById("lobby-code-input"),
+  lobbyCodeInput: document.getElementById("lobby-code"),
   lobbyError: document.getElementById("lobby-error"),
-  multiplayerBack: document.getElementById("multiplayer-back"),
-  lobbyContinue: document.getElementById("lobby-continue"),
-  lobbyLeave: document.getElementById("lobby-leave"),
   lobbyBack: document.getElementById("lobby-back"),
 
   // Deck builder
@@ -375,15 +373,59 @@ const initNavigation = () => {
     latestCallbacks.onUpdate?.();
   });
 
-  // Multiplayer: Create lobby
-  elements.lobbyCreate?.addEventListener("click", () => {
+  // Lobby: Create new lobby with fresh code (always resets to new code)
+  elements.lobbyCreate?.addEventListener("click", async () => {
     if (!latestState) {
       return;
     }
-    handleCreateLobby(latestState);
+    // Clear any existing lobby reference so we always get a fresh code
+    latestState.menu.existingLobby = null;
+    latestState.menu.gameInProgress = false;
+
+    // If already in active lobby, close it first then create new
+    if (latestState.menu.lobby) {
+      await handleLeaveLobby(latestState);
+    } else {
+      // No active lobby - just create a new one
+      await handleCreateLobby(latestState);
+    }
   });
 
-  // Multiplayer: Join lobby (show form)
+  // Lobby: Rejoin existing lobby / Continue game
+  elements.lobbyRejoin?.addEventListener("click", async () => {
+    if (!latestState) {
+      return;
+    }
+    // If we have an existing lobby but not active, rejoin it first
+    if (latestState.menu.existingLobby && !latestState.menu.lobby) {
+      await handleCreateLobby(latestState);
+    }
+
+    // Now check if lobby is ready for game
+    if (!isLobbyReady(latestState.menu.lobby)) {
+      setMenuError(
+        latestState,
+        `Waiting for ${getOpponentDisplayName(latestState)} to join the lobby.`
+      );
+      latestCallbacks.onUpdate?.();
+      return;
+    }
+
+    // Set online mode BEFORE trying to load state
+    latestState.menu.mode = "online";
+
+    // Try to restore game state from database (for reconnection)
+    await loadGameStateFromDatabase(latestState);
+
+    // If no game was restored, proceed with normal game start
+    if (!latestState.menu.gameInProgress) {
+      setMenuStage(latestState, "ready");
+    }
+
+    latestCallbacks.onUpdate?.();
+  });
+
+  // Lobby: Join someone else's lobby (show form)
   elements.lobbyJoin?.addEventListener("click", () => {
     if (!latestState) {
       return;
@@ -409,57 +451,18 @@ const initNavigation = () => {
     handleJoinLobby(latestState);
   });
 
-  // Multiplayer back button
-  elements.multiplayerBack?.addEventListener("click", () => {
-    if (!latestState) {
-      return;
-    }
-    setMenuStage(latestState, "main");
-    latestCallbacks.onUpdate?.();
-  });
-
-  // Lobby continue (start game)
-  elements.lobbyContinue?.addEventListener("click", async () => {
-    if (!latestState) {
-      return;
-    }
-    if (!isLobbyReady(latestState.menu.lobby)) {
-      setMenuError(
-        latestState,
-        `Waiting for ${getOpponentDisplayName(latestState)} to join the lobby.`
-      );
-      latestCallbacks.onUpdate?.();
-      return;
-    }
-
-    // Set online mode BEFORE trying to load state
-    latestState.menu.mode = "online";
-
-    // Try to restore game state from database (for reconnection)
-    await loadGameStateFromDatabase(latestState);
-
-    // If no game was restored, proceed with normal game start
-    if (!latestState.menu.gameInProgress) {
-      setMenuStage(latestState, "ready");
-    }
-
-    latestCallbacks.onUpdate?.();
-  });
-
-  // Lobby leave (reset to new code)
-  elements.lobbyLeave?.addEventListener("click", () => {
-    if (!latestState) {
-      return;
-    }
-    handleLeaveLobby(latestState);
-  });
-
-  // Lobby back (return to multiplayer menu)
+  // Lobby back button (return to main menu)
   elements.lobbyBack?.addEventListener("click", () => {
     if (!latestState) {
       return;
     }
-    handleBackFromLobby(latestState);
+    // If in active lobby, close it first
+    if (latestState.menu.lobby) {
+      handleBackFromLobby(latestState);
+    } else {
+      setMenuStage(latestState, "main");
+      latestCallbacks.onUpdate?.();
+    }
   });
 
   // Deck catalog exit - go back to home screen instead of main menu

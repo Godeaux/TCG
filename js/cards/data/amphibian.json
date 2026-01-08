@@ -326,14 +326,6 @@
       }
     },
     {
-      "id": "amphibian-prey-froglet",
-      "name": "Froglet",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1
-    },
-    {
       "id": "amphibian-prey-axolotl",
       "name": "Axolotl",
       "type": "Prey",

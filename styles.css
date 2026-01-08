@@ -2460,11 +2460,11 @@ button {
   gap: 12px;
 }
 
-.multiplayer-overlay .menu-form {
+.lobby-overlay .menu-form {
   display: none;
 }
 
-.multiplayer-overlay .menu-form.active {
+.lobby-overlay .menu-form.active {
   display: flex;
 }
 

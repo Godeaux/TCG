@@ -1036,17 +1036,6 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
     const localReady = state.deckSelection.readyStatus[localIndex];
     const opponentReady = state.deckSelection.readyStatus[opponentIndex];
 
-    console.log('[DeckBuilderOverlay] Online deck selection render:', {
-      localIndex,
-      opponentIndex,
-      selections: state.deckSelection.selections,
-      localSelection: state.deckSelection.selections[localIndex],
-      readyStatus: state.deckSelection.readyStatus,
-      localReady,
-      opponentReady,
-      lobby: { host_id: state.menu?.lobby?.host_id, guest_id: state.menu?.lobby?.guest_id },
-      profileId: state.menu?.profile?.id
-    });
     const localPlayer = state.players[localIndex];
     const opponentPlayer = state.players[opponentIndex];
     const opponentName = opponentPlayer?.name || "Opponent";
@@ -1122,13 +1111,6 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
 
     const localSelection = state.deckSelection.selections[localIndex];
     const hasSelectedDeck = Boolean(localSelection);
-
-    console.log('[DeckBuilderOverlay] Deck selection check:', {
-      localIndex,
-      localSelection,
-      hasSelectedDeck,
-      allSelections: state.deckSelection.selections
-    });
 
     if (deckSelectTitle) {
       deckSelectTitle.textContent = hasSelectedDeck
@@ -1263,7 +1245,13 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       state.deckBuilder.available[playerIndex] = cloneDeckCatalog(catalog);
       state.deckBuilder.catalogOrder[playerIndex] = catalog.map((card) => card.id);
       state.deckBuilder.selections[playerIndex] = [];
-      state.deckSelection.stage = isPlayerOne ? "p1-selected" : "complete";
+      // In online mode, don't advance stage to "complete" on category selection
+      // The "complete" stage is only set when BOTH players are ready (line 1055-1059)
+      // This prevents a race condition where stage="complete" causes the render to skip
+      // the both-ready check for the other player
+      if (state.menu?.mode !== "online") {
+        state.deckSelection.stage = isPlayerOne ? "p1-selected" : "complete";
+      }
       logMessage(state, `${player.name} selected the ${option.name} deck.`);
       if (state.menu?.mode === "online") {
         sendLobbyBroadcast("deck_update", buildLobbySyncPayload(state));

@@ -112,10 +112,7 @@ export const hydrateZoneSnapshots = (snapshots, size, fallbackTurn) => {
     console.warn("⚠️ hydrateZoneSnapshots: snapshots is not an array:", snapshots);
     return size ? Array.from({ length: size }, () => null) : [];
   }
-  console.log("🔄 Hydrating zone with", snapshots.length, "snapshots, size:", size, "fallbackTurn:", fallbackTurn);
-  console.log("  Input snapshots:", snapshots);
   const hydrated = snapshots.map((card) => hydrateCardSnapshot(card, fallbackTurn));
-  console.log("  Hydrated result:", hydrated);
   if (size) {
     const padded = hydrated.slice(0, size);
     while (padded.length < size) {
@@ -332,7 +329,8 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
           isProtectedLocalSnapshot
         );
 
-        if (playerSnapshot.name) {
+        // Only sync opponent's name, protect local player's name
+        if (playerSnapshot.name && !isProtectedLocalSnapshot) {
           player.name = playerSnapshot.name;
         }
         if (typeof playerSnapshot.hp === "number") {

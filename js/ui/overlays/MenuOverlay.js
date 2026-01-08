@@ -12,6 +12,8 @@
  * - renderMenuOverlays: Main menu overlay coordinator
  */
 
+import { getLocalPlayerIndex } from '../../state/selectors.js';
+
 // ============================================================================
 // DOM ELEMENTS
 // ============================================================================
@@ -20,7 +22,6 @@ const getMenuElements = () => ({
   // Overlays
   menuOverlay: document.getElementById("menu-overlay"),
   loginOverlay: document.getElementById("login-overlay"),
-  multiplayerOverlay: document.getElementById("multiplayer-overlay"),
   lobbyOverlay: document.getElementById("lobby-overlay"),
   tutorialOverlay: document.getElementById("tutorial-overlay"),
   aiSetupOverlay: document.getElementById("ai-setup-overlay"),
@@ -34,10 +35,11 @@ const getMenuElements = () => ({
   loginSubmit: document.getElementById("login-submit"),
   loginError: document.getElementById("login-error"),
   lobbyCreate: document.getElementById("lobby-create"),
+  lobbyRejoin: document.getElementById("lobby-rejoin"),
   lobbyJoin: document.getElementById("lobby-join"),
   lobbyJoinForm: document.getElementById("lobby-join-form"),
   lobbyJoinCancel: document.getElementById("lobby-join-cancel"),
-  multiplayerBack: document.getElementById("multiplayer-back"),
+  lobbyBack: document.getElementById("lobby-back"),
   lobbyError: document.getElementById("lobby-error"),
   lobbyLiveError: document.getElementById("lobby-live-error"),
   lobbyStatus: document.getElementById("lobby-status"),
@@ -75,9 +77,9 @@ const updateMenuStatus = (state, elements) => {
  * Get opponent display name
  */
 const getOpponentDisplayName = (state) => {
-  const localIndex = state.menu?.profile?.id === state.players[0].profileId ? 0 : 1;
+  const localIndex = getLocalPlayerIndex(state);
   const opponentIndex = (localIndex + 1) % 2;
-  return state.players[opponentIndex]?.name || "opponent";
+  return state.players?.[opponentIndex]?.name || "Opponent";
 };
 
 // ============================================================================
@@ -104,8 +106,8 @@ export const renderMenuOverlays = (state) => {
   const stage = state.menu.stage;
   const showMain = stage === "main";
   const showLogin = stage === "login";
-  const showMultiplayer = stage === "multiplayer";
-  const showLobby = stage === "lobby";
+  // Show lobby overlay for both "multiplayer" and "lobby" stages (combined UI)
+  const showLobby = stage === "multiplayer" || stage === "lobby";
   const showTutorial = stage === "tutorial";
   const showAISetup = stage === "ai-setup";
 
@@ -116,9 +118,6 @@ export const renderMenuOverlays = (state) => {
   elements.loginOverlay?.classList.toggle("active", showLogin);
   elements.loginOverlay?.setAttribute("aria-hidden", showLogin ? "false" : "true");
 
-  elements.multiplayerOverlay?.classList.toggle("active", showMultiplayer);
-  elements.multiplayerOverlay?.setAttribute("aria-hidden", showMultiplayer ? "false" : "true");
-
   elements.lobbyOverlay?.classList.toggle("active", showLobby);
   elements.lobbyOverlay?.setAttribute("aria-hidden", showLobby ? "false" : "true");
 
@@ -128,8 +127,8 @@ export const renderMenuOverlays = (state) => {
   elements.aiSetupOverlay?.classList.toggle("active", showAISetup);
   elements.aiSetupOverlay?.setAttribute("aria-hidden", showAISetup ? "false" : "true");
 
-  // Hide lobby join form if not in multiplayer
-  if (!showMultiplayer) {
+  // Hide lobby join form if not in lobby stages
+  if (!showLobby) {
     elements.lobbyJoinForm?.classList.remove("active");
   }
 
@@ -156,20 +155,43 @@ export const renderMenuOverlays = (state) => {
   if (elements.loginSubmit) {
     elements.loginSubmit.disabled = state.menu.loading;
   }
+
+  // Determine lobby state for button visibility
+  const hasExistingLobby = Boolean(state.menu.existingLobby || state.menu.lobby);
+  const hasGameInProgress = Boolean(state.menu.gameInProgress);
+  const isInActiveLobby = Boolean(state.menu.lobby);
+
+  // Rejoin button - primary (golden) if game in progress, hidden if no existing lobby
+  if (elements.lobbyRejoin) {
+    elements.lobbyRejoin.disabled = state.menu.loading || !hasExistingLobby;
+    elements.lobbyRejoin.style.display = hasExistingLobby ? "" : "none";
+    // Make golden/primary when game in progress, otherwise secondary style
+    if (hasGameInProgress) {
+      elements.lobbyRejoin.className = "btn-primary";
+      elements.lobbyRejoin.textContent = "Continue Game";
+    } else {
+      elements.lobbyRejoin.className = "btn-secondary";
+      elements.lobbyRejoin.textContent = "Rejoin Lobby";
+    }
+  }
+
+  // New Code button - always creates a fresh lobby code
   if (elements.lobbyCreate) {
     elements.lobbyCreate.disabled = state.menu.loading;
-    // Update button text based on whether user has an existing lobby
-    const hasExistingLobby = Boolean(state.menu.existingLobby);
-    elements.lobbyCreate.textContent = hasExistingLobby ? "Rejoin Lobby" : "Create Lobby";
+    elements.lobbyCreate.textContent = "New Code";
   }
+
+  // Join lobby button - hide when already in a lobby
   if (elements.lobbyJoin) {
     elements.lobbyJoin.disabled = state.menu.loading;
+    elements.lobbyJoin.style.display = isInActiveLobby ? "none" : "";
   }
+
   if (elements.lobbyJoinCancel) {
     elements.lobbyJoinCancel.disabled = state.menu.loading;
   }
-  if (elements.multiplayerBack) {
-    elements.multiplayerBack.disabled = state.menu.loading;
+  if (elements.lobbyBack) {
+    elements.lobbyBack.disabled = state.menu.loading;
   }
 
   // Update error messages
@@ -183,38 +205,44 @@ export const renderMenuOverlays = (state) => {
     elements.lobbyLiveError.textContent = state.menu.error ?? "";
   }
 
-  // Update lobby status
+  // Update lobby status text
   if (elements.lobbyStatus) {
     const lobby = state.menu.lobby;
-    const opponentName = getOpponentDisplayName(state);
+    const existingLobby = state.menu.existingLobby;
     const localProfileId = state.menu.profile?.id ?? null;
     const hostName = state.players?.[0]?.name || "Host";
     const guestName = state.players?.[1]?.name || "Guest";
     const isHost = Boolean(lobby?.host_id && lobby.host_id === localProfileId);
     const isGuest = Boolean(lobby?.guest_id && lobby.guest_id === localProfileId);
 
-    if (!lobby) {
-      elements.lobbyStatus.textContent = `Waiting for ${opponentName}...`;
+    if (hasGameInProgress && existingLobby) {
+      elements.lobbyStatus.textContent = "Game in progress. Click Continue to rejoin.";
+    } else if (existingLobby && !lobby) {
+      elements.lobbyStatus.textContent = `You have an existing lobby (${existingLobby.code}).`;
+    } else if (!lobby) {
+      elements.lobbyStatus.textContent = "Create or join a lobby to play with a friend.";
     } else if (lobby.status === "full") {
       if (isGuest) {
         elements.lobbyStatus.textContent = `Joined ${hostName}'s lobby. Ready to start.`;
       } else if (isHost) {
         elements.lobbyStatus.textContent = `${guestName} joined. Ready to start.`;
       } else {
-        elements.lobbyStatus.textContent = `${opponentName} joined. Ready to start.`;
+        elements.lobbyStatus.textContent = "Ready to start.";
       }
     } else if (lobby.status === "closed") {
       elements.lobbyStatus.textContent = "Lobby closed.";
     } else {
       elements.lobbyStatus.textContent = isHost
-        ? `Waiting for ${guestName}...`
+        ? `Waiting for opponent to join...`
         : `Joined ${hostName}'s lobby. Waiting to start.`;
     }
   }
 
   // Update lobby code display
   if (elements.lobbyCodeDisplay) {
-    elements.lobbyCodeDisplay.textContent = state.menu.lobby?.code || "";
+    const code = state.menu.lobby?.code || state.menu.existingLobby?.code || "";
+    elements.lobbyCodeDisplay.textContent = code;
+    elements.lobbyCodeDisplay.style.display = code ? "" : "none";
   }
 };
 
@@ -226,13 +254,11 @@ export const hideAllMenuOverlays = () => {
 
   elements.menuOverlay?.classList.remove("active");
   elements.loginOverlay?.classList.remove("active");
-  elements.multiplayerOverlay?.classList.remove("active");
   elements.lobbyOverlay?.classList.remove("active");
   elements.tutorialOverlay?.classList.remove("active");
 
   elements.menuOverlay?.setAttribute("aria-hidden", "true");
   elements.loginOverlay?.setAttribute("aria-hidden", "true");
-  elements.multiplayerOverlay?.setAttribute("aria-hidden", "true");
   elements.lobbyOverlay?.setAttribute("aria-hidden", "true");
   elements.tutorialOverlay?.setAttribute("aria-hidden", "true");
 };

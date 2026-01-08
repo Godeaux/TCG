@@ -8,13 +8,16 @@
  * - Database persistence for reconnection
  *
  * Usage:
- *   import { broadcastSyncState, loadGameStateFromDatabase } from './network/index.js';
+ *   import { broadcastSyncState, saveGameStateToDatabase } from './network/index.js';
  *
  *   // After a game action
  *   broadcastSyncState(gameState);
  *
- *   // When joining a lobby
- *   const restored = await loadGameStateFromDatabase(gameState);
+ *   // Persist game state
+ *   await saveGameStateToDatabase(gameState);
+ *
+ * Note: loadGameStateFromDatabase is defined locally in ui.js because it needs
+ * UI-specific applyLobbySyncPayload that handles local player protection.
  */
 
 // ============================================================================
@@ -40,7 +43,6 @@ export {
   sendLobbyBroadcast,
   broadcastSyncState,
   saveGameStateToDatabase,
-  loadGameStateFromDatabase,
   requestSyncFromOpponent,
 } from './sync.js';
 

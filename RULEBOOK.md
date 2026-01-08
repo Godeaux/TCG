@@ -499,6 +499,12 @@ Traps resolve **before** the triggering action completes. For example:
 - **"Kill"** effects destroy the target instantly, regardless of HP
 - **"Deal damage"** effects reduce HP and only destroy if HP reaches 0
 
+### **Damage Targeting**
+- Cards that say **"deal X damage"** can target **any creature or the rival player**
+- When targeting a creature, it reduces their HP (destroying them if HP reaches 0)
+- When targeting the rival, it reduces their life points directly
+- **"Kill"** effects can only target creatures, not players
+
 ### **Draw Effects**
 - If an effect says "draw" without a number, draw **1 card**
 - If your deck is empty, you cannot draw (the effect does nothing)

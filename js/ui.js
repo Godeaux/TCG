@@ -130,6 +130,7 @@ import {
 } from "./network/serialization.js";
 
 import {
+  setLobbyChannel,
   sendLobbyBroadcast,
   broadcastSyncState,
   saveGameStateToDatabase,
@@ -233,6 +234,7 @@ let lobbyChannel = null;
 let activeLobbyId = null;
 let lobbyRefreshTimeout = null;
 let lobbyRefreshInFlight = false;
+let dbLoadComplete = false; // Flag to prevent sync_request response before DB loads
 
 // Note: Other lobby state (profileLoaded, decksLoaded, etc.)
 // has been moved to ./network/lobbyManager.js
@@ -409,7 +411,6 @@ const applyLobbySyncPayload = (state, payload, options = {}) => {
   const senderId = payload.senderId ?? null;
   // Skip sender check when loading from database (force apply)
   if (!forceApply && senderId && senderId === state.menu?.profile?.id) {
-    console.log('[ui.js applyLobbySyncPayload] SKIPPED - payload is from self', { senderId, profileId: state.menu?.profile?.id });
     return;
   }
   const timestamp = payload.timestamp ?? 0;
@@ -424,16 +425,6 @@ const applyLobbySyncPayload = (state, payload, options = {}) => {
     state.menu.lastLobbySyncBySender[senderId] = timestamp;
   }
   const localIndex = getLocalPlayerIndex(state);
-  console.log('[ui.js applyLobbySyncPayload] Starting sync', {
-    localIndex,
-    senderId,
-    profileId: state.menu?.profile?.id,
-    lobby: { host_id: state.menu?.lobby?.host_id, guest_id: state.menu?.lobby?.guest_id },
-    payloadSelections: payload.deckSelection?.selections,
-    currentSelections: state.deckSelection?.selections,
-    payloadReadyStatus: payload.deckSelection?.readyStatus,
-    currentReadyStatus: state.deckSelection?.readyStatus
-  });
   const deckSelectionOrder = ["p1", "p1-selected", "p2", "complete"];
   const deckBuilderOrder = ["p1", "p2", "complete"];
   const getStageRank = (order, stage) => {
@@ -499,7 +490,8 @@ const applyLobbySyncPayload = (state, payload, options = {}) => {
 
         const isProtectedLocalSnapshot = !forceApply && index === localIndex;
 
-        if (playerSnapshot.name) {
+        // Only sync opponent's name, protect local player's name
+        if (playerSnapshot.name && !isProtectedLocalSnapshot) {
           player.name = playerSnapshot.name;
         }
         if (typeof playerSnapshot.hp === "number") {
@@ -552,18 +544,9 @@ const applyLobbySyncPayload = (state, payload, options = {}) => {
         const localSelection = state.deckSelection.selections[index];
         const isLocalSlot = index === localIndex;
         const shouldProtect = isLocalSlot && localSelection;
-        console.log(`[ui.js applyLobbySyncPayload] Selection sync index ${index}:`, {
-          isLocalSlot,
-          localSelection,
-          incomingSelection: selection,
-          shouldProtect,
-          localIndex
-        });
         if (shouldProtect) {
-          console.log(`[ui.js applyLobbySyncPayload] PROTECTING local selection at index ${index}`);
           return;
         }
-        console.log(`[ui.js applyLobbySyncPayload] APPLYING selection at index ${index}:`, selection);
         state.deckSelection.selections[index] = selection;
       });
     }
@@ -575,10 +558,7 @@ const applyLobbySyncPayload = (state, payload, options = {}) => {
       payload.deckSelection.readyStatus.forEach((ready, index) => {
         // Only update opponent's ready status
         if (index !== localIndex) {
-          console.log(`[ui.js applyLobbySyncPayload] APPLYING opponent ready status at index ${index}:`, ready);
           state.deckSelection.readyStatus[index] = ready;
-        } else {
-          console.log(`[ui.js applyLobbySyncPayload] PROTECTING local ready status at index ${index}`);
         }
       });
     }
@@ -696,6 +676,7 @@ const updateLobbySubscription = (state, { force = false } = {}) => {
     return;
   }
   activeLobbyId = lobbyId;
+  dbLoadComplete = false; // Reset flag - don't respond to sync_request until DB loads
   if (lobbyRefreshTimeout) {
     window.clearTimeout(lobbyRefreshTimeout);
     lobbyRefreshTimeout = null;
@@ -734,6 +715,10 @@ const updateLobbySubscription = (state, { force = false } = {}) => {
     if (payload?.senderId === state.menu?.profile?.id) {
       return;
     }
+    // Don't respond until we've loaded from DB - otherwise we send empty/stale state
+    if (!dbLoadComplete) {
+      return;
+    }
     sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
   });
   lobbyChannel.on("broadcast", { event: "sync_state" }, ({ payload }) => {
@@ -743,9 +728,36 @@ const updateLobbySubscription = (state, { force = false } = {}) => {
 
   refreshLobbyState(state, { silent: true });
 
-  // Load from database, then request sync for real-time updates
-  loadGameStateFromDatabase(state).then(() => {
+  // Load from database, then sync with other player
+  loadGameStateFromDatabase(state).then((gameRestored) => {
+    // Mark DB load as complete - now safe to respond to sync_request
+    dbLoadComplete = true;
+
+    // Request the other player's state (they may have a more recent version)
     sendLobbyBroadcast("sync_request", { senderId: state.menu?.profile?.id ?? null });
+
+    // Only broadcast our state if NO game was restored from database.
+    // If a game WAS restored, our state might be stale (opponent may have made moves
+    // while we were disconnected). In that case, we rely on sync_request to get
+    // the latest state from the opponent. We still need to share our playerProfile
+    // for name sync though.
+    if (!gameRestored) {
+      sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
+    } else {
+      // Just send minimal info for name sync (don't overwrite game state)
+      sendLobbyBroadcast("sync_state", {
+        playerProfile: {
+          index: getLocalPlayerIndex(state),
+          name: state.menu?.profile?.username ?? state.players?.[getLocalPlayerIndex(state)]?.name ?? null,
+        },
+        // Include timestamps but NOT game state
+        deckSelection: {
+          stage: state.deckSelection?.stage ?? null,
+          selections: state.deckSelection?.selections ?? [],
+          readyStatus: state.deckSelection?.readyStatus ?? [false, false],
+        },
+      });
+    }
   });
 };
 
@@ -1829,7 +1841,19 @@ const handlePendingPlayTrapDecision = (state, onUpdate) => {
   const localIndex = getLocalPlayerIndex(state);
   const opponent = state.players[opponentIndex];
 
+  console.log('[PlayTrap] Decision check:', {
+    opponentIndex,
+    localIndex,
+    creatureId,
+    triggerKey,
+    profileId: state.menu?.profile?.id,
+    hostId: state.menu?.lobby?.host_id,
+    guestId: state.menu?.lobby?.guest_id,
+    isOnline: isOnlineMode(state),
+  });
+
   if (!opponent) {
+    console.warn('[PlayTrap] No opponent found at index', opponentIndex);
     state.pendingPlayTrapDecision = null;
     if (playTrapWaitingPanelActive) {
       clearSelectionPanel();
@@ -1840,6 +1864,7 @@ const handlePendingPlayTrapDecision = (state, onUpdate) => {
 
   // If we're NOT the trap owner, show waiting message
   if (opponentIndex !== localIndex) {
+    console.log('[PlayTrap] Showing waiting message (not trap owner)');
     renderSelectionPanel({
       title: `${getOpponentDisplayName(state)} is deciding whether to trigger a trap...`,
       items: [],
@@ -1850,23 +1875,30 @@ const handlePendingPlayTrapDecision = (state, onUpdate) => {
     return;
   }
 
+  console.log('[PlayTrap] I am the trap owner, showing trap decision UI');
+
   playTrapWaitingPanelActive = false;
 
   // Find the creature that was played
   const creature = findCardByInstanceId(state, creatureId);
   if (!creature) {
+    console.warn('[PlayTrap] Creature not found:', creatureId);
     state.pendingPlayTrapDecision = null;
     return;
   }
 
   // Get traps from hand that can trigger
   const relevantTraps = getTrapsFromHand(opponent, triggerKey);
+  console.log('[PlayTrap] Relevant traps:', relevantTraps.length, 'for trigger:', triggerKey);
   if (relevantTraps.length === 0) {
+    console.log('[PlayTrap] No relevant traps, clearing pending decision');
     state.pendingPlayTrapDecision = null;
     onUpdate?.();
     broadcastSyncState(state);
     return;
   }
+
+  console.log('[PlayTrap] Rendering trap decision with', relevantTraps.length, 'traps');
 
   // Render the trap decision UI
   const items = relevantTraps.map((trap) => {

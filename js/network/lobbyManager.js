@@ -5,21 +5,17 @@
  * Handles:
  * - User authentication/profile
  * - Lobby creation, joining, and leaving
- * - Real-time lobby subscriptions
  * - Deck loading and management
  *
  * Uses a callback registration pattern to notify the UI of state changes
  * without creating circular dependencies.
+ *
+ * Note: Lobby subscriptions, sync, and game state loading are handled in ui.js
+ * because they require UI-specific applyLobbySyncPayload for local player protection.
  */
 
 import { isOnlineMode } from '../state/selectors.js';
 import { deckCatalogs } from '../cards/index.js';
-import {
-  setLobbyChannel,
-  sendLobbyBroadcast,
-  saveGameStateToDatabase,
-} from './sync.js';
-import { buildLobbySyncPayload } from './serialization.js';
 import { getSupabaseApi } from './index.js';
 
 // ============================================================================
@@ -28,12 +24,6 @@ import { getSupabaseApi } from './index.js';
 
 // Supabase API reference (populated by loadSupabaseApi)
 let supabaseApi = null;
-
-// Lobby subscription state
-let lobbyChannel = null;
-let activeLobbyId = null;
-let lobbyRefreshTimeout = null;
-let lobbyRefreshInFlight = false;
 
 // Profile/deck loading state
 let profileLoaded = false;
@@ -261,8 +251,11 @@ export const updateLobbyPlayerNames = async (state, lobby = state.menu?.lobby) =
   }
   try {
     const api = await loadSupabaseApi(state);
-    const profiles = await api.fetchProfilesByIds([lobby.host_id, lobby.guest_id]);
+    const idsToFetch = [lobby.host_id, lobby.guest_id].filter(Boolean);
+    const profiles = await api.fetchProfilesByIds(idsToFetch);
     const profileMap = new Map(profiles.map((profile) => [profile.id, profile.username]));
+    // Note: Due to Supabase RLS, this may only return the current user's profile.
+    // Opponent names are synced via broadcast (playerProfile in sync payload).
     if (lobby.host_id && profileMap.has(lobby.host_id)) {
       state.players[0].name = profileMap.get(lobby.host_id);
     }
@@ -271,6 +264,7 @@ export const updateLobbyPlayerNames = async (state, lobby = state.menu?.lobby) =
     }
     callbacks.onUpdate?.();
   } catch (error) {
+    console.error('[updateLobbyPlayerNames] Error:', error);
     setMenuError(state, error.message || 'Unable to load lobby profiles.');
     callbacks.onUpdate?.();
   }
@@ -374,11 +368,13 @@ export const handleCreateLobby = async (state) => {
     state.menu.existingLobby = null;
     state.menu.gameInProgress = false;
     setMenuStage(state, 'lobby');
-    updateLobbySubscription(state);
+    // NOTE: Don't call updateLobbySubscription here - ui.js handles it via renderGame
+    // This avoids creating duplicate subscriptions
     updateLobbyPlayerNames(state, lobby);
 
-    // Try to restore any existing game state (in case of reconnection)
-    await loadGameStateFromDatabase(state);
+    // Trigger UI update to set up subscription via ui.js
+    // ui.js updateLobbySubscription also handles loadGameStateFromDatabase and sync_request
+    callbacks.onUpdate?.();
 
     return { success: true, lobby };
   } catch (error) {
@@ -408,13 +404,24 @@ export const handleJoinLobby = async (state, code) => {
     const api = await loadSupabaseApi(state);
     const lobby = await api.joinLobbyByCode({ code, guestId: state.menu.profile.id });
     state.menu.lobby = lobby;
+
+    // IMPORTANT: Move guest's name from slot 0 to slot 1
+    // When user logs in, their name is set to state.players[0].name.
+    // As a guest (index 1), we need to move it to the correct slot before
+    // any sync happens, otherwise the wrong name gets broadcast.
+    const guestName = state.players[0].name;
+    state.players[1].name = guestName;
+    state.players[0].name = 'Player 1'; // Clear slot 0 until host name is fetched
+
     state.menu.gameInProgress = false;
     setMenuStage(state, 'lobby');
-    updateLobbySubscription(state);
+    // NOTE: Don't call updateLobbySubscription here - ui.js handles it via renderGame
+    // This avoids creating duplicate subscriptions
     updateLobbyPlayerNames(state, lobby);
 
-    // Try to restore any existing game state (in case of reconnection)
-    await loadGameStateFromDatabase(state);
+    // Trigger UI update to set up subscription via ui.js
+    // ui.js updateLobbySubscription also handles loadGameStateFromDatabase and sync_request
+    callbacks.onUpdate?.();
 
     return { success: true, lobby };
   } catch (error) {
@@ -428,13 +435,13 @@ export const handleJoinLobby = async (state, code) => {
 };
 
 /**
- * Go back from lobby to multiplayer menu
+ * Go back from lobby to main menu
  */
 export const handleBackFromLobby = async (state) => {
   if (!state.menu.lobby || !state.menu.profile) {
-    setMenuStage(state, 'multiplayer');
+    setMenuStage(state, 'main');
     state.menu.lobby = null;
-    updateLobbySubscription(state);
+    callbacks.onUpdate?.(); // Let ui.js handle subscription cleanup
     return { success: true };
   }
 
@@ -451,8 +458,8 @@ export const handleBackFromLobby = async (state) => {
   } finally {
     state.menu.lobby = null;
     applyMenuLoading(state, false);
-    setMenuStage(state, 'multiplayer');
-    updateLobbySubscription(state);
+    setMenuStage(state, 'main');
+    // NOTE: Don't call updateLobbySubscription here - ui.js handles it via renderGame
     callbacks.onUpdate?.();
   }
 
@@ -466,7 +473,7 @@ export const handleLeaveLobby = async (state) => {
   if (!state.menu.lobby || !state.menu.profile) {
     setMenuStage(state, 'multiplayer');
     state.menu.lobby = null;
-    updateLobbySubscription(state);
+    callbacks.onUpdate?.(); // Let ui.js handle subscription cleanup
     return { success: true };
   }
 
@@ -480,7 +487,7 @@ export const handleLeaveLobby = async (state) => {
     // Close the current lobby
     await api.closeLobby({ lobbyId: state.menu.lobby.id, userId: state.menu.profile.id });
     state.menu.lobby = null;
-    updateLobbySubscription(state);
+    callbacks.onUpdate?.(); // Let ui.js handle subscription cleanup
 
     // Create a new lobby with a fresh code
     const lobby = await api.createLobby({
@@ -491,7 +498,7 @@ export const handleLeaveLobby = async (state) => {
     state.menu.lobby = lobby;
     state.menu.existingLobby = null;
     state.menu.gameInProgress = false;
-    updateLobbySubscription(state);
+    // NOTE: Don't call updateLobbySubscription here - ui.js handles it via renderGame
     updateLobbyPlayerNames(state, lobby);
 
     return { success: true, lobby };
@@ -500,7 +507,6 @@ export const handleLeaveLobby = async (state) => {
     setMenuError(state, message);
     state.menu.lobby = null;
     setMenuStage(state, 'multiplayer');
-    updateLobbySubscription(state);
     return { success: false, error: message };
   } finally {
     applyMenuLoading(state, false);
@@ -508,200 +514,6 @@ export const handleLeaveLobby = async (state) => {
   }
 };
 
-// ============================================================================
-// LOBBY SUBSCRIPTION
-// ============================================================================
-
-/**
- * Update lobby subscription (subscribe to real-time updates)
- */
-export const updateLobbySubscription = (state, { force = false } = {}) => {
-  const lobbyId = state.menu.lobby?.id ?? null;
-
-  if (!force && activeLobbyId === lobbyId) {
-    return;
-  }
-
-  activeLobbyId = lobbyId;
-
-  // Clear existing refresh timeout
-  if (lobbyRefreshTimeout) {
-    window.clearTimeout(lobbyRefreshTimeout);
-    lobbyRefreshTimeout = null;
-  }
-
-  // Unsubscribe from existing channel
-  if (lobbyChannel) {
-    supabaseApi?.unsubscribeChannel?.(lobbyChannel);
-    lobbyChannel = null;
-    setLobbyChannel(null);
-  }
-
-  if (!lobbyId || !supabaseApi) {
-    return;
-  }
-
-  // Apply lobby update from subscription
-  const applyLobbyUpdate = (lobby) => {
-    state.menu.lobby = lobby;
-    if (lobby?.status === 'closed') {
-      setMenuError(state, 'Lobby closed.');
-    }
-    if (lobby) {
-      updateLobbyPlayerNames(state, lobby);
-    }
-    callbacks.onUpdate?.();
-  };
-
-  // Subscribe to lobby updates
-  lobbyChannel = supabaseApi.subscribeToLobby({
-    lobbyId,
-    onUpdate: applyLobbyUpdate,
-  });
-  setLobbyChannel(lobbyChannel);
-
-  // Handle deck update broadcasts
-  lobbyChannel.on('broadcast', { event: 'deck_update' }, ({ payload }) => {
-    callbacks.onApplySync?.(state, payload);
-    callbacks.onUpdate?.();
-  });
-
-  // Handle sync request broadcasts
-  lobbyChannel.on('broadcast', { event: 'sync_request' }, ({ payload }) => {
-    if (payload?.senderId === state.menu?.profile?.id) {
-      return;
-    }
-    // Respond with current state
-    sendLobbyBroadcast('sync_state', buildLobbySyncPayload(state));
-  });
-
-  // Handle sync state broadcasts
-  lobbyChannel.on('broadcast', { event: 'sync_state' }, ({ payload }) => {
-    callbacks.onApplySync?.(state, payload);
-    callbacks.onUpdate?.();
-  });
-
-  // Initial refresh
-  refreshLobbyState(state, { silent: true });
-
-  // Load from database, then request sync
-  loadGameStateFromDatabase(state).then(() => {
-    sendLobbyBroadcast('sync_request', { senderId: state.menu?.profile?.id ?? null });
-  });
-};
-
-/**
- * Refresh lobby state from database
- */
-export const refreshLobbyState = async (state, { silent = false } = {}) => {
-  if (!state.menu?.lobby?.id || !supabaseApi || lobbyRefreshInFlight) {
-    return;
-  }
-
-  lobbyRefreshInFlight = true;
-
-  try {
-    const lobby = await supabaseApi.fetchLobbyById({
-      lobbyId: state.menu.lobby.id,
-    });
-    if (lobby) {
-      state.menu.lobby = lobby;
-      if (lobby.status === 'closed') {
-        setMenuError(state, 'Lobby closed.');
-      }
-      updateLobbyPlayerNames(state, lobby);
-      callbacks.onUpdate?.();
-    }
-  } catch (error) {
-    if (!silent) {
-      setMenuError(state, error.message || 'Failed to refresh lobby.');
-      callbacks.onUpdate?.();
-    }
-  } finally {
-    lobbyRefreshInFlight = false;
-    if (!silent && state.menu?.lobby?.id) {
-      lobbyRefreshTimeout = window.setTimeout(() => {
-        refreshLobbyState(state, { silent: true });
-      }, 2000);
-    }
-  }
-};
-
-// ============================================================================
-// GAME STATE LOADING
-// ============================================================================
-
-/**
- * Load saved game state from database when joining/rejoining a lobby
- * @returns {Promise<boolean>} True if a game was restored
- */
-export const loadGameStateFromDatabase = async (state) => {
-  if (!isOnlineMode(state) || !state.menu?.lobby?.id) {
-    console.log('Skipping load - not online or no lobby ID');
-    return false;
-  }
-
-  try {
-    const api = await loadSupabaseApi(state);
-    console.log('Loading game state for lobby ID:', state.menu.lobby.id);
-    const savedGame = await api.loadGameState({ lobbyId: state.menu.lobby.id });
-    console.log('Saved game from DB:', savedGame);
-
-    if (savedGame && savedGame.game_state) {
-      console.log('Restoring saved game state from database');
-
-      // Check if game has actually started
-      const setupCompleted = savedGame.game_state.setup?.stage === 'complete';
-      const hasGameStarted = setupCompleted || savedGame.game_state.game?.turn > 1;
-
-      // Set gameInProgress BEFORE applying state
-      state.menu.gameInProgress = hasGameStarted;
-
-      // Apply the saved game state via callback
-      callbacks.onApplySync?.(state, savedGame.game_state, { forceApply: true });
-
-      // Ensure deckBuilder stage is set if decks are already built
-      if (savedGame.game_state.deckBuilder?.stage === 'complete') {
-        state.deckBuilder.stage = 'complete';
-      }
-
-      if (hasGameStarted) {
-        setMenuStage(state, 'ready');
-      }
-
-      callbacks.onUpdate?.();
-
-      // Force a second render after delay
-      setTimeout(() => {
-        callbacks.onUpdate?.();
-      }, 50);
-
-      return hasGameStarted;
-    }
-    return false;
-  } catch (error) {
-    console.error('Failed to load game state:', error);
-    return false;
-  }
-};
-
-// ============================================================================
-// CLEANUP
-// ============================================================================
-
-/**
- * Clean up lobby subscriptions and state
- */
-export const cleanup = () => {
-  if (lobbyRefreshTimeout) {
-    window.clearTimeout(lobbyRefreshTimeout);
-    lobbyRefreshTimeout = null;
-  }
-  if (lobbyChannel && supabaseApi) {
-    supabaseApi.unsubscribeChannel?.(lobbyChannel);
-    lobbyChannel = null;
-    setLobbyChannel(null);
-  }
-  activeLobbyId = null;
-  lobbyRefreshInFlight = false;
-};
+// Note: updateLobbySubscription, refreshLobbyState, loadGameStateFromDatabase, and cleanup
+// are defined locally in ui.js because they need UI-specific applyLobbySyncPayload
+// that handles local player protection. See ui.js for the authoritative versions.
