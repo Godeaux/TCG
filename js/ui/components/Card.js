@@ -425,6 +425,7 @@ export const renderCard = (card, options = {}) => {
     onInspect,
     showBack = false,
     isSelected = false,
+    highlighted = false,
     draggable = false,
   } = options;
 
@@ -436,7 +437,7 @@ export const renderCard = (card, options = {}) => {
     return cardElement;
   }
 
-  cardElement.className = `card ${cardTypeClass(card)}${isSelected ? ' card-selected' : ''}`;
+  cardElement.className = `card ${cardTypeClass(card)}${isSelected ? ' card-selected' : ''}${highlighted ? ' card-highlighted' : ''}`;
   if (card.instanceId) {
     cardElement.dataset.instanceId = card.instanceId;
   }

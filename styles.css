@@ -1739,6 +1739,11 @@ button {
   box-shadow: 0 0 20px rgba(212, 168, 83, 0.8), 0 6px 16px rgba(0, 0, 0, 0.35);
 }
 
+.card.card-highlighted {
+  border: 2px solid var(--gold);
+  box-shadow: 0 0 12px rgba(212, 168, 83, 0.7), 0 0 24px rgba(212, 168, 83, 0.4);
+}
+
 .card.back {
   display: grid;
   place-items: center;
