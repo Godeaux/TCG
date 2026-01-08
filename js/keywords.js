@@ -29,7 +29,7 @@ export const KEYWORD_DESCRIPTIONS = {
   [KEYWORDS.IMMUNE]: "Only takes damage from direct creature attacks.",
   [KEYWORDS.EDIBLE]: "Can be consumed as prey; nutrition equals its ATK.",
   [KEYWORDS.SCAVENGE]: "May consume from the carrion pile when played.",
-  [KEYWORDS.NEUROTOXIC]: "Combat damage freezes the target; it dies at the end of its controller's turn.",
+  [KEYWORDS.NEUROTOXIC]: "Combat damage poisons the target; it dies at the end of its owner's turn.",
   [KEYWORDS.AMBUSH]:
     "If it kills its target when attacking, it takes no damage; otherwise it takes damage normally.",
   [KEYWORDS.TOXIC]: "Kills any creature it damages in combat regardless of HP.",

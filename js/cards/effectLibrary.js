@@ -126,7 +126,6 @@ export const damageCreature = (targetType, amount, sourceLabel = "damage") => (c
  */
 export const summonTokens = (tokenIds) => ({ log, playerIndex }) => {
   const tokens = Array.isArray(tokenIds) ? tokenIds : [tokenIds];
-  console.log(`✨ [summonTokens] Called with tokenIds:`, tokenIds, `→ tokens:`, tokens, `playerIndex:`, playerIndex);
   log(`Summons ${tokens.length} token${tokens.length > 1 ? 's' : ''}.`);
   return { summonTokens: { playerIndex, tokens } };
 };
@@ -2927,7 +2926,6 @@ export const resolveEffect = (effectDef, context) => {
 
   // Apply parameters to create specific effect instance
   const params = effectDef.params || {};
-  console.log(`🔧 [resolveEffect] type: ${effectDef.type}, params:`, params);
 
   // Extract parameters in the order they're defined for each effect type
   let specificEffect;

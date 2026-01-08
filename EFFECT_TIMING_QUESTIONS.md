@@ -125,11 +125,12 @@ This document outlines the current implementation of keywords, effect hooks, and
 
 ---
 
-### Q4: Frozen creature death timing ✅ RESOLVED
+### Q4: Neurotoxic vs Frozen timing ✅ RESOLVED
 
-**Answer:** Frozen creatures die at the end of their controller's current turn (the turn they received the frozen status).
+**Answer:** Neurotoxic and Frozen are now separate mechanics:
 
-**Implementation:** `frozenDiesTurn = state.turn` (same turn, not +1)
+- **Neurotoxic**: Creature dies at end of its owner's turn. Uses `neurotoxicDiesTurn = state.turn`.
+- **Frozen**: Creature cannot attack or be consumed. Thaws at end of owner's turn. Does NOT kill. Uses `frozenUntilTurn = state.turn`.
 
 ---
 
