@@ -1344,6 +1344,12 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
   deckStatus.innerHTML = statusHtml;
 
   updateDeckTabs(state);
+
+  // Preserve scroll position before clearing panels
+  const catalogScrollTop = deckFullRow?.scrollTop ?? 0;
+  const catalogParentScrollTop = deckFullRow?.parentElement?.scrollTop ?? 0;
+  const selectedScrollTop = deckAddedRow?.scrollTop ?? 0;
+
   clearPanel(deckFullRow);
   clearPanel(deckAddedRow);
   if (!deckHighlighted) {
@@ -1402,6 +1408,11 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
     });
     deckAddedRow.appendChild(cardElement);
   });
+
+  // Restore scroll positions after rendering
+  if (deckFullRow) deckFullRow.scrollTop = catalogScrollTop;
+  if (deckFullRow?.parentElement) deckFullRow.parentElement.scrollTop = catalogParentScrollTop;
+  if (deckAddedRow) deckAddedRow.scrollTop = selectedScrollTop;
 
   renderDeckManagePanel(state, callbacks);
 
@@ -1620,6 +1631,12 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
   `;
 
   updateDeckTabs(state);
+
+  // Preserve scroll position before clearing panels
+  const catalogScrollTop = deckFullRow?.scrollTop ?? 0;
+  const catalogParentScrollTop = deckFullRow?.parentElement?.scrollTop ?? 0;
+  const selectedScrollTop = deckAddedRow?.scrollTop ?? 0;
+
   clearPanel(deckFullRow);
   clearPanel(deckAddedRow);
   if (!deckHighlighted) {
@@ -1678,6 +1695,11 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
     });
     deckAddedRow.appendChild(cardElement);
   });
+
+  // Restore scroll positions after rendering
+  if (deckFullRow) deckFullRow.scrollTop = catalogScrollTop;
+  if (deckFullRow?.parentElement) deckFullRow.parentElement.scrollTop = catalogParentScrollTop;
+  if (deckAddedRow) deckAddedRow.scrollTop = selectedScrollTop;
 
   renderDeckLoadPanel(state, playerIndex, callbacks);
 
