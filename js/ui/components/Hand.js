@@ -20,6 +20,75 @@ import { canPlayCard, cardLimitAvailable } from '../../game/turnManager.js';
 import { isFreePlay } from '../../keywords.js';
 
 // ============================================================================
+// SPELL TARGET VALIDATION
+// ============================================================================
+
+/**
+ * Check if a spell has valid targets to be played
+ * @param {Object} card - The spell card
+ * @param {Object} player - The player who would play the spell
+ * @param {Object} opponent - The opponent player
+ * @returns {boolean} True if spell has valid targets
+ */
+const spellHasValidTargets = (card, player, opponent) => {
+  const effectDef = card.effects?.effect;
+  if (!effectDef) return true; // No effect definition, assume playable
+
+  const effectType = effectDef.type;
+  if (!effectType) return true;
+
+  // Get creatures on each side
+  const friendlyCreatures = player.field.filter(c => c !== null);
+  const enemyCreatures = opponent.field.filter(c => c !== null);
+  const allCreatures = [...friendlyCreatures, ...enemyCreatures];
+
+  // Get specific creature types
+  const friendlyPredators = friendlyCreatures.filter(c => c.type === 'Predator');
+  const friendlyPrey = friendlyCreatures.filter(c => c.type === 'Prey');
+  const enemyPredators = enemyCreatures.filter(c => c.type === 'Predator');
+  const enemyPrey = enemyCreatures.filter(c => c.type === 'Prey');
+  const allPredators = [...friendlyPredators, ...enemyPredators];
+  const allPrey = [...friendlyPrey, ...enemyPrey];
+
+  // Check based on effect type patterns
+  // Enemy targeting effects
+  if (effectType.startsWith('selectEnemy') || effectType === 'removeAbilitiesAll') {
+    return enemyCreatures.length > 0;
+  }
+
+  // Friendly targeting effects
+  if (effectType.startsWith('selectFriendly')) {
+    return friendlyCreatures.length > 0;
+  }
+
+  // Predator-specific targeting
+  if (effectType.includes('Predator')) {
+    // Check if it's enemy predator or any predator
+    if (effectType.includes('Enemy')) {
+      return enemyPredators.length > 0;
+    }
+    return allPredators.length > 0;
+  }
+
+  // Prey-specific targeting (that's not from hand)
+  if (effectType.includes('Prey') && !effectType.includes('FromHand')) {
+    // Check if it's enemy prey or any prey
+    if (effectType.includes('Enemy')) {
+      return enemyPrey.length > 0;
+    }
+    return allPrey.length > 0;
+  }
+
+  // Generic creature targeting (selectCreature*)
+  if (effectType.startsWith('selectCreature') && !effectType.includes('FromDeck') && !effectType.includes('FromHand')) {
+    return allCreatures.length > 0;
+  }
+
+  // Effects that work without targets (draw, summon, buff self, etc.)
+  return true;
+};
+
+// ============================================================================
 // HAND OVERLAP CALCULATION
 // ============================================================================
 
@@ -216,6 +285,7 @@ export const renderHand = (state, options = {}) => {
   const isMainPhase = canPlayCard(state); // canPlayCard checks for Main 1 or Main 2 phase
   const hasCardLimit = cardLimitAvailable(state); // True if no card played this turn yet
   const hasEmptySlot = player.field.some(slot => slot === null);
+  const opponent = state.players[(playerIndex + 1) % 2];
 
   // Render actual cards
   player.hand.forEach((card) => {
@@ -240,7 +310,11 @@ export const renderHand = (state, options = {}) => {
       const isCreature = card.type === "Predator" || card.type === "Prey";
       const creatureCanBePlayed = !isCreature || hasEmptySlot;
 
-      if (canPlayThisCard && creatureCanBePlayed) {
+      // For spells, check if they have valid targets
+      const isSpell = card.type === "Spell" || card.type === "Free Spell";
+      const spellCanBePlayed = !isSpell || spellHasValidTargets(card, player, opponent);
+
+      if (canPlayThisCard && creatureCanBePlayed && spellCanBePlayed) {
         cardElement.classList.add('playable-pulse');
       }
     }
