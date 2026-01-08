@@ -1487,6 +1487,60 @@ const resolveAttack = (state, attacker, target, negateAttack = false) => {
   }
   attacker.hasAttacked = true;
   cleanupDestroyed(state);
+
+  // Trigger onAfterCombat for attacker (if still alive and has the effect)
+  if (attacker.currentHp > 0 && attacker.effects?.onAfterCombat) {
+    const attackerOwner = state.players.find(p => p.field.includes(attacker));
+    if (attackerOwner) {
+      const attackerOwnerIdx = state.players.indexOf(attackerOwner);
+      const attackerResult = resolveCardEffect(attacker, 'onAfterCombat', {
+        log: (message) => logMessage(state, message),
+        creature: attacker,
+        player: attackerOwner,
+        opponent: state.players[(attackerOwnerIdx + 1) % 2],
+        state,
+        playerIndex: attackerOwnerIdx,
+        opponentIndex: (attackerOwnerIdx + 1) % 2,
+      });
+      if (attackerResult) {
+        resolveEffectChain(state, attackerResult, {
+          playerIndex: attackerOwnerIdx,
+          opponentIndex: (attackerOwnerIdx + 1) % 2,
+          card: attacker,
+        });
+        cleanupDestroyed(state);
+      }
+    }
+  }
+
+  // Trigger onAfterCombat for defender (if creature combat and defender still alive)
+  if (target.type === "creature") {
+    const defender = target.card;
+    if (defender.currentHp > 0 && defender.effects?.onAfterCombat) {
+      const defenderOwner = state.players.find(p => p.field.includes(defender));
+      if (defenderOwner) {
+        const defenderOwnerIdx = state.players.indexOf(defenderOwner);
+        const defenderResult = resolveCardEffect(defender, 'onAfterCombat', {
+          log: (message) => logMessage(state, message),
+          creature: defender,
+          player: defenderOwner,
+          opponent: state.players[(defenderOwnerIdx + 1) % 2],
+          state,
+          playerIndex: defenderOwnerIdx,
+          opponentIndex: (defenderOwnerIdx + 1) % 2,
+        });
+        if (defenderResult) {
+          resolveEffectChain(state, defenderResult, {
+            playerIndex: defenderOwnerIdx,
+            opponentIndex: (defenderOwnerIdx + 1) % 2,
+            card: defender,
+          });
+          cleanupDestroyed(state);
+        }
+      }
+    }
+  }
+
   state.broadcast?.(state);
   return effect;
 };
