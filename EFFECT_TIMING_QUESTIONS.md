@@ -13,7 +13,7 @@ This document outlines the current implementation of keywords, effect hooks, and
 | **Haste** | Creature can attack the rival player directly on the turn it is played. Without Haste, creatures must wait one turn before attacking players (but can still attack creatures). |
 | **Ambush** | When attacking: if the attacker kills its target, the attacker takes no counter-damage. If the target survives, combat proceeds normally. |
 | **Toxic** | Any creature damaged by this creature in combat dies immediately, regardless of remaining HP. |
-| **Neurotoxic** | Combat damage applies a "frozen" status to the target. Frozen creatures die at the end of their controller's current turn. |
+| **Neurotoxic** | Combat damage applies a neurotoxin status to the target. Poisoned creatures die at the end of their owner's turn. |
 | **Lure** | Enemies must attack this creature if able. Multiple Lure creatures allow the attacker to choose among them. |
 | **Passive** | Cannot declare attacks, but can still block/defend and can be consumed as prey. |
 | **Harmless** | Cannot attack (0 attack permanently). Functionally similar to Passive but explicitly sets ATK to 0. |
@@ -41,6 +41,14 @@ This document outlines the current implementation of keywords, effect hooks, and
 | Keyword | Current Behavior |
 |---------|------------------|
 | **Poisonous** | At the end of the opponent's turn (during End Phase finalization), deals 1 damage to the opponent for each Poisonous creature you control. |
+
+### Status Effects (Not Keywords)
+
+| Status | Current Behavior |
+|--------|------------------|
+| **Frozen** | Cannot attack or be consumed. Wears off at end of owner's turn. Does NOT kill. Applied by spell effects. |
+| **Neurotoxic** | Creature dies at end of its owner's turn. Applied by Neurotoxic keyword in combat. |
+| **Paralyzed** | Cannot attack. Wears off at end of owner's turn. |
 
 ---
 

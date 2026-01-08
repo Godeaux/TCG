@@ -122,15 +122,15 @@ const resolveSingleAttack = (state, attacker, defender, attackerOwnerIndex, defe
 
   if (hasNeurotoxic(attacker) && attacker.currentAtk > 0) {
     queueKeywordEffect(state, attacker, "Neurotoxic", attackerOwnerIndex);
-    defender.frozen = true;
-    defender.frozenDiesTurn = state.turn;
-    logMessage(state, `  💉 ${defender.name} is frozen by neurotoxin (dies end of turn).`);
+    defender.neurotoxic = true;
+    defender.neurotoxicDiesTurn = state.turn;
+    logMessage(state, `  💉 ${defender.name} is poisoned by neurotoxin (dies end of owner's turn).`);
   }
   if (defenderDealsDamage && hasNeurotoxic(defender) && defender.currentAtk > 0) {
     queueKeywordEffect(state, defender, "Neurotoxic", defenderOwnerIndex);
-    attacker.frozen = true;
-    attacker.frozenDiesTurn = state.turn;
-    logMessage(state, `  💉 ${attacker.name} is frozen by neurotoxin (dies end of turn).`);
+    attacker.neurotoxic = true;
+    attacker.neurotoxicDiesTurn = state.turn;
+    logMessage(state, `  💉 ${attacker.name} is poisoned by neurotoxin (dies end of owner's turn).`);
   }
 
   // Check for regenHealOnAttacked (e.g., Boa Constrictor's "If attacked, regen and heal X")

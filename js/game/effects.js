@@ -543,8 +543,8 @@ export const resolveEffectResult = (state, result, context) => {
   if (result.freezeCreature) {
     const { creature } = result.freezeCreature;
     creature.frozen = true;
-    creature.frozenDiesTurn = state.turn + 1;
-    logMessage(state, `${creature.name} is frozen.`);
+    creature.frozenUntilTurn = state.turn;
+    logMessage(state, `${creature.name} is frozen (thaws end of owner's turn).`);
   }
 
   if (result.freezeEnemyCreatures) {
@@ -552,8 +552,8 @@ export const resolveEffectResult = (state, result, context) => {
     enemy.field.forEach((creature) => {
       if (creature && (creature.type === "Predator" || creature.type === "Prey")) {
         creature.frozen = true;
-        creature.frozenDiesTurn = state.turn + 1;
-        logMessage(state, `${creature.name} is frozen.`);
+        creature.frozenUntilTurn = state.turn;
+        logMessage(state, `${creature.name} is frozen (thaws end of owner's turn).`);
       }
     });
   }
@@ -570,8 +570,8 @@ export const resolveEffectResult = (state, result, context) => {
     result.freezeCreatures.forEach((creature) => {
       if (creature) {
         creature.frozen = true;
-        creature.frozenDiesTurn = state.turn + 1;
-        logMessage(state, `${creature.name} is frozen.`);
+        creature.frozenUntilTurn = state.turn;
+        logMessage(state, `${creature.name} is frozen (thaws end of owner's turn).`);
       }
     });
   }
@@ -585,7 +585,7 @@ export const resolveEffectResult = (state, result, context) => {
           creature.keywords.splice(frozenIndex, 1);
         }
         creature.frozen = false;
-        creature.frozenDiesTurn = null;
+        creature.frozenUntilTurn = null;
         logMessage(state, `${creature.name} thaws out.`);
       }
     });
@@ -623,7 +623,7 @@ export const resolveEffectResult = (state, result, context) => {
       }
       if (keyword === "Frozen") {
         creature.frozen = true;
-        creature.frozenDiesTurn = state.turn + 1;
+        creature.frozenUntilTurn = state.turn;
       }
     }
   }

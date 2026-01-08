@@ -42,7 +42,9 @@ export const serializeCardSnapshot = (card) => {
     hasAttacked: card.hasAttacked ?? false,
     hasBarrier: card.hasBarrier ?? false,
     frozen: card.frozen ?? false,
-    frozenDiesTurn: card.frozenDiesTurn ?? null,
+    frozenUntilTurn: card.frozenUntilTurn ?? null,
+    neurotoxic: card.neurotoxic ?? false,
+    neurotoxicDiesTurn: card.neurotoxicDiesTurn ?? null,
     dryDropped: card.dryDropped ?? false,
     isToken: card.isToken ?? false,
     abilitiesCancelled: card.abilitiesCancelled ?? false,
@@ -84,7 +86,9 @@ export const hydrateCardSnapshot = (snapshot, fallbackTurn) => {
   instance.hasAttacked = snapshot.hasAttacked ?? instance.hasAttacked;
   instance.hasBarrier = snapshot.hasBarrier ?? instance.hasBarrier;
   instance.frozen = snapshot.frozen ?? instance.frozen;
-  instance.frozenDiesTurn = snapshot.frozenDiesTurn ?? instance.frozenDiesTurn;
+  instance.frozenUntilTurn = snapshot.frozenUntilTurn ?? instance.frozenUntilTurn;
+  instance.neurotoxic = snapshot.neurotoxic ?? instance.neurotoxic;
+  instance.neurotoxicDiesTurn = snapshot.neurotoxicDiesTurn ?? instance.neurotoxicDiesTurn;
   instance.dryDropped = snapshot.dryDropped ?? false;
   instance.isToken = snapshot.isToken ?? instance.isToken;
   if (Array.isArray(snapshot.keywords)) {

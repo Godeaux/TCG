@@ -57,12 +57,23 @@ const queueEndOfTurnEffects = (state) => {
   state.endOfTurnFinalized = false;
 };
 
-const handleFrozenDeaths = (state) => {
+const handleNeurotoxicDeaths = (state) => {
   const player = state.players[state.activePlayerIndex];
   player.field.forEach((creature) => {
-    if (creature?.frozen && creature.frozenDiesTurn <= state.turn) {
+    if (creature?.neurotoxic && creature.neurotoxicDiesTurn <= state.turn) {
       creature.currentHp = 0;
-      logMessage(state, `${creature.name} succumbs to frozen toxin.`);
+      logMessage(state, `${creature.name} succumbs to neurotoxin.`);
+    }
+  });
+};
+
+const clearFrozen = (state) => {
+  const player = state.players[state.activePlayerIndex];
+  player.field.forEach((creature) => {
+    if (creature?.frozen && creature.frozenUntilTurn <= state.turn) {
+      creature.frozen = false;
+      creature.frozenUntilTurn = null;
+      logMessage(state, `${creature.name} thaws out.`);
     }
   });
 };
@@ -248,7 +259,8 @@ export const finalizeEndPhase = (state) => {
 
   logMessage(state, `[End Phase Finalize] Processing end-of-turn effects...`);
   handlePoisonousDamage(state);
-  handleFrozenDeaths(state);
+  handleNeurotoxicDeaths(state);
+  clearFrozen(state);
   clearParalysis(state);
   cleanupDestroyed(state);
 
