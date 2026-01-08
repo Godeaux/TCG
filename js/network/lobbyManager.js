@@ -429,11 +429,12 @@ export const handleJoinLobby = async (state, code) => {
 };
 
 /**
- * Go back from lobby to multiplayer menu
+ * Go back from multiplayer to main menu
+ * Cleans up any active lobby connection
  */
 export const handleBackFromLobby = async (state) => {
   if (!state.menu.lobby || !state.menu.profile) {
-    setMenuStage(state, 'multiplayer');
+    setMenuStage(state, 'main');
     state.menu.lobby = null;
     updateLobbySubscription(state);
     return { success: true };
@@ -452,7 +453,7 @@ export const handleBackFromLobby = async (state) => {
   } finally {
     state.menu.lobby = null;
     applyMenuLoading(state, false);
-    setMenuStage(state, 'multiplayer');
+    setMenuStage(state, 'main');
     updateLobbySubscription(state);
     callbacks.onUpdate?.();
   }

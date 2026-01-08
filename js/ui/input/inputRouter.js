@@ -147,17 +147,17 @@ const getNavigationElements = () => ({
   // Tutorial
   tutorialClose: document.getElementById("tutorial-close"),
 
-  // Lobby
+  // Multiplayer (unified lobby screen)
   lobbyCreate: document.getElementById("lobby-create"),
+  lobbyRejoin: document.getElementById("lobby-rejoin"),
   lobbyJoin: document.getElementById("lobby-join"),
   lobbyJoinForm: document.getElementById("lobby-join-form"),
   lobbyJoinCancel: document.getElementById("lobby-join-cancel"),
-  lobbyCodeInput: document.getElementById("lobby-code-input"),
+  lobbyCodeInput: document.getElementById("lobby-code"),
   lobbyError: document.getElementById("lobby-error"),
   multiplayerBack: document.getElementById("multiplayer-back"),
   lobbyContinue: document.getElementById("lobby-continue"),
   lobbyLeave: document.getElementById("lobby-leave"),
-  lobbyBack: document.getElementById("lobby-back"),
 
   // Deck builder
   deckExit: document.getElementById("deck-exit"),
@@ -383,7 +383,15 @@ const initNavigation = () => {
     handleCreateLobby(latestState);
   });
 
-  // Multiplayer: Join lobby (show form)
+  // Multiplayer: Rejoin existing lobby (same as create - handleCreateLobby handles both)
+  elements.lobbyRejoin?.addEventListener("click", () => {
+    if (!latestState) {
+      return;
+    }
+    handleCreateLobby(latestState);
+  });
+
+  // Multiplayer: Join as guest (show form)
   elements.lobbyJoin?.addEventListener("click", () => {
     if (!latestState) {
       return;
@@ -409,13 +417,18 @@ const initNavigation = () => {
     handleJoinLobby(latestState);
   });
 
-  // Multiplayer back button
+  // Multiplayer back button (also cleans up lobby if in one)
   elements.multiplayerBack?.addEventListener("click", () => {
     if (!latestState) {
       return;
     }
-    setMenuStage(latestState, "main");
-    latestCallbacks.onUpdate?.();
+    // If we're in a lobby, clean it up first
+    if (latestState.menu.lobby) {
+      handleBackFromLobby(latestState);
+    } else {
+      setMenuStage(latestState, "main");
+      latestCallbacks.onUpdate?.();
+    }
   });
 
   // Lobby continue (start game)
@@ -452,14 +465,6 @@ const initNavigation = () => {
       return;
     }
     handleLeaveLobby(latestState);
-  });
-
-  // Lobby back (return to multiplayer menu)
-  elements.lobbyBack?.addEventListener("click", () => {
-    if (!latestState) {
-      return;
-    }
-    handleBackFromLobby(latestState);
   });
 
   // Deck catalog exit - go back to home screen instead of main menu

@@ -4,9 +4,9 @@
  * Handles all menu-related overlays:
  * - Main menu
  * - Login overlay
- * - Multiplayer lobby selection
- * - Active lobby overlay
+ * - Multiplayer (unified lobby screen)
  * - Tutorial overlay
+ * - AI Setup overlay
  *
  * Key Functions:
  * - renderMenuOverlays: Main menu overlay coordinator
@@ -21,28 +21,33 @@ const getMenuElements = () => ({
   menuOverlay: document.getElementById("menu-overlay"),
   loginOverlay: document.getElementById("login-overlay"),
   multiplayerOverlay: document.getElementById("multiplayer-overlay"),
-  lobbyOverlay: document.getElementById("lobby-overlay"),
   tutorialOverlay: document.getElementById("tutorial-overlay"),
   aiSetupOverlay: document.getElementById("ai-setup-overlay"),
 
-  // Buttons and inputs
+  // Main menu buttons
   menuPlay: document.getElementById("menu-play"),
   menuAI: document.getElementById("menu-ai"),
   menuLogin: document.getElementById("menu-login"),
   menuCatalog: document.getElementById("menu-catalog"),
+  menuStatus: document.getElementById("menu-status"),
+
+  // Login elements
   loginUsername: document.getElementById("login-username"),
   loginSubmit: document.getElementById("login-submit"),
   loginError: document.getElementById("login-error"),
+
+  // Multiplayer elements (unified screen)
+  multiplayerStatus: document.getElementById("multiplayer-status"),
+  lobbyCodeDisplay: document.getElementById("lobby-code-display"),
   lobbyCreate: document.getElementById("lobby-create"),
+  lobbyRejoin: document.getElementById("lobby-rejoin"),
+  lobbyContinue: document.getElementById("lobby-continue"),
   lobbyJoin: document.getElementById("lobby-join"),
+  lobbyLeave: document.getElementById("lobby-leave"),
+  multiplayerBack: document.getElementById("multiplayer-back"),
   lobbyJoinForm: document.getElementById("lobby-join-form"),
   lobbyJoinCancel: document.getElementById("lobby-join-cancel"),
-  multiplayerBack: document.getElementById("multiplayer-back"),
   lobbyError: document.getElementById("lobby-error"),
-  lobbyLiveError: document.getElementById("lobby-live-error"),
-  lobbyStatus: document.getElementById("lobby-status"),
-  lobbyCodeDisplay: document.getElementById("lobby-code-display"),
-  menuStatus: document.getElementById("menu-status"),
 });
 
 // ============================================================================
@@ -101,11 +106,11 @@ export const renderMenuOverlays = (state) => {
   updateMenuStatus(state, elements);
 
   // Determine which overlays to show
+  // 'multiplayer' and 'lobby' stages both show the unified multiplayer overlay
   const stage = state.menu.stage;
   const showMain = stage === "main";
   const showLogin = stage === "login";
-  const showMultiplayer = stage === "multiplayer";
-  const showLobby = stage === "lobby";
+  const showMultiplayer = stage === "multiplayer" || stage === "lobby";
   const showTutorial = stage === "tutorial";
   const showAISetup = stage === "ai-setup";
 
@@ -118,9 +123,6 @@ export const renderMenuOverlays = (state) => {
 
   elements.multiplayerOverlay?.classList.toggle("active", showMultiplayer);
   elements.multiplayerOverlay?.setAttribute("aria-hidden", showMultiplayer ? "false" : "true");
-
-  elements.lobbyOverlay?.classList.toggle("active", showLobby);
-  elements.lobbyOverlay?.setAttribute("aria-hidden", showLobby ? "false" : "true");
 
   elements.tutorialOverlay?.classList.toggle("active", showTutorial);
   elements.tutorialOverlay?.setAttribute("aria-hidden", showTutorial ? "false" : "true");
@@ -138,7 +140,7 @@ export const renderMenuOverlays = (state) => {
     elements.loginUsername?.focus();
   }
 
-  // Update button text and states
+  // Update main menu button text and states
   if (elements.menuLogin) {
     elements.menuLogin.textContent = state.menu.profile ? "Multiplayer" : "Login";
   }
@@ -152,69 +154,109 @@ export const renderMenuOverlays = (state) => {
     elements.menuCatalog.disabled = state.menu.loading || !state.menu.profile;
   }
 
-  // Update loading states
+  // Update login states
   if (elements.loginSubmit) {
     elements.loginSubmit.disabled = state.menu.loading;
   }
-  if (elements.lobbyCreate) {
-    elements.lobbyCreate.disabled = state.menu.loading;
-    // Update button text based on whether user has an existing lobby
-    const hasExistingLobby = Boolean(state.menu.existingLobby);
-    elements.lobbyCreate.textContent = hasExistingLobby ? "Rejoin Lobby" : "Create Lobby";
-  }
-  if (elements.lobbyJoin) {
-    elements.lobbyJoin.disabled = state.menu.loading;
-  }
-  if (elements.lobbyJoinCancel) {
-    elements.lobbyJoinCancel.disabled = state.menu.loading;
-  }
-  if (elements.multiplayerBack) {
-    elements.multiplayerBack.disabled = state.menu.loading;
-  }
-
-  // Update error messages
   if (elements.loginError) {
     elements.loginError.textContent = state.menu.error ?? "";
   }
-  if (elements.lobbyError) {
-    elements.lobbyError.textContent = state.menu.error ?? "";
-  }
-  if (elements.lobbyLiveError) {
-    elements.lobbyLiveError.textContent = state.menu.error ?? "";
-  }
 
-  // Update lobby status
-  if (elements.lobbyStatus) {
-    const lobby = state.menu.lobby;
-    const opponentName = getOpponentDisplayName(state);
-    const localProfileId = state.menu.profile?.id ?? null;
-    const hostName = state.players?.[0]?.name || "Host";
-    const guestName = state.players?.[1]?.name || "Guest";
-    const isHost = Boolean(lobby?.host_id && lobby.host_id === localProfileId);
-    const isGuest = Boolean(lobby?.guest_id && lobby.guest_id === localProfileId);
+  // Update multiplayer screen (unified lobby UI)
+  renderMultiplayerScreen(state, elements);
+};
 
-    if (!lobby) {
-      elements.lobbyStatus.textContent = `Waiting for ${opponentName}...`;
-    } else if (lobby.status === "full") {
-      if (isGuest) {
-        elements.lobbyStatus.textContent = `Joined ${hostName}'s lobby. Ready to start.`;
-      } else if (isHost) {
-        elements.lobbyStatus.textContent = `${guestName} joined. Ready to start.`;
-      } else {
-        elements.lobbyStatus.textContent = `${opponentName} joined. Ready to start.`;
-      }
-    } else if (lobby.status === "closed") {
-      elements.lobbyStatus.textContent = "Lobby closed.";
+/**
+ * Render the unified multiplayer screen
+ * Shows appropriate buttons based on lobby state
+ */
+const renderMultiplayerScreen = (state, elements) => {
+  const lobby = state.menu.lobby;
+  const existingLobby = state.menu.existingLobby;
+  const loading = state.menu.loading;
+  const localProfileId = state.menu.profile?.id ?? null;
+
+  // Determine lobby state
+  const hasLobby = Boolean(lobby);
+  const hasExistingLobby = Boolean(existingLobby);
+  const isLobbyFull = lobby?.status === "full";
+  const isLobbyClosed = lobby?.status === "closed";
+  const isHost = Boolean(lobby?.host_id && lobby.host_id === localProfileId);
+
+  // Get player names
+  const hostName = state.players?.[0]?.name || "Host";
+  const guestName = state.players?.[1]?.name || "Guest";
+
+  // Update status text
+  if (elements.multiplayerStatus) {
+    if (loading) {
+      elements.multiplayerStatus.textContent = "Loading...";
+    } else if (isLobbyClosed) {
+      elements.multiplayerStatus.textContent = "Lobby was closed.";
+    } else if (isLobbyFull) {
+      elements.multiplayerStatus.textContent = isHost
+        ? `${guestName} joined! Ready to start.`
+        : `Joined ${hostName}'s lobby. Ready to start!`;
+    } else if (hasLobby) {
+      elements.multiplayerStatus.textContent = isHost
+        ? `Waiting for opponent to join...`
+        : `Joined ${hostName}'s lobby. Waiting...`;
+    } else if (hasExistingLobby) {
+      elements.multiplayerStatus.textContent = "You have an existing lobby. Rejoin or create new.";
     } else {
-      elements.lobbyStatus.textContent = isHost
-        ? `Waiting for ${guestName}...`
-        : `Joined ${hostName}'s lobby. Waiting to start.`;
+      elements.multiplayerStatus.textContent = "Create a lobby or join a friend's game.";
     }
   }
 
   // Update lobby code display
   if (elements.lobbyCodeDisplay) {
-    elements.lobbyCodeDisplay.textContent = state.menu.lobby?.code || "";
+    elements.lobbyCodeDisplay.textContent = lobby?.code || existingLobby?.code || "----";
+  }
+
+  // Show/hide buttons based on state
+  // Create Lobby: show when no lobby and no existing lobby
+  if (elements.lobbyCreate) {
+    elements.lobbyCreate.style.display = (!hasLobby && !hasExistingLobby) ? "" : "none";
+    elements.lobbyCreate.disabled = loading;
+  }
+
+  // Rejoin Lobby: show when there's an existing lobby to rejoin (but not currently in a lobby)
+  if (elements.lobbyRejoin) {
+    elements.lobbyRejoin.style.display = (!hasLobby && hasExistingLobby) ? "" : "none";
+    elements.lobbyRejoin.disabled = loading;
+  }
+
+  // Continue to Game: show when lobby is full
+  if (elements.lobbyContinue) {
+    elements.lobbyContinue.style.display = isLobbyFull ? "" : "none";
+    elements.lobbyContinue.disabled = loading;
+  }
+
+  // Join as Guest: show when not in a lobby
+  if (elements.lobbyJoin) {
+    elements.lobbyJoin.style.display = !hasLobby ? "" : "none";
+    elements.lobbyJoin.disabled = loading;
+  }
+
+  // New Code: show when in a lobby (to leave and create new)
+  if (elements.lobbyLeave) {
+    elements.lobbyLeave.style.display = hasLobby ? "" : "none";
+    elements.lobbyLeave.disabled = loading;
+  }
+
+  // Back button always visible
+  if (elements.multiplayerBack) {
+    elements.multiplayerBack.disabled = loading;
+  }
+
+  // Cancel button in join form
+  if (elements.lobbyJoinCancel) {
+    elements.lobbyJoinCancel.disabled = loading;
+  }
+
+  // Update error message
+  if (elements.lobbyError) {
+    elements.lobbyError.textContent = state.menu.error ?? "";
   }
 };
 
@@ -227,12 +269,12 @@ export const hideAllMenuOverlays = () => {
   elements.menuOverlay?.classList.remove("active");
   elements.loginOverlay?.classList.remove("active");
   elements.multiplayerOverlay?.classList.remove("active");
-  elements.lobbyOverlay?.classList.remove("active");
   elements.tutorialOverlay?.classList.remove("active");
+  elements.aiSetupOverlay?.classList.remove("active");
 
   elements.menuOverlay?.setAttribute("aria-hidden", "true");
   elements.loginOverlay?.setAttribute("aria-hidden", "true");
   elements.multiplayerOverlay?.setAttribute("aria-hidden", "true");
-  elements.lobbyOverlay?.setAttribute("aria-hidden", "true");
   elements.tutorialOverlay?.setAttribute("aria-hidden", "true");
+  elements.aiSetupOverlay?.setAttribute("aria-hidden", "true");
 };
