@@ -2643,26 +2643,26 @@ export const damageEnemiesAfterCombat = (damage) => ({ log, opponent }) => {
 };
 
 /**
- * Attack replacement: eat target prey instead of attacking
+ * Attack replacement: consume target enemy prey instead of attacking
  */
-export const eatPreyInsteadOfAttacking = () => (context) => {
+export const consumePreyInsteadOfAttacking = () => (context) => {
   const { log, opponent, player, state, playerIndex, creature } = context;
   const preyTargets = opponent.field.filter(c => c && (c.type === 'Prey' || c.type === 'prey') && !isInvisible(c, state));
 
   if (preyTargets.length === 0) {
-    log(`No prey to eat.`);
+    log(`No enemy prey to consume.`);
     return {};
   }
 
   return makeTargetedSelection({
-    title: "Choose an enemy prey to eat",
+    title: "Choose an enemy prey to consume",
     candidates: preyTargets.map(t => ({ label: t.name, value: t })),
     onSelect: (target) => {
       const response = handleTargetedResponse({ target, source: creature, log, player, opponent, state });
       if (response?.returnToHand) return response;
 
-      log(`${creature.name} eats ${target.name}.`);
-      return { eatCreature: { eater: creature, target, playerIndex } };
+      log(`${creature.name} consumes ${target.name}.`);
+      return { consumeEnemyCreature: { consumer: creature, target, playerIndex } };
     }
   });
 };
@@ -2879,7 +2879,7 @@ export const effectRegistry = {
   applyNeurotoxicToAttacker,
   freezeAttacker,
   damageEnemiesAfterCombat,
-  eatPreyInsteadOfAttacking,
+  consumePreyInsteadOfAttacking,
 };
 
 // ============================================================================
@@ -3297,7 +3297,7 @@ export const resolveEffect = (effectDef, context) => {
     case 'damageEnemiesAfterCombat':
       specificEffect = effectFn(params.damage);
       break;
-    case 'eatPreyInsteadOfAttacking':
+    case 'consumePreyInsteadOfAttacking':
       specificEffect = effectFn();
       break;
     default:

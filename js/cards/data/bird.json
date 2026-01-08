@@ -279,7 +279,7 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Eat target enemy prey.",
+      "effectText": "Consume target enemy prey.",
       "effects": {
         "onPlay": { "type": "selectEnemyPreyToConsume" }
       }
@@ -517,7 +517,7 @@
       "type": "Predator",
       "atk": 3,
       "hp": 3,
-      "effectText": "Eat target enemy prey.",
+      "effectText": "Consume target enemy prey.",
       "effects": {
         "onConsume": { "type": "selectEnemyPreyToConsume" }
       }

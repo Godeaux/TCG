@@ -470,6 +470,31 @@ export const resolveEffectResult = (state, result, context) => {
     logMessage(state, `${destination.name} steals ${creature.name}.`);
   }
 
+  // Consume an enemy creature (attack replacement for Hippo Frog, etc.)
+  if (result.consumeEnemyCreature) {
+    const { consumer, target, playerIndex } = result.consumeEnemyCreature;
+    const opponentIndex = (playerIndex + 1) % 2;
+    const opponent = state.players[opponentIndex];
+
+    // Remove target from opponent's field
+    const targetSlot = opponent.field.findIndex((slot) => slot?.instanceId === target.instanceId);
+    if (targetSlot >= 0) {
+      opponent.field[targetSlot] = null;
+      opponent.carrion.push(target);
+
+      // Grant nutrition bonus to consumer
+      const nutrition = target.nutrition || 0;
+      if (nutrition > 0 && consumer.currentHp > 0) {
+        consumer.currentAtk = (consumer.currentAtk || consumer.atk || 0) + nutrition;
+        consumer.currentHp = (consumer.currentHp || consumer.hp || 0) + nutrition;
+        logMessage(state, `${consumer.name} gains +${nutrition}/+${nutrition} from consuming ${target.name}.`);
+      }
+
+      // Mark consumer as having attacked (used the attack action)
+      consumer.hasAttacked = true;
+    }
+  }
+
   if (result.transformCard) {
     const { card, newCardData } = result.transformCard;
     const ownerIndex = findCardOwnerIndex(state, card);

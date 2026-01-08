@@ -530,7 +530,7 @@ Traps resolve **before** the triggering action completes. For example:
 
 **Nutrition** — The stat on prey cards that determines how much +ATK/+HP a predator gains when consuming it.
 
-**Consume** — The act of a predator eating prey/edible creatures when played, gaining stats and activating its ability.
+**Consume** — The act of a predator consuming prey/edible creatures when played, gaining stats and activating its ability.
 
 **Dry Drop** — Playing a predator without consuming anything. It enters with base stats and its ability doesn't activate.
 

@@ -307,9 +307,9 @@
       "atk": 1,
       "hp": 2,
       "nutrition": 2,
-      "effectText": "Instead of attacking; may eat target prey.",
+      "effectText": "Instead of attacking; may consume target enemy prey.",
       "effects": {
-        "attackReplacement": { "type": "eatPreyInsteadOfAttacking" }
+        "attackReplacement": { "type": "consumePreyInsteadOfAttacking" }
       }
     },
     {

@@ -1875,6 +1875,40 @@ const handleAttackSelection = (state, attacker, onUpdate) => {
     logMessage(state, "Resolve the current combat choice before declaring another attack.");
     return;
   }
+
+  // Check for attack replacement effect (e.g., Hippo Frog)
+  if (attacker.effects?.attackReplacement) {
+    const player = getActivePlayer(state);
+    const opponent = getOpponentPlayer(state);
+    const playerIndex = state.activePlayerIndex;
+    const opponentIndex = (playerIndex + 1) % 2;
+
+    const result = resolveCardEffect(attacker, 'attackReplacement', {
+      log: (message) => logMessage(state, message),
+      player,
+      opponent,
+      creature: attacker,
+      state,
+      playerIndex,
+      opponentIndex,
+    });
+
+    if (result) {
+      resolveEffectChain(
+        state,
+        result,
+        { playerIndex, opponentIndex, card: attacker },
+        onUpdate,
+        () => {
+          cleanupDestroyed(state);
+          onUpdate?.();
+          broadcastSyncState(state);
+        }
+      );
+    }
+    return;
+  }
+
   const opponent = getOpponentPlayer(state);
   const validTargets = getValidTargets(state, attacker, opponent);
 
