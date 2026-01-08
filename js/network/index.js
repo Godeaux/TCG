@@ -28,6 +28,7 @@ export {
   hydrateDeckSnapshots,
   buildLobbySyncPayload,
   applyLobbySyncPayload,
+  checkAndRecoverSetupState,
 } from './serialization.js';
 
 // ============================================================================
@@ -40,9 +41,23 @@ export {
   sendLobbyBroadcast,
   broadcastSyncState,
   saveGameStateToDatabase,
-  loadGameStateFromDatabase,
   requestSyncFromOpponent,
 } from './sync.js';
+
+// ============================================================================
+// LOBBY MANAGER
+// Note: loadGameStateFromDatabase, updateLobbySubscription, refreshLobbyState
+// are exported from lobbyManager.js (they use callback pattern)
+// ============================================================================
+
+export {
+  loadGameStateFromDatabase,
+  updateLobbySubscription,
+  refreshLobbyState,
+  registerCallbacks,
+  getCallbacks,
+  cleanup as cleanupLobby,
+} from './lobbyManager.js';
 
 // ============================================================================
 // SUPABASE

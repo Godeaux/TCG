@@ -119,14 +119,14 @@ import {
 } from "./ui/dom/helpers.js";
 
 // Network serialization (extracted module)
-// Note: applyLobbySyncPayload is defined locally because it needs UI-specific
-// callbacks (checkAndRecoverSetupState, latestCallbacks.onUpdate, etc.)
 import {
   serializeCardSnapshot,
   hydrateCardSnapshot,
   hydrateZoneSnapshots,
   hydrateDeckSnapshots,
   buildLobbySyncPayload,
+  applyLobbySyncPayload,
+  checkAndRecoverSetupState,
 } from "./network/serialization.js";
 
 import {
@@ -136,8 +136,7 @@ import {
 } from "./network/index.js";
 
 // Lobby manager (extracted module)
-// Note: updateLobbySubscription and refreshLobbyState remain local because they
-// call applyLobbySyncPayload which requires UI-specific state
+// All lobby subscription functions are now centralized in lobbyManager
 import {
   registerCallbacks as registerLobbyCallbacks,
   loadSupabaseApi,
@@ -157,6 +156,9 @@ import {
   handleBackFromLobby as lobbyHandleBackFromLobby,
   handleLeaveLobby as lobbyHandleLeaveLobby,
   updateLobbyPlayerNames,
+  updateLobbySubscription,
+  refreshLobbyState,
+  loadGameStateFromDatabase,
 } from "./network/lobbyManager.js";
 
 // Helper to get discardEffect and timing for both old and new card formats
@@ -227,15 +229,8 @@ let selectedHandCardId = null;
 let battleEffectsInitialized = false;
 let touchInitialized = false;
 
-// Lobby subscription state (kept local because updateLobbySubscription
-// needs to call applyLobbySyncPayload which is UI-specific)
-let lobbyChannel = null;
-let activeLobbyId = null;
-let lobbyRefreshTimeout = null;
-let lobbyRefreshInFlight = false;
-
-// Note: Other lobby state (profileLoaded, decksLoaded, etc.)
-// has been moved to ./network/lobbyManager.js
+// Note: Lobby subscription state has been moved to ./network/lobbyManager.js
+// All lobby management is now centralized there
 
 // ============================================================================
 // LOBBY MANAGEMENT
@@ -309,284 +304,15 @@ const handleLeaveLobby = async (state) => {
 };
 
 /**
- * Load saved game state from database (UI wrapper)
- * Calls applyLobbySyncPayload which is defined locally for UI-specific handling
+ * UI-specific post-processing after applying sync payload
+ * This handles deck builder rehydration, deck completion callbacks, and recovery
  */
-const loadGameStateFromDatabase = async (state) => {
-  if (!isOnlineMode(state) || !state.menu?.lobby?.id) {
-    return false;
-  }
-
-  try {
-    const api = await loadSupabaseApi(state);
-    const savedGame = await api.loadGameState({ lobbyId: state.menu.lobby.id });
-
-    if (savedGame && savedGame.game_state) {
-      const setupCompleted = savedGame.game_state.setup?.stage === "complete";
-      const hasGameStarted = setupCompleted || savedGame.game_state.game?.turn > 1;
-
-      state.menu.gameInProgress = hasGameStarted;
-      applyLobbySyncPayload(state, savedGame.game_state, { forceApply: true });
-
-      if (savedGame.game_state.deckBuilder?.stage === "complete") {
-        state.deckBuilder.stage = "complete";
-      }
-
-      if (hasGameStarted) {
-        setMenuStage(state, "ready");
-      }
-
-      latestCallbacks.onUpdate?.();
-      setTimeout(() => latestCallbacks.onUpdate?.(), 50);
-
-      return hasGameStarted;
-    }
-    return false;
-  } catch (error) {
-    console.error("Failed to load game state:", error);
-    return false;
-  }
-};
-
-// Add recovery mechanism for stuck dice rolling
-const checkAndRecoverSetupState = (state) => {
-  if (!state.setup || state.setup.stage !== "rolling") {
-    return false;
-  }
-  
-  // Check if both players have valid rolls but stage is still "rolling"
-  const hasValidRolls = state.setup.rolls.every(roll => 
-    roll !== null && typeof roll === 'number' && roll >= 1 && roll <= 10
-  );
-  
-  if (hasValidRolls) {
-    console.warn("Recovery: Both players have rolls but stage is still 'rolling'", state.setup.rolls);
-    
-    const [p1Roll, p2Roll] = state.setup.rolls;
-    if (p1Roll === p2Roll) {
-      // Handle tie case
-      logMessage(state, "Tie detected during recovery! Reroll the dice.");
-      state.setup.rolls = [null, null];
-    } else {
-      // Advance to choice stage
-      state.setup.winnerIndex = p1Roll > p2Roll ? 0 : 1;
-      state.setup.stage = "choice";
-      logMessage(state, `Recovery: ${state.players[state.setup.winnerIndex].name} wins the roll and chooses who goes first.`);
-    }
-    
-    // Broadcast the recovery
-    if (state.menu?.mode === "online") {
-      sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
-      saveGameStateToDatabase(state);
-    }
-    
-    return true;
-  }
-  
-  // Check if rolls have been invalid for too long (stuck state)
-  const hasInvalidRolls = state.setup.rolls.some(roll => 
-    roll !== null && (typeof roll !== 'number' || roll < 1 || roll > 10)
-  );
-  
-  if (hasInvalidRolls) {
-    console.warn("Recovery: Invalid rolls detected, resetting", state.setup.rolls);
-    state.setup.rolls = [null, null];
-    
-    // Broadcast the recovery
-    if (state.menu?.mode === "online") {
-      sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
-      saveGameStateToDatabase(state);
-    }
-    
-    return true;
-  }
-  
-  return false;
-};
-
-const applyLobbySyncPayload = (state, payload, options = {}) => {
+const handleSyncPostProcessing = (state, payload, options = {}) => {
   const { forceApply = false, skipDeckComplete = false } = options;
-  const senderId = payload.senderId ?? null;
-  // Skip sender check when loading from database (force apply)
-  if (!forceApply && senderId && senderId === state.menu?.profile?.id) {
-    console.log('[ui.js applyLobbySyncPayload] SKIPPED - payload is from self', { senderId, profileId: state.menu?.profile?.id });
-    return;
-  }
-  const timestamp = payload.timestamp ?? 0;
-  if (!state.menu.lastLobbySyncBySender) {
-    state.menu.lastLobbySyncBySender = {};
-  }
-  if (senderId && timestamp) {
-    const lastSync = state.menu.lastLobbySyncBySender[senderId] ?? 0;
-    if (timestamp <= lastSync) {
-      return;
-    }
-    state.menu.lastLobbySyncBySender[senderId] = timestamp;
-  }
   const localIndex = getLocalPlayerIndex(state);
-  console.log('[ui.js applyLobbySyncPayload] Starting sync', {
-    localIndex,
-    senderId,
-    profileId: state.menu?.profile?.id,
-    lobby: { host_id: state.menu?.lobby?.host_id, guest_id: state.menu?.lobby?.guest_id },
-    payloadSelections: payload.deckSelection?.selections,
-    currentSelections: state.deckSelection?.selections,
-    payloadReadyStatus: payload.deckSelection?.readyStatus,
-    currentReadyStatus: state.deckSelection?.readyStatus
-  });
-  const deckSelectionOrder = ["p1", "p1-selected", "p2", "complete"];
-  const deckBuilderOrder = ["p1", "p2", "complete"];
-  const getStageRank = (order, stage) => {
-    const index = order.indexOf(stage);
-    return index === -1 ? -1 : index;
-  };
 
-  if (payload.playerProfile?.name && Number.isInteger(payload.playerProfile.index)) {
-    state.players[payload.playerProfile.index].name = payload.playerProfile.name;
-  }
-
-  const hasRuntimeState =
-    payload?.game?.players?.some((p) => {
-      if (!p) return false;
-      const handHasCards = Array.isArray(p.hand) && p.hand.length > 0;
-      const fieldHasCards = Array.isArray(p.field) && p.field.some(Boolean);
-      const carrionHasCards = Array.isArray(p.carrion) && p.carrion.length > 0;
-      const exileHasCards = Array.isArray(p.exile) && p.exile.length > 0;
-      const trapsHasCards = Array.isArray(p.traps) && p.traps.length > 0;
-      return handHasCards || fieldHasCards || carrionHasCards || exileHasCards || trapsHasCards;
-    }) ?? false;
-  const gameHasStarted = (payload?.game?.turn ?? 1) > 1 || payload?.setup?.stage === "complete";
-  const shouldSkipDeckComplete = skipDeckComplete || forceApply || hasRuntimeState || gameHasStarted;
-
-  if (payload.game) {
-    if (payload.game.activePlayerIndex !== undefined && payload.game.activePlayerIndex !== null) {
-      state.activePlayerIndex = payload.game.activePlayerIndex;
-    }
-    if (payload.game.phase) {
-      state.phase = payload.game.phase;
-    }
-    if (payload.game.turn !== undefined && payload.game.turn !== null) {
-      state.turn = payload.game.turn;
-    }
-    if (payload.game.cardPlayedThisTurn !== undefined) {
-      state.cardPlayedThisTurn = payload.game.cardPlayedThisTurn;
-    }
-    if (payload.game.passPending !== undefined) {
-      state.passPending = payload.game.passPending;
-    }
-    if (Array.isArray(payload.game.log)) {
-      state.log = [...payload.game.log];
-    }
-    if (Array.isArray(payload.game.visualEffects)) {
-      state.visualEffects = payload.game.visualEffects.map((effect) => ({ ...effect }));
-    }
-    if (payload.game.pendingTrapDecision !== undefined) {
-      state.pendingTrapDecision = payload.game.pendingTrapDecision
-        ? { ...payload.game.pendingTrapDecision }
-        : null;
-    }
-    if (Array.isArray(payload.game.players)) {
-      payload.game.players.forEach((playerSnapshot, index) => {
-        const player = state.players[index];
-        if (!player || !playerSnapshot) {
-          return;
-        }
-
-        const isProtectedLocalSnapshot = !forceApply && index === localIndex;
-
-        if (playerSnapshot.name) {
-          player.name = playerSnapshot.name;
-        }
-        if (typeof playerSnapshot.hp === "number") {
-          player.hp = playerSnapshot.hp;
-        }
-
-        if (!isProtectedLocalSnapshot && Array.isArray(playerSnapshot.deck)) {
-          player.deck = hydrateDeckSnapshots(playerSnapshot.deck);
-        }
-        if (!isProtectedLocalSnapshot && Array.isArray(playerSnapshot.hand)) {
-          player.hand = hydrateZoneSnapshots(playerSnapshot.hand, null, state.turn);
-        }
-        if (Array.isArray(playerSnapshot.field)) {
-          player.field = hydrateZoneSnapshots(playerSnapshot.field, 3, state.turn);
-        }
-        if (Array.isArray(playerSnapshot.carrion)) {
-          player.carrion = hydrateZoneSnapshots(playerSnapshot.carrion, null, state.turn);
-        }
-        if (Array.isArray(playerSnapshot.exile)) {
-          player.exile = hydrateZoneSnapshots(playerSnapshot.exile, null, state.turn);
-        }
-        if (!isProtectedLocalSnapshot && Array.isArray(playerSnapshot.traps)) {
-          player.traps = hydrateZoneSnapshots(playerSnapshot.traps, null, state.turn);
-        }
-      });
-      cleanupDestroyed(state, { silent: true });
-    }
-    if (payload.game.fieldSpell && payload.game.fieldSpell.instanceId) {
-      const ownerIndex = payload.game.fieldSpell.ownerIndex;
-      const owner = state.players[ownerIndex];
-      const fieldCard = owner?.field?.find(
-        (card) => card?.instanceId === payload.game.fieldSpell.instanceId
-      );
-      state.fieldSpell = fieldCard ? { ownerIndex, card: fieldCard } : null;
-    } else if (payload.game.fieldSpell === null) {
-      state.fieldSpell = null;
-    }
-  }
-
-  if (payload.deckSelection && state.deckSelection) {
-    if (payload.deckSelection.stage) {
-      const incomingRank = getStageRank(deckSelectionOrder, payload.deckSelection.stage);
-      const currentRank = getStageRank(deckSelectionOrder, state.deckSelection.stage);
-      if (incomingRank > currentRank) {
-        state.deckSelection.stage = payload.deckSelection.stage;
-      }
-    }
-    if (Array.isArray(payload.deckSelection.selections)) {
-      payload.deckSelection.selections.forEach((selection, index) => {
-        const localSelection = state.deckSelection.selections[index];
-        const isLocalSlot = index === localIndex;
-        const shouldProtect = isLocalSlot && localSelection;
-        console.log(`[ui.js applyLobbySyncPayload] Selection sync index ${index}:`, {
-          isLocalSlot,
-          localSelection,
-          incomingSelection: selection,
-          shouldProtect,
-          localIndex
-        });
-        if (shouldProtect) {
-          console.log(`[ui.js applyLobbySyncPayload] PROTECTING local selection at index ${index}`);
-          return;
-        }
-        console.log(`[ui.js applyLobbySyncPayload] APPLYING selection at index ${index}:`, selection);
-        state.deckSelection.selections[index] = selection;
-      });
-    }
-    // Sync ready status - only update opponent's status, protect local player's
-    if (Array.isArray(payload.deckSelection.readyStatus)) {
-      if (!state.deckSelection.readyStatus) {
-        state.deckSelection.readyStatus = [false, false];
-      }
-      payload.deckSelection.readyStatus.forEach((ready, index) => {
-        // Only update opponent's ready status
-        if (index !== localIndex) {
-          console.log(`[ui.js applyLobbySyncPayload] APPLYING opponent ready status at index ${index}:`, ready);
-          state.deckSelection.readyStatus[index] = ready;
-        } else {
-          console.log(`[ui.js applyLobbySyncPayload] PROTECTING local ready status at index ${index}`);
-        }
-      });
-    }
-  }
-
+  // Rehydrate deck builder if needed (UI-specific operation)
   if (payload.deckBuilder && state.deckBuilder) {
-    if (payload.deckBuilder.stage) {
-      const incomingRank = getStageRank(deckBuilderOrder, payload.deckBuilder.stage);
-      const currentRank = getStageRank(deckBuilderOrder, state.deckBuilder.stage);
-      if (incomingRank > currentRank) {
-        state.deckBuilder.stage = payload.deckBuilder.stage;
-      }
-    }
     if (Array.isArray(payload.deckBuilder.deckIds)) {
       payload.deckBuilder.deckIds.forEach((deckIds, index) => {
         if (!Array.isArray(deckIds) || deckIds.length === 0) {
@@ -608,55 +334,19 @@ const applyLobbySyncPayload = (state, payload, options = {}) => {
     });
   }
 
-  if (payload.setup && state.setup) {
-    const setupOrder = ["rolling", "choice", "complete"];
-    if (payload.setup.stage) {
-      const incomingRank = getStageRank(setupOrder, payload.setup.stage);
-      const currentRank = getStageRank(setupOrder, state.setup.stage);
-      if (incomingRank > currentRank) {
-        state.setup.stage = payload.setup.stage;
-      }
-    }
-    if (Array.isArray(payload.setup.rolls)) {
-      payload.setup.rolls.forEach((roll, index) => {
-        // Enhanced validation
-        if (roll === null || roll === undefined) {
-          // Only apply if current state is also null/undefined or if this is a reset
-          if (state.setup.rolls[index] !== null) {
-            state.setup.rolls[index] = null;
-          }
-          return;
-        }
-
-        // Validate roll is a number within valid range
-        if (typeof roll === 'number' && roll >= 1 && roll <= 10) {
-          if (state.setup.rolls[index] !== roll) {
-            state.setup.rolls[index] = roll;
-          }
-        } else {
-          console.warn(`Invalid roll value for Player ${index + 1}:`, roll, "Type:", typeof roll);
-          // Don't apply invalid rolls, but don't clear existing valid ones
-        }
-      });
-      
-      // Verify rolls array consistency after sync
-      const validRolls = state.setup.rolls.every(roll => 
-        roll === null || (typeof roll === 'number' && roll >= 1 && roll <= 10)
-      );
-      
-      if (!validRolls) {
-        console.error("Roll validation failed after sync, resetting invalid rolls");
-        state.setup.rolls = state.setup.rolls.map(roll => 
-          (typeof roll === 'number' && roll >= 1 && roll <= 10) ? roll : null
-        );
-      }
-    } else {
-      console.warn("Received non-array rolls data:", payload.setup?.rolls);
-    }
-    if (payload.setup.winnerIndex !== undefined && payload.setup.winnerIndex !== null) {
-      state.setup.winnerIndex = payload.setup.winnerIndex;
-    }
-  }
+  // Check for deck completion (UI-specific callback)
+  const hasRuntimeState =
+    payload?.game?.players?.some((p) => {
+      if (!p) return false;
+      const handHasCards = Array.isArray(p.hand) && p.hand.length > 0;
+      const fieldHasCards = Array.isArray(p.field) && p.field.some(Boolean);
+      const carrionHasCards = Array.isArray(p.carrion) && p.carrion.length > 0;
+      const exileHasCards = Array.isArray(p.exile) && p.exile.length > 0;
+      const trapsHasCards = Array.isArray(p.traps) && p.traps.length > 0;
+      return handHasCards || fieldHasCards || carrionHasCards || exileHasCards || trapsHasCards;
+    }) ?? false;
+  const gameHasStarted = (payload?.game?.turn ?? 1) > 1 || payload?.setup?.stage === "complete";
+  const shouldSkipDeckComplete = skipDeckComplete || forceApply || hasRuntimeState || gameHasStarted;
 
   if (
     state.menu?.mode === "online" &&
@@ -678,103 +368,13 @@ const applyLobbySyncPayload = (state, payload, options = {}) => {
   }
 
   // Check for recovery opportunities after sync
-  checkAndRecoverSetupState(state);
+  checkAndRecoverSetupState(state, {
+    broadcastFn: sendLobbyBroadcast,
+    saveFn: () => saveGameStateToDatabase(state),
+  });
 
+  // Update UI
   latestCallbacks.onUpdate?.();
-};
-
-const updateLobbySubscription = (state, { force = false } = {}) => {
-  const lobbyId = state.menu.lobby?.id ?? null;
-  const api = getLobbyApi();
-
-  if (!force && activeLobbyId === lobbyId) {
-    return;
-  }
-  activeLobbyId = lobbyId;
-  if (lobbyRefreshTimeout) {
-    window.clearTimeout(lobbyRefreshTimeout);
-    lobbyRefreshTimeout = null;
-  }
-  if (lobbyChannel) {
-    api?.unsubscribeChannel?.(lobbyChannel);
-    lobbyChannel = null;
-    setLobbyChannel(null);
-  }
-  if (!lobbyId || !api) {
-    return;
-  }
-
-  const applyLobbyUpdate = (lobby) => {
-    state.menu.lobby = lobby;
-    if (lobby?.status === "closed") {
-      setMenuError(state, "Lobby closed.");
-    }
-    if (lobby) {
-      updateLobbyPlayerNames(state, lobby);
-    }
-    latestCallbacks.onUpdate?.();
-  };
-
-  lobbyChannel = api.subscribeToLobby({
-    lobbyId,
-    onUpdate: applyLobbyUpdate,
-  });
-  setLobbyChannel(lobbyChannel);
-
-  lobbyChannel.on("broadcast", { event: "deck_update" }, ({ payload }) => {
-    applyLobbySyncPayload(state, payload);
-    latestCallbacks.onUpdate?.();
-  });
-  lobbyChannel.on("broadcast", { event: "sync_request" }, ({ payload }) => {
-    if (payload?.senderId === state.menu?.profile?.id) {
-      return;
-    }
-    sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
-  });
-  lobbyChannel.on("broadcast", { event: "sync_state" }, ({ payload }) => {
-    applyLobbySyncPayload(state, payload);
-    latestCallbacks.onUpdate?.();
-  });
-
-  refreshLobbyState(state, { silent: true });
-
-  // Load from database, then request sync for real-time updates
-  loadGameStateFromDatabase(state).then(() => {
-    sendLobbyBroadcast("sync_request", { senderId: state.menu?.profile?.id ?? null });
-  });
-};
-
-const refreshLobbyState = async (state, { silent = false } = {}) => {
-  const api = getLobbyApi();
-  if (!state.menu?.lobby?.id || !api || lobbyRefreshInFlight) {
-    return;
-  }
-  lobbyRefreshInFlight = true;
-  try {
-    const lobby = await api.fetchLobbyById({
-      lobbyId: state.menu.lobby.id,
-    });
-    if (lobby) {
-      state.menu.lobby = lobby;
-      if (lobby.status === "closed") {
-        setMenuError(state, "Lobby closed.");
-      }
-      updateLobbyPlayerNames(state, lobby);
-      latestCallbacks.onUpdate?.();
-    }
-  } catch (error) {
-    if (!silent) {
-      setMenuError(state, error.message || "Failed to refresh lobby.");
-      latestCallbacks.onUpdate?.();
-    }
-  } finally {
-    lobbyRefreshInFlight = false;
-    if (!silent && state.menu?.lobby?.id) {
-      lobbyRefreshTimeout = window.setTimeout(() => {
-        refreshLobbyState(state, { silent: true });
-      }, 2000);
-    }
-  }
 };
 
 const updateActionPanel = (state, callbacks = {}) => {
@@ -2484,7 +2084,12 @@ export const renderGame = (state, callbacks = {}) => {
   registerLobbyCallbacks({
     onUpdate: () => callbacks.onUpdate?.(),
     onDeckComplete: (selections) => callbacks.onDeckComplete?.(selections),
-    onApplySync: (s, payload, options) => applyLobbySyncPayload(s, payload, options),
+    onApplySync: (s, payload, options) => {
+      // Apply core state changes from serialization module
+      applyLobbySyncPayload(s, payload, options);
+      // Apply UI-specific post-processing (deck rehydration, callbacks, recovery)
+      handleSyncPostProcessing(s, payload, options);
+    },
   });
 
   // Attach broadcast hook so downstream systems (effects) can broadcast after mutations
@@ -2653,8 +2258,8 @@ export const renderGame = (state, callbacks = {}) => {
   renderDeckBuilderOverlay(state, callbacks);
   // Menu overlays (uses extracted MenuOverlay module)
   renderMenuOverlays(state);
-  // The extracted module doesn't handle lobby subscriptions, so call it separately
-  updateLobbySubscription(state);
+  // Note: Lobby subscriptions are managed by lobbyManager.js (handleCreateLobby/handleJoinLobby)
+  // No need to call updateLobbySubscription here - it's set up when entering a lobby
 
   // Setup carrion pile click handler
   const carrionEl = document.getElementById("active-carrion");

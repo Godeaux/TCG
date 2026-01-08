@@ -19,6 +19,7 @@ import { createCardInstance } from '../cardTypes.js';
 import { getLocalPlayerIndex } from '../state/selectors.js';
 import { stripAbilities } from '../game/effects.js';
 import { cleanupDestroyed } from '../game/combat.js';
+import { logMessage } from '../state/gameState.js';
 
 // ============================================================================
 // CARD SERIALIZATION
@@ -487,4 +488,73 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
       state.setup.winnerIndex = payload.setup.winnerIndex;
     }
   }
+};
+
+// ============================================================================
+// SETUP STATE RECOVERY
+// ============================================================================
+
+/**
+ * Check and recover from stuck setup states
+ * This handles cases where both players have rolled but state didn't advance
+ *
+ * @param {Object} state - Game state
+ * @param {Object} options - Options { broadcastFn, saveFn }
+ * @returns {boolean} True if recovery was performed
+ */
+export const checkAndRecoverSetupState = (state, options = {}) => {
+  const { broadcastFn, saveFn } = options;
+
+  if (!state.setup || state.setup.stage !== "rolling") {
+    return false;
+  }
+
+  // Check if both players have valid rolls but stage is still "rolling"
+  const hasValidRolls = state.setup.rolls.every(roll =>
+    roll !== null && typeof roll === 'number' && roll >= 1 && roll <= 10
+  );
+
+  if (hasValidRolls) {
+    console.warn("Recovery: Both players have rolls but stage is still 'rolling'", state.setup.rolls);
+
+    const [p1Roll, p2Roll] = state.setup.rolls;
+    if (p1Roll === p2Roll) {
+      // Handle tie case
+      logMessage(state, "Tie detected during recovery! Reroll the dice.");
+      state.setup.rolls = [null, null];
+    } else {
+      // Advance to choice stage
+      state.setup.winnerIndex = p1Roll > p2Roll ? 0 : 1;
+      state.setup.stage = "choice";
+      logMessage(state, `Recovery: ${state.players[state.setup.winnerIndex].name} wins the roll and chooses who goes first.`);
+    }
+
+    // Broadcast the recovery if online
+    if (state.menu?.mode === "online" && broadcastFn) {
+      broadcastFn("sync_state", buildLobbySyncPayload(state));
+      saveFn?.();
+    }
+
+    return true;
+  }
+
+  // Check if rolls have been invalid for too long (stuck state)
+  const hasInvalidRolls = state.setup.rolls.some(roll =>
+    roll !== null && (typeof roll !== 'number' || roll < 1 || roll > 10)
+  );
+
+  if (hasInvalidRolls) {
+    console.warn("Recovery: Invalid rolls detected, resetting", state.setup.rolls);
+    state.setup.rolls = [null, null];
+
+    // Broadcast the recovery if online
+    if (state.menu?.mode === "online" && broadcastFn) {
+      broadcastFn("sync_state", buildLobbySyncPayload(state));
+      saveFn?.();
+    }
+
+    return true;
+  }
+
+  return false;
 };
