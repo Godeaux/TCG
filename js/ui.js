@@ -485,6 +485,11 @@ const applyLobbySyncPayload = (state, payload, options = {}) => {
         ? { ...payload.game.pendingTrapDecision }
         : null;
     }
+    if (payload.game.pendingPlayTrapDecision !== undefined) {
+      state.pendingPlayTrapDecision = payload.game.pendingPlayTrapDecision
+        ? { ...payload.game.pendingPlayTrapDecision }
+        : null;
+    }
     if (Array.isArray(payload.game.players)) {
       payload.game.players.forEach((playerSnapshot, index) => {
         const player = state.players[index];
@@ -1659,6 +1664,113 @@ const handlePendingTrapDecision = (state, onUpdate) => {
   renderTrapDecision(state, defender, attacker, target, onUpdate);
 };
 
+// Track if play trap waiting panel is active (similar to trapWaitingPanelActive)
+let playTrapWaitingPanelActive = false;
+
+const handlePendingPlayTrapDecision = (state, onUpdate) => {
+  if (!state.pendingPlayTrapDecision) {
+    if (playTrapWaitingPanelActive) {
+      clearSelectionPanel();
+      playTrapWaitingPanelActive = false;
+    }
+    return;
+  }
+
+  const { opponentIndex, creatureId, triggerKey } = state.pendingPlayTrapDecision;
+  const localIndex = getLocalPlayerIndex(state);
+  const opponent = state.players[opponentIndex];
+
+  if (!opponent) {
+    state.pendingPlayTrapDecision = null;
+    if (playTrapWaitingPanelActive) {
+      clearSelectionPanel();
+      playTrapWaitingPanelActive = false;
+    }
+    return;
+  }
+
+  // If we're NOT the trap owner, show waiting message
+  if (opponentIndex !== localIndex) {
+    renderSelectionPanel({
+      title: `${getOpponentDisplayName(state)} is deciding whether to trigger a trap...`,
+      items: [],
+      onConfirm: () => {},
+      confirmLabel: null,
+    });
+    playTrapWaitingPanelActive = true;
+    return;
+  }
+
+  playTrapWaitingPanelActive = false;
+
+  // Find the creature that was played
+  const creature = findCardByInstanceId(state, creatureId);
+  if (!creature) {
+    state.pendingPlayTrapDecision = null;
+    return;
+  }
+
+  // Get traps from hand that can trigger
+  const relevantTraps = getTrapsFromHand(opponent, triggerKey);
+  if (relevantTraps.length === 0) {
+    state.pendingPlayTrapDecision = null;
+    onUpdate?.();
+    broadcastSyncState(state);
+    return;
+  }
+
+  // Render the trap decision UI
+  const items = relevantTraps.map((trap) => {
+    const item = document.createElement("label");
+    item.className = "selection-item";
+    const button = document.createElement("button");
+    button.className = "secondary";
+    button.textContent = `Trigger ${trap.name}`;
+    button.onclick = () => {
+      // Remove trap from hand and move to exile
+      opponent.hand = opponent.hand.filter((card) => card.instanceId !== trap.instanceId);
+      opponent.exile.push(trap);
+      const result = resolveCardEffect(trap, 'effect', {
+        log: (message) => logMessage(state, message),
+        target: { type: "creature", card: creature },
+        defenderIndex: opponentIndex,
+        state,
+      });
+      resolveEffectChain(state, result, {
+        playerIndex: opponentIndex,
+        opponentIndex: state.activePlayerIndex,
+      });
+      cleanupDestroyed(state);
+      state.pendingPlayTrapDecision = null;
+      clearSelectionPanel();
+      onUpdate?.();
+      broadcastSyncState(state);
+    };
+    item.appendChild(button);
+    return item;
+  });
+
+  const skipButton = document.createElement("label");
+  skipButton.className = "selection-item";
+  const skipAction = document.createElement("button");
+  skipAction.textContent = "Skip Trap";
+  skipAction.onclick = () => {
+    state.pendingPlayTrapDecision = null;
+    clearSelectionPanel();
+    onUpdate?.();
+    broadcastSyncState(state);
+  };
+  skipButton.appendChild(skipAction);
+  items.push(skipButton);
+
+  renderSelectionPanel({
+    title: `${opponent.name} may trigger a trap`,
+    items,
+    onConfirm: () => {},
+    confirmLabel: null,
+  });
+};
+
 const handleAttackSelection = (state, attacker, onUpdate) => {
   if (!isLocalPlayersTurn(state)) {
     logMessage(state, "Wait for your turn to declare attacks.");
@@ -2036,6 +2148,24 @@ const triggerPlayTraps = (state, creature, onUpdate, onResolved) => {
     onResolved?.();
     return;
   }
+
+  // In online mode, only the trap owner (opponent) should see the decision UI
+  if (isOnlineMode(state)) {
+    const localIndex = getLocalPlayerIndex(state);
+    if (localIndex !== opponentIndex) {
+      // Active player should NOT see the trap decision UI - set pending state for opponent
+      state.pendingPlayTrapDecision = {
+        opponentIndex,
+        creatureId: creature.instanceId,
+        triggerKey,
+      };
+      onUpdate?.();
+      broadcastSyncState(state);
+      // Don't call onResolved yet - opponent will handle continuation
+      return;
+    }
+  }
+
   const items = relevantTraps.map((trap) => {
     const item = document.createElement("label");
     item.className = "selection-item";
@@ -2057,8 +2187,10 @@ const triggerPlayTraps = (state, creature, onUpdate, onResolved) => {
         opponentIndex: state.activePlayerIndex,
       });
       cleanupDestroyed(state);
+      state.pendingPlayTrapDecision = null;
       clearSelectionPanel();
       onUpdate?.();
+      broadcastSyncState(state);
       onResolved?.();
     };
     item.appendChild(button);
@@ -2070,8 +2202,10 @@ const triggerPlayTraps = (state, creature, onUpdate, onResolved) => {
   const skipAction = document.createElement("button");
   skipAction.textContent = "Skip Trap";
   skipAction.onclick = () => {
+    state.pendingPlayTrapDecision = null;
     clearSelectionPanel();
     onUpdate?.();
+    broadcastSyncState(state);
     onResolved?.();
   };
   skipButton.appendChild(skipAction);
@@ -2627,6 +2761,7 @@ export const renderGame = (state, callbacks = {}) => {
   });
   updateActionPanel(state, callbacks);
   handlePendingTrapDecision(state, callbacks.onUpdate);
+  handlePendingPlayTrapDecision(state, callbacks.onUpdate);
   processVisualEffects(state);
   const handleNextPhase = () => {
     if (!isLocalPlayersTurn(state)) {
