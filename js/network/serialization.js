@@ -233,7 +233,8 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
   if (!state.menu.lastLobbySyncBySender) {
     state.menu.lastLobbySyncBySender = {};
   }
-  if (senderId && timestamp) {
+  // Skip timestamp check for DB restore (forceApply) - we always want subsequent broadcasts to apply
+  if (!forceApply && senderId && timestamp) {
     const lastSync = state.menu.lastLobbySyncBySender[senderId] ?? 0;
     if (timestamp <= lastSync) {
       return;
@@ -278,7 +279,7 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
     if (payload.game.activePlayerIndex !== undefined && payload.game.activePlayerIndex !== null) {
       state.activePlayerIndex = payload.game.activePlayerIndex;
     }
-    if (payload.game.phase) {
+    if (payload.game.phase !== undefined && payload.game.phase !== null) {
       state.phase = payload.game.phase;
     }
     if (payload.game.turn !== undefined && payload.game.turn !== null) {
