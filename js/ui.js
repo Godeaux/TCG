@@ -1707,6 +1707,9 @@ const handleAttackSelection = (state, attacker, onUpdate) => {
 };
 
 const handlePlayCard = (state, card, onUpdate) => {
+  console.log('[handlePlayCard] Called with card:', card?.name, card?.type);
+  console.log('[handlePlayCard] Card effects:', card?.effects);
+
   if (!isLocalPlayersTurn(state)) {
     logMessage(state, "Wait for your turn to play cards.");
     onUpdate?.();
@@ -1731,6 +1734,7 @@ const handlePlayCard = (state, card, onUpdate) => {
   }
 
   if (card.type === "Spell" || card.type === "Free Spell") {
+    console.log('[handlePlayCard] Playing spell, calling resolveCardEffect');
     // Use resolveCardEffect to properly handle both legacy and new effect formats
     const result = resolveCardEffect(card, 'effect', {
       log: (message) => logMessage(state, message),
@@ -1740,7 +1744,9 @@ const handlePlayCard = (state, card, onUpdate) => {
       playerIndex,
       opponentIndex,
     });
+    console.log('[handlePlayCard] resolveCardEffect returned:', result);
     if (result == null) {
+      console.log('[handlePlayCard] Result is null, returning early');
       onUpdate?.();
       return;
     }

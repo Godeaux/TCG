@@ -219,17 +219,27 @@ export const getDeckCategories = () => {
  * @returns {any} Result from effect handler or null
  */
 export const resolveCardEffect = (card, effectType, context) => {
+  console.log(`[resolveCardEffect] card=${card?.name}, effectType=${effectType}`);
+  console.log('[resolveCardEffect] card.effects:', card?.effects);
+
   const effectDef = card.effects?.[effectType];
-  if (!effectDef) return null;
+  console.log('[resolveCardEffect] effectDef:', effectDef);
+
+  if (!effectDef) {
+    console.log('[resolveCardEffect] No effectDef, returning null');
+    return null;
+  }
 
   try {
     // Array of effects (composite)
     if (Array.isArray(effectDef)) {
+      console.log('[resolveCardEffect] Processing array effect');
       return resolveEffect(effectDef, context);
     }
 
     // Object-based effect definition with type and params
     if (typeof effectDef === 'object' && effectDef.type) {
+      console.log('[resolveCardEffect] Processing object effect with type:', effectDef.type);
       return resolveEffect(effectDef, context);
     }
 
