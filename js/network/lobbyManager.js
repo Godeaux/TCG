@@ -585,13 +585,20 @@ export const updateLobbySubscription = (state, { force = false } = {}) => {
   // Initial refresh
   refreshLobbyState(state, { silent: true });
 
-  // Load from database, then request sync from opponent
-  loadGameStateFromDatabase(state).then(() => {
+  // Load from database first (authoritative), then request sync from opponent (latest)
+  // This ensures we have DB state before any broadcasts can overwrite it
+  (async () => {
+    try {
+      await loadGameStateFromDatabase(state);
+    } catch (error) {
+      console.error('Failed to load game state during subscription:', error);
+    }
+    // After DB load, request sync to get any changes since last save
     sendLobbyBroadcast('sync_request', {
       senderId: state.menu?.profile?.id ?? null,
       timestamp: Date.now(),
     });
-  });
+  })();
 };
 
 /**

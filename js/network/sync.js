@@ -79,6 +79,16 @@ export const broadcastSyncState = (state) => {
 
 /**
  * Save game state to database (runs in background, doesn't block gameplay)
+ *
+ * SAFETY: This is only called from:
+ * 1. broadcastSyncState() - triggered by game actions (attacks, plays, phase changes)
+ * 2. SetupOverlay - on dice rolls
+ * 3. checkAndRecoverSetupState() - on stuck state recovery
+ *
+ * Game actions require menu.stage === 'ready', which only happens AFTER
+ * loadGameStateFromDatabase() completes. This prevents rejoining players
+ * from overwriting DB with empty/stale state.
+ *
  * @param {Object} state - Game state to save
  */
 export const saveGameStateToDatabase = async (state) => {
