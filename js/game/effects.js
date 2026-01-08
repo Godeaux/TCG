@@ -627,6 +627,36 @@ export const resolveEffectResult = (state, result, context) => {
       }
     }
   }
+
+  // Revive a creature that just died (for onSlain effects like Opossum)
+  if (result.reviveCreature) {
+    const { creature, playerIndex } = result.reviveCreature;
+    if (creature && playerIndex !== undefined) {
+      const player = state.players[playerIndex];
+      const emptySlot = player.field.findIndex((slot) => slot === null);
+      if (emptySlot >= 0) {
+        // Reset creature to base stats and place back on field
+        creature.currentHp = creature.hp || 1;
+        creature.currentAtk = creature.atk || 0;
+        creature.hasRevived = true; // Prevent infinite revive loops
+        player.field[emptySlot] = creature;
+        // Remove from carrion if it ended up there
+        player.carrion = player.carrion.filter(c => c?.instanceId !== creature.instanceId);
+        logMessage(state, `${creature.name} revives!`);
+      } else {
+        logMessage(state, `No field slot available for ${creature.name} to revive.`);
+      }
+    }
+  }
+
+  // Track attack for conditional regen/heal (for creatures like Boa Constrictor)
+  if (result.trackAttackForRegenHeal) {
+    const { creature, healAmount } = result.trackAttackForRegenHeal;
+    if (creature) {
+      creature.regenHealOnAttacked = healAmount;
+      // This flag will be checked in combat resolution
+    }
+  }
 };
 
 export const findCreatureOwnerIndex = findCardOwnerIndex;

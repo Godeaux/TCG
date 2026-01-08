@@ -72,8 +72,15 @@ const applyDamage = (creature, amount, state, ownerIndex) => {
   return { damage: amount, barrierBlocked: false };
 };
 
-export const resolveCreatureCombat = (state, attacker, defender, attackerOwnerIndex, defenderOwnerIndex) => {
-  logMessage(state, `⚔️ COMBAT: ${attacker.name} (${attacker.currentAtk}/${attacker.currentHp}) attacks ${defender.name} (${defender.currentAtk}/${defender.currentHp})`);
+/**
+ * Resolve a single attack between creatures
+ */
+const resolveSingleAttack = (state, attacker, defender, attackerOwnerIndex, defenderOwnerIndex, attackNumber = 1, totalAttacks = 1) => {
+  if (totalAttacks > 1) {
+    logMessage(state, `⚔️ ATTACK ${attackNumber}/${totalAttacks}: ${attacker.name} (${attacker.currentAtk}/${attacker.currentHp}) attacks ${defender.name} (${defender.currentAtk}/${defender.currentHp})`);
+  } else {
+    logMessage(state, `⚔️ COMBAT: ${attacker.name} (${attacker.currentAtk}/${attacker.currentHp}) attacks ${defender.name} (${defender.currentAtk}/${defender.currentHp})`);
+  }
 
   const ambushAttack = hasAmbush(attacker);
   const attackerPreHp = attacker.currentHp;
@@ -126,6 +133,22 @@ export const resolveCreatureCombat = (state, attacker, defender, attackerOwnerIn
     logMessage(state, `  ❄️ ${attacker.name} is frozen by neurotoxin (dies turn ${state.turn + 1}).`);
   }
 
+  // Check for regenHealOnAttacked (e.g., Boa Constrictor's "If attacked, regen and heal X")
+  // Triggers when defender survives being attacked
+  if (defender.regenHealOnAttacked && defenderDamage > 0 && defender.currentHp > 0) {
+    const healAmount = defender.regenHealOnAttacked;
+    // Regen: restore HP to base
+    const baseHp = defender.hp || 1;
+    defender.currentHp = baseHp;
+    // Heal player
+    const player = state.players[defenderOwnerIndex];
+    const actualHeal = Math.min(healAmount, 10 - player.hp);
+    player.hp = Math.min(10, player.hp + healAmount);
+    logMessage(state, `  🌿 ${defender.name} regenerates and heals ${actualHeal} HP!`);
+    // Clear the flag after triggering
+    defender.regenHealOnAttacked = null;
+  }
+
   if (defender.currentHp <= 0) {
     defender.diedInCombat = true;
     defender.slainBy = attacker;
@@ -145,11 +168,50 @@ export const resolveCreatureCombat = (state, attacker, defender, attackerOwnerIn
   return { attackerDamage, defenderDamage };
 };
 
+/**
+ * Resolve creature combat, handling multi-attack if applicable
+ */
+export const resolveCreatureCombat = (state, attacker, defender, attackerOwnerIndex, defenderOwnerIndex) => {
+  const multiAttackCount = attacker.multiAttackCount || 1;
+  let totalAttackerDamage = 0;
+  let totalDefenderDamage = 0;
+
+  for (let i = 1; i <= multiAttackCount; i++) {
+    // Stop if either creature is dead
+    if (attacker.currentHp <= 0 || defender.currentHp <= 0) {
+      break;
+    }
+
+    const result = resolveSingleAttack(state, attacker, defender, attackerOwnerIndex, defenderOwnerIndex, i, multiAttackCount);
+    totalAttackerDamage += result.attackerDamage;
+    totalDefenderDamage += result.defenderDamage;
+  }
+
+  return { attackerDamage: totalAttackerDamage, defenderDamage: totalDefenderDamage };
+};
+
 export const resolveDirectAttack = (state, attacker, opponent) => {
-  const previousHp = opponent.hp;
-  opponent.hp -= attacker.currentAtk;
-  logMessage(state, `🎯 DIRECT ATTACK: ${attacker.name} hits ${opponent.name} for ${attacker.currentAtk} damage! (${previousHp} → ${opponent.hp} HP)`);
-  return attacker.currentAtk;
+  const multiAttackCount = attacker.multiAttackCount || 1;
+  let totalDamage = 0;
+
+  for (let i = 1; i <= multiAttackCount; i++) {
+    // Stop if attacker is dead
+    if (attacker.currentHp <= 0) {
+      break;
+    }
+
+    const previousHp = opponent.hp;
+    opponent.hp -= attacker.currentAtk;
+    totalDamage += attacker.currentAtk;
+
+    if (multiAttackCount > 1) {
+      logMessage(state, `🎯 ATTACK ${i}/${multiAttackCount}: ${attacker.name} hits ${opponent.name} for ${attacker.currentAtk} damage! (${previousHp} → ${opponent.hp} HP)`);
+    } else {
+      logMessage(state, `🎯 DIRECT ATTACK: ${attacker.name} hits ${opponent.name} for ${attacker.currentAtk} damage! (${previousHp} → ${opponent.hp} HP)`);
+    }
+  }
+
+  return totalDamage;
 };
 
 export const cleanupDestroyed = (state, { silent = false } = {}) => {

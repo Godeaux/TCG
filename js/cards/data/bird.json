@@ -390,9 +390,7 @@
       "hp": 1,
       "nutrition": 1,
       "effectText": "Can attack three times.",
-      "effects": {
-        "multiAttack": "pileated-woodpecker-triple-attack"
-      }
+      "multiAttackCount": 3
     },
     {
       "id": "bird-prey-black-swan",

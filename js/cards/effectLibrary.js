@@ -2026,6 +2026,7 @@ export const selectFriendlyCreatureToSacrifice = () => (context) => {
 
 /**
  * Revive the creature that just died (for onSlain effects)
+ * Only works once per creature to prevent infinite loops
  */
 export const reviveCreature = () => (context) => {
   const { log, creature, playerIndex } = context;
@@ -2035,7 +2036,13 @@ export const reviveCreature = () => (context) => {
     return {};
   }
 
-  log(`${creature.name} revives.`);
+  // Prevent infinite revive loops - creature can only revive once
+  if (creature.hasRevived) {
+    log(`${creature.name} has already revived and cannot revive again.`);
+    return {};
+  }
+
+  log(`${creature.name} revives!`);
   return { reviveCreature: { creature, playerIndex } };
 };
 
