@@ -1,32 +1,6 @@
 {
   "cards": [
     {
-      "id": "reptile-free-spell-hand-egg",
-      "name": "Hand Egg",
-      "type": "Free Spell",
-      "effectText": "Play Anole Egg.",
-      "summons": ["token-anole-egg"],
-      "effects": {
-        "effect": { "type": "summonTokens", "params": { "tokenIds": ["token-anole-egg"] } }
-      }
-    },
-    {
-      "id": "reptile-free-spell-alligator-skin",
-      "name": "Alligator Skin",
-      "type": "Free Spell",
-      "effectText": "Target creature gains Barrier.",
-      "effects": {
-        "effect": {
-          "type": "selectFromGroup",
-          "params": {
-            "targetGroup": "all-creatures",
-            "title": "Choose a creature to gain Barrier",
-            "effect": { "keyword": "Barrier" }
-          }
-        }
-      }
-    },
-    {
       "id": "reptile-prey-cuban-brown-anole",
       "name": "Cuban Brown Anole",
       "type": "Prey",
@@ -420,7 +394,7 @@
       "keywords": [],
       "effectText": "Slain, add Alligator Skin to hand.",
       "effects": {
-        "onSlain": { "type": "addToHand", "params": { "cardId": "reptile-free-spell-alligator-skin" } }
+        "onSlain": { "type": "addToHand", "params": { "cardId": "token-alligator-skin" } }
       }
     },
     {

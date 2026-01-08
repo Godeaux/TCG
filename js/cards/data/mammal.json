@@ -9,18 +9,10 @@
       "nutrition": 0,
       "keywords": ["Free Play"],
       "effectText": "Play 2 Pups.",
-      "summons": ["mammal-prey-pup"],
+      "summons": ["token-pup"],
       "effects": {
-        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["mammal-prey-pup", "mammal-prey-pup"] } }
+        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-pup", "token-pup"] } }
       }
-    },
-    {
-      "id": "mammal-prey-pup",
-      "name": "Pup",
-      "type": "Prey",
-      "atk": 0,
-      "hp": 1,
-      "nutrition": 0
     },
     {
       "id": "mammal-prey-arctic-ground-squirrels",
@@ -136,10 +128,10 @@
       "hp": 1,
       "nutrition": 1,
       "effectText": "Play 2 Pups. Slain, play 3 Pups.",
-      "summons": ["mammal-prey-pup"],
+      "summons": ["token-pup"],
       "effects": {
-        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["mammal-prey-pup", "mammal-prey-pup"] } },
-        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["mammal-prey-pup", "mammal-prey-pup", "mammal-prey-pup"] } }
+        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-pup", "token-pup"] } },
+        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["token-pup", "token-pup", "token-pup"] } }
       }
     },
     {
@@ -185,19 +177,10 @@
       "nutrition": 1,
       "keywords": ["Poisonous"],
       "effectText": "Play 2 Mammal Eggs.",
-      "summons": ["mammal-prey-mammal-egg"],
+      "summons": ["token-mammal-egg"],
       "effects": {
-        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["mammal-prey-mammal-egg", "mammal-prey-mammal-egg"] } }
+        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-mammal-egg", "token-mammal-egg"] } }
       }
-    },
-    {
-      "id": "mammal-prey-mammal-egg",
-      "name": "Mammal Egg",
-      "type": "Prey",
-      "atk": 0,
-      "hp": 1,
-      "nutrition": 0,
-      "keywords": ["Passive", "Barrier", "Hidden"]
     },
     {
       "id": "mammal-prey-red-handed-howler",
@@ -348,26 +331,19 @@
       }
     },
     {
-      "id": "mammal-predator-dholes",
+      "id": "token-dholes",
       "name": "Dholes",
       "type": "Predator",
       "atk": 1,
       "hp": 1,
       "effectText": "Play 2 Dholes. Kill target enemy.",
-      "summons": ["mammal-predator-dhole"],
+      "summons": ["token-dhole"],
       "effects": {
         "onConsume": {
           "type": "summonAndSelectEnemyToKill",
-          "params": { "tokenIds": ["mammal-predator-dhole", "mammal-predator-dhole"] }
+          "params": { "tokenIds": ["token-dhole", "token-dhole"] }
         }
       }
-    },
-    {
-      "id": "mammal-predator-dhole",
-      "name": "Dhole",
-      "type": "Predator",
-      "atk": 1,
-      "hp": 1
     },
     {
       "id": "mammal-predator-eurasian-lynx",
@@ -394,25 +370,17 @@
       }
     },
     {
-      "id": "mammal-predator-black-leopards",
+      "id": "token-black-leopards",
       "name": "Black Leopards",
       "type": "Predator",
       "atk": 3,
       "hp": 2,
       "keywords": ["Ambush"],
       "effectText": "Slain, play Black Leopard.",
-      "summons": ["mammal-predator-black-leopard"],
+      "summons": ["token-black-leopard"],
       "effects": {
-        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["mammal-predator-black-leopard"] } }
+        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["token-black-leopard"] } }
       }
-    },
-    {
-      "id": "mammal-predator-black-leopard",
-      "name": "Black Leopard",
-      "type": "Predator",
-      "atk": 3,
-      "hp": 2,
-      "keywords": ["Ambush"]
     },
     {
       "id": "mammal-predator-jaguar",
@@ -493,17 +461,8 @@
       "hp": 5,
       "effectText": "Add Salmon to hand.",
       "effects": {
-        "onConsume": { "type": "addToHand", "params": { "cardId": "mammal-prey-salmon" } }
+        "onConsume": { "type": "addToHand", "params": { "cardId": "token-salmon" } }
       }
-    },
-    {
-      "id": "mammal-prey-salmon",
-      "name": "Salmon",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": ["Free Play"]
     },
     {
       "id": "mammal-predator-polar-bear",
@@ -600,29 +559,86 @@
       }
     },
     {
-      "id": "mammal-field-spell-wolves-den",
-      "name": "Wolves Den",
-      "type": "Spell",
-      "isFieldSpell": true,
-      "effectText": "End of turn, play Wolf.",
-      "summons": ["mammal-prey-wolf"],
+      "id": "mammal-spell-fresh-milk",
+      "name": "Fresh Milk",
+      "type": "Free Spell",
+      "effectText": "Creatures gain +1/+1.",
       "effects": {
-        "effect": { "type": "setFieldSpell", "params": { "cardId": "mammal-field-spell-wolves-den" } },
-        "onEnd": {
-          "type": "summonTokens",
+        "effect": {
+          "type": "buffStats",
           "params": {
-            "tokenIds": ["mammal-prey-wolf"]
+            "targetType": "all-friendly",
+            "stats": { "attack": 1, "health": 1 }
           }
         }
       }
     },
     {
-      "id": "mammal-prey-wolf",
-      "name": "Wolf",
-      "type": "Prey",
-      "atk": 2,
-      "hp": 2,
-      "nutrition": 2
+      "id": "mammal-spell-present",
+      "name": "Present",
+      "type": "Free Spell",
+      "effectText": "Either heal 2 or target creature gains +2/+2.",
+      "effects": {
+        "effect": {
+          "type": "chooseOption",
+          "params": {
+            "title": "Present: choose an outcome",
+            "options": [
+              { "label": "Heal 2", "description": "Restore 2 HP", "effect": { "heal": 2 } },
+              { "label": "Target creature gains +2/+2", "description": "Buff a creature", "effect": { "buff": { "attack": 2, "health": 2 } } }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "mammal-spell-qiviut",
+      "name": "Qiviut",
+      "type": "Free Spell",
+      "effectText": "Target creature gains immune.",
+      "effects": {
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "friendly-creatures",
+            "title": "Choose a creature to gain Immune",
+            "effect": { "keyword": "Immune" }
+          }
+        }
+      }
+    },
+    {
+      "id": "mammal-spell-angus",
+      "name": "Angus",
+      "type": "Free Spell",
+      "effectText": "Target predator creature gains +2/+2.",
+      "effects": {
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "friendly-predators",
+            "title": "Choose a predator to buff",
+            "effect": { "buff": { "attack": 2, "health": 2 } }
+          }
+        }
+      }
+    },
+    {
+      "id": "mammal-field-spell-wolves-den",
+      "name": "Wolves Den",
+      "type": "Spell",
+      "isFieldSpell": true,
+      "effectText": "End of turn, play Wolf.",
+      "summons": ["token-wolf"],
+      "effects": {
+        "effect": { "type": "setFieldSpell", "params": { "cardId": "mammal-field-spell-wolves-den" } },
+        "onEnd": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": ["token-wolf"]
+          }
+        }
+      }
     },
     {
       "id": "mammal-trap-animal-rights",

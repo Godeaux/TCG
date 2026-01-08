@@ -430,7 +430,7 @@
         "onSlain": {
           "type": "addToHand",
           "params": {
-            "cardId": "fish-prey-salmon"
+            "cardId": "token-salmon"
           }
         }
       }
@@ -498,7 +498,7 @@
         "onSlain": {
           "type": "addToHand",
           "params": {
-            "cardId": "fish-free-spell-scale-arrows"
+            "cardId": "token-scale-arrows"
           }
         }
       }
@@ -846,29 +846,6 @@
           "params": {
             "creatureDamage": 2,
             "playerDamage": 2
-          }
-        }
-      }
-    },
-    {
-      "id": "fish-prey-salmon",
-      "name": "Salmon",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": ["Free Play"]
-    },
-    {
-      "id": "fish-free-spell-scale-arrows",
-      "name": "Scale Arrows",
-      "type": "Free Spell",
-      "effectText": "Kill enemies.",
-      "effects": {
-        "effect": {
-          "type": "killAll",
-          "params": {
-            "targetType": "all-enemy"
           }
         }
       }

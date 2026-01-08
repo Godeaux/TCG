@@ -108,7 +108,7 @@
       }
     },
     {
-      "id": "bird-prey-sparrow-egg",
+      "id": "token-sparrow-egg",
       "name": "Sparrow Egg",
       "type": "Prey",
       "atk": 0,
@@ -116,20 +116,7 @@
       "nutrition": 0,
       "effectText": "Start of turn, become Sparrow.",
       "effects": {
-        "onStart": { "type": "transformCard", "params": { "targetType": "self", "newCardId": "bird-prey-sparrow" } }
-      }
-    },
-    {
-      "id": "bird-prey-sparrow",
-      "name": "Sparrow",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "effectText": "End of turn, play Sparrow Egg.",
-      "summons": ["token-sparrow-egg"],
-      "effects": {
-        "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-sparrow-egg"] } }
+        "onStart": { "type": "transformCard", "params": { "targetType": "self", "newCardId": "token-sparrow" } }
       }
     },
     {
@@ -678,6 +665,58 @@
       "effectText": "Deal 1 damage to any target.",
       "effects": {
         "effect": { "type": "selectTargetForDamage", "params": { "amount": 1, "label": "white missile" } }
+      }
+    },
+    {
+      "id": "bird-spell-feed",
+      "name": "Feed",
+      "type": "Free Spell",
+      "effectText": "Target creature gains +1/+1.",
+      "effects": {
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "friendly-creatures",
+            "title": "Choose a creature to buff",
+            "effect": { "buff": { "attack": 1, "health": 1 } }
+          }
+        }
+      }
+    },
+    {
+      "id": "bird-spell-rainbow-feathers",
+      "name": "Rainbow Feathers",
+      "type": "Free Spell",
+      "effectText": "Either heal 2 or regen target creature.",
+      "effects": {
+        "effect": {
+          "type": "chooseOption",
+          "params": {
+            "title": "Rainbow Feathers: choose an outcome",
+            "options": [
+              { "label": "Heal 2", "description": "Restore 2 HP", "effect": { "heal": 2 } },
+              { "label": "Regen target creature", "description": "Restore a creature to full stats", "effect": { "regen": true } }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "bird-spell-red-tailfeathers",
+      "name": "Red Tailfeathers",
+      "type": "Free Spell",
+      "effectText": "Either heal 6 or target creature gains +3/+3.",
+      "effects": {
+        "effect": {
+          "type": "chooseOption",
+          "params": {
+            "title": "Red Tailfeathers: choose an outcome",
+            "options": [
+              { "label": "Heal 6", "description": "Restore 6 HP", "effect": { "heal": 6 } },
+              { "label": "Target creature gains +3/+3", "description": "Buff a creature", "effect": { "buff": { "attack": 3, "health": 3 } } }
+            ]
+          }
+        }
       }
     },
     {
