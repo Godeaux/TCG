@@ -96,14 +96,14 @@ const DECK_OPTIONS = [
     name: "Bird",
     emoji: "🐦",
     panelClass: "deck-select-panel--bird",
-    available: false,
+    available: true,
   },
   {
     id: "mammal",
     name: "Mammal",
     emoji: "🐻",
     panelClass: "deck-select-panel--mammal",
-    available: false,
+    available: true,
   },
   {
     id: "reptile",
@@ -117,7 +117,7 @@ const DECK_OPTIONS = [
     name: "Amphibian",
     emoji: "🐸",
     panelClass: "deck-select-panel--amphibian",
-    available: false,
+    available: true,
   },
 ];
 
