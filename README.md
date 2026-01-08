@@ -6,18 +6,6 @@ A web-based two-player trading card game featuring a unique consumption mechanic
 
 ---
 
-## Quick Start
-
-```bash
-# Clone and run locally
-git clone <repo-url>
-cd TCG
-# Open index.html in a browser, or use a local server:
-npx serve .
-```
-
----
-
 ## Game Overview
 
 Food Chain TCG combines elements of Hearthstone, Magic: The Gathering, and Yu-Gi-Oh! with animal-themed deck building.
