@@ -1468,11 +1468,53 @@ const resolveAttack = (state, attacker, target, negateAttack = false) => {
 };
 
 const renderTrapDecision = (state, defender, attacker, target, onUpdate) => {
-  pendingAttack = { attacker, target, defenderIndex: state.players.indexOf(defender) };
+  const defenderIndex = state.players.indexOf(defender);
+  pendingAttack = { attacker, target, defenderIndex };
   trapWaitingPanelActive = false;
 
   // Get traps that can trigger from hand for direct attacks
   const availableTraps = getTrapsFromHand(defender, "directAttack");
+
+  // AI auto-decides trap usage
+  if (isAIMode(state) && defenderIndex === 1) {
+    // AI always triggers first available trap (simple strategy)
+    if (availableTraps.length > 0) {
+      const trap = availableTraps[0];
+      defender.hand = defender.hand.filter((card) => card.instanceId !== trap.instanceId);
+      defender.exile.push(trap);
+      logMessage(state, `${defender.name} triggers ${trap.name}!`);
+      const result = resolveCardEffect(trap, 'effect', {
+        log: (message) => logMessage(state, message),
+        attacker,
+        target,
+        defenderIndex,
+        state,
+      });
+      resolveEffectChain(state, result, {
+        playerIndex: defenderIndex,
+        opponentIndex: (defenderIndex + 1) % 2,
+      });
+      cleanupDestroyed(state);
+      if (attacker.currentHp <= 0) {
+        logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
+        pendingAttack = null;
+        state.pendingTrapDecision = null;
+        onUpdate?.();
+        return;
+      }
+      resolveAttack(state, attacker, target, Boolean(result?.negateAttack));
+      pendingAttack = null;
+      state.pendingTrapDecision = null;
+      onUpdate?.();
+    } else {
+      // No traps, just resolve the attack
+      resolveAttack(state, attacker, target, false);
+      pendingAttack = null;
+      state.pendingTrapDecision = null;
+      onUpdate?.();
+    }
+    return;
+  }
 
   const items = availableTraps.map((trap) => {
     const item = document.createElement("label");
@@ -2145,6 +2187,29 @@ const triggerPlayTraps = (state, creature, onUpdate, onResolved) => {
   // Get traps from hand that can trigger on this creature type being played
   const relevantTraps = getTrapsFromHand(opponent, triggerKey);
   if (relevantTraps.length === 0) {
+    onResolved?.();
+    return;
+  }
+
+  // AI auto-decides trap usage
+  if (isAIMode(state) && opponentIndex === 1) {
+    // AI always triggers first available trap (simple strategy)
+    const trap = relevantTraps[0];
+    opponent.hand = opponent.hand.filter((card) => card.instanceId !== trap.instanceId);
+    opponent.exile.push(trap);
+    logMessage(state, `${opponent.name} triggers ${trap.name}!`);
+    const result = resolveCardEffect(trap, 'effect', {
+      log: (message) => logMessage(state, message),
+      target: { type: "creature", card: creature },
+      defenderIndex: opponentIndex,
+      state,
+    });
+    resolveEffectChain(state, result, {
+      playerIndex: opponentIndex,
+      opponentIndex: state.activePlayerIndex,
+    });
+    cleanupDestroyed(state);
+    onUpdate?.();
     onResolved?.();
     return;
   }
