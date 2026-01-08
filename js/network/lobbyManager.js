@@ -261,7 +261,12 @@ export const updateLobbyPlayerNames = async (state, lobby = state.menu?.lobby) =
   }
   try {
     const api = await loadSupabaseApi(state);
-    const profiles = await api.fetchProfilesByIds([lobby.host_id, lobby.guest_id]);
+    // Filter out null/undefined IDs (guest may not have joined yet)
+    const playerIds = [lobby.host_id, lobby.guest_id].filter(Boolean);
+    if (playerIds.length === 0) {
+      return;
+    }
+    const profiles = await api.fetchProfilesByIds(playerIds);
     const profileMap = new Map(profiles.map((profile) => [profile.id, profile.username]));
     if (lobby.host_id && profileMap.has(lobby.host_id)) {
       state.players[0].name = profileMap.get(lobby.host_id);
@@ -374,11 +379,9 @@ export const handleCreateLobby = async (state) => {
     state.menu.existingLobby = null;
     state.menu.gameInProgress = false;
     setMenuStage(state, 'lobby');
+    // updateLobbySubscription handles: DB restore, sync request, and real-time subscription
     updateLobbySubscription(state);
     updateLobbyPlayerNames(state, lobby);
-
-    // Try to restore any existing game state (in case of reconnection)
-    await loadGameStateFromDatabase(state);
 
     return { success: true, lobby };
   } catch (error) {
@@ -410,11 +413,9 @@ export const handleJoinLobby = async (state, code) => {
     state.menu.lobby = lobby;
     state.menu.gameInProgress = false;
     setMenuStage(state, 'lobby');
+    // updateLobbySubscription handles: DB restore, sync request, and real-time subscription
     updateLobbySubscription(state);
     updateLobbyPlayerNames(state, lobby);
-
-    // Try to restore any existing game state (in case of reconnection)
-    await loadGameStateFromDatabase(state);
 
     return { success: true, lobby };
   } catch (error) {
@@ -584,9 +585,12 @@ export const updateLobbySubscription = (state, { force = false } = {}) => {
   // Initial refresh
   refreshLobbyState(state, { silent: true });
 
-  // Load from database, then request sync
+  // Load from database, then request sync from opponent
   loadGameStateFromDatabase(state).then(() => {
-    sendLobbyBroadcast('sync_request', { senderId: state.menu?.profile?.id ?? null });
+    sendLobbyBroadcast('sync_request', {
+      senderId: state.menu?.profile?.id ?? null,
+      timestamp: Date.now(),
+    });
   });
 };
 
@@ -661,7 +665,7 @@ export const loadGameStateFromDatabase = async (state) => {
       callbacks.onApplySync?.(state, savedGame.game_state, { forceApply: true });
 
       // Ensure deckBuilder stage is set if decks are already built
-      if (savedGame.game_state.deckBuilder?.stage === 'complete') {
+      if (savedGame.game_state.deckBuilder?.stage === 'complete' && state.deckBuilder) {
         state.deckBuilder.stage = 'complete';
       }
 

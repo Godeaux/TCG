@@ -511,7 +511,7 @@ export const checkAndRecoverSetupState = (state, options = {}) => {
 
   // Check if both players have valid rolls but stage is still "rolling"
   const hasValidRolls = state.setup.rolls.every(roll =>
-    roll !== null && typeof roll === 'number' && roll >= 1 && roll <= 10
+    roll !== null && typeof roll === 'number' && roll >= 1 && roll <= 6
   );
 
   if (hasValidRolls) {
@@ -540,7 +540,7 @@ export const checkAndRecoverSetupState = (state, options = {}) => {
 
   // Check if rolls have been invalid for too long (stuck state)
   const hasInvalidRolls = state.setup.rolls.some(roll =>
-    roll !== null && (typeof roll !== 'number' || roll < 1 || roll > 10)
+    roll !== null && (typeof roll !== 'number' || roll < 1 || roll > 6)
   );
 
   if (hasInvalidRolls) {
