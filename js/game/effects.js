@@ -375,7 +375,7 @@ export const resolveEffectResult = (state, result, context) => {
 
       const summoned = placeToken(state, playerIndex, tokenData);
       console.log(`  → Summoned:`, summoned ? summoned.name : 'FAILED');
-      if (summoned?.onPlay) {
+      if (summoned?.onPlay && !summoned?.abilitiesCancelled) {
         const opponentIndex = (playerIndex + 1) % 2;
         const resultOnPlay = summoned.onPlay({
           log: (message) => logMessage(state, message),
@@ -416,7 +416,7 @@ export const resolveEffectResult = (state, result, context) => {
       return;
     }
     player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
-    if (instance.type === "Prey" && instance.onPlay) {
+    if (instance.type === "Prey" && instance.onPlay && !instance.abilitiesCancelled) {
       const opponentIndex = (playerIndex + 1) % 2;
       const resultOnPlay = instance.onPlay({
         log: (message) => logMessage(state, message),
@@ -451,7 +451,7 @@ export const resolveEffectResult = (state, result, context) => {
     if (!instance) {
       return;
     }
-    if (instance.type === "Prey" && instance.onPlay) {
+    if (instance.type === "Prey" && instance.onPlay && !instance.abilitiesCancelled) {
       const opponentIndex = (playerIndex + 1) % 2;
       const resultOnPlay = instance.onPlay({
         log: (message) => logMessage(state, message),
