@@ -463,3 +463,114 @@ export const loadGameState = async ({ lobbyId }) => {
   }
   return data ?? null;
 };
+
+/**
+ * Find an open lobby waiting for an opponent (for matchmaking)
+ * Only returns lobbies created in the last 5 minutes to avoid stale matches
+ * @param {Object} params
+ * @param {string} params.excludeUserId - User ID to exclude (don't match with yourself)
+ * @returns {Promise<Object|null>} An open lobby or null if none found
+ */
+export const findWaitingLobby = async ({ excludeUserId }) => {
+  // Calculate 5 minutes ago
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+
+  const { data, error } = await supabase
+    .from("lobbies")
+    .select("id, code, status, host_id, guest_id, created_at")
+    .eq("status", "open")
+    .is("guest_id", null)
+    .neq("host_id", excludeUserId)
+    .gte("created_at", fiveMinutesAgo)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data ?? null;
+};
+
+/**
+ * Join a lobby by ID (for matchmaking - no code needed)
+ * Uses conditional update to handle race conditions
+ * @param {Object} params
+ * @param {string} params.lobbyId - The lobby ID to join
+ * @param {string} params.guestId - The guest's user ID
+ * @returns {Promise<Object>} The joined lobby
+ */
+export const joinLobbyById = async ({ lobbyId, guestId }) => {
+  if (!lobbyId) {
+    throw new Error("Missing lobby id.");
+  }
+  if (!guestId) {
+    throw new Error("Missing guest id.");
+  }
+
+  // Use conditional update to handle race conditions
+  // Only succeeds if guest_id is still null
+  const { data, error } = await supabase
+    .from("lobbies")
+    .update({ guest_id: guestId, status: "full" })
+    .eq("id", lobbyId)
+    .is("guest_id", null)
+    .eq("status", "open")
+    .select("id, code, status, host_id, guest_id")
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data) {
+    // Race condition - someone else joined first
+    return null;
+  }
+
+  return data;
+};
+
+/**
+ * Create a lobby for matchmaking (no code display needed)
+ * @param {Object} params
+ * @param {string} params.hostId - The host's user ID
+ * @returns {Promise<Object>} The created lobby
+ */
+export const createMatchmakingLobby = async ({ hostId }) => {
+  if (!hostId) {
+    throw new Error("Missing host id.");
+  }
+
+  // First close any existing open lobbies for this user
+  await supabase
+    .from("lobbies")
+    .update({ status: "closed" })
+    .eq("host_id", hostId)
+    .eq("status", "open");
+
+  // Create a new lobby
+  let attempts = 0;
+  while (attempts < 5) {
+    attempts += 1;
+    const code = generateLobbyCode();
+    const { data, error } = await supabase
+      .from("lobbies")
+      .insert({
+        code,
+        host_id: hostId,
+        status: "open",
+      })
+      .select("id, code, status, host_id, guest_id")
+      .single();
+
+    if (!error) {
+      return data;
+    }
+    if (!error.message?.includes("duplicate")) {
+      throw error;
+    }
+  }
+  throw new Error("Unable to generate a lobby code.");
+};

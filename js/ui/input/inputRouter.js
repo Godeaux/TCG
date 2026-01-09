@@ -36,6 +36,8 @@ let handleCreateLobby = null;
 let handleJoinLobby = null;
 let handleLeaveLobby = null;
 let handleBackFromLobby = null;
+let handleFindMatch = null;
+let handleCancelMatchmaking = null;
 let ensureDecksLoaded = null;
 let getOpponentDisplayName = null;
 let loadGameStateFromDatabase = null;
@@ -148,6 +150,8 @@ const getNavigationElements = () => ({
   tutorialClose: document.getElementById("tutorial-close"),
 
   // Multiplayer (unified lobby screen)
+  lobbyFindMatch: document.getElementById("lobby-find-match"),
+  lobbyFindCancel: document.getElementById("lobby-find-cancel"),
   lobbyCreate: document.getElementById("lobby-create"),
   lobbyRejoin: document.getElementById("lobby-rejoin"),
   lobbyJoin: document.getElementById("lobby-join"),
@@ -375,6 +379,22 @@ const initNavigation = () => {
     latestCallbacks.onUpdate?.();
   });
 
+  // Multiplayer: Find Match (matchmaking)
+  elements.lobbyFindMatch?.addEventListener("click", () => {
+    if (!latestState) {
+      return;
+    }
+    handleFindMatch(latestState);
+  });
+
+  // Multiplayer: Cancel matchmaking
+  elements.lobbyFindCancel?.addEventListener("click", () => {
+    if (!latestState) {
+      return;
+    }
+    handleCancelMatchmaking(latestState);
+  });
+
   // Multiplayer: Create lobby
   elements.lobbyCreate?.addEventListener("click", () => {
     if (!latestState) {
@@ -534,6 +554,8 @@ export const initializeInput = (options = {}) => {
   handleJoinLobby = helpers.handleJoinLobby;
   handleLeaveLobby = helpers.handleLeaveLobby;
   handleBackFromLobby = helpers.handleBackFromLobby;
+  handleFindMatch = helpers.handleFindMatch;
+  handleCancelMatchmaking = helpers.handleCancelMatchmaking;
   ensureDecksLoaded = helpers.ensureDecksLoaded;
   getOpponentDisplayName = helpers.getOpponentDisplayName;
   loadGameStateFromDatabase = helpers.loadGameStateFromDatabase;

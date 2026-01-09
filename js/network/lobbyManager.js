@@ -429,6 +429,99 @@ export const handleJoinLobby = async (state, code) => {
 };
 
 /**
+ * Find a match via matchmaking
+ * Searches for an open lobby, or creates one and waits
+ */
+export const handleFindMatch = async (state) => {
+  if (!state.menu.profile) {
+    setMenuError(state, 'Login required to find a match.');
+    return { success: false };
+  }
+
+  applyMenuLoading(state, true);
+  state.menu.matchmaking = true;
+  setMenuError(state, null);
+  callbacks.onUpdate?.();
+
+  try {
+    const api = await loadSupabaseApi(state);
+
+    // First, look for an existing open lobby to join
+    const waitingLobby = await api.findWaitingLobby({
+      excludeUserId: state.menu.profile.id,
+    });
+
+    if (waitingLobby) {
+      // Found a lobby! Try to join it
+      const joinedLobby = await api.joinLobbyById({
+        lobbyId: waitingLobby.id,
+        guestId: state.menu.profile.id,
+      });
+
+      if (joinedLobby) {
+        // Successfully joined
+        state.menu.lobby = joinedLobby;
+        state.menu.matchmaking = false;
+        state.menu.gameInProgress = false;
+        setMenuStage(state, 'lobby');
+        updateLobbySubscription(state);
+        updateLobbyPlayerNames(state, joinedLobby);
+        applyMenuLoading(state, false);
+        callbacks.onUpdate?.();
+        return { success: true, lobby: joinedLobby, joined: true };
+      }
+      // Race condition - someone else joined first, fall through to create
+    }
+
+    // No lobby found (or join failed), create one and wait
+    const newLobby = await api.createMatchmakingLobby({
+      hostId: state.menu.profile.id,
+    });
+
+    state.menu.lobby = newLobby;
+    state.menu.gameInProgress = false;
+    setMenuStage(state, 'lobby');
+    updateLobbySubscription(state);
+    updateLobbyPlayerNames(state, newLobby);
+
+    return { success: true, lobby: newLobby, joined: false };
+  } catch (error) {
+    const message = error.message || 'Failed to find match.';
+    setMenuError(state, message);
+    state.menu.matchmaking = false;
+    return { success: false, error: message };
+  } finally {
+    applyMenuLoading(state, false);
+    callbacks.onUpdate?.();
+  }
+};
+
+/**
+ * Cancel matchmaking
+ */
+export const handleCancelMatchmaking = async (state) => {
+  state.menu.matchmaking = false;
+
+  if (state.menu.lobby) {
+    // Close the lobby we created while waiting
+    try {
+      const api = await loadSupabaseApi(state);
+      await api.closeLobby({
+        lobbyId: state.menu.lobby.id,
+        userId: state.menu.profile.id,
+      });
+    } catch (error) {
+      console.error('Failed to close matchmaking lobby:', error);
+    }
+    state.menu.lobby = null;
+    updateLobbySubscription(state);
+  }
+
+  callbacks.onUpdate?.();
+  return { success: true };
+};
+
+/**
  * Go back from multiplayer to main menu
  * Cleans up any active lobby connection
  */
