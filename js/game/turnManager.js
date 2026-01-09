@@ -134,6 +134,7 @@ export const advancePhase = (state) => {
       logMessage(state, `[Draw] ${state.players[state.activePlayerIndex].name} skips first draw (going second).`);
       state.phase = "Main 1";
       logMessage(state, `━━━ PHASE: MAIN 1 ━━━`);
+      state.broadcast?.(state);
       return;
     }
 
@@ -199,8 +200,10 @@ export const advancePhase = (state) => {
       logMessage(state, `[End] Queuing ${endEffectCreatures.length} end-of-turn effect(s): ${endEffectCreatures.map(c => c.name).join(', ')}`);
     }
     queueEndOfTurnEffects(state);
-    state.broadcast?.(state);
   }
+
+  // Broadcast after every phase change so rejoining players get the latest phase
+  state.broadcast?.(state);
 };
 
 export const endTurn = (state) => {
@@ -232,6 +235,9 @@ export const endTurn = (state) => {
   logMessage(state, `═══════════════════════════════════════`);
 
   startTurn(state);
+
+  // Broadcast turn change so rejoining players get the latest state
+  state.broadcast?.(state);
 };
 
 export const canPlayCard = (state) => {

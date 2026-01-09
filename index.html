@@ -359,16 +359,20 @@
           <div class="menu-icon">🌐</div>
           <div>
             <h2>Multiplayer</h2>
-            <p class="muted">Create or join a lobby with a friend.</p>
+            <p class="muted" id="multiplayer-status">Create or join a lobby with a friend.</p>
           </div>
         </div>
-        <div class="menu-actions">
+        <div class="lobby-code" id="lobby-code-display">----</div>
+        <div class="menu-actions" id="multiplayer-actions">
           <button class="btn-primary" id="lobby-create">Create Lobby</button>
-          <button class="btn-secondary" id="lobby-join">Join Lobby</button>
+          <button class="btn-primary" id="lobby-rejoin" style="display: none;">Rejoin Lobby</button>
+          <button class="btn-primary" id="lobby-continue" style="display: none;">Continue to Game</button>
+          <button class="btn-secondary" id="lobby-join">Join as Guest</button>
+          <button class="btn-secondary" id="lobby-leave" style="display: none;">New Code</button>
           <button class="btn-secondary" id="multiplayer-back">Back</button>
         </div>
         <form class="menu-form" id="lobby-join-form">
-          <label class="menu-label" for="lobby-code">Lobby Code</label>
+          <label class="menu-label" for="lobby-code">Enter Lobby Code</label>
           <input
             class="menu-input"
             id="lobby-code"
@@ -376,31 +380,12 @@
             autocomplete="off"
             placeholder="ABC123"
           />
-          <div class="menu-error" id="lobby-error" role="alert"></div>
           <div class="menu-actions">
             <button class="btn-primary" type="submit">Join</button>
             <button class="btn-secondary" type="button" id="lobby-join-cancel">Cancel</button>
           </div>
         </form>
-      </div>
-    </div>
-
-    <div class="overlay lobby-overlay" id="lobby-overlay" aria-hidden="true">
-      <div class="overlay-content menu-card">
-        <div class="menu-header">
-          <div class="menu-icon">🧩</div>
-          <div>
-            <h2>Lobby</h2>
-            <p class="muted" id="lobby-status">Waiting for opponent...</p>
-          </div>
-        </div>
-        <div class="lobby-code" id="lobby-code-display">----</div>
-        <div class="menu-actions">
-          <button class="btn-primary" id="lobby-continue">Continue to Game</button>
-          <button class="btn-secondary" id="lobby-leave">New Code</button>
-          <button class="btn-secondary" id="lobby-back">Back</button>
-        </div>
-        <div class="menu-error" id="lobby-live-error" role="alert"></div>
+        <div class="menu-error" id="lobby-error" role="alert"></div>
       </div>
     </div>
 

@@ -5,16 +5,16 @@
  * This module provides:
  * - Broadcasting state changes to opponent via Supabase Realtime
  * - Persisting game state to database for reconnection support
- * - Loading saved games from database
  *
  * Key Functions:
  * - sendLobbyBroadcast: Send a broadcast event to the lobby channel
  * - broadcastSyncState: Broadcast full game state to opponent
  * - saveGameStateToDatabase: Persist game state for reconnection
- * - loadGameStateFromDatabase: Restore game from database
+ *
+ * Note: loadGameStateFromDatabase is in lobbyManager.js (uses callback pattern)
  */
 
-import { buildLobbySyncPayload, applyLobbySyncPayload } from './serialization.js';
+import { buildLobbySyncPayload } from './serialization.js';
 import { isOnlineMode } from '../state/selectors.js';
 import * as supabaseApi from './supabaseApi.js';
 
@@ -79,6 +79,16 @@ export const broadcastSyncState = (state) => {
 
 /**
  * Save game state to database (runs in background, doesn't block gameplay)
+ *
+ * SAFETY: This is only called from:
+ * 1. broadcastSyncState() - triggered by game actions (attacks, plays, phase changes)
+ * 2. SetupOverlay - on dice rolls
+ * 3. checkAndRecoverSetupState() - on stuck state recovery
+ *
+ * Game actions require menu.stage === 'ready', which only happens AFTER
+ * loadGameStateFromDatabase() completes. This prevents rejoining players
+ * from overwriting DB with empty/stale state.
+ *
  * @param {Object} state - Game state to save
  */
 export const saveGameStateToDatabase = async (state) => {
@@ -111,79 +121,6 @@ export const saveGameStateToDatabase = async (state) => {
   } catch (error) {
     console.error("Failed to save game state:", error);
     // Don't throw - we don't want to break gameplay if DB save fails
-  }
-};
-
-/**
- * Load saved game state from database when joining/rejoining a lobby
- *
- * @param {Object} state - Game state to load into
- * @returns {Promise<boolean>} True if a game was restored, false otherwise
- */
-export const loadGameStateFromDatabase = async (state) => {
-  if (!isOnlineMode(state) || !state.menu?.lobby?.id) {
-    console.log("Skipping load - not online or no lobby ID");
-    return false;
-  }
-
-  try {
-    console.log("Loading game state for lobby ID:", state.menu.lobby.id);
-    const savedGame = await supabaseApi.loadGameState({ lobbyId: state.menu.lobby.id });
-    console.log("Saved game from DB:", savedGame);
-
-    if (savedGame && savedGame.game_state) {
-      console.log("Restoring saved game state from database");
-      console.log("DeckBuilder stage before:", state.deckBuilder?.stage);
-      console.log("FULL saved game state from DB:", savedGame.game_state);
-      console.log("Player 0 hand from DB (ALL):", savedGame.game_state.game?.players?.[0]?.hand);
-      console.log("Player 0 field from DB (ALL):", savedGame.game_state.game?.players?.[0]?.field);
-      console.log("Player 1 hand from DB (ALL):", savedGame.game_state.game?.players?.[1]?.hand);
-      console.log("Player 1 field from DB (ALL):", savedGame.game_state.game?.players?.[1]?.field);
-      console.log("Saved game state structure:", {
-        hasGame: !!savedGame.game_state.game,
-        hasPlayers: !!savedGame.game_state.game?.players,
-        playerCount: savedGame.game_state.game?.players?.length,
-        player0Hand: savedGame.game_state.game?.players?.[0]?.hand?.length,
-        player0Field: savedGame.game_state.game?.players?.[0]?.field?.length,
-        player1Hand: savedGame.game_state.game?.players?.[1]?.hand?.length,
-        player1Field: savedGame.game_state.game?.players?.[1]?.field?.length,
-        turn: savedGame.game_state.game?.turn,
-        phase: savedGame.game_state.game?.phase,
-      });
-
-      // Check if game has actually started (setup completed) BEFORE applying state
-      const setupCompleted = savedGame.game_state.setup?.stage === "complete";
-      const hasGameStarted = setupCompleted || savedGame.game_state.game?.turn > 1;
-
-      // Set gameInProgress BEFORE applying state to prevent deck builder from showing
-      state.menu.gameInProgress = hasGameStarted;
-
-      // Now apply the saved game state (forceApply to bypass sender check)
-      console.log("Applying saved state with forceApply=true");
-      applyLobbySyncPayload(state, savedGame.game_state, { forceApply: true });
-
-      // Ensure deckBuilder stage is set to "complete" if decks are already built
-      if (savedGame.game_state.deckBuilder?.stage === "complete") {
-        state.deckBuilder.stage = "complete";
-      }
-
-      console.log("DeckBuilder stage after:", state.deckBuilder?.stage);
-      console.log("Game in progress:", hasGameStarted);
-      console.log("Local state after applying DB:");
-      console.log("  Player 0 hand:", state.players?.[0]?.hand);
-      console.log("  Player 0 field:", state.players?.[0]?.field);
-      console.log("  Player 1 hand:", state.players?.[1]?.hand);
-      console.log("  Player 1 field:", state.players?.[1]?.field);
-      console.log("  Turn:", state.turn, "Phase:", state.phase);
-
-      // Return true to indicate successful restoration
-      return hasGameStarted;
-    }
-
-    return false;
-  } catch (error) {
-    console.error("Failed to load game state from database:", error);
-    return false;
   }
 };
 
