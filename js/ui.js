@@ -1069,6 +1069,50 @@ const resolveAttack = (state, attacker, target, negateAttack = false) => {
     playAttackEffect(effect, state);
   }
   attacker.hasAttacked = true;
+
+  // Trigger onAfterCombat effects for surviving creatures
+  if (attacker.currentHp > 0 && (attacker.effects?.onAfterCombat || attacker.onAfterCombat)) {
+    const attackerOwner = state.players[attackerOwnerIndex];
+    const result = resolveCardEffect(attacker, 'onAfterCombat', {
+      log: (message) => logMessage(state, message),
+      player: attackerOwner,
+      opponent: state.players[(attackerOwnerIndex + 1) % 2],
+      creature: attacker,
+      state,
+      playerIndex: attackerOwnerIndex,
+      opponentIndex: (attackerOwnerIndex + 1) % 2,
+    });
+    if (result) {
+      resolveEffectChain(state, result, {
+        playerIndex: attackerOwnerIndex,
+        opponentIndex: (attackerOwnerIndex + 1) % 2,
+        card: attacker,
+      });
+    }
+  }
+  if (target.type === "creature" && target.card.currentHp > 0 && (target.card.effects?.onAfterCombat || target.card.onAfterCombat)) {
+    const { ownerIndex: defenderOwnerIdx } = findCardSlotIndex(state, target.card.instanceId);
+    if (defenderOwnerIdx >= 0) {
+      const defenderOwner = state.players[defenderOwnerIdx];
+      const result = resolveCardEffect(target.card, 'onAfterCombat', {
+        log: (message) => logMessage(state, message),
+        player: defenderOwner,
+        opponent: state.players[(defenderOwnerIdx + 1) % 2],
+        creature: target.card,
+        state,
+        playerIndex: defenderOwnerIdx,
+        opponentIndex: (defenderOwnerIdx + 1) % 2,
+      });
+      if (result) {
+        resolveEffectChain(state, result, {
+          playerIndex: defenderOwnerIdx,
+          opponentIndex: (defenderOwnerIdx + 1) % 2,
+          card: target.card,
+        });
+      }
+    }
+  }
+
   cleanupDestroyed(state);
   state.broadcast?.(state);
   return effect;
