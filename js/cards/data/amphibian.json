@@ -146,7 +146,7 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Poisonous"],
-      "effectText": "Draw 1. Sacrifice; add Golden Blowdart to hand.",
+      "effectText": "Draw 1. Sacrifice; add Golden Blowdart to hand. [TODO - sacrificeEffect hook not triggered]",
       "effects": {
         "onPlay": { "type": "draw", "params": { "count": 1 } },
         "sacrificeEffect": { "type": "addToHand", "params": { "cardId": "amphibian-spell-golden-blowdart" } }
@@ -210,7 +210,7 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Poisonous"],
-      "effectText": "Sacrifice, add Phantasmal Darts to hand.",
+      "effectText": "Sacrifice, add Phantasmal Darts to hand. [TODO - sacrificeEffect hook not triggered]",
       "effects": {
         "sacrificeEffect": { "type": "addToHand", "params": { "cardId": "amphibian-spell-phantasmal-darts" } }
       }
@@ -307,7 +307,7 @@
       "atk": 1,
       "hp": 2,
       "nutrition": 2,
-      "effectText": "Instead of attacking; may eat target prey.",
+      "effectText": "Instead of attacking; may eat target prey. [TODO - attackReplacement hook not triggered]",
       "effects": {
         "attackReplacement": { "type": "eatPreyInsteadOfAttacking" }
       }
@@ -825,6 +825,41 @@
           "params": {}
         }
       }
+    },
+    {
+      "id": "amphibian-spell-golden-blowdart",
+      "name": "Golden Blowdart",
+      "type": "Free Spell",
+      "effectText": "TODO - REVISIT",
+      "effects": {}
+    },
+    {
+      "id": "amphibian-spell-phantasmal-darts",
+      "name": "Phantasmal Darts",
+      "type": "Free Spell",
+      "effectText": "TODO - REVISIT",
+      "effects": {}
+    },
+    {
+      "id": "amphibian-spell-tomato",
+      "name": "Tomato",
+      "type": "Free Spell",
+      "effectText": "TODO - REVISIT",
+      "effects": {}
+    },
+    {
+      "id": "amphibian-spell-titicaca-water",
+      "name": "Titicaca Water",
+      "type": "Free Spell",
+      "effectText": "TODO - REVISIT",
+      "effects": {}
+    },
+    {
+      "id": "amphibian-free-spell-rainbow",
+      "name": "Rainbow",
+      "type": "Free Spell",
+      "effectText": "TODO - REVISIT",
+      "effects": {}
     }
   ]
 }

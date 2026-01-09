@@ -16,7 +16,7 @@ const runStartOfTurnEffects = (state) => {
   }
 
   player.field.forEach((creature) => {
-    if (creature?.onStart) {
+    if (creature?.onStart && !creature?.abilitiesCancelled) {
       logMessage(state, `→ ${creature.name} start-of-turn effect activates.`);
       const result = creature.onStart({
         log: (message) => logMessage(state, message),
@@ -33,7 +33,7 @@ const runStartOfTurnEffects = (state) => {
         card: creature,
       });
     }
-    if (creature?.transformOnStart) {
+    if (creature?.transformOnStart && !creature?.abilitiesCancelled) {
       logMessage(state, `→ ${creature.name} transforms at start of turn.`);
       resolveEffectResult(state, {
         transformCard: { card: creature, newCardData: creature.transformOnStart },

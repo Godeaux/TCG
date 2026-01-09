@@ -2,7 +2,7 @@ import { drawCard, logMessage, queueVisualEffect } from "../state/gameState.js";
 import { createCardInstance } from "../cardTypes.js";
 import { consumePrey } from "./consumption.js";
 import { isImmune, areAbilitiesActive } from "../keywords.js";
-import { getTokenById } from "../cards/index.js";
+import { getTokenById, getCardDefinitionById } from "../cards/index.js";
 
 const findCardOwnerIndex = (state, card) =>
   state.players.findIndex((player) =>
@@ -200,6 +200,15 @@ export const resolveEffectResult = (state, result, context) => {
     });
   }
 
+  if (result.killCreature) {
+    // Single creature kill (from applyEffectToSelection)
+    const creature = result.killCreature;
+    const killed = killCreature(state, creature, "effect");
+    if (killed) {
+      logMessage(state, `${creature.name} is destroyed.`);
+    }
+  }
+
   if (result.killAllCreatures) {
     state.players.forEach((player) => {
       player.field.forEach((creature) => {
@@ -243,6 +252,54 @@ export const resolveEffectResult = (state, result, context) => {
     });
   }
 
+  if (result.grantKeywordToAll) {
+    const { creatures, keyword } = result.grantKeywordToAll;
+    creatures.forEach((creature) => {
+      if (creature && !creature.keywords.includes(keyword)) {
+        creature.keywords.push(keyword);
+        logMessage(state, `${creature.name} gains ${keyword}.`);
+      }
+      if (creature && keyword === "Barrier") {
+        creature.hasBarrier = true;
+      }
+      if (creature && keyword === "Frozen") {
+        creature.frozen = true;
+        creature.frozenDiesTurn = state.turn + 1;
+      }
+    });
+  }
+
+  if (result.removeKeywordFromAll) {
+    const { creatures, keyword } = result.removeKeywordFromAll;
+    creatures.forEach((creature) => {
+      if (creature && creature.keywords) {
+        const keywordIndex = creature.keywords.indexOf(keyword);
+        if (keywordIndex >= 0) {
+          creature.keywords.splice(keywordIndex, 1);
+          logMessage(state, `${creature.name} loses ${keyword}.`);
+        }
+        if (keyword === "Barrier") {
+          creature.hasBarrier = false;
+        }
+        if (keyword === "Frozen") {
+          creature.frozen = false;
+          creature.frozenDiesTurn = null;
+        }
+      }
+    });
+  }
+
+  if (result.buffAllCreatures) {
+    const { creatures, attack, health } = result.buffAllCreatures;
+    creatures.forEach((creature) => {
+      if (creature) {
+        creature.currentAtk = (creature.currentAtk ?? creature.atk ?? 0) + (attack || 0);
+        creature.currentHp = (creature.currentHp ?? creature.hp ?? 0) + (health || 0);
+        logMessage(state, `${creature.name} gains +${attack || 0}/+${health || 0}.`);
+      }
+    });
+  }
+
   if (result.consumeEnemyPrey) {
     const { predator, prey, opponentIndex } = result.consumeEnemyPrey;
     consumePrey({ predator, preyList: [prey], state, playerIndex: opponentIndex });
@@ -268,15 +325,44 @@ export const resolveEffectResult = (state, result, context) => {
   }
 
   if (result.buffCreature) {
-    const { creature, atk, hp } = result.buffCreature;
-    creature.currentAtk += atk;
-    creature.currentHp += hp;
+    const { creature, atk, hp, attack, health } = result.buffCreature;
+    // Support both property naming conventions (atk/hp and attack/health)
+    const atkAmount = atk ?? attack ?? 0;
+    const hpAmount = hp ?? health ?? 0;
+    creature.currentAtk = (creature.currentAtk ?? creature.atk ?? 0) + atkAmount;
+    creature.currentHp = (creature.currentHp ?? creature.hp ?? 0) + hpAmount;
+    logMessage(state, `${creature.name} gains +${atkAmount}/+${hpAmount}.`);
+  }
+
+  if (result.grantKeyword) {
+    // Handler for single creature keyword grant (mirrors addKeyword)
+    const { creature, keyword } = result.grantKeyword;
+    if (creature && !creature.keywords.includes(keyword)) {
+      creature.keywords.push(keyword);
+    }
+    if (creature && keyword === "Barrier") {
+      creature.hasBarrier = true;
+    }
+    if (creature && keyword === "Frozen") {
+      creature.frozen = true;
+      creature.frozenDiesTurn = state.turn + 1;
+    }
   }
 
   if (result.restoreCreature) {
     const { creature } = result.restoreCreature;
     creature.currentHp = creature.hp;
     logMessage(state, `${creature.name} is regenerated.`);
+  }
+
+  if (result.healCreature) {
+    const { creature, amount } = result.healCreature;
+    if (creature) {
+      const baseHp = creature.hp || creature.currentHp || 1;
+      const healAmount = Math.min(amount, baseHp - creature.currentHp);
+      creature.currentHp = Math.min(baseHp, creature.currentHp + amount);
+      logMessage(state, `${creature.name} heals ${healAmount} HP.`);
+    }
   }
 
   if (result.addKeyword) {
@@ -293,6 +379,15 @@ export const resolveEffectResult = (state, result, context) => {
     const { creature, token } = result.addEndOfTurnSummon;
     creature.endOfTurnSummon = token;
     logMessage(state, `${creature.name} will summon ${token.name} at end of turn.`);
+  }
+
+  if (result.empowerWithEndEffect) {
+    const { creature, tokenId } = result.empowerWithEndEffect;
+    const tokenData = getTokenById(tokenId);
+    if (tokenData && creature) {
+      creature.endOfTurnSummon = tokenData;
+      logMessage(state, `${creature.name} will summon ${tokenData.name} at end of turn.`);
+    }
   }
 
   if (result.copyAbilities) {
@@ -325,8 +420,9 @@ export const resolveEffectResult = (state, result, context) => {
     console.log(`🎯 [effects.js summonTokens] playerIndex: ${playerIndex}, tokens:`, tokens);
     tokens.forEach((tokenIdOrData) => {
       // Resolve token ID to token definition if it's a string
+      // Try tokens.json first, then fall back to regular card definitions
       const tokenData = typeof tokenIdOrData === 'string'
-        ? getTokenById(tokenIdOrData)
+        ? (getTokenById(tokenIdOrData) || getCardDefinitionById(tokenIdOrData))
         : tokenIdOrData;
 
       console.log(`  → Attempting to summon token:`, tokenIdOrData, `→ resolved to:`, tokenData?.name);
@@ -338,7 +434,7 @@ export const resolveEffectResult = (state, result, context) => {
 
       const summoned = placeToken(state, playerIndex, tokenData);
       console.log(`  → Summoned:`, summoned ? summoned.name : 'FAILED');
-      if (summoned?.onPlay) {
+      if (summoned?.onPlay && !summoned?.abilitiesCancelled) {
         const opponentIndex = (playerIndex + 1) % 2;
         const resultOnPlay = summoned.onPlay({
           log: (message) => logMessage(state, message),
@@ -360,15 +456,21 @@ export const resolveEffectResult = (state, result, context) => {
 
   if (result.addToHand) {
     const { playerIndex, card, fromDeck } = result.addToHand;
+    // Resolve card ID string to card definition if needed
+    const cardData = typeof card === 'string' ? getCardDefinitionById(card) : card;
+    if (!cardData) {
+      console.error(`[addToHand] Card not found: ${card}`);
+      return;
+    }
     if (fromDeck) {
       const deck = state.players[playerIndex].deck;
-      const index = deck.findIndex((deckCard) => deckCard.id === card.id);
+      const index = deck.findIndex((deckCard) => deckCard.id === cardData.id);
       if (index >= 0) {
         deck.splice(index, 1);
       }
     }
-    state.players[playerIndex].hand.push({ ...card, instanceId: crypto.randomUUID() });
-    logMessage(state, `${state.players[playerIndex].name} adds ${card.name} to hand.`);
+    state.players[playerIndex].hand.push({ ...cardData, instanceId: crypto.randomUUID() });
+    logMessage(state, `${state.players[playerIndex].name} adds ${cardData.name} to hand.`);
   }
 
   if (result.playFromHand) {
@@ -379,7 +481,7 @@ export const resolveEffectResult = (state, result, context) => {
       return;
     }
     player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
-    if (instance.type === "Prey" && instance.onPlay) {
+    if (instance.type === "Prey" && instance.onPlay && !instance.abilitiesCancelled) {
       const opponentIndex = (playerIndex + 1) % 2;
       const resultOnPlay = instance.onPlay({
         log: (message) => logMessage(state, message),
@@ -414,7 +516,7 @@ export const resolveEffectResult = (state, result, context) => {
     if (!instance) {
       return;
     }
-    if (instance.type === "Prey" && instance.onPlay) {
+    if (instance.type === "Prey" && instance.onPlay && !instance.abilitiesCancelled) {
       const opponentIndex = (playerIndex + 1) % 2;
       const resultOnPlay = instance.onPlay({
         log: (message) => logMessage(state, message),
@@ -448,10 +550,12 @@ export const resolveEffectResult = (state, result, context) => {
   }
 
   if (result.returnToHand) {
-    const { card, playerIndex } = result.returnToHand;
-    removeCardFromField(state, card);
-    state.players[playerIndex].hand.push(card);
-    logMessage(state, `${card.name} returns to ${state.players[playerIndex].name}'s hand.`);
+    // Support both 'card' and 'creature' property names for compatibility
+    const { card, creature, playerIndex } = result.returnToHand;
+    const targetCard = card || creature;
+    removeCardFromField(state, targetCard);
+    state.players[playerIndex].hand.push(targetCard);
+    logMessage(state, `${targetCard.name} returns to ${state.players[playerIndex].name}'s hand.`);
   }
 
   if (result.stealCreature) {
@@ -470,6 +574,39 @@ export const resolveEffectResult = (state, result, context) => {
     logMessage(state, `${destination.name} steals ${creature.name}.`);
   }
 
+  if (result.copyCreature) {
+    const { target, playerIndex } = result.copyCreature;
+    const player = state.players[playerIndex];
+    const emptySlot = player.field.findIndex((slot) => slot === null);
+    if (emptySlot === -1) {
+      logMessage(state, `${player.name} has no room to play the copy.`);
+      return;
+    }
+    // Create a copy of the target creature
+    const copy = createCardInstance({ ...target, isToken: true }, state.turn);
+    copy.isToken = true;
+    player.field[emptySlot] = copy;
+    logMessage(state, `${player.name} summons a copy of ${target.name}.`);
+    // Trigger onPlay for the copy if it's a prey
+    if (copy.type === "Prey" && copy.onPlay && !copy.abilitiesCancelled) {
+      const opponentIndex = (playerIndex + 1) % 2;
+      const resultOnPlay = copy.onPlay({
+        log: (message) => logMessage(state, message),
+        player: state.players[playerIndex],
+        opponent: state.players[opponentIndex],
+        creature: copy,
+        state,
+        playerIndex,
+        opponentIndex,
+      });
+      resolveEffectResult(state, resultOnPlay, {
+        playerIndex,
+        opponentIndex,
+        card: copy,
+      });
+    }
+  }
+
   if (result.transformCard) {
     const { card, newCardData } = result.transformCard;
     const ownerIndex = findCardOwnerIndex(state, card);
@@ -481,7 +618,15 @@ export const resolveEffectResult = (state, result, context) => {
     if (slotIndex === -1) {
       return;
     }
-    const replacement = createCardInstance({ ...newCardData, isToken: true }, state.turn);
+    // Resolve card ID string to card definition if needed
+    const resolvedCardData = typeof newCardData === 'string'
+      ? getCardDefinitionById(newCardData) || getTokenById(newCardData)
+      : newCardData;
+    if (!resolvedCardData) {
+      console.error(`[transformCard] Card not found: ${newCardData}`);
+      return;
+    }
+    const replacement = createCardInstance({ ...resolvedCardData, isToken: true }, state.turn);
     replacement.isToken = true;
     owner.field[slotIndex] = replacement;
     logMessage(state, `${card.name} transforms into ${replacement.name}.`);
@@ -489,6 +634,14 @@ export const resolveEffectResult = (state, result, context) => {
 
   if (result.setFieldSpell) {
     const { ownerIndex, cardData } = result.setFieldSpell;
+    // Resolve card ID string to card definition if needed
+    const resolvedCardData = typeof cardData === 'string'
+      ? getCardDefinitionById(cardData)
+      : cardData;
+    if (!resolvedCardData) {
+      console.error(`[setFieldSpell] Card not found: ${cardData}`);
+      return;
+    }
     if (state.fieldSpell) {
       const previousOwner = state.players[state.fieldSpell.ownerIndex];
       removeCardFromField(state, state.fieldSpell.card);
@@ -501,10 +654,10 @@ export const resolveEffectResult = (state, result, context) => {
       logMessage(state, "No empty field slot for the field spell.");
       return;
     }
-    const instance = createCardInstance(cardData, state.turn);
+    const instance = createCardInstance(resolvedCardData, state.turn);
     owner.field[emptySlot] = instance;
     state.fieldSpell = { ownerIndex, card: instance };
-    logMessage(state, `${owner.name} plays the field spell ${cardData.name}.`);
+    logMessage(state, `${owner.name} plays the field spell ${resolvedCardData.name}.`);
   }
 
   if (result.removeFieldSpell && state.fieldSpell) {
@@ -624,6 +777,25 @@ export const resolveEffectResult = (state, result, context) => {
       if (creature.currentHp < baseHp) {
         creature.currentHp = baseHp;
         logMessage(state, `${creature.name} regenerates to full health.`);
+      }
+    }
+  }
+
+  // Revive a creature (resurrect it to the field)
+  if (result.reviveCreature) {
+    const { creature, playerIndex } = result.reviveCreature;
+    if (creature) {
+      const player = state.players[playerIndex];
+      const emptySlot = player.field.findIndex((slot) => slot === null);
+      if (emptySlot === -1) {
+        logMessage(state, `No room to revive ${creature.name}.`);
+      } else {
+        // Reset HP and place on field
+        creature.currentHp = creature.hp || 1;
+        creature.diedInCombat = false;
+        creature.slainBy = null;
+        player.field[emptySlot] = creature;
+        logMessage(state, `${creature.name} revives!`);
       }
     }
   }

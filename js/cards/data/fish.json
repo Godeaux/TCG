@@ -38,10 +38,7 @@
       "keywords": ["Passive", "Immune"],
       "effectText": "End of turn, eat target enemy prey.",
       "effects": {
-        "onEnd": {
-          "type": "selectEnemyPreyToConsume",
-          "params": {}
-        }
+        "onEnd": { "type": "selectEnemyPreyToConsume" }
       }
     },
     {
@@ -80,10 +77,7 @@
       "keywords": ["Ambush", "Hidden"],
       "effectText": "Discard: negate direct attack.",
       "effects": {
-        "discardEffect": {
-          "type": "negateAttack",
-          "params": {}
-        }
+        "discardEffect": { "type": "negateAttack" }
       }
     },
     {
@@ -103,10 +97,7 @@
               "count": 1
             }
           },
-          {
-            "type": "grantBarrier",
-            "params": {}
-          }
+          { "type": "grantBarrier" }
         ]
       }
     },
@@ -259,10 +250,7 @@
               "amount": 4
             }
           },
-          {
-            "type": "selectCreatureToRestore",
-            "params": {}
-          }
+          { "type": "selectCreatureToRestore" }
         ]
       }
     },
@@ -304,8 +292,11 @@
       "effectText": "Draw 2. Target pred gains end of turn, play Golden Trevally. Discard: target pred gains end of turn, play Golden Trevally.",
       "summons": ["token-golden-trevally"],
       "effects": {
-        "onPlay": { "type": "drawAndEmpowerPredator", "params": { "drawCount": 2, "tokenId": "token-golden-trevally" } },
-        "discardEffect": { "type": "drawAndEmpowerPredator", "params": { "drawCount": 0, "tokenId": "token-golden-trevally" } }
+        "onPlay": [
+          { "type": "draw", "params": { "count": 2 } },
+          { "type": "selectPredatorForEndEffect", "params": { "tokenId": "token-golden-trevally" } }
+        ],
+        "discardEffect": { "type": "selectPredatorForEndEffect", "params": { "tokenId": "token-golden-trevally" } }
       }
     },
     {
@@ -530,10 +521,7 @@
       "keywords": ["Edible"],
       "effectText": "Kill target prey.",
       "effects": {
-        "onConsume": {
-          "type": "selectEnemyPreyToKill",
-          "params": {}
-        }
+        "onConsume": { "type": "selectEnemyPreyToKill" }
       }
     },
     {
@@ -571,10 +559,7 @@
       "keywords": [],
       "effectText": "Play a prey.",
       "effects": {
-        "onConsume": {
-          "type": "selectPreyFromHandToPlay",
-          "params": {}
-        }
+        "onConsume": { "type": "selectPreyFromHandToPlay" }
       }
     },
     {
@@ -604,10 +589,7 @@
       "keywords": [],
       "effectText": "Copy abilities of a carrion pred.",
       "effects": {
-        "onConsume": {
-          "type": "selectCarrionPredToCopyAbilities",
-          "params": {}
-        }
+        "onConsume": { "type": "selectCarrionPredToCopyAbilities" }
       }
     },
     {
@@ -627,10 +609,7 @@
       "keywords": ["Acuity"],
       "effectText": "Kill target enemy.",
       "effects": {
-        "onConsume": {
-          "type": "selectEnemyToKill",
-          "params": {}
-        }
+        "onConsume": { "type": "selectEnemyToKill" }
       }
     },
     {
@@ -656,10 +635,7 @@
       "type": "Spell",
       "effectText": "Kill enemy prey.",
       "effects": {
-        "effect": {
-          "type": "selectEnemyPreyToKill",
-          "params": {}
-        }
+        "effect": { "type": "selectEnemyPreyToKill" }
       }
     },
     {
@@ -736,7 +712,7 @@
               {
                 "label": "Play a prey from hand",
                 "description": "Play a prey card from your hand",
-                "effect": { "type": "selectPreyFromHandToPlay", "params": {} }
+                "effect": { "type": "selectPreyFromHandToPlay" }
               },
               {
                 "label": "Add a prey from deck to hand",
@@ -768,10 +744,7 @@
       "type": "Spell",
       "effectText": "Enemies lose abilities.",
       "effects": {
-        "effect": {
-          "type": "removeAbilitiesAll",
-          "params": {}
-        }
+        "effect": { "type": "removeAbilitiesAll" }
       }
     },
     {
@@ -780,10 +753,7 @@
       "type": "Free Spell",
       "effectText": "Target enemy loses abilities.",
       "effects": {
-        "effect": {
-          "type": "selectEnemyToStripAbilities",
-          "params": {}
-        }
+        "effect": { "type": "selectEnemyToStripAbilities" }
       }
     },
     {
@@ -815,10 +785,7 @@
       "trigger": "rivalPlaysPred",
       "effectText": "When rival plays a pred it loses abilities.",
       "effects": {
-        "effect": {
-          "type": "removeTriggeredCreatureAbilities",
-          "params": {}
-        }
+        "effect": { "type": "removeTriggeredCreatureAbilities" }
       }
     },
     {
@@ -828,10 +795,7 @@
       "trigger": "rivalPlaysPrey",
       "effectText": "When rival plays a prey it loses abilities.",
       "effects": {
-        "effect": {
-          "type": "removeTriggeredCreatureAbilities",
-          "params": {}
-        }
+        "effect": { "type": "removeTriggeredCreatureAbilities" }
       }
     },
     {
@@ -841,13 +805,11 @@
       "trigger": "directAttack",
       "effectText": "When target enemy attacks directly, negate attack. Deal 2 damage to players & animals.",
       "effects": {
-        "effect": {
-          "type": "negateAndDamageAll",
-          "params": {
-            "creatureDamage": 2,
-            "playerDamage": 2
-          }
-        }
+        "effect": [
+          { "type": "negateAttack" },
+          { "type": "damageAllCreatures", "params": { "amount": 2 } },
+          { "type": "damageBothPlayers", "params": { "amount": 2 } }
+        ]
       }
     },
     {

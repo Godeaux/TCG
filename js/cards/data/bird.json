@@ -743,6 +743,34 @@
       "effects": {
         "effect": { "type": "heal", "params": { "amount": 1 } }
       }
+    },
+    {
+      "id": "bird-spell-kakapo-feathers",
+      "name": "Kākāpō Feathers",
+      "type": "Free Spell",
+      "effectText": "TODO - REVISIT",
+      "effects": {}
+    },
+    {
+      "id": "bird-spell-rainbow-feathers",
+      "name": "Rainbow Feathers",
+      "type": "Free Spell",
+      "effectText": "TODO - REVISIT",
+      "effects": {}
+    },
+    {
+      "id": "bird-spell-feed",
+      "name": "Feed",
+      "type": "Spell",
+      "effectText": "TODO - REVISIT",
+      "effects": {}
+    },
+    {
+      "id": "bird-spell-red-tailfeathers",
+      "name": "Red Tailfeathers",
+      "type": "Free Spell",
+      "effectText": "TODO - REVISIT",
+      "effects": {}
     }
   ]
 }

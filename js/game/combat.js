@@ -160,7 +160,7 @@ export const cleanupDestroyed = (state, { silent = false } = {}) => {
       if (card && card.currentHp <= 0) {
         destroyedCreatures.push({ card, player: player.name });
 
-        if (!silent && card.onSlain && card.diedInCombat) {
+        if (!silent && card.onSlain && card.diedInCombat && !card.abilitiesCancelled) {
           logMessage(state, `  ⚰️ ${card.name} onSlain effect triggers...`);
           const result = card.onSlain({
             log: (message) => logMessage(state, message),

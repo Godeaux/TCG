@@ -219,6 +219,12 @@ export const getDeckCategories = () => {
  * @returns {any} Result from effect handler or null
  */
 export const resolveCardEffect = (card, effectType, context) => {
+  // Check if abilities have been cancelled (e.g., by Undertow, Cramp, etc.)
+  // This prevents effects from triggering on creatures that have been stripped
+  if (card.abilitiesCancelled) {
+    return null;
+  }
+
   const effectDef = card.effects?.[effectType];
   if (!effectDef) return null;
 

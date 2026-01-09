@@ -433,6 +433,42 @@ export const negateAttack = () => ({ log }) => {
 };
 
 /**
+ * Negate incoming damage
+ */
+export const negateDamage = () => ({ log }) => {
+  log("Damage is negated.");
+  return { negateDamage: true };
+};
+
+/**
+ * Kill the attacking creature
+ */
+export const killAttacker = () => ({ log, attacker }) => {
+  if (!attacker) {
+    log("No attacker to kill.");
+    return {};
+  }
+  log(`${attacker.name} is destroyed.`);
+  return { killTargets: [attacker] };
+};
+
+/**
+ * Freeze all creatures on the field (both players)
+ */
+export const freezeAllCreatures = () => ({ log, player, opponent }) => {
+  const allCreatures = [
+    ...player.field.filter(c => c && isCreatureCard(c)),
+    ...opponent.field.filter(c => c && isCreatureCard(c))
+  ];
+  if (allCreatures.length === 0) {
+    log("No creatures to freeze.");
+    return {};
+  }
+  log("All creatures gain Frozen.");
+  return { grantKeywordToAll: { creatures: allCreatures, keyword: 'Frozen' } };
+};
+
+/**
  * Discard cards from hand
  * @param {number} count - Number of cards to discard
  */
@@ -655,6 +691,30 @@ export const selectPredatorForKeyword = (keyword) => (context) => {
       handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
         addKeyword: { creature: target, keyword }
       }
+  });
+};
+
+/**
+ * Select a predator to grant end-of-turn token summon
+ * @param {string} tokenId - Token ID to summon at end of turn
+ */
+export const selectPredatorForEndEffect = (tokenId) => (context) => {
+  const { log, player } = context;
+  const targets = player.field.filter(c => c && (c.type === 'Predator' || c.type === 'predator'));
+
+  if (targets.length === 0) {
+    log(`No predators to empower.`);
+    return {};
+  }
+
+  return makeTargetedSelection({
+    title: "Choose a predator to empower",
+    candidates: targets.map(t => ({ label: t.name, value: t, card: t })),
+    renderCards: true,
+    onSelect: (target) => {
+      log(`${target.name} gains: End of turn, play token.`);
+      return { empowerWithEndEffect: { creature: target, tokenId } };
+    }
   });
 };
 
@@ -1084,42 +1144,48 @@ export const selectFromGroup = (params) => (context) => {
  */
 const applyEffectToSelection = (selection, effectDef, context) => {
   const { log } = context;
+  const result = {};
 
-  // Simple effect shortcuts for common patterns
+  // Accumulate results from multiple effect properties (supports combined effects like buff+keyword)
   if (effectDef.damage) {
     if (selection.type === 'creature') {
       log(`Deals ${effectDef.damage} damage to ${selection.creature.name}.`);
-      return { damageCreature: { creature: selection.creature, amount: effectDef.damage, sourceLabel: effectDef.label || 'damage' } };
+      result.damageCreature = { creature: selection.creature, amount: effectDef.damage, sourceLabel: effectDef.label || 'damage' };
     } else if (selection.type === 'player') {
       log(`Deals ${effectDef.damage} damage to rival.`);
-      return { damageOpponent: effectDef.damage };
+      result.damageOpponent = effectDef.damage;
     }
   }
 
   if (effectDef.heal) {
     if (selection.type === 'creature') {
       log(`Restores ${effectDef.heal} HP to ${selection.creature.name}.`);
-      return { healCreature: { creature: selection.creature, amount: effectDef.heal } };
+      result.healCreature = { creature: selection.creature, amount: effectDef.heal };
     } else if (selection.type === 'player') {
       log(`Heals ${effectDef.heal} HP.`);
-      return { heal: effectDef.heal };
+      result.heal = effectDef.heal;
     }
   }
 
   if (effectDef.kill && selection.type === 'creature') {
     log(`${selection.creature.name} is destroyed.`);
-    return { killCreature: selection.creature };
+    result.killCreature = selection.creature;
   }
 
   if (effectDef.buff && selection.type === 'creature') {
     const { attack = 0, health = 0 } = effectDef.buff;
     log(`${selection.creature.name} gains +${attack}/+${health}.`);
-    return { buffCreature: { creature: selection.creature, attack, health } };
+    result.buffCreature = { creature: selection.creature, attack, health };
   }
 
   if (effectDef.keyword && selection.type === 'creature') {
     log(`${selection.creature.name} gains ${effectDef.keyword}.`);
-    return { addKeyword: { creature: selection.creature, keyword: effectDef.keyword } };
+    result.addKeyword = { creature: selection.creature, keyword: effectDef.keyword };
+  }
+
+  // If we accumulated any simple effects, return them
+  if (Object.keys(result).length > 0) {
+    return result;
   }
 
   // For complex effects, resolve them with extended context
@@ -2758,6 +2824,9 @@ export const effectRegistry = {
 
   // Advanced
   negateAttack,
+  negateDamage,
+  killAttacker,
+  freezeAllCreatures,
   discardCards,
   revealCards,
   tutor,
@@ -2771,6 +2840,7 @@ export const effectRegistry = {
 
   // Selection-based
   selectPredatorForKeyword,
+  selectPredatorForEndEffect,
   selectEnemyToStripAbilities,
   selectCardToDiscard,
   selectEnemyPreyToKill,
@@ -2992,6 +3062,15 @@ export const resolveEffect = (effectDef, context) => {
     case 'negateAttack':
       specificEffect = effectFn();
       break;
+    case 'negateDamage':
+      specificEffect = effectFn();
+      break;
+    case 'killAttacker':
+      specificEffect = effectFn();
+      break;
+    case 'freezeAllCreatures':
+      specificEffect = effectFn();
+      break;
     case 'hasCardsInHand':
       specificEffect = effectFn(params.minCount);
       break;
@@ -3015,6 +3094,9 @@ export const resolveEffect = (effectDef, context) => {
       break;
     case 'selectPredatorForKeyword':
       specificEffect = effectFn(params.keyword);
+      break;
+    case 'selectPredatorForEndEffect':
+      specificEffect = effectFn(params.tokenId);
       break;
     case 'selectEnemyToStripAbilities':
       specificEffect = effectFn();
