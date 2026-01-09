@@ -433,6 +433,42 @@ export const negateAttack = () => ({ log }) => {
 };
 
 /**
+ * Negate incoming damage
+ */
+export const negateDamage = () => ({ log }) => {
+  log("Damage is negated.");
+  return { negateDamage: true };
+};
+
+/**
+ * Kill the attacking creature
+ */
+export const killAttacker = () => ({ log, attacker }) => {
+  if (!attacker) {
+    log("No attacker to kill.");
+    return {};
+  }
+  log(`${attacker.name} is destroyed.`);
+  return { killTargets: [attacker] };
+};
+
+/**
+ * Freeze all creatures on the field (both players)
+ */
+export const freezeAllCreatures = () => ({ log, player, opponent }) => {
+  const allCreatures = [
+    ...player.field.filter(c => c && isCreatureCard(c)),
+    ...opponent.field.filter(c => c && isCreatureCard(c))
+  ];
+  if (allCreatures.length === 0) {
+    log("No creatures to freeze.");
+    return {};
+  }
+  log("All creatures gain Frozen.");
+  return { grantKeywordToAll: { creatures: allCreatures, keyword: 'Frozen' } };
+};
+
+/**
  * Discard cards from hand
  * @param {number} count - Number of cards to discard
  */
@@ -2758,6 +2794,9 @@ export const effectRegistry = {
 
   // Advanced
   negateAttack,
+  negateDamage,
+  killAttacker,
+  freezeAllCreatures,
   discardCards,
   revealCards,
   tutor,
@@ -2990,6 +3029,15 @@ export const resolveEffect = (effectDef, context) => {
       specificEffect = effectFn(params.targetType);
       break;
     case 'negateAttack':
+      specificEffect = effectFn();
+      break;
+    case 'negateDamage':
+      specificEffect = effectFn();
+      break;
+    case 'killAttacker':
+      specificEffect = effectFn();
+      break;
+    case 'freezeAllCreatures':
       specificEffect = effectFn();
       break;
     case 'hasCardsInHand':
