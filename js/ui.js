@@ -155,6 +155,8 @@ import {
   handleJoinLobby as lobbyHandleJoinLobby,
   handleBackFromLobby as lobbyHandleBackFromLobby,
   handleLeaveLobby as lobbyHandleLeaveLobby,
+  handleFindMatch as lobbyHandleFindMatch,
+  handleCancelMatchmaking as lobbyHandleCancelMatchmaking,
   updateLobbyPlayerNames,
   updateLobbySubscription,
   refreshLobbyState,
@@ -301,6 +303,16 @@ const handleBackFromLobby = async (state) => {
 // UI wrapper for leave lobby
 const handleLeaveLobby = async (state) => {
   await lobbyHandleLeaveLobby(state);
+};
+
+// UI wrapper for find match (matchmaking)
+const handleFindMatch = async (state) => {
+  await lobbyHandleFindMatch(state);
+};
+
+// UI wrapper for cancel matchmaking
+const handleCancelMatchmaking = async (state) => {
+  await lobbyHandleCancelMatchmaking(state);
 };
 
 /**
@@ -2110,6 +2122,8 @@ export const renderGame = (state, callbacks = {}) => {
         handleJoinLobby,
         handleLeaveLobby,
         handleBackFromLobby,
+        handleFindMatch,
+        handleCancelMatchmaking,
         ensureDecksLoaded,
         getOpponentDisplayName,
         loadGameStateFromDatabase,

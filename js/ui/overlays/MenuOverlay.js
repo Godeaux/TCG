@@ -39,6 +39,8 @@ const getMenuElements = () => ({
   // Multiplayer elements (unified screen)
   multiplayerStatus: document.getElementById("multiplayer-status"),
   lobbyCodeDisplay: document.getElementById("lobby-code-display"),
+  lobbyFindMatch: document.getElementById("lobby-find-match"),
+  lobbyFindCancel: document.getElementById("lobby-find-cancel"),
   lobbyCreate: document.getElementById("lobby-create"),
   lobbyRejoin: document.getElementById("lobby-rejoin"),
   lobbyContinue: document.getElementById("lobby-continue"),
@@ -174,6 +176,7 @@ const renderMultiplayerScreen = (state, elements) => {
   const lobby = state.menu.lobby;
   const existingLobby = state.menu.existingLobby;
   const loading = state.menu.loading;
+  const matchmaking = state.menu.matchmaking;
   const localProfileId = state.menu.profile?.id ?? null;
 
   // Determine lobby state
@@ -189,7 +192,11 @@ const renderMultiplayerScreen = (state, elements) => {
 
   // Update status text
   if (elements.multiplayerStatus) {
-    if (loading) {
+    if (loading && matchmaking) {
+      elements.multiplayerStatus.textContent = "Finding match...";
+    } else if (matchmaking && hasLobby && !isLobbyFull) {
+      elements.multiplayerStatus.textContent = "Waiting for opponent...";
+    } else if (loading) {
       elements.multiplayerStatus.textContent = "Loading...";
     } else if (isLobbyClosed) {
       elements.multiplayerStatus.textContent = "Lobby was closed.";
@@ -204,25 +211,42 @@ const renderMultiplayerScreen = (state, elements) => {
     } else if (hasExistingLobby) {
       elements.multiplayerStatus.textContent = "You have an existing lobby. Rejoin or create new.";
     } else {
-      elements.multiplayerStatus.textContent = "Create a lobby or join a friend's game.";
+      elements.multiplayerStatus.textContent = "Find a match or create a private lobby.";
     }
   }
 
   // Update lobby code display
   if (elements.lobbyCodeDisplay) {
-    elements.lobbyCodeDisplay.textContent = lobby?.code || existingLobby?.code || "----";
+    // Hide code during matchmaking (not relevant)
+    if (matchmaking && !isLobbyFull) {
+      elements.lobbyCodeDisplay.textContent = "...";
+    } else {
+      elements.lobbyCodeDisplay.textContent = lobby?.code || existingLobby?.code || "----";
+    }
   }
 
   // Show/hide buttons based on state
-  // Create Lobby: show when no lobby and no existing lobby
+  // Find Match: show when no lobby and no existing lobby and not matchmaking
+  if (elements.lobbyFindMatch) {
+    elements.lobbyFindMatch.style.display = (!hasLobby && !hasExistingLobby && !matchmaking) ? "" : "none";
+    elements.lobbyFindMatch.disabled = loading;
+  }
+
+  // Cancel (matchmaking): show when matchmaking and lobby not full
+  if (elements.lobbyFindCancel) {
+    elements.lobbyFindCancel.style.display = (matchmaking && hasLobby && !isLobbyFull) ? "" : "none";
+    elements.lobbyFindCancel.disabled = loading;
+  }
+
+  // Create Lobby: show when no lobby and no existing lobby and not matchmaking
   if (elements.lobbyCreate) {
-    elements.lobbyCreate.style.display = (!hasLobby && !hasExistingLobby) ? "" : "none";
+    elements.lobbyCreate.style.display = (!hasLobby && !hasExistingLobby && !matchmaking) ? "" : "none";
     elements.lobbyCreate.disabled = loading;
   }
 
   // Rejoin Lobby: show when there's an existing lobby to rejoin (but not currently in a lobby)
   if (elements.lobbyRejoin) {
-    elements.lobbyRejoin.style.display = (!hasLobby && hasExistingLobby) ? "" : "none";
+    elements.lobbyRejoin.style.display = (!hasLobby && hasExistingLobby && !matchmaking) ? "" : "none";
     elements.lobbyRejoin.disabled = loading;
   }
 
@@ -232,20 +256,21 @@ const renderMultiplayerScreen = (state, elements) => {
     elements.lobbyContinue.disabled = loading;
   }
 
-  // Join as Guest: show when not in a lobby
+  // Join as Guest: show when not in a lobby and not matchmaking
   if (elements.lobbyJoin) {
-    elements.lobbyJoin.style.display = !hasLobby ? "" : "none";
+    elements.lobbyJoin.style.display = (!hasLobby && !matchmaking) ? "" : "none";
     elements.lobbyJoin.disabled = loading;
   }
 
-  // New Code: show when in a lobby (to leave and create new)
+  // New Code: show when in a lobby (to leave and create new) and not matchmaking
   if (elements.lobbyLeave) {
-    elements.lobbyLeave.style.display = hasLobby ? "" : "none";
+    elements.lobbyLeave.style.display = (hasLobby && !matchmaking) ? "" : "none";
     elements.lobbyLeave.disabled = loading;
   }
 
-  // Back button always visible
+  // Back button: hide during matchmaking waiting
   if (elements.multiplayerBack) {
+    elements.multiplayerBack.style.display = (matchmaking && hasLobby && !isLobbyFull) ? "none" : "";
     elements.multiplayerBack.disabled = loading;
   }
 
