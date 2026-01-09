@@ -695,6 +695,30 @@ export const selectPredatorForKeyword = (keyword) => (context) => {
 };
 
 /**
+ * Select a predator to grant end-of-turn token summon
+ * @param {string} tokenId - Token ID to summon at end of turn
+ */
+export const selectPredatorForEndEffect = (tokenId) => (context) => {
+  const { log, player } = context;
+  const targets = player.field.filter(c => c && (c.type === 'Predator' || c.type === 'predator'));
+
+  if (targets.length === 0) {
+    log(`No predators to empower.`);
+    return {};
+  }
+
+  return makeTargetedSelection({
+    title: "Choose a predator to empower",
+    candidates: targets.map(t => ({ label: t.name, value: t, card: t })),
+    renderCards: true,
+    onSelect: (target) => {
+      log(`${target.name} gains: End of turn, play token.`);
+      return { empowerWithEndEffect: { creature: target, tokenId } };
+    }
+  });
+};
+
+/**
  * Select an enemy creature to strip abilities
  */
 export const selectEnemyToStripAbilities = () => (context) => {
@@ -2810,6 +2834,7 @@ export const effectRegistry = {
 
   // Selection-based
   selectPredatorForKeyword,
+  selectPredatorForEndEffect,
   selectEnemyToStripAbilities,
   selectCardToDiscard,
   selectEnemyPreyToKill,
@@ -3063,6 +3088,9 @@ export const resolveEffect = (effectDef, context) => {
       break;
     case 'selectPredatorForKeyword':
       specificEffect = effectFn(params.keyword);
+      break;
+    case 'selectPredatorForEndEffect':
+      specificEffect = effectFn(params.tokenId);
       break;
     case 'selectEnemyToStripAbilities':
       specificEffect = effectFn();
