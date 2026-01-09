@@ -63,8 +63,8 @@ export const updateHandOverlap = (handGrid) => {
   const minVisibleWidth = isMobilePortrait ? 40 : 20; // Larger touch targets on mobile
 
   // Base overlap for "fanned" look - always show cards overlapping
-  // Use less overlap on mobile for better visibility
-  const baseOverlapPercent = isMobilePortrait ? 0.30 : 0.40;
+  // Use more overlap now that cards are smaller, creating a tighter fan
+  const baseOverlapPercent = isMobilePortrait ? 0.45 : 0.55;
   let overlap = cardWidth * baseOverlapPercent;
   let scale = 1;
 
@@ -97,8 +97,8 @@ export const updateHandOverlap = (handGrid) => {
         overlap = cardWidth - minVisibleWidth;
       }
     } else {
-      // Cap max overlap to keep cards readable - lower cap on mobile
-      const maxOverlapPercent = isMobilePortrait ? 0.70 : 0.85;
+      // Cap max overlap to keep cards identifiable - tighter since cards expand on hover
+      const maxOverlapPercent = isMobilePortrait ? 0.75 : 0.88;
       const maxOverlap = cardWidth * maxOverlapPercent;
       overlap = Math.min(overlap, maxOverlap);
     }
@@ -220,8 +220,10 @@ export const renderHand = (state, options = {}) => {
   const hasCardLimit = cardLimitAvailable(state); // True if no card played this turn yet
   const hasEmptySlot = player.field.some(slot => slot === null);
 
-  // Render actual cards
-  player.hand.forEach((card) => {
+  // Render actual cards with fan/arc effect
+  const cardCount = player.hand.length;
+
+  player.hand.forEach((card, index) => {
     const cardElement = renderCard(card, {
       showEffectSummary: true,
       isSelected: selectedCardId === card.instanceId,
@@ -232,6 +234,26 @@ export const renderHand = (state, options = {}) => {
         onUpdate?.();
       },
     });
+
+    // Apply fan/arc effect using CSS custom properties
+    // Calculate position from center (-1 to 1, where 0 is center)
+    const centerOffset = cardCount > 1
+      ? (index - (cardCount - 1) / 2) / ((cardCount - 1) / 2)
+      : 0;
+
+    // Rotation: cards at edges rotate outward (max ~8 degrees)
+    const maxRotation = Math.min(8, 3 + cardCount * 0.5); // More cards = more rotation
+    const rotation = centerOffset * maxRotation;
+
+    // Vertical offset: cards at edges are lower (arc effect)
+    // Using a parabola: y = x^2 creates the arc
+    const maxVerticalOffset = Math.min(15, 5 + cardCount * 1.5); // More cards = deeper arc
+    const verticalOffset = Math.abs(centerOffset) * Math.abs(centerOffset) * maxVerticalOffset;
+
+    // Apply as CSS custom properties
+    cardElement.style.setProperty('--card-rotation', `${rotation}deg`);
+    cardElement.style.setProperty('--card-offset-y', `${verticalOffset}px`);
+    cardElement.style.setProperty('--card-index', `${index}`);
 
     // Add playable pulse if this specific card can be played this turn
     if (isPlayerTurn && isMainPhase) {

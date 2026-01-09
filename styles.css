@@ -41,7 +41,7 @@
   --min-container-height: 600px;
   --min-pages-height: 500px;
   --min-battlefield-height: 480px;
-  --min-hand-height: clamp(100px, 15vh, 140px);
+  --min-hand-height: clamp(80px, 12vh, 120px);
   --min-inspector-height: 200px;
   --min-log-height: 150px;
   --min-piles-height: 80px;
@@ -529,7 +529,7 @@ button {
   max-width: 100%;
   box-sizing: border-box;
   min-height: var(--min-hand-height); /* Scale with viewport but enforce minimums */
-  max-height: 40vh; /* Prevent hand from taking too much space */
+  max-height: 20vh; /* Constrained height - cards expand on hover */
   min-width: 0;
   flex-shrink: 0; /* Prevent hand from being crushed by flex layout */
 }
@@ -574,12 +574,12 @@ button {
   gap: 0;
   overflow-x: visible; /* Let cards overflow rather than scroll */
   overflow-y: visible;
-  padding: 0 clamp(4px, 0.8vw, 8px) clamp(8px, 1.2vw, 16px);
+  padding: 0 clamp(4px, 0.8vw, 8px) clamp(4px, 0.8vw, 12px);
   min-height: 0;
   width: 100%;
   flex: 1;
   min-width: 0;
-  max-width: min(100%, 600px); /* Constrain width to force card overlap */
+  max-width: min(100%, 500px); /* Constrain width for tighter fan */
   margin: 0 auto; /* Center the constrained hand-grid */
   box-sizing: border-box;
   position: relative;
@@ -588,20 +588,21 @@ button {
 
 .hand-grid .card {
   flex: 0 0 auto; /* Don't shrink - use overlap instead */
-  width: clamp(100px, min(16vw, 130px), 150px);
-  min-width: 90px; /* Minimum width to remain readable */
+  width: clamp(70px, min(10vw, 90px), 100px); /* Smaller default - expands on hover */
+  min-width: 60px; /* Minimum width to remain visible */
   aspect-ratio: 5 / 7; /* Standard playing card ratio */
   margin-left: calc(var(--hand-overlap) * -1);
   transform-origin: bottom center;
-  transform: translateY(8px) scale(0.98);
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast), z-index 0.2s;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35);
+  /* Fan effect: rotate based on position, offset creates arc */
+  transform: translateY(var(--card-offset-y, 0px)) scale(0.95) rotate(var(--card-rotation, 0deg));
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, z-index 0s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
   position: relative;
   font-size: 20px;
-  z-index: 10; /* Base z-index for hand cards */
+  z-index: calc(10 + var(--card-index, 0)); /* Base z-index + position for stacking */
 }
 
-/* Dynamic hand expansion mode */
+/* Dynamic hand expansion mode - for 7+ cards */
 .battlefield-center-column.hand-expanded .battlefield-layout {
   grid-template-rows: minmax(140px, 1.5fr) minmax(140px, 1fr); /* Expanded hand takes more space */
   flex: 0 1 auto; /* Allow more shrinking to make room for hand */
@@ -609,21 +610,22 @@ button {
 
 .battlefield-center-column.hand-expanded .hand-panel {
   overflow: visible;
-  min-height: clamp(180px, 28vh, 260px); /* Taller expanded height */
-  max-height: 55vh; /* Allow more space when expanded */
+  min-height: clamp(120px, 22vh, 180px); /* Taller expanded height */
+  max-height: 28vh; /* Allow more space when expanded */
 }
 
 .battlefield-center-column.hand-expanded .hand-grid {
-  align-items: center;
-  min-height: 180px;
+  align-items: flex-end;
+  min-height: 100px;
 }
 
 .battlefield-center-column.hand-expanded .hand-grid .card {
-  width: clamp(110px, min(18vw, 150px), 170px);
+  width: clamp(60px, min(8vw, 75px), 90px); /* Even smaller when many cards */
+  /* Fan effect still applies via CSS custom properties from JS */
 }
 
 .battlefield-center-column.hand-expanded .hand-grid .card.hand-focus {
-  transform: translateY(-40px) scale(1.4);
+  transform: translateY(-70px) scale(2.0) rotate(0deg); /* Extra large for many cards */
   z-index: 3000; /* Highest z-index for expanded focused cards */
 }
 
@@ -633,8 +635,8 @@ button {
 
 .hand-grid .card.hand-focus {
   z-index: 2000; /* Highest z-index for focused cards */
-  transform: translateY(-25px) scale(1.15);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  transform: translateY(-60px) scale(1.8) rotate(0deg); /* Large expansion on hover */
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7);
 }
 
 /* Hover handled by JavaScript proximity detection - see hand-focus class */
@@ -3308,11 +3310,11 @@ button {
   }
 
   .hand-panel {
-    min-height: clamp(160px, 25dvh, 240px);
-    max-height: 55dvh;
+    min-height: clamp(100px, 18dvh, 160px);
+    max-height: 25dvh;
     overflow: visible; /* Allow cards to extend upward when focused */
     padding-bottom: calc(var(--safe-bottom) + 8px); /* Account for iOS home indicator */
-    padding-top: 30px; /* Space for focused card to lift into */
+    padding-top: 20px; /* Space for focused card to lift into */
   }
 
   .hand-panel.is-dragging {
@@ -3324,7 +3326,7 @@ button {
   }
 
   .hand-grid {
-    align-items: flex-start; /* Position cards from top, not bottom */
+    align-items: flex-end; /* Position cards from bottom for fan effect */
     overflow: visible; /* Allow focused cards to extend */
     padding: 0 16px; /* Keep cards from screen edges */
     max-width: 100%;
@@ -3340,12 +3342,12 @@ button {
   }
 
   .hand-grid .card {
-    width: clamp(105px, 30vw, 150px); /* ~50% larger for better text readability */
-    min-width: 90px;
+    width: clamp(65px, 20vw, 90px); /* Smaller cards for mobile - expand on tap */
+    min-width: 55px;
     margin-left: calc(var(--hand-overlap) * -1); /* Use full overlap calculated by JS */
-    transform: translateY(0) scale(var(--mobile-card-scale, 1));
-    transform-origin: top center; /* Scale from top since cards are at top */
-    z-index: 10;
+    transform: translateY(var(--card-offset-y, 0px)) scale(var(--mobile-card-scale, 1)) rotate(var(--card-rotation, 0deg));
+    transform-origin: bottom center; /* Scale from bottom for fan effect */
+    z-index: calc(10 + var(--card-index, 0));
   }
 
   .hand-grid .card:first-child {
@@ -3353,7 +3355,7 @@ button {
   }
 
   .hand-grid .card.hand-focus {
-    transform: translateY(-25px) scale(calc(1.15 * var(--mobile-card-scale, 1)));
+    transform: translateY(-50px) scale(calc(1.6 * var(--mobile-card-scale, 1))) rotate(0deg);
     z-index: 100;
   }
 
@@ -3420,7 +3422,8 @@ button {
   }
 
   .hand-panel {
-    min-height: clamp(90px, 12vh, 120px);
+    min-height: clamp(70px, 10vh, 100px);
+    max-height: 18vh;
   }
 
   .card-inspector-panel,
@@ -3448,7 +3451,7 @@ button {
   }
 
   .hand-grid .card {
-    width: clamp(110px, 14vw, 180px);
+    width: clamp(75px, min(11vw, 95px), 110px); /* Slightly larger on desktop but still compact */
   }
 
   .overlay-content {
