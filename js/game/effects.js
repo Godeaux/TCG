@@ -2,7 +2,7 @@ import { drawCard, logMessage, queueVisualEffect } from "../state/gameState.js";
 import { createCardInstance } from "../cardTypes.js";
 import { consumePrey } from "./consumption.js";
 import { isImmune, areAbilitiesActive } from "../keywords.js";
-import { getTokenById } from "../cards/index.js";
+import { getTokenById, getCardDefinitionById } from "../cards/index.js";
 
 const findCardOwnerIndex = (state, card) =>
   state.players.findIndex((player) =>
@@ -296,9 +296,28 @@ export const resolveEffectResult = (state, result, context) => {
   }
 
   if (result.buffCreature) {
-    const { creature, atk, hp } = result.buffCreature;
-    creature.currentAtk += atk;
-    creature.currentHp += hp;
+    const { creature, atk, hp, attack, health } = result.buffCreature;
+    // Support both property naming conventions (atk/hp and attack/health)
+    const atkAmount = atk ?? attack ?? 0;
+    const hpAmount = hp ?? health ?? 0;
+    creature.currentAtk = (creature.currentAtk ?? creature.atk ?? 0) + atkAmount;
+    creature.currentHp = (creature.currentHp ?? creature.hp ?? 0) + hpAmount;
+    logMessage(state, `${creature.name} gains +${atkAmount}/+${hpAmount}.`);
+  }
+
+  if (result.grantKeyword) {
+    // Handler for single creature keyword grant (mirrors addKeyword)
+    const { creature, keyword } = result.grantKeyword;
+    if (creature && !creature.keywords.includes(keyword)) {
+      creature.keywords.push(keyword);
+    }
+    if (creature && keyword === "Barrier") {
+      creature.hasBarrier = true;
+    }
+    if (creature && keyword === "Frozen") {
+      creature.frozen = true;
+      creature.frozenDiesTurn = state.turn + 1;
+    }
   }
 
   if (result.restoreCreature) {
@@ -397,15 +416,21 @@ export const resolveEffectResult = (state, result, context) => {
 
   if (result.addToHand) {
     const { playerIndex, card, fromDeck } = result.addToHand;
+    // Resolve card ID string to card definition if needed
+    const cardData = typeof card === 'string' ? getCardDefinitionById(card) : card;
+    if (!cardData) {
+      console.error(`[addToHand] Card not found: ${card}`);
+      return;
+    }
     if (fromDeck) {
       const deck = state.players[playerIndex].deck;
-      const index = deck.findIndex((deckCard) => deckCard.id === card.id);
+      const index = deck.findIndex((deckCard) => deckCard.id === cardData.id);
       if (index >= 0) {
         deck.splice(index, 1);
       }
     }
-    state.players[playerIndex].hand.push({ ...card, instanceId: crypto.randomUUID() });
-    logMessage(state, `${state.players[playerIndex].name} adds ${card.name} to hand.`);
+    state.players[playerIndex].hand.push({ ...cardData, instanceId: crypto.randomUUID() });
+    logMessage(state, `${state.players[playerIndex].name} adds ${cardData.name} to hand.`);
   }
 
   if (result.playFromHand) {
@@ -518,7 +543,15 @@ export const resolveEffectResult = (state, result, context) => {
     if (slotIndex === -1) {
       return;
     }
-    const replacement = createCardInstance({ ...newCardData, isToken: true }, state.turn);
+    // Resolve card ID string to card definition if needed
+    const resolvedCardData = typeof newCardData === 'string'
+      ? getCardDefinitionById(newCardData) || getTokenById(newCardData)
+      : newCardData;
+    if (!resolvedCardData) {
+      console.error(`[transformCard] Card not found: ${newCardData}`);
+      return;
+    }
+    const replacement = createCardInstance({ ...resolvedCardData, isToken: true }, state.turn);
     replacement.isToken = true;
     owner.field[slotIndex] = replacement;
     logMessage(state, `${card.name} transforms into ${replacement.name}.`);
@@ -526,6 +559,14 @@ export const resolveEffectResult = (state, result, context) => {
 
   if (result.setFieldSpell) {
     const { ownerIndex, cardData } = result.setFieldSpell;
+    // Resolve card ID string to card definition if needed
+    const resolvedCardData = typeof cardData === 'string'
+      ? getCardDefinitionById(cardData)
+      : cardData;
+    if (!resolvedCardData) {
+      console.error(`[setFieldSpell] Card not found: ${cardData}`);
+      return;
+    }
     if (state.fieldSpell) {
       const previousOwner = state.players[state.fieldSpell.ownerIndex];
       removeCardFromField(state, state.fieldSpell.card);
@@ -538,10 +579,10 @@ export const resolveEffectResult = (state, result, context) => {
       logMessage(state, "No empty field slot for the field spell.");
       return;
     }
-    const instance = createCardInstance(cardData, state.turn);
+    const instance = createCardInstance(resolvedCardData, state.turn);
     owner.field[emptySlot] = instance;
     state.fieldSpell = { ownerIndex, card: instance };
-    logMessage(state, `${owner.name} plays the field spell ${cardData.name}.`);
+    logMessage(state, `${owner.name} plays the field spell ${resolvedCardData.name}.`);
   }
 
   if (result.removeFieldSpell && state.fieldSpell) {
