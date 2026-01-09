@@ -733,6 +733,11 @@ button {
   margin: 0;
 }
 
+/* Hide mobile close button on desktop */
+.mobile-panel-close {
+  display: none;
+}
+
 .inspector-content {
   flex: 1;
   overflow-y: auto; /* Allow scrolling if content is too tall */
@@ -3334,8 +3339,8 @@ button {
   }
 
   .hand-grid .card {
-    width: clamp(115px, 32vw, 165px); /* ~66% larger for better text readability */
-    min-width: 100px;
+    width: clamp(105px, 30vw, 150px); /* ~50% larger for better text readability */
+    min-width: 90px;
     margin-left: calc(var(--hand-overlap) * -1); /* Use full overlap calculated by JS */
     transform: translateY(0) scale(var(--mobile-card-scale, 1));
     transform-origin: top center; /* Scale from top since cards are at top */
@@ -3355,6 +3360,33 @@ button {
   .game-log-panel {
     min-height: 150px;
     height: 100%;
+  }
+
+  /* Mobile panel close button */
+  .mobile-panel-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-gold);
+    color: var(--gold-light);
+    font-size: 18px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .mobile-panel-close:hover {
+    background: rgba(212, 168, 83, 0.3);
+  }
+
+  .inspector-header,
+  .log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 
   /* Fix action bar visibility on mobile */

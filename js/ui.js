@@ -2051,19 +2051,38 @@ const showCarrionPilePopup = (player, opponent, onUpdate) => {
 const setupMobileNavigation = () => {
   const navLeft = document.getElementById('mobile-nav-left');
   const navRight = document.getElementById('mobile-nav-right');
+  const closeInspector = document.getElementById('close-inspector');
+  const closeHistory = document.getElementById('close-history');
   const battlefieldLayout = document.querySelector('.battlefield-layout-three-column');
 
-  if (!navLeft || !navRight || !battlefieldLayout) return;
+  if (!battlefieldLayout) return;
 
-  navLeft.addEventListener('click', () => {
-    battlefieldLayout.classList.toggle('show-inspector');
-    battlefieldLayout.classList.remove('show-history');
-  });
+  if (navLeft) {
+    navLeft.addEventListener('click', () => {
+      battlefieldLayout.classList.toggle('show-inspector');
+      battlefieldLayout.classList.remove('show-history');
+    });
+  }
 
-  navRight.addEventListener('click', () => {
-    battlefieldLayout.classList.toggle('show-history');
-    battlefieldLayout.classList.remove('show-inspector');
-  });
+  if (navRight) {
+    navRight.addEventListener('click', () => {
+      battlefieldLayout.classList.toggle('show-history');
+      battlefieldLayout.classList.remove('show-inspector');
+    });
+  }
+
+  // Close buttons for mobile panels
+  if (closeInspector) {
+    closeInspector.addEventListener('click', () => {
+      battlefieldLayout.classList.remove('show-inspector');
+    });
+  }
+
+  if (closeHistory) {
+    closeHistory.addEventListener('click', () => {
+      battlefieldLayout.classList.remove('show-history');
+    });
+  }
 };
 
 // ==================== TOUCH EVENTS ====================

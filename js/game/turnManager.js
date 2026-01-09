@@ -230,9 +230,9 @@ export const endTurn = (state) => {
   state.passPending = true;
   resetCombat(state);
 
-  logMessage(state, `═══════════════════════════════════════`);
+  logMessage(state, `════════════════`);
   logMessage(state, `Turn ${state.turn - 1} complete. Passing to ${state.players[state.activePlayerIndex].name}...`);
-  logMessage(state, `═══════════════════════════════════════`);
+  logMessage(state, `════════════════`);
 
   startTurn(state);
 
