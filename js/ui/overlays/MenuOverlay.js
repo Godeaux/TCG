@@ -226,9 +226,10 @@ const renderMultiplayerScreen = (state, elements) => {
   }
 
   // Show/hide buttons based on state
-  // Find Match: show when no lobby and no existing lobby and not matchmaking
+  // Find Match: show when not currently in a lobby and not matchmaking
+  // (show even if there's an existing lobby - user can choose to find new match instead)
   if (elements.lobbyFindMatch) {
-    elements.lobbyFindMatch.style.display = (!hasLobby && !hasExistingLobby && !matchmaking) ? "" : "none";
+    elements.lobbyFindMatch.style.display = (!hasLobby && !matchmaking) ? "" : "none";
     elements.lobbyFindMatch.disabled = loading;
   }
 
