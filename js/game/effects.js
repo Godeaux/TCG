@@ -420,8 +420,9 @@ export const resolveEffectResult = (state, result, context) => {
     console.log(`🎯 [effects.js summonTokens] playerIndex: ${playerIndex}, tokens:`, tokens);
     tokens.forEach((tokenIdOrData) => {
       // Resolve token ID to token definition if it's a string
+      // Try tokens.json first, then fall back to regular card definitions
       const tokenData = typeof tokenIdOrData === 'string'
-        ? getTokenById(tokenIdOrData)
+        ? (getTokenById(tokenIdOrData) || getCardDefinitionById(tokenIdOrData))
         : tokenIdOrData;
 
       console.log(`  → Attempting to summon token:`, tokenIdOrData, `→ resolved to:`, tokenData?.name);
@@ -776,6 +777,25 @@ export const resolveEffectResult = (state, result, context) => {
       if (creature.currentHp < baseHp) {
         creature.currentHp = baseHp;
         logMessage(state, `${creature.name} regenerates to full health.`);
+      }
+    }
+  }
+
+  // Revive a creature (resurrect it to the field)
+  if (result.reviveCreature) {
+    const { creature, playerIndex } = result.reviveCreature;
+    if (creature) {
+      const player = state.players[playerIndex];
+      const emptySlot = player.field.findIndex((slot) => slot === null);
+      if (emptySlot === -1) {
+        logMessage(state, `No room to revive ${creature.name}.`);
+      } else {
+        // Reset HP and place on field
+        creature.currentHp = creature.hp || 1;
+        creature.diedInCombat = false;
+        creature.slainBy = null;
+        player.field[emptySlot] = creature;
+        logMessage(state, `${creature.name} revives!`);
       }
     }
   }

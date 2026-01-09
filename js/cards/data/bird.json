@@ -748,65 +748,29 @@
       "id": "bird-spell-kakapo-feathers",
       "name": "Kākāpō Feathers",
       "type": "Free Spell",
-      "effectText": "Target creature gains invisible.",
-      "effects": {
-        "effect": {
-          "type": "selectFromGroup",
-          "params": {
-            "targetGroup": "friendly-creatures",
-            "title": "Choose a creature to gain Invisible",
-            "effect": { "keyword": "Invisible" }
-          }
-        }
-      }
+      "effectText": "TODO - REVISIT",
+      "effects": {}
     },
     {
       "id": "bird-spell-rainbow-feathers",
       "name": "Rainbow Feathers",
       "type": "Free Spell",
-      "effectText": "Target creature gains barrier.",
-      "effects": {
-        "effect": {
-          "type": "selectFromGroup",
-          "params": {
-            "targetGroup": "friendly-creatures",
-            "title": "Choose a creature to gain Barrier",
-            "effect": { "keyword": "Barrier" }
-          }
-        }
-      }
+      "effectText": "TODO - REVISIT",
+      "effects": {}
     },
     {
       "id": "bird-spell-feed",
       "name": "Feed",
       "type": "Spell",
-      "effectText": "Target creature gains +3/+3.",
-      "effects": {
-        "effect": {
-          "type": "selectFromGroup",
-          "params": {
-            "targetGroup": "friendly-creatures",
-            "title": "Choose a creature to gain +3/+3",
-            "effect": { "buff": { "attack": 3, "health": 3 } }
-          }
-        }
-      }
+      "effectText": "TODO - REVISIT",
+      "effects": {}
     },
     {
       "id": "bird-spell-red-tailfeathers",
       "name": "Red Tailfeathers",
       "type": "Free Spell",
-      "effectText": "Target creature gains +2/+0 and haste.",
-      "effects": {
-        "effect": {
-          "type": "selectFromGroup",
-          "params": {
-            "targetGroup": "friendly-creatures",
-            "title": "Choose a creature to gain +2/+0 and Haste",
-            "effect": { "buff": { "attack": 2, "health": 0 }, "keyword": "Haste" }
-          }
-        }
-      }
+      "effectText": "TODO - REVISIT",
+      "effects": {}
     }
   ]
 }

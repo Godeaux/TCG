@@ -663,6 +663,34 @@
       "effects": {
         "effect": { "type": "selectCarrionToPlayWithKeyword", "params": { "keyword": "Frozen" } }
       }
+    },
+    {
+      "id": "mammal-spell-fresh-milk",
+      "name": "Fresh Milk",
+      "type": "Free Spell",
+      "effectText": "TODO - REVISIT",
+      "effects": {}
+    },
+    {
+      "id": "mammal-spell-present",
+      "name": "Present",
+      "type": "Free Spell",
+      "effectText": "TODO - REVISIT",
+      "effects": {}
+    },
+    {
+      "id": "mammal-spell-qiviut",
+      "name": "Qiviut",
+      "type": "Free Spell",
+      "effectText": "TODO - REVISIT",
+      "effects": {}
+    },
+    {
+      "id": "mammal-spell-angus",
+      "name": "Angus",
+      "type": "Spell",
+      "effectText": "TODO - REVISIT",
+      "effects": {}
     }
   ]
 }
