@@ -503,10 +503,10 @@ const updatePlayerStats = (state, index, role, onUpdate = null) => {
     }
   }
   if (hpEl) {
-    hpEl.textContent = `HP: ${player.hp}`;
+    hpEl.textContent = `❤️: ${player.hp}`;
   }
   if (deckEl) {
-    deckEl.textContent = `Deck: ${player.deck.length}`;
+    deckEl.textContent = `🃏: ${player.deck.length}`;
   }
 
   if (role === "active") {
