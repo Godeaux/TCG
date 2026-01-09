@@ -733,6 +733,11 @@ button {
   margin: 0;
 }
 
+/* Hide mobile close button on desktop */
+.mobile-panel-close {
+  display: none;
+}
+
 .inspector-content {
   flex: 1;
   overflow-y: auto; /* Allow scrolling if content is too tall */
@@ -3265,7 +3270,7 @@ button {
     width: 100%;
     height: 100%;
     background: var(--bg-dark);
-    z-index: 5;
+    z-index: 200; /* Above everything including hand panel */
     overflow-y: auto;
     padding: 12px;
   }
@@ -3282,7 +3287,13 @@ button {
 
   .battlefield-center-column {
     width: 100%;
-    overflow-x: hidden; /* Prevent cards from bleeding off edges */
+    overflow-x: hidden; /* Prevent horizontal scroll */
+    overflow-y: visible; /* Allow hand cards to extend upward */
+  }
+
+  .battlefield-layout {
+    grid-template-rows: minmax(0, 1.5fr) minmax(140px, 1fr); /* Give more space to hand on mobile */
+    min-height: 0;
   }
 
   .mobile-nav-left,
@@ -3296,9 +3307,11 @@ button {
   }
 
   .hand-panel {
-    min-height: clamp(120px, 20vh, 200px);
-    max-height: 45vh;
-    overflow-x: hidden; /* Clip cards that extend beyond edges */
+    min-height: clamp(160px, 25dvh, 240px);
+    max-height: 55dvh;
+    overflow: visible; /* Allow cards to extend upward when focused */
+    padding-bottom: calc(var(--safe-bottom) + 8px); /* Account for iOS home indicator */
+    padding-top: 30px; /* Space for focused card to lift into */
   }
 
   .hand-panel.is-dragging {
@@ -3306,16 +3319,15 @@ button {
   }
 
   .hand-container {
-    overflow-x: hidden !important; /* Override visible overflow on mobile */
-  }
-
-  .hand-container.is-dragging {
-    overflow: visible !important; /* Allow cards to be visible when dragging */
+    overflow: visible; /* Allow cards to extend */
   }
 
   .hand-grid {
-    overflow-x: hidden !important; /* Override visible overflow on mobile */
-    padding: 0 clamp(8px, 2vw, 16px); /* Add padding to prevent edge clipping */
+    align-items: flex-start; /* Position cards from top, not bottom */
+    overflow: visible; /* Allow focused cards to extend */
+    padding: 0 16px; /* Keep cards from screen edges */
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .hand-grid.is-dragging {
@@ -3327,13 +3339,21 @@ button {
   }
 
   .hand-grid .card {
-    width: clamp(140px, 35vw, 200px);
-    margin-left: calc(var(--hand-overlap) * -2);
-    transform: translateY(8px) scale(calc(0.98 * var(--mobile-card-scale, 1)));
+    width: clamp(105px, 30vw, 150px); /* ~50% larger for better text readability */
+    min-width: 90px;
+    margin-left: calc(var(--hand-overlap) * -1); /* Use full overlap calculated by JS */
+    transform: translateY(0) scale(var(--mobile-card-scale, 1));
+    transform-origin: top center; /* Scale from top since cards are at top */
+    z-index: 10;
+  }
+
+  .hand-grid .card:first-child {
+    margin-left: 0;
   }
 
   .hand-grid .card.hand-focus {
-    transform: translateY(-40px) scale(calc(1.2 * var(--mobile-card-scale, 1)));
+    transform: translateY(-25px) scale(calc(1.15 * var(--mobile-card-scale, 1)));
+    z-index: 100;
   }
 
   .card-inspector-panel,
@@ -3342,11 +3362,38 @@ button {
     height: 100%;
   }
 
+  /* Mobile panel close button */
+  .mobile-panel-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-gold);
+    color: var(--gold-light);
+    font-size: 18px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .mobile-panel-close:hover {
+    background: rgba(212, 168, 83, 0.3);
+  }
+
+  .inspector-header,
+  .log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
   /* Fix action bar visibility on mobile */
   .action-bar.has-selection,
   .action-bar.has-actions {
-    max-height: 45vh; /* Reduce from 50vh to account for mobile browser chrome */
-    padding-bottom: clamp(12px, 2vh, 20px); /* Ensure bottom content is visible */
+    max-height: 45dvh; /* Use dynamic viewport height for browser UI */
+    padding-bottom: calc(var(--safe-bottom) + 12px); /* Account for iOS home indicator */
   }
 }
 
