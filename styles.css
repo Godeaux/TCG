@@ -3265,7 +3265,7 @@ button {
     width: 100%;
     height: 100%;
     background: var(--bg-dark);
-    z-index: 5;
+    z-index: 200; /* Above everything including hand panel */
     overflow-y: auto;
     padding: 12px;
   }
@@ -3304,8 +3304,6 @@ button {
     min-height: clamp(140px, 22dvh, 220px);
     max-height: 50dvh;
     overflow: hidden; /* Clip cards that extend beyond edges */
-    position: relative;
-    z-index: 100; /* Ensure hand appears above field */
     padding-bottom: calc(var(--safe-bottom) + 8px); /* Account for iOS home indicator */
   }
 
@@ -3337,10 +3335,9 @@ button {
   }
 
   .hand-grid .card {
-    width: clamp(100px, 28vw, 140px);
-    margin-left: calc(var(--hand-overlap) * -0.8);
-    transform: translateY(0) scale(calc(0.95 * var(--mobile-card-scale, 1)));
-    z-index: 10;
+    width: clamp(80px, 22vw, 120px); /* Smaller cards on mobile to fit more */
+    margin-left: calc(var(--hand-overlap) * -1); /* Use full overlap calculated by JS */
+    transform: translateY(0) scale(var(--mobile-card-scale, 1));
   }
 
   .hand-grid .card:first-child {
@@ -3348,8 +3345,7 @@ button {
   }
 
   .hand-grid .card.hand-focus {
-    transform: translateY(-30px) scale(calc(1.15 * var(--mobile-card-scale, 1)));
-    z-index: 2000;
+    transform: translateY(-20px) scale(calc(1.1 * var(--mobile-card-scale, 1)));
   }
 
   .card-inspector-panel,
