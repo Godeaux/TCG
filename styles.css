@@ -3286,7 +3286,8 @@ button {
   }
 
   .battlefield-layout {
-    grid-template-rows: minmax(0, 2fr) minmax(0, 1.2fr); /* Give more space to hand on mobile */
+    grid-template-rows: minmax(0, 1.8fr) minmax(0, 1fr); /* Give more space to hand on mobile */
+    max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 60px); /* Account for browser UI and header */
   }
 
   .mobile-nav-left,
@@ -3300,11 +3301,12 @@ button {
   }
 
   .hand-panel {
-    min-height: clamp(140px, 22vh, 220px);
-    max-height: 50vh;
-    overflow-x: hidden; /* Clip cards that extend beyond edges */
+    min-height: clamp(140px, 22dvh, 220px);
+    max-height: 50dvh;
+    overflow: hidden; /* Clip cards that extend beyond edges */
     position: relative;
     z-index: 100; /* Ensure hand appears above field */
+    padding-bottom: calc(var(--safe-bottom) + 8px); /* Account for iOS home indicator */
   }
 
   .hand-panel.is-dragging {
@@ -3320,8 +3322,10 @@ button {
   }
 
   .hand-grid {
-    overflow-x: hidden !important; /* Override visible overflow on mobile */
-    padding: 0 clamp(8px, 2vw, 16px); /* Add padding to prevent edge clipping */
+    overflow: hidden !important; /* Keep cards within bounds on mobile */
+    padding: 0 12px; /* Fixed padding to keep cards from edge */
+    max-width: 100%; /* Ensure grid doesn't exceed container */
+    box-sizing: border-box;
   }
 
   .hand-grid.is-dragging {
@@ -3357,8 +3361,8 @@ button {
   /* Fix action bar visibility on mobile */
   .action-bar.has-selection,
   .action-bar.has-actions {
-    max-height: 45vh; /* Reduce from 50vh to account for mobile browser chrome */
-    padding-bottom: clamp(12px, 2vh, 20px); /* Ensure bottom content is visible */
+    max-height: 45dvh; /* Use dynamic viewport height for browser UI */
+    padding-bottom: calc(var(--safe-bottom) + 12px); /* Account for iOS home indicator */
   }
 }
 

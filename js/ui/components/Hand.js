@@ -46,14 +46,20 @@ export const updateHandOverlap = (handGrid) => {
     return;
   }
 
-  const handWidth = handGrid.clientWidth;
+  // Check if we're on mobile portrait mode
+  const isMobilePortrait = window.matchMedia("(max-width: 767px) and (orientation: portrait)").matches;
+
+  // Get available width, accounting for padding
+  const computedStyle = getComputedStyle(handGrid);
+  const paddingLeft = parseFloat(computedStyle.paddingLeft) || 0;
+  const paddingRight = parseFloat(computedStyle.paddingRight) || 0;
+  const handWidth = handGrid.clientWidth - paddingLeft - paddingRight;
   const cardWidth = cards[0].getBoundingClientRect().width;
-  if (!handWidth || !cardWidth) {
+
+  if (!handWidth || !cardWidth || handWidth <= 0) {
     return;
   }
 
-  // Check if we're on mobile portrait mode
-  const isMobilePortrait = window.matchMedia("(max-width: 767px) and (orientation: portrait)").matches;
   const minVisibleWidth = isMobilePortrait ? 40 : 20; // Larger touch targets on mobile
 
   // Base overlap for "fanned" look - always show cards overlapping
@@ -100,14 +106,26 @@ export const updateHandOverlap = (handGrid) => {
 
   handGrid.style.setProperty("--hand-overlap", `${overlap}px`);
   handGrid.style.setProperty("--mobile-card-scale", `${scale}`);
-  handGrid.style.overflow = "visible";
+
+  // Only set overflow visible on desktop - mobile uses CSS overflow hidden
+  if (!isMobilePortrait) {
+    handGrid.style.overflow = "visible";
+  }
 };
 
 /**
- * Force overflow visible on hand containers
- * This prevents cards from being cut off
+ * Force overflow visible on hand containers (desktop only)
+ * This prevents cards from being cut off on desktop
+ * On mobile, we keep overflow hidden to prevent cards bleeding off screen
  */
 const setOverflowVisible = (handGrid) => {
+  const isMobilePortrait = window.matchMedia("(max-width: 767px) and (orientation: portrait)").matches;
+
+  // Skip on mobile - let CSS handle overflow as hidden
+  if (isMobilePortrait) {
+    return;
+  }
+
   handGrid.style.overflow = 'visible';
 
   const handPanel = handGrid.closest('.hand-panel');
