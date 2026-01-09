@@ -134,6 +134,7 @@ export const advancePhase = (state) => {
       logMessage(state, `[Draw] ${state.players[state.activePlayerIndex].name} skips first draw (going second).`);
       state.phase = "Main 1";
       logMessage(state, `━━━ PHASE: MAIN 1 ━━━`);
+      state.broadcast?.(state);
       return;
     }
 
