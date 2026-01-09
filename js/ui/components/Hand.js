@@ -54,10 +54,11 @@ export const updateHandOverlap = (handGrid) => {
 
   // Check if we're on mobile portrait mode
   const isMobilePortrait = window.matchMedia("(max-width: 767px) and (orientation: portrait)").matches;
-  const minVisibleWidth = 20; // Minimum visible pixels per card
+  const minVisibleWidth = isMobilePortrait ? 40 : 20; // Larger touch targets on mobile
 
-  // Base overlap for "fanned" look - always show cards overlapping (40% overlap)
-  const baseOverlapPercent = 0.40;
+  // Base overlap for "fanned" look - always show cards overlapping
+  // Use less overlap on mobile for better visibility
+  const baseOverlapPercent = isMobilePortrait ? 0.30 : 0.40;
   let overlap = cardWidth * baseOverlapPercent;
   let scale = 1;
 
@@ -90,8 +91,9 @@ export const updateHandOverlap = (handGrid) => {
         overlap = cardWidth - minVisibleWidth;
       }
     } else {
-      // Cap at 85% max overlap to keep cards readable
-      const maxOverlap = cardWidth * 0.85;
+      // Cap max overlap to keep cards readable - lower cap on mobile
+      const maxOverlapPercent = isMobilePortrait ? 0.70 : 0.85;
+      const maxOverlap = cardWidth * maxOverlapPercent;
       overlap = Math.min(overlap, maxOverlap);
     }
   }

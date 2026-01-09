@@ -3285,6 +3285,10 @@ button {
     overflow-x: hidden; /* Prevent cards from bleeding off edges */
   }
 
+  .battlefield-layout {
+    grid-template-rows: minmax(0, 2fr) minmax(0, 1.2fr); /* Give more space to hand on mobile */
+  }
+
   .mobile-nav-left,
   .mobile-nav-right {
     display: flex;
@@ -3296,9 +3300,11 @@ button {
   }
 
   .hand-panel {
-    min-height: clamp(120px, 20vh, 200px);
-    max-height: 45vh;
+    min-height: clamp(140px, 22vh, 220px);
+    max-height: 50vh;
     overflow-x: hidden; /* Clip cards that extend beyond edges */
+    position: relative;
+    z-index: 100; /* Ensure hand appears above field */
   }
 
   .hand-panel.is-dragging {
@@ -3327,13 +3333,19 @@ button {
   }
 
   .hand-grid .card {
-    width: clamp(140px, 35vw, 200px);
-    margin-left: calc(var(--hand-overlap) * -2);
-    transform: translateY(8px) scale(calc(0.98 * var(--mobile-card-scale, 1)));
+    width: clamp(100px, 28vw, 140px);
+    margin-left: calc(var(--hand-overlap) * -0.8);
+    transform: translateY(0) scale(calc(0.95 * var(--mobile-card-scale, 1)));
+    z-index: 10;
+  }
+
+  .hand-grid .card:first-child {
+    margin-left: 0;
   }
 
   .hand-grid .card.hand-focus {
-    transform: translateY(-40px) scale(calc(1.2 * var(--mobile-card-scale, 1)));
+    transform: translateY(-30px) scale(calc(1.15 * var(--mobile-card-scale, 1)));
+    z-index: 2000;
   }
 
   .card-inspector-panel,
