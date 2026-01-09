@@ -3334,8 +3334,8 @@ button {
   }
 
   .hand-grid .card {
-    width: clamp(70px, 20vw, 100px); /* Smaller cards on mobile to fit more */
-    min-width: 60px;
+    width: clamp(115px, 32vw, 165px); /* ~66% larger for better text readability */
+    min-width: 100px;
     margin-left: calc(var(--hand-overlap) * -1); /* Use full overlap calculated by JS */
     transform: translateY(0) scale(var(--mobile-card-scale, 1));
     transform-origin: top center; /* Scale from top since cards are at top */
