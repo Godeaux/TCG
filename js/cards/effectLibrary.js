@@ -1144,42 +1144,48 @@ export const selectFromGroup = (params) => (context) => {
  */
 const applyEffectToSelection = (selection, effectDef, context) => {
   const { log } = context;
+  const result = {};
 
-  // Simple effect shortcuts for common patterns
+  // Accumulate results from multiple effect properties (supports combined effects like buff+keyword)
   if (effectDef.damage) {
     if (selection.type === 'creature') {
       log(`Deals ${effectDef.damage} damage to ${selection.creature.name}.`);
-      return { damageCreature: { creature: selection.creature, amount: effectDef.damage, sourceLabel: effectDef.label || 'damage' } };
+      result.damageCreature = { creature: selection.creature, amount: effectDef.damage, sourceLabel: effectDef.label || 'damage' };
     } else if (selection.type === 'player') {
       log(`Deals ${effectDef.damage} damage to rival.`);
-      return { damageOpponent: effectDef.damage };
+      result.damageOpponent = effectDef.damage;
     }
   }
 
   if (effectDef.heal) {
     if (selection.type === 'creature') {
       log(`Restores ${effectDef.heal} HP to ${selection.creature.name}.`);
-      return { healCreature: { creature: selection.creature, amount: effectDef.heal } };
+      result.healCreature = { creature: selection.creature, amount: effectDef.heal };
     } else if (selection.type === 'player') {
       log(`Heals ${effectDef.heal} HP.`);
-      return { heal: effectDef.heal };
+      result.heal = effectDef.heal;
     }
   }
 
   if (effectDef.kill && selection.type === 'creature') {
     log(`${selection.creature.name} is destroyed.`);
-    return { killCreature: selection.creature };
+    result.killCreature = selection.creature;
   }
 
   if (effectDef.buff && selection.type === 'creature') {
     const { attack = 0, health = 0 } = effectDef.buff;
     log(`${selection.creature.name} gains +${attack}/+${health}.`);
-    return { buffCreature: { creature: selection.creature, attack, health } };
+    result.buffCreature = { creature: selection.creature, attack, health };
   }
 
   if (effectDef.keyword && selection.type === 'creature') {
     log(`${selection.creature.name} gains ${effectDef.keyword}.`);
-    return { addKeyword: { creature: selection.creature, keyword: effectDef.keyword } };
+    result.addKeyword = { creature: selection.creature, keyword: effectDef.keyword };
+  }
+
+  // If we accumulated any simple effects, return them
+  if (Object.keys(result).length > 0) {
+    return result;
   }
 
   // For complex effects, resolve them with extended context

@@ -200,6 +200,15 @@ export const resolveEffectResult = (state, result, context) => {
     });
   }
 
+  if (result.killCreature) {
+    // Single creature kill (from applyEffectToSelection)
+    const creature = result.killCreature;
+    const killed = killCreature(state, creature, "effect");
+    if (killed) {
+      logMessage(state, `${creature.name} is destroyed.`);
+    }
+  }
+
   if (result.killAllCreatures) {
     state.players.forEach((player) => {
       player.field.forEach((creature) => {
@@ -256,6 +265,26 @@ export const resolveEffectResult = (state, result, context) => {
       if (creature && keyword === "Frozen") {
         creature.frozen = true;
         creature.frozenDiesTurn = state.turn + 1;
+      }
+    });
+  }
+
+  if (result.removeKeywordFromAll) {
+    const { creatures, keyword } = result.removeKeywordFromAll;
+    creatures.forEach((creature) => {
+      if (creature && creature.keywords) {
+        const keywordIndex = creature.keywords.indexOf(keyword);
+        if (keywordIndex >= 0) {
+          creature.keywords.splice(keywordIndex, 1);
+          logMessage(state, `${creature.name} loses ${keyword}.`);
+        }
+        if (keyword === "Barrier") {
+          creature.hasBarrier = false;
+        }
+        if (keyword === "Frozen") {
+          creature.frozen = false;
+          creature.frozenDiesTurn = null;
+        }
       }
     });
   }
@@ -324,6 +353,16 @@ export const resolveEffectResult = (state, result, context) => {
     const { creature } = result.restoreCreature;
     creature.currentHp = creature.hp;
     logMessage(state, `${creature.name} is regenerated.`);
+  }
+
+  if (result.healCreature) {
+    const { creature, amount } = result.healCreature;
+    if (creature) {
+      const baseHp = creature.hp || creature.currentHp || 1;
+      const healAmount = Math.min(amount, baseHp - creature.currentHp);
+      creature.currentHp = Math.min(baseHp, creature.currentHp + amount);
+      logMessage(state, `${creature.name} heals ${healAmount} HP.`);
+    }
   }
 
   if (result.addKeyword) {
@@ -510,10 +549,12 @@ export const resolveEffectResult = (state, result, context) => {
   }
 
   if (result.returnToHand) {
-    const { card, playerIndex } = result.returnToHand;
-    removeCardFromField(state, card);
-    state.players[playerIndex].hand.push(card);
-    logMessage(state, `${card.name} returns to ${state.players[playerIndex].name}'s hand.`);
+    // Support both 'card' and 'creature' property names for compatibility
+    const { card, creature, playerIndex } = result.returnToHand;
+    const targetCard = card || creature;
+    removeCardFromField(state, targetCard);
+    state.players[playerIndex].hand.push(targetCard);
+    logMessage(state, `${targetCard.name} returns to ${state.players[playerIndex].name}'s hand.`);
   }
 
   if (result.stealCreature) {
@@ -530,6 +571,39 @@ export const resolveEffectResult = (state, result, context) => {
     removeCardFromField(state, creature);
     destination.field[emptySlot] = creature;
     logMessage(state, `${destination.name} steals ${creature.name}.`);
+  }
+
+  if (result.copyCreature) {
+    const { target, playerIndex } = result.copyCreature;
+    const player = state.players[playerIndex];
+    const emptySlot = player.field.findIndex((slot) => slot === null);
+    if (emptySlot === -1) {
+      logMessage(state, `${player.name} has no room to play the copy.`);
+      return;
+    }
+    // Create a copy of the target creature
+    const copy = createCardInstance({ ...target, isToken: true }, state.turn);
+    copy.isToken = true;
+    player.field[emptySlot] = copy;
+    logMessage(state, `${player.name} summons a copy of ${target.name}.`);
+    // Trigger onPlay for the copy if it's a prey
+    if (copy.type === "Prey" && copy.onPlay && !copy.abilitiesCancelled) {
+      const opponentIndex = (playerIndex + 1) % 2;
+      const resultOnPlay = copy.onPlay({
+        log: (message) => logMessage(state, message),
+        player: state.players[playerIndex],
+        opponent: state.players[opponentIndex],
+        creature: copy,
+        state,
+        playerIndex,
+        opponentIndex,
+      });
+      resolveEffectResult(state, resultOnPlay, {
+        playerIndex,
+        opponentIndex,
+        card: copy,
+      });
+    }
   }
 
   if (result.transformCard) {
