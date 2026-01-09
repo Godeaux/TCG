@@ -3282,12 +3282,13 @@ button {
 
   .battlefield-center-column {
     width: 100%;
-    overflow-x: hidden; /* Prevent cards from bleeding off edges */
+    overflow-x: hidden; /* Prevent horizontal scroll */
+    overflow-y: visible; /* Allow hand cards to extend upward */
   }
 
   .battlefield-layout {
-    grid-template-rows: minmax(0, 1.8fr) minmax(0, 1fr); /* Give more space to hand on mobile */
-    max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 60px); /* Account for browser UI and header */
+    grid-template-rows: minmax(0, 1.5fr) minmax(140px, 1fr); /* Give more space to hand on mobile */
+    min-height: 0;
   }
 
   .mobile-nav-left,
@@ -3301,10 +3302,11 @@ button {
   }
 
   .hand-panel {
-    min-height: clamp(140px, 22dvh, 220px);
-    max-height: 50dvh;
-    overflow: hidden; /* Clip cards that extend beyond edges */
+    min-height: clamp(160px, 25dvh, 240px);
+    max-height: 55dvh;
+    overflow: visible; /* Allow cards to extend upward when focused */
     padding-bottom: calc(var(--safe-bottom) + 8px); /* Account for iOS home indicator */
+    padding-top: 30px; /* Space for focused card to lift into */
   }
 
   .hand-panel.is-dragging {
@@ -3312,17 +3314,14 @@ button {
   }
 
   .hand-container {
-    overflow-x: hidden !important; /* Override visible overflow on mobile */
-  }
-
-  .hand-container.is-dragging {
-    overflow: visible !important; /* Allow cards to be visible when dragging */
+    overflow: visible; /* Allow cards to extend */
   }
 
   .hand-grid {
-    overflow: hidden !important; /* Keep cards within bounds on mobile */
-    padding: 0 12px; /* Fixed padding to keep cards from edge */
-    max-width: 100%; /* Ensure grid doesn't exceed container */
+    align-items: flex-start; /* Position cards from top, not bottom */
+    overflow: visible; /* Allow focused cards to extend */
+    padding: 0 16px; /* Keep cards from screen edges */
+    max-width: 100%;
     box-sizing: border-box;
   }
 
@@ -3335,9 +3334,12 @@ button {
   }
 
   .hand-grid .card {
-    width: clamp(80px, 22vw, 120px); /* Smaller cards on mobile to fit more */
+    width: clamp(70px, 20vw, 100px); /* Smaller cards on mobile to fit more */
+    min-width: 60px;
     margin-left: calc(var(--hand-overlap) * -1); /* Use full overlap calculated by JS */
     transform: translateY(0) scale(var(--mobile-card-scale, 1));
+    transform-origin: top center; /* Scale from top since cards are at top */
+    z-index: 10;
   }
 
   .hand-grid .card:first-child {
@@ -3345,7 +3347,8 @@ button {
   }
 
   .hand-grid .card.hand-focus {
-    transform: translateY(-20px) scale(calc(1.1 * var(--mobile-card-scale, 1)));
+    transform: translateY(-25px) scale(calc(1.15 * var(--mobile-card-scale, 1)));
+    z-index: 100;
   }
 
   .card-inspector-panel,

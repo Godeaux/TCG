@@ -106,26 +106,14 @@ export const updateHandOverlap = (handGrid) => {
 
   handGrid.style.setProperty("--hand-overlap", `${overlap}px`);
   handGrid.style.setProperty("--mobile-card-scale", `${scale}`);
-
-  // Only set overflow visible on desktop - mobile uses CSS overflow hidden
-  if (!isMobilePortrait) {
-    handGrid.style.overflow = "visible";
-  }
+  handGrid.style.overflow = "visible";
 };
 
 /**
- * Force overflow visible on hand containers (desktop only)
- * This prevents cards from being cut off on desktop
- * On mobile, we keep overflow hidden to prevent cards bleeding off screen
+ * Force overflow visible on hand containers
+ * This prevents cards from being cut off
  */
 const setOverflowVisible = (handGrid) => {
-  const isMobilePortrait = window.matchMedia("(max-width: 767px) and (orientation: portrait)").matches;
-
-  // Skip on mobile - let CSS handle overflow as hidden
-  if (isMobilePortrait) {
-    return;
-  }
-
   handGrid.style.overflow = 'visible';
 
   const handPanel = handGrid.closest('.hand-panel');
@@ -136,11 +124,6 @@ const setOverflowVisible = (handGrid) => {
   const handContainer = handGrid.closest('.hand-container');
   if (handContainer) {
     handContainer.style.overflow = 'visible';
-  }
-
-  const centerColumn = handGrid.closest('.battlefield-center-column');
-  if (centerColumn) {
-    centerColumn.style.overflow = 'visible';
   }
 };
 
