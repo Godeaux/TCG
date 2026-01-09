@@ -243,6 +243,34 @@ export const resolveEffectResult = (state, result, context) => {
     });
   }
 
+  if (result.grantKeywordToAll) {
+    const { creatures, keyword } = result.grantKeywordToAll;
+    creatures.forEach((creature) => {
+      if (creature && !creature.keywords.includes(keyword)) {
+        creature.keywords.push(keyword);
+        logMessage(state, `${creature.name} gains ${keyword}.`);
+      }
+      if (creature && keyword === "Barrier") {
+        creature.hasBarrier = true;
+      }
+      if (creature && keyword === "Frozen") {
+        creature.frozen = true;
+        creature.frozenDiesTurn = state.turn + 1;
+      }
+    });
+  }
+
+  if (result.buffAllCreatures) {
+    const { creatures, attack, health } = result.buffAllCreatures;
+    creatures.forEach((creature) => {
+      if (creature) {
+        creature.currentAtk = (creature.currentAtk ?? creature.atk ?? 0) + (attack || 0);
+        creature.currentHp = (creature.currentHp ?? creature.hp ?? 0) + (health || 0);
+        logMessage(state, `${creature.name} gains +${attack || 0}/+${health || 0}.`);
+      }
+    });
+  }
+
   if (result.consumeEnemyPrey) {
     const { predator, prey, opponentIndex } = result.consumeEnemyPrey;
     consumePrey({ predator, preyList: [prey], state, playerIndex: opponentIndex });
@@ -293,6 +321,15 @@ export const resolveEffectResult = (state, result, context) => {
     const { creature, token } = result.addEndOfTurnSummon;
     creature.endOfTurnSummon = token;
     logMessage(state, `${creature.name} will summon ${token.name} at end of turn.`);
+  }
+
+  if (result.empowerWithEndEffect) {
+    const { creature, tokenId } = result.empowerWithEndEffect;
+    const tokenData = getTokenById(tokenId);
+    if (tokenData && creature) {
+      creature.endOfTurnSummon = tokenData;
+      logMessage(state, `${creature.name} will summon ${tokenData.name} at end of turn.`);
+    }
   }
 
   if (result.copyAbilities) {
