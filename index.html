@@ -397,47 +397,30 @@
           <div class="menu-icon">🤖</div>
           <div>
             <h2>Play vs. AI</h2>
-            <p class="muted">Choose difficulty and decks for your match.</p>
-          </div>
-        </div>
-
-        <div class="ai-setup-section" id="ai-difficulty-section">
-          <h3 class="ai-setup-label">Difficulty</h3>
-          <div class="ai-difficulty-buttons">
-            <button class="btn-difficulty active" id="ai-difficulty-easy" data-difficulty="easy">
-              <span class="difficulty-icon">🐟</span>
-              <span class="difficulty-name">Easy</span>
-              <span class="difficulty-desc">Simple decisions, less aggressive</span>
-            </button>
-            <button class="btn-difficulty" id="ai-difficulty-hard" data-difficulty="hard">
-              <span class="difficulty-icon">🦈</span>
-              <span class="difficulty-name">Hard</span>
-              <span class="difficulty-desc">Knows your hand, optimal plays</span>
-            </button>
+            <p class="muted">Choose a deck for the AI opponent.</p>
           </div>
         </div>
 
         <div class="ai-setup-section" id="ai-deck-section">
-          <h3 class="ai-setup-label">AI Deck</h3>
           <div class="ai-deck-options">
-            <button class="btn-deck-option active" id="ai-deck-random" data-deck="random">
+            <button class="btn-deck-option" id="ai-deck-random" data-deck="random">
               <span class="deck-option-icon">🎲</span>
               <span class="deck-option-name">Random Deck</span>
             </button>
             <button class="btn-deck-option" id="ai-deck-saved" data-deck="saved">
               <span class="deck-option-icon">📚</span>
-              <span class="deck-option-name">Use Saved Deck</span>
+              <span class="deck-option-name">Choose Deck</span>
             </button>
           </div>
           <div class="ai-saved-decks" id="ai-saved-decks" style="display: none;">
             <select class="menu-select" id="ai-deck-select">
               <option value="">Select a deck...</option>
             </select>
+            <button class="btn-primary" id="ai-start-game" style="margin-top: 12px;">Start Game</button>
           </div>
         </div>
 
         <div class="menu-actions">
-          <button class="btn-primary" id="ai-start-game">Start Game</button>
           <button class="btn-secondary" id="ai-setup-back">Back</button>
         </div>
       </div>
