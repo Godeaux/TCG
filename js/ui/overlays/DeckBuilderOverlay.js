@@ -13,7 +13,7 @@
  * - renderCatalogBuilderOverlay: Deck catalog management
  */
 
-import { deckCatalogs } from '../../cards/index.js';
+import { deckCatalogs, getCardDefinitionById } from '../../cards/index.js';
 import { logMessage } from '../../state/gameState.js';
 import { buildLobbySyncPayload, sendLobbyBroadcast, getSupabaseApi } from '../../network/index.js';
 import { getLocalPlayerIndex, isAIMode } from '../../state/selectors.js';
@@ -461,7 +461,8 @@ const setDeckInspectorContent = (card) => {
         .join("")
     : "";
   const tokenKeywordDetails = card.summons
-    ?.filter((token) => token.keywords?.length)
+    ?.map((tokenId) => getCardDefinitionById(tokenId))
+    .filter((token) => token && token.keywords?.length)
     .map((token) => {
       const tokenDetails = token.keywords
         .map((keyword) => {
@@ -478,7 +479,7 @@ const setDeckInspectorContent = (card) => {
     })
     .join("");
   const stats = renderCardStats(card)
-    .map((stat) => `${stat.label} ${stat.value}`)
+    .map((stat) => `${stat.emoji} ${stat.value}`)
     .join(" • ");
   const effectSummary = getCardEffectSummary(card, {
     includeKeywordDetails: true,
