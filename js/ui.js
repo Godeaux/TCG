@@ -100,6 +100,7 @@ import {
   updateInputState,
   updateInputCallbacks,
   initTouchHandlers,
+  isTouchDragging,
 } from "./ui/input/index.js";
 
 // Battle effects (extracted module)
@@ -629,6 +630,12 @@ const initHandPreview = () => {
   };
 
   const handlePointer = (event) => {
+    // Skip focus handling during touch drag operations (mobile)
+    // This prevents other cards from "hovering" when dragging a card across the field
+    if (isTouchDragging()) {
+      return;
+    }
+
     // Get all cards in hand
     const cards = Array.from(handGrid.querySelectorAll('.card'));
     if (cards.length === 0) {
