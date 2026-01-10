@@ -48,4 +48,5 @@ export {
   initTouchHandlers,
   reattachTouchHandlers,
   focusCardElement,
+  isTouchDragging,
 } from './touchHandlers.js';

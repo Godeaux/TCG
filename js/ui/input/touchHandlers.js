@@ -35,6 +35,12 @@ let currentTouchPos = { x: 0, y: 0 };
 let isDragging = false;
 let dragPreview = null;
 
+/**
+ * Check if a touch drag operation is currently in progress
+ * Used to disable hand card hover effects during drag
+ */
+export const isTouchDragging = () => isDragging;
+
 // Configuration
 const VERTICAL_DRAG_THRESHOLD = 30; // pixels to move upward before dragging to play
 
