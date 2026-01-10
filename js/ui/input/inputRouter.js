@@ -108,6 +108,11 @@ const startAIGame = (state, callbacks) => {
   state.menu.aiDeckType = aiSettings.deckType;
   state.menu.aiSelectedDeckId = aiSettings.selectedDeckId;
 
+  // Reset skipSavedDecks flag for fresh deck selection
+  if (state.deckSelection) {
+    state.deckSelection.skipSavedDecks = false;
+  }
+
   // Transition to deck selection for the player
   setMenuStage(state, "ready");
   callbacks.onUpdate?.();
@@ -446,6 +451,11 @@ const initNavigation = () => {
 
     // Set online mode BEFORE trying to load state
     latestState.menu.mode = "online";
+
+    // Reset skipSavedDecks flag for fresh deck selection
+    if (latestState.deckSelection) {
+      latestState.deckSelection.skipSavedDecks = false;
+    }
 
     // Try to restore game state from database (for reconnection)
     await loadGameStateFromDatabase(latestState);

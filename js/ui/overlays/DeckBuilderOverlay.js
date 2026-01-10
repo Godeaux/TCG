@@ -1028,7 +1028,8 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
   const opponentIndex = (localIndex + 1) % 2;
 
   // Online mode: parallel deck selection with ready status
-  if (isOnlineMode(state)) {
+  // Skip to category selection if user clicked "Create a deck (Not saved)"
+  if (isOnlineMode(state) && !state.deckSelection.skipSavedDecks) {
     // Initialize readyStatus if not present
     if (!state.deckSelection.readyStatus) {
       state.deckSelection.readyStatus = [false, false];
@@ -1189,6 +1190,23 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       deckSelectGrid?.appendChild(slot);
     });
 
+    // Add "Create a deck (Not saved)" button
+    const createDeckContainer = document.createElement("div");
+    createDeckContainer.style.cssText = "margin-top: 1.5rem; text-align: center; padding-top: 1rem; border-top: 1px solid var(--color-border);";
+
+    const createDeckButton = document.createElement("button");
+    createDeckButton.type = "button";
+    createDeckButton.className = "btn-secondary";
+    createDeckButton.style.cssText = "padding: 0.5rem 1rem; font-size: 0.9rem;";
+    createDeckButton.textContent = "Create a deck (Not saved)";
+    createDeckButton.onclick = () => {
+      state.deckSelection.skipSavedDecks = true;
+      callbacks.onUpdate?.();
+    };
+
+    createDeckContainer.appendChild(createDeckButton);
+    deckSelectGrid?.appendChild(createDeckContainer);
+
     // Add confirm button if deck is selected
     if (hasSelectedDeck) {
       const confirmContainer = document.createElement("div");
@@ -1231,6 +1249,99 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       deckSelectSubtitle.textContent = `Waiting for ${opponentName} to pick their deck.`;
     }
     clearPanel(deckSelectGrid);
+    return;
+  }
+
+  // AI mode: show saved decks first for player 1 (unless skipSavedDecks is set)
+  ensureDecksLoaded(state);
+  const savedDecks = state.menu?.decks ?? [];
+  const showSavedDecks = isAIMode(state) && isPlayerOne && savedDecks.length > 0 && !state.deckSelection.skipSavedDecks;
+
+  if (showSavedDecks) {
+    // Show saved deck selection for AI mode
+    if (deckSelectTitle) {
+      deckSelectTitle.textContent = `${player.name} - Load Deck`;
+    }
+    if (deckSelectSubtitle) {
+      deckSelectSubtitle.textContent = "Choose one of your saved decks or create a new one.";
+    }
+    clearPanel(deckSelectGrid);
+
+    const localSelection = state.deckSelection.selections[playerIndex];
+    const hasSelectedDeck = Boolean(localSelection);
+
+    // Show saved deck options
+    savedDecks.forEach((deck) => {
+      const isSelected = hasSelectedDeck && state.deckBuilder.selections[playerIndex]?.length > 0
+        && deck.deck.every((id) => state.deckBuilder.selections[playerIndex].some(card => card.id === id));
+
+      const slot = document.createElement("div");
+      slot.className = "deck-slot" + (isSelected ? " selected" : "");
+      if (isSelected) {
+        slot.style.borderColor = "var(--color-primary, #3b82f6)";
+        slot.style.backgroundColor = "rgba(59, 130, 246, 0.1)";
+      }
+
+      const loadButton = document.createElement("button");
+      loadButton.type = "button";
+      loadButton.className = isSelected ? "btn-secondary" : "primary";
+      loadButton.textContent = isSelected ? "Selected" : "Select Deck";
+      loadButton.disabled = isSelected;
+      loadButton.onclick = () => {
+        applyDeckToBuilder(state, playerIndex, deck.deck);
+        logMessage(state, `${player.name} selected "${deck.name}".`);
+        callbacks.onUpdate?.();
+      };
+      slot.innerHTML = `
+        <div class="deck-slot-header">
+          <span>${deck.name}</span>
+          <span class="deck-slot-meta">${isSelected ? "✓ Selected" : "20 cards"}</span>
+        </div>
+        <div class="deck-slot-meta">Saved Deck</div>
+      `;
+      const actions = document.createElement("div");
+      actions.className = "deck-slot-actions";
+      actions.appendChild(loadButton);
+      slot.appendChild(actions);
+      deckSelectGrid?.appendChild(slot);
+    });
+
+    // Add "Create a deck (Not saved)" button
+    const createDeckContainer = document.createElement("div");
+    createDeckContainer.style.cssText = "margin-top: 1.5rem; text-align: center; padding-top: 1rem; border-top: 1px solid var(--color-border);";
+
+    const createDeckButton = document.createElement("button");
+    createDeckButton.type = "button";
+    createDeckButton.className = "btn-secondary";
+    createDeckButton.style.cssText = "padding: 0.5rem 1rem; font-size: 0.9rem;";
+    createDeckButton.textContent = "Create a deck (Not saved)";
+    createDeckButton.onclick = () => {
+      state.deckSelection.skipSavedDecks = true;
+      callbacks.onUpdate?.();
+    };
+
+    createDeckContainer.appendChild(createDeckButton);
+    deckSelectGrid?.appendChild(createDeckContainer);
+
+    // Add confirm button if deck is selected
+    if (hasSelectedDeck) {
+      const confirmContainer = document.createElement("div");
+      confirmContainer.style.cssText = "margin-top: 1rem; text-align: center;";
+
+      const confirmButton = document.createElement("button");
+      confirmButton.type = "button";
+      confirmButton.className = "btn-primary";
+      confirmButton.style.cssText = "padding: 0.75rem 2rem; font-size: 1.1rem;";
+      confirmButton.textContent = "Confirm Deck & Start Game";
+      confirmButton.onclick = () => {
+        state.deckSelection.stage = "p1-selected";
+        logMessage(state, `${player.name} confirmed their deck.`);
+        callbacks.onUpdate?.();
+      };
+
+      confirmContainer.appendChild(confirmButton);
+      deckSelectGrid?.appendChild(confirmContainer);
+    }
     return;
   }
 
