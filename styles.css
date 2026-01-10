@@ -2525,15 +2525,17 @@ button {
 .btn-deck-option {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 14px 16px;
+  gap: 6px;
+  padding: 16px 12px;
   border-radius: 12px;
   border: 2px solid var(--border-subtle);
   background: rgba(255, 255, 255, 0.04);
   color: var(--text-primary);
   cursor: pointer;
   transition: all var(--transition-fast);
+  text-align: center;
 }
 
 .btn-deck-option:hover {
@@ -2541,12 +2543,29 @@ button {
   border-color: rgba(255, 255, 255, 0.15);
 }
 
+.btn-deck-option.ai-quick-play {
+  border-color: var(--color-primary, #3b82f6);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.btn-deck-option.ai-quick-play:hover {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: var(--color-primary, #3b82f6);
+}
+
 .deck-option-icon {
-  font-size: 22px;
+  font-size: 28px;
 }
 
 .deck-option-name {
   font-size: 14px;
+  font-weight: 600;
+}
+
+.deck-option-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  opacity: 0.8;
 }
 
 .ai-saved-decks {

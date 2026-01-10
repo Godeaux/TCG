@@ -48,6 +48,7 @@ let isLobbyReady = null;
 let navigateToPage = null;
 let updateNavButtons = null;
 let updateDeckTabs = null;
+let generateRandomDecksForQuickPlay = null;
 
 // References to UI state
 let currentPage = null;
@@ -98,9 +99,8 @@ const startAIGame = (state, callbacks) => {
   const aiSettings = state.menu.aiSettings || {
     deckType: "random",
     selectedDeckId: null,
+    quickPlay: false,
   };
-
-  console.log("[AI] Starting game with settings:", aiSettings);
 
   // Set the game mode to AI (default difficulty is "easy")
   state.menu.mode = "ai";
@@ -108,7 +108,16 @@ const startAIGame = (state, callbacks) => {
   state.menu.aiDeckType = aiSettings.deckType;
   state.menu.aiSelectedDeckId = aiSettings.selectedDeckId;
 
-  // Transition to deck selection for the player
+  // Quick Play mode: generate random decks for both players and start immediately
+  if (aiSettings.quickPlay) {
+    const selections = generateRandomDecksForQuickPlay(state);
+    setMenuStage(state, "ready");
+    callbacks.onDeckComplete?.(selections);
+    callbacks.onUpdate?.();
+    return;
+  }
+
+  // Normal mode: transition to deck selection for the player
   setMenuStage(state, "ready");
   callbacks.onUpdate?.();
 };
@@ -132,6 +141,7 @@ const getNavigationElements = () => ({
   menuTutorial: document.getElementById("menu-tutorial"),
 
   // AI Setup
+  aiQuickPlay: document.getElementById("ai-quick-play"),
   aiDeckRandom: document.getElementById("ai-deck-random"),
   aiDeckSaved: document.getElementById("ai-deck-saved"),
   aiSavedDecks: document.getElementById("ai-saved-decks"),
@@ -292,11 +302,21 @@ const initNavigation = () => {
     latestCallbacks.onUpdate?.();
   });
 
-  // AI Setup: Random Deck button - starts game immediately with random deck
+  // AI Setup: Quick Play button - generates random decks for both players and starts immediately
+  elements.aiQuickPlay?.addEventListener("click", () => {
+    if (!latestState) return;
+    latestState.menu.aiSettings = latestState.menu.aiSettings || {};
+    latestState.menu.aiSettings.deckType = "random";
+    latestState.menu.aiSettings.quickPlay = true;
+    startAIGame(latestState, latestCallbacks);
+  });
+
+  // AI Setup: Build Deck button - lets player build their deck, AI gets random
   elements.aiDeckRandom?.addEventListener("click", () => {
     if (!latestState) return;
     latestState.menu.aiSettings = latestState.menu.aiSettings || {};
     latestState.menu.aiSettings.deckType = "random";
+    latestState.menu.aiSettings.quickPlay = false;
     latestState.menu.aiSettings.selectedDeckId = null;
     startAIGame(latestState, latestCallbacks);
   });
@@ -545,6 +565,7 @@ export const initializeInput = (options = {}) => {
   navigateToPage = helpers.navigateToPage;
   updateNavButtons = helpers.updateNavButtons;
   updateDeckTabs = helpers.updateDeckTabs;
+  generateRandomDecksForQuickPlay = helpers.generateRandomDecksForQuickPlay;
 
   // Store UI state references
   currentPage = uiState.currentPage;

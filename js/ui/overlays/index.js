@@ -46,6 +46,7 @@ export {
   renderDeckBuilderOverlay,
   renderCatalogBuilderOverlay,
   resetDeckBuilderState,
+  generateRandomDecksForQuickPlay,
 } from './DeckBuilderOverlay.js';
 
 // ============================================================================

@@ -410,11 +410,14 @@ const buildRandomDeck = ({ available, selected, catalogOrder }) => {
 };
 
 /**
- * Generate a random deck for AI player
+ * Generate a random deck for a player
  * Uses one of the available deck catalogs
+ * @param {Object} state - Game state
+ * @param {number} playerIndex - Player index (0 or 1)
+ * @returns {Array} The generated deck
  */
-const generateAIDeck = (state) => {
-  // Pick a random available deck category for AI
+const generateRandomDeck = (state, playerIndex) => {
+  // Pick a random available deck category
   const availableDecks = DECK_OPTIONS.filter(opt => opt.available);
   const randomOption = availableDecks[Math.floor(Math.random() * availableDecks.length)];
   const deckId = randomOption?.id ?? 'fish';
@@ -424,17 +427,42 @@ const generateAIDeck = (state) => {
   const selected = [];
   const catalogOrder = catalog.map((card) => card.id);
 
-  // Build random deck for AI
+  // Build random deck
   buildRandomDeck({ available, selected, catalogOrder });
 
-  // Set up AI's deck in state (player index 1)
-  state.deckSelection.selections[1] = deckId;
-  state.deckBuilder.selections[1] = selected;
-  state.deckBuilder.available[1] = available;
-  state.deckBuilder.catalogOrder[1] = catalogOrder;
+  // Set up deck in state
+  state.deckSelection.selections[playerIndex] = deckId;
+  state.deckBuilder.selections[playerIndex] = selected;
+  state.deckBuilder.available[playerIndex] = available;
+  state.deckBuilder.catalogOrder[playerIndex] = catalogOrder;
 
-  console.log(`[AI] Generated random ${randomOption?.name ?? 'Fish'} deck with ${selected.length} cards`);
   return selected;
+};
+
+/**
+ * Generate a random deck for AI player (legacy function for compatibility)
+ * Uses one of the available deck catalogs
+ */
+const generateAIDeck = (state) => {
+  return generateRandomDeck(state, 1);
+};
+
+/**
+ * Generate random decks for both players (Quick Play mode)
+ * @param {Object} state - Game state
+ */
+export const generateRandomDecksForQuickPlay = (state) => {
+  // Generate random deck for player 1 (human)
+  generateRandomDeck(state, 0);
+
+  // Generate random deck for AI (player 2)
+  generateRandomDeck(state, 1);
+
+  // Mark deck selection as complete
+  state.deckSelection.stage = "complete";
+  state.deckBuilder.stage = "complete";
+
+  return [state.deckBuilder.selections[0], state.deckBuilder.selections[1]];
 };
 
 /**

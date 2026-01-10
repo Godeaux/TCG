@@ -67,6 +67,7 @@ import {
 import {
   renderDeckSelectionOverlay,
   renderDeckBuilderOverlay,
+  generateRandomDecksForQuickPlay,
 } from "./ui/overlays/DeckBuilderOverlay.js";
 
 // UI Components (extracted modules)
@@ -2204,6 +2205,7 @@ export const renderGame = (state, callbacks = {}) => {
         navigateToPage,
         updateNavButtons,
         updateDeckTabs,
+        generateRandomDecksForQuickPlay,
         // Drag-and-drop helpers
         getLocalPlayerIndex,
         isLocalPlayersTurn,

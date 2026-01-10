@@ -397,22 +397,25 @@
           <div class="menu-icon">🤖</div>
           <div>
             <h2>Play vs. AI</h2>
-            <p class="muted">Choose a deck for the AI opponent.</p>
+            <p class="muted">Choose how to start the game.</p>
           </div>
         </div>
 
         <div class="ai-setup-section" id="ai-deck-section">
           <div class="ai-deck-options">
-            <button class="btn-deck-option" id="ai-deck-random" data-deck="random">
-              <span class="deck-option-icon">🎲</span>
-              <span class="deck-option-name">Random Deck</span>
+            <button class="btn-deck-option ai-quick-play" id="ai-quick-play">
+              <span class="deck-option-icon">⚡</span>
+              <span class="deck-option-name">Quick Play</span>
+              <span class="deck-option-desc">Random decks for both</span>
             </button>
-            <button class="btn-deck-option" id="ai-deck-saved" data-deck="saved">
-              <span class="deck-option-icon">📚</span>
-              <span class="deck-option-name">Choose Deck</span>
+            <button class="btn-deck-option" id="ai-deck-random" data-deck="random">
+              <span class="deck-option-icon">🎯</span>
+              <span class="deck-option-name">Build Deck</span>
+              <span class="deck-option-desc">Pick your cards, AI random</span>
             </button>
           </div>
           <div class="ai-saved-decks" id="ai-saved-decks" style="display: none;">
+            <p class="muted" style="margin-bottom: 8px;">Or use a saved deck:</p>
             <select class="menu-select" id="ai-deck-select">
               <option value="">Select a deck...</option>
             </select>
