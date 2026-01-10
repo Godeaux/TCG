@@ -60,47 +60,43 @@ export const updateHandOverlap = (handGrid) => {
     return;
   }
 
-  const minVisibleWidth = isMobilePortrait ? 40 : 20; // Larger touch targets on mobile
+  const minVisibleWidth = isMobilePortrait ? 35 : 25; // Minimum visible per card
 
-  // Base overlap for "fanned" look - always show cards overlapping
-  // Use more overlap now that cards are smaller, creating a tighter fan
-  const baseOverlapPercent = isMobilePortrait ? 0.45 : 0.55;
-  let overlap = cardWidth * baseOverlapPercent;
+  // Hearthstone-style: spread cards out when space allows, overlap only when needed
+  // Calculate total width if cards don't overlap at all
+  const totalWidthNoOverlap = cardWidth * cards.length;
+
+  let overlap = 0;
   let scale = 1;
 
-  // Calculate total width with base overlap
-  const totalWidthWithBaseOverlap = cardWidth + (cardWidth - overlap) * (cards.length - 1);
-
-  // If cards still overflow with base overlap, increase overlap to fit
-  if (totalWidthWithBaseOverlap > handWidth) {
+  // Only overlap if cards would exceed available space
+  if (totalWidthNoOverlap > handWidth) {
     // Calculate overlap needed to fit all cards
-    overlap = (cardWidth * cards.length - handWidth) / Math.max(1, cards.length - 1);
+    overlap = (totalWidthNoOverlap - handWidth) / Math.max(1, cards.length - 1);
 
     // Calculate visible width per card with this overlap
     const visibleWidth = cardWidth - overlap;
 
-    // If on mobile and visible width is less than minimum
-    if (isMobilePortrait && visibleWidth < minVisibleWidth && cards.length > 1) {
-      // Calculate what scale would be needed to show minVisibleWidth per card
-      const totalWidthNeeded = minVisibleWidth * (cards.length - 1) + cardWidth;
+    // If visible width is less than minimum, we need more aggressive handling
+    if (visibleWidth < minVisibleWidth && cards.length > 1) {
+      if (isMobilePortrait) {
+        // On mobile, scale down cards to fit
+        const totalWidthNeeded = minVisibleWidth * (cards.length - 1) + cardWidth;
 
-      if (totalWidthNeeded > handWidth) {
-        // Scale down cards to fit
-        scale = handWidth / totalWidthNeeded;
-        const scaledCardWidth = cardWidth * scale;
-
-        // Recalculate overlap with scaled cards
-        const scaledTotalWidth = scaledCardWidth * cards.length;
-        overlap = (scaledTotalWidth - handWidth) / Math.max(1, cards.length - 1);
+        if (totalWidthNeeded > handWidth) {
+          scale = handWidth / totalWidthNeeded;
+          const scaledCardWidth = cardWidth * scale;
+          const scaledTotalWidth = scaledCardWidth * cards.length;
+          overlap = (scaledTotalWidth - handWidth) / Math.max(1, cards.length - 1);
+        } else {
+          overlap = cardWidth - minVisibleWidth;
+        }
       } else {
-        // No scaling needed, just set overlap to show minVisibleWidth
-        overlap = cardWidth - minVisibleWidth;
+        // On desktop, cap max overlap to keep cards identifiable (hover expands them)
+        const maxOverlapPercent = 0.80;
+        const maxOverlap = cardWidth * maxOverlapPercent;
+        overlap = Math.min(overlap, maxOverlap);
       }
-    } else {
-      // Cap max overlap to keep cards identifiable - tighter since cards expand on hover
-      const maxOverlapPercent = isMobilePortrait ? 0.75 : 0.88;
-      const maxOverlap = cardWidth * maxOverlapPercent;
-      overlap = Math.min(overlap, maxOverlap);
     }
   }
 
@@ -241,13 +237,13 @@ export const renderHand = (state, options = {}) => {
       ? (index - (cardCount - 1) / 2) / ((cardCount - 1) / 2)
       : 0;
 
-    // Rotation: cards at edges rotate outward (max ~8 degrees)
-    const maxRotation = Math.min(8, 3 + cardCount * 0.5); // More cards = more rotation
+    // Rotation: subtle, cards at edges rotate outward (max ~4 degrees)
+    const maxRotation = Math.min(4, 1.5 + cardCount * 0.25);
     const rotation = centerOffset * maxRotation;
 
-    // Vertical offset: cards at edges are lower (arc effect)
+    // Vertical offset: very subtle arc effect (max ~6px at edges)
     // Using a parabola: y = x^2 creates the arc
-    const maxVerticalOffset = Math.min(15, 5 + cardCount * 1.5); // More cards = deeper arc
+    const maxVerticalOffset = Math.min(6, 2 + cardCount * 0.4);
     const verticalOffset = Math.abs(centerOffset) * Math.abs(centerOffset) * maxVerticalOffset;
 
     // Apply as CSS custom properties
