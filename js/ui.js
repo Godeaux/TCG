@@ -636,6 +636,12 @@ const updateIndicators = (state, controlsLocked) => {
   }
   if (turnBadge) {
     turnBadge.disabled = controlsLocked;
+    // Add brighter glow for Start phase to catch attention
+    if (state.phase === "Start") {
+      turnBadge.classList.add("phase-start");
+    } else {
+      turnBadge.classList.remove("phase-start");
+    }
   }
   playerLeftBadge?.classList.remove("is-active");
   playerRightBadge?.classList.remove("is-active");

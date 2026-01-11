@@ -13,6 +13,7 @@ import {
 import { logMessage, queueVisualEffect, logGameAction, LOG_CATEGORIES, getKeywordEmoji, formatCardForLog } from "../state/gameState.js";
 import { resolveEffectResult } from "./effects.js";
 import { isCreatureCard } from "../cardTypes.js";
+import { resolveCardEffect } from "../cards/index.js";
 
 const { COMBAT, DEATH, BUFF, DEBUFF } = LOG_CATEGORIES;
 
@@ -162,21 +163,45 @@ export const cleanupDestroyed = (state, { silent = false } = {}) => {
       if (card && card.currentHp <= 0) {
         destroyedCreatures.push({ card, player: player.name });
 
-        if (!silent && card.onSlain && card.diedInCombat && !card.abilitiesCancelled) {
+        // Check for onSlain effect (either function or object-based)
+        const hasOnSlainEffect = card.onSlain || card.effects?.onSlain;
+        if (!silent && hasOnSlainEffect && card.diedInCombat && !card.abilitiesCancelled) {
           logGameAction(state, DEATH, `${formatCardForLog(card)} onSlain effect triggers...`);
-          const result = card.onSlain({
-            log: (message) => logMessage(state, message),
-            player,
-            opponent: state.players[(state.players.indexOf(player) + 1) % 2],
-            creature: card,
-            killer: card.slainBy,
-            state,
-          });
-          resolveEffectResult(state, result, {
-            playerIndex: state.players.indexOf(player),
-            opponentIndex: (state.players.indexOf(player) + 1) % 2,
-            card,
-          });
+          const playerIndex = state.players.indexOf(player);
+          const opponentIndex = (playerIndex + 1) % 2;
+
+          let result;
+          if (card.onSlain) {
+            // Function-based onSlain
+            result = card.onSlain({
+              log: (message) => logMessage(state, message),
+              player,
+              opponent: state.players[opponentIndex],
+              creature: card,
+              killer: card.slainBy,
+              state,
+            });
+          } else if (card.effects?.onSlain) {
+            // Object-based onSlain (via resolveCardEffect)
+            result = resolveCardEffect(card, 'onSlain', {
+              log: (message) => logMessage(state, message),
+              player,
+              playerIndex,
+              opponent: state.players[opponentIndex],
+              opponentIndex,
+              creature: card,
+              killer: card.slainBy,
+              state,
+            });
+          }
+
+          if (result) {
+            resolveEffectResult(state, result, {
+              playerIndex,
+              opponentIndex,
+              card,
+            });
+          }
         }
         player.carrion.push(card);
         if (!silent) {

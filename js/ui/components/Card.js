@@ -206,6 +206,17 @@ const appendTokenDetails = (summary, card) => {
 };
 
 /**
+ * Format stat buff patterns with emoji indicators
+ * Transforms "+X/+Y" into "⚔+X/❤+Y" for clarity
+ * @param {string} text - Text containing stat buffs
+ * @returns {string} Text with emoji-enhanced stat buffs
+ */
+const formatStatBuffs = (text) => {
+  // Match patterns like +2/+2, -1/+3, +0/-1, etc.
+  return text.replace(/([+-]\d+)\/([+-]\d+)/g, '⚔$1/❤$2');
+};
+
+/**
  * Get effect summary for a card
  * @param {Object} card - Card with effects
  * @param {Object} options - Options { includeKeywordDetails, includeTokenDetails }
@@ -215,7 +226,7 @@ export const getCardEffectSummary = (card, options = {}) => {
   const { includeKeywordDetails = false, includeTokenDetails = false } = options;
   let summary = "";
   if (card.effectText) {
-    summary = card.effectText;
+    summary = formatStatBuffs(card.effectText);
   } else {
     const effectFn = card.effect ?? card.onPlay ?? card.onConsume ?? card.onEnd ?? card.onStart;
     if (!effectFn) {
