@@ -28,12 +28,15 @@ const getMenuElements = () => ({
   menuPlay: document.getElementById("menu-play"),
   menuAI: document.getElementById("menu-ai"),
   menuLogin: document.getElementById("menu-login"),
+  menuLogout: document.getElementById("menu-logout"),
   menuCatalog: document.getElementById("menu-catalog"),
   menuStatus: document.getElementById("menu-status"),
 
   // Login elements
   loginUsername: document.getElementById("login-username"),
+  loginPin: document.getElementById("login-pin"),
   loginSubmit: document.getElementById("login-submit"),
+  loginCreate: document.getElementById("login-create"),
   loginError: document.getElementById("login-error"),
 
   // Multiplayer elements (unified screen)
@@ -143,22 +146,28 @@ export const renderMenuOverlays = (state) => {
   }
 
   // Update main menu button text and states
+  const isLoggedIn = Boolean(state.menu.profile);
   if (elements.menuLogin) {
-    elements.menuLogin.textContent = state.menu.profile ? "Multiplayer" : "Login";
+    elements.menuLogin.textContent = isLoggedIn ? "Multiplayer" : "Login";
+    elements.menuLogin.disabled = state.menu.loading;
+  }
+  if (elements.menuLogout) {
+    elements.menuLogout.style.display = isLoggedIn ? "" : "none";
+    elements.menuLogout.disabled = state.menu.loading;
   }
   if (elements.menuPlay) {
     elements.menuPlay.disabled = state.menu.loading;
   }
-  if (elements.menuLogin) {
-    elements.menuLogin.disabled = state.menu.loading;
-  }
   if (elements.menuCatalog) {
-    elements.menuCatalog.disabled = state.menu.loading || !state.menu.profile;
+    elements.menuCatalog.disabled = state.menu.loading || !isLoggedIn;
   }
 
   // Update login states
   if (elements.loginSubmit) {
     elements.loginSubmit.disabled = state.menu.loading;
+  }
+  if (elements.loginCreate) {
+    elements.loginCreate.disabled = state.menu.loading;
   }
   if (elements.loginError) {
     elements.loginError.textContent = state.menu.error ?? "";

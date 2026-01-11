@@ -23,20 +23,73 @@ const ensureSession = async () => {
   return data.session;
 };
 
-export const signInWithUsername = async (username) => {
+/**
+ * Check if a username already exists
+ * @param {string} username - Username to check
+ * @returns {Promise<Object|null>} Profile if exists, null otherwise
+ */
+export const checkUsernameExists = async (username) => {
   if (!username || typeof username !== "string") {
-    throw new Error("Enter a valid username.");
+    return null;
   }
   const trimmed = username.trim();
   if (!trimmed) {
+    return null;
+  }
+
+  // Ensure we have an authenticated session before querying
+  await ensureSession();
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, username, current_auth_id")
+    .eq("username", trimmed)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+  return data ?? null;
+};
+
+/**
+ * Create a new account with username and PIN
+ * @param {string} username - Username for the account
+ * @param {string} pin - 4-6 digit PIN
+ * @returns {Promise<Object>} The created profile
+ */
+export const createAccountWithPin = async (username, pin) => {
+  if (!username || typeof username !== "string") {
     throw new Error("Enter a valid username.");
+  }
+  const trimmedUsername = username.trim();
+  if (!trimmedUsername) {
+    throw new Error("Enter a valid username.");
+  }
+  if (!pin || typeof pin !== "string" || !/^\d{4,6}$/.test(pin)) {
+    throw new Error("PIN must be 4-6 digits.");
+  }
+
+  // Check if username already exists
+  const existing = await checkUsernameExists(trimmedUsername);
+  if (existing) {
+    throw new Error("Username already taken. Try logging in instead.");
   }
 
   const session = await ensureSession();
-  const userId = session.user.id;
+  const authUserId = session.user.id;
+
+  // Generate a new UUID for the profile (separate from auth user ID)
+  const profileId = crypto.randomUUID();
+
   const { data, error } = await supabase
     .from("profiles")
-    .upsert({ id: userId, username: trimmed }, { onConflict: "id" })
+    .insert({
+      id: profileId,
+      username: trimmedUsername,
+      pin: pin,
+      current_auth_id: authUserId,
+    })
     .select("id, username")
     .single();
 
@@ -47,6 +100,106 @@ export const signInWithUsername = async (username) => {
   return data;
 };
 
+/**
+ * Login to an existing account with username and PIN
+ * @param {string} username - Username of the account
+ * @param {string} pin - The account's PIN
+ * @returns {Promise<Object>} The profile
+ */
+export const loginWithPin = async (username, pin) => {
+  if (!username || typeof username !== "string") {
+    throw new Error("Enter a valid username.");
+  }
+  const trimmedUsername = username.trim();
+  if (!trimmedUsername) {
+    throw new Error("Enter a valid username.");
+  }
+  if (!pin || typeof pin !== "string") {
+    throw new Error("Enter your PIN.");
+  }
+
+  // Ensure we have an authenticated session before querying
+  // (needed for RLS policies on new browsers/devices)
+  await ensureSession();
+
+  // Find the profile by username
+  const { data: profile, error: fetchError } = await supabase
+    .from("profiles")
+    .select("id, username, pin, current_auth_id")
+    .eq("username", trimmedUsername)
+    .maybeSingle();
+
+  if (fetchError) {
+    throw fetchError;
+  }
+  if (!profile) {
+    throw new Error("Username not found. Create a new account?");
+  }
+
+  // Verify PIN
+  if (profile.pin !== pin) {
+    throw new Error("Incorrect PIN.");
+  }
+
+  // Check if account is currently logged in elsewhere
+  if (profile.current_auth_id) {
+    throw new Error("Account is currently logged in elsewhere. Log out from the other device first.");
+  }
+
+  // Claim the profile with our auth session
+  const session = await ensureSession();
+  const authUserId = session.user.id;
+
+  const { data, error: updateError } = await supabase
+    .from("profiles")
+    .update({ current_auth_id: authUserId })
+    .eq("id", profile.id)
+    .is("current_auth_id", null) // Only succeed if still logged out
+    .select("id, username")
+    .single();
+
+  if (updateError) {
+    throw updateError;
+  }
+  if (!data) {
+    throw new Error("Login failed. Account may have been claimed by another device.");
+  }
+
+  return data;
+};
+
+/**
+ * Log out of the current profile (clears current_auth_id)
+ * @returns {Promise<boolean>} True if logout succeeded
+ */
+export const logoutProfile = async () => {
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData?.session?.user) {
+    return false;
+  }
+
+  const authUserId = sessionData.session.user.id;
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ current_auth_id: null })
+    .eq("current_auth_id", authUserId);
+
+  if (error) {
+    throw error;
+  }
+
+  return true;
+};
+
+/**
+ * Legacy function - now just an alias for reference
+ * @deprecated Use createAccountWithPin or loginWithPin instead
+ */
+export const signInWithUsername = async (username) => {
+  throw new Error("Use createAccountWithPin or loginWithPin instead.");
+};
+
 export const fetchProfile = async () => {
   const { data: sessionData } = await supabase.auth.getSession();
   if (!sessionData?.session?.user) {
@@ -55,7 +208,7 @@ export const fetchProfile = async () => {
   const { data, error } = await supabase
     .from("profiles")
     .select("id, username")
-    .eq("id", sessionData.session.user.id)
+    .eq("current_auth_id", sessionData.session.user.id)
     .maybeSingle();
 
   if (error) {

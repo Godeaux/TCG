@@ -282,22 +282,23 @@ export const updateLobbyPlayerNames = async (state, lobby = state.menu?.lobby) =
 };
 
 // ============================================================================
-// LOGIN
+// LOGIN / LOGOUT
 // ============================================================================
 
 /**
- * Handle login form submission
+ * Handle login form submission (existing account)
  * @param {Object} state - Game state
  * @param {string} username - Username to login with
+ * @param {string} pin - PIN for the account
  */
-export const handleLoginSubmit = async (state, username) => {
+export const handleLoginSubmit = async (state, username, pin) => {
   applyMenuLoading(state, true);
   setMenuError(state, null);
   callbacks.onUpdate?.();
 
   try {
     const api = await loadSupabaseApi(state);
-    const profile = await api.signInWithUsername(username);
+    const profile = await api.loginWithPin(username, pin);
     state.menu.profile = profile;
     state.players[0].name = profile.username;
     decksLoaded = false;
@@ -311,6 +312,88 @@ export const handleLoginSubmit = async (state, username) => {
   } finally {
     applyMenuLoading(state, false);
     callbacks.onUpdate?.();
+  }
+};
+
+/**
+ * Handle creating a new account
+ * @param {Object} state - Game state
+ * @param {string} username - Username for new account
+ * @param {string} pin - PIN for new account (4-6 digits)
+ */
+export const handleCreateAccount = async (state, username, pin) => {
+  applyMenuLoading(state, true);
+  setMenuError(state, null);
+  callbacks.onUpdate?.();
+
+  try {
+    const api = await loadSupabaseApi(state);
+    const profile = await api.createAccountWithPin(username, pin);
+    state.menu.profile = profile;
+    state.players[0].name = profile.username;
+    decksLoaded = false;
+    ensureDecksLoaded(state, { force: true });
+    setMenuStage(state, 'main');
+    return { success: true };
+  } catch (error) {
+    const message = error.message || 'Account creation failed.';
+    setMenuError(state, message);
+    return { success: false, error: message };
+  } finally {
+    applyMenuLoading(state, false);
+    callbacks.onUpdate?.();
+  }
+};
+
+/**
+ * Handle logging out of the current profile
+ * @param {Object} state - Game state
+ */
+export const handleLogout = async (state) => {
+  applyMenuLoading(state, true);
+  setMenuError(state, null);
+  callbacks.onUpdate?.();
+
+  try {
+    const api = await loadSupabaseApi(state);
+    await api.logoutProfile();
+
+    // Clear local profile state
+    state.menu.profile = null;
+    state.menu.decks = [];
+    state.menu.lobby = null;
+    state.menu.existingLobby = null;
+
+    // Reset loaded flags
+    profileLoaded = false;
+    decksLoaded = false;
+
+    // Clean up any lobby subscription
+    updateLobbySubscription(state);
+
+    return { success: true };
+  } catch (error) {
+    const message = error.message || 'Logout failed.';
+    setMenuError(state, message);
+    return { success: false, error: message };
+  } finally {
+    applyMenuLoading(state, false);
+    callbacks.onUpdate?.();
+  }
+};
+
+/**
+ * Check if a username exists (for UI to show appropriate action)
+ * @param {Object} state - Game state
+ * @param {string} username - Username to check
+ */
+export const checkUsername = async (state, username) => {
+  try {
+    const api = await loadSupabaseApi(state);
+    const existing = await api.checkUsernameExists(username);
+    return existing;
+  } catch (error) {
+    return null;
   }
 };
 

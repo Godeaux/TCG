@@ -32,6 +32,8 @@ let latestCallbacks = {};
 let setMenuStage = null;
 let setMenuError = null;
 let handleLoginSubmit = null;
+let handleCreateAccount = null;
+let handleLogout = null;
 let handleCreateLobby = null;
 let handleJoinLobby = null;
 let handleLeaveLobby = null;
@@ -133,6 +135,7 @@ const getNavigationElements = () => ({
   menuPlay: document.getElementById("menu-play"),
   menuAI: document.getElementById("menu-ai"),
   menuLogin: document.getElementById("menu-login"),
+  menuLogout: document.getElementById("menu-logout"),
   menuCatalog: document.getElementById("menu-catalog"),
   menuTutorial: document.getElementById("menu-tutorial"),
 
@@ -146,6 +149,7 @@ const getNavigationElements = () => ({
 
   // Login form
   loginForm: document.getElementById("login-form"),
+  loginCreate: document.getElementById("login-create"),
   loginCancel: document.getElementById("login-cancel"),
 
   // Tutorial
@@ -247,6 +251,14 @@ const initNavigation = () => {
     latestCallbacks.onUpdate?.();
   });
 
+  // Main menu: Log Out
+  elements.menuLogout?.addEventListener("click", () => {
+    if (!latestState) {
+      return;
+    }
+    handleLogout(latestState);
+  });
+
   // Main menu: Deck Catalog
   elements.menuCatalog?.addEventListener("click", () => {
     if (!latestState || !latestState.menu.profile) {
@@ -336,13 +348,21 @@ const initNavigation = () => {
     latestCallbacks.onUpdate?.();
   });
 
-  // Login form submission
+  // Login form submission (login to existing account)
   elements.loginForm?.addEventListener("submit", (event) => {
     event.preventDefault();
     if (!latestState) {
       return;
     }
     handleLoginSubmit(latestState);
+  });
+
+  // Create account button
+  elements.loginCreate?.addEventListener("click", () => {
+    if (!latestState) {
+      return;
+    }
+    handleCreateAccount(latestState);
   });
 
   // Login cancel
@@ -539,6 +559,8 @@ export const initializeInput = (options = {}) => {
   setMenuStage = helpers.setMenuStage;
   setMenuError = helpers.setMenuError;
   handleLoginSubmit = helpers.handleLoginSubmit;
+  handleCreateAccount = helpers.handleCreateAccount;
+  handleLogout = helpers.handleLogout;
   handleCreateLobby = helpers.handleCreateLobby;
   handleJoinLobby = helpers.handleJoinLobby;
   handleLeaveLobby = helpers.handleLeaveLobby;

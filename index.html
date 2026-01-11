@@ -110,6 +110,7 @@
           <button class="btn-primary" id="menu-play">Play (one device)</button>
           <button class="btn-primary" id="menu-ai">Play vs. AI</button>
           <button class="btn-secondary" id="menu-login">Login</button>
+          <button class="btn-secondary" id="menu-logout" style="display: none;">Log Out</button>
           <button class="btn-secondary" id="menu-catalog" disabled>Catalog</button>
           <button class="btn-secondary" id="menu-tutorial">Tutorial</button>
         </div>
@@ -343,8 +344,8 @@
         <div class="menu-header">
           <div class="menu-icon">🔐</div>
           <div>
-            <h2>Quick Login</h2>
-            <p class="muted">Enter a username to save decks and join lobbies.</p>
+            <h2 id="login-title">Login</h2>
+            <p class="muted" id="login-subtitle">Enter your username and PIN to login, or create a new account.</p>
           </div>
         </div>
         <form class="menu-form" id="login-form">
@@ -357,9 +358,23 @@
             placeholder="e.g. KrakenQueen"
             required
           />
+          <label class="menu-label" for="login-pin">PIN (4-6 digits)</label>
+          <input
+            class="menu-input"
+            id="login-pin"
+            name="pin"
+            type="password"
+            inputmode="numeric"
+            pattern="[0-9]{4,6}"
+            autocomplete="current-password"
+            placeholder="1234"
+            maxlength="6"
+            required
+          />
           <div class="menu-error" id="login-error" role="alert"></div>
           <div class="menu-actions">
-            <button class="btn-primary" type="submit" id="login-submit">Continue</button>
+            <button class="btn-primary" type="submit" id="login-submit">Login</button>
+            <button class="btn-secondary" type="button" id="login-create">Create Account</button>
             <button class="btn-secondary" type="button" id="login-cancel">Back</button>
           </div>
         </form>
