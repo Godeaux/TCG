@@ -23,6 +23,7 @@ import {
   getCardImagePath,
   preloadCardImages,
 } from '../../cardImages.js';
+import { getCardDefinitionById } from '../../cards/index.js';
 
 // ============================================================================
 // CARD STYLING HELPERS
@@ -181,7 +182,13 @@ const appendTokenDetails = (summary, card) => {
   if (!card?.summons?.length) {
     return summary;
   }
-  const tokenSummaries = card.summons.map((token) => formatTokenSummary(token));
+  const tokenSummaries = card.summons
+    .map((tokenId) => getCardDefinitionById(tokenId))
+    .filter((token) => token)
+    .map((token) => formatTokenSummary(token));
+  if (!tokenSummaries.length) {
+    return summary;
+  }
   return `${summary}<br>***<br>${tokenSummaries.join("<br>")}`;
 };
 
