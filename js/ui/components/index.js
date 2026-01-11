@@ -67,3 +67,21 @@ export {
   createSelectionItem,
   createCardSelectionItem,
 } from './SelectionPanel.js';
+
+// ============================================================================
+// EMOTE COMPONENTS
+// ============================================================================
+
+export {
+  renderEmotePanel,
+  showEmotePanel,
+  hideEmotePanel,
+  toggleEmotePanel,
+  isEmotePanelVisible,
+} from './EmotePanel.js';
+
+export {
+  showEmoteBubble,
+  clearEmoteBubble,
+  clearAllEmoteBubbles,
+} from './EmoteBubble.js';

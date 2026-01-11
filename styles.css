@@ -4110,3 +4110,265 @@ button {
 .victory-overlay.show .victory-subtitle {
   animation-delay: 1.4s;
 }
+
+/* ============================================================================
+   EMOTE SYSTEM
+   ============================================================================ */
+
+/* Emote Toggle Button */
+.emote-toggle {
+  display: none;  /* Hidden by default, shown only in online mode */
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #4a5568, #2d3748);
+  border: 2px solid #718096;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.emote-toggle-left {
+  margin-left: 8px;
+  margin-right: auto;
+}
+
+.emote-toggle-right {
+  margin-right: 8px;
+  margin-left: auto;
+}
+
+.emote-toggle:hover {
+  background: linear-gradient(135deg, #5a6578, #3d4758);
+  border-color: #a0aec0;
+  transform: scale(1.05);
+}
+
+.emote-toggle:active {
+  transform: scale(0.95);
+}
+
+.emote-toggle.active {
+  background: linear-gradient(135deg, #4299e1, #3182ce);
+  border-color: #63b3ed;
+}
+
+.emote-toggle-icon {
+  font-size: 1.1rem;
+}
+
+/* Show emote toggles in online mode */
+.online-mode .emote-toggle {
+  display: flex;
+}
+
+/* Emote Panel */
+.emote-panel {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+  background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+  border: 2px solid #4a5568;
+  border-radius: 16px;
+  padding: 16px;
+  z-index: 1000;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.2s ease;
+  min-width: 280px;
+}
+
+.emote-panel.active {
+  display: block;
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  pointer-events: auto;
+}
+
+.emote-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #4a5568;
+}
+
+.emote-panel-title {
+  color: #e2e8f0;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.emote-squelch-btn {
+  background: transparent;
+  border: 1px solid #4a5568;
+  border-radius: 8px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.emote-squelch-btn:hover {
+  background: #4a5568;
+}
+
+.emote-squelch-btn.active {
+  background: #e53e3e;
+  border-color: #fc8181;
+}
+
+.emote-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.emote-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px 8px;
+  background: linear-gradient(135deg, #2d3748, #1a202c);
+  border: 1px solid #4a5568;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.emote-btn:hover {
+  background: linear-gradient(135deg, #4a5568, #2d3748);
+  border-color: #718096;
+  transform: translateY(-2px);
+}
+
+.emote-btn:active {
+  transform: translateY(0);
+}
+
+.emote-btn-emoji {
+  font-size: 1.5rem;
+}
+
+.emote-btn-label {
+  color: #a0aec0;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Emote Bubble */
+.emote-bubble {
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  transform: translateY(-50%) translateX(-10px);
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  border: 2px solid #63b3ed;
+  border-radius: 16px;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  z-index: 500;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 4px 16px rgba(66, 153, 225, 0.4);
+  margin-left: 8px;
+}
+
+.emote-bubble::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-right: 8px solid #63b3ed;
+}
+
+.emote-bubble::after {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-right: 6px solid #4299e1;
+}
+
+.emote-bubble.visible {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+.emote-bubble.fading {
+  opacity: 0;
+  transform: translateY(-50%) translateX(10px);
+}
+
+/* Player 1 (right side) - bubble appears to the LEFT */
+.emote-bubble-player-1 {
+  left: auto;
+  right: 100%;
+  margin-left: 0;
+  margin-right: 8px;
+  transform: translateY(-50%) translateX(10px);
+}
+
+.emote-bubble-player-1::before {
+  left: auto;
+  right: -8px;
+  border-right: none;
+  border-left: 8px solid #63b3ed;
+}
+
+.emote-bubble-player-1::after {
+  left: auto;
+  right: -6px;
+  border-right: none;
+  border-left: 6px solid #4299e1;
+}
+
+.emote-bubble-player-1.visible {
+  transform: translateY(-50%) translateX(0);
+}
+
+.emote-bubble-player-1.fading {
+  transform: translateY(-50%) translateX(-10px);
+}
+
+.emote-bubble-emoji {
+  font-size: 1.25rem;
+}
+
+.emote-bubble-text {
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* Emote panel backdrop (click outside to close) */
+.emote-panel-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 999;
+}
+
+.emote-panel-backdrop.active {
+  display: block;
+}

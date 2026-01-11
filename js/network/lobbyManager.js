@@ -50,6 +50,7 @@ let callbacks = {
   onDeckComplete: null,     // Called when both players have completed decks
   onApplySync: null,        // Called to apply sync payload to state
   onError: null,            // Called when an error occurs
+  onEmoteReceived: null,    // Called when an emote is received from opponent
 };
 
 /**
@@ -757,6 +758,22 @@ export const updateLobbySubscription = (state, { force = false } = {}) => {
   lobbyChannel.on('broadcast', { event: 'sync_state' }, ({ payload }) => {
     callbacks.onApplySync?.(state, payload);
     callbacks.onUpdate?.();
+  });
+
+  // Handle emote broadcasts
+  lobbyChannel.on('broadcast', { event: 'emote' }, ({ payload }) => {
+    // Ignore emotes from self
+    if (payload?.senderId === state.menu?.profile?.id) {
+      return;
+    }
+    // Ignore if squelched
+    if (state.emotes?.squelched) {
+      return;
+    }
+    // Determine which player sent the emote (opponent is the other player)
+    const isHost = state.menu?.lobby?.host_id === state.menu?.profile?.id;
+    const senderPlayerIndex = isHost ? 1 : 0;  // If I'm host (P1), sender is guest (P2)
+    callbacks.onEmoteReceived?.(payload.emoteId, senderPlayerIndex);
   });
 
   // Initial refresh

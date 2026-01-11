@@ -98,6 +98,9 @@ export const createGameState = () => {
     combat: {
       declaredAttacks: [],
     },
+    emotes: {
+      squelched: false,  // Whether opponent emotes are muted
+    },
   };
 };
 

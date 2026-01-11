@@ -42,6 +42,7 @@ export {
   broadcastSyncState,
   saveGameStateToDatabase,
   requestSyncFromOpponent,
+  broadcastEmote,
 } from './sync.js';
 
 // ============================================================================
