@@ -23,6 +23,7 @@ import { createCardInstance } from '../../cardTypes.js';
 import { consumePrey } from '../../game/consumption.js';
 import { cleanupDestroyed } from '../../game/combat.js';
 import { resolveCardEffect } from '../../cards/index.js';
+import { broadcastHandDrag } from '../../network/sync.js';
 
 // ============================================================================
 // MODULE-LEVEL STATE
@@ -37,6 +38,11 @@ let draggedCardElement = null;
 let originalParent = null;
 let originalIndex = -1;
 let currentDragTargetId = null; // Track current hover target ID to prevent flickering
+let draggedCardHandIndex = -1;  // Track hand index for drag broadcasting
+
+// Drag broadcast throttling
+let lastDragBroadcast = 0;
+const DRAG_BROADCAST_THROTTLE_MS = 50; // ~20 updates per second
 
 // References to external state and callbacks (set via initialize)
 let latestState = null;
@@ -332,6 +338,21 @@ const clearDragVisuals = () => {
     el.classList.remove('valid-target', 'invalid-target', 'valid-drop-zone', 'consumption-target', 'spell-target', 'spell-drop-zone');
   });
   currentDragTargetId = null;
+};
+
+/**
+ * Get relative position (0-1 range) from mouse event
+ * Used for broadcasting drag position to opponent
+ */
+const getRelativePosition = (event) => {
+  const gameContainer = document.querySelector('.game-container');
+  if (!gameContainer) return null;
+
+  const rect = gameContainer.getBoundingClientRect();
+  return {
+    x: (event.clientX - rect.left) / rect.width,
+    y: (event.clientY - rect.top) / rect.height,
+  };
 };
 
 /**
@@ -786,15 +807,40 @@ const handleDragStart = (event) => {
   originalParent = cardElement.parentElement;
   originalIndex = Array.from(originalParent.children).indexOf(cardElement);
 
+  // Track hand index for drag broadcasting
+  const activePlayer = getActivePlayer(latestState);
+  draggedCardHandIndex = activePlayer?.hand?.findIndex(c => c?.instanceId === instanceId) ?? -1;
+
   cardElement.classList.add('dragging');
   event.dataTransfer.effectAllowed = 'move';
   event.dataTransfer.setData('text/plain', instanceId);
+
+  // Broadcast drag start to opponent (if dragging from hand)
+  if (latestState && draggedCardHandIndex >= 0) {
+    const position = getRelativePosition(event);
+    if (position) {
+      broadcastHandDrag(latestState, {
+        cardIndex: draggedCardHandIndex,
+        position,
+        isDragging: true,
+      });
+    }
+  }
 };
 
 /**
  * Handle drag end event
  */
-const handleDragEnd = () => {
+const handleDragEnd = (event) => {
+  // Broadcast drag end to opponent
+  if (latestState && draggedCardHandIndex >= 0) {
+    broadcastHandDrag(latestState, {
+      cardIndex: draggedCardHandIndex,
+      position: null,
+      isDragging: false,
+    });
+  }
+
   if (draggedCardElement) {
     draggedCardElement.classList.remove('dragging');
   }
@@ -803,6 +849,7 @@ const handleDragEnd = () => {
   draggedCardElement = null;
   originalParent = null;
   originalIndex = -1;
+  draggedCardHandIndex = -1;
 };
 
 /**
@@ -845,6 +892,22 @@ const handleDragOver = (event) => {
   event.dataTransfer.dropEffect = 'move';
 
   if (!draggedCardElement || !draggedCard || !latestState) return;
+
+  // Broadcast drag position to opponent (throttled)
+  if (draggedCardHandIndex >= 0) {
+    const now = Date.now();
+    if (now - lastDragBroadcast >= DRAG_BROADCAST_THROTTLE_MS) {
+      lastDragBroadcast = now;
+      const position = getRelativePosition(event);
+      if (position) {
+        broadcastHandDrag(latestState, {
+          cardIndex: draggedCardHandIndex,
+          position,
+          isDragging: true,
+        });
+      }
+    }
+  }
 
   // Check if this is a spell card being dragged
   const isSpell = draggedCard.type === 'Spell' || draggedCard.type === 'Free Spell';

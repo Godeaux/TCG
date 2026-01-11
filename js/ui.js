@@ -901,20 +901,28 @@ const initHandPreview = () => {
 /**
  * Handle opponent drag events
  * Shows a floating face-down card following the drag position
+ * Uses same relative coordinate system as cursor tracking
  */
 const handleOpponentDrag = (dragInfo) => {
   const { cardIndex, position, isDragging } = dragInfo;
   const preview = document.getElementById('opponent-drag-preview');
-  if (!preview) return;
+  const gameContainer = document.querySelector('.game-container');
+  if (!preview || !gameContainer) return;
 
   if (isDragging && position) {
     // Update opponent hand strip to show dragging state
     updateOpponentDrag(cardIndex);
 
+    // Convert relative position (0-1) to local pixels
+    // Mirror Y-axis: opponent's bottom becomes our top
+    const rect = gameContainer.getBoundingClientRect();
+    const localX = rect.left + (position.x * rect.width);
+    const localY = rect.top + ((1 - position.y) * rect.height);
+
     // Show floating card at drag position
     preview.classList.add('active');
-    preview.style.left = `${position.x}px`;
-    preview.style.top = `${position.y}px`;
+    preview.style.left = `${localX}px`;
+    preview.style.top = `${localY}px`;
 
     // Ensure preview has card back content
     if (!preview.querySelector('.card-back')) {
@@ -947,10 +955,11 @@ let cursorVelocityY = 0;
 let cursorAnimationFrame = null;
 let cursorInitialized = false;
 
-// Physics constants for smooth movement
-const CURSOR_SMOOTHING = 0.08; // Lower = smoother but slower to reach target
-const CURSOR_DAMPING = 0.85;   // Velocity decay per frame (0.85 = smooth deceleration)
-const CURSOR_MAX_VELOCITY = 50; // Cap velocity to prevent overshooting
+// Physics constants for smooth movement (tuned to prevent jiggle)
+const CURSOR_SMOOTHING = 0.04;      // Lower = smoother, more gradual acceleration
+const CURSOR_DAMPING = 0.75;        // Higher friction for smoother deceleration
+const CURSOR_MAX_VELOCITY = 25;     // Lower cap to prevent overshooting
+const CURSOR_SETTLE_THRESHOLD = 2;  // Snap to target when this close (in pixels)
 
 const handleOpponentCursorMove = (position) => {
   const cursor = document.getElementById('opponent-cursor');
@@ -1000,29 +1009,38 @@ const handleOpponentCursorMove = (position) => {
  * Creates natural, fluid movement that curves toward new targets
  */
 const animateCursor = (cursor) => {
-  // Calculate acceleration toward target (spring force)
+  // Calculate distance to target
   const dx = cursorTargetX - cursorCurrentX;
   const dy = cursorTargetY - cursorCurrentY;
+  const distanceToTarget = Math.sqrt(dx * dx + dy * dy);
 
-  // Add acceleration based on distance to target
-  cursorVelocityX += dx * CURSOR_SMOOTHING;
-  cursorVelocityY += dy * CURSOR_SMOOTHING;
+  // Snap to target when very close to prevent jiggle
+  if (distanceToTarget < CURSOR_SETTLE_THRESHOLD) {
+    cursorCurrentX = cursorTargetX;
+    cursorCurrentY = cursorTargetY;
+    cursorVelocityX = 0;
+    cursorVelocityY = 0;
+  } else {
+    // Add acceleration based on distance to target (spring force)
+    cursorVelocityX += dx * CURSOR_SMOOTHING;
+    cursorVelocityY += dy * CURSOR_SMOOTHING;
 
-  // Apply damping (friction) for smooth deceleration
-  cursorVelocityX *= CURSOR_DAMPING;
-  cursorVelocityY *= CURSOR_DAMPING;
+    // Apply damping (friction) for smooth deceleration
+    cursorVelocityX *= CURSOR_DAMPING;
+    cursorVelocityY *= CURSOR_DAMPING;
 
-  // Cap velocity to prevent overshooting
-  const speed = Math.sqrt(cursorVelocityX * cursorVelocityX + cursorVelocityY * cursorVelocityY);
-  if (speed > CURSOR_MAX_VELOCITY) {
-    const scale = CURSOR_MAX_VELOCITY / speed;
-    cursorVelocityX *= scale;
-    cursorVelocityY *= scale;
+    // Cap velocity to prevent overshooting
+    const speed = Math.sqrt(cursorVelocityX * cursorVelocityX + cursorVelocityY * cursorVelocityY);
+    if (speed > CURSOR_MAX_VELOCITY) {
+      const scale = CURSOR_MAX_VELOCITY / speed;
+      cursorVelocityX *= scale;
+      cursorVelocityY *= scale;
+    }
+
+    // Apply velocity to position
+    cursorCurrentX += cursorVelocityX;
+    cursorCurrentY += cursorVelocityY;
   }
-
-  // Apply velocity to position
-  cursorCurrentX += cursorVelocityX;
-  cursorCurrentY += cursorVelocityY;
 
   // Apply position
   cursor.style.left = `${cursorCurrentX}px`;
@@ -2239,7 +2257,22 @@ const triggerPlayTraps = (state, creature, onUpdate, onResolved) => {
 const updateActionBar = (onNextPhase) => {
   const turnBadge = document.getElementById("turn-badge");
   if (turnBadge) {
-    turnBadge.onclick = onNextPhase;
+    turnBadge.onclick = () => {
+      // Check if there's an active selection that needs to be resolved first
+      if (isSelectionActive()) {
+        // Show visual feedback that selection must be completed
+        const actionBar = document.getElementById("action-bar");
+        if (actionBar) {
+          actionBar.classList.add("selection-blocked");
+          // Remove the class after animation completes
+          setTimeout(() => {
+            actionBar.classList.remove("selection-blocked");
+          }, 600);
+        }
+        return; // Block phase advancement
+      }
+      onNextPhase();
+    };
   }
 };
 

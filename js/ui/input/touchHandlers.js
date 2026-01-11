@@ -22,6 +22,8 @@ import {
   updateDropTargetVisuals,
   getLatestState,
 } from './dragAndDrop.js';
+import { broadcastHandDrag } from '../../network/sync.js';
+import { getActivePlayer } from '../../state/gameState.js';
 
 // ============================================================================
 // MODULE-LEVEL STATE
@@ -34,6 +36,11 @@ let touchStartPos = { x: 0, y: 0 };
 let currentTouchPos = { x: 0, y: 0 };
 let isDragging = false;
 let dragPreview = null;
+let touchedCardHandIndex = -1;  // Track hand index for drag broadcasting
+
+// Drag broadcast throttling
+let lastTouchDragBroadcast = 0;
+const TOUCH_DRAG_BROADCAST_THROTTLE_MS = 50;
 
 /**
  * Check if a touch drag operation is currently in progress
@@ -86,6 +93,21 @@ const removeDragPreview = (preview) => {
   if (preview && preview.parentNode) {
     preview.parentNode.removeChild(preview);
   }
+};
+
+/**
+ * Get relative position (0-1 range) from touch coordinates
+ * Used for broadcasting drag position to opponent
+ */
+const getRelativePositionFromTouch = (clientX, clientY) => {
+  const gameContainer = document.querySelector('.game-container');
+  if (!gameContainer) return null;
+
+  const rect = gameContainer.getBoundingClientRect();
+  return {
+    x: (clientX - rect.left) / rect.width,
+    y: (clientY - rect.top) / rect.height,
+  };
 };
 
 // ============================================================================
@@ -239,11 +261,29 @@ const handleTouchMove = (e) => {
     isDragging = true;
     touchedCardElement.classList.add('dragging');
 
+    // Track hand index for drag broadcasting
+    const state = getLatestState();
+    const activePlayer = getActivePlayer(state);
+    const instanceId = touchedCardElement.dataset.instanceId;
+    touchedCardHandIndex = activePlayer?.hand?.findIndex(c => c?.instanceId === instanceId) ?? -1;
+
     // Create drag preview
     dragPreview = createDragPreview(touchedCardElement, touch.clientX, touch.clientY);
 
     // Allow overflow on hand containers for mobile dragging
     addDraggingClasses();
+
+    // Broadcast drag start to opponent
+    if (state && touchedCardHandIndex >= 0) {
+      const position = getRelativePositionFromTouch(touch.clientX, touch.clientY);
+      if (position) {
+        broadcastHandDrag(state, {
+          cardIndex: touchedCardHandIndex,
+          position,
+          isDragging: true,
+        });
+      }
+    }
 
     // Trigger dragstart event for any listeners that need it
     const dragStartEvent = new DragEvent('dragstart', {
@@ -266,6 +306,23 @@ const handleTouchMove = (e) => {
     // Update drag preview position
     updateDragPreviewPosition(dragPreview, touch.clientX, touch.clientY);
 
+    // Broadcast drag position to opponent (throttled)
+    const state = getLatestState();
+    if (state && touchedCardHandIndex >= 0) {
+      const now = Date.now();
+      if (now - lastTouchDragBroadcast >= TOUCH_DRAG_BROADCAST_THROTTLE_MS) {
+        lastTouchDragBroadcast = now;
+        const position = getRelativePositionFromTouch(touch.clientX, touch.clientY);
+        if (position) {
+          broadcastHandDrag(state, {
+            cardIndex: touchedCardHandIndex,
+            position,
+            isDragging: true,
+          });
+        }
+      }
+    }
+
     // Update visual feedback for drag targets
     const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
     updateDropTargetVisuals(elementBelow, touchedCard, touchedCardElement);
@@ -282,6 +339,15 @@ const handleTouchEnd = (e) => {
     const touch = e.changedTouches[0];
     const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
     const state = getLatestState();
+
+    // Broadcast drag end to opponent
+    if (state && touchedCardHandIndex >= 0) {
+      broadcastHandDrag(state, {
+        cardIndex: touchedCardHandIndex,
+        position: null,
+        isDragging: false,
+      });
+    }
 
     // Handle drop based on target
     if (elementBelow && touchedCard) {
@@ -320,6 +386,7 @@ const handleTouchEnd = (e) => {
   touchedCard = null;
   touchedCardElement = null;
   isDragging = false;
+  touchedCardHandIndex = -1;
 };
 
 /**
@@ -327,6 +394,18 @@ const handleTouchEnd = (e) => {
  */
 const handleTouchCancel = (e) => {
   if (touchedCardElement) {
+    // Broadcast drag end to opponent if was dragging
+    if (isDragging) {
+      const state = getLatestState();
+      if (state && touchedCardHandIndex >= 0) {
+        broadcastHandDrag(state, {
+          cardIndex: touchedCardHandIndex,
+          position: null,
+          isDragging: false,
+        });
+      }
+    }
+
     touchedCardElement.classList.remove('dragging');
     clearDragVisuals();
 
@@ -340,6 +419,7 @@ const handleTouchCancel = (e) => {
     // Reset state
     touchedCard = null;
     touchedCardElement = null;
+    touchedCardHandIndex = -1;
     isDragging = false;
   }
 };

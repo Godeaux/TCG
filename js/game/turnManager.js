@@ -144,6 +144,25 @@ export const advancePhase = (state) => {
   const previousPhase = state.phase;
   state.phase = PHASES[nextIndex];
 
+  // Handle Before Combat auto-skip (streamlined turn flow)
+  // If no before-combat effects exist, skip directly to Combat
+  if (state.phase === "Before Combat") {
+    const player = state.players[state.activePlayerIndex];
+    const beforeCombatCreatures = player.field.filter((creature) => creature?.onBeforeCombat || creature?.effects?.onBeforeCombat);
+    if (beforeCombatCreatures.length === 0) {
+      // No before-combat effects, skip to Combat
+      state.phase = "Combat";
+    } else {
+      // Has effects, set up queue for processing
+      state.beforeCombatQueue = beforeCombatCreatures;
+      state.beforeCombatProcessing = false;
+      logPlainMessage(state, `━━━ PHASE: BEFORE COMBAT ━━━`);
+      logGameAction(state, PHASE, `${beforeCombatCreatures.length} before-combat effect(s) queued: ${beforeCombatCreatures.map(c => c.name).join(', ')}`);
+      state.broadcast?.(state);
+      return; // Wait for effects to be resolved before continuing to Combat
+    }
+  }
+
   // Log phase transition using plain message for separator bars
   logPlainMessage(state, `━━━ PHASE: ${state.phase.toUpperCase()} ━━━`);
 
@@ -174,19 +193,14 @@ export const advancePhase = (state) => {
       logGameAction(state, BUFF, `${player.name} draws a card. (Hand: ${handSize} → ${handSize + 1}, Deck: ${deckSize} → ${deckSize - 1})`);
     } else {
       logGameAction(state, PHASE, `${player.name} has no cards left in deck.`);
-      state.phase = "Main 1";
-      logPlainMessage(state, `━━━ PHASE: MAIN 1 ━━━`);
     }
+
+    // Auto-advance from Draw to Main 1 (streamlined turn flow)
+    state.phase = "Main 1";
+    logPlainMessage(state, `━━━ PHASE: MAIN 1 ━━━`);
   }
 
-  if (state.phase === "Before Combat") {
-    const player = state.players[state.activePlayerIndex];
-    state.beforeCombatQueue = player.field.filter((creature) => creature?.onBeforeCombat || creature?.effects?.onBeforeCombat);
-    state.beforeCombatProcessing = false;
-    if (state.beforeCombatQueue.length > 0) {
-      logGameAction(state, PHASE, `${state.beforeCombatQueue.length} before-combat effect(s) queued: ${state.beforeCombatQueue.map(c => c.name).join(', ')}`);
-    }
-  }
+  // Before Combat is now handled earlier in advancePhase with auto-skip logic
 
   if (state.phase === "Combat") {
     const player = state.players[state.activePlayerIndex];
@@ -252,14 +266,20 @@ export const endTurn = (state) => {
   state.activePlayerIndex = (state.activePlayerIndex + 1) % 2;
   state.phase = "Start";
   state.turn += 1;
-  state.passPending = true;
+  state.passPending = true; // Show pass overlay for local 2-player (cleared by UI for online/AI)
   resetCombat(state);
 
   logPlainMessage(state, `~•~•~•~•~•~•~•~•`);
   logGameAction(state, PHASE, `Turn ${state.turn - 1} complete. Passing to ${state.players[state.activePlayerIndex].name}...`);
   logPlainMessage(state, `~•~•~•~•~•~•~•~•`);
 
+  // Run start-of-turn effects
+  logPlainMessage(state, `━━━ PHASE: START ━━━`);
   startTurn(state);
+
+  // Auto-advance through Start → Draw → Main 1 (streamlined turn flow)
+  // advancePhase will handle Draw processing and auto-advance to Main 1
+  advancePhase(state);
 
   // Broadcast turn change so rejoining players get the latest state
   state.broadcast?.(state);
