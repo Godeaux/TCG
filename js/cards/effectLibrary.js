@@ -687,10 +687,12 @@ export const selectPredatorForKeyword = (keyword) => (context) => {
   return makeTargetedSelection({
     title: `Choose a predator to gain ${keyword}`,
     candidates: targets.map(t => ({ label: t.name, value: t })),
-    onSelect: (target) =>
-      handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+    onSelect: (target) => {
+      log(`${target.name} gains ${keyword}.`);
+      return handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
         addKeyword: { creature: target, keyword }
-      }
+      };
+    }
   });
 };
 
@@ -733,10 +735,12 @@ export const selectEnemyToStripAbilities = () => (context) => {
   return makeTargetedSelection({
     title: "Choose an enemy creature to strip abilities",
     candidates: targets.map(t => ({ label: t.name, value: t })),
-    onSelect: (target) =>
-      handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+    onSelect: (target) => {
+      log(`Targets ${target.name}.`);
+      return handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
         removeAbilities: target
-      }
+      };
+    }
   });
 };
 
@@ -777,10 +781,12 @@ export const selectEnemyPreyToKill = () => (context) => {
   return makeTargetedSelection({
     title: "Choose an enemy prey to kill",
     candidates: targets.map(t => ({ label: t.name, value: t })),
-    onSelect: (target) =>
-      handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+    onSelect: (target) => {
+      log(`Targets ${target.name}.`);
+      return handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
         killTargets: [target]
-      }
+      };
+    }
   });
 };
 
@@ -799,10 +805,12 @@ export const selectEnemyToKill = () => (context) => {
   return makeTargetedSelection({
     title: "Choose an enemy creature to kill",
     candidates: targets.map(t => ({ label: t.name, value: t })),
-    onSelect: (target) =>
-      handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+    onSelect: (target) => {
+      log(`Targets ${target.name}.`);
+      return handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
         killTargets: [target]
-      }
+      };
+    }
   });
 };
 
@@ -863,10 +871,12 @@ export const selectCreatureForDamage = (amount, label = "damage") => (context) =
   return makeTargetedSelection({
     title: `Choose a target for ${amount} ${label}`,
     candidates: candidates.map(c => ({ label: c.name, value: c })),
-    onSelect: (target) =>
-      handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+    onSelect: (target) => {
+      log(`Targets ${target.name}.`);
+      return handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
         damageCreature: { creature: target, amount, sourceLabel: label }
-      }
+      };
+    }
   });
 };
 
@@ -900,6 +910,7 @@ export const selectTargetForDamage = (amount, label = "damage") => (context) => 
         log(`Deals ${amount} ${label} to rival.`);
         return { damageOpponent: amount };
       }
+      log(`Targets ${selection.creature.name}.`);
       return handleTargetedResponse({
         target: selection.creature,
         source: null,
@@ -929,10 +940,12 @@ export const selectEnemyPreyToConsume = () => (context) => {
   return makeTargetedSelection({
     title: "Choose an enemy prey to consume",
     candidates: targets.map(t => ({ label: t.name, value: t, card: t })),
-    onSelect: (target) =>
-      handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+    onSelect: (target) => {
+      log(`Targets ${target.name}.`);
+      return handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
         consumeEnemyPrey: { predator: creature, prey: target, opponentIndex }
-      },
+      };
+    },
     renderCards: true
   });
 };
@@ -955,10 +968,12 @@ export const selectCreatureToRestore = () => (context) => {
   return makeTargetedSelection({
     title: "Choose a creature to regenerate",
     candidates: candidates.map(c => ({ label: c.name, value: c, card: c })),
-    onSelect: (target) =>
-      handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+    onSelect: (target) => {
+      log(`Targets ${target.name}.`);
+      return handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
         restoreCreature: { creature: target }
-      },
+      };
+    },
     renderCards: true
   });
 };
@@ -1303,8 +1318,8 @@ const resolveOptionEffect = (effectDef, context) => {
  * Set a field spell
  * @param {string} cardId - Field spell card ID
  */
-export const setFieldSpell = (cardId) => ({ log, playerIndex }) => {
-  log(`Field spell is played.`);
+export const setFieldSpell = (cardId) => ({ playerIndex }) => {
+  // Log is handled in effects.js resolveEffectResult with full card name
   return { setFieldSpell: { ownerIndex: playerIndex, cardData: cardId } };
 };
 
@@ -1331,10 +1346,12 @@ export const selectEnemyToParalyze = () => (context) => {
   return makeTargetedSelection({
     title: "Choose an enemy creature to paralyze",
     candidates: targets.map(t => ({ label: t.name, value: t })),
-    onSelect: (target) =>
-      handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+    onSelect: (target) => {
+      log(`Targets ${target.name}.`);
+      return handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
         paralyzeCreature: { creature: target }
-      }
+      };
+    }
   });
 };
 
@@ -1415,10 +1432,12 @@ export const selectEnemyForKeyword = (keyword) => (context) => {
   return makeTargetedSelection({
     title: `Choose an enemy creature to gain ${keyword}`,
     candidates: targets.map(t => ({ label: t.name, value: t })),
-    onSelect: (target) =>
-      handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+    onSelect: (target) => {
+      log(`${target.name} gains ${keyword}.`);
+      return handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
         addKeyword: { creature: target, keyword }
-      }
+      };
+    }
   });
 };
 
@@ -1439,10 +1458,12 @@ export const selectEnemyCreatureForDamage = (amount, label = "damage") => (conte
   return makeTargetedSelection({
     title: `Choose an enemy creature for ${amount} ${label}`,
     candidates: targets.map(t => ({ label: t.name, value: t })),
-    onSelect: (target) =>
-      handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+    onSelect: (target) => {
+      log(`Targets ${target.name}.`);
+      return handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
         damageCreature: { creature: target, amount, sourceLabel: label }
-      }
+      };
+    }
   });
 };
 
@@ -1465,10 +1486,12 @@ export const selectCreatureToCopy = () => (context) => {
     title: "Choose a creature to copy",
     candidates: candidates.map(c => ({ label: c.name, value: c, card: c })),
     renderCards: true,
-    onSelect: (target) =>
-      handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+    onSelect: (target) => {
+      log(`Copies ${target.name}.`);
+      return handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
         copyCreature: { target, playerIndex }
-      }
+      };
+    }
   });
 };
 
@@ -1492,10 +1515,12 @@ export const selectPreyForBuff = (stats) => (context) => {
   return makeTargetedSelection({
     title: `Choose a prey to gain +${attack}/+${health}`,
     candidates: prey.map(t => ({ label: t.name, value: t })),
-    onSelect: (target) =>
-      handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+    onSelect: (target) => {
+      log(`Targets ${target.name}.`);
+      return handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
         buffCreature: { creature: target, attack, health }
-      }
+      };
+    }
   });
 };
 
@@ -1518,10 +1543,12 @@ export const selectCreatureToTransform = (newCardId) => (context) => {
   return makeTargetedSelection({
     title: "Choose a creature to transform",
     candidates: candidates.map(c => ({ label: c.name, value: c })),
-    onSelect: (target) =>
-      handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+    onSelect: (target) => {
+      log(`Targets ${target.name}.`);
+      return handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
         transformCard: { card: target, newCardData: newCardId }
-      }
+      };
+    }
   });
 };
 
@@ -1542,6 +1569,7 @@ export const selectEnemyToSteal = (damage = 0) => (context) => {
     title: "Choose an enemy creature",
     candidates: targets.map(t => ({ label: t.name, value: t })),
     onSelect: (target) => {
+      log(`Targets ${target.name}.`);
       const response = handleTargetedResponse({ target, source: null, log, player, opponent, state });
       if (response?.returnToHand) return response;
 

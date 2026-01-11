@@ -767,7 +767,7 @@
         "effect": {
           "type": "setFieldSpell",
           "params": {
-            "cardId": "fish-field-magnificent-sea-anemone"
+            "cardId": "fish-spell-magnificent-sea-anemone"
           }
         },
         "onEnd": {
