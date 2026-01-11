@@ -456,32 +456,29 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
     if (Array.isArray(payload.setup.rolls)) {
       console.log("Processing roll sync:", payload.setup.rolls);
       payload.setup.rolls.forEach((roll, index) => {
-        // Enhanced validation with logging
+        // If incoming roll is null, do NOT clear existing local rolls.
+        // A null in the payload just means the sender didn't know about that roll yet.
+        // This prevents race conditions where out-of-order syncs clear valid rolls.
         if (roll === null || roll === undefined) {
-          console.log(`Received null/undefined roll for Player ${index + 1}`);
-          // Only apply if current state is also null/undefined or if this is a reset
-          if (state.setup.rolls[index] !== null) {
-            console.log(`Clearing roll for Player ${index + 1} due to sync`);
-            state.setup.rolls[index] = null;
-          }
+          console.log(`Received null/undefined roll for Player ${index + 1}, preserving local state`);
           return;
         }
 
-        const validRoll = Number.isInteger(roll) && roll >= 1 && roll <= 6;
+        const validRoll = Number.isInteger(roll) && roll >= 1 && roll <= 10;
         if (!validRoll) {
           console.warn(`Invalid roll value for Player ${index + 1}:`, roll);
           return;
         }
 
-        // Apply roll
+        // Apply roll only if we don't already have one for this player
         const existingRoll = state.setup.rolls[index];
         if (existingRoll === null || existingRoll === undefined) {
           console.log(`Applying roll ${roll} for Player ${index + 1}`);
           state.setup.rolls[index] = roll;
         } else if (existingRoll !== roll) {
-          console.warn(`Roll conflict for Player ${index + 1}: have ${existingRoll}, received ${roll}`);
-          // Take the newer value (from sync)
-          state.setup.rolls[index] = roll;
+          // Both have different values - keep the existing one to prevent overwrites
+          // The authoritative state will come from the database or be reconciled via tie logic
+          console.warn(`Roll conflict for Player ${index + 1}: keeping local ${existingRoll}, ignoring remote ${roll}`);
         }
       });
     }
@@ -512,7 +509,7 @@ export const checkAndRecoverSetupState = (state, options = {}) => {
 
   // Check if both players have valid rolls but stage is still "rolling"
   const hasValidRolls = state.setup.rolls.every(roll =>
-    roll !== null && typeof roll === 'number' && roll >= 1 && roll <= 6
+    roll !== null && typeof roll === 'number' && roll >= 1 && roll <= 10
   );
 
   if (hasValidRolls) {
@@ -541,7 +538,7 @@ export const checkAndRecoverSetupState = (state, options = {}) => {
 
   // Check if rolls have been invalid for too long (stuck state)
   const hasInvalidRolls = state.setup.rolls.some(roll =>
-    roll !== null && (typeof roll !== 'number' || roll < 1 || roll > 6)
+    roll !== null && (typeof roll !== 'number' || roll < 1 || roll > 10)
   );
 
   if (hasInvalidRolls) {
