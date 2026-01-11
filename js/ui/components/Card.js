@@ -366,27 +366,39 @@ const adjustTextToFit = (cardElement, inner) => {
     }
   }
 
-  // Adjust keywords and effect area to fit without overflow
-  if (contentArea && (keywordsElement || effectElement)) {
-    // Check if content overflows vertically
+  // Adjust effect text to fit available space
+  // This is more aggressive - we want the full effect text visible when possible
+  if (effectElement && effectElement.textContent.trim()) {
+    let fontSize = 9; // Start at base font size
+    const minFontSize = 6;
+    const step = 0.5;
     let attempts = 0;
-    const maxAttempts = 20;
+    const maxAttempts = 10;
 
-    while (contentArea.scrollHeight > contentArea.clientHeight && attempts < maxAttempts) {
+    // Check if text is overflowing (scrollHeight > clientHeight means content is clipped)
+    while (attempts < maxAttempts && fontSize > minFontSize) {
+      // Force layout recalc
+      effectElement.style.fontSize = `${fontSize}px`;
+
+      // Check if content is being clipped (line-clamp is active)
+      // scrollHeight will be larger than clientHeight when text is clamped
+      if (effectElement.scrollHeight <= effectElement.clientHeight + 2) {
+        break; // Text fits, we're done
+      }
+
+      fontSize -= step;
       attempts++;
-      let fontSize = parseFloat(effectElement?.style.fontSize || keywordsElement?.style.fontSize) || 11;
-      const minFontSize = 6;
+    }
+  }
 
-      if (fontSize <= minFontSize) break;
+  // Adjust keywords if they overflow
+  if (keywordsElement && keywordsElement.scrollWidth > keywordsElement.clientWidth) {
+    let fontSize = 11;
+    const minFontSize = 7;
 
+    while (fontSize > minFontSize && keywordsElement.scrollWidth > keywordsElement.clientWidth) {
       fontSize -= 0.5;
-
-      if (keywordsElement) {
-        keywordsElement.style.fontSize = `${fontSize}px`;
-      }
-      if (effectElement) {
-        effectElement.style.fontSize = `${fontSize}px`;
-      }
+      keywordsElement.style.fontSize = `${fontSize}px`;
     }
   }
 

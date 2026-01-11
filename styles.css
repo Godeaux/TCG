@@ -518,18 +518,19 @@ button {
 .hand-panel {
   display: flex;
   align-items: stretch;
-  padding: clamp(6px, 1vw, 12px) clamp(8px, 1.2vw, 16px) clamp(10px, 1.5vw, 20px);
+  padding: 6px 12px 10px;
   background: linear-gradient(180deg, rgba(10, 14, 20, 0.4), rgba(10, 14, 20, 0.92));
   border-top: 1px solid var(--border-subtle);
   box-shadow: 0 -12px 24px rgba(0, 0, 0, 0.35);
-  border-radius: clamp(12px, 2vw, 20px) clamp(12px, 2vw, 20px) 0 0;
-  overflow-x: hidden; /* Prevent horizontal growth beyond center column */
-  overflow-y: visible !important; /* Allow upward hover/expansion */
+  border-radius: 16px 16px 0 0;
+  overflow: visible; /* Allow cards to extend upward on hover */
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  min-height: var(--min-hand-height);
-  max-height: 22vh; /* Room for readable cards - expand on hover */
+  /* Fixed pixel height - generous to give cards room at standard zoom */
+  height: 260px;
+  min-height: 260px;
+  max-height: 260px;
   min-width: 0;
   flex-shrink: 0; /* Prevent hand from being crushed by flex layout */
 }
@@ -537,27 +538,28 @@ button {
 .hand-container {
   display: flex;
   flex-direction: column;
-  gap: clamp(6px, 1vw, 12px);
+  gap: 4px;
   height: 100%;
   width: 100%;
   min-height: 0;
   min-width: 0;
   max-width: 100%;
-  overflow: visible !important; /* Force visible to prevent card cutoff */
+  overflow: visible; /* Allow cards to extend upward on hover */
 }
 
 .hand-header {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 /* Hand expansion toggle removed - using compact hand by default */
 
 .hand-title {
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: 16px;
   letter-spacing: 0.05em;
 }
 
@@ -572,14 +574,12 @@ button {
   justify-content: center; /* Center the card fan like Hearthstone/Balatro */
   flex-wrap: nowrap;
   gap: 0;
-  overflow-x: visible; /* Let cards overflow rather than scroll */
-  overflow-y: visible;
-  padding: 0 clamp(8px, 1.5vw, 20px) clamp(4px, 0.8vw, 12px);
-  min-height: 0;
+  overflow: visible; /* Let cards overflow for hover effects */
+  padding: 0 16px 4px;
   width: 100%;
-  flex: 1;
+  flex: 1; /* Fill remaining height after header */
   min-width: 0;
-  max-width: 100%; /* Use available horizontal space - overlap only when needed */
+  max-width: 100%;
   margin: 0 auto;
   box-sizing: border-box;
   position: relative;
@@ -588,9 +588,12 @@ button {
 
 .hand-grid .card {
   flex: 0 0 auto; /* Don't shrink - use overlap instead */
-  width: clamp(90px, 12vw, 130px); /* Readable size - overlap dynamically calculated */
-  min-width: 80px; /* Minimum width to remain readable */
-  aspect-ratio: 5 / 7; /* Standard playing card ratio */
+  /* Size by height - cards fill container height, width derived from aspect ratio */
+  height: 100%;
+  width: auto;
+  aspect-ratio: 5 / 7; /* Standard playing card ratio - width = height * 5/7 */
+  min-width: 70px; /* Minimum width to remain readable */
+  max-width: 130px; /* Cap width so cards don't get too wide */
   margin-left: calc(var(--hand-overlap, 0px) * -1);
   transform-origin: bottom center;
   /* Fan effect: rotate based on position, offset creates arc */
@@ -603,27 +606,17 @@ button {
 
 /* Dynamic hand expansion mode - for 7+ cards */
 .battlefield-center-column.hand-expanded .battlefield-layout {
-  grid-template-rows: minmax(140px, 1.5fr) minmax(140px, 1fr); /* Expanded hand takes more space */
   flex: 0 1 auto; /* Allow more shrinking to make room for hand */
 }
 
 .battlefield-center-column.hand-expanded .hand-panel {
-  overflow: visible;
-  min-height: clamp(100px, 18vh, 150px);
-  max-height: 25vh;
-}
-
-.battlefield-center-column.hand-expanded .hand-grid {
-  align-items: flex-end;
-  min-height: 80px;
-}
-
-.battlefield-center-column.hand-expanded .hand-grid .card {
-  width: clamp(80px, 10vw, 110px); /* Slightly smaller when many cards */
+  height: 280px;
+  min-height: 280px;
+  max-height: 280px;
 }
 
 .battlefield-center-column.hand-expanded .hand-grid .card.hand-focus {
-  transform: translateY(-50px) scale(1.6) rotate(0deg);
+  transform: translateY(-50px) scale(1.5) rotate(0deg);
   z-index: 3000; /* Highest z-index for expanded focused cards */
 }
 
@@ -1722,9 +1715,14 @@ button {
   flex: 1 1 50%; /* Effect takes remaining space */
   overflow: hidden;
   padding: 2px 4px;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3; /* Fallback: max 3 lines, then ellipsis */
+  line-clamp: 3;
+  text-overflow: ellipsis;
+  text-align: center;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .card-actions {
@@ -1748,10 +1746,10 @@ button {
 }
 
 /* Disable CSS hover for hand cards - JS proximity detection handles this via .hand-focus class */
-/* Must explicitly keep base transform to prevent any hover-induced movement */
+/* Keep base transform to prevent hover-induced movement */
 .hand-grid .card:hover:not(.hand-focus) {
-  transform: translateY(8px) scale(0.98); /* Same as base - no change on hover */
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35); /* Same as base */
+  transform: translateY(var(--card-offset-y, 0px)) scale(1) rotate(var(--card-rotation, 0deg));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
 .card.card-selected {
@@ -3382,8 +3380,10 @@ button {
   }
 
   .hand-panel {
-    min-height: 70px; /* Very compact hand at extreme zoom */
-    max-height: 25vh; /* Reduce max to prioritize battlefield */
+    /* At extreme zoom, use smaller fixed height */
+    height: 150px;
+    min-height: 150px;
+    max-height: 150px;
   }
 
   .field-slot {
@@ -3454,11 +3454,13 @@ button {
   }
 
   .hand-panel {
-    min-height: clamp(110px, 20dvh, 180px);
-    max-height: 28dvh;
+    /* Fixed height for mobile portrait - taller to accommodate touch interaction */
+    height: 180px;
+    min-height: 180px;
+    max-height: 180px;
     overflow: visible; /* Allow cards to extend upward when focused */
     padding-bottom: calc(var(--safe-bottom) + 8px); /* Account for iOS home indicator */
-    padding-top: 16px; /* Space for focused card to lift into */
+    padding-top: 12px; /* Space for focused card to lift into */
   }
 
   .hand-panel.is-dragging {
@@ -3472,7 +3474,7 @@ button {
   .hand-grid {
     align-items: flex-end; /* Position cards from bottom for fan effect */
     overflow: visible; /* Allow focused cards to extend */
-    padding: 0 16px; /* Keep cards from screen edges */
+    padding: 0 12px 4px; /* Keep cards from screen edges */
     max-width: 100%;
     box-sizing: border-box;
   }
@@ -3486,8 +3488,12 @@ button {
   }
 
   .hand-grid .card {
-    width: clamp(80px, 22vw, 110px); /* Readable cards for mobile - overlap when needed */
-    min-width: 70px;
+    /* Height-based sizing for mobile - fills container height */
+    height: 100%;
+    width: auto;
+    aspect-ratio: 5 / 7;
+    min-width: 60px;
+    max-width: 100px;
     margin-left: calc(var(--hand-overlap, 0px) * -1);
     transform: translateY(var(--card-offset-y, 0px)) scale(var(--mobile-card-scale, 1)) rotate(var(--card-rotation, 0deg));
     transform-origin: bottom center;
@@ -3499,7 +3505,7 @@ button {
   }
 
   .hand-grid .card.hand-focus {
-    transform: translateY(-35px) scale(calc(1.45 * var(--mobile-card-scale, 1))) rotate(0deg);
+    transform: translateY(-35px) scale(calc(1.4 * var(--mobile-card-scale, 1))) rotate(0deg);
     z-index: 100;
   }
 
@@ -3566,8 +3572,10 @@ button {
   }
 
   .hand-panel {
-    min-height: clamp(70px, 10vh, 100px);
-    max-height: 18vh;
+    /* Landscape mobile - compact but usable */
+    height: 140px;
+    min-height: 140px;
+    max-height: 140px;
   }
 
   .card-inspector-panel,
@@ -3591,11 +3599,16 @@ button {
   }
 
   .hand-panel {
-    padding: clamp(8px, 1.5vw, 16px) clamp(12px, 2vw, 24px) clamp(14px, 2vw, 28px);
+    padding: 10px 16px 14px;
+    /* Desktop gets taller hand for larger cards */
+    height: 280px;
+    min-height: 280px;
+    max-height: 280px;
   }
 
   .hand-grid .card {
-    width: clamp(95px, 13vw, 140px); /* Readable cards on desktop - overlap when needed */
+    /* Height-based sizing continues on desktop */
+    max-width: 140px; /* Allow slightly wider cards on desktop */
   }
 
   .overlay-content {
