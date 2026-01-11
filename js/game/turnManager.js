@@ -250,7 +250,9 @@ export const canPlayCard = (state) => {
 };
 
 export const finalizeEndPhase = (state) => {
+  console.log("[EOT] finalizeEndPhase called, current finalized:", state.endOfTurnFinalized);
   if (state.endOfTurnFinalized) {
+    console.log("[EOT] finalizeEndPhase: already finalized, returning early");
     return;
   }
 
@@ -263,6 +265,7 @@ export const finalizeEndPhase = (state) => {
   const player = state.players[state.activePlayerIndex];
   logGameAction(state, PHASE, `${player.name} ends turn. (HP: ${player.hp}, Hand: ${player.hand.length}, Deck: ${player.deck.length})`);
   state.endOfTurnFinalized = true;
+  console.log("[EOT] finalizeEndPhase complete, endOfTurnFinalized set to true");
   state.broadcast?.(state);
 };
 

@@ -967,10 +967,13 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
     return;
   }
 
+  console.log("[resolveEffectChain] No selection needed, processing result:", nextResult);
   resolveEffectResult(state, nextResult, context);
   onUpdate?.();
   broadcastSyncState(state);
+  console.log("[resolveEffectChain] About to call onComplete");
   onComplete?.();
+  console.log("[resolveEffectChain] onComplete finished");
 };
 
 // ============================================================================
@@ -1781,32 +1784,51 @@ const processBeforeCombatQueue = (state, onUpdate) => {
 };
 
 const processEndOfTurnQueue = (state, onUpdate) => {
+  console.log("[EOT] processEndOfTurnQueue called", {
+    phase: state.phase,
+    processing: state.endOfTurnProcessing,
+    queueLength: state.endOfTurnQueue.length,
+    finalized: state.endOfTurnFinalized,
+    selectionActive: isSelectionActive(),
+  });
+
   if (state.phase !== "End") {
+    console.log("[EOT] Early return: phase is not End");
     return;
   }
-  
+
+  // Already finalized - nothing more to do
+  if (state.endOfTurnFinalized) {
+    console.log("[EOT] Early return: already finalized");
+    return;
+  }
+
   // If there's an active selection, don't process but also don't get stuck
   if (isSelectionActive()) {
+    console.log("[EOT] Early return: selection is active");
     // Reset processing flag if we're waiting for selection but it's not our turn
     if (state.endOfTurnProcessing && !isLocalPlayersTurn(state)) {
       state.endOfTurnProcessing = false;
     }
     return;
   }
-  
+
   // Reset processing flag if it was stuck waiting for a selection
   if (state.endOfTurnProcessing && !isSelectionActive()) {
-    console.log("Resetting stuck endOfTurnProcessing flag");
+    console.log("[EOT] Resetting stuck endOfTurnProcessing flag");
     state.endOfTurnProcessing = false;
   }
-  
+
   if (state.endOfTurnProcessing) {
+    console.log("[EOT] Early return: already processing");
     return;
   }
-  
+
   if (state.endOfTurnQueue.length === 0) {
+    console.log("[EOT] Queue empty, calling finalizeEndPhase");
     finalizeEndPhase(state);
     broadcastSyncState(state);
+    onUpdate?.(); // Re-render UI to reflect endOfTurnFinalized = true
     return;
   }
 
@@ -1814,6 +1836,7 @@ const processEndOfTurnQueue = (state, onUpdate) => {
   if (!creature) {
     finalizeEndPhase(state);
     broadcastSyncState(state);
+    onUpdate?.(); // Re-render UI to reflect endOfTurnFinalized = true
     return;
   }
   state.endOfTurnProcessing = true;
@@ -1824,6 +1847,10 @@ const processEndOfTurnQueue = (state, onUpdate) => {
   const opponent = state.players[opponentIndex];
 
   const finishCreature = () => {
+    console.log("[EOT] finishCreature called for:", creature.name, {
+      hasEndOfTurnSummon: !!creature.endOfTurnSummon,
+      queueLengthBefore: state.endOfTurnQueue.length,
+    });
     if (creature.endOfTurnSummon) {
       resolveEffectResult(state, {
         summonTokens: { playerIndex, tokens: [creature.endOfTurnSummon] },
@@ -1836,6 +1863,7 @@ const processEndOfTurnQueue = (state, onUpdate) => {
     }
     cleanupDestroyed(state);
     state.endOfTurnProcessing = false;
+    console.log("[EOT] finishCreature: set endOfTurnProcessing to false, calling processEndOfTurnQueue");
     broadcastSyncState(state);
     processEndOfTurnQueue(state, onUpdate);
   };
@@ -1854,13 +1882,18 @@ const processEndOfTurnQueue = (state, onUpdate) => {
     playerIndex,
     opponentIndex,
   });
+  console.log("[EOT] Calling resolveEffectChain with result:", result);
   resolveEffectChain(
     state,
     result,
     { playerIndex, opponentIndex, card: creature },
     onUpdate,
-    finishCreature,
     () => {
+      console.log("[EOT] resolveEffectChain onComplete callback called");
+      finishCreature();
+    },
+    () => {
+      console.log("[EOT] resolveEffectChain onCancel callback called");
       finishCreature();
     }
   );
