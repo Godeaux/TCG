@@ -124,6 +124,7 @@ button {
 }
 
 .top-bar {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -197,6 +198,10 @@ button {
 }
 
 .turn-badge {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   padding: 6px 16px;
   border-radius: 999px;
   border: 1px solid var(--border-gold);
@@ -205,6 +210,7 @@ button {
   min-width: 110px;
   animation: glow 2.5s ease-in-out infinite;
   transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  z-index: 5;
 }
 
 .turn-number {
@@ -220,7 +226,7 @@ button {
 }
 
 .turn-badge:hover:not(:disabled) {
-  transform: translateY(-1px);
+  transform: translate(-50%, -50%) translateY(-1px);
   box-shadow: 0 6px 18px rgba(212, 168, 83, 0.25);
 }
 
@@ -237,6 +243,10 @@ button {
 
 /* Surrender Button */
 .surrender-btn {
+  position: absolute;
+  left: calc(50% - 130px);
+  top: 50%;
+  transform: translateY(-50%);
   background: transparent;
   border: none;
   padding: 4px 8px;
@@ -244,17 +254,17 @@ button {
   cursor: pointer;
   transition: transform 0.15s, filter 0.15s;
   opacity: 0.7;
-  margin-right: 8px;
+  z-index: 5;
 }
 
 .surrender-btn:hover {
-  transform: scale(1.15);
+  transform: translateY(-50%) scale(1.15);
   opacity: 1;
   filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.3));
 }
 
 .surrender-btn:active {
-  transform: scale(0.95);
+  transform: translateY(-50%) scale(0.95);
 }
 
 /* Surrender Overlay */
