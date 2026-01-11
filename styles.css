@@ -235,6 +235,117 @@ button {
   outline-offset: 2px;
 }
 
+/* Surrender Button */
+.surrender-btn {
+  background: transparent;
+  border: none;
+  padding: 4px 8px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: transform 0.15s, filter 0.15s;
+  opacity: 0.7;
+  margin-right: 8px;
+}
+
+.surrender-btn:hover {
+  transform: scale(1.15);
+  opacity: 1;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.3));
+}
+
+.surrender-btn:active {
+  transform: scale(0.95);
+}
+
+/* Surrender Overlay */
+.surrender-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 2000;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(4px);
+}
+
+.surrender-overlay.active {
+  display: flex;
+}
+
+.surrender-dialog {
+  background: var(--bg-primary);
+  border: 2px solid var(--border-gold);
+  border-radius: 16px;
+  padding: 32px 48px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  animation: surrender-dialog-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes surrender-dialog-pop {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.surrender-title {
+  font-family: var(--font-display);
+  font-size: 24px;
+  margin-bottom: 12px;
+  color: var(--gold);
+}
+
+.surrender-message {
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+
+.surrender-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.surrender-btn-yes,
+.surrender-btn-no {
+  padding: 10px 28px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  border: none;
+}
+
+.surrender-btn-yes {
+  background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(229, 62, 62, 0.3);
+}
+
+.surrender-btn-yes:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(229, 62, 62, 0.4);
+}
+
+.surrender-btn-no {
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
+}
+
+.surrender-btn-no:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(66, 153, 225, 0.4);
+}
+
 .pages-container {
   flex: 1;
   position: relative;
@@ -808,6 +919,50 @@ button {
   font-size: 20px;
   color: var(--text-primary);
   letter-spacing: 0.04em;
+}
+
+/* Inspector card name rarity styling */
+.inspector-card-content h4.rarity-common {
+  color: #4ade80;
+  text-shadow: 0 0 6px rgba(74, 222, 128, 0.4);
+}
+
+.inspector-card-content h4.rarity-uncommon {
+  color: #60a5fa;
+  text-shadow: 0 0 8px rgba(96, 165, 250, 0.5);
+}
+
+.inspector-card-content h4.rarity-rare {
+  color: #c084fc;
+  text-shadow: 0 0 10px rgba(192, 132, 252, 0.6);
+}
+
+.inspector-card-content h4.rarity-legendary {
+  color: #fb923c;
+  text-shadow:
+    0 0 10px rgba(251, 146, 60, 0.7),
+    0 0 20px rgba(251, 146, 60, 0.5);
+  animation: legendary-glow 2s ease-in-out infinite;
+}
+
+.inspector-card-content h4.rarity-pristine {
+  background: linear-gradient(
+    90deg,
+    #ffffff 0%,
+    #ffd4e5 15%,
+    #d4f1ff 30%,
+    #e8d4ff 45%,
+    #ffffff 60%,
+    #d4ffe8 75%,
+    #fff4d4 90%,
+    #ffffff 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: pristine-shimmer 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.7));
 }
 
 .inspector-card-content .meta {
@@ -1874,6 +2029,59 @@ button {
   }
   25%, 75% {
     box-shadow: 0 0 15px rgba(255, 80, 80, 0.6);
+  }
+}
+
+/* Player damage shake effect */
+.player-damage-shake {
+  animation: player-damage-shake 0.6s ease-out;
+}
+
+@keyframes player-damage-shake {
+  0%, 100% {
+    transform: translateX(0) scale(1);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-6px) scale(1.05);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(6px) scale(1.05);
+  }
+  15%, 45%, 75% {
+    box-shadow: 0 0 20px rgba(255, 59, 59, 0.8), inset 0 0 10px rgba(255, 59, 59, 0.3);
+  }
+}
+
+/* Player damage pop number */
+.player-damage-pop {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: bold;
+  color: #ff3b3b;
+  text-shadow: 0 0 15px rgba(255, 59, 59, 0.9), 2px 2px 4px rgba(0, 0, 0, 0.5);
+  animation: player-damage-pop 1s ease-out forwards;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+@keyframes player-damage-pop {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 0;
+  }
+  20% {
+    transform: translate(-50%, -50%) scale(1.3);
+    opacity: 1;
+  }
+  40% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -80%) scale(1.1);
+    opacity: 0;
   }
 }
 
@@ -4364,11 +4572,38 @@ button {
 .emote-bubble.visible {
   opacity: 1;
   transform: translateY(-50%) translateX(0);
+  animation: emote-bubble-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .emote-bubble.fading {
   opacity: 0;
   transform: translateY(-50%) translateX(10px);
+}
+
+@keyframes emote-bubble-pop {
+  0% {
+    transform: translateY(-50%) translateX(0) scale(0.3);
+    opacity: 0;
+  }
+  30% {
+    transform: translateY(-50%) translateX(0) scale(1.2);
+    opacity: 1;
+  }
+  45% {
+    transform: translateY(-50%) translateX(-4px) scale(1.1);
+  }
+  55% {
+    transform: translateY(-50%) translateX(4px) scale(1.05);
+  }
+  65% {
+    transform: translateY(-50%) translateX(-3px) scale(1.02);
+  }
+  75% {
+    transform: translateY(-50%) translateX(2px) scale(1.01);
+  }
+  100% {
+    transform: translateY(-50%) translateX(0) scale(1);
+  }
 }
 
 /* Player 1 (right side) - bubble appears to the LEFT */
@@ -4396,10 +4631,37 @@ button {
 
 .emote-bubble-player-1.visible {
   transform: translateY(-50%) translateX(0);
+  animation: emote-bubble-pop-right 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .emote-bubble-player-1.fading {
   transform: translateY(-50%) translateX(-10px);
+}
+
+@keyframes emote-bubble-pop-right {
+  0% {
+    transform: translateY(-50%) translateX(0) scale(0.3);
+    opacity: 0;
+  }
+  30% {
+    transform: translateY(-50%) translateX(0) scale(1.2);
+    opacity: 1;
+  }
+  45% {
+    transform: translateY(-50%) translateX(4px) scale(1.1);
+  }
+  55% {
+    transform: translateY(-50%) translateX(-4px) scale(1.05);
+  }
+  65% {
+    transform: translateY(-50%) translateX(3px) scale(1.02);
+  }
+  75% {
+    transform: translateY(-50%) translateX(-2px) scale(1.01);
+  }
+  100% {
+    transform: translateY(-50%) translateX(0) scale(1);
+  }
 }
 
 .emote-bubble-emoji {
@@ -4517,6 +4779,136 @@ button {
 @keyframes pristine-gem-spin {
   from { filter: hue-rotate(0deg); }
   to { filter: hue-rotate(360deg); }
+}
+
+/* ============================================================================
+   IN-GAME CARD RARITY BORDERS
+   Applied to cards in hand and on battlefield
+   ============================================================================ */
+
+/* Rarity borders for in-game cards - similar to collection but subtler */
+.card.rarity-common {
+  border-color: #4ade80;
+  box-shadow: 0 0 6px rgba(74, 222, 128, 0.25);
+}
+
+.card.rarity-uncommon {
+  border-color: #60a5fa;
+  box-shadow: 0 0 8px rgba(96, 165, 250, 0.3);
+}
+
+.card.rarity-rare {
+  border-color: #c084fc;
+  box-shadow: 0 0 10px rgba(192, 132, 252, 0.35);
+}
+
+.card.rarity-legendary {
+  border-color: #fb923c;
+  box-shadow: 0 0 12px rgba(251, 146, 60, 0.4);
+  animation: card-legendary-pulse 2s ease-in-out infinite;
+}
+
+@keyframes card-legendary-pulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(251, 146, 60, 0.4); }
+  50% { box-shadow: 0 0 18px rgba(251, 146, 60, 0.6); }
+}
+
+.card.rarity-pristine {
+  border-color: #fff;
+  box-shadow:
+    0 0 15px rgba(255, 255, 255, 0.3),
+    0 0 30px rgba(192, 132, 252, 0.15);
+  animation: card-pristine-border 3s linear infinite;
+}
+
+@keyframes card-pristine-border {
+  0% { border-color: #fff; }
+  25% { border-color: #ffd4e5; }
+  50% { border-color: #d4f1ff; }
+  75% { border-color: #e8d4ff; }
+  100% { border-color: #fff; }
+}
+
+/* Rarity name styling for in-game cards (using .card-name class) */
+.card-name.rarity-common {
+  color: #4ade80;
+  text-shadow: 0 0 4px rgba(74, 222, 128, 0.3);
+}
+
+.card-name.rarity-uncommon {
+  color: #60a5fa;
+  text-shadow: 0 0 6px rgba(96, 165, 250, 0.4);
+}
+
+.card-name.rarity-rare {
+  color: #c084fc;
+  text-shadow: 0 0 8px rgba(192, 132, 252, 0.5);
+}
+
+.card-name.rarity-legendary {
+  color: #fb923c;
+  text-shadow:
+    0 0 8px rgba(251, 146, 60, 0.6),
+    0 0 16px rgba(251, 146, 60, 0.4);
+  animation: legendary-glow 2s ease-in-out infinite;
+}
+
+.card-name.rarity-pristine {
+  background: linear-gradient(
+    90deg,
+    #ffffff 0%,
+    #ffd4e5 15%,
+    #d4f1ff 30%,
+    #e8d4ff 45%,
+    #ffffff 60%,
+    #d4ffe8 75%,
+    #fff4d4 90%,
+    #ffffff 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: pristine-shimmer 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.6));
+}
+
+/* ============================================================================
+   GAME HISTORY LOG RARITY COLORS
+   ============================================================================ */
+
+.log-card-link.rarity-common {
+  color: #4ade80;
+}
+
+.log-card-link.rarity-uncommon {
+  color: #60a5fa;
+}
+
+.log-card-link.rarity-rare {
+  color: #c084fc;
+}
+
+.log-card-link.rarity-legendary {
+  color: #fb923c;
+  text-shadow: 0 0 4px rgba(251, 146, 60, 0.4);
+}
+
+.log-card-link.rarity-pristine {
+  background: linear-gradient(
+    90deg,
+    #ffffff 0%,
+    #ffd4e5 20%,
+    #d4f1ff 40%,
+    #e8d4ff 60%,
+    #ffffff 80%,
+    #d4ffe8 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: pristine-shimmer 3s ease-in-out infinite;
 }
 
 /* ============================================================================

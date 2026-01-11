@@ -16,6 +16,74 @@
 import { getLocalPlayerIndex, isOnlineMode, isAIMode } from '../../state/selectors.js';
 import { REACTION_TIMER_SECONDS } from '../../game/triggers/index.js';
 
+// ============================================================================
+// CONTEXT DESCRIPTION HELPERS
+// ============================================================================
+
+/**
+ * Get a human-readable description of what triggered the reaction
+ * @param {Object} pendingReaction - The pending reaction state
+ * @param {Object} players - Array of players
+ * @returns {string} Description of the triggering event
+ */
+const getReactionContextDescription = (pendingReaction, players) => {
+  const { event, eventContext, triggeringPlayerIndex } = pendingReaction;
+  const triggeringPlayer = players[triggeringPlayerIndex];
+
+  switch (event) {
+    case 'cardPlayed':
+      if (eventContext?.card?.name) {
+        return `${triggeringPlayer.name} played ${eventContext.card.name}`;
+      }
+      return `${triggeringPlayer.name} played a card`;
+
+    case 'attackDeclared':
+      if (eventContext?.attacker?.name) {
+        if (eventContext?.target?.type === 'player') {
+          return `${eventContext.attacker.name} is attacking you directly`;
+        } else if (eventContext?.target?.card?.name) {
+          return `${eventContext.attacker.name} is attacking ${eventContext.target.card.name}`;
+        }
+        return `${eventContext.attacker.name} declared an attack`;
+      }
+      return `${triggeringPlayer.name} declared an attack`;
+
+    case 'creatureTargeted':
+      if (eventContext?.target?.name) {
+        return `${eventContext.target.name} is being targeted`;
+      }
+      return `A creature is being targeted`;
+
+    case 'creatureSlain':
+      if (eventContext?.creature?.name) {
+        return `${eventContext.creature.name} was slain`;
+      }
+      return `A creature was slain`;
+
+    case 'damageDealt':
+      return `You are taking damage`;
+
+    case 'cardsDrawn':
+      return `${triggeringPlayer.name} drew cards`;
+
+    default:
+      return `${triggeringPlayer.name} took an action`;
+  }
+};
+
+/**
+ * Get the name of the trap that can be activated
+ * @param {Object} pendingReaction - The pending reaction state
+ * @returns {string|null} Trap name or null if no trap available
+ */
+const getActivatableTrapName = (pendingReaction) => {
+  const { reactions } = pendingReaction;
+  if (reactions && reactions.length > 0 && reactions[0].card?.name) {
+    return reactions[0].card.name;
+  }
+  return null;
+};
+
 // Timer interval reference
 let timerInterval = null;
 
@@ -164,13 +232,17 @@ export const renderReactionOverlay = (state, callbacks = {}) => {
     ? localIndex === reactingPlayerIndex
     : true; // In local mode, show buttons (the device holder decides)
 
+  // Get context description for what triggered this reaction
+  const contextDescription = getReactionContextDescription(state.pendingReaction, state.players);
+  const trapName = getActivatableTrapName(state.pendingReaction);
+
   // Set title and subtitle based on who is viewing
   if (isReactingPlayer) {
-    title.textContent = "Reaction";
-    subtitle.textContent = "You may respond to this action.";
+    title.textContent = trapName ? `Activate ${trapName}?` : "Reaction";
+    subtitle.textContent = contextDescription;
   } else {
     title.textContent = "Reaction";
-    subtitle.textContent = `${reactingPlayer.name} is making a decision...`;
+    subtitle.textContent = `${reactingPlayer.name} is deciding... (${contextDescription})`;
   }
 
   // Show timer

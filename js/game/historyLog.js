@@ -92,3 +92,18 @@ export const logPlainMessage = (state, message) => {
     state.log.pop();
   }
 };
+
+/**
+ * Format a card name for logging with rarity metadata
+ * Returns a special format that the UI can parse: {{name|id|rarity}}
+ * If no rarity, returns: {{name|id}}
+ * @param {object} card - Card object with name, id, and optional rarity
+ * @returns {string} Formatted card name for log
+ */
+export const formatCardForLog = (card) => {
+  if (!card || !card.name) return '';
+  if (card.rarity) {
+    return `{{${card.name}|${card.id}|${card.rarity}}}`;
+  }
+  return `{{${card.name}|${card.id}}}`;
+};

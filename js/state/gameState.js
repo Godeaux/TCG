@@ -6,6 +6,7 @@ export {
   formatKeyword,
   formatKeywordList,
   getKeywordEmoji,
+  formatCardForLog,
 } from "../game/historyLog.js";
 
 const shuffle = (array) => {
@@ -137,9 +138,28 @@ export const queueVisualEffect = (state, effect) => {
   return entry;
 };
 
-export const setPlayerDeck = (state, playerIndex, deck) => {
+export const setPlayerDeck = (state, playerIndex, deck, ownedCards = null) => {
   const player = state.players[playerIndex];
-  player.deck = shuffle([...deck]);
+
+  // Attach rarity from ownedCards to each card in the deck
+  const deckWithRarity = deck.map(card => {
+    if (ownedCards && card.id) {
+      // ownedCards can be a Map or an array of {cardId, rarity}
+      let rarity = null;
+      if (ownedCards instanceof Map) {
+        rarity = ownedCards.get(card.id);
+      } else if (Array.isArray(ownedCards)) {
+        const owned = ownedCards.find(c => c.cardId === card.id);
+        rarity = owned?.rarity;
+      }
+      if (rarity) {
+        return { ...card, rarity };
+      }
+    }
+    return { ...card };
+  });
+
+  player.deck = shuffle(deckWithRarity);
   player.hand = [];
   player.field = [null, null, null];
   player.carrion = [];

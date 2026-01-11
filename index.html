@@ -608,6 +608,18 @@
       </div>
     </div>
 
+    <!-- Surrender Confirmation Overlay -->
+    <div class="overlay surrender-overlay" id="surrender-overlay" aria-hidden="true">
+      <div class="surrender-dialog">
+        <div class="surrender-title">🏳️ Surrender?</div>
+        <div class="surrender-message">Are you sure you want to surrender?</div>
+        <div class="surrender-actions">
+          <button class="surrender-btn-yes" id="surrender-yes">Yes</button>
+          <button class="surrender-btn-no" id="surrender-no">No</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Emote Panel -->
     <div class="emote-panel" id="emote-panel"></div>
 
@@ -625,6 +637,7 @@
         <button class="emote-toggle emote-toggle-left" id="emote-toggle" title="Quick Chat" aria-label="Quick Chat">
           <span class="emote-toggle-icon">💬</span>
         </button>
+        <button class="surrender-btn" id="surrender-btn" title="Surrender" aria-label="Surrender">🏳️</button>
         <button class="turn-badge" id="turn-badge" type="button" aria-label="Advance phase">
           <span class="turn-number" id="turn-number">Turn 1</span>
           <span class="phase-label" id="phase-label">Main</span>

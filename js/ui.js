@@ -6,6 +6,7 @@ import {
   queueVisualEffect,
   logGameAction,
   LOG_CATEGORIES,
+  formatCardForLog,
 } from "./state/gameState.js";
 import { canPlayCard, cardLimitAvailable, finalizeEndPhase } from "./game/turnManager.js";
 import { createCardInstance } from "./cardTypes.js";
@@ -556,20 +557,36 @@ const escapeHtml = (text) => {
 
 /**
  * Make card names in a log entry clickable
+ * Supports two formats:
+ * 1. {{name|id|rarity}} - explicit format with rarity metadata
+ * 2. Plain card names - matched via cardNameRegex for backward compatibility
  */
 const linkifyCardNames = (entry) => {
-  if (!cardNameRegex) return escapeHtml(entry);
+  // First escape HTML
+  let result = escapeHtml(entry);
 
-  // First escape HTML, then replace card names with clickable spans
-  const escaped = escapeHtml(entry);
+  // Check if entry uses explicit format (contains {{ markers)
+  const hasExplicitFormat = entry.includes('{{');
 
-  return escaped.replace(cardNameRegex, (match) => {
-    const card = cardNameMap.get(match.toLowerCase());
-    if (card) {
-      return `<span class="log-card-link" data-card-id="${card.id}">${match}</span>`;
-    }
-    return match;
-  });
+  if (hasExplicitFormat) {
+    // Parse explicit card format: {{name|id|rarity}} or {{name|id}}
+    // Only do this replacement, skip legacy to avoid breaking generated HTML
+    result = result.replace(/\{\{([^|]+)\|([^|}]+)(?:\|([^}]+))?\}\}/g, (match, name, id, rarity) => {
+      const rarityClass = rarity ? ` rarity-${rarity}` : '';
+      return `<span class="log-card-link${rarityClass}" data-card-id="${id}">${name}</span>`;
+    });
+  } else if (cardNameRegex) {
+    // Legacy card name matching (only for entries without explicit format)
+    result = result.replace(cardNameRegex, (match) => {
+      const card = cardNameMap.get(match.toLowerCase());
+      if (card) {
+        return `<span class="log-card-link" data-card-id="${card.id}">${match}</span>`;
+      }
+      return match;
+    });
+  }
+
+  return result;
 };
 
 const appendLog = (state) => {
@@ -1010,6 +1027,9 @@ const setInspectorContentFor = (panel, card, showImage = true) => {
          onerror="this.parentElement.style.display='none';">`
     : '';
   
+  // Add rarity class to the card name if card has rarity
+  const nameRarityClass = card.rarity ? ` class="rarity-${card.rarity}"` : '';
+
   // Build layout based on whether we show image
   if (showImage) {
     panel.innerHTML = `
@@ -1020,7 +1040,7 @@ const setInspectorContentFor = (panel, card, showImage = true) => {
           </div>
         </div>
         <div class="inspector-card-content">
-          <h4>${card.name}</h4>
+          <h4${nameRarityClass}>${card.name}</h4>
           <div class="meta">${card.type}${stats ? ` • ${stats}` : ""}</div>
           ${keywordLabel ? `<div class="meta">${keywordLabel}</div>` : ""}
           ${statusLabel ? `<div class="meta">${statusLabel}</div>` : ""}
@@ -1033,7 +1053,7 @@ const setInspectorContentFor = (panel, card, showImage = true) => {
     // Deck construction mode - no image, more space for content
     panel.innerHTML = `
       <div class="inspector-card-content inspector-deck-mode">
-        <h4>${card.name}</h4>
+        <h4${nameRarityClass}>${card.name}</h4>
         <div class="meta">${card.type}${stats ? ` • ${stats}` : ""}</div>
         ${keywordLabel ? `<div class="meta">${keywordLabel}</div>` : ""}
         ${statusLabel ? `<div class="meta">${statusLabel}</div>` : ""}
@@ -1108,11 +1128,12 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
     const handleSelection = (value) => {
       clearSelectionPanel();
       // Log the player's choice - include spell name if this is a spell target selection
-      const selectedName = value?.name || value?.label || (typeof value === 'string' ? value : 'target');
+      // Use formatCardForLog for card values to preserve rarity
+      const selectedName = (value?.id && value?.name) ? formatCardForLog(value) : (value?.name || value?.label || (typeof value === 'string' ? value : 'target'));
       const playerName = context.player?.name || state.players[context.playerIndex]?.name || 'Player';
       if (context.spellCard) {
         // Spell with target selection - log the full cast with target
-        logGameAction(state, LOG_CATEGORIES.SPELL, `${playerName} casts ${context.spellCard.name} on ${selectedName}.`);
+        logGameAction(state, LOG_CATEGORIES.SPELL, `${playerName} casts ${formatCardForLog(context.spellCard)} on ${selectedName}.`);
       } else {
         logGameAction(state, LOG_CATEGORIES.CHOICE, `${playerName} selects ${selectedName}.`);
       }
@@ -1458,7 +1479,7 @@ const handleReturnToHand = (state, card, onUpdate) => {
   delete card.playedVia;
   player.hand.push(card);
 
-  logGameAction(state, LOG_CATEGORIES.BUFF, `${card.name} returns to ${player.name}'s hand.`);
+  logGameAction(state, LOG_CATEGORIES.BUFF, `${formatCardForLog(card)} returns to ${player.name}'s hand.`);
   onUpdate?.();
 };
 
@@ -1550,7 +1571,7 @@ const handlePlayCard = (state, card, onUpdate) => {
     // If spell requires target selection, defer the cast log until target is chosen
     // Otherwise, log the cast immediately
     if (!result.selectTarget) {
-      logGameAction(state, LOG_CATEGORIES.SPELL, `${player.name} casts ${card.name}.`);
+      logGameAction(state, LOG_CATEGORIES.SPELL, `${player.name} casts ${formatCardForLog(card)}.`);
     }
     const finalizePlay = () => {
       cleanupDestroyed(state);
@@ -1750,7 +1771,7 @@ const handlePlayCard = (state, card, onUpdate) => {
           }
           creature.dryDropped = true;
           player.field[emptySlot] = creature;
-          logGameAction(state, LOG_CATEGORIES.SUMMON, `${player.name} plays ${creature.name} (dry-dropped).`);
+          logGameAction(state, LOG_CATEGORIES.SUMMON, `${player.name} plays ${formatCardForLog(creature)} (dry-dropped).`);
           clearSelectionPanel();
           triggerPlayTraps(state, creature, onUpdate, () => {
             if (!isFree) {
@@ -1782,7 +1803,7 @@ const handlePlayCard = (state, card, onUpdate) => {
 
     if (card.type === "Predator") {
       creature.dryDropped = true;
-      logGameAction(state, LOG_CATEGORIES.SUMMON, `${player.name} plays ${creature.name} (dry-dropped).`);
+      logGameAction(state, LOG_CATEGORIES.SUMMON, `${player.name} plays ${formatCardForLog(creature)} (dry-dropped).`);
     }
     player.field[emptySlot] = creature;
     triggerPlayTraps(state, creature, onUpdate, () => {
@@ -2214,6 +2235,7 @@ const showCarrionPilePopup = (player, opponent, onUpdate) => {
       item.className = "selection-item selection-card";
       const cardElement = renderCard(card, {
         showEffectSummary: true,
+        useBaseStats: true,
       });
       item.appendChild(cardElement);
       items.push(item);
@@ -2237,6 +2259,7 @@ const showCarrionPilePopup = (player, opponent, onUpdate) => {
       item.className = "selection-item selection-card";
       const cardElement = renderCard(card, {
         showEffectSummary: true,
+        useBaseStats: true,
       });
       item.appendChild(cardElement);
       items.push(item);
@@ -2304,16 +2327,103 @@ const setupMobileNavigation = () => {
 // Import: initTouchHandlers from './ui/input/index.js'
 // ============================================================================
 
+// ============================================================================
+// SURRENDER FUNCTIONALITY
+// ============================================================================
+
+/**
+ * Show the surrender confirmation dialog
+ */
+const showSurrenderDialog = () => {
+  const overlay = document.getElementById('surrender-overlay');
+  if (overlay) {
+    overlay.classList.add('active');
+    overlay.setAttribute('aria-hidden', 'false');
+  }
+};
+
+/**
+ * Hide the surrender confirmation dialog
+ */
+const hideSurrenderDialog = () => {
+  const overlay = document.getElementById('surrender-overlay');
+  if (overlay) {
+    overlay.classList.remove('active');
+    overlay.setAttribute('aria-hidden', 'true');
+  }
+};
+
+/**
+ * Execute the surrender - set local player HP to 0 and trigger victory check
+ */
+const executeSurrender = () => {
+  if (!latestState || !latestCallbacks) return;
+
+  // Get the local player index (player who is surrendering)
+  const localIndex = getLocalPlayerIndex(latestState);
+
+  // Set local player HP to 0
+  latestState.players[localIndex].hp = 0;
+
+  // Hide the dialog
+  hideSurrenderDialog();
+
+  // Re-render to trigger victory check
+  if (latestCallbacks.onUpdate) {
+    latestCallbacks.onUpdate();
+  }
+};
+
+/**
+ * Set up surrender button click handlers
+ */
+const setupSurrenderButton = () => {
+  const surrenderBtn = document.getElementById('surrender-btn');
+  const surrenderYes = document.getElementById('surrender-yes');
+  const surrenderNo = document.getElementById('surrender-no');
+  const surrenderOverlay = document.getElementById('surrender-overlay');
+
+  if (surrenderBtn) {
+    surrenderBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showSurrenderDialog();
+    });
+  }
+
+  if (surrenderYes) {
+    surrenderYes.addEventListener('click', () => {
+      executeSurrender();
+    });
+  }
+
+  if (surrenderNo) {
+    surrenderNo.addEventListener('click', () => {
+      hideSurrenderDialog();
+    });
+  }
+
+  // Close on clicking backdrop
+  if (surrenderOverlay) {
+    surrenderOverlay.addEventListener('click', (e) => {
+      if (e.target === surrenderOverlay) {
+        hideSurrenderDialog();
+      }
+    });
+  }
+};
+
 // Initialize mobile features and log card links when DOM is ready
 if (typeof window !== 'undefined') {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       setupMobileNavigation();
       setupLogCardLinks();
+      setupSurrenderButton();
     });
   } else {
     setupMobileNavigation();
     setupLogCardLinks();
+    setupSurrenderButton();
   }
 }
 

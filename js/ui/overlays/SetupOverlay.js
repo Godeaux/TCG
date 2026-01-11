@@ -64,9 +64,11 @@ const renderRollingPhase = (state, elements, callbacks) => {
   rollSummary.className = "setup-roll-summary";
   const p1Roll = state.setup.rolls[0];
   const p2Roll = state.setup.rolls[1];
+  const p1Name = state.players[0]?.name || "Player 1";
+  const p2Name = state.players[1]?.name || "Player 2";
   rollSummary.innerHTML = `
-    <div>Player 1 roll: <strong>${p1Roll ?? "-"}</strong></div>
-    <div>Player 2 roll: <strong>${p2Roll ?? "-"}</strong></div>
+    <div>${p1Name} roll: <strong>${p1Roll ?? "-"}</strong></div>
+    <div>${p2Name} roll: <strong>${p2Roll ?? "-"}</strong></div>
   `;
   rolls.appendChild(rollSummary);
 
@@ -94,7 +96,7 @@ const renderRollingPhase = (state, elements, callbacks) => {
 
   // Player 1 roll button
   const rollP1 = document.createElement("button");
-  rollP1.textContent = "Roll for Player 1";
+  rollP1.textContent = `Roll for ${p1Name}`;
   rollP1.onclick = async () => {
     if (!canRollP1) return;
 
@@ -133,7 +135,7 @@ const renderRollingPhase = (state, elements, callbacks) => {
   // Player 2 roll button (hide in AI mode since AI auto-rolls)
   if (!isAIMode(state)) {
     const rollP2 = document.createElement("button");
-    rollP2.textContent = "Roll for Player 2";
+    rollP2.textContent = `Roll for ${p2Name}`;
     rollP2.onclick = async () => {
       if (!canRollP2) return;
 
@@ -189,9 +191,11 @@ const renderChoicePhase = (state, elements, callbacks) => {
   rollSummary.className = "setup-roll-summary";
   const p1Roll = state.setup.rolls[0];
   const p2Roll = state.setup.rolls[1];
+  const p1Name = state.players[0]?.name || "Player 1";
+  const p2Name = state.players[1]?.name || "Player 2";
   rollSummary.innerHTML = `
-    <div>Player 1 roll: <strong>${p1Roll ?? "-"}</strong></div>
-    <div>Player 2 roll: <strong>${p2Roll ?? "-"}</strong></div>
+    <div>${p1Name} roll: <strong>${p1Roll ?? "-"}</strong></div>
+    <div>${p2Name} roll: <strong>${p2Roll ?? "-"}</strong></div>
   `;
   rolls.appendChild(rollSummary);
 

@@ -104,6 +104,23 @@ const startAIGame = (state, callbacks) => {
 
   console.log("[AI] Starting game with settings:", aiSettings);
 
+  // Ensure profile has ownedCards for rarity display
+  if (state.menu.profile && !state.menu.profile.ownedCards) {
+    // Initialize with some test rarities for demonstration
+    state.menu.profile.ownedCards = new Map([
+      ['fish-prey-clownfish', 'common'],
+      ['fish-prey-sardine', 'common'],
+      ['bird-prey-chicken', 'common'],
+      ['fish-prey-angler', 'uncommon'],
+      ['fish-pred-orca', 'uncommon'],
+      ['bird-pred-eagle', 'uncommon'],
+      ['fish-prey-rainbow-mantis-shrimp', 'rare'],
+      ['fish-pred-megalodon', 'rare'],
+      ['fish-pred-kraken', 'legendary'],
+      ['bird-pred-phoenix', 'pristine'],
+    ]);
+  }
+
   // Set the game mode to AI (default difficulty is "easy")
   state.menu.mode = "ai";
   state.menu.aiDifficulty = "easy";
@@ -320,7 +337,24 @@ const initNavigation = () => {
       profile.matches = [];
     }
     if (!profile.ownedCards) {
-      profile.ownedCards = new Map();
+      // Initialize with some test rarities for demonstration
+      profile.ownedCards = new Map([
+        // Some common cards
+        ['fish-prey-clownfish', 'common'],
+        ['fish-prey-sardine', 'common'],
+        ['bird-prey-chicken', 'common'],
+        // Some uncommon cards
+        ['fish-prey-angler', 'uncommon'],
+        ['fish-pred-orca', 'uncommon'],
+        ['bird-pred-eagle', 'uncommon'],
+        // Some rare cards
+        ['fish-prey-rainbow-mantis-shrimp', 'rare'],
+        ['fish-pred-megalodon', 'rare'],
+        // Legendary
+        ['fish-pred-kraken', 'legendary'],
+        // Pristine
+        ['bird-pred-phoenix', 'pristine'],
+      ]);
     }
     setMenuStage(latestState, "profile");
     latestCallbacks.onUpdate?.();
