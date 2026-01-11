@@ -63,15 +63,6 @@
       }
     },
     {
-      "id": "amphibian-prey-empress-newt",
-      "name": "Empress Newt",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": ["Poisonous"]
-    },
-    {
       "id": "amphibian-prey-fire-salamander",
       "name": "Fire Salamander",
       "type": "Prey",
@@ -126,19 +117,6 @@
       }
     },
     {
-      "id": "amphibian-prey-golden-mantella",
-      "name": "Golden Mantella",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": ["Poisonous"],
-      "effectText": "Draw 1.",
-      "effects": {
-        "onPlay": { "type": "draw", "params": { "count": 1 } }
-      }
-    },
-    {
       "id": "amphibian-prey-golden-poison-frog",
       "name": "Golden Poison Frog",
       "type": "Prey",
@@ -173,19 +151,6 @@
       "summons": ["token-hidden-eleuth-egg"],
       "effects": {
         "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-hidden-eleuth-egg"] } }
-      }
-    },
-    {
-      "id": "amphibian-prey-hidden-eleuth-egg",
-      "name": "Hidden Eleuth Egg",
-      "type": "Prey",
-      "atk": 0,
-      "hp": 1,
-      "nutrition": 0,
-      "keywords": ["Hidden"],
-      "effectText": "Start of turn, become Monte Iberia Eleuth.",
-      "effects": {
-        "onStart": { "type": "transformCard", "params": { "targetType": "self", "newCardId": "amphibian-prey-monte-iberia-eleuth" } }
       }
     },
     {
@@ -241,18 +206,6 @@
       }
     },
     {
-      "id": "amphibian-prey-red-tailed-knobby-newt",
-      "name": "Red-tailed Knobby Newt",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "effectText": "Defending, neurotoxic.",
-      "effects": {
-        "onDefend": { "type": "applyNeurotoxicToAttacker" }
-      }
-    },
-    {
       "id": "amphibian-prey-siberian-salamander",
       "name": "Siberian Salamander",
       "type": "Prey",
@@ -277,15 +230,6 @@
       "effects": {
         "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-turtle-froglet"] } }
       }
-    },
-    {
-      "id": "amphibian-prey-turtle-froglet",
-      "name": "Turtle Froglet",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": ["Passive", "Hidden"]
     },
     {
       "id": "amphibian-prey-tomato-frog",
@@ -326,14 +270,6 @@
       }
     },
     {
-      "id": "amphibian-prey-froglet",
-      "name": "Froglet",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1
-    },
-    {
       "id": "amphibian-prey-axolotl",
       "name": "Axolotl",
       "type": "Prey",
@@ -357,18 +293,6 @@
       "summons": ["token-bigfoot-tadpole"],
       "effects": {
         "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-bigfoot-tadpole"] } }
-      }
-    },
-    {
-      "id": "amphibian-prey-bigfoot-tadpole",
-      "name": "Bigfoot Tadpole",
-      "type": "Prey",
-      "atk": 0,
-      "hp": 1,
-      "nutrition": 0,
-      "effectText": "Start of turn, become Bigfoot Leopard Frog.",
-      "effects": {
-        "onStart": { "type": "transformCard", "params": { "targetType": "self", "newCardId": "amphibian-prey-bigfoot-leopard-frog" } }
       }
     },
     {
@@ -407,13 +331,6 @@
       }
     },
     {
-      "id": "amphibian-predator-american-bullfrog",
-      "name": "American Bullfrog",
-      "type": "Predator",
-      "atk": 3,
-      "hp": 3
-    },
-    {
       "id": "amphibian-predator-mountain-chicken",
       "name": "Mountain Chicken",
       "type": "Predator",
@@ -424,19 +341,6 @@
       "summons": ["token-mountain-chicken-egg"],
       "effects": {
         "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-mountain-chicken-egg"] } }
-      }
-    },
-    {
-      "id": "amphibian-predator-mountain-chicken-egg",
-      "name": "Mountain Chicken Egg",
-      "type": "Prey",
-      "atk": 0,
-      "hp": 1,
-      "nutrition": 0,
-      "keywords": ["Hidden"],
-      "effectText": "Start of turn, become Mountain Chicken.",
-      "effects": {
-        "onStart": { "type": "transformCard", "params": { "targetType": "self", "newCardId": "amphibian-predator-mountain-chicken" } }
       }
     },
     {
@@ -463,13 +367,6 @@
       }
     },
     {
-      "id": "amphibian-predator-pixie-frog",
-      "name": "Pixie Frog",
-      "type": "Predator",
-      "atk": 2,
-      "hp": 2
-    },
-    {
       "id": "amphibian-predator-cane-toad",
       "name": "Cane Toad",
       "type": "Predator",
@@ -481,15 +378,6 @@
       "effects": {
         "onConsume": { "type": "summonTokens", "params": { "tokenIds": ["token-poisonous-egg", "token-poisonous-egg"] } }
       }
-    },
-    {
-      "id": "amphibian-prey-poisonous-egg",
-      "name": "Poisonous Egg",
-      "type": "Prey",
-      "atk": 0,
-      "hp": 1,
-      "nutrition": 0,
-      "keywords": ["Poisonous"]
     },
     {
       "id": "amphibian-predator-goliath-frog",
@@ -554,18 +442,6 @@
       "summons": ["token-chinese-salamander"],
       "effects": {
         "onConsume": { "type": "summonTokens", "params": { "tokenIds": ["token-chinese-salamander"] } }
-      }
-    },
-    {
-      "id": "amphibian-prey-chinese-salamander",
-      "name": "Chinese Salamander",
-      "type": "Prey",
-      "atk": 2,
-      "hp": 2,
-      "nutrition": 2,
-      "effectText": "Heal 2.",
-      "effects": {
-        "onPlay": { "type": "heal", "params": { "amount": 2 } }
       }
     },
     {
@@ -717,18 +593,10 @@
         "effect": {
           "type": "selectCreatureToTransform",
           "params": {
-            "newCardId": "amphibian-prey-newt-token"
+            "newCardId": "token-newt"
           }
         }
       }
-    },
-    {
-      "id": "amphibian-prey-newt-token",
-      "name": "Newt",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1
     },
     {
       "id": "amphibian-free-spell-sleight-of-hand",
