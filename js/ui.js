@@ -65,6 +65,12 @@ import {
   renderSetupOverlay,
 } from "./ui/overlays/SetupOverlay.js";
 
+// Reaction overlay (extracted module)
+import {
+  renderReactionOverlay,
+  hideReactionOverlay,
+} from "./ui/overlays/ReactionOverlay.js";
+
 // Deck builder overlays (extracted module)
 import {
   renderDeckSelectionOverlay,
@@ -219,8 +225,6 @@ const lobbyError = document.getElementById("lobby-error");
 
 // UI state variables
 let pendingConsumption = null;
-let pendingAttack = null;
-let trapWaitingPanelActive = false;
 let inspectedCardId = null;
 let deckHighlighted = null;
 let currentPage = 0;
@@ -980,8 +984,8 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
 // Selection panel functions moved to: ./ui/components/SelectionPanel.js
 // Import: renderSelectionPanel, clearSelectionPanel, isSelectionActiveFromModule
 
-// Keep local isSelectionActive for pendingAttack check (module-scoped state)
-const isSelectionActive = () => isSelectionActiveFromModule() || Boolean(pendingAttack);
+// Local isSelectionActive that also checks for pending reactions
+const isSelectionActive = () => isSelectionActiveFromModule();
 
 const findCardByInstanceId = (state, instanceId) =>
   state.players
@@ -1132,201 +1136,185 @@ const resolveAttack = (state, attacker, target, negateAttack = false) => {
   return effect;
 };
 
-const renderTrapDecision = (state, defender, attacker, target, onUpdate) => {
-  pendingAttack = { attacker, target, defenderIndex: state.players.indexOf(defender) };
-  trapWaitingPanelActive = false;
+// ============================================================================
+// REACTION SYSTEM (Traps & Discard Effects)
+// Uses the reaction overlay for a consistent experience across players
+// ============================================================================
 
-  // Get traps that can trigger from hand for direct attacks
-  const availableTraps = getTrapsFromHand(defender, "directAttack");
+/**
+ * Collect all available reactions for a defender
+ * Returns traps and discard effects that can trigger on the given trigger type
+ */
+const collectAvailableReactions = (defender, triggerType, target) => {
+  const reactions = [];
 
-  const items = availableTraps.map((trap) => {
-    const item = document.createElement("label");
-    item.className = "selection-item";
-    const button = document.createElement("button");
-    button.className = "secondary";
-    button.textContent = `Trigger ${trap.name}`;
-    button.onclick = () => {
-      // Remove trap from hand and move to exile
-      defender.hand = defender.hand.filter((card) => card.instanceId !== trap.instanceId);
-      defender.exile.push(trap);
-      const result = resolveCardEffect(trap, 'effect', {
-        log: (message) => logMessage(state, message),
-        attacker,
-        target,
-        defenderIndex: pendingAttack.defenderIndex,
-        state,
-      });
-      resolveEffectChain(state, result, {
-        playerIndex: pendingAttack.defenderIndex,
-        opponentIndex: (pendingAttack.defenderIndex + 1) % 2,
-      });
-      cleanupDestroyed(state);
-      if (attacker.currentHp <= 0) {
-        logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
-        clearSelectionPanel();
-        pendingAttack = null;
-        state.pendingTrapDecision = null;
-        onUpdate?.();
-        broadcastSyncState(state);
-        return;
+  // Collect traps with matching trigger
+  const traps = getTrapsFromHand(defender, triggerType);
+  traps.forEach((trap) => {
+    reactions.push({
+      type: "trap",
+      card: trap,
+      instanceId: trap.instanceId,
+    });
+  });
+
+  // For direct attacks against player, also collect discard effects
+  if (triggerType === "directAttack" && target?.type === "player") {
+    defender.hand.forEach((card) => {
+      if (getDiscardEffectInfo(card).timing === "directAttack") {
+        reactions.push({
+          type: "discard",
+          card,
+          instanceId: card.instanceId,
+        });
       }
-      const negate = Boolean(result?.negateAttack);
-      clearSelectionPanel();
-      resolveAttack(state, attacker, target, negate);
-      pendingAttack = null;
-      state.pendingTrapDecision = null;
-      trapWaitingPanelActive = false;
-      onUpdate?.();
-      broadcastSyncState(state);
-    };
-    item.appendChild(button);
-    return item;
-  });
-
-  const skipButton = document.createElement("label");
-  skipButton.className = "selection-item";
-  const skipAction = document.createElement("button");
-  skipAction.textContent = "Skip Trap";
-  skipAction.onclick = () => {
-    clearSelectionPanel();
-    resolveAttack(state, attacker, target, false);
-    pendingAttack = null;
-    state.pendingTrapDecision = null;
-    trapWaitingPanelActive = false;
-    onUpdate?.();
-    broadcastSyncState(state);
-  };
-  skipButton.appendChild(skipAction);
-  items.push(skipButton);
-
-  if (target.type === "player") {
-    const discardOptions = defender.hand.filter(
-      (card) => getDiscardEffectInfo(card).timing === "directAttack"
-    );
-    discardOptions.forEach((card) => {
-      const item = document.createElement("label");
-      item.className = "selection-item";
-      const button = document.createElement("button");
-      button.textContent = `Discard ${card.name}`;
-      button.onclick = () => {
-        defender.hand = defender.hand.filter((itemCard) => itemCard.instanceId !== card.instanceId);
-        if (card.type === "Predator" || card.type === "Prey") {
-          defender.carrion.push(card);
-        } else {
-          defender.exile.push(card);
-        }
-        const result = resolveCardEffect(card, 'discardEffect', {
-          log: (message) => logMessage(state, message),
-          attacker,
-          defender,
-        });
-        resolveEffectChain(state, result, {
-          playerIndex: pendingAttack.defenderIndex,
-          opponentIndex: (pendingAttack.defenderIndex + 1) % 2,
-        });
-        clearSelectionPanel();
-        resolveAttack(state, attacker, target, Boolean(result?.negateAttack));
-        pendingAttack = null;
-        state.pendingTrapDecision = null;
-        trapWaitingPanelActive = false;
-        onUpdate?.();
-        broadcastSyncState(state);
-      };
-      item.appendChild(button);
-      items.push(item);
     });
   }
 
-  renderSelectionPanel({
-    title: `${defender.name} may trigger a trap`,
-    items,
-    onConfirm: () => {},
-    confirmLabel: null,
-  });
+  return reactions;
 };
 
+/**
+ * Handle reaction decision from the overlay
+ * @param {Object} state - Game state
+ * @param {boolean} activated - Whether the player chose to activate
+ * @param {Function} onUpdate - UI update callback
+ */
+const handleReactionDecision = (state, activated, onUpdate) => {
+  if (!state.pendingReaction) return;
+
+  const {
+    deciderIndex,
+    reactions,
+    attackContext,
+  } = state.pendingReaction;
+
+  const defender = state.players[deciderIndex];
+  const attackerIndex = (deciderIndex + 1) % 2;
+
+  // Find the attacker and target from the attack context
+  const attacker = attackContext.attackerId
+    ? findCardByInstanceId(state, attackContext.attackerId)
+    : null;
+  const target = attackContext.targetType === "player"
+    ? { type: "player", player: state.players[attackContext.targetPlayerIndex] }
+    : { type: "creature", card: findCardByInstanceId(state, attackContext.targetCardId) };
+
+  // Clear the pending reaction first
+  state.pendingReaction = null;
+  hideReactionOverlay();
+
+  if (!attacker) {
+    // Attacker no longer exists
+    onUpdate?.();
+    broadcastSyncState(state);
+    return;
+  }
+
+  if (!activated || reactions.length === 0) {
+    // Player chose not to activate or has no reactions
+    resolveAttack(state, attacker, target, false);
+    onUpdate?.();
+    broadcastSyncState(state);
+    return;
+  }
+
+  // Activate the first available reaction
+  // (In the future, could show a sub-selection if multiple reactions exist)
+  const reaction = reactions[0];
+  let result = null;
+
+  if (reaction.type === "trap") {
+    // Remove trap from hand and move to exile
+    defender.hand = defender.hand.filter((c) => c.instanceId !== reaction.instanceId);
+    defender.exile.push(reaction.card);
+
+    logMessage(state, `${defender.name}'s ${reaction.card.name} trap activates!`);
+
+    result = resolveCardEffect(reaction.card, "effect", {
+      log: (message) => logMessage(state, message),
+      attacker,
+      target,
+      defenderIndex: deciderIndex,
+      state,
+    });
+  } else if (reaction.type === "discard") {
+    // Remove card from hand and move to appropriate pile
+    defender.hand = defender.hand.filter((c) => c.instanceId !== reaction.instanceId);
+    if (reaction.card.type === "Predator" || reaction.card.type === "Prey") {
+      defender.carrion.push(reaction.card);
+    } else {
+      defender.exile.push(reaction.card);
+    }
+
+    logMessage(state, `${defender.name} discards ${reaction.card.name}!`);
+
+    result = resolveCardEffect(reaction.card, "discardEffect", {
+      log: (message) => logMessage(state, message),
+      attacker,
+      defender,
+    });
+  }
+
+  // Resolve the effect chain
+  if (result) {
+    resolveEffectChain(state, result, {
+      playerIndex: deciderIndex,
+      opponentIndex: attackerIndex,
+    });
+  }
+
+  cleanupDestroyed(state);
+
+  // Check if attacker was destroyed
+  if (attacker.currentHp <= 0) {
+    logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
+    onUpdate?.();
+    broadcastSyncState(state);
+    return;
+  }
+
+  // Resolve the attack with negate status
+  const negate = Boolean(result?.negateAttack);
+  resolveAttack(state, attacker, target, negate);
+  onUpdate?.();
+  broadcastSyncState(state);
+};
+
+/**
+ * Handle trap/reaction response when an attack is declared
+ * Sets up pendingReaction state for the reaction overlay
+ */
 const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
-  // Check for traps in hand that can trigger on direct attacks
-  const availableTraps = getTrapsFromHand(defender, "directAttack");
-  if (availableTraps.length === 0) {
+  const defenderIndex = state.players.indexOf(defender);
+  const triggerType = target.type === "player" ? "directAttack" : "defending";
+
+  // Collect available reactions
+  const reactions = collectAvailableReactions(defender, triggerType, target);
+
+  // If no reactions available, resolve attack immediately
+  if (reactions.length === 0) {
     resolveAttack(state, attacker, target, false);
     onUpdate?.();
     broadcastSyncState(state);
     return;
   }
 
-  if (isOnlineMode(state)) {
-    const defenderIndex = state.players.indexOf(defender);
-    const localIndex = getLocalPlayerIndex(state);
-    if (defenderIndex !== localIndex) {
-      state.pendingTrapDecision = {
-        defenderIndex,
-        attackerId: attacker.instanceId,
-        targetType: target.type,
-        targetPlayerIndex:
-          target.type === "player" ? state.players.indexOf(target.player) : null,
-        targetCardId: target.type === "creature" ? target.card.instanceId : null,
-      };
-      onUpdate?.();
-      broadcastSyncState(state);
-      return;
-    }
-  }
+  // Set up pending reaction state
+  state.pendingReaction = {
+    deciderIndex: defenderIndex,
+    reactions,
+    attackContext: {
+      attackerId: attacker.instanceId,
+      targetType: target.type,
+      targetPlayerIndex: target.type === "player" ? state.players.indexOf(target.player) : null,
+      targetCardId: target.type === "creature" ? target.card.instanceId : null,
+    },
+    timerStart: Date.now(),
+  };
 
-  renderTrapDecision(state, defender, attacker, target, onUpdate);
-};
-
-const handlePendingTrapDecision = (state, onUpdate) => {
-  if (!state.pendingTrapDecision) {
-    if (trapWaitingPanelActive) {
-      clearSelectionPanel();
-      trapWaitingPanelActive = false;
-    }
-    return;
-  }
-  const { defenderIndex, attackerId, targetType, targetPlayerIndex, targetCardId } =
-    state.pendingTrapDecision;
-  const localIndex = getLocalPlayerIndex(state);
-  const defender = state.players[defenderIndex];
-  if (!defender) {
-    state.pendingTrapDecision = null;
-    if (trapWaitingPanelActive) {
-      clearSelectionPanel();
-      trapWaitingPanelActive = false;
-    }
-    return;
-  }
-  if (defenderIndex !== localIndex) {
-    renderSelectionPanel({
-      title: `${getOpponentDisplayName(state)} is deciding whether to play a trap...`,
-      items: [],
-      onConfirm: () => {},
-      confirmLabel: null,
-    });
-    trapWaitingPanelActive = true;
-    return;
-  }
-  trapWaitingPanelActive = false;
-  const attacker = attackerId ? findCardByInstanceId(state, attackerId) : null;
-  const target =
-    targetType === "player"
-      ? {
-          type: "player",
-          player: state.players[targetPlayerIndex ?? (defenderIndex + 1) % 2],
-        }
-      : {
-          type: "creature",
-          card: targetCardId ? findCardByInstanceId(state, targetCardId) : null,
-        };
-  if (!attacker || (target.type === "creature" && !target.card)) {
-    state.pendingTrapDecision = null;
-    if (trapWaitingPanelActive) {
-      clearSelectionPanel();
-      trapWaitingPanelActive = false;
-    }
-    return;
-  }
-  renderTrapDecision(state, defender, attacker, target, onUpdate);
+  onUpdate?.();
+  broadcastSyncState(state);
 };
 
 const handleAttackSelection = (state, attacker, onUpdate) => {
@@ -2324,7 +2312,13 @@ export const renderGame = (state, callbacks = {}) => {
     selectedCardId: selectedHandCardId,
   });
   updateActionPanel(state, callbacks);
-  handlePendingTrapDecision(state, callbacks.onUpdate);
+
+  // Reaction overlay (traps & discard effects)
+  renderReactionOverlay(state, {
+    onReactionDecision: (activated) => handleReactionDecision(state, activated, callbacks.onUpdate),
+    onUpdate: callbacks.onUpdate,
+  });
+
   processVisualEffects(state);
   const handleNextPhase = () => {
     if (!isLocalPlayersTurn(state)) {

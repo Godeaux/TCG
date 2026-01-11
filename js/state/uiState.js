@@ -53,14 +53,8 @@ export const createUIState = () => ({
   deckHighlighted: null,
 
   // ============================================================================
-  // TRAP & EFFECT STATE
+  // EFFECT STATE
   // ============================================================================
-
-  /**
-   * Whether the trap waiting panel is active
-   * Shows UI overlay while waiting for opponent to respond to trap
-   */
-  trapWaitingPanelActive: false,
 
   /**
    * Map of processed visual effects (to prevent duplicates)

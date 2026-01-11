@@ -3,7 +3,9 @@
     "allow": [
       "Bash(node -e:*)",
       "Bash(node count-cards.js:*)",
-      "Bash(node --check:*)"
+      "Bash(node --check:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)"
     ]
   }
 }

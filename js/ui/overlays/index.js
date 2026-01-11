@@ -66,3 +66,13 @@ export {
   hideVictoryScreen,
   checkForVictory,
 } from './VictoryOverlay.js';
+
+// ============================================================================
+// REACTION OVERLAY
+// ============================================================================
+
+export {
+  renderReactionOverlay,
+  hideReactionOverlay,
+  isReactionOverlayActive,
+} from './ReactionOverlay.js';

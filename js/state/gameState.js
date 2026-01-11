@@ -54,6 +54,7 @@ export const createGameState = () => {
     endOfTurnFinalized: false,
     visualEffects: [],
     pendingTrapDecision: null,
+    pendingReaction: null, // { deciderIndex, reactions, attackContext, timerStart }
     setup: {
       stage: "rolling",
       rolls: [null, null],
