@@ -165,6 +165,8 @@ import {
   ensureProfileLoaded,
   ensureDecksLoaded,
   handleLoginSubmit as lobbyHandleLoginSubmit,
+  handleCreateAccount as lobbyHandleCreateAccount,
+  handleLogout as lobbyHandleLogout,
   checkExistingLobby,
   handleCreateLobby as lobbyHandleCreateLobby,
   handleJoinLobby as lobbyHandleJoinLobby,
@@ -225,6 +227,7 @@ const pageDots = document.getElementById("page-dots");
 const navLeft = document.getElementById("nav-left");
 const navRight = document.getElementById("nav-right");
 const loginUsername = document.getElementById("login-username");
+const loginPin = document.getElementById("login-pin");
 const loginError = document.getElementById("login-error");
 const lobbyCodeInput = document.getElementById("lobby-code");
 const lobbyError = document.getElementById("lobby-error");
@@ -270,18 +273,45 @@ const setMenuError = (state, message) => {
 
 const isCatalogMode = (state) => state.menu?.stage === "catalog";
 
-// UI wrapper for login - extracts value from DOM and calls lobbyManager
+// UI wrapper for login - extracts values from DOM and calls lobbyManager
 const handleLoginSubmit = async (state) => {
   const username = loginUsername?.value ?? "";
+  const pin = loginPin?.value ?? "";
   if (loginError) {
     loginError.textContent = "";
   }
-  const result = await lobbyHandleLoginSubmit(state, username);
-  if (loginUsername && result.success) {
-    loginUsername.value = "";
+  const result = await lobbyHandleLoginSubmit(state, username, pin);
+  if (result.success) {
+    if (loginUsername) loginUsername.value = "";
+    if (loginPin) loginPin.value = "";
   }
   if (!result.success && loginError) {
     loginError.textContent = result.error || "";
+  }
+};
+
+// UI wrapper for create account - extracts values from DOM and calls lobbyManager
+const handleCreateAccount = async (state) => {
+  const username = loginUsername?.value ?? "";
+  const pin = loginPin?.value ?? "";
+  if (loginError) {
+    loginError.textContent = "";
+  }
+  const result = await lobbyHandleCreateAccount(state, username, pin);
+  if (result.success) {
+    if (loginUsername) loginUsername.value = "";
+    if (loginPin) loginPin.value = "";
+  }
+  if (!result.success && loginError) {
+    loginError.textContent = result.error || "";
+  }
+};
+
+// UI wrapper for logout
+const handleLogout = async (state) => {
+  const result = await lobbyHandleLogout(state);
+  if (!result.success) {
+    console.error("Logout failed:", result.error);
   }
 };
 
@@ -2205,6 +2235,8 @@ export const renderGame = (state, callbacks = {}) => {
         setMenuStage,
         setMenuError,
         handleLoginSubmit,
+        handleCreateAccount,
+        handleLogout,
         handleCreateLobby,
         handleJoinLobby,
         handleLeaveLobby,
