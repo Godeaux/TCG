@@ -445,6 +445,43 @@ export const playDamageEffect = (effect, state) => {
 };
 
 // ============================================================================
+// PLAYER DAMAGE EFFECT
+// ============================================================================
+
+/**
+ * Play player damage visual effect
+ * Shows a shake animation and damage pop when a player takes damage to their HP
+ */
+export const playPlayerDamageEffect = (effect, state) => {
+  if (!battleEffectsLayer) {
+    return;
+  }
+
+  const playerBadge = getPlayerBadgeByIndex(effect.playerIndex);
+  if (!playerBadge) {
+    return;
+  }
+
+  // Add shake class to player badge
+  playerBadge.classList.add("player-damage-shake");
+  setTimeout(() => playerBadge.classList.remove("player-damage-shake"), 600);
+
+  // Show damage pop on player badge
+  if (effect.amount && effect.amount > 0) {
+    const layerRect = battleEffectsLayer.getBoundingClientRect();
+    const badgeRect = playerBadge.getBoundingClientRect();
+
+    const pop = document.createElement("div");
+    pop.className = "player-damage-pop";
+    pop.textContent = `-${effect.amount}`;
+    pop.style.left = `${badgeRect.left - layerRect.left + badgeRect.width / 2}px`;
+    pop.style.top = `${badgeRect.top - layerRect.top + badgeRect.height / 2}px`;
+    battleEffectsLayer.appendChild(pop);
+    pop.addEventListener("animationend", () => pop.remove());
+  }
+};
+
+// ============================================================================
 // HEAL EFFECT
 // ============================================================================
 
@@ -578,6 +615,9 @@ export const processVisualEffects = (state) => {
         break;
       case "damage":
         requestAnimationFrame(() => playDamageEffect(effect, state));
+        break;
+      case "playerDamage":
+        requestAnimationFrame(() => playPlayerDamageEffect(effect, state));
         break;
       case "heal":
         requestAnimationFrame(() => playHealEffect(effect, state));

@@ -112,6 +112,7 @@
           <button class="btn-secondary" id="menu-login">Login</button>
           <button class="btn-secondary" id="menu-logout" style="display: none;">Log Out</button>
           <button class="btn-secondary" id="menu-catalog" disabled>Catalog</button>
+          <button class="btn-secondary" id="menu-profile">Profile</button>
           <button class="btn-secondary" id="menu-tutorial">Tutorial</button>
         </div>
       </div>
@@ -339,6 +340,123 @@
       </div>
     </div>
 
+    <!-- Profile Overlay -->
+    <div class="overlay profile-overlay" id="profile-overlay" aria-hidden="true">
+      <div class="overlay-content">
+        <div class="profile-container">
+          <!-- Left Panel: Stats & Packs -->
+          <div class="profile-left-panel">
+            <div class="profile-header">
+              <div class="profile-avatar">🎮</div>
+              <div class="profile-username" id="profile-username">Player</div>
+            </div>
+
+            <!-- Stats -->
+            <div class="profile-stats">
+              <div class="profile-stats-title">Stats</div>
+              <div class="profile-stat-row">
+                <span class="profile-stat-label">Games Played</span>
+                <span class="profile-stat-value" id="profile-games-played">0</span>
+              </div>
+              <div class="profile-stat-row">
+                <span class="profile-stat-label">Games Won</span>
+                <span class="profile-stat-value" id="profile-games-won">0</span>
+              </div>
+              <div class="profile-stat-row">
+                <span class="profile-stat-label">Win Rate</span>
+                <span class="profile-stat-value" id="profile-win-rate">0%</span>
+              </div>
+              <div class="profile-stat-row">
+                <span class="profile-stat-label">Favorite Card</span>
+                <span class="profile-stat-value" id="profile-favorite-card">-</span>
+              </div>
+            </div>
+
+            <!-- Match History -->
+            <div class="profile-match-history">
+              <div class="profile-match-history-title">Recent Matches</div>
+              <div id="profile-match-list">
+                <div class="profile-match-item">
+                  <span class="profile-match-players">No matches yet</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Packs -->
+            <div class="profile-packs" id="profile-packs-btn">
+              <div class="profile-packs-label">Packs</div>
+              <div class="profile-packs-count">
+                <span id="profile-packs-count">0</span>
+                <span class="profile-packs-icon">📦</span>
+              </div>
+              <div class="profile-packs-hint">Click to open</div>
+            </div>
+
+            <button class="profile-back-btn" id="profile-back">Back to Menu</button>
+          </div>
+
+          <!-- Right Panel: Card Collection -->
+          <div class="profile-right-panel">
+            <div class="collection-header">
+              <div class="collection-title">Card Collection</div>
+              <div class="collection-filter">
+                <span class="collection-filter-label">Filter:</span>
+                <select class="collection-filter-select" id="collection-filter">
+                  <option value="all">All Cards</option>
+                  <option value="fish">Fish</option>
+                  <option value="bird">Bird</option>
+                  <option value="mammal">Mammal</option>
+                  <option value="reptile">Reptile</option>
+                  <option value="amphibian">Amphibian</option>
+                  <option value="owned">Owned Only</option>
+                </select>
+              </div>
+            </div>
+            <div class="collection-grid" id="collection-grid">
+              <!-- Cards populated by JavaScript -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pack Opening Overlay -->
+    <div class="overlay pack-opening-overlay" id="pack-opening-overlay" aria-hidden="true">
+      <div class="overlay-content">
+        <!-- Unopened pack phase -->
+        <div class="pack-unopened-phase" id="pack-unopened-phase">
+          <h2 class="pack-opening-title">Open Your Pack</h2>
+          <p class="pack-opening-subtitle">Hold down to open!</p>
+          <div class="pack-unopened" id="pack-unopened">
+            <div class="pack-unopened-glow"></div>
+            <div class="pack-unopened-box">
+              <div class="pack-unopened-icon">📦</div>
+              <div class="pack-unopened-label">PACK</div>
+            </div>
+            <div class="pack-progress-ring" id="pack-progress-ring">
+              <svg viewBox="0 0 100 100">
+                <circle class="progress-bg" cx="50" cy="50" r="45"></circle>
+                <circle class="progress-fill" cx="50" cy="50" r="45" id="pack-progress-circle"></circle>
+              </svg>
+            </div>
+          </div>
+          <p class="pack-hold-hint" id="pack-hold-hint">Hold to open...</p>
+        </div>
+        <!-- Cards reveal phase -->
+        <div class="pack-cards-phase" id="pack-cards-phase" style="display: none;">
+          <h2 class="pack-opening-title">Your Cards!</h2>
+          <p class="pack-opening-subtitle">Click cards to reveal, or reveal all at once!</p>
+          <div class="pack-cards-container" id="pack-cards-container">
+            <!-- Pack cards populated by JavaScript -->
+          </div>
+          <div class="pack-opening-actions">
+            <button class="pack-reveal-all-btn" id="pack-reveal-all">Reveal All</button>
+            <button class="pack-done-btn" id="pack-done">Done</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="overlay login-overlay" id="login-overlay" aria-hidden="true">
       <div class="overlay-content menu-card login-card">
         <div class="menu-header">
@@ -479,9 +597,25 @@
               <span class="stat-value" id="victory-kills">0</span>
             </div>
           </div>
+          <div class="victory-reward" id="victory-reward" style="display: none;">
+            <div class="victory-reward-icon">📦</div>
+            <div class="victory-reward-text">+1 Pack Earned!</div>
+          </div>
           <div class="victory-actions">
             <button class="btn-primary victory-menu" id="victory-menu">Main Menu</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Surrender Confirmation Overlay -->
+    <div class="overlay surrender-overlay" id="surrender-overlay" aria-hidden="true">
+      <div class="surrender-dialog">
+        <div class="surrender-title">🏳️ Surrender?</div>
+        <div class="surrender-message">Are you sure you want to surrender?</div>
+        <div class="surrender-actions">
+          <button class="surrender-btn-yes" id="surrender-yes">Yes</button>
+          <button class="surrender-btn-no" id="surrender-no">No</button>
         </div>
       </div>
     </div>
@@ -503,6 +637,7 @@
         <button class="emote-toggle emote-toggle-left" id="emote-toggle" title="Quick Chat" aria-label="Quick Chat">
           <span class="emote-toggle-icon">💬</span>
         </button>
+        <button class="surrender-btn" id="surrender-btn" title="Surrender" aria-label="Surrender">🏳️</button>
         <button class="turn-badge" id="turn-badge" type="button" aria-label="Advance phase">
           <span class="turn-number" id="turn-number">Turn 1</span>
           <span class="phase-label" id="phase-label">Main</span>

@@ -65,6 +65,7 @@ export {
   showVictoryScreen,
   hideVictoryScreen,
   checkForVictory,
+  setVictoryMenuCallback,
 } from './VictoryOverlay.js';
 
 // ============================================================================
@@ -76,3 +77,23 @@ export {
   hideReactionOverlay,
   isReactionOverlayActive,
 } from './ReactionOverlay.js';
+
+// ============================================================================
+// PROFILE OVERLAY
+// ============================================================================
+
+export {
+  renderProfileOverlay,
+  hideProfileOverlay,
+  resetCollectionFilter,
+} from './ProfileOverlay.js';
+
+// ============================================================================
+// PACK OPENING OVERLAY
+// ============================================================================
+
+export {
+  renderPackOpeningOverlay,
+  hidePackOpeningOverlay,
+  startPackOpening,
+} from './PackOpeningOverlay.js';

@@ -60,13 +60,17 @@ export const isCardLike = (value) =>
 /**
  * Render card stats (ATK, HP, NUT) with emoji format
  * @param {Object} card - Card instance
+ * @param {Object} options - Options { useBaseStats: boolean }
  * @returns {Array} Array of stat objects { emoji, value, className }
  */
-export const renderCardStats = (card) => {
+export const renderCardStats = (card, options = {}) => {
+  const { useBaseStats = false } = options;
   const stats = [];
   if (card.type === "Predator" || card.type === "Prey") {
-    stats.push({ emoji: "⚔", value: card.currentAtk ?? card.atk, className: "atk" });
-    stats.push({ emoji: "❤", value: card.currentHp ?? card.hp, className: "hp" });
+    const atk = useBaseStats ? card.atk : (card.currentAtk ?? card.atk);
+    const hp = useBaseStats ? card.hp : (card.currentHp ?? card.hp);
+    stats.push({ emoji: "⚔", value: atk, className: "atk" });
+    stats.push({ emoji: "❤", value: hp, className: "hp" });
   }
   if (card.type === "Prey") {
     stats.push({ emoji: "🍖", value: card.nutrition, className: "nut" });
@@ -279,11 +283,11 @@ export const getStatusIndicators = (card) => {
 /**
  * Render inner HTML structure of a card
  * @param {Object} card - Card to render
- * @param {Object} options - { showEffectSummary }
+ * @param {Object} options - { showEffectSummary, useBaseStats }
  * @returns {string} Inner HTML for card
  */
-export const renderCardInnerHtml = (card, { showEffectSummary } = {}) => {
-  const stats = renderCardStats(card);
+export const renderCardInnerHtml = (card, { showEffectSummary, useBaseStats } = {}) => {
+  const stats = renderCardStats(card, { useBaseStats });
   const hasNut = hasNutrition(card);
 
   // Build stats row with emoji format - if no nutrition, stats split the row in half
@@ -310,8 +314,11 @@ export const renderCardInnerHtml = (card, { showEffectSummary } = {}) => {
        <div class="card-image-placeholder" style="display: none;">🎨</div>`
     : `<div class="card-image-placeholder">🎨</div>`;
 
+  // Add rarity class to card name if card has a rarity
+  const nameRarityClass = card.rarity ? ` rarity-${card.rarity}` : '';
+
   return `
-    <div class="card-name">${card.name}</div>
+    <div class="card-name${nameRarityClass}">${card.name}</div>
     <div class="card-image-container">
       ${imageHtml}
     </div>
@@ -461,6 +468,7 @@ const adjustTextToFit = (cardElement, inner, cardId) => {
  * @param {boolean} options.showDiscard - Show "Discard" button
  * @param {boolean} options.showReturnToHand - Show "Return to Hand" button
  * @param {boolean} options.showEffectSummary - Show effect text
+ * @param {boolean} options.useBaseStats - Use base ATK/HP instead of current (for carrion display)
  * @param {Function} options.onPlay - Play button callback
  * @param {Function} options.onAttack - Attack button callback
  * @param {Function} options.onDiscard - Discard button callback
@@ -479,6 +487,7 @@ export const renderCard = (card, options = {}) => {
     showDiscard = false,
     showReturnToHand = false,
     showEffectSummary = false,
+    useBaseStats = false,
     onPlay,
     onAttack,
     onDiscard,
@@ -498,15 +507,20 @@ export const renderCard = (card, options = {}) => {
     return cardElement;
   }
 
-  cardElement.className = `card ${cardTypeClass(card)}${isSelected ? ' card-selected' : ''}`;
+  // Build card class with optional rarity
+  const rarityClass = card.rarity ? ` rarity-${card.rarity}` : '';
+  cardElement.className = `card ${cardTypeClass(card)}${isSelected ? ' card-selected' : ''}${rarityClass}`;
   if (card.instanceId) {
     cardElement.dataset.instanceId = card.instanceId;
+  }
+  if (card.rarity) {
+    cardElement.dataset.rarity = card.rarity;
   }
 
   const inner = document.createElement("div");
   inner.className = "card-inner";
 
-  inner.innerHTML = renderCardInnerHtml(card, { showEffectSummary });
+  inner.innerHTML = renderCardInnerHtml(card, { showEffectSummary, useBaseStats });
 
   // Add action buttons if needed
   if (showPlay || showAttack || showDiscard || showReturnToHand) {

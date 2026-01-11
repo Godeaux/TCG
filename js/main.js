@@ -88,9 +88,15 @@ const refresh = () => {
       console.log('[DeckComplete] P1 deck length:', selections[0]?.length ?? 0);
       console.log('[DeckComplete] P2 deck length:', selections[1]?.length ?? 0);
 
+      // Get the local player's owned cards for rarity assignment
+      const ownedCards = state.menu?.profile?.ownedCards || null;
+
       selections.forEach((deck, index) => {
         console.log(`[DeckComplete] Setting deck for player ${index}, cards: ${deck?.length ?? 0}`);
-        setPlayerDeck(state, index, deck.slice(0, 20));
+        // In AI mode, player 0 is the human - attach their card rarities
+        // In local mode, only player 0 gets rarities
+        const playerOwnedCards = (index === 0) ? ownedCards : null;
+        setPlayerDeck(state, index, deck.slice(0, 20), playerOwnedCards);
       });
       setupInitialDraw(state, 5);
       logMessage(state, "Each player draws 5 cards to start.");

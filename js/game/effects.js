@@ -1,4 +1,4 @@
-import { drawCard, logMessage, queueVisualEffect, logGameAction, LOG_CATEGORIES, formatKeyword, formatKeywordList, getKeywordEmoji } from "../state/gameState.js";
+import { drawCard, logMessage, queueVisualEffect, logGameAction, LOG_CATEGORIES, formatKeyword, formatKeywordList, getKeywordEmoji, formatCardForLog } from "../state/gameState.js";
 import { createCardInstance, isCreatureCard } from "../cardTypes.js";
 import { consumePrey } from "./consumption.js";
 import { isImmune, areAbilitiesActive } from "../keywords.js";
@@ -40,7 +40,7 @@ const applyEffectDamage = (state, creature, amount, sourceLabel = "effect") => {
     return;
   }
   if (isImmune(creature)) {
-    logGameAction(state, BUFF, `${creature.name} is immune to ${sourceLabel} damage.`);
+    logGameAction(state, BUFF, `${formatCardForLog(creature)} is immune to ${sourceLabel} damage.`);
     return;
   }
   if (creature.hasBarrier && areAbilitiesActive(creature)) {
@@ -56,7 +56,7 @@ const applyEffectDamage = (state, creature, amount, sourceLabel = "effect") => {
         slotIndex,
       });
     }
-    logGameAction(state, BUFF, `${creature.name}'s ${getKeywordEmoji("Barrier")} Barrier blocks the damage.`);
+    logGameAction(state, BUFF, `${formatCardForLog(creature)}'s ${getKeywordEmoji("Barrier")} Barrier blocks the damage.`);
     return;
   }
   creature.currentHp -= amount;
@@ -71,7 +71,7 @@ const applyEffectDamage = (state, creature, amount, sourceLabel = "effect") => {
       amount,
     });
   }
-  logGameAction(state, DAMAGE, `${creature.name} takes ${amount} damage.`);
+  logGameAction(state, DAMAGE, `${formatCardForLog(creature)} takes ${amount} damage.`);
 };
 
 const killCreature = (state, creature, sourceLabel = "effect") => {
@@ -92,7 +92,7 @@ const placeToken = (state, playerIndex, tokenData) => {
   const token = createCardInstance({ ...tokenData, isToken: true }, state.turn);
   token.isToken = true;
   player.field[emptySlot] = token;
-  logGameAction(state, SUMMON, `${player.name} summons ${token.name}.`);
+  logGameAction(state, SUMMON, `${player.name} summons ${formatCardForLog(token)}.`);
   return token;
 };
 
@@ -105,7 +105,7 @@ const placeCreatureOnField = (state, playerIndex, cardData) => {
   }
   const instance = createCardInstance(cardData, state.turn);
   player.field[emptySlot] = instance;
-  logGameAction(state, SUMMON, `${player.name} plays ${instance.name}.`);
+  logGameAction(state, SUMMON, `${player.name} plays ${formatCardForLog(instance)}.`);
   return instance;
 };
 
@@ -162,12 +162,27 @@ export const resolveEffectResult = (state, result, context) => {
 
   if (result.damageOpponent) {
     state.players[context.opponentIndex].hp -= result.damageOpponent;
+    // Queue player damage visual effect
+    queueVisualEffect(state, {
+      type: "playerDamage",
+      playerIndex: context.opponentIndex,
+      amount: result.damageOpponent,
+    });
     logGameAction(state, DAMAGE, `${state.players[context.opponentIndex].name} takes ${result.damageOpponent} damage.`);
   }
 
   if (result.damagePlayer) {
     const { player, amount } = result.damagePlayer;
     player.hp -= amount;
+    // Queue player damage visual effect
+    const playerIndex = state.players.findIndex(p => p === player);
+    if (playerIndex >= 0) {
+      queueVisualEffect(state, {
+        type: "playerDamage",
+        playerIndex,
+        amount,
+      });
+    }
     logGameAction(state, DAMAGE, `${player.name} takes ${amount} damage.`);
   }
 
@@ -195,9 +210,27 @@ export const resolveEffectResult = (state, result, context) => {
     });
   }
 
+  // Handle damaging a specific array of creatures
+  if (result.damageCreatures) {
+    const { creatures, amount } = result.damageCreatures;
+    if (creatures && Array.isArray(creatures)) {
+      creatures.forEach((creature) => {
+        if (creature && (creature.type === "Predator" || creature.type === "Prey")) {
+          applyEffectDamage(state, creature, amount, "volcanic");
+        }
+      });
+    }
+  }
+
   if (result.damageBothPlayers) {
-    state.players.forEach((player) => {
+    state.players.forEach((player, playerIndex) => {
       player.hp -= result.damageBothPlayers;
+      // Queue player damage visual effect
+      queueVisualEffect(state, {
+        type: "playerDamage",
+        playerIndex,
+        amount: result.damageBothPlayers,
+      });
       logGameAction(state, DAMAGE, `${player.name} takes ${result.damageBothPlayers} damage.`);
     });
   }
@@ -206,7 +239,7 @@ export const resolveEffectResult = (state, result, context) => {
     result.killTargets.forEach((creature) => {
       const killed = killCreature(state, creature, result.killSourceLabel);
       if (killed) {
-        logGameAction(state, DEATH, `${creature.name} is destroyed.`);
+        logGameAction(state, DEATH, `${formatCardForLog(creature)} is destroyed.`);
       }
     });
   }
@@ -216,7 +249,7 @@ export const resolveEffectResult = (state, result, context) => {
     const creature = result.killCreature;
     const killed = killCreature(state, creature, "effect");
     if (killed) {
-      logGameAction(state, DEATH, `${creature.name} is destroyed.`);
+      logGameAction(state, DEATH, `${formatCardForLog(creature)} is destroyed.`);
     }
   }
 
@@ -268,7 +301,7 @@ export const resolveEffectResult = (state, result, context) => {
     creatures.forEach((creature) => {
       if (creature && !creature.keywords.includes(keyword)) {
         creature.keywords.push(keyword);
-        logGameAction(state, BUFF, `${creature.name} gains ${formatKeyword(keyword)}.`);
+        logGameAction(state, BUFF, `${formatCardForLog(creature)} gains ${formatKeyword(keyword)}.`);
       }
       if (creature && keyword === "Barrier") {
         creature.hasBarrier = true;
@@ -287,7 +320,7 @@ export const resolveEffectResult = (state, result, context) => {
         const keywordIndex = creature.keywords.indexOf(keyword);
         if (keywordIndex >= 0) {
           creature.keywords.splice(keywordIndex, 1);
-          logGameAction(state, DEBUFF, `${creature.name} loses ${formatKeyword(keyword)}.`);
+          logGameAction(state, DEBUFF, `${formatCardForLog(creature)} loses ${formatKeyword(keyword)}.`);
         }
         if (keyword === "Barrier") {
           creature.hasBarrier = false;
@@ -306,7 +339,7 @@ export const resolveEffectResult = (state, result, context) => {
       if (creature) {
         creature.currentAtk = (creature.currentAtk ?? creature.atk ?? 0) + (attack || 0);
         creature.currentHp = (creature.currentHp ?? creature.hp ?? 0) + (health || 0);
-        logGameAction(state, BUFF, `${creature.name} gains +${attack || 0}/+${health || 0}.`);
+        logGameAction(state, BUFF, `${formatCardForLog(creature)} gains +${attack || 0}/+${health || 0}.`);
       }
     });
   }
@@ -341,7 +374,7 @@ export const resolveEffectResult = (state, result, context) => {
         if (!creature.keywords.includes("Barrier")) {
           creature.keywords.push("Barrier");
         }
-        logGameAction(state, BUFF, `${creature.name} gains ${formatKeyword("Barrier")}.`);
+        logGameAction(state, BUFF, `${formatCardForLog(creature)} gains ${formatKeyword("Barrier")}.`);
       }
     });
   }
@@ -349,7 +382,7 @@ export const resolveEffectResult = (state, result, context) => {
   if (result.tempBuff && context.card) {
     context.card.currentAtk += result.tempBuff.atk;
     context.card.currentHp += result.tempBuff.hp;
-    logGameAction(state, BUFF, `${context.card.name} gains +${result.tempBuff.atk}/+${result.tempBuff.hp}.`);
+    logGameAction(state, BUFF, `${formatCardForLog(context.card)} gains +${result.tempBuff.atk}/+${result.tempBuff.hp}.`);
   }
 
   if (result.buffCreature) {
@@ -359,7 +392,7 @@ export const resolveEffectResult = (state, result, context) => {
     const hpAmount = hp ?? health ?? 0;
     creature.currentAtk = (creature.currentAtk ?? creature.atk ?? 0) + atkAmount;
     creature.currentHp = (creature.currentHp ?? creature.hp ?? 0) + hpAmount;
-    logGameAction(state, BUFF, `${creature.name} gains +${atkAmount}/+${hpAmount}.`);
+    logGameAction(state, BUFF, `${formatCardForLog(creature)} gains +${atkAmount}/+${hpAmount}.`);
   }
 
   if (result.grantKeyword) {
@@ -393,7 +426,7 @@ export const resolveEffectResult = (state, result, context) => {
         amount: healAmount,
       });
     }
-    logGameAction(state, HEAL, `${creature.name} is regenerated.`);
+    logGameAction(state, HEAL, `${formatCardForLog(creature)} is regenerated.`);
   }
 
   if (result.healCreature) {
@@ -414,7 +447,7 @@ export const resolveEffectResult = (state, result, context) => {
           amount: healAmount,
         });
       }
-      logGameAction(state, HEAL, `${creature.name} heals ${healAmount} HP.`);
+      logGameAction(state, HEAL, `${formatCardForLog(creature)} heals ${healAmount} HP.`);
     }
   }
 
@@ -431,7 +464,7 @@ export const resolveEffectResult = (state, result, context) => {
   if (result.addEndOfTurnSummon) {
     const { creature, token } = result.addEndOfTurnSummon;
     creature.endOfTurnSummon = token;
-    logGameAction(state, BUFF, `${creature.name} will summon ${token.name} at end of turn.`);
+    logGameAction(state, BUFF, `${formatCardForLog(creature)} will summon ${token.name} at end of turn.`);
   }
 
   if (result.empowerWithEndEffect) {
@@ -439,7 +472,7 @@ export const resolveEffectResult = (state, result, context) => {
     const tokenData = getTokenById(tokenId);
     if (tokenData && creature) {
       creature.endOfTurnSummon = tokenData;
-      logGameAction(state, BUFF, `${creature.name} will summon ${tokenData.name} at end of turn.`);
+      logGameAction(state, BUFF, `${formatCardForLog(creature)} will summon ${tokenData.name} at end of turn.`);
     }
   }
 
@@ -470,22 +503,28 @@ export const resolveEffectResult = (state, result, context) => {
     }
 
     // Also copy direct function properties if they exist (for backwards compatibility)
+    target.onPlay = target.onPlay ?? source.onPlay;
+    target.onConsume = target.onConsume ?? source.onConsume;
+    target.onSlain = target.onSlain ?? source.onSlain;
     target.onStart = target.onStart ?? source.onStart;
     target.onEnd = target.onEnd ?? source.onEnd;
     target.onBeforeCombat = target.onBeforeCombat ?? source.onBeforeCombat;
     target.onDefend = target.onDefend ?? source.onDefend;
     target.onTargeted = target.onTargeted ?? source.onTargeted;
 
+    // Copy the effect property as well (for cards using the single 'effect' property)
+    target.effect = target.effect ?? source.effect;
+
     const keywordsList = sourceKeywords.length > 0 ? formatKeywordList(sourceKeywords) : "no keywords";
     const effectsList = source.effects ? Object.keys(source.effects).filter(k => source.effects[k]).join(", ") : "";
     const abilitiesDesc = effectsList ? `${keywordsList}, effects: ${effectsList}` : keywordsList;
-    logGameAction(state, CHOICE, `${target.name} copies ${source.name}'s abilities: ${abilitiesDesc}.`);
+    logGameAction(state, CHOICE, `${formatCardForLog(target)} copies ${formatCardForLog(source)}'s abilities: ${abilitiesDesc}.`);
   }
 
   if (result.removeAbilities) {
     const creature = result.removeAbilities;
     stripAbilities(creature);
-    logGameAction(state, DEBUFF, `${creature.name} loses all abilities.`);
+    logGameAction(state, DEBUFF, `${formatCardForLog(creature)} loses all abilities.`);
     // Queue visual effect for ability removal (cancel emoji)
     const ownerIndex = findCardOwnerIndex(state, creature);
     if (ownerIndex >= 0) {
@@ -502,7 +541,7 @@ export const resolveEffectResult = (state, result, context) => {
   if (result.removeAbilitiesAll) {
     result.removeAbilitiesAll.forEach((creature) => {
       stripAbilities(creature);
-      logGameAction(state, DEBUFF, `${creature.name} loses all abilities.`);
+      logGameAction(state, DEBUFF, `${formatCardForLog(creature)} loses all abilities.`);
       // Queue visual effect for ability removal (cancel emoji)
       const ownerIndex = findCardOwnerIndex(state, creature);
       if (ownerIndex >= 0) {
@@ -575,7 +614,7 @@ export const resolveEffectResult = (state, result, context) => {
       }
     }
     state.players[playerIndex].hand.push({ ...cardData, instanceId: crypto.randomUUID() });
-    logGameAction(state, BUFF, `${state.players[playerIndex].name} adds ${cardData.name} to hand.`);
+    logGameAction(state, BUFF, `${state.players[playerIndex].name} adds ${formatCardForLog(cardData)} to hand.`);
   }
 
   if (result.addCarrionToHand) {
@@ -587,7 +626,7 @@ export const resolveEffectResult = (state, result, context) => {
       player.carrion.splice(cardIndex, 1);
       // Add to hand with new instance ID
       player.hand.push({ ...card, instanceId: crypto.randomUUID() });
-      logGameAction(state, BUFF, `${player.name} adds ${card.name} from carrion to hand.`);
+      logGameAction(state, BUFF, `${player.name} adds ${formatCardForLog(card)} from carrion to hand.`);
     } else {
       console.error(`[addCarrionToHand] Card not found in carrion:`, card);
     }
@@ -675,17 +714,37 @@ export const resolveEffectResult = (state, result, context) => {
       } else {
         player.exile.push(card);
       }
-      logGameAction(state, DEBUFF, `${player.name} discards ${card.name}.`);
+      logGameAction(state, DEBUFF, `${player.name} discards ${formatCardForLog(card)}.`);
     });
   }
 
   if (result.returnToHand) {
-    // Support both 'card' and 'creature' property names for compatibility
-    const { card, creature, playerIndex } = result.returnToHand;
-    const targetCard = card || creature;
-    removeCardFromField(state, targetCard);
-    state.players[playerIndex].hand.push(targetCard);
-    logGameAction(state, BUFF, `${targetCard.name} returns to ${state.players[playerIndex].name}'s hand.`);
+    // Support 'creatures' (array), 'card', or 'creature' property names
+    const { card, creature, creatures, playerIndex } = result.returnToHand;
+
+    // Build array of cards to return
+    const cardsToReturn = creatures || (card ? [card] : creature ? [creature] : []);
+
+    cardsToReturn.forEach((targetCard) => {
+      if (!targetCard) return;
+
+      // Find who actually controls this card on the battlefield
+      const controllerIndex = findCardOwnerIndex(state, targetCard);
+      // Use the battlefield controller if found, otherwise fall back to passed playerIndex
+      const returnToIndex = controllerIndex >= 0 ? controllerIndex : playerIndex;
+
+      if (returnToIndex === undefined || returnToIndex < 0) {
+        console.warn(`[returnToHand] Could not determine owner for ${targetCard.name}`);
+        return;
+      }
+
+      removeCardFromField(state, targetCard);
+      // Reset currentHp/currentAtk to base values when returning to hand
+      if (targetCard.hp !== undefined) targetCard.currentHp = targetCard.hp;
+      if (targetCard.atk !== undefined) targetCard.currentAtk = targetCard.atk;
+      state.players[returnToIndex].hand.push(targetCard);
+      logGameAction(state, BUFF, `${formatCardForLog(targetCard)} returns to ${state.players[returnToIndex].name}'s hand.`);
+    });
   }
 
   if (result.stealCreature) {
@@ -696,12 +755,14 @@ export const resolveEffectResult = (state, result, context) => {
     const destination = state.players[toIndex];
     const emptySlot = destination.field.findIndex((slot) => slot === null);
     if (emptySlot === -1) {
-      logMessage(state, `${destination.name} has no room to steal ${creature.name}.`);
+      logMessage(state, `${destination.name} has no room to steal ${formatCardForLog(creature)}.`);
       return;
     }
     removeCardFromField(state, creature);
     destination.field[emptySlot] = creature;
-    logGameAction(state, CHOICE, `${destination.name} steals ${creature.name}.`);
+    // Reset summonedTurn to give summoning sickness to stolen creatures
+    creature.summonedTurn = state.turn;
+    logGameAction(state, CHOICE, `${destination.name} steals ${formatCardForLog(creature)}.`);
   }
 
   if (result.copyCreature) {
@@ -716,7 +777,7 @@ export const resolveEffectResult = (state, result, context) => {
     const copy = createCardInstance({ ...target, isToken: true }, state.turn);
     copy.isToken = true;
     player.field[emptySlot] = copy;
-    logGameAction(state, SUMMON, `${player.name} summons a copy of ${target.name}.`);
+    logGameAction(state, SUMMON, `${player.name} summons a copy of ${formatCardForLog(target)}.`);
     // Trigger onPlay for the copy if it's a prey
     if (copy.type === "Prey" && copy.onPlay && !copy.abilitiesCancelled) {
       const opponentIndex = (playerIndex + 1) % 2;
@@ -759,7 +820,7 @@ export const resolveEffectResult = (state, result, context) => {
     const replacement = createCardInstance({ ...resolvedCardData, isToken: true }, state.turn);
     replacement.isToken = true;
     owner.field[slotIndex] = replacement;
-    logGameAction(state, SUMMON, `${card.name} transforms into ${replacement.name}.`);
+    logGameAction(state, SUMMON, `${formatCardForLog(card)} transforms into ${formatCardForLog(replacement)}.`);
   }
 
   if (result.setFieldSpell) {
@@ -776,7 +837,7 @@ export const resolveEffectResult = (state, result, context) => {
       const previousOwner = state.players[state.fieldSpell.ownerIndex];
       removeCardFromField(state, state.fieldSpell.card);
       previousOwner.exile.push(state.fieldSpell.card);
-      logGameAction(state, DEATH, `${state.fieldSpell.card.name} is replaced.`);
+      logGameAction(state, DEATH, `${formatCardForLog(state.fieldSpell.card)} is replaced.`);
     }
     const owner = state.players[ownerIndex];
     const emptySlot = owner.field.findIndex((slot) => slot === null);
@@ -787,14 +848,14 @@ export const resolveEffectResult = (state, result, context) => {
     const instance = createCardInstance(resolvedCardData, state.turn);
     owner.field[emptySlot] = instance;
     state.fieldSpell = { ownerIndex, card: instance };
-    logGameAction(state, SUMMON, `${owner.name} plays the field spell ${resolvedCardData.name}.`);
+    logGameAction(state, SUMMON, `${owner.name} plays the field spell ${formatCardForLog(resolvedCardData)}.`);
   }
 
   if (result.removeFieldSpell && state.fieldSpell) {
     const previousOwner = state.players[state.fieldSpell.ownerIndex];
     removeCardFromField(state, state.fieldSpell.card);
     previousOwner.exile.push(state.fieldSpell.card);
-    logGameAction(state, DEATH, `${state.fieldSpell.card.name} is destroyed.`);
+    logGameAction(state, DEATH, `${formatCardForLog(state.fieldSpell.card)} is destroyed.`);
     state.fieldSpell = null;
   }
 
@@ -802,7 +863,7 @@ export const resolveEffectResult = (state, result, context) => {
     const { creature } = result.freezeCreature;
     creature.frozen = true;
     creature.frozenDiesTurn = state.turn + 1;
-    logGameAction(state, DEBUFF, `${creature.name} is ${formatKeyword("Frozen")}.`);
+    logGameAction(state, DEBUFF, `${formatCardForLog(creature)} is ${formatKeyword("Frozen")}.`);
   }
 
   if (result.freezeEnemyCreatures) {
@@ -811,7 +872,7 @@ export const resolveEffectResult = (state, result, context) => {
       if (creature && (creature.type === "Predator" || creature.type === "Prey")) {
         creature.frozen = true;
         creature.frozenDiesTurn = state.turn + 1;
-        logGameAction(state, DEBUFF, `${creature.name} is ${formatKeyword("Frozen")}.`);
+        logGameAction(state, DEBUFF, `${formatCardForLog(creature)} is ${formatKeyword("Frozen")}.`);
       }
     });
   }
@@ -820,7 +881,7 @@ export const resolveEffectResult = (state, result, context) => {
     const { creature } = result.paralyzeCreature;
     creature.paralyzed = true;
     creature.paralyzedUntilTurn = state.turn + 1;
-    logGameAction(state, DEBUFF, `${creature.name} is paralyzed.`);
+    logGameAction(state, DEBUFF, `${formatCardForLog(creature)} is paralyzed.`);
   }
 
   // Freeze multiple creatures
@@ -829,7 +890,7 @@ export const resolveEffectResult = (state, result, context) => {
       if (creature) {
         creature.frozen = true;
         creature.frozenDiesTurn = state.turn + 1;
-        logGameAction(state, DEBUFF, `${creature.name} is ${formatKeyword("Frozen")}.`);
+        logGameAction(state, DEBUFF, `${formatCardForLog(creature)} is ${formatKeyword("Frozen")}.`);
       }
     });
   }
@@ -844,7 +905,7 @@ export const resolveEffectResult = (state, result, context) => {
         }
         creature.frozen = false;
         creature.frozenDiesTurn = null;
-        logGameAction(state, BUFF, `${creature.name} thaws out.`);
+        logGameAction(state, BUFF, `${formatCardForLog(creature)} thaws out.`);
       }
     });
   }
@@ -861,9 +922,9 @@ export const resolveEffectResult = (state, result, context) => {
         const instance = createCardInstance(card);
         player.field[emptySlot] = instance;
         state._lastPlayedCreature = instance;
-        logGameAction(state, SUMMON, `${card.name} returns from the carrion.`);
+        logGameAction(state, SUMMON, `${formatCardForLog(card)} returns from the carrion.`);
       } else {
-        logMessage(state, `No field slot available for ${card.name}.`);
+        logMessage(state, `No field slot available for ${formatCardForLog(card)}.`);
       }
     }
   }
@@ -893,7 +954,7 @@ export const resolveEffectResult = (state, result, context) => {
         creature.currentAtk = (creature.currentAtk ?? creature.atk ?? 0) + (attack || 0);
         creature.currentHp = (creature.currentHp ?? creature.hp ?? 0) + (health || 0);
         if (attack || health) {
-          logGameAction(state, BUFF, `${creature.name} gains +${attack || 0}/+${health || 0}.`);
+          logGameAction(state, BUFF, `${formatCardForLog(creature)} gains +${attack || 0}/+${health || 0}.`);
         }
       }
     });
@@ -906,7 +967,7 @@ export const resolveEffectResult = (state, result, context) => {
       const baseHp = creature.hp || 1;
       if (creature.currentHp < baseHp) {
         creature.currentHp = baseHp;
-        logGameAction(state, HEAL, `${creature.name} regenerates to full health.`);
+        logGameAction(state, HEAL, `${formatCardForLog(creature)} regenerates to full health.`);
       }
     }
   }
@@ -918,14 +979,14 @@ export const resolveEffectResult = (state, result, context) => {
       const player = state.players[playerIndex];
       const emptySlot = player.field.findIndex((slot) => slot === null);
       if (emptySlot === -1) {
-        logMessage(state, `No room to revive ${creature.name}.`);
+        logMessage(state, `No room to revive ${formatCardForLog(creature)}.`);
       } else {
         // Reset HP and place on field
         creature.currentHp = creature.hp || 1;
         creature.diedInCombat = false;
         creature.slainBy = null;
         player.field[emptySlot] = creature;
-        logGameAction(state, SUMMON, `${creature.name} revives!`);
+        logGameAction(state, SUMMON, `${formatCardForLog(creature)} revives!`);
       }
     }
   }
