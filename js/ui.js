@@ -4,7 +4,6 @@ import {
   logMessage,
   drawCard,
   queueVisualEffect,
-  getTrapsFromHand,
   logGameAction,
   LOG_CATEGORIES,
 } from "./state/gameState.js";
@@ -70,6 +69,13 @@ import {
   renderReactionOverlay,
   hideReactionOverlay,
 } from "./ui/overlays/ReactionOverlay.js";
+
+// Trigger/Reaction system (extracted module)
+import {
+  TRIGGER_EVENTS,
+  createReactionWindow,
+  resolveReaction,
+} from "./game/triggers/index.js";
 
 // Deck builder overlays (extracted module)
 import {
@@ -1138,183 +1144,47 @@ const resolveAttack = (state, attacker, target, negateAttack = false) => {
 
 // ============================================================================
 // REACTION SYSTEM (Traps & Discard Effects)
-// Uses the reaction overlay for a consistent experience across players
+// Now uses the centralized trigger/reaction system in ./game/triggers/
 // ============================================================================
 
 /**
- * Collect all available reactions for a defender
- * Returns traps and discard effects that can trigger on the given trigger type
- */
-const collectAvailableReactions = (defender, triggerType, target) => {
-  const reactions = [];
-
-  // Collect traps with matching trigger
-  const traps = getTrapsFromHand(defender, triggerType);
-  traps.forEach((trap) => {
-    reactions.push({
-      type: "trap",
-      card: trap,
-      instanceId: trap.instanceId,
-    });
-  });
-
-  // For direct attacks against player, also collect discard effects
-  if (triggerType === "directAttack" && target?.type === "player") {
-    defender.hand.forEach((card) => {
-      if (getDiscardEffectInfo(card).timing === "directAttack") {
-        reactions.push({
-          type: "discard",
-          card,
-          instanceId: card.instanceId,
-        });
-      }
-    });
-  }
-
-  return reactions;
-};
-
-/**
- * Handle reaction decision from the overlay
- * @param {Object} state - Game state
- * @param {boolean} activated - Whether the player chose to activate
- * @param {Function} onUpdate - UI update callback
- */
-const handleReactionDecision = (state, activated, onUpdate) => {
-  if (!state.pendingReaction) return;
-
-  const {
-    deciderIndex,
-    reactions,
-    attackContext,
-  } = state.pendingReaction;
-
-  const defender = state.players[deciderIndex];
-  const attackerIndex = (deciderIndex + 1) % 2;
-
-  // Find the attacker and target from the attack context
-  const attacker = attackContext.attackerId
-    ? findCardByInstanceId(state, attackContext.attackerId)
-    : null;
-  const target = attackContext.targetType === "player"
-    ? { type: "player", player: state.players[attackContext.targetPlayerIndex] }
-    : { type: "creature", card: findCardByInstanceId(state, attackContext.targetCardId) };
-
-  // Clear the pending reaction first
-  state.pendingReaction = null;
-  hideReactionOverlay();
-
-  if (!attacker) {
-    // Attacker no longer exists
-    onUpdate?.();
-    broadcastSyncState(state);
-    return;
-  }
-
-  if (!activated || reactions.length === 0) {
-    // Player chose not to activate or has no reactions
-    resolveAttack(state, attacker, target, false);
-    onUpdate?.();
-    broadcastSyncState(state);
-    return;
-  }
-
-  // Activate the first available reaction
-  // (In the future, could show a sub-selection if multiple reactions exist)
-  const reaction = reactions[0];
-  let result = null;
-
-  if (reaction.type === "trap") {
-    // Remove trap from hand and move to exile
-    defender.hand = defender.hand.filter((c) => c.instanceId !== reaction.instanceId);
-    defender.exile.push(reaction.card);
-
-    logMessage(state, `${defender.name}'s ${reaction.card.name} trap activates!`);
-
-    result = resolveCardEffect(reaction.card, "effect", {
-      log: (message) => logMessage(state, message),
-      attacker,
-      target,
-      defenderIndex: deciderIndex,
-      state,
-    });
-  } else if (reaction.type === "discard") {
-    // Remove card from hand and move to appropriate pile
-    defender.hand = defender.hand.filter((c) => c.instanceId !== reaction.instanceId);
-    if (reaction.card.type === "Predator" || reaction.card.type === "Prey") {
-      defender.carrion.push(reaction.card);
-    } else {
-      defender.exile.push(reaction.card);
-    }
-
-    logMessage(state, `${defender.name} discards ${reaction.card.name}!`);
-
-    result = resolveCardEffect(reaction.card, "discardEffect", {
-      log: (message) => logMessage(state, message),
-      attacker,
-      defender,
-    });
-  }
-
-  // Resolve the effect chain
-  if (result) {
-    resolveEffectChain(state, result, {
-      playerIndex: deciderIndex,
-      opponentIndex: attackerIndex,
-    });
-  }
-
-  cleanupDestroyed(state);
-
-  // Check if attacker was destroyed
-  if (attacker.currentHp <= 0) {
-    logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
-    onUpdate?.();
-    broadcastSyncState(state);
-    return;
-  }
-
-  // Resolve the attack with negate status
-  const negate = Boolean(result?.negateAttack);
-  resolveAttack(state, attacker, target, negate);
-  onUpdate?.();
-  broadcastSyncState(state);
-};
-
-/**
  * Handle trap/reaction response when an attack is declared
- * Sets up pendingReaction state for the reaction overlay
+ * Uses the new centralized reaction system
  */
 const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
-  const defenderIndex = state.players.indexOf(defender);
-  const triggerType = target.type === "player" ? "directAttack" : "defending";
+  const attackerIndex = state.players.indexOf(getActivePlayer(state));
 
-  // Collect available reactions
-  const reactions = collectAvailableReactions(defender, triggerType, target);
-
-  // If no reactions available, resolve attack immediately
-  if (reactions.length === 0) {
-    resolveAttack(state, attacker, target, false);
-    onUpdate?.();
-    broadcastSyncState(state);
-    return;
-  }
-
-  // Set up pending reaction state
-  state.pendingReaction = {
-    deciderIndex: defenderIndex,
-    reactions,
-    attackContext: {
-      attackerId: attacker.instanceId,
-      targetType: target.type,
-      targetPlayerIndex: target.type === "player" ? state.players.indexOf(target.player) : null,
-      targetCardId: target.type === "creature" ? target.card.instanceId : null,
+  const windowCreated = createReactionWindow({
+    state,
+    event: TRIGGER_EVENTS.ATTACK_DECLARED,
+    triggeringPlayerIndex: attackerIndex,
+    eventContext: {
+      attacker,
+      target,
     },
-    timerStart: Date.now(),
-  };
+    onResolved: () => {
+      // After reaction resolves, continue with attack
+      // The attack might have been negated by the trap effect
+      const wasNegated = state._lastReactionNegatedAttack ?? false;
+      state._lastReactionNegatedAttack = undefined;
 
-  onUpdate?.();
-  broadcastSyncState(state);
+      // Check if attacker still exists and has HP
+      if (attacker.currentHp <= 0) {
+        logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
+        onUpdate?.();
+        broadcastSyncState(state);
+        return;
+      }
+
+      resolveAttack(state, attacker, target, wasNegated);
+      onUpdate?.();
+      broadcastSyncState(state);
+    },
+    onUpdate,
+    broadcast: broadcastSyncState,
+  });
+
+  // If no window was created, attack resolves immediately (no reactions available)
 };
 
 const handleAttackSelection = (state, attacker, onUpdate) => {
@@ -1686,63 +1556,25 @@ const handleDiscardEffect = (state, card, onUpdate) => {
   broadcastSyncState(state);
 };
 
+/**
+ * Trigger play traps using the new reaction system
+ * Creates a reaction window for traps that trigger when a creature is played
+ */
 const triggerPlayTraps = (state, creature, onUpdate, onResolved) => {
-  const opponentIndex = (state.activePlayerIndex + 1) % 2;
-  const opponent = state.players[opponentIndex];
-  const triggerKey = creature.type === "Predator" ? "rivalPlaysPred" : "rivalPlaysPrey";
-  // Get traps from hand that can trigger on this creature type being played
-  const relevantTraps = getTrapsFromHand(opponent, triggerKey);
-  if (relevantTraps.length === 0) {
-    onResolved?.();
-    return;
-  }
-  const items = relevantTraps.map((trap) => {
-    const item = document.createElement("label");
-    item.className = "selection-item";
-    const button = document.createElement("button");
-    button.className = "secondary";
-    button.textContent = `Trigger ${trap.name}`;
-    button.onclick = () => {
-      // Remove trap from hand and move to exile
-      opponent.hand = opponent.hand.filter((card) => card.instanceId !== trap.instanceId);
-      opponent.exile.push(trap);
-      const result = resolveCardEffect(trap, 'effect', {
-        log: (message) => logMessage(state, message),
-        target: { type: "creature", card: creature },
-        defenderIndex: opponentIndex,
-        state,
-      });
-      resolveEffectChain(state, result, {
-        playerIndex: opponentIndex,
-        opponentIndex: state.activePlayerIndex,
-      });
-      cleanupDestroyed(state);
-      clearSelectionPanel();
-      onUpdate?.();
-      onResolved?.();
-    };
-    item.appendChild(button);
-    return item;
+  const windowCreated = createReactionWindow({
+    state,
+    event: TRIGGER_EVENTS.CARD_PLAYED,
+    triggeringPlayerIndex: state.activePlayerIndex,
+    eventContext: {
+      card: creature,
+    },
+    onResolved,
+    onUpdate,
+    broadcast: broadcastSyncState,
   });
 
-  const skipButton = document.createElement("label");
-  skipButton.className = "selection-item";
-  const skipAction = document.createElement("button");
-  skipAction.textContent = "Skip Trap";
-  skipAction.onclick = () => {
-    clearSelectionPanel();
-    onUpdate?.();
-    onResolved?.();
-  };
-  skipButton.appendChild(skipAction);
-  items.push(skipButton);
-
-  renderSelectionPanel({
-    title: `${opponent.name} may trigger a trap`,
-    items,
-    onConfirm: () => {},
-    confirmLabel: null,
-  });
+  // If no window was created, onResolved was already called
+  // Otherwise, the reaction overlay will handle the decision
 };
 
 const updateActionBar = (onNextPhase) => {
@@ -2315,7 +2147,16 @@ export const renderGame = (state, callbacks = {}) => {
 
   // Reaction overlay (traps & discard effects)
   renderReactionOverlay(state, {
-    onReactionDecision: (activated) => handleReactionDecision(state, activated, callbacks.onUpdate),
+    onReactionDecision: (activated) => {
+      resolveReaction({
+        state,
+        activated,
+        onUpdate: callbacks.onUpdate,
+        broadcast: broadcastSyncState,
+        resolveEffectChain,
+        cleanupDestroyed,
+      });
+    },
     onUpdate: callbacks.onUpdate,
   });
 

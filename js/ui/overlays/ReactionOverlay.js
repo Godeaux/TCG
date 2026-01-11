@@ -10,12 +10,11 @@
  * - "Activate" / "Do not activate" buttons (deliberately vague)
  * - Shows "{Player} is making a decision..." to opponent
  * - Timer expiry defaults to not activating
+ * - Live-synced so both players see the same state
  */
 
 import { getLocalPlayerIndex, isOnlineMode, isAIMode } from '../../state/selectors.js';
-
-// Timer duration in seconds
-const REACTION_TIMER_SECONDS = 15;
+import { REACTION_TIMER_SECONDS } from '../../game/triggers/index.js';
 
 // Timer interval reference
 let timerInterval = null;
@@ -144,10 +143,12 @@ export const renderReactionOverlay = (state, callbacks = {}) => {
     return;
   }
 
-  const { deciderIndex, reactions } = state.pendingReaction;
-  const decider = state.players[deciderIndex];
+  // Support both old (deciderIndex) and new (reactingPlayerIndex) formats
+  const reactingPlayerIndex = state.pendingReaction.reactingPlayerIndex ?? state.pendingReaction.deciderIndex;
+  const reactions = state.pendingReaction.reactions;
+  const reactingPlayer = state.players[reactingPlayerIndex];
 
-  if (!decider || !reactions || reactions.length === 0) {
+  if (!reactingPlayer || !reactions || reactions.length === 0) {
     hideReactionOverlay();
     return;
   }
@@ -157,16 +158,19 @@ export const renderReactionOverlay = (state, callbacks = {}) => {
   overlay.setAttribute("aria-hidden", "false");
 
   const localIndex = getLocalPlayerIndex(state);
-  const isDecider = !isOnlineMode(state) || localIndex === deciderIndex;
-  const isOnline = isOnlineMode(state);
+  // In local mode, the reacting player is always the non-active player
+  // In online mode, check if local player is the reacting player
+  const isReactingPlayer = isOnlineMode(state)
+    ? localIndex === reactingPlayerIndex
+    : true; // In local mode, show buttons (the device holder decides)
 
   // Set title and subtitle based on who is viewing
-  if (isDecider) {
+  if (isReactingPlayer) {
     title.textContent = "Reaction";
     subtitle.textContent = "You may respond to this action.";
   } else {
     title.textContent = "Reaction";
-    subtitle.textContent = `${decider.name} is making a decision...`;
+    subtitle.textContent = `${reactingPlayer.name} is making a decision...`;
   }
 
   // Show timer
@@ -175,7 +179,7 @@ export const renderReactionOverlay = (state, callbacks = {}) => {
   // Render action buttons
   clearActions(actions);
 
-  if (isDecider) {
+  if (isReactingPlayer) {
     // Activate button
     const activateBtn = document.createElement("button");
     activateBtn.className = "primary";
@@ -190,27 +194,25 @@ export const renderReactionOverlay = (state, callbacks = {}) => {
     passBtn.onclick = () => handlePass(state, callbacks);
     actions.appendChild(passBtn);
 
-    // Start the timer
+    // Start the timer (with timeout callback for reacting player)
     startTimer(state, () => handleTimeout(state, callbacks), callbacks.onUpdate);
   } else {
-    // Just watching - show waiting state
+    // Non-reacting player sees waiting state
     const waitingText = document.createElement("p");
     waitingText.className = "muted";
     waitingText.textContent = "Waiting for opponent...";
     actions.appendChild(waitingText);
 
-    // Still run timer visually for opponent
-    startTimer(state, () => {
-      // Timer expired on our end - opponent should handle it
-      // If we don't get an update soon, the sync will clear it
-    }, callbacks.onUpdate);
+    // Run timer visually for both players (live-sync)
+    startTimer(state, null, callbacks.onUpdate);
   }
 
   // In AI mode, auto-decide after a short delay
-  if (isAIMode(state) && deciderIndex === 1 && !aiDecisionPending) {
+  if (isAIMode(state) && reactingPlayerIndex === 1 && !aiDecisionPending) {
     aiDecisionPending = true;
     setTimeout(() => {
-      if (state.pendingReaction && state.pendingReaction.deciderIndex === 1) {
+      const currentReactingIndex = state.pendingReaction?.reactingPlayerIndex ?? state.pendingReaction?.deciderIndex;
+      if (state.pendingReaction && currentReactingIndex === 1) {
         // AI always activates if it has a reaction available
         console.log("[AI] Auto-activating reaction");
         callbacks.onReactionDecision?.(true);
