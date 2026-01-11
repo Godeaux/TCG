@@ -137,6 +137,7 @@ const getNavigationElements = () => ({
   menuLogin: document.getElementById("menu-login"),
   menuLogout: document.getElementById("menu-logout"),
   menuCatalog: document.getElementById("menu-catalog"),
+  menuProfile: document.getElementById("menu-profile"),
   menuTutorial: document.getElementById("menu-tutorial"),
 
   // AI Setup
@@ -288,6 +289,37 @@ const initNavigation = () => {
       return;
     }
     setMenuStage(latestState, "tutorial");
+    latestCallbacks.onUpdate?.();
+  });
+
+  // Main menu: Profile
+  elements.menuProfile?.addEventListener("click", () => {
+    if (!latestState) {
+      return;
+    }
+    // Add mock profile data for testing if not logged in
+    if (!latestState.menu.profile) {
+      latestState.menu.profile = {
+        username: "Guest Player",
+        packs: 5,  // Give 5 packs for testing
+        stats: {
+          gamesPlayed: 12,
+          gamesWon: 7,
+          favoriteCard: "Salmon",
+        },
+        matches: [
+          { opponent: "DragonMaster", won: true, date: new Date().toISOString() },
+          { opponent: "CardShark99", won: false, date: new Date(Date.now() - 86400000).toISOString() },
+          { opponent: "FishKing", won: true, date: new Date(Date.now() - 172800000).toISOString() },
+        ],
+        ownedCards: new Map([
+          ["fish-prey-salmon", "uncommon"],
+          ["fish-predator-shark", "rare"],
+          ["bird-prey-sparrow", "common"],
+        ]),
+      };
+    }
+    setMenuStage(latestState, "profile");
     latestCallbacks.onUpdate?.();
   });
 

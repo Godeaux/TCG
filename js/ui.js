@@ -70,6 +70,19 @@ import {
   hideReactionOverlay,
 } from "./ui/overlays/ReactionOverlay.js";
 
+// Profile overlay (extracted module)
+import {
+  renderProfileOverlay,
+  hideProfileOverlay,
+} from "./ui/overlays/ProfileOverlay.js";
+
+// Pack opening overlay (extracted module)
+import {
+  renderPackOpeningOverlay,
+  hidePackOpeningOverlay,
+  startPackOpening,
+} from "./ui/overlays/PackOpeningOverlay.js";
+
 // Trigger/Reaction system (extracted module)
 import {
   TRIGGER_EVENTS,
@@ -2523,6 +2536,59 @@ export const renderGame = (state, callbacks = {}) => {
   renderMenuOverlays(state);
   // Note: Lobby subscriptions are managed by lobbyManager.js (handleCreateLobby/handleJoinLobby)
   // No need to call updateLobbySubscription here - it's set up when entering a lobby
+
+  // Profile overlay
+  renderProfileOverlay(state, {
+    onBack: () => {
+      setMenuStage(state, "main");
+      callbacks.onUpdate?.();
+    },
+    onOpenPack: () => {
+      if ((state.menu?.profile?.packs || 0) > 0) {
+        // Decrement pack count
+        state.menu.profile.packs--;
+        setMenuStage(state, "pack-opening");
+        startPackOpening({
+          onCardRevealed: (card) => {
+            console.log("Card revealed:", card.name, card.packRarity);
+          },
+        });
+        callbacks.onUpdate?.();
+      }
+    },
+    onCardClick: (card, rarity) => {
+      console.log("Card clicked:", card.name, "Rarity:", rarity);
+      // TODO: Show card upgrade popup
+    },
+  });
+
+  // Pack opening overlay
+  renderPackOpeningOverlay(state, {
+    onDone: (packCards) => {
+      console.log("Pack opening done:", packCards);
+      // Add cards to collection (only if better than existing rarity)
+      if (state.menu?.profile?.ownedCards) {
+        const ownedCards = state.menu.profile.ownedCards;
+        const rarityOrder = ['common', 'uncommon', 'rare', 'legendary', 'pristine'];
+
+        packCards.forEach(card => {
+          const existingRarity = ownedCards.get(card.id);
+          const existingIndex = existingRarity ? rarityOrder.indexOf(existingRarity) : -1;
+          const newIndex = rarityOrder.indexOf(card.packRarity);
+
+          // Only add/upgrade if new rarity is better
+          if (newIndex > existingIndex) {
+            ownedCards.set(card.id, card.packRarity);
+            console.log(`Added/upgraded ${card.name} to ${card.packRarity}`);
+          }
+        });
+      }
+      // TODO: Save cards to collection via Supabase
+      // For now, just go back to profile
+      setMenuStage(state, "profile");
+      callbacks.onUpdate?.();
+    },
+  });
 
   // Setup carrion pile click handler
   const carrionEl = document.getElementById("active-carrion");

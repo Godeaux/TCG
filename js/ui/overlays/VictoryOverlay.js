@@ -25,6 +25,7 @@ const getVictoryElements = () => ({
   cards: document.getElementById("victory-cards"),
   kills: document.getElementById("victory-kills"),
   menu: document.getElementById("victory-menu"),
+  reward: document.getElementById("victory-reward"),
 });
 
 // ============================================================================
@@ -101,10 +102,13 @@ const calculateCreaturesDefeated = (state) => {
  * @param {number} stats.turns - Number of turns played
  * @param {number} stats.cardsPlayed - Total cards played
  * @param {number} stats.creaturesDefeated - Total creatures defeated
+ * @param {Object} options - Additional options
+ * @param {boolean} options.awardPack - Whether to award a pack
+ * @param {Object} options.state - Game state (for updating pack count)
  */
-export const showVictoryScreen = (winner, stats = {}) => {
+export const showVictoryScreen = (winner, stats = {}, options = {}) => {
   const elements = getVictoryElements();
-  const { overlay, winnerName, turns, cards, kills, menu } = elements;
+  const { overlay, winnerName, turns, cards, kills, menu, reward } = elements;
 
   if (!overlay) return;
 
@@ -122,6 +126,23 @@ export const showVictoryScreen = (winner, stats = {}) => {
   }
   if (kills) {
     kills.textContent = stats.creaturesDefeated || 0;
+  }
+
+  // Show pack reward if applicable
+  if (reward) {
+    if (options.awardPack) {
+      reward.style.display = '';
+      reward.classList.add('animate');
+
+      // Actually award the pack to the player's profile
+      if (options.state?.menu?.profile) {
+        options.state.menu.profile.packs = (options.state.menu.profile.packs || 0) + 1;
+        console.log('Pack awarded! New total:', options.state.menu.profile.packs);
+      }
+    } else {
+      reward.style.display = 'none';
+      reward.classList.remove('animate');
+    }
   }
 
   // Create particles
@@ -159,6 +180,43 @@ export const hideVictoryScreen = (callback) => {
 };
 
 /**
+ * Determine if a pack should be awarded based on game mode and outcome
+ *
+ * @param {Object} state - Game state
+ * @param {Object} winner - The winning player
+ * @param {Object} loser - The losing player
+ * @returns {boolean} True if pack should be awarded
+ */
+const shouldAwardPack = (state, winner, loser) => {
+  const gameMode = state.menu?.mode;
+  const localPlayerIndex = state.menu?.profile?.id === state.players[0].profileId ? 0 : 1;
+  const localPlayer = state.players[localPlayerIndex];
+
+  // AI mode: Only award pack if local player (human) won
+  if (gameMode === 'ai') {
+    // In AI mode, player 0 is always the human, player 1 is AI
+    const humanWon = winner === state.players[0];
+    console.log('AI mode - Human won:', humanWon);
+    return humanWon;
+  }
+
+  // Online mode: Award pack for completing the game (win or lose)
+  if (gameMode === 'online') {
+    console.log('Online mode - Pack awarded for completing game');
+    return true;
+  }
+
+  // Local mode: No packs (it's just practice)
+  if (gameMode === 'local') {
+    console.log('Local mode - No pack awarded');
+    return false;
+  }
+
+  // Default: no pack
+  return false;
+};
+
+/**
  * Check if the game has reached a victory condition
  *
  * @param {Object} state - Game state
@@ -177,8 +235,11 @@ export const checkForVictory = (state) => {
       creaturesDefeated: calculateCreaturesDefeated(state)
     };
 
-    // Show victory screen
-    showVictoryScreen(winner, stats);
+    // Determine if pack should be awarded
+    const awardPack = shouldAwardPack(state, winner, loser);
+
+    // Show victory screen with pack reward if applicable
+    showVictoryScreen(winner, stats, { awardPack, state });
 
     return true; // Game over
   }
