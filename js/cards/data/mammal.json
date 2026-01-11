@@ -428,17 +428,8 @@
       "hp": 5,
       "effectText": "Add Salmon to hand.",
       "effects": {
-        "onConsume": { "type": "addToHand", "params": { "cardId": "mammal-prey-salmon" } }
+        "onConsume": { "type": "addToHand", "params": { "cardId": "token-salmon" } }
       }
-    },
-    {
-      "id": "mammal-prey-salmon",
-      "name": "Salmon",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": ["Free Play"]
     },
     {
       "id": "mammal-predator-polar-bear",
