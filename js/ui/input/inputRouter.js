@@ -261,7 +261,7 @@ const initNavigation = () => {
 
   // Main menu: Deck Catalog
   elements.menuCatalog?.addEventListener("click", () => {
-    if (!latestState || !latestState.menu.profile) {
+    if (!latestState) {
       return;
     }
     latestState.menu.mode = null;

@@ -159,7 +159,7 @@ export const renderMenuOverlays = (state) => {
     elements.menuPlay.disabled = state.menu.loading;
   }
   if (elements.menuCatalog) {
-    elements.menuCatalog.disabled = state.menu.loading || !isLoggedIn;
+    elements.menuCatalog.disabled = state.menu.loading;
   }
 
   // Update login states
