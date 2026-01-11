@@ -820,14 +820,10 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       }
       clearPanel(deckSelectGrid);
 
-      // Ensure decks are loaded
-      ensureDecksLoaded(state);
-      const decks = state.menu.decks ?? [];
-
       // Create card-style grid container
       deckSelectGrid.className = "deck-select-grid deck-catalog-home";
 
-      // 1. "View All Cards" option
+      // 1. "View All Cards" option (always visible)
       const viewAllCard = document.createElement("button");
       viewAllCard.type = "button";
       viewAllCard.className = "deck-catalog-card deck-catalog-card--view-all";
@@ -843,86 +839,102 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       };
       deckSelectGrid.appendChild(viewAllCard);
 
-      // 2. Existing deck slots (up to 5)
-      const maxSlots = 5;
-      for (let i = 0; i < maxSlots; i++) {
-        const deck = decks[i];
-        const card = document.createElement("div");
-        card.className = "deck-catalog-card" + (deck ? " deck-catalog-card--filled" : " deck-catalog-card--empty");
+      // 2. Deck slots - only show if logged in
+      if (!state.menu.profile) {
+        // Not logged in - show login prompt
+        const loginPrompt = document.createElement("div");
+        loginPrompt.className = "deck-catalog-card deck-catalog-card--login-prompt";
+        loginPrompt.innerHTML = `
+          <div class="deck-catalog-card__icon">🔐</div>
+          <div class="deck-catalog-card__title">Log in to create decks</div>
+          <div class="deck-catalog-card__subtitle">Save up to 5 decks for multiplayer</div>
+        `;
+        deckSelectGrid.appendChild(loginPrompt);
+      } else {
+        // Logged in - show deck slots
+        ensureDecksLoaded(state);
+        const decks = state.menu.decks ?? [];
 
-        if (deck) {
-          // Filled deck slot
-          card.innerHTML = `
-            <div class="deck-catalog-card__icon">🃏</div>
-            <div class="deck-catalog-card__title">${deck.name}</div>
-            <div class="deck-catalog-card__subtitle">20 cards</div>
-            <div class="deck-catalog-card__actions">
-              <button type="button" class="deck-catalog-card__btn deck-catalog-card__btn--edit" title="Edit deck">✏️</button>
-              <button type="button" class="deck-catalog-card__btn deck-catalog-card__btn--delete" title="Delete deck">🗑️</button>
-            </div>
-          `;
+        const maxSlots = 5;
+        for (let i = 0; i < maxSlots; i++) {
+          const deck = decks[i];
+          const card = document.createElement("div");
+          card.className = "deck-catalog-card" + (deck ? " deck-catalog-card--filled" : " deck-catalog-card--empty");
 
-          // Edit button handler
-          const editBtn = card.querySelector(".deck-catalog-card__btn--edit");
-          editBtn.onclick = (e) => {
-            e.stopPropagation();
-            const deckId = findDeckCatalogId(deck.deck);
-            state.catalogBuilder.deckId = deckId;
-            state.catalogBuilder.stage = "build";
-            state.catalogBuilder.selections = mapDeckIdsToCards(deckId, deck.deck);
-            state.catalogBuilder.available = [];
-            state.catalogBuilder.catalogOrder = [];
-            state.catalogBuilder.editingDeckId = deck.id;
-            state.catalogBuilder.editingDeckName = deck.name;
-            initCatalogBuilder(state.catalogBuilder);
-            state.catalogBuilder.activeTab = "catalog";
-            deckActiveTab = "catalog";
-            deckHighlighted = null;
-            callbacks.onUpdate?.();
-          };
+          if (deck) {
+            // Filled deck slot
+            card.innerHTML = `
+              <div class="deck-catalog-card__icon">🃏</div>
+              <div class="deck-catalog-card__title">${deck.name}</div>
+              <div class="deck-catalog-card__subtitle">20 cards</div>
+              <div class="deck-catalog-card__actions">
+                <button type="button" class="deck-catalog-card__btn deck-catalog-card__btn--edit" title="Edit deck">✏️</button>
+                <button type="button" class="deck-catalog-card__btn deck-catalog-card__btn--delete" title="Delete deck">🗑️</button>
+              </div>
+            `;
 
-          // Delete button handler
-          const deleteBtn = card.querySelector(".deck-catalog-card__btn--delete");
-          deleteBtn.onclick = async (e) => {
-            e.stopPropagation();
-            if (!window.confirm(`Delete "${deck.name}"?`)) {
-              return;
-            }
-            applyMenuLoading(state, true);
-            try {
-              const api = await loadSupabaseApi(state);
-              await api.deleteDeck({ deckId: deck.id, ownerId: state.menu.profile.id });
-              await ensureDecksLoaded(state, { force: true });
-            } catch (error) {
-              setMenuError(state, error.message || "Failed to delete deck.");
-            } finally {
-              applyMenuLoading(state, false);
+            // Edit button handler
+            const editBtn = card.querySelector(".deck-catalog-card__btn--edit");
+            editBtn.onclick = (e) => {
+              e.stopPropagation();
+              const deckId = findDeckCatalogId(deck.deck);
+              state.catalogBuilder.deckId = deckId;
+              state.catalogBuilder.stage = "build";
+              state.catalogBuilder.selections = mapDeckIdsToCards(deckId, deck.deck);
+              state.catalogBuilder.available = [];
+              state.catalogBuilder.catalogOrder = [];
+              state.catalogBuilder.editingDeckId = deck.id;
+              state.catalogBuilder.editingDeckName = deck.name;
+              initCatalogBuilder(state.catalogBuilder);
+              state.catalogBuilder.activeTab = "catalog";
+              deckActiveTab = "catalog";
+              deckHighlighted = null;
               callbacks.onUpdate?.();
-            }
-          };
+            };
 
-          // Clicking the card itself also opens edit
-          card.onclick = (e) => {
-            if (e.target === editBtn || e.target === deleteBtn) return;
-            editBtn.click();
-          };
-          card.style.cursor = "pointer";
-        } else {
-          // Empty deck slot - "Create New Deck"
-          card.innerHTML = `
-            <div class="deck-catalog-card__icon">➕</div>
-            <div class="deck-catalog-card__title">Create New Deck</div>
-            <div class="deck-catalog-card__subtitle">Slot ${i + 1} available</div>
-          `;
-          card.style.cursor = "pointer";
-          card.onclick = () => {
-            state.catalogBuilder.stage = "select";
-            state.catalogBuilder.viewOnly = false;
-            callbacks.onUpdate?.();
-          };
+            // Delete button handler
+            const deleteBtn = card.querySelector(".deck-catalog-card__btn--delete");
+            deleteBtn.onclick = async (e) => {
+              e.stopPropagation();
+              if (!window.confirm(`Delete "${deck.name}"?`)) {
+                return;
+              }
+              applyMenuLoading(state, true);
+              try {
+                const api = await loadSupabaseApi(state);
+                await api.deleteDeck({ deckId: deck.id, ownerId: state.menu.profile.id });
+                await ensureDecksLoaded(state, { force: true });
+              } catch (error) {
+                setMenuError(state, error.message || "Failed to delete deck.");
+              } finally {
+                applyMenuLoading(state, false);
+                callbacks.onUpdate?.();
+              }
+            };
+
+            // Clicking the card itself also opens edit
+            card.onclick = (e) => {
+              if (e.target === editBtn || e.target === deleteBtn) return;
+              editBtn.click();
+            };
+            card.style.cursor = "pointer";
+          } else {
+            // Empty deck slot - "Create New Deck"
+            card.innerHTML = `
+              <div class="deck-catalog-card__icon">➕</div>
+              <div class="deck-catalog-card__title">Create New Deck</div>
+              <div class="deck-catalog-card__subtitle">Slot ${i + 1} available</div>
+            `;
+            card.style.cursor = "pointer";
+            card.onclick = () => {
+              state.catalogBuilder.stage = "select";
+              state.catalogBuilder.viewOnly = false;
+              callbacks.onUpdate?.();
+            };
+          }
+
+          deckSelectGrid.appendChild(card);
         }
-
-        deckSelectGrid.appendChild(card);
       }
 
       // Back button
