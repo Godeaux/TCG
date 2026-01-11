@@ -5,6 +5,8 @@ import {
   drawCard,
   queueVisualEffect,
   getTrapsFromHand,
+  logGameAction,
+  LOG_CATEGORIES,
 } from "./state/gameState.js";
 import { canPlayCard, cardLimitAvailable, finalizeEndPhase } from "./game/turnManager.js";
 import { createCardInstance } from "./cardTypes.js";
@@ -865,6 +867,9 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
       candidates.some((candidate) => isCardLike(candidate.card ?? candidate.value));
     const handleSelection = (value) => {
       clearSelectionPanel();
+      // Log the player's choice
+      const selectedName = value?.name || value?.label || (typeof value === 'string' ? value : 'target');
+      logGameAction(state, LOG_CATEGORIES.CHOICE, `${context.player?.name || 'Player'} selects ${selectedName}.`);
       const followUp = onSelect(value);
       resolveEffectChain(state, followUp, context, onUpdate, onComplete);
       cleanupDestroyed(state);
@@ -914,6 +919,8 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
 
     const handleOptionSelection = (option) => {
       clearSelectionPanel();
+      // Log the player's choice
+      logGameAction(state, LOG_CATEGORIES.CHOICE, `${context.player?.name || 'Player'} chooses ${option.label}.`);
       const followUp = onSelect(option);
       resolveEffectChain(state, followUp, context, onUpdate, onComplete);
       cleanupDestroyed(state);
@@ -1394,6 +1401,8 @@ const handlePlayCard = (state, card, onUpdate) => {
   }
 
   if (card.type === "Spell" || card.type === "Free Spell") {
+    // Log spell cast
+    logGameAction(state, LOG_CATEGORIES.SPELL, `${player.name} casts ${card.name}.`);
     // Use resolveCardEffect to properly handle both legacy and new effect formats
     const result = resolveCardEffect(card, 'effect', {
       log: (message) => logMessage(state, message),
@@ -1584,7 +1593,7 @@ const handlePlayCard = (state, card, onUpdate) => {
           }
           creature.dryDropped = true;
           player.field[emptySlot] = creature;
-          logMessage(state, `${creature.name} enters play with no consumption.`);
+          logGameAction(state, LOG_CATEGORIES.SUMMON, `${player.name} plays ${creature.name} (dry-dropped).`);
           clearSelectionPanel();
           triggerPlayTraps(state, creature, onUpdate, () => {
             if (!isFree) {
@@ -1616,7 +1625,7 @@ const handlePlayCard = (state, card, onUpdate) => {
 
     if (card.type === "Predator") {
       creature.dryDropped = true;
-      logMessage(state, `${creature.name} enters play with no consumption.`);
+      logGameAction(state, LOG_CATEGORIES.SUMMON, `${player.name} plays ${creature.name} (dry-dropped).`);
     }
     player.field[emptySlot] = creature;
     triggerPlayTraps(state, creature, onUpdate, () => {

@@ -1,3 +1,13 @@
+// Re-export history logging functions for convenience
+export {
+  LOG_CATEGORIES,
+  KEYWORD_EMOJIS,
+  logGameAction,
+  formatKeyword,
+  formatKeywordList,
+  getKeywordEmoji,
+} from "../game/historyLog.js";
+
 const shuffle = (array) => {
   for (let i = array.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));

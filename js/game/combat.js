@@ -10,9 +10,11 @@ import {
   areAbilitiesActive,
   hasToxic,
 } from "../keywords.js";
-import { logMessage, queueVisualEffect } from "../state/gameState.js";
+import { logMessage, queueVisualEffect, logGameAction, LOG_CATEGORIES, getKeywordEmoji } from "../state/gameState.js";
 import { resolveEffectResult } from "./effects.js";
 import { isCreatureCard } from "../cardTypes.js";
+
+const { COMBAT, DEATH, BUFF, DEBUFF } = LOG_CATEGORIES;
 
 /**
  * Queue a keyword trigger visual effect
@@ -73,7 +75,7 @@ const applyDamage = (creature, amount, state, ownerIndex) => {
 };
 
 export const resolveCreatureCombat = (state, attacker, defender, attackerOwnerIndex, defenderOwnerIndex) => {
-  logMessage(state, `⚔️ COMBAT: ${attacker.name} (${attacker.currentAtk}/${attacker.currentHp}) attacks ${defender.name} (${defender.currentAtk}/${defender.currentHp})`);
+  logGameAction(state, COMBAT, `${attacker.name} (${attacker.currentAtk}/${attacker.currentHp}) attacks ${defender.name} (${defender.currentAtk}/${defender.currentHp})`);
 
   const ambushAttack = hasAmbush(attacker);
   const attackerPreHp = attacker.currentHp;
@@ -86,18 +88,18 @@ export const resolveCreatureCombat = (state, attacker, defender, attackerOwnerIn
   let attackerDamage = 0;
 
   if (defenderResult.barrierBlocked) {
-    logMessage(state, `  🛡️ ${defender.name}'s barrier blocks the attack!`);
+    logGameAction(state, BUFF, `${defender.name}'s ${getKeywordEmoji("Barrier")} Barrier blocks the attack!`);
   } else if (defenderDamage > 0) {
-    logMessage(state, `  → ${attacker.name} deals ${defenderDamage} damage to ${defender.name} (${defenderPreHp} → ${defender.currentHp})`);
+    logGameAction(state, COMBAT, `${attacker.name} deals ${defenderDamage} damage to ${defender.name} (${defenderPreHp} → ${defender.currentHp})`);
   }
 
   if (defenderDealsDamage) {
     const attackerResult = applyDamage(attacker, defender.currentAtk, state, attackerOwnerIndex);
     attackerDamage = attackerResult.damage;
     if (attackerResult.barrierBlocked) {
-      logMessage(state, `  🛡️ ${attacker.name}'s barrier blocks the counter-attack!`);
+      logGameAction(state, BUFF, `${attacker.name}'s ${getKeywordEmoji("Barrier")} Barrier blocks the counter-attack!`);
     } else if (attackerDamage > 0) {
-      logMessage(state, `  → ${defender.name} deals ${attackerDamage} damage to ${attacker.name} (${attackerPreHp} → ${attacker.currentHp})`);
+      logGameAction(state, COMBAT, `${defender.name} deals ${attackerDamage} damage to ${attacker.name} (${attackerPreHp} → ${attacker.currentHp})`);
     }
   }
 
@@ -105,41 +107,41 @@ export const resolveCreatureCombat = (state, attacker, defender, attackerOwnerIn
   if (hasToxic(attacker) && defenderDamage > 0 && defender.currentHp > 0) {
     queueKeywordEffect(state, attacker, "Toxic", attackerOwnerIndex);
     defender.currentHp = 0;
-    logMessage(state, `  💀 TOXIC: ${defender.name} is killed by ${attacker.name}'s toxic venom!`);
+    logGameAction(state, DEATH, `${getKeywordEmoji("Toxic")} TOXIC: ${defender.name} is killed by ${attacker.name}'s toxic venom!`);
   }
   if (defenderDealsDamage && hasToxic(defender) && attackerDamage > 0 && attacker.currentHp > 0) {
     queueKeywordEffect(state, defender, "Toxic", defenderOwnerIndex);
     attacker.currentHp = 0;
-    logMessage(state, `  💀 TOXIC: ${attacker.name} is killed by ${defender.name}'s toxic venom!`);
+    logGameAction(state, DEATH, `${getKeywordEmoji("Toxic")} TOXIC: ${attacker.name} is killed by ${defender.name}'s toxic venom!`);
   }
 
   if (hasNeurotoxic(attacker) && attacker.currentAtk > 0) {
     queueKeywordEffect(state, attacker, "Neurotoxic", attackerOwnerIndex);
     defender.frozen = true;
     defender.frozenDiesTurn = state.turn + 1;
-    logMessage(state, `  ❄️ ${defender.name} is frozen by neurotoxin (dies turn ${state.turn + 1}).`);
+    logGameAction(state, DEBUFF, `${getKeywordEmoji("Neurotoxic")} ${defender.name} is frozen by neurotoxin (dies turn ${state.turn + 1}).`);
   }
   if (defenderDealsDamage && hasNeurotoxic(defender) && defender.currentAtk > 0) {
     queueKeywordEffect(state, defender, "Neurotoxic", defenderOwnerIndex);
     attacker.frozen = true;
     attacker.frozenDiesTurn = state.turn + 1;
-    logMessage(state, `  ❄️ ${attacker.name} is frozen by neurotoxin (dies turn ${state.turn + 1}).`);
+    logGameAction(state, DEBUFF, `${getKeywordEmoji("Neurotoxic")} ${attacker.name} is frozen by neurotoxin (dies turn ${state.turn + 1}).`);
   }
 
   if (defender.currentHp <= 0) {
     defender.diedInCombat = true;
     defender.slainBy = attacker;
-    logMessage(state, `  💀 ${defender.name} is slain!`);
+    logGameAction(state, DEATH, `${defender.name} is slain!`);
   }
   if (attacker.currentHp <= 0) {
     attacker.diedInCombat = true;
     attacker.slainBy = defender;
-    logMessage(state, `  💀 ${attacker.name} is slain!`);
+    logGameAction(state, DEATH, `${attacker.name} is slain!`);
   }
 
   if (ambushAttack && !defenderSurvived) {
     queueKeywordEffect(state, attacker, "Ambush", attackerOwnerIndex);
-    logMessage(state, `  🎯 AMBUSH: ${attacker.name} avoids all damage!`);
+    logGameAction(state, COMBAT, `${getKeywordEmoji("Ambush")} AMBUSH: ${attacker.name} avoids all damage!`);
   }
 
   return { attackerDamage, defenderDamage };
@@ -148,7 +150,7 @@ export const resolveCreatureCombat = (state, attacker, defender, attackerOwnerIn
 export const resolveDirectAttack = (state, attacker, opponent) => {
   const previousHp = opponent.hp;
   opponent.hp -= attacker.currentAtk;
-  logMessage(state, `🎯 DIRECT ATTACK: ${attacker.name} hits ${opponent.name} for ${attacker.currentAtk} damage! (${previousHp} → ${opponent.hp} HP)`);
+  logGameAction(state, COMBAT, `DIRECT ATTACK: ${attacker.name} hits ${opponent.name} for ${attacker.currentAtk} damage! (${previousHp} → ${opponent.hp} HP)`);
   return attacker.currentAtk;
 };
 
@@ -161,7 +163,7 @@ export const cleanupDestroyed = (state, { silent = false } = {}) => {
         destroyedCreatures.push({ card, player: player.name });
 
         if (!silent && card.onSlain && card.diedInCombat && !card.abilitiesCancelled) {
-          logMessage(state, `  ⚰️ ${card.name} onSlain effect triggers...`);
+          logGameAction(state, DEATH, `${card.name} onSlain effect triggers...`);
           const result = card.onSlain({
             log: (message) => logMessage(state, message),
             player,
@@ -178,12 +180,12 @@ export const cleanupDestroyed = (state, { silent = false } = {}) => {
         }
         player.carrion.push(card);
         if (!silent) {
-          logMessage(state, `  📦 ${card.name} → ${player.name}'s Carrion (${player.carrion.length} cards)`);
+          logGameAction(state, DEATH, `${card.name} → ${player.name}'s Carrion (${player.carrion.length} cards)`);
         }
         if (state.fieldSpell?.card?.instanceId === card.instanceId) {
           state.fieldSpell = null;
           if (!silent) {
-            logMessage(state, `  🏟️ Field spell removed.`);
+            logGameAction(state, DEATH, `Field spell removed.`);
           }
         }
         return null;

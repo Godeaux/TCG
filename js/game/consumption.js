@@ -1,5 +1,7 @@
-import { logMessage, queueVisualEffect } from "../state/gameState.js";
+import { logMessage, queueVisualEffect, logGameAction, LOG_CATEGORIES } from "../state/gameState.js";
 import { isEdible } from "../keywords.js";
+
+const { BUFF } = LOG_CATEGORIES;
 
 const getNutritionValue = (card) => {
   if (card.type === "Predator" && isEdible(card)) {
@@ -55,9 +57,11 @@ export const consumePrey = ({
     }
   });
 
-  logMessage(
+  const preyNames = [...preyList, ...carrionList].map(p => p.name).join(', ');
+  logGameAction(
     state,
-    `${predator.name} consumes ${preyList.length + carrionList.length} prey for +${totalNutrition}/+${totalNutrition}.`
+    BUFF,
+    `${predator.name} consumes ${preyNames} for +${totalNutrition}/+${totalNutrition}.`
   );
   onBroadcast?.(state);
 };

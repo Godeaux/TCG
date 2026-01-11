@@ -1,7 +1,10 @@
-import { drawCard, logMessage, resetCombat } from "../state/gameState.js";
+import { drawCard, logMessage, resetCombat, logGameAction, LOG_CATEGORIES, getKeywordEmoji } from "../state/gameState.js";
 import { cleanupDestroyed } from "./combat.js";
 import { resolveEffectResult } from "./effects.js";
 import { hasPoisonous } from "../keywords.js";
+import { logPlainMessage } from "./historyLog.js";
+
+const { PHASE, BUFF, DEBUFF, DAMAGE, DEATH } = LOG_CATEGORIES;
 
 const PHASES = ["Start", "Draw", "Main 1", "Before Combat", "Combat", "Main 2", "End"];
 
@@ -12,12 +15,12 @@ const runStartOfTurnEffects = (state) => {
 
   const effectCreatures = player.field.filter((c) => c?.onStart || c?.transformOnStart);
   if (effectCreatures.length > 0) {
-    logMessage(state, `[Start-of-Turn] Processing ${effectCreatures.length} effect(s).`);
+    logGameAction(state, PHASE, `Processing ${effectCreatures.length} start-of-turn effect(s).`);
   }
 
   player.field.forEach((creature) => {
     if (creature?.onStart && !creature?.abilitiesCancelled) {
-      logMessage(state, `→ ${creature.name} start-of-turn effect activates.`);
+      logGameAction(state, BUFF, `${creature.name} start-of-turn effect activates.`);
       const result = creature.onStart({
         log: (message) => logMessage(state, message),
         player,
@@ -34,7 +37,7 @@ const runStartOfTurnEffects = (state) => {
       });
     }
     if (creature?.transformOnStart && !creature?.abilitiesCancelled) {
-      logMessage(state, `→ ${creature.name} transforms at start of turn.`);
+      logGameAction(state, BUFF, `${creature.name} transforms at start of turn.`);
       resolveEffectResult(state, {
         transformCard: { card: creature, newCardData: creature.transformOnStart },
       }, {
@@ -62,7 +65,7 @@ const handleFrozenDeaths = (state) => {
   player.field.forEach((creature) => {
     if (creature?.frozen && creature.frozenDiesTurn <= state.turn) {
       creature.currentHp = 0;
-      logMessage(state, `${creature.name} succumbs to frozen toxin.`);
+      logGameAction(state, DEATH, `${creature.name} succumbs to ${getKeywordEmoji("Frozen")} frozen toxin.`);
     }
   });
 };
@@ -72,7 +75,7 @@ const clearParalysis = (state) => {
     player.field.forEach((creature) => {
       if (creature?.paralyzed && creature.paralyzedUntilTurn <= state.turn) {
         creature.paralyzed = false;
-        logMessage(state, `${creature.name} recovers from paralysis.`);
+        logGameAction(state, BUFF, `${creature.name} recovers from paralysis.`);
       }
     });
   });
@@ -87,7 +90,7 @@ const handlePoisonousDamage = (state) => {
   opponent.field.forEach((creature) => {
     if (creature && hasPoisonous(creature)) {
       state.players[playerIndex].hp -= 1;
-      logMessage(state, `${creature.name}'s poison damages ${state.players[playerIndex].name} for 1.`);
+      logGameAction(state, DAMAGE, `${creature.name}'s ${getKeywordEmoji("Poisonous")} poison damages ${state.players[playerIndex].name} for 1.`);
     }
   });
 };
@@ -95,7 +98,7 @@ const handlePoisonousDamage = (state) => {
 export const startTurn = (state) => {
   state.cardPlayedThisTurn = false;
   resetCombat(state);
-  logMessage(state, `Turn ${state.turn}: ${state.players[state.activePlayerIndex].name}'s Turn`);
+  logGameAction(state, PHASE, `Turn ${state.turn}: ${state.players[state.activePlayerIndex].name}'s Turn`);
   runStartOfTurnEffects(state);
   cleanupDestroyed(state);
 };
@@ -118,8 +121,8 @@ export const advancePhase = (state) => {
   const previousPhase = state.phase;
   state.phase = PHASES[nextIndex];
 
-  // Log phase transition
-  logMessage(state, `━━━ PHASE: ${state.phase.toUpperCase()} ━━━`);
+  // Log phase transition using plain message for separator bars
+  logPlainMessage(state, `━━━ PHASE: ${state.phase.toUpperCase()} ━━━`);
 
   if (state.phase === "Start") {
     startTurn(state);
@@ -131,9 +134,9 @@ export const advancePhase = (state) => {
       state.turn === 1 &&
       state.activePlayerIndex === state.firstPlayerIndex;
     if (skipFirst) {
-      logMessage(state, `[Draw] ${state.players[state.activePlayerIndex].name} skips first draw (going second).`);
+      logGameAction(state, PHASE, `${state.players[state.activePlayerIndex].name} skips first draw (going second).`);
       state.phase = "Main 1";
-      logMessage(state, `━━━ PHASE: MAIN 1 ━━━`);
+      logPlainMessage(state, `━━━ PHASE: MAIN 1 ━━━`);
       state.broadcast?.(state);
       return;
     }
@@ -144,11 +147,12 @@ export const advancePhase = (state) => {
 
     const card = drawCard(state, state.activePlayerIndex);
     if (card) {
-      logMessage(state, `[Draw] ${player.name} draws ${card.name}. (Hand: ${handSize} → ${handSize + 1}, Deck: ${deckSize} → ${deckSize - 1})`);
+      // Don't reveal card name - hidden information for competitive fairness
+      logGameAction(state, BUFF, `${player.name} draws a card. (Hand: ${handSize} → ${handSize + 1}, Deck: ${deckSize} → ${deckSize - 1})`);
     } else {
-      logMessage(state, `[Draw] ${player.name} has no cards left in deck.`);
+      logGameAction(state, PHASE, `${player.name} has no cards left in deck.`);
       state.phase = "Main 1";
-      logMessage(state, `━━━ PHASE: MAIN 1 ━━━`);
+      logPlainMessage(state, `━━━ PHASE: MAIN 1 ━━━`);
     }
   }
 
@@ -157,9 +161,7 @@ export const advancePhase = (state) => {
     state.beforeCombatQueue = player.field.filter((creature) => creature?.onBeforeCombat || creature?.effects?.onBeforeCombat);
     state.beforeCombatProcessing = false;
     if (state.beforeCombatQueue.length > 0) {
-      logMessage(state, `[Before Combat] ${state.beforeCombatQueue.length} effect(s) queued: ${state.beforeCombatQueue.map(c => c.name).join(', ')}`);
-    } else {
-      logMessage(state, `[Before Combat] No before-combat effects.`);
+      logGameAction(state, PHASE, `${state.beforeCombatQueue.length} before-combat effect(s) queued: ${state.beforeCombatQueue.map(c => c.name).join(', ')}`);
     }
   }
 
@@ -168,18 +170,18 @@ export const advancePhase = (state) => {
     const readyAttackers = player.field.filter(c =>
       c && (c.type === "Predator" || c.type === "Prey") && !c.hasAttacked && !c.frozen && !c.paralyzed
     );
-    logMessage(state, `[Combat] ${player.name} has ${readyAttackers.length} creature(s) ready to attack.`);
+    logGameAction(state, PHASE, `${player.name} has ${readyAttackers.length} creature(s) ready to attack.`);
     resetCombat(state);
   }
 
   if (state.phase === "Main 1") {
     const player = state.players[state.activePlayerIndex];
-    logMessage(state, `[Main 1] ${player.name} can play cards. (Hand: ${player.hand.length}, Card limit: ${state.cardPlayedThisTurn ? 'USED' : 'Available'})`);
+    logGameAction(state, PHASE, `${player.name} can play cards. (Hand: ${player.hand.length}, Card limit: ${state.cardPlayedThisTurn ? 'USED' : 'Available'})`);
   }
 
   if (state.phase === "Main 2") {
     const player = state.players[state.activePlayerIndex];
-    logMessage(state, `[Main 2] ${player.name} can play cards. (Hand: ${player.hand.length}, Card limit: ${state.cardPlayedThisTurn ? 'USED' : 'Available'})`);
+    logGameAction(state, PHASE, `${player.name} can play cards. (Hand: ${player.hand.length}, Card limit: ${state.cardPlayedThisTurn ? 'USED' : 'Available'})`);
 
     // Handle Boa Constrictor effect: if it attacked this turn, regen and heal player
     const playerIndex = state.activePlayerIndex;
@@ -187,7 +189,7 @@ export const advancePhase = (state) => {
       if (creature?.boaConstrictorEffect && creature.attackedThisTurn) {
         creature.currentHp = creature.hp;
         player.hp += 2;
-        logMessage(state, `→ ${creature.name} constriction effect: regenerates to ${creature.hp} HP and heals ${player.name} for 2 HP.`);
+        logGameAction(state, BUFF, `${creature.name} constriction effect: regenerates to ${creature.hp} HP and heals ${player.name} for 2 HP.`);
         creature.attackedThisTurn = false; // Reset flag
       }
     });
@@ -197,7 +199,7 @@ export const advancePhase = (state) => {
     const player = state.players[state.activePlayerIndex];
     const endEffectCreatures = player.field.filter(c => c?.onEnd || c?.effects?.onEnd || c?.endOfTurnSummon);
     if (endEffectCreatures.length > 0) {
-      logMessage(state, `[End] Queuing ${endEffectCreatures.length} end-of-turn effect(s): ${endEffectCreatures.map(c => c.name).join(', ')}`);
+      logGameAction(state, PHASE, `Queuing ${endEffectCreatures.length} end-of-turn effect(s): ${endEffectCreatures.map(c => c.name).join(', ')}`);
     }
     queueEndOfTurnEffects(state);
   }
@@ -230,9 +232,9 @@ export const endTurn = (state) => {
   state.passPending = true;
   resetCombat(state);
 
-  logMessage(state, `════════════════`);
-  logMessage(state, `Turn ${state.turn - 1} complete. Passing to ${state.players[state.activePlayerIndex].name}...`);
-  logMessage(state, `════════════════`);
+  logPlainMessage(state, `~•~•~•~•~•~•~•~•`);
+  logGameAction(state, PHASE, `Turn ${state.turn - 1} complete. Passing to ${state.players[state.activePlayerIndex].name}...`);
+  logPlainMessage(state, `~•~•~•~•~•~•~•~•`);
 
   startTurn(state);
 
@@ -252,14 +254,14 @@ export const finalizeEndPhase = (state) => {
     return;
   }
 
-  logMessage(state, `[End Phase Finalize] Processing end-of-turn effects...`);
+  logGameAction(state, PHASE, `Processing end-of-turn effects...`);
   handlePoisonousDamage(state);
   handleFrozenDeaths(state);
   clearParalysis(state);
   cleanupDestroyed(state);
 
   const player = state.players[state.activePlayerIndex];
-  logMessage(state, `${player.name} ends turn. (HP: ${player.hp}, Hand: ${player.hand.length}, Deck: ${player.deck.length})`);
+  logGameAction(state, PHASE, `${player.name} ends turn. (HP: ${player.hp}, Hand: ${player.hand.length}, Deck: ${player.deck.length})`);
   state.endOfTurnFinalized = true;
   state.broadcast?.(state);
 };
