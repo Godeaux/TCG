@@ -1,5 +1,5 @@
 import { drawCard, logMessage, queueVisualEffect, logGameAction, LOG_CATEGORIES, formatKeyword, formatKeywordList, getKeywordEmoji } from "../state/gameState.js";
-import { createCardInstance } from "../cardTypes.js";
+import { createCardInstance, isCreatureCard } from "../cardTypes.js";
 import { consumePrey } from "./consumption.js";
 import { isImmune, areAbilitiesActive } from "../keywords.js";
 import { getTokenById, getCardDefinitionById, resolveCardEffect } from "../cards/index.js";
@@ -60,6 +60,17 @@ const applyEffectDamage = (state, creature, amount, sourceLabel = "effect") => {
     return;
   }
   creature.currentHp -= amount;
+  // Queue damage visual effect
+  const { ownerIndex, slotIndex } = findCardSlotIndex(state, creature);
+  if (ownerIndex >= 0) {
+    queueVisualEffect(state, {
+      type: "damage",
+      cardId: creature.instanceId,
+      ownerIndex,
+      slotIndex,
+      amount,
+    });
+  }
   logGameAction(state, DAMAGE, `${creature.name} takes ${amount} damage.`);
 };
 
@@ -302,7 +313,24 @@ export const resolveEffectResult = (state, result, context) => {
 
   if (result.consumeEnemyPrey) {
     const { predator, prey, opponentIndex } = result.consumeEnemyPrey;
-    consumePrey({ predator, preyList: [prey], state, playerIndex: opponentIndex });
+    consumePrey({
+      predator,
+      preyList: [prey],
+      state,
+      playerIndex: opponentIndex,
+      onSlain: (slainPrey, preyOwnerIndex) => {
+        const slainResult = resolveCardEffect(slainPrey, 'onSlain', {
+          log: (message) => logMessage(state, message),
+          player: state.players[preyOwnerIndex],
+          playerIndex: preyOwnerIndex,
+          state,
+          creature: slainPrey,
+        });
+        if (slainResult) {
+          resolveEffectResult(state, slainResult, { playerIndex: preyOwnerIndex });
+        }
+      },
+    });
   }
 
   if (result.grantBarrier) {
@@ -351,7 +379,20 @@ export const resolveEffectResult = (state, result, context) => {
 
   if (result.restoreCreature) {
     const { creature } = result.restoreCreature;
+    const healAmount = creature.hp - creature.currentHp;
     creature.currentHp = creature.hp;
+    // Queue heal visual effect
+    const ownerIndex = findCardOwnerIndex(state, creature);
+    if (ownerIndex >= 0 && healAmount > 0) {
+      const slotIndex = state.players[ownerIndex].field.findIndex(c => c?.instanceId === creature.instanceId);
+      queueVisualEffect(state, {
+        type: "heal",
+        cardId: creature.instanceId,
+        ownerIndex,
+        slotIndex,
+        amount: healAmount,
+      });
+    }
     logGameAction(state, HEAL, `${creature.name} is regenerated.`);
   }
 
@@ -361,6 +402,18 @@ export const resolveEffectResult = (state, result, context) => {
       const baseHp = creature.hp || creature.currentHp || 1;
       const healAmount = Math.min(amount, baseHp - creature.currentHp);
       creature.currentHp = Math.min(baseHp, creature.currentHp + amount);
+      // Queue heal visual effect
+      const ownerIndex = findCardOwnerIndex(state, creature);
+      if (ownerIndex >= 0 && healAmount > 0) {
+        const slotIndex = state.players[ownerIndex].field.findIndex(c => c?.instanceId === creature.instanceId);
+        queueVisualEffect(state, {
+          type: "heal",
+          cardId: creature.instanceId,
+          ownerIndex,
+          slotIndex,
+          amount: healAmount,
+        });
+      }
       logGameAction(state, HEAL, `${creature.name} heals ${healAmount} HP.`);
     }
   }
@@ -430,13 +483,37 @@ export const resolveEffectResult = (state, result, context) => {
   }
 
   if (result.removeAbilities) {
-    stripAbilities(result.removeAbilities);
+    const creature = result.removeAbilities;
+    stripAbilities(creature);
+    logGameAction(state, DEBUFF, `${creature.name} loses all abilities.`);
+    // Queue visual effect for ability removal (cancel emoji)
+    const ownerIndex = findCardOwnerIndex(state, creature);
+    if (ownerIndex >= 0) {
+      const slotIndex = state.players[ownerIndex].field.findIndex(c => c?.instanceId === creature.instanceId);
+      queueVisualEffect(state, {
+        type: "ability-cancel",
+        cardId: creature.instanceId,
+        ownerIndex,
+        slotIndex,
+      });
+    }
   }
 
   if (result.removeAbilitiesAll) {
     result.removeAbilitiesAll.forEach((creature) => {
       stripAbilities(creature);
       logGameAction(state, DEBUFF, `${creature.name} loses all abilities.`);
+      // Queue visual effect for ability removal (cancel emoji)
+      const ownerIndex = findCardOwnerIndex(state, creature);
+      if (ownerIndex >= 0) {
+        const slotIndex = state.players[ownerIndex].field.findIndex(c => c?.instanceId === creature.instanceId);
+        queueVisualEffect(state, {
+          type: "ability-cancel",
+          cardId: creature.instanceId,
+          ownerIndex,
+          slotIndex,
+        });
+      }
     });
   }
 
@@ -523,9 +600,11 @@ export const resolveEffectResult = (state, result, context) => {
     if (!instance) {
       return;
     }
+    // Mark as played via effect (not normal hand play) - can be returned to hand
+    instance.playedVia = "effect";
     player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
-    // Trigger onPlay effect (use resolveCardEffect for effects object)
-    if (instance.type === "Prey" && instance.effects?.onPlay && !instance.abilitiesCancelled) {
+    // Trigger onPlay effect for any creature (use resolveCardEffect for effects object)
+    if (isCreatureCard(instance) && instance.effects?.onPlay && !instance.abilitiesCancelled) {
       const opponentIndex = (playerIndex + 1) % 2;
       const resultOnPlay = resolveCardEffect(instance, 'onPlay', {
         log: (message) => logMessage(state, message),
@@ -562,8 +641,10 @@ export const resolveEffectResult = (state, result, context) => {
     if (!instance) {
       return;
     }
-    // Trigger onPlay effect (use resolveCardEffect for effects object)
-    if (instance.type === "Prey" && instance.effects?.onPlay && !instance.abilitiesCancelled) {
+    // Mark as played via effect (from deck) - can be returned to hand
+    instance.playedVia = "deck";
+    // Trigger onPlay effect for any creature (use resolveCardEffect for effects object)
+    if (isCreatureCard(instance) && instance.effects?.onPlay && !instance.abilitiesCancelled) {
       const opponentIndex = (playerIndex + 1) % 2;
       const resultOnPlay = resolveCardEffect(instance, 'onPlay', {
         log: (message) => logMessage(state, message),

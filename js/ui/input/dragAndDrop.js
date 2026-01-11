@@ -276,6 +276,16 @@ const isValidAttackTarget = (attacker, target, state) => {
 };
 
 /**
+ * Get nutrition value for a card (accounts for Edible predators using ATK)
+ */
+const getNutritionValue = (card) => {
+  if (card.type === "Predator" && isEdible(card)) {
+    return card.currentAtk ?? card.atk ?? 0;
+  }
+  return card.nutrition ?? 0;
+};
+
+/**
  * Check if a predator can directly consume a prey
  */
 const canConsumePreyDirectly = (predator, prey, state) => {
@@ -290,7 +300,7 @@ const canConsumePreyDirectly = (predator, prey, state) => {
   if (!activePlayer.field.includes(prey)) return false;
 
   const predatorAtk = predator.currentAtk ?? predator.atk ?? 0;
-  const preyNut = prey.nutrition ?? 0;
+  const preyNut = getNutritionValue(prey);
 
   return preyNut <= predatorAtk;
 };
@@ -309,7 +319,7 @@ const getConsumablePrey = (predator, state) => {
 
   const predatorAtk = predator.currentAtk ?? predator.atk ?? 0;
   return availablePrey.filter(prey => {
-    const preyNut = prey.nutrition ?? 0;
+    const preyNut = getNutritionValue(prey);
     return preyNut <= predatorAtk;
   });
 };
@@ -394,6 +404,23 @@ const startConsumptionForSpecificSlot = (predator, slotIndex, ediblePrey) => {
         state,
         playerIndex: state.activePlayerIndex,
         onBroadcast: broadcastSyncState,
+        onSlain: (prey, preyOwnerIndex) => {
+          const slainResult = resolveCardEffect(prey, 'onSlain', {
+            log: (message) => logMessage(state, message),
+            player: state.players[preyOwnerIndex],
+            playerIndex: preyOwnerIndex,
+            state,
+            creature: prey,
+          });
+          if (slainResult) {
+            resolveEffectChain(
+              state,
+              slainResult,
+              { playerIndex: preyOwnerIndex },
+              latestCallbacks.onUpdate
+            );
+          }
+        },
       });
 
       player.field[slotIndex] = predator;
@@ -473,7 +500,10 @@ const placeCreatureInSpecificSlot = (card, slotIndex) => {
 
   triggerPlayTraps(state, creature, latestCallbacks.onUpdate, () => {
     // Trigger onPlay effect for Prey cards (like Celestial Eye Goldfish)
+    console.log('[placeCreatureInSpecificSlot] triggerPlayTraps callback executed for:', creature.name, 'type:', card.type);
+    console.log('[placeCreatureInSpecificSlot] creature.onPlay:', creature.onPlay, 'creature.effects?.onPlay:', creature.effects?.onPlay);
     if (card.type === "Prey" && (creature.onPlay || creature.effects?.onPlay)) {
+      console.log('[placeCreatureInSpecificSlot] Triggering onPlay effect for:', creature.name);
       const player = getActivePlayer(state);
       const playerIndex = state.activePlayerIndex;
       const opponentIndex = (playerIndex + 1) % 2;
@@ -486,6 +516,7 @@ const placeCreatureInSpecificSlot = (card, slotIndex) => {
         playerIndex,
         opponentIndex,
       });
+      console.log('[placeCreatureInSpecificSlot] onPlay result:', result);
       if (result) {
         applyEffectResult(result, state, latestCallbacks.onUpdate);
       }
@@ -523,6 +554,23 @@ const handleDirectConsumption = (predator, prey, slotIndex) => {
     state,
     playerIndex: state.activePlayerIndex,
     onBroadcast: broadcastSyncState,
+    onSlain: (slainPrey, preyOwnerIndex) => {
+      const slainResult = resolveCardEffect(slainPrey, 'onSlain', {
+        log: (message) => logMessage(state, message),
+        player: state.players[preyOwnerIndex],
+        playerIndex: preyOwnerIndex,
+        state,
+        creature: slainPrey,
+      });
+      if (slainResult) {
+        resolveEffectChain(
+          state,
+          slainResult,
+          { playerIndex: preyOwnerIndex },
+          latestCallbacks.onUpdate
+        );
+      }
+    },
   });
 
   player.field[slotIndex] = predatorInstance;
@@ -566,12 +614,14 @@ const handleFieldDrop = (card, fieldSlot) => {
 
   if (!isLocalPlayersTurn(latestState)) {
     logMessage(latestState, "Wait for your turn to play cards.");
+    latestCallbacks.onUpdate?.();
     revertCardToOriginalPosition();
     return;
   }
 
   if (!canPlayCard(latestState)) {
     logMessage(latestState, "You've already played a card this turn.");
+    latestCallbacks.onUpdate?.();
     revertCardToOriginalPosition();
     return;
   }
@@ -584,6 +634,7 @@ const handleFieldDrop = (card, fieldSlot) => {
 
   if (activePlayer.field[slotIndex]) {
     logMessage(latestState, "That slot is already occupied.");
+    latestCallbacks.onUpdate?.();
     revertCardToOriginalPosition();
     return;
   }
@@ -650,6 +701,7 @@ const handlePlayerDrop = (card, playerBadge) => {
     } else {
       logMessage(latestState, "Combat can only be declared during the Combat phase.");
     }
+    latestCallbacks.onUpdate?.();
     revertCardToOriginalPosition();
     return;
   }
@@ -694,6 +746,7 @@ const handleCreatureDrop = (attacker, target) => {
 
   if (!canAttack) {
     logMessage(latestState, "Combat can only be declared during the Combat phase.");
+    latestCallbacks.onUpdate?.();
     revertCardToOriginalPosition();
     return;
   }

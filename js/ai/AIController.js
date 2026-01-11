@@ -21,6 +21,8 @@ import { isCreatureCard, createCardInstance } from '../cardTypes.js';
 import { logMessage, queueVisualEffect } from '../state/gameState.js';
 import { consumePrey } from '../game/consumption.js';
 import { resolveCardEffect } from '../cards/index.js';
+import { resolveEffectResult } from '../game/effects.js';
+import { createReactionWindow, TRIGGER_EVENTS } from '../game/triggers/index.js';
 
 // ============================================================================
 // AI CONFIGURATION
@@ -417,6 +419,18 @@ export class AIController {
       carrionList: [],
       state,
       playerIndex: this.playerIndex,
+      onSlain: (prey, preyOwnerIndex) => {
+        const slainResult = resolveCardEffect(prey, 'onSlain', {
+          log: (message) => logMessage(state, message),
+          player: state.players[preyOwnerIndex],
+          playerIndex: preyOwnerIndex,
+          state,
+          creature: prey,
+        });
+        if (slainResult) {
+          resolveEffectResult(state, slainResult, { playerIndex: preyOwnerIndex });
+        }
+      },
     });
 
     // Find slot (may have changed if we consumed from the target slot)
@@ -544,8 +558,8 @@ export class AIController {
 
       console.log(`[AI] ${attacker.name} attacks ${target.type === 'player' ? 'player' : target.card?.name}`);
 
-      // Execute the attack
-      this.executeAttack(state, attacker, target);
+      // Execute the attack (with reaction window for human player's traps)
+      await this.executeAttack(state, attacker, target, callbacks);
 
       // Mark attacker as having attacked
       attacker.hasAttacked = true;
@@ -559,22 +573,73 @@ export class AIController {
 
   /**
    * Execute an attack action
-   * Actually resolves combat and modifies game state
+   * Creates a reaction window for the human player to respond with traps
+   * Then resolves combat and modifies game state
    */
-  executeAttack(state, attacker, target) {
+  async executeAttack(state, attacker, target, callbacks) {
     const attackerOwnerIndex = this.playerIndex;
     const defenderOwnerIndex = 1 - this.playerIndex;
 
-    if (target.type === 'player') {
-      // Direct attack on player
-      resolveDirectAttack(state, attacker, target.player);
-    } else if (target.type === 'creature') {
-      // Creature combat
-      resolveCreatureCombat(state, attacker, target.card, attackerOwnerIndex, defenderOwnerIndex);
-    }
+    // Create a promise to wait for the reaction window to resolve
+    return new Promise((resolve) => {
+      const windowCreated = createReactionWindow({
+        state,
+        event: TRIGGER_EVENTS.ATTACK_DECLARED,
+        triggeringPlayerIndex: attackerOwnerIndex,
+        eventContext: {
+          attacker,
+          target,
+        },
+        onResolved: () => {
+          // After reaction resolves, continue with attack
+          // Check if attack was negated by a trap
+          const wasNegated = state._lastReactionNegatedAttack ?? false;
+          state._lastReactionNegatedAttack = undefined;
 
-    // Clean up destroyed creatures
-    cleanupDestroyed(state);
+          // Check if attacker still exists and has HP
+          if (attacker.currentHp <= 0) {
+            logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
+            callbacks.onUpdate?.();
+            state.broadcast?.(state);
+            resolve();
+            return;
+          }
+
+          if (!wasNegated) {
+            if (target.type === 'player') {
+              // Direct attack on player
+              resolveDirectAttack(state, attacker, target.player);
+            } else if (target.type === 'creature') {
+              // Creature combat
+              resolveCreatureCombat(state, attacker, target.card, attackerOwnerIndex, defenderOwnerIndex);
+            }
+          } else {
+            logMessage(state, `${attacker.name}'s attack was negated.`);
+          }
+
+          // Clean up destroyed creatures
+          cleanupDestroyed(state);
+          callbacks.onUpdate?.();
+          state.broadcast?.(state);
+          resolve();
+        },
+        onUpdate: callbacks.onUpdate,
+        broadcast: state.broadcast,
+      });
+
+      // If no reaction window was created (no traps available), execute attack immediately
+      if (!windowCreated) {
+        if (target.type === 'player') {
+          resolveDirectAttack(state, attacker, target.player);
+        } else if (target.type === 'creature') {
+          resolveCreatureCombat(state, attacker, target.card, attackerOwnerIndex, defenderOwnerIndex);
+        }
+        cleanupDestroyed(state);
+        callbacks.onUpdate?.();
+        state.broadcast?.(state);
+        resolve();
+      }
+    });
   }
 
   /**

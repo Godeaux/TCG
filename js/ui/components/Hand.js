@@ -252,15 +252,17 @@ export const renderHand = (state, options = {}) => {
     cardElement.style.setProperty('--card-index', `${index}`);
 
     // Add playable pulse if this specific card can be played this turn
+    // Note: Traps don't get the pulse since they're set face-down (not "played" in the normal sense)
     if (isPlayerTurn && isMainPhase) {
-      const isFreeCard = card.type === "Free Spell" || card.type === "Trap" || isFreePlay(card);
+      const isTrap = card.type === "Trap";
+      const isFreeCard = card.type === "Free Spell" || isFreePlay(card);
       const canPlayThisCard = isFreeCard || hasCardLimit;
 
       // For creatures, also check if there's somewhere to play them
       const isCreature = card.type === "Predator" || card.type === "Prey";
       const creatureCanBePlayed = !isCreature || hasEmptySlot;
 
-      if (canPlayThisCard && creatureCanBePlayed) {
+      if (canPlayThisCard && creatureCanBePlayed && !isTrap) {
         cardElement.classList.add('playable-pulse');
       }
     }

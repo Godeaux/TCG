@@ -17,6 +17,7 @@ export const consumePrey = ({
   state,
   playerIndex,
   onBroadcast,
+  onSlain,
 }) => {
   if (!preyList.length && !carrionList.length) {
     return;
@@ -46,6 +47,11 @@ export const consumePrey = ({
       });
       player.field[slotIndex] = null;
       player.carrion.push(prey);
+
+      // Trigger onSlain effect for consumed prey
+      if (onSlain) {
+        onSlain(prey, playerIndex);
+      }
     }
   });
 

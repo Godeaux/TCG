@@ -3,6 +3,7 @@ import { cleanupDestroyed } from "./combat.js";
 import { resolveEffectResult } from "./effects.js";
 import { hasPoisonous } from "../keywords.js";
 import { logPlainMessage } from "./historyLog.js";
+import { resolveCardEffect } from "../cards/index.js";
 
 const { PHASE, BUFF, DEBUFF, DAMAGE, DEATH } = LOG_CATEGORIES;
 
@@ -13,12 +14,13 @@ const runStartOfTurnEffects = (state) => {
   const playerIndex = state.activePlayerIndex;
   const opponentIndex = (state.activePlayerIndex + 1) % 2;
 
-  const effectCreatures = player.field.filter((c) => c?.onStart || c?.transformOnStart);
+  const effectCreatures = player.field.filter((c) => c?.onStart || c?.effects?.onStart || c?.transformOnStart);
   if (effectCreatures.length > 0) {
     logGameAction(state, PHASE, `Processing ${effectCreatures.length} start-of-turn effect(s).`);
   }
 
   player.field.forEach((creature) => {
+    // Handle legacy onStart function
     if (creature?.onStart && !creature?.abilitiesCancelled) {
       logGameAction(state, BUFF, `${creature.name} start-of-turn effect activates.`);
       const result = creature.onStart({
@@ -35,6 +37,26 @@ const runStartOfTurnEffects = (state) => {
         opponentIndex,
         card: creature,
       });
+    }
+    // Handle new JSON-based effects.onStart
+    if (creature?.effects?.onStart && !creature?.abilitiesCancelled) {
+      logGameAction(state, BUFF, `${creature.name} start-of-turn effect activates.`);
+      const result = resolveCardEffect(creature, 'onStart', {
+        log: (message) => logMessage(state, message),
+        player,
+        opponent: state.players[opponentIndex],
+        creature,
+        state,
+        playerIndex,
+        opponentIndex,
+      });
+      if (result) {
+        resolveEffectResult(state, result, {
+          playerIndex,
+          opponentIndex,
+          card: creature,
+        });
+      }
     }
     if (creature?.transformOnStart && !creature?.abilitiesCancelled) {
       logGameAction(state, BUFF, `${creature.name} transforms at start of turn.`);

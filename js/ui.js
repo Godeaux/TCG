@@ -960,11 +960,19 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
       candidates.some((candidate) => isCardLike(candidate.card ?? candidate.value));
     const handleSelection = (value) => {
       clearSelectionPanel();
-      // Log the player's choice
+      // Log the player's choice - include spell name if this is a spell target selection
       const selectedName = value?.name || value?.label || (typeof value === 'string' ? value : 'target');
-      logGameAction(state, LOG_CATEGORIES.CHOICE, `${context.player?.name || 'Player'} selects ${selectedName}.`);
+      const playerName = context.player?.name || state.players[context.playerIndex]?.name || 'Player';
+      if (context.spellCard) {
+        // Spell with target selection - log the full cast with target
+        logGameAction(state, LOG_CATEGORIES.SPELL, `${playerName} casts ${context.spellCard.name} on ${selectedName}.`);
+      } else {
+        logGameAction(state, LOG_CATEGORIES.CHOICE, `${playerName} selects ${selectedName}.`);
+      }
       const followUp = onSelect(value);
-      resolveEffectChain(state, followUp, context, onUpdate, onComplete);
+      // Clear spellCard from context after first target selection to avoid duplicate logs
+      const nextContext = { ...context, spellCard: undefined };
+      resolveEffectChain(state, followUp, nextContext, onUpdate, onComplete);
       cleanupDestroyed(state);
       onUpdate?.();
       broadcastSyncState(state);
@@ -1273,6 +1281,40 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
   // If no window was created, attack resolves immediately (no reactions available)
 };
 
+/**
+ * Handle returning a card from field back to hand
+ * Used for cards played via effects (not from hand) that can be returned
+ */
+const handleReturnToHand = (state, card, onUpdate) => {
+  if (!isLocalPlayersTurn(state)) {
+    logMessage(state, "Wait for your turn.");
+    return;
+  }
+
+  // Find card's owner and slot
+  const playerIndex = state.players.findIndex(
+    (p) => p.field.some((slot) => slot?.instanceId === card.instanceId)
+  );
+  if (playerIndex === -1) {
+    return;
+  }
+
+  const player = state.players[playerIndex];
+  const slotIndex = player.field.findIndex((slot) => slot?.instanceId === card.instanceId);
+  if (slotIndex === -1) {
+    return;
+  }
+
+  // Remove from field and add to hand
+  player.field[slotIndex] = null;
+  // Clear the playedVia flag when returning to hand
+  delete card.playedVia;
+  player.hand.push(card);
+
+  logGameAction(state, LOG_CATEGORIES.BUFF, `${card.name} returns to ${player.name}'s hand.`);
+  onUpdate?.();
+};
+
 const handleAttackSelection = (state, attacker, onUpdate) => {
   if (!isLocalPlayersTurn(state)) {
     logMessage(state, "Wait for your turn to declare attacks.");
@@ -1345,8 +1387,6 @@ const handlePlayCard = (state, card, onUpdate) => {
   }
 
   if (card.type === "Spell" || card.type === "Free Spell") {
-    // Log spell cast
-    logGameAction(state, LOG_CATEGORIES.SPELL, `${player.name} casts ${card.name}.`);
     // Use resolveCardEffect to properly handle both legacy and new effect formats
     const result = resolveCardEffect(card, 'effect', {
       log: (message) => logMessage(state, message),
@@ -1359,6 +1399,11 @@ const handlePlayCard = (state, card, onUpdate) => {
     if (result == null) {
       onUpdate?.();
       return;
+    }
+    // If spell requires target selection, defer the cast log until target is chosen
+    // Otherwise, log the cast immediately
+    if (!result.selectTarget) {
+      logGameAction(state, LOG_CATEGORIES.SPELL, `${player.name} casts ${card.name}.`);
     }
     const finalizePlay = () => {
       cleanupDestroyed(state);
@@ -1378,6 +1423,7 @@ const handlePlayCard = (state, card, onUpdate) => {
       {
         playerIndex,
         opponentIndex,
+        spellCard: card, // Pass spell info for deferred logging
       },
       onUpdate,
       finalizePlay,
@@ -1438,7 +1484,10 @@ const handlePlayCard = (state, card, onUpdate) => {
           checkbox.type = "checkbox";
           checkbox.value = prey.instanceId;
           const label = document.createElement("span");
-          const nutrition = prey.nutrition ?? prey.currentAtk ?? prey.atk ?? 0;
+          // For Edible predators, use ATK as nutrition value
+          const nutrition = (prey.type === "Predator" && isEdible(prey))
+            ? (prey.currentAtk ?? prey.atk ?? 0)
+            : (prey.nutrition ?? 0);
           const sourceLabel = availableCarrion.includes(prey) ? "Carrion" : "Field";
           label.textContent = `${prey.name} (${sourceLabel}, Nutrition ${nutrition})`;
           item.appendChild(checkbox);
@@ -1477,6 +1526,23 @@ const handlePlayCard = (state, card, onUpdate) => {
               state,
               playerIndex: state.activePlayerIndex,
               onBroadcast: broadcastSyncState,
+              onSlain: (prey, preyOwnerIndex) => {
+                const slainResult = resolveCardEffect(prey, 'onSlain', {
+                  log: (message) => logMessage(state, message),
+                  player: state.players[preyOwnerIndex],
+                  playerIndex: preyOwnerIndex,
+                  state,
+                  creature: prey,
+                });
+                if (slainResult) {
+                  resolveEffectChain(
+                    state,
+                    slainResult,
+                    { playerIndex: preyOwnerIndex },
+                    onUpdate
+                  );
+                }
+              },
             });
             const placementSlot =
               pendingConsumption.slotIndex ?? player.field.findIndex((slot) => slot === null);
@@ -1573,7 +1639,10 @@ const handlePlayCard = (state, card, onUpdate) => {
     }
     player.field[emptySlot] = creature;
     triggerPlayTraps(state, creature, onUpdate, () => {
+      console.log('[handlePlayCard] triggerPlayTraps callback executed for:', creature.name, 'type:', card.type);
+      console.log('[handlePlayCard] creature.onPlay:', creature.onPlay, 'creature.effects?.onPlay:', creature.effects?.onPlay);
       if (card.type === "Prey" && (creature.onPlay || creature.effects?.onPlay)) {
+        console.log('[handlePlayCard] Triggering onPlay effect for:', creature.name);
         const result = resolveCardEffect(creature, 'onPlay', {
           log: (message) => logMessage(state, message),
           player,
@@ -1583,6 +1652,7 @@ const handlePlayCard = (state, card, onUpdate) => {
           playerIndex,
           opponentIndex,
         });
+        console.log('[handlePlayCard] onPlay result:', result);
         resolveEffectChain(
           state,
           result,
@@ -2249,6 +2319,7 @@ export const renderGame = (state, callbacks = {}) => {
   });
   renderField(state, activeIndex, false, {
     onAttack: (card) => handleAttackSelection(state, card, callbacks.onUpdate),
+    onReturnToHand: (card) => handleReturnToHand(state, card, callbacks.onUpdate),
     onInspect: fieldInspectCallback,
   });
   // Hand rendering (uses extracted Hand component)

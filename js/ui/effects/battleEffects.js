@@ -412,6 +412,130 @@ export const playKeywordEffect = (effect, state) => {
 };
 
 // ============================================================================
+// DAMAGE EFFECT
+// ============================================================================
+
+/**
+ * Play damage visual effect
+ * Shows a shake animation and damage pop when a creature takes damage
+ */
+export const playDamageEffect = (effect, state) => {
+  const cardElement = effect.cardId
+    ? document.querySelector(`.card[data-instance-id="${effect.cardId}"]`)
+    : null;
+  const slotElement = getFieldSlotElement(
+    state,
+    effect.ownerIndex ?? -1,
+    effect.slotIndex ?? -1
+  );
+
+  const target = cardElement ?? slotElement;
+  if (!target) {
+    return;
+  }
+
+  // Add shake and damage flash class
+  target.classList.add("damage-shake");
+  setTimeout(() => target.classList.remove("damage-shake"), 500);
+
+  // Show damage pop
+  if (effect.amount && effect.amount > 0) {
+    createDamagePop(target, effect.amount);
+  }
+};
+
+// ============================================================================
+// HEAL EFFECT
+// ============================================================================
+
+/**
+ * Play heal visual effect
+ * Shows a green glow and heal pop when a creature is healed
+ */
+export const playHealEffect = (effect, state) => {
+  if (!battleEffectsLayer) {
+    return;
+  }
+
+  const cardElement = effect.cardId
+    ? document.querySelector(`.card[data-instance-id="${effect.cardId}"]`)
+    : null;
+  const slotElement = getFieldSlotElement(
+    state,
+    effect.ownerIndex ?? -1,
+    effect.slotIndex ?? -1
+  );
+
+  const target = cardElement ?? slotElement;
+  if (!target) {
+    return;
+  }
+
+  const layerRect = battleEffectsLayer.getBoundingClientRect();
+  const targetRect = target.getBoundingClientRect();
+
+  // Add heal glow class
+  target.classList.add("heal-glow");
+  setTimeout(() => target.classList.remove("heal-glow"), 600);
+
+  // Show heal pop
+  if (effect.amount && effect.amount > 0) {
+    const pop = document.createElement("div");
+    pop.className = "heal-pop";
+    pop.textContent = `+${effect.amount}`;
+    pop.style.left = `${targetRect.left - layerRect.left + targetRect.width / 2}px`;
+    pop.style.top = `${targetRect.top - layerRect.top + targetRect.height / 2}px`;
+    battleEffectsLayer.appendChild(pop);
+    pop.addEventListener("animationend", () => pop.remove());
+  }
+};
+
+// ============================================================================
+// ABILITY CANCEL EFFECT
+// ============================================================================
+
+/**
+ * Play ability cancel visual effect
+ * Shows a cancel emoji and flash when abilities are removed from a creature
+ */
+export const playAbilityCancelEffect = (effect, state) => {
+  if (!battleEffectsLayer) {
+    return;
+  }
+
+  const cardElement = effect.cardId
+    ? document.querySelector(`.card[data-instance-id="${effect.cardId}"]`)
+    : null;
+  const slotElement = getFieldSlotElement(
+    state,
+    effect.ownerIndex ?? -1,
+    effect.slotIndex ?? -1
+  );
+
+  const target = cardElement ?? slotElement;
+  if (!target) {
+    return;
+  }
+
+  const layerRect = battleEffectsLayer.getBoundingClientRect();
+  const targetRect = target.getBoundingClientRect();
+
+  // Add flash class to card
+  target.classList.add("ability-cancel");
+  setTimeout(() => target.classList.remove("ability-cancel"), 600);
+
+  // Create floating cancel emoji indicator
+  const indicator = document.createElement("div");
+  indicator.className = "ability-cancel-indicator";
+  indicator.textContent = "🚫";
+  indicator.style.left = `${targetRect.left - layerRect.left + targetRect.width / 2}px`;
+  indicator.style.top = `${targetRect.top - layerRect.top + targetRect.height / 2}px`;
+  battleEffectsLayer.appendChild(indicator);
+
+  indicator.addEventListener("animationend", () => indicator.remove());
+};
+
+// ============================================================================
 // MAIN ENTRY POINT
 // ============================================================================
 
@@ -448,6 +572,15 @@ export const processVisualEffects = (state) => {
         break;
       case "keyword":
         requestAnimationFrame(() => playKeywordEffect(effect, state));
+        break;
+      case "ability-cancel":
+        requestAnimationFrame(() => playAbilityCancelEffect(effect, state));
+        break;
+      case "damage":
+        requestAnimationFrame(() => playDamageEffect(effect, state));
+        break;
+      case "heal":
+        requestAnimationFrame(() => playHealEffect(effect, state));
         break;
     }
   });

@@ -29,9 +29,10 @@ import { isLocalPlayersTurn } from '../../state/selectors.js';
  * @param {Object} options - Rendering options
  * @param {Function} options.onAttack - Attack callback (card) => void
  * @param {Function} options.onInspect - Inspect callback (card) => void
+ * @param {Function} options.onReturnToHand - Return to Hand callback (card) => void
  */
 export const renderField = (state, playerIndex, isOpponent, options = {}) => {
-  const { onAttack, onInspect } = options;
+  const { onAttack, onInspect, onReturnToHand } = options;
 
   const fieldRow = document.querySelector(isOpponent ? ".opponent-field" : ".player-field");
   if (!fieldRow) {
@@ -67,11 +68,22 @@ export const renderField = (state, playerIndex, isOpponent, options = {}) => {
       !card.paralyzed &&
       isCreature;
 
+    // Determine if creature can be returned to hand (played via effect, not from hand)
+    const isMainPhase = state.phase === "Main 1" || state.phase === "Main 2";
+    const canReturnToHand =
+      !isOpponent &&
+      isLocalPlayersTurn(state) &&
+      isMainPhase &&
+      card.playedVia && // Was played via effect ("effect" or "deck")
+      isCreature;
+
     const cardElement = renderCard(card, {
       showAttack: canAttack,
+      showReturnToHand: canReturnToHand,
       showEffectSummary: true,
       draggable: true,
       onAttack,
+      onReturnToHand,
       onInspect,
     });
 

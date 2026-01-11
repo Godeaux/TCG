@@ -1856,6 +1856,77 @@ button {
   }
 }
 
+/* Damage shake effect for effect-based damage */
+.damage-shake {
+  animation: damage-shake 0.5s ease-out;
+}
+
+@keyframes damage-shake {
+  0%, 100% {
+    transform: translateX(0);
+    filter: brightness(1);
+  }
+  10%, 50%, 90% {
+    transform: translateX(-4px);
+    filter: brightness(0.8) saturate(1.2);
+  }
+  30%, 70% {
+    transform: translateX(4px);
+    filter: brightness(0.8) saturate(1.2);
+  }
+  25%, 75% {
+    box-shadow: 0 0 15px rgba(255, 80, 80, 0.6);
+  }
+}
+
+/* Heal glow effect */
+.heal-glow {
+  animation: heal-glow 0.6s ease-out;
+}
+
+@keyframes heal-glow {
+  0% {
+    box-shadow: 0 0 0 rgba(76, 217, 100, 0);
+    filter: brightness(1);
+  }
+  40% {
+    box-shadow: 0 0 25px rgba(76, 217, 100, 0.8), inset 0 0 10px rgba(76, 217, 100, 0.3);
+    filter: brightness(1.15) saturate(1.1);
+  }
+  100% {
+    box-shadow: 0 0 0 rgba(76, 217, 100, 0);
+    filter: brightness(1);
+  }
+}
+
+/* Heal pop number */
+.heal-pop {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-display);
+  font-size: 26px;
+  color: #4cd964;
+  text-shadow: 0 0 10px rgba(76, 217, 100, 0.75);
+  animation: heal-pop 0.9s ease-out forwards;
+  pointer-events: none;
+  z-index: 3;
+}
+
+@keyframes heal-pop {
+  0% {
+    transform: translate(-50%, -50%) scale(0.6);
+    opacity: 0;
+  }
+  25% {
+    transform: translate(-50%, -60%) scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -110%) scale(0.9);
+    opacity: 0;
+  }
+}
+
 /* ============================================================================
    CONSUMPTION EFFECTS
    ============================================================================ */
@@ -2095,6 +2166,57 @@ button {
   }
   100% {
     box-shadow: 0 0 0 rgba(212, 168, 83, 0);
+  }
+}
+
+/* Ability Cancel - Red cancel effect for ability removal (e.g., Riptide) */
+.ability-cancel {
+  animation: ability-cancel-flash 0.6s ease-out;
+}
+
+@keyframes ability-cancel-flash {
+  0% {
+    box-shadow: 0 0 0 rgba(231, 76, 60, 0);
+    filter: brightness(1);
+  }
+  30% {
+    box-shadow: 0 0 30px rgba(231, 76, 60, 0.8), 0 0 50px rgba(231, 76, 60, 0.4);
+    filter: brightness(0.8) saturate(0.5);
+  }
+  100% {
+    box-shadow: 0 0 0 rgba(231, 76, 60, 0);
+    filter: brightness(1);
+  }
+}
+
+/* Cancel emoji indicator that pops up */
+.ability-cancel-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 3rem;
+  animation: ability-cancel-pop 0.8s ease-out forwards;
+  pointer-events: none;
+  z-index: 1000;
+  text-shadow: 0 0 10px rgba(231, 76, 60, 0.8), 0 0 20px rgba(231, 76, 60, 0.5);
+}
+
+@keyframes ability-cancel-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.3);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.3);
+  }
+  60% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1) translateY(-30px);
   }
 }
 

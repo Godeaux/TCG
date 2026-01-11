@@ -408,10 +408,12 @@ const adjustTextToFit = (cardElement, inner) => {
  * @param {boolean} options.showPlay - Show "Play" button
  * @param {boolean} options.showAttack - Show "Attack" button
  * @param {boolean} options.showDiscard - Show "Discard" button
+ * @param {boolean} options.showReturnToHand - Show "Return to Hand" button
  * @param {boolean} options.showEffectSummary - Show effect text
  * @param {Function} options.onPlay - Play button callback
  * @param {Function} options.onAttack - Attack button callback
  * @param {Function} options.onDiscard - Discard button callback
+ * @param {Function} options.onReturnToHand - Return to Hand button callback
  * @param {Function} options.onClick - Card click callback
  * @param {Function} options.onInspect - Inspect callback (for detail view)
  * @param {boolean} options.showBack - Show card back instead
@@ -424,10 +426,12 @@ export const renderCard = (card, options = {}) => {
     showPlay = false,
     showAttack = false,
     showDiscard = false,
+    showReturnToHand = false,
     showEffectSummary = false,
     onPlay,
     onAttack,
     onDiscard,
+    onReturnToHand,
     onClick,
     onInspect,
     showBack = false,
@@ -454,7 +458,7 @@ export const renderCard = (card, options = {}) => {
   inner.innerHTML = renderCardInnerHtml(card, { showEffectSummary });
 
   // Add action buttons if needed
-  if (showPlay || showAttack || showDiscard) {
+  if (showPlay || showAttack || showDiscard || showReturnToHand) {
     const actions = document.createElement("div");
     actions.className = "card-actions";
 
@@ -475,6 +479,13 @@ export const renderCard = (card, options = {}) => {
       discardButton.textContent = "Discard";
       discardButton.onclick = () => onDiscard?.(card);
       actions.appendChild(discardButton);
+    }
+    if (showReturnToHand) {
+      const returnButton = document.createElement("button");
+      returnButton.textContent = "↩ Hand";
+      returnButton.title = "Return to Hand";
+      returnButton.onclick = () => onReturnToHand?.(card);
+      actions.appendChild(returnButton);
     }
 
     inner.appendChild(actions);
