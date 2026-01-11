@@ -9,18 +9,10 @@
       "nutrition": 0,
       "keywords": ["Free Play"],
       "effectText": "Play 2 Pups.",
-      "summons": ["mammal-prey-pup"],
+      "summons": ["token-pup"],
       "effects": {
-        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["mammal-prey-pup", "mammal-prey-pup"] } }
+        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-pup", "token-pup"] } }
       }
-    },
-    {
-      "id": "mammal-prey-pup",
-      "name": "Pup",
-      "type": "Prey",
-      "atk": 0,
-      "hp": 1,
-      "nutrition": 0
     },
     {
       "id": "mammal-prey-arctic-ground-squirrels",
@@ -30,25 +22,12 @@
       "hp": 1,
       "nutrition": 1,
       "effectText": "Play 2 Arctic Ground Squirrels. Target enemy gains frozen.",
-      "summons": ["mammal-prey-arctic-ground-squirrel"],
+      "summons": ["token-arctic-ground-squirrel"],
       "effects": {
         "onPlay": {
           "type": "summonAndSelectEnemyToFreeze",
-          "params": { "tokenIds": ["mammal-prey-arctic-ground-squirrel", "mammal-prey-arctic-ground-squirrel"] }
+          "params": { "tokenIds": ["token-arctic-ground-squirrel", "token-arctic-ground-squirrel"] }
         }
-      }
-    },
-    {
-      "id": "mammal-prey-arctic-ground-squirrel",
-      "name": "Arctic Ground Squirrel",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": ["Frozen"],
-      "effectText": "Target enemy gains frozen.",
-      "effects": {
-        "onPlay": { "type": "selectEnemyToFreeze" }
       }
     },
     {
@@ -86,21 +65,9 @@
       "hp": 1,
       "nutrition": 1,
       "effectText": "End of turn, play 2 Kits.",
-      "summons": ["mammal-prey-kit"],
+      "summons": ["token-kit"],
       "effects": {
-        "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["mammal-prey-kit", "mammal-prey-kit"] } }
-      }
-    },
-    {
-      "id": "mammal-prey-kit",
-      "name": "Kit",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "effectText": "Start of turn, become Florida White Rabbit.",
-      "effects": {
-        "onStart": { "type": "transformCard", "params": { "targetType": "self", "newCardId": "mammal-prey-florida-white-rabbit" } }
+        "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-kit", "token-kit"] } }
       }
     },
     {
@@ -136,10 +103,10 @@
       "hp": 1,
       "nutrition": 1,
       "effectText": "Play 2 Pups. Slain, play 3 Pups.",
-      "summons": ["mammal-prey-pup"],
+      "summons": ["token-pup"],
       "effects": {
-        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["mammal-prey-pup", "mammal-prey-pup"] } },
-        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["mammal-prey-pup", "mammal-prey-pup", "mammal-prey-pup"] } }
+        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-pup", "token-pup"] } },
+        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["token-pup", "token-pup", "token-pup"] } }
       }
     },
     {
@@ -163,18 +130,10 @@
       "nutrition": 1,
       "keywords": ["Hidden"],
       "effectText": "Slain, play Joey.",
-      "summons": ["mammal-prey-joey"],
+      "summons": ["token-joey"],
       "effects": {
-        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["mammal-prey-joey"] } }
+        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["token-joey"] } }
       }
-    },
-    {
-      "id": "mammal-prey-joey",
-      "name": "Joey",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1
     },
     {
       "id": "mammal-prey-platypus",
@@ -185,19 +144,10 @@
       "nutrition": 1,
       "keywords": ["Poisonous"],
       "effectText": "Play 2 Mammal Eggs.",
-      "summons": ["mammal-prey-mammal-egg"],
+      "summons": ["token-mammal-egg"],
       "effects": {
-        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["mammal-prey-mammal-egg", "mammal-prey-mammal-egg"] } }
+        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-mammal-egg", "token-mammal-egg"] } }
       }
-    },
-    {
-      "id": "mammal-prey-mammal-egg",
-      "name": "Mammal Egg",
-      "type": "Prey",
-      "atk": 0,
-      "hp": 1,
-      "nutrition": 0,
-      "keywords": ["Passive", "Barrier", "Hidden"]
     },
     {
       "id": "mammal-prey-red-handed-howler",
@@ -354,20 +304,13 @@
       "atk": 1,
       "hp": 1,
       "effectText": "Play 2 Dholes. Kill target enemy.",
-      "summons": ["mammal-predator-dhole"],
+      "summons": ["token-dhole"],
       "effects": {
         "onConsume": {
           "type": "summonAndSelectEnemyToKill",
-          "params": { "tokenIds": ["mammal-predator-dhole", "mammal-predator-dhole"] }
+          "params": { "tokenIds": ["token-dhole", "token-dhole"] }
         }
       }
-    },
-    {
-      "id": "mammal-predator-dhole",
-      "name": "Dhole",
-      "type": "Predator",
-      "atk": 1,
-      "hp": 1
     },
     {
       "id": "mammal-predator-eurasian-lynx",
@@ -401,18 +344,10 @@
       "hp": 2,
       "keywords": ["Ambush"],
       "effectText": "Slain, play Black Leopard.",
-      "summons": ["mammal-predator-black-leopard"],
+      "summons": ["token-black-leopard"],
       "effects": {
-        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["mammal-predator-black-leopard"] } }
+        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["token-black-leopard"] } }
       }
-    },
-    {
-      "id": "mammal-predator-black-leopard",
-      "name": "Black Leopard",
-      "type": "Predator",
-      "atk": 3,
-      "hp": 2,
-      "keywords": ["Ambush"]
     },
     {
       "id": "mammal-predator-jaguar",
@@ -605,24 +540,16 @@
       "type": "Spell",
       "isFieldSpell": true,
       "effectText": "End of turn, play Wolf.",
-      "summons": ["mammal-prey-wolf"],
+      "summons": ["token-wolf"],
       "effects": {
         "effect": { "type": "setFieldSpell", "params": { "cardId": "mammal-field-spell-wolves-den" } },
         "onEnd": {
           "type": "summonTokens",
           "params": {
-            "tokenIds": ["mammal-prey-wolf"]
+            "tokenIds": ["token-wolf"]
           }
         }
       }
-    },
-    {
-      "id": "mammal-prey-wolf",
-      "name": "Wolf",
-      "type": "Prey",
-      "atk": 2,
-      "hp": 2,
-      "nutrition": 2
     },
     {
       "id": "mammal-trap-animal-rights",

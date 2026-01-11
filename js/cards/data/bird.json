@@ -60,19 +60,6 @@
       }
     },
     {
-      "id": "bird-prey-dove",
-      "name": "Dove",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": ["Passive"],
-      "effectText": "Heal 3.",
-      "effects": {
-        "onPlay": { "type": "heal", "params": { "amount": 3 } }
-      }
-    },
-    {
       "id": "bird-prey-eurasian-magpie",
       "name": "Eurasian Magpie",
       "type": "Prey",
@@ -108,18 +95,6 @@
       }
     },
     {
-      "id": "bird-prey-sparrow-egg",
-      "name": "Sparrow Egg",
-      "type": "Prey",
-      "atk": 0,
-      "hp": 1,
-      "nutrition": 0,
-      "effectText": "Start of turn, become Sparrow.",
-      "effects": {
-        "onStart": { "type": "transformCard", "params": { "targetType": "self", "newCardId": "bird-prey-sparrow" } }
-      }
-    },
-    {
       "id": "bird-prey-sparrow",
       "name": "Sparrow",
       "type": "Prey",
@@ -146,18 +121,6 @@
           { "type": "summonTokens", "params": { "tokenIds": ["token-golden-song-sparrow", "token-golden-song-sparrow"] } },
           { "type": "draw", "params": { "count": 1 } }
         ]
-      }
-    },
-    {
-      "id": "bird-prey-golden-song-sparrow",
-      "name": "Golden Song Sparrow",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "effectText": "Draw 1.",
-      "effects": {
-        "onPlay": { "type": "draw", "params": { "count": 1 } }
       }
     },
     {
@@ -210,18 +173,6 @@
       }
     },
     {
-      "id": "bird-prey-oriental-magpie",
-      "name": "Oriental Magpie",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "effectText": "Heal 2.",
-      "effects": {
-        "onPlay": { "type": "heal", "params": { "amount": 2 } }
-      }
-    },
-    {
       "id": "bird-prey-quetzal",
       "name": "Quetzal",
       "type": "Prey",
@@ -257,19 +208,6 @@
       "summons": ["token-blue-egg"],
       "effects": {
         "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-blue-egg", "token-blue-egg"] } }
-      }
-    },
-    {
-      "id": "bird-prey-blue-egg",
-      "name": "Blue Egg",
-      "type": "Prey",
-      "atk": 0,
-      "hp": 1,
-      "nutrition": 0,
-      "keywords": ["Hidden"],
-      "effectText": "Start of turn, become Robin.",
-      "effects": {
-        "onStart": { "type": "transformCard", "params": { "targetType": "self", "newCardId": "bird-prey-robin" } }
       }
     },
     {
@@ -324,18 +262,6 @@
       }
     },
     {
-      "id": "bird-prey-golden-egg",
-      "name": "Golden Egg",
-      "type": "Prey",
-      "atk": 0,
-      "hp": 1,
-      "nutrition": 0,
-      "effectText": "Draw 1.",
-      "effects": {
-        "onPlay": { "type": "draw", "params": { "count": 1 } }
-      }
-    },
-    {
       "id": "bird-prey-indian-peacock",
       "name": "Indian Peacock",
       "type": "Prey",
@@ -360,27 +286,6 @@
       "effects": {
         "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["token-hen"] } }
       }
-    },
-    {
-      "id": "bird-prey-hen",
-      "name": "Hen",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 2,
-      "nutrition": 2,
-      "effectText": "Start of turn, play Egg.",
-      "summons": ["token-egg"],
-      "effects": {
-        "onStart": { "type": "summonTokens", "params": { "tokenIds": ["token-egg"] } }
-      }
-    },
-    {
-      "id": "bird-prey-egg",
-      "name": "Egg",
-      "type": "Prey",
-      "atk": 0,
-      "hp": 1,
-      "nutrition": 0
     },
     {
       "id": "bird-prey-pileated-woodpecker",
@@ -464,15 +369,6 @@
       "effects": {
         "onConsume": { "type": "summonTokens", "params": { "tokenIds": ["token-toxic-snake", "token-toxic-snake"] } }
       }
-    },
-    {
-      "id": "bird-prey-toxic-snake",
-      "name": "Toxic Snake",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": ["Toxic"]
     },
     {
       "id": "bird-predator-wolf-hawk",
@@ -712,14 +608,6 @@
           }
         }
       }
-    },
-    {
-      "id": "bird-prey-bushtit",
-      "name": "Bushtit",
-      "type": "Prey",
-      "atk": 0,
-      "hp": 1,
-      "nutrition": 1
     },
     {
       "id": "bird-trap-fly-off",
