@@ -94,6 +94,17 @@ const calculateCreaturesDefeated = (state) => {
 // MAIN FUNCTIONS
 // ============================================================================
 
+// Store callback for menu button
+let onReturnToMenuCallback = null;
+
+/**
+ * Set the callback for returning to menu from victory screen
+ * This should be called from ui.js to provide proper game reset functionality
+ */
+export const setVictoryMenuCallback = (callback) => {
+  onReturnToMenuCallback = callback;
+};
+
 /**
  * Show the victory screen
  *
@@ -155,8 +166,12 @@ export const showVictoryScreen = (winner, stats = {}, options = {}) => {
   // Add event listener for main menu
   if (menu) {
     menu.onclick = () => hideVictoryScreen(() => {
-      // Return to main menu - reload the page for now
-      window.location.reload();
+      // Use callback if provided, otherwise fall back to reload
+      if (onReturnToMenuCallback) {
+        onReturnToMenuCallback();
+      } else {
+        window.location.reload();
+      }
     });
   }
 };

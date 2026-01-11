@@ -46,6 +46,7 @@ import {
   showVictoryScreen,
   hideVictoryScreen,
   checkForVictory,
+  setVictoryMenuCallback,
 } from "./ui/overlays/VictoryOverlay.js";
 
 // Pass overlay (extracted module)
@@ -2324,6 +2325,52 @@ export const renderGame = (state, callbacks = {}) => {
 
   latestState = state;
   latestCallbacks = callbacks;
+
+  // Set up victory menu callback (only once)
+  setVictoryMenuCallback(() => {
+    // Preserve profile data (packs, stats, etc.)
+    const profile = state.menu?.profile;
+    const decks = state.menu?.decks;
+
+    // Reset game state to initial values
+    state.players = [
+      { name: "Player 1", hp: 10, deck: [], hand: [], field: [null, null, null], carrion: [], exile: [], traps: [] },
+      { name: "Player 2", hp: 10, deck: [], hand: [], field: [null, null, null], carrion: [], exile: [], traps: [] },
+    ];
+    state.activePlayerIndex = 0;
+    state.phase = "Setup";
+    state.turn = 1;
+    state.firstPlayerIndex = null;
+    state.skipFirstDraw = true;
+    state.cardPlayedThisTurn = false;
+    state.passPending = false;
+    state.fieldSpell = null;
+    state.beforeCombatQueue = [];
+    state.beforeCombatProcessing = false;
+    state.endOfTurnQueue = [];
+    state.endOfTurnProcessing = false;
+    state.endOfTurnFinalized = false;
+    state.visualEffects = [];
+    state.pendingTrapDecision = null;
+    state.pendingReaction = null;
+    state.setup = { stage: "rolling", rolls: [null, null], winnerIndex: null };
+    state.deckSelection = { stage: "p1", selections: [null, null], readyStatus: [false, false] };
+    state.deckBuilder = { stage: "p1", selections: [[], []], available: [[], []], catalogOrder: [[], []] };
+    state.log = [];
+    state.combat = { declaredAttacks: [] };
+
+    // Restore profile and decks, return to main menu
+    state.menu.profile = profile;
+    state.menu.decks = decks;
+    state.menu.stage = "main";
+    state.menu.mode = null;
+    state.menu.lobby = null;
+    state.menu.error = null;
+    state.menu.loading = false;
+
+    // Refresh the UI
+    callbacks.onUpdate?.();
+  });
 
   // Register callbacks with lobbyManager so it can notify UI of changes
   registerLobbyCallbacks({

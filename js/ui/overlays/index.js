@@ -65,6 +65,7 @@ export {
   showVictoryScreen,
   hideVictoryScreen,
   checkForVictory,
+  setVictoryMenuCallback,
 } from './VictoryOverlay.js';
 
 // ============================================================================

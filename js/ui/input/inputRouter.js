@@ -297,27 +297,30 @@ const initNavigation = () => {
     if (!latestState) {
       return;
     }
-    // Add mock profile data for testing if not logged in
+    // Create profile if it doesn't exist
     if (!latestState.menu.profile) {
       latestState.menu.profile = {
         username: "Guest Player",
-        packs: 5,  // Give 5 packs for testing
-        stats: {
-          gamesPlayed: 12,
-          gamesWon: 7,
-          favoriteCard: "Salmon",
-        },
-        matches: [
-          { opponent: "DragonMaster", won: true, date: new Date().toISOString() },
-          { opponent: "CardShark99", won: false, date: new Date(Date.now() - 86400000).toISOString() },
-          { opponent: "FishKing", won: true, date: new Date(Date.now() - 172800000).toISOString() },
-        ],
-        ownedCards: new Map([
-          ["fish-prey-salmon", "uncommon"],
-          ["fish-predator-shark", "rare"],
-          ["bird-prey-sparrow", "common"],
-        ]),
       };
+    }
+    // Ensure profile has all required properties (even for logged-in users)
+    // This ensures packs/stats work even before Supabase integration
+    const profile = latestState.menu.profile;
+    if (profile.packs === undefined) {
+      profile.packs = 5;  // Give 5 packs for testing
+    }
+    if (!profile.stats) {
+      profile.stats = {
+        gamesPlayed: 0,
+        gamesWon: 0,
+        favoriteCard: "-",
+      };
+    }
+    if (!profile.matches) {
+      profile.matches = [];
+    }
+    if (!profile.ownedCards) {
+      profile.ownedCards = new Map();
     }
     setMenuStage(latestState, "profile");
     latestCallbacks.onUpdate?.();
