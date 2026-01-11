@@ -243,7 +243,7 @@
       "nutrition": 1,
       "effectText": "After combat, deal 2 damage. End of turn, deal 2 damage to rival.",
       "effects": {
-        "onAfterCombat": { "type": "selectCreatureForDamage", "params": { "amount": 2, "label": "stink" } },
+        "onAfterCombat": { "type": "selectTargetForDamage", "params": { "amount": 2, "label": "stink" } },
         "onEnd": { "type": "damageOpponent", "params": { "amount": 2 } }
       }
     },
