@@ -397,31 +397,37 @@ const startConsumptionForSpecificSlot = (predator, slotIndex, ediblePrey) => {
         return;
       }
 
-      consumePrey({
-        predator: predator,
-        preyList: preyToConsume,
-        carrionList: [],
-        state,
-        playerIndex: state.activePlayerIndex,
-        onBroadcast: broadcastSyncState,
-        onSlain: (prey, preyOwnerIndex) => {
-          const slainResult = resolveCardEffect(prey, 'onSlain', {
-            log: (message) => logMessage(state, message),
-            player: state.players[preyOwnerIndex],
-            playerIndex: preyOwnerIndex,
-            state,
-            creature: prey,
-          });
-          if (slainResult) {
-            resolveEffectChain(
+      // If no prey selected, mark as dry-dropped (loses Haste etc.)
+      if (totalSelected === 0) {
+        predator.dryDropped = true;
+        logMessage(state, `${predator.name} enters play with no consumption (dry-dropped).`);
+      } else {
+        consumePrey({
+          predator: predator,
+          preyList: preyToConsume,
+          carrionList: [],
+          state,
+          playerIndex: state.activePlayerIndex,
+          onBroadcast: broadcastSyncState,
+          onSlain: (prey, preyOwnerIndex) => {
+            const slainResult = resolveCardEffect(prey, 'onSlain', {
+              log: (message) => logMessage(state, message),
+              player: state.players[preyOwnerIndex],
+              playerIndex: preyOwnerIndex,
               state,
-              slainResult,
-              { playerIndex: preyOwnerIndex },
-              latestCallbacks.onUpdate
-            );
-          }
-        },
-      });
+              creature: prey,
+            });
+            if (slainResult) {
+              resolveEffectChain(
+                state,
+                slainResult,
+                { playerIndex: preyOwnerIndex },
+                latestCallbacks.onUpdate
+              );
+            }
+          },
+        });
+      }
 
       player.field[slotIndex] = predator;
       clearSelectionPanel();
