@@ -218,6 +218,8 @@ import {
   updateLobbySubscription,
   refreshLobbyState,
   loadGameStateFromDatabase,
+  savePlayerCardsToDatabase,
+  updatePackCount,
 } from "./network/lobbyManager.js";
 
 // Helper to get discardEffect and timing for both old and new card formats
@@ -701,16 +703,12 @@ const updatePlayerStats = (state, index, role, onUpdate = null) => {
   if (role === "active") {
     const carrionEl = document.getElementById("active-carrion");
     const exileEl = document.getElementById("active-exile");
-    const trapsEl = document.getElementById("active-traps");
     if (carrionEl) {
       const opponent = state.players[(index + 1) % 2];
       carrionEl.innerHTML = `<span style="color: var(--prey);">${player.carrion.length}</span> / <span style="color: var(--hp-red);">${opponent.carrion.length}</span>`;
     }
     if (exileEl) {
       exileEl.textContent = player.exile.length;
-    }
-    if (trapsEl) {
-      trapsEl.textContent = player.traps.length;
     }
   }
 };
@@ -2650,6 +2648,68 @@ const showCarrionPilePopup = (player, opponent, onUpdate) => {
   });
 };
 
+const showExilePilePopup = (player, opponent, onUpdate) => {
+  const items = [];
+
+  // Player's exile pile section
+  if (player.exile.length > 0) {
+    const playerHeader = document.createElement("div");
+    playerHeader.className = "selection-item";
+    playerHeader.innerHTML = `<strong style="color: var(--prey);">${player.name}'s Exile Pile:</strong>`;
+    items.push(playerHeader);
+
+    player.exile.forEach((card) => {
+      const item = document.createElement("label");
+      item.className = "selection-item selection-card";
+      const cardElement = renderCard(card, {
+        showEffectSummary: true,
+        useBaseStats: true,
+      });
+      item.appendChild(cardElement);
+      items.push(item);
+    });
+  } else {
+    const item = document.createElement("label");
+    item.className = "selection-item";
+    item.innerHTML = `<strong style="color: var(--prey);">${player.name}'s Exile Pile:</strong> (Empty)`;
+    items.push(item);
+  }
+
+  // Opponent's exile pile section
+  if (opponent.exile.length > 0) {
+    const opponentHeader = document.createElement("div");
+    opponentHeader.className = "selection-item";
+    opponentHeader.innerHTML = `<strong style="color: var(--hp-red);">${opponent.name}'s Exile Pile:</strong>`;
+    items.push(opponentHeader);
+
+    opponent.exile.forEach((card) => {
+      const item = document.createElement("label");
+      item.className = "selection-item selection-card";
+      const cardElement = renderCard(card, {
+        showEffectSummary: true,
+        useBaseStats: true,
+      });
+      item.appendChild(cardElement);
+      items.push(item);
+    });
+  } else {
+    const item = document.createElement("label");
+    item.className = "selection-item";
+    item.innerHTML = `<strong style="color: var(--hp-red);">${opponent.name}'s Exile Pile:</strong> (Empty)`;
+    items.push(item);
+  }
+
+  renderSelectionPanel({
+    title: "Exile Piles",
+    items,
+    onConfirm: () => {
+      clearSelectionPanel();
+      onUpdate?.();
+    },
+    confirmLabel: "OK",
+  });
+};
+
 // ==================== MOBILE NAVIGATION ====================
 // Setup mobile tab navigation
 const setupMobileNavigation = () => {
@@ -3007,6 +3067,8 @@ export const renderGame = (state, callbacks = {}) => {
   );
   updatePlayerStats(state, 0, "player1");
   updatePlayerStats(state, 1, "player2", callbacks.onUpdate);
+  // Update pile counts from viewing player's perspective
+  updatePlayerStats(state, activeIndex, "active");
   // Field rendering (uses extracted Field component)
   const fieldInspectCallback = (card) => {
     inspectedCardId = card.instanceId;
@@ -3085,10 +3147,10 @@ export const renderGame = (state, callbacks = {}) => {
       setMenuStage(state, "main");
       callbacks.onUpdate?.();
     },
-    onOpenPack: () => {
+    onOpenPack: async () => {
       if ((state.menu?.profile?.packs || 0) > 0) {
-        // Decrement pack count
-        state.menu.profile.packs--;
+        // Decrement pack count and sync to database
+        await updatePackCount(state, -1);
         setMenuStage(state, "pack-opening");
         startPackOpening({
           onCardRevealed: (card) => {
@@ -3106,40 +3168,46 @@ export const renderGame = (state, callbacks = {}) => {
 
   // Pack opening overlay
   renderPackOpeningOverlay(state, {
+    onSaveCards: async (packCards) => {
+      console.log("Saving pack cards:", packCards);
+      // Save cards to database (this also updates local state)
+      try {
+        const savedCards = await savePlayerCardsToDatabase(state, packCards);
+        const newCount = savedCards.length;
+        const message = newCount > 0
+          ? `${newCount} card${newCount === 1 ? '' : 's'} added to collection!`
+          : 'Cards already in collection';
+        return { success: true, message };
+      } catch (error) {
+        console.error("Failed to save cards:", error);
+        return { success: false, message: error.message || 'Failed to save cards' };
+      }
+    },
     onDone: (packCards) => {
       console.log("Pack opening done:", packCards);
-      // Add cards to collection (only if better than existing rarity)
-      if (state.menu?.profile?.ownedCards) {
-        const ownedCards = state.menu.profile.ownedCards;
-        const rarityOrder = ['common', 'uncommon', 'rare', 'legendary', 'pristine'];
-
-        packCards.forEach(card => {
-          const existingRarity = ownedCards.get(card.id);
-          const existingIndex = existingRarity ? rarityOrder.indexOf(existingRarity) : -1;
-          const newIndex = rarityOrder.indexOf(card.packRarity);
-
-          // Only add/upgrade if new rarity is better
-          if (newIndex > existingIndex) {
-            ownedCards.set(card.id, card.packRarity);
-            console.log(`Added/upgraded ${card.name} to ${card.packRarity}`);
-          }
-        });
-      }
-      // TODO: Save cards to collection via Supabase
-      // For now, just go back to profile
+      // Go back to profile
       setMenuStage(state, "profile");
       callbacks.onUpdate?.();
     },
   });
 
-  // Setup carrion pile click handler
-  const carrionEl = document.getElementById("active-carrion");
-  if (carrionEl) {
-    carrionEl.style.cursor = "pointer";
-    carrionEl.onclick = () => {
+  // Setup carrion pile click handler (on container for full area click)
+  const carrionContainer = document.getElementById("carrion-pile-container");
+  if (carrionContainer) {
+    carrionContainer.onclick = () => {
       const player = state.players[activeIndex];
       const opponent = state.players[opponentIndex];
       showCarrionPilePopup(player, opponent, callbacks.onUpdate);
+    };
+  }
+
+  // Setup exile pile click handler (on container for full area click)
+  const exileContainer = document.getElementById("exile-pile-container");
+  if (exileContainer) {
+    exileContainer.onclick = () => {
+      const player = state.players[activeIndex];
+      const opponent = state.players[opponentIndex];
+      showExilePilePopup(player, opponent, callbacks.onUpdate);
     };
   }
 

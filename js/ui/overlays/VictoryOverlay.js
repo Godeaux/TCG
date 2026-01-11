@@ -14,6 +14,8 @@
  * - checkForVictory: Check game state for victory condition
  */
 
+import { updatePackCount } from '../../network/lobbyManager.js';
+
 // ============================================================================
 // DOM ELEMENTS
 // ============================================================================
@@ -145,10 +147,9 @@ export const showVictoryScreen = (winner, stats = {}, options = {}) => {
       reward.style.display = '';
       reward.classList.add('animate');
 
-      // Actually award the pack to the player's profile
+      // Actually award the pack to the player's profile and sync to database
       if (options.state?.menu?.profile) {
-        options.state.menu.profile.packs = (options.state.menu.profile.packs || 0) + 1;
-        console.log('Pack awarded! New total:', options.state.menu.profile.packs);
+        updatePackCount(options.state, 1);
       }
     } else {
       reward.style.display = 'none';

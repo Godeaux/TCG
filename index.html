@@ -449,6 +449,7 @@
           <div class="pack-cards-container" id="pack-cards-container">
             <!-- Pack cards populated by JavaScript -->
           </div>
+          <div class="pack-save-status" id="pack-save-status"></div>
           <div class="pack-opening-actions">
             <button class="pack-reveal-all-btn" id="pack-reveal-all">Reveal All</button>
             <button class="pack-done-btn" id="pack-done">Done</button>
@@ -752,17 +753,13 @@
               <!-- Piles Information - anchored to bottom -->
               <div class="piles-section">
                 <div class="piles-grid">
-                  <div class="pile-item">
+                  <div class="pile-item" id="carrion-pile-container">
                     <span>Carrion</span>
                     <strong id="active-carrion">0</strong>
                   </div>
-                  <div class="pile-item">
+                  <div class="pile-item" id="exile-pile-container">
                     <span>Exile</span>
                     <strong id="active-exile">0</strong>
-                  </div>
-                  <div class="pile-item">
-                    <span>Traps</span>
-                    <strong id="active-traps">0</strong>
                   </div>
                 </div>
               </div>

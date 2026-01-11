@@ -30,6 +30,7 @@ const getPackElements = () => ({
   packCardsContainer: document.getElementById('pack-cards-container'),
   packRevealAllBtn: document.getElementById('pack-reveal-all'),
   packDoneBtn: document.getElementById('pack-done'),
+  saveStatus: document.getElementById('pack-save-status'),
 });
 
 // ============================================================================
@@ -39,6 +40,7 @@ const getPackElements = () => ({
 let currentPackCards = [];
 let revealedCount = 0;
 let currentCallbacks = null;
+let saveTriggered = false;
 
 // Hold-to-open state
 let isHolding = false;
@@ -324,19 +326,49 @@ const revealAllCards = () => {
 };
 
 /**
+ * Update the save status display
+ */
+const updateSaveStatus = (message, isSuccess) => {
+  const elements = getPackElements();
+  if (!elements.saveStatus) return;
+
+  elements.saveStatus.textContent = message;
+  elements.saveStatus.style.color = isSuccess ? '#4ade80' : '#f87171';
+  elements.saveStatus.style.display = message ? '' : 'none';
+};
+
+/**
  * Update button states based on reveal progress
  */
-const updateButtonStates = () => {
+const updateButtonStates = async () => {
   const elements = getPackElements();
+  const allRevealed = revealedCount >= currentPackCards.length;
 
   if (elements.packRevealAllBtn) {
-    const allRevealed = revealedCount >= currentPackCards.length;
     elements.packRevealAllBtn.disabled = allRevealed;
     elements.packRevealAllBtn.style.display = allRevealed ? 'none' : '';
   }
 
   if (elements.packDoneBtn) {
-    elements.packDoneBtn.style.display = revealedCount >= currentPackCards.length ? '' : 'none';
+    elements.packDoneBtn.style.display = allRevealed ? '' : 'none';
+  }
+
+  // Trigger save when all cards revealed (only once)
+  if (allRevealed && !saveTriggered && currentCallbacks?.onSaveCards) {
+    saveTriggered = true;
+    updateSaveStatus('Saving to collection...', true);
+
+    try {
+      const result = await currentCallbacks.onSaveCards(currentPackCards);
+      if (result.success) {
+        updateSaveStatus(result.message || 'Cards saved to collection!', true);
+      } else {
+        updateSaveStatus(result.message || 'Failed to save cards', false);
+      }
+    } catch (error) {
+      console.error('Save error:', error);
+      updateSaveStatus('Failed to save cards', false);
+    }
   }
 };
 
@@ -401,6 +433,13 @@ export const startPackOpening = (callbacks = {}) => {
   currentCallbacks = callbacks;
   holdProgress = 0;
   isHolding = false;
+  saveTriggered = false;
+
+  // Clear save status
+  if (elements.saveStatus) {
+    elements.saveStatus.textContent = '';
+    elements.saveStatus.style.display = 'none';
+  }
 
   // Reset to unopened phase
   if (elements.unopenedPhase) {
@@ -488,6 +527,7 @@ export const hidePackOpeningOverlay = () => {
   currentCallbacks = null;
   isHolding = false;
   holdProgress = 0;
+  saveTriggered = false;
 
   if (holdAnimationFrame) {
     cancelAnimationFrame(holdAnimationFrame);

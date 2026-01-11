@@ -200,6 +200,8 @@ export const ensureProfileLoaded = async (state) => {
       const localIndex = getLocalPlayerIndex(state);
       state.players[localIndex].name = profile.username;
       ensureDecksLoaded(state);
+      // Load card collection from database
+      ensurePlayerCardsLoaded(state);
     } else {
       state.menu.profile = null;
     }
@@ -251,6 +253,134 @@ export const ensureDecksLoaded = async (state, { force = false } = {}) => {
 export const resetProfileLoaded = () => {
   profileLoaded = false;
   decksLoaded = false;
+  cardsLoaded = false;
+};
+
+// ============================================================================
+// PLAYER CARDS (Collection)
+// ============================================================================
+
+let cardsLoaded = false;
+let cardsLoading = false;
+
+/**
+ * Ensure player's card collection is loaded from database
+ */
+export const ensurePlayerCardsLoaded = async (state) => {
+  if (!state.menu?.profile) {
+    return;
+  }
+  if (cardsLoading || cardsLoaded) {
+    return;
+  }
+  cardsLoading = true;
+
+  try {
+    const api = await loadSupabaseApi(state);
+    const cards = await api.fetchPlayerCards({ profileId: state.menu.profile.id });
+
+    // Initialize ownedCards Map if it doesn't exist
+    if (!state.menu.profile.ownedCards) {
+      state.menu.profile.ownedCards = new Map();
+    }
+
+    // Convert array to Map and store on profile
+    const ownedCardsMap = new Map(cards.map((c) => [c.card_id, c.rarity]));
+    state.menu.profile.ownedCards = ownedCardsMap;
+
+    cardsLoaded = true;
+    console.log(`Loaded ${cards.length} cards from database`);
+  } catch (error) {
+    console.error('Failed to load player cards:', error);
+  } finally {
+    cardsLoading = false;
+    callbacks.onUpdate?.();
+  }
+};
+
+/**
+ * Save cards to player's collection (batch save with rarity upgrade logic)
+ * @param {Object} state - Game state
+ * @param {Array} cards - Array of {id, packRarity} card objects from pack opening
+ * @returns {Promise<Array>} Cards that were actually saved (new or upgraded)
+ */
+export const savePlayerCardsToDatabase = async (state, cards) => {
+  if (!state.menu?.profile?.id) {
+    console.warn('Cannot save cards: no profile');
+    return [];
+  }
+  if (!cards || cards.length === 0) {
+    return [];
+  }
+
+  const rarityOrder = ['common', 'uncommon', 'rare', 'legendary', 'pristine'];
+
+  // Ensure ownedCards Map exists
+  if (!state.menu.profile.ownedCards) {
+    state.menu.profile.ownedCards = new Map();
+  }
+  const ownedCards = state.menu.profile.ownedCards;
+
+  // Filter to only cards that are new or better rarity
+  const cardsToSave = cards.filter((card) => {
+    const existingRarity = ownedCards.get(card.id);
+    const existingIndex = existingRarity ? rarityOrder.indexOf(existingRarity) : -1;
+    const newIndex = rarityOrder.indexOf(card.packRarity);
+    return newIndex > existingIndex;
+  });
+
+  if (cardsToSave.length === 0) {
+    return [];
+  }
+
+  const api = await loadSupabaseApi(state);
+  const savedCards = await api.savePlayerCards({
+    profileId: state.menu.profile.id,
+    cards: cardsToSave.map((c) => ({ cardId: c.id, rarity: c.packRarity })),
+  });
+
+  // Update local Map with saved cards
+  savedCards.forEach((c) => {
+    ownedCards.set(c.card_id, c.rarity);
+  });
+
+  console.log(`Saved ${savedCards.length} cards to database`);
+  return savedCards;
+};
+
+/**
+ * Update pack count in database
+ * @param {Object} state - Game state
+ * @param {number} delta - Change in packs (+1 for win, -1 for open)
+ * @returns {Promise<number>} New pack count
+ */
+export const updatePackCount = async (state, delta) => {
+  if (!state.menu?.profile?.id) {
+    console.warn('Cannot update packs: no profile');
+    return state.menu?.profile?.packs || 0;
+  }
+
+  const currentPacks = state.menu.profile.packs || 0;
+  const newPacks = Math.max(0, currentPacks + delta);
+
+  // Update local state immediately
+  state.menu.profile.packs = newPacks;
+
+  // Sync to database
+  try {
+    const api = await loadSupabaseApi(state);
+    await api.updateProfilePacks({
+      profileId: state.menu.profile.id,
+      packs: newPacks,
+    });
+    console.log(`Packs updated: ${currentPacks} -> ${newPacks}`);
+  } catch (error) {
+    console.error('Failed to update packs in database:', error);
+    // Revert local state on error
+    state.menu.profile.packs = currentPacks;
+  }
+
+  return state.menu.profile.packs;
 };
 
 // ============================================================================

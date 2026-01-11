@@ -199,7 +199,7 @@ export const grantKeyword = (targetType, keyword) => (context) => {
     log(`${target.name} gains ${keyword}.`);
     return { grantKeyword: { creature: target, keyword } };
   } else if (targetType === 'all-friendly') {
-    const creatures = player.field.filter(c => c);
+    const creatures = player.field.filter(c => c && isCreatureCard(c));
     if (creatures.length === 0) {
       log(`No creatures to grant ${keyword}.`);
       return {};
@@ -230,7 +230,7 @@ export const buffStats = (targetType, stats) => (context) => {
     log(`${target.name} gains +${attack}/+${health}.`);
     return { buffCreature: { creature: target, attack, health } };
   } else if (targetType === 'all-friendly') {
-    const creatures = player.field.filter(c => c);
+    const creatures = player.field.filter(c => c && isCreatureCard(c));
     if (creatures.length === 0) {
       log(`No creatures to buff.`);
       return {};
@@ -621,7 +621,7 @@ export const revealHand = (durationMs = 3000) => ({ log, opponentIndex }) => {
  * Grant Barrier keyword to all friendly creatures
  */
 export const grantBarrier = () => ({ log, player }) => {
-  const creatures = player.field.filter(c => c);
+  const creatures = player.field.filter(c => c && isCreatureCard(c));
   if (creatures.length === 0) {
     log(`No creatures to grant Barrier.`);
     return {};

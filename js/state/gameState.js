@@ -117,7 +117,7 @@ export const drawCard = (state, playerIndex) => {
 
 export const logMessage = (state, message) => {
   state.log.unshift(message);
-  if (state.log.length > 50) {
+  if (state.log.length > 300) {
     state.log.pop();
   }
 };

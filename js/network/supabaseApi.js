@@ -207,7 +207,7 @@ export const fetchProfile = async () => {
   }
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, username")
+    .select("id, username, packs")
     .eq("current_auth_id", sessionData.session.user.id)
     .maybeSingle();
 
@@ -215,6 +215,34 @@ export const fetchProfile = async () => {
     throw error;
   }
   return data ?? null;
+};
+
+/**
+ * Update the pack count for a profile
+ * @param {Object} params
+ * @param {string} params.profileId - The profile ID
+ * @param {number} params.packs - The new pack count
+ * @returns {Promise<Object>} The updated profile data
+ */
+export const updateProfilePacks = async ({ profileId, packs }) => {
+  if (!profileId) {
+    throw new Error("Missing profile id.");
+  }
+  if (typeof packs !== 'number' || packs < 0) {
+    throw new Error("Invalid pack count.");
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .update({ packs })
+    .eq("id", profileId)
+    .select("id, packs")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+  return data;
 };
 
 export const fetchProfilesByIds = async (ids = []) => {
@@ -726,4 +754,103 @@ export const createMatchmakingLobby = async ({ hostId }) => {
     }
   }
   throw new Error("Unable to generate a lobby code.");
+};
+
+// ============================================================================
+// PLAYER CARDS (Collection)
+// ============================================================================
+
+/**
+ * Fetch all cards owned by a player
+ * @param {Object} params
+ * @param {string} params.profileId - The player's profile ID
+ * @returns {Promise<Array>} Array of {card_id, rarity} objects
+ */
+export const fetchPlayerCards = async ({ profileId }) => {
+  if (!profileId) {
+    throw new Error("Missing profile id.");
+  }
+
+  const { data, error } = await supabase
+    .from("player_cards")
+    .select("card_id, rarity")
+    .eq("profile_id", profileId);
+
+  if (error) {
+    throw error;
+  }
+
+  return data ?? [];
+};
+
+/**
+ * Save or update a player's card (upsert - upgrades rarity if better)
+ * @param {Object} params
+ * @param {string} params.profileId - The player's profile ID
+ * @param {string} params.cardId - The card ID
+ * @param {string} params.rarity - The rarity level
+ * @returns {Promise<Object>} The saved card data
+ */
+export const savePlayerCard = async ({ profileId, cardId, rarity }) => {
+  if (!profileId) {
+    throw new Error("Missing profile id.");
+  }
+  if (!cardId) {
+    throw new Error("Missing card id.");
+  }
+  if (!rarity) {
+    throw new Error("Missing rarity.");
+  }
+
+  const { data, error } = await supabase
+    .from("player_cards")
+    .upsert(
+      {
+        profile_id: profileId,
+        card_id: cardId,
+        rarity: rarity,
+      },
+      { onConflict: "profile_id,card_id" }
+    )
+    .select("card_id, rarity")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+};
+
+/**
+ * Save multiple cards at once (batch upsert)
+ * @param {Object} params
+ * @param {string} params.profileId - The player's profile ID
+ * @param {Array} params.cards - Array of {cardId, rarity} objects
+ * @returns {Promise<Array>} The saved cards data
+ */
+export const savePlayerCards = async ({ profileId, cards }) => {
+  if (!profileId) {
+    throw new Error("Missing profile id.");
+  }
+  if (!cards || !Array.isArray(cards) || cards.length === 0) {
+    return [];
+  }
+
+  const rows = cards.map((c) => ({
+    profile_id: profileId,
+    card_id: c.cardId,
+    rarity: c.rarity,
+  }));
+
+  const { data, error } = await supabase
+    .from("player_cards")
+    .upsert(rows, { onConflict: "profile_id,card_id" })
+    .select("card_id, rarity");
+
+  if (error) {
+    throw error;
+  }
+
+  return data ?? [];
 };

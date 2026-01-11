@@ -1371,7 +1371,7 @@ button {
 
 .piles-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: clamp(4px, 0.8vw, 8px);
   width: 100%;
 }
@@ -1383,9 +1383,15 @@ button {
   text-align: center;
   font-size: clamp(9px, 1.2vw, 11px);
   color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s ease;
 }
 
-.pile-item span {
+.pile-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.pile-item > span {
   display: block;
   font-size: 10px;
   text-transform: uppercase;
@@ -1394,10 +1400,11 @@ button {
 }
 
 .pile-item strong {
-  display: block;
-  font-size: 14px;
+  display: inline;
+  font-size: 18px;
   color: var(--text-primary);
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .info-container {
@@ -1454,7 +1461,7 @@ button {
 
 .piles-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
 }
 
@@ -1465,13 +1472,20 @@ button {
   text-align: center;
   font-size: 12px;
   color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.pile-item:hover {
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .pile-item strong {
-  display: block;
+  display: inline;
   font-size: 16px;
   color: var(--text-primary);
   margin-top: 4px;
+  white-space: nowrap;
 }
 
 .action-bar {
@@ -5928,6 +5942,16 @@ button {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   animation: pristine-shimmer 3s ease-in-out infinite;
+}
+
+/* Pack save status */
+.pack-save-status {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 20px;
+  margin: 8px 0;
+  transition: color 0.3s ease;
 }
 
 /* Pack opening actions */

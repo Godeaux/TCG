@@ -237,8 +237,15 @@ export const advancePhase = (state) => {
     const endEffectCreatures = player.field.filter(c => c?.onEnd || c?.effects?.onEnd || c?.endOfTurnSummon);
     if (endEffectCreatures.length > 0) {
       logGameAction(state, PHASE, `Queuing ${endEffectCreatures.length} end-of-turn effect(s): ${endEffectCreatures.map(c => c.name).join(', ')}`);
+      queueEndOfTurnEffects(state);
+      // Wait for effects to be resolved before ending turn
+      state.broadcast?.(state);
+      return;
     }
+    // No end-of-turn effects - auto-end turn and pass to next player
     queueEndOfTurnEffects(state);
+    endTurn(state);
+    return;
   }
 
   // Broadcast after every phase change so rejoining players get the latest phase

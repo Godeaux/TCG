@@ -519,6 +519,14 @@ const placeCreatureInSpecificSlot = (card, slotIndex) => {
       return;
     }
 
+    // Free Play predators require consuming prey to play for free
+    if (isFreePlay(card)) {
+      logMessage(state, `${card.name} requires consuming prey to play for free.`);
+      player.hand.push(card); // Return card to hand
+      latestCallbacks.onUpdate?.();
+      return;
+    }
+
     creature.dryDropped = true;
     logMessage(state, `${creature.name} enters play with no consumption.`);
   }
