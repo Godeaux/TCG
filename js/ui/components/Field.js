@@ -30,9 +30,10 @@ import { isLocalPlayersTurn } from '../../state/selectors.js';
  * @param {Function} options.onAttack - Attack callback (card) => void
  * @param {Function} options.onInspect - Inspect callback (card) => void
  * @param {Function} options.onReturnToHand - Return to Hand callback (card) => void
+ * @param {Function} options.onSacrifice - Sacrifice callback (card) => void
  */
 export const renderField = (state, playerIndex, isOpponent, options = {}) => {
-  const { onAttack, onInspect, onReturnToHand } = options;
+  const { onAttack, onInspect, onReturnToHand, onSacrifice } = options;
 
   const fieldRow = document.querySelector(isOpponent ? ".opponent-field" : ".player-field");
   if (!fieldRow) {
@@ -77,13 +78,23 @@ export const renderField = (state, playerIndex, isOpponent, options = {}) => {
       card.playedVia && // Was played via effect ("effect" or "deck")
       isCreature;
 
+    // Determine if creature can be sacrificed (has sacrificeEffect and is in main phase)
+    const canSacrifice =
+      !isOpponent &&
+      isLocalPlayersTurn(state) &&
+      isMainPhase &&
+      card.sacrificeEffect &&
+      isCreature;
+
     const cardElement = renderCard(card, {
       showAttack: canAttack,
       showReturnToHand: canReturnToHand,
+      showSacrifice: canSacrifice,
       showEffectSummary: true,
       draggable: true,
       onAttack,
       onReturnToHand,
+      onSacrifice,
       onInspect,
     });
 

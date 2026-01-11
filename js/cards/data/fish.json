@@ -36,7 +36,7 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Passive", "Immune"],
-      "effectText": "End of turn, eat target enemy prey.",
+      "effectText": "End of turn; consume target enemy prey.",
       "effects": {
         "onEnd": { "type": "selectEnemyPreyToConsume" }
       }

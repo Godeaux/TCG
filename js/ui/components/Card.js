@@ -478,12 +478,14 @@ const adjustTextToFit = (cardElement, inner, cardId) => {
  * @param {boolean} options.showAttack - Show "Attack" button
  * @param {boolean} options.showDiscard - Show "Discard" button
  * @param {boolean} options.showReturnToHand - Show "Return to Hand" button
+ * @param {boolean} options.showSacrifice - Show "Sacrifice" button (for cards with sacrificeEffect)
  * @param {boolean} options.showEffectSummary - Show effect text
  * @param {boolean} options.useBaseStats - Use base ATK/HP instead of current (for carrion display)
  * @param {Function} options.onPlay - Play button callback
  * @param {Function} options.onAttack - Attack button callback
  * @param {Function} options.onDiscard - Discard button callback
  * @param {Function} options.onReturnToHand - Return to Hand button callback
+ * @param {Function} options.onSacrifice - Sacrifice button callback
  * @param {Function} options.onClick - Card click callback
  * @param {Function} options.onInspect - Inspect callback (for detail view)
  * @param {boolean} options.showBack - Show card back instead
@@ -497,12 +499,14 @@ export const renderCard = (card, options = {}) => {
     showAttack = false,
     showDiscard = false,
     showReturnToHand = false,
+    showSacrifice = false,
     showEffectSummary = false,
     useBaseStats = false,
     onPlay,
     onAttack,
     onDiscard,
     onReturnToHand,
+    onSacrifice,
     onClick,
     onInspect,
     showBack = false,
@@ -534,7 +538,7 @@ export const renderCard = (card, options = {}) => {
   inner.innerHTML = renderCardInnerHtml(card, { showEffectSummary, useBaseStats });
 
   // Add action buttons if needed
-  if (showPlay || showAttack || showDiscard || showReturnToHand) {
+  if (showPlay || showAttack || showDiscard || showReturnToHand || showSacrifice) {
     const actions = document.createElement("div");
     actions.className = "card-actions";
 
@@ -549,6 +553,13 @@ export const renderCard = (card, options = {}) => {
       attackButton.textContent = "Attack";
       attackButton.onclick = () => onAttack?.(card);
       actions.appendChild(attackButton);
+    }
+    if (showSacrifice) {
+      const sacrificeButton = document.createElement("button");
+      sacrificeButton.textContent = "Sacrifice";
+      sacrificeButton.className = "sacrifice-btn";
+      sacrificeButton.onclick = () => onSacrifice?.(card);
+      actions.appendChild(sacrificeButton);
     }
     if (showDiscard) {
       const discardButton = document.createElement("button");

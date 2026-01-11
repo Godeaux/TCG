@@ -21,7 +21,7 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Play 2 Arctic Ground Squirrels. Target enemy gains frozen.",
+      "effectText": "Play 2 Arctic Ground Squirrels. Target enemy gains Frozen.",
       "summons": ["token-arctic-ground-squirrel"],
       "effects": {
         "onPlay": {
@@ -38,7 +38,7 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Hidden"],
-      "effectText": "Target enemy gains frozen. Start of turn, play Arctic Hare.",
+      "effectText": "Target enemy gains Frozen. Start of turn, play Arctic Hare.",
       "summons": ["mammal-prey-arctic-hare"],
       "effects": {
         "onPlay": { "type": "selectEnemyToFreeze" },
@@ -484,7 +484,7 @@
       "id": "mammal-spell-six-layered-neocortex",
       "name": "Six-layered Neocortex",
       "type": "Spell",
-      "effectText": "Play a creature from deck it gains frozen.",
+      "effectText": "Play a creature from deck; it gains Frozen.",
       "effects": {
         "effect": { "type": "selectCreatureFromDeckWithKeyword", "params": { "keyword": "Frozen" } }
       }
@@ -493,7 +493,7 @@
       "id": "mammal-spell-white-hart",
       "name": "White Hart",
       "type": "Spell",
-      "effectText": "Play a carrion it gains frozen.",
+      "effectText": "Play a carrion; it gains Frozen.",
       "effects": {
         "effect": { "type": "selectCarrionToPlayWithKeyword", "params": { "keyword": "Frozen" } }
       }
@@ -511,7 +511,7 @@
       "id": "mammal-free-spell-tranquilizer",
       "name": "Tranquilizer",
       "type": "Free Spell",
-      "effectText": "Target enemy gains frozen.",
+      "effectText": "Target enemy gains Frozen.",
       "effects": {
         "effect": { "type": "selectEnemyToFreeze" }
       }
@@ -577,7 +577,7 @@
       "name": "Burial Ground",
       "type": "Trap",
       "trigger": "slain",
-      "effectText": "When target defending creature is slain, play a carrion it gains frozen.",
+      "effectText": "When target defending creature is slain; play a carrion, it gains Frozen.",
       "effects": {
         "effect": { "type": "selectCarrionToPlayWithKeyword", "params": { "keyword": "Frozen" } }
       }
@@ -586,29 +586,54 @@
       "id": "mammal-spell-fresh-milk",
       "name": "Fresh Milk",
       "type": "Free Spell",
-      "effectText": "TODO - REVISIT",
-      "effects": {}
+      "effectText": "Your creatures gain +1/+1.",
+      "effects": {
+        "effect": {
+          "type": "buff",
+          "params": { "attack": 1, "health": 1, "target": "friendlyCreatures" }
+        }
+      }
     },
     {
       "id": "mammal-spell-present",
       "name": "Present",
       "type": "Free Spell",
-      "effectText": "TODO - REVISIT",
-      "effects": {}
+      "effectText": "Choose: Heal 2 or target creature gains +2/+2.",
+      "effects": {
+        "effect": {
+          "type": "choice",
+          "params": {
+            "choices": [
+              { "label": "Heal 2", "type": "heal", "params": { "amount": 2 } },
+              { "label": "+2/+2", "type": "buff", "params": { "attack": 2, "health": 2, "target": "targetCreature" } }
+            ]
+          }
+        }
+      }
     },
     {
       "id": "mammal-spell-qiviut",
       "name": "Qiviut",
       "type": "Free Spell",
-      "effectText": "TODO - REVISIT",
-      "effects": {}
+      "effectText": "Target creature gains Immune.",
+      "effects": {
+        "effect": {
+          "type": "addKeyword",
+          "params": { "keyword": "immune", "target": "targetCreature" }
+        }
+      }
     },
     {
       "id": "mammal-spell-angus",
       "name": "Angus",
-      "type": "Spell",
-      "effectText": "TODO - REVISIT",
-      "effects": {}
+      "type": "Free Spell",
+      "effectText": "Target Predator gains +2/+2.",
+      "effects": {
+        "effect": {
+          "type": "buff",
+          "params": { "attack": 2, "health": 2, "target": "targetPredator" }
+        }
+      }
     }
   ]
 }

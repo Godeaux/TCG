@@ -217,7 +217,7 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Eat target enemy prey.",
+      "effectText": "Consume target enemy prey.",
       "effects": {
         "onPlay": { "type": "selectEnemyPreyToConsume" }
       }
@@ -415,7 +415,7 @@
       "type": "Predator",
       "atk": 3,
       "hp": 3,
-      "effectText": "Eat target enemy prey.",
+      "effectText": "Consume target enemy prey.",
       "effects": {
         "onConsume": { "type": "selectEnemyPreyToConsume" }
       }
@@ -541,7 +541,7 @@
       "id": "bird-free-spell-clouds",
       "name": "Clouds",
       "type": "Free Spell",
-      "effectText": "Target creature gains immune.",
+      "effectText": "Target creature gains Immune.",
       "effects": {
         "effect": {
           "type": "selectFromGroup",
@@ -636,29 +636,59 @@
       "id": "bird-spell-kakapo-feathers",
       "name": "Kākāpō Feathers",
       "type": "Free Spell",
-      "effectText": "TODO - REVISIT",
-      "effects": {}
+      "effectText": "Target creature gains Invisible.",
+      "effects": {
+        "effect": {
+          "type": "addKeyword",
+          "params": { "keyword": "invisible", "target": "targetCreature" }
+        }
+      }
     },
     {
       "id": "bird-spell-rainbow-feathers",
       "name": "Rainbow Feathers",
       "type": "Free Spell",
-      "effectText": "TODO - REVISIT",
-      "effects": {}
+      "effectText": "Choose: Heal 2 or target creature gains Regen.",
+      "effects": {
+        "effect": {
+          "type": "choice",
+          "params": {
+            "choices": [
+              { "label": "Heal 2", "type": "heal", "params": { "amount": 2 } },
+              { "label": "Regen", "type": "addKeyword", "params": { "keyword": "regen", "target": "targetCreature" } }
+            ]
+          }
+        }
+      }
     },
     {
       "id": "bird-spell-feed",
       "name": "Feed",
-      "type": "Spell",
-      "effectText": "TODO - REVISIT",
-      "effects": {}
+      "type": "Free Spell",
+      "effectText": "Target creature gains +1/+1.",
+      "effects": {
+        "effect": {
+          "type": "buff",
+          "params": { "attack": 1, "health": 1, "target": "targetCreature" }
+        }
+      }
     },
     {
       "id": "bird-spell-red-tailfeathers",
       "name": "Red Tailfeathers",
       "type": "Free Spell",
-      "effectText": "TODO - REVISIT",
-      "effects": {}
+      "effectText": "Choose: Heal 6 or target creature gains +3/+3.",
+      "effects": {
+        "effect": {
+          "type": "choice",
+          "params": {
+            "choices": [
+              { "label": "Heal 6", "type": "heal", "params": { "amount": 6 } },
+              { "label": "+3/+3", "type": "buff", "params": { "attack": 3, "health": 3, "target": "targetCreature" } }
+            ]
+          }
+        }
+      }
     }
   ]
 }

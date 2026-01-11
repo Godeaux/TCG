@@ -23,6 +23,9 @@ import {
   isPassive,
   hasScavenge,
   isHarmless,
+  isHidden,
+  isInvisible,
+  hasAcuity,
   KEYWORD_DESCRIPTIONS,
 } from "./keywords.js";
 import { resolveEffectResult, stripAbilities } from "./game/effects.js";
@@ -1489,6 +1492,66 @@ const handleReturnToHand = (state, card, onUpdate) => {
   onUpdate?.();
 };
 
+/**
+ * Handle sacrificing a card from field
+ * Used for cards with sacrificeEffect (e.g., Golden Poison Frog, Phantasmal Poison Frog)
+ */
+const handleSacrifice = (state, card, onUpdate) => {
+  if (!isLocalPlayersTurn(state)) {
+    logMessage(state, "Wait for your turn.");
+    return;
+  }
+
+  // Find card's owner and slot
+  const playerIndex = state.players.findIndex(
+    (p) => p.field.some((slot) => slot?.instanceId === card.instanceId)
+  );
+  if (playerIndex === -1) {
+    return;
+  }
+
+  const player = state.players[playerIndex];
+  const opponentIndex = (playerIndex + 1) % 2;
+  const opponent = state.players[opponentIndex];
+  const slotIndex = player.field.findIndex((slot) => slot?.instanceId === card.instanceId);
+  if (slotIndex === -1) {
+    return;
+  }
+
+  // Check if card has a sacrifice effect
+  if (!card.sacrificeEffect && !card.effects?.sacrificeEffect) {
+    logMessage(state, `${card.name} cannot be sacrificed.`);
+    return;
+  }
+
+  logGameAction(state, LOG_CATEGORIES.EFFECT, `${player.name} sacrifices ${formatCardForLog(card)}.`);
+
+  // Resolve the sacrifice effect
+  const result = resolveCardEffect(card, 'sacrificeEffect', {
+    log: (message) => logMessage(state, message),
+    player,
+    opponent,
+    card,
+    state,
+  });
+
+  // Handle the effect chain
+  resolveEffectChain(
+    state,
+    result,
+    { player, opponent, card },
+    onUpdate,
+    () => {
+      // After effect resolves, move card to carrion
+      player.field[slotIndex] = null;
+      player.carrion.push(card);
+      cleanupDestroyed(state);
+      onUpdate?.();
+      broadcastSyncState(state);
+    }
+  );
+};
+
 const handleAttackSelection = (state, attacker, onUpdate) => {
   if (!isLocalPlayersTurn(state)) {
     logMessage(state, "Wait for your turn to declare attacks.");
@@ -1498,6 +1561,14 @@ const handleAttackSelection = (state, attacker, onUpdate) => {
     logMessage(state, "Resolve the current combat choice before declaring another attack.");
     return;
   }
+
+  // Check for attack replacement effect (e.g., Hippo Frog's "eat prey instead of attacking")
+  const attackReplacement = attacker.attackReplacement || attacker.effects?.attackReplacement;
+  if (attackReplacement && attackReplacement.type === "eatPreyInsteadOfAttacking") {
+    handleEatPreyAttack(state, attacker, onUpdate);
+    return;
+  }
+
   const opponent = getOpponentPlayer(state);
   const validTargets = getValidTargets(state, attacker, opponent);
 
@@ -1530,6 +1601,64 @@ const handleAttackSelection = (state, attacker, onUpdate) => {
 
   renderSelectionPanel({
     title: `Select target for ${attacker.name}`,
+    items,
+    onConfirm: clearSelectionPanel,
+    confirmLabel: "Cancel",
+  });
+};
+
+/**
+ * Handle attack replacement for Hippo Frog - eat prey instead of attacking
+ */
+const handleEatPreyAttack = (state, attacker, onUpdate) => {
+  const opponent = getOpponentPlayer(state);
+  const player = getActivePlayer(state);
+  const opponentIndex = (state.activePlayerIndex + 1) % 2;
+
+  // Get enemy prey creatures that can be eaten
+  const targetablePrey = opponent.field.filter((card) => {
+    if (!card || card.type !== "Prey") return false;
+    // Can target if has Acuity, otherwise must not be hidden/invisible
+    if (hasAcuity(attacker)) return true;
+    return !isHidden(card) && !isInvisible(card);
+  });
+
+  if (targetablePrey.length === 0) {
+    logMessage(state, `${attacker.name} has no prey to eat.`);
+    return;
+  }
+
+  const items = [];
+  targetablePrey.forEach((prey) => {
+    const item = document.createElement("label");
+    item.className = "selection-item";
+    const button = document.createElement("button");
+    button.textContent = `Eat ${prey.name}`;
+    button.onclick = () => {
+      clearSelectionPanel();
+
+      // Find and remove prey from opponent's field
+      const slotIndex = opponent.field.findIndex((slot) => slot?.instanceId === prey.instanceId);
+      if (slotIndex !== -1) {
+        opponent.field[slotIndex] = null;
+        opponent.carrion.push(prey);
+
+        logGameAction(state, LOG_CATEGORIES.DEATH, `${formatCardForLog(attacker)} eats ${formatCardForLog(prey)}!`);
+
+        // Mark attacker as having attacked
+        attacker.hasAttacked = true;
+
+        cleanupDestroyed(state);
+        onUpdate?.();
+        broadcastSyncState(state);
+      }
+    };
+    item.appendChild(button);
+    items.push(item);
+  });
+
+  renderSelectionPanel({
+    title: `Select prey for ${attacker.name} to eat`,
     items,
     onConfirm: clearSelectionPanel,
     confirmLabel: "Cancel",
@@ -2642,6 +2771,7 @@ export const renderGame = (state, callbacks = {}) => {
   renderField(state, activeIndex, false, {
     onAttack: (card) => handleAttackSelection(state, card, callbacks.onUpdate),
     onReturnToHand: (card) => handleReturnToHand(state, card, callbacks.onUpdate),
+    onSacrifice: (card) => handleSacrifice(state, card, callbacks.onUpdate),
     onInspect: fieldInspectCallback,
   });
   // Hand rendering (uses extracted Hand component)

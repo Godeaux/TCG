@@ -124,7 +124,7 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Poisonous"],
-      "effectText": "Draw 1. Sacrifice; add Golden Blowdart to hand. [TODO - sacrificeEffect hook not triggered]",
+      "effectText": "Draw 1. Sacrifice; add Golden Blowdart to hand.",
       "effects": {
         "onPlay": { "type": "draw", "params": { "count": 1 } },
         "sacrificeEffect": { "type": "addToHand", "params": { "cardId": "amphibian-spell-golden-blowdart" } }
@@ -147,7 +147,7 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Poisonous"],
-      "effectText": "End of turn play Hidden Egg.",
+      "effectText": "End of turn; play Hidden Egg.",
       "summons": ["token-hidden-eleuth-egg"],
       "effects": {
         "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-hidden-eleuth-egg"] } }
@@ -175,7 +175,7 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Poisonous"],
-      "effectText": "Sacrifice, add Phantasmal Darts to hand. [TODO - sacrificeEffect hook not triggered]",
+      "effectText": "Sacrifice; add Phantasmal Darts to hand.",
       "effects": {
         "sacrificeEffect": { "type": "addToHand", "params": { "cardId": "amphibian-spell-phantasmal-darts" } }
       }
@@ -238,7 +238,7 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 2,
-      "effectText": "Discard add Tomato to hand. Defending, attacking enemy gains frozen.",
+      "effectText": "Discard; add Tomato to hand. Defending; attacking enemy gains Frozen.",
       "effects": {
         "discardEffect": { "type": "addToHand", "params": { "cardId": "amphibian-spell-tomato" } },
         "onDefend": { "type": "freezeAttacker" }
@@ -251,7 +251,7 @@
       "atk": 1,
       "hp": 2,
       "nutrition": 2,
-      "effectText": "Instead of attacking; may eat target prey. [TODO - attackReplacement hook not triggered]",
+      "effectText": "Instead of attacking; may consume target prey.",
       "effects": {
         "attackReplacement": { "type": "eatPreyInsteadOfAttacking" }
       }
@@ -697,37 +697,62 @@
     {
       "id": "amphibian-spell-golden-blowdart",
       "name": "Golden Blowdart",
-      "type": "Free Spell",
-      "effectText": "TODO - REVISIT",
-      "effects": {}
+      "type": "Spell",
+      "effectText": "Destroy target enemy creature. Draw 1.",
+      "effects": {
+        "effect": [
+          { "type": "destroy", "params": { "target": "targetEnemy" } },
+          { "type": "draw", "params": { "count": 1 } }
+        ]
+      }
     },
     {
       "id": "amphibian-spell-phantasmal-darts",
       "name": "Phantasmal Darts",
-      "type": "Free Spell",
-      "effectText": "TODO - REVISIT",
-      "effects": {}
+      "type": "Spell",
+      "effectText": "Destroy all enemy creatures.",
+      "effects": {
+        "effect": {
+          "type": "destroy",
+          "params": { "target": "enemyCreatures" }
+        }
+      }
     },
     {
       "id": "amphibian-spell-tomato",
       "name": "Tomato",
       "type": "Free Spell",
-      "effectText": "TODO - REVISIT",
-      "effects": {}
+      "effectText": "Target enemy creature gains Frozen.",
+      "effects": {
+        "effect": {
+          "type": "addKeyword",
+          "params": { "keyword": "frozen", "target": "targetEnemy" }
+        }
+      }
     },
     {
       "id": "amphibian-spell-titicaca-water",
       "name": "Titicaca Water",
-      "type": "Free Spell",
-      "effectText": "TODO - REVISIT",
-      "effects": {}
+      "type": "Spell",
+      "effectText": "Destroy all creatures.",
+      "effects": {
+        "effect": {
+          "type": "destroy",
+          "params": { "target": "allCreatures" }
+        }
+      }
     },
     {
       "id": "amphibian-free-spell-rainbow",
       "name": "Rainbow",
       "type": "Free Spell",
-      "effectText": "TODO - REVISIT",
-      "effects": {}
+      "effectText": "Your creatures gain Regen.",
+      "effects": {
+        "effect": {
+          "type": "addKeyword",
+          "params": { "keyword": "regen", "target": "friendlyCreatures" }
+        }
+      }
     }
   ]
 }
