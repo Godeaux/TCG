@@ -108,6 +108,17 @@ import {
   createCardSelectionItem,
 } from "./ui/components/SelectionPanel.js";
 
+import {
+  renderEmotePanel,
+  showEmotePanel,
+  hideEmotePanel,
+  toggleEmotePanel,
+} from "./ui/components/EmotePanel.js";
+
+import {
+  showEmoteBubble,
+} from "./ui/components/EmoteBubble.js";
+
 // Input handling (extracted module - drag-and-drop + navigation + touch)
 import {
   initializeInput,
@@ -148,6 +159,7 @@ import {
   sendLobbyBroadcast,
   broadcastSyncState,
   saveGameStateToDatabase,
+  broadcastEmote,
 } from "./network/index.js";
 
 // Lobby manager (extracted module)
@@ -243,6 +255,7 @@ let latestCallbacks = {};
 const TOTAL_PAGES = 2;
 let handPreviewInitialized = false;
 let inputInitialized = false;
+let emoteInitialized = false;
 let selectedHandCardId = null;
 let battleEffectsInitialized = false;
 let touchInitialized = false;
@@ -813,6 +826,96 @@ const initHandPreview = () => {
   });
   handGrid.addEventListener("pointerleave", clearFocus);
   window.addEventListener("resize", () => updateHandOverlap(handGrid));
+};
+
+/**
+ * Initialize emote system - binds toggle button and panel interactions
+ */
+const initEmoteSystem = (state) => {
+  const emoteToggleLeft = document.getElementById("emote-toggle");
+  const emoteToggleRight = document.getElementById("emote-toggle-right");
+  const emotePanel = document.getElementById("emote-panel");
+  const emoteToggles = [emoteToggleLeft, emoteToggleRight].filter(Boolean);
+
+  if (emoteToggles.length === 0 || !emotePanel) {
+    console.warn("Emote elements not found in DOM");
+    return;
+  }
+
+  const closeAllToggles = () => {
+    emoteToggles.forEach(btn => btn.classList.remove("active"));
+  };
+
+  const handleEmoteToggleClick = (clickedToggle) => (e) => {
+    e.stopPropagation();
+    const wasActive = emotePanel.classList.contains("active");
+    if (wasActive) {
+      hideEmotePanel();
+      closeAllToggles();
+    } else {
+      // Render the panel with current state
+      renderEmotePanel({
+        onEmoteClick: (emoteId) => {
+          // Send emote to opponent
+          broadcastEmote(latestState, emoteId);
+          // Also show it locally for self
+          const localIndex = getLocalPlayerIndex(latestState);
+          showEmoteBubble(emoteId, localIndex);
+          // Close panel
+          hideEmotePanel();
+          closeAllToggles();
+        },
+        squelched: latestState?.emotes?.squelched ?? false,
+        onToggleSquelch: () => {
+          if (latestState?.emotes) {
+            latestState.emotes.squelched = !latestState.emotes.squelched;
+            // Re-render to update squelch button state
+            renderEmotePanel({
+              onEmoteClick: (emoteId) => {
+                broadcastEmote(latestState, emoteId);
+                const localIndex = getLocalPlayerIndex(latestState);
+                showEmoteBubble(emoteId, localIndex);
+                hideEmotePanel();
+                closeAllToggles();
+              },
+              squelched: latestState.emotes.squelched,
+              onToggleSquelch: () => {
+                latestState.emotes.squelched = !latestState.emotes.squelched;
+              },
+            });
+          }
+        },
+      });
+      showEmotePanel();
+      clickedToggle.classList.add("active");
+    }
+  };
+
+  // Bind click handlers to both toggle buttons
+  emoteToggles.forEach(toggle => {
+    toggle.addEventListener("click", handleEmoteToggleClick(toggle));
+  });
+
+  // Close panel when clicking outside
+  document.addEventListener("click", (e) => {
+    const clickedOnToggle = emoteToggles.some(t => t.contains(e.target));
+    if (
+      emotePanel.classList.contains("active") &&
+      !emotePanel.contains(e.target) &&
+      !clickedOnToggle
+    ) {
+      hideEmotePanel();
+      closeAllToggles();
+    }
+  });
+
+  // Close panel on Escape key
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && emotePanel.classList.contains("active")) {
+      hideEmotePanel();
+      closeAllToggles();
+    }
+  });
 };
 
 // renderDeckCard moved to: ./ui/components/Card.js
@@ -2219,6 +2322,10 @@ export const renderGame = (state, callbacks = {}) => {
       // Apply UI-specific post-processing (deck rehydration, callbacks, recovery)
       handleSyncPostProcessing(s, payload, options);
     },
+    onEmoteReceived: (emoteId, senderPlayerIndex) => {
+      // Show the emote bubble for the sender
+      showEmoteBubble(emoteId, senderPlayerIndex);
+    },
   });
 
   // Attach broadcast hook so downstream systems (effects) can broadcast after mutations
@@ -2299,6 +2406,12 @@ export const renderGame = (state, callbacks = {}) => {
     touchInitialized = true;
   }
 
+  // Initialize emote system
+  if (!emoteInitialized) {
+    initEmoteSystem(state);
+    emoteInitialized = true;
+  }
+
   ensureProfileLoaded(state);
 
   const isOnline = isOnlineMode(state);
@@ -2317,6 +2430,7 @@ export const renderGame = (state, callbacks = {}) => {
   const menuPending = state.menu?.stage !== "ready";
   document.body.classList.toggle("deck-building", deckBuilding);
   document.documentElement.classList.toggle("deck-building", deckBuilding);
+  document.body.classList.toggle("online-mode", isOnline);
   const selectionActive = isSelectionActive();
   const beforeCombatPending =
     state.phase === "Before Combat" &&

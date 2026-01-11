@@ -486,6 +486,9 @@
       </div>
     </div>
 
+    <!-- Emote Panel -->
+    <div class="emote-panel" id="emote-panel"></div>
+
     <div class="game-container">
       <header class="top-bar">
         <div class="player-badge player-left" data-player-index="0">
@@ -497,9 +500,15 @@
             </div>
           </div>
         </div>
+        <button class="emote-toggle emote-toggle-left" id="emote-toggle" title="Quick Chat" aria-label="Quick Chat">
+          <span class="emote-toggle-icon">💬</span>
+        </button>
         <button class="turn-badge" id="turn-badge" type="button" aria-label="Advance phase">
           <span class="turn-number" id="turn-number">Turn 1</span>
           <span class="phase-label" id="phase-label">Main</span>
+        </button>
+        <button class="emote-toggle emote-toggle-right" id="emote-toggle-right" title="Quick Chat" aria-label="Quick Chat">
+          <span class="emote-toggle-icon">💬</span>
         </button>
         <div class="player-badge player-right" data-player-index="1">
           <div class="player-info right">

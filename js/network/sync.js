@@ -138,3 +138,19 @@ export const requestSyncFromOpponent = (state) => {
     timestamp: Date.now(),
   });
 };
+
+/**
+ * Broadcast an emote to the opponent
+ * @param {Object} state - Game state
+ * @param {string} emoteId - The emote ID to send
+ */
+export const broadcastEmote = (state, emoteId) => {
+  if (!isOnlineMode(state)) {
+    return;
+  }
+  sendLobbyBroadcast("emote", {
+    senderId: state.menu?.profile?.id ?? null,
+    emoteId,
+    timestamp: Date.now(),
+  });
+};
