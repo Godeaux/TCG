@@ -20,3 +20,10 @@ export {
   checkAndTriggerAITurn,
   getAIController,
 } from './AIGameManager.js';
+
+export {
+  simulateAIHover,
+  simulateAIDrag,
+  simulateAICardPlay,
+  clearAIVisuals,
+} from './aiVisuals.js';

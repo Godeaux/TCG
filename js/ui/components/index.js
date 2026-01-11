@@ -85,3 +85,18 @@ export {
   clearEmoteBubble,
   clearAllEmoteBubbles,
 } from './EmoteBubble.js';
+
+// ============================================================================
+// OPPONENT HAND STRIP
+// ============================================================================
+
+export {
+  renderOpponentHandStrip,
+  updateOpponentHover,
+  updateOpponentDrag,
+  clearOpponentHandStates,
+  DECK_EMOJIS,
+  getDeckEmoji,
+  inferDeckFromCardId,
+  inferPlayerDeck,
+} from './OpponentHandStrip.js';

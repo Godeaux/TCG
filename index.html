@@ -623,6 +623,15 @@
     <!-- Emote Panel -->
     <div class="emote-panel" id="emote-panel"></div>
 
+    <!-- Opponent Cursor (spirit ball) -->
+    <div class="opponent-cursor" id="opponent-cursor" aria-hidden="true">
+      <div class="cursor-glow"></div>
+      <div class="cursor-trail"></div>
+    </div>
+
+    <!-- Opponent Drag Preview (floating face-down card) -->
+    <div class="opponent-drag-preview" id="opponent-drag-preview" aria-hidden="true"></div>
+
     <div class="game-container">
       <header class="top-bar">
         <div class="player-badge player-left" data-player-index="0">
@@ -677,6 +686,12 @@
             <!-- Center Column: Battlefield and Hand -->
             <div class="battlefield-center-column">
               <div class="battlefield-layout">
+                <!-- Opponent Hand Strip (shows card backs with hover/drag feedback) -->
+                <div class="opponent-hand-strip" id="opponent-hand-strip">
+                  <div class="opponent-hand-cards" id="opponent-hand-cards">
+                    <!-- Card backs will be rendered here by JavaScript -->
+                  </div>
+                </div>
                 <div class="battlefield-region">
                   <div class="battlefield">
                     <div class="field-row opponent-field">

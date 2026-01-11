@@ -137,6 +137,13 @@ import {
   showEmoteBubble,
 } from "./ui/components/EmoteBubble.js";
 
+import {
+  renderOpponentHandStrip,
+  updateOpponentHover,
+  updateOpponentDrag,
+  clearOpponentHandStates,
+} from "./ui/components/OpponentHandStrip.js";
+
 // Input handling (extracted module - drag-and-drop + navigation + touch)
 import {
   initializeInput,
@@ -178,6 +185,9 @@ import {
   broadcastSyncState,
   saveGameStateToDatabase,
   broadcastEmote,
+  broadcastHandHover,
+  broadcastHandDrag,
+  broadcastCursorMove,
 } from "./network/index.js";
 
 // Lobby manager (extracted module)
@@ -758,11 +768,15 @@ const initHandPreview = () => {
   // Lower value = easier to switch focus, higher value = more stable but harder to switch
   const HYSTERESIS_MARGIN = 8;
 
-  const clearFocus = () => {
+  const clearFocus = (broadcast = true) => {
     handGrid.querySelectorAll(".card.hand-focus").forEach((card) => {
       card.classList.remove("hand-focus");
     });
     currentFocusedCard = null;
+    // Broadcast hover cleared to opponent (unless we're about to set new focus)
+    if (broadcast && latestState) {
+      broadcastHandHover(latestState, null);
+    }
   };
 
   const focusCardElement = (cardElement) => {
@@ -772,9 +786,20 @@ const initHandPreview = () => {
     if (cardElement.classList.contains("hand-focus")) {
       return;
     }
-    clearFocus();
+    // Clear focus without broadcasting - we'll broadcast the new index instead
+    clearFocus(false);
     cardElement.classList.add("hand-focus");
     currentFocusedCard = cardElement;
+
+    // Get card index for broadcast
+    const cards = Array.from(handGrid.querySelectorAll('.card'));
+    const cardIndex = cards.indexOf(cardElement);
+
+    // Broadcast hover to opponent
+    if (latestState && cardIndex >= 0) {
+      broadcastHandHover(latestState, cardIndex);
+    }
+
     const instanceId = cardElement.dataset.instanceId;
     if (!instanceId) {
       return;
@@ -866,6 +891,181 @@ const initHandPreview = () => {
   });
   handGrid.addEventListener("pointerleave", clearFocus);
   window.addEventListener("resize", () => updateHandOverlap(handGrid));
+};
+
+// ============================================================================
+// OPPONENT VISUALIZATION HANDLERS
+// Handle incoming opponent cursor/drag data and update UI
+// ============================================================================
+
+/**
+ * Handle opponent drag events
+ * Shows a floating face-down card following the drag position
+ */
+const handleOpponentDrag = (dragInfo) => {
+  const { cardIndex, position, isDragging } = dragInfo;
+  const preview = document.getElementById('opponent-drag-preview');
+  if (!preview) return;
+
+  if (isDragging && position) {
+    // Update opponent hand strip to show dragging state
+    updateOpponentDrag(cardIndex);
+
+    // Show floating card at drag position
+    preview.classList.add('active');
+    preview.style.left = `${position.x}px`;
+    preview.style.top = `${position.y}px`;
+
+    // Ensure preview has card back content
+    if (!preview.querySelector('.card-back')) {
+      const cardBack = document.createElement('div');
+      cardBack.className = 'card-back';
+      cardBack.textContent = '🎴'; // Will be updated with deck emoji
+      preview.appendChild(cardBack);
+    }
+  } else {
+    // Hide drag preview
+    preview.classList.remove('active');
+    updateOpponentDrag(null);
+  }
+};
+
+/**
+ * Handle opponent cursor movement
+ * Shows a glowing spirit ball following their cursor
+ * Y-axis is mirrored so cursor appears in "opponent's zone" from our perspective
+ * Uses velocity-based physics for ultra-smooth movement
+ */
+
+// Cursor physics state
+let cursorTargetX = 0;
+let cursorTargetY = 0;
+let cursorCurrentX = 0;
+let cursorCurrentY = 0;
+let cursorVelocityX = 0;
+let cursorVelocityY = 0;
+let cursorAnimationFrame = null;
+let cursorInitialized = false;
+
+// Physics constants for smooth movement
+const CURSOR_SMOOTHING = 0.08; // Lower = smoother but slower to reach target
+const CURSOR_DAMPING = 0.85;   // Velocity decay per frame (0.85 = smooth deceleration)
+const CURSOR_MAX_VELOCITY = 50; // Cap velocity to prevent overshooting
+
+const handleOpponentCursorMove = (position) => {
+  const cursor = document.getElementById('opponent-cursor');
+  const gameContainer = document.querySelector('.game-container');
+  if (!cursor || !position || !gameContainer) return;
+
+  // Get local game container bounds
+  const rect = gameContainer.getBoundingClientRect();
+
+  // Convert relative position (0-1) to local pixels
+  // Mirror Y-axis: opponent's bottom (1.0) becomes our top (0.0)
+  const localX = rect.left + (position.x * rect.width);
+  const localY = rect.top + ((1 - position.y) * rect.height);
+
+  // Set target position
+  cursorTargetX = localX;
+  cursorTargetY = localY;
+
+  // Initialize position on first update (no animation to start position)
+  if (!cursorInitialized) {
+    cursorCurrentX = cursorTargetX;
+    cursorCurrentY = cursorTargetY;
+    cursorInitialized = true;
+  }
+
+  // Start animation if not already running
+  if (!cursorAnimationFrame) {
+    animateCursor(cursor);
+  }
+
+  cursor.classList.add('active');
+
+  // Hide cursor after inactivity
+  clearTimeout(cursor._hideTimeout);
+  cursor._hideTimeout = setTimeout(() => {
+    cursor.classList.remove('active');
+    cursorInitialized = false;
+    if (cursorAnimationFrame) {
+      cancelAnimationFrame(cursorAnimationFrame);
+      cursorAnimationFrame = null;
+    }
+  }, 2000);
+};
+
+/**
+ * Smoothly animate cursor position using velocity-based physics
+ * Creates natural, fluid movement that curves toward new targets
+ */
+const animateCursor = (cursor) => {
+  // Calculate acceleration toward target (spring force)
+  const dx = cursorTargetX - cursorCurrentX;
+  const dy = cursorTargetY - cursorCurrentY;
+
+  // Add acceleration based on distance to target
+  cursorVelocityX += dx * CURSOR_SMOOTHING;
+  cursorVelocityY += dy * CURSOR_SMOOTHING;
+
+  // Apply damping (friction) for smooth deceleration
+  cursorVelocityX *= CURSOR_DAMPING;
+  cursorVelocityY *= CURSOR_DAMPING;
+
+  // Cap velocity to prevent overshooting
+  const speed = Math.sqrt(cursorVelocityX * cursorVelocityX + cursorVelocityY * cursorVelocityY);
+  if (speed > CURSOR_MAX_VELOCITY) {
+    const scale = CURSOR_MAX_VELOCITY / speed;
+    cursorVelocityX *= scale;
+    cursorVelocityY *= scale;
+  }
+
+  // Apply velocity to position
+  cursorCurrentX += cursorVelocityX;
+  cursorCurrentY += cursorVelocityY;
+
+  // Apply position
+  cursor.style.left = `${cursorCurrentX}px`;
+  cursor.style.top = `${cursorCurrentY}px`;
+
+  // Continue animation if cursor is active
+  if (cursor.classList.contains('active')) {
+    cursorAnimationFrame = requestAnimationFrame(() => animateCursor(cursor));
+  } else {
+    cursorAnimationFrame = null;
+  }
+};
+
+// Track if cursor tracking is initialized
+let cursorTrackingInitialized = false;
+
+/**
+ * Initialize cursor tracking for broadcasting to opponent
+ * Broadcasts relative position (0-1 range) based on game container
+ * This ensures cursor appears in same relative position regardless of resolution/zoom
+ */
+const initCursorTracking = () => {
+  if (cursorTrackingInitialized) return;
+  cursorTrackingInitialized = true;
+
+  const gameContainer = document.querySelector('.game-container');
+  if (!gameContainer) return;
+
+  gameContainer.addEventListener('mousemove', (event) => {
+    if (!latestState) return;
+
+    // Get game container bounds
+    const rect = gameContainer.getBoundingClientRect();
+
+    // Convert to relative position (0-1 range) within game container
+    const relativeX = (event.clientX - rect.left) / rect.width;
+    const relativeY = (event.clientY - rect.top) / rect.height;
+
+    broadcastCursorMove(latestState, {
+      x: relativeX,
+      y: relativeY,
+    });
+  });
 };
 
 /**
@@ -2631,11 +2831,22 @@ export const renderGame = (state, callbacks = {}) => {
       // Show the emote bubble for the sender
       showEmoteBubble(emoteId, senderPlayerIndex);
     },
+    // Opponent hand tracking callbacks
+    onOpponentHandHover: (cardIndex) => {
+      updateOpponentHover(cardIndex);
+    },
+    onOpponentHandDrag: (dragInfo) => {
+      handleOpponentDrag(dragInfo);
+    },
+    onOpponentCursorMove: (position) => {
+      handleOpponentCursorMove(position);
+    },
   });
 
   // Attach broadcast hook so downstream systems (effects) can broadcast after mutations
   state.broadcast = broadcastSyncState;
   initHandPreview();
+  initCursorTracking();
 
   // Initialize or update input handling (navigation + drag-and-drop)
   if (!inputInitialized) {
@@ -2725,8 +2936,11 @@ export const renderGame = (state, callbacks = {}) => {
     state.passPending = false;
   }
   const localIndex = getLocalPlayerIndex(state);
-  const activeIndex = isOnline ? localIndex : state.activePlayerIndex;
-  const opponentIndex = isOnline ? (localIndex + 1) % 2 : (state.activePlayerIndex + 1) % 2;
+  // For AI mode, always show from human player's perspective (index 0)
+  // For online mode, show from local player's perspective
+  // For local mode, show from active player's perspective (board flips)
+  const activeIndex = isOnline ? localIndex : (isAI ? 0 : state.activePlayerIndex);
+  const opponentIndex = isOnline ? (localIndex + 1) % 2 : (isAI ? 1 : (state.activePlayerIndex + 1) % 2);
   // Don't show pass overlay in online or AI mode
   const passPending = !isOnline && !isAI && Boolean(state.passPending);
   const setupPending = state.setup?.stage !== "complete";
@@ -2774,6 +2988,8 @@ export const renderGame = (state, callbacks = {}) => {
     onSacrifice: (card) => handleSacrifice(state, card, callbacks.onUpdate),
     onInspect: fieldInspectCallback,
   });
+  // Opponent hand strip (shows card backs with hover/drag feedback)
+  renderOpponentHandStrip(state, { opponentIndex });
   // Hand rendering (uses extracted Hand component)
   renderHand(state, {
     onSelect: (card) => {

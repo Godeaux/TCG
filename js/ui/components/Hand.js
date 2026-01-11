@@ -15,7 +15,7 @@
  */
 
 import { renderCard } from './Card.js';
-import { getLocalPlayerIndex } from '../../state/selectors.js';
+import { getLocalPlayerIndex, isAIMode } from '../../state/selectors.js';
 import { canPlayCard, cardLimitAvailable } from '../../game/turnManager.js';
 import { isFreePlay } from '../../keywords.js';
 
@@ -135,7 +135,10 @@ const setupHandExpansion = (state) => {
   const centerColumn = document.querySelector(".battlefield-center-column");
   if (!centerColumn) return;
 
-  const playerIndex = state.menu?.mode === "online" ? getLocalPlayerIndex(state) : state.activePlayerIndex;
+  // Always show human player's hand: online uses local index, AI uses 0, local uses active
+  const isOnline = state.menu?.mode === "online";
+  const isAI = isAIMode(state);
+  const playerIndex = isOnline ? getLocalPlayerIndex(state) : (isAI ? 0 : state.activePlayerIndex);
   const player = state.players[playerIndex];
   const cardCount = player.hand.length;
 
@@ -194,8 +197,10 @@ export const renderHand = (state, options = {}) => {
 
   clearHandPanel(handGrid);
 
+  // Always show human player's hand: online uses local index, AI uses 0, local uses active
   const isOnlineMode = state.menu?.mode === "online";
-  const playerIndex = isOnlineMode ? getLocalPlayerIndex(state) : state.activePlayerIndex;
+  const isAI = isAIMode(state);
+  const playerIndex = isOnlineMode ? getLocalPlayerIndex(state) : (isAI ? 0 : state.activePlayerIndex);
   const player = state.players[playerIndex];
 
   // Setup hand expansion

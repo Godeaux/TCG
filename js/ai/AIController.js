@@ -20,6 +20,7 @@ import { isFreePlay, isPassive, isHarmless, isEdible, hasScavenge } from '../key
 import { isCreatureCard, createCardInstance } from '../cardTypes.js';
 import { logMessage, queueVisualEffect } from '../state/gameState.js';
 import { consumePrey } from '../game/consumption.js';
+import { simulateAICardPlay, clearAIVisuals } from './aiVisuals.js';
 import { resolveCardEffect } from '../cards/index.js';
 import { resolveEffectResult } from '../game/effects.js';
 import { createReactionWindow, TRIGGER_EVENTS } from '../game/triggers/index.js';
@@ -154,6 +155,14 @@ export class AIController {
         break;
       }
 
+      // Find the card's index in hand for visual simulation
+      const cardIndex = player.hand.findIndex(c => c.instanceId === cardToPlay.instanceId);
+
+      // Show visual hover on the card (opponent hand strip)
+      if (cardIndex >= 0) {
+        await simulateAICardPlay(cardIndex);
+      }
+
       console.log(`[AI] Playing card: ${cardToPlay.name}`);
 
       // Find empty field slot
@@ -173,6 +182,9 @@ export class AIController {
 
       await this.delay(AI_DELAYS.BETWEEN_ACTIONS, state);
     }
+
+    // Clear any lingering AI visuals
+    clearAIVisuals();
   }
 
   /**

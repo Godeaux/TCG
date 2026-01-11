@@ -43,6 +43,10 @@ export {
   saveGameStateToDatabase,
   requestSyncFromOpponent,
   broadcastEmote,
+  // Opponent hand tracking
+  broadcastCursorMove,
+  broadcastHandHover,
+  broadcastHandDrag,
 } from './sync.js';
 
 // ============================================================================

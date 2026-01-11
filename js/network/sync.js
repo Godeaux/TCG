@@ -154,3 +154,90 @@ export const broadcastEmote = (state, emoteId) => {
     timestamp: Date.now(),
   });
 };
+
+// ============================================================================
+// OPPONENT HAND TRACKING BROADCASTS
+// Broadcasts for showing opponent's cursor, hand hover, and drag states
+// ============================================================================
+
+// Throttle tracking for broadcast functions
+let lastCursorBroadcast = 0;
+let lastHoverBroadcast = 0;
+const CURSOR_THROTTLE_MS = 100; // ~10 updates per second
+const HOVER_THROTTLE_MS = 50; // Faster for hover changes
+
+/**
+ * Broadcast cursor position to opponent
+ * Throttled to prevent network flooding
+ *
+ * @param {Object} state - Game state
+ * @param {Object} position - { x, y } cursor position (relative to viewport)
+ */
+export const broadcastCursorMove = (state, position) => {
+  if (!isOnlineMode(state)) {
+    return;
+  }
+  const now = Date.now();
+  if (now - lastCursorBroadcast < CURSOR_THROTTLE_MS) {
+    return;
+  }
+  lastCursorBroadcast = now;
+  sendLobbyBroadcast("cursor_move", {
+    senderId: state.menu?.profile?.id ?? null,
+    position,
+    timestamp: now,
+  });
+};
+
+// Track last hovered index to avoid duplicate broadcasts
+let lastHoveredIndex = null;
+
+/**
+ * Broadcast hand hover state to opponent
+ * Shows which card in hand the player is hovering over
+ *
+ * @param {Object} state - Game state
+ * @param {number|null} cardIndex - Index of hovered card (null to clear)
+ */
+export const broadcastHandHover = (state, cardIndex) => {
+  if (!isOnlineMode(state)) {
+    return;
+  }
+
+  // Skip if same as last broadcast (avoid duplicates)
+  if (cardIndex === lastHoveredIndex) {
+    return;
+  }
+
+  const now = Date.now();
+  // Apply throttle, but always allow null (clear) to go through
+  if (cardIndex !== null && now - lastHoverBroadcast < HOVER_THROTTLE_MS) {
+    return;
+  }
+
+  lastHoverBroadcast = now;
+  lastHoveredIndex = cardIndex;
+  sendLobbyBroadcast("hand_hover", {
+    senderId: state.menu?.profile?.id ?? null,
+    cardIndex,
+    timestamp: now,
+  });
+};
+
+/**
+ * Broadcast hand drag state to opponent
+ * Shows when a card is being dragged from hand
+ *
+ * @param {Object} state - Game state
+ * @param {Object} dragInfo - { cardIndex, position, isDragging }
+ */
+export const broadcastHandDrag = (state, dragInfo) => {
+  if (!isOnlineMode(state)) {
+    return;
+  }
+  sendLobbyBroadcast("hand_drag", {
+    senderId: state.menu?.profile?.id ?? null,
+    ...dragInfo,
+    timestamp: Date.now(),
+  });
+};

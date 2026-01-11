@@ -5,7 +5,8 @@
       "Bash(node count-cards.js:*)",
       "Bash(node --check:*)",
       "Bash(grep:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(cd:*)"
     ]
   }
 }

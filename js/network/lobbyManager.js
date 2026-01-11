@@ -51,6 +51,10 @@ let callbacks = {
   onApplySync: null,        // Called to apply sync payload to state
   onError: null,            // Called when an error occurs
   onEmoteReceived: null,    // Called when an emote is received from opponent
+  // Opponent hand tracking callbacks
+  onOpponentHandHover: null,  // Called when opponent hovers a card in hand
+  onOpponentHandDrag: null,   // Called when opponent drags a card from hand
+  onOpponentCursorMove: null, // Called when opponent cursor moves
 };
 
 /**
@@ -774,6 +778,33 @@ export const updateLobbySubscription = (state, { force = false } = {}) => {
     const isHost = state.menu?.lobby?.host_id === state.menu?.profile?.id;
     const senderPlayerIndex = isHost ? 1 : 0;  // If I'm host (P1), sender is guest (P2)
     callbacks.onEmoteReceived?.(payload.emoteId, senderPlayerIndex);
+  });
+
+  // Handle opponent hand hover broadcasts
+  lobbyChannel.on('broadcast', { event: 'hand_hover' }, ({ payload }) => {
+    // Ignore from self
+    if (payload?.senderId === state.menu?.profile?.id) {
+      return;
+    }
+    callbacks.onOpponentHandHover?.(payload.cardIndex);
+  });
+
+  // Handle opponent hand drag broadcasts
+  lobbyChannel.on('broadcast', { event: 'hand_drag' }, ({ payload }) => {
+    // Ignore from self
+    if (payload?.senderId === state.menu?.profile?.id) {
+      return;
+    }
+    callbacks.onOpponentHandDrag?.(payload);
+  });
+
+  // Handle opponent cursor move broadcasts
+  lobbyChannel.on('broadcast', { event: 'cursor_move' }, ({ payload }) => {
+    // Ignore from self
+    if (payload?.senderId === state.menu?.profile?.id) {
+      return;
+    }
+    callbacks.onOpponentCursorMove?.(payload.position);
   });
 
   // Initial refresh
