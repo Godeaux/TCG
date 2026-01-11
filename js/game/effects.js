@@ -2,7 +2,7 @@ import { drawCard, logMessage, queueVisualEffect, logGameAction, LOG_CATEGORIES,
 import { createCardInstance } from "../cardTypes.js";
 import { consumePrey } from "./consumption.js";
 import { isImmune, areAbilitiesActive } from "../keywords.js";
-import { getTokenById, getCardDefinitionById } from "../cards/index.js";
+import { getTokenById, getCardDefinitionById, resolveCardEffect } from "../cards/index.js";
 
 const { DAMAGE, DEATH, SUMMON, BUFF, DEBUFF, HEAL, CHOICE } = LOG_CATEGORIES;
 
@@ -392,17 +392,41 @@ export const resolveEffectResult = (state, result, context) => {
 
   if (result.copyAbilities) {
     const { target, source } = result.copyAbilities;
-    target.keywords = Array.from(new Set([...target.keywords, ...source.keywords]));
-    if (source.keywords.includes("Barrier")) {
+
+    // Copy keywords (handle undefined with fallback to empty array)
+    const targetKeywords = target.keywords || [];
+    const sourceKeywords = source.keywords || [];
+    target.keywords = Array.from(new Set([...targetKeywords, ...sourceKeywords]));
+
+    // Copy Barrier state if source has it
+    if (sourceKeywords.includes("Barrier")) {
       target.hasBarrier = true;
     }
+
+    // Copy effects object (for onPlay, onConsume, onSlain, and other triggered abilities)
+    if (source.effects) {
+      target.effects = target.effects || {};
+      target.effects.onPlay = target.effects.onPlay ?? source.effects.onPlay;
+      target.effects.onConsume = target.effects.onConsume ?? source.effects.onConsume;
+      target.effects.onSlain = target.effects.onSlain ?? source.effects.onSlain;
+      target.effects.onStart = target.effects.onStart ?? source.effects.onStart;
+      target.effects.onEnd = target.effects.onEnd ?? source.effects.onEnd;
+      target.effects.onBeforeCombat = target.effects.onBeforeCombat ?? source.effects.onBeforeCombat;
+      target.effects.onDefend = target.effects.onDefend ?? source.effects.onDefend;
+      target.effects.onTargeted = target.effects.onTargeted ?? source.effects.onTargeted;
+    }
+
+    // Also copy direct function properties if they exist (for backwards compatibility)
     target.onStart = target.onStart ?? source.onStart;
     target.onEnd = target.onEnd ?? source.onEnd;
     target.onBeforeCombat = target.onBeforeCombat ?? source.onBeforeCombat;
     target.onDefend = target.onDefend ?? source.onDefend;
     target.onTargeted = target.onTargeted ?? source.onTargeted;
-    const keywordsList = source.keywords?.length > 0 ? formatKeywordList(source.keywords) : "no keywords";
-    logGameAction(state, CHOICE, `${target.name} copies ${source.name}'s abilities: ${keywordsList}.`);
+
+    const keywordsList = sourceKeywords.length > 0 ? formatKeywordList(sourceKeywords) : "no keywords";
+    const effectsList = source.effects ? Object.keys(source.effects).filter(k => source.effects[k]).join(", ") : "";
+    const abilitiesDesc = effectsList ? `${keywordsList}, effects: ${effectsList}` : keywordsList;
+    logGameAction(state, CHOICE, `${target.name} copies ${source.name}'s abilities: ${abilitiesDesc}.`);
   }
 
   if (result.removeAbilities) {
@@ -435,9 +459,10 @@ export const resolveEffectResult = (state, result, context) => {
 
       const summoned = placeToken(state, playerIndex, tokenData);
       console.log(`  → Summoned:`, summoned ? summoned.name : 'FAILED');
-      if (summoned?.onPlay && !summoned?.abilitiesCancelled) {
+      // Trigger onPlay effect for summoned token (use resolveCardEffect for effects object)
+      if (summoned?.effects?.onPlay && !summoned?.abilitiesCancelled) {
         const opponentIndex = (playerIndex + 1) % 2;
-        const resultOnPlay = summoned.onPlay({
+        const resultOnPlay = resolveCardEffect(summoned, 'onPlay', {
           log: (message) => logMessage(state, message),
           player: state.players[playerIndex],
           opponent: state.players[opponentIndex],
@@ -446,11 +471,13 @@ export const resolveEffectResult = (state, result, context) => {
           playerIndex,
           opponentIndex,
         });
-        resolveEffectResult(state, resultOnPlay, {
-          playerIndex,
-          opponentIndex,
-          card: summoned,
-        });
+        if (resultOnPlay) {
+          resolveEffectResult(state, resultOnPlay, {
+            playerIndex,
+            opponentIndex,
+            card: summoned,
+          });
+        }
       }
     });
   }
@@ -474,6 +501,21 @@ export const resolveEffectResult = (state, result, context) => {
     logGameAction(state, BUFF, `${state.players[playerIndex].name} adds ${cardData.name} to hand.`);
   }
 
+  if (result.addCarrionToHand) {
+    const { playerIndex, card } = result.addCarrionToHand;
+    const player = state.players[playerIndex];
+    // Find and remove the card from carrion
+    const cardIndex = player.carrion.findIndex(c => c?.instanceId === card.instanceId);
+    if (cardIndex >= 0) {
+      player.carrion.splice(cardIndex, 1);
+      // Add to hand with new instance ID
+      player.hand.push({ ...card, instanceId: crypto.randomUUID() });
+      logGameAction(state, BUFF, `${player.name} adds ${card.name} from carrion to hand.`);
+    } else {
+      console.error(`[addCarrionToHand] Card not found in carrion:`, card);
+    }
+  }
+
   if (result.playFromHand) {
     const { playerIndex, card } = result.playFromHand;
     const player = state.players[playerIndex];
@@ -482,9 +524,10 @@ export const resolveEffectResult = (state, result, context) => {
       return;
     }
     player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
-    if (instance.type === "Prey" && instance.onPlay && !instance.abilitiesCancelled) {
+    // Trigger onPlay effect (use resolveCardEffect for effects object)
+    if (instance.type === "Prey" && instance.effects?.onPlay && !instance.abilitiesCancelled) {
       const opponentIndex = (playerIndex + 1) % 2;
-      const resultOnPlay = instance.onPlay({
+      const resultOnPlay = resolveCardEffect(instance, 'onPlay', {
         log: (message) => logMessage(state, message),
         player: state.players[playerIndex],
         opponent: state.players[opponentIndex],
@@ -493,11 +536,13 @@ export const resolveEffectResult = (state, result, context) => {
         playerIndex,
         opponentIndex,
       });
-      resolveEffectResult(state, resultOnPlay, {
-        playerIndex,
-        opponentIndex,
-        card: instance,
-      });
+      if (resultOnPlay) {
+        resolveEffectResult(state, resultOnPlay, {
+          playerIndex,
+          opponentIndex,
+          card: instance,
+        });
+      }
     }
   }
 
@@ -517,9 +562,10 @@ export const resolveEffectResult = (state, result, context) => {
     if (!instance) {
       return;
     }
-    if (instance.type === "Prey" && instance.onPlay && !instance.abilitiesCancelled) {
+    // Trigger onPlay effect (use resolveCardEffect for effects object)
+    if (instance.type === "Prey" && instance.effects?.onPlay && !instance.abilitiesCancelled) {
       const opponentIndex = (playerIndex + 1) % 2;
-      const resultOnPlay = instance.onPlay({
+      const resultOnPlay = resolveCardEffect(instance, 'onPlay', {
         log: (message) => logMessage(state, message),
         player: state.players[playerIndex],
         opponent: state.players[opponentIndex],
@@ -528,11 +574,13 @@ export const resolveEffectResult = (state, result, context) => {
         playerIndex,
         opponentIndex,
       });
-      resolveEffectResult(state, resultOnPlay, {
-        playerIndex,
-        opponentIndex,
-        card: instance,
-      });
+      if (resultOnPlay) {
+        resolveEffectResult(state, resultOnPlay, {
+          playerIndex,
+          opponentIndex,
+          card: instance,
+        });
+      }
     }
   }
 

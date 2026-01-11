@@ -453,7 +453,7 @@
       "keywords": [],
       "effectText": "Deal 3 damage to any target. Slain, heal 3.",
       "effects": {
-        "onConsume": { "type": "selectCreatureForDamage", "params": { "amount": 3, "label": "chomp" } },
+        "onConsume": { "type": "selectTargetForDamage", "params": { "amount": 3, "label": "chomp" } },
         "onSlain": { "type": "heal", "params": { "amount": 3 } }
       }
     },

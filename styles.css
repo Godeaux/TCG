@@ -951,6 +951,20 @@ button {
   margin-left: 8px;
 }
 
+.log-card-link {
+  text-decoration: underline;
+  text-decoration-color: var(--border-gold);
+  text-underline-offset: 2px;
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
+}
+
+.log-card-link:hover {
+  color: var(--border-gold);
+  text-decoration-color: currentColor;
+}
+
 .piles-section {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);

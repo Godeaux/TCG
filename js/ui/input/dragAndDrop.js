@@ -18,7 +18,7 @@
 
 import { getActivePlayer, getOpponentPlayer, logMessage } from '../../state/gameState.js';
 import { canPlayCard, cardLimitAvailable } from '../../game/turnManager.js';
-import { isFreePlay, isPassive, isHarmless, isEdible, isHidden, isInvisible, hasAcuity } from '../../keywords.js';
+import { isFreePlay, isPassive, isHarmless, isEdible, isHidden, isInvisible, hasAcuity, hasHaste } from '../../keywords.js';
 import { createCardInstance } from '../../cardTypes.js';
 import { consumePrey } from '../../game/consumption.js';
 import { cleanupDestroyed } from '../../game/combat.js';
@@ -282,6 +282,7 @@ const canConsumePreyDirectly = (predator, prey, state) => {
   if (!predator || !prey) return false;
   if (predator.type !== 'Predator') return false;
   if (prey.type !== 'Prey' && !(prey.type === 'Predator' && isEdible(prey))) return false;
+  if (predator.frozen) return false;  // Frozen predator cannot consume
   if (prey.frozen) return false;
 
   const activePlayer = getActivePlayer(state);
@@ -298,6 +299,9 @@ const canConsumePreyDirectly = (predator, prey, state) => {
  * Get all consumable prey for a predator
  */
 const getConsumablePrey = (predator, state) => {
+  // Frozen predator cannot consume any prey
+  if (predator.frozen) return [];
+
   const activePlayer = getActivePlayer(state);
   const availablePrey = activePlayer.field.filter(
     slot => slot && (slot.type === "Prey" || (slot.type === "Predator" && isEdible(slot))) && !slot.frozen
@@ -623,6 +627,10 @@ const handlePlayerDrop = (card, playerBadge) => {
   const isTargetOpponent = playerIndex !== localIndex;
 
   const isCreature = card.type === "Predator" || card.type === "Prey";
+
+  // Check if creature can attack player directly (must have Haste or be summoned on previous turn)
+  const canAttackPlayerDirectly = hasHaste(card) || card.summonedTurn < latestState.turn;
+
   const canAttack =
     isCardOnOurField &&
     isTargetOpponent &&
@@ -633,10 +641,15 @@ const handlePlayerDrop = (card, playerBadge) => {
     !isHarmless(card) &&
     !card.frozen &&
     !card.paralyzed &&
-    isCreature;
+    isCreature &&
+    canAttackPlayerDirectly;
 
   if (!canAttack) {
-    logMessage(latestState, "Combat can only be declared during the Combat phase.");
+    if (!canAttackPlayerDirectly && isCreature && !card.hasAttacked) {
+      logMessage(latestState, `${card.name} cannot attack the turn it was summoned without Haste.`);
+    } else {
+      logMessage(latestState, "Combat can only be declared during the Combat phase.");
+    }
     revertCardToOriginalPosition();
     return;
   }

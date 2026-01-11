@@ -231,7 +231,7 @@
       "nutrition": 1,
       "effectText": "End of turn, deal 3 damage to any target.",
       "effects": {
-        "onEnd": { "type": "selectCreatureForDamage", "params": { "amount": 3, "label": "sonic" } }
+        "onEnd": { "type": "selectTargetForDamage", "params": { "amount": 3, "label": "sonic" } }
       }
     },
     {

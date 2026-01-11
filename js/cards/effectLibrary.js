@@ -705,7 +705,7 @@ export const selectPredatorForEndEffect = (tokenId) => (context) => {
   const targets = player.field.filter(c => c && (c.type === 'Predator' || c.type === 'predator'));
 
   if (targets.length === 0) {
-    log(`No predators to empower.`);
+    log(`No predators on field to empower.`);
     return {};
   }
 
@@ -1365,12 +1365,16 @@ export const damageAllCreatures = (amount) => ({ log }) => {
 };
 
 /**
- * Deal damage to all enemy creatures
+ * Deal damage to all enemy creatures and the rival (enemies = creatures + rival)
  * @param {number} amount - Damage amount
  */
 export const damageAllEnemyCreatures = (amount) => ({ log, opponent }) => {
-  log(`Deals ${amount} damage to all enemy creatures.`);
-  return { damageAllCreatures: amount, targetPlayer: opponent };
+  log(`Deals ${amount} damage to enemies.`);
+  return {
+    damageAllCreatures: amount,
+    targetPlayer: opponent,
+    damageOpponent: amount  // Also damage the rival
+  };
 };
 
 /**
@@ -2635,15 +2639,19 @@ export const summonAndDamageOpponent = (tokenIds, damage) => ({ log, playerIndex
 };
 
 /**
- * Deal damage to both players and all other creatures
+ * Deal damage to both players and all other creatures (both friendly and enemy, excluding self)
  * @param {number} damage - Damage amount
  */
-export const damagePlayersAndOtherCreatures = (damage) => ({ log, player, creature }) => {
-  const others = player.field.filter(c => c && isCreatureCard(c) && c !== creature);
+export const damagePlayersAndOtherCreatures = (damage) => ({ log, player, opponent, creature }) => {
+  // All creatures on both fields, excluding self
+  const allOtherCreatures = [
+    ...player.field.filter(c => c && isCreatureCard(c) && c !== creature),
+    ...opponent.field.filter(c => c && isCreatureCard(c))
+  ];
   log(`Deals ${damage} damage to players and other creatures.`);
   return {
     damageBothPlayers: damage,
-    damageCreatures: { creatures: others, amount: damage }
+    damageCreatures: { creatures: allOtherCreatures, amount: damage }
   };
 };
 

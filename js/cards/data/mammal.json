@@ -92,7 +92,7 @@
       "nutrition": 1,
       "effectText": "Deal 3 damage to any target.",
       "effects": {
-        "onPlay": { "type": "selectCreatureForDamage", "params": { "amount": 3, "label": "weasel" } }
+        "onPlay": { "type": "selectTargetForDamage", "params": { "amount": 3, "label": "weasel" } }
       }
     },
     {
@@ -170,7 +170,7 @@
       "nutrition": 2,
       "effectText": "Deal 2 damage to any target.",
       "effects": {
-        "onPlay": { "type": "selectCreatureForDamage", "params": { "amount": 2, "label": "pronghorn" } }
+        "onPlay": { "type": "selectTargetForDamage", "params": { "amount": 2, "label": "pronghorn" } }
       }
     },
     {

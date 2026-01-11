@@ -25,6 +25,8 @@ export {
   getCardDefinitionById,
   getTokenById,
   cardExists,
+  getAllCards,
+  getCardByName,
 
   // Deck catalogs
   getDeckCatalog,

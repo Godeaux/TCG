@@ -170,6 +170,32 @@ export const cardExists = (id) => {
   return cardRegistry.has(id);
 };
 
+/**
+ * Get all card definitions from the registry
+ *
+ * @returns {Object[]} Array of all card definitions
+ */
+export const getAllCards = () => {
+  return Array.from(cardRegistry.values());
+};
+
+/**
+ * Get a card definition by its display name
+ * Searches all cards for a matching name (case-insensitive)
+ *
+ * @param {string} name - Card display name
+ * @returns {Object|null} Card definition or null if not found
+ */
+export const getCardByName = (name) => {
+  const lowerName = name.toLowerCase();
+  for (const card of cardRegistry.values()) {
+    if (card.name.toLowerCase() === lowerName) {
+      return card;
+    }
+  }
+  return null;
+};
+
 // ============================================================================
 // DECK CATALOGS
 // ============================================================================

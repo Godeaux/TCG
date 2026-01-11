@@ -25,7 +25,7 @@ import {
   KEYWORD_DESCRIPTIONS,
 } from "./keywords.js";
 import { resolveEffectResult, stripAbilities } from "./game/effects.js";
-import { deckCatalogs, getCardDefinitionById, resolveCardEffect } from "./cards/index.js";
+import { deckCatalogs, getCardDefinitionById, resolveCardEffect, getAllCards, getCardByName } from "./cards/index.js";
 import { getCardImagePath, hasCardImage, getCachedCardImage, isCardImageCached, preloadCardImages } from "./cardImages.js";
 
 // ============================================================================
@@ -458,11 +458,94 @@ const updateActionPanel = (state, callbacks = {}) => {
   actionBar.classList.add("has-actions");
 };
 
+// Cache for card name lookup (built once, used for log parsing)
+let cardNameMap = null;
+let cardNameRegex = null;
+
+/**
+ * Build the card name lookup map and regex for efficient log parsing
+ */
+const buildCardNameLookup = () => {
+  if (cardNameMap !== null) return;
+
+  cardNameMap = new Map();
+  const allCards = getAllCards();
+
+  // Build map of lowercase name -> card definition
+  allCards.forEach(card => {
+    if (card.name) {
+      cardNameMap.set(card.name.toLowerCase(), card);
+    }
+  });
+
+  // Build regex to match any card name (sorted by length descending to match longer names first)
+  const sortedNames = Array.from(cardNameMap.keys())
+    .sort((a, b) => b.length - a.length)
+    .map(name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')); // Escape regex special chars
+
+  if (sortedNames.length > 0) {
+    cardNameRegex = new RegExp(`\\b(${sortedNames.join('|')})\\b`, 'gi');
+  }
+};
+
+/**
+ * Escape HTML special characters for safe rendering
+ */
+const escapeHtml = (text) => {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+};
+
+/**
+ * Make card names in a log entry clickable
+ */
+const linkifyCardNames = (entry) => {
+  if (!cardNameRegex) return escapeHtml(entry);
+
+  // First escape HTML, then replace card names with clickable spans
+  const escaped = escapeHtml(entry);
+
+  return escaped.replace(cardNameRegex, (match) => {
+    const card = cardNameMap.get(match.toLowerCase());
+    if (card) {
+      return `<span class="log-card-link" data-card-id="${card.id}">${match}</span>`;
+    }
+    return match;
+  });
+};
+
 const appendLog = (state) => {
   if (!gameHistoryLog) {
     return;
   }
-  gameHistoryLog.innerHTML = state.log.map((entry) => `<div class="log-entry"><span class="log-action">${entry}</span></div>`).join("");
+
+  // Build card name lookup on first use
+  buildCardNameLookup();
+
+  gameHistoryLog.innerHTML = state.log.map((entry) =>
+    `<div class="log-entry"><span class="log-action">${linkifyCardNames(entry)}</span></div>`
+  ).join("");
+};
+
+/**
+ * Set up click handler for card links in the history log (event delegation)
+ */
+const setupLogCardLinks = () => {
+  if (!gameHistoryLog) return;
+
+  gameHistoryLog.addEventListener('click', (e) => {
+    const cardLink = e.target.closest('.log-card-link');
+    if (cardLink) {
+      const cardId = cardLink.dataset.cardId;
+      if (cardId) {
+        const card = getCardDefinitionById(cardId);
+        if (card) {
+          setInspectorContent(card);
+        }
+      }
+    }
+  });
 };
 
 const updateIndicators = (state, controlsLocked) => {
@@ -2004,14 +2087,16 @@ const setupMobileNavigation = () => {
 // Import: initTouchHandlers from './ui/input/index.js'
 // ============================================================================
 
-// Initialize mobile features when DOM is ready
+// Initialize mobile features and log card links when DOM is ready
 if (typeof window !== 'undefined') {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       setupMobileNavigation();
+      setupLogCardLinks();
     });
   } else {
     setupMobileNavigation();
+    setupLogCardLinks();
   }
 }
 

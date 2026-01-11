@@ -84,13 +84,14 @@ const clearParalysis = (state) => {
 const handlePoisonousDamage = (state) => {
   const playerIndex = state.activePlayerIndex;
   const opponentIndex = (state.activePlayerIndex + 1) % 2;
+  const activePlayer = state.players[playerIndex];
   const opponent = state.players[opponentIndex];
 
-  // Check opponent's field for poisonous creatures
-  opponent.field.forEach((creature) => {
+  // At end of turn, active player's poisonous creatures deal 1 damage to opponent
+  activePlayer.field.forEach((creature) => {
     if (creature && hasPoisonous(creature)) {
-      state.players[playerIndex].hp -= 1;
-      logGameAction(state, DAMAGE, `${creature.name}'s ${getKeywordEmoji("Poisonous")} poison damages ${state.players[playerIndex].name} for 1.`);
+      opponent.hp -= 1;
+      logGameAction(state, DAMAGE, `${creature.name}'s ${getKeywordEmoji("Poisonous")} poison damages ${opponent.name} for 1.`);
     }
   });
 };

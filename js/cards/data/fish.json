@@ -382,7 +382,7 @@
       "effectText": "Before combat, deal 2 damage.",
       "effects": {
         "onBeforeCombat": {
-          "type": "selectCreatureForDamage",
+          "type": "selectTargetForDamage",
           "params": {
             "amount": 2,
             "label": "shock"
