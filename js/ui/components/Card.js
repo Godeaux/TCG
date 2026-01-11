@@ -18,12 +18,21 @@
 import { KEYWORD_DESCRIPTIONS } from '../../keywords.js';
 import {
   hasCardImage,
-  isCardImageCached,
-  getCachedCardImage,
   getCardImagePath,
-  preloadCardImages,
 } from '../../cardImages.js';
 import { getCardDefinitionById } from '../../cards/index.js';
+
+// ============================================================================
+// IMAGE FAILURE TRACKING
+// ============================================================================
+
+// Track card IDs whose images failed to load (to avoid repeated attempts)
+const failedImageIds = new Set();
+
+// Global function for onerror handlers to mark image as failed
+window._markCardImageFailed = (cardId) => {
+  failedImageIds.add(cardId);
+};
 
 // ============================================================================
 // CARD STYLING HELPERS
@@ -290,22 +299,16 @@ export const renderCardInnerHtml = (card, { showEffectSummary } = {}) => {
     ? `<div class="card-effect">${effectSummary}</div>`
     : "";
 
-  // Check if card has an image
-  const hasImage = hasCardImage(card.id);
-  const isCached = hasImage && isCardImageCached(card.id);
-  const cachedImage = hasImage ? getCachedCardImage(card.id) : null;
+  // Check if card has an image (and hasn't failed to load before)
+  const hasImage = hasCardImage(card.id) && !failedImageIds.has(card.id);
 
-  // Generate image HTML - use cached image if available, otherwise preload
+  // Generate image HTML - show image immediately, use onerror to show placeholder on failure
   // Note: draggable="false" prevents browser's native image drag from interfering with card drag
-  const imageHtml = hasImage && (isCached || cachedImage)
-    ? `<img src="${getCardImagePath(card.id)}" alt="${card.name}" class="card-image" draggable="false" style="display: ${cachedImage ? 'block' : 'none'};" onload="this.style.display='block'; this.nextElementSibling.style.display='none';" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-       <div class="card-image-placeholder" style="display: ${cachedImage ? 'none' : 'flex'};">🎨</div>`
-    : hasImage ? `<div class="card-image-placeholder">🎨</div>` : '';
-
-  // Preload image if not cached
-  if (hasImage && !isCached) {
-    preloadCardImages([card.id]);
-  }
+  // Failed images are cached to prevent repeated load attempts
+  const imageHtml = hasImage
+    ? `<img src="${getCardImagePath(card.id)}" alt="${card.name}" class="card-image" draggable="false" onerror="window._markCardImageFailed?.('${card.id}'); this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+       <div class="card-image-placeholder" style="display: none;">🎨</div>`
+    : `<div class="card-image-placeholder">🎨</div>`;
 
   return `
     <div class="card-name">${card.name}</div>
@@ -324,19 +327,58 @@ export const renderCardInnerHtml = (card, { showEffectSummary } = {}) => {
 // TEXT AUTO-SIZING
 // ============================================================================
 
+// Cache adjusted font sizes by card ID to prevent recalculation jitter
+const fontSizeCache = new Map();
+
+/**
+ * Apply cached font sizes to a card element (no recalculation)
+ */
+const applyCachedFontSizes = (cardId, inner) => {
+  const cached = fontSizeCache.get(cardId);
+  if (!cached) return false;
+
+  const nameElement = inner.querySelector('.card-name');
+  const statsRow = inner.querySelector('.card-stats-row');
+  const effectElement = inner.querySelector('.card-effect');
+  const keywordsElement = inner.querySelector('.card-keywords');
+
+  if (cached.name && nameElement) {
+    nameElement.style.fontSize = `${cached.name}px`;
+  }
+  if (cached.stats && statsRow) {
+    const statElements = statsRow.querySelectorAll('.card-stat');
+    statElements.forEach(stat => {
+      stat.style.fontSize = `${cached.stats}px`;
+      stat.style.padding = `${Math.max(1, cached.stats * 0.18)}px ${Math.max(3, cached.stats * 0.55)}px`;
+    });
+  }
+  if (cached.effect && effectElement) {
+    effectElement.style.fontSize = `${cached.effect}px`;
+  }
+  if (cached.keywords && keywordsElement) {
+    keywordsElement.style.fontSize = `${cached.keywords}px`;
+  }
+
+  return true;
+};
+
 /**
  * Auto-adjust text size to fit card constraints
  * This prevents text overflow and makes cards readable
+ * Results are cached by card ID for instant application on re-renders
  */
-const adjustTextToFit = (cardElement, inner) => {
+const adjustTextToFit = (cardElement, inner, cardId) => {
+  // If we have cached sizes for this card, apply them instantly
+  if (cardId && applyCachedFontSizes(cardId, inner)) {
+    return;
+  }
+
   const nameElement = inner.querySelector('.card-name');
-  const contentArea = inner.querySelector('.card-content-area');
   const statsRow = inner.querySelector('.card-stats-row');
   const keywordsElement = inner.querySelector('.card-keywords');
   const effectElement = inner.querySelector('.card-effect');
 
-  // Skip if already adjusted to prevent repeated calculations
-  if (nameElement?.dataset.textAdjusted === 'true') return;
+  const cachedSizes = {};
 
   // Adjust card name to fit on one line
   if (nameElement && nameElement.scrollWidth > nameElement.clientWidth) {
@@ -348,6 +390,7 @@ const adjustTextToFit = (cardElement, inner) => {
       fontSize -= step;
       nameElement.style.fontSize = `${fontSize}px`;
     }
+    cachedSizes.name = fontSize;
   }
 
   // Adjust stats row to fit without horizontal overflow
@@ -364,31 +407,26 @@ const adjustTextToFit = (cardElement, inner) => {
         stat.style.padding = `${Math.max(1, fontSize * 0.18)}px ${Math.max(3, fontSize * 0.55)}px`;
       });
     }
+    cachedSizes.stats = fontSize;
   }
 
   // Adjust effect text to fit available space
-  // This is more aggressive - we want the full effect text visible when possible
   if (effectElement && effectElement.textContent.trim()) {
-    let fontSize = 9; // Start at base font size
+    let fontSize = 9;
     const minFontSize = 6;
     const step = 0.5;
     let attempts = 0;
     const maxAttempts = 10;
 
-    // Check if text is overflowing (scrollHeight > clientHeight means content is clipped)
     while (attempts < maxAttempts && fontSize > minFontSize) {
-      // Force layout recalc
       effectElement.style.fontSize = `${fontSize}px`;
-
-      // Check if content is being clipped (line-clamp is active)
-      // scrollHeight will be larger than clientHeight when text is clamped
       if (effectElement.scrollHeight <= effectElement.clientHeight + 2) {
-        break; // Text fits, we're done
+        break;
       }
-
       fontSize -= step;
       attempts++;
     }
+    cachedSizes.effect = fontSize;
   }
 
   // Adjust keywords if they overflow
@@ -400,11 +438,12 @@ const adjustTextToFit = (cardElement, inner) => {
       fontSize -= 0.5;
       keywordsElement.style.fontSize = `${fontSize}px`;
     }
+    cachedSizes.keywords = fontSize;
   }
 
-  // Mark as adjusted
-  if (nameElement) {
-    nameElement.dataset.textAdjusted = 'true';
+  // Cache the computed sizes for this card
+  if (cardId && Object.keys(cachedSizes).length > 0) {
+    fontSizeCache.set(cardId, cachedSizes);
   }
 };
 
@@ -544,8 +583,14 @@ export const renderCard = (card, options = {}) => {
     }
   });
 
-  // Auto-adjust text to fit (after a microtask to ensure rendering)
-  setTimeout(() => adjustTextToFit(cardElement, inner), 0);
+  // Auto-adjust text to fit
+  // If sizes are cached, apply immediately (no layout thrashing)
+  // Otherwise defer to after paint to allow measurement
+  if (fontSizeCache.has(card.id)) {
+    applyCachedFontSizes(card.id, inner);
+  } else {
+    setTimeout(() => adjustTextToFit(cardElement, inner, card.id), 0);
+  }
 
   return cardElement;
 };

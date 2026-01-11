@@ -2000,7 +2000,7 @@ button {
 
 .keyword-indicator {
   position: absolute;
-  font-size: 36px;
+  font-size: 72px; /* ~100% of typical card width for visibility */
   transform: translate(-50%, -50%);
   animation: keyword-indicator 0.8s ease-out forwards;
   pointer-events: none;
