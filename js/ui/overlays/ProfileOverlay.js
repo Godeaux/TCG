@@ -25,7 +25,14 @@ import {
   fetchPublicProfile,
   subscribeToFriendships,
   unsubscribeFromFriendships,
+  updateProfileNameStyle,
 } from '../../network/supabaseApi.js';
+import {
+  renderStyledName,
+  NAME_EFFECTS,
+  NAME_FONTS,
+  NAME_COLORS,
+} from '../components/StyledName.js';
 import {
   initializePresence,
   subscribeToOnlineStatus,
@@ -53,8 +60,15 @@ const getProfileElements = () => ({
   // Tab elements
   tabCareer: document.getElementById('profile-tab-career'),
   tabFriends: document.getElementById('profile-tab-friends'),
+  tabStyle: document.getElementById('profile-tab-style'),
   careerContent: document.getElementById('profile-career-tab'),
   friendsContent: document.getElementById('profile-friends-tab'),
+  styleContent: document.getElementById('profile-style-tab'),
+  // Style tab elements
+  stylePreviewName: document.getElementById('style-preview-name'),
+  styleEffectOptions: document.getElementById('style-effect-options'),
+  styleFontOptions: document.getElementById('style-font-options'),
+  styleColorOptions: document.getElementById('style-color-options'),
   // Friends elements
   friendsAddInput: document.getElementById('friends-add-input'),
   friendsAddBtn: document.getElementById('friends-add-btn'),
@@ -275,10 +289,8 @@ const updateMatchHistory = (elements, matches) => {
     return;
   }
 
-  // Show last 5 matches
-  const recentMatches = matches.slice(0, 5);
-
-  recentMatches.forEach(match => {
+  // Show all matches (container is scrollable)
+  matches.forEach(match => {
     const item = document.createElement('div');
     item.className = `profile-match-item ${match.won ? 'win' : 'loss'}`;
 
@@ -316,6 +328,133 @@ const formatMatchDate = (dateStr) => {
   if (diffDays < 7) return `${diffDays}d ago`;
 
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
+// ============================================================================
+// NAME STYLE PICKER
+// ============================================================================
+
+// Current name style state (for the picker UI)
+let currentNameStyle = { effect: null, font: null, color: null };
+
+/**
+ * Render the style picker tab
+ */
+const renderStyleTab = (elements, profileId, username, savedStyle, callbacks) => {
+  const { stylePreviewName, styleEffectOptions, styleFontOptions, styleColorOptions } = elements;
+
+  // Initialize from saved style
+  currentNameStyle = { ...savedStyle };
+
+  const updatePreview = () => {
+    if (!stylePreviewName) return;
+    stylePreviewName.innerHTML = '';
+    const preview = renderStyledName(username || 'YourName', currentNameStyle);
+    stylePreviewName.appendChild(preview);
+  };
+
+  const saveStyle = async () => {
+    if (!profileId) return;
+    try {
+      await updateProfileNameStyle({ profileId, nameStyle: currentNameStyle });
+      // Update local profile state
+      if (callbacks.onStyleChange) {
+        callbacks.onStyleChange(currentNameStyle);
+      }
+    } catch (e) {
+      console.error('Failed to save name style:', e);
+    }
+  };
+
+  // Render effect options
+  if (styleEffectOptions) {
+    styleEffectOptions.innerHTML = '';
+
+    // None option
+    const noneBtn = document.createElement('button');
+    noneBtn.className = `style-option ${!currentNameStyle.effect ? 'selected' : ''}`;
+    noneBtn.textContent = 'None';
+    noneBtn.onclick = () => {
+      currentNameStyle.effect = null;
+      renderStyleTab(elements, profileId, username, currentNameStyle, callbacks);
+      saveStyle();
+    };
+    styleEffectOptions.appendChild(noneBtn);
+
+    Object.entries(NAME_EFFECTS).forEach(([key, config]) => {
+      const btn = document.createElement('button');
+      btn.className = `style-option ${currentNameStyle.effect === key ? 'selected' : ''}`;
+      btn.textContent = config.label;
+      btn.title = config.description;
+      btn.onclick = () => {
+        currentNameStyle.effect = key;
+        renderStyleTab(elements, profileId, username, currentNameStyle, callbacks);
+        saveStyle();
+      };
+      styleEffectOptions.appendChild(btn);
+    });
+  }
+
+  // Render font options
+  if (styleFontOptions) {
+    styleFontOptions.innerHTML = '';
+
+    // Default option
+    const defaultBtn = document.createElement('button');
+    defaultBtn.className = `style-option ${!currentNameStyle.font ? 'selected' : ''}`;
+    defaultBtn.textContent = 'Default';
+    defaultBtn.onclick = () => {
+      currentNameStyle.font = null;
+      renderStyleTab(elements, profileId, username, currentNameStyle, callbacks);
+      saveStyle();
+    };
+    styleFontOptions.appendChild(defaultBtn);
+
+    Object.entries(NAME_FONTS).forEach(([key, config]) => {
+      const btn = document.createElement('button');
+      btn.className = `style-option ${currentNameStyle.font === key ? 'selected' : ''}`;
+      btn.textContent = config.label;
+      btn.style.fontFamily = config.family;
+      btn.onclick = () => {
+        currentNameStyle.font = key;
+        renderStyleTab(elements, profileId, username, currentNameStyle, callbacks);
+        saveStyle();
+      };
+      styleFontOptions.appendChild(btn);
+    });
+  }
+
+  // Render color options
+  if (styleColorOptions) {
+    styleColorOptions.innerHTML = '';
+
+    // Default color swatch
+    const defaultSwatch = document.createElement('button');
+    defaultSwatch.className = `style-color-swatch ${!currentNameStyle.color ? 'selected' : ''}`;
+    defaultSwatch.style.background = '#e2e8f0';
+    defaultSwatch.title = 'Default';
+    defaultSwatch.onclick = () => {
+      currentNameStyle.color = null;
+      renderStyleTab(elements, profileId, username, currentNameStyle, callbacks);
+      saveStyle();
+    };
+    styleColorOptions.appendChild(defaultSwatch);
+
+    Object.entries(NAME_COLORS).forEach(([key, config]) => {
+      const swatch = document.createElement('button');
+      swatch.className = `style-color-swatch ${currentNameStyle.color === key ? 'selected' : ''}`;
+      swatch.style.background = config.value;
+      swatch.title = config.label;
+      swatch.onclick = () => {
+        currentNameStyle.color = key;
+        renderStyleTab(elements, profileId, username, currentNameStyle, callbacks);
+        saveStyle();
+      };
+      styleColorOptions.appendChild(swatch);
+    });
+  }
+
+  updatePreview();
 };
 
 // ============================================================================
@@ -547,8 +686,8 @@ const loadFriends = async (profileId) => {
 /**
  * Setup tab switching
  */
-const setupTabs = (elements, profileId, callbacks) => {
-  const { tabCareer, tabFriends, careerContent, friendsContent } = elements;
+const setupTabs = (elements, profileId, profileData, callbacks) => {
+  const { tabCareer, tabFriends, tabStyle, careerContent, friendsContent, styleContent } = elements;
 
   const switchTab = (tab) => {
     currentTab = tab;
@@ -556,16 +695,24 @@ const setupTabs = (elements, profileId, callbacks) => {
     // Update tab buttons
     tabCareer?.classList.toggle('active', tab === 'career');
     tabFriends?.classList.toggle('active', tab === 'friends');
+    tabStyle?.classList.toggle('active', tab === 'style');
 
     // Update content visibility
     if (careerContent) careerContent.style.display = tab === 'career' ? '' : 'none';
     if (friendsContent) friendsContent.style.display = tab === 'friends' ? '' : 'none';
+    if (styleContent) styleContent.style.display = tab === 'style' ? '' : 'none';
 
     // Load friends data when switching to friends tab
     if (tab === 'friends' && profileId) {
       loadFriends(profileId).then(() => {
         renderFriendsTab(elements, profileId, callbacks);
       });
+    }
+
+    // Render style tab when switching to it
+    if (tab === 'style' && profileId) {
+      const savedStyle = profileData.nameStyle || {};
+      renderStyleTab(elements, profileId, profileData.username, savedStyle, callbacks);
     }
   };
 
@@ -575,6 +722,10 @@ const setupTabs = (elements, profileId, callbacks) => {
 
   if (tabFriends) {
     tabFriends.onclick = () => switchTab('friends');
+  }
+
+  if (tabStyle) {
+    tabStyle.onclick = () => switchTab('style');
   }
 
   // Set initial tab state
@@ -688,6 +839,7 @@ export const renderProfileOverlay = (state, callbacks = {}) => {
     stats: state.menu?.profile?.stats || {},
     matches: state.menu?.profile?.matches || [],
     ownedCards: state.menu?.profile?.ownedCards || new Map(),
+    nameStyle: state.menu?.profile?.name_style || {},
   };
 
   // Convert ownedCards to Map if it's not already
@@ -746,7 +898,7 @@ export const renderProfileOverlay = (state, callbacks = {}) => {
 
     // Setup tabs (only if logged in)
     if (profileId) {
-      setupTabs(elements, profileId, callbacks);
+      setupTabs(elements, profileId, profileData, callbacks);
       setupAddFriend(elements, profileId, callbacks);
 
       // Initialize presence tracking

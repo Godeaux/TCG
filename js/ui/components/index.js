@@ -100,3 +100,16 @@ export {
   inferDeckFromCardId,
   inferPlayerDeck,
 } from './OpponentHandStrip.js';
+
+// ============================================================================
+// STYLED NAME
+// ============================================================================
+
+export {
+  renderStyledName,
+  applyStyledName,
+  renderColorSwatch,
+  NAME_EFFECTS,
+  NAME_FONTS,
+  NAME_COLORS,
+} from './StyledName.js';

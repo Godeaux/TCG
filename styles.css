@@ -876,6 +876,121 @@ button {
 }
 
 /* ============================================================================
+   AI FLYING CARD ANIMATION
+   Card that flies from opponent hand to field
+   ============================================================================ */
+
+.ai-flying-card {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  width: 60px;
+  height: 84px;
+}
+
+.ai-flying-card-back {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 2px solid #d4a853;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.4),
+    0 0 20px rgba(212, 168, 83, 0.3);
+  backface-visibility: hidden;
+}
+
+/* Card flip reveal animation */
+.ai-flying-card.revealing {
+  animation: ai-card-reveal 0.2s ease-out forwards;
+}
+
+@keyframes ai-card-reveal {
+  0% {
+    transform: translate(-50%, -50%) scale(1.05) rotateY(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1) rotateY(90deg);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1) rotateY(180deg);
+    opacity: 0;
+  }
+}
+
+/* ============================================================================
+   AI COMBAT VISUAL HIGHLIGHTS
+   Selection and targeting glows during AI attacks
+   ============================================================================ */
+
+/* Attacker selection - orange pulsing glow */
+.ai-attacker-selected {
+  animation: ai-attacker-pulse 0.8s ease-in-out infinite !important;
+  box-shadow:
+    0 0 15px rgba(255, 165, 0, 0.7),
+    0 0 30px rgba(255, 165, 0, 0.4),
+    inset 0 0 10px rgba(255, 165, 0, 0.2) !important;
+  z-index: 100;
+}
+
+@keyframes ai-attacker-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 15px rgba(255, 165, 0, 0.6),
+      0 0 25px rgba(255, 165, 0, 0.3);
+  }
+  50% {
+    box-shadow:
+      0 0 25px rgba(255, 165, 0, 0.9),
+      0 0 40px rgba(255, 165, 0, 0.5);
+  }
+}
+
+/* Target consideration - red/orange glow */
+.ai-target-considering {
+  animation: ai-target-pulse 0.6s ease-in-out infinite !important;
+  box-shadow:
+    0 0 15px rgba(255, 69, 0, 0.7),
+    0 0 30px rgba(255, 69, 0, 0.4),
+    inset 0 0 10px rgba(255, 69, 0, 0.2) !important;
+  z-index: 99;
+}
+
+@keyframes ai-target-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 12px rgba(255, 69, 0, 0.6),
+      0 0 20px rgba(255, 69, 0, 0.3);
+  }
+  50% {
+    box-shadow:
+      0 0 20px rgba(255, 69, 0, 0.9),
+      0 0 35px rgba(255, 69, 0, 0.5);
+  }
+}
+
+/* Player field as target (for direct attacks) */
+#player-field.ai-target-considering {
+  position: relative;
+}
+
+#player-field.ai-target-considering::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border: 3px solid rgba(255, 69, 0, 0.6);
+  border-radius: 8px;
+  animation: ai-target-pulse 0.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ============================================================================
    OPPONENT CURSOR (Spirit Ball)
    Glowing orb that follows opponent's cursor position
    ============================================================================ */
@@ -5318,6 +5433,8 @@ button {
   flex-direction: column;
   padding: 20px;
   gap: 16px;
+  overflow: hidden;
+  min-height: 0;
 }
 
 .profile-header {
@@ -5351,6 +5468,9 @@ button {
   gap: 8px;
   margin-top: 16px;
   margin-bottom: 16px;
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
 }
 
 .profile-tab {
@@ -5384,6 +5504,7 @@ button {
   gap: 16px;
   flex: 1;
   overflow-y: auto;
+  min-height: 0;
 }
 
 /* Friends Tab Styles */
@@ -5778,9 +5899,11 @@ button {
   border: 1px solid #334155;
   border-radius: 12px;
   padding: 16px;
-  flex: 1;
-  overflow-y: auto;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
   min-height: 120px;
+  max-height: 150px;
 }
 
 .profile-match-history-title {
@@ -5789,6 +5912,12 @@ button {
   letter-spacing: 0.1em;
   color: #94a3b8;
   margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+#profile-match-list {
+  flex: 1;
+  overflow-y: auto;
 }
 
 .profile-match-item {
@@ -6642,6 +6771,192 @@ button {
   }
 }
 
+/* ============================================================================
+   PLAYER NAME STYLING EFFECTS
+   ============================================================================ */
+
+/* Wave Effect - Per-letter animation */
+.name-effect-wave {
+  display: inline-flex;
+}
+
+.name-wave-char {
+  display: inline-block;
+  animation: name-wave 1.2s ease-in-out infinite;
+}
+
+@keyframes name-wave {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* Glow Effect - Pulsing shadow */
+.name-effect-glow {
+  animation: name-glow 2s ease-in-out infinite;
+}
+
+@keyframes name-glow {
+  0%, 100% {
+    text-shadow: 0 0 5px currentColor, 0 0 10px currentColor;
+    filter: brightness(1);
+  }
+  50% {
+    text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor;
+    filter: brightness(1.2);
+  }
+}
+
+/* Rainbow Effect - Shimmer gradient */
+.name-effect-rainbow {
+  background: linear-gradient(
+    90deg,
+    #ff6b6b 0%,
+    #feca57 20%,
+    #48dbfb 40%,
+    #ff9ff3 60%,
+    #54a0ff 80%,
+    #ff6b6b 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: name-rainbow-shimmer 3s linear infinite;
+}
+
+@keyframes name-rainbow-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: 0 0; }
+}
+
+/* Pulse Effect - Size breathing */
+.name-effect-pulse {
+  animation: name-pulse 2s ease-in-out infinite;
+  transform-origin: center;
+  display: inline-block;
+}
+
+@keyframes name-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* Shadow Effect - Drop shadow */
+.name-effect-shadow {
+  text-shadow:
+    2px 2px 4px rgba(0, 0, 0, 0.5),
+    -1px -1px 2px rgba(255, 255, 255, 0.1);
+}
+
+/* Gradient text support */
+.name-gradient {
+  background-size: 200% 100%;
+  animation: name-gradient-shift 3s linear infinite;
+}
+
+@keyframes name-gradient-shift {
+  0% { background-position: 200% 0; }
+  100% { background-position: 0 0; }
+}
+
+/* ============================================================================
+   NAME STYLE PICKER UI
+   ============================================================================ */
+
+.style-preview-section {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.style-preview-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #64748b;
+  margin-bottom: 12px;
+}
+
+.style-preview-name {
+  font-size: 1.5rem;
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.style-section {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.style-section-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #94a3b8;
+  margin-bottom: 12px;
+}
+
+.style-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.style-option {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: rgba(15, 23, 42, 0.5);
+  color: #94a3b8;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.style-option:hover {
+  background: rgba(51, 65, 85, 0.5);
+  color: #e2e8f0;
+}
+
+.style-option.selected {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: #3b82f6;
+  color: #60a5fa;
+}
+
+.style-color-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+}
+
+.style-color-swatch {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.style-color-swatch:hover {
+  transform: scale(1.1);
+}
+
+.style-color-swatch.selected {
+  border-color: #fff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .profile-container {
@@ -6660,5 +6975,9 @@ button {
   .pack-card {
     width: 100px;
     height: 140px;
+  }
+
+  .style-color-grid {
+    grid-template-columns: repeat(4, 1fr);
   }
 }

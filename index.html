@@ -9,7 +9,7 @@
     <title>Food Chain TCG Prototype</title>
     <link rel="stylesheet" href="styles.css?v=2.0" />
     <link
-      href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Bebas+Neue&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Bebas+Neue&family=Orbitron:wght@400;500&family=Cinzel:wght@400;500&family=Righteous&family=Russo+One&display=swap"
       rel="stylesheet"
     />
   </head>
@@ -355,6 +355,7 @@
             <div class="profile-tabs">
               <button class="profile-tab active" data-tab="career" id="profile-tab-career">Career</button>
               <button class="profile-tab" data-tab="friends" id="profile-tab-friends">Friends</button>
+              <button class="profile-tab" data-tab="style" id="profile-tab-style">Style</button>
             </div>
 
             <!-- Career Tab Content -->
@@ -426,6 +427,33 @@
               <div class="friends-section" id="friends-accepted-section">
                 <div class="friends-section-title">Friends</div>
                 <div class="friends-list" id="friends-accepted-list"></div>
+              </div>
+            </div>
+
+            <!-- Style Tab Content -->
+            <div class="profile-tab-content" id="profile-style-tab" style="display: none;">
+              <!-- Name Preview -->
+              <div class="style-preview-section">
+                <div class="style-preview-label">Preview</div>
+                <div class="style-preview-name" id="style-preview-name">YourName</div>
+              </div>
+
+              <!-- Effects Picker -->
+              <div class="style-section">
+                <div class="style-section-title">Effect</div>
+                <div class="style-options" id="style-effect-options"></div>
+              </div>
+
+              <!-- Font Picker -->
+              <div class="style-section">
+                <div class="style-section-title">Font</div>
+                <div class="style-options" id="style-font-options"></div>
+              </div>
+
+              <!-- Color Picker -->
+              <div class="style-section">
+                <div class="style-section-title">Color</div>
+                <div class="style-color-grid" id="style-color-options"></div>
               </div>
             </div>
 

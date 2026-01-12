@@ -20,7 +20,7 @@ import { isFreePlay, isPassive, isHarmless, isEdible, hasScavenge } from '../key
 import { isCreatureCard, createCardInstance } from '../cardTypes.js';
 import { logMessage, queueVisualEffect } from '../state/gameState.js';
 import { consumePrey } from '../game/consumption.js';
-import { simulateAICardPlay, clearAIVisuals } from './aiVisuals.js';
+import { simulateAICardPlay, simulateAICardDrag, simulateAICombatSequence, clearAIVisuals } from './aiVisuals.js';
 import { resolveCardEffect } from '../cards/index.js';
 import { resolveEffectResult } from '../game/effects.js';
 import { createReactionWindow, TRIGGER_EVENTS } from '../game/triggers/index.js';
@@ -30,9 +30,10 @@ import { createReactionWindow, TRIGGER_EVENTS } from '../game/triggers/index.js'
 // ============================================================================
 
 const AI_DELAYS = {
-  THINKING: 800,      // Initial "thinking" delay
-  BETWEEN_ACTIONS: 600,  // Delay between each action
-  END_TURN: 400,      // Delay before ending turn
+  THINKING: { min: 500, max: 1500 },      // Initial "thinking" delay
+  BETWEEN_ACTIONS: { min: 500, max: 1200 },  // Delay between each action
+  END_TURN: { min: 300, max: 600 },      // Delay before ending turn
+  PHASE_ADVANCE: 300,  // Fixed delay for phase advances
 };
 
 // Slow mode multiplier (4x slower)
@@ -97,7 +98,7 @@ export class AIController {
       while (state.phase === 'Start' || state.phase === 'Draw') {
         console.log(`[AI] Advancing from ${state.phase}`);
         callbacks.onAdvancePhase?.();
-        await this.delay(300, state); // Short delay between phase advances
+        await this.delay(AI_DELAYS.PHASE_ADVANCE, state); // Short delay between phase advances
       }
 
       // Now we should be in Main 1
@@ -112,7 +113,7 @@ export class AIController {
       while (state.phase === 'Main 1' || state.phase === 'Before Combat') {
         console.log(`[AI] Advancing from ${state.phase} to Combat`);
         callbacks.onAdvancePhase?.();
-        await this.delay(300, state);
+        await this.delay(AI_DELAYS.PHASE_ADVANCE, state);
       }
 
       // Combat phase actions
@@ -123,7 +124,7 @@ export class AIController {
       // Advance to Main 2 (could play more cards here in future)
       if (state.phase === 'Combat') {
         callbacks.onAdvancePhase?.();
-        await this.delay(300, state);
+        await this.delay(AI_DELAYS.PHASE_ADVANCE, state);
       }
 
       // End turn
@@ -158,19 +159,23 @@ export class AIController {
       // Find the card's index in hand for visual simulation
       const cardIndex = player.hand.findIndex(c => c.instanceId === cardToPlay.instanceId);
 
-      // Show visual hover on the card (opponent hand strip)
-      if (cardIndex >= 0) {
-        await simulateAICardPlay(cardIndex);
-      }
-
-      console.log(`[AI] Playing card: ${cardToPlay.name}`);
-
-      // Find empty field slot
+      // Find empty field slot (needed for creatures and drag animation)
       const emptySlot = player.field.findIndex(slot => slot === null);
       if (emptySlot === -1 && isCreatureCard(cardToPlay)) {
         console.log('[AI] No empty field slots');
         break;
       }
+
+      // Show visual animation: full drag for creatures, hover for spells
+      if (cardIndex >= 0) {
+        if (isCreatureCard(cardToPlay) && emptySlot >= 0) {
+          await simulateAICardDrag(cardIndex, emptySlot, state);
+        } else {
+          await simulateAICardPlay(cardIndex);
+        }
+      }
+
+      console.log(`[AI] Playing card: ${cardToPlay.name}`);
 
       // Execute the play
       const playResult = await this.executeCardPlay(state, cardToPlay, emptySlot, callbacks);
@@ -431,18 +436,6 @@ export class AIController {
       carrionList: [],
       state,
       playerIndex: this.playerIndex,
-      onSlain: (prey, preyOwnerIndex) => {
-        const slainResult = resolveCardEffect(prey, 'onSlain', {
-          log: (message) => logMessage(state, message),
-          player: state.players[preyOwnerIndex],
-          playerIndex: preyOwnerIndex,
-          state,
-          creature: prey,
-        });
-        if (slainResult) {
-          resolveEffectResult(state, slainResult, { playerIndex: preyOwnerIndex });
-        }
-      },
     });
 
     // Find slot (may have changed if we consumed from the target slot)
@@ -569,6 +562,9 @@ export class AIController {
       }
 
       console.log(`[AI] ${attacker.name} attacks ${target.type === 'player' ? 'player' : target.card?.name}`);
+
+      // Show combat visuals: attacker selection and target consideration
+      await simulateAICombatSequence(attacker, target);
 
       // Mark attacker as having attacked BEFORE executing (prevents double attacks during reaction windows)
       attacker.hasAttacked = true;
@@ -775,12 +771,22 @@ export class AIController {
   }
 
   /**
-   * Utility delay function
-   * @param {number} ms - Base delay in milliseconds
+   * Utility delay function with randomization support
+   * @param {number|Object} msOrRange - Fixed ms or { min, max } range
    * @param {Object} state - Game state to check for slow mode
    */
-  delay(ms, state = null) {
+  delay(msOrRange, state = null) {
     const multiplier = state?.menu?.aiSlowMode ? SLOW_MODE_MULTIPLIER : 1;
+
+    // Support both fixed delays and randomized ranges
+    let ms;
+    if (typeof msOrRange === 'object' && msOrRange.min !== undefined) {
+      const { min, max } = msOrRange;
+      ms = min + Math.random() * (max - min);
+    } else {
+      ms = msOrRange;
+    }
+
     return new Promise(resolve => setTimeout(resolve, ms * multiplier));
   }
 }

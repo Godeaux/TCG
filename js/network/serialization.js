@@ -161,6 +161,10 @@ export const buildLobbySyncPayload = (state) => ({
       state.menu?.profile?.username ??
       state.players?.[getLocalPlayerIndex(state)]?.name ??
       null,
+    nameStyle:
+      state.menu?.profile?.name_style ??
+      state.players?.[getLocalPlayerIndex(state)]?.nameStyle ??
+      {},
   },
   game: {
     activePlayerIndex: state.activePlayerIndex,
@@ -185,6 +189,7 @@ export const buildLobbySyncPayload = (state) => ({
       : null,
     players: state.players.map((player) => ({
       name: player.name,
+      nameStyle: player.nameStyle || {},
       hp: player.hp,
       deck: player.deck.map((card) => card.id),
       hand: player.hand.map((card) => serializeCardSnapshot(card)),
@@ -266,6 +271,9 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
 
   if (payload.playerProfile?.name && Number.isInteger(payload.playerProfile.index)) {
     state.players[payload.playerProfile.index].name = payload.playerProfile.name;
+    if (payload.playerProfile.nameStyle) {
+      state.players[payload.playerProfile.index].nameStyle = payload.playerProfile.nameStyle;
+    }
   }
 
   const hasRuntimeState =
@@ -330,6 +338,9 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
 
         if (playerSnapshot.name) {
           player.name = playerSnapshot.name;
+        }
+        if (playerSnapshot.nameStyle) {
+          player.nameStyle = playerSnapshot.nameStyle;
         }
         if (typeof playerSnapshot.hp === "number") {
           player.hp = playerSnapshot.hp;

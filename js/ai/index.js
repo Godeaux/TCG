@@ -23,7 +23,8 @@ export {
 
 export {
   simulateAIHover,
-  simulateAIDrag,
+  simulateAICardDrag,
   simulateAICardPlay,
+  simulateAICombatSequence,
   clearAIVisuals,
 } from './aiVisuals.js';

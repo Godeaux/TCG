@@ -351,18 +351,6 @@ export const resolveEffectResult = (state, result, context) => {
       preyList: [prey],
       state,
       playerIndex: opponentIndex,
-      onSlain: (slainPrey, preyOwnerIndex) => {
-        const slainResult = resolveCardEffect(slainPrey, 'onSlain', {
-          log: (message) => logMessage(state, message),
-          player: state.players[preyOwnerIndex],
-          playerIndex: preyOwnerIndex,
-          state,
-          creature: slainPrey,
-        });
-        if (slainResult) {
-          resolveEffectResult(state, slainResult, { playerIndex: preyOwnerIndex });
-        }
-      },
     });
   }
 

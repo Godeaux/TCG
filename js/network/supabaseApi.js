@@ -207,7 +207,7 @@ export const fetchProfile = async () => {
   }
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, username, packs, stats, matches")
+    .select("id, username, packs, stats, matches, name_style")
     .eq("current_auth_id", sessionData.session.user.id)
     .maybeSingle();
 
@@ -283,6 +283,31 @@ export const updateProfileStats = async ({ profileId, stats, matches }) => {
   return data;
 };
 
+/**
+ * Update the name style for a profile
+ * @param {Object} params
+ * @param {string} params.profileId - The profile ID
+ * @param {Object} params.nameStyle - Name style object { effect, font, color }
+ * @returns {Promise<Object>} The updated profile data
+ */
+export const updateProfileNameStyle = async ({ profileId, nameStyle }) => {
+  if (!profileId) {
+    throw new Error("Missing profile id.");
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .update({ name_style: nameStyle })
+    .eq("id", profileId)
+    .select("id, name_style")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
 export const fetchProfilesByIds = async (ids = []) => {
   const uniqueIds = Array.from(new Set(ids.filter(Boolean)));
   if (uniqueIds.length === 0) {
@@ -290,7 +315,7 @@ export const fetchProfilesByIds = async (ids = []) => {
   }
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, username")
+    .select("id, username, name_style")
     .in("id", uniqueIds);
 
   if (error) {

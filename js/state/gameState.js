@@ -22,6 +22,7 @@ const shuffle = (array) => {
 
 const createPlayer = (name) => ({
   name,
+  nameStyle: {}, // { effect, font, color } for customized name display
   hp: 10,
   deck: [],
   hand: [],

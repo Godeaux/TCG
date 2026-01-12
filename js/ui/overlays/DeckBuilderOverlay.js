@@ -96,14 +96,14 @@ const DECK_OPTIONS = [
     name: "Bird",
     emoji: "🐦",
     panelClass: "deck-select-panel--bird",
-    available: false,
+    available: true,
   },
   {
     id: "mammal",
     name: "Mammal",
     emoji: "🐻",
     panelClass: "deck-select-panel--mammal",
-    available: false,
+    available: true,
   },
   {
     id: "reptile",
@@ -117,7 +117,7 @@ const DECK_OPTIONS = [
     name: "Amphibian",
     emoji: "🐸",
     panelClass: "deck-select-panel--amphibian",
-    available: false,
+    available: true,
   },
 ];
 
@@ -1068,7 +1068,10 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
     const opponentName = opponentPlayer?.name || "Opponent";
 
     // If both players are ready, proceed to setup
-    if (localReady && opponentReady) {
+    // IMPORTANT: Also verify both decks are actually populated (not just ready status)
+    // This prevents a race condition where ready status syncs before deck data
+    const bothDecksPopulated = state.deckBuilder.selections.every(deck => deck && deck.length > 0);
+    if (localReady && opponentReady && bothDecksPopulated) {
       if (state.deckSelection.stage !== "complete" || state.deckBuilder.stage !== "complete") {
         state.deckSelection.stage = "complete";
         state.deckBuilder.stage = "complete";
@@ -1870,7 +1873,12 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
     if (state.menu?.mode === "online") {
       state.menu.onlineDecksReady = true;
       sendLobbyBroadcast("deck_update", buildLobbySyncPayload(state));
+      // In online mode, don't call onDeckComplete directly - let renderDeckSelectionOverlay
+      // handle it after verifying both decks are synced (prevents race condition)
+      callbacks.onUpdate?.();
+      return;
     }
+    // Local mode: both decks are already populated locally, safe to complete
     callbacks.onDeckComplete?.(state.deckBuilder.selections);
     callbacks.onUpdate?.();
   };

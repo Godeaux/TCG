@@ -144,6 +144,7 @@ import {
   clearOpponentHandStates,
   clearOpponentDragPreview,
 } from "./ui/components/OpponentHandStrip.js";
+import { applyStyledName } from "./ui/components/StyledName.js";
 
 // Input handling (extracted module - drag-and-drop + navigation + touch)
 import {
@@ -726,7 +727,9 @@ const updatePlayerStats = (state, index, role, onUpdate = null) => {
   const hpEl = document.getElementById(`${role}-hp`);
   const deckEl = document.getElementById(`${role}-deck`);
   if (nameEl) {
-    nameEl.textContent = player.name;
+    // Apply styled name with effect, font, and color
+    const nameStyle = player.nameStyle || {};
+    applyStyledName(nameEl, player.name, nameStyle);
 
     // Add AI speed toggle button next to AI's name (player2 in AI mode)
     if (role === "player2" && isAIMode(state)) {
@@ -2138,23 +2141,6 @@ const handlePlayCard = (state, card, onUpdate) => {
               state,
               playerIndex: state.activePlayerIndex,
               onBroadcast: broadcastSyncState,
-              onSlain: (prey, preyOwnerIndex) => {
-                const slainResult = resolveCardEffect(prey, 'onSlain', {
-                  log: (message) => logMessage(state, message),
-                  player: state.players[preyOwnerIndex],
-                  playerIndex: preyOwnerIndex,
-                  state,
-                  creature: prey,
-                });
-                if (slainResult) {
-                  resolveEffectChain(
-                    state,
-                    slainResult,
-                    { playerIndex: preyOwnerIndex },
-                    onUpdate
-                  );
-                }
-              },
             });
             const placementSlot =
               pendingConsumption.slotIndex ?? player.field.findIndex((slot) => slot === null);
@@ -3267,6 +3253,18 @@ export const renderGame = (state, callbacks = {}) => {
     onCardClick: (card, rarity) => {
       console.log("Card clicked:", card.name, "Rarity:", rarity);
       // TODO: Show card upgrade popup
+    },
+    onStyleChange: (newStyle) => {
+      // Update the profile's name_style in state
+      if (state.menu?.profile) {
+        state.menu.profile.name_style = newStyle;
+      }
+      // Update the local player's nameStyle
+      const localIndex = getLocalPlayerIndex(state);
+      if (state.players[localIndex]) {
+        state.players[localIndex].nameStyle = newStyle;
+      }
+      callbacks.onUpdate?.();
     },
   });
 

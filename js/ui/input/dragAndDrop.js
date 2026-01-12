@@ -498,23 +498,6 @@ const startConsumptionForSpecificSlot = (predator, slotIndex, ediblePrey) => {
           state,
           playerIndex: state.activePlayerIndex,
           onBroadcast: broadcastSyncState,
-          onSlain: (prey, preyOwnerIndex) => {
-            const slainResult = resolveCardEffect(prey, 'onSlain', {
-              log: (message) => logMessage(state, message),
-              player: state.players[preyOwnerIndex],
-              playerIndex: preyOwnerIndex,
-              state,
-              creature: prey,
-            });
-            if (slainResult) {
-              resolveEffectChain(
-                state,
-                slainResult,
-                { playerIndex: preyOwnerIndex },
-                latestCallbacks.onUpdate
-              );
-            }
-          },
         });
       }
 
@@ -673,23 +656,6 @@ const handleDirectConsumption = (predator, prey, slotIndex) => {
     state,
     playerIndex: state.activePlayerIndex,
     onBroadcast: broadcastSyncState,
-    onSlain: (slainPrey, preyOwnerIndex) => {
-      const slainResult = resolveCardEffect(slainPrey, 'onSlain', {
-        log: (message) => logMessage(state, message),
-        player: state.players[preyOwnerIndex],
-        playerIndex: preyOwnerIndex,
-        state,
-        creature: slainPrey,
-      });
-      if (slainResult) {
-        resolveEffectChain(
-          state,
-          slainResult,
-          { playerIndex: preyOwnerIndex },
-          latestCallbacks.onUpdate
-        );
-      }
-    },
   });
 
   player.field[slotIndex] = predatorInstance;
@@ -761,23 +727,6 @@ const handleExtendedConsumption = (predator, prey) => {
     state,
     playerIndex: state.activePlayerIndex,
     onBroadcast: broadcastSyncState,
-    onSlain: (slainPrey, preyOwnerIndex) => {
-      const slainResult = resolveCardEffect(slainPrey, 'onSlain', {
-        log: (message) => logMessage(state, message),
-        player: state.players[preyOwnerIndex],
-        playerIndex: preyOwnerIndex,
-        state,
-        creature: slainPrey,
-      });
-      if (slainResult) {
-        resolveEffectChain(
-          state,
-          slainResult,
-          { playerIndex: preyOwnerIndex },
-          latestCallbacks.onUpdate
-        );
-      }
-    },
   });
 
   // Update consumption count

@@ -199,6 +199,7 @@ export const ensureProfileLoaded = async (state) => {
       state.menu.profile = profile;
       const localIndex = getLocalPlayerIndex(state);
       state.players[localIndex].name = profile.username;
+      state.players[localIndex].nameStyle = profile.name_style || {};
       ensureDecksLoaded(state);
       // Load card collection from database
       ensurePlayerCardsLoaded(state);
@@ -430,12 +431,16 @@ export const updateLobbyPlayerNames = async (state, lobby = state.menu?.lobby) =
       return;
     }
     const profiles = await api.fetchProfilesByIds(playerIds);
-    const profileMap = new Map(profiles.map((profile) => [profile.id, profile.username]));
+    const profileMap = new Map(profiles.map((profile) => [profile.id, profile]));
     if (lobby.host_id && profileMap.has(lobby.host_id)) {
-      state.players[0].name = profileMap.get(lobby.host_id);
+      const hostProfile = profileMap.get(lobby.host_id);
+      state.players[0].name = hostProfile.username;
+      state.players[0].nameStyle = hostProfile.name_style || {};
     }
     if (lobby.guest_id && profileMap.has(lobby.guest_id)) {
-      state.players[1].name = profileMap.get(lobby.guest_id);
+      const guestProfile = profileMap.get(lobby.guest_id);
+      state.players[1].name = guestProfile.username;
+      state.players[1].nameStyle = guestProfile.name_style || {};
     }
     callbacks.onUpdate?.();
   } catch (error) {
@@ -464,6 +469,7 @@ export const handleLoginSubmit = async (state, username, pin) => {
     const profile = await api.loginWithPin(username, pin);
     state.menu.profile = profile;
     state.players[0].name = profile.username;
+    state.players[0].nameStyle = profile.name_style || {};
     decksLoaded = false;
     ensureDecksLoaded(state, { force: true });
     setMenuStage(state, 'main');
@@ -494,6 +500,7 @@ export const handleCreateAccount = async (state, username, pin) => {
     const profile = await api.createAccountWithPin(username, pin);
     state.menu.profile = profile;
     state.players[0].name = profile.username;
+    state.players[0].nameStyle = profile.name_style || {};
     decksLoaded = false;
     ensureDecksLoaded(state, { force: true });
     setMenuStage(state, 'main');
