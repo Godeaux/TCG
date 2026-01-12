@@ -1244,6 +1244,11 @@ const handleDrop = (event) => {
   } else if (dropTarget?.classList.contains('card')) {
     const targetCard = getCardFromInstanceId(dropTarget.dataset.instanceId, latestState);
     if (targetCard) {
+      // Check if this is a spell being dropped on a valid target
+      if (isSpell && isValidSpellTarget(card, targetCard, latestState)) {
+        handlePlayCard(latestState, card, latestCallbacks.onUpdate, targetCard);
+        return;
+      }
       handleCreatureDrop(card, targetCard);
     }
   } else {

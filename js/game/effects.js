@@ -4,7 +4,7 @@ import { consumePrey } from "./consumption.js";
 import { isImmune, areAbilitiesActive } from "../keywords.js";
 import { getTokenById, getCardDefinitionById, resolveCardEffect } from "../cards/index.js";
 
-const { DAMAGE, DEATH, SUMMON, BUFF, DEBUFF, HEAL, CHOICE } = LOG_CATEGORIES;
+const { DAMAGE, DEATH, SUMMON, BUFF, DEBUFF, HEAL, CHOICE, SPELL } = LOG_CATEGORIES;
 
 const findCardOwnerIndex = (state, card) =>
   state.players.findIndex((player) =>
@@ -654,6 +654,39 @@ export const resolveEffectResult = (state, result, context) => {
   if (result.playFromHand) {
     const { playerIndex, card } = result.playFromHand;
     const player = state.players[playerIndex];
+    const opponentIndex = (playerIndex + 1) % 2;
+
+    // Handle spells differently - cast them instead of placing on field
+    if (card.type === 'Spell' || card.type === 'Free Spell') {
+      logGameAction(state, SPELL, `${player.name} casts ${formatCardForLog(card)}.`);
+
+      // Resolve the spell's effect
+      const spellResult = resolveCardEffect(card, 'effect', {
+        log: (message) => logMessage(state, message),
+        player: state.players[playerIndex],
+        opponent: state.players[opponentIndex],
+        state,
+        playerIndex,
+        opponentIndex,
+      });
+
+      // Remove from hand and exile
+      player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
+      if (!card.isFieldSpell) {
+        player.exile.push(card);
+      }
+
+      // Process spell effect result
+      if (spellResult && Object.keys(spellResult).length > 0) {
+        const uiResult = resolveEffectResult(state, spellResult, { playerIndex, opponentIndex });
+        if (uiResult) {
+          return uiResult;
+        }
+      }
+      return;
+    }
+
+    // Handle creatures - place on field
     const instance = placeCreatureOnField(state, playerIndex, card);
     if (!instance) {
       return;
@@ -663,7 +696,6 @@ export const resolveEffectResult = (state, result, context) => {
     player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
     // Trigger onPlay effect for any creature (use resolveCardEffect for effects object)
     if (isCreatureCard(instance) && instance.effects?.onPlay && !instance.abilitiesCancelled) {
-      const opponentIndex = (playerIndex + 1) % 2;
       const resultOnPlay = resolveCardEffect(instance, 'onPlay', {
         log: (message) => logMessage(state, message),
         player: state.players[playerIndex],

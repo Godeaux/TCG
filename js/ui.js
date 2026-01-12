@@ -534,20 +534,20 @@ const updateActionPanel = (state, callbacks = {}) => {
     return;
   }
   clearPanel(actionPanel);
-  
-  // Clear action bar if no card is selected or if it's the End phase
-  const playerIndex = isLocalPlayersTurn(state) ? state.activePlayerIndex : (state.activePlayerIndex + 1) % 2;
+
+  // Clear action bar if no card is selected, if it's the End phase, or if it's not the local player's turn
+  const isLocalTurn = isLocalPlayersTurn(state);
+  const playerIndex = isLocalTurn ? state.activePlayerIndex : (state.activePlayerIndex + 1) % 2;
   const player = state.players[playerIndex];
   const selectedCard = player.hand.find((card) => card.instanceId === selectedHandCardId);
-  
-  if (!selectedCard || state.phase === "End") {
+
+  if (!selectedCard || state.phase === "End" || !isLocalTurn) {
     actionBar.classList.remove("has-actions");
     return;
   }
 
   const actions = document.createElement("div");
   actions.className = "action-buttons";
-  const isLocalTurn = isLocalPlayersTurn(state);
 
   const isFree =
     selectedCard.type === "Free Spell" || selectedCard.type === "Trap" || isFreePlay(selectedCard);
@@ -1974,7 +1974,7 @@ const handleEatPreyAttack = (state, attacker, onUpdate) => {
   });
 };
 
-const handlePlayCard = (state, card, onUpdate) => {
+const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) => {
   if (!isLocalPlayersTurn(state)) {
     logMessage(state, "Wait for your turn to play cards.");
     onUpdate?.();
@@ -2015,11 +2015,7 @@ const handlePlayCard = (state, card, onUpdate) => {
       onUpdate?.();
       return;
     }
-    // If spell requires target selection, defer the cast log until target is chosen
-    // Otherwise, log the cast immediately
-    if (!result.selectTarget) {
-      logGameAction(state, LOG_CATEGORIES.SPELL, `${player.name} casts ${formatCardForLog(card)}.`);
-    }
+
     const finalizePlay = () => {
       cleanupDestroyed(state);
       if (!card.isFieldSpell) {
@@ -2032,6 +2028,39 @@ const handlePlayCard = (state, card, onUpdate) => {
       onUpdate?.();
       broadcastSyncState(state);
     };
+
+    // If preselectedTarget is provided and spell requires targeting, bypass selection UI
+    if (preselectedTarget && result.selectTarget) {
+      const { candidates, onSelect } = result.selectTarget;
+      // Find matching candidate by instanceId
+      const matchingCandidate = candidates.find(
+        (c) => (c.value?.instanceId || c.card?.instanceId) === preselectedTarget.instanceId
+      );
+      if (matchingCandidate) {
+        logGameAction(state, LOG_CATEGORIES.SPELL, `${player.name} casts ${formatCardForLog(card)}.`);
+        const followUp = onSelect(matchingCandidate.value);
+        resolveEffectChain(
+          state,
+          followUp,
+          {
+            playerIndex,
+            opponentIndex,
+            spellCard: undefined, // Already logged
+          },
+          onUpdate,
+          finalizePlay,
+          () => onUpdate?.()
+        );
+        return;
+      }
+      // If no matching candidate found, fall through to normal flow
+    }
+
+    // If spell requires target selection, defer the cast log until target is chosen
+    // Otherwise, log the cast immediately
+    if (!result.selectTarget) {
+      logGameAction(state, LOG_CATEGORIES.SPELL, `${player.name} casts ${formatCardForLog(card)}.`);
+    }
     resolveEffectChain(
       state,
       result,
