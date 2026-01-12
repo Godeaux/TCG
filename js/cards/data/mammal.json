@@ -398,7 +398,7 @@
       "hp": 3,
       "effectText": "Copy abilities of a carrion.",
       "effects": {
-        "onConsume": { "type": "selectCarrionPredToCopyAbilities" }
+        "onConsume": { "type": "selectCarrionToCopyAbilities" }
       }
     },
     {

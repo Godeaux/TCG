@@ -655,11 +655,15 @@ export const resolveEffectResult = (state, result, context) => {
         opponentIndex,
       });
       if (resultOnPlay) {
-        resolveEffectResult(state, resultOnPlay, {
+        const uiResult = resolveEffectResult(state, resultOnPlay, {
           playerIndex,
           opponentIndex,
           card: instance,
         });
+        // Return UI results (selectOption, selectTarget) for the UI layer to handle
+        if (uiResult) {
+          return uiResult;
+        }
       }
     }
   }
@@ -695,11 +699,15 @@ export const resolveEffectResult = (state, result, context) => {
         opponentIndex,
       });
       if (resultOnPlay) {
-        resolveEffectResult(state, resultOnPlay, {
+        const uiResult = resolveEffectResult(state, resultOnPlay, {
           playerIndex,
           opponentIndex,
           card: instance,
         });
+        // Return UI results (selectOption, selectTarget) for the UI layer to handle
+        if (uiResult) {
+          return uiResult;
+        }
       }
     }
   }
@@ -989,6 +997,12 @@ export const resolveEffectResult = (state, result, context) => {
         logGameAction(state, SUMMON, `${formatCardForLog(creature)} revives!`);
       }
     }
+  }
+
+  // Return any UI-related results for the caller to handle
+  // These need to bubble up to the UI layer (resolveEffectChain)
+  if (result.selectOption || result.selectTarget) {
+    return result;
   }
 };
 

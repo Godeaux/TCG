@@ -1456,7 +1456,16 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
   }
 
   console.log("[resolveEffectChain] No selection needed, processing result:", nextResult);
-  resolveEffectResult(state, nextResult, context);
+  const uiResult = resolveEffectResult(state, nextResult, context);
+
+  // If resolveEffectResult returned a UI result (from nested effects like playFromHand),
+  // recursively handle it before completing the chain
+  if (uiResult && (uiResult.selectOption || uiResult.selectTarget)) {
+    console.log("[resolveEffectChain] Nested UI result detected, recursing:", uiResult);
+    resolveEffectChain(state, uiResult, context, onUpdate, onComplete, onCancel);
+    return;
+  }
+
   onUpdate?.();
   broadcastSyncState(state);
   console.log("[resolveEffectChain] About to call onComplete");
@@ -2801,6 +2810,16 @@ const executeSurrender = () => {
 
   // Hide the dialog
   hideSurrenderDialog();
+
+  // Broadcast surrender immediately in online mode for instant sync
+  if (latestState.menu?.mode === 'online') {
+    sendLobbyBroadcast('surrender', {
+      senderId: latestState.menu?.profile?.id ?? null,
+      surrenderingPlayerIndex: localIndex,
+      timestamp: Date.now(),
+    });
+    broadcastSyncState(latestState);
+  }
 
   // Re-render to trigger victory check
   if (latestCallbacks.onUpdate) {

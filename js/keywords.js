@@ -15,6 +15,7 @@ export const KEYWORDS = {
   TOXIC: "Toxic",
   POISONOUS: "Poisonous",
   HARMLESS: "Harmless",
+  FROZEN: "Frozen",
 };
 
 export const KEYWORD_DESCRIPTIONS = {
@@ -35,6 +36,7 @@ export const KEYWORD_DESCRIPTIONS = {
   [KEYWORDS.TOXIC]: "Kills any creature it damages in combat regardless of HP.",
   [KEYWORDS.POISONOUS]: "Deals 1 damage to opponent at end of their turn.",
   [KEYWORDS.HARMLESS]: "Cannot attack (0 attack permanently).",
+  [KEYWORDS.FROZEN]: "Cannot attack or be consumed. Thaws at the end of the creature-owning player's turn.",
 };
 
 /**

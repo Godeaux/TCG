@@ -655,7 +655,7 @@ const renderDeckManagePanel = (state, callbacks) => {
   }
   ensureDecksLoaded(state);
   const decks = state.menu.decks ?? [];
-  const slots = Array.from({ length: 5 }, (_, index) => decks[index] ?? null);
+  const slots = Array.from({ length: 10 }, (_, index) => decks[index] ?? null);
 
   const newDeckButton = document.createElement("button");
   newDeckButton.type = "button";
@@ -679,9 +679,9 @@ const renderDeckManagePanel = (state, callbacks) => {
   newDeckSlot.innerHTML = `
     <div class="deck-slot-header">
       <span>Deck Slots</span>
-      <span class="deck-slot-meta">${decks.length}/5 used</span>
+      <span class="deck-slot-meta">${decks.length}/10 used</span>
     </div>
-    <div class="deck-slot-meta">Save up to five decks per account.</div>
+    <div class="deck-slot-meta">Save up to ten decks per account.</div>
   `;
   const newDeckActions = document.createElement("div");
   newDeckActions.className = "deck-slot-actions";
@@ -847,7 +847,7 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
         loginPrompt.innerHTML = `
           <div class="deck-catalog-card__icon">🔐</div>
           <div class="deck-catalog-card__title">Log in to create decks</div>
-          <div class="deck-catalog-card__subtitle">Save up to 5 decks for multiplayer</div>
+          <div class="deck-catalog-card__subtitle">Save up to 10 decks for multiplayer</div>
         `;
         deckSelectGrid.appendChild(loginPrompt);
       } else {
@@ -855,7 +855,7 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
         ensureDecksLoaded(state);
         const decks = state.menu.decks ?? [];
 
-        const maxSlots = 5;
+        const maxSlots = 10;
         for (let i = 0; i < maxSlots; i++) {
           const deck = decks[i];
           const card = document.createElement("div");
@@ -1152,11 +1152,11 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
     if (deckSelectSubtitle) {
       deckSelectSubtitle.textContent = hasSelectedDeck
         ? "Your deck is loaded. Click Confirm when ready to play."
-        : "Choose one of your saved decks (up to 3 available in multiplayer).";
+        : "Choose one of your saved decks.";
     }
     clearPanel(deckSelectGrid);
 
-    const decks = (state.menu.decks ?? []).slice(0, 3);
+    const decks = state.menu.decks ?? [];
     if (decks.length === 0) {
       const empty = document.createElement("div");
       empty.className = "deck-slot";
@@ -1452,8 +1452,19 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
   deckOverlay.setAttribute("aria-hidden", "false");
   deckTitle.textContent = "Deck Catalog Builder";
 
-  // Build status HTML with success/error messages
+  // Set default deck name for new decks if not already set
+  if (!state.catalogBuilder.editingDeckName) {
+    state.catalogBuilder.editingDeckName = "New Deck";
+  }
+
+  // Build status HTML with deck name input and success/error messages
+  const isEditing = Boolean(state.catalogBuilder.editingDeckId);
+  const deckNameLabel = isEditing ? "Editing:" : "Deck Name:";
   let statusHtml = `
+    <div class="deck-status-item deck-name-row">
+      <label for="deck-name-input">${deckNameLabel}</label>
+      <input type="text" id="deck-name-input" class="deck-name-input" value="${state.catalogBuilder.editingDeckName || 'New Deck'}" maxlength="30" placeholder="Deck name" />
+    </div>
     <div class="deck-status-item">Cards selected: <strong>${totalCount}/20</strong></div>
     <div class="deck-status-item ${preyRuleValid ? "" : "invalid"}">
       Prey: <strong>${preyCount}</strong> • Predators: <strong>${predatorCount}</strong>
@@ -1466,6 +1477,21 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
     statusHtml += `<div class="deck-status-item deck-status-error">${state.menu.error}</div>`;
   }
   deckStatus.innerHTML = statusHtml;
+
+  // Bind deck name input change handler
+  const deckNameInput = document.getElementById("deck-name-input");
+  if (deckNameInput) {
+    deckNameInput.oninput = (e) => {
+      state.catalogBuilder.editingDeckName = e.target.value;
+    };
+    // Prevent form submission on enter, just blur the input
+    deckNameInput.onkeydown = (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        deckNameInput.blur();
+      }
+    };
+  }
 
   updateDeckTabs(state);
   clearPanel(deckFullRow);
@@ -1544,7 +1570,7 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
         callbacks.onUpdate?.();
         return;
       }
-      if (!state.catalogBuilder.editingDeckId && (state.menu.decks ?? []).length >= 5) {
+      if (!state.catalogBuilder.editingDeckId && (state.menu.decks ?? []).length >= 10) {
         setMenuError(state, "Deck slots full. Delete a deck to save a new one.");
         callbacks.onUpdate?.();
         return;
@@ -1566,12 +1592,8 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
           savedDeckName = state.catalogBuilder.editingDeckName;
           logMessage(state, `Updated deck "${savedDeckName}".`);
         } else {
-          const deckName = window.prompt("Deck name:", "New Deck");
-          if (!deckName) {
-            applyMenuLoading(state, false);
-            callbacks.onUpdate?.();
-            return;
-          }
+          // Use the deck name from the inline input (defaults to "New Deck")
+          const deckName = state.catalogBuilder.editingDeckName || "New Deck";
           await api.saveDeck({
             ownerId: state.menu.profile.id,
             name: deckName,

@@ -216,7 +216,7 @@
       "keywords": [],
       "effectText": "Before combat, deal 2 damage.",
       "effects": {
-        "onBeforeCombat": { "type": "damageCreature", "params": { "targetType": "target", "amount": 2, "sourceLabel": "snapping turtle" } }
+        "onBeforeCombat": { "type": "selectTargetForDamage", "params": { "amount": 2, "label": "snapping turtle" } }
       }
     },
     {

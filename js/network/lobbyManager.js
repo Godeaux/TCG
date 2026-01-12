@@ -937,6 +937,20 @@ export const updateLobbySubscription = (state, { force = false } = {}) => {
     callbacks.onOpponentCursorMove?.(payload.position);
   });
 
+  // Handle surrender broadcasts (immediate notification)
+  lobbyChannel.on('broadcast', { event: 'surrender' }, ({ payload }) => {
+    // Ignore from self
+    if (payload?.senderId === state.menu?.profile?.id) {
+      return;
+    }
+    // Set the surrendering player's HP to 0
+    const surrenderingIndex = payload.surrenderingPlayerIndex;
+    if (state.players?.[surrenderingIndex]) {
+      state.players[surrenderingIndex].hp = 0;
+    }
+    callbacks.onUpdate?.();
+  });
+
   // Initial refresh
   refreshLobbyState(state, { silent: true });
 
