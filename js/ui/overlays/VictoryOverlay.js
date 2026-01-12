@@ -320,6 +320,9 @@ const updateProfileStatsOnVictory = (state, winner, loser) => {
     const opponentDeckId = state.deckSelection?.selections?.[(localPlayerIndex + 1) % 2] || 'unknown';
     const opponentDeck = opponentDeckId.charAt(0).toUpperCase() + opponentDeckId.slice(1);
 
+    // Get player's deck cards (names only, to track favorite card)
+    const playerDeckCards = state.deckBuilder?.selections?.[localPlayerIndex]?.map(card => card.name) || [];
+
     // Add match to history (most recent first)
     const matchEntry = {
       won: didWin,
@@ -330,6 +333,7 @@ const updateProfileStatsOnVictory = (state, winner, loser) => {
       date: new Date().toISOString(),
       mode: gameMode,
       turns: state.turn || 1,
+      deckCards: playerDeckCards, // Track cards used for favorite calculation
     };
     profile.matches.unshift(matchEntry);
 
@@ -338,9 +342,30 @@ const updateProfileStatsOnVictory = (state, winner, loser) => {
       profile.matches = profile.matches.slice(0, 20);
     }
 
+    // Calculate favorite card (most frequently used across all matches)
+    const cardCounts = {};
+    profile.matches.forEach(match => {
+      if (match.deckCards && Array.isArray(match.deckCards)) {
+        match.deckCards.forEach(cardName => {
+          cardCounts[cardName] = (cardCounts[cardName] || 0) + 1;
+        });
+      }
+    });
+
+    // Find the most used card
+    let favoriteCard = '-';
+    let maxCount = 0;
+    for (const [cardName, count] of Object.entries(cardCounts)) {
+      if (count > maxCount) {
+        maxCount = count;
+        favoriteCard = cardName;
+      }
+    }
+    profile.stats.favoriteCard = favoriteCard;
+
     // Sync to database (async, don't wait)
     updateProfileStats(state, profile.stats, profile.matches);
 
-    console.log(`Profile stats updated: ${profile.stats.gamesPlayed} played, ${profile.stats.gamesWon} won`);
+    console.log(`Profile stats updated: ${profile.stats.gamesPlayed} played, ${profile.stats.gamesWon} won, favorite: ${favoriteCard}`);
   }
 };

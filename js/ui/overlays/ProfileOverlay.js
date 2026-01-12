@@ -5,6 +5,7 @@
  * - Player stats display
  * - Card collection browser with rarity filters
  * - Packs display and opening trigger
+ * - Friends list with online status
  *
  * Key Functions:
  * - renderProfileOverlay: Main profile overlay rendering
@@ -15,6 +16,22 @@ import { getAllCards } from '../../cards/index.js';
 import { renderCard } from '../components/Card.js';
 import { RARITY_COLORS, RARITY_LABELS } from '../../packs/packConfig.js';
 import { clearOpponentDragPreview } from '../components/OpponentHandStrip.js';
+import {
+  searchUserByUsername,
+  sendFriendRequest,
+  respondToFriendRequest,
+  removeFriendship,
+  fetchFriendships,
+  fetchPublicProfile,
+  subscribeToFriendships,
+  unsubscribeFromFriendships,
+} from '../../network/supabaseApi.js';
+import {
+  initializePresence,
+  subscribeToOnlineStatus,
+  isUserOnline,
+  cleanupPresence,
+} from '../../network/presenceManager.js';
 
 // ============================================================================
 // DOM ELEMENTS
@@ -33,6 +50,21 @@ const getProfileElements = () => ({
   profileBackBtn: document.getElementById('profile-back'),
   collectionFilter: document.getElementById('collection-filter'),
   collectionGrid: document.getElementById('collection-grid'),
+  // Tab elements
+  tabCareer: document.getElementById('profile-tab-career'),
+  tabFriends: document.getElementById('profile-tab-friends'),
+  careerContent: document.getElementById('profile-career-tab'),
+  friendsContent: document.getElementById('profile-friends-tab'),
+  // Friends elements
+  friendsAddInput: document.getElementById('friends-add-input'),
+  friendsAddBtn: document.getElementById('friends-add-btn'),
+  friendsAddError: document.getElementById('friends-add-error'),
+  friendsIncomingSection: document.getElementById('friends-incoming-section'),
+  friendsIncomingList: document.getElementById('friends-incoming-list'),
+  friendsOutgoingSection: document.getElementById('friends-outgoing-section'),
+  friendsOutgoingList: document.getElementById('friends-outgoing-list'),
+  friendsAcceptedSection: document.getElementById('friends-accepted-section'),
+  friendsAcceptedList: document.getElementById('friends-accepted-list'),
 });
 
 // ============================================================================
@@ -93,6 +125,12 @@ const renderCollectionCard = (card, ownedRarity, onClick) => {
   return wrapper;
 };
 
+// Rarity order for sorting (highest first)
+const RARITY_ORDER = { pristine: 5, legendary: 4, rare: 3, uncommon: 2, common: 1 };
+
+// Class order for sorting
+const CLASS_ORDER = { fish: 1, bird: 2, mammal: 3, reptile: 4, amphibian: 5, other: 6 };
+
 /**
  * Render the card collection grid
  */
@@ -110,6 +148,11 @@ const renderCollectionGrid = (elements, ownedCards, filter, onCardClick) => {
     // Skip tokens
     if (card.isToken) return false;
 
+    // Rarity filter: show only owned cards
+    if (filter === 'rarity') {
+      return ownedCards.has(card.id);
+    }
+
     // Apply category filter
     if (filter && filter !== 'all' && filter !== 'owned') {
       const category = getCardCategory(card.id);
@@ -124,14 +167,36 @@ const renderCollectionGrid = (elements, ownedCards, filter, onCardClick) => {
     return true;
   });
 
-  // Sort: owned cards first, then by name
-  filteredCards.sort((a, b) => {
-    const aOwned = ownedCards.has(a.id);
-    const bOwned = ownedCards.has(b.id);
-    if (aOwned && !bOwned) return -1;
-    if (!aOwned && bOwned) return 1;
-    return a.name.localeCompare(b.name);
-  });
+  // Sort based on filter type
+  if (filter === 'rarity') {
+    // Sort by rarity (highest first), then by class, then by name
+    filteredCards.sort((a, b) => {
+      const aRarity = ownedCards.get(a.id) || 'common';
+      const bRarity = ownedCards.get(b.id) || 'common';
+
+      // Sort by rarity (highest first)
+      const rarityDiff = (RARITY_ORDER[bRarity] || 0) - (RARITY_ORDER[aRarity] || 0);
+      if (rarityDiff !== 0) return rarityDiff;
+
+      // Then by class
+      const aClass = getCardCategory(a.id);
+      const bClass = getCardCategory(b.id);
+      const classDiff = (CLASS_ORDER[aClass] || 6) - (CLASS_ORDER[bClass] || 6);
+      if (classDiff !== 0) return classDiff;
+
+      // Then alphabetically by name
+      return a.name.localeCompare(b.name);
+    });
+  } else {
+    // Default sort: owned cards first, then by name
+    filteredCards.sort((a, b) => {
+      const aOwned = ownedCards.has(a.id);
+      const bOwned = ownedCards.has(b.id);
+      if (aOwned && !bOwned) return -1;
+      if (!aOwned && bOwned) return 1;
+      return a.name.localeCompare(b.name);
+    });
+  }
 
   // Render cards
   filteredCards.forEach(card => {
@@ -254,12 +319,339 @@ const formatMatchDate = (dateStr) => {
 };
 
 // ============================================================================
+// FRIENDS RENDERING
+// ============================================================================
+
+// Friends state
+let friendsData = { incoming: [], outgoing: [], accepted: [] };
+let friendsChannel = null;
+let onlineUnsubscribe = null;
+let onlineUsers = new Set();
+let currentTab = 'career';
+
+/**
+ * Render a single friend item
+ */
+const renderFriendItem = (friendship, type, callbacks) => {
+  const item = document.createElement('div');
+  item.className = `friend-item ${type}`;
+  item.dataset.friendshipId = friendship.id;
+  item.dataset.profileId = friendship.friendId;
+
+  const isOnline = onlineUsers.has(friendship.friendId);
+
+  // Status indicator
+  const indicator = document.createElement('div');
+  indicator.className = `friend-status-indicator ${isOnline ? 'online' : 'offline'}`;
+  item.appendChild(indicator);
+
+  // Info section
+  const info = document.createElement('div');
+  info.className = 'friend-info';
+
+  const username = document.createElement('span');
+  username.className = 'friend-username';
+  username.textContent = friendship.friendUsername;
+  info.appendChild(username);
+
+  const status = document.createElement('span');
+  if (type === 'incoming') {
+    status.className = 'friend-request-status';
+    status.textContent = 'wants to be your friend';
+  } else if (type === 'outgoing') {
+    status.className = 'friend-request-status';
+    status.textContent = friendship.status === 'rejected' ? 'Rejected' : 'Request Sent';
+  } else {
+    status.className = `friend-online-status ${isOnline ? 'online' : ''}`;
+    status.textContent = isOnline ? 'Online' : 'Offline';
+  }
+  info.appendChild(status);
+  item.appendChild(info);
+
+  // Actions
+  const actions = document.createElement('div');
+  actions.className = 'friend-actions';
+
+  if (type === 'incoming') {
+    const acceptBtn = document.createElement('button');
+    acceptBtn.className = 'friend-accept-btn';
+    acceptBtn.title = 'Accept';
+    acceptBtn.innerHTML = '✓';
+    acceptBtn.onclick = () => callbacks.onAccept?.(friendship);
+    actions.appendChild(acceptBtn);
+
+    const rejectBtn = document.createElement('button');
+    rejectBtn.className = 'friend-reject-btn';
+    rejectBtn.title = 'Reject';
+    rejectBtn.innerHTML = '✕';
+    rejectBtn.onclick = () => callbacks.onReject?.(friendship);
+    actions.appendChild(rejectBtn);
+  } else if (type === 'outgoing') {
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'friend-cancel-btn';
+    cancelBtn.title = 'Cancel Request';
+    cancelBtn.innerHTML = '✕';
+    cancelBtn.onclick = () => callbacks.onCancel?.(friendship);
+    actions.appendChild(cancelBtn);
+  } else {
+    const viewBtn = document.createElement('button');
+    viewBtn.className = 'friend-view-btn';
+    viewBtn.title = 'View Profile';
+    viewBtn.innerHTML = '👤';
+    viewBtn.onclick = () => callbacks.onViewProfile?.(friendship);
+    actions.appendChild(viewBtn);
+
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'friend-remove-btn';
+    removeBtn.title = 'Remove Friend';
+    removeBtn.innerHTML = '✕';
+    removeBtn.onclick = () => callbacks.onRemove?.(friendship);
+    actions.appendChild(removeBtn);
+  }
+
+  item.appendChild(actions);
+  return item;
+};
+
+/**
+ * Render a friends list section
+ */
+const renderFriendsList = (container, friends, type, callbacks) => {
+  container.innerHTML = '';
+
+  if (friends.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'friends-empty';
+    if (type === 'incoming') {
+      empty.textContent = 'No friend requests';
+    } else if (type === 'outgoing') {
+      empty.textContent = 'No pending requests';
+    } else {
+      empty.textContent = 'No friends yet. Add some!';
+    }
+    container.appendChild(empty);
+    return;
+  }
+
+  // Sort accepted friends: online first
+  let sortedFriends = friends;
+  if (type === 'accepted') {
+    sortedFriends = [...friends].sort((a, b) => {
+      const aOnline = onlineUsers.has(a.friendId);
+      const bOnline = onlineUsers.has(b.friendId);
+      if (aOnline && !bOnline) return -1;
+      if (!aOnline && bOnline) return 1;
+      return a.friendUsername.localeCompare(b.friendUsername);
+    });
+  }
+
+  sortedFriends.forEach(friendship => {
+    const item = renderFriendItem(friendship, type, callbacks);
+    container.appendChild(item);
+  });
+};
+
+/**
+ * Render the friends tab
+ */
+const renderFriendsTab = (elements, profileId, callbacks) => {
+  const {
+    friendsIncomingSection,
+    friendsIncomingList,
+    friendsOutgoingSection,
+    friendsOutgoingList,
+    friendsAcceptedSection,
+    friendsAcceptedList,
+  } = elements;
+
+  const friendCallbacks = {
+    onAccept: async (friendship) => {
+      try {
+        await respondToFriendRequest({
+          friendshipId: friendship.id,
+          addresseeId: profileId,
+          response: 'accepted',
+        });
+        await loadFriends(profileId);
+        renderFriendsTab(elements, profileId, callbacks);
+      } catch (e) {
+        console.error('Failed to accept friend:', e);
+      }
+    },
+    onReject: async (friendship) => {
+      try {
+        await respondToFriendRequest({
+          friendshipId: friendship.id,
+          addresseeId: profileId,
+          response: 'rejected',
+        });
+        await loadFriends(profileId);
+        renderFriendsTab(elements, profileId, callbacks);
+      } catch (e) {
+        console.error('Failed to reject friend:', e);
+      }
+    },
+    onCancel: async (friendship) => {
+      try {
+        await removeFriendship({ friendshipId: friendship.id, profileId });
+        await loadFriends(profileId);
+        renderFriendsTab(elements, profileId, callbacks);
+      } catch (e) {
+        console.error('Failed to cancel request:', e);
+      }
+    },
+    onRemove: async (friendship) => {
+      if (!confirm(`Remove ${friendship.friendUsername} from friends?`)) return;
+      try {
+        await removeFriendship({ friendshipId: friendship.id, profileId });
+        await loadFriends(profileId);
+        renderFriendsTab(elements, profileId, callbacks);
+      } catch (e) {
+        console.error('Failed to remove friend:', e);
+      }
+    },
+    onViewProfile: async (friendship) => {
+      showFriendProfile(friendship.friendId, friendship.friendUsername);
+    },
+  };
+
+  // Render sections
+  if (friendsIncomingList) {
+    renderFriendsList(friendsIncomingList, friendsData.incoming, 'incoming', friendCallbacks);
+    friendsIncomingSection.style.display = friendsData.incoming.length > 0 ? '' : 'none';
+  }
+
+  if (friendsOutgoingList) {
+    renderFriendsList(friendsOutgoingList, friendsData.outgoing, 'outgoing', friendCallbacks);
+    friendsOutgoingSection.style.display = friendsData.outgoing.length > 0 ? '' : 'none';
+  }
+
+  if (friendsAcceptedList) {
+    renderFriendsList(friendsAcceptedList, friendsData.accepted, 'accepted', friendCallbacks);
+  }
+};
+
+/**
+ * Load friends data
+ */
+const loadFriends = async (profileId) => {
+  if (!profileId) return;
+  try {
+    friendsData = await fetchFriendships({ profileId });
+  } catch (e) {
+    console.error('Failed to load friends:', e);
+    friendsData = { incoming: [], outgoing: [], accepted: [] };
+  }
+};
+
+/**
+ * Setup tab switching
+ */
+const setupTabs = (elements, profileId, callbacks) => {
+  const { tabCareer, tabFriends, careerContent, friendsContent } = elements;
+
+  const switchTab = (tab) => {
+    currentTab = tab;
+
+    // Update tab buttons
+    tabCareer?.classList.toggle('active', tab === 'career');
+    tabFriends?.classList.toggle('active', tab === 'friends');
+
+    // Update content visibility
+    if (careerContent) careerContent.style.display = tab === 'career' ? '' : 'none';
+    if (friendsContent) friendsContent.style.display = tab === 'friends' ? '' : 'none';
+
+    // Load friends data when switching to friends tab
+    if (tab === 'friends' && profileId) {
+      loadFriends(profileId).then(() => {
+        renderFriendsTab(elements, profileId, callbacks);
+      });
+    }
+  };
+
+  if (tabCareer) {
+    tabCareer.onclick = () => switchTab('career');
+  }
+
+  if (tabFriends) {
+    tabFriends.onclick = () => switchTab('friends');
+  }
+
+  // Set initial tab state
+  switchTab(currentTab);
+};
+
+/**
+ * Setup add friend functionality
+ */
+const setupAddFriend = (elements, profileId, callbacks) => {
+  const { friendsAddInput, friendsAddBtn, friendsAddError } = elements;
+
+  const showError = (msg, isSuccess = false) => {
+    if (friendsAddError) {
+      friendsAddError.textContent = msg;
+      friendsAddError.classList.toggle('success', isSuccess);
+    }
+  };
+
+  const handleAddFriend = async () => {
+    const username = friendsAddInput?.value?.trim();
+    if (!username) {
+      showError('Enter a username');
+      return;
+    }
+
+    if (friendsAddBtn) friendsAddBtn.disabled = true;
+    showError('');
+
+    try {
+      // Search for user
+      const user = await searchUserByUsername(username);
+      if (!user) {
+        showError('User not found');
+        return;
+      }
+
+      if (user.id === profileId) {
+        showError("Can't add yourself");
+        return;
+      }
+
+      // Send friend request
+      await sendFriendRequest({ requesterId: profileId, addresseeId: user.id });
+      showError('Friend request sent!', true);
+      if (friendsAddInput) friendsAddInput.value = '';
+
+      // Reload friends
+      await loadFriends(profileId);
+      renderFriendsTab(elements, profileId, callbacks);
+    } catch (e) {
+      showError(e.message || 'Failed to send request');
+    } finally {
+      if (friendsAddBtn) friendsAddBtn.disabled = false;
+    }
+  };
+
+  if (friendsAddBtn) {
+    friendsAddBtn.onclick = handleAddFriend;
+  }
+
+  if (friendsAddInput) {
+    friendsAddInput.onkeypress = (e) => {
+      if (e.key === 'Enter') {
+        handleAddFriend();
+      }
+    };
+  }
+};
+
+// ============================================================================
 // MAIN RENDERING
 // ============================================================================
 
 // Store current callbacks for cleanup
 let currentCallbacks = null;
-let currentFilter = 'all';
+let currentFilter = 'rarity';
 
 /**
  * Render the profile overlay
@@ -317,6 +709,9 @@ export const renderProfileOverlay = (state, callbacks = {}) => {
     callbacks.onCardClick?.(card, rarity);
   });
 
+  // Get profile ID for friends functionality
+  const profileId = state.menu?.profile?.id;
+
   // Setup event handlers (only once)
   if (currentCallbacks !== callbacks) {
     currentCallbacks = callbacks;
@@ -348,6 +743,41 @@ export const renderProfileOverlay = (state, callbacks = {}) => {
         });
       };
     }
+
+    // Setup tabs (only if logged in)
+    if (profileId) {
+      setupTabs(elements, profileId, callbacks);
+      setupAddFriend(elements, profileId, callbacks);
+
+      // Initialize presence tracking
+      initializePresence(profileId);
+
+      // Subscribe to online status changes
+      if (onlineUnsubscribe) {
+        onlineUnsubscribe();
+      }
+      onlineUnsubscribe = subscribeToOnlineStatus((users) => {
+        onlineUsers = users;
+        // Re-render friends list if on friends tab
+        if (currentTab === 'friends') {
+          renderFriendsTab(elements, profileId, callbacks);
+        }
+      });
+
+      // Subscribe to friendship changes
+      if (friendsChannel) {
+        unsubscribeFromFriendships(friendsChannel);
+      }
+      friendsChannel = subscribeToFriendships({
+        profileId,
+        onUpdate: async () => {
+          await loadFriends(profileId);
+          if (currentTab === 'friends') {
+            renderFriendsTab(elements, profileId, callbacks);
+          }
+        },
+      });
+    }
   }
 };
 
@@ -370,5 +800,108 @@ export const hideProfileOverlay = () => {
  * Reset the collection filter to default
  */
 export const resetCollectionFilter = () => {
-  currentFilter = 'all';
+  currentFilter = 'rarity';
+};
+
+// ============================================================================
+// FRIEND PROFILE MODAL
+// ============================================================================
+
+/**
+ * Show friend profile modal
+ * @param {string} profileId - Friend's profile ID
+ * @param {string} username - Friend's username (for immediate display)
+ */
+export const showFriendProfile = async (profileId, username) => {
+  const modal = document.getElementById('friend-profile-modal');
+  const backdrop = document.getElementById('friend-profile-backdrop');
+  const closeBtn = document.getElementById('friend-profile-close');
+  const usernameEl = document.getElementById('friend-profile-username');
+  const gamesPlayedEl = document.getElementById('friend-profile-games-played');
+  const gamesWonEl = document.getElementById('friend-profile-games-won');
+  const winRateEl = document.getElementById('friend-profile-win-rate');
+  const collectionGrid = document.getElementById('friend-profile-collection-grid');
+
+  if (!modal) return;
+
+  // Show modal with username immediately
+  if (usernameEl) usernameEl.textContent = username || 'Loading...';
+  if (gamesPlayedEl) gamesPlayedEl.textContent = '...';
+  if (gamesWonEl) gamesWonEl.textContent = '...';
+  if (winRateEl) winRateEl.textContent = '...';
+  if (collectionGrid) collectionGrid.innerHTML = '<div class="friend-profile-collection-empty">Loading...</div>';
+
+  modal.classList.add('active');
+  modal.setAttribute('aria-hidden', 'false');
+
+  // Setup close handlers
+  const closeModal = () => {
+    modal.classList.remove('active');
+    modal.setAttribute('aria-hidden', 'true');
+  };
+
+  if (closeBtn) closeBtn.onclick = closeModal;
+  if (backdrop) backdrop.onclick = closeModal;
+
+  // Fetch and display friend's profile
+  try {
+    const profile = await fetchPublicProfile({ profileId });
+
+    if (usernameEl) usernameEl.textContent = profile.username;
+
+    const stats = profile.stats || {};
+    const gamesPlayed = stats.gamesPlayed || 0;
+    const gamesWon = stats.gamesWon || 0;
+    const winRate = gamesPlayed > 0 ? Math.round((gamesWon / gamesPlayed) * 100) : 0;
+
+    if (gamesPlayedEl) gamesPlayedEl.textContent = gamesPlayed;
+    if (gamesWonEl) gamesWonEl.textContent = gamesWon;
+    if (winRateEl) winRateEl.textContent = `${winRate}%`;
+
+    // Render collection
+    if (collectionGrid) {
+      collectionGrid.innerHTML = '';
+
+      const ownedCards = profile.ownedCards || [];
+      if (ownedCards.length === 0) {
+        collectionGrid.innerHTML = '<div class="friend-profile-collection-empty">No cards collected yet</div>';
+      } else {
+        // Convert to Map for renderCollectionCard
+        const ownedCardsMap = new Map(ownedCards.map(c => [c.card_id, c.rarity]));
+        const allCards = getAllCards();
+
+        // Get owned cards and sort by rarity
+        const ownedCardObjects = allCards.filter(card => ownedCardsMap.has(card.id) && !card.isToken);
+        ownedCardObjects.sort((a, b) => {
+          const aRarity = ownedCardsMap.get(a.id) || 'common';
+          const bRarity = ownedCardsMap.get(b.id) || 'common';
+          const rarityDiff = (RARITY_ORDER[bRarity] || 0) - (RARITY_ORDER[aRarity] || 0);
+          if (rarityDiff !== 0) return rarityDiff;
+          return a.name.localeCompare(b.name);
+        });
+
+        ownedCardObjects.forEach(card => {
+          const rarity = ownedCardsMap.get(card.id);
+          const cardWrapper = renderCollectionCard(card, rarity, () => {});
+          collectionGrid.appendChild(cardWrapper);
+        });
+      }
+    }
+  } catch (e) {
+    console.error('Failed to load friend profile:', e);
+    if (collectionGrid) {
+      collectionGrid.innerHTML = '<div class="friend-profile-collection-empty">Failed to load profile</div>';
+    }
+  }
+};
+
+/**
+ * Hide friend profile modal
+ */
+export const hideFriendProfile = () => {
+  const modal = document.getElementById('friend-profile-modal');
+  if (modal) {
+    modal.classList.remove('active');
+    modal.setAttribute('aria-hidden', 'true');
+  }
 };

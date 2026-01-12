@@ -530,7 +530,9 @@ const updateDeckTabs = (state) => {
   const deckTabs = Array.from(document.querySelectorAll(".deck-tab"));
   const deckPanels = Array.from(document.querySelectorAll(".deck-panel"));
   const showLoad = isOnlineMode(state) && !isCatalogMode(state);
-  const showManage = isCatalogMode(state);
+  // Only show manage tab when NOT actively building a deck (to prevent accidental navigation loss)
+  const isActivelyBuilding = state.catalogBuilder?.stage === "build";
+  const showManage = isCatalogMode(state) && !isActivelyBuilding;
   const allowedTabs = new Set(["catalog", "deck"]);
   if (showLoad) {
     allowedTabs.add("load");
@@ -1905,7 +1907,31 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
     };
   }
   if (deckExit) {
-    deckExit.classList.add("hidden");
+    // Show back button to return to deck type selection
+    deckExit.classList.remove("hidden");
+    deckExit.disabled = state.menu.loading;
+    deckExit.textContent = "← Back";
+    deckExit.onclick = () => {
+      // Reset current player's deck selection to go back to type selection
+      if (isPlayerOne) {
+        // Player 1 goes back to deck type selection
+        state.deckBuilder.stage = "p1";
+        state.deckSelection.stage = "p1";
+        state.deckSelection.selections[0] = null;
+        state.deckBuilder.selections[0] = [];
+        state.deckBuilder.available[0] = [];
+      } else {
+        // Player 2 goes back to deck type selection (keeps P1's selection)
+        state.deckBuilder.stage = "p2";
+        state.deckSelection.stage = "p2";
+        state.deckSelection.selections[1] = null;
+        state.deckBuilder.selections[1] = [];
+        state.deckBuilder.available[1] = [];
+      }
+      deckHighlighted = null;
+      setDeckInspectorContent(null);
+      callbacks.onUpdate?.();
+    };
   }
 };
 

@@ -892,3 +892,329 @@ export const savePlayerCards = async ({ profileId, cards }) => {
 
   return data ?? [];
 };
+
+// ============================================================================
+// FRIENDS API
+// ============================================================================
+
+/**
+ * Search for a user by username (for adding friends)
+ * @param {string} username - Username to search
+ * @returns {Promise<Object|null>} Profile {id, username} or null if not found
+ */
+export const searchUserByUsername = async (username) => {
+  if (!username || typeof username !== "string") {
+    return null;
+  }
+  const trimmed = username.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  await ensureSession();
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, username")
+    .ilike("username", trimmed)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+  return data ?? null;
+};
+
+/**
+ * Send a friend request
+ * @param {Object} params
+ * @param {string} params.requesterId - Sender's profile ID
+ * @param {string} params.addresseeId - Recipient's profile ID
+ * @returns {Promise<Object>} The created friendship record
+ */
+export const sendFriendRequest = async ({ requesterId, addresseeId }) => {
+  if (!requesterId || !addresseeId) {
+    throw new Error("Missing profile IDs.");
+  }
+  if (requesterId === addresseeId) {
+    throw new Error("Cannot send friend request to yourself.");
+  }
+
+  await ensureSession();
+
+  // Check if friendship already exists (in either direction)
+  const { data: existing } = await supabase
+    .from("friendships")
+    .select("id, status, requester_id, addressee_id")
+    .or(
+      `and(requester_id.eq.${requesterId},addressee_id.eq.${addresseeId}),and(requester_id.eq.${addresseeId},addressee_id.eq.${requesterId})`
+    )
+    .maybeSingle();
+
+  if (existing) {
+    if (existing.status === "accepted") {
+      throw new Error("Already friends with this user.");
+    }
+    if (existing.status === "pending") {
+      if (existing.requester_id === requesterId) {
+        throw new Error("Friend request already sent.");
+      } else {
+        // They sent us a request, accept it instead
+        const { data, error } = await supabase
+          .from("friendships")
+          .update({ status: "accepted", updated_at: new Date().toISOString() })
+          .eq("id", existing.id)
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      }
+    }
+    if (existing.status === "rejected") {
+      // Delete old rejected request and create new one
+      await supabase.from("friendships").delete().eq("id", existing.id);
+    }
+  }
+
+  const { data, error } = await supabase
+    .from("friendships")
+    .insert({
+      requester_id: requesterId,
+      addressee_id: addresseeId,
+      status: "pending",
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+/**
+ * Respond to a friend request (accept or reject)
+ * @param {Object} params
+ * @param {string} params.friendshipId - Friendship record ID
+ * @param {string} params.addresseeId - Profile ID of responder (for validation)
+ * @param {'accepted'|'rejected'} params.response - Accept or reject
+ * @returns {Promise<Object>} Updated friendship record
+ */
+export const respondToFriendRequest = async ({
+  friendshipId,
+  addresseeId,
+  response,
+}) => {
+  if (!friendshipId || !addresseeId) {
+    throw new Error("Missing required parameters.");
+  }
+  if (response !== "accepted" && response !== "rejected") {
+    throw new Error("Invalid response. Must be 'accepted' or 'rejected'.");
+  }
+
+  await ensureSession();
+
+  const { data, error } = await supabase
+    .from("friendships")
+    .update({ status: response, updated_at: new Date().toISOString() })
+    .eq("id", friendshipId)
+    .eq("addressee_id", addresseeId)
+    .eq("status", "pending")
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+/**
+ * Remove a friendship (unfriend or cancel request)
+ * @param {Object} params
+ * @param {string} params.friendshipId - Friendship record ID
+ * @param {string} params.profileId - Profile ID of the user removing
+ * @returns {Promise<boolean>} Success
+ */
+export const removeFriendship = async ({ friendshipId, profileId }) => {
+  if (!friendshipId || !profileId) {
+    throw new Error("Missing required parameters.");
+  }
+
+  await ensureSession();
+
+  const { error } = await supabase
+    .from("friendships")
+    .delete()
+    .eq("id", friendshipId)
+    .or(`requester_id.eq.${profileId},addressee_id.eq.${profileId}`);
+
+  if (error) {
+    throw error;
+  }
+  return true;
+};
+
+/**
+ * Fetch all friendships for a user
+ * @param {Object} params
+ * @param {string} params.profileId - User's profile ID
+ * @returns {Promise<Object>} Categorized friendships { incoming, outgoing, accepted }
+ */
+export const fetchFriendships = async ({ profileId }) => {
+  if (!profileId) {
+    throw new Error("Missing profile ID.");
+  }
+
+  await ensureSession();
+
+  // Get all friendships involving this user
+  const { data, error } = await supabase
+    .from("friendships")
+    .select(
+      `
+      id,
+      status,
+      requester_id,
+      addressee_id,
+      created_at,
+      updated_at,
+      requester:profiles!friendships_requester_id_fkey(id, username),
+      addressee:profiles!friendships_addressee_id_fkey(id, username)
+    `
+    )
+    .or(`requester_id.eq.${profileId},addressee_id.eq.${profileId}`);
+
+  if (error) {
+    throw error;
+  }
+
+  // Categorize friendships
+  const result = {
+    incoming: [], // Requests received (pending, where we are addressee)
+    outgoing: [], // Requests sent (pending/rejected, where we are requester)
+    accepted: [], // Accepted friends
+  };
+
+  (data ?? []).forEach((friendship) => {
+    const isRequester = friendship.requester_id === profileId;
+    const friend = isRequester ? friendship.addressee : friendship.requester;
+
+    const item = {
+      id: friendship.id,
+      status: friendship.status,
+      friendId: friend.id,
+      friendUsername: friend.username,
+      isRequester,
+      createdAt: friendship.created_at,
+      updatedAt: friendship.updated_at,
+    };
+
+    if (friendship.status === "accepted") {
+      result.accepted.push(item);
+    } else if (friendship.status === "pending") {
+      if (isRequester) {
+        result.outgoing.push(item);
+      } else {
+        result.incoming.push(item);
+      }
+    } else if (friendship.status === "rejected" && isRequester) {
+      // Only show rejected to the requester
+      result.outgoing.push(item);
+    }
+  });
+
+  return result;
+};
+
+/**
+ * Fetch a public profile by ID (for viewing friend's profile)
+ * @param {Object} params
+ * @param {string} params.profileId - Profile ID to fetch
+ * @returns {Promise<Object>} Public profile data
+ */
+export const fetchPublicProfile = async ({ profileId }) => {
+  if (!profileId) {
+    throw new Error("Missing profile ID.");
+  }
+
+  await ensureSession();
+
+  // Fetch profile with stats
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("id, username, stats, matches")
+    .eq("id", profileId)
+    .single();
+
+  if (profileError) {
+    throw profileError;
+  }
+
+  // Fetch owned cards
+  const { data: cards, error: cardsError } = await supabase
+    .from("player_cards")
+    .select("card_id, rarity")
+    .eq("profile_id", profileId);
+
+  if (cardsError) {
+    throw cardsError;
+  }
+
+  return {
+    id: profile.id,
+    username: profile.username,
+    stats: profile.stats ?? {},
+    matches: profile.matches ?? [],
+    ownedCards: cards ?? [],
+  };
+};
+
+/**
+ * Subscribe to friendship changes (real-time)
+ * @param {Object} params
+ * @param {string} params.profileId - User's profile ID
+ * @param {Function} params.onUpdate - Callback when friendships change
+ * @returns {Object} Supabase channel (for cleanup)
+ */
+export const subscribeToFriendships = ({ profileId, onUpdate }) => {
+  if (!profileId || !onUpdate) {
+    return null;
+  }
+
+  const channel = supabase
+    .channel(`friendships:${profileId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "friendships",
+        filter: `requester_id=eq.${profileId}`,
+      },
+      () => onUpdate()
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "friendships",
+        filter: `addressee_id=eq.${profileId}`,
+      },
+      () => onUpdate()
+    )
+    .subscribe();
+
+  return channel;
+};
+
+/**
+ * Unsubscribe from friendship changes
+ * @param {Object} channel - Supabase channel to remove
+ */
+export const unsubscribeFromFriendships = (channel) => {
+  if (channel) {
+    supabase.removeChannel(channel);
+  }
+};

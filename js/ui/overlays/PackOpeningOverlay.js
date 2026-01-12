@@ -13,6 +13,7 @@
 
 import { getAllCards } from '../../cards/index.js';
 import { rollRarity, RARITY_COLORS, RARITY_LABELS, PACK_CONFIG } from '../../packs/packConfig.js';
+import { renderCard } from '../components/Card.js';
 
 // ============================================================================
 // DOM ELEMENTS
@@ -236,16 +237,22 @@ const renderPackCard = (cardData, index, onClick) => {
   front.className = 'pack-card-front';
   front.innerHTML = `<div class="pack-card-logo">?</div>`;
 
-  // Card back (revealed) - always populate content for flip
+  // Card back (revealed) - use actual card rendering
   const back = document.createElement('div');
   back.className = 'pack-card-back';
-  back.innerHTML = `
-    <div class="pack-card-name rarity-${cardData.packRarity}">${cardData.name}</div>
-    <div class="pack-card-type">${cardData.type}</div>
-    <div class="pack-card-rarity" style="color: ${RARITY_COLORS[cardData.packRarity]}">
-      ${RARITY_LABELS[cardData.packRarity]}
-    </div>
-  `;
+
+  // Render the actual card
+  const cardEl = renderCard(cardData, { showEffectSummary: false });
+  cardEl.classList.add('pack-revealed-card', `rarity-${cardData.packRarity}`);
+
+  // Add rarity badge below the card
+  const rarityBadge = document.createElement('div');
+  rarityBadge.className = 'pack-card-rarity-badge';
+  rarityBadge.style.color = RARITY_COLORS[cardData.packRarity];
+  rarityBadge.textContent = RARITY_LABELS[cardData.packRarity];
+
+  back.appendChild(cardEl);
+  back.appendChild(rarityBadge);
 
   inner.appendChild(front);
   inner.appendChild(back);

@@ -351,45 +351,82 @@
               <div class="profile-username" id="profile-username">Player</div>
             </div>
 
-            <!-- Stats -->
-            <div class="profile-stats">
-              <div class="profile-stats-title">Stats</div>
-              <div class="profile-stat-row">
-                <span class="profile-stat-label">Games Played</span>
-                <span class="profile-stat-value" id="profile-games-played">0</span>
-              </div>
-              <div class="profile-stat-row">
-                <span class="profile-stat-label">Games Won</span>
-                <span class="profile-stat-value" id="profile-games-won">0</span>
-              </div>
-              <div class="profile-stat-row">
-                <span class="profile-stat-label">Win Rate</span>
-                <span class="profile-stat-value" id="profile-win-rate">0%</span>
-              </div>
-              <div class="profile-stat-row">
-                <span class="profile-stat-label">Favorite Card</span>
-                <span class="profile-stat-value" id="profile-favorite-card">-</span>
-              </div>
+            <!-- Tab Navigation -->
+            <div class="profile-tabs">
+              <button class="profile-tab active" data-tab="career" id="profile-tab-career">Career</button>
+              <button class="profile-tab" data-tab="friends" id="profile-tab-friends">Friends</button>
             </div>
 
-            <!-- Match History -->
-            <div class="profile-match-history">
-              <div class="profile-match-history-title">Recent Matches</div>
-              <div id="profile-match-list">
-                <div class="profile-match-item">
-                  <span class="profile-match-players">No matches yet</span>
+            <!-- Career Tab Content -->
+            <div class="profile-tab-content" id="profile-career-tab">
+              <!-- Stats -->
+              <div class="profile-stats">
+                <div class="profile-stats-title">Stats</div>
+                <div class="profile-stat-row">
+                  <span class="profile-stat-label">Games Played</span>
+                  <span class="profile-stat-value" id="profile-games-played">0</span>
+                </div>
+                <div class="profile-stat-row">
+                  <span class="profile-stat-label">Games Won</span>
+                  <span class="profile-stat-value" id="profile-games-won">0</span>
+                </div>
+                <div class="profile-stat-row">
+                  <span class="profile-stat-label">Win Rate</span>
+                  <span class="profile-stat-value" id="profile-win-rate">0%</span>
+                </div>
+                <div class="profile-stat-row">
+                  <span class="profile-stat-label">Favorite Card</span>
+                  <span class="profile-stat-value" id="profile-favorite-card">-</span>
                 </div>
               </div>
+
+              <!-- Match History -->
+              <div class="profile-match-history">
+                <div class="profile-match-history-title">Recent Matches</div>
+                <div id="profile-match-list">
+                  <div class="profile-match-item">
+                    <span class="profile-match-players">No matches yet</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Packs -->
+              <div class="profile-packs" id="profile-packs-btn">
+                <div class="profile-packs-label">Packs</div>
+                <div class="profile-packs-count">
+                  <span id="profile-packs-count">0</span>
+                  <span class="profile-packs-icon">📦</span>
+                </div>
+                <div class="profile-packs-hint">Click to open</div>
+              </div>
             </div>
 
-            <!-- Packs -->
-            <div class="profile-packs" id="profile-packs-btn">
-              <div class="profile-packs-label">Packs</div>
-              <div class="profile-packs-count">
-                <span id="profile-packs-count">0</span>
-                <span class="profile-packs-icon">📦</span>
+            <!-- Friends Tab Content -->
+            <div class="profile-tab-content" id="profile-friends-tab" style="display: none;">
+              <!-- Add Friend Section -->
+              <div class="friends-add-section">
+                <input type="text" class="friends-add-input" id="friends-add-input" placeholder="Enter username..." autocomplete="off" />
+                <button class="friends-add-btn" id="friends-add-btn">Add</button>
               </div>
-              <div class="profile-packs-hint">Click to open</div>
+              <div class="friends-add-error" id="friends-add-error"></div>
+
+              <!-- Friend Requests (incoming) -->
+              <div class="friends-section" id="friends-incoming-section">
+                <div class="friends-section-title">Friend Requests</div>
+                <div class="friends-list" id="friends-incoming-list"></div>
+              </div>
+
+              <!-- Sent Requests (outgoing) -->
+              <div class="friends-section" id="friends-outgoing-section">
+                <div class="friends-section-title">Sent Requests</div>
+                <div class="friends-list" id="friends-outgoing-list"></div>
+              </div>
+
+              <!-- Friends List -->
+              <div class="friends-section" id="friends-accepted-section">
+                <div class="friends-section-title">Friends</div>
+                <div class="friends-list" id="friends-accepted-list"></div>
+              </div>
             </div>
 
             <button class="profile-back-btn" id="profile-back">Back to Menu</button>
@@ -402,6 +439,7 @@
               <div class="collection-filter">
                 <span class="collection-filter-label">Filter:</span>
                 <select class="collection-filter-select" id="collection-filter">
+                  <option value="rarity">Rarity</option>
                   <option value="all">All Cards</option>
                   <option value="fish">Fish</option>
                   <option value="bird">Bird</option>
@@ -415,6 +453,39 @@
             <div class="collection-grid" id="collection-grid">
               <!-- Cards populated by JavaScript -->
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Friend Profile Modal -->
+    <div class="modal friend-profile-modal" id="friend-profile-modal" aria-hidden="true">
+      <div class="modal-backdrop" id="friend-profile-backdrop"></div>
+      <div class="modal-content friend-profile-content">
+        <div class="friend-profile-header">
+          <div class="friend-profile-avatar">🎮</div>
+          <div class="friend-profile-username" id="friend-profile-username">Player</div>
+          <button class="friend-profile-close" id="friend-profile-close">✕</button>
+        </div>
+        <div class="friend-profile-stats">
+          <div class="friend-profile-stats-title">Stats</div>
+          <div class="friend-profile-stat-row">
+            <span class="friend-profile-stat-label">Games Played</span>
+            <span class="friend-profile-stat-value" id="friend-profile-games-played">0</span>
+          </div>
+          <div class="friend-profile-stat-row">
+            <span class="friend-profile-stat-label">Games Won</span>
+            <span class="friend-profile-stat-value" id="friend-profile-games-won">0</span>
+          </div>
+          <div class="friend-profile-stat-row">
+            <span class="friend-profile-stat-label">Win Rate</span>
+            <span class="friend-profile-stat-value" id="friend-profile-win-rate">0%</span>
+          </div>
+        </div>
+        <div class="friend-profile-collection">
+          <div class="friend-profile-collection-title">Card Collection</div>
+          <div class="friend-profile-collection-grid" id="friend-profile-collection-grid">
+            <!-- Cards populated by JavaScript -->
           </div>
         </div>
       </div>
