@@ -4172,7 +4172,7 @@ button {
   }
 
   .battlefield-layout {
-    grid-template-rows: auto minmax(0, 1fr) auto; /* opponent strip (auto) / field (flex) / hand (auto - uses fixed height) */
+    grid-template-rows: auto minmax(0, 0.9fr) auto; /* Slightly less field space to give room to hand */
     min-height: 0;
   }
 
@@ -4188,12 +4188,12 @@ button {
 
   .hand-panel {
     /* Fixed height for mobile portrait - taller to accommodate touch interaction */
-    height: 180px;
-    min-height: 180px;
-    max-height: 180px;
+    height: 195px;
+    min-height: 195px;
+    max-height: 195px;
     overflow: visible; /* Allow cards to extend upward when focused */
-    padding-bottom: calc(var(--safe-bottom) + 8px); /* Account for iOS home indicator */
-    padding-top: 12px; /* Space for focused card to lift into */
+    padding-bottom: calc(var(--safe-bottom) + 20px); /* Extra padding to clear browser chrome */
+    padding-top: 8px; /* Space for focused card to lift into */
   }
 
   .hand-panel.is-dragging {
@@ -4240,6 +4240,30 @@ button {
   .hand-grid .card.hand-focus {
     transform: translateY(-35px) scale(calc(1.4 * var(--mobile-card-scale, 1))) rotate(0deg);
     z-index: 100;
+  }
+
+  /* Smaller card text for hand cards on mobile */
+  .hand-grid .card .card-name {
+    font-size: 10px;
+  }
+
+  .hand-grid .card .card-header {
+    padding: 4px 6px;
+  }
+
+  .hand-grid .card .card-effect {
+    font-size: 7px;
+    line-height: 1.15;
+  }
+
+  .hand-grid .card .card-stat {
+    font-size: 10px;
+    padding: 1px 4px;
+  }
+
+  .hand-grid .card .card-footer {
+    padding: 4px 6px;
+    gap: 2px;
   }
 
   .card-inspector-panel,
