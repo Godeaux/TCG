@@ -477,6 +477,9 @@ export const resolveEffectResult = (state, result, context) => {
       target.hasBarrier = true;
     }
 
+    // Check if source has onPlay effect that should be triggered
+    const sourceHasOnPlay = source.effects?.onPlay || source.onPlay;
+
     // Copy effects object (for onPlay, onConsume, onSlain, and other triggered abilities)
     if (source.effects) {
       target.effects = target.effects || {};
@@ -507,6 +510,34 @@ export const resolveEffectResult = (state, result, context) => {
     const effectsList = source.effects ? Object.keys(source.effects).filter(k => source.effects[k]).join(", ") : "";
     const abilitiesDesc = effectsList ? `${keywordsList}, effects: ${effectsList}` : keywordsList;
     logGameAction(state, CHOICE, `${formatCardForLog(target)} copies ${formatCardForLog(source)}'s abilities: ${abilitiesDesc}.`);
+
+    // Trigger the copied onPlay effect immediately (if source had one)
+    if (sourceHasOnPlay && !target.abilitiesCancelled) {
+      const playerIndex = context.playerIndex ?? findCardOwnerIndex(state, target);
+      const opponentIndex = (playerIndex + 1) % 2;
+      console.log(`[copyAbilities] Triggering copied onPlay for ${target.name}, playerIndex: ${playerIndex}`);
+
+      const copiedOnPlayResult = resolveCardEffect(target, 'onPlay', {
+        log: (message) => logMessage(state, message),
+        player: state.players[playerIndex],
+        opponent: state.players[opponentIndex],
+        playerIndex,
+        opponentIndex,
+        state,
+        creature: target,
+      });
+
+      console.log(`[copyAbilities] Copied onPlay result:`, copiedOnPlayResult);
+
+      if (copiedOnPlayResult && Object.keys(copiedOnPlayResult).length > 0) {
+        // Recursively resolve the copied effect
+        const nestedResult = resolveEffectResult(state, copiedOnPlayResult, { ...context, playerIndex });
+        // If nested result needs UI, return it to bubble up
+        if (nestedResult && (nestedResult.selectTarget || nestedResult.selectOption)) {
+          return nestedResult;
+        }
+      }
+    }
   }
 
   if (result.removeAbilities) {
