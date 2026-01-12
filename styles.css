@@ -4079,6 +4079,16 @@ button {
   .player-info.right {
     flex-direction: column;
     align-items: flex-end;
+    position: relative;
+  }
+
+  /* Position AI speed toggle to left of name on mobile */
+  .player-info.right .ai-speed-toggle {
+    position: absolute;
+    left: -20px;
+    top: 0;
+    margin: 0;
+    font-size: 14px;
   }
 
   .player-name {
