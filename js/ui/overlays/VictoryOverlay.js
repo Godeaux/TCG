@@ -316,10 +316,17 @@ const updateProfileStatsOnVictory = (state, winner, loser) => {
       profile.stats.gamesWon = (profile.stats.gamesWon || 0) + 1;
     }
 
+    // Get deck info (capitalize first letter)
+    const opponentDeckId = state.deckSelection?.selections?.[(localPlayerIndex + 1) % 2] || 'unknown';
+    const opponentDeck = opponentDeckId.charAt(0).toUpperCase() + opponentDeckId.slice(1);
+
     // Add match to history (most recent first)
     const matchEntry = {
       won: didWin,
       opponent: opponentPlayer.name || (gameMode === 'ai' ? 'AI' : 'Unknown'),
+      opponentDeck,
+      playerHp: localPlayer.hp,
+      opponentHp: opponentPlayer.hp,
       date: new Date().toISOString(),
       mode: gameMode,
       turns: state.turn || 1,

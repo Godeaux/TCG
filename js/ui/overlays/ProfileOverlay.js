@@ -216,9 +216,20 @@ const updateMatchHistory = (elements, matches) => {
   recentMatches.forEach(match => {
     const item = document.createElement('div');
     item.className = `profile-match-item ${match.won ? 'win' : 'loss'}`;
+
+    // Format HP display: player HP colored based on win/loss, opponent HP plain
+    const playerHp = match.playerHp ?? 0;
+    const opponentHp = match.opponentHp ?? 0;
+    const playerHpClass = match.won ? 'hp-win' : 'hp-loss';
+    const hpDisplay = `<span class="${playerHpClass}">${playerHp}</span> - ${opponentHp}`;
+
+    // Format opponent with deck
+    const deckDisplay = match.opponentDeck ? ` <span class="match-deck">(${match.opponentDeck})</span>` : '';
+
     item.innerHTML = `
       <span class="profile-match-result">${match.won ? 'W' : 'L'}</span>
-      <span class="profile-match-opponent">vs ${match.opponent || 'Unknown'}</span>
+      <span class="profile-match-hp">${hpDisplay}</span>
+      <span class="profile-match-opponent">vs ${match.opponent || 'Unknown'}${deckDisplay}</span>
       <span class="profile-match-date">${formatMatchDate(match.date)}</span>
     `;
     profileMatchList.appendChild(item);
