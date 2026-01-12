@@ -93,11 +93,19 @@ export const hasNutrition = (card) => card.type === "Prey";
  * @returns {string} HTML for keyword tags
  */
 export const renderKeywordTags = (card) => {
-  if (!card.keywords?.length) {
-    return "";
+  const tags = [];
+
+  // Add Field Spell tag for field spell cards
+  if (card.isFieldSpell) {
+    tags.push(`<span class="keyword-field-spell">Field Spell</span>`);
   }
-  const keywords = card.keywords;
-  return keywords.map((keyword) => `<span>${keyword}</span>`).join("");
+
+  // Add regular keywords
+  if (card.keywords?.length) {
+    tags.push(...card.keywords.map((keyword) => `<span>${keyword}</span>`));
+  }
+
+  return tags.join("");
 };
 
 // ============================================================================

@@ -194,7 +194,7 @@
       "nutrition": 3,
       "effectText": "End of turn, add Fresh Milk to hand.",
       "effects": {
-        "onEnd": { "type": "addToHand", "params": { "cardId": "mammal-spell-fresh-milk" } }
+        "onEnd": { "type": "addToHand", "params": { "cardId": "token-fresh-milk" } }
       }
     },
     {
@@ -251,7 +251,7 @@
       "nutrition": 2,
       "effectText": "Add Present to hand.",
       "effects": {
-        "onPlay": { "type": "addToHand", "params": { "cardId": "mammal-spell-present" } }
+        "onPlay": { "type": "addToHand", "params": { "cardId": "token-present" } }
       }
     },
     {
@@ -264,7 +264,7 @@
       "keywords": ["Immune"],
       "effectText": "Slain, add Qiviut to hand.",
       "effects": {
-        "onSlain": { "type": "addToHand", "params": { "cardId": "mammal-spell-qiviut" } }
+        "onSlain": { "type": "addToHand", "params": { "cardId": "token-qiviut" } }
       }
     },
     {
@@ -294,7 +294,7 @@
       "nutrition": 3,
       "effectText": "Slain; add Angus to hand.",
       "effects": {
-        "onSlain": { "type": "addToHand", "params": { "cardId": "mammal-spell-angus" } }
+        "onSlain": { "type": "addToHand", "params": { "cardId": "token-angus" } }
       }
     },
     {
@@ -580,59 +580,6 @@
       "effectText": "When target defending creature is slain; play a carrion, it gains Frozen.",
       "effects": {
         "effect": { "type": "selectCarrionToPlayWithKeyword", "params": { "keyword": "Frozen" } }
-      }
-    },
-    {
-      "id": "mammal-spell-fresh-milk",
-      "name": "Fresh Milk",
-      "type": "Free Spell",
-      "effectText": "Your creatures gain +1/+1.",
-      "effects": {
-        "effect": {
-          "type": "buff",
-          "params": { "attack": 1, "health": 1, "target": "friendlyCreatures" }
-        }
-      }
-    },
-    {
-      "id": "mammal-spell-present",
-      "name": "Present",
-      "type": "Free Spell",
-      "effectText": "Choose: Heal 2 or target creature gains +2/+2.",
-      "effects": {
-        "effect": {
-          "type": "choice",
-          "params": {
-            "choices": [
-              { "label": "Heal 2", "type": "heal", "params": { "amount": 2 } },
-              { "label": "+2/+2", "type": "buff", "params": { "attack": 2, "health": 2, "target": "targetCreature" } }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "id": "mammal-spell-qiviut",
-      "name": "Qiviut",
-      "type": "Free Spell",
-      "effectText": "Target creature gains Immune.",
-      "effects": {
-        "effect": {
-          "type": "addKeyword",
-          "params": { "keyword": "immune", "target": "targetCreature" }
-        }
-      }
-    },
-    {
-      "id": "mammal-spell-angus",
-      "name": "Angus",
-      "type": "Free Spell",
-      "effectText": "Target Predator gains +2/+2.",
-      "effects": {
-        "effect": {
-          "type": "buff",
-          "params": { "attack": 2, "health": 2, "target": "targetPredator" }
-        }
       }
     }
   ]

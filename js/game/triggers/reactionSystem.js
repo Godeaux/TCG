@@ -252,6 +252,28 @@ export const resolveReaction = ({
       state._lastReactionNegatedAttack = true;
     }
 
+    // Handle negated play - return card to hand
+    if (event === TRIGGER_EVENTS.CARD_PLAYED && result?.negatePlay) {
+      const playedCard = eventContext?.card;
+      if (playedCard) {
+        // Remove from field
+        const slot = triggeringPlayer.field.findIndex(
+          (c) => c && c.instanceId === playedCard.instanceId
+        );
+        if (slot !== -1) {
+          triggeringPlayer.field[slot] = null;
+        }
+        // Return to hand
+        triggeringPlayer.hand.push(playedCard);
+        logMessage(state, `${playedCard.name} is returned to ${triggeringPlayer.name}'s hand.`);
+
+        // Allow replay - reset cardPlayedThisTurn
+        if (result?.allowReplay) {
+          state.cardPlayedThisTurn = false;
+        }
+      }
+    }
+
     cleanupDestroyed?.(state);
   }
 
@@ -274,11 +296,12 @@ const buildEffectContext = ({
   const reactingPlayer = state.players[reactingPlayerIndex];
   const triggeringPlayer = state.players[triggeringPlayerIndex];
 
+  // For trap effects, "player" is the trap owner and "opponent" is the enemy (triggering player)
   const baseContext = {
-    player: triggeringPlayer,
-    opponent: reactingPlayer,
-    playerIndex: triggeringPlayerIndex,
-    opponentIndex: reactingPlayerIndex,
+    player: reactingPlayer,
+    opponent: triggeringPlayer,
+    playerIndex: reactingPlayerIndex,
+    opponentIndex: triggeringPlayerIndex,
     defenderIndex: reactingPlayerIndex,
   };
 

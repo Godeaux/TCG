@@ -475,6 +475,55 @@ const handleSyncPostProcessing = (state, payload, options = {}) => {
     saveFn: () => saveGameStateToDatabase(state),
   });
 
+  // Handle pending choice from opponent (e.g., forced discard)
+  if (state.pendingChoice && state.pendingChoice.forPlayer === localIndex) {
+    const { type, title, count } = state.pendingChoice;
+    const player = state.players[localIndex];
+
+    if (type === 'discard') {
+      // Show discard selection for opponent
+      const candidates = player.hand.map((card) => ({ label: card.name, value: card }));
+
+      const handleSelection = (card) => {
+        clearSelectionPanel();
+        // Apply the discard
+        player.hand = player.hand.filter((c) => c.instanceId !== card.instanceId);
+        if (card.type === "Predator" || card.type === "Prey") {
+          player.carrion.push(card);
+        } else {
+          player.exile.push(card);
+        }
+        logMessage(state, `${player.name} discards ${card.name}.`);
+        // Clear pending choice
+        state.pendingChoice = null;
+        cleanupDestroyed(state);
+        broadcastSyncState(state);
+        latestCallbacks.onUpdate?.();
+      };
+
+      const items = candidates.map((candidate) => {
+        const item = document.createElement("label");
+        item.className = "selection-item selection-card";
+        const cardElement = renderCard(candidate.value, {
+          showEffectSummary: true,
+          onClick: () => handleSelection(candidate.value),
+        });
+        item.appendChild(cardElement);
+        return item;
+      });
+
+      renderSelectionPanel({
+        title: title || `Choose ${count || 1} card to discard`,
+        items,
+        onConfirm: null,
+        confirmLabel: null, // No cancel option for forced choices
+      });
+    }
+  } else if (!state.pendingChoice) {
+    // Clear any "waiting" selection panel if pending choice was resolved
+    clearSelectionPanel();
+  }
+
   // Update UI
   latestCallbacks.onUpdate?.();
 };
@@ -1452,6 +1501,29 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
       },
       confirmLabel: "Cancel",
     });
+    return;
+  }
+
+  // Handle pendingChoice result (for opponent selections like forced discard)
+  if (nextResult.pendingChoice) {
+    const { pendingChoice, ...rest } = nextResult;
+    // Apply any other results first
+    if (Object.keys(rest).length > 0) {
+      resolveEffectResult(state, rest, context);
+    }
+    // Store pending choice on state for opponent to handle
+    state.pendingChoice = pendingChoice;
+    // Complete the effect chain (spell is exiled) before showing waiting message
+    onComplete?.();
+    // Show waiting message to current player
+    renderSelectionPanel({
+      title: "Waiting for opponent",
+      items: [],
+      onConfirm: null,
+      confirmLabel: null,
+    });
+    broadcastSyncState(state);
+    onUpdate?.();
     return;
   }
 
@@ -2921,6 +2993,7 @@ export const renderGame = (state, callbacks = {}) => {
     state.deckBuilder = { stage: "p1", selections: [[], []], available: [[], []], catalogOrder: [[], []] };
     state.log = [];
     state.combat = { declaredAttacks: [] };
+    state.victoryProcessed = false;
 
     // Restore profile and decks, return to main menu
     state.menu.profile = profile;

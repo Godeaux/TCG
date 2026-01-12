@@ -383,6 +383,34 @@ export const updatePackCount = async (state, delta) => {
   return state.menu.profile.packs;
 };
 
+/**
+ * Update profile stats and match history in database
+ * @param {Object} state - Game state
+ * @param {Object} stats - Stats object { gamesPlayed, gamesWon, favoriteCard }
+ * @param {Array} matches - Array of match history entries
+ * @returns {Promise<boolean>} Success status
+ */
+export const updateProfileStats = async (state, stats, matches) => {
+  if (!state.menu?.profile?.id) {
+    console.warn('Cannot update stats: no profile');
+    return false;
+  }
+
+  try {
+    const api = await loadSupabaseApi(state);
+    await api.updateProfileStats({
+      profileId: state.menu.profile.id,
+      stats,
+      matches,
+    });
+    console.log('Profile stats synced to database');
+    return true;
+  } catch (error) {
+    console.error('Failed to update profile stats in database:', error);
+    return false;
+  }
+};
+
 // ============================================================================
 // LOBBY PLAYER NAMES
 // ============================================================================

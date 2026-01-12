@@ -267,9 +267,9 @@ export const renderReactionOverlay = (state, callbacks = {}) => {
     title.textContent = trapName ? `Activate ${trapName}?` : "Reaction";
     subtitle.textContent = contextDescription;
   } else {
-    title.textContent = "Reaction";
-    // Show full context with trap name to opponent so they know what's being considered
-    subtitle.textContent = `${reactingPlayer.name} is deciding... (${contextWithTrap})`;
+    title.textContent = "Waiting";
+    // Don't reveal trap details to opponent - just show waiting message
+    subtitle.textContent = `${reactingPlayer.name} is considering a response...`;
   }
 
   // Show timer

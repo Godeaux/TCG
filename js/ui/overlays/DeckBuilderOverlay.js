@@ -1185,7 +1185,8 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       loadButton.disabled = isSelected;
       loadButton.onclick = () => {
         applyDeckToBuilder(state, localIndex, deck.deck);
-        logMessage(state, `${localPlayer?.name || "Player"} selected "${deck.name}".`);
+        // Don't reveal full deck name in log - just confirm deck was selected
+        logMessage(state, `${localPlayer?.name || "Player"} selected a deck.`);
         callbacks.onUpdate?.();
       };
       slot.innerHTML = `
@@ -1301,7 +1302,8 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       loadButton.disabled = isSelected;
       loadButton.onclick = () => {
         applyDeckToBuilder(state, playerIndex, deck.deck);
-        logMessage(state, `${player.name} selected "${deck.name}".`);
+        // Don't reveal full deck name in log
+        logMessage(state, `${player.name} selected a deck.`);
         callbacks.onUpdate?.();
       };
       slot.innerHTML = `

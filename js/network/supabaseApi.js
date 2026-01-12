@@ -207,7 +207,7 @@ export const fetchProfile = async () => {
   }
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, username, packs")
+    .select("id, username, packs, stats, matches")
     .eq("current_auth_id", sessionData.session.user.id)
     .maybeSingle();
 
@@ -237,6 +237,44 @@ export const updateProfilePacks = async ({ profileId, packs }) => {
     .update({ packs })
     .eq("id", profileId)
     .select("id, packs")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+  return data;
+};
+
+/**
+ * Update the stats and match history for a profile
+ * @param {Object} params
+ * @param {string} params.profileId - The profile ID
+ * @param {Object} params.stats - Stats object { gamesPlayed, gamesWon, favoriteCard }
+ * @param {Array} params.matches - Array of match history entries
+ * @returns {Promise<Object>} The updated profile data
+ */
+export const updateProfileStats = async ({ profileId, stats, matches }) => {
+  if (!profileId) {
+    throw new Error("Missing profile id.");
+  }
+
+  const updateData = {};
+  if (stats) {
+    updateData.stats = stats;
+  }
+  if (matches) {
+    updateData.matches = matches;
+  }
+
+  if (Object.keys(updateData).length === 0) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .update(updateData)
+    .eq("id", profileId)
+    .select("id, stats, matches")
     .single();
 
   if (error) {

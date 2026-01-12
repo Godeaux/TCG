@@ -270,15 +270,6 @@
       }
     },
     {
-      "id": "reptile-prey-giant-tortoise",
-      "name": "Giant Tortoise",
-      "type": "Prey",
-      "atk": 2,
-      "hp": 3,
-      "nutrition": 3,
-      "keywords": []
-    },
-    {
       "id": "reptile-prey-darwin-volcano-giant-tortoise",
       "name": "Darwin Volcano Giant Tortoise",
       "type": "Prey",

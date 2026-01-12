@@ -10,7 +10,7 @@
       "keywords": ["Invisible"],
       "effectText": "Slain, add Kākāpō Feathers to hand.",
       "effects": {
-        "onSlain": { "type": "addToHand", "params": { "cardId": "bird-spell-kakapo-feathers" } }
+        "onSlain": { "type": "addToHand", "params": { "cardId": "token-kakapo-feathers" } }
       }
     },
     {
@@ -271,7 +271,7 @@
       "keywords": ["Barrier", "Lure"],
       "effectText": "Slain, add Rainbow Feathers to hand.",
       "effects": {
-        "onSlain": { "type": "addToHand", "params": { "cardId": "bird-spell-rainbow-feathers" } }
+        "onSlain": { "type": "addToHand", "params": { "cardId": "token-rainbow-feathers" } }
       }
     },
     {
@@ -321,7 +321,7 @@
       "nutrition": 3,
       "effectText": "Add Feed to hand.",
       "effects": {
-        "onPlay": { "type": "addToHand", "params": { "cardId": "bird-spell-feed" } }
+        "onPlay": { "type": "addToHand", "params": { "cardId": "token-feed" } }
       }
     },
     {
@@ -398,7 +398,7 @@
       "hp": 2,
       "effectText": "Add Red Tailfeathers to hand.",
       "effects": {
-        "onConsume": { "type": "addToHand", "params": { "cardId": "bird-spell-red-tailfeathers" } }
+        "onConsume": { "type": "addToHand", "params": { "cardId": "token-red-tailfeathers" } }
       }
     },
     {
@@ -630,64 +630,6 @@
       "effectText": "When life is 0, heal 1.",
       "effects": {
         "effect": { "type": "heal", "params": { "amount": 1 } }
-      }
-    },
-    {
-      "id": "bird-spell-kakapo-feathers",
-      "name": "Kākāpō Feathers",
-      "type": "Free Spell",
-      "effectText": "Target creature gains Invisible.",
-      "effects": {
-        "effect": {
-          "type": "addKeyword",
-          "params": { "keyword": "invisible", "target": "targetCreature" }
-        }
-      }
-    },
-    {
-      "id": "bird-spell-rainbow-feathers",
-      "name": "Rainbow Feathers",
-      "type": "Free Spell",
-      "effectText": "Choose: Heal 2 or target creature gains Regen.",
-      "effects": {
-        "effect": {
-          "type": "choice",
-          "params": {
-            "choices": [
-              { "label": "Heal 2", "type": "heal", "params": { "amount": 2 } },
-              { "label": "Regen", "type": "addKeyword", "params": { "keyword": "regen", "target": "targetCreature" } }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "id": "bird-spell-feed",
-      "name": "Feed",
-      "type": "Free Spell",
-      "effectText": "Target creature gains +1/+1.",
-      "effects": {
-        "effect": {
-          "type": "buff",
-          "params": { "attack": 1, "health": 1, "target": "targetCreature" }
-        }
-      }
-    },
-    {
-      "id": "bird-spell-red-tailfeathers",
-      "name": "Red Tailfeathers",
-      "type": "Free Spell",
-      "effectText": "Choose: Heal 6 or target creature gains +3/+3.",
-      "effects": {
-        "effect": {
-          "type": "choice",
-          "params": {
-            "choices": [
-              { "label": "Heal 6", "type": "heal", "params": { "amount": 6 } },
-              { "label": "+3/+3", "type": "buff", "params": { "attack": 3, "health": 3, "target": "targetCreature" } }
-            ]
-          }
-        }
       }
     }
   ]

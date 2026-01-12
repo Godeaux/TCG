@@ -14,7 +14,7 @@
  * - checkForVictory: Check game state for victory condition
  */
 
-import { updatePackCount } from '../../network/lobbyManager.js';
+import { updatePackCount, updateProfileStats } from '../../network/lobbyManager.js';
 
 // ============================================================================
 // DOM ELEMENTS
@@ -244,6 +244,14 @@ export const checkForVictory = (state) => {
   const loser = state.players.find(player => player.hp <= 0);
 
   if (winner && loser) {
+    // Check if victory was already processed (prevents multiple pack awards on re-renders)
+    if (state.victoryProcessed) {
+      return true; // Game is over but already handled
+    }
+
+    // Mark victory as processed BEFORE awarding anything
+    state.victoryProcessed = true;
+
     // Calculate stats
     const stats = {
       turns: state.turn || 1,
@@ -254,6 +262,9 @@ export const checkForVictory = (state) => {
     // Determine if pack should be awarded
     const awardPack = shouldAwardPack(state, winner, loser);
 
+    // Update profile stats and match history
+    updateProfileStatsOnVictory(state, winner, loser);
+
     // Show victory screen with pack reward if applicable
     showVictoryScreen(winner, stats, { awardPack, state });
 
@@ -261,4 +272,68 @@ export const checkForVictory = (state) => {
   }
 
   return false; // Game continues
+};
+
+/**
+ * Update profile stats and match history after a game completes
+ *
+ * @param {Object} state - Game state
+ * @param {Object} winner - The winning player
+ * @param {Object} loser - The losing player
+ */
+const updateProfileStatsOnVictory = (state, winner, loser) => {
+  const profile = state.menu?.profile;
+  if (!profile) return;
+
+  const gameMode = state.menu?.mode;
+
+  // Determine local player index based on game mode
+  let localPlayerIndex;
+  if (gameMode === 'ai') {
+    // In AI mode, player 0 is always the human
+    localPlayerIndex = 0;
+  } else {
+    // In online mode, match profile ID to player
+    localPlayerIndex = profile.id === state.players[0].profileId ? 0 : 1;
+  }
+
+  const localPlayer = state.players[localPlayerIndex];
+  const opponentPlayer = state.players[(localPlayerIndex + 1) % 2];
+  const didWin = winner === localPlayer;
+
+  // Initialize stats if missing
+  if (!profile.stats) {
+    profile.stats = { gamesPlayed: 0, gamesWon: 0, favoriteCard: '-' };
+  }
+  if (!profile.matches) {
+    profile.matches = [];
+  }
+
+  // Update stats for AI and online modes (not local practice)
+  if (gameMode === 'ai' || gameMode === 'online') {
+    profile.stats.gamesPlayed = (profile.stats.gamesPlayed || 0) + 1;
+    if (didWin) {
+      profile.stats.gamesWon = (profile.stats.gamesWon || 0) + 1;
+    }
+
+    // Add match to history (most recent first)
+    const matchEntry = {
+      won: didWin,
+      opponent: opponentPlayer.name || (gameMode === 'ai' ? 'AI' : 'Unknown'),
+      date: new Date().toISOString(),
+      mode: gameMode,
+      turns: state.turn || 1,
+    };
+    profile.matches.unshift(matchEntry);
+
+    // Keep only last 20 matches
+    if (profile.matches.length > 20) {
+      profile.matches = profile.matches.slice(0, 20);
+    }
+
+    // Sync to database (async, don't wait)
+    updateProfileStats(state, profile.stats, profile.matches);
+
+    console.log(`Profile stats updated: ${profile.stats.gamesPlayed} played, ${profile.stats.gamesWon} won`);
+  }
 };

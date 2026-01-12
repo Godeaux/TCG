@@ -242,6 +242,66 @@ export const buffStats = (targetType, stats) => (context) => {
   return {};
 };
 
+/**
+ * Buff effect with flexible targeting (used by token spells like Angus, Fresh Milk)
+ * @param {Object} params - { attack, health, target }
+ * target can be: 'targetCreature', 'targetPredator', 'friendlyCreatures', 'self'
+ */
+export const buff = (params) => (context) => {
+  const { log, player, opponent, state } = context;
+  const { attack = 0, health = 0, target } = params;
+
+  // Handle "friendlyCreatures" - buff all friendly creatures
+  if (target === 'friendlyCreatures') {
+    const creatures = player.field.filter(c => c && isCreatureCard(c));
+    if (creatures.length === 0) {
+      log(`No creatures to buff.`);
+      return {};
+    }
+    log(`All friendly creatures gain +${attack}/+${health}.`);
+    return { buffAllCreatures: { creatures, attack, health } };
+  }
+
+  // Handle "self" - buff the card that triggered this
+  if (target === 'self') {
+    const creature = context.creature;
+    if (creature) {
+      log(`${creature.name} gains +${attack}/+${health}.`);
+      return { buffCreature: { creature, attack, health } };
+    }
+    return {};
+  }
+
+  // Handle targeting - show selection UI
+  let validTargets = [];
+  let title = "Choose a creature to buff";
+
+  if (target === 'targetPredator') {
+    validTargets = player.field.filter(c => c && c.type === 'Predator');
+    title = "Choose a Predator to buff";
+  } else if (target === 'targetCreature') {
+    validTargets = player.field.filter(c => c && isCreatureCard(c));
+    title = "Choose a creature to buff";
+  } else if (target === 'targetEnemy') {
+    validTargets = opponent.field.filter(c => c && isCreatureCard(c) && !isInvisible(c, state));
+    title = "Choose an enemy to buff";
+  }
+
+  if (validTargets.length === 0) {
+    log(`No valid targets for buff.`);
+    return {};
+  }
+
+  return makeTargetedSelection({
+    title,
+    candidates: validTargets.map(t => ({ label: t.name, value: t })),
+    onSelect: (selectedTarget) => {
+      log(`${selectedTarget.name} gains +${attack}/+${health}.`);
+      return { buffCreature: { creature: selectedTarget, attack, health } };
+    }
+  });
+};
+
 // ============================================================================
 // SELECTION EFFECTS
 // ============================================================================
@@ -2299,9 +2359,26 @@ export const selectEnemyToReturn = () => (context) => {
  * Force opponent to discard cards
  * @param {number} count - Cards to discard
  */
-export const forceOpponentDiscard = (count) => ({ log, opponentIndex }) => {
+export const forceOpponentDiscard = (count) => (context) => {
+  const { log, state, opponentIndex } = context;
+  const opponent = state?.players?.[opponentIndex];
+
+  if (!opponent || opponent.hand.length === 0) {
+    log(`Rival has no cards to discard.`);
+    return {};
+  }
+
   log(`Rival discards ${count}.`);
-  return { forceDiscard: { playerIndex: opponentIndex, count } };
+
+  // Set pending choice for opponent to handle (serializable format)
+  return {
+    pendingChoice: {
+      type: 'discard',
+      forPlayer: opponentIndex,
+      count,
+      title: `Choose ${count} card${count > 1 ? 's' : ''} to discard`,
+    }
+  };
 };
 
 /**
@@ -2843,6 +2920,7 @@ export const effectRegistry = {
   // Keywords & Buffs
   grantKeyword,
   buffStats,
+  buff,
 
   // Selection
   selectTarget,
@@ -3061,6 +3139,9 @@ export const resolveEffect = (effectDef, context) => {
       break;
     case 'buffStats':
       specificEffect = effectFn(params.targetType, params.stats);
+      break;
+    case 'buff':
+      specificEffect = effectFn(params);
       break;
     case 'selectTarget':
       specificEffect = effectFn(params.selectionType, params.effectCallback);

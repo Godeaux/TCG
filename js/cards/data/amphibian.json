@@ -127,7 +127,7 @@
       "effectText": "Draw 1. Sacrifice; add Golden Blowdart to hand.",
       "effects": {
         "onPlay": { "type": "draw", "params": { "count": 1 } },
-        "sacrificeEffect": { "type": "addToHand", "params": { "cardId": "amphibian-spell-golden-blowdart" } }
+        "sacrificeEffect": { "type": "addToHand", "params": { "cardId": "token-golden-blowdart" } }
       }
     },
     {
@@ -177,7 +177,7 @@
       "keywords": ["Poisonous"],
       "effectText": "Sacrifice; add Phantasmal Darts to hand.",
       "effects": {
-        "sacrificeEffect": { "type": "addToHand", "params": { "cardId": "amphibian-spell-phantasmal-darts" } }
+        "sacrificeEffect": { "type": "addToHand", "params": { "cardId": "token-phantasmal-darts" } }
       }
     },
     {
@@ -240,7 +240,7 @@
       "nutrition": 2,
       "effectText": "Discard; add Tomato to hand. Defending; attacking enemy gains Frozen.",
       "effects": {
-        "discardEffect": { "type": "addToHand", "params": { "cardId": "amphibian-spell-tomato" } },
+        "discardEffect": { "type": "addToHand", "params": { "cardId": "token-tomato" } },
         "onDefend": { "type": "freezeAttacker" }
       }
     },
@@ -351,7 +351,7 @@
       "hp": 3,
       "effectText": "Add Titicaca Water to hand.",
       "effects": {
-        "onConsume": { "type": "addToHand", "params": { "cardId": "amphibian-spell-titicaca-water" } }
+        "onConsume": { "type": "addToHand", "params": { "cardId": "token-titicaca-water" } }
       }
     },
     {
@@ -500,7 +500,7 @@
           "type": "damageOpponentsAndAddToHand",
           "params": {
             "damage": 2,
-            "cardId": "amphibian-free-spell-rainbow"
+            "cardId": "token-rainbow"
           }
         }
       }
@@ -523,7 +523,7 @@
       "id": "amphibian-spell-pounce-plummet",
       "name": "Pounce Plummet",
       "type": "Spell",
-      "effectText": "Deal 2 damage to enemies. Deal 2 damage to enemies.",
+      "effectText": "Deal 2 damage to all enemies twice.",
       "effects": {
         "effect": {
           "type": "damageAllEnemiesMultiple",
@@ -630,7 +630,7 @@
       "id": "amphibian-free-spell-spell-overload",
       "name": "Spell Overload",
       "type": "Free Spell",
-      "effectText": "Play a spell. Play a spell.",
+      "effectText": "Play 2 spells from your hand.",
       "effects": {
         "effect": {
           "type": "playSpellsFromHand",
@@ -691,66 +691,6 @@
         "effect": {
           "type": "negateCombat",
           "params": {}
-        }
-      }
-    },
-    {
-      "id": "amphibian-spell-golden-blowdart",
-      "name": "Golden Blowdart",
-      "type": "Spell",
-      "effectText": "Destroy target enemy creature. Draw 1.",
-      "effects": {
-        "effect": [
-          { "type": "destroy", "params": { "target": "targetEnemy" } },
-          { "type": "draw", "params": { "count": 1 } }
-        ]
-      }
-    },
-    {
-      "id": "amphibian-spell-phantasmal-darts",
-      "name": "Phantasmal Darts",
-      "type": "Spell",
-      "effectText": "Destroy all enemy creatures.",
-      "effects": {
-        "effect": {
-          "type": "destroy",
-          "params": { "target": "enemyCreatures" }
-        }
-      }
-    },
-    {
-      "id": "amphibian-spell-tomato",
-      "name": "Tomato",
-      "type": "Free Spell",
-      "effectText": "Target enemy creature gains Frozen.",
-      "effects": {
-        "effect": {
-          "type": "addKeyword",
-          "params": { "keyword": "frozen", "target": "targetEnemy" }
-        }
-      }
-    },
-    {
-      "id": "amphibian-spell-titicaca-water",
-      "name": "Titicaca Water",
-      "type": "Spell",
-      "effectText": "Destroy all creatures.",
-      "effects": {
-        "effect": {
-          "type": "destroy",
-          "params": { "target": "allCreatures" }
-        }
-      }
-    },
-    {
-      "id": "amphibian-free-spell-rainbow",
-      "name": "Rainbow",
-      "type": "Free Spell",
-      "effectText": "Your creatures gain Regen.",
-      "effects": {
-        "effect": {
-          "type": "addKeyword",
-          "params": { "keyword": "regen", "target": "friendlyCreatures" }
         }
       }
     }

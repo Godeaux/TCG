@@ -59,6 +59,7 @@ export const createGameState = () => {
     visualEffects: [],
     pendingTrapDecision: null,
     pendingReaction: null, // { deciderIndex, reactions, attackContext, timerStart }
+    victoryProcessed: false, // Prevents multiple pack awards on re-renders
     setup: {
       stage: "rolling",
       rolls: [null, null],
