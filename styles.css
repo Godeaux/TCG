@@ -4059,6 +4059,66 @@ button {
 
 /* Mobile portrait mode - tab-based layout */
 @media (max-width: 767px) and (orientation: portrait) {
+  /* Compact top bar for mobile portrait */
+  .top-bar {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  .player-badge {
+    padding: 4px 8px;
+    gap: 6px;
+  }
+
+  .player-info {
+    gap: 4px;
+  }
+
+  .player-name {
+    font-size: 12px;
+  }
+
+  .player-stats {
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  .turn-badge {
+    padding: 4px 10px;
+    min-width: 70px;
+  }
+
+  .turn-number {
+    font-size: 12px;
+  }
+
+  .phase-label {
+    font-size: 10px;
+  }
+
+  .surrender-btn {
+    left: calc(50% - 80px);
+    font-size: 14px;
+    padding: 2px 4px;
+  }
+
+  .emote-toggle {
+    width: 28px;
+    height: 28px;
+  }
+
+  .emote-toggle-left {
+    margin-left: 4px;
+  }
+
+  .emote-toggle-right {
+    margin-right: 4px;
+  }
+
+  .emote-toggle-icon {
+    font-size: 0.9rem;
+  }
+
   .battlefield-layout-three-column {
     grid-template-columns: 1fr;
     overflow: hidden;
