@@ -4244,26 +4244,58 @@ button {
 
   /* Smaller card text for hand cards on mobile */
   .hand-grid .card .card-name {
-    font-size: 10px;
+    font-size: 9px !important;
   }
 
   .hand-grid .card .card-header {
-    padding: 4px 6px;
+    padding: 3px 4px !important;
   }
 
   .hand-grid .card .card-effect {
-    font-size: 7px;
-    line-height: 1.15;
+    font-size: 6px !important;
+    line-height: 1.1;
   }
 
   .hand-grid .card .card-stat {
-    font-size: 10px;
-    padding: 1px 4px;
+    font-size: 9px !important;
+    padding: 1px 3px;
   }
 
   .hand-grid .card .card-footer {
-    padding: 4px 6px;
+    padding: 3px 4px !important;
     gap: 2px;
+  }
+
+  .hand-grid .card .card-stat-box {
+    padding: 2px 4px !important;
+    gap: 2px;
+  }
+
+  .hand-grid .card .card-stat-box .stat-emoji {
+    font-size: 10px !important;
+  }
+
+  .hand-grid .card .card-stat-box .stat-value {
+    font-size: 10px !important;
+  }
+
+  .hand-grid .card .card-text-area {
+    font-size: 7px !important;
+    line-height: 1.1;
+  }
+
+  .hand-grid .card .card-keywords {
+    font-size: 6px !important;
+    gap: 1px;
+  }
+
+  .hand-grid .card .card-keywords span {
+    padding: 0 1px;
+  }
+
+  .hand-grid .card .card-actions button {
+    font-size: 9px !important;
+    padding: 2px 4px;
   }
 
   .card-inspector-panel,
