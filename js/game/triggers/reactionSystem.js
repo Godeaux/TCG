@@ -239,14 +239,6 @@ export const resolveReaction = ({
       ...effectContext,
     });
 
-    // Apply effect chain if needed
-    if (result && resolveEffectChain) {
-      resolveEffectChain(state, result, {
-        playerIndex: reactingPlayerIndex,
-        opponentIndex: triggeringPlayerIndex,
-      });
-    }
-
     // Track if this reaction negated an attack (for attack resolution)
     if (event === TRIGGER_EVENTS.ATTACK_DECLARED && result?.negateAttack) {
       state._lastReactionNegatedAttack = true;
@@ -274,10 +266,38 @@ export const resolveReaction = ({
       }
     }
 
+    // Apply effect chain if needed, with proper callbacks for async effects
+    if (result && resolveEffectChain) {
+      resolveEffectChain(
+        state,
+        result,
+        {
+          playerIndex: reactingPlayerIndex,
+          opponentIndex: triggeringPlayerIndex,
+        },
+        onUpdate,
+        () => {
+          // Effect chain completed - continue game flow
+          cleanupDestroyed?.(state);
+          callback?.();
+          onUpdate?.();
+          broadcast?.(state);
+        },
+        () => {
+          // Effect chain cancelled - still continue game flow
+          cleanupDestroyed?.(state);
+          callback?.();
+          onUpdate?.();
+          broadcast?.(state);
+        }
+      );
+      return; // Wait for effect chain to complete
+    }
+
     cleanupDestroyed?.(state);
   }
 
-  // Continue with the game flow
+  // Continue with the game flow (for non-activated or no effect result)
   callback?.();
   onUpdate?.();
   broadcast?.(state);

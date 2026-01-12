@@ -5,7 +5,7 @@ import { hasPoisonous } from "../keywords.js";
 import { logPlainMessage } from "./historyLog.js";
 import { resolveCardEffect } from "../cards/index.js";
 
-const { PHASE, BUFF, DEBUFF, DAMAGE, DEATH } = LOG_CATEGORIES;
+const { PHASE, BUFF, DEBUFF, DAMAGE, DEATH, HEAL } = LOG_CATEGORIES;
 
 const PHASES = ["Start", "Draw", "Main 1", "Before Combat", "Combat", "Main 2", "End"];
 
@@ -100,6 +100,21 @@ const clearParalysis = (state) => {
         logGameAction(state, BUFF, `${creature.name} recovers from paralysis.`);
       }
     });
+  });
+};
+
+const handleRegen = (state) => {
+  // Regen keyword: at end of turn, creatures with Regen restore to full HP
+  const activePlayer = state.players[state.activePlayerIndex];
+  activePlayer.field.forEach((creature) => {
+    if (creature && creature.keywords?.includes("Regen")) {
+      const baseHp = creature.hp;
+      if (creature.currentHp < baseHp) {
+        const healAmount = baseHp - creature.currentHp;
+        creature.currentHp = baseHp;
+        logGameAction(state, HEAL, `${creature.name} regenerates to full health (+${healAmount} HP).`);
+      }
+    }
   });
 };
 
@@ -322,6 +337,7 @@ export const finalizeEndPhase = (state) => {
   }
 
   logGameAction(state, PHASE, `Processing end-of-turn effects...`);
+  handleRegen(state);
   handlePoisonousDamage(state);
   handleFrozenDeaths(state);
   clearParalysis(state);

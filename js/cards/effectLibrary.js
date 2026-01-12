@@ -212,6 +212,55 @@ export const grantKeyword = (targetType, keyword) => (context) => {
 };
 
 /**
+ * Add keyword to target (alternative to grantKeyword with different param names)
+ * @param {Object} params - { keyword, target }
+ * target can be: 'targetCreature', 'friendlyCreatures', 'self'
+ */
+export const addKeyword = (params) => (context) => {
+  const { log, creature, player, opponent, state } = context;
+  const { keyword, target } = params;
+
+  const formattedKeyword = keyword.charAt(0).toUpperCase() + keyword.slice(1);
+
+  if (target === 'friendlyCreatures') {
+    const creatures = player.field.filter(c => c && isCreatureCard(c));
+    if (creatures.length === 0) {
+      log(`No creatures to grant ${formattedKeyword}.`);
+      return {};
+    }
+    log(`All friendly creatures gain ${formattedKeyword}.`);
+    return { grantKeywordToAll: { creatures, keyword: formattedKeyword } };
+  }
+
+  if (target === 'targetCreature') {
+    const targets = [
+      ...player.field.filter(c => c && isCreatureCard(c)),
+      ...opponent.field.filter(c => c && isCreatureCard(c) && !isInvisible(c, state))
+    ];
+    if (targets.length === 0) {
+      log(`No creatures to grant ${formattedKeyword}.`);
+      return {};
+    }
+    return makeTargetedSelection({
+      title: `Choose creature to gain ${formattedKeyword}`,
+      candidates: targets.map(t => ({ label: t.name, value: t, card: t })),
+      renderCards: true,
+      onSelect: (selected) => {
+        log(`${selected.name} gains ${formattedKeyword}.`);
+        return { addKeyword: { creature: selected, keyword: formattedKeyword } };
+      }
+    });
+  }
+
+  if (target === 'self' && creature) {
+    log(`${creature.name} gains ${formattedKeyword}.`);
+    return { addKeyword: { creature, keyword: formattedKeyword } };
+  }
+
+  return {};
+};
+
+/**
  * Buff creature stats
  * @param {string} targetType - 'self' | 'target' | 'all-friendly'
  * @param {Object} stats - { attack?: number, health?: number }
@@ -2449,16 +2498,17 @@ export const tutorAndPlaySpell = () => (context) => {
  * Deal damage to all creatures and both players, then grant frozen to all creatures
  * @param {number} damage - Damage amount
  */
-export const damageAllAndFreezeAll = (damage) => ({ log, player, opponent }) => {
-  const allCreatures = [
-    ...player.field.filter(c => c && isCreatureCard(c)),
+export const damageAllAndFreezeAll = (damage) => ({ log, player, opponent, creature }) => {
+  // Exclude the source creature ("other animals")
+  const otherCreatures = [
+    ...player.field.filter(c => c && isCreatureCard(c) && c.instanceId !== creature?.instanceId),
     ...opponent.field.filter(c => c && isCreatureCard(c))
   ];
-  log(`Deals ${damage} damage to everything. All creatures gain Frozen.`);
+  log(`Deals ${damage} damage to players & other animals. All gain Frozen.`);
   return {
     damageBothPlayers: damage,
-    damageAllCreatures: damage,
-    grantKeywordToAll: { creatures: allCreatures, keyword: 'Frozen' }
+    damageCreatures: { creatures: otherCreatures, amount: damage },
+    grantKeywordToAll: { creatures: otherCreatures, keyword: 'Frozen' }
   };
 };
 
@@ -2466,11 +2516,10 @@ export const damageAllAndFreezeAll = (damage) => ({ log, player, opponent }) => 
  * Deal damage to enemy creatures and end turn
  * @param {number} damage - Damage amount
  */
-export const damageEnemiesAndEndTurn = (damage) => ({ log, opponent }) => {
+export const damageEnemiesAndEndTurn = (damage) => ({ log }) => {
   log(`Deals ${damage} damage to enemies. Turn ends.`);
   return {
-    damageAllCreatures: damage,
-    targetPlayer: opponent,
+    damageEnemyCreatures: damage,
     endTurn: true
   };
 };
@@ -2947,6 +2996,7 @@ export const effectRegistry = {
 
   // Keywords & Buffs
   grantKeyword,
+  addKeyword,
   buffStats,
   buff,
 
@@ -3165,6 +3215,9 @@ export const resolveEffect = (effectDef, context) => {
       break;
     case 'grantKeyword':
       specificEffect = effectFn(params.targetType, params.keyword);
+      break;
+    case 'addKeyword':
+      specificEffect = effectFn(params);
       break;
     case 'buffStats':
       specificEffect = effectFn(params.targetType, params.stats);

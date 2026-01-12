@@ -671,6 +671,7 @@ const renderDeckManagePanel = (state, callbacks) => {
     state.catalogBuilder.catalogOrder = [];
     state.catalogBuilder.editingDeckId = null;
     state.catalogBuilder.editingDeckName = null;
+    state.catalogBuilder.viewOnly = false;
     state.catalogBuilder.activeTab = "catalog";
     deckActiveTab = "catalog";
     deckHighlighted = null;
