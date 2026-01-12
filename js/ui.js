@@ -142,6 +142,7 @@ import {
   updateOpponentHover,
   updateOpponentDrag,
   clearOpponentHandStates,
+  clearOpponentDragPreview,
 } from "./ui/components/OpponentHandStrip.js";
 
 // Input handling (extracted module - drag-and-drop + navigation + touch)
@@ -408,6 +409,9 @@ const handleCancelMatchmaking = async (state) => {
 const handleSyncPostProcessing = (state, payload, options = {}) => {
   const { forceApply = false, skipDeckComplete = false } = options;
   const localIndex = getLocalPlayerIndex(state);
+
+  // Clear opponent drag preview when receiving sync_state (action completed)
+  clearOpponentDragPreview();
 
   // Rehydrate deck builder if needed (UI-specific operation)
   if (payload.deckBuilder && state.deckBuilder) {
@@ -1832,11 +1836,13 @@ const handleEatPreyAttack = (state, attacker, onUpdate) => {
   const opponentIndex = (state.activePlayerIndex + 1) % 2;
 
   // Get enemy prey creatures that can be eaten
+  // Hidden does NOT block this effect (only blocks direct attacks)
+  // Invisible still blocks unless attacker has Acuity
   const targetablePrey = opponent.field.filter((card) => {
     if (!card || card.type !== "Prey") return false;
-    // Can target if has Acuity, otherwise must not be hidden/invisible
+    // Can target if has Acuity, otherwise must not be invisible (Hidden does NOT block)
     if (hasAcuity(attacker)) return true;
-    return !isHidden(card) && !isInvisible(card);
+    return !isInvisible(card);
   });
 
   if (targetablePrey.length === 0) {

@@ -24,51 +24,76 @@ import { REACTION_TIMER_SECONDS } from '../../game/triggers/index.js';
  * Get a human-readable description of what triggered the reaction
  * @param {Object} pendingReaction - The pending reaction state
  * @param {Object} players - Array of players
+ * @param {boolean} includeReactionName - Whether to include the reaction/trap name in the description
  * @returns {string} Description of the triggering event
  */
-const getReactionContextDescription = (pendingReaction, players) => {
-  const { event, eventContext, triggeringPlayerIndex } = pendingReaction;
+const getReactionContextDescription = (pendingReaction, players, includeReactionName = false) => {
+  const { event, eventContext, triggeringPlayerIndex, reactingPlayerIndex, reactions } = pendingReaction;
   const triggeringPlayer = players[triggeringPlayerIndex];
+  const reactingPlayer = players[reactingPlayerIndex];
+
+  // Get the trap/reaction name if available
+  const trapName = reactions?.[0]?.card?.name;
+
+  let actionDescription = '';
 
   switch (event) {
     case 'cardPlayed':
       if (eventContext?.card?.name) {
-        return `${triggeringPlayer.name} played ${eventContext.card.name}`;
+        actionDescription = `${triggeringPlayer.name} played ${eventContext.card.name}`;
+      } else {
+        actionDescription = `${triggeringPlayer.name} played a card`;
       }
-      return `${triggeringPlayer.name} played a card`;
+      break;
 
     case 'attackDeclared':
       if (eventContext?.attacker?.name) {
         if (eventContext?.target?.type === 'player') {
-          return `${eventContext.attacker.name} is attacking you directly`;
+          actionDescription = `${eventContext.attacker.name} attacked ${reactingPlayer.name}`;
         } else if (eventContext?.target?.card?.name) {
-          return `${eventContext.attacker.name} is attacking ${eventContext.target.card.name}`;
+          actionDescription = `${eventContext.attacker.name} attacked ${eventContext.target.card.name}`;
+        } else {
+          actionDescription = `${eventContext.attacker.name} declared an attack`;
         }
-        return `${eventContext.attacker.name} declared an attack`;
+      } else {
+        actionDescription = `${triggeringPlayer.name} declared an attack`;
       }
-      return `${triggeringPlayer.name} declared an attack`;
+      break;
 
     case 'creatureTargeted':
       if (eventContext?.target?.name) {
-        return `${eventContext.target.name} is being targeted`;
+        actionDescription = `${eventContext.target.name} is being targeted`;
+      } else {
+        actionDescription = `A creature is being targeted`;
       }
-      return `A creature is being targeted`;
+      break;
 
     case 'creatureSlain':
       if (eventContext?.creature?.name) {
-        return `${eventContext.creature.name} was slain`;
+        actionDescription = `${eventContext.creature.name} was slain`;
+      } else {
+        actionDescription = `A creature was slain`;
       }
-      return `A creature was slain`;
+      break;
 
     case 'damageDealt':
-      return `You are taking damage`;
+      actionDescription = `${reactingPlayer.name} is taking damage`;
+      break;
 
     case 'cardsDrawn':
-      return `${triggeringPlayer.name} drew cards`;
+      actionDescription = `${triggeringPlayer.name} drew cards`;
+      break;
 
     default:
-      return `${triggeringPlayer.name} took an action`;
+      actionDescription = `${triggeringPlayer.name} took an action`;
   }
+
+  // Add trap name to the description if requested
+  if (includeReactionName && trapName) {
+    return `${actionDescription}, triggering ${trapName}`;
+  }
+
+  return actionDescription;
 };
 
 /**
@@ -233,7 +258,8 @@ export const renderReactionOverlay = (state, callbacks = {}) => {
     : true; // In local mode, show buttons (the device holder decides)
 
   // Get context description for what triggered this reaction
-  const contextDescription = getReactionContextDescription(state.pendingReaction, state.players);
+  const contextDescription = getReactionContextDescription(state.pendingReaction, state.players, false);
+  const contextWithTrap = getReactionContextDescription(state.pendingReaction, state.players, true);
   const trapName = getActivatableTrapName(state.pendingReaction);
 
   // Set title and subtitle based on who is viewing
@@ -242,7 +268,8 @@ export const renderReactionOverlay = (state, callbacks = {}) => {
     subtitle.textContent = contextDescription;
   } else {
     title.textContent = "Reaction";
-    subtitle.textContent = `${reactingPlayer.name} is deciding... (${contextDescription})`;
+    // Show full context with trap name to opponent so they know what's being considered
+    subtitle.textContent = `${reactingPlayer.name} is deciding... (${contextWithTrap})`;
   }
 
   // Show timer

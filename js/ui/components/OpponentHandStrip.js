@@ -120,6 +120,19 @@ export const clearOpponentHandStates = () => {
 };
 
 /**
+ * Clear opponent drag preview element (the floating card)
+ * Call this when sync_state is received or overlays are opened
+ */
+export const clearOpponentDragPreview = () => {
+  const preview = document.getElementById('opponent-drag-preview');
+  if (preview) {
+    preview.classList.remove('active');
+  }
+  opponentHandState.draggingIndex = null;
+  applyOpponentHandStates();
+};
+
+/**
  * Apply current hover/drag states to DOM
  */
 const applyOpponentHandStates = () => {

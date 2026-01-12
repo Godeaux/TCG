@@ -104,16 +104,18 @@ const clearParalysis = (state) => {
 };
 
 const handlePoisonousDamage = (state) => {
-  const playerIndex = state.activePlayerIndex;
-  const opponentIndex = (state.activePlayerIndex + 1) % 2;
-  const activePlayer = state.players[playerIndex];
-  const opponent = state.players[opponentIndex];
+  const activePlayerIndex = state.activePlayerIndex;
+  const opponentIndex = (activePlayerIndex + 1) % 2;
+  const activePlayer = state.players[activePlayerIndex];
+  const opponentPlayer = state.players[opponentIndex];
 
-  // At end of turn, active player's poisonous creatures deal 1 damage to opponent
-  activePlayer.field.forEach((creature) => {
+  // Poison triggers at end of "their" (opponent's) turn
+  // So at end of active player's turn, the OPPONENT's poisonous creatures damage the ACTIVE player
+  // This means: my poison hurts my enemy at the end of my enemy's turn
+  opponentPlayer.field.forEach((creature) => {
     if (creature && hasPoisonous(creature)) {
-      opponent.hp -= 1;
-      logGameAction(state, DAMAGE, `${creature.name}'s ${getKeywordEmoji("Poisonous")} poison damages ${opponent.name} for 1.`);
+      activePlayer.hp -= 1;
+      logGameAction(state, DAMAGE, `${creature.name}'s ${getKeywordEmoji("Poisonous")} poison damages ${activePlayer.name} for 1.`);
     }
   });
 };

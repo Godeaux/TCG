@@ -14,6 +14,7 @@
 import { getAllCards } from '../../cards/index.js';
 import { renderCard } from '../components/Card.js';
 import { RARITY_COLORS, RARITY_LABELS } from '../../packs/packConfig.js';
+import { clearOpponentDragPreview } from '../components/OpponentHandStrip.js';
 
 // ============================================================================
 // DOM ELEMENTS
@@ -273,6 +274,9 @@ export const renderProfileOverlay = (state, callbacks = {}) => {
   if (!showProfile) {
     return;
   }
+
+  // Clear opponent drag preview when overlay is shown
+  clearOpponentDragPreview();
 
   // Get profile data from state
   const profileData = {

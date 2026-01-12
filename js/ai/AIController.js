@@ -570,11 +570,11 @@ export class AIController {
 
       console.log(`[AI] ${attacker.name} attacks ${target.type === 'player' ? 'player' : target.card?.name}`);
 
+      // Mark attacker as having attacked BEFORE executing (prevents double attacks during reaction windows)
+      attacker.hasAttacked = true;
+
       // Execute the attack (with reaction window for human player's traps)
       await this.executeAttack(state, attacker, target, callbacks);
-
-      // Mark attacker as having attacked
-      attacker.hasAttacked = true;
 
       // Notify callbacks
       callbacks.onAttack?.(attacker, target);
@@ -589,6 +589,12 @@ export class AIController {
    * Then resolves combat and modifies game state
    */
   async executeAttack(state, attacker, target, callbacks) {
+    // Safety check: prevent executing attack if attacker no longer exists or has 0 HP
+    if (!attacker || attacker.currentHp <= 0) {
+      console.log('[AI] Attacker no longer valid, skipping attack');
+      return;
+    }
+
     const attackerOwnerIndex = this.playerIndex;
     const defenderOwnerIndex = 1 - this.playerIndex;
 
