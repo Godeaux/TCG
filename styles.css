@@ -4071,7 +4071,14 @@ button {
   }
 
   .player-info {
-    gap: 4px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .player-info.right {
+    flex-direction: column;
+    align-items: flex-end;
   }
 
   .player-name {
@@ -4096,10 +4103,9 @@ button {
     font-size: 10px;
   }
 
+  /* Hide surrender button on mobile - tap player name instead */
   .surrender-btn {
-    left: calc(50% - 80px);
-    font-size: 14px;
-    padding: 2px 4px;
+    display: none;
   }
 
   .emote-toggle {
