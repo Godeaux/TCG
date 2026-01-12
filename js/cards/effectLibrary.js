@@ -2898,6 +2898,34 @@ export const discardDrawAndKillEnemy = () => (context) => {
   });
 };
 
+/**
+ * Draw cards first, then select cards to discard from the updated hand
+ * The draw happens before the selection UI, so newly drawn cards are available to discard
+ * @param {number} drawCount - Number of cards to draw
+ * @param {number} discardCount - Number of cards to discard (default 1)
+ */
+export const drawThenDiscard = (drawCount, discardCount = 1) => (context) => {
+  const { log, player, playerIndex } = context;
+
+  log(`Draws ${drawCount}, then discards ${discardCount}.`);
+
+  // Return draw + selectTarget together
+  // resolveEffectChain processes 'draw' first via resolveEffectResult,
+  // then shows the selection UI - so hand will include newly drawn cards
+  return {
+    draw: drawCount,
+    selectTarget: {
+      title: `Choose ${discardCount} card${discardCount > 1 ? 's' : ''} to discard`,
+      // Use function so candidates are evaluated AFTER draw is processed
+      candidates: () => player.hand.map(card => ({ label: card.name, value: card, card })),
+      onSelect: (card) => ({
+        discardCards: { playerIndex, cards: [card] }
+      }),
+      renderCards: true
+    }
+  };
+};
+
 // ============================================================================
 // EFFECT REGISTRY
 // ============================================================================
@@ -3030,6 +3058,7 @@ export const effectRegistry = {
   forceDiscardAndTutor,
   selectEnemyToReturn,
   discardDrawAndKillEnemy,
+  drawThenDiscard,
 
   // Additional creature effect primitives
   forceOpponentDiscard,

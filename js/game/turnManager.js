@@ -122,6 +122,7 @@ const handlePoisonousDamage = (state) => {
 
 export const startTurn = (state) => {
   state.cardPlayedThisTurn = false;
+  state.extendedConsumption = null; // Clear extended consumption window on turn start
   resetCombat(state);
   logGameAction(state, PHASE, `Turn ${state.turn}: ${state.players[state.activePlayerIndex].name}'s Turn`);
   runStartOfTurnEffects(state);
@@ -147,6 +148,11 @@ export const advancePhase = (state) => {
   const previousPhase = state.phase;
   state.phase = PHASES[nextIndex];
   console.log('[PHASE-DEBUG] Phase transition:', previousPhase, '->', state.phase);
+
+  // Clear extended consumption window when leaving Main phases
+  if (previousPhase === "Main 1" || previousPhase === "Main 2") {
+    state.extendedConsumption = null;
+  }
 
   // Handle Before Combat auto-skip (streamlined turn flow)
   // If no before-combat effects exist, skip directly to Combat

@@ -707,6 +707,7 @@ export const handleFindMatch = async (state) => {
       if (joinedLobby) {
         // Successfully joined
         state.menu.lobby = joinedLobby;
+        state.menu.existingLobby = joinedLobby;
         state.menu.matchmaking = false;
         state.menu.gameInProgress = false;
         setMenuStage(state, 'lobby');
@@ -725,6 +726,7 @@ export const handleFindMatch = async (state) => {
     });
 
     state.menu.lobby = newLobby;
+    state.menu.existingLobby = newLobby;
     state.menu.gameInProgress = false;
     setMenuStage(state, 'lobby');
     updateLobbySubscription(state);

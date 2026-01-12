@@ -4282,6 +4282,27 @@ button {
   }
 }
 
+/* Extended consumption - predator that can consume more prey */
+.extended-consumption-active {
+  box-shadow: 0 0 25px rgba(39, 174, 96, 0.9), inset 0 0 15px rgba(39, 174, 96, 0.4);
+  border: 2px solid #27ae60;
+  animation: extended-consumption-pulse 1.5s infinite;
+  cursor: grab;
+}
+
+.extended-consumption-active:active {
+  cursor: grabbing;
+}
+
+@keyframes extended-consumption-pulse {
+  0%, 100% {
+    box-shadow: 0 0 25px rgba(39, 174, 96, 0.9), inset 0 0 15px rgba(39, 174, 96, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(39, 174, 96, 1), inset 0 0 25px rgba(39, 174, 96, 0.6);
+  }
+}
+
 /* Drop zone styles */
 .field-slot.valid-drop-zone {
   background: rgba(46, 204, 113, 0.2);

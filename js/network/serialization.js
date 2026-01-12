@@ -168,6 +168,7 @@ export const buildLobbySyncPayload = (state) => ({
     turn: state.turn,
     cardPlayedThisTurn: state.cardPlayedThisTurn,
     passPending: state.passPending,
+    extendedConsumption: state.extendedConsumption ? { ...state.extendedConsumption } : null,
     log: Array.isArray(state.log) ? [...state.log] : [],
     visualEffects: Array.isArray(state.visualEffects) ? [...state.visualEffects] : [],
     pendingTrapDecision: state.pendingTrapDecision
@@ -295,6 +296,11 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
     }
     if (payload.game.passPending !== undefined) {
       state.passPending = payload.game.passPending;
+    }
+    if (payload.game.extendedConsumption !== undefined) {
+      state.extendedConsumption = payload.game.extendedConsumption
+        ? { ...payload.game.extendedConsumption }
+        : null;
     }
     if (Array.isArray(payload.game.log)) {
       state.log = [...payload.game.log];

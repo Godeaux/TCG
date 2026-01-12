@@ -1724,6 +1724,9 @@ const resolveAttack = (state, attacker, target, negateAttack = false) => {
  * Uses the new centralized reaction system
  */
 const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
+  // Clear extended consumption window when an attack is declared
+  state.extendedConsumption = null;
+
   const attackerIndex = state.players.indexOf(getActivePlayer(state));
 
   const windowCreated = createReactionWindow({
@@ -1991,6 +1994,9 @@ const handlePlayCard = (state, card, onUpdate) => {
     onUpdate?.();
     return;
   }
+
+  // Clear extended consumption window when a card is being played
+  state.extendedConsumption = null;
 
   if (card.type === "Spell" || card.type === "Free Spell") {
     // Use resolveCardEffect to properly handle both legacy and new effect formats

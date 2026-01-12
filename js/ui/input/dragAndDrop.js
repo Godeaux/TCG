@@ -44,6 +44,9 @@ let draggedCardHandIndex = -1;  // Track hand index for drag broadcasting
 let lastDragBroadcast = 0;
 const DRAG_BROADCAST_THROTTLE_MS = 50; // ~20 updates per second
 
+// Extended consumption state (for dragging from field to consume more)
+let draggedFromExtendedConsumption = false;
+
 // References to external state and callbacks (set via initialize)
 let latestState = null;
 let latestCallbacks = {};
@@ -296,6 +299,7 @@ const getNutritionValue = (card) => {
  */
 const canConsumePreyDirectly = (predator, prey, state) => {
   if (!predator || !prey) return false;
+  if (predator.instanceId === prey.instanceId) return false; // Can't consume itself
   if (predator.type !== 'Predator') return false;
   if (prey.type !== 'Prey' && !(prey.type === 'Predator' && isEdible(prey))) return false;
   if (predator.frozen) return false;  // Frozen predator cannot consume
@@ -320,7 +324,10 @@ const getConsumablePrey = (predator, state) => {
 
   const activePlayer = getActivePlayer(state);
   const availablePrey = activePlayer.field.filter(
-    slot => slot && (slot.type === "Prey" || (slot.type === "Predator" && isEdible(slot))) && !slot.frozen
+    slot => slot &&
+      slot.instanceId !== predator.instanceId && // Can't consume itself
+      (slot.type === "Prey" || (slot.type === "Predator" && isEdible(slot))) &&
+      !slot.frozen
   );
 
   const predatorAtk = predator.currentAtk ?? predator.atk ?? 0;
@@ -334,10 +341,71 @@ const getConsumablePrey = (predator, state) => {
  * Clear all drag visual indicators
  */
 const clearDragVisuals = () => {
-  document.querySelectorAll('.valid-target, .invalid-target, .valid-drop-zone, .consumption-target, .spell-target, .spell-drop-zone').forEach(el => {
-    el.classList.remove('valid-target', 'invalid-target', 'valid-drop-zone', 'consumption-target', 'spell-target', 'spell-drop-zone');
+  document.querySelectorAll('.valid-target, .invalid-target, .valid-drop-zone, .consumption-target, .spell-target, .spell-drop-zone, .extended-consumption-active').forEach(el => {
+    el.classList.remove('valid-target', 'invalid-target', 'valid-drop-zone', 'consumption-target', 'spell-target', 'spell-drop-zone', 'extended-consumption-active');
   });
   currentDragTargetId = null;
+};
+
+/**
+ * Clear extended consumption window
+ */
+const clearExtendedConsumption = () => {
+  if (latestState?.extendedConsumption) {
+    latestState.extendedConsumption = null;
+    // Remove all extended consumption visual indicators
+    document.querySelectorAll('.extended-consumption-active').forEach(el => {
+      el.classList.remove('extended-consumption-active');
+    });
+    document.querySelectorAll('.consumption-target').forEach(el => {
+      el.classList.remove('consumption-target');
+    });
+  }
+};
+
+/**
+ * Highlight valid prey targets and the active predator during extended consumption
+ */
+const highlightExtendedConsumptionTargets = () => {
+  const state = latestState;
+  if (!state?.extendedConsumption) return;
+
+  const predator = getCardFromInstanceId(state.extendedConsumption.predatorInstanceId, state);
+  if (!predator) {
+    clearExtendedConsumption();
+    return;
+  }
+
+  // Check predator still exists on field
+  const activePlayer = getActivePlayer(state);
+  if (!activePlayer.field.includes(predator)) {
+    clearExtendedConsumption();
+    return;
+  }
+
+  // Highlight predator with green glow
+  const predatorElement = document.querySelector(
+    `.field-slot .card[data-instance-id="${predator.instanceId}"]`
+  );
+  if (predatorElement) {
+    predatorElement.classList.add('extended-consumption-active');
+  }
+
+  // Highlight consumable prey with yellow glow
+  const consumablePrey = getConsumablePrey(predator, state);
+  if (consumablePrey.length === 0) {
+    clearExtendedConsumption();
+    return;
+  }
+
+  consumablePrey.forEach(prey => {
+    const preyElement = document.querySelector(
+      `.field-slot .card[data-instance-id="${prey.instanceId}"]`
+    );
+    if (preyElement) {
+      preyElement.classList.add('consumption-target');
+    }
+  });
 };
 
 /**
@@ -481,6 +549,22 @@ const startConsumptionForSpecificSlot = (predator, slotIndex, ediblePrey) => {
         if (!isFree) {
           state.cardPlayedThisTurn = true;
         }
+
+        // Activate extended consumption window if more prey available and didn't consume max
+        if (totalSelected > 0 && totalSelected < 3) {
+          const remainingPrey = getConsumablePrey(predator, state);
+          if (remainingPrey.length > 0) {
+            state.extendedConsumption = {
+              predatorInstanceId: predator.instanceId,
+              predatorSlotIndex: slotIndex,
+              consumedCount: totalSelected,
+              maxConsumption: 3,
+            };
+            // Delay highlight to ensure DOM is updated
+            setTimeout(() => highlightExtendedConsumptionTargets(), 50);
+          }
+        }
+
         pendingConsumption = null;
         latestCallbacks.onUpdate?.();
         broadcastSyncState(state);
@@ -628,9 +712,91 @@ const handleDirectConsumption = (predator, prey, slotIndex) => {
     if (!isFree) {
       state.cardPlayedThisTurn = true;
     }
+
+    // Activate extended consumption window if more prey available
+    const remainingConsumablePrey = getConsumablePrey(predatorInstance, state);
+    if (remainingConsumablePrey.length > 0) {
+      state.extendedConsumption = {
+        predatorInstanceId: predatorInstance.instanceId,
+        predatorSlotIndex: slotIndex,
+        consumedCount: 1,
+        maxConsumption: 3,
+      };
+      // Delay highlight to ensure DOM is updated
+      setTimeout(() => highlightExtendedConsumptionTargets(), 50);
+    }
+
     latestCallbacks.onUpdate?.();
     broadcastSyncState(state);
   });
+};
+
+/**
+ * Handle consumption during extended consumption window
+ * Predator is already on field, consuming additional prey
+ */
+const handleExtendedConsumption = (predator, prey) => {
+  const state = latestState;
+  const player = getActivePlayer(state);
+
+  if (!state.extendedConsumption) return;
+  if (state.extendedConsumption.predatorInstanceId !== predator.instanceId) return;
+  if (state.extendedConsumption.consumedCount >= 3) {
+    clearExtendedConsumption();
+    return;
+  }
+
+  // Verify prey is valid for consumption
+  if (!canConsumePreyDirectly(predator, prey, state)) {
+    revertCardToOriginalPosition();
+    highlightExtendedConsumptionTargets();
+    return;
+  }
+
+  // Perform consumption
+  consumePrey({
+    predator: predator,
+    preyList: [prey],
+    carrionList: [],
+    state,
+    playerIndex: state.activePlayerIndex,
+    onBroadcast: broadcastSyncState,
+    onSlain: (slainPrey, preyOwnerIndex) => {
+      const slainResult = resolveCardEffect(slainPrey, 'onSlain', {
+        log: (message) => logMessage(state, message),
+        player: state.players[preyOwnerIndex],
+        playerIndex: preyOwnerIndex,
+        state,
+        creature: slainPrey,
+      });
+      if (slainResult) {
+        resolveEffectChain(
+          state,
+          slainResult,
+          { playerIndex: preyOwnerIndex },
+          latestCallbacks.onUpdate
+        );
+      }
+    },
+  });
+
+  // Update consumption count
+  state.extendedConsumption.consumedCount++;
+
+  // NOTE: onConsume effect is NOT triggered here - it only fires once when the predator
+  // is initially played, not on subsequent extended consumption actions
+
+  // Check if max consumption reached or no more prey
+  const remainingPrey = getConsumablePrey(predator, state);
+  if (state.extendedConsumption.consumedCount >= 3 || remainingPrey.length === 0) {
+    clearExtendedConsumption();
+  } else {
+    // Re-highlight remaining targets after DOM update
+    setTimeout(() => highlightExtendedConsumptionTargets(), 50);
+  }
+
+  latestCallbacks.onUpdate?.();
+  broadcastSyncState(state);
 };
 
 // ============================================================================
@@ -748,22 +914,37 @@ const handlePlayerDrop = (card, playerBadge) => {
  * Handle dropping card on another card (attack creature or consume)
  */
 const handleCreatureDrop = (attacker, target) => {
-  const activePlayer = getActivePlayer(latestState);
+  const state = latestState;
+  const activePlayer = getActivePlayer(state);
+
+  // Check if this is an extended consumption drop (predator on field consuming more)
+  if (state.extendedConsumption &&
+      state.extendedConsumption.predatorInstanceId === attacker.instanceId &&
+      draggedFromExtendedConsumption) {
+    // Validate target is consumable prey on our field
+    if (activePlayer.field.includes(target) && canConsumePreyDirectly(attacker, target, state)) {
+      handleExtendedConsumption(attacker, target);
+      return;
+    }
+    // Invalid drop during extended consumption - keep window open
+    revertCardToOriginalPosition();
+    highlightExtendedConsumptionTargets();
+    return;
+  }
+
   const isPredatorFromHand = attacker.type === 'Predator' && activePlayer.hand.includes(attacker);
   const isPreyOnField = activePlayer.field.includes(target);
 
-  if (isPredatorFromHand && isPreyOnField && canConsumePreyDirectly(attacker, target, latestState)) {
-    const consumablePrey = getConsumablePrey(attacker, latestState);
-    if (consumablePrey.length === 1 && consumablePrey[0] === target) {
-      const preySlotIndex = activePlayer.field.indexOf(target);
-      if (preySlotIndex !== -1) {
-        handleDirectConsumption(attacker, target, preySlotIndex);
-        return;
-      }
+  // Allow direct consumption regardless of how many prey are available (removed length === 1 restriction)
+  if (isPredatorFromHand && isPreyOnField && canConsumePreyDirectly(attacker, target, state)) {
+    const preySlotIndex = activePlayer.field.indexOf(target);
+    if (preySlotIndex !== -1) {
+      handleDirectConsumption(attacker, target, preySlotIndex);
+      return;
     }
   }
 
-  if (!isValidAttackTarget(attacker, target, latestState)) {
+  if (!isValidAttackTarget(attacker, target, state)) {
     revertCardToOriginalPosition();
     return;
   }
@@ -809,15 +990,36 @@ const handleDragStart = (event) => {
   const instanceId = cardElement.dataset.instanceId;
   if (!instanceId) return;
 
+  const state = latestState;
+  const card = getCardFromInstanceId(instanceId, state);
+  if (!card) return;
+
+  // Check if this card is in hand or on field
+  const activePlayer = getActivePlayer(state);
+  const isInHand = activePlayer?.hand?.includes(card);
+  const isOnField = activePlayer?.field?.includes(card);
+
+  // Check if this is the predator in extended consumption window
+  const isExtendedConsumptionDrag = state?.extendedConsumption &&
+    state.extendedConsumption.predatorInstanceId === instanceId;
+
+  // For field cards, only allow drag if in extended consumption mode
+  if (isOnField && !isExtendedConsumptionDrag) {
+    // Don't start drag for field cards unless in extended consumption
+    return;
+  }
+
+  // Track if this is an extended consumption drag
+  draggedFromExtendedConsumption = isExtendedConsumptionDrag;
+
   draggedCardElement = cardElement;
-  draggedCard = getCardFromInstanceId(instanceId, latestState);
+  draggedCard = card;
 
   originalParent = cardElement.parentElement;
   originalIndex = Array.from(originalParent.children).indexOf(cardElement);
 
-  // Track hand index for drag broadcasting
-  const activePlayer = getActivePlayer(latestState);
-  draggedCardHandIndex = activePlayer?.hand?.findIndex(c => c?.instanceId === instanceId) ?? -1;
+  // Track hand index for drag broadcasting (only for hand cards)
+  draggedCardHandIndex = isInHand ? activePlayer.hand.findIndex(c => c?.instanceId === instanceId) : -1;
 
   cardElement.classList.add('dragging');
   event.dataTransfer.effectAllowed = 'move';
@@ -858,6 +1060,12 @@ const handleDragEnd = (event) => {
   originalParent = null;
   originalIndex = -1;
   draggedCardHandIndex = -1;
+  draggedFromExtendedConsumption = false;
+
+  // Re-highlight extended consumption targets if still active
+  if (latestState?.extendedConsumption) {
+    setTimeout(() => highlightExtendedConsumptionTargets(), 50);
+  }
 };
 
 /**
@@ -1022,17 +1230,26 @@ const handleDragOver = (event) => {
       return;
     }
 
-    // Check for consumption scenario (predator from hand onto prey on own field)
+    // Check for extended consumption scenario (predator on field consuming more)
     const activePlayer = getActivePlayer(latestState);
-    const isPredatorFromHand = draggedCard.type === 'Predator' && activePlayer.hand.includes(draggedCard);
-    const isPreyOnField = activePlayer.field.includes(targetCard);
-
-    if (isPredatorFromHand && isPreyOnField && canConsumePreyDirectly(draggedCard, targetCard, latestState)) {
-      const consumablePrey = getConsumablePrey(draggedCard, latestState);
-      if (consumablePrey.length === 1 && consumablePrey[0] === targetCard) {
+    if (draggedFromExtendedConsumption &&
+        latestState.extendedConsumption &&
+        latestState.extendedConsumption.predatorInstanceId === draggedCard.instanceId) {
+      // During extended consumption, highlight valid prey targets
+      if (activePlayer.field.includes(targetCard) && canConsumePreyDirectly(draggedCard, targetCard, latestState)) {
         target.classList.add('consumption-target');
         return;
       }
+    }
+
+    // Check for consumption scenario (predator from hand onto prey on own field)
+    const isPredatorFromHand = draggedCard.type === 'Predator' && activePlayer.hand.includes(draggedCard);
+    const isPreyOnField = activePlayer.field.includes(targetCard);
+
+    // Allow consumption target regardless of how many prey available (removed length === 1 restriction)
+    if (isPredatorFromHand && isPreyOnField && canConsumePreyDirectly(draggedCard, targetCard, latestState)) {
+      target.classList.add('consumption-target');
+      return;
     }
 
     const isCombatPhase = latestState.phase === "Combat";
@@ -1167,6 +1384,16 @@ export { getCardFromInstanceId };
 export { clearDragVisuals };
 
 /**
+ * Clear extended consumption window
+ */
+export { clearExtendedConsumption };
+
+/**
+ * Highlight valid prey targets during extended consumption
+ */
+export { highlightExtendedConsumptionTargets };
+
+/**
  * Get current state reference
  */
 export const getLatestState = () => latestState;
@@ -1296,17 +1523,26 @@ export const updateDropTargetVisuals = (elementBelow, card, cardElement) => {
       return;
     }
 
-    // Check for consumption scenario
+    // Check for extended consumption scenario (predator on field consuming more)
     const activePlayer = getActivePlayer(latestState);
-    const isPredatorFromHand = card.type === 'Predator' && activePlayer.hand.includes(card);
-    const isPreyOnField = activePlayer.field.includes(targetCard);
-
-    if (isPredatorFromHand && isPreyOnField && canConsumePreyDirectly(card, targetCard, latestState)) {
-      const consumablePrey = getConsumablePrey(card, latestState);
-      if (consumablePrey.length === 1 && consumablePrey[0] === targetCard) {
+    if (draggedFromExtendedConsumption &&
+        latestState.extendedConsumption &&
+        latestState.extendedConsumption.predatorInstanceId === card.instanceId) {
+      // During extended consumption, highlight valid prey targets
+      if (activePlayer.field.includes(targetCard) && canConsumePreyDirectly(card, targetCard, latestState)) {
         target.classList.add('consumption-target');
         return;
       }
+    }
+
+    // Check for consumption scenario (predator from hand onto prey on own field)
+    const isPredatorFromHand = card.type === 'Predator' && activePlayer.hand.includes(card);
+    const isPreyOnField = activePlayer.field.includes(targetCard);
+
+    // Allow consumption target regardless of how many prey available (removed length === 1 restriction)
+    if (isPredatorFromHand && isPreyOnField && canConsumePreyDirectly(card, targetCard, latestState)) {
+      target.classList.add('consumption-target');
+      return;
     }
 
     // Check for valid attack target

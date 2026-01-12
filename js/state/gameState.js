@@ -50,6 +50,7 @@ export const createGameState = () => {
     skipFirstDraw: true,
     cardPlayedThisTurn: false,
     passPending: false,
+    extendedConsumption: null, // { predatorInstanceId, predatorSlotIndex, consumedCount, maxConsumption: 3 }
     fieldSpell: null,
     beforeCombatQueue: [],
     beforeCombatProcessing: false,
