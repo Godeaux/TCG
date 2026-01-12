@@ -115,10 +115,6 @@ A turn proceeds through the following phases in order:
 
 **Consumed Target Destination:** All consumed targets from the field move to the carrion pile. Consumed targets from carrion (via scavenge) are removed from carrion.
 
-### 2.6 Trap System
-
-Traps are held in hand and can only be played (set) during the controlling player’s main phase, counting toward the one-card-per-turn limit. Once set, traps remain hidden and activate during the opponent’s turn when their trigger condition is met.
-
 **Trigger Types:**
 
 - “When attacked” — triggers when any of your creatures is attacked
