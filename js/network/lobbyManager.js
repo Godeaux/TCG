@@ -1002,8 +1002,23 @@ export const refreshLobbyState = async (state, { silent = false } = {}) => {
  * @returns {Promise<boolean>} True if a game was restored
  */
 export const loadGameStateFromDatabase = async (state) => {
+  console.log('[DB-LOAD-DEBUG] loadGameStateFromDatabase called', {
+    isOnline: isOnlineMode(state),
+    lobbyId: state.menu?.lobby?.id,
+    setupStage: state.setup?.stage,
+    handSizes: state.players?.map(p => p?.hand?.length),
+  });
+
   if (!isOnlineMode(state) || !state.menu?.lobby?.id) {
-    console.log('Skipping load - not online or no lobby ID');
+    console.log('[DB-LOAD-DEBUG] Skipping - not online or no lobby ID');
+    return false;
+  }
+
+  // Skip database load if local game is already actively in progress
+  // This prevents overwriting fresh local state (like newly drawn cards) with stale DB data
+  const localGameInProgress = state.setup?.stage === 'complete' && state.players?.some(p => p?.hand?.length > 0);
+  if (localGameInProgress) {
+    console.log('[DB-LOAD-DEBUG] Skipping - local game already in progress with active state');
     return false;
   }
 

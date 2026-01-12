@@ -1,3 +1,6 @@
+// Module load verification - this should appear in console on page load
+console.log('[GAMESTATE-MODULE] Loaded at:', new Date().toISOString());
+
 // Re-export history logging functions for convenience
 export {
   LOG_CATEGORIES,
@@ -107,11 +110,15 @@ export const createGameState = () => {
 
 export const drawCard = (state, playerIndex) => {
   const player = state.players[playerIndex];
+  console.log(`[DRAW-DEBUG] Before: hand=${player.hand.length}, deck=${player.deck.length}, playerIndex=${playerIndex}`);
   if (player.deck.length === 0) {
+    console.log(`[DRAW-DEBUG] Deck empty!`);
     return null;
   }
   const card = player.deck.shift();
-  player.hand.push({ ...card, instanceId: crypto.randomUUID() });
+  const newCard = { ...card, instanceId: crypto.randomUUID() };
+  player.hand.push(newCard);
+  console.log(`[DRAW-DEBUG] After: hand=${player.hand.length}, deck=${player.deck.length}, drew: ${card.name}`);
   return card;
 };
 

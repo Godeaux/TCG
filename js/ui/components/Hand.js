@@ -202,6 +202,7 @@ export const renderHand = (state, options = {}) => {
   const isAI = isAIMode(state);
   const playerIndex = isOnlineMode ? getLocalPlayerIndex(state) : (isAI ? 0 : state.activePlayerIndex);
   const player = state.players[playerIndex];
+  console.log(`[RENDER-HAND-DEBUG] playerIndex=${playerIndex}, hand.length=${player.hand.length}, cards=${player.hand.map(c => c?.name).join(', ')}`);
 
   // Setup hand expansion
   setupHandExpansion(state);

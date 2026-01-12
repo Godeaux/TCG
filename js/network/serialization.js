@@ -229,8 +229,10 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
 
   // Skip sender check when loading from database (force apply)
   if (!forceApply && senderId && senderId === state.menu?.profile?.id) {
+    console.log('[applySync] SKIPPING - this is our own broadcast (senderId matches profile.id)');
     return;
   }
+  console.log('[applySync] Processing sync from senderId:', senderId, '| our profile.id:', state.menu?.profile?.id);
 
   const timestamp = payload.timestamp ?? 0;
   if (!state.menu.lastLobbySyncBySender) {
@@ -318,17 +320,7 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
         }
 
         const isProtectedLocalSnapshot = !forceApply && index === localIndex;
-
-        console.log(
-          "Applying player data for index:",
-          index,
-          "localIndex:",
-          localIndex,
-          "forceApply:",
-          forceApply,
-          "protectedLocalSnapshot:",
-          isProtectedLocalSnapshot
-        );
+        console.log(`[SYNC-DEBUG] Player ${index}: protected=${isProtectedLocalSnapshot}, forceApply=${forceApply}, localIndex=${localIndex}, currentHand=${player.hand.length}, payloadHand=${playerSnapshot.hand?.length ?? 'null'}`);
 
         if (playerSnapshot.name) {
           player.name = playerSnapshot.name;
@@ -338,10 +330,22 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
         }
 
         // Protect local player's private zones
-        if (!isProtectedLocalSnapshot && Array.isArray(playerSnapshot.deck)) {
+        // EXCEPTION: If it's our turn and the incoming hand is larger, accept it
+        // This handles draws processed by the opponent during turn transitions
+        const isOurTurn = state.activePlayerIndex === localIndex;
+        const incomingHandLarger = Array.isArray(playerSnapshot.hand) && playerSnapshot.hand.length > player.hand.length;
+        const shouldAcceptDraw = isProtectedLocalSnapshot && isOurTurn && incomingHandLarger;
+
+        if (shouldAcceptDraw) {
+          console.log(`[SYNC-DEBUG] Player ${index}: ACCEPTING DRAW - our turn and incoming hand larger (${player.hand.length} -> ${playerSnapshot.hand.length})`);
+        }
+
+        if ((!isProtectedLocalSnapshot || shouldAcceptDraw) && Array.isArray(playerSnapshot.deck)) {
+          console.log(`[SYNC-DEBUG] Player ${index}: MODIFYING deck from ${player.deck.length} to ${playerSnapshot.deck.length}`);
           player.deck = hydrateDeckSnapshots(playerSnapshot.deck);
         }
-        if (!isProtectedLocalSnapshot && Array.isArray(playerSnapshot.hand)) {
+        if ((!isProtectedLocalSnapshot || shouldAcceptDraw) && Array.isArray(playerSnapshot.hand)) {
+          console.log(`[SYNC-DEBUG] Player ${index}: MODIFYING hand from ${player.hand.length} to ${playerSnapshot.hand.length}`);
           player.hand = hydrateZoneSnapshots(playerSnapshot.hand, null, state.turn);
         }
 

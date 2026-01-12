@@ -127,6 +127,7 @@ export const startTurn = (state) => {
 };
 
 export const advancePhase = (state) => {
+  console.log('[PHASE-DEBUG] advancePhase called, current phase:', state.phase, 'activePlayer:', state.activePlayerIndex);
   if (state.setup?.stage !== "complete") {
     logMessage(state, "Finish the opening roll before advancing phases.");
     return;
@@ -143,6 +144,7 @@ export const advancePhase = (state) => {
   const nextIndex = (currentIndex + 1) % PHASES.length;
   const previousPhase = state.phase;
   state.phase = PHASES[nextIndex];
+  console.log('[PHASE-DEBUG] Phase transition:', previousPhase, '->', state.phase);
 
   // Handle Before Combat auto-skip (streamlined turn flow)
   // If no before-combat effects exist, skip directly to Combat
@@ -171,11 +173,13 @@ export const advancePhase = (state) => {
   }
 
   if (state.phase === "Draw") {
+    console.log('[PHASE-DEBUG] Entering Draw phase block');
     const skipFirst =
       state.skipFirstDraw &&
       state.turn === 1 &&
       state.activePlayerIndex === state.firstPlayerIndex;
     if (skipFirst) {
+      console.log('[PHASE-DEBUG] Skipping first draw');
       logGameAction(state, PHASE, `${state.players[state.activePlayerIndex].name} skips first draw (going second).`);
       state.phase = "Main 1";
       logPlainMessage(state, `━━━ PHASE: MAIN 1 ━━━`);
@@ -187,7 +191,9 @@ export const advancePhase = (state) => {
     const deckSize = player.deck.length;
     const handSize = player.hand.length;
 
+    console.log('[PHASE-DEBUG] About to call drawCard, player:', state.activePlayerIndex, 'handSize:', handSize, 'deckSize:', deckSize);
     const card = drawCard(state, state.activePlayerIndex);
+    console.log('[PHASE-DEBUG] drawCard returned:', card?.name ?? 'null', 'new hand size:', player.hand.length);
     if (card) {
       // Don't reveal card name - hidden information for competitive fairness
       logGameAction(state, BUFF, `${player.name} draws a card. (Hand: ${handSize} → ${handSize + 1}, Deck: ${deckSize} → ${deckSize - 1})`);
@@ -253,6 +259,7 @@ export const advancePhase = (state) => {
 };
 
 export const endTurn = (state) => {
+  console.log('[PHASE-DEBUG] endTurn called, current phase:', state.phase, 'turn:', state.turn);
   if (state.setup?.stage !== "complete") {
     logMessage(state, "Complete the opening roll before ending the turn.");
     return;
