@@ -388,7 +388,11 @@ export class GameController {
     player.field[slotIndex] = creatureInstance;
 
     // Update card play limit
-    if (!isFree) {
+    // Dry-dropped predators lose Free Play, so recalculate isFree based on the instance
+    const isFreeAfterPlacement = creatureInstance.dryDropped
+      ? isFreePlay(creatureInstance)
+      : isFree;
+    if (!isFreeAfterPlacement) {
       this.state.cardPlayedThisTurn = true;
     }
 

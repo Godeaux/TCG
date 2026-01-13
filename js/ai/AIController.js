@@ -265,10 +265,33 @@ export class AIController {
       return null;
     }
 
+    // Find available prey for consumption (needed to check if Free Play predators can be played)
+    const availablePrey = player.field.filter(c =>
+      c && !c.frozen && (c.type === 'Prey' || (c.type === 'Predator' && isEdible(c)))
+    );
+    const hasConsumablePrey = availablePrey.length > 0;
+
     // Filter to playable cards (respect card limit unless free play)
     const playableCards = hand.filter(card => {
       const isFree = card.type === "Free Spell" || card.type === "Trap" || isFreePlay(card);
-      return isFree || !state.cardPlayedThisTurn;
+
+      // If card limit not used, any card is playable
+      if (!state.cardPlayedThisTurn) {
+        return true;
+      }
+
+      // Card limit already used - only free cards can be played
+      if (!isFree) {
+        return false;
+      }
+
+      // Free Play predators require prey to consume when card limit is used
+      // (dry-dropped predators lose Free Play, so they'd violate the card limit)
+      if (card.type === "Predator" && isFreePlay(card) && !hasConsumablePrey) {
+        return false;
+      }
+
+      return true;
     });
 
     console.log(`[${this.playerLabel}] selectCardToPlay: hand has ${hand.length} cards, ${playableCards.length} playable (cardPlayedThisTurn: ${state.cardPlayedThisTurn})`);
@@ -526,7 +549,10 @@ export class AIController {
       creature.dryDropped = true;
       logMessage(state, `${player.name} plays ${creature.name} (dry drop - no prey to consume).`);
 
-      if (!isFree) {
+      // Dry-dropped predators lose Free Play, so recalculate isFree
+      // (isFreePlay checks areAbilitiesActive which returns false for dryDropped creatures)
+      const isFreeAfterDryDrop = isFreePlay(creature);
+      if (!isFreeAfterDryDrop) {
         state.cardPlayedThisTurn = true;
       }
 
