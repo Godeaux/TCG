@@ -141,10 +141,21 @@ export class AIController {
 
       // Advance through early phases to get to Main 1
       // Phase order: Start → Draw → Main 1 → Before Combat → Combat → Main 2 → End
+      console.log(`[${this.playerLabel}] About to advance through early phases. Current phase: ${state.phase}`);
+      let phaseLoopCount = 0;
       while (state.phase === 'Start' || state.phase === 'Draw') {
+        phaseLoopCount++;
+        if (phaseLoopCount > 10) {
+          console.error(`[${this.playerLabel}] Phase loop exceeded 10 iterations! Breaking to prevent infinite loop.`);
+          break;
+        }
+        const phaseBefore = state.phase;
+        console.log(`[${this.playerLabel}] Phase loop iteration ${phaseLoopCount}, calling onAdvancePhase from phase: ${phaseBefore}`);
         callbacks.onAdvancePhase?.();
+        console.log(`[${this.playerLabel}] After onAdvancePhase, phase is now: ${state.phase}`);
         await this.delay(delays.PHASE_ADVANCE, state);
       }
+      console.log(`[${this.playerLabel}] Exited early phase loop. Current phase: ${state.phase}`);
 
       // Play phase actions (Main 1)
       if (state.phase === 'Main 1') {
@@ -217,9 +228,9 @@ export class AIController {
       // Show visual animation: full drag for creatures, hover for spells
       if (cardIndex >= 0) {
         if (isCreatureCard(cardToPlay) && emptySlot >= 0) {
-          await simulateAICardDrag(cardIndex, emptySlot, state);
+          await simulateAICardDrag(cardIndex, emptySlot, state, this.playerIndex);
         } else {
-          await simulateAICardPlay(cardIndex);
+          await simulateAICardPlay(cardIndex, { playerIndex: this.playerIndex });
         }
       }
 

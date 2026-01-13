@@ -23,6 +23,17 @@ let aiController0 = null;      // Player 0 AI (only used in AI vs AI mode)
 let isAITurnInProgress = false;
 
 // ============================================================================
+// BUG DETECTION STATE
+// ============================================================================
+
+let lastTurnCompletedAt = null;
+let lastTurnPlayer = null;
+let stuckDetectionTimer = null;
+let consecutiveStuckCount = 0;
+const STUCK_TIMEOUT_MS = 15000; // 15 seconds without turn completion = potentially stuck
+const MAX_RECOVERY_ATTEMPTS = 3;
+
+// ============================================================================
 // AI INITIALIZATION
 // ============================================================================
 
@@ -87,6 +98,7 @@ export const cleanupAI = () => {
   aiController = null;
   aiController0 = null;
   isAITurnInProgress = false;
+  resetBugDetection();
 };
 
 // ============================================================================
@@ -161,6 +173,11 @@ export const executeAITurn = async (state, callbacks) => {
   const playerLabel = state.activePlayerIndex === 0 ? 'AI-P1' : 'AI-P2';
   console.log(`[AIManager] Starting ${playerLabel} turn execution`);
 
+  // Start stuck detection for AI vs AI mode
+  if (isAIvsAIMode(state)) {
+    startStuckDetection(state, callbacks);
+  }
+
   try {
     await controller.takeTurn(state, {
       onPlayCard: (card, slotIndex, options) => {
@@ -170,6 +187,10 @@ export const executeAITurn = async (state, callbacks) => {
         callbacks.onAIAttack?.(attacker, target);
       },
       onAdvancePhase: () => {
+        console.log(`[AIManager] onAdvancePhase wrapper called, phase: ${state.phase}`);
+        if (!callbacks.onAIAdvancePhase) {
+          console.error('[AIManager] ERROR: callbacks.onAIAdvancePhase is undefined!');
+        }
         callbacks.onAIAdvancePhase?.();
       },
       onEndTurn: () => {
@@ -184,6 +205,11 @@ export const executeAITurn = async (state, callbacks) => {
   } finally {
     isAITurnInProgress = false;
     console.log(`[AIManager] ${playerLabel} turn complete, checking for next AI turn...`);
+
+    // Mark turn as completed (resets stuck detection)
+    if (isAIvsAIMode(state)) {
+      markTurnCompleted(state);
+    }
 
     // After this AI's turn completes, check if the next player is also AI
     // This is needed because when onEndTurn calls refresh() -> checkAndTriggerAITurn,
@@ -202,17 +228,21 @@ export const executeAITurn = async (state, callbacks) => {
  * This should be called after each state update
  */
 export const checkAndTriggerAITurn = (state, callbacks) => {
+  console.log(`[AIManager] checkAndTriggerAITurn called - mode: ${state.menu?.mode}, phase: ${state.phase}, turn: ${state.turn}, activePlayer: ${state.activePlayerIndex}`);
+
   if (!isAnyAIMode(state)) {
+    console.log('[AIManager] checkAndTriggerAITurn: not AI mode, skipping');
     return;
   }
 
   // Don't trigger if game hasn't started or is over
   if (state.setup?.stage !== 'complete') {
-    console.log('[AIManager] checkAndTriggerAITurn: setup not complete, skipping');
+    console.log(`[AIManager] checkAndTriggerAITurn: setup not complete (stage: ${state.setup?.stage}), skipping`);
     return;
   }
 
   if (state.winner) {
+    console.log('[AIManager] checkAndTriggerAITurn: game has winner, skipping');
     return;
   }
 
@@ -235,6 +265,125 @@ export const checkAndTriggerAITurn = (state, callbacks) => {
     console.log(`[AIManager] checkAndTriggerAITurn: not AI turn (isAIsTurn returned false)`);
   }
 };
+
+// ============================================================================
+// BUG DETECTION
+// ============================================================================
+
+/**
+ * Start monitoring for stuck state
+ */
+const startStuckDetection = (state, callbacks) => {
+  if (stuckDetectionTimer) {
+    clearTimeout(stuckDetectionTimer);
+  }
+
+  stuckDetectionTimer = setTimeout(() => {
+    if (!isAIvsAIMode(state) || state.winner) {
+      return;
+    }
+
+    // Check if AI turn is still in progress (potential stuck)
+    if (isAITurnInProgress) {
+      consecutiveStuckCount++;
+      console.error(`[AIManager] ⚠️ STUCK DETECTED: AI turn in progress for ${STUCK_TIMEOUT_MS / 1000}s`);
+      logStuckState(state);
+
+      if (consecutiveStuckCount < MAX_RECOVERY_ATTEMPTS) {
+        console.log(`[AIManager] Attempting recovery (attempt ${consecutiveStuckCount}/${MAX_RECOVERY_ATTEMPTS})...`);
+        attemptRecovery(state, callbacks);
+      } else {
+        console.error(`[AIManager] ❌ Max recovery attempts reached. Game appears permanently stuck.`);
+        logMessage(state, `⚠️ AI vs AI appears stuck after ${MAX_RECOVERY_ATTEMPTS} recovery attempts.`);
+      }
+    }
+  }, STUCK_TIMEOUT_MS);
+};
+
+/**
+ * Log detailed state for debugging stuck issues
+ */
+const logStuckState = (state) => {
+  console.log('=== STUCK STATE DEBUG INFO ===');
+  console.log('Turn:', state.turn);
+  console.log('Phase:', state.phase);
+  console.log('Active Player:', state.activePlayerIndex);
+  console.log('Setup Stage:', state.setup?.stage);
+  console.log('Card Played This Turn:', state.cardPlayedThisTurn);
+  console.log('Pass Pending:', state.passPending);
+  console.log('isAITurnInProgress:', isAITurnInProgress);
+
+  const activePlayer = state.players[state.activePlayerIndex];
+  if (activePlayer) {
+    console.log('Active Player Hand Size:', activePlayer.hand?.length);
+    console.log('Active Player Field:', activePlayer.field?.map(c => c?.name || 'empty').join(', '));
+    console.log('Active Player HP:', activePlayer.hp);
+    console.log('Active Player Deck Size:', activePlayer.deck?.length);
+  }
+
+  console.log('aiController0 exists:', !!aiController0);
+  console.log('aiController exists:', !!aiController);
+  console.log('================================');
+};
+
+/**
+ * Attempt to recover from a stuck state
+ */
+const attemptRecovery = (state, callbacks) => {
+  console.log('[AIManager] Recovery: Resetting isAITurnInProgress flag');
+  isAITurnInProgress = false;
+
+  // Reset AI controller processing flags
+  if (aiController0) {
+    aiController0.isProcessing = false;
+  }
+  if (aiController) {
+    aiController.isProcessing = false;
+  }
+
+  // Try to trigger the next AI turn
+  setTimeout(() => {
+    console.log('[AIManager] Recovery: Attempting to trigger AI turn');
+    checkAndTriggerAITurn(state, callbacks);
+  }, 500);
+};
+
+/**
+ * Reset bug detection state (call on game end/restart)
+ */
+export const resetBugDetection = () => {
+  if (stuckDetectionTimer) {
+    clearTimeout(stuckDetectionTimer);
+    stuckDetectionTimer = null;
+  }
+  lastTurnCompletedAt = null;
+  lastTurnPlayer = null;
+  consecutiveStuckCount = 0;
+};
+
+/**
+ * Mark turn as completed (resets stuck detection)
+ */
+const markTurnCompleted = (state) => {
+  lastTurnCompletedAt = Date.now();
+  lastTurnPlayer = state.activePlayerIndex;
+  consecutiveStuckCount = 0;
+
+  if (stuckDetectionTimer) {
+    clearTimeout(stuckDetectionTimer);
+    stuckDetectionTimer = null;
+  }
+};
+
+/**
+ * Get bug detection statistics
+ */
+export const getBugDetectionStats = () => ({
+  lastTurnCompletedAt,
+  lastTurnPlayer,
+  consecutiveStuckCount,
+  isAITurnInProgress,
+});
 
 // ============================================================================
 // EXPORTS

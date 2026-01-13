@@ -61,20 +61,25 @@ const delay = (msOrRange) => {
 // ============================================================================
 
 /**
- * Get the screen position of a card in the opponent's hand strip
+ * Get the screen position of a card in the player's hand
  * @param {number} cardIndex - Index of card in hand
+ * @param {number} playerIndex - Which player's hand (0 = bottom/active-hand, 1 = top/opponent-hand)
  * @returns {Object|null} { x, y, width, height } or null if not found
  */
-const getHandCardPosition = (cardIndex) => {
-  const container = document.getElementById('opponent-hand-cards');
+const getHandCardPosition = (cardIndex, playerIndex = 1) => {
+  // Player 0's cards are in #active-hand (bottom), Player 1's are in #opponent-hand-cards (top)
+  const containerId = playerIndex === 0 ? 'active-hand' : 'opponent-hand-cards';
+  const container = document.getElementById(containerId);
   if (!container) {
-    console.log('[AI Visual] Hand container not found');
+    console.log(`[AI Visual] Hand container not found: ${containerId}`);
     return null;
   }
 
-  const cards = container.querySelectorAll('.card-back');
+  // Player 0's hand has .card elements, Player 1's hand has .card-back elements
+  const cardSelector = playerIndex === 0 ? '.card' : '.card-back';
+  const cards = container.querySelectorAll(cardSelector);
   if (cardIndex < 0 || cardIndex >= cards.length) {
-    console.log('[AI Visual] Card not found in hand:', cardIndex, 'of', cards.length);
+    console.log(`[AI Visual] Card not found in hand: ${cardIndex} of ${cards.length} (player ${playerIndex})`);
     return null;
   }
 
@@ -92,20 +97,21 @@ const getHandCardPosition = (cardIndex) => {
 /**
  * Get the screen position of a field slot
  * @param {number} slotIndex - Index of field slot (0-2)
- * @param {boolean} isOpponent - Whether this is the opponent's field
+ * @param {number} playerIndex - Which player's field (0 = bottom/player-field, 1 = top/opponent-field)
  * @returns {Object|null} { x, y, width, height } or null if not found
  */
-const getTargetSlotPosition = (slotIndex, isOpponent = true) => {
-  const fieldClass = isOpponent ? '.opponent-field' : '.player-field';
+const getTargetSlotPosition = (slotIndex, playerIndex = 1) => {
+  // Player 0's field is .player-field (bottom), Player 1's field is .opponent-field (top)
+  const fieldClass = playerIndex === 0 ? '.player-field' : '.opponent-field';
   const field = document.querySelector(fieldClass);
   if (!field) {
-    console.log('[AI Visual] Field not found:', fieldClass);
+    console.log(`[AI Visual] Field not found: ${fieldClass}`);
     return null;
   }
 
   const slots = field.querySelectorAll('.field-slot');
   if (slotIndex < 0 || slotIndex >= slots.length) {
-    console.log('[AI Visual] Slot not found:', slotIndex, 'of', slots.length);
+    console.log(`[AI Visual] Slot not found: ${slotIndex} of ${slots.length} (player ${playerIndex})`);
     return null;
   }
 
@@ -168,30 +174,46 @@ const removeFlyingCard = () => {
  * @param {number} cardIndex - Index of card in AI's hand
  * @param {number} targetSlotIndex - Index of target field slot
  * @param {Object} state - Game state (for deck emoji inference)
+ * @param {number} playerIndex - Which AI player (0 or 1)
  * @returns {Promise} Resolves when animation sequence is complete
  */
-export const simulateAICardDrag = async (cardIndex, targetSlotIndex, state) => {
-  console.log('[AI Visual] simulateAICardDrag called:', { cardIndex, targetSlotIndex });
+export const simulateAICardDrag = async (cardIndex, targetSlotIndex, state, playerIndex = 1) => {
+  console.log(`[AI Visual] simulateAICardDrag called:`, { cardIndex, targetSlotIndex, playerIndex });
 
-  // Get positions
-  const startPos = getHandCardPosition(cardIndex);
-  const endPos = getTargetSlotPosition(targetSlotIndex, true);
+  // Get positions based on which player is acting
+  const startPos = getHandCardPosition(cardIndex, playerIndex);
+  const endPos = getTargetSlotPosition(targetSlotIndex, playerIndex);
 
   console.log('[AI Visual] Positions:', { startPos, endPos });
 
   if (!startPos || !endPos) {
     // Fallback to simple hover if positions not found
     console.log('[AI Visual] Falling back to hover - positions not found');
-    await simulateAIHover(cardIndex);
+    await simulateAIHover(cardIndex, playerIndex);
     return;
   }
 
-  // Get deck emoji from opponent hand state
-  const handState = getOpponentHandState();
-  const deckEmoji = handState.deckEmoji || '🎴';
+  // Get deck emoji - for player 0, we can see the card, for player 1 use opponent hand state
+  let deckEmoji = '🎴';
+  if (playerIndex === 1) {
+    const handState = getOpponentHandState();
+    deckEmoji = handState.deckEmoji || '🎴';
+  } else {
+    // For player 0, try to get deck emoji from state
+    deckEmoji = state.players?.[0]?.deckEmoji || '🎴';
+  }
 
-  // Phase 1: Hover - raise card in hand
-  updateOpponentHover(cardIndex);
+  // Phase 1: Hover - raise card in hand (only for player 1's opponent hand strip)
+  if (playerIndex === 1) {
+    updateOpponentHover(cardIndex);
+  } else {
+    // For player 0, add a visual highlight class to the card
+    const handContainer = document.getElementById('active-hand');
+    const cards = handContainer?.querySelectorAll('.card');
+    if (cards?.[cardIndex]) {
+      cards[cardIndex].classList.add('ai-selecting');
+    }
+  }
   await delay(AI_VISUAL_TIMING.HOVER);
 
   // Phase 2: Lift - create flying card at hand position
@@ -202,8 +224,18 @@ export const simulateAICardDrag = async (cardIndex, targetSlotIndex, state) => {
   console.log('[AI Visual] Flying card created at:', startPos.x, startPos.y);
 
   // Fade the original card in hand
-  updateOpponentDrag(cardIndex);
-  updateOpponentHover(null);
+  if (playerIndex === 1) {
+    updateOpponentDrag(cardIndex);
+    updateOpponentHover(null);
+  } else {
+    // For player 0, remove the highlight
+    const handContainer = document.getElementById('active-hand');
+    const cards = handContainer?.querySelectorAll('.card');
+    if (cards?.[cardIndex]) {
+      cards[cardIndex].classList.remove('ai-selecting');
+      cards[cardIndex].classList.add('ai-dragging');
+    }
+  }
 
   await delay(AI_VISUAL_TIMING.LIFT);
 
@@ -224,31 +256,60 @@ export const simulateAICardDrag = async (cardIndex, targetSlotIndex, state) => {
 
   // Cleanup
   removeFlyingCard();
-  updateOpponentDrag(null);
-  clearOpponentHandStates();
+  if (playerIndex === 1) {
+    updateOpponentDrag(null);
+    clearOpponentHandStates();
+  } else {
+    // Clear player 0's visual states
+    const handContainer = document.getElementById('active-hand');
+    const cards = handContainer?.querySelectorAll('.card');
+    cards?.forEach(card => {
+      card.classList.remove('ai-selecting', 'ai-dragging');
+    });
+  }
 };
 
 /**
  * Simple hover animation (fallback/legacy)
  * @param {number} cardIndex - Index of card in hand
+ * @param {number} playerIndex - Which AI player (0 or 1)
  * @returns {Promise} Resolves after hover duration
  */
-export const simulateAIHover = (cardIndex) => {
+export const simulateAIHover = (cardIndex, playerIndex = 1) => {
   return new Promise((resolve) => {
-    updateOpponentHover(cardIndex);
-    setTimeout(() => {
-      updateOpponentHover(null);
-      resolve();
-    }, getRandomDelay(AI_VISUAL_TIMING.HOVER));
+    if (playerIndex === 1) {
+      updateOpponentHover(cardIndex);
+      setTimeout(() => {
+        updateOpponentHover(null);
+        resolve();
+      }, getRandomDelay(AI_VISUAL_TIMING.HOVER));
+    } else {
+      // For player 0, highlight the card in the active hand
+      const handContainer = document.getElementById('active-hand');
+      const cards = handContainer?.querySelectorAll('.card');
+      if (cards?.[cardIndex]) {
+        cards[cardIndex].classList.add('ai-selecting');
+      }
+      setTimeout(() => {
+        if (cards?.[cardIndex]) {
+          cards[cardIndex].classList.remove('ai-selecting');
+        }
+        resolve();
+      }, getRandomDelay(AI_VISUAL_TIMING.HOVER));
+    }
   });
 };
 
 /**
  * Legacy function for backwards compatibility
+ * @param {number} cardIndex - Index of card in hand
+ * @param {Object} options - Options object
+ * @param {number} options.playerIndex - Which AI player (0 or 1)
  */
 export const simulateAICardPlay = async (cardIndex, options = {}) => {
+  const playerIndex = options.playerIndex ?? 1;
   // Use new drag animation if we have slot info, otherwise fallback to hover
-  await simulateAIHover(cardIndex);
+  await simulateAIHover(cardIndex, playerIndex);
 };
 
 // ============================================================================
@@ -337,6 +398,7 @@ export const simulateAICombatSequence = async (attacker, target) => {
  * Called when AI turn ends or is interrupted
  */
 export const clearAIVisuals = () => {
+  // Clear player 1's opponent hand states
   clearOpponentHandStates();
   removeFlyingCard();
   clearAICombatHighlights();
@@ -345,4 +407,11 @@ export const clearAIVisuals = () => {
   if (preview) {
     preview.classList.remove('active');
   }
+
+  // Clear player 0's visual states from the active hand
+  const handContainer = document.getElementById('active-hand');
+  const cards = handContainer?.querySelectorAll('.card');
+  cards?.forEach(card => {
+    card.classList.remove('ai-selecting', 'ai-dragging');
+  });
 };

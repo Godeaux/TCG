@@ -991,6 +991,28 @@ button {
 }
 
 /* ============================================================================
+   AI HAND CARD SELECTION (Player 0 in AI vs AI mode)
+   Visual feedback when AI player 0 selects cards from the bottom hand
+   ============================================================================ */
+
+/* AI selecting a card - raise and highlight */
+.card.ai-selecting {
+  transform: translateY(-20px) scale(1.05) !important;
+  box-shadow:
+    0 0 20px rgba(100, 200, 255, 0.7),
+    0 0 40px rgba(100, 200, 255, 0.4) !important;
+  z-index: 1000 !important;
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out !important;
+}
+
+/* AI dragging a card - faded to show it's being moved */
+.card.ai-dragging {
+  opacity: 0.3 !important;
+  transform: scale(0.95) !important;
+  transition: opacity 0.15s ease-out, transform 0.15s ease-out !important;
+}
+
+/* ============================================================================
    OPPONENT CURSOR (Spirit Ball)
    Glowing orb that follows opponent's cursor position
    ============================================================================ */

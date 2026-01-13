@@ -49,10 +49,14 @@ const aiCallbacks = {
     refresh();
   },
   onAIAdvancePhase: () => {
+    console.log(`[Main] onAIAdvancePhase called, current phase: ${state.phase}, activePlayer: ${state.activePlayerIndex}`);
+    const phaseBefore = state.phase;
     advancePhase(state);
+    console.log(`[Main] onAIAdvancePhase: phase changed from ${phaseBefore} to ${state.phase}`);
     refresh();
   },
   onAIEndTurn: () => {
+    console.log(`[Main] onAIEndTurn called, current phase: ${state.phase}, turn: ${state.turn}`);
     endTurn(state);
     refresh();
   },

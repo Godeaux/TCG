@@ -116,10 +116,26 @@ export const getRemotePlayer = (state) => {
 
 /**
  * Check if it's the local player's turn
+ * - AI vs AI mode: never (both players are AI, no human interaction)
+ * - AI mode: only when player 0 is active (human is player 0)
+ * - Online mode: when local player is active
+ * - Local mode: always (hot-seat play, both players take turns on same device)
  */
 export const isLocalPlayersTurn = (state) => {
-  const localIndex = getLocalPlayerIndex(state);
-  return state.activePlayerIndex === localIndex;
+  // AI vs AI: no human player, so never the local player's turn
+  if (isAIvsAIMode(state)) {
+    return false;
+  }
+  // Regular AI mode: human is player 0
+  if (isAIMode(state)) {
+    return state.activePlayerIndex === 0;
+  }
+  // Online mode: check if it's the local player's turn
+  if (state.menu?.mode === "online") {
+    return state.activePlayerIndex === getLocalPlayerIndex(state);
+  }
+  // Local mode (hot-seat): always the local player's turn
+  return true;
 };
 
 // ============================================================================

@@ -44,6 +44,7 @@ import {
   isOnlineMode,
   isAIMode,
   isAnyAIMode,
+  isAIvsAIMode,
 } from "./state/selectors.js";
 
 // Victory overlay (extracted module)
@@ -478,9 +479,15 @@ const handleSyncPostProcessing = (state, payload, options = {}) => {
   });
 
   // Handle pending choice from opponent (e.g., forced discard)
-  if (state.pendingChoice && state.pendingChoice.forPlayer === localIndex) {
-    const { type, title, count } = state.pendingChoice;
-    const player = state.players[localIndex];
+  // In AI vs AI mode, handle pending choices for any player
+  const pendingChoiceForPlayer = state.pendingChoice?.forPlayer;
+  const shouldHandlePendingChoice = state.pendingChoice && (
+    pendingChoiceForPlayer === localIndex || isAIvsAIMode(state)
+  );
+
+  if (shouldHandlePendingChoice) {
+    const { type, title, count, forPlayer } = state.pendingChoice;
+    const player = state.players[forPlayer];
 
     if (type === 'discard') {
       // Show discard selection for opponent
@@ -503,23 +510,46 @@ const handleSyncPostProcessing = (state, payload, options = {}) => {
         latestCallbacks.onUpdate?.();
       };
 
-      const items = candidates.map((candidate) => {
-        const item = document.createElement("label");
-        item.className = "selection-item selection-card";
-        const cardElement = renderCard(candidate.value, {
-          showEffectSummary: true,
-          onClick: () => handleSelection(candidate.value),
-        });
-        item.appendChild(cardElement);
-        return item;
-      });
+      // AI vs AI mode: auto-select a card to discard (pick lowest value card)
+      if (isAIvsAIMode(state) && candidates.length > 0) {
+        console.log(`[AI] Auto-selecting discard for player ${forPlayer}`);
 
-      renderSelectionPanel({
-        title: title || `Choose ${count || 1} card to discard`,
-        items,
-        onConfirm: null,
-        confirmLabel: null, // No cancel option for forced choices
-      });
+        // Sort by card value (lowest first) - discard the weakest card
+        const sortedCandidates = [...candidates].sort((a, b) => {
+          const aCard = a.value;
+          const bCard = b.value;
+          const aValue = (aCard.atk ?? 0) + (aCard.hp ?? 0);
+          const bValue = (bCard.atk ?? 0) + (bCard.hp ?? 0);
+          return aValue - bValue;
+        });
+
+        const selectedCard = sortedCandidates[0].value;
+        console.log(`[AI] Discarding: ${selectedCard.name}`);
+
+        const aiDelay = state.menu?.aiSlowMode ? 500 : 100;
+        setTimeout(() => {
+          handleSelection(selectedCard);
+        }, aiDelay);
+      } else {
+        // Human player: show selection UI
+        const items = candidates.map((candidate) => {
+          const item = document.createElement("label");
+          item.className = "selection-item selection-card";
+          const cardElement = renderCard(candidate.value, {
+            showEffectSummary: true,
+            onClick: () => handleSelection(candidate.value),
+          });
+          item.appendChild(cardElement);
+          return item;
+        });
+
+        renderSelectionPanel({
+          title: title || `Choose ${count || 1} card to discard`,
+          items,
+          onConfirm: null,
+          confirmLabel: null, // No cancel option for forced choices
+        });
+      }
     }
   } else if (!state.pendingChoice) {
     // Clear any "waiting" selection panel if pending choice was resolved
@@ -747,13 +777,13 @@ const updatePlayerStats = (state, index, role, onUpdate = null) => {
     applyStyledName(nameEl, player.name, nameStyle);
 
     // Add AI speed toggle button next to AI's name (player2 in AI mode)
-    if (role === "player2" && isAIMode(state)) {
+    if (role === "player2" && isAnyAIMode(state)) {
       let speedBtn = document.getElementById("ai-speed-toggle");
       if (!speedBtn) {
         speedBtn = document.createElement("button");
         speedBtn.id = "ai-speed-toggle";
         speedBtn.className = "ai-speed-toggle";
-        speedBtn.title = "Toggle AI speed";
+        speedBtn.title = "Toggle AI speed (🐇 fast / 🐢 slow)";
         nameEl.parentNode.insertBefore(speedBtn, nameEl.nextSibling);
       }
       speedBtn.textContent = state.menu.aiSlowMode ? "\u{1F422}" : "\u{1F407}";
@@ -1418,9 +1448,7 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
     const resolvedCandidates =
       typeof candidatesInput === "function" ? candidatesInput() : candidatesInput;
     const candidates = Array.isArray(resolvedCandidates) ? resolvedCandidates : [];
-    const shouldRenderCards =
-      renderCards ||
-      candidates.some((candidate) => isCardLike(candidate.card ?? candidate.value));
+
     const handleSelection = (value) => {
       clearSelectionPanel();
       // Log the player's choice - include spell name if this is a spell target selection
@@ -1441,6 +1469,58 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
       onUpdate?.();
       broadcastSyncState(state);
     };
+
+    // AI vs AI mode: auto-select the best target
+    if (isAIvsAIMode(state) && candidates.length > 0) {
+      console.log(`[AI] Auto-selecting target for: ${title}`);
+      console.log(`[AI] Candidates:`, candidates.map(c => c.label || c.value?.name || 'unknown'));
+
+      // AI target selection heuristic:
+      // For damage effects, prefer opponent creatures over own creatures, prefer higher HP targets
+      // For other effects, just pick the first valid candidate
+      const aiPlayerIndex = context.playerIndex ?? state.activePlayerIndex;
+      const opponentIndex = (aiPlayerIndex + 1) % 2;
+
+      // Sort candidates: prefer opponent targets, then by creature stats
+      const sortedCandidates = [...candidates].sort((a, b) => {
+        const aValue = a.value;
+        const bValue = b.value;
+
+        // Check if targets are players
+        const aIsPlayer = aValue?.hp !== undefined && aValue?.deck !== undefined;
+        const bIsPlayer = bValue?.hp !== undefined && bValue?.deck !== undefined;
+
+        // Check if targets are opponent's creatures/player
+        const aIsOpponent = aIsPlayer ? (aValue === state.players[opponentIndex]) :
+          (state.players[opponentIndex]?.field?.some(c => c?.instanceId === aValue?.instanceId));
+        const bIsOpponent = bIsPlayer ? (bValue === state.players[opponentIndex]) :
+          (state.players[opponentIndex]?.field?.some(c => c?.instanceId === bValue?.instanceId));
+
+        // Prefer opponent targets for damage effects
+        if (aIsOpponent && !bIsOpponent) return -1;
+        if (!aIsOpponent && bIsOpponent) return 1;
+
+        // For creatures, prefer higher HP (more valuable targets)
+        const aHp = aValue?.currentHp ?? aValue?.hp ?? 0;
+        const bHp = bValue?.currentHp ?? bValue?.hp ?? 0;
+        return bHp - aHp;
+      });
+
+      const selectedCandidate = sortedCandidates[0];
+      console.log(`[AI] Selected: ${selectedCandidate.label || selectedCandidate.value?.name || 'target'}`);
+
+      // Add a small delay to make it visible, then auto-select
+      const aiDelay = state.menu?.aiSlowMode ? 500 : 100;
+      setTimeout(() => {
+        handleSelection(selectedCandidate.value);
+      }, aiDelay);
+      return;
+    }
+
+    // Human player: show selection UI
+    const shouldRenderCards =
+      renderCards ||
+      candidates.some((candidate) => isCardLike(candidate.card ?? candidate.value));
     const items = candidates.map((candidate) => {
       const item = document.createElement("label");
       item.className = "selection-item";
@@ -1493,6 +1573,23 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
       broadcastSyncState(state);
     };
 
+    // AI vs AI mode: auto-select the first option
+    if (isAIvsAIMode(state) && options.length > 0) {
+      console.log(`[AI] Auto-selecting option for: ${title}`);
+      console.log(`[AI] Options:`, options.map(o => o.label));
+
+      // For now, just pick the first option (could be smarter based on option descriptions)
+      const selectedOption = options[0];
+      console.log(`[AI] Selected: ${selectedOption.label}`);
+
+      const aiDelay = state.menu?.aiSlowMode ? 500 : 100;
+      setTimeout(() => {
+        handleOptionSelection(selectedOption);
+      }, aiDelay);
+      return;
+    }
+
+    // Human player: show selection UI
     // Create bubble-style option buttons
     const items = options.map((option) => {
       const item = document.createElement("label");

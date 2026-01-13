@@ -72,6 +72,12 @@ const renderRollingPhase = (state, elements, callbacks) => {
   `;
   rolls.appendChild(rollSummary);
 
+  // Reset aiRollPending if we need to re-roll (tie was detected and rolls were reset)
+  if (isAIvsAIMode(state) && p1Roll === null && p2Roll === null && aiRollPending) {
+    console.log("[AI vs AI] Tie detected, resetting aiRollPending for reroll");
+    aiRollPending = false;
+  }
+
   // In AI vs AI mode, auto-roll for both players
   if (isAIvsAIMode(state) && !aiRollPending) {
     aiRollPending = true;
