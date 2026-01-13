@@ -132,16 +132,24 @@ export const isAIProcessing = () => {
  * This is called from the game loop when it's detected that AI should act
  */
 export const executeAITurn = async (state, callbacks) => {
+  console.log(`[AIManager] executeAITurn called, activePlayer: ${state.activePlayerIndex}, inProgress: ${isAITurnInProgress}`);
+
   if (isAITurnInProgress) {
+    console.log('[AIManager] executeAITurn: already in progress, returning');
     return;
   }
 
   const controller = getActiveAIController(state);
+  console.log(`[AIManager] executeAITurn: got controller:`, controller ? `playerIndex=${controller.playerIndex}` : 'null');
+
   if (!controller) {
+    console.log('[AIManager] executeAITurn: no controller found, returning');
+    console.log(`[AIManager] aiController0: ${aiController0 ? 'exists' : 'null'}, aiController: ${aiController ? 'exists' : 'null'}`);
     return;
   }
 
   if (!isAIsTurn(state)) {
+    console.log('[AIManager] executeAITurn: not AI turn, returning');
     return;
   }
 
@@ -185,6 +193,7 @@ export const checkAndTriggerAITurn = (state, callbacks) => {
 
   // Don't trigger if game hasn't started or is over
   if (state.setup?.stage !== 'complete') {
+    console.log('[AIManager] checkAndTriggerAITurn: setup not complete, skipping');
     return;
   }
 
@@ -194,17 +203,21 @@ export const checkAndTriggerAITurn = (state, callbacks) => {
 
   // Don't trigger if AI is already processing
   if (isAITurnInProgress) {
+    console.log('[AIManager] checkAndTriggerAITurn: turn already in progress, skipping');
     return;
   }
 
   // Check if it's AI's turn
   if (isAIsTurn(state)) {
+    console.log(`[AIManager] checkAndTriggerAITurn: triggering AI turn for player ${state.activePlayerIndex}`);
     // Use setTimeout to allow UI to update first
     // Shorter delay for AI vs AI mode for faster gameplay
     const delay = isAIvsAIMode(state) ? 200 : 500;
     setTimeout(() => {
       executeAITurn(state, callbacks);
     }, delay);
+  } else {
+    console.log(`[AIManager] checkAndTriggerAITurn: not AI turn (isAIsTurn returned false)`);
   }
 };
 

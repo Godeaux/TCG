@@ -120,13 +120,17 @@ export class AIController {
     }
 
     if (!this.isAITurn(state)) {
-      console.log(`[${this.playerLabel}] Not AI turn, skipping`);
+      console.log(`[${this.playerLabel}] Not AI turn (active: ${state.activePlayerIndex}, mine: ${this.playerIndex}), skipping`);
       return;
     }
 
     this.isProcessing = true;
     const delays = this.getDelays(state);
     const player = this.getAIPlayer(state);
+
+    console.log(`[${this.playerLabel}] === STARTING TURN ===`);
+    console.log(`[${this.playerLabel}] Phase: ${state.phase}, Turn: ${state.turn}`);
+    console.log(`[${this.playerLabel}] Hand size: ${player.hand.length}, Field slots filled: ${player.field.filter(s => s).length}/3`);
 
     this.logThought(state, `Starting turn ${state.turn}, phase: ${state.phase}`);
     this.logThought(state, `Hand: ${player.hand.map(c => c.name).join(', ') || 'empty'}`);
@@ -183,6 +187,10 @@ export class AIController {
     const player = this.getAIPlayer(state);
     const delays = this.getDelays(state);
     let actionsRemaining = 10; // Safety limit
+
+    console.log(`[${this.playerLabel}] executePlayPhase - phase: ${state.phase}, cardPlayedThisTurn: ${state.cardPlayedThisTurn}`);
+    console.log(`[${this.playerLabel}] Hand: ${player.hand.map(c => c.name).join(', ')}`);
+    console.log(`[${this.playerLabel}] Field: ${player.field.map(c => c?.name || 'empty').join(', ')}`);
 
     this.logThought(state, `Evaluating play options...`);
 
@@ -241,6 +249,7 @@ export class AIController {
 
     // Check if we can play cards in this phase
     if (!canPlayCard(state)) {
+      console.log(`[${this.playerLabel}] selectCardToPlay: canPlayCard returned false (phase: ${state.phase}, setup: ${state.setup?.stage})`);
       return null;
     }
 
