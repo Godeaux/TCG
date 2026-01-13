@@ -31,9 +31,13 @@ let isAITurnInProgress = false;
  * Called when an AI game starts
  */
 export const initializeAI = (state) => {
+  console.log('[AIManager] initializeAI called');
+  console.log('[AIManager] state.menu.mode:', state.menu?.mode);
+  console.log('[AIManager] isAIvsAIMode:', isAIvsAIMode(state), 'isAIMode:', isAIMode(state));
+
   if (isAIvsAIMode(state)) {
     // AI vs AI mode: create two controllers
-    console.log('[AIManager] Initializing AI vs AI mode');
+    console.log('[AIManager] Initializing AI vs AI mode - creating both controllers');
 
     aiController0 = createAIController(0, true);  // AI for player 0 (bottom/watching)
     aiController = createAIController(1, true);   // AI for player 1 (top/opponent)
