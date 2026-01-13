@@ -259,7 +259,10 @@ export class AIController {
       return isFree || !state.cardPlayedThisTurn;
     });
 
+    console.log(`[${this.playerLabel}] selectCardToPlay: hand has ${hand.length} cards, ${playableCards.length} playable (cardPlayedThisTurn: ${state.cardPlayedThisTurn})`);
+
     if (playableCards.length === 0) {
+      console.log(`[${this.playerLabel}] selectCardToPlay: no playable cards`);
       return null;
     }
 
@@ -269,7 +272,10 @@ export class AIController {
       isCreatureCard(c) ? hasFieldSpace : true
     );
 
+    console.log(`[${this.playerLabel}] selectCardToPlay: ${creaturesPlayable.length} cards can actually be played (hasFieldSpace: ${hasFieldSpace})`);
+
     if (creaturesPlayable.length === 0) {
+      console.log(`[${this.playerLabel}] selectCardToPlay: no creatures playable (field full or only creatures in hand)`);
       return null;
     }
 
