@@ -965,7 +965,7 @@ export const checkTurnCounter = (state, before, action) => {
     bugs.push({
       type: 'turn_decreased',
       severity: 'high',
-      message: `Turn counter decreased: ${before.turn} → ${state.turn}`,
+      message: `Turn counter decreased: ${before.turn} -> ${state.turn}`,
       details: {
         turnBefore: before.turn,
         turnAfter: state.turn,
@@ -979,7 +979,7 @@ export const checkTurnCounter = (state, before, action) => {
     bugs.push({
       type: 'turn_skipped',
       severity: 'medium',
-      message: `Turn counter jumped unexpectedly: ${before.turn} → ${state.turn}`,
+      message: `Turn counter jumped unexpectedly: ${before.turn} -> ${state.turn}`,
       details: {
         turnBefore: before.turn,
         turnAfter: state.turn,

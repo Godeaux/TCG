@@ -83,7 +83,7 @@ const FIX_SUGGESTIONS = {
   },
   card_count_mismatch: {
     files: ['js/game/controller.js', 'js/game/effects.js'],
-    hint: 'Check card zone transitions (hand→field, field→carrion)',
+    hint: 'Check card zone transitions (hand->field, field->carrion)',
   },
   hp_bounds: {
     files: ['js/game/combat.js', 'js/game/effects.js'],
@@ -203,25 +203,25 @@ const createStateDiff = (before, after) => {
     const playerName = after.players[i]?.name || `Player ${i + 1}`;
 
     if (pDiff.hp) {
-      summary.push(`${playerName} HP: ${pDiff.hp.before} → ${pDiff.hp.after}`);
+      summary.push(`${playerName} HP: ${pDiff.hp.before} -> ${pDiff.hp.after}`);
     }
     if (pDiff.handSize) {
-      summary.push(`${playerName} hand: ${pDiff.handSize.before} → ${pDiff.handSize.after} cards`);
+      summary.push(`${playerName} hand: ${pDiff.handSize.before} -> ${pDiff.handSize.after} cards`);
     }
     if (pDiff.deckSize) {
-      summary.push(`${playerName} deck: ${pDiff.deckSize.before} → ${pDiff.deckSize.after} cards`);
+      summary.push(`${playerName} deck: ${pDiff.deckSize.before} -> ${pDiff.deckSize.after} cards`);
     }
     if (pDiff.fieldCount) {
-      summary.push(`${playerName} field: ${pDiff.fieldCount.before} → ${pDiff.fieldCount.after} creatures`);
+      summary.push(`${playerName} field: ${pDiff.fieldCount.before} -> ${pDiff.fieldCount.after} creatures`);
     }
     if (pDiff.carrionSize) {
-      summary.push(`${playerName} carrion: ${pDiff.carrionSize.before} → ${pDiff.carrionSize.after} cards`);
+      summary.push(`${playerName} carrion: ${pDiff.carrionSize.before} -> ${pDiff.carrionSize.after} cards`);
     }
     if (pDiff.creatureChanges) {
       pDiff.creatureChanges.forEach(c => {
         const changes = [];
-        if (c.hp) changes.push(`HP ${c.hp.before}→${c.hp.after}`);
-        if (c.atk) changes.push(`ATK ${c.atk.before}→${c.atk.after}`);
+        if (c.hp) changes.push(`HP ${c.hp.before}->${c.hp.after}`);
+        if (c.atk) changes.push(`ATK ${c.atk.before}->${c.atk.after}`);
         summary.push(`${c.name}: ${changes.join(', ')}`);
       });
     }
@@ -229,10 +229,10 @@ const createStateDiff = (before, after) => {
 
   // Global changes
   if (diff.global.turn) {
-    summary.push(`Turn: ${diff.global.turn.before} → ${diff.global.turn.after}`);
+    summary.push(`Turn: ${diff.global.turn.before} -> ${diff.global.turn.after}`);
   }
   if (diff.global.phase) {
-    summary.push(`Phase: ${diff.global.phase.before} → ${diff.global.phase.after}`);
+    summary.push(`Phase: ${diff.global.phase.before} -> ${diff.global.phase.after}`);
   }
 
   return {
@@ -299,9 +299,9 @@ const summarizeContext = (context) => {
  */
 export const formatBugReport = (report) => {
   const lines = [
-    `═══════════════════════════════════════════════`,
-    `🐛 BUG DETECTED: ${report.id}`,
-    `═══════════════════════════════════════════════`,
+    `===============================================`,
+    `[BUG] BUG DETECTED: ${report.id}`,
+    `===============================================`,
     ``,
     `Type: ${report.type}`,
     `Category: ${report.category}`,
@@ -313,7 +313,7 @@ export const formatBugReport = (report) => {
 
   // Game context
   if (report.gameContext) {
-    lines.push(`── Game Context ──`);
+    lines.push(`-- Game Context --`);
     lines.push(`Turn: ${report.gameContext.turn}, Phase: ${report.gameContext.phase}`);
     lines.push(`Active Player: ${report.gameContext.activePlayer}`);
     if (report.gameContext.action) {
@@ -324,16 +324,16 @@ export const formatBugReport = (report) => {
 
   // State diff
   if (report.stateDiff?.changes?.length > 0) {
-    lines.push(`── State Changes ──`);
+    lines.push(`-- State Changes --`);
     report.stateDiff.changes.forEach(change => {
-      lines.push(`  • ${change}`);
+      lines.push(`  *${change}`);
     });
     lines.push(``);
   }
 
   // Details
   if (report.details && Object.keys(report.details).length > 0) {
-    lines.push(`── Details ──`);
+    lines.push(`-- Details --`);
     Object.entries(report.details).forEach(([key, value]) => {
       lines.push(`  ${key}: ${JSON.stringify(value)}`);
     });
@@ -342,12 +342,12 @@ export const formatBugReport = (report) => {
 
   // Fix suggestion
   if (report.fixSuggestion) {
-    lines.push(`── Suggested Fix ──`);
+    lines.push(`-- Suggested Fix --`);
     lines.push(`Hint: ${report.fixSuggestion.hint}`);
     if (report.fixSuggestion.files?.length > 0) {
       lines.push(`Check files:`);
       report.fixSuggestion.files.forEach(file => {
-        lines.push(`  → ${file}`);
+        lines.push(`  -> ${file}`);
       });
     }
     lines.push(``);
@@ -355,13 +355,13 @@ export const formatBugReport = (report) => {
 
   // Recent actions
   if (report.reproduction?.actionHistory?.length > 0) {
-    lines.push(`── Recent Actions (last ${report.reproduction.actionHistory.length}) ──`);
+    lines.push(`-- Recent Actions (last ${report.reproduction.actionHistory.length}) --`);
     report.reproduction.actionHistory.slice(-5).forEach((action, i) => {
       lines.push(`  ${i + 1}. ${action.type}: ${action.summary || ''}`);
     });
   }
 
-  lines.push(`═══════════════════════════════════════════════`);
+  lines.push(`===============================================`);
 
   return lines.join('\n');
 };
@@ -759,9 +759,9 @@ export class BugDetector {
       }
     }
 
-    // Drawing cards doesn't change total (deck → hand)
-    // Playing cards doesn't change total (hand → field)
-    // Combat deaths move cards (field → carrion) - no change
+    // Drawing cards doesn't change total (deck -> hand)
+    // Playing cards doesn't change total (hand -> field)
+    // Combat deaths move cards (field -> carrion) - no change
     // Exile moves cards - no change in total
 
     const actualChange = countAfter - countBefore;
@@ -770,7 +770,7 @@ export class BugDetector {
       bugs.push({
         type: 'card_count_mismatch',
         severity: 'medium',
-        message: `Card count changed unexpectedly: ${countBefore} → ${countAfter} (expected ${expectedChange >= 0 ? '+' : ''}${expectedChange}, got ${actualChange >= 0 ? '+' : ''}${actualChange})`,
+        message: `Card count changed unexpectedly: ${countBefore} -> ${countAfter} (expected ${expectedChange >= 0 ? '+' : ''}${expectedChange}, got ${actualChange >= 0 ? '+' : ''}${actualChange})`,
         details: {
           countBefore,
           countAfter,
@@ -817,7 +817,7 @@ export class BugDetector {
 
       // Log fix hint
       if (report.fixSuggestion?.hint) {
-        this.logBug(state, `  💡 ${report.fixSuggestion.hint}`);
+        this.logBug(state, `  [TIP] ${report.fixSuggestion.hint}`);
       }
 
       // Log detailed report to console
@@ -903,28 +903,28 @@ export class BugDetector {
     const stats = this.getStats();
 
     const lines = [
-      `╔═══════════════════════════════════════════════╗`,
-      `║         BUG DETECTION SUMMARY REPORT          ║`,
-      `╠═══════════════════════════════════════════════╣`,
-      `║ Runtime: ${Math.floor(stats.runtime / 1000)}s                              ║`,
-      `║ Actions Checked: ${stats.actionsChecked.toString().padEnd(27)}║`,
-      `║ Bugs Found: ${stats.bugsFound.toString().padEnd(32)}║`,
-      `╠═══════════════════════════════════════════════╣`,
-      `║ BY SEVERITY:                                  ║`,
-      `║   Critical: ${(stats.bugsBySeverity.critical || 0).toString().padEnd(33)}║`,
-      `║   High: ${(stats.bugsBySeverity.high || 0).toString().padEnd(37)}║`,
-      `║   Medium: ${(stats.bugsBySeverity.medium || 0).toString().padEnd(35)}║`,
-      `║   Low: ${(stats.bugsBySeverity.low || 0).toString().padEnd(38)}║`,
-      `╠═══════════════════════════════════════════════╣`,
-      `║ BY CATEGORY:                                  ║`,
+      `+===============================================+`,
+      `|         BUG DETECTION SUMMARY REPORT          |`,
+      `+===============================================+`,
+      `| Runtime: ${Math.floor(stats.runtime / 1000)}s                              |`,
+      `| Actions Checked: ${stats.actionsChecked.toString().padEnd(27)}|`,
+      `| Bugs Found: ${stats.bugsFound.toString().padEnd(32)}|`,
+      `+===============================================+`,
+      `| BY SEVERITY:                                  |`,
+      `|   Critical: ${(stats.bugsBySeverity.critical || 0).toString().padEnd(33)}|`,
+      `|   High: ${(stats.bugsBySeverity.high || 0).toString().padEnd(37)}|`,
+      `|   Medium: ${(stats.bugsBySeverity.medium || 0).toString().padEnd(35)}|`,
+      `|   Low: ${(stats.bugsBySeverity.low || 0).toString().padEnd(38)}|`,
+      `+===============================================+`,
+      `| BY CATEGORY:                                  |`,
     ];
 
     Object.entries(stats.bugsByCategory).forEach(([cat, count]) => {
       const label = cat.replace(/_/g, ' ');
-      lines.push(`║   ${label}: ${count.toString().padEnd(41 - label.length)}║`);
+      lines.push(`|   ${label}: ${count.toString().padEnd(41 - label.length)}|`);
     });
 
-    lines.push(`╚═══════════════════════════════════════════════╝`);
+    lines.push(`+===============================================+`);
 
     if (this.bugsDetected.length > 0) {
       lines.push(``);
@@ -932,7 +932,7 @@ export class BugDetector {
       const uniqueTypes = [...new Set(this.bugsDetected.map(b => b.type))];
       uniqueTypes.forEach(type => {
         const count = this.bugsDetected.filter(b => b.type === type).length;
-        lines.push(`  • ${type}: ${count}x`);
+        lines.push(`  *${type}: ${count}x`);
       });
     }
 
