@@ -35,6 +35,24 @@ const STUCK_TIMEOUT_MS = 15000; // 15 seconds without turn completion = potentia
 const MAX_RECOVERY_ATTEMPTS = 3;
 
 // ============================================================================
+// AI SPEED HELPERS
+// ============================================================================
+
+/**
+ * Get the AI delay based on current speed setting
+ * @param {Object} state - Game state
+ * @param {number} fastDelay - Delay for fast mode (default)
+ * @returns {number} Delay in milliseconds
+ */
+const getAIDelay = (state, fastDelay = 100) => {
+  const speed = state.menu?.aiSpeed || (state.menu?.aiSlowMode ? 'slow' : 'fast');
+  if (speed === 'slow') {
+    return fastDelay * 2.5; // 2.5x slower in slow mode
+  }
+  return fastDelay;
+};
+
+// ============================================================================
 // AI INITIALIZATION
 // ============================================================================
 
@@ -249,7 +267,12 @@ export const executeAITurn = async (state, callbacks) => {
     // This is needed because when onEndTurn calls refresh() -> checkAndTriggerAITurn,
     // isAITurnInProgress was still true, so the next turn wasn't triggered
     if (isAIvsAIMode(state) && !state.winner) {
-      const nextDelay = state.menu?.aiSlowMode ? 500 : 200;
+      // Don't schedule next turn if AI is paused
+      if (state.menu?.aiSpeed === 'paused') {
+        console.log('[AIManager] AI is paused, not scheduling next turn');
+        return;
+      }
+      const nextDelay = getAIDelay(state, 200);
       setTimeout(() => {
         checkAndTriggerAITurn(state, callbacks);
       }, nextDelay);
@@ -271,6 +294,12 @@ export const checkAndTriggerAITurn = (state, callbacks) => {
   const detector = getBugDetector();
   if (detector?.isPaused()) {
     console.log('[AIManager] checkAndTriggerAITurn: bug detector is paused, skipping');
+    return;
+  }
+
+  // Check if AI is manually paused via speed control
+  if (state.menu?.aiSpeed === 'paused') {
+    console.log('[AIManager] checkAndTriggerAITurn: AI is paused via speed control, skipping');
     return;
   }
 
