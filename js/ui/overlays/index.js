@@ -35,6 +35,7 @@ export {
 export {
   renderSetupOverlay,
   hideSetupOverlay,
+  resetSetupAIState,
 } from './SetupOverlay.js';
 
 // ============================================================================

@@ -229,6 +229,9 @@ export const executeAITurn = async (state, callbacks) => {
  */
 export const checkAndTriggerAITurn = (state, callbacks) => {
   console.log(`[AIManager] checkAndTriggerAITurn called - mode: ${state.menu?.mode}, phase: ${state.phase}, turn: ${state.turn}, activePlayer: ${state.activePlayerIndex}`);
+  console.log(`[AIManager] checkAndTriggerAITurn - isAnyAIMode: ${isAnyAIMode(state)}, isAIvsAIMode: ${isAIvsAIMode(state)}`);
+  console.log(`[AIManager] checkAndTriggerAITurn - setup.stage: ${state.setup?.stage}, winner: ${state.winner}, isAITurnInProgress: ${isAITurnInProgress}`);
+  console.log(`[AIManager] checkAndTriggerAITurn - aiController0: ${aiController0 ? 'exists' : 'null'}, aiController: ${aiController ? 'exists' : 'null'}`);
 
   if (!isAnyAIMode(state)) {
     console.log('[AIManager] checkAndTriggerAITurn: not AI mode, skipping');
@@ -253,12 +256,17 @@ export const checkAndTriggerAITurn = (state, callbacks) => {
   }
 
   // Check if it's AI's turn
-  if (isAIsTurn(state)) {
+  const aisTurn = isAIsTurn(state);
+  console.log(`[AIManager] checkAndTriggerAITurn - isAIsTurn: ${aisTurn}`);
+
+  if (aisTurn) {
     console.log(`[AIManager] checkAndTriggerAITurn: triggering AI turn for player ${state.activePlayerIndex}`);
     // Use setTimeout to allow UI to update first
     // Shorter delay for AI vs AI mode for faster gameplay
     const delay = isAIvsAIMode(state) ? 200 : 500;
+    console.log(`[AIManager] checkAndTriggerAITurn: scheduling executeAITurn with ${delay}ms delay`);
     setTimeout(() => {
+      console.log(`[AIManager] setTimeout fired, calling executeAITurn`);
       executeAITurn(state, callbacks);
     }, delay);
   } else {

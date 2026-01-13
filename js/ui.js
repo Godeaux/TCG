@@ -47,12 +47,16 @@ import {
   isAIvsAIMode,
 } from "./state/selectors.js";
 
+// AI module (for cleanup when returning to menu)
+import { cleanupAI } from "./ai/index.js";
+
 // Victory overlay (extracted module)
 import {
   showVictoryScreen,
   hideVictoryScreen,
   checkForVictory,
   setVictoryMenuCallback,
+  setAIvsAIRestartCallback,
 } from "./ui/overlays/VictoryOverlay.js";
 
 // Pass overlay (extracted module)
@@ -69,6 +73,7 @@ import {
 // Setup overlay (extracted module)
 import {
   renderSetupOverlay,
+  resetSetupAIState,
 } from "./ui/overlays/SetupOverlay.js";
 
 // Reaction overlay (extracted module)
@@ -101,6 +106,7 @@ import {
 import {
   renderDeckSelectionOverlay,
   renderDeckBuilderOverlay,
+  generateAIvsAIDecks,
 } from "./ui/overlays/DeckBuilderOverlay.js";
 
 // UI Components (extracted modules)
@@ -3100,6 +3106,13 @@ export const renderGame = (state, callbacks = {}) => {
     const profile = state.menu?.profile;
     const decks = state.menu?.decks;
 
+    // Clean up AI state (important: must be called before resetting game state)
+    // This resets isAITurnInProgress and other AI flags that would block new games
+    cleanupAI();
+
+    // Reset setup overlay AI pending flags
+    resetSetupAIState();
+
     // Reset game state to initial values
     state.players = [
       { name: "Player 1", hp: 10, deck: [], hand: [], field: [null, null, null], carrion: [], exile: [], traps: [] },
@@ -3108,6 +3121,7 @@ export const renderGame = (state, callbacks = {}) => {
     state.activePlayerIndex = 0;
     state.phase = "Setup";
     state.turn = 1;
+    state.winner = null; // Clear winner from previous game
     state.firstPlayerIndex = null;
     state.skipFirstDraw = true;
     state.cardPlayedThisTurn = false;
@@ -3139,6 +3153,72 @@ export const renderGame = (state, callbacks = {}) => {
 
     // Refresh the UI
     callbacks.onUpdate?.();
+  });
+
+  // Set up AI vs AI restart callback (auto-restart with same decks)
+  setAIvsAIRestartCallback(() => {
+    // Preserve the AI vs AI deck configuration
+    const aiVsAiDecks = state.menu?.aiVsAiDecks;
+    const profile = state.menu?.profile;
+    const decks = state.menu?.decks;
+
+    console.log('[AI vs AI] Auto-restarting with same decks:', aiVsAiDecks);
+
+    // Clean up AI state
+    cleanupAI();
+
+    // Reset setup overlay AI pending flags
+    resetSetupAIState();
+
+    // Reset game state to initial values
+    state.players = [
+      { name: "Player 1", hp: 10, deck: [], hand: [], field: [null, null, null], carrion: [], exile: [], traps: [] },
+      { name: "Player 2", hp: 10, deck: [], hand: [], field: [null, null, null], carrion: [], exile: [], traps: [] },
+    ];
+    state.activePlayerIndex = 0;
+    state.phase = "Setup";
+    state.turn = 1;
+    state.winner = null;
+    state.firstPlayerIndex = null;
+    state.skipFirstDraw = true;
+    state.cardPlayedThisTurn = false;
+    state.passPending = false;
+    state.fieldSpell = null;
+    state.beforeCombatQueue = [];
+    state.beforeCombatProcessing = false;
+    state.endOfTurnQueue = [];
+    state.endOfTurnProcessing = false;
+    state.endOfTurnFinalized = false;
+    state.visualEffects = [];
+    state.pendingTrapDecision = null;
+    state.pendingReaction = null;
+    state.setup = { stage: "rolling", rolls: [null, null], winnerIndex: null };
+    state.deckSelection = { stage: "complete", selections: [null, null], readyStatus: [true, true] };
+    state.deckBuilder = { stage: "complete", selections: [[], []], available: [[], []], catalogOrder: [[], []] };
+    state.log = [];
+    state.combat = { declaredAttacks: [] };
+    state.victoryProcessed = false;
+
+    // Restore profile, decks, and keep AI vs AI mode
+    state.menu.profile = profile;
+    state.menu.decks = decks;
+    state.menu.stage = "ready"; // Go directly to ready stage
+    state.menu.mode = "aiVsAi"; // Stay in AI vs AI mode
+    state.menu.aiVsAiDecks = aiVsAiDecks; // Preserve deck selections
+    state.menu.lobby = null;
+    state.menu.error = null;
+    state.menu.loading = false;
+
+    // Regenerate the AI vs AI decks and start the game
+    if (aiVsAiDecks) {
+      console.log('[AI vs AI] Generating fresh decks...');
+      // generateAIvsAIDecks expects state object - it reads deck types from state.menu.aiVsAiDecks
+      const generatedDecks = generateAIvsAIDecks(state);
+      console.log('[AI vs AI] Decks generated, calling onDeckComplete');
+      callbacks.onDeckComplete?.(generatedDecks);
+    } else {
+      console.warn('[AI vs AI] No deck configuration found, cannot restart');
+    }
   });
 
   // Register callbacks with lobbyManager so it can notify UI of changes

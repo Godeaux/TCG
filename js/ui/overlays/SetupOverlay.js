@@ -17,6 +17,15 @@ import { getLocalPlayerIndex, isAIMode, isAIvsAIMode, isAnyAIMode } from '../../
 let aiRollPending = false;
 let aiChoicePending = false;
 
+/**
+ * Reset AI pending flags (call when restarting a game)
+ */
+export const resetSetupAIState = () => {
+  console.log("[SetupOverlay] Resetting AI pending flags");
+  aiRollPending = false;
+  aiChoicePending = false;
+};
+
 // ============================================================================
 // DOM ELEMENTS
 // ============================================================================

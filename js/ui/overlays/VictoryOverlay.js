@@ -99,12 +99,46 @@ const calculateCreaturesDefeated = (state) => {
 // Store callback for menu button
 let onReturnToMenuCallback = null;
 
+// Store callback for AI vs AI restart
+let onAIvsAIRestartCallback = null;
+
+// Auto-restart timer for AI vs AI mode
+let autoRestartTimer = null;
+let countdownInterval = null;
+
 /**
  * Set the callback for returning to menu from victory screen
  * This should be called from ui.js to provide proper game reset functionality
  */
 export const setVictoryMenuCallback = (callback) => {
   onReturnToMenuCallback = callback;
+};
+
+/**
+ * Set the callback for restarting AI vs AI with same decks
+ * This should be called from ui.js to provide proper restart functionality
+ */
+export const setAIvsAIRestartCallback = (callback) => {
+  onAIvsAIRestartCallback = callback;
+};
+
+/**
+ * Cancel the auto-restart timer
+ */
+const cancelAutoRestart = () => {
+  if (autoRestartTimer) {
+    clearTimeout(autoRestartTimer);
+    autoRestartTimer = null;
+  }
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+  }
+  // Remove countdown element if it exists
+  const countdown = document.getElementById('victory-countdown');
+  if (countdown) {
+    countdown.remove();
+  }
 };
 
 /**
@@ -118,12 +152,16 @@ export const setVictoryMenuCallback = (callback) => {
  * @param {Object} options - Additional options
  * @param {boolean} options.awardPack - Whether to award a pack
  * @param {Object} options.state - Game state (for updating pack count)
+ * @param {boolean} options.isAIvsAI - Whether this is AI vs AI mode
  */
 export const showVictoryScreen = (winner, stats = {}, options = {}) => {
   const elements = getVictoryElements();
   const { overlay, winnerName, turns, cards, kills, menu, reward } = elements;
 
   if (!overlay) return;
+
+  // Cancel any existing auto-restart timer
+  cancelAutoRestart();
 
   // Set winner name
   if (winnerName) {
@@ -164,16 +202,69 @@ export const showVictoryScreen = (winner, stats = {}, options = {}) => {
   overlay.classList.add('show');
   overlay.setAttribute('aria-hidden', 'false');
 
+  // AI vs AI mode: Add auto-restart countdown
+  if (options.isAIvsAI && onAIvsAIRestartCallback) {
+    const COUNTDOWN_SECONDS = 5;
+    let secondsRemaining = COUNTDOWN_SECONDS;
+
+    // Create countdown element
+    const countdownDiv = document.createElement('div');
+    countdownDiv.id = 'victory-countdown';
+    countdownDiv.className = 'victory-countdown';
+    countdownDiv.innerHTML = `
+      <div class="countdown-text">Next match in <span class="countdown-number">${secondsRemaining}</span>s</div>
+      <div class="countdown-hint">(click to cancel)</div>
+    `;
+
+    // Insert after the menu button
+    const menuContainer = menu?.parentElement;
+    if (menuContainer) {
+      menuContainer.appendChild(countdownDiv);
+    }
+
+    // Update countdown every second
+    countdownInterval = setInterval(() => {
+      secondsRemaining--;
+      const numberSpan = countdownDiv.querySelector('.countdown-number');
+      if (numberSpan) {
+        numberSpan.textContent = secondsRemaining;
+      }
+      if (secondsRemaining <= 0) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+      }
+    }, 1000);
+
+    // Auto-restart after countdown
+    autoRestartTimer = setTimeout(() => {
+      cancelAutoRestart();
+      hideVictoryScreen(() => {
+        if (onAIvsAIRestartCallback) {
+          onAIvsAIRestartCallback();
+        }
+      });
+    }, COUNTDOWN_SECONDS * 1000);
+
+    // Click countdown to cancel and show menu options
+    countdownDiv.onclick = (e) => {
+      e.stopPropagation();
+      cancelAutoRestart();
+    };
+  }
+
   // Add event listener for main menu
   if (menu) {
-    menu.onclick = () => hideVictoryScreen(() => {
-      // Use callback if provided, otherwise fall back to reload
-      if (onReturnToMenuCallback) {
-        onReturnToMenuCallback();
-      } else {
-        window.location.reload();
-      }
-    });
+    menu.onclick = () => {
+      cancelAutoRestart();
+      hideVictoryScreen(() => {
+        // Use callback if provided, otherwise fall back to reload
+        if (onReturnToMenuCallback) {
+          onReturnToMenuCallback();
+        } else {
+          window.location.reload();
+        }
+      });
+    };
   }
 };
 
@@ -262,11 +353,14 @@ export const checkForVictory = (state) => {
     // Determine if pack should be awarded
     const awardPack = shouldAwardPack(state, winner, loser);
 
+    // Check if AI vs AI mode
+    const isAIvsAI = state.menu?.mode === 'aiVsAi';
+
     // Update profile stats and match history
     updateProfileStatsOnVictory(state, winner, loser);
 
     // Show victory screen with pack reward if applicable
-    showVictoryScreen(winner, stats, { awardPack, state });
+    showVictoryScreen(winner, stats, { awardPack, state, isAIvsAI });
 
     return true; // Game over
   }

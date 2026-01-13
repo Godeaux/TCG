@@ -4976,6 +4976,60 @@ button {
   box-shadow: 0 15px 40px rgba(212, 168, 83, 0.5);
 }
 
+/* AI vs AI Auto-restart Countdown */
+.victory-countdown {
+  margin-top: 20px;
+  padding: 15px 25px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 10px;
+  border: 1px solid rgba(100, 200, 255, 0.3);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.victory-countdown:hover {
+  background: rgba(0, 0, 0, 0.7);
+  border-color: rgba(255, 100, 100, 0.5);
+}
+
+.countdown-text {
+  font-size: 1.1rem;
+  color: #a0d8ff;
+  font-weight: 500;
+}
+
+.countdown-number {
+  display: inline-block;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #64d8ff;
+  min-width: 1.5em;
+  text-align: center;
+  animation: countdown-pulse 1s ease-in-out infinite;
+}
+
+@keyframes countdown-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+}
+
+.countdown-hint {
+  font-size: 0.85rem;
+  color: #888;
+  margin-top: 5px;
+  transition: color 0.3s ease;
+}
+
+.victory-countdown:hover .countdown-hint {
+  color: #ff8888;
+}
+
 /* Victory screen entrance animations */
 .victory-overlay.show .victory-crown {
   animation-delay: 0.5s;

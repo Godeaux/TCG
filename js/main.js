@@ -94,6 +94,16 @@ const refresh = () => {
       chooseFirstPlayer(state, playerIndex);
       startTurn(state);
       refresh();
+
+      // In AI vs AI mode, explicitly trigger the first AI turn after a short delay
+      // This ensures the UI has fully updated before AI starts
+      if (isAIvsAIMode(state)) {
+        console.log('[Main] Setup complete in AI vs AI mode, scheduling first AI turn');
+        setTimeout(() => {
+          console.log('[Main] Triggering first AI turn after setup');
+          checkAndTriggerAITurn(state, aiCallbacks);
+        }, 500);
+      }
     },
     onDeckComplete: (selections) => {
       console.log('[DeckComplete] Received selections:', selections);
