@@ -9,7 +9,7 @@
  * - AIGameManager: Functions for managing AI during gameplay
  */
 
-export { AIController, createAIController } from './AIController.js';
+export { AIController, createAIController, evaluateTrapActivation } from './AIController.js';
 
 export {
   initializeAI,

@@ -80,6 +80,7 @@ import {
 import {
   renderReactionOverlay,
   hideReactionOverlay,
+  resetReactionAIState,
 } from "./ui/overlays/ReactionOverlay.js";
 
 // Profile overlay (extracted module)
@@ -3113,6 +3114,9 @@ export const renderGame = (state, callbacks = {}) => {
     // Reset setup overlay AI pending flags
     resetSetupAIState();
 
+    // Reset reaction overlay AI pending flags
+    resetReactionAIState();
+
     // Reset game state to initial values
     state.players = [
       { name: "Player 1", hp: 10, deck: [], hand: [], field: [null, null, null], carrion: [], exile: [], traps: [] },
@@ -3169,6 +3173,9 @@ export const renderGame = (state, callbacks = {}) => {
 
     // Reset setup overlay AI pending flags
     resetSetupAIState();
+
+    // Reset reaction overlay AI pending flags
+    resetReactionAIState();
 
     // Reset game state to initial values
     state.players = [

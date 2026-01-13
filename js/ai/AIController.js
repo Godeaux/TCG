@@ -852,6 +852,97 @@ export class AIController {
 }
 
 // ============================================================================
+// TRAP EVALUATION
+// ============================================================================
+
+/**
+ * Evaluate whether AI should activate a trap
+ * Uses effect-aware evaluation with slight randomness (10-20%)
+ *
+ * @param {Object} state - Game state
+ * @param {Object} trap - The trap card
+ * @param {Object} eventContext - Context about the triggering event
+ * @param {number} reactingPlayerIndex - Which player owns the trap
+ * @returns {boolean} Whether to activate
+ */
+export const evaluateTrapActivation = (state, trap, eventContext, reactingPlayerIndex) => {
+  const effect = trap.effects?.effect || trap.effect;
+  const triggeringPlayerIndex = (reactingPlayerIndex + 1) % 2;
+  const reactingPlayer = state.players[reactingPlayerIndex];
+  const triggeringPlayer = state.players[triggeringPlayerIndex];
+
+  let value = 0;
+
+  // Evaluate based on effect type
+  switch (effect?.type) {
+    case 'negateAttack': {
+      const attacker = eventContext.attacker;
+      const target = eventContext.target;
+      if (target?.type === 'player') {
+        // Saving HP is very valuable
+        value = (attacker?.currentAtk || attacker?.atk || 3) * 3;
+      } else if (target?.card) {
+        // Saving a creature - value based on creature stats
+        const card = target.card;
+        value = ((card.currentAtk || card.atk || 0) + (card.currentHp || card.hp || 0)) * 1.5;
+      } else {
+        value = 10;
+      }
+      break;
+    }
+
+    case 'negatePlay': {
+      const playedCard = eventContext.card;
+      if (playedCard) {
+        value = ((playedCard.atk || 0) * 2) + (playedCard.hp || 0) + 5;
+      } else {
+        value = 12;
+      }
+      break;
+    }
+
+    case 'damage':
+      value = (effect.params?.amount || 2) * 2.5;
+      break;
+
+    case 'destroy':
+      value = 18;
+      break;
+
+    case 'returnToHand':
+      value = 12;
+      break;
+
+    case 'drawCards':
+      value = (effect.params?.count || 1) * 4;
+      break;
+
+    default:
+      value = 10; // Unknown effect - moderate value
+  }
+
+  // Adjust for game state
+  if (reactingPlayer.hp <= 3) {
+    value *= 1.5; // Desperate - more likely to use resources
+  }
+  if (reactingPlayer.hp > triggeringPlayer.hp + 5) {
+    value *= 0.8; // Winning comfortably - can afford to hold
+  }
+
+  // Add slight randomness (10-20%)
+  const randomFactor = 0.9 + (Math.random() * 0.2); // 0.9 to 1.1
+  value *= randomFactor;
+
+  // Threshold: activate if value > 8
+  const threshold = 8;
+  const shouldActivate = value > threshold;
+
+  console.log(`[AI Trap] ${trap.name}: value=${value.toFixed(1)}, threshold=${threshold}, activate=${shouldActivate}`);
+
+  return shouldActivate;
+};
+
+// ============================================================================
 // FACTORY FUNCTION
 // ============================================================================
 

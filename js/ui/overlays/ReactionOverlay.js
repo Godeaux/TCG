@@ -13,8 +13,9 @@
  * - Live-synced so both players see the same state
  */
 
-import { getLocalPlayerIndex, isOnlineMode, isAIMode } from '../../state/selectors.js';
+import { getLocalPlayerIndex, isOnlineMode, isAIMode, isAIvsAIMode } from '../../state/selectors.js';
 import { REACTION_TIMER_SECONDS } from '../../game/triggers/index.js';
+import { evaluateTrapActivation } from '../../ai/index.js';
 
 // ============================================================================
 // CONTEXT DESCRIPTION HELPERS
@@ -306,18 +307,31 @@ export const renderReactionOverlay = (state, callbacks = {}) => {
     startTimer(state, null, callbacks.onUpdate);
   }
 
-  // In AI mode, auto-decide after a short delay
-  if (isAIMode(state) && reactingPlayerIndex === 1 && !aiDecisionPending) {
+  // AI trap decision handling (both regular AI mode and AI vs AI mode)
+  const isAIReacting = (isAIMode(state) && reactingPlayerIndex === 1) ||
+                       isAIvsAIMode(state); // Both players are AI in AI vs AI mode
+
+  if (isAIReacting && !aiDecisionPending) {
     aiDecisionPending = true;
+
+    // Get the trap and context from pending reaction
+    const trap = reactions[0]; // First available trap
+    const eventContext = state.pendingReaction.eventContext;
+
+    // Evaluate whether to activate using effect-aware AI logic
+    const shouldActivate = evaluateTrapActivation(state, trap, eventContext, reactingPlayerIndex);
+
+    // Add thinking delay (longer if activating for dramatic effect)
+    const delay = shouldActivate ? 1200 : 800;
+
     setTimeout(() => {
       const currentReactingIndex = state.pendingReaction?.reactingPlayerIndex ?? state.pendingReaction?.deciderIndex;
-      if (state.pendingReaction && currentReactingIndex === 1) {
-        // AI always activates if it has a reaction available
-        console.log("[AI] Auto-activating reaction");
-        callbacks.onReactionDecision?.(true);
+      if (state.pendingReaction && currentReactingIndex === reactingPlayerIndex) {
+        console.log(`[AI] Trap decision: ${shouldActivate ? 'ACTIVATE' : 'PASS'} ${trap?.name || 'trap'}`);
+        callbacks.onReactionDecision?.(shouldActivate);
       }
       aiDecisionPending = false;
-    }, 1000);
+    }, delay);
   }
 };
 
@@ -344,4 +358,12 @@ export const hideReactionOverlay = () => {
 export const isReactionOverlayActive = () => {
   const { overlay } = getReactionElements();
   return overlay?.classList.contains("active") ?? false;
+};
+
+/**
+ * Reset AI decision pending flag (call when restarting a game)
+ */
+export const resetReactionAIState = () => {
+  console.log("[ReactionOverlay] Resetting AI decision pending flag");
+  aiDecisionPending = false;
 };
