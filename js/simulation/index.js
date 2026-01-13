@@ -10,6 +10,9 @@ export {
   getBugDetector,
   initBugDetector,
   logBugMessage,
+  BUG_CATEGORIES,
+  createBugReport,
+  formatBugReport,
 } from './BugDetector.js';
 
 export {
@@ -30,6 +33,20 @@ export {
   checkCreatureStats,
   checkSummoningSickness,
   checkDryDropKeywords,
+  checkBarrierBypass,
+  checkFrozenParalyzedAttack,
+  checkPassiveHarmlessAttack,
+  checkHiddenTargeting,
+  checkLureBypass,
+  checkConflictingKeywords,
+  checkNutritionValues,
+  checkImpossibleStats,
+  checkCreatureIntegrity,
+  checkCarrionIntegrity,
+  checkExileIntegrity,
+  checkTurnCounter,
+  checkActivePlayer,
+  checkVenomousEffect,
 } from './invariantChecks.js';
 
 export {
@@ -42,6 +59,8 @@ export {
   validateOnPlayTriggered,
   validateOnConsumeTriggered,
   validateDryDropNoConsume,
+  validateTrapEffect,
+  validateCombatDamage,
   validateEffect,
   effectValidatorRegistry,
 } from './effectValidators.js';

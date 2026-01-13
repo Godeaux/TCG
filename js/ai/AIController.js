@@ -734,6 +734,21 @@ export class AIController {
     const attackerOwnerIndex = this.playerIndex;
     const defenderOwnerIndex = 1 - this.playerIndex;
 
+    // Bug detection: snapshot before attack
+    const detector = getBugDetector();
+    const attackAction = {
+      type: 'DECLARE_ATTACK',
+      payload: { attacker, target }
+    };
+    if (detector?.isEnabled()) {
+      detector.beforeAction(state, attackAction, {
+        attacker,
+        target,
+        attackerOwnerIndex,
+        defenderOwnerIndex,
+      });
+    }
+
     // Create a promise to wait for the reaction window to resolve
     return new Promise((resolve) => {
       const windowCreated = createReactionWindow({
@@ -753,6 +768,10 @@ export class AIController {
           // Check if attacker still exists and has HP
           if (attacker.currentHp <= 0) {
             logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
+            // Bug detection: check after (attack cancelled due to attacker death)
+            if (detector?.isEnabled()) {
+              detector.afterAction(state);
+            }
             callbacks.onUpdate?.();
             state.broadcast?.(state);
             resolve();
@@ -773,6 +792,12 @@ export class AIController {
 
           // Clean up destroyed creatures
           cleanupDestroyed(state);
+
+          // Bug detection: check after attack resolution
+          if (detector?.isEnabled()) {
+            detector.afterAction(state);
+          }
+
           callbacks.onUpdate?.();
           state.broadcast?.(state);
           resolve();
@@ -789,6 +814,12 @@ export class AIController {
           resolveCreatureCombat(state, attacker, target.card, attackerOwnerIndex, defenderOwnerIndex);
         }
         cleanupDestroyed(state);
+
+        // Bug detection: check after immediate attack
+        if (detector?.isEnabled()) {
+          detector.afterAction(state);
+        }
+
         callbacks.onUpdate?.();
         state.broadcast?.(state);
         resolve();

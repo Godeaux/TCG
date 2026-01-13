@@ -127,7 +127,9 @@ export const drawCard = (state, playerIndex) => {
 
 export const logMessage = (state, message) => {
   state.log.unshift(message);
-  if (state.log.length > 300) {
+  // Increased limit to preserve full game history
+  // 2000 entries should be more than enough for any game
+  if (state.log.length > 2000) {
     state.log.pop();
   }
 };

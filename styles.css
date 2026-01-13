@@ -181,6 +181,16 @@ button {
   transform: scale(0.95);
 }
 
+.ai-speed-toggle.ai-paused {
+  animation: pause-pulse 1.5s ease-in-out infinite;
+  color: #ff9800;
+}
+
+@keyframes pause-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.1); }
+}
+
 .player-stats {
   display: flex;
   gap: 6px;

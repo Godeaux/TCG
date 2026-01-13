@@ -707,6 +707,12 @@ const appendLog = (state) => {
   // Build card name lookup on first use
   buildCardNameLookup();
 
+  // Check if user has scrolled up (not at the bottom)
+  // If they have, preserve their scroll position after update
+  const scrollThreshold = 50; // pixels from bottom to consider "at bottom"
+  const wasAtBottom = gameHistoryLog.scrollHeight - gameHistoryLog.scrollTop - gameHistoryLog.clientHeight < scrollThreshold;
+  const previousScrollTop = gameHistoryLog.scrollTop;
+
   gameHistoryLog.innerHTML = state.log.map((entry) => {
     // Handle different log entry types
     if (typeof entry === 'object' && entry !== null) {
@@ -724,6 +730,15 @@ const appendLog = (state) => {
     // Normal string entry
     return `<div class="log-entry"><span class="log-action">${linkifyCardNames(entry)}</span></div>`;
   }).join("");
+
+  // Restore scroll position: if user was scrolled up, keep them there
+  // If they were at the bottom, stay at bottom (new entries appear at top, so scroll stays at top)
+  if (!wasAtBottom && previousScrollTop > 0) {
+    // User was scrolled down viewing older entries - preserve their position
+    gameHistoryLog.scrollTop = previousScrollTop;
+  }
+  // Note: New entries are added at the TOP of the log (state.log.unshift),
+  // so "at bottom" means viewing older entries, and scroll position 0 is newest
 };
 
 /**
@@ -793,13 +808,36 @@ const updatePlayerStats = (state, index, role, onUpdate = null) => {
         speedBtn = document.createElement("button");
         speedBtn.id = "ai-speed-toggle";
         speedBtn.className = "ai-speed-toggle";
-        speedBtn.title = "Toggle AI speed (🐇 fast / 🐢 slow)";
         nameEl.parentNode.insertBefore(speedBtn, nameEl.nextSibling);
       }
-      speedBtn.textContent = state.menu.aiSlowMode ? "\u{1F422}" : "\u{1F407}";
+      // Get current speed mode (default to 'fast' for backwards compatibility)
+      const currentSpeed = state.menu.aiSpeed || (state.menu.aiSlowMode ? 'slow' : 'fast');
+      // Update display based on speed
+      if (currentSpeed === 'paused') {
+        speedBtn.textContent = "\u{23F8}"; // Pause symbol
+        speedBtn.title = "AI Paused - Click to resume (fast)";
+        speedBtn.classList.add('ai-paused');
+      } else if (currentSpeed === 'slow') {
+        speedBtn.textContent = "\u{1F422}"; // Turtle
+        speedBtn.title = "Slow mode - Click to pause";
+        speedBtn.classList.remove('ai-paused');
+      } else {
+        speedBtn.textContent = "\u{1F407}"; // Rabbit
+        speedBtn.title = "Fast mode - Click for slow mode";
+        speedBtn.classList.remove('ai-paused');
+      }
       speedBtn.onclick = (e) => {
         e.stopPropagation();
-        state.menu.aiSlowMode = !state.menu.aiSlowMode;
+        // Cycle: fast -> slow -> paused -> fast
+        if (currentSpeed === 'fast') {
+          state.menu.aiSpeed = 'slow';
+          state.menu.aiSlowMode = true; // Keep backwards compat
+        } else if (currentSpeed === 'slow') {
+          state.menu.aiSpeed = 'paused';
+        } else {
+          state.menu.aiSpeed = 'fast';
+          state.menu.aiSlowMode = false; // Keep backwards compat
+        }
         if (onUpdate) onUpdate();
       };
     }

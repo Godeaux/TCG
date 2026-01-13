@@ -76,7 +76,8 @@ export const getKeywordEmoji = (keyword) => {
 export const logGameAction = (state, category, message) => {
   const formattedMessage = `${category.emoji} ${message}`;
   state.log.unshift(formattedMessage);
-  if (state.log.length > 300) {
+  // Increased limit to preserve full game history
+  if (state.log.length > 2000) {
     state.log.pop();
   }
 };
@@ -88,7 +89,8 @@ export const logGameAction = (state, category, message) => {
  */
 export const logPlainMessage = (state, message) => {
   state.log.unshift(message);
-  if (state.log.length > 300) {
+  // Increased limit to preserve full game history
+  if (state.log.length > 2000) {
     state.log.pop();
   }
 };

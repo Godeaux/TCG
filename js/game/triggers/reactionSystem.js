@@ -21,6 +21,7 @@
 import { checkTrigger, TRIGGER_EVENTS, getTriggersForEvent } from './triggerRegistry.js';
 import { getTrapsFromHand, logMessage } from '../../state/gameState.js';
 import { resolveCardEffect } from '../../cards/index.js';
+import { getBugDetector } from '../../simulation/index.js';
 
 // ============================================================================
 // CONSTANTS
@@ -215,6 +216,25 @@ export const resolveReaction = ({
 
   // Process the trap activation
   if (reaction.type === 'trap') {
+    // Bug detection: snapshot before trap activation
+    const detector = getBugDetector();
+    if (detector?.isEnabled()) {
+      detector.beforeAction(state, {
+        type: 'ACTIVATE_TRAP',
+        payload: {
+          trap: reaction.card,
+          event,
+          eventContext,
+        }
+      }, {
+        trap: reaction.card,
+        reactingPlayerIndex,
+        triggeringPlayerIndex,
+        event,
+        eventContext,
+      });
+    }
+
     // Remove trap from hand and move to exile
     reactingPlayer.hand = reactingPlayer.hand.filter(
       (c) => c.instanceId !== reaction.instanceId
@@ -279,6 +299,10 @@ export const resolveReaction = ({
         () => {
           // Effect chain completed - continue game flow
           cleanupDestroyed?.(state);
+          // Bug detection: check after trap effect chain completed
+          if (detector?.isEnabled()) {
+            detector.afterAction(state);
+          }
           callback?.();
           onUpdate?.();
           broadcast?.(state);
@@ -286,6 +310,10 @@ export const resolveReaction = ({
         () => {
           // Effect chain cancelled - still continue game flow
           cleanupDestroyed?.(state);
+          // Bug detection: check after trap effect chain cancelled
+          if (detector?.isEnabled()) {
+            detector.afterAction(state);
+          }
           callback?.();
           onUpdate?.();
           broadcast?.(state);
@@ -295,6 +323,10 @@ export const resolveReaction = ({
     }
 
     cleanupDestroyed?.(state);
+    // Bug detection: check after trap activation (no effect chain)
+    if (detector?.isEnabled()) {
+      detector.afterAction(state);
+    }
   }
 
   // Continue with the game flow (for non-activated or no effect result)
