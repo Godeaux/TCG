@@ -12,6 +12,7 @@
 import { createAIController } from './AIController.js';
 import { isAIMode, isAIvsAIMode, isAnyAIMode } from '../state/selectors.js';
 import { logMessage } from '../state/gameState.js';
+import { initBugDetector, getBugDetector, logBugMessage } from '../simulation/index.js';
 
 // ============================================================================
 // MODULE STATE
@@ -68,6 +69,22 @@ export const initializeAI = (state) => {
     }
 
     logMessage(state, `AI vs AI: ${deck1} vs ${deck2}`);
+
+    // Initialize bug detector for AI vs AI mode
+    initBugDetector({
+      logBug: (bugState, message) => logBugMessage(bugState, message),
+      onBugDetected: (bugs) => {
+        console.log('[AIManager] Bug detected, pausing AI execution');
+      },
+      onPause: () => {
+        console.log('[AIManager] Bug detector paused - click game area to continue');
+      },
+      onResume: () => {
+        console.log('[AIManager] Bug detector resumed');
+      },
+    });
+    getBugDetector().enable();
+    logMessage(state, `Bug detector enabled.`);
     return;
   }
 
@@ -99,6 +116,12 @@ export const cleanupAI = () => {
   aiController0 = null;
   isAITurnInProgress = false;
   resetBugDetection();
+
+  // Disable bug detector
+  const detector = getBugDetector();
+  if (detector) {
+    detector.disable();
+  }
 };
 
 // ============================================================================
@@ -149,6 +172,17 @@ export const isAIProcessing = () => {
  */
 export const executeAITurn = async (state, callbacks) => {
   console.log(`[AIManager] executeAITurn called, activePlayer: ${state.activePlayerIndex}, inProgress: ${isAITurnInProgress}`);
+
+  // Check if bug detector is paused
+  const detector = getBugDetector();
+  if (detector?.isPaused()) {
+    console.log('[AIManager] executeAITurn: bug detector is paused, waiting...');
+    // Set resume callback to retry
+    detector.setResumeCallback(() => {
+      setTimeout(() => executeAITurn(state, callbacks), 100);
+    });
+    return;
+  }
 
   if (isAITurnInProgress) {
     console.log('[AIManager] executeAITurn: already in progress, returning');
@@ -232,6 +266,13 @@ export const checkAndTriggerAITurn = (state, callbacks) => {
   console.log(`[AIManager] checkAndTriggerAITurn - isAnyAIMode: ${isAnyAIMode(state)}, isAIvsAIMode: ${isAIvsAIMode(state)}`);
   console.log(`[AIManager] checkAndTriggerAITurn - setup.stage: ${state.setup?.stage}, winner: ${state.winner}, isAITurnInProgress: ${isAITurnInProgress}`);
   console.log(`[AIManager] checkAndTriggerAITurn - aiController0: ${aiController0 ? 'exists' : 'null'}, aiController: ${aiController ? 'exists' : 'null'}`);
+
+  // Check if bug detector is paused
+  const detector = getBugDetector();
+  if (detector?.isPaused()) {
+    console.log('[AIManager] checkAndTriggerAITurn: bug detector is paused, skipping');
+    return;
+  }
 
   if (!isAnyAIMode(state)) {
     console.log('[AIManager] checkAndTriggerAITurn: not AI mode, skipping');
