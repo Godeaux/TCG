@@ -99,9 +99,36 @@ const renderEffectSvg = (effectText) => {
 
   // Shorter lines = larger text relative to card width
   const lines = wrapTextToLines(effectText, 22);
-  const lineHeight = 15;
-  const fontSize = 13;
-  const viewBoxHeight = Math.max(lines.length * lineHeight + 6, 45);
+
+  // Fixed viewBox dimensions - matches typical card effect area aspect ratio
+  const viewBoxWidth = 100;
+  const viewBoxHeight = 55;
+
+  // Scale font size based on line count to fill available space
+  const lineCount = lines.length;
+  let fontSize, lineHeight, startY;
+
+  if (lineCount <= 1) {
+    fontSize = 16;
+    lineHeight = 18;
+    startY = 32; // Center single line
+  } else if (lineCount <= 2) {
+    fontSize = 14;
+    lineHeight = 16;
+    startY = 20;
+  } else if (lineCount <= 3) {
+    fontSize = 12;
+    lineHeight = 14;
+    startY = 14;
+  } else if (lineCount <= 4) {
+    fontSize = 11;
+    lineHeight = 13;
+    startY = 10;
+  } else {
+    fontSize = 10;
+    lineHeight = 11;
+    startY = 6;
+  }
 
   // Create text elements for each line, centered
   const textElements = lines.map((line, i) => {
@@ -112,12 +139,12 @@ const renderEffectSvg = (effectText) => {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
 
-    return `<text x="50%" y="${14 + i * lineHeight}" text-anchor="middle" font-size="${fontSize}" fill="#a0aec0">${escapedLine}</text>`;
+    return `<text x="50%" y="${startY + i * lineHeight}" text-anchor="middle" font-size="${fontSize}" fill="#a0aec0">${escapedLine}</text>`;
   }).join('');
 
-  // viewBox width of 90 makes text appear wider relative to card
+  // Use xMidYMin to align text to top, letting it fill downward
   return `
-    <svg class="card-effect-svg" viewBox="0 0 90 ${viewBoxHeight}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+    <svg class="card-effect-svg" viewBox="0 0 ${viewBoxWidth} ${viewBoxHeight}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
       <style>
         text { font-family: system-ui, -apple-system, sans-serif; }
       </style>
