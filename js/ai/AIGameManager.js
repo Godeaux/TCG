@@ -183,6 +183,17 @@ export const executeAITurn = async (state, callbacks) => {
     console.error(`[AIManager] Error during ${playerLabel} turn:`, error);
   } finally {
     isAITurnInProgress = false;
+    console.log(`[AIManager] ${playerLabel} turn complete, checking for next AI turn...`);
+
+    // After this AI's turn completes, check if the next player is also AI
+    // This is needed because when onEndTurn calls refresh() -> checkAndTriggerAITurn,
+    // isAITurnInProgress was still true, so the next turn wasn't triggered
+    if (isAIvsAIMode(state) && !state.winner) {
+      const nextDelay = state.menu?.aiSlowMode ? 500 : 200;
+      setTimeout(() => {
+        checkAndTriggerAITurn(state, callbacks);
+      }, nextDelay);
+    }
   }
 };
 
