@@ -10,6 +10,9 @@ export {
   getBugDetector,
   initBugDetector,
   logBugMessage,
+  BUG_CATEGORIES,
+  createBugReport,
+  formatBugReport,
 } from './BugDetector.js';
 
 export {
@@ -35,6 +38,15 @@ export {
   checkPassiveHarmlessAttack,
   checkHiddenTargeting,
   checkLureBypass,
+  checkConflictingKeywords,
+  checkNutritionValues,
+  checkImpossibleStats,
+  checkCreatureIntegrity,
+  checkCarrionIntegrity,
+  checkExileIntegrity,
+  checkTurnCounter,
+  checkActivePlayer,
+  checkVenomousEffect,
 } from './invariantChecks.js';
 
 export {
