@@ -651,11 +651,15 @@
           <div class="ai-deck-options">
             <button class="btn-deck-option" id="ai-deck-random" data-deck="random">
               <span class="deck-option-icon">🎲</span>
-              <span class="deck-option-name">Random Deck</span>
+              <span class="deck-option-name">Random</span>
             </button>
             <button class="btn-deck-option" id="ai-deck-saved" data-deck="saved">
               <span class="deck-option-icon">📚</span>
-              <span class="deck-option-name">Choose Deck</span>
+              <span class="deck-option-name">Choose a deck</span>
+            </button>
+            <button class="btn-deck-option" id="ai-vs-ai" data-deck="aivsai">
+              <span class="deck-option-icon">🤖</span>
+              <span class="deck-option-name">AI vs AI</span>
             </button>
           </div>
           <div class="ai-saved-decks" id="ai-saved-decks" style="display: none;">
@@ -668,6 +672,34 @@
 
         <div class="menu-actions">
           <button class="btn-secondary" id="ai-setup-back">Back</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay ai-vs-ai-deck-overlay" id="ai-vs-ai-deck-overlay" aria-hidden="true">
+      <div class="overlay-content menu-card ai-vs-ai-deck-card">
+        <div class="menu-header">
+          <div class="menu-icon">🤖⚔️🤖</div>
+          <div>
+            <h2>AI vs AI - Choose Decks</h2>
+            <p class="muted" id="ai-vs-ai-status">Select decks for both AI players.</p>
+          </div>
+        </div>
+
+        <div class="ai-vs-ai-deck-picker">
+          <div class="ai-vs-ai-side" id="ai-vs-ai-left">
+            <h3>AI Player 1 (You Watch)</h3>
+            <div class="ai-vs-ai-deck-grid" id="ai-vs-ai-decks-left"></div>
+          </div>
+          <div class="ai-vs-ai-divider">VS</div>
+          <div class="ai-vs-ai-side" id="ai-vs-ai-right">
+            <h3>AI Player 2 (Opponent)</h3>
+            <div class="ai-vs-ai-deck-grid" id="ai-vs-ai-decks-right"></div>
+          </div>
+        </div>
+
+        <div class="menu-actions">
+          <button class="btn-secondary" id="ai-vs-ai-back">Back</button>
         </div>
       </div>
     </div>

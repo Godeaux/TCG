@@ -5,6 +5,8 @@ import {
   chooseFirstPlayer,
   setPlayerDeck,
   isAIMode,
+  isAIvsAIMode,
+  isAnyAIMode,
 } from "./state/index.js";
 import { advancePhase, endTurn, startTurn } from "./game/index.js";
 import { renderGame, setupInitialDraw } from "./ui.js";
@@ -14,6 +16,7 @@ import {
   cleanupAI,
   checkAndTriggerAITurn,
 } from "./ai/index.js";
+import { generateAIvsAIDecks } from "./ui/overlays/DeckBuilderOverlay.js";
 
 // Initialize the card registry (loads JSON card data)
 initializeCardRegistry();
@@ -22,11 +25,12 @@ const state = createGameState();
 
 const checkWinCondition = () => {
   state.players.forEach((player, index) => {
-    if (player.hp <= 0) {
+    if (player.hp <= 0 && !state.winner) {
       const winner = state.players[(index + 1) % 2];
+      state.winner = winner;
       logMessage(state, `${winner.name} wins the game!`);
       // Clean up AI when game ends
-      if (isAIMode(state)) {
+      if (isAnyAIMode(state)) {
         cleanupAI();
       }
     }
@@ -94,8 +98,9 @@ const refresh = () => {
       selections.forEach((deck, index) => {
         console.log(`[DeckComplete] Setting deck for player ${index}, cards: ${deck?.length ?? 0}`);
         // In AI mode, player 0 is the human - attach their card rarities
+        // In AI vs AI mode, no players get rarities
         // In local mode, only player 0 gets rarities
-        const playerOwnedCards = (index === 0) ? ownedCards : null;
+        const playerOwnedCards = (index === 0 && !isAIvsAIMode(state)) ? ownedCards : null;
         setPlayerDeck(state, index, deck.slice(0, 20), playerOwnedCards);
       });
       setupInitialDraw(state, 5);
@@ -104,10 +109,14 @@ const refresh = () => {
       console.log('[DeckComplete] After draw - P1 hand:', state.players[0].hand.length, 'deck:', state.players[0].deck.length);
       console.log('[DeckComplete] After draw - P2 hand:', state.players[1].hand.length, 'deck:', state.players[1].deck.length);
 
-      // Initialize AI if in AI mode
-      if (isAIMode(state)) {
+      // Initialize AI if in any AI mode
+      if (isAnyAIMode(state)) {
         initializeAI(state);
-        logMessage(state, `AI opponent initialized (${state.menu.aiDifficulty} mode).`);
+        if (isAIvsAIMode(state)) {
+          logMessage(state, `AI vs AI mode initialized.`);
+        } else {
+          logMessage(state, `AI opponent initialized.`);
+        }
       }
 
       refresh();
@@ -115,7 +124,7 @@ const refresh = () => {
   });
 
   // After rendering, check if AI should take a turn
-  if (isAIMode(state)) {
+  if (isAnyAIMode(state)) {
     checkAndTriggerAITurn(state, aiCallbacks);
   }
 };

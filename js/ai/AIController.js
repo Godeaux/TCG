@@ -1,12 +1,11 @@
 /**
  * AI Controller
  *
- * Main orchestrator for AI opponent behavior in singleplayer mode.
+ * Main orchestrator for AI opponent behavior in singleplayer and AI vs AI modes.
  * Handles turn execution, action selection, and game flow.
  *
- * Difficulty Levels:
- * - easy: Simple heuristics, plays cards by cost, attacks greedily
- * - hard: Knows player's hand, makes more informed decisions
+ * The AI uses smart heuristics to make informed decisions about card plays
+ * and combat targets while engaging with all game mechanics.
  *
  * Key Functions:
  * - takeTurn: Execute AI's turn with appropriate delays
@@ -24,19 +23,31 @@ import { simulateAICardPlay, simulateAICardDrag, simulateAICombatSequence, clear
 import { resolveCardEffect } from '../cards/index.js';
 import { resolveEffectResult } from '../game/effects.js';
 import { createReactionWindow, TRIGGER_EVENTS } from '../game/triggers/index.js';
+import { isAIvsAIMode } from '../state/selectors.js';
 
 // ============================================================================
 // AI CONFIGURATION
 // ============================================================================
 
+// Normal delays (turtle mode in AI vs AI)
 const AI_DELAYS = {
   THINKING: { min: 500, max: 1500 },      // Initial "thinking" delay
   BETWEEN_ACTIONS: { min: 500, max: 1200 },  // Delay between each action
   END_TURN: { min: 300, max: 600 },      // Delay before ending turn
   PHASE_ADVANCE: 300,  // Fixed delay for phase advances
+  TRAP_CONSIDERATION: 1000,  // "AI is considering..." delay for trap decisions
 };
 
-// Slow mode multiplier (4x slower)
+// Instant mode delays (bunny mode in AI vs AI) - minimal delays to prevent race conditions
+const AI_DELAYS_INSTANT = {
+  THINKING: { min: 30, max: 50 },
+  BETWEEN_ACTIONS: { min: 30, max: 50 },
+  END_TURN: { min: 30, max: 50 },
+  PHASE_ADVANCE: 30,
+  TRAP_CONSIDERATION: 30,
+};
+
+// Slow mode multiplier (4x slower for debugging)
 const SLOW_MODE_MULTIPLIER = 4;
 
 // ============================================================================
@@ -45,9 +56,25 @@ const SLOW_MODE_MULTIPLIER = 4;
 
 export class AIController {
   constructor(options = {}) {
-    this.difficulty = options.difficulty || 'easy';
     this.playerIndex = options.playerIndex ?? 1; // AI is usually player 1
     this.isProcessing = false;
+    this.verboseLogging = options.verboseLogging ?? true; // Enable verbose logging by default
+    this.playerLabel = `AI-P${this.playerIndex + 1}`;
+  }
+
+  /**
+   * Log a verbose AI thought/decision
+   */
+  logThought(state, message, isDecision = false) {
+    if (this.verboseLogging) {
+      const prefix = isDecision ? `[${this.playerLabel}]` : `[${this.playerLabel}]`;
+      const logEntry = { type: 'ai-thinking', message: `${prefix} ${message}` };
+      console.log(`${prefix} ${message}`);
+      // Also log to game log for UI display
+      if (state?.log) {
+        state.log.unshift(logEntry);
+      }
+    }
   }
 
   /**
@@ -58,9 +85,9 @@ export class AIController {
   }
 
   /**
-   * Get the human player from state
+   * Get the opponent player from state
    */
-  getHumanPlayer(state) {
+  getOpponentPlayer(state) {
     return state.players[1 - this.playerIndex];
   }
 
@@ -72,37 +99,48 @@ export class AIController {
   }
 
   /**
+   * Get appropriate delays based on mode (instant/normal/slow)
+   */
+  getDelays(state) {
+    // In AI vs AI mode with bunny (fast) mode, use instant delays
+    if (isAIvsAIMode(state) && !state.menu?.aiSlowMode) {
+      return AI_DELAYS_INSTANT;
+    }
+    return AI_DELAYS;
+  }
+
+  /**
    * Execute the AI's turn
    * Returns a promise that resolves when the turn is complete
    */
   async takeTurn(state, callbacks = {}) {
     if (this.isProcessing) {
-      console.log('[AI] Already processing, skipping');
+      console.log(`[${this.playerLabel}] Already processing, skipping`);
       return;
     }
 
     if (!this.isAITurn(state)) {
-      console.log('[AI] Not AI turn, skipping');
+      console.log(`[${this.playerLabel}] Not AI turn, skipping`);
       return;
     }
 
     this.isProcessing = true;
-    console.log(`[AI] Starting turn (difficulty: ${this.difficulty}), phase: ${state.phase}`);
+    const delays = this.getDelays(state);
+    const player = this.getAIPlayer(state);
+
+    this.logThought(state, `Starting turn ${state.turn}, phase: ${state.phase}`);
+    this.logThought(state, `Hand: ${player.hand.map(c => c.name).join(', ') || 'empty'}`);
 
     try {
       // Initial thinking delay
-      await this.delay(AI_DELAYS.THINKING, state);
+      await this.delay(delays.THINKING, state);
 
       // Advance through early phases to get to Main 1
       // Phase order: Start → Draw → Main 1 → Before Combat → Combat → Main 2 → End
       while (state.phase === 'Start' || state.phase === 'Draw') {
-        console.log(`[AI] Advancing from ${state.phase}`);
         callbacks.onAdvancePhase?.();
-        await this.delay(AI_DELAYS.PHASE_ADVANCE, state); // Short delay between phase advances
+        await this.delay(delays.PHASE_ADVANCE, state);
       }
-
-      // Now we should be in Main 1
-      console.log(`[AI] In phase: ${state.phase}`);
 
       // Play phase actions (Main 1)
       if (state.phase === 'Main 1') {
@@ -111,9 +149,8 @@ export class AIController {
 
       // Advance through Before Combat to Combat
       while (state.phase === 'Main 1' || state.phase === 'Before Combat') {
-        console.log(`[AI] Advancing from ${state.phase} to Combat`);
         callbacks.onAdvancePhase?.();
-        await this.delay(AI_DELAYS.PHASE_ADVANCE, state);
+        await this.delay(delays.PHASE_ADVANCE, state);
       }
 
       // Combat phase actions
@@ -121,19 +158,19 @@ export class AIController {
         await this.executeCombatPhase(state, callbacks);
       }
 
-      // Advance to Main 2 (could play more cards here in future)
+      // Advance to Main 2
       if (state.phase === 'Combat') {
         callbacks.onAdvancePhase?.();
-        await this.delay(AI_DELAYS.PHASE_ADVANCE, state);
+        await this.delay(delays.PHASE_ADVANCE, state);
       }
 
       // End turn
-      console.log('[AI] Ending turn');
-      await this.delay(AI_DELAYS.END_TURN, state);
+      this.logThought(state, `Ending turn`);
+      await this.delay(delays.END_TURN, state);
       callbacks.onEndTurn?.();
 
     } catch (error) {
-      console.error('[AI] Error during turn:', error);
+      console.error(`[${this.playerLabel}] Error during turn:`, error);
     } finally {
       this.isProcessing = false;
     }
@@ -144,7 +181,10 @@ export class AIController {
    */
   async executePlayPhase(state, callbacks) {
     const player = this.getAIPlayer(state);
+    const delays = this.getDelays(state);
     let actionsRemaining = 10; // Safety limit
+
+    this.logThought(state, `Evaluating play options...`);
 
     while (actionsRemaining > 0) {
       actionsRemaining--;
@@ -152,7 +192,7 @@ export class AIController {
       // Find a playable card
       const cardToPlay = this.selectCardToPlay(state);
       if (!cardToPlay) {
-        console.log('[AI] No more cards to play');
+        this.logThought(state, `No more cards to play this turn`);
         break;
       }
 
@@ -162,7 +202,7 @@ export class AIController {
       // Find empty field slot (needed for creatures and drag animation)
       const emptySlot = player.field.findIndex(slot => slot === null);
       if (emptySlot === -1 && isCreatureCard(cardToPlay)) {
-        console.log('[AI] No empty field slots');
+        this.logThought(state, `Field is full, cannot play creatures`);
         break;
       }
 
@@ -175,17 +215,17 @@ export class AIController {
         }
       }
 
-      console.log(`[AI] Playing card: ${cardToPlay.name}`);
+      this.logThought(state, `Playing: ${cardToPlay.name}`, true);
 
       // Execute the play
       const playResult = await this.executeCardPlay(state, cardToPlay, emptySlot, callbacks);
 
       if (!playResult.success) {
-        console.log(`[AI] Failed to play card: ${playResult.error}`);
+        this.logThought(state, `Failed to play: ${playResult.error}`);
         break;
       }
 
-      await this.delay(AI_DELAYS.BETWEEN_ACTIONS, state);
+      await this.delay(delays.BETWEEN_ACTIONS, state);
     }
 
     // Clear any lingering AI visuals
@@ -199,11 +239,8 @@ export class AIController {
     const player = this.getAIPlayer(state);
     const hand = player.hand;
 
-    console.log(`[AI] Hand size: ${hand.length}, Deck size: ${player.deck?.length ?? 0}, Phase: ${state.phase}`);
-
     // Check if we can play cards in this phase
     if (!canPlayCard(state)) {
-      console.log(`[AI] Cannot play cards in phase: ${state.phase}`);
       return null;
     }
 
@@ -212,8 +249,6 @@ export class AIController {
       const isFree = card.type === "Free Spell" || card.type === "Trap" || isFreePlay(card);
       return isFree || !state.cardPlayedThisTurn;
     });
-
-    console.log(`[AI] Playable cards: ${playableCards.length}`);
 
     if (playableCards.length === 0) {
       return null;
@@ -229,34 +264,40 @@ export class AIController {
       return null;
     }
 
-    // Easy mode: just play the first available card (highest in hand order)
-    // This creates some randomness since hand order isn't sorted
-    if (this.difficulty === 'easy') {
-      // Prefer creatures over spells for board presence
-      const creatures = creaturesPlayable.filter(c => isCreatureCard(c));
-      if (creatures.length > 0) {
-        return creatures[0];
-      }
-      return creaturesPlayable[0];
-    }
-
-    // Hard mode: evaluate card value
+    // Evaluate all playable cards and select the best one
     return this.evaluateBestCardToPlay(state, creaturesPlayable);
   }
 
   /**
-   * Evaluate and return the best card to play (hard mode)
+   * Evaluate and return the best card to play
+   * Uses smart heuristics to choose the optimal card
    */
   evaluateBestCardToPlay(state, playableCards) {
     let bestCard = null;
     let bestScore = -Infinity;
+    const scores = [];
 
     for (const card of playableCards) {
       const score = this.evaluateCardValue(state, card);
+      scores.push({ name: card.name, score });
       if (score > bestScore) {
         bestScore = score;
         bestCard = card;
       }
+    }
+
+    // Log card evaluations
+    if (scores.length > 1) {
+      const scoreStr = scores
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5)
+        .map(s => `${s.name}=${s.score}`)
+        .join(', ');
+      this.logThought(state, `Card scores: ${scoreStr}`);
+    }
+
+    if (bestCard) {
+      this.logThought(state, `Best card: ${bestCard.name} (score: ${bestScore})`);
     }
 
     return bestCard;
@@ -516,24 +557,18 @@ export class AIController {
    * Select which prey to consume
    */
   selectPreyToConsume(state, availablePrey) {
-    if (this.difficulty === 'easy') {
-      // Easy: just consume one prey with highest nutrition
-      const sorted = [...availablePrey].sort((a, b) => {
-        const nutA = a.nutrition ?? a.currentAtk ?? 0;
-        const nutB = b.nutrition ?? b.currentAtk ?? 0;
-        return nutB - nutA;
-      });
-      return [sorted[0]];
-    }
-
-    // Hard: evaluate the board state to decide consumption
-    // For now, also just take highest nutrition
+    // Sort by nutrition value (highest first)
     const sorted = [...availablePrey].sort((a, b) => {
       const nutA = a.nutrition ?? a.currentAtk ?? 0;
       const nutB = b.nutrition ?? b.currentAtk ?? 0;
       return nutB - nutA;
     });
-    return [sorted[0]];
+
+    const chosen = sorted[0];
+    const nutrition = chosen.nutrition ?? chosen.currentAtk ?? 0;
+    this.logThought(state, `Consuming: ${chosen.name} (nutrition: ${nutrition})`);
+
+    return [chosen];
   }
 
   /**
@@ -541,8 +576,21 @@ export class AIController {
    */
   async executeCombatPhase(state, callbacks) {
     const player = this.getAIPlayer(state);
-    const opponent = this.getHumanPlayer(state);
+    const opponent = this.getOpponentPlayer(state);
+    const delays = this.getDelays(state);
     let actionsRemaining = 10; // Safety limit
+
+    this.logThought(state, `Evaluating combat options...`);
+
+    // Log field state
+    const myCreatures = player.field.filter(c => c).map(c => `${c.name}(${c.currentAtk}/${c.currentHp})`);
+    const theirCreatures = opponent.field.filter(c => c).map(c => `${c.name}(${c.currentAtk}/${c.currentHp})`);
+    if (myCreatures.length > 0) {
+      this.logThought(state, `My field: ${myCreatures.join(', ')}`);
+    }
+    if (theirCreatures.length > 0) {
+      this.logThought(state, `Opponent field: ${theirCreatures.join(', ')}`);
+    }
 
     while (actionsRemaining > 0) {
       actionsRemaining--;
@@ -550,18 +598,19 @@ export class AIController {
       // Find a creature that can attack
       const attacker = this.selectAttacker(state);
       if (!attacker) {
-        console.log('[AI] No more attackers');
+        this.logThought(state, `No more available attackers`);
         break;
       }
 
       // Find best target
       const target = this.selectAttackTarget(state, attacker);
       if (!target) {
-        console.log('[AI] No valid targets');
+        this.logThought(state, `No valid targets for ${attacker.name}`);
         break;
       }
 
-      console.log(`[AI] ${attacker.name} attacks ${target.type === 'player' ? 'player' : target.card?.name}`);
+      const targetName = target.type === 'player' ? 'opponent (direct)' : target.card?.name;
+      this.logThought(state, `${attacker.name} attacks ${targetName}`, true);
 
       // Show combat visuals: attacker selection and target consideration
       await simulateAICombatSequence(attacker, target);
@@ -569,13 +618,13 @@ export class AIController {
       // Mark attacker as having attacked BEFORE executing (prevents double attacks during reaction windows)
       attacker.hasAttacked = true;
 
-      // Execute the attack (with reaction window for human player's traps)
+      // Execute the attack (with reaction window for opponent's traps)
       await this.executeAttack(state, attacker, target, callbacks);
 
       // Notify callbacks
       callbacks.onAttack?.(attacker, target);
 
-      await this.delay(AI_DELAYS.BETWEEN_ACTIONS, state);
+      await this.delay(delays.BETWEEN_ACTIONS, state);
     }
   }
 
@@ -686,51 +735,25 @@ export class AIController {
 
   /**
    * Select the best target for an attack
+   * Uses smart evaluation to choose optimal targets
    */
   selectAttackTarget(state, attacker) {
-    const opponent = this.getHumanPlayer(state);
+    const opponent = this.getOpponentPlayer(state);
     const validTargets = getValidTargets(state, attacker, opponent);
 
-    if (this.difficulty === 'easy') {
-      return this.selectTargetEasy(state, attacker, validTargets, opponent);
-    }
-
-    return this.selectTargetHard(state, attacker, validTargets, opponent);
-  }
-
-  /**
-   * Easy mode target selection - prefer face damage
-   */
-  selectTargetEasy(state, attacker, validTargets, opponent) {
-    // If can attack player, do it
-    if (validTargets.player) {
-      return { type: 'player', player: opponent };
-    }
-
-    // Otherwise attack a random creature
-    if (validTargets.creatures.length > 0) {
-      const target = validTargets.creatures[0];
-      return { type: 'creature', card: target };
-    }
-
-    return null;
-  }
-
-  /**
-   * Hard mode target selection - evaluate trades
-   */
-  selectTargetHard(state, attacker, validTargets, opponent) {
     const attackerAtk = attacker.currentAtk ?? attacker.atk;
     const attackerHp = attacker.currentHp ?? attacker.hp;
 
-    // Check for lethal on player
+    // Check for lethal on player first (always take lethal)
     if (validTargets.player && opponent.hp <= attackerAtk) {
+      this.logThought(state, `Lethal available! Going face for ${attackerAtk} damage`);
       return { type: 'player', player: opponent };
     }
 
     // Evaluate creature trades
     let bestTarget = null;
     let bestScore = -Infinity;
+    let bestReason = '';
 
     for (const creature of validTargets.creatures) {
       const defenderAtk = creature.currentAtk ?? creature.atk;
@@ -742,20 +765,26 @@ export class AIController {
       const weSurvive = attackerHp > defenderAtk;
 
       let score = 0;
+      let reason = '';
 
       if (weKillThem && weSurvive) {
         score = 20 + defenderAtk + defenderHp; // Great trade
+        reason = 'favorable trade';
       } else if (weKillThem && !weSurvive) {
         score = 5 + (defenderAtk + defenderHp) - (attackerAtk + attackerHp); // Even trade
+        reason = 'even trade';
       } else if (!weKillThem && weSurvive) {
         score = 1; // Chip damage
+        reason = 'chip damage';
       } else {
         score = -10; // Bad trade
+        reason = 'bad trade';
       }
 
       if (score > bestScore) {
         bestScore = score;
         bestTarget = { type: 'creature', card: creature };
+        bestReason = reason;
       }
     }
 
@@ -763,8 +792,13 @@ export class AIController {
     if (validTargets.player) {
       const faceScore = attackerAtk * 2; // Value face damage
       if (faceScore > bestScore) {
+        this.logThought(state, `Face damage (${attackerAtk}) better than creature trades`);
         return { type: 'player', player: opponent };
       }
+    }
+
+    if (bestTarget) {
+      this.logThought(state, `Target: ${bestTarget.card.name} (${bestReason})`);
     }
 
     return bestTarget;
@@ -796,8 +830,10 @@ export class AIController {
 // ============================================================================
 
 /**
- * Create an AI controller with the specified difficulty
+ * Create an AI controller for the specified player
+ * @param {number} playerIndex - Player index (0 or 1)
+ * @param {boolean} verboseLogging - Enable verbose AI thought logging
  */
-export const createAIController = (difficulty = 'easy', playerIndex = 1) => {
-  return new AIController({ difficulty, playerIndex });
+export const createAIController = (playerIndex = 1, verboseLogging = true) => {
+  return new AIController({ playerIndex, verboseLogging });
 };

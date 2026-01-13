@@ -666,9 +666,23 @@ const appendLog = (state) => {
   // Build card name lookup on first use
   buildCardNameLookup();
 
-  gameHistoryLog.innerHTML = state.log.map((entry) =>
-    `<div class="log-entry"><span class="log-action">${linkifyCardNames(entry)}</span></div>`
-  ).join("");
+  gameHistoryLog.innerHTML = state.log.map((entry) => {
+    // Handle different log entry types
+    if (typeof entry === 'object' && entry !== null) {
+      // Bug log entry
+      if (entry.type === 'bug') {
+        return `<div class="log-entry log-bug"><span class="log-action">[BUG] ${escapeHtml(entry.message)}</span></div>`;
+      }
+      // AI thinking log entry
+      if (entry.type === 'ai-thinking') {
+        return `<div class="log-entry log-ai-thinking"><span class="log-action">${escapeHtml(entry.message)}</span></div>`;
+      }
+      // Unknown object type - try to stringify
+      return `<div class="log-entry"><span class="log-action">${escapeHtml(JSON.stringify(entry))}</span></div>`;
+    }
+    // Normal string entry
+    return `<div class="log-entry"><span class="log-action">${linkifyCardNames(entry)}</span></div>`;
+  }).join("");
 };
 
 /**

@@ -59,6 +59,18 @@ let deckHighlighted = null;
 // AI game setup functions (set during initialization)
 let startAIGameHandler = null;
 
+// AI vs AI deck selection state
+let aiVsAiSelectedDecks = { left: null, right: null };
+
+// Deck options for AI vs AI
+const AI_VS_AI_DECK_OPTIONS = [
+  { id: "fish", name: "Fish", emoji: "🐟" },
+  { id: "bird", name: "Bird", emoji: "🐦" },
+  { id: "mammal", name: "Mammal", emoji: "🐻" },
+  { id: "reptile", name: "Reptile", emoji: "🦎" },
+  { id: "amphibian", name: "Amphibian", emoji: "🐸" },
+];
+
 // ============================================================================
 // AI SETUP HELPERS
 // ============================================================================
@@ -104,9 +116,8 @@ const startAIGame = (state, callbacks) => {
 
   console.log("[AI] Starting game with settings:", aiSettings);
 
-  // Set the game mode to AI (default difficulty is "easy")
+  // Set the game mode to AI
   state.menu.mode = "ai";
-  state.menu.aiDifficulty = "easy";
   state.menu.aiDeckType = aiSettings.deckType;
   state.menu.aiSelectedDeckId = aiSettings.selectedDeckId;
 
@@ -118,6 +129,128 @@ const startAIGame = (state, callbacks) => {
   // Transition to deck selection for the player
   setMenuStage(state, "ready");
   callbacks.onUpdate?.();
+};
+
+/**
+ * Populate the AI vs AI deck picker grids
+ */
+const populateAIvsAIDeckPicker = (elements) => {
+  const { aiVsAiDecksLeft, aiVsAiDecksRight } = elements;
+
+  if (!aiVsAiDecksLeft || !aiVsAiDecksRight) return;
+
+  // Clear existing buttons
+  aiVsAiDecksLeft.innerHTML = "";
+  aiVsAiDecksRight.innerHTML = "";
+
+  // Reset selections
+  aiVsAiSelectedDecks = { left: null, right: null };
+
+  // Create deck buttons for both sides
+  AI_VS_AI_DECK_OPTIONS.forEach((option) => {
+    // Left side button
+    const leftBtn = document.createElement("button");
+    leftBtn.type = "button";
+    leftBtn.className = "ai-vs-ai-deck-btn";
+    leftBtn.dataset.deckId = option.id;
+    leftBtn.innerHTML = `
+      <span class="deck-emoji">${option.emoji}</span>
+      <span class="deck-name">${option.name}</span>
+    `;
+    leftBtn.onclick = () => handleAIvsAIDeckSelect("left", option.id, elements);
+    aiVsAiDecksLeft.appendChild(leftBtn);
+
+    // Right side button
+    const rightBtn = document.createElement("button");
+    rightBtn.type = "button";
+    rightBtn.className = "ai-vs-ai-deck-btn";
+    rightBtn.dataset.deckId = option.id;
+    rightBtn.innerHTML = `
+      <span class="deck-emoji">${option.emoji}</span>
+      <span class="deck-name">${option.name}</span>
+    `;
+    rightBtn.onclick = () => handleAIvsAIDeckSelect("right", option.id, elements);
+    aiVsAiDecksRight.appendChild(rightBtn);
+  });
+};
+
+/**
+ * Handle deck selection in AI vs AI mode
+ */
+const handleAIvsAIDeckSelect = (side, deckId, elements) => {
+  const { aiVsAiDecksLeft, aiVsAiDecksRight, aiVsAiStatus } = elements;
+
+  // Update selection state
+  aiVsAiSelectedDecks[side] = deckId;
+
+  // Update button states
+  const container = side === "left" ? aiVsAiDecksLeft : aiVsAiDecksRight;
+  container.querySelectorAll(".ai-vs-ai-deck-btn").forEach((btn) => {
+    btn.classList.toggle("selected", btn.dataset.deckId === deckId);
+  });
+
+  // Update status
+  const leftName = AI_VS_AI_DECK_OPTIONS.find(d => d.id === aiVsAiSelectedDecks.left)?.name || "...";
+  const rightName = AI_VS_AI_DECK_OPTIONS.find(d => d.id === aiVsAiSelectedDecks.right)?.name || "...";
+
+  if (aiVsAiStatus) {
+    if (aiVsAiSelectedDecks.left && aiVsAiSelectedDecks.right) {
+      aiVsAiStatus.textContent = `${leftName} vs ${rightName} - Starting game...`;
+    } else if (aiVsAiSelectedDecks.left || aiVsAiSelectedDecks.right) {
+      aiVsAiStatus.textContent = `${leftName} vs ${rightName} - Select second deck`;
+    } else {
+      aiVsAiStatus.textContent = "Select decks for both AI players.";
+    }
+  }
+
+  // If both decks selected, start the game
+  if (aiVsAiSelectedDecks.left && aiVsAiSelectedDecks.right) {
+    setTimeout(() => {
+      startAIvsAIGame(aiVsAiSelectedDecks.left, aiVsAiSelectedDecks.right, elements);
+    }, 500); // Brief delay to show the selection
+  }
+};
+
+/**
+ * Start an AI vs AI game with the selected decks
+ */
+const startAIvsAIGame = (deck1Id, deck2Id, elements) => {
+  if (!latestState) return;
+
+  console.log(`[AI vs AI] Starting game: ${deck1Id} vs ${deck2Id}`);
+
+  // Set game mode to AI vs AI
+  latestState.menu.mode = "aiVsAi";
+  latestState.menu.aiVsAiDecks = {
+    player1: deck1Id,
+    player2: deck2Id,
+  };
+
+  // Initialize AI vs AI state
+  latestState.aiVsAi = {
+    deck1Type: deck1Id,
+    deck2Type: deck2Id,
+    bugsDetected: [],
+    gameCount: 0,
+  };
+
+  // Hide the deck picker overlay
+  elements.aiVsAiDeckOverlay?.classList.remove("active");
+  elements.aiVsAiDeckOverlay?.setAttribute("aria-hidden", "true");
+
+  // Hide the AI setup overlay
+  const aiSetupOverlay = document.getElementById("ai-setup-overlay");
+  aiSetupOverlay?.classList.remove("active");
+  aiSetupOverlay?.setAttribute("aria-hidden", "true");
+
+  // Reset deck selection state for fresh game
+  if (latestState.deckSelection) {
+    latestState.deckSelection.skipSavedDecks = false;
+  }
+
+  // Transition to ready stage - this will trigger deck building
+  setMenuStage(latestState, "ready");
+  latestCallbacks.onUpdate?.();
 };
 
 // ============================================================================
@@ -147,6 +280,14 @@ const getNavigationElements = () => ({
   aiDeckSelect: document.getElementById("ai-deck-select"),
   aiStartGame: document.getElementById("ai-start-game"),
   aiSetupBack: document.getElementById("ai-setup-back"),
+
+  // AI vs AI Setup
+  aiVsAiButton: document.getElementById("ai-vs-ai"),
+  aiVsAiDeckOverlay: document.getElementById("ai-vs-ai-deck-overlay"),
+  aiVsAiDecksLeft: document.getElementById("ai-vs-ai-decks-left"),
+  aiVsAiDecksRight: document.getElementById("ai-vs-ai-decks-right"),
+  aiVsAiStatus: document.getElementById("ai-vs-ai-status"),
+  aiVsAiBack: document.getElementById("ai-vs-ai-back"),
 
   // Login form
   loginForm: document.getElementById("login-form"),
@@ -400,6 +541,35 @@ const initNavigation = () => {
     if (!latestState) return;
     setMenuStage(latestState, "main");
     latestCallbacks.onUpdate?.();
+  });
+
+  // AI vs AI: Open deck picker
+  elements.aiVsAiButton?.addEventListener("click", () => {
+    if (!latestState) return;
+
+    // Show AI vs AI deck picker overlay
+    elements.aiVsAiDeckOverlay?.classList.add("active");
+    elements.aiVsAiDeckOverlay?.setAttribute("aria-hidden", "false");
+
+    // Populate deck options
+    populateAIvsAIDeckPicker(elements);
+
+    // Reset status
+    if (elements.aiVsAiStatus) {
+      elements.aiVsAiStatus.textContent = "Select decks for both AI players.";
+    }
+  });
+
+  // AI vs AI: Back button
+  elements.aiVsAiBack?.addEventListener("click", () => {
+    if (!latestState) return;
+
+    // Hide AI vs AI deck picker
+    elements.aiVsAiDeckOverlay?.classList.remove("active");
+    elements.aiVsAiDeckOverlay?.setAttribute("aria-hidden", "true");
+
+    // Reset selections
+    aiVsAiSelectedDecks = { left: null, right: null };
   });
 
   // Login form submission (login to existing account)

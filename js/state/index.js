@@ -122,7 +122,8 @@ export {
   isOnlineMode,
   isLocalMode,
   isAIMode,
-  getAIDifficulty,
+  isAIvsAIMode,
+  isAnyAIMode,
   isGameReady,
 
   // Combat selectors

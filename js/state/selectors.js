@@ -443,10 +443,17 @@ export const isAIMode = (state) => {
 };
 
 /**
- * Get AI difficulty setting
+ * Check if in AI vs AI (spectator) mode
  */
-export const getAIDifficulty = (state) => {
-  return state.menu?.aiDifficulty || "easy";
+export const isAIvsAIMode = (state) => {
+  return state.menu?.mode === "aiVsAi";
+};
+
+/**
+ * Check if either AI mode is active (human vs AI or AI vs AI)
+ */
+export const isAnyAIMode = (state) => {
+  return isAIMode(state) || isAIvsAIMode(state);
 };
 
 /**

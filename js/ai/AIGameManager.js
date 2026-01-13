@@ -1,22 +1,25 @@
 /**
  * AI Game Manager
  *
- * Manages AI behavior during a singleplayer game.
+ * Manages AI behavior during singleplayer and AI vs AI games.
  * Handles:
- * - Initializing the AI controller
- * - Detecting when it's the AI's turn
+ * - Initializing AI controllers (one for AI mode, two for AI vs AI)
+ * - Detecting when it's an AI's turn
  * - Executing AI turns with proper timing
  * - Coordinating with the game UI
  */
 
 import { createAIController } from './AIController.js';
-import { isAIMode, getAIDifficulty } from '../state/selectors.js';
+import { isAIMode, isAIvsAIMode, isAnyAIMode } from '../state/selectors.js';
+import { logMessage } from '../state/gameState.js';
 
 // ============================================================================
 // MODULE STATE
 // ============================================================================
 
-let aiController = null;
+// AI controllers (one for regular AI mode, two for AI vs AI mode)
+let aiController = null;       // Player 1 AI (used in both modes)
+let aiController0 = null;      // Player 0 AI (only used in AI vs AI mode)
 let isAITurnInProgress = false;
 
 // ============================================================================
@@ -28,21 +31,47 @@ let isAITurnInProgress = false;
  * Called when an AI game starts
  */
 export const initializeAI = (state) => {
+  if (isAIvsAIMode(state)) {
+    // AI vs AI mode: create two controllers
+    console.log('[AIManager] Initializing AI vs AI mode');
+
+    aiController0 = createAIController(0, true);  // AI for player 0 (bottom/watching)
+    aiController = createAIController(1, true);   // AI for player 1 (top/opponent)
+    isAITurnInProgress = false;
+
+    // Set AI player names
+    const deck1 = state.aiVsAi?.deck1Type || state.menu?.aiVsAiDecks?.player1 || 'AI';
+    const deck2 = state.aiVsAi?.deck2Type || state.menu?.aiVsAiDecks?.player2 || 'AI';
+
+    if (state.players[0]) {
+      state.players[0].name = `AI (${deck1})`;
+      state.players[0].isAI = true;
+    }
+    if (state.players[1]) {
+      state.players[1].name = `AI (${deck2})`;
+      state.players[1].isAI = true;
+    }
+
+    logMessage(state, `AI vs AI: ${deck1} vs ${deck2}`);
+    return;
+  }
+
   if (!isAIMode(state)) {
     console.log('[AIManager] Not in AI mode, skipping initialization');
     return;
   }
 
-  const difficulty = getAIDifficulty(state);
-  console.log(`[AIManager] Initializing AI with difficulty: ${difficulty}`);
+  // Regular AI mode: create one controller for player 1
+  console.log('[AIManager] Initializing AI mode');
 
-  // AI is always player 1 (index 1)
-  aiController = createAIController(difficulty, 1);
+  // AI is always player 1 (index 1) in regular AI mode
+  aiController = createAIController(1, true);
+  aiController0 = null;
   isAITurnInProgress = false;
 
   // Set AI player name
   if (state.players[1]) {
-    state.players[1].name = difficulty === 'hard' ? 'AI (Hard)' : 'AI (Easy)';
+    state.players[1].name = 'AI';
     state.players[1].isAI = true;
   }
 };
@@ -52,6 +81,7 @@ export const initializeAI = (state) => {
  */
 export const cleanupAI = () => {
   aiController = null;
+  aiController0 = null;
   isAITurnInProgress = false;
 };
 
@@ -60,13 +90,30 @@ export const cleanupAI = () => {
 // ============================================================================
 
 /**
- * Check if it's the AI's turn
+ * Check if it's any AI's turn
  */
 export const isAIsTurn = (state) => {
-  if (!isAIMode(state) || !aiController) {
+  if (!isAnyAIMode(state)) {
     return false;
   }
-  return state.activePlayerIndex === 1;
+
+  if (isAIvsAIMode(state)) {
+    // In AI vs AI mode, it's always an AI's turn (both players are AI)
+    return true;
+  }
+
+  // In regular AI mode, only player 1 is AI
+  return state.activePlayerIndex === 1 && aiController !== null;
+};
+
+/**
+ * Get the AI controller for the current active player
+ */
+const getActiveAIController = (state) => {
+  if (isAIvsAIMode(state)) {
+    return state.activePlayerIndex === 0 ? aiController0 : aiController;
+  }
+  return state.activePlayerIndex === 1 ? aiController : null;
 };
 
 /**
@@ -85,7 +132,12 @@ export const isAIProcessing = () => {
  * This is called from the game loop when it's detected that AI should act
  */
 export const executeAITurn = async (state, callbacks) => {
-  if (!aiController || isAITurnInProgress) {
+  if (isAITurnInProgress) {
+    return;
+  }
+
+  const controller = getActiveAIController(state);
+  if (!controller) {
     return;
   }
 
@@ -94,10 +146,11 @@ export const executeAITurn = async (state, callbacks) => {
   }
 
   isAITurnInProgress = true;
-  console.log('[AIManager] Starting AI turn execution');
+  const playerLabel = state.activePlayerIndex === 0 ? 'AI-P1' : 'AI-P2';
+  console.log(`[AIManager] Starting ${playerLabel} turn execution`);
 
   try {
-    await aiController.takeTurn(state, {
+    await controller.takeTurn(state, {
       onPlayCard: (card, slotIndex, options) => {
         callbacks.onAIPlayCard?.(card, slotIndex, options);
       },
@@ -110,9 +163,12 @@ export const executeAITurn = async (state, callbacks) => {
       onEndTurn: () => {
         callbacks.onAIEndTurn?.();
       },
+      onUpdate: () => {
+        callbacks.onUpdate?.();
+      },
     });
   } catch (error) {
-    console.error('[AIManager] Error during AI turn:', error);
+    console.error(`[AIManager] Error during ${playerLabel} turn:`, error);
   } finally {
     isAITurnInProgress = false;
   }
@@ -123,12 +179,12 @@ export const executeAITurn = async (state, callbacks) => {
  * This should be called after each state update
  */
 export const checkAndTriggerAITurn = (state, callbacks) => {
-  if (!isAIMode(state)) {
+  if (!isAnyAIMode(state)) {
     return;
   }
 
   // Don't trigger if game hasn't started or is over
-  if (!state.setup?.stage === 'complete') {
+  if (state.setup?.stage !== 'complete') {
     return;
   }
 
@@ -144,9 +200,11 @@ export const checkAndTriggerAITurn = (state, callbacks) => {
   // Check if it's AI's turn
   if (isAIsTurn(state)) {
     // Use setTimeout to allow UI to update first
+    // Shorter delay for AI vs AI mode for faster gameplay
+    const delay = isAIvsAIMode(state) ? 200 : 500;
     setTimeout(() => {
       executeAITurn(state, callbacks);
-    }, 500);
+    }, delay);
   }
 };
 
@@ -155,3 +213,4 @@ export const checkAndTriggerAITurn = (state, callbacks) => {
 // ============================================================================
 
 export const getAIController = () => aiController;
+export const getAIController0 = () => aiController0;

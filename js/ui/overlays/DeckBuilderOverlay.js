@@ -16,7 +16,7 @@
 import { deckCatalogs, getCardDefinitionById } from '../../cards/index.js';
 import { logMessage } from '../../state/gameState.js';
 import { buildLobbySyncPayload, sendLobbyBroadcast, getSupabaseApi } from '../../network/index.js';
-import { getLocalPlayerIndex, isAIMode } from '../../state/selectors.js';
+import { getLocalPlayerIndex, isAIMode, isAIvsAIMode } from '../../state/selectors.js';
 import { renderDeckCard, renderCardStats, getCardEffectSummary } from '../components/Card.js';
 import { KEYWORD_DESCRIPTIONS } from '../../keywords.js';
 
@@ -410,31 +410,70 @@ const buildRandomDeck = ({ available, selected, catalogOrder }) => {
 };
 
 /**
- * Generate a random deck for AI player
+ * Generate a random deck for a player
  * Uses one of the available deck catalogs
+ * @param {Object} state - Game state
+ * @param {number} playerIndex - Player index (0 or 1)
+ * @param {string} [specificDeckId] - Optional specific deck ID to use
  */
-const generateAIDeck = (state) => {
-  // Pick a random available deck category for AI
-  const availableDecks = DECK_OPTIONS.filter(opt => opt.available);
-  const randomOption = availableDecks[Math.floor(Math.random() * availableDecks.length)];
-  const deckId = randomOption?.id ?? 'fish';
+const generateDeckForPlayer = (state, playerIndex, specificDeckId = null) => {
+  // Pick deck category - use specific if provided, otherwise random
+  let deckId;
+  let deckName;
+
+  if (specificDeckId) {
+    deckId = specificDeckId;
+    deckName = DECK_OPTIONS.find(opt => opt.id === specificDeckId)?.name ?? specificDeckId;
+  } else {
+    const availableDecks = DECK_OPTIONS.filter(opt => opt.available);
+    const randomOption = availableDecks[Math.floor(Math.random() * availableDecks.length)];
+    deckId = randomOption?.id ?? 'fish';
+    deckName = randomOption?.name ?? 'Fish';
+  }
 
   const catalog = deckCatalogs[deckId] ?? [];
   const available = cloneDeckCatalog(catalog);
   const selected = [];
   const catalogOrder = catalog.map((card) => card.id);
 
-  // Build random deck for AI
+  // Build random deck
   buildRandomDeck({ available, selected, catalogOrder });
 
-  // Set up AI's deck in state (player index 1)
-  state.deckSelection.selections[1] = deckId;
-  state.deckBuilder.selections[1] = selected;
-  state.deckBuilder.available[1] = available;
-  state.deckBuilder.catalogOrder[1] = catalogOrder;
+  // Set up deck in state
+  state.deckSelection.selections[playerIndex] = deckId;
+  state.deckBuilder.selections[playerIndex] = selected;
+  state.deckBuilder.available[playerIndex] = available;
+  state.deckBuilder.catalogOrder[playerIndex] = catalogOrder;
 
-  console.log(`[AI] Generated random ${randomOption?.name ?? 'Fish'} deck with ${selected.length} cards`);
+  console.log(`[AI] Generated ${deckName} deck for player ${playerIndex} with ${selected.length} cards`);
   return selected;
+};
+
+/**
+ * Generate a random deck for AI player (backwards compatibility)
+ */
+const generateAIDeck = (state) => {
+  return generateDeckForPlayer(state, 1);
+};
+
+/**
+ * Generate decks for both AI players in AI vs AI mode
+ */
+export const generateAIvsAIDecks = (state) => {
+  const deck1Type = state.menu?.aiVsAiDecks?.player1 || state.aiVsAi?.deck1Type;
+  const deck2Type = state.menu?.aiVsAiDecks?.player2 || state.aiVsAi?.deck2Type;
+
+  console.log(`[AI vs AI] Generating decks: P1=${deck1Type}, P2=${deck2Type}`);
+
+  // Generate deck for AI player 1 (bottom/watching perspective)
+  generateDeckForPlayer(state, 0, deck1Type);
+
+  // Generate deck for AI player 2 (top/opponent)
+  generateDeckForPlayer(state, 1, deck2Type);
+
+  logMessage(state, `AI vs AI: ${deck1Type} vs ${deck2Type}`);
+
+  return state.deckBuilder.selections;
 };
 
 /**
@@ -808,6 +847,45 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
 
   // Store callbacks for async operations
   latestCallbacks = callbacks;
+
+  // AI vs AI mode: auto-generate both decks and skip selection UI
+  if (isAIvsAIMode(state) && state.menu?.stage === "ready") {
+    // Only process once (check if already complete)
+    if (state.deckSelection?.stage !== "complete") {
+      console.log('[DeckBuilderOverlay] AI vs AI mode - generating both decks');
+
+      // Initialize deck builder state if needed
+      if (!state.deckBuilder) {
+        state.deckBuilder = {
+          stage: "p1",
+          selections: [[], []],
+          available: [[], []],
+          catalogOrder: [[], []],
+        };
+      }
+      if (!state.deckSelection) {
+        state.deckSelection = {
+          stage: "p1",
+          selections: [null, null],
+        };
+      }
+
+      // Generate both AI decks
+      generateAIvsAIDecks(state);
+
+      // Mark as complete
+      state.deckBuilder.stage = "complete";
+      state.deckSelection.stage = "complete";
+
+      // Trigger deck complete callback
+      callbacks.onDeckComplete?.(state.deckBuilder.selections);
+    }
+
+    // Hide overlay
+    deckSelectOverlay?.classList.remove("active");
+    deckSelectOverlay?.setAttribute("aria-hidden", "true");
+    return;
+  }
 
   // Catalog mode: deck management home screen or category selection
   if (isCatalogMode(state)) {

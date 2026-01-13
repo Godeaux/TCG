@@ -19,6 +19,7 @@ export {
   executeAITurn,
   checkAndTriggerAITurn,
   getAIController,
+  getAIController0,
 } from './AIGameManager.js';
 
 export {
