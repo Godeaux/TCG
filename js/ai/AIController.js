@@ -24,6 +24,7 @@ import { resolveCardEffect } from '../cards/index.js';
 import { resolveEffectResult } from '../game/effects.js';
 import { createReactionWindow, TRIGGER_EVENTS } from '../game/triggers/index.js';
 import { isAIvsAIMode } from '../state/selectors.js';
+import { getBugDetector } from '../simulation/index.js';
 
 // ============================================================================
 // AI CONFIGURATION
@@ -385,6 +386,15 @@ export class AIController {
     const opponentIndex = 1 - this.playerIndex;
     const isFree = card.type === "Free Spell" || card.type === "Trap" || isFreePlay(card);
 
+    // Bug detection: snapshot before action
+    const detector = getBugDetector();
+    if (detector?.isEnabled()) {
+      detector.beforeAction(state, { type: 'PLAY_CARD', payload: { card, slotIndex } }, {
+        card,
+        playerIndex,
+      });
+    }
+
     // Handle spells
     if (card.type === "Spell" || card.type === "Free Spell") {
       logMessage(state, `${player.name} casts ${card.name}.`);
@@ -410,6 +420,12 @@ export class AIController {
       }
 
       cleanupDestroyed(state);
+
+      // Bug detection: check after action
+      if (detector?.isEnabled()) {
+        detector.afterAction(state);
+      }
+
       callbacks.onPlayCard?.(card, slotIndex);
       return { success: true };
     }
@@ -438,6 +454,15 @@ export class AIController {
     const player = this.getAIPlayer(state);
     const isFree = isFreePlay(card);
 
+    // Bug detection: snapshot before action
+    const detector = getBugDetector();
+    if (detector?.isEnabled()) {
+      detector.beforeAction(state, { type: 'PLAY_CREATURE', payload: { card, slotIndex } }, {
+        card,
+        playerIndex: this.playerIndex,
+      });
+    }
+
     // Remove from hand
     player.hand = player.hand.filter(c => c.instanceId !== card.instanceId);
 
@@ -455,6 +480,11 @@ export class AIController {
 
     // Trigger onPlay effect if any
     this.triggerOnPlayEffect(state, creature);
+
+    // Bug detection: check after action
+    if (detector?.isEnabled()) {
+      detector.afterAction(state);
+    }
 
     callbacks.onPlayCard?.(card, slotIndex);
     return { success: true };
@@ -478,7 +508,19 @@ export class AIController {
     // Create card instance
     const creature = createCardInstance(card, state.turn);
 
-    if (availablePrey.length === 0) {
+    // Bug detection: snapshot before action
+    const detector = getBugDetector();
+    const isDryDrop = availablePrey.length === 0;
+
+    if (detector?.isEnabled()) {
+      detector.beforeAction(state, { type: 'PLAY_PREDATOR', payload: { card, slotIndex } }, {
+        predator: creature,
+        playerIndex: this.playerIndex,
+        consumedPrey: isDryDrop ? [] : null, // Will be set after selection
+      });
+    }
+
+    if (isDryDrop) {
       // Dry drop - play without consumption
       player.field[slotIndex] = creature;
       creature.dryDropped = true;
@@ -489,6 +531,18 @@ export class AIController {
       }
 
       this.triggerOnPlayEffect(state, creature);
+
+      // Bug detection: check after dry drop
+      if (detector?.isEnabled()) {
+        // Update context with dry drop info
+        detector.actionContext = {
+          ...detector.actionContext,
+          predator: creature,
+          consumedPrey: [],
+        };
+        detector.afterAction(state);
+      }
+
       callbacks.onPlayCard?.(card, slotIndex, { dryDrop: true });
       return { success: true };
     }
@@ -525,6 +579,17 @@ export class AIController {
     // Trigger onPlay and onConsume effects
     this.triggerOnPlayEffect(state, creature);
     this.triggerOnConsumeEffect(state, creature, preyToConsume);
+
+    // Bug detection: check after consumption play
+    if (detector?.isEnabled()) {
+      // Update context with consumption info
+      detector.actionContext = {
+        ...detector.actionContext,
+        predator: creature,
+        consumedPrey: preyToConsume,
+      };
+      detector.afterAction(state);
+    }
 
     callbacks.onPlayCard?.(card, actualSlot, { consumeTargets: preyToConsume });
     return { success: true };

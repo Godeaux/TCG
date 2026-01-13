@@ -50,6 +50,9 @@ import {
 // AI module (for cleanup when returning to menu)
 import { cleanupAI } from "./ai/index.js";
 
+// Bug detection (for AI vs AI mode)
+import { getBugDetector } from "./simulation/index.js";
+
 // Victory overlay (extracted module)
 import {
   showVictoryScreen,
@@ -3077,6 +3080,51 @@ const setupSurrenderButton = () => {
   }
 };
 
+/**
+ * Set up click-to-continue handler for bug detector pause
+ * When a bug is detected in AI vs AI mode, clicking anywhere resumes execution
+ */
+const setupBugDetectorResumeHandler = () => {
+  const gameContainer = document.querySelector('.game-container');
+  if (!gameContainer) return;
+
+  // Add a visible pause indicator element
+  let pauseIndicator = document.getElementById('bug-pause-indicator');
+  if (!pauseIndicator) {
+    pauseIndicator = document.createElement('div');
+    pauseIndicator.id = 'bug-pause-indicator';
+    pauseIndicator.className = 'bug-pause-indicator';
+    pauseIndicator.innerHTML = `
+      <div class="bug-pause-content">
+        <span class="bug-pause-icon">BUG</span>
+        <span class="bug-pause-text">Click anywhere to continue</span>
+      </div>
+    `;
+    pauseIndicator.style.display = 'none';
+    document.body.appendChild(pauseIndicator);
+  }
+
+  // Click handler to resume bug detector
+  document.body.addEventListener('click', (e) => {
+    const detector = getBugDetector();
+    if (detector?.isPaused()) {
+      console.log('[UI] Resuming bug detector from click');
+      pauseIndicator.style.display = 'none';
+      detector.resume();
+    }
+  });
+
+  // Show/hide pause indicator based on detector state
+  setInterval(() => {
+    const detector = getBugDetector();
+    if (detector?.isPaused() && pauseIndicator.style.display === 'none') {
+      pauseIndicator.style.display = 'flex';
+    } else if (!detector?.isPaused() && pauseIndicator.style.display === 'flex') {
+      pauseIndicator.style.display = 'none';
+    }
+  }, 100);
+};
+
 // Initialize mobile features and log card links when DOM is ready
 if (typeof window !== 'undefined') {
   if (document.readyState === 'loading') {
@@ -3084,11 +3132,13 @@ if (typeof window !== 'undefined') {
       setupMobileNavigation();
       setupLogCardLinks();
       setupSurrenderButton();
+      setupBugDetectorResumeHandler();
     });
   } else {
     setupMobileNavigation();
     setupLogCardLinks();
     setupSurrenderButton();
+    setupBugDetectorResumeHandler();
   }
 }
 
