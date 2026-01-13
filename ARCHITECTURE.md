@@ -151,7 +151,7 @@ User Input → Action → Controller → State Change → Re-render
 
 ## Coding Standards
 
-See `AGENTS.md` for comprehensive coding standards, patterns, and conventions.
+See `CLAUDE.md` for coding standards, patterns, and conventions.
 
 ---
 
@@ -207,4 +207,4 @@ See `AGENTS.md` for comprehensive coding standards, patterns, and conventions.
 ---
 
 *For game rules, see `RULEBOOK.md`*
-*For developer standards, see `AGENTS.md`*
+*For AI/developer standards, see `CLAUDE.md`*
