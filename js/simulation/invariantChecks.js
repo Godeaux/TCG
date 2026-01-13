@@ -324,6 +324,348 @@ export const checkDryDropKeywords = (state) => {
 };
 
 /**
+ * Check for barrier bypass during combat
+ * A creature with barrier should have its barrier consumed, not take damage
+ *
+ * @param {Object} state - Game state after action
+ * @param {Object} before - State before action
+ * @param {Object} action - The action that was executed
+ * @returns {Object[]} Array of bug objects
+ */
+export const checkBarrierBypass = (state, before, action) => {
+  const bugs = [];
+
+  if (!action || action.type !== 'DECLARE_ATTACK') {
+    return bugs;
+  }
+
+  const { target } = action.payload || {};
+  if (!target || target.type !== 'creature') return bugs;
+
+  const targetInstanceId = target.card?.instanceId;
+  if (!targetInstanceId) return bugs;
+
+  // Find target creature in before state
+  let targetBefore = null;
+  for (const player of before.players) {
+    for (const creature of player.field) {
+      if (creature?.instanceId === targetInstanceId) {
+        targetBefore = creature;
+        break;
+      }
+    }
+  }
+
+  if (!targetBefore || !targetBefore.hasBarrier) return bugs;
+
+  // Find target creature in after state
+  let targetAfter = null;
+  for (const player of state.players) {
+    for (const creature of player.field) {
+      if (creature?.instanceId === targetInstanceId) {
+        targetAfter = creature;
+        break;
+      }
+    }
+  }
+
+  // If creature had barrier and took damage (HP decreased), that's a bug
+  if (targetAfter) {
+    const hpBefore = targetBefore.currentHp ?? targetBefore.hp;
+    const hpAfter = targetAfter.currentHp ?? targetAfter.hp;
+
+    if (hpAfter < hpBefore && targetBefore.hasBarrier) {
+      bugs.push({
+        type: 'barrier_bypass',
+        severity: 'high',
+        message: `${targetBefore.name} had Barrier but took ${hpBefore - hpAfter} damage`,
+        details: {
+          creature: targetBefore.name,
+          instanceId: targetInstanceId,
+          hpBefore,
+          hpAfter,
+          hadBarrier: true,
+        },
+      });
+    }
+  }
+
+  return bugs;
+};
+
+/**
+ * Check for frozen/paralyzed creature attacking
+ * A creature that is frozen or paralyzed should not be able to attack
+ *
+ * @param {Object} state - Game state after action
+ * @param {Object} before - State before action
+ * @param {Object} action - The action that was executed
+ * @returns {Object[]} Array of bug objects
+ */
+export const checkFrozenParalyzedAttack = (state, before, action) => {
+  const bugs = [];
+
+  if (!action || action.type !== 'DECLARE_ATTACK') {
+    return bugs;
+  }
+
+  const { attacker } = action.payload || {};
+  if (!attacker) return bugs;
+
+  // Find the attacker in before state
+  let attackerBefore = null;
+  for (const player of before.players) {
+    for (const creature of player.field) {
+      if (creature?.instanceId === attacker.instanceId) {
+        attackerBefore = creature;
+        break;
+      }
+    }
+  }
+
+  if (!attackerBefore) return bugs;
+
+  if (attackerBefore.frozen) {
+    bugs.push({
+      type: 'frozen_attack',
+      severity: 'high',
+      message: `${attackerBefore.name} attacked while Frozen`,
+      details: {
+        creature: attackerBefore.name,
+        instanceId: attacker.instanceId,
+        frozen: true,
+      },
+    });
+  }
+
+  if (attackerBefore.paralyzed) {
+    bugs.push({
+      type: 'paralyzed_attack',
+      severity: 'high',
+      message: `${attackerBefore.name} attacked while Paralyzed`,
+      details: {
+        creature: attackerBefore.name,
+        instanceId: attacker.instanceId,
+        paralyzed: true,
+      },
+    });
+  }
+
+  return bugs;
+};
+
+/**
+ * Check for passive/harmless creature attacking
+ * A creature with Passive or Harmless keyword should not attack
+ *
+ * @param {Object} state - Game state after action
+ * @param {Object} before - State before action
+ * @param {Object} action - The action that was executed
+ * @returns {Object[]} Array of bug objects
+ */
+export const checkPassiveHarmlessAttack = (state, before, action) => {
+  const bugs = [];
+
+  if (!action || action.type !== 'DECLARE_ATTACK') {
+    return bugs;
+  }
+
+  const { attacker } = action.payload || {};
+  if (!attacker) return bugs;
+
+  // Find the attacker in before state
+  let attackerBefore = null;
+  for (const player of before.players) {
+    for (const creature of player.field) {
+      if (creature?.instanceId === attacker.instanceId) {
+        attackerBefore = creature;
+        break;
+      }
+    }
+  }
+
+  if (!attackerBefore) return bugs;
+
+  const keywords = attackerBefore.keywords || [];
+  const grantedKeywords = attackerBefore.grantedKeywords || [];
+  const allKeywords = [...keywords, ...grantedKeywords];
+
+  if (allKeywords.includes('Passive')) {
+    bugs.push({
+      type: 'passive_attack',
+      severity: 'high',
+      message: `${attackerBefore.name} attacked despite having Passive keyword`,
+      details: {
+        creature: attackerBefore.name,
+        instanceId: attacker.instanceId,
+        keywords: allKeywords,
+      },
+    });
+  }
+
+  if (allKeywords.includes('Harmless')) {
+    bugs.push({
+      type: 'harmless_attack',
+      severity: 'high',
+      message: `${attackerBefore.name} attacked despite having Harmless keyword`,
+      details: {
+        creature: attackerBefore.name,
+        instanceId: attacker.instanceId,
+        keywords: allKeywords,
+      },
+    });
+  }
+
+  return bugs;
+};
+
+/**
+ * Check for hidden/invisible creature being targeted
+ * A creature with Hidden or Invisible shouldn't be targetable
+ *
+ * @param {Object} state - Game state after action
+ * @param {Object} before - State before action
+ * @param {Object} action - The action that was executed
+ * @returns {Object[]} Array of bug objects
+ */
+export const checkHiddenTargeting = (state, before, action) => {
+  const bugs = [];
+
+  if (!action || action.type !== 'DECLARE_ATTACK') {
+    return bugs;
+  }
+
+  const { target } = action.payload || {};
+  if (!target || target.type !== 'creature') return bugs;
+
+  const targetInstanceId = target.card?.instanceId;
+  if (!targetInstanceId) return bugs;
+
+  // Find target creature in before state
+  let targetBefore = null;
+  for (const player of before.players) {
+    for (const creature of player.field) {
+      if (creature?.instanceId === targetInstanceId) {
+        targetBefore = creature;
+        break;
+      }
+    }
+  }
+
+  if (!targetBefore) return bugs;
+
+  const keywords = targetBefore.keywords || [];
+  const grantedKeywords = targetBefore.grantedKeywords || [];
+  const allKeywords = [...keywords, ...grantedKeywords];
+
+  if (allKeywords.includes('Hidden')) {
+    bugs.push({
+      type: 'hidden_targeted',
+      severity: 'high',
+      message: `${targetBefore.name} was targeted despite having Hidden keyword`,
+      details: {
+        creature: targetBefore.name,
+        instanceId: targetInstanceId,
+        keywords: allKeywords,
+      },
+    });
+  }
+
+  if (allKeywords.includes('Invisible')) {
+    bugs.push({
+      type: 'invisible_targeted',
+      severity: 'high',
+      message: `${targetBefore.name} was targeted despite having Invisible keyword`,
+      details: {
+        creature: targetBefore.name,
+        instanceId: targetInstanceId,
+        keywords: allKeywords,
+      },
+    });
+  }
+
+  return bugs;
+};
+
+/**
+ * Check for lure bypass during combat
+ * If opponent has a creature with Lure, other creatures shouldn't be targetable
+ *
+ * @param {Object} state - Game state after action
+ * @param {Object} before - State before action
+ * @param {Object} action - The action that was executed
+ * @returns {Object[]} Array of bug objects
+ */
+export const checkLureBypass = (state, before, action) => {
+  const bugs = [];
+
+  if (!action || action.type !== 'DECLARE_ATTACK') {
+    return bugs;
+  }
+
+  const { attacker, target } = action.payload || {};
+  if (!attacker || !target) return bugs;
+
+  // Find which player owns the attacker
+  let attackerOwnerIndex = null;
+  for (let i = 0; i < before.players.length; i++) {
+    for (const creature of before.players[i].field) {
+      if (creature?.instanceId === attacker.instanceId) {
+        attackerOwnerIndex = i;
+        break;
+      }
+    }
+  }
+
+  if (attackerOwnerIndex === null) return bugs;
+  const defenderOwnerIndex = 1 - attackerOwnerIndex;
+  const defenderField = before.players[defenderOwnerIndex].field;
+
+  // Check if defender has any creature with Lure
+  const lureCreatures = defenderField.filter(c => {
+    if (!c) return false;
+    const keywords = c.keywords || [];
+    const grantedKeywords = c.grantedKeywords || [];
+    return keywords.includes('Lure') || grantedKeywords.includes('Lure');
+  });
+
+  if (lureCreatures.length === 0) return bugs;
+
+  // If attacking a creature, check if target has Lure
+  if (target.type === 'creature' && target.card) {
+    const targetHasLure = lureCreatures.some(c => c.instanceId === target.card.instanceId);
+
+    if (!targetHasLure) {
+      bugs.push({
+        type: 'lure_bypass',
+        severity: 'high',
+        message: `${attacker.name} attacked ${target.card.name} while ${lureCreatures[0].name} has Lure`,
+        details: {
+          attacker: attacker.name,
+          target: target.card.name,
+          lureCreature: lureCreatures[0].name,
+        },
+      });
+    }
+  }
+
+  // If attacking player directly while lure creature exists
+  if (target.type === 'player') {
+    bugs.push({
+      type: 'lure_bypass_direct',
+      severity: 'high',
+      message: `${attacker.name} attacked player directly while ${lureCreatures[0].name} has Lure`,
+      details: {
+        attacker: attacker.name,
+        lureCreature: lureCreatures[0].name,
+      },
+    });
+  }
+
+  return bugs;
+};
+
+/**
  * Run all invariant checks
  *
  * @param {Object} state - Game state after action
@@ -345,6 +687,12 @@ export const runAllInvariantChecks = (state, before = null, action = null) => {
   // Comparison checks (need before state)
   if (before && action) {
     allBugs.push(...checkSummoningSickness(state, before, action));
+    // Combat-specific checks
+    allBugs.push(...checkBarrierBypass(state, before, action));
+    allBugs.push(...checkFrozenParalyzedAttack(state, before, action));
+    allBugs.push(...checkPassiveHarmlessAttack(state, before, action));
+    allBugs.push(...checkHiddenTargeting(state, before, action));
+    allBugs.push(...checkLureBypass(state, before, action));
   }
 
   return allBugs;

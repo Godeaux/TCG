@@ -18,6 +18,8 @@ import {
   validateOnPlayTriggered,
   validateOnConsumeTriggered,
   validateDryDropNoConsume,
+  validateTrapEffect,
+  validateCombatDamage,
 } from './effectValidators.js';
 
 /**
@@ -158,6 +160,31 @@ export class BugDetector {
         shouldNotTrigger: 'onConsume',
       });
     }
+
+    // Track trap activation effects
+    if (type === 'ACTIVATE_TRAP' && payload?.trap) {
+      const trap = payload.trap;
+      const effect = trap.effects?.effect || trap.effect;
+
+      if (effect) {
+        this.expectedEffects.push({
+          trigger: 'trapEffect',
+          card: trap,
+          effect,
+          event: payload.event,
+          eventContext: payload.eventContext,
+        });
+      }
+    }
+
+    // Track combat effects (damage validation)
+    if (type === 'DECLARE_ATTACK' && payload?.attacker && payload?.target) {
+      this.expectedEffects.push({
+        trigger: 'combat',
+        attacker: payload.attacker,
+        target: payload.target,
+      });
+    }
   }
 
   /**
@@ -205,6 +232,28 @@ export class BugDetector {
           playerIndex: this.actionContext?.playerIndex ?? before.activePlayerIndex,
         });
         bugs.push(...dryDropBugs);
+      }
+
+      if (expected.trigger === 'trapEffect') {
+        const trapBugs = validateTrapEffect(before, after, {
+          card: expected.card,
+          effect: expected.effect,
+          event: expected.event,
+          eventContext: expected.eventContext,
+          reactingPlayerIndex: this.actionContext?.reactingPlayerIndex,
+          triggeringPlayerIndex: this.actionContext?.triggeringPlayerIndex,
+        });
+        bugs.push(...trapBugs);
+      }
+
+      if (expected.trigger === 'combat') {
+        const combatBugs = validateCombatDamage(before, after, {
+          attacker: expected.attacker,
+          target: expected.target,
+          attackerOwnerIndex: this.actionContext?.attackerOwnerIndex,
+          defenderOwnerIndex: this.actionContext?.defenderOwnerIndex,
+        });
+        bugs.push(...combatBugs);
       }
     }
 

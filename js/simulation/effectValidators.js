@@ -137,7 +137,7 @@ export const validateDamage = (before, after, effectData) => {
 export const validateDraw = (before, after, effectData) => {
   const bugs = [];
 
-  if (!effectData?.playerIndex === undefined || !effectData?.expectedCards) {
+  if (effectData?.playerIndex === undefined || !effectData?.expectedCards) {
     return bugs;
   }
 
@@ -332,21 +332,175 @@ export const validateOnPlayTriggered = (before, after, actionData) => {
 
   const { card, playerIndex } = actionData;
   const effect = card.effects.onPlay;
+  const opponentIndex = 1 - playerIndex;
 
-  // Check based on effect type
-  if (effect.type === 'summonTokens') {
-    const expectedTokens = effect.params?.tokenIds?.length || 0;
-    if (expectedTokens > 0) {
-      const tokenBugs = validateSummonTokens(before, after, {
+  // Validate based on effect type
+  const effectBugs = validateEffectByType(effect, before, after, {
+    playerIndex,
+    opponentIndex,
+    triggerName: 'onPlay',
+  });
+  bugs.push(...effectBugs);
+
+  return bugs;
+};
+
+/**
+ * Validate an effect based on its type
+ * Centralized validation logic for all trigger types
+ *
+ * @param {Object} effect - The effect definition
+ * @param {Object} before - State before action
+ * @param {Object} after - State after action
+ * @param {Object} context - Context with playerIndex, opponentIndex, triggerName
+ * @returns {Object[]} Array of bug objects
+ */
+const validateEffectByType = (effect, before, after, context) => {
+  const bugs = [];
+  const { playerIndex, opponentIndex, triggerName } = context;
+
+  if (!effect?.type) return bugs;
+
+  switch (effect.type) {
+    case 'summonTokens': {
+      const expectedTokens = effect.params?.tokenIds?.length || 0;
+      if (expectedTokens > 0) {
+        const tokenBugs = validateSummonTokens(before, after, {
+          playerIndex,
+          expectedTokens,
+          tokenNames: effect.params?.tokenIds,
+        });
+        tokenBugs.forEach(bug => {
+          bug.type = `${triggerName}_${bug.type}`;
+          bug.message = `${triggerName}: ${bug.message}`;
+        });
+        bugs.push(...tokenBugs);
+      }
+      break;
+    }
+
+    case 'draw': {
+      const expectedCards = effect.params?.count || 1;
+      const drawBugs = validateDraw(before, after, {
         playerIndex,
-        expectedTokens,
-        tokenNames: effect.params?.tokenIds,
+        expectedCards,
       });
-      bugs.push(...tokenBugs);
+      drawBugs.forEach(bug => {
+        bug.type = `${triggerName}_${bug.type}`;
+        bug.message = `${triggerName}: ${bug.message}`;
+      });
+      bugs.push(...drawBugs);
+      break;
+    }
+
+    case 'dealDamage':
+    case 'damageOpponent': {
+      // Damage to opponent player
+      const expectedDamage = effect.params?.amount || effect.params?.damage || 0;
+      if (expectedDamage > 0) {
+        const damageBugs = validateDamage(before, after, {
+          targetType: 'player',
+          playerIndex: opponentIndex,
+          expectedDamage,
+        });
+        damageBugs.forEach(bug => {
+          bug.type = `${triggerName}_${bug.type}`;
+          bug.message = `${triggerName}: ${bug.message}`;
+        });
+        bugs.push(...damageBugs);
+      }
+      break;
+    }
+
+    case 'buffStats':
+    case 'buffCreature':
+    case 'buffAllAllies': {
+      // Buff validation - check if any friendly creature got buffed
+      const expectedAtkChange = effect.params?.atk || effect.params?.attack || 0;
+      const expectedHpChange = effect.params?.hp || effect.params?.health || 0;
+      if (expectedAtkChange !== 0 || expectedHpChange !== 0) {
+        // Check if at least one creature got the expected buff
+        const friendlyCreaturesBefore = before.players[playerIndex].field.filter(c => c !== null);
+        const friendlyCreaturesAfter = after.players[playerIndex].field.filter(c => c !== null);
+
+        let anyBuffApplied = false;
+        for (const creatureAfter of friendlyCreaturesAfter) {
+          const creatureBefore = friendlyCreaturesBefore.find(c => c?.instanceId === creatureAfter?.instanceId);
+          if (creatureBefore) {
+            const atkBefore = creatureBefore.currentAtk ?? creatureBefore.atk ?? 0;
+            const atkAfter = creatureAfter.currentAtk ?? creatureAfter.atk ?? 0;
+            const hpBefore = creatureBefore.currentHp ?? creatureBefore.hp ?? 0;
+            const hpAfter = creatureAfter.currentHp ?? creatureAfter.hp ?? 0;
+
+            if ((expectedAtkChange !== 0 && atkAfter !== atkBefore) ||
+                (expectedHpChange !== 0 && hpAfter !== hpBefore)) {
+              anyBuffApplied = true;
+              break;
+            }
+          }
+        }
+
+        if (!anyBuffApplied && (expectedAtkChange !== 0 || expectedHpChange !== 0)) {
+          bugs.push({
+            type: `${triggerName}_buff_failed`,
+            severity: 'medium',
+            message: `${triggerName}: Buff effect (+${expectedAtkChange}/+${expectedHpChange}) did not apply to any creature`,
+            details: {
+              expectedAtkChange,
+              expectedHpChange,
+              playerIndex,
+            },
+          });
+        }
+      }
+      break;
+    }
+
+    case 'grantKeyword': {
+      const keyword = effect.params?.keyword;
+      if (keyword) {
+        // Check if any friendly creature gained the keyword
+        const friendlyCreaturesAfter = after.players[playerIndex].field.filter(c => c !== null);
+        const anyHasKeyword = friendlyCreaturesAfter.some(c =>
+          c.keywords?.includes(keyword) || c.grantedKeywords?.includes(keyword)
+        );
+
+        if (!anyHasKeyword) {
+          bugs.push({
+            type: `${triggerName}_keyword_grant_failed`,
+            severity: 'medium',
+            message: `${triggerName}: Failed to grant ${keyword} to any creature`,
+            details: {
+              keyword,
+              playerIndex,
+            },
+          });
+        }
+      }
+      break;
+    }
+
+    case 'destroyCreature':
+    case 'destroy': {
+      // Check if any enemy creature was destroyed
+      const enemyCreaturesBefore = before.players[opponentIndex].field.filter(c => c !== null);
+      const enemyCreaturesAfter = after.players[opponentIndex].field.filter(c => c !== null);
+
+      if (enemyCreaturesBefore.length > 0 && enemyCreaturesAfter.length >= enemyCreaturesBefore.length) {
+        // No creature was destroyed (unless field was empty)
+        bugs.push({
+          type: `${triggerName}_destroy_failed`,
+          severity: 'medium',
+          message: `${triggerName}: Destroy effect did not remove any creature`,
+          details: {
+            creaturesBefore: enemyCreaturesBefore.length,
+            creaturesAfter: enemyCreaturesAfter.length,
+          },
+        });
+      }
+      break;
     }
   }
-
-  // Add more effect type validations as needed...
 
   return bugs;
 };
@@ -368,6 +522,7 @@ export const validateOnConsumeTriggered = (before, after, actionData) => {
   }
 
   const { predator, consumedPrey, playerIndex } = actionData;
+  const opponentIndex = 1 - playerIndex;
 
   // If dry dropped, onConsume should NOT trigger
   if (predator.dryDropped && consumedPrey?.length === 0) {
@@ -379,38 +534,13 @@ export const validateOnConsumeTriggered = (before, after, actionData) => {
   if (!predator.dryDropped && consumedPrey?.length > 0) {
     const effect = predator.effects.onConsume;
 
-    // Validate based on effect type
-    if (effect.type === 'summonTokens') {
-      const expectedTokens = effect.params?.tokenIds?.length || 0;
-      if (expectedTokens > 0) {
-        const tokenBugs = validateSummonTokens(before, after, {
-          playerIndex,
-          expectedTokens,
-          tokenNames: effect.params?.tokenIds,
-        });
-
-        // Relabel as onConsume failure
-        tokenBugs.forEach(bug => {
-          bug.type = 'onConsume_' + bug.type;
-          bug.message = `onConsume: ${bug.message}`;
-        });
-        bugs.push(...tokenBugs);
-      }
-    }
-
-    // Check for draw effects
-    if (effect.type === 'draw') {
-      const expectedCards = effect.params?.count || 1;
-      const drawBugs = validateDraw(before, after, {
-        playerIndex,
-        expectedCards,
-      });
-      drawBugs.forEach(bug => {
-        bug.type = 'onConsume_' + bug.type;
-        bug.message = `onConsume: ${bug.message}`;
-      });
-      bugs.push(...drawBugs);
-    }
+    // Use centralized effect validator
+    const effectBugs = validateEffectByType(effect, before, after, {
+      playerIndex,
+      opponentIndex,
+      triggerName: 'onConsume',
+    });
+    bugs.push(...effectBugs);
   }
 
   return bugs;
@@ -451,6 +581,156 @@ export const validateDryDropNoConsume = (before, after, actionData) => {
           tokensAfter,
         },
       });
+    }
+  }
+
+  return bugs;
+};
+
+/**
+ * Validate trap effect triggered correctly
+ * Checks that a trap's effect actually fired
+ *
+ * @param {Object} before - State before action
+ * @param {Object} after - State after action
+ * @param {Object} actionData - Data about the trap activation
+ * @returns {Object[]} Array of bug objects
+ */
+export const validateTrapEffect = (before, after, actionData) => {
+  const bugs = [];
+
+  if (!actionData?.card || !actionData?.effect) {
+    return bugs;
+  }
+
+  const { card, effect, event, eventContext } = actionData;
+
+  // Determine player indices based on context
+  // Trap owner (reactingPlayerIndex) vs opponent (triggeringPlayerIndex)
+  const reactingPlayerIndex = actionData.reactingPlayerIndex ?? 0;
+  const triggeringPlayerIndex = actionData.triggeringPlayerIndex ?? 1;
+
+  // Use centralized effect validator
+  const effectBugs = validateEffectByType(effect, before, after, {
+    playerIndex: reactingPlayerIndex,
+    opponentIndex: triggeringPlayerIndex,
+    triggerName: 'trap',
+  });
+  bugs.push(...effectBugs);
+
+  // Special trap-specific validations
+  if (effect.type === 'negateAttack') {
+    // Check if the attack was actually negated (target should not have taken damage)
+    if (eventContext?.target?.type === 'creature') {
+      const targetInstanceId = eventContext.target.card?.instanceId;
+      if (targetInstanceId) {
+        const targetBefore = findCreatureById(before, targetInstanceId);
+        const targetAfter = findCreatureById(after, targetInstanceId);
+
+        if (targetBefore && targetAfter) {
+          const hpBefore = targetBefore.currentHp ?? targetBefore.hp;
+          const hpAfter = targetAfter.currentHp ?? targetAfter.hp;
+
+          // If target lost HP despite negate attack trap, that's a bug
+          if (hpAfter < hpBefore) {
+            bugs.push({
+              type: 'trap_negate_attack_failed',
+              severity: 'high',
+              message: `${card.name} failed to negate attack: ${targetBefore.name} lost ${hpBefore - hpAfter} HP`,
+              details: {
+                trap: card.name,
+                target: targetBefore.name,
+                hpBefore,
+                hpAfter,
+              },
+            });
+          }
+        }
+      }
+    }
+  }
+
+  return bugs;
+};
+
+/**
+ * Validate combat damage was applied correctly
+ * Checks that attacker dealt expected damage to target
+ *
+ * @param {Object} before - State before action
+ * @param {Object} after - State after action
+ * @param {Object} actionData - Data about the combat
+ * @returns {Object[]} Array of bug objects
+ */
+export const validateCombatDamage = (before, after, actionData) => {
+  const bugs = [];
+
+  if (!actionData?.attacker || !actionData?.target) {
+    return bugs;
+  }
+
+  const { attacker, target } = actionData;
+  const attackerAtk = attacker.currentAtk ?? attacker.atk ?? 0;
+
+  if (target.type === 'creature' && target.card) {
+    const targetInstanceId = target.card.instanceId;
+    const targetBefore = findCreatureById(before, targetInstanceId);
+    const targetAfter = findCreatureById(after, targetInstanceId);
+
+    if (targetBefore) {
+      const hpBefore = targetBefore.currentHp ?? targetBefore.hp;
+
+      // If target had barrier, it should be consumed, not HP
+      if (targetBefore.hasBarrier) {
+        // Barrier validation is handled by invariant checks
+        return bugs;
+      }
+
+      // If target is still alive, check damage
+      if (targetAfter) {
+        const hpAfter = targetAfter.currentHp ?? targetAfter.hp;
+        const actualDamage = hpBefore - hpAfter;
+
+        // Damage should equal attacker's attack (unless target died)
+        if (actualDamage !== attackerAtk && actualDamage !== hpBefore && actualDamage > 0) {
+          bugs.push({
+            type: 'combat_damage_mismatch',
+            severity: 'medium',
+            message: `Combat damage mismatch: ${attacker.name} (${attackerAtk} ATK) dealt ${actualDamage} damage to ${targetBefore.name}`,
+            details: {
+              attacker: attacker.name,
+              attackerAtk,
+              target: targetBefore.name,
+              expectedDamage: attackerAtk,
+              actualDamage,
+            },
+          });
+        }
+      }
+    }
+  } else if (target.type === 'player') {
+    const playerIndex = target.player ?
+      before.players.findIndex(p => p === target.player) :
+      (actionData.defenderOwnerIndex ?? 1);
+
+    if (playerIndex >= 0) {
+      const hpBefore = before.players[playerIndex]?.hp ?? 0;
+      const hpAfter = after.players[playerIndex]?.hp ?? 0;
+      const actualDamage = hpBefore - hpAfter;
+
+      if (actualDamage !== attackerAtk && actualDamage > 0) {
+        bugs.push({
+          type: 'direct_damage_mismatch',
+          severity: 'medium',
+          message: `Direct attack damage mismatch: ${attacker.name} (${attackerAtk} ATK) dealt ${actualDamage} damage to player`,
+          details: {
+            attacker: attacker.name,
+            attackerAtk,
+            expectedDamage: attackerAtk,
+            actualDamage,
+          },
+        });
+      }
     }
   }
 

@@ -30,6 +30,11 @@ export {
   checkCreatureStats,
   checkSummoningSickness,
   checkDryDropKeywords,
+  checkBarrierBypass,
+  checkFrozenParalyzedAttack,
+  checkPassiveHarmlessAttack,
+  checkHiddenTargeting,
+  checkLureBypass,
 } from './invariantChecks.js';
 
 export {
@@ -42,6 +47,8 @@ export {
   validateOnPlayTriggered,
   validateOnConsumeTriggered,
   validateDryDropNoConsume,
+  validateTrapEffect,
+  validateCombatDamage,
   validateEffect,
   effectValidatorRegistry,
 } from './effectValidators.js';
