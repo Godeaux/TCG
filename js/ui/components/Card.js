@@ -142,9 +142,9 @@ const renderEffectSvg = (effectText) => {
     return `<text x="50%" y="${startY + i * lineHeight}" text-anchor="middle" font-size="${fontSize}" fill="#a0aec0">${escapedLine}</text>`;
   }).join('');
 
-  // Use xMidYMin to align text to top, letting it fill downward
+  // xMidYMid meet: center content, scale uniformly to fit
   return `
-    <svg class="card-effect-svg" viewBox="0 0 ${viewBoxWidth} ${viewBoxHeight}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <svg class="card-effect-svg" viewBox="0 0 ${viewBoxWidth} ${viewBoxHeight}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
       <style>
         text { font-family: system-ui, -apple-system, sans-serif; }
       </style>

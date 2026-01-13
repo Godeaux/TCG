@@ -2277,9 +2277,9 @@ button {
   color: var(--text-primary);
 }
 
-/* Content area: ~32% of card height (stats + keywords + effect) */
+/* Content area: ~42% of card height (stats + keywords + effect) */
 .card-content-area {
-  flex: 0 0 32%;
+  flex: 0 0 42%;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -2287,26 +2287,27 @@ button {
 }
 
 .card-content-area .card-stats-row {
-  flex: 0 0 30%; /* ~10% of card = 30% of content area */
+  flex: 0 0 auto; /* Fixed height based on content */
+  min-height: 20px;
+  max-height: 24px;
 }
 
 .card-content-area .card-keywords {
-  flex: 0 0 20%; /* Keywords section */
+  flex: 0 0 auto; /* Fixed height based on content */
   padding: 2px 4px;
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 16px;
 }
 
 .card-content-area .card-effect {
-  flex: 1 1 50%; /* Effect takes remaining space */
+  flex: 1 1 auto; /* Effect takes ALL remaining space */
   overflow: hidden;
   padding: 2px 4px;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3; /* Fallback: max 3 lines, then ellipsis */
-  line-clamp: 3;
-  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   word-wrap: break-word;
   overflow-wrap: break-word;
