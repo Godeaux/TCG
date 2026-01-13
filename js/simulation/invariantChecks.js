@@ -408,7 +408,12 @@ export const checkBarrierBypass = (state, before, action) => {
 
 /**
  * Check for frozen/paralyzed creature attacking
- * A creature that is frozen or paralyzed should not be able to attack
+ *
+ * NOTE: Per rulebook, Frozen does NOT prevent attacking - it just marks
+ * the creature to die at end of controller's next turn.
+ * Paralyzed is not a mechanic in this game.
+ *
+ * This check is disabled/returns empty - kept for potential future mechanics.
  *
  * @param {Object} state - Game state after action
  * @param {Object} before - State before action
@@ -416,60 +421,16 @@ export const checkBarrierBypass = (state, before, action) => {
  * @returns {Object[]} Array of bug objects
  */
 export const checkFrozenParalyzedAttack = (state, before, action) => {
-  const bugs = [];
-
-  if (!action || action.type !== 'DECLARE_ATTACK') {
-    return bugs;
-  }
-
-  const { attacker } = action.payload || {};
-  if (!attacker) return bugs;
-
-  // Find the attacker in before state
-  let attackerBefore = null;
-  for (const player of before.players) {
-    for (const creature of player.field) {
-      if (creature?.instanceId === attacker.instanceId) {
-        attackerBefore = creature;
-        break;
-      }
-    }
-  }
-
-  if (!attackerBefore) return bugs;
-
-  if (attackerBefore.frozen) {
-    bugs.push({
-      type: 'frozen_attack',
-      severity: 'high',
-      message: `${attackerBefore.name} attacked while Frozen`,
-      details: {
-        creature: attackerBefore.name,
-        instanceId: attacker.instanceId,
-        frozen: true,
-      },
-    });
-  }
-
-  if (attackerBefore.paralyzed) {
-    bugs.push({
-      type: 'paralyzed_attack',
-      severity: 'high',
-      message: `${attackerBefore.name} attacked while Paralyzed`,
-      details: {
-        creature: attackerBefore.name,
-        instanceId: attacker.instanceId,
-        paralyzed: true,
-      },
-    });
-  }
-
-  return bugs;
+  // Frozen doesn't prevent attacking per rulebook
+  // Paralyzed doesn't exist in this game
+  return [];
 };
 
 /**
- * Check for passive/harmless creature attacking
- * A creature with Passive or Harmless keyword should not attack
+ * Check for passive creature attacking
+ * Per rulebook: "Creatures with Passive cannot attack but can still be attacked."
+ *
+ * Note: "Harmless" keyword does not exist in this game's rulebook.
  *
  * @param {Object} state - Game state after action
  * @param {Object} before - State before action
@@ -516,25 +477,15 @@ export const checkPassiveHarmlessAttack = (state, before, action) => {
     });
   }
 
-  if (allKeywords.includes('Harmless')) {
-    bugs.push({
-      type: 'harmless_attack',
-      severity: 'high',
-      message: `${attackerBefore.name} attacked despite having Harmless keyword`,
-      details: {
-        creature: attackerBefore.name,
-        instanceId: attacker.instanceId,
-        keywords: allKeywords,
-      },
-    });
-  }
-
   return bugs;
 };
 
 /**
  * Check for hidden/invisible creature being targeted
- * A creature with Hidden or Invisible shouldn't be targetable
+ * Per rulebook:
+ * - Hidden: Cannot be targeted by attacks (but can be targeted by spells)
+ * - Invisible: Cannot be targeted by attacks or spells
+ * - Acuity: Can target Hidden and Invisible creatures
  *
  * @param {Object} state - Game state after action
  * @param {Object} before - State before action
@@ -548,11 +499,23 @@ export const checkHiddenTargeting = (state, before, action) => {
     return bugs;
   }
 
-  const { target } = action.payload || {};
+  const { attacker, target } = action.payload || {};
   if (!target || target.type !== 'creature') return bugs;
 
   const targetInstanceId = target.card?.instanceId;
   if (!targetInstanceId) return bugs;
+
+  // Check if attacker has Acuity (allows targeting Hidden/Invisible)
+  const attackerKeywords = [
+    ...(attacker?.keywords || []),
+    ...(attacker?.grantedKeywords || []),
+  ];
+  const attackerHasAcuity = attackerKeywords.includes('Acuity');
+
+  // If attacker has Acuity, targeting Hidden/Invisible is allowed
+  if (attackerHasAcuity) {
+    return bugs;
+  }
 
   // Find target creature in before state
   let targetBefore = null;
@@ -575,11 +538,12 @@ export const checkHiddenTargeting = (state, before, action) => {
     bugs.push({
       type: 'hidden_targeted',
       severity: 'high',
-      message: `${targetBefore.name} was targeted despite having Hidden keyword`,
+      message: `${targetBefore.name} was targeted by attack despite having Hidden keyword (attacker lacks Acuity)`,
       details: {
         creature: targetBefore.name,
         instanceId: targetInstanceId,
         keywords: allKeywords,
+        attackerHasAcuity: false,
       },
     });
   }
@@ -588,11 +552,12 @@ export const checkHiddenTargeting = (state, before, action) => {
     bugs.push({
       type: 'invisible_targeted',
       severity: 'high',
-      message: `${targetBefore.name} was targeted despite having Invisible keyword`,
+      message: `${targetBefore.name} was targeted by attack despite having Invisible keyword (attacker lacks Acuity)`,
       details: {
         creature: targetBefore.name,
         instanceId: targetInstanceId,
         keywords: allKeywords,
+        attackerHasAcuity: false,
       },
     });
   }
@@ -896,7 +861,10 @@ export const checkCreatureIntegrity = (state) => {
 };
 
 /**
- * Check that carrion only contains valid dead creatures
+ * Check that carrion only contains valid cards
+ * Per rulebook:
+ * - Destroyed creatures go to carrion
+ * - Replaced Field Spells go to carrion
  *
  * @param {Object} state - Game state after action
  * @returns {Object[]} Array of bug objects
@@ -904,21 +872,27 @@ export const checkCreatureIntegrity = (state) => {
 export const checkCarrionIntegrity = (state) => {
   const bugs = [];
 
+  // Valid card types for carrion: creatures (Prey, Predator), tokens, and Field Spells
+  const validCarrionTypes = ['Prey', 'Predator', 'Field Spell'];
+
   state.players.forEach((player, playerIndex) => {
     player.carrion?.forEach((card, index) => {
       if (!card) return;
 
-      // Carrion should only contain creature cards
-      if (card.type !== 'Prey' && card.type !== 'Predator' && !card.isToken) {
+      // Check if card type is valid for carrion
+      const isValidType = validCarrionTypes.includes(card.type) || card.isToken;
+
+      if (!isValidType) {
         bugs.push({
           type: 'invalid_carrion_card',
           severity: 'medium',
-          message: `Non-creature card ${card.name} (${card.type}) found in carrion`,
+          message: `Invalid card type in carrion: ${card.name} (${card.type})`,
           details: {
             card: card.name,
             cardType: card.type,
             playerIndex,
             carrionIndex: index,
+            validTypes: validCarrionTypes,
           },
         });
       }
