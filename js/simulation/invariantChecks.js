@@ -116,13 +116,14 @@ export const checkHpBounds = (state) => {
 };
 
 /**
- * Check field slot count (always exactly 5 slots)
+ * Check field slot count (always exactly 3 slots)
  *
  * @param {Object} state - Game state after action
  * @returns {Object[]} Array of bug objects
  */
 export const checkFieldSlotCount = (state) => {
   const bugs = [];
+  const EXPECTED_FIELD_SLOTS = 3;
 
   state.players.forEach((player, playerIndex) => {
     if (!Array.isArray(player.field)) {
@@ -132,14 +133,15 @@ export const checkFieldSlotCount = (state) => {
         message: `Player ${playerIndex + 1} field is not an array`,
         details: { playerIndex },
       });
-    } else if (player.field.length !== 5) {
+    } else if (player.field.length !== EXPECTED_FIELD_SLOTS) {
       bugs.push({
         type: 'field_slot_count',
         severity: 'high',
-        message: `Player ${playerIndex + 1} has ${player.field.length} field slots instead of 5`,
+        message: `Player ${playerIndex + 1} has ${player.field.length} field slots instead of ${EXPECTED_FIELD_SLOTS}`,
         details: {
           playerIndex,
           slotCount: player.field.length,
+          expected: EXPECTED_FIELD_SLOTS,
         },
       });
     }
@@ -149,25 +151,27 @@ export const checkFieldSlotCount = (state) => {
 };
 
 /**
- * Check hand size bounds (shouldn't exceed maximum)
+ * Check hand size bounds
+ * Note: Per rulebook, there is NO maximum hand size.
+ * This check only flags extremely large hands that likely indicate a bug.
  *
  * @param {Object} state - Game state after action
  * @returns {Object[]} Array of bug objects
  */
 export const checkHandSizeBounds = (state) => {
   const bugs = [];
-  const MAX_HAND_SIZE = 10; // Reasonable maximum
+  // No max hand size per rules, but flag absurdly large hands (likely a bug)
+  const SUSPICIOUS_HAND_SIZE = 30;
 
   state.players.forEach((player, playerIndex) => {
-    if (player.hand.length > MAX_HAND_SIZE) {
+    if (player.hand.length > SUSPICIOUS_HAND_SIZE) {
       bugs.push({
         type: 'hand_overflow',
-        severity: 'medium',
-        message: `Player ${playerIndex + 1} has ${player.hand.length} cards in hand (exceeds ${MAX_HAND_SIZE})`,
+        severity: 'low',
+        message: `Player ${playerIndex + 1} has unusually large hand (${player.hand.length} cards) - possible bug`,
         details: {
           playerIndex,
           handSize: player.hand.length,
-          maxSize: MAX_HAND_SIZE,
         },
       });
     }
@@ -213,7 +217,10 @@ export const checkCreatureStats = (state) => {
 
 /**
  * Check summoning sickness violations
- * A creature without Haste shouldn't be able to attack on the turn it was played
+ * Per rulebook:
+ * - Creatures CAN attack enemy creatures immediately (no sickness for creature combat)
+ * - Direct attacks on player HP require creature to have been on field since start of turn
+ *   (or have Haste)
  *
  * @param {Object} state - Game state after action
  * @param {Object} before - State before action (for comparison)
@@ -228,8 +235,15 @@ export const checkSummoningSickness = (state, before, action) => {
     return bugs;
   }
 
-  const { attacker } = action.payload || {};
+  const { attacker, target } = action.payload || {};
   if (!attacker) return bugs;
+
+  // Summoning sickness only applies to DIRECT attacks on the player
+  // Creatures can attack enemy creatures immediately per rulebook
+  const isDirectAttack = target?.type === 'player';
+  if (!isDirectAttack) {
+    return bugs; // Creature-vs-creature combat is always allowed
+  }
 
   // Find the attacker in the current state
   for (const player of state.players) {
@@ -239,11 +253,8 @@ export const checkSummoningSickness = (state, before, action) => {
                         creature.grantedKeywords?.includes('Haste');
         const playedThisTurn = creature.summonedTurn === state.turn;
 
-        // If creature was dry dropped, it shouldn't have Haste from its original keywords
-        if (creature.dryDropped && playedThisTurn && !hasHaste) {
-          // This is expected behavior - dry dropped creatures can't attack turn 1
-        } else if (creature.dryDropped && playedThisTurn && creature.keywords?.includes('Haste')) {
-          // BUG: Dry dropped creature has Haste keyword but shouldn't
+        // Check for dry-dropped creature retaining Haste
+        if (creature.dryDropped && playedThisTurn && creature.keywords?.includes('Haste')) {
           bugs.push({
             type: 'dry_drop_keyword_retained',
             severity: 'high',
@@ -257,17 +268,19 @@ export const checkSummoningSickness = (state, before, action) => {
           });
         }
 
-        if (playedThisTurn && !hasHaste && creature.hasAttacked) {
+        // Direct attack on player requires being on field since start of turn OR Haste
+        if (playedThisTurn && !hasHaste) {
           bugs.push({
             type: 'summoning_sickness',
             severity: 'high',
-            message: `${creature.name} attacked on the turn it was played without Haste`,
+            message: `${creature.name} made a direct attack on the turn it was played without Haste`,
             details: {
               creature: creature.name,
               instanceId: creature.instanceId,
               summonedTurn: creature.summonedTurn,
               currentTurn: state.turn,
               hasHaste,
+              targetType: 'player',
             },
           });
         }

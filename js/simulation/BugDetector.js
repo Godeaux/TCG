@@ -638,9 +638,11 @@ export class BugDetector {
     const invariantBugs = runAllInvariantChecks(after, before, action);
     bugs.push(...invariantBugs);
 
-    // Run card conservation check
-    const conservationBugs = this.checkCardConservation(before, after, action);
-    bugs.push(...conservationBugs);
+    // Card conservation check disabled - too many false positives due to
+    // token summoning from various sources (onPlay, onConsume, combat triggers,
+    // chained effects) that can't be reliably predicted ahead of time.
+    // const conservationBugs = this.checkCardConservation(before, after, action);
+    // bugs.push(...conservationBugs);
 
     // Run effect validators based on expected effects
     for (const expected of this.expectedEffects) {
