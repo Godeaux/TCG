@@ -43,6 +43,7 @@ import { getCardImagePath, hasCardImage, getCachedCardImage, isCardImageCached, 
 import {
   isOnlineMode,
   isAIMode,
+  isAnyAIMode,
 } from "./state/selectors.js";
 
 // Victory overlay (extracted module)
@@ -3157,7 +3158,7 @@ export const renderGame = (state, callbacks = {}) => {
   ensureProfileLoaded(state);
 
   const isOnline = isOnlineMode(state);
-  const isAI = isAIMode(state);
+  const isAI = isAnyAIMode(state);
   if ((isOnline || isAI) && state.passPending) {
     state.passPending = false;
   }

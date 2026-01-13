@@ -354,7 +354,7 @@ export class AIController {
    */
   async executeCardPlay(state, card, slotIndex, callbacks) {
     const player = this.getAIPlayer(state);
-    const opponent = this.getHumanPlayer(state);
+    const opponent = this.getOpponentPlayer(state);
     const playerIndex = this.playerIndex;
     const opponentIndex = 1 - this.playerIndex;
     const isFree = card.type === "Free Spell" || card.type === "Trap" || isFreePlay(card);
@@ -509,7 +509,7 @@ export class AIController {
    */
   triggerOnPlayEffect(state, creature) {
     const player = this.getAIPlayer(state);
-    const opponent = this.getHumanPlayer(state);
+    const opponent = this.getOpponentPlayer(state);
 
     if (creature.onPlay || creature.effects?.onPlay) {
       const result = resolveCardEffect(creature, 'onPlay', {
@@ -533,7 +533,7 @@ export class AIController {
    */
   triggerOnConsumeEffect(state, creature, consumedPrey) {
     const player = this.getAIPlayer(state);
-    const opponent = this.getHumanPlayer(state);
+    const opponent = this.getOpponentPlayer(state);
 
     if ((creature.onConsume || creature.effects?.onConsume) && !creature.dryDropped) {
       const result = resolveCardEffect(creature, 'onConsume', {

@@ -11,7 +11,7 @@
  */
 
 import { buildLobbySyncPayload, sendLobbyBroadcast, saveGameStateToDatabase } from '../../network/index.js';
-import { getLocalPlayerIndex, isAIMode } from '../../state/selectors.js';
+import { getLocalPlayerIndex, isAIMode, isAIvsAIMode, isAnyAIMode } from '../../state/selectors.js';
 
 // Track if AI auto-actions are pending (to prevent double-triggering)
 let aiRollPending = false;
@@ -72,7 +72,36 @@ const renderRollingPhase = (state, elements, callbacks) => {
   `;
   rolls.appendChild(rollSummary);
 
-  // In AI mode, auto-roll for AI (player 1) after a short delay
+  // In AI vs AI mode, auto-roll for both players
+  if (isAIvsAIMode(state) && !aiRollPending) {
+    aiRollPending = true;
+    const rollDelay = state.menu?.aiSlowMode ? 800 : 200;
+
+    // Roll for player 0 if needed
+    if (state.setup.rolls[0] === null) {
+      setTimeout(() => {
+        if (state.setup?.stage === "rolling" && state.setup.rolls[0] === null) {
+          console.log("[AI vs AI] Auto-rolling for AI player 0");
+          callbacks.onSetupRoll?.(0);
+        }
+      }, rollDelay);
+    }
+    // Roll for player 1 if needed (with slight delay after p0)
+    if (state.setup.rolls[1] === null) {
+      setTimeout(() => {
+        if (state.setup?.stage === "rolling" && state.setup.rolls[1] === null) {
+          console.log("[AI vs AI] Auto-rolling for AI player 1");
+          callbacks.onSetupRoll?.(1);
+        }
+        aiRollPending = false;
+      }, rollDelay * 2);
+    } else {
+      aiRollPending = false;
+    }
+    return; // Don't render buttons in AI vs AI mode
+  }
+
+  // In regular AI mode, auto-roll for AI (player 1) after a short delay
   if (isAIMode(state) && state.setup.rolls[1] === null && !aiRollPending) {
     aiRollPending = true;
     setTimeout(() => {
@@ -207,7 +236,22 @@ const renderChoicePhase = (state, elements, callbacks) => {
   message.textContent = `${winnerName} chooses who goes first.`;
   actions.appendChild(message);
 
-  // In AI mode, if AI won the roll, auto-choose to go first
+  // In AI vs AI mode, auto-choose winner to go first
+  if (isAIvsAIMode(state) && !aiChoicePending) {
+    aiChoicePending = true;
+    const choiceDelay = state.menu?.aiSlowMode ? 800 : 200;
+    setTimeout(() => {
+      if (state.setup?.stage === "choice") {
+        console.log(`[AI vs AI] Auto-choosing player ${state.setup.winnerIndex} to go first`);
+        // Winner always chooses to go first
+        callbacks.onSetupChoose?.(state.setup.winnerIndex);
+      }
+      aiChoicePending = false;
+    }, choiceDelay);
+    return; // Don't render choice buttons in AI vs AI mode
+  }
+
+  // In regular AI mode, if AI won the roll, auto-choose to go first
   if (isAIMode(state) && state.setup.winnerIndex === 1 && !aiChoicePending) {
     aiChoicePending = true;
     setTimeout(() => {

@@ -56,6 +56,10 @@ const aiCallbacks = {
     endTurn(state);
     refresh();
   },
+  onUpdate: () => {
+    // Generic UI update for AI actions
+    refresh();
+  },
 };
 
 const refresh = () => {
