@@ -12,7 +12,7 @@
  * without creating circular dependencies.
  */
 
-import { isOnlineMode } from '../state/selectors.js';
+import { isOnlineMode, isAIMode, isAIvsAIMode } from '../state/selectors.js';
 import { deckCatalogs } from '../cards/index.js';
 import {
   setLobbyChannel,
@@ -146,9 +146,27 @@ export const getLocalPlayerIndex = (state) => {
 
 /**
  * Check if it's the local player's turn
+ * - AI vs AI mode: never (both players are AI, no human interaction)
+ * - AI mode: only when player 0 is active (human is player 0)
+ * - Online mode: when local player is active
+ * - Local mode: always (hot-seat play, both players take turns on same device)
  */
-export const isLocalPlayersTurn = (state) =>
-  !isOnlineMode(state) || state.activePlayerIndex === getLocalPlayerIndex(state);
+export const isLocalPlayersTurn = (state) => {
+  // AI vs AI: no human player, so never the local player's turn
+  if (isAIvsAIMode(state)) {
+    return false;
+  }
+  // Regular AI mode: human is player 0
+  if (isAIMode(state)) {
+    return state.activePlayerIndex === 0;
+  }
+  // Online mode: check if it's the local player's turn
+  if (isOnlineMode(state)) {
+    return state.activePlayerIndex === getLocalPlayerIndex(state);
+  }
+  // Local mode (hot-seat): always the local player's turn
+  return true;
+};
 
 /**
  * Get opponent's display name

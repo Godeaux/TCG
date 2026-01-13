@@ -15,7 +15,7 @@
  */
 
 import { renderCard } from './Card.js';
-import { getLocalPlayerIndex, isAIMode } from '../../state/selectors.js';
+import { getLocalPlayerIndex, isAnyAIMode } from '../../state/selectors.js';
 import { canPlayCard, cardLimitAvailable } from '../../game/turnManager.js';
 import { isFreePlay } from '../../keywords.js';
 
@@ -197,9 +197,9 @@ export const renderHand = (state, options = {}) => {
 
   clearHandPanel(handGrid);
 
-  // Always show human player's hand: online uses local index, AI uses 0, local uses active
+  // Always show player 0's hand: online uses local index, AI modes use 0, local uses active
   const isOnlineMode = state.menu?.mode === "online";
-  const isAI = isAIMode(state);
+  const isAI = isAnyAIMode(state);
   const playerIndex = isOnlineMode ? getLocalPlayerIndex(state) : (isAI ? 0 : state.activePlayerIndex);
   const player = state.players[playerIndex];
   console.log(`[RENDER-HAND-DEBUG] playerIndex=${playerIndex}, hand.length=${player.hand.length}, cards=${player.hand.map(c => c?.name).join(', ')}`);
