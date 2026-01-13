@@ -54,6 +54,77 @@ export const isCardLike = (value) =>
   typeof value.id === "string";
 
 // ============================================================================
+// SVG EFFECT TEXT RENDERING
+// ============================================================================
+
+/**
+ * Wrap text into lines based on character count (word-boundary aware)
+ * @param {string} text - Text to wrap
+ * @param {number} maxChars - Maximum characters per line
+ * @returns {string[]} Array of lines
+ */
+const wrapTextToLines = (text, maxChars = 26) => {
+  if (!text) return [];
+
+  const words = text.split(' ');
+  const lines = [];
+  let currentLine = '';
+
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    if (testLine.length <= maxChars) {
+      currentLine = testLine;
+    } else {
+      if (currentLine) lines.push(currentLine);
+      // Handle words longer than maxChars
+      if (word.length > maxChars) {
+        lines.push(word);
+        currentLine = '';
+      } else {
+        currentLine = word;
+      }
+    }
+  }
+  if (currentLine) lines.push(currentLine);
+  return lines;
+};
+
+/**
+ * Render effect text as SVG that scales perfectly with card
+ * @param {string} effectText - The effect text to render
+ * @returns {string} SVG markup
+ */
+const renderEffectSvg = (effectText) => {
+  if (!effectText) return '';
+
+  const lines = wrapTextToLines(effectText, 28);
+  const lineHeight = 14;
+  const fontSize = 10;
+  const viewBoxHeight = Math.max(lines.length * lineHeight + 4, 40);
+
+  // Create text elements for each line, centered
+  const textElements = lines.map((line, i) => {
+    // Escape HTML entities
+    const escapedLine = line
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+
+    return `<text x="50%" y="${12 + i * lineHeight}" text-anchor="middle" font-size="${fontSize}" fill="#a0aec0">${escapedLine}</text>`;
+  }).join('');
+
+  return `
+    <svg class="card-effect-svg" viewBox="0 0 100 ${viewBoxHeight}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+      <style>
+        text { font-family: system-ui, -apple-system, sans-serif; }
+      </style>
+      ${textElements}
+    </svg>
+  `;
+};
+
+// ============================================================================
 // CARD STATS RENDERING
 // ============================================================================
 
@@ -318,8 +389,9 @@ export const renderCardInnerHtml = (card, { showEffectSummary, useBaseStats } = 
     : "";
 
   const effectSummary = showEffectSummary ? getCardEffectSummary(card) : "";
+  // Use SVG for effect text - scales perfectly with card size
   const effectRow = effectSummary
-    ? `<div class="card-effect">${effectSummary}</div>`
+    ? `<div class="card-effect">${renderEffectSvg(effectSummary)}</div>`
     : "";
 
   // Check if card has an image (and hasn't failed to load before)
