@@ -50,6 +50,9 @@ let holdStartTime = 0;
 let holdAnimationFrame = null;
 const HOLD_DURATION = 1500; // 1.5 seconds to open
 
+// Tilt effect state
+const activeTilts = new Map(); // cardElement -> { rafId, bounds }
+
 // ============================================================================
 // PACK GENERATION
 // ============================================================================
@@ -214,6 +217,246 @@ const burstOpen = () => {
 };
 
 // ============================================================================
+// TILT EFFECT SYSTEM
+// ============================================================================
+
+const TILT_CONFIG = {
+  maxAngle: 15,           // Maximum tilt angle in degrees
+  perspective: 800,       // CSS perspective value
+  scale: 1.02,            // Scale on hover
+  transitionIn: '150ms',  // Transition when entering
+  transitionOut: '300ms', // Transition when leaving (slower for smooth reset)
+  glowShift: 20,          // How much the glow shifts with tilt (px)
+};
+
+/**
+ * Calculate tilt transform based on mouse/touch position
+ */
+const calculateTilt = (element, clientX, clientY) => {
+  const rect = element.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+
+  // Calculate position relative to center (-1 to 1)
+  const relativeX = (clientX - centerX) / (rect.width / 2);
+  const relativeY = (clientY - centerY) / (rect.height / 2);
+
+  // Clamp values
+  const clampedX = Math.max(-1, Math.min(1, relativeX));
+  const clampedY = Math.max(-1, Math.min(1, relativeY));
+
+  // Calculate tilt angles (inverted for natural feel)
+  const tiltX = -clampedY * TILT_CONFIG.maxAngle; // Vertical mouse = X rotation
+  const tiltY = clampedX * TILT_CONFIG.maxAngle;  // Horizontal mouse = Y rotation
+
+  return { tiltX, tiltY, relativeX: clampedX, relativeY: clampedY };
+};
+
+/**
+ * Apply tilt transform to card
+ */
+const applyTilt = (wrapper, cardInner, front, tiltX, tiltY, relativeX, relativeY) => {
+  // Apply 3D transform with slight push-down effect
+  cardInner.style.transform = `
+    rotateX(${tiltX}deg)
+    rotateY(${tiltY}deg)
+    translateZ(-5px)
+    scale(${TILT_CONFIG.scale})
+  `;
+
+  // Move the shine highlight based on cursor position
+  if (front) {
+    const shineX = 50 + relativeX * TILT_CONFIG.glowShift;
+    const shineY = 50 + relativeY * TILT_CONFIG.glowShift;
+    front.style.setProperty('--shine-x', `${shineX}%`);
+    front.style.setProperty('--shine-y', `${shineY}%`);
+  }
+
+  // Shift the rarity glow based on tilt (set on wrapper for glow element)
+  const rarityGlow = wrapper.querySelector('.pack-card-rarity-glow');
+  if (rarityGlow) {
+    const glowOffsetX = relativeX * 8;
+    const glowOffsetY = relativeY * 8;
+    rarityGlow.style.setProperty('--glow-offset-x', `${glowOffsetX}px`);
+    rarityGlow.style.setProperty('--glow-offset-y', `${glowOffsetY}px`);
+  }
+};
+
+/**
+ * Reset tilt transform
+ */
+const resetTilt = (wrapper, cardInner, front) => {
+  cardInner.style.transition = `transform ${TILT_CONFIG.transitionOut} ease-out`;
+  cardInner.style.transform = '';
+
+  if (front) {
+    front.style.setProperty('--shine-x', '50%');
+    front.style.setProperty('--shine-y', '50%');
+  }
+
+  // Reset rarity glow position
+  const rarityGlow = wrapper.querySelector('.pack-card-rarity-glow');
+  if (rarityGlow) {
+    rarityGlow.style.setProperty('--glow-offset-x', '0px');
+    rarityGlow.style.setProperty('--glow-offset-y', '0px');
+  }
+};
+
+/**
+ * Setup tilt event handlers for a card
+ */
+const setupTiltListeners = (wrapper, cardInner, front) => {
+  let isHovering = false;
+
+  const handleMove = (clientX, clientY) => {
+    if (!isHovering) return;
+
+    const { tiltX, tiltY, relativeX, relativeY } = calculateTilt(wrapper, clientX, clientY);
+    cardInner.style.transition = 'none'; // Instant response while moving
+    applyTilt(wrapper, cardInner, front, tiltX, tiltY, relativeX, relativeY);
+  };
+
+  const handleEnter = (e) => {
+    if (wrapper.classList.contains('revealed')) return;
+    isHovering = true;
+    wrapper.classList.add('tilting');
+    cardInner.style.transition = `transform ${TILT_CONFIG.transitionIn} ease-out`;
+
+    // Get initial position
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    handleMove(clientX, clientY);
+  };
+
+  const handleLeave = () => {
+    isHovering = false;
+    wrapper.classList.remove('tilting');
+    resetTilt(wrapper, cardInner, front);
+  };
+
+  // Mouse events
+  wrapper.addEventListener('mouseenter', handleEnter);
+  wrapper.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
+  wrapper.addEventListener('mouseleave', handleLeave);
+
+  // Touch events
+  wrapper.addEventListener('touchstart', (e) => {
+    // Don't prevent default - allow click through for reveal
+    handleEnter(e);
+  }, { passive: true });
+
+  wrapper.addEventListener('touchmove', (e) => {
+    if (e.touches.length > 0) {
+      handleMove(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  }, { passive: true });
+
+  wrapper.addEventListener('touchend', handleLeave);
+  wrapper.addEventListener('touchcancel', handleLeave);
+};
+
+// ============================================================================
+// REVEAL HALO EFFECT
+// ============================================================================
+
+const HALO_CONFIG = {
+  common: null, // No halo for common
+  uncommon: {
+    color: 'rgba(96, 165, 250, 0.8)',
+    size: 200,
+    duration: 500,
+    rings: 1,
+  },
+  rare: {
+    color: 'rgba(192, 132, 252, 0.9)',
+    size: 280,
+    duration: 600,
+    rings: 2,
+  },
+  legendary: {
+    color: 'rgba(251, 146, 60, 1)',
+    secondaryColor: 'rgba(251, 191, 36, 0.8)',
+    size: 400,
+    duration: 800,
+    rings: 3,
+    particles: true,
+  },
+  pristine: {
+    color: 'rgba(255, 255, 255, 1)',
+    secondaryColor: 'rgba(255, 212, 229, 0.9)',
+    tertiaryColor: 'rgba(212, 241, 255, 0.8)',
+    size: 500,
+    duration: 1000,
+    rings: 4,
+    particles: true,
+    screenFlash: true,
+  },
+};
+
+/**
+ * Create expanding halo effect element
+ */
+const createHaloEffect = (rarity, cardElement) => {
+  const config = HALO_CONFIG[rarity];
+  if (!config) return null;
+
+  const container = document.createElement('div');
+  container.className = `pack-halo-container halo-${rarity}`;
+
+  // Create multiple expanding rings
+  for (let i = 0; i < config.rings; i++) {
+    const ring = document.createElement('div');
+    ring.className = 'pack-halo-ring';
+    ring.style.setProperty('--ring-index', i);
+    ring.style.setProperty('--ring-delay', `${i * 80}ms`);
+    ring.style.setProperty('--ring-color', i === 0 ? config.color : (config.secondaryColor || config.color));
+    ring.style.setProperty('--ring-size', `${config.size}px`);
+    ring.style.setProperty('--ring-duration', `${config.duration}ms`);
+    container.appendChild(ring);
+  }
+
+  // Add particles for legendary/pristine
+  if (config.particles) {
+    const particleCount = rarity === 'pristine' ? 24 : 16;
+    for (let i = 0; i < particleCount; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'pack-halo-particle';
+      particle.style.setProperty('--particle-angle', `${(360 / particleCount) * i}deg`);
+      particle.style.setProperty('--particle-delay', `${Math.random() * 200}ms`);
+      particle.style.setProperty('--particle-distance', `${80 + Math.random() * 60}px`);
+      particle.style.setProperty('--particle-color',
+        rarity === 'pristine'
+          ? [config.color, config.secondaryColor, config.tertiaryColor][i % 3]
+          : config.color
+      );
+      container.appendChild(particle);
+    }
+  }
+
+  // Screen flash for pristine
+  if (config.screenFlash) {
+    const flash = document.createElement('div');
+    flash.className = 'pack-screen-flash';
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 600);
+  }
+
+  // Position at card center
+  const rect = cardElement.getBoundingClientRect();
+  const containerRect = cardElement.closest('.pack-cards-container')?.getBoundingClientRect();
+
+  if (containerRect) {
+    container.style.left = `${rect.left - containerRect.left + rect.width / 2}px`;
+    container.style.top = `${rect.top - containerRect.top + rect.height / 2}px`;
+  }
+
+  // Auto-remove after animation
+  setTimeout(() => container.remove(), config.duration + 200);
+
+  return container;
+};
+
+// ============================================================================
 // CARD RENDERING
 // ============================================================================
 
@@ -223,19 +466,33 @@ const burstOpen = () => {
 const renderPackCard = (cardData, index, onClick) => {
   const wrapper = document.createElement('div');
   wrapper.className = `pack-card ${cardData.revealed ? 'revealed' : ''}`;
-  if (cardData.revealed) {
-    wrapper.classList.add(`rarity-${cardData.packRarity}`);
-  }
+  wrapper.classList.add(`rarity-${cardData.packRarity}`);
   wrapper.dataset.index = index;
+  wrapper.dataset.rarity = cardData.packRarity;
 
   // Inner wrapper for 3D flip transform
   const inner = document.createElement('div');
   inner.className = 'pack-card-inner';
 
+  // Add rarity glow element (positioned behind card, on wrapper level)
+  const rarityGlow = document.createElement('div');
+  rarityGlow.className = `pack-card-rarity-glow glow-${cardData.packRarity}`;
+  wrapper.appendChild(rarityGlow);
+
   // Card front (face-down)
   const front = document.createElement('div');
   front.className = 'pack-card-front';
-  front.innerHTML = `<div class="pack-card-logo">?</div>`;
+
+  // Add shine overlay for tilt effect
+  const shine = document.createElement('div');
+  shine.className = 'pack-card-shine';
+  front.appendChild(shine);
+
+  // Question mark logo
+  const logo = document.createElement('div');
+  logo.className = 'pack-card-logo';
+  logo.textContent = '?';
+  front.appendChild(logo);
 
   // Card back (revealed) - use actual card rendering
   const back = document.createElement('div');
@@ -257,6 +514,11 @@ const renderPackCard = (cardData, index, onClick) => {
   inner.appendChild(front);
   inner.appendChild(back);
   wrapper.appendChild(inner);
+
+  // Setup tilt interaction for face-down cards
+  if (!cardData.revealed) {
+    setupTiltListeners(wrapper, inner, front);
+  }
 
   // Click to reveal
   wrapper.addEventListener('click', () => {
@@ -301,16 +563,36 @@ const revealCard = (index) => {
 
   if (cardEl) {
     const cardData = currentPackCards[index];
-    cardEl.classList.add('revealed', `rarity-${cardData.packRarity}`);
 
-    // Add rarity-specific reveal effect
-    if (cardData.packRarity === 'pristine') {
-      cardEl.classList.add('pristine-reveal');
-    } else if (cardData.packRarity === 'legendary') {
-      cardEl.classList.add('legendary-reveal');
-    } else if (cardData.packRarity === 'rare') {
-      cardEl.classList.add('rare-reveal');
+    // Remove tilting class and reset transform before reveal
+    cardEl.classList.remove('tilting');
+    const cardInner = cardEl.querySelector('.pack-card-inner');
+    if (cardInner) {
+      cardInner.style.transition = '';
+      cardInner.style.transform = '';
     }
+
+    // Create and show halo effect (before flip for timing)
+    const halo = createHaloEffect(cardData.packRarity, cardEl);
+    if (halo && elements.packCardsContainer) {
+      elements.packCardsContainer.appendChild(halo);
+    }
+
+    // Small delay for halo to start, then flip
+    setTimeout(() => {
+      cardEl.classList.add('revealed');
+
+      // Add rarity-specific reveal effect
+      if (cardData.packRarity === 'pristine') {
+        cardEl.classList.add('pristine-reveal');
+      } else if (cardData.packRarity === 'legendary') {
+        cardEl.classList.add('legendary-reveal');
+      } else if (cardData.packRarity === 'rare') {
+        cardEl.classList.add('rare-reveal');
+      } else if (cardData.packRarity === 'uncommon') {
+        cardEl.classList.add('uncommon-reveal');
+      }
+    }, 50);
   }
 
   // Update button states

@@ -6432,6 +6432,7 @@ button {
   gap: 16px;
   margin-bottom: 32px;
   flex-wrap: wrap;
+  position: relative; /* For halo effect positioning */
 }
 
 /* Individual Pack Card */
@@ -6769,6 +6770,312 @@ button {
       0 0 55px rgba(255, 255, 255, 0.5),
       0 0 75px rgba(212, 241, 255, 0.3);
   }
+}
+
+/* ============================================================================
+   TILT EFFECT SYSTEM
+   ============================================================================ */
+
+/* Card tilt base styles */
+.pack-card {
+  transform-style: preserve-3d;
+}
+
+.pack-card:not(.revealed) {
+  cursor: pointer;
+}
+
+.pack-card.tilting {
+  z-index: 10;
+}
+
+/* Shine overlay for tilt effect */
+.pack-card-shine {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at var(--shine-x, 50%) var(--shine-y, 50%),
+    rgba(255, 255, 255, 0.25) 0%,
+    rgba(255, 255, 255, 0.1) 20%,
+    transparent 50%
+  );
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  border-radius: 10px;
+  z-index: 5;
+}
+
+.pack-card.tilting .pack-card-shine {
+  opacity: 1;
+}
+
+/* ============================================================================
+   PRE-REVEAL RARITY GLOW (FACE-DOWN CARDS)
+   ============================================================================ */
+
+/* Rarity glow element - positioned behind card at wrapper level */
+.pack-card-rarity-glow {
+  position: absolute;
+  inset: -12px;
+  border-radius: 16px;
+  pointer-events: none;
+  z-index: 0;
+  transform: translate(var(--glow-offset-x, 0px), var(--glow-offset-y, 0px));
+  transition: transform 0.1s ease-out, opacity 0.3s ease;
+}
+
+/* Ensure card inner is above glow */
+.pack-card-inner {
+  z-index: 1;
+}
+
+/* Common - very subtle, barely visible */
+.pack-card-rarity-glow.glow-common {
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.15);
+}
+
+/* Uncommon - soft blue pulse */
+.pack-card-rarity-glow.glow-uncommon {
+  box-shadow:
+    0 0 15px rgba(96, 165, 250, 0.3),
+    0 0 25px rgba(96, 165, 250, 0.15);
+  animation: pre-reveal-uncommon 2.5s ease-in-out infinite;
+}
+
+@keyframes pre-reveal-uncommon {
+  0%, 100% {
+    box-shadow:
+      0 0 12px rgba(96, 165, 250, 0.25),
+      0 0 20px rgba(96, 165, 250, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 18px rgba(96, 165, 250, 0.4),
+      0 0 30px rgba(96, 165, 250, 0.2);
+  }
+}
+
+/* Rare - purple glow, more noticeable */
+.pack-card-rarity-glow.glow-rare {
+  box-shadow:
+    0 0 20px rgba(192, 132, 252, 0.4),
+    0 0 35px rgba(192, 132, 252, 0.2);
+  animation: pre-reveal-rare 2s ease-in-out infinite;
+}
+
+@keyframes pre-reveal-rare {
+  0%, 100% {
+    box-shadow:
+      0 0 15px rgba(192, 132, 252, 0.35),
+      0 0 25px rgba(192, 132, 252, 0.15);
+  }
+  50% {
+    box-shadow:
+      0 0 25px rgba(192, 132, 252, 0.55),
+      0 0 45px rgba(192, 132, 252, 0.3);
+  }
+}
+
+/* Legendary - strong orange glow, eye-catching */
+.pack-card-rarity-glow.glow-legendary {
+  box-shadow:
+    0 0 25px rgba(251, 146, 60, 0.5),
+    0 0 45px rgba(251, 146, 60, 0.25),
+    0 0 60px rgba(251, 191, 36, 0.15);
+  animation: pre-reveal-legendary 1.8s ease-in-out infinite;
+}
+
+@keyframes pre-reveal-legendary {
+  0%, 100% {
+    box-shadow:
+      0 0 20px rgba(251, 146, 60, 0.4),
+      0 0 35px rgba(251, 146, 60, 0.2),
+      0 0 50px rgba(251, 191, 36, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 35px rgba(251, 146, 60, 0.65),
+      0 0 55px rgba(251, 146, 60, 0.35),
+      0 0 75px rgba(251, 191, 36, 0.2);
+  }
+}
+
+/* Pristine - rainbow shimmer, unmistakable */
+.pack-card-rarity-glow.glow-pristine {
+  box-shadow:
+    0 0 30px rgba(255, 255, 255, 0.6),
+    0 0 50px rgba(255, 212, 229, 0.3),
+    0 0 70px rgba(212, 241, 255, 0.2);
+  animation: pre-reveal-pristine 2.5s ease-in-out infinite;
+}
+
+@keyframes pre-reveal-pristine {
+  0%, 100% {
+    box-shadow:
+      0 0 25px rgba(255, 255, 255, 0.5),
+      0 0 40px rgba(255, 212, 229, 0.25),
+      0 0 55px rgba(212, 241, 255, 0.15);
+  }
+  33% {
+    box-shadow:
+      0 0 35px rgba(212, 241, 255, 0.6),
+      0 0 55px rgba(232, 212, 255, 0.35),
+      0 0 75px rgba(255, 212, 229, 0.2);
+  }
+  66% {
+    box-shadow:
+      0 0 30px rgba(232, 212, 255, 0.55),
+      0 0 50px rgba(255, 255, 255, 0.3),
+      0 0 65px rgba(212, 241, 255, 0.2);
+  }
+}
+
+/* Hide rarity glow once revealed */
+.pack-card.revealed .pack-card-rarity-glow {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* ============================================================================
+   EXPANDING HALO REVEAL EFFECTS (HEARTHSTONE-STYLE)
+   ============================================================================ */
+
+/* Halo container - positioned at card center */
+.pack-halo-container {
+  position: absolute;
+  pointer-events: none;
+  z-index: 100;
+  transform: translate(-50%, -50%);
+}
+
+/* Individual expanding ring */
+.pack-halo-ring {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  background: radial-gradient(
+    circle,
+    var(--ring-color) 0%,
+    transparent 70%
+  );
+  box-shadow:
+    0 0 20px var(--ring-color),
+    0 0 40px var(--ring-color),
+    inset 0 0 20px var(--ring-color);
+  animation: halo-expand var(--ring-duration) ease-out forwards;
+  animation-delay: var(--ring-delay);
+}
+
+@keyframes halo-expand {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 1;
+  }
+  60% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(calc(var(--ring-size) / 20));
+    opacity: 0;
+  }
+}
+
+/* Particles for legendary/pristine */
+.pack-halo-particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  left: 50%;
+  top: 50%;
+  background: var(--particle-color);
+  box-shadow:
+    0 0 6px var(--particle-color),
+    0 0 12px var(--particle-color);
+  transform: translate(-50%, -50%);
+  animation: particle-burst 0.8s ease-out forwards;
+  animation-delay: var(--particle-delay);
+}
+
+@keyframes particle-burst {
+  0% {
+    transform: translate(-50%, -50%) rotate(var(--particle-angle)) translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(var(--particle-angle)) translateY(calc(-1 * var(--particle-distance)));
+    opacity: 0;
+  }
+}
+
+/* Legendary halo - golden fire burst */
+.pack-halo-container.halo-legendary .pack-halo-ring {
+  background: radial-gradient(
+    circle,
+    rgba(251, 191, 36, 0.9) 0%,
+    rgba(251, 146, 60, 0.6) 40%,
+    transparent 70%
+  );
+  box-shadow:
+    0 0 30px rgba(251, 146, 60, 0.8),
+    0 0 60px rgba(251, 191, 36, 0.5),
+    inset 0 0 25px rgba(251, 146, 60, 0.6);
+}
+
+/* Pristine halo - white/rainbow burst */
+.pack-halo-container.halo-pristine .pack-halo-ring {
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(255, 212, 229, 0.7) 30%,
+    rgba(212, 241, 255, 0.4) 60%,
+    transparent 80%
+  );
+  box-shadow:
+    0 0 40px rgba(255, 255, 255, 0.9),
+    0 0 80px rgba(255, 212, 229, 0.6),
+    0 0 120px rgba(212, 241, 255, 0.3),
+    inset 0 0 30px rgba(255, 255, 255, 0.8);
+}
+
+/* Screen flash for pristine reveals */
+.pack-screen-flash {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.4) 30%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 10000;
+  animation: screen-flash 0.6s ease-out forwards;
+}
+
+@keyframes screen-flash {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.2);
+  }
+}
+
+/* Uncommon reveal animation */
+.pack-card.uncommon-reveal {
+  animation: uncommon-card-enter 0.6s ease-out;
 }
 
 /* ============================================================================
