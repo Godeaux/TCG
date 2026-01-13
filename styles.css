@@ -4258,6 +4258,14 @@ button {
   /* Smaller card text for hand cards on mobile */
   .hand-grid .card .card-name {
     font-size: 9px !important;
+    padding-top: 6px !important; /* Clear the colored header stripe */
+    flex: 0 0 auto !important; /* Allow natural height instead of fixed % */
+    min-height: 18px;
+  }
+
+  /* Reduce color stripe height on mobile hand cards */
+  .hand-grid .card::before {
+    height: 3px;
   }
 
   .hand-grid .card .card-header {

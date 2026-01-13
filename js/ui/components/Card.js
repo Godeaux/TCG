@@ -97,10 +97,11 @@ const wrapTextToLines = (text, maxChars = 26) => {
 const renderEffectSvg = (effectText) => {
   if (!effectText) return '';
 
-  const lines = wrapTextToLines(effectText, 28);
-  const lineHeight = 14;
-  const fontSize = 10;
-  const viewBoxHeight = Math.max(lines.length * lineHeight + 4, 40);
+  // Shorter lines = larger text relative to card width
+  const lines = wrapTextToLines(effectText, 22);
+  const lineHeight = 15;
+  const fontSize = 13;
+  const viewBoxHeight = Math.max(lines.length * lineHeight + 6, 45);
 
   // Create text elements for each line, centered
   const textElements = lines.map((line, i) => {
@@ -111,11 +112,12 @@ const renderEffectSvg = (effectText) => {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
 
-    return `<text x="50%" y="${12 + i * lineHeight}" text-anchor="middle" font-size="${fontSize}" fill="#a0aec0">${escapedLine}</text>`;
+    return `<text x="50%" y="${14 + i * lineHeight}" text-anchor="middle" font-size="${fontSize}" fill="#a0aec0">${escapedLine}</text>`;
   }).join('');
 
+  // viewBox width of 90 makes text appear wider relative to card
   return `
-    <svg class="card-effect-svg" viewBox="0 0 100 ${viewBoxHeight}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+    <svg class="card-effect-svg" viewBox="0 0 90 ${viewBoxHeight}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
       <style>
         text { font-family: system-ui, -apple-system, sans-serif; }
       </style>
