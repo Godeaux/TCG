@@ -199,6 +199,7 @@ export class AIController {
     const player = this.getAIPlayer(state);
     const delays = this.getDelays(state);
     let actionsRemaining = 10; // Safety limit
+    const attemptedCards = new Set(); // Track attempted cards to prevent infinite loops
 
     console.log(`[${this.playerLabel}] executePlayPhase - phase: ${state.phase}, cardPlayedThisTurn: ${state.cardPlayedThisTurn}`);
     console.log(`[${this.playerLabel}] Hand: ${player.hand.map(c => c.name).join(', ')}`);
@@ -215,6 +216,14 @@ export class AIController {
         this.logThought(state, `No more cards to play this turn`);
         break;
       }
+
+      // Safety check: prevent attempting the same card twice (indicates a bug)
+      if (attemptedCards.has(cardToPlay.instanceId)) {
+        console.error(`[${this.playerLabel}] BUG: Attempted to play same card twice: ${cardToPlay.name}`);
+        this.logThought(state, `Error: Card selection loop detected, stopping`);
+        break;
+      }
+      attemptedCards.add(cardToPlay.instanceId);
 
       // Find the card's index in hand for visual simulation
       const cardIndex = player.hand.findIndex(c => c.instanceId === cardToPlay.instanceId);
@@ -243,6 +252,15 @@ export class AIController {
       if (!playResult.success) {
         this.logThought(state, `Failed to play: ${playResult.error}`);
         break;
+      }
+
+      // Verify card was removed from hand (diagnostic check)
+      const stillInHand = player.hand.some(c => c.instanceId === cardToPlay.instanceId);
+      if (stillInHand) {
+        console.error(`[${this.playerLabel}] BUG: Card ${cardToPlay.name} still in hand after successful play!`);
+        console.error(`[${this.playerLabel}] Hand instanceIds:`, player.hand.map(c => c.instanceId));
+        console.error(`[${this.playerLabel}] Card instanceId:`, cardToPlay.instanceId);
+        break; // Prevent infinite loop
       }
 
       await this.delay(delays.BETWEEN_ACTIONS, state);
