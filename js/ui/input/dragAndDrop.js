@@ -604,9 +604,10 @@ const placeCreatureInSpecificSlot = (card, slotIndex) => {
       return;
     }
 
-    // Free Play predators require consuming prey to play for free
-    if (isFreePlay(card)) {
-      logMessage(state, `${card.name} requires consuming prey to play for free.`);
+    // Free Play predators can only bypass the card limit by consuming prey
+    // If card limit already used and this is a Free Play predator, block the play
+    if (isFreePlay(card) && state.cardPlayedThisTurn) {
+      logMessage(state, `${card.name} requires consuming prey to play for free (you've already played a card this turn).`);
       player.hand.push(card); // Return card to hand
       latestCallbacks.onUpdate?.();
       return;
