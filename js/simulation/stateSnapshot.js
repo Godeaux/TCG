@@ -7,10 +7,10 @@
 
 /**
  * Create a deep clone of the game state
- * Uses structuredClone for reliable deep copying
+ * Uses structuredClone for reliable deep copying, with fallbacks for edge cases
  *
  * @param {Object} state - Game state to clone
- * @returns {Object} Deep copy of the state
+ * @returns {Object} Deep copy of the state, or null if cloning fails
  */
 export const createSnapshot = (state) => {
   try {
@@ -19,9 +19,31 @@ export const createSnapshot = (state) => {
     // (effects are resolved, not stored as functions in state)
     return structuredClone(state);
   } catch (error) {
-    console.error('[StateSnapshot] Failed to clone state:', error);
-    // Fallback to JSON parse/stringify (loses some types but works)
-    return JSON.parse(JSON.stringify(state));
+    // structuredClone failed (likely due to functions or symbols)
+    // Try JSON with circular reference handling
+    try {
+      const seen = new WeakSet();
+      const json = JSON.stringify(state, (key, value) => {
+        // Skip functions
+        if (typeof value === 'function') {
+          return undefined;
+        }
+        // Handle circular references
+        if (typeof value === 'object' && value !== null) {
+          if (seen.has(value)) {
+            // Return a placeholder for circular references
+            return '[Circular]';
+          }
+          seen.add(value);
+        }
+        return value;
+      });
+      return JSON.parse(json);
+    } catch (jsonError) {
+      console.error('[StateSnapshot] Failed to clone state:', error.message);
+      // Return null to signal snapshot failure - bug detector should handle this gracefully
+      return null;
+    }
   }
 };
 
