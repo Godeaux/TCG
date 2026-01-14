@@ -903,7 +903,7 @@ export class AIController {
     // Check for lethal on player first (always take lethal)
     if (validTargets.player && opponent.hp <= attackerAtk) {
       this.logThought(state, `Lethal available! Going face for ${attackerAtk} damage`);
-      return { type: 'player', player: opponent };
+      return { type: 'player', player: opponent, playerIndex: 1 - this.playerIndex };
     }
 
     // Evaluate creature trades
@@ -949,7 +949,7 @@ export class AIController {
       const faceScore = attackerAtk * 2; // Value face damage
       if (faceScore > bestScore) {
         this.logThought(state, `Face damage (${attackerAtk}) better than creature trades`);
-        return { type: 'player', player: opponent };
+        return { type: 'player', player: opponent, playerIndex: 1 - this.playerIndex };
       }
     }
 

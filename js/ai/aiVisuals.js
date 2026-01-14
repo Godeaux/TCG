@@ -332,15 +332,15 @@ const getCardCenterPosition = (instanceId) => {
 };
 
 /**
- * Get the center position of the player field (for direct attacks)
- * @param {number} playerIndex - 0 for bottom player, 1 for top player
+ * Get the center position of the player badge (for direct attacks)
+ * @param {number} playerIndex - 0 for left player, 1 for right player
  * @returns {Object|null} { x, y } center coordinates
  */
 const getPlayerFieldCenter = (playerIndex) => {
-  const fieldClass = playerIndex === 0 ? '.player-field' : '.opponent-field';
-  const field = document.querySelector(fieldClass);
-  if (!field) return null;
-  const rect = field.getBoundingClientRect();
+  // Target the player badge in the top bar for direct attacks
+  const badge = document.querySelector(`.player-badge[data-player-index="${playerIndex}"]`);
+  if (!badge) return null;
+  const rect = badge.getBoundingClientRect();
   return {
     x: rect.left + rect.width / 2,
     y: rect.top + rect.height / 2,
@@ -493,8 +493,8 @@ const showAttackArrow = async (attacker, target) => {
 
   let toPos;
   if (target.type === 'player') {
-    // Direct attack - target the player's field center
-    toPos = getPlayerFieldCenter(target.player);
+    // Direct attack - target the player badge in the top bar
+    toPos = getPlayerFieldCenter(target.playerIndex);
   } else if (target.card) {
     toPos = getCardCenterPosition(target.card.instanceId);
   }
