@@ -15,7 +15,7 @@
 
 import { canPlayCard, cardLimitAvailable } from '../game/turnManager.js';
 import { getValidTargets, resolveCreatureCombat, resolveDirectAttack, cleanupDestroyed } from '../game/combat.js';
-import { isFreePlay, isPassive, isHarmless, isEdible, hasScavenge } from '../keywords.js';
+import { isFreePlay, isPassive, isHarmless, isEdible, hasScavenge, hasHaste } from '../keywords.js';
 import { isCreatureCard, createCardInstance } from '../cardTypes.js';
 import { logMessage, queueVisualEffect } from '../state/gameState.js';
 import { consumePrey } from '../game/consumption.js';
@@ -853,24 +853,9 @@ export class AIController {
         broadcast: state.broadcast,
       });
 
-      // If no reaction window was created (no traps available), execute attack immediately
-      if (!windowCreated) {
-        if (target.type === 'player') {
-          resolveDirectAttack(state, attacker, target.player);
-        } else if (target.type === 'creature') {
-          resolveCreatureCombat(state, attacker, target.card, attackerOwnerIndex, defenderOwnerIndex);
-        }
-        cleanupDestroyed(state);
-
-        // Bug detection: check after immediate attack
-        if (detector?.isEnabled()) {
-          detector.afterAction(state);
-        }
-
-        callbacks.onUpdate?.();
-        state.broadcast?.(state);
-        resolve();
-      }
+      // Note: When no reaction window is created, createReactionWindow calls onResolved
+      // immediately, so combat is resolved through that callback path. No duplicate
+      // handling needed here.
     });
   }
 
@@ -888,7 +873,8 @@ export class AIController {
       if (isHarmless(card)) return false;
       if (card.frozen || card.paralyzed) return false;
       // Check summoning sickness (unless has haste)
-      if (card.summonedTurn === state.turn && !card.keywords?.includes('Haste')) {
+      // Use hasHaste() which checks areAbilitiesActive() (dry-dropped = no keywords)
+      if (card.summonedTurn === state.turn && !hasHaste(card)) {
         return false;
       }
       return true;
