@@ -248,28 +248,39 @@ export const resolveCardEffect = (card, effectType, context) => {
   // Check if abilities have been cancelled (e.g., by Undertow, Cramp, etc.)
   // This prevents effects from triggering on creatures that have been stripped
   if (card.abilitiesCancelled) {
+    console.log(`[Effect] ${card.name} → ${effectType} SKIPPED (abilities cancelled)`);
     return null;
   }
 
   const effectDef = card.effects?.[effectType];
   if (!effectDef) return null;
 
+  // Log effect execution for debugging (helps identify when effects don't fire)
+  console.log(`[Effect] ${card.name} → ${effectType}`, effectDef.type || '(composite)');
+
   try {
+    let result;
+
     // Array of effects (composite)
     if (Array.isArray(effectDef)) {
-      return resolveEffect(effectDef, context);
+      result = resolveEffect(effectDef, context);
     }
-
     // Object-based effect definition with type and params
-    if (typeof effectDef === 'object' && effectDef.type) {
-      return resolveEffect(effectDef, context);
+    else if (typeof effectDef === 'object' && effectDef.type) {
+      result = resolveEffect(effectDef, context);
+    }
+    else {
+      console.warn(`[Effect] ${card.name} → ${effectType} INVALID definition:`, effectDef);
+      return null;
     }
 
-    console.warn(`[Card Registry] Invalid effect definition for ${card.name} ${effectType}:`, effectDef);
-    return null;
+    if (!result) {
+      console.warn(`[Effect] ${card.name} → ${effectType} returned no result`);
+    }
+    return result;
 
   } catch (error) {
-    console.error(`[Card Registry] Effect handler error: ${card.name} ${effectType}`, error);
+    console.error(`[Effect] ${card.name} → ${effectType} ERROR:`, error);
     return null;
   }
 };

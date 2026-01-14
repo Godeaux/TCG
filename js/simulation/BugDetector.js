@@ -16,13 +16,9 @@
 
 import { createSnapshot, diffSnapshots, getAllInstanceIds, getTotalCardCount } from './stateSnapshot.js';
 import { runAllInvariantChecks, checkDryDropKeywords } from './invariantChecks.js';
-import {
-  validateOnPlayTriggered,
-  validateOnConsumeTriggered,
-  validateDryDropNoConsume,
-  validateTrapEffect,
-  validateCombatDamage,
-} from './effectValidators.js';
+// Effect validators removed - they re-implemented game logic which violated
+// the principle of organic bug detection. Keeping import commented for reference.
+// import { validateOnPlayTriggered, validateOnConsumeTriggered, ... } from './effectValidators.js';
 
 // ============================================================================
 // BUG REPORT UTILITIES
@@ -494,8 +490,8 @@ export class BugDetector {
     };
     this.expectedEffects = [];
 
-    // Track expected effects based on action type
-    this.trackExpectedEffects(action, context);
+    // Note: trackExpectedEffects removed - effect validation was re-implementing
+    // game logic. Bug detection now relies on invariant checks and execution logging.
 
     // Record action in history
     this.recordAction(action, context, state);
@@ -638,61 +634,11 @@ export class BugDetector {
     const invariantBugs = runAllInvariantChecks(after, before, action);
     bugs.push(...invariantBugs);
 
-    // Card conservation check disabled - too many false positives due to
-    // token summoning from various sources (onPlay, onConsume, combat triggers,
-    // chained effects) that can't be reliably predicted ahead of time.
-    // const conservationBugs = this.checkCardConservation(before, after, action);
-    // bugs.push(...conservationBugs);
-
-    // Run effect validators based on expected effects
-    for (const expected of this.expectedEffects) {
-      if (expected.trigger === 'onPlay') {
-        const playBugs = validateOnPlayTriggered(before, after, {
-          card: expected.card,
-          playerIndex: this.actionContext?.playerIndex ?? before.activePlayerIndex,
-        });
-        bugs.push(...playBugs);
-      }
-
-      if (expected.trigger === 'onConsume') {
-        const consumeBugs = validateOnConsumeTriggered(before, after, {
-          predator: expected.card,
-          consumedPrey: expected.consumedPrey,
-          playerIndex: this.actionContext?.playerIndex ?? before.activePlayerIndex,
-        });
-        bugs.push(...consumeBugs);
-      }
-
-      if (expected.trigger === 'dryDrop') {
-        const dryDropBugs = validateDryDropNoConsume(before, after, {
-          predator: expected.card,
-          playerIndex: this.actionContext?.playerIndex ?? before.activePlayerIndex,
-        });
-        bugs.push(...dryDropBugs);
-      }
-
-      if (expected.trigger === 'trapEffect') {
-        const trapBugs = validateTrapEffect(before, after, {
-          card: expected.card,
-          effect: expected.effect,
-          event: expected.event,
-          eventContext: expected.eventContext,
-          reactingPlayerIndex: this.actionContext?.reactingPlayerIndex,
-          triggeringPlayerIndex: this.actionContext?.triggeringPlayerIndex,
-        });
-        bugs.push(...trapBugs);
-      }
-
-      if (expected.trigger === 'combat') {
-        const combatBugs = validateCombatDamage(before, after, {
-          attacker: expected.attacker,
-          target: expected.target,
-          attackerOwnerIndex: this.actionContext?.attackerOwnerIndex,
-          defenderOwnerIndex: this.actionContext?.defenderOwnerIndex,
-        });
-        bugs.push(...combatBugs);
-      }
-    }
+    // Effect validators removed - they re-implemented game logic which violates
+    // the principle that bug detection should emerge organically from invariant
+    // checks, not from a separate layer that tries to predict what effects should do.
+    // The invariant checks above catch invalid states; effect execution is now
+    // logged directly in resolveCardEffect() for debugging.
 
     // Create rich bug reports
     const bugReports = bugs.map(bug => createBugReport(bug, {
