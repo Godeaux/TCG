@@ -131,12 +131,26 @@ export const resolveCreatureCombat = (state, attacker, defender, attackerOwnerIn
 
   if (defender.currentHp <= 0) {
     defender.diedInCombat = true;
-    defender.slainBy = attacker;
+    // Store minimal killer info to avoid circular references
+    defender.slainBy = {
+      instanceId: attacker.instanceId,
+      name: attacker.name,
+      type: attacker.type,
+      currentAtk: attacker.currentAtk,
+      currentHp: attacker.currentHp,
+    };
     logGameAction(state, DEATH, `${formatCardForLog(defender)} is slain!`);
   }
   if (attacker.currentHp <= 0) {
     attacker.diedInCombat = true;
-    attacker.slainBy = defender;
+    // Store minimal killer info to avoid circular references
+    attacker.slainBy = {
+      instanceId: defender.instanceId,
+      name: defender.name,
+      type: defender.type,
+      currentAtk: defender.currentAtk,
+      currentHp: defender.currentHp,
+    };
     logGameAction(state, DEATH, `${formatCardForLog(attacker)} is slain!`);
   }
 

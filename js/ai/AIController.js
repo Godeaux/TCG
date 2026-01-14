@@ -15,7 +15,7 @@
 
 import { canPlayCard, cardLimitAvailable } from '../game/turnManager.js';
 import { getValidTargets, resolveCreatureCombat, resolveDirectAttack, cleanupDestroyed } from '../game/combat.js';
-import { isFreePlay, isPassive, isHarmless, isEdible, hasScavenge } from '../keywords.js';
+import { isFreePlay, isPassive, isHarmless, isEdible, hasScavenge, hasHaste } from '../keywords.js';
 import { isCreatureCard, createCardInstance } from '../cardTypes.js';
 import { logMessage, queueVisualEffect } from '../state/gameState.js';
 import { consumePrey } from '../game/consumption.js';
@@ -199,6 +199,7 @@ export class AIController {
     const player = this.getAIPlayer(state);
     const delays = this.getDelays(state);
     let actionsRemaining = 10; // Safety limit
+    const attemptedCards = new Set(); // Track attempted cards to prevent infinite loops
 
     console.log(`[${this.playerLabel}] executePlayPhase - phase: ${state.phase}, cardPlayedThisTurn: ${state.cardPlayedThisTurn}`);
     console.log(`[${this.playerLabel}] Hand: ${player.hand.map(c => c.name).join(', ')}`);
@@ -215,6 +216,14 @@ export class AIController {
         this.logThought(state, `No more cards to play this turn`);
         break;
       }
+
+      // Safety check: prevent attempting the same card twice (indicates a bug)
+      if (attemptedCards.has(cardToPlay.instanceId)) {
+        console.error(`[${this.playerLabel}] BUG: Attempted to play same card twice: ${cardToPlay.name}`);
+        this.logThought(state, `Error: Card selection loop detected, stopping`);
+        break;
+      }
+      attemptedCards.add(cardToPlay.instanceId);
 
       // Find the card's index in hand for visual simulation
       const cardIndex = player.hand.findIndex(c => c.instanceId === cardToPlay.instanceId);
@@ -245,6 +254,15 @@ export class AIController {
         break;
       }
 
+      // Verify card was removed from hand (diagnostic check)
+      const stillInHand = player.hand.some(c => c.instanceId === cardToPlay.instanceId);
+      if (stillInHand) {
+        console.error(`[${this.playerLabel}] BUG: Card ${cardToPlay.name} still in hand after successful play!`);
+        console.error(`[${this.playerLabel}] Hand instanceIds:`, player.hand.map(c => c.instanceId));
+        console.error(`[${this.playerLabel}] Card instanceId:`, cardToPlay.instanceId);
+        break; // Prevent infinite loop
+      }
+
       await this.delay(delays.BETWEEN_ACTIONS, state);
     }
 
@@ -265,10 +283,33 @@ export class AIController {
       return null;
     }
 
+    // Find available prey for consumption (needed to check if Free Play predators can be played)
+    const availablePrey = player.field.filter(c =>
+      c && !c.frozen && (c.type === 'Prey' || (c.type === 'Predator' && isEdible(c)))
+    );
+    const hasConsumablePrey = availablePrey.length > 0;
+
     // Filter to playable cards (respect card limit unless free play)
     const playableCards = hand.filter(card => {
       const isFree = card.type === "Free Spell" || card.type === "Trap" || isFreePlay(card);
-      return isFree || !state.cardPlayedThisTurn;
+
+      // If card limit not used, any card is playable
+      if (!state.cardPlayedThisTurn) {
+        return true;
+      }
+
+      // Card limit already used - only free cards can be played
+      if (!isFree) {
+        return false;
+      }
+
+      // Free Play predators require prey to consume when card limit is used
+      // (dry-dropped predators lose Free Play, so they'd violate the card limit)
+      if (card.type === "Predator" && isFreePlay(card) && !hasConsumablePrey) {
+        return false;
+      }
+
+      return true;
     });
 
     console.log(`[${this.playerLabel}] selectCardToPlay: hand has ${hand.length} cards, ${playableCards.length} playable (cardPlayedThisTurn: ${state.cardPlayedThisTurn})`);
@@ -526,7 +567,10 @@ export class AIController {
       creature.dryDropped = true;
       logMessage(state, `${player.name} plays ${creature.name} (dry drop - no prey to consume).`);
 
-      if (!isFree) {
+      // Dry-dropped predators lose Free Play, so recalculate isFree
+      // (isFreePlay checks areAbilitiesActive which returns false for dryDropped creatures)
+      const isFreeAfterDryDrop = isFreePlay(creature);
+      if (!isFreeAfterDryDrop) {
         state.cardPlayedThisTurn = true;
       }
 
@@ -712,6 +756,9 @@ export class AIController {
       // Execute the attack (with reaction window for opponent's traps)
       await this.executeAttack(state, attacker, target, callbacks);
 
+      // Clean up destroyed creatures before next attack
+      cleanupDestroyed(state);
+
       // Notify callbacks
       callbacks.onAttack?.(attacker, target);
 
@@ -806,24 +853,9 @@ export class AIController {
         broadcast: state.broadcast,
       });
 
-      // If no reaction window was created (no traps available), execute attack immediately
-      if (!windowCreated) {
-        if (target.type === 'player') {
-          resolveDirectAttack(state, attacker, target.player);
-        } else if (target.type === 'creature') {
-          resolveCreatureCombat(state, attacker, target.card, attackerOwnerIndex, defenderOwnerIndex);
-        }
-        cleanupDestroyed(state);
-
-        // Bug detection: check after immediate attack
-        if (detector?.isEnabled()) {
-          detector.afterAction(state);
-        }
-
-        callbacks.onUpdate?.();
-        state.broadcast?.(state);
-        resolve();
-      }
+      // Note: When no reaction window is created, createReactionWindow calls onResolved
+      // immediately, so combat is resolved through that callback path. No duplicate
+      // handling needed here.
     });
   }
 
@@ -835,12 +867,14 @@ export class AIController {
 
     const availableAttackers = player.field.filter(card => {
       if (!card || !isCreatureCard(card)) return false;
+      if (card.currentHp <= 0) return false; // Dead creatures can't attack
       if (card.hasAttacked) return false;
       if (isPassive(card)) return false;
       if (isHarmless(card)) return false;
       if (card.frozen || card.paralyzed) return false;
       // Check summoning sickness (unless has haste)
-      if (card.summonedTurn === state.turn && !card.keywords?.includes('Haste')) {
+      // Use hasHaste() which checks areAbilitiesActive() (dry-dropped = no keywords)
+      if (card.summonedTurn === state.turn && !hasHaste(card)) {
         return false;
       }
       return true;

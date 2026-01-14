@@ -6,6 +6,16 @@
  */
 
 import { getAllInstanceIds } from './stateSnapshot.js';
+import {
+  hasLure,
+  hasHaste,
+  hasAcuity,
+  isHidden,
+  isInvisible,
+  isPassive,
+  isHarmless,
+  hasKeyword,
+} from '../keywords.js';
 
 /**
  * Check for zombie creatures (HP <= 0 but still on field)
@@ -249,27 +259,12 @@ export const checkSummoningSickness = (state, before, action) => {
   for (const player of state.players) {
     for (const creature of player.field) {
       if (creature?.instanceId === attacker.instanceId) {
-        const hasHaste = creature.keywords?.includes('Haste') ||
-                        creature.grantedKeywords?.includes('Haste');
+        // Use hasHaste() which checks areAbilitiesActive() (dry-dropped = no keywords)
+        const creatureHasHaste = hasHaste(creature);
         const playedThisTurn = creature.summonedTurn === state.turn;
 
-        // Check for dry-dropped creature retaining Haste
-        if (creature.dryDropped && playedThisTurn && creature.keywords?.includes('Haste')) {
-          bugs.push({
-            type: 'dry_drop_keyword_retained',
-            severity: 'high',
-            message: `${creature.name} was dry-dropped but still has Haste keyword`,
-            details: {
-              creature: creature.name,
-              instanceId: creature.instanceId,
-              keywords: creature.keywords,
-              dryDropped: true,
-            },
-          });
-        }
-
         // Direct attack on player requires being on field since start of turn OR Haste
-        if (playedThisTurn && !hasHaste) {
+        if (playedThisTurn && !creatureHasHaste) {
           bugs.push({
             type: 'summoning_sickness',
             severity: 'high',
@@ -460,11 +455,8 @@ export const checkPassiveHarmlessAttack = (state, before, action) => {
 
   if (!attackerBefore) return bugs;
 
-  const keywords = attackerBefore.keywords || [];
-  const grantedKeywords = attackerBefore.grantedKeywords || [];
-  const allKeywords = [...keywords, ...grantedKeywords];
-
-  if (allKeywords.includes('Passive')) {
+  // Use isPassive() which checks areAbilitiesActive() (dry-dropped = no keywords)
+  if (isPassive(attackerBefore)) {
     bugs.push({
       type: 'passive_attack',
       severity: 'high',
@@ -472,7 +464,6 @@ export const checkPassiveHarmlessAttack = (state, before, action) => {
       details: {
         creature: attackerBefore.name,
         instanceId: attacker.instanceId,
-        keywords: allKeywords,
       },
     });
   }
@@ -506,15 +497,9 @@ export const checkHiddenTargeting = (state, before, action) => {
   if (!targetInstanceId) return bugs;
 
   // Check if attacker has Acuity (allows targeting Hidden/Invisible)
-  const attackerKeywords = [
-    ...(attacker?.keywords || []),
-    ...(attacker?.grantedKeywords || []),
-  ];
-  const attackerHasAcuity = attackerKeywords.includes('Acuity');
-
-  // If attacker has Acuity, targeting Hidden/Invisible is allowed
-  if (attackerHasAcuity) {
-    return bugs;
+  // Use hasAcuity() which checks areAbilitiesActive() (dry-dropped = no keywords)
+  if (hasAcuity(attacker)) {
+    return bugs; // Acuity allows targeting Hidden/Invisible
   }
 
   // Find target creature in before state
@@ -530,11 +515,8 @@ export const checkHiddenTargeting = (state, before, action) => {
 
   if (!targetBefore) return bugs;
 
-  const keywords = targetBefore.keywords || [];
-  const grantedKeywords = targetBefore.grantedKeywords || [];
-  const allKeywords = [...keywords, ...grantedKeywords];
-
-  if (allKeywords.includes('Hidden')) {
+  // Use isHidden()/isInvisible() which check areAbilitiesActive()
+  if (isHidden(targetBefore)) {
     bugs.push({
       type: 'hidden_targeted',
       severity: 'high',
@@ -542,13 +524,12 @@ export const checkHiddenTargeting = (state, before, action) => {
       details: {
         creature: targetBefore.name,
         instanceId: targetInstanceId,
-        keywords: allKeywords,
         attackerHasAcuity: false,
       },
     });
   }
 
-  if (allKeywords.includes('Invisible')) {
+  if (isInvisible(targetBefore)) {
     bugs.push({
       type: 'invisible_targeted',
       severity: 'high',
@@ -556,7 +537,6 @@ export const checkHiddenTargeting = (state, before, action) => {
       details: {
         creature: targetBefore.name,
         instanceId: targetInstanceId,
-        keywords: allKeywords,
         attackerHasAcuity: false,
       },
     });
@@ -599,13 +579,9 @@ export const checkLureBypass = (state, before, action) => {
   const defenderOwnerIndex = 1 - attackerOwnerIndex;
   const defenderField = before.players[defenderOwnerIndex].field;
 
-  // Check if defender has any creature with Lure
-  const lureCreatures = defenderField.filter(c => {
-    if (!c) return false;
-    const keywords = c.keywords || [];
-    const grantedKeywords = c.grantedKeywords || [];
-    return keywords.includes('Lure') || grantedKeywords.includes('Lure');
-  });
+  // Check if defender has any creature with active Lure
+  // Use hasLure() which properly checks areAbilitiesActive() (dry-dropped predators have no abilities)
+  const lureCreatures = defenderField.filter(c => c && hasLure(c));
 
   if (lureCreatures.length === 0) return bugs;
 

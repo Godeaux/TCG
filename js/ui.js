@@ -2388,12 +2388,22 @@ const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) => {
             onUpdate?.();
             return;
           }
+          // Free Play predators can only bypass card limit by consuming prey
+          // If card was already played this turn, dry-dropping a Free Play predator is not allowed
+          if (isFreePlay(card) && state.cardPlayedThisTurn) {
+            logMessage(state, `${card.name} must consume prey to play for free (you've already played a card this turn).`);
+            clearSelectionPanel();
+            onUpdate?.();
+            return;
+          }
           creature.dryDropped = true;
           player.field[emptySlot] = creature;
           logGameAction(state, LOG_CATEGORIES.SUMMON, `${player.name} plays ${formatCardForLog(creature)} (dry-dropped).`);
           clearSelectionPanel();
           triggerPlayTraps(state, creature, onUpdate, () => {
-            if (!isFree) {
+            // Dry-dropped predators lose Free Play, so recalculate isFree
+            const isFreeAfterDryDrop = isFreePlay(creature);
+            if (!isFreeAfterDryDrop) {
               state.cardPlayedThisTurn = true;
             }
             onUpdate?.();
@@ -2421,6 +2431,14 @@ const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) => {
     }
 
     if (card.type === "Predator") {
+      // Free Play predators can only bypass the card limit by consuming prey
+      // If card limit already used and this is a Free Play predator, block the play
+      if (isFreePlay(card) && state.cardPlayedThisTurn) {
+        logMessage(state, `${card.name} requires consuming prey to play for free (you've already played a card this turn).`);
+        player.hand.push(card); // Return card to hand
+        onUpdate?.();
+        return;
+      }
       creature.dryDropped = true;
       logGameAction(state, LOG_CATEGORIES.SUMMON, `${player.name} plays ${formatCardForLog(creature)} (dry-dropped).`);
     }
@@ -2452,7 +2470,11 @@ const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) => {
           () => cleanupDestroyed(state)
         );
       }
-      if (!isFree) {
+      // Dry-dropped predators lose Free Play, so recalculate isFree
+      const isFreeAfterPlay = card.type === "Predator" && creature.dryDropped
+        ? isFreePlay(creature)
+        : isFree;
+      if (!isFreeAfterPlay) {
         state.cardPlayedThisTurn = true;
       }
       onUpdate?.();
