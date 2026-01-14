@@ -313,6 +313,202 @@ export const simulateAICardPlay = async (cardIndex, options = {}) => {
 };
 
 // ============================================================================
+// ATTACK ARROW VISUALS
+// ============================================================================
+
+/**
+ * Get the center position of a card element by instance ID
+ * @param {string} instanceId - Instance ID of the card
+ * @returns {Object|null} { x, y } center coordinates or null if not found
+ */
+const getCardCenterPosition = (instanceId) => {
+  const card = document.querySelector(`[data-instance-id="${instanceId}"]`);
+  if (!card) return null;
+  const rect = card.getBoundingClientRect();
+  return {
+    x: rect.left + rect.width / 2,
+    y: rect.top + rect.height / 2,
+  };
+};
+
+/**
+ * Get the center position of the player field (for direct attacks)
+ * @param {number} playerIndex - 0 for bottom player, 1 for top player
+ * @returns {Object|null} { x, y } center coordinates
+ */
+const getPlayerFieldCenter = (playerIndex) => {
+  const fieldClass = playerIndex === 0 ? '.player-field' : '.opponent-field';
+  const field = document.querySelector(fieldClass);
+  if (!field) return null;
+  const rect = field.getBoundingClientRect();
+  return {
+    x: rect.left + rect.width / 2,
+    y: rect.top + rect.height / 2,
+  };
+};
+
+/**
+ * Create an SVG curved arrow from attacker to target
+ * @param {Object} from - { x, y } start position
+ * @param {Object} to - { x, y } end position
+ * @returns {SVGElement} The arrow SVG element
+ */
+const createAttackArrow = (from, to) => {
+  // Remove any existing arrow
+  const existing = document.getElementById('ai-attack-arrow');
+  if (existing) existing.remove();
+
+  // Create SVG element
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.id = 'ai-attack-arrow';
+  svg.classList.add('ai-attack-arrow');
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', '100%');
+  svg.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 1000;
+    overflow: visible;
+  `;
+
+  // Calculate control point for the arc
+  // The arc curves outward from the line between points
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+
+  // Perpendicular offset for the curve (arc outward)
+  // Curve to the right when going down, left when going up
+  const arcDirection = dy > 0 ? 1 : -1;
+  const arcIntensity = Math.min(distance * 0.3, 80); // Cap the arc size
+
+  // Control point is perpendicular to the midpoint
+  const midX = (from.x + to.x) / 2;
+  const midY = (from.y + to.y) / 2;
+  const perpX = -dy / distance * arcIntensity * arcDirection;
+  const perpY = dx / distance * arcIntensity * arcDirection;
+
+  const controlX = midX + perpX;
+  const controlY = midY + perpY;
+
+  // Create the curved path
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  const pathData = `M ${from.x} ${from.y} Q ${controlX} ${controlY} ${to.x} ${to.y}`;
+  path.setAttribute('d', pathData);
+  path.classList.add('ai-arrow-path');
+
+  // Create arrowhead
+  const arrowhead = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+
+  // Calculate arrowhead position and rotation
+  // Get the tangent at the end of the curve (derivative of quadratic bezier at t=1)
+  const tangentX = 2 * (to.x - controlX);
+  const tangentY = 2 * (to.y - controlY);
+  const angle = Math.atan2(tangentY, tangentX);
+
+  // Arrowhead size
+  const headLength = 16;
+  const headWidth = 10;
+
+  // Calculate arrowhead points
+  const tipX = to.x;
+  const tipY = to.y;
+  const baseX = tipX - headLength * Math.cos(angle);
+  const baseY = tipY - headLength * Math.sin(angle);
+  const leftX = baseX - headWidth * Math.cos(angle - Math.PI / 2);
+  const leftY = baseY - headWidth * Math.sin(angle - Math.PI / 2);
+  const rightX = baseX - headWidth * Math.cos(angle + Math.PI / 2);
+  const rightY = baseY - headWidth * Math.sin(angle + Math.PI / 2);
+
+  arrowhead.setAttribute('points', `${tipX},${tipY} ${leftX},${leftY} ${rightX},${rightY}`);
+  arrowhead.classList.add('ai-arrow-head');
+
+  // Add glow filter
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  const filter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+  filter.id = 'arrow-glow';
+  filter.setAttribute('x', '-50%');
+  filter.setAttribute('y', '-50%');
+  filter.setAttribute('width', '200%');
+  filter.setAttribute('height', '200%');
+
+  const feGaussianBlur = document.createElementNS('http://www.w3.org/2000/svg', 'feGaussianBlur');
+  feGaussianBlur.setAttribute('stdDeviation', '4');
+  feGaussianBlur.setAttribute('result', 'coloredBlur');
+
+  const feMerge = document.createElementNS('http://www.w3.org/2000/svg', 'feMerge');
+  const feMergeNode1 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
+  feMergeNode1.setAttribute('in', 'coloredBlur');
+  const feMergeNode2 = document.createElementNS('http://www.w3.org/2000/svg', 'feMergeNode');
+  feMergeNode2.setAttribute('in', 'SourceGraphic');
+
+  feMerge.appendChild(feMergeNode1);
+  feMerge.appendChild(feMergeNode2);
+  filter.appendChild(feGaussianBlur);
+  filter.appendChild(feMerge);
+  defs.appendChild(filter);
+
+  svg.appendChild(defs);
+  svg.appendChild(path);
+  svg.appendChild(arrowhead);
+
+  document.body.appendChild(svg);
+
+  // Trigger animation after a tiny delay for CSS transition
+  requestAnimationFrame(() => {
+    svg.classList.add('visible');
+  });
+
+  return svg;
+};
+
+/**
+ * Remove the attack arrow
+ */
+const removeAttackArrow = () => {
+  const arrow = document.getElementById('ai-attack-arrow');
+  if (arrow) {
+    arrow.classList.add('fading');
+    // Remove after fade animation
+    setTimeout(() => arrow.remove(), 200);
+  }
+};
+
+/**
+ * Animate attack arrow from attacker to target
+ * @param {Object} attacker - Attacker card object with instanceId
+ * @param {Object} target - Target { type: 'player'|'creature', card?, player? }
+ * @returns {Promise} Resolves when arrow animation starts
+ */
+const showAttackArrow = async (attacker, target) => {
+  const fromPos = getCardCenterPosition(attacker.instanceId);
+  if (!fromPos) {
+    console.log('[AI Visual] Could not find attacker position for arrow');
+    return;
+  }
+
+  let toPos;
+  if (target.type === 'player') {
+    // Direct attack - target the player's field center
+    toPos = getPlayerFieldCenter(target.player);
+  } else if (target.card) {
+    toPos = getCardCenterPosition(target.card.instanceId);
+  }
+
+  if (!toPos) {
+    console.log('[AI Visual] Could not find target position for arrow');
+    return;
+  }
+
+  console.log('[AI Visual] Creating attack arrow:', { from: fromPos, to: toPos });
+  createAttackArrow(fromPos, toPos);
+};
+
+// ============================================================================
 // COMBAT VISUALS
 // ============================================================================
 
@@ -348,7 +544,7 @@ export const highlightAITarget = (instanceId, isPlayer = false) => {
 };
 
 /**
- * Clear all AI combat highlight classes
+ * Clear all AI combat highlight classes and attack arrow
  */
 export const clearAICombatHighlights = () => {
   // Clear attacker highlights
@@ -360,11 +556,14 @@ export const clearAICombatHighlights = () => {
   document.querySelectorAll('.ai-target-considering').forEach(el => {
     el.classList.remove('ai-target-considering');
   });
+
+  // Remove attack arrow
+  removeAttackArrow();
 };
 
 /**
  * Full AI combat sequence with visual feedback
- * Shows attacker selection glow, then target consideration
+ * Shows attacker selection glow, animated arrow, then target consideration
  *
  * @param {Object} attacker - Attacker card object
  * @param {Object} target - Target object { type: 'player'|'creature', card?, player? }
@@ -377,7 +576,10 @@ export const simulateAICombatSequence = async (attacker, target) => {
   highlightAIAttacker(attacker.instanceId);
   await delay(AI_VISUAL_TIMING.COMBAT_SELECT_ATTACKER);
 
-  // Phase 2: Highlight target with red glow
+  // Phase 2: Show attack arrow from attacker to target
+  await showAttackArrow(attacker, target);
+
+  // Phase 3: Highlight target with red glow (arrow stays visible)
   if (target.type === 'player') {
     highlightAITarget(null, true);
   } else if (target.card) {
@@ -385,7 +587,7 @@ export const simulateAICombatSequence = async (attacker, target) => {
   }
   await delay(AI_VISUAL_TIMING.COMBAT_CONSIDER_TARGET);
 
-  // Clear highlights before attack animation fires
+  // Clear highlights and arrow before attack animation fires
   clearAICombatHighlights();
 };
 
