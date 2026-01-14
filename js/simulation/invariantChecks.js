@@ -15,6 +15,7 @@ import {
   isPassive,
   isHarmless,
   hasKeyword,
+  isFreePlay,
 } from '../keywords.js';
 
 /**
@@ -298,17 +299,18 @@ export const checkSummoningSickness = (state, before, action) => {
 export const checkDryDropKeywords = (state) => {
   const bugs = [];
 
-  // Keywords that should be stripped on dry drop
-  const STRIPPED_KEYWORDS = ['Haste', 'Free Play'];
-
   state.players.forEach((player, playerIndex) => {
     player.field.forEach((creature, slotIndex) => {
       if (creature !== null && creature.dryDropped) {
-        // Check if creature still has keywords it shouldn't
-        const activeKeywords = creature.keywords || [];
-        const problematicKeywords = activeKeywords.filter(kw =>
-          STRIPPED_KEYWORDS.includes(kw)
-        );
+        // Use game's actual keyword functions to check if suppression is working
+        // This ensures bug detection uses the same code paths as PvP
+        const keywordChecks = [
+          { name: 'Haste', isActive: hasHaste(creature) },
+          { name: 'Free Play', isActive: isFreePlay(creature) },
+        ];
+        const problematicKeywords = keywordChecks
+          .filter(kw => kw.isActive)
+          .map(kw => kw.name);
 
         if (problematicKeywords.length > 0) {
           bugs.push({
