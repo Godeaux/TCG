@@ -307,9 +307,10 @@ const resetTilt = (wrapper, cardInner, front) => {
  */
 const setupTiltListeners = (wrapper, cardInner, front) => {
   let isHovering = false;
+  let isRevealed = false;
 
   const handleMove = (clientX, clientY) => {
-    if (!isHovering) return;
+    if (!isHovering || isRevealed) return;
 
     const { tiltX, tiltY, relativeX, relativeY } = calculateTilt(wrapper, clientX, clientY);
     cardInner.style.transition = 'none'; // Instant response while moving
@@ -317,7 +318,11 @@ const setupTiltListeners = (wrapper, cardInner, front) => {
   };
 
   const handleEnter = (e) => {
-    if (wrapper.classList.contains('revealed')) return;
+    // Check revealed state fresh each time
+    if (wrapper.classList.contains('revealed')) {
+      isRevealed = true;
+      return;
+    }
     isHovering = true;
     wrapper.classList.add('tilting');
     cardInner.style.transition = `transform ${TILT_CONFIG.transitionIn} ease-out`;
@@ -330,9 +335,28 @@ const setupTiltListeners = (wrapper, cardInner, front) => {
 
   const handleLeave = () => {
     isHovering = false;
-    wrapper.classList.remove('tilting');
-    resetTilt(wrapper, cardInner, front);
+    if (!isRevealed) {
+      wrapper.classList.remove('tilting');
+      resetTilt(wrapper, cardInner, front);
+    }
   };
+
+  // Watch for reveal to disable tilt immediately
+  const observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      if (mutation.attributeName === 'class' && wrapper.classList.contains('revealed')) {
+        isRevealed = true;
+        isHovering = false;
+        wrapper.classList.remove('tilting');
+        // Clear any inline transforms so CSS flip works
+        cardInner.style.transition = '';
+        cardInner.style.transform = '';
+        observer.disconnect();
+        break;
+      }
+    }
+  });
+  observer.observe(wrapper, { attributes: true, attributeFilter: ['class'] });
 
   // Mouse events
   wrapper.addEventListener('mouseenter', handleEnter);

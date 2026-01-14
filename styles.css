@@ -6441,6 +6441,7 @@ button {
   height: 190px;
   perspective: 1000px;
   cursor: pointer;
+  position: relative; /* Contain the rarity glow */
 }
 
 .pack-card-inner {
@@ -6808,6 +6809,33 @@ button {
 
 .pack-card.tilting .pack-card-shine {
   opacity: 1;
+}
+
+/* ============================================================================
+   REVEALED CARD INSPECT HOVER EFFECT
+   ============================================================================ */
+
+/* Revealed cards can be hovered to inspect (scale up ~50%) */
+.pack-card.revealed {
+  cursor: zoom-in;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), z-index 0s;
+}
+
+.pack-card.revealed:hover {
+  transform: scale(1.5);
+  z-index: 100;
+}
+
+/* Ensure the flip transform is preserved when hovering */
+.pack-card.revealed:hover .pack-card-inner {
+  transform: rotateY(180deg);
+}
+
+/* Add subtle shadow lift when inspecting */
+.pack-card.revealed:hover .pack-card-back {
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.4),
+    0 0 30px rgba(0, 0, 0, 0.2);
 }
 
 /* ============================================================================
