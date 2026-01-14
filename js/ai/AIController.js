@@ -756,6 +756,9 @@ export class AIController {
       // Execute the attack (with reaction window for opponent's traps)
       await this.executeAttack(state, attacker, target, callbacks);
 
+      // Clean up destroyed creatures before next attack
+      cleanupDestroyed(state);
+
       // Notify callbacks
       callbacks.onAttack?.(attacker, target);
 
@@ -879,6 +882,7 @@ export class AIController {
 
     const availableAttackers = player.field.filter(card => {
       if (!card || !isCreatureCard(card)) return false;
+      if (card.currentHp <= 0) return false; // Dead creatures can't attack
       if (card.hasAttacked) return false;
       if (isPassive(card)) return false;
       if (isHarmless(card)) return false;
