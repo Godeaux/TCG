@@ -47,6 +47,7 @@ export {
   renderDeckBuilderOverlay,
   renderCatalogBuilderOverlay,
   resetDeckBuilderState,
+  resetDecksLoaded,
 } from './DeckBuilderOverlay.js';
 
 // ============================================================================
@@ -87,6 +88,7 @@ export {
   renderProfileOverlay,
   hideProfileOverlay,
   resetCollectionFilter,
+  resetProfileState,
   showFriendProfile,
   hideFriendProfile,
 } from './ProfileOverlay.js';

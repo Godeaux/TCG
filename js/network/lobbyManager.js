@@ -14,6 +14,9 @@
 
 import { isOnlineMode, isAIMode, isAIvsAIMode } from '../state/selectors.js';
 import { deckCatalogs } from '../cards/index.js';
+import { resetDecksLoaded } from '../ui/overlays/DeckBuilderOverlay.js';
+import { resetProfileState } from '../ui/overlays/ProfileOverlay.js';
+import { resetPresenceState } from './presenceManager.js';
 import {
   setLobbyChannel,
   sendLobbyBroadcast,
@@ -491,10 +494,17 @@ export const handleLoginSubmit = async (state, username, pin) => {
   try {
     const api = await loadSupabaseApi(state);
     const profile = await api.loginWithPin(username, pin);
+    // Reset all user-specific state before loading new user data
+    decksLoaded = false;
+    cardsLoaded = false;
+    cardsLoading = false;
+    resetDecksLoaded();
+    resetProfileState();
+    await resetPresenceState();
+
     state.menu.profile = profile;
     state.players[0].name = profile.username;
     state.players[0].nameStyle = profile.name_style || {};
-    decksLoaded = false;
     ensureDecksLoaded(state, { force: true });
     setMenuStage(state, 'main');
 
@@ -526,10 +536,18 @@ export const handleCreateAccount = async (state, username, pin) => {
   try {
     const api = await loadSupabaseApi(state);
     const profile = await api.createAccountWithPin(username, pin);
+
+    // Reset all user-specific state before loading new user data
+    decksLoaded = false;
+    cardsLoaded = false;
+    cardsLoading = false;
+    resetDecksLoaded();
+    resetProfileState();
+    await resetPresenceState();
+
     state.menu.profile = profile;
     state.players[0].name = profile.username;
     state.players[0].nameStyle = profile.name_style || {};
-    decksLoaded = false;
     ensureDecksLoaded(state, { force: true });
     setMenuStage(state, 'main');
 
@@ -566,9 +584,16 @@ export const handleLogout = async (state) => {
     state.menu.lobby = null;
     state.menu.existingLobby = null;
 
-    // Reset loaded flags
+    // Reset all loaded flags
     profileLoaded = false;
     decksLoaded = false;
+    cardsLoaded = false;
+    cardsLoading = false;
+
+    // Reset all user-specific module state
+    resetDecksLoaded();
+    resetProfileState();
+    await resetPresenceState();
 
     // Stop session validation
     stopSessionValidation();

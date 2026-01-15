@@ -82,7 +82,15 @@ export {
   renderDeckBuilderOverlay,
   renderCatalogBuilderOverlay,
   resetDeckBuilderState,
+  resetDecksLoaded,
 } from './overlays/DeckBuilderOverlay.js';
+
+export {
+  // Profile overlay
+  renderProfileOverlay,
+  hideProfileOverlay,
+  resetProfileState,
+} from './overlays/ProfileOverlay.js';
 
 export {
   // Pass overlay (local mode)

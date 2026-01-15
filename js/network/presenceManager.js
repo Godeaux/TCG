@@ -114,6 +114,15 @@ export const cleanupPresence = async () => {
 };
 
 /**
+ * Reset all presence state (for use during login/logout)
+ * This ensures a clean slate when switching accounts
+ */
+export const resetPresenceState = async () => {
+  await cleanupPresence();
+  onlineStatusCallbacks.clear();
+};
+
+/**
  * Get the current user's profile ID
  * @returns {string|null} Current profile ID or null
  */

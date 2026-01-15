@@ -949,6 +949,42 @@ export const hideProfileOverlay = () => {
 };
 
 /**
+ * Reset all profile-related state (for use during login/logout)
+ * This ensures a clean slate when switching accounts
+ */
+export const resetProfileState = () => {
+  // Reset name style state
+  currentNameStyle = { effect: null, font: null, color: null };
+
+  // Reset friends data
+  friendsData = { incoming: [], outgoing: [], accepted: [] };
+
+  // Cleanup friends subscription
+  if (friendsChannel) {
+    unsubscribeFromFriendships(friendsChannel);
+    friendsChannel = null;
+  }
+
+  // Cleanup online status subscription
+  if (onlineUnsubscribe) {
+    onlineUnsubscribe();
+    onlineUnsubscribe = null;
+  }
+
+  // Clear online users cache
+  onlineUsers = new Set();
+
+  // Reset tab state
+  currentTab = 'career';
+
+  // Reset callbacks
+  currentCallbacks = null;
+
+  // Reset filter
+  currentFilter = 'rarity';
+};
+
+/**
  * Reset the collection filter to default
  */
 export const resetCollectionFilter = () => {
