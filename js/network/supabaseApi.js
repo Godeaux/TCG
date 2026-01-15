@@ -145,21 +145,19 @@ export const loginWithPin = async (username, pin) => {
   const session = await ensureSession();
   const authUserId = session.user.id;
 
-  const { data, error: updateError } = await supabase
+  // Update without expecting return data - RLS policies may prevent SELECT on the updated row
+  // until the new auth_id is set, causing ".single()" to fail with "Cannot coerce to single JSON object"
+  const { error: updateError } = await supabase
     .from("profiles")
     .update({ current_auth_id: authUserId })
-    .eq("id", profile.id)
-    .select("id, username")
-    .single();
+    .eq("id", profile.id);
 
   if (updateError) {
     throw updateError;
   }
-  if (!data) {
-    throw new Error("Login failed. Please try again.");
-  }
 
-  return data;
+  // Return the profile data we already verified during PIN check
+  return { id: profile.id, username: profile.username };
 };
 
 /**
