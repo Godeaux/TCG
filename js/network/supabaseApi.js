@@ -157,7 +157,7 @@ export const loginWithPin = async (username, pin) => {
   }
 
   // Return the complete profile data (excluding sensitive fields)
-  return {
+  const returnProfile = {
     id: profile.id,
     username: profile.username,
     packs: profile.packs,
@@ -165,6 +165,9 @@ export const loginWithPin = async (username, pin) => {
     matches: profile.matches,
     name_style: profile.name_style,
   };
+  console.log('[loginWithPin] Returning profile:', returnProfile);
+  console.log('[loginWithPin] Profile ID:', returnProfile.id);
+  return returnProfile;
 };
 
 /**
@@ -382,18 +385,25 @@ export const saveDeck = async ({ ownerId, name, deck }) => {
 };
 
 export const fetchDecksByOwner = async ({ ownerId }) => {
+  console.log('[fetchDecksByOwner] Called with ownerId:', ownerId);
   if (!ownerId) {
+    console.error('[fetchDecksByOwner] ERROR: Missing owner id');
     throw new Error("Missing owner id.");
   }
+  console.log('[fetchDecksByOwner] Querying supabase for decks...');
   const { data, error } = await supabase
     .from("decks")
     .select("id, name, deck_json, created_at")
     .eq("owner_id", ownerId)
     .order("created_at", { ascending: true });
 
+  console.log('[fetchDecksByOwner] Supabase response - data:', data, 'error:', error);
+
   if (error) {
+    console.error('[fetchDecksByOwner] Supabase error:', error);
     throw error;
   }
+  console.log('[fetchDecksByOwner] Returning', (data ?? []).length, 'decks');
   return data ?? [];
 };
 
