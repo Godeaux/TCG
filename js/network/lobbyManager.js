@@ -496,6 +496,7 @@ export const handleLoginSubmit = async (state, username, pin) => {
     const profile = await api.loginWithPin(username, pin);
     // Reset all user-specific state before loading new user data
     decksLoaded = false;
+    decksLoading = false;
     cardsLoaded = false;
     cardsLoading = false;
     resetDecksLoaded();
@@ -541,6 +542,7 @@ export const handleCreateAccount = async (state, username, pin) => {
 
     // Reset all user-specific state before loading new user data
     decksLoaded = false;
+    decksLoading = false;
     cardsLoaded = false;
     cardsLoading = false;
     resetDecksLoaded();
