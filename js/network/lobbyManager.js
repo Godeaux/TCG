@@ -506,6 +506,8 @@ export const handleLoginSubmit = async (state, username, pin) => {
     state.players[0].name = profile.username;
     state.players[0].nameStyle = profile.name_style || {};
     ensureDecksLoaded(state, { force: true });
+    // Load card collection from database
+    ensurePlayerCardsLoaded(state);
     setMenuStage(state, 'main');
 
     // Start session validation to detect if kicked by another login
@@ -549,6 +551,8 @@ export const handleCreateAccount = async (state, username, pin) => {
     state.players[0].name = profile.username;
     state.players[0].nameStyle = profile.name_style || {};
     ensureDecksLoaded(state, { force: true });
+    // Load card collection from database (empty for new accounts, but ensures state is initialized)
+    ensurePlayerCardsLoaded(state);
     setMenuStage(state, 'main');
 
     // Start session validation to detect if kicked by another login
