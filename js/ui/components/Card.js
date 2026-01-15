@@ -54,6 +54,106 @@ export const isCardLike = (value) =>
   typeof value.id === "string";
 
 // ============================================================================
+// SVG EFFECT TEXT RENDERING
+// ============================================================================
+
+/**
+ * Wrap text into lines based on character count (word-boundary aware)
+ * @param {string} text - Text to wrap
+ * @param {number} maxChars - Maximum characters per line
+ * @returns {string[]} Array of lines
+ */
+const wrapTextToLines = (text, maxChars = 26) => {
+  if (!text) return [];
+
+  const words = text.split(' ');
+  const lines = [];
+  let currentLine = '';
+
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    if (testLine.length <= maxChars) {
+      currentLine = testLine;
+    } else {
+      if (currentLine) lines.push(currentLine);
+      // Handle words longer than maxChars
+      if (word.length > maxChars) {
+        lines.push(word);
+        currentLine = '';
+      } else {
+        currentLine = word;
+      }
+    }
+  }
+  if (currentLine) lines.push(currentLine);
+  return lines;
+};
+
+/**
+ * Render effect text as SVG that scales perfectly with card
+ * @param {string} effectText - The effect text to render
+ * @returns {string} SVG markup
+ */
+const renderEffectSvg = (effectText) => {
+  if (!effectText) return '';
+
+  // Shorter lines = larger text relative to card width
+  const lines = wrapTextToLines(effectText, 22);
+
+  // Fixed viewBox dimensions - matches typical card effect area aspect ratio
+  const viewBoxWidth = 100;
+  const viewBoxHeight = 55;
+
+  // Scale font size based on line count to fill available space
+  const lineCount = lines.length;
+  let fontSize, lineHeight, startY;
+
+  if (lineCount <= 1) {
+    fontSize = 16;
+    lineHeight = 18;
+    startY = 32; // Center single line
+  } else if (lineCount <= 2) {
+    fontSize = 14;
+    lineHeight = 16;
+    startY = 20;
+  } else if (lineCount <= 3) {
+    fontSize = 12;
+    lineHeight = 14;
+    startY = 14;
+  } else if (lineCount <= 4) {
+    fontSize = 11;
+    lineHeight = 13;
+    startY = 10;
+  } else {
+    fontSize = 10;
+    lineHeight = 11;
+    startY = 6;
+  }
+
+  // Create text elements for each line, centered
+  const textElements = lines.map((line, i) => {
+    // Escape HTML entities
+    const escapedLine = line
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+
+    return `<text x="50%" y="${startY + i * lineHeight}" text-anchor="middle" font-size="${fontSize}" fill="#a0aec0">${escapedLine}</text>`;
+  }).join('');
+
+  // xMidYMid meet: center content, scale uniformly to fit
+  return `
+    <svg class="card-effect-svg" viewBox="0 0 ${viewBoxWidth} ${viewBoxHeight}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+      <style>
+        text { font-family: system-ui, -apple-system, sans-serif; }
+      </style>
+      ${textElements}
+    </svg>
+  `;
+};
+
+// ============================================================================
 // CARD STATS RENDERING
 // ============================================================================
 
@@ -318,8 +418,9 @@ export const renderCardInnerHtml = (card, { showEffectSummary, useBaseStats } = 
     : "";
 
   const effectSummary = showEffectSummary ? getCardEffectSummary(card) : "";
+  // Use SVG for effect text - scales perfectly with card size
   const effectRow = effectSummary
-    ? `<div class="card-effect">${effectSummary}</div>`
+    ? `<div class="card-effect">${renderEffectSvg(effectSummary)}</div>`
     : "";
 
   // Check if card has an image (and hasn't failed to load before)

@@ -3118,6 +3118,30 @@ const setupSurrenderButton = () => {
     });
   }
 
+  // Mobile: tap own player name to surrender
+  const playerBadges = document.querySelectorAll('.player-badge');
+  playerBadges.forEach((badge) => {
+    const playerName = badge.querySelector('.player-name');
+    if (playerName) {
+      playerName.addEventListener('click', (e) => {
+        // Only trigger on mobile portrait
+        if (!window.matchMedia('(max-width: 767px) and (orientation: portrait)').matches) {
+          return;
+        }
+        if (!latestState) return;
+
+        const badgePlayerIndex = parseInt(badge.dataset.playerIndex, 10);
+        const localIndex = getLocalPlayerIndex(latestState);
+
+        // Only show surrender if tapping own name
+        if (badgePlayerIndex === localIndex) {
+          e.stopPropagation();
+          showSurrenderDialog();
+        }
+      });
+    }
+  });
+
   if (surrenderYes) {
     surrenderYes.addEventListener('click', () => {
       executeSurrender();

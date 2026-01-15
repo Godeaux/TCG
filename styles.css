@@ -2245,7 +2245,7 @@ button {
   display: flex;
   flex-wrap: wrap;
   gap: 2px;
-  font-size: 10px;
+  font-size: 15px;
   color: var(--text-primary);
   justify-content: center;
   text-align: center;
@@ -2272,6 +2272,19 @@ button {
   color: var(--text-secondary);
   line-height: 1.2;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* SVG effect text - scales perfectly with card */
+.card-effect-svg {
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
 }
 
 /* Image container: ~50% of card height */
@@ -2370,9 +2383,9 @@ button {
   color: var(--text-primary);
 }
 
-/* Content area: ~32% of card height (stats + keywords + effect) */
+/* Content area: ~42% of card height (stats + keywords + effect) */
 .card-content-area {
-  flex: 0 0 32%;
+  flex: 0 0 42%;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -2380,26 +2393,27 @@ button {
 }
 
 .card-content-area .card-stats-row {
-  flex: 0 0 30%; /* ~10% of card = 30% of content area */
+  flex: 0 0 auto; /* Fixed height based on content */
+  min-height: 20px;
+  max-height: 24px;
 }
 
 .card-content-area .card-keywords {
-  flex: 0 0 20%; /* Keywords section */
+  flex: 0 0 auto; /* Fixed height based on content */
   padding: 2px 4px;
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 16px;
 }
 
 .card-content-area .card-effect {
-  flex: 1 1 50%; /* Effect takes remaining space */
+  flex: 1 1 auto; /* Effect takes ALL remaining space */
   overflow: hidden;
   padding: 2px 4px;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3; /* Fallback: max 3 lines, then ellipsis */
-  line-clamp: 3;
-  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   word-wrap: break-word;
   overflow-wrap: break-word;
@@ -4330,6 +4344,82 @@ button {
 
 /* Mobile portrait mode - tab-based layout */
 @media (max-width: 767px) and (orientation: portrait) {
+  /* Compact top bar for mobile portrait */
+  .top-bar {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  .player-badge {
+    padding: 4px 8px;
+    gap: 6px;
+  }
+
+  .player-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .player-info.right {
+    flex-direction: column;
+    align-items: flex-end;
+    position: relative;
+  }
+
+  /* Position AI speed toggle to left of name on mobile */
+  .player-info.right .ai-speed-toggle {
+    position: absolute;
+    left: -20px;
+    top: 0;
+    margin: 0;
+    font-size: 14px;
+  }
+
+  .player-name {
+    font-size: 12px;
+  }
+
+  .player-stats {
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  .turn-badge {
+    padding: 4px 10px;
+    min-width: 70px;
+  }
+
+  .turn-number {
+    font-size: 12px;
+  }
+
+  .phase-label {
+    font-size: 10px;
+  }
+
+  /* Hide surrender button on mobile - tap player name instead */
+  .surrender-btn {
+    display: none;
+  }
+
+  .emote-toggle {
+    width: 28px;
+    height: 28px;
+  }
+
+  .emote-toggle-left {
+    margin-left: 4px;
+  }
+
+  .emote-toggle-right {
+    margin-right: 4px;
+  }
+
+  .emote-toggle-icon {
+    font-size: 0.9rem;
+  }
+
   .battlefield-layout-three-column {
     grid-template-columns: 1fr;
     overflow: hidden;
@@ -4367,7 +4457,7 @@ button {
   }
 
   .battlefield-layout {
-    grid-template-rows: minmax(0, 1.5fr) minmax(140px, 1fr); /* Give more space to hand on mobile */
+    grid-template-rows: auto minmax(0, 0.9fr) auto; /* Slightly less field space to give room to hand */
     min-height: 0;
   }
 
@@ -4383,12 +4473,12 @@ button {
 
   .hand-panel {
     /* Fixed height for mobile portrait - taller to accommodate touch interaction */
-    height: 180px;
-    min-height: 180px;
-    max-height: 180px;
+    height: 195px;
+    min-height: 195px;
+    max-height: 195px;
     overflow: visible; /* Allow cards to extend upward when focused */
-    padding-bottom: calc(var(--safe-bottom) + 8px); /* Account for iOS home indicator */
-    padding-top: 12px; /* Space for focused card to lift into */
+    padding-bottom: calc(var(--safe-bottom) + 20px); /* Extra padding to clear browser chrome */
+    padding-top: 8px; /* Space for focused card to lift into */
   }
 
   .hand-panel.is-dragging {
@@ -4435,6 +4525,86 @@ button {
   .hand-grid .card.hand-focus {
     transform: translateY(-35px) scale(calc(1.4 * var(--mobile-card-scale, 1))) rotate(0deg);
     z-index: 100;
+  }
+
+  /* Smaller card text for hand cards on mobile */
+  .hand-grid .card .card-name {
+    font-size: 9px !important;
+    padding-top: 6px !important; /* Clear the colored header stripe */
+    flex: 0 0 auto !important; /* Allow natural height instead of fixed % */
+    min-height: 18px;
+  }
+
+  /* Reduce color stripe height on mobile hand cards */
+  .hand-grid .card::before {
+    height: 3px;
+  }
+
+  .hand-grid .card .card-header {
+    padding: 3px 4px !important;
+  }
+
+  /* SVG effect text scales automatically - no font-size override needed */
+  .hand-grid .card .card-effect {
+    padding: 0;
+  }
+
+  .hand-grid .card .card-stat {
+    font-size: 9px !important;
+    padding: 1px 3px;
+  }
+
+  .hand-grid .card .card-footer {
+    padding: 3px 4px !important;
+    gap: 2px;
+  }
+
+  .hand-grid .card .card-stat-box {
+    padding: 2px 4px !important;
+    gap: 2px;
+  }
+
+  .hand-grid .card .card-stat-box .stat-emoji {
+    font-size: 10px !important;
+  }
+
+  .hand-grid .card .card-stat-box .stat-value {
+    font-size: 10px !important;
+  }
+
+  .hand-grid .card .card-text-area {
+    font-size: 7px !important;
+    line-height: 1.1;
+  }
+
+  .hand-grid .card .card-keywords {
+    font-size: 9px !important;
+    gap: 1px;
+  }
+
+  .hand-grid .card .card-keywords span {
+    padding: 0 1px;
+  }
+
+  /* Mobile hand cards: use percentages instead of fixed pixels */
+  .hand-grid .card .card-content-area .card-stats-row {
+    flex: 0 0 22% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+
+  .hand-grid .card .card-content-area .card-keywords {
+    flex: 0 0 18% !important;
+    min-height: 0 !important;
+  }
+
+  .hand-grid .card .card-content-area .card-effect {
+    flex: 1 1 60% !important;
+  }
+
+  .hand-grid .card .card-actions button {
+    font-size: 9px !important;
+    padding: 2px 4px;
   }
 
   .card-inspector-panel,
