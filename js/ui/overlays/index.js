@@ -88,6 +88,7 @@ export {
   renderProfileOverlay,
   hideProfileOverlay,
   resetCollectionFilter,
+  resetProfileState,
   showFriendProfile,
   hideFriendProfile,
 } from './ProfileOverlay.js';

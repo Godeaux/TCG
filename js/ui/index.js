@@ -86,6 +86,13 @@ export {
 } from './overlays/DeckBuilderOverlay.js';
 
 export {
+  // Profile overlay
+  renderProfileOverlay,
+  hideProfileOverlay,
+  resetProfileState,
+} from './overlays/ProfileOverlay.js';
+
+export {
   // Pass overlay (local mode)
   renderPassOverlay,
   hidePassOverlay,
