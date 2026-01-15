@@ -590,28 +590,16 @@ const updateDeckTabs = (state) => {
  * Render deck load panel (for loading saved decks during deck building)
  */
 const renderDeckLoadPanel = (state, playerIndex, callbacks) => {
-  console.log('[renderDeckLoadPanel] Called');
-  console.log('[renderDeckLoadPanel] state.menu.profile:', state.menu?.profile);
-  console.log('[renderDeckLoadPanel] state.menu.decks before ensureDecksLoaded:', state.menu.decks);
-
   const elements = getDeckElements();
   const { deckLoadList } = elements;
 
   if (!deckLoadList) {
-    console.log('[renderDeckLoadPanel] EARLY RETURN: No deckLoadList element');
     return;
   }
-  console.log('[renderDeckLoadPanel] Calling ensureDecksLoaded...');
   ensureDecksLoaded(state);
-  console.log('[renderDeckLoadPanel] After ensureDecksLoaded, state.menu.decks:', state.menu.decks);
-
   clearPanel(deckLoadList);
   const decks = (state.menu.decks ?? []).slice(0, 3);
-  console.log('[renderDeckLoadPanel] Decks to render:', decks);
-  console.log('[renderDeckLoadPanel] Number of decks:', decks.length);
-
   if (decks.length === 0) {
-    console.log('[renderDeckLoadPanel] No decks found, showing empty message');
     const empty = document.createElement("div");
     empty.className = "deck-slot";
     empty.textContent = "No saved decks available. Build decks in Catalog.";
@@ -656,34 +644,22 @@ const renderDeckLoadPanel = (state, playerIndex, callbacks) => {
  * Render deck manage panel (for catalog builder)
  */
 const renderDeckManagePanel = (state, callbacks) => {
-  console.log('[renderDeckManagePanel] Called');
-  console.log('[renderDeckManagePanel] state.menu.profile:', state.menu?.profile);
-  console.log('[renderDeckManagePanel] state.menu.decks before ensureDecksLoaded:', state.menu.decks);
-
   const elements = getDeckElements();
   const { deckManageList } = elements;
 
   if (!deckManageList) {
-    console.log('[renderDeckManagePanel] EARLY RETURN: No deckManageList element');
     return;
   }
   clearPanel(deckManageList);
   if (!state.menu.profile) {
-    console.log('[renderDeckManagePanel] No profile, showing login message');
     const message = document.createElement("div");
     message.className = "deck-slot";
     message.textContent = "Login to manage decks.";
     deckManageList.appendChild(message);
     return;
   }
-  console.log('[renderDeckManagePanel] Calling ensureDecksLoaded...');
   ensureDecksLoaded(state);
-  console.log('[renderDeckManagePanel] After ensureDecksLoaded, state.menu.decks:', state.menu.decks);
-
   const decks = state.menu.decks ?? [];
-  console.log('[renderDeckManagePanel] Decks to use for slots:', decks);
-  console.log('[renderDeckManagePanel] Number of decks:', decks.length);
-
   const slots = Array.from({ length: 10 }, (_, index) => decks[index] ?? null);
 
   const newDeckButton = document.createElement("button");

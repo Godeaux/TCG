@@ -144,38 +144,19 @@ export const loginWithPin = async (username, pin) => {
   // Claim the profile with our auth session (force-claim, kicking any existing session)
   const session = await ensureSession();
   const authUserId = session.user.id;
-  console.log('[loginWithPin] Current auth session UID:', authUserId);
-  console.log('[loginWithPin] Profile current_auth_id before update:', profile.current_auth_id);
-  console.log('[loginWithPin] Updating current_auth_id to:', authUserId);
 
-  // Update without expecting return data - RLS policies may prevent SELECT on the updated row
-  // until the new auth_id is set, causing ".single()" to fail with "Cannot coerce to single JSON object"
+  // Update current_auth_id to claim this profile
   const { error: updateError } = await supabase
     .from("profiles")
     .update({ current_auth_id: authUserId })
     .eq("id", profile.id);
 
   if (updateError) {
-    console.error('[loginWithPin] Failed to update current_auth_id:', updateError);
     throw updateError;
-  }
-  console.log('[loginWithPin] current_auth_id update succeeded (no error returned)');
-
-  // Verify the update actually worked by fetching the profile again
-  const { data: verifyProfile, error: verifyError } = await supabase
-    .from("profiles")
-    .select("id, current_auth_id")
-    .eq("id", profile.id)
-    .maybeSingle();
-
-  console.log('[loginWithPin] Verification fetch - profile:', verifyProfile, 'error:', verifyError);
-  if (verifyProfile) {
-    console.log('[loginWithPin] Verified current_auth_id in DB:', verifyProfile.current_auth_id);
-    console.log('[loginWithPin] Does it match session UID?', verifyProfile.current_auth_id === authUserId);
   }
 
   // Return the complete profile data (excluding sensitive fields)
-  const returnProfile = {
+  return {
     id: profile.id,
     username: profile.username,
     packs: profile.packs,
@@ -183,9 +164,6 @@ export const loginWithPin = async (username, pin) => {
     matches: profile.matches,
     name_style: profile.name_style,
   };
-  console.log('[loginWithPin] Returning profile:', returnProfile);
-  console.log('[loginWithPin] Profile ID:', returnProfile.id);
-  return returnProfile;
 };
 
 /**
@@ -403,31 +381,18 @@ export const saveDeck = async ({ ownerId, name, deck }) => {
 };
 
 export const fetchDecksByOwner = async ({ ownerId }) => {
-  console.log('[fetchDecksByOwner] Called with ownerId:', ownerId);
-
-  // Log current session UID for debugging RLS issues
-  const { data: sessionData } = await supabase.auth.getSession();
-  const currentAuthUid = sessionData?.session?.user?.id;
-  console.log('[fetchDecksByOwner] Current auth.uid():', currentAuthUid);
-
   if (!ownerId) {
-    console.error('[fetchDecksByOwner] ERROR: Missing owner id');
     throw new Error("Missing owner id.");
   }
-  console.log('[fetchDecksByOwner] Querying supabase for decks...');
   const { data, error } = await supabase
     .from("decks")
     .select("id, name, deck_json, created_at")
     .eq("owner_id", ownerId)
     .order("created_at", { ascending: true });
 
-  console.log('[fetchDecksByOwner] Supabase response - data:', data, 'error:', error);
-
   if (error) {
-    console.error('[fetchDecksByOwner] Supabase error:', error);
     throw error;
   }
-  console.log('[fetchDecksByOwner] Returning', (data ?? []).length, 'decks');
   return data ?? [];
 };
 

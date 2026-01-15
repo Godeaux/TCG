@@ -210,46 +210,33 @@ export const mapDeckIdsToCards = (deckId, deckIds = []) => {
  * Ensure user profile is loaded
  */
 export const ensureProfileLoaded = async (state) => {
-  console.log('[ensureProfileLoaded] Called, profileLoaded flag:', profileLoaded);
   if (profileLoaded) {
-    console.log('[ensureProfileLoaded] EARLY RETURN: Already loaded');
     return;
   }
   profileLoaded = true;
-  console.log('[ensureProfileLoaded] Starting profile fetch...');
   applyMenuLoading(state, true);
   callbacks.onUpdate?.();
 
   try {
     const api = await loadSupabaseApi(state);
     const profile = await api.fetchProfile();
-    console.log('[ensureProfileLoaded] fetchProfile returned:', profile);
     if (profile) {
-      console.log('[ensureProfileLoaded] Profile ID:', profile.id);
       state.menu.profile = profile;
       const localIndex = getLocalPlayerIndex(state);
       state.players[localIndex].name = profile.username;
       state.players[localIndex].nameStyle = profile.name_style || {};
-      console.log('[ensureProfileLoaded] About to call ensureDecksLoaded (NO force flag)');
-      console.log('[ensureProfileLoaded] Current decksLoaded:', decksLoaded, 'decksLoading:', decksLoading);
       ensureDecksLoaded(state);
-      console.log('[ensureProfileLoaded] ensureDecksLoaded called, now calling ensurePlayerCardsLoaded');
-      // Load card collection from database
       ensurePlayerCardsLoaded(state);
-      // Start session validation to detect if kicked by another login
       startSessionValidation(state);
     } else {
-      console.log('[ensureProfileLoaded] No profile returned, setting to null');
       state.menu.profile = null;
     }
   } catch (error) {
-    console.error('[ensureProfileLoaded] ERROR:', error);
     state.menu.profile = null;
     setMenuError(state, error.message || 'Unable to load profile.');
   } finally {
     applyMenuLoading(state, false);
     callbacks.onUpdate?.();
-    console.log('[ensureProfileLoaded] Complete');
   }
 };
 
@@ -257,49 +244,31 @@ export const ensureProfileLoaded = async (state) => {
  * Ensure saved decks are loaded from database
  */
 export const ensureDecksLoaded = async (state, { force = false } = {}) => {
-  console.log('[ensureDecksLoaded] Called with force:', force);
-  console.log('[ensureDecksLoaded] Current state - decksLoaded:', decksLoaded, 'decksLoading:', decksLoading);
-  console.log('[ensureDecksLoaded] Profile exists:', !!state.menu?.profile);
-
   if (!state.menu?.profile) {
-    console.log('[ensureDecksLoaded] EARLY RETURN: No profile');
     return;
   }
   if (decksLoading) {
-    console.log('[ensureDecksLoaded] EARLY RETURN: Already loading');
     return;
   }
   if (decksLoaded && !force) {
-    console.log('[ensureDecksLoaded] EARLY RETURN: Already loaded and not forced');
     return;
   }
-
-  console.log('[ensureDecksLoaded] Starting deck fetch for profile id:', state.menu.profile.id);
   decksLoading = true;
 
   try {
     const api = await loadSupabaseApi(state);
-    console.log('[ensureDecksLoaded] API loaded, calling fetchDecksByOwner...');
     const decks = await api.fetchDecksByOwner({ ownerId: state.menu.profile.id });
-    console.log('[ensureDecksLoaded] Fetched decks from DB:', decks);
-    console.log('[ensureDecksLoaded] Number of decks returned:', decks?.length ?? 0);
-
     state.menu.decks = decks.map((deck) => ({
       id: deck.id,
       name: deck.name,
       deck: deck.deck_json ?? [],
       createdAt: deck.created_at ?? null,
     }));
-    console.log('[ensureDecksLoaded] Assigned to state.menu.decks:', state.menu.decks);
     decksLoaded = true;
-    console.log('[ensureDecksLoaded] SUCCESS - decksLoaded set to true');
   } catch (error) {
-    console.error('[ensureDecksLoaded] ERROR:', error);
     setMenuError(state, error.message || 'Unable to load decks.');
   } finally {
     decksLoading = false;
-    console.log('[ensureDecksLoaded] Finally block - decksLoading set to false, calling callbacks.onUpdate');
-    console.log('[ensureDecksLoaded] callbacks.onUpdate exists:', !!callbacks.onUpdate);
     callbacks.onUpdate?.();
   }
 };
@@ -346,7 +315,6 @@ export const ensurePlayerCardsLoaded = async (state) => {
     state.menu.profile.ownedCards = ownedCardsMap;
 
     cardsLoaded = true;
-    console.log(`Loaded ${cards.length} cards from database`);
   } catch (error) {
     console.error('Failed to load player cards:', error);
   } finally {
@@ -516,47 +484,31 @@ export const updateLobbyPlayerNames = async (state, lobby = state.menu?.lobby) =
  * @param {string} pin - PIN for the account
  */
 export const handleLoginSubmit = async (state, username, pin) => {
-  console.log('[handleLoginSubmit] Starting login for user:', username);
   applyMenuLoading(state, true);
   setMenuError(state, null);
   callbacks.onUpdate?.();
 
   try {
     const api = await loadSupabaseApi(state);
-    console.log('[handleLoginSubmit] Calling loginWithPin...');
     const profile = await api.loginWithPin(username, pin);
-    console.log('[handleLoginSubmit] Login successful, profile:', profile);
-    console.log('[handleLoginSubmit] Profile ID:', profile?.id);
 
     // Reset all user-specific state before loading new user data
-    console.log('[handleLoginSubmit] Resetting flags - before: decksLoaded=', decksLoaded, 'decksLoading=', decksLoading);
     decksLoaded = false;
     decksLoading = false;
     cardsLoaded = false;
     cardsLoading = false;
-    console.log('[handleLoginSubmit] Flags reset - after: decksLoaded=', decksLoaded, 'decksLoading=', decksLoading);
 
     resetDecksLoaded();
     resetProfileState();
     await resetPresenceState();
 
-    console.log('[handleLoginSubmit] Setting state.menu.profile...');
     state.menu.profile = profile;
-    console.log('[handleLoginSubmit] state.menu.profile set to:', state.menu.profile);
-    console.log('[handleLoginSubmit] state.menu.profile.id:', state.menu.profile?.id);
-
     state.players[0].name = profile.username;
     state.players[0].nameStyle = profile.name_style || {};
 
-    console.log('[handleLoginSubmit] About to call ensureDecksLoaded with force: true');
-    console.log('[handleLoginSubmit] Current state.menu.decks before call:', state.menu.decks);
     ensureDecksLoaded(state, { force: true });
-    console.log('[handleLoginSubmit] ensureDecksLoaded called (async, not awaited)');
-
-    // Load card collection from database
     ensurePlayerCardsLoaded(state);
     setMenuStage(state, 'main');
-    console.log('[handleLoginSubmit] Menu stage set to main');
 
     // Start session validation to detect if kicked by another login
     startSessionValidation(state);
