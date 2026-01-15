@@ -122,10 +122,10 @@ export const loginWithPin = async (username, pin) => {
   // (needed for RLS policies on new browsers/devices)
   await ensureSession();
 
-  // Find the profile by username
+  // Find the profile by username (include all profile fields for complete data)
   const { data: profile, error: fetchError } = await supabase
     .from("profiles")
-    .select("id, username, pin, current_auth_id")
+    .select("id, username, pin, current_auth_id, packs, stats, matches, name_style")
     .eq("username", trimmedUsername)
     .maybeSingle();
 
@@ -156,8 +156,15 @@ export const loginWithPin = async (username, pin) => {
     throw updateError;
   }
 
-  // Return the profile data we already verified during PIN check
-  return { id: profile.id, username: profile.username };
+  // Return the complete profile data (excluding sensitive fields)
+  return {
+    id: profile.id,
+    username: profile.username,
+    packs: profile.packs,
+    stats: profile.stats,
+    matches: profile.matches,
+    name_style: profile.name_style,
+  };
 };
 
 /**
