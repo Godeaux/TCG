@@ -3588,10 +3588,7 @@ export const renderGame = (state, callbacks = {}) => {
         callbacks.onUpdate?.();
       }
     },
-    onCardClick: (card, rarity) => {
-      console.log("Card clicked:", card.name, "Rarity:", rarity);
-      // TODO: Show card upgrade popup
-    },
+    onCardClick: null,
     onStyleChange: (newStyle) => {
       // Update the profile's name_style in state
       if (state.menu?.profile) {

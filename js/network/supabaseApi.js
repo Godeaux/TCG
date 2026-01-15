@@ -141,12 +141,7 @@ export const loginWithPin = async (username, pin) => {
     throw new Error("Incorrect PIN.");
   }
 
-  // Check if account is currently logged in elsewhere
-  if (profile.current_auth_id) {
-    throw new Error("Account is currently logged in elsewhere. Log out from the other device first.");
-  }
-
-  // Claim the profile with our auth session
+  // Claim the profile with our auth session (force-claim, kicking any existing session)
   const session = await ensureSession();
   const authUserId = session.user.id;
 
@@ -154,7 +149,6 @@ export const loginWithPin = async (username, pin) => {
     .from("profiles")
     .update({ current_auth_id: authUserId })
     .eq("id", profile.id)
-    .is("current_auth_id", null) // Only succeed if still logged out
     .select("id, username")
     .single();
 
@@ -162,7 +156,7 @@ export const loginWithPin = async (username, pin) => {
     throw updateError;
   }
   if (!data) {
-    throw new Error("Login failed. Account may have been claimed by another device.");
+    throw new Error("Login failed. Please try again.");
   }
 
   return data;
@@ -190,6 +184,39 @@ export const logoutProfile = async () => {
   }
 
   return true;
+};
+
+/**
+ * Validate that the current session still owns the profile
+ * Returns false if another device has claimed the profile (logged in elsewhere)
+ * @param {string} profileId - The profile ID to validate
+ * @returns {Promise<boolean>} True if session is still valid, false if kicked
+ */
+export const validateSession = async (profileId) => {
+  if (!profileId) {
+    return false;
+  }
+
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData?.session?.user) {
+    return false;
+  }
+
+  const currentAuthId = sessionData.session.user.id;
+
+  // Check if our auth ID still matches the profile's current_auth_id
+  const { data: profile, error } = await supabase
+    .from("profiles")
+    .select("current_auth_id")
+    .eq("id", profileId)
+    .maybeSingle();
+
+  if (error || !profile) {
+    return false;
+  }
+
+  // If current_auth_id doesn't match, we've been kicked by another login
+  return profile.current_auth_id === currentAuthId;
 };
 
 /**
