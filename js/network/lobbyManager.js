@@ -210,35 +210,46 @@ export const mapDeckIdsToCards = (deckId, deckIds = []) => {
  * Ensure user profile is loaded
  */
 export const ensureProfileLoaded = async (state) => {
+  console.log('[ensureProfileLoaded] Called, profileLoaded flag:', profileLoaded);
   if (profileLoaded) {
+    console.log('[ensureProfileLoaded] EARLY RETURN: Already loaded');
     return;
   }
   profileLoaded = true;
+  console.log('[ensureProfileLoaded] Starting profile fetch...');
   applyMenuLoading(state, true);
   callbacks.onUpdate?.();
 
   try {
     const api = await loadSupabaseApi(state);
     const profile = await api.fetchProfile();
+    console.log('[ensureProfileLoaded] fetchProfile returned:', profile);
     if (profile) {
+      console.log('[ensureProfileLoaded] Profile ID:', profile.id);
       state.menu.profile = profile;
       const localIndex = getLocalPlayerIndex(state);
       state.players[localIndex].name = profile.username;
       state.players[localIndex].nameStyle = profile.name_style || {};
+      console.log('[ensureProfileLoaded] About to call ensureDecksLoaded (NO force flag)');
+      console.log('[ensureProfileLoaded] Current decksLoaded:', decksLoaded, 'decksLoading:', decksLoading);
       ensureDecksLoaded(state);
+      console.log('[ensureProfileLoaded] ensureDecksLoaded called, now calling ensurePlayerCardsLoaded');
       // Load card collection from database
       ensurePlayerCardsLoaded(state);
       // Start session validation to detect if kicked by another login
       startSessionValidation(state);
     } else {
+      console.log('[ensureProfileLoaded] No profile returned, setting to null');
       state.menu.profile = null;
     }
   } catch (error) {
+    console.error('[ensureProfileLoaded] ERROR:', error);
     state.menu.profile = null;
     setMenuError(state, error.message || 'Unable to load profile.');
   } finally {
     applyMenuLoading(state, false);
     callbacks.onUpdate?.();
+    console.log('[ensureProfileLoaded] Complete');
   }
 };
 
