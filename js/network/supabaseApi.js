@@ -144,6 +144,9 @@ export const loginWithPin = async (username, pin) => {
   // Claim the profile with our auth session (force-claim, kicking any existing session)
   const session = await ensureSession();
   const authUserId = session.user.id;
+  console.log('[loginWithPin] Current auth session UID:', authUserId);
+  console.log('[loginWithPin] Profile current_auth_id before update:', profile.current_auth_id);
+  console.log('[loginWithPin] Updating current_auth_id to:', authUserId);
 
   // Update without expecting return data - RLS policies may prevent SELECT on the updated row
   // until the new auth_id is set, causing ".single()" to fail with "Cannot coerce to single JSON object"
@@ -153,7 +156,22 @@ export const loginWithPin = async (username, pin) => {
     .eq("id", profile.id);
 
   if (updateError) {
+    console.error('[loginWithPin] Failed to update current_auth_id:', updateError);
     throw updateError;
+  }
+  console.log('[loginWithPin] current_auth_id update succeeded (no error returned)');
+
+  // Verify the update actually worked by fetching the profile again
+  const { data: verifyProfile, error: verifyError } = await supabase
+    .from("profiles")
+    .select("id, current_auth_id")
+    .eq("id", profile.id)
+    .maybeSingle();
+
+  console.log('[loginWithPin] Verification fetch - profile:', verifyProfile, 'error:', verifyError);
+  if (verifyProfile) {
+    console.log('[loginWithPin] Verified current_auth_id in DB:', verifyProfile.current_auth_id);
+    console.log('[loginWithPin] Does it match session UID?', verifyProfile.current_auth_id === authUserId);
   }
 
   // Return the complete profile data (excluding sensitive fields)
@@ -386,6 +404,12 @@ export const saveDeck = async ({ ownerId, name, deck }) => {
 
 export const fetchDecksByOwner = async ({ ownerId }) => {
   console.log('[fetchDecksByOwner] Called with ownerId:', ownerId);
+
+  // Log current session UID for debugging RLS issues
+  const { data: sessionData } = await supabase.auth.getSession();
+  const currentAuthUid = sessionData?.session?.user?.id;
+  console.log('[fetchDecksByOwner] Current auth.uid():', currentAuthUid);
+
   if (!ownerId) {
     console.error('[fetchDecksByOwner] ERROR: Missing owner id');
     throw new Error("Missing owner id.");
