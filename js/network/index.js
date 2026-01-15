@@ -62,6 +62,7 @@ export {
   registerCallbacks,
   getCallbacks,
   cleanup as cleanupLobby,
+  ensureDecksLoaded,
 } from './lobbyManager.js';
 
 // ============================================================================
