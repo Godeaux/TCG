@@ -2029,3 +2029,11 @@ export const resetDeckBuilderState = () => {
   deckHighlighted = null;
   deckActiveTab = "catalog";
 };
+
+/**
+ * Reset decks loaded state (for use during login/logout)
+ */
+export const resetDecksLoaded = () => {
+  decksLoaded = false;
+  decksLoading = false;
+};

@@ -14,6 +14,7 @@
 
 import { isOnlineMode, isAIMode, isAIvsAIMode } from '../state/selectors.js';
 import { deckCatalogs } from '../cards/index.js';
+import { resetDecksLoaded } from '../ui/overlays/DeckBuilderOverlay.js';
 import {
   setLobbyChannel,
   sendLobbyBroadcast,
@@ -495,6 +496,7 @@ export const handleLoginSubmit = async (state, username, pin) => {
     state.players[0].name = profile.username;
     state.players[0].nameStyle = profile.name_style || {};
     decksLoaded = false;
+    resetDecksLoaded();
     ensureDecksLoaded(state, { force: true });
     setMenuStage(state, 'main');
 
@@ -530,6 +532,7 @@ export const handleCreateAccount = async (state, username, pin) => {
     state.players[0].name = profile.username;
     state.players[0].nameStyle = profile.name_style || {};
     decksLoaded = false;
+    resetDecksLoaded();
     ensureDecksLoaded(state, { force: true });
     setMenuStage(state, 'main');
 
@@ -569,6 +572,7 @@ export const handleLogout = async (state) => {
     // Reset loaded flags
     profileLoaded = false;
     decksLoaded = false;
+    resetDecksLoaded();
 
     // Stop session validation
     stopSessionValidation();

@@ -47,6 +47,7 @@ export {
   renderDeckBuilderOverlay,
   renderCatalogBuilderOverlay,
   resetDeckBuilderState,
+  resetDecksLoaded,
 } from './DeckBuilderOverlay.js';
 
 // ============================================================================
