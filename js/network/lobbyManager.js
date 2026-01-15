@@ -226,9 +226,7 @@ export const ensureProfileLoaded = async (state) => {
       state.players[localIndex].name = profile.username;
       state.players[localIndex].nameStyle = profile.name_style || {};
       ensureDecksLoaded(state);
-      // Load card collection from database
       ensurePlayerCardsLoaded(state);
-      // Start session validation to detect if kicked by another login
       startSessionValidation(state);
     } else {
       state.menu.profile = null;
@@ -317,7 +315,6 @@ export const ensurePlayerCardsLoaded = async (state) => {
     state.menu.profile.ownedCards = ownedCardsMap;
 
     cardsLoaded = true;
-    console.log(`Loaded ${cards.length} cards from database`);
   } catch (error) {
     console.error('Failed to load player cards:', error);
   } finally {
@@ -494,11 +491,13 @@ export const handleLoginSubmit = async (state, username, pin) => {
   try {
     const api = await loadSupabaseApi(state);
     const profile = await api.loginWithPin(username, pin);
+
     // Reset all user-specific state before loading new user data
     decksLoaded = false;
     decksLoading = false;
     cardsLoaded = false;
     cardsLoading = false;
+
     resetDecksLoaded();
     resetProfileState();
     await resetPresenceState();
@@ -506,8 +505,8 @@ export const handleLoginSubmit = async (state, username, pin) => {
     state.menu.profile = profile;
     state.players[0].name = profile.username;
     state.players[0].nameStyle = profile.name_style || {};
+
     ensureDecksLoaded(state, { force: true });
-    // Load card collection from database
     ensurePlayerCardsLoaded(state);
     setMenuStage(state, 'main');
 

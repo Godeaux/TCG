@@ -145,8 +145,7 @@ export const loginWithPin = async (username, pin) => {
   const session = await ensureSession();
   const authUserId = session.user.id;
 
-  // Update without expecting return data - RLS policies may prevent SELECT on the updated row
-  // until the new auth_id is set, causing ".single()" to fail with "Cannot coerce to single JSON object"
+  // Update current_auth_id to claim this profile
   const { error: updateError } = await supabase
     .from("profiles")
     .update({ current_auth_id: authUserId })

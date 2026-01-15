@@ -15,7 +15,7 @@
 
 import { deckCatalogs, getCardDefinitionById } from '../../cards/index.js';
 import { logMessage } from '../../state/gameState.js';
-import { buildLobbySyncPayload, sendLobbyBroadcast, getSupabaseApi } from '../../network/index.js';
+import { buildLobbySyncPayload, sendLobbyBroadcast, getSupabaseApi, ensureDecksLoaded } from '../../network/index.js';
 import { getLocalPlayerIndex, isAIMode, isAIvsAIMode } from '../../state/selectors.js';
 import { renderDeckCard, renderCardStats, getCardEffectSummary } from '../components/Card.js';
 import { KEYWORD_DESCRIPTIONS } from '../../keywords.js';
@@ -124,10 +124,6 @@ const DECK_OPTIONS = [
 // Deck builder UI state
 let deckHighlighted = null;
 let deckActiveTab = "catalog";
-
-// Deck loading state
-let decksLoaded = false;
-let decksLoading = false;
 
 // Latest callbacks reference for async operations
 let latestCallbacks = {};
@@ -312,38 +308,6 @@ const findDeckCatalogId = (deckIds = []) => {
       return ids.every((id) => catalogIds.has(id));
     })?.[0] ?? "fish"
   );
-};
-
-/**
- * Ensure decks are loaded from database
- */
-const ensureDecksLoaded = async (state, { force = false } = {}) => {
-  if (!state.menu?.profile) {
-    return;
-  }
-  if (decksLoading) {
-    return;
-  }
-  if (decksLoaded && !force) {
-    return;
-  }
-  decksLoading = true;
-  try {
-    const api = await loadSupabaseApi(state);
-    const decks = await api.fetchDecksByOwner({ ownerId: state.menu.profile.id });
-    state.menu.decks = decks.map((deck) => ({
-      id: deck.id,
-      name: deck.name,
-      deck: deck.deck_json ?? [],
-      createdAt: deck.created_at ?? null,
-    }));
-    decksLoaded = true;
-  } catch (error) {
-    setMenuError(state, error.message || "Unable to load decks.");
-  } finally {
-    decksLoading = false;
-    latestCallbacks.onUpdate?.();
-  }
 };
 
 /**
@@ -2034,6 +1998,5 @@ export const resetDeckBuilderState = () => {
  * Reset decks loaded state (for use during login/logout)
  */
 export const resetDecksLoaded = () => {
-  decksLoaded = false;
-  decksLoading = false;
+  // No-op: deck loading state is now centralized in lobbyManager
 };
