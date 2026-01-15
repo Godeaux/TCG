@@ -40,6 +40,10 @@ let profileLoaded = false;
 let decksLoaded = false;
 let decksLoading = false;
 
+// Session validation state
+let sessionValidationInterval = null;
+let visibilityChangeHandler = null;
+
 // ============================================================================
 // CALLBACKS
 // Registered by UI layer to receive notifications
@@ -221,6 +225,8 @@ export const ensureProfileLoaded = async (state) => {
       ensureDecksLoaded(state);
       // Load card collection from database
       ensurePlayerCardsLoaded(state);
+      // Start session validation to detect if kicked by another login
+      startSessionValidation(state);
     } else {
       state.menu.profile = null;
     }
@@ -491,6 +497,10 @@ export const handleLoginSubmit = async (state, username, pin) => {
     decksLoaded = false;
     ensureDecksLoaded(state, { force: true });
     setMenuStage(state, 'main');
+
+    // Start session validation to detect if kicked by another login
+    startSessionValidation(state);
+
     return { success: true };
   } catch (error) {
     const message = error.message || 'Login failed.';
@@ -522,6 +532,10 @@ export const handleCreateAccount = async (state, username, pin) => {
     decksLoaded = false;
     ensureDecksLoaded(state, { force: true });
     setMenuStage(state, 'main');
+
+    // Start session validation to detect if kicked by another login
+    startSessionValidation(state);
+
     return { success: true };
   } catch (error) {
     const message = error.message || 'Account creation failed.';
@@ -556,6 +570,9 @@ export const handleLogout = async (state) => {
     profileLoaded = false;
     decksLoaded = false;
 
+    // Stop session validation
+    stopSessionValidation();
+
     // Clean up any lobby subscription
     updateLobbySubscription(state);
 
@@ -582,6 +599,92 @@ export const checkUsername = async (state, username) => {
     return existing;
   } catch (error) {
     return null;
+  }
+};
+
+// ============================================================================
+// SESSION VALIDATION (Single-Session Enforcement)
+// ============================================================================
+
+/**
+ * Validate current session and auto-logout if kicked by another login
+ * @param {Object} state - Game state
+ * @returns {Promise<boolean>} True if session is still valid
+ */
+export const validateAndAutoLogout = async (state) => {
+  if (!state.menu?.profile?.id) {
+    return true; // No profile to validate
+  }
+
+  try {
+    const api = await loadSupabaseApi(state);
+    const isValid = await api.validateSession(state.menu.profile.id);
+
+    if (!isValid) {
+      console.log('Session invalidated - logged in from another location');
+
+      // Perform local logout (don't call logoutProfile since we're already kicked)
+      state.menu.profile = null;
+      state.menu.decks = [];
+      state.menu.lobby = null;
+      state.menu.existingLobby = null;
+      state.menu.error = 'You were logged out because your account was accessed from another location.';
+
+      // Reset loaded flags
+      profileLoaded = false;
+      decksLoaded = false;
+      cardsLoaded = false;
+
+      // Clean up any lobby subscription
+      updateLobbySubscription(state);
+
+      // Stop session validation since we're logged out
+      stopSessionValidation();
+
+      callbacks.onUpdate?.();
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Session validation error:', error);
+    return true; // Don't logout on network errors
+  }
+};
+
+/**
+ * Start periodic session validation
+ * @param {Object} state - Game state
+ */
+export const startSessionValidation = (state) => {
+  // Clear any existing interval
+  stopSessionValidation();
+
+  // Validate every 30 seconds
+  sessionValidationInterval = window.setInterval(() => {
+    validateAndAutoLogout(state);
+  }, 30000);
+
+  // Also validate when tab becomes visible (user returns to tab)
+  visibilityChangeHandler = () => {
+    if (document.visibilityState === 'visible') {
+      validateAndAutoLogout(state);
+    }
+  };
+  document.addEventListener('visibilitychange', visibilityChangeHandler);
+};
+
+/**
+ * Stop periodic session validation
+ */
+export const stopSessionValidation = () => {
+  if (sessionValidationInterval) {
+    window.clearInterval(sessionValidationInterval);
+    sessionValidationInterval = null;
+  }
+  if (visibilityChangeHandler) {
+    document.removeEventListener('visibilitychange', visibilityChangeHandler);
+    visibilityChangeHandler = null;
   }
 };
 
@@ -1154,4 +1257,7 @@ export const cleanup = () => {
   }
   activeLobbyId = null;
   lobbyRefreshInFlight = false;
+
+  // Clean up session validation
+  stopSessionValidation();
 };
