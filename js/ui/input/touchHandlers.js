@@ -21,9 +21,13 @@ import {
   revertCardToOriginalPosition,
   updateDropTargetVisuals,
   getLatestState,
+  isValidSpellTarget,
+  getSpellTargetingInfo,
+  getLatestCallbacks,
 } from './dragAndDrop.js';
 import { broadcastHandDrag } from '../../network/sync.js';
 import { getActivePlayer } from '../../state/gameState.js';
+import { handlePlayCard } from '../../ui.js';
 
 // ============================================================================
 // MODULE-LEVEL STATE
@@ -351,19 +355,49 @@ const handleTouchEnd = (e) => {
 
     // Handle drop based on target
     if (elementBelow && touchedCard) {
-      const dropTarget = elementBelow.closest('.field-slot, .player-badge, .card');
+      const isSpell = touchedCard.type === 'Spell' || touchedCard.type === 'Free Spell';
 
-      if (dropTarget?.classList.contains('field-slot')) {
+      // For spells, also check for player-field container (more forgiving drop zone)
+      const dropTarget = isSpell
+        ? elementBelow.closest('.field-slot, .player-badge, .card, .player-field')
+        : elementBelow.closest('.field-slot, .player-badge, .card');
+
+      // Handle spell drop on player field area (any part of it) - Hearthstone style
+      if (isSpell && dropTarget?.classList.contains('player-field')) {
+        const callbacks = getLatestCallbacks();
+        handlePlayCard(state, touchedCard, callbacks?.onUpdate);
+      } else if (dropTarget?.classList.contains('field-slot')) {
         // Handle dropping on field slot (play card)
         handleFieldDrop(touchedCard, dropTarget);
       } else if (dropTarget?.classList.contains('player-badge')) {
         // Handle dropping on player (attack player)
         handlePlayerDrop(touchedCard, dropTarget);
       } else if (dropTarget?.classList.contains('card')) {
-        // Handle dropping on card (attack creature or consumption)
         const targetCard = getCardFromInstanceId(dropTarget.dataset.instanceId, state);
         if (targetCard) {
-          handleCreatureDrop(touchedCard, targetCard);
+          // Check if this is a spell being dropped on a card
+          if (isSpell) {
+            const targetingInfo = getSpellTargetingInfo(touchedCard);
+            const isTargetInPlayerField = dropTarget.closest('.player-field') !== null;
+
+            // If spell requires a target and this is a valid target, cast with target
+            if (targetingInfo?.requiresTarget && isValidSpellTarget(touchedCard, targetCard, state)) {
+              const callbacks = getLatestCallbacks();
+              handlePlayCard(state, touchedCard, callbacks?.onUpdate, targetCard);
+            }
+            // If spell doesn't require target and dropped on our field, just cast it
+            else if (!targetingInfo?.requiresTarget && isTargetInPlayerField) {
+              const callbacks = getLatestCallbacks();
+              handlePlayCard(state, touchedCard, callbacks?.onUpdate);
+            }
+            // Otherwise revert (e.g., non-targeted spell dropped on enemy)
+            else {
+              revertCardToOriginalPosition();
+            }
+          } else {
+            // Handle dropping creature on card (attack creature or consumption)
+            handleCreatureDrop(touchedCard, targetCard);
+          }
         }
       } else {
         // Invalid drop - just revert

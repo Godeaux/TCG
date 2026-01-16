@@ -2134,7 +2134,7 @@ const handleEatPreyAttack = (state, attacker, onUpdate) => {
   });
 };
 
-const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) => {
+export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) => {
   if (!isLocalPlayersTurn(state)) {
     logMessage(state, "Wait for your turn to play cards.");
     onUpdate?.();
