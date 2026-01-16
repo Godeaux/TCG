@@ -971,9 +971,23 @@ const handleDragStart = (event) => {
   const isExtendedConsumptionDrag = state?.extendedConsumption &&
     state.extendedConsumption.predatorInstanceId === instanceId;
 
-  // For field cards, only allow drag if in extended consumption mode
-  if (isOnField && !isExtendedConsumptionDrag) {
-    // Don't start drag for field cards unless in extended consumption
+  // Check if this is a valid combat drag (field creature attacking)
+  const isCreature = card.type === 'Predator' || card.type === 'Prey';
+  const isCombatPhase = state?.phase === 'Combat';
+  const canCreatureAttack = isCreature &&
+    isCombatPhase &&
+    isLocalPlayersTurn?.(state) &&
+    !card.hasAttacked &&
+    !isPassive(card) &&
+    !isHarmless(card) &&
+    !card.frozen &&
+    !card.paralyzed &&
+    (hasHaste(card) || card.summonedTurn < state.turn);
+  const isCombatDrag = isOnField && canCreatureAttack;
+
+  // For field cards, allow drag if in extended consumption mode OR valid combat attack
+  if (isOnField && !isExtendedConsumptionDrag && !isCombatDrag) {
+    // Don't start drag for field cards unless in extended consumption or combat
     return;
   }
 
