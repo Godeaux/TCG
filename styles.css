@@ -4487,6 +4487,17 @@ button {
     overflow: visible !important; /* Allow cards to be visible when dragging */
   }
 
+  /* Override hand expansion on mobile - keep fixed height to prevent battlefield squishing */
+  .battlefield-center-column.hand-expanded .hand-panel {
+    height: 195px;
+    min-height: 195px;
+    max-height: 195px;
+  }
+
+  .battlefield-center-column.hand-expanded .battlefield-layout {
+    flex: 1; /* Don't allow extra shrinking on mobile */
+  }
+
   .hand-container {
     overflow: visible; /* Allow cards to extend */
     gap: 2px; /* Tighter gap to maximize card space */
@@ -4590,19 +4601,25 @@ button {
   }
 
   /* Mobile hand cards: use percentages instead of fixed pixels */
+  .hand-grid .card .card-content-area {
+    overflow: visible !important; /* Allow effect text to show */
+  }
+
   .hand-grid .card .card-content-area .card-stats-row {
-    flex: 0 0 22% !important;
+    flex: 0 0 18% !important;
     min-height: 0 !important;
     max-height: none !important;
   }
 
   .hand-grid .card .card-content-area .card-keywords {
-    flex: 0 0 18% !important;
+    flex: 0 0 12% !important;
     min-height: 0 !important;
   }
 
   .hand-grid .card .card-content-area .card-effect {
-    flex: 1 1 60% !important;
+    flex: 1 1 auto !important; /* Take remaining space */
+    min-height: 0 !important;
+    overflow: visible !important; /* Prevent SVG clipping */
   }
 
   .hand-grid .card .card-actions button {
