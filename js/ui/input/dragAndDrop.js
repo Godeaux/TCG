@@ -971,9 +971,22 @@ const handleDragStart = (event) => {
   const isExtendedConsumptionDrag = state?.extendedConsumption &&
     state.extendedConsumption.predatorInstanceId === instanceId;
 
-  // For field cards, only allow drag if in extended consumption mode
-  if (isOnField && !isExtendedConsumptionDrag) {
-    // Don't start drag for field cards unless in extended consumption
+  // Check if this is a valid combat drag (field creature attacking)
+  const isCreature = card.type === 'Predator' || card.type === 'Prey';
+  const isCombatPhase = state?.phase === 'Combat';
+  const canCreatureAttack = isCreature &&
+    isCombatPhase &&
+    isLocalPlayersTurn?.(state) &&
+    !card.hasAttacked &&
+    !isPassive(card) &&
+    !isHarmless(card) &&
+    !card.frozen &&
+    !card.paralyzed;
+  const isCombatDrag = isOnField && canCreatureAttack;
+
+  // For field cards, allow drag if in extended consumption mode OR valid combat attack
+  if (isOnField && !isExtendedConsumptionDrag && !isCombatDrag) {
+    // Don't start drag for field cards unless in extended consumption or combat
     return;
   }
 
@@ -1180,7 +1193,13 @@ const handleDragOver = (event) => {
       target.classList.add('spell-target');
     } else if (isCombatPhase && targetPlayer && attackerPlayer && attackerPlayer !== targetPlayer &&
         (draggedCard.type === 'Predator' || draggedCard.type === 'Prey')) {
-      target.classList.add('valid-drop-zone');
+      // Check if creature can attack player directly (must have Haste or not played this turn)
+      const canAttackPlayerDirectly = hasHaste(draggedCard) || draggedCard.summonedTurn < latestState.turn;
+      if (canAttackPlayerDirectly) {
+        target.classList.add('valid-drop-zone');
+      } else {
+        target.classList.add('invalid-target');
+      }
     } else if (!isSpell) {
       target.classList.add('invalid-target');
     }
@@ -1263,11 +1282,26 @@ const handleDrop = (event) => {
   } else if (dropTarget?.classList.contains('card')) {
     const targetCard = getCardFromInstanceId(dropTarget.dataset.instanceId, latestState);
     if (targetCard) {
-      // Check if this is a spell being dropped on a valid target
-      if (isSpell && isValidSpellTarget(card, targetCard, latestState)) {
-        handlePlayCard(latestState, card, latestCallbacks.onUpdate, targetCard);
+      // Check if this is a spell being dropped on a card
+      if (isSpell) {
+        const targetingInfo = getSpellTargetingInfo(card);
+        const isTargetInPlayerField = dropTarget.closest('.player-field') !== null;
+
+        // If spell requires a target and this is a valid target, cast with target
+        if (targetingInfo?.requiresTarget && isValidSpellTarget(card, targetCard, latestState)) {
+          handlePlayCard(latestState, card, latestCallbacks.onUpdate, targetCard);
+          return;
+        }
+        // If spell doesn't require target and dropped on our field, just cast it (Hearthstone style)
+        if (!targetingInfo?.requiresTarget && isTargetInPlayerField) {
+          handlePlayCard(latestState, card, latestCallbacks.onUpdate);
+          return;
+        }
+        // Otherwise revert (e.g., dropped on enemy with no valid target)
+        revertCardToOriginalPosition();
         return;
       }
+      // Not a spell - handle as creature drop (attack or consumption)
       handleCreatureDrop(card, targetCard);
     }
   } else {
@@ -1397,6 +1431,16 @@ export { handleCreatureDrop };
 export { revertCardToOriginalPosition };
 
 /**
+ * Check if a spell effect requires targeting and determine target type
+ */
+export { getSpellTargetingInfo };
+
+/**
+ * Check if a target is valid for a spell's targeting requirement
+ */
+export { isValidSpellTarget };
+
+/**
  * Update drop target visuals based on element under cursor/touch
  * @param {HTMLElement} elementBelow - Element under the cursor/touch point
  * @param {Object} draggedCard - The card being dragged
@@ -1427,22 +1471,22 @@ export const updateDropTargetVisuals = (elementBelow, card, cardElement) => {
   clearDragVisuals();
   currentDragTargetId = targetId;
 
-  // For targeted spells, always show valid targets highlighted in blue
+  // For spells, provide clear visual feedback (Hearthstone style)
   if (isSpell) {
     const targetingInfo = getSpellTargetingInfo(card);
     if (targetingInfo?.requiresTarget) {
+      // Targeted spell: highlight all valid targets
       highlightSpellTargets(card, latestState);
-    }
-  }
-
-  if (!target) {
-    // For non-targeted spells, highlight the player field area
-    if (isSpell) {
+    } else {
+      // Non-targeted spell: ALWAYS highlight player field as valid drop zone
       const playerField = document.querySelector('.player-field');
       if (playerField) {
         playerField.classList.add('spell-drop-zone');
       }
     }
+  }
+
+  if (!target) {
     return;
   }
 
@@ -1490,9 +1534,27 @@ export const updateDropTargetVisuals = (elementBelow, card, cardElement) => {
     const targetCard = getCardFromInstanceId(target.dataset.instanceId, latestState);
     if (!targetCard) return;
 
-    // Check if dragging a targeted spell onto a valid target
-    if (isSpell && isValidSpellTarget(card, targetCard, latestState)) {
-      target.classList.add('spell-target');
+    // Check if dragging a spell onto a card
+    if (isSpell) {
+      const targetingInfo = getSpellTargetingInfo(card);
+      const isTargetInPlayerField = target.closest('.player-field') !== null;
+
+      // For targeted spells, highlight valid targets
+      if (targetingInfo?.requiresTarget && isValidSpellTarget(card, targetCard, latestState)) {
+        target.classList.add('spell-target');
+        return;
+      }
+
+      // For non-targeted spells over our field, highlight the whole field as valid (Hearthstone style)
+      if (!targetingInfo?.requiresTarget && isTargetInPlayerField) {
+        const playerField = target.closest('.player-field');
+        if (playerField) {
+          playerField.classList.add('spell-drop-zone');
+        }
+        return;
+      }
+
+      // Spell over invalid area (enemy field with no valid target) - no highlight
       return;
     }
 

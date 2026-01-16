@@ -21,9 +21,15 @@ import {
   revertCardToOriginalPosition,
   updateDropTargetVisuals,
   getLatestState,
+  isValidSpellTarget,
+  getSpellTargetingInfo,
+  getLatestCallbacks,
 } from './dragAndDrop.js';
 import { broadcastHandDrag } from '../../network/sync.js';
 import { getActivePlayer } from '../../state/gameState.js';
+import { handlePlayCard } from '../../ui.js';
+import { isPassive, isHarmless } from '../../keywords.js';
+import { isLocalPlayersTurn } from '../../state/selectors.js';
 
 // ============================================================================
 // MODULE-LEVEL STATE
@@ -37,6 +43,7 @@ let currentTouchPos = { x: 0, y: 0 };
 let isDragging = false;
 let dragPreview = null;
 let touchedCardHandIndex = -1;  // Track hand index for drag broadcasting
+let touchedFromField = false;   // Track if touch started from field (combat drag)
 
 // Drag broadcast throttling
 let lastTouchDragBroadcast = 0;
@@ -50,6 +57,7 @@ export const isTouchDragging = () => isDragging;
 
 // Configuration
 const VERTICAL_DRAG_THRESHOLD = 30; // pixels to move upward before dragging to play
+const FIELD_DRAG_THRESHOLD = 15;    // Lower threshold for field cards (combat)
 
 // External callback for card focus (set via init)
 let onCardFocus = null;
@@ -115,7 +123,24 @@ const getRelativePositionFromTouch = (clientX, clientY) => {
 // ============================================================================
 
 /**
- * Find the closest card at a given position
+ * Check if a creature can attack (for combat drag)
+ */
+const canCreatureAttack = (card, state) => {
+  if (!card || !state) return false;
+  const isCreature = card.type === 'Predator' || card.type === 'Prey';
+  const isCombatPhase = state.phase === 'Combat';
+  return isCreature &&
+    isCombatPhase &&
+    isLocalPlayersTurn(state) &&
+    !card.hasAttacked &&
+    !isPassive(card) &&
+    !isHarmless(card) &&
+    !card.frozen &&
+    !card.paralyzed;
+};
+
+/**
+ * Find the closest card at a given position in hand
  */
 const getCardAtPosition = (x, y) => {
   const handGrid = document.getElementById('active-hand');
@@ -140,6 +165,23 @@ const getCardAtPosition = (x, y) => {
   });
 
   return closestCard;
+};
+
+/**
+ * Find field card element at a given position
+ */
+const getFieldCardAtPosition = (x, y) => {
+  const playerField = document.querySelector('.player-field');
+  if (!playerField) return null;
+
+  const cards = Array.from(playerField.querySelectorAll('.card'));
+  for (const card of cards) {
+    const rect = card.getBoundingClientRect();
+    if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+      return card;
+    }
+  }
+  return null;
 };
 
 /**
@@ -351,19 +393,49 @@ const handleTouchEnd = (e) => {
 
     // Handle drop based on target
     if (elementBelow && touchedCard) {
-      const dropTarget = elementBelow.closest('.field-slot, .player-badge, .card');
+      const isSpell = touchedCard.type === 'Spell' || touchedCard.type === 'Free Spell';
 
-      if (dropTarget?.classList.contains('field-slot')) {
+      // For spells, also check for player-field container (more forgiving drop zone)
+      const dropTarget = isSpell
+        ? elementBelow.closest('.field-slot, .player-badge, .card, .player-field')
+        : elementBelow.closest('.field-slot, .player-badge, .card');
+
+      // Handle spell drop on player field area (any part of it) - Hearthstone style
+      if (isSpell && dropTarget?.classList.contains('player-field')) {
+        const callbacks = getLatestCallbacks();
+        handlePlayCard(state, touchedCard, callbacks?.onUpdate);
+      } else if (dropTarget?.classList.contains('field-slot')) {
         // Handle dropping on field slot (play card)
         handleFieldDrop(touchedCard, dropTarget);
       } else if (dropTarget?.classList.contains('player-badge')) {
         // Handle dropping on player (attack player)
         handlePlayerDrop(touchedCard, dropTarget);
       } else if (dropTarget?.classList.contains('card')) {
-        // Handle dropping on card (attack creature or consumption)
         const targetCard = getCardFromInstanceId(dropTarget.dataset.instanceId, state);
         if (targetCard) {
-          handleCreatureDrop(touchedCard, targetCard);
+          // Check if this is a spell being dropped on a card
+          if (isSpell) {
+            const targetingInfo = getSpellTargetingInfo(touchedCard);
+            const isTargetInPlayerField = dropTarget.closest('.player-field') !== null;
+
+            // If spell requires a target and this is a valid target, cast with target
+            if (targetingInfo?.requiresTarget && isValidSpellTarget(touchedCard, targetCard, state)) {
+              const callbacks = getLatestCallbacks();
+              handlePlayCard(state, touchedCard, callbacks?.onUpdate, targetCard);
+            }
+            // If spell doesn't require target and dropped on our field, just cast it
+            else if (!targetingInfo?.requiresTarget && isTargetInPlayerField) {
+              const callbacks = getLatestCallbacks();
+              handlePlayCard(state, touchedCard, callbacks?.onUpdate);
+            }
+            // Otherwise revert (e.g., non-targeted spell dropped on enemy)
+            else {
+              revertCardToOriginalPosition();
+            }
+          } else {
+            // Handle dropping creature on card (attack creature or consumption)
+            handleCreatureDrop(touchedCard, targetCard);
+          }
         }
       } else {
         // Invalid drop - just revert
@@ -420,8 +492,147 @@ const handleTouchCancel = (e) => {
     touchedCard = null;
     touchedCardElement = null;
     touchedCardHandIndex = -1;
+    touchedFromField = false;
     isDragging = false;
   }
+};
+
+// ============================================================================
+// FIELD TOUCH HANDLERS (for combat drag)
+// ============================================================================
+
+/**
+ * Handle touch start on player field - for combat attacks
+ */
+const handleFieldTouchStart = (e) => {
+  const touch = e.touches[0];
+  const state = getLatestState();
+
+  // Check if we touched a field card
+  const cardElement = getFieldCardAtPosition(touch.clientX, touch.clientY);
+  if (!cardElement) return;
+
+  const card = getCardFromInstanceId(cardElement.dataset.instanceId, state);
+  if (!card) return;
+
+  // Only allow drag if creature can attack
+  if (!canCreatureAttack(card, state)) return;
+
+  // Initialize touch state
+  touchStartPos = { x: touch.clientX, y: touch.clientY };
+  currentTouchPos = { ...touchStartPos };
+  isDragging = false;
+  touchedCard = card;
+  touchedCardElement = cardElement;
+  touchedFromField = true;
+  touchedCardHandIndex = -1; // Not from hand
+
+  // Focus the card
+  focusCardElement(cardElement);
+
+  e.preventDefault();
+};
+
+/**
+ * Handle touch move on player field - drag to attack
+ */
+const handleFieldTouchMove = (e) => {
+  if (!touchedCardElement || !touchedFromField) return;
+
+  e.preventDefault();
+
+  const touch = e.touches[0];
+  currentTouchPos = { x: touch.clientX, y: touch.clientY };
+
+  const dx = currentTouchPos.x - touchStartPos.x;
+  const dy = currentTouchPos.y - touchStartPos.y;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+
+  // Start dragging after small movement (combat drag is more sensitive)
+  if (!isDragging && distance > FIELD_DRAG_THRESHOLD) {
+    isDragging = true;
+    touchedCardElement.classList.add('dragging');
+
+    // Create drag preview
+    dragPreview = createDragPreview(touchedCardElement, touch.clientX, touch.clientY);
+
+    // Allow overflow
+    addDraggingClasses();
+  }
+
+  if (isDragging) {
+    // Update drag preview position
+    updateDragPreviewPosition(dragPreview, touch.clientX, touch.clientY);
+
+    // Update visual feedback for drag targets
+    const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+    updateDropTargetVisuals(elementBelow, touchedCard, touchedCardElement);
+  }
+};
+
+/**
+ * Handle touch end on player field - execute attack or revert
+ */
+const handleFieldTouchEnd = (e) => {
+  if (!touchedCardElement || !touchedFromField) return;
+
+  if (isDragging) {
+    const touch = e.changedTouches[0];
+    const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+    const state = getLatestState();
+
+    // Handle drop based on target
+    if (elementBelow && touchedCard) {
+      const dropTarget = elementBelow.closest('.player-badge, .card');
+
+      if (dropTarget?.classList.contains('player-badge')) {
+        // Attack player directly
+        handlePlayerDrop(touchedCard, dropTarget);
+      } else if (dropTarget?.classList.contains('card')) {
+        // Attack creature
+        const targetCard = getCardFromInstanceId(dropTarget.dataset.instanceId, state);
+        if (targetCard) {
+          handleCreatureDrop(touchedCard, targetCard);
+        }
+      } else {
+        // Invalid drop
+        revertCardToOriginalPosition();
+      }
+    }
+
+    touchedCardElement.classList.remove('dragging');
+    clearDragVisuals();
+    removeDragPreview(dragPreview);
+    dragPreview = null;
+    removeDraggingClasses();
+  }
+
+  // Reset state
+  touchedCard = null;
+  touchedCardElement = null;
+  touchedFromField = false;
+  isDragging = false;
+  touchedCardHandIndex = -1;
+};
+
+/**
+ * Handle touch cancel on player field
+ */
+const handleFieldTouchCancel = (e) => {
+  if (touchedCardElement && touchedFromField) {
+    touchedCardElement.classList.remove('dragging');
+    clearDragVisuals();
+    removeDragPreview(dragPreview);
+    dragPreview = null;
+    removeDraggingClasses();
+  }
+
+  // Reset state
+  touchedCard = null;
+  touchedCardElement = null;
+  touchedFromField = false;
+  isDragging = false;
+  touchedCardHandIndex = -1;
 };
 
 // ============================================================================
@@ -444,12 +655,22 @@ export const initTouchHandlers = (options = {}) => {
     handGrid.addEventListener('touchend', handleTouchEnd);
     handGrid.addEventListener('touchcancel', handleTouchCancel);
   }
+
+  // Add touch event listeners to the player field (for combat attacks)
+  const playerField = document.querySelector('.player-field');
+  if (playerField) {
+    playerField.addEventListener('touchstart', handleFieldTouchStart, { passive: false });
+    playerField.addEventListener('touchmove', handleFieldTouchMove, { passive: false });
+    playerField.addEventListener('touchend', handleFieldTouchEnd);
+    playerField.addEventListener('touchcancel', handleFieldTouchCancel);
+  }
 };
 
 /**
  * Re-attach touch handlers (call after DOM updates if hand is recreated)
  */
 export const reattachTouchHandlers = () => {
+  // Re-attach hand grid listeners
   const handGrid = document.getElementById('active-hand');
   if (handGrid) {
     // Remove old listeners (if any)
@@ -463,5 +684,19 @@ export const reattachTouchHandlers = () => {
     handGrid.addEventListener('touchmove', handleTouchMove, { passive: false });
     handGrid.addEventListener('touchend', handleTouchEnd);
     handGrid.addEventListener('touchcancel', handleTouchCancel);
+  }
+
+  // Re-attach player field listeners (for combat)
+  const playerField = document.querySelector('.player-field');
+  if (playerField) {
+    playerField.removeEventListener('touchstart', handleFieldTouchStart);
+    playerField.removeEventListener('touchmove', handleFieldTouchMove);
+    playerField.removeEventListener('touchend', handleFieldTouchEnd);
+    playerField.removeEventListener('touchcancel', handleFieldTouchCancel);
+
+    playerField.addEventListener('touchstart', handleFieldTouchStart, { passive: false });
+    playerField.addEventListener('touchmove', handleFieldTouchMove, { passive: false });
+    playerField.addEventListener('touchend', handleFieldTouchEnd);
+    playerField.addEventListener('touchcancel', handleFieldTouchCancel);
   }
 };
