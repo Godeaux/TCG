@@ -1193,7 +1193,13 @@ const handleDragOver = (event) => {
       target.classList.add('spell-target');
     } else if (isCombatPhase && targetPlayer && attackerPlayer && attackerPlayer !== targetPlayer &&
         (draggedCard.type === 'Predator' || draggedCard.type === 'Prey')) {
-      target.classList.add('valid-drop-zone');
+      // Check if creature can attack player directly (must have Haste or not played this turn)
+      const canAttackPlayerDirectly = hasHaste(draggedCard) || draggedCard.summonedTurn < latestState.turn;
+      if (canAttackPlayerDirectly) {
+        target.classList.add('valid-drop-zone');
+      } else {
+        target.classList.add('invalid-target');
+      }
     } else if (!isSpell) {
       target.classList.add('invalid-target');
     }
