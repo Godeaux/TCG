@@ -28,7 +28,7 @@ import {
 import { broadcastHandDrag } from '../../network/sync.js';
 import { getActivePlayer } from '../../state/gameState.js';
 import { handlePlayCard } from '../../ui.js';
-import { isPassive, isHarmless, hasHaste } from '../../keywords.js';
+import { isPassive, isHarmless } from '../../keywords.js';
 import { isLocalPlayersTurn } from '../../state/selectors.js';
 
 // ============================================================================
@@ -136,8 +136,7 @@ const canCreatureAttack = (card, state) => {
     !isPassive(card) &&
     !isHarmless(card) &&
     !card.frozen &&
-    !card.paralyzed &&
-    (hasHaste(card) || card.summonedTurn < state.turn);
+    !card.paralyzed;
 };
 
 /**

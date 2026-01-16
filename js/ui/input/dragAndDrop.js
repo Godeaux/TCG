@@ -981,8 +981,7 @@ const handleDragStart = (event) => {
     !isPassive(card) &&
     !isHarmless(card) &&
     !card.frozen &&
-    !card.paralyzed &&
-    (hasHaste(card) || card.summonedTurn < state.turn);
+    !card.paralyzed;
   const isCombatDrag = isOnField && canCreatureAttack;
 
   // For field cards, allow drag if in extended consumption mode OR valid combat attack
