@@ -4479,8 +4479,8 @@ button {
     min-height: 195px;
     max-height: 195px;
     overflow: visible; /* Allow cards to extend upward when focused */
-    padding-bottom: calc(var(--safe-bottom) + 20px); /* Extra padding to clear browser chrome */
-    padding-top: 8px; /* Space for focused card to lift into */
+    padding-bottom: calc(var(--safe-bottom) + 6px); /* Minimal padding - safe-area handles notch */
+    padding-top: 4px;
   }
 
   .hand-panel.is-dragging {
@@ -4489,12 +4489,13 @@ button {
 
   .hand-container {
     overflow: visible; /* Allow cards to extend */
+    gap: 2px; /* Tighter gap to maximize card space */
   }
 
   .hand-grid {
     align-items: flex-end; /* Position cards from bottom for fan effect */
     overflow: visible; /* Allow focused cards to extend */
-    padding: 0 12px 4px; /* Keep cards from screen edges */
+    padding: 0 8px 0; /* Minimal padding - maximize card space */
     max-width: 100%;
     box-sizing: border-box;
   }
@@ -4513,7 +4514,7 @@ button {
     width: auto;
     aspect-ratio: 5 / 7;
     min-width: 60px;
-    max-width: 100px;
+    max-width: 115px; /* Larger cards to fill available space */
     margin-left: calc(var(--hand-overlap, 0px) * -1);
     transform: translateY(var(--card-offset-y, 0px)) scale(var(--mobile-card-scale, 1)) rotate(var(--card-rotation, 0deg));
     transform-origin: bottom center;
