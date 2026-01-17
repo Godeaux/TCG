@@ -15,6 +15,7 @@
  */
 
 import { updatePackCount, updateProfileStats } from '../../network/lobbyManager.js';
+import { getLocalPlayerIndex } from '../../state/selectors.js';
 
 // ============================================================================
 // DOM ELEMENTS
@@ -296,8 +297,6 @@ export const hideVictoryScreen = (callback) => {
  */
 const shouldAwardPack = (state, winner, loser) => {
   const gameMode = state.menu?.mode;
-  const localPlayerIndex = state.menu?.profile?.id === state.players[0].profileId ? 0 : 1;
-  const localPlayer = state.players[localPlayerIndex];
 
   // AI mode: Only award pack if local player (human) won
   if (gameMode === 'ai') {
@@ -381,15 +380,8 @@ const updateProfileStatsOnVictory = (state, winner, loser) => {
 
   const gameMode = state.menu?.mode;
 
-  // Determine local player index based on game mode
-  let localPlayerIndex;
-  if (gameMode === 'ai') {
-    // In AI mode, player 0 is always the human
-    localPlayerIndex = 0;
-  } else {
-    // In online mode, match profile ID to player
-    localPlayerIndex = profile.id === state.players[0].profileId ? 0 : 1;
-  }
+  // Use selector to correctly determine local player (handles AI, online, and local modes)
+  const localPlayerIndex = getLocalPlayerIndex(state);
 
   const localPlayer = state.players[localPlayerIndex];
   const opponentPlayer = state.players[(localPlayerIndex + 1) % 2];
