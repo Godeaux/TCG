@@ -734,6 +734,7 @@ const handleExtendedConsumption = (predator, prey) => {
   // Verify prey is valid for consumption
   if (!canConsumePreyDirectly(predator, prey, state)) {
     revertCardToOriginalPosition();
+    latestCallbacks.onUpdate?.();
     highlightExtendedConsumptionTargets();
     return;
   }
@@ -778,33 +779,35 @@ const handleFieldDrop = (card, fieldSlot) => {
   const activePlayer = getActivePlayer(latestState);
   if (!activePlayer.hand.includes(card)) {
     revertCardToOriginalPosition();
+    latestCallbacks.onUpdate?.();
     return;
   }
 
   if (!isLocalPlayersTurn(latestState)) {
     logMessage(latestState, "Wait for your turn to play cards.");
-    latestCallbacks.onUpdate?.();
     revertCardToOriginalPosition();
+    latestCallbacks.onUpdate?.();
     return;
   }
 
   if (!canPlayCard(latestState)) {
     logMessage(latestState, "You've already played a card this turn.");
-    latestCallbacks.onUpdate?.();
     revertCardToOriginalPosition();
+    latestCallbacks.onUpdate?.();
     return;
   }
 
   const slotIndex = parseInt(fieldSlot.dataset.slot);
   if (isNaN(slotIndex)) {
     revertCardToOriginalPosition();
+    latestCallbacks.onUpdate?.();
     return;
   }
 
   if (activePlayer.field[slotIndex]) {
     logMessage(latestState, "That slot is already occupied.");
-    latestCallbacks.onUpdate?.();
     revertCardToOriginalPosition();
+    latestCallbacks.onUpdate?.();
     return;
   }
 
@@ -824,6 +827,7 @@ const handleFieldDrop = (card, fieldSlot) => {
   }
 
   revertCardToOriginalPosition();
+  latestCallbacks.onUpdate?.();
 };
 
 /**
@@ -835,6 +839,7 @@ const handlePlayerDrop = (card, playerBadge) => {
 
   if (!targetPlayer) {
     revertCardToOriginalPosition();
+    latestCallbacks.onUpdate?.();
     return;
   }
 
@@ -870,8 +875,8 @@ const handlePlayerDrop = (card, playerBadge) => {
     } else {
       logMessage(latestState, "Combat can only be declared during the Combat phase.");
     }
-    latestCallbacks.onUpdate?.();
     revertCardToOriginalPosition();
+    latestCallbacks.onUpdate?.();
     return;
   }
 
@@ -896,6 +901,7 @@ const handleCreatureDrop = (attacker, target) => {
     }
     // Invalid drop during extended consumption - keep window open
     revertCardToOriginalPosition();
+    latestCallbacks.onUpdate?.();
     highlightExtendedConsumptionTargets();
     return;
   }
@@ -914,6 +920,7 @@ const handleCreatureDrop = (attacker, target) => {
 
   if (!isValidAttackTarget(attacker, target, state)) {
     revertCardToOriginalPosition();
+    latestCallbacks.onUpdate?.();
     return;
   }
 
@@ -942,6 +949,7 @@ const handleCreatureDrop = (attacker, target) => {
   }
 
   revertCardToOriginalPosition();
+  latestCallbacks.onUpdate?.();
 };
 
 // ============================================================================
@@ -1299,6 +1307,7 @@ const handleDrop = (event) => {
         }
         // Otherwise revert (e.g., dropped on enemy with no valid target)
         revertCardToOriginalPosition();
+        latestCallbacks.onUpdate?.();
         return;
       }
       // Not a spell - handle as creature drop (attack or consumption)
@@ -1306,6 +1315,7 @@ const handleDrop = (event) => {
     }
   } else {
     revertCardToOriginalPosition();
+    latestCallbacks.onUpdate?.();
   }
 };
 

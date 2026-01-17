@@ -1102,9 +1102,12 @@ export const selectPreyFromHandToPlay = () => (context) => {
   return makeTargetedSelection({
     title: "Choose a prey to play",
     candidates: preyInHand.map(card => ({ label: card.name, value: card, card: card })),
-    onSelect: (card) => ({
-      playFromHand: { playerIndex, card }
-    }),
+    onSelect: (card) => {
+      log(`Plays ${card.name} from hand.`);
+      return {
+        playFromHand: { playerIndex, card }
+      };
+    },
     renderCards: true
   });
 };
@@ -1704,14 +1707,30 @@ export const selectEnemyToSteal = (damage = 0) => (context) => {
 /**
  * Remove abilities from the triggered creature (for trap effects)
  * Used when a trap triggers on a creature being played/attacking
+ *
+ * Note: We look up the creature from the field by instanceId to avoid stale
+ * reference issues that can occur when multiplayer sync replaces field objects.
  */
 export const removeTriggeredCreatureAbilities = () => (context) => {
-  const { log, target, attacker } = context;
-  const creature = target?.card ?? target ?? attacker;
+  const { log, target, attacker, state, opponentIndex } = context;
+  const staleCreature = target?.card ?? target ?? attacker;
 
-  if (!creature) {
+  if (!staleCreature) {
     log(`No creature to strip abilities from.`);
     return {};
+  }
+
+  // Look up the CURRENT creature on field by instanceId to avoid stale reference
+  // (multiplayer sync can replace field objects, making eventContext.card stale)
+  let creature = staleCreature;
+  if (state && opponentIndex !== undefined) {
+    const triggeringPlayer = state.players[opponentIndex];
+    const currentCreature = triggeringPlayer?.field?.find(
+      c => c?.instanceId === staleCreature.instanceId
+    );
+    if (currentCreature) {
+      creature = currentCreature;
+    }
   }
 
   log(`${creature.name} loses its abilities.`);

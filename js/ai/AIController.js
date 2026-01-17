@@ -519,7 +519,9 @@ export class AIController {
       state.cardPlayedThisTurn = true;
     }
 
-    // Trigger onPlay effect if any
+    // Trigger trap reaction window, then onPlay effect
+    // Traps resolve BEFORE onPlay effects per RULEBOOK
+    await this.triggerPlayTrapsForCreature(state, creature, callbacks);
     this.triggerOnPlayEffect(state, creature);
 
     // Bug detection: check after action
@@ -574,6 +576,9 @@ export class AIController {
         state.cardPlayedThisTurn = true;
       }
 
+      // Trigger trap reaction window, then onPlay effect
+      // Traps resolve BEFORE onPlay effects per RULEBOOK
+      await this.triggerPlayTrapsForCreature(state, creature, callbacks);
       this.triggerOnPlayEffect(state, creature);
 
       // Bug detection: check after dry drop
@@ -620,7 +625,9 @@ export class AIController {
       state.cardPlayedThisTurn = true;
     }
 
-    // Trigger onPlay and onConsume effects
+    // Trigger trap reaction window, then onPlay and onConsume effects
+    // Traps resolve BEFORE onPlay effects per RULEBOOK
+    await this.triggerPlayTrapsForCreature(state, creature, callbacks);
     this.triggerOnPlayEffect(state, creature);
     this.triggerOnConsumeEffect(state, creature, preyToConsume);
 
@@ -637,6 +644,36 @@ export class AIController {
 
     callbacks.onPlayCard?.(card, actualSlot, { consumeTargets: preyToConsume });
     return { success: true };
+  }
+
+  /**
+   * Trigger play traps for a creature that was just placed on the field
+   * This creates a reaction window that allows the opponent to activate traps
+   * Returns a promise that resolves when the reaction window is resolved
+   */
+  triggerPlayTrapsForCreature(state, creature, callbacks) {
+    return new Promise((resolve) => {
+      const windowCreated = createReactionWindow({
+        state,
+        event: TRIGGER_EVENTS.CARD_PLAYED,
+        triggeringPlayerIndex: this.playerIndex,
+        eventContext: {
+          card: creature,
+        },
+        onResolved: () => {
+          resolve();
+        },
+        onUpdate: () => {
+          callbacks.onUpdate?.();
+        },
+        broadcast: null, // AI doesn't broadcast directly, UI handles it
+      });
+
+      // If no window was created (no traps to trigger), resolve immediately
+      if (!windowCreated) {
+        resolve();
+      }
+    });
   }
 
   /**
