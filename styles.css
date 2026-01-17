@@ -111,7 +111,9 @@ button {
   inset: 0;
   z-index: 1;
   height: 100vh;
+  height: 100dvh; /* Dynamic viewport height - adjusts for mobile browser UI */
   max-height: 100vh;
+  max-height: 100dvh;
   min-height: var(--min-container-height); /* Prevent total collapse on extreme zoom */
   display: flex;
   flex-direction: column;
@@ -4477,22 +4479,34 @@ button {
     min-height: 195px;
     max-height: 195px;
     overflow: visible; /* Allow cards to extend upward when focused */
-    padding-bottom: calc(var(--safe-bottom) + 20px); /* Extra padding to clear browser chrome */
-    padding-top: 8px; /* Space for focused card to lift into */
+    padding-bottom: calc(var(--safe-bottom) + 6px); /* Minimal padding - safe-area handles notch */
+    padding-top: 4px;
   }
 
   .hand-panel.is-dragging {
     overflow: visible !important; /* Allow cards to be visible when dragging */
   }
 
+  /* Override hand expansion on mobile - keep fixed height to prevent battlefield squishing */
+  .battlefield-center-column.hand-expanded .hand-panel {
+    height: 195px;
+    min-height: 195px;
+    max-height: 195px;
+  }
+
+  .battlefield-center-column.hand-expanded .battlefield-layout {
+    flex: 1; /* Don't allow extra shrinking on mobile */
+  }
+
   .hand-container {
     overflow: visible; /* Allow cards to extend */
+    gap: 2px; /* Tighter gap to maximize card space */
   }
 
   .hand-grid {
     align-items: flex-end; /* Position cards from bottom for fan effect */
     overflow: visible; /* Allow focused cards to extend */
-    padding: 0 12px 4px; /* Keep cards from screen edges */
+    padding: 0 8px 0; /* Minimal padding - maximize card space */
     max-width: 100%;
     box-sizing: border-box;
   }
@@ -4511,7 +4525,7 @@ button {
     width: auto;
     aspect-ratio: 5 / 7;
     min-width: 60px;
-    max-width: 100px;
+    max-width: 115px; /* Larger cards to fill available space */
     margin-left: calc(var(--hand-overlap, 0px) * -1);
     transform: translateY(var(--card-offset-y, 0px)) scale(var(--mobile-card-scale, 1)) rotate(var(--card-rotation, 0deg));
     transform-origin: bottom center;
@@ -4587,19 +4601,25 @@ button {
   }
 
   /* Mobile hand cards: use percentages instead of fixed pixels */
+  .hand-grid .card .card-content-area {
+    overflow: visible !important; /* Allow effect text to show */
+  }
+
   .hand-grid .card .card-content-area .card-stats-row {
-    flex: 0 0 22% !important;
+    flex: 0 0 18% !important;
     min-height: 0 !important;
     max-height: none !important;
   }
 
   .hand-grid .card .card-content-area .card-keywords {
-    flex: 0 0 18% !important;
+    flex: 0 0 12% !important;
     min-height: 0 !important;
   }
 
   .hand-grid .card .card-content-area .card-effect {
-    flex: 1 1 60% !important;
+    flex: 1 1 auto !important; /* Take remaining space */
+    min-height: 0 !important;
+    overflow: visible !important; /* Prevent SVG clipping */
   }
 
   .hand-grid .card .card-actions button {
