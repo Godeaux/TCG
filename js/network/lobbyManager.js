@@ -195,11 +195,17 @@ export const isLobbyReady = (lobby) => Boolean(lobby?.guest_id && lobby?.status 
  */
 export const mapDeckIdsToCards = (deckId, deckIds = []) => {
   const catalog = deckCatalogs[deckId] ?? [];
+  console.log(`[mapDeckIdsToCards] deckId=${deckId}, catalogSize=${catalog.length}, deckIdsCount=${deckIds.length}`);
+  if (catalog.length === 0) {
+    console.warn(`[mapDeckIdsToCards] WARNING: No catalog found for deckId="${deckId}". Available catalogs:`, Object.keys(deckCatalogs));
+  }
   const catalogMap = new Map(catalog.map((card) => [card.id, card]));
-  return deckIds
+  const result = deckIds
     .map((id) => catalogMap.get(id))
     .filter(Boolean)
     .map((card) => ({ ...card }));
+  console.log(`[mapDeckIdsToCards] Mapped ${deckIds.length} IDs to ${result.length} cards`);
+  return result;
 };
 
 // ============================================================================
@@ -1063,6 +1069,13 @@ export const updateLobbySubscription = (state, { force = false } = {}) => {
 
   // Handle deck update broadcasts
   lobbyChannel.on('broadcast', { event: 'deck_update' }, ({ payload }) => {
+    console.log('[lobbyManager] Received deck_update broadcast:', {
+      senderId: payload?.senderId,
+      hasDeckBuilder: !!payload?.deckBuilder,
+      deckBuilderStage: payload?.deckBuilder?.stage,
+      deckIdsLengths: payload?.deckBuilder?.deckIds?.map(d => d?.length ?? 'null'),
+      readyStatus: payload?.deckSelection?.readyStatus,
+    });
     callbacks.onApplySync?.(state, payload);
     callbacks.onUpdate?.();
   });

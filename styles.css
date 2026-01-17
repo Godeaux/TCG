@@ -3205,6 +3205,12 @@ button {
   pointer-events: auto;
 }
 
+.overlay.fading-out {
+  opacity: 0;
+  transition: opacity 1s ease-out;
+  pointer-events: none;
+}
+
 .overlay-content {
   background: var(--bg-card);
   border: 1px solid var(--border-gold);

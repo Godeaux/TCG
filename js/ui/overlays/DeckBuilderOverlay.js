@@ -129,6 +129,10 @@ let deckFilterText = "";
 // Latest callbacks reference for async operations
 let latestCallbacks = {};
 
+// Fade-out state for "both players ready" transition
+let waitingScreenFadeTimeout = null;
+let waitingScreenFading = false;
+
 // ============================================================================
 // DOM ELEMENTS
 // ============================================================================
@@ -1199,14 +1203,45 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
     // IMPORTANT: Also verify both decks are actually populated (not just ready status)
     // This prevents a race condition where ready status syncs before deck data
     const bothDecksPopulated = state.deckBuilder.selections.every(deck => deck && deck.length > 0);
+    console.log('[DeckBuilderOverlay] Ready check:', {
+      localReady,
+      opponentReady,
+      bothDecksPopulated,
+      deckBuilderSelections: state.deckBuilder.selections.map(d => d?.length ?? 'null'),
+      deckSelectionSelections: state.deckSelection.selections,
+      waitingScreenFading,
+    });
     if (localReady && opponentReady && bothDecksPopulated) {
-      if (state.deckSelection.stage !== "complete" || state.deckBuilder.stage !== "complete") {
-        state.deckSelection.stage = "complete";
-        state.deckBuilder.stage = "complete";
-        callbacks.onDeckComplete?.(state.deckBuilder.selections);
+      // If already fading or complete, just ensure overlay is hidden
+      if (state.deckSelection.stage === "complete" && state.deckBuilder.stage === "complete") {
+        deckSelectOverlay?.classList.remove("active");
+        deckSelectOverlay?.setAttribute("aria-hidden", "true");
+        return;
       }
-      deckSelectOverlay?.classList.remove("active");
-      deckSelectOverlay?.setAttribute("aria-hidden", "true");
+
+      // Start fade-out transition if not already fading
+      if (!waitingScreenFading && !waitingScreenFadeTimeout) {
+        console.log('[DeckBuilderOverlay] Starting waiting screen fade-out');
+        waitingScreenFading = true;
+        deckSelectOverlay?.classList.add("fading-out");
+
+        waitingScreenFadeTimeout = setTimeout(() => {
+          console.log('[DeckBuilderOverlay] Fade complete, proceeding to setup');
+          waitingScreenFading = false;
+          waitingScreenFadeTimeout = null;
+
+          // Complete the deck selection
+          state.deckSelection.stage = "complete";
+          state.deckBuilder.stage = "complete";
+
+          // Hide the overlay
+          deckSelectOverlay?.classList.remove("active", "fading-out");
+          deckSelectOverlay?.setAttribute("aria-hidden", "true");
+
+          // Trigger the deck complete callback
+          callbacks.onDeckComplete?.(state.deckBuilder.selections);
+        }, 1000);
+      }
       return;
     }
 
@@ -1398,14 +1433,45 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
 
     // If both players are ready, proceed to setup
     const bothDecksPopulated = state.deckBuilder.selections.every(deck => deck && deck.length > 0);
+    console.log('[DeckBuilderOverlay] Ready check (random deck path):', {
+      localReady,
+      opponentReady,
+      bothDecksPopulated,
+      deckBuilderSelections: state.deckBuilder.selections.map(d => d?.length ?? 'null'),
+      deckSelectionSelections: state.deckSelection.selections,
+      waitingScreenFading,
+    });
     if (localReady && opponentReady && bothDecksPopulated) {
-      if (state.deckSelection.stage !== "complete" || state.deckBuilder.stage !== "complete") {
-        state.deckSelection.stage = "complete";
-        state.deckBuilder.stage = "complete";
-        callbacks.onDeckComplete?.(state.deckBuilder.selections);
+      // If already fading or complete, just ensure overlay is hidden
+      if (state.deckSelection.stage === "complete" && state.deckBuilder.stage === "complete") {
+        deckSelectOverlay?.classList.remove("active");
+        deckSelectOverlay?.setAttribute("aria-hidden", "true");
+        return;
       }
-      deckSelectOverlay?.classList.remove("active");
-      deckSelectOverlay?.setAttribute("aria-hidden", "true");
+
+      // Start fade-out transition if not already fading
+      if (!waitingScreenFading && !waitingScreenFadeTimeout) {
+        console.log('[DeckBuilderOverlay] Starting waiting screen fade-out (random deck path)');
+        waitingScreenFading = true;
+        deckSelectOverlay?.classList.add("fading-out");
+
+        waitingScreenFadeTimeout = setTimeout(() => {
+          console.log('[DeckBuilderOverlay] Fade complete, proceeding to setup (random deck path)');
+          waitingScreenFading = false;
+          waitingScreenFadeTimeout = null;
+
+          // Complete the deck selection
+          state.deckSelection.stage = "complete";
+          state.deckBuilder.stage = "complete";
+
+          // Hide the overlay
+          deckSelectOverlay?.classList.remove("active", "fading-out");
+          deckSelectOverlay?.setAttribute("aria-hidden", "true");
+
+          // Trigger the deck complete callback
+          callbacks.onDeckComplete?.(state.deckBuilder.selections);
+        }, 1000);
+      }
       return;
     }
 
@@ -2297,6 +2363,13 @@ export const resetDeckBuilderState = () => {
   deckHighlighted = null;
   deckActiveTab = "catalog";
   deckFilterText = "";
+
+  // Clear any pending fade timeout
+  if (waitingScreenFadeTimeout) {
+    clearTimeout(waitingScreenFadeTimeout);
+    waitingScreenFadeTimeout = null;
+  }
+  waitingScreenFading = false;
 };
 
 /**

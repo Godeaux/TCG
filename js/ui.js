@@ -426,22 +426,39 @@ const handleSyncPostProcessing = (state, payload, options = {}) => {
   // Clear opponent drag preview when receiving sync_state (action completed)
   clearOpponentDragPreview();
 
+  console.log('[handleSyncPostProcessing] Called:', {
+    hasPayloadDeckBuilder: !!payload.deckBuilder,
+    hasStateDeckBuilder: !!state.deckBuilder,
+    payloadDeckBuilderStage: payload.deckBuilder?.stage,
+    payloadDeckIdsLengths: payload.deckBuilder?.deckIds?.map(d => d?.length ?? 'null'),
+  });
+
   // Rehydrate deck builder if needed (UI-specific operation)
   if (payload.deckBuilder && state.deckBuilder) {
+    console.log('[handleSyncPostProcessing] Deck hydration:', {
+      payloadDeckIds: payload.deckBuilder.deckIds?.map(d => d?.length ?? 'null'),
+      localIndex,
+      deckSelectionSelections: state.deckSelection?.selections,
+    });
     if (Array.isArray(payload.deckBuilder.deckIds)) {
       payload.deckBuilder.deckIds.forEach((deckIds, index) => {
         if (!Array.isArray(deckIds) || deckIds.length === 0) {
+          console.log(`[handleSyncPostProcessing] Skipping index ${index}: empty deckIds`);
           return;
         }
         const localSelection = state.deckBuilder.selections[index];
         if (index === localIndex && localSelection?.length) {
+          console.log(`[handleSyncPostProcessing] Skipping index ${index}: local slot protected`);
           return;
         }
         const deckId = state.deckSelection?.selections?.[index];
         if (!deckId) {
+          console.log(`[handleSyncPostProcessing] Skipping index ${index}: no deckId in deckSelection.selections`);
           return;
         }
+        console.log(`[handleSyncPostProcessing] Hydrating index ${index}: deckId=${deckId}, deckIds.length=${deckIds.length}`);
         state.deckBuilder.selections[index] = mapDeckIdsToCards(deckId, deckIds);
+        console.log(`[handleSyncPostProcessing] After hydration: selections[${index}].length=${state.deckBuilder.selections[index]?.length}`);
       });
     }
     state.deckBuilder.selections.forEach((_, index) => {

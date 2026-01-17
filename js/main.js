@@ -9,7 +9,6 @@ import {
   isAnyAIMode,
   isLocalPlayersTurn,
   isMainPhase,
-  isCombatPhase,
   isSetupComplete,
   canPlayerMakeAnyMove,
 } from "./state/index.js";
@@ -90,9 +89,8 @@ const checkAutoAdvance = () => {
   // Don't auto-advance during AI turns
   if (!isLocalPlayersTurn(state)) return;
 
-  // Only auto-advance during Main phases or Combat phase
-  const isActionPhase = isMainPhase(state) || isCombatPhase(state);
-  if (!isActionPhase) return;
+  // Only auto-advance during Main phases (not Combat - let player manually advance)
+  if (!isMainPhase(state)) return;
 
   // Don't auto-advance if there's an active selection
   if (isSelectionActive()) return;
@@ -108,8 +106,7 @@ const checkAutoAdvance = () => {
   autoAdvanceTimeout = setTimeout(() => {
     // Re-check conditions in case something changed
     if (!isLocalPlayersTurn(state)) return;
-    const stillActionPhase = isMainPhase(state) || isCombatPhase(state);
-    if (!stillActionPhase) return;
+    if (!isMainPhase(state)) return;
     if (isSelectionActive()) return;
     if (canPlayerMakeAnyMove(state, state.activePlayerIndex)) return;
 
