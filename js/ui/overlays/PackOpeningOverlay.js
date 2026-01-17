@@ -523,7 +523,7 @@ const renderPackCard = (cardData, index, onClick) => {
   back.className = 'pack-card-back';
 
   // Render the actual card
-  const cardEl = renderCard(cardData, { showEffectSummary: false });
+  const cardEl = renderCard(cardData, { showEffectSummary: true });
   cardEl.classList.add('pack-revealed-card', `rarity-${cardData.packRarity}`);
 
   // Add rarity badge below the card
