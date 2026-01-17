@@ -720,9 +720,23 @@ const appendLog = (state) => {
       if (entry.type === 'bug') {
         return `<div class="log-entry log-bug"><span class="log-action">[BUG] ${escapeHtml(entry.message)}</span></div>`;
       }
-      // AI thinking log entry
+      // AI thinking log entry - apply different styles based on content
       if (entry.type === 'ai-thinking') {
-        return `<div class="log-entry log-ai-thinking"><span class="log-action">${escapeHtml(entry.message)}</span></div>`;
+        let logClass = 'log-ai-thinking';
+        const msg = entry.message || '';
+
+        // Detect message type for appropriate styling
+        if (msg.includes('DANGER') || msg.includes('Caution:')) {
+          logClass = 'log-ai-danger';
+        } else if (msg.includes('LETHAL') || msg.includes('Lethal detected') || msg.includes('Going for the win')) {
+          logClass = 'log-ai-lethal';
+        } else if (msg.includes('Priority target:') || msg.includes('threat')) {
+          logClass = 'log-ai-strategic';
+        } else if (entry.isDecision || msg.includes('Playing') || msg.includes('attacks')) {
+          logClass = 'log-ai-decision';
+        }
+
+        return `<div class="log-entry ${logClass}"><span class="log-action">${escapeHtml(msg)}</span></div>`;
       }
       // Unknown object type - try to stringify
       return `<div class="log-entry"><span class="log-action">${escapeHtml(JSON.stringify(entry))}</span></div>`;
@@ -762,11 +776,20 @@ const setupLogCardLinks = () => {
 };
 
 const updateIndicators = (state, controlsLocked) => {
+  // Original turn badge (hidden but kept for compatibility)
   const turnNumber = document.getElementById("turn-number");
   const phaseLabel = document.getElementById("phase-label");
   const turnBadge = document.getElementById("turn-badge");
-  const playerLeftBadge = document.querySelector(".player-badge.player-left");
-  const playerRightBadge = document.querySelector(".player-badge.player-right");
+
+  // New field controls
+  const fieldTurnNumber = document.getElementById("field-turn-number");
+  const fieldPhaseLabel = document.getElementById("field-phase-label");
+  const fieldTurnBtn = document.getElementById("field-turn-btn");
+
+  // Scoreboard players (new location for player badges)
+  const scoreboardPlayers = document.querySelectorAll(".scoreboard-player");
+
+  // Update original turn badge (for compatibility)
   if (turnNumber) {
     turnNumber.textContent = `Turn ${state.turn}`;
   }
@@ -775,20 +798,37 @@ const updateIndicators = (state, controlsLocked) => {
   }
   if (turnBadge) {
     turnBadge.disabled = controlsLocked;
-    // Add brighter glow for Start phase to catch attention
     if (state.phase === "Start") {
       turnBadge.classList.add("phase-start");
     } else {
       turnBadge.classList.remove("phase-start");
     }
   }
-  playerLeftBadge?.classList.remove("is-active");
-  playerRightBadge?.classList.remove("is-active");
-  if (state.activePlayerIndex === 0) {
-    playerLeftBadge?.classList.add("is-active");
-  } else {
-    playerRightBadge?.classList.add("is-active");
+
+  // Update new field turn button
+  if (fieldTurnNumber) {
+    fieldTurnNumber.textContent = `Turn ${state.turn}`;
   }
+  if (fieldPhaseLabel) {
+    fieldPhaseLabel.textContent = state.phase;
+  }
+  if (fieldTurnBtn) {
+    fieldTurnBtn.disabled = controlsLocked;
+    if (state.phase === "Start") {
+      fieldTurnBtn.classList.add("phase-start");
+    } else {
+      fieldTurnBtn.classList.remove("phase-start");
+    }
+  }
+
+  // Apply is-active to scoreboard players based on active player index
+  scoreboardPlayers.forEach((badge) => {
+    badge.classList.remove("is-active");
+    const playerIndex = parseInt(badge.dataset.playerIndex, 10);
+    if (playerIndex === state.activePlayerIndex) {
+      badge.classList.add("is-active");
+    }
+  });
 };
 
 const updatePlayerStats = (state, index, role, onUpdate = null) => {
@@ -1485,7 +1525,16 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
   if (nextResult.selectTarget) {
     const { selectTarget, ...rest } = nextResult;
     if (Object.keys(rest).length > 0) {
-      resolveEffectResult(state, rest, context);
+      // Apply immediate effects, but check for nested UI requirements (e.g., playFromHand triggering a spell that needs targeting)
+      const nestedUI = resolveEffectResult(state, rest, context);
+      if (nestedUI && (nestedUI.selectTarget || nestedUI.selectOption)) {
+        // Nested effect needs UI - resolve it first, then come back to the outer selectTarget
+        resolveEffectChain(state, nestedUI, context, onUpdate, () => {
+          // After nested UI completes, show the outer selectTarget
+          resolveEffectChain(state, { selectTarget }, context, onUpdate, onComplete, onCancel);
+        }, onCancel);
+        return;
+      }
     }
     const {
       title,
@@ -1606,7 +1655,16 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
   if (nextResult.selectOption) {
     const { selectOption, ...rest } = nextResult;
     if (Object.keys(rest).length > 0) {
-      resolveEffectResult(state, rest, context);
+      // Apply immediate effects, but check for nested UI requirements
+      const nestedUI = resolveEffectResult(state, rest, context);
+      if (nestedUI && (nestedUI.selectTarget || nestedUI.selectOption)) {
+        // Nested effect needs UI - resolve it first, then come back to the outer selectOption
+        resolveEffectChain(state, nestedUI, context, onUpdate, () => {
+          // After nested UI completes, show the outer selectOption
+          resolveEffectChain(state, { selectOption }, context, onUpdate, onComplete, onCancel);
+        }, onCancel);
+        return;
+      }
     }
     const { title, options, onSelect } = selectOption;
 
@@ -2543,24 +2601,34 @@ const triggerPlayTraps = (state, creature, onUpdate, onResolved) => {
 };
 
 const updateActionBar = (onNextPhase) => {
+  // Handler for advancing phase
+  const handleNextPhase = () => {
+    // Check if there's an active selection that needs to be resolved first
+    if (isSelectionActive()) {
+      // Show visual feedback that selection must be completed
+      const actionBar = document.getElementById("action-bar");
+      if (actionBar) {
+        actionBar.classList.add("selection-blocked");
+        // Remove the class after animation completes
+        setTimeout(() => {
+          actionBar.classList.remove("selection-blocked");
+        }, 600);
+      }
+      return; // Block phase advancement
+    }
+    onNextPhase();
+  };
+
+  // Original turn badge (hidden but kept for compatibility)
   const turnBadge = document.getElementById("turn-badge");
   if (turnBadge) {
-    turnBadge.onclick = () => {
-      // Check if there's an active selection that needs to be resolved first
-      if (isSelectionActive()) {
-        // Show visual feedback that selection must be completed
-        const actionBar = document.getElementById("action-bar");
-        if (actionBar) {
-          actionBar.classList.add("selection-blocked");
-          // Remove the class after animation completes
-          setTimeout(() => {
-            actionBar.classList.remove("selection-blocked");
-          }, 600);
-        }
-        return; // Block phase advancement
-      }
-      onNextPhase();
-    };
+    turnBadge.onclick = handleNextPhase;
+  }
+
+  // New field turn button
+  const fieldTurnBtn = document.getElementById("field-turn-btn");
+  if (fieldTurnBtn) {
+    fieldTurnBtn.onclick = handleNextPhase;
   }
 };
 
@@ -3107,12 +3175,22 @@ const executeSurrender = () => {
  */
 const setupSurrenderButton = () => {
   const surrenderBtn = document.getElementById('surrender-btn');
+  const fieldSurrenderBtn = document.getElementById('field-surrender-btn');
   const surrenderYes = document.getElementById('surrender-yes');
   const surrenderNo = document.getElementById('surrender-no');
   const surrenderOverlay = document.getElementById('surrender-overlay');
 
+  // Original surrender button (may not exist in new layout)
   if (surrenderBtn) {
     surrenderBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showSurrenderDialog();
+    });
+  }
+
+  // New field surrender button
+  if (fieldSurrenderBtn) {
+    fieldSurrenderBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       showSurrenderDialog();
     });

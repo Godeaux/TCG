@@ -135,6 +135,21 @@ button {
   gap: 12px;
 }
 
+/* Minimal top bar - player info moved to scoreboard row */
+.top-bar-minimal {
+  justify-content: center;
+  padding: 4px 18px;
+  min-height: 0;
+  border-bottom: none;
+}
+
+.top-bar-minimal .turn-badge {
+  position: relative;
+  left: auto;
+  top: auto;
+  transform: none;
+}
+
 .player-badge {
   display: flex;
   align-items: center;
@@ -623,6 +638,68 @@ button {
   transform: scale(0.95);
 }
 
+/* Field Controls (turn button + surrender) in field divider */
+.field-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.field-turn-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border-gold);
+  background: rgba(212, 168, 83, 0.1);
+  color: var(--gold-light);
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  animation: glow 2.5s ease-in-out infinite;
+}
+
+.field-turn-btn:hover:not(:disabled) {
+  background: rgba(212, 168, 83, 0.2);
+  box-shadow: 0 4px 12px rgba(212, 168, 83, 0.25);
+}
+
+.field-turn-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  animation: none;
+}
+
+.field-turn-number {
+  font-weight: 600;
+}
+
+.field-phase-label {
+  opacity: 0.8;
+}
+
+.field-surrender-btn {
+  background: transparent;
+  border: none;
+  padding: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: all 0.15s;
+}
+
+.field-surrender-btn:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
 .info-toggle {
   position: absolute;
   right: 0;
@@ -809,10 +886,121 @@ button {
 }
 
 /* ============================================================================
-   OPPONENT HAND STRIP
-   Shows opponent's hand as face-down cards with hover/drag feedback
+   SCOREBOARD ROW (replaces opponent hand strip)
+   Shows both players' info with opponent hand cards centered
    ============================================================================ */
 
+.scoreboard-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 50px;
+  min-height: 50px;
+  max-height: 50px;
+  padding: 4px 12px;
+  background: linear-gradient(180deg, rgba(10, 14, 20, 0.6), rgba(10, 14, 20, 0.3));
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: 0 0 8px 8px;
+  overflow: visible;
+  flex-shrink: 0;
+}
+
+.scoreboard-left,
+.scoreboard-right {
+  flex: 0 0 auto;
+  min-width: 140px;
+}
+
+.scoreboard-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: visible;
+}
+
+.scoreboard-player {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.02);
+  transition: all 0.2s ease;
+}
+
+.scoreboard-left .scoreboard-player {
+  flex-direction: row;
+}
+
+.scoreboard-right .scoreboard-player {
+  flex-direction: row-reverse;
+  margin-left: auto;
+}
+
+.scoreboard-player .player-name {
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.scoreboard-stats {
+  display: flex;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.scoreboard-right .scoreboard-stats {
+  flex-direction: row-reverse;
+}
+
+.scoreboard-player .emote-toggle {
+  padding: 2px 6px;
+  font-size: 14px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.scoreboard-player .emote-toggle:hover {
+  opacity: 1;
+}
+
+/* Active player breathing animation on name text */
+@keyframes name-breathe {
+  0%, 100% {
+    color: #ffffff;
+    text-shadow: 0 0 4px rgba(255, 255, 255, 0.3);
+  }
+  50% {
+    color: #f0d078;
+    text-shadow: 0 0 12px rgba(240, 208, 120, 0.7);
+  }
+}
+
+.scoreboard-player.is-active .player-name {
+  animation: name-breathe 2.6s ease-in-out infinite;
+}
+
+/* Preserve gradient names during animation */
+.scoreboard-player.is-active .player-name.name-gradient {
+  animation: name-breathe-gradient 2.6s ease-in-out infinite;
+}
+
+@keyframes name-breathe-gradient {
+  0%, 100% {
+    filter: brightness(1) drop-shadow(0 0 4px rgba(255, 255, 255, 0.3));
+  }
+  50% {
+    filter: brightness(1.3) drop-shadow(0 0 12px rgba(240, 208, 120, 0.7));
+  }
+}
+
+/* Legacy opponent-hand-strip kept for compatibility */
 .opponent-hand-strip {
   display: flex;
   align-items: center;
@@ -3566,8 +3754,44 @@ button {
 
 /* AI thinking indicator */
 .log-entry.log-ai-thinking {
-  color: #60a5fa;
+  color: #8b5cf6;
   font-style: italic;
+  border-left-color: #8b5cf6;
+}
+
+/* AI strategic thoughts (threat detection, lethal awareness) */
+.log-entry.log-ai-strategic {
+  color: #f59e0b;
+  font-weight: 500;
+  border-left-color: #f59e0b;
+}
+
+/* AI decision (card played, attack made) */
+.log-entry.log-ai-decision {
+  color: #10b981;
+  font-weight: 600;
+  border-left-color: #10b981;
+}
+
+/* AI danger warning */
+.log-entry.log-ai-danger {
+  color: #ef4444;
+  font-weight: 600;
+  border-left-color: #ef4444;
+  animation: ai-danger-pulse 1s ease-in-out;
+}
+
+@keyframes ai-danger-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* AI lethal detected */
+.log-entry.log-ai-lethal {
+  color: #22c55e;
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+  border-left-color: #22c55e;
 }
 
 /* Bug pause indicator */
@@ -3810,6 +4034,62 @@ button {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Deck Filter Input */
+.deck-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.deck-filter-input {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.deck-filter-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.deck-filter-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.deck-filter-clear {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.deck-filter-clear:hover {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border-color: var(--primary);
+}
+
+.deck-filter-clear.hidden {
+  display: none;
 }
 
 .deck-tabs {

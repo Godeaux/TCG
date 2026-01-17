@@ -26,6 +26,13 @@ import { createReactionWindow, TRIGGER_EVENTS } from '../game/triggers/index.js'
 import { isAIvsAIMode } from '../state/selectors.js';
 import { getBugDetector } from '../simulation/index.js';
 
+// New AI evaluation modules
+import { ThreatDetector } from './ThreatDetector.js';
+import { PlayEvaluator } from './PlayEvaluator.js';
+import { CombatEvaluator } from './CombatEvaluator.js';
+import { CardKnowledgeBase } from './CardKnowledgeBase.js';
+import { DifficultyManager, DIFFICULTY_LEVELS } from './DifficultyManager.js';
+
 // ============================================================================
 // AI CONFIGURATION
 // ============================================================================
@@ -61,20 +68,49 @@ export class AIController {
     this.isProcessing = false;
     this.verboseLogging = options.verboseLogging ?? true; // Enable verbose logging by default
     this.playerLabel = `AI-P${this.playerIndex + 1}`;
+
+    // Initialize difficulty system
+    this.difficulty = new DifficultyManager(options.difficulty ?? 'medium');
+    this.showThinking = options.showThinking ?? true;
+
+    // Initialize evaluation modules
+    const cardKnowledge = new CardKnowledgeBase();
+    this.threatDetector = new ThreatDetector();
+    this.playEvaluator = new PlayEvaluator(this.threatDetector, cardKnowledge);
+    this.combatEvaluator = new CombatEvaluator(this.threatDetector);
   }
 
   /**
    * Log a verbose AI thought/decision
+   * @param {Object} state - Game state
+   * @param {string} message - Message to log
+   * @param {boolean} isDecision - Whether this is a decision (shown to player)
    */
   logThought(state, message, isDecision = false) {
+    // Console logging for debug
     if (this.verboseLogging) {
-      const prefix = isDecision ? `[${this.playerLabel}]` : `[${this.playerLabel}]`;
-      const logEntry = { type: 'ai-thinking', message: `${prefix} ${message}` };
-      console.log(`${prefix} ${message}`);
-      // Also log to game log for UI display
-      if (state?.log) {
-        state.log.unshift(logEntry);
-      }
+      console.log(`[${this.playerLabel}] ${message}`);
+    }
+
+    // Game log for UI display (only if showThinking is enabled)
+    if (this.showThinking && state?.log) {
+      const prefix = `[${this.difficulty.getLevelName()} AI]`;
+      const logEntry = {
+        type: 'ai-thinking',
+        message: `${prefix} ${message}`,
+        isDecision,
+      };
+      state.log.unshift(logEntry);
+    }
+  }
+
+  /**
+   * Log a strategic thought (threat detection, lethal awareness, etc.)
+   * Only shown if threat detection is enabled at this difficulty
+   */
+  logStrategicThought(state, message) {
+    if (this.difficulty.isEnabled('threatDetection')) {
+      this.logThought(state, message, false);
     }
   }
 
@@ -100,14 +136,22 @@ export class AIController {
   }
 
   /**
-   * Get appropriate delays based on mode (instant/normal/slow)
+   * Get appropriate delays based on mode (instant/normal/slow) and difficulty
    */
   getDelays(state) {
     // In AI vs AI mode with bunny (fast) mode, use instant delays
     if (isAIvsAIMode(state) && !state.menu?.aiSlowMode) {
       return AI_DELAYS_INSTANT;
     }
-    return AI_DELAYS;
+
+    // Use difficulty-based delays for more natural feel
+    return {
+      THINKING: this.difficulty.getThinkingDelay(),
+      BETWEEN_ACTIONS: this.difficulty.getBetweenActionsDelay(),
+      END_TURN: AI_DELAYS.END_TURN,
+      PHASE_ADVANCE: AI_DELAYS.PHASE_ADVANCE,
+      TRAP_CONSIDERATION: AI_DELAYS.TRAP_CONSIDERATION,
+    };
   }
 
   /**
@@ -204,6 +248,22 @@ export class AIController {
     console.log(`[${this.playerLabel}] executePlayPhase - phase: ${state.phase}, cardPlayedThisTurn: ${state.cardPlayedThisTurn}`);
     console.log(`[${this.playerLabel}] Hand: ${player.hand.map(c => c.name).join(', ')}`);
     console.log(`[${this.playerLabel}] Field: ${player.field.map(c => c?.name || 'empty').join(', ')}`);
+
+    // Strategic analysis at start of play phase
+    if (this.difficulty.isEnabled('threatDetection')) {
+      const dangerLevel = this.threatDetector.assessDangerLevel(state, this.playerIndex);
+      if (dangerLevel.level === 'critical') {
+        this.logStrategicThought(state, `DANGER! ${dangerLevel.lethal.damage} damage incoming - need defense!`);
+      } else if (dangerLevel.level === 'danger') {
+        this.logStrategicThought(state, `Caution: ${dangerLevel.lethal.damage} potential damage on board`);
+      }
+
+      // Check for our lethal
+      const ourLethal = this.threatDetector.detectOurLethal(state, this.playerIndex);
+      if (ourLethal.hasLethal) {
+        this.logStrategicThought(state, `Lethal detected! ${ourLethal.damage} damage available`);
+      }
+    }
 
     this.logThought(state, `Evaluating play options...`);
 
@@ -339,36 +399,41 @@ export class AIController {
   /**
    * Evaluate and return the best card to play
    * Uses smart heuristics to choose the optimal card
+   * Now integrates PlayEvaluator and difficulty-based mistake injection
    */
   evaluateBestCardToPlay(state, playableCards) {
-    let bestCard = null;
-    let bestScore = -Infinity;
-    const scores = [];
+    // Use the new PlayEvaluator for context-aware scoring
+    const rankings = this.playEvaluator.rankPlays(state, playableCards, this.playerIndex);
 
-    for (const card of playableCards) {
-      const score = this.evaluateCardValue(state, card);
-      scores.push({ name: card.name, score });
-      if (score > bestScore) {
-        bestScore = score;
-        bestCard = card;
-      }
+    if (rankings.length === 0) {
+      return null;
     }
 
-    // Log card evaluations
-    if (scores.length > 1) {
-      const scoreStr = scores
-        .sort((a, b) => b.score - a.score)
+    // Log card evaluations (show top 5)
+    if (rankings.length > 1 && this.difficulty.isEnabled('showDetailedThinking')) {
+      const scoreStr = rankings
         .slice(0, 5)
-        .map(s => `${s.name}=${s.score}`)
+        .map(r => `${r.card.name}=${r.score.toFixed(0)}`)
         .join(', ');
       this.logThought(state, `Card scores: ${scoreStr}`);
     }
 
-    if (bestCard) {
-      this.logThought(state, `Best card: ${bestCard.name} (score: ${bestScore})`);
+    // Apply difficulty-based mistake injection
+    const selection = this.difficulty.applyMistake(rankings);
+
+    if (!selection) {
+      return null;
     }
 
-    return bestCard;
+    // Log the decision
+    if (selection.wasMistake) {
+      console.log(`[${this.playerLabel}] Made a mistake! Picked ${selection.card.name} instead of ${rankings[0].card.name}`);
+      this.logThought(state, `Playing ${selection.card.name} (score: ${selection.score.toFixed(0)})`);
+    } else {
+      this.logThought(state, `Best card: ${selection.card.name} (score: ${selection.score.toFixed(0)})`);
+    }
+
+    return selection.card;
   }
 
   /**
@@ -727,9 +792,25 @@ export class AIController {
 
   /**
    * Select which prey to consume
+   * Uses PlayEvaluator for smarter consumption decisions
    */
-  selectPreyToConsume(state, availablePrey) {
-    // Sort by nutrition value (highest first)
+  selectPreyToConsume(state, availablePrey, predator = null) {
+    // Use PlayEvaluator for smarter selection
+    const selected = this.playEvaluator.selectPreyToConsume(
+      predator,
+      availablePrey,
+      state,
+      this.playerIndex
+    );
+
+    if (selected.length > 0) {
+      const chosen = selected[0];
+      const nutrition = chosen.nutrition ?? chosen.currentAtk ?? 0;
+      this.logThought(state, `Consuming: ${chosen.name} (nutrition: ${nutrition})`);
+      return selected;
+    }
+
+    // Fallback: sort by nutrition value (highest first)
     const sorted = [...availablePrey].sort((a, b) => {
       const nutA = a.nutrition ?? a.currentAtk ?? 0;
       const nutB = b.nutrition ?? b.currentAtk ?? 0;
@@ -762,6 +843,23 @@ export class AIController {
     }
     if (theirCreatures.length > 0) {
       this.logThought(state, `Opponent field: ${theirCreatures.join(', ')}`);
+    }
+
+    // Strategic analysis: check for lethal
+    if (this.difficulty.isEnabled('lethalDetection')) {
+      const ourLethal = this.threatDetector.detectOurLethal(state, this.playerIndex);
+      if (ourLethal.hasLethal) {
+        this.logStrategicThought(state, `LETHAL! Going for the win with ${ourLethal.damage} damage!`);
+      }
+    }
+
+    // Check for must-kill threats
+    if (this.difficulty.isEnabled('threatDetection')) {
+      const mustKills = this.threatDetector.findMustKillTargets(state, this.playerIndex);
+      if (mustKills.length > 0) {
+        const topTarget = mustKills[0];
+        this.logStrategicThought(state, `Priority target: ${topTarget.creature.name} - ${topTarget.reason}`);
+      }
     }
 
     while (actionsRemaining > 0) {
@@ -928,73 +1026,67 @@ export class AIController {
 
   /**
    * Select the best target for an attack
-   * Uses smart evaluation to choose optimal targets
+   * Uses CombatEvaluator for smart trade analysis
    */
   selectAttackTarget(state, attacker) {
     const opponent = this.getOpponentPlayer(state);
     const validTargets = getValidTargets(state, attacker, opponent);
 
-    const attackerAtk = attacker.currentAtk ?? attacker.atk;
-    const attackerHp = attacker.currentHp ?? attacker.hp;
+    // Use CombatEvaluator to find best target
+    const { target, score, reason } = this.combatEvaluator.findBestTarget(
+      state,
+      attacker,
+      validTargets,
+      this.playerIndex
+    );
 
-    // Check for lethal on player first (always take lethal)
-    if (validTargets.player && opponent.hp <= attackerAtk) {
-      this.logThought(state, `Lethal available! Going face for ${attackerAtk} damage`);
-      return { type: 'player', player: opponent, playerIndex: 1 - this.playerIndex };
+    if (!target) {
+      return null;
     }
 
-    // Evaluate creature trades
-    let bestTarget = null;
-    let bestScore = -Infinity;
-    let bestReason = '';
+    // Build ranked list for potential mistake injection
+    const rankedTargets = [];
 
-    for (const creature of validTargets.creatures) {
-      const defenderAtk = creature.currentAtk ?? creature.atk;
-      const defenderHp = creature.currentHp ?? creature.hp;
-
-      // Can we kill it?
-      const weKillThem = attackerAtk >= defenderHp;
-      // Do we survive?
-      const weSurvive = attackerHp > defenderAtk;
-
-      let score = 0;
-      let reason = '';
-
-      if (weKillThem && weSurvive) {
-        score = 20 + defenderAtk + defenderHp; // Great trade
-        reason = 'favorable trade';
-      } else if (weKillThem && !weSurvive) {
-        score = 5 + (defenderAtk + defenderHp) - (attackerAtk + attackerHp); // Even trade
-        reason = 'even trade';
-      } else if (!weKillThem && weSurvive) {
-        score = 1; // Chip damage
-        reason = 'chip damage';
-      } else {
-        score = -10; // Bad trade
-        reason = 'bad trade';
-      }
-
-      if (score > bestScore) {
-        bestScore = score;
-        bestTarget = { type: 'creature', card: creature };
-        bestReason = reason;
-      }
-    }
-
-    // Compare to face damage
+    // Add player target if valid
     if (validTargets.player) {
-      const faceScore = attackerAtk * 2; // Value face damage
-      if (faceScore > bestScore) {
-        this.logThought(state, `Face damage (${attackerAtk}) better than creature trades`);
-        return { type: 'player', player: opponent, playerIndex: 1 - this.playerIndex };
-      }
+      const playerTarget = { type: 'player', player: opponent, playerIndex: 1 - this.playerIndex };
+      const { score: playerScore, reason: playerReason } = this.combatEvaluator.evaluateAttack(
+        state, attacker, playerTarget, this.playerIndex
+      );
+      rankedTargets.push({ target: playerTarget, score: playerScore, reason: playerReason });
     }
 
-    if (bestTarget) {
-      this.logThought(state, `Target: ${bestTarget.card.name} (${bestReason})`);
+    // Add creature targets
+    for (const creature of validTargets.creatures || []) {
+      const creatureTarget = { type: 'creature', card: creature };
+      const { score: creatureScore, reason: creatureReason } = this.combatEvaluator.evaluateAttack(
+        state, attacker, creatureTarget, this.playerIndex
+      );
+      rankedTargets.push({ target: creatureTarget, score: creatureScore, reason: creatureReason });
     }
 
-    return bestTarget;
+    // Sort by score descending
+    rankedTargets.sort((a, b) => b.score - a.score);
+
+    // Apply difficulty-based mistake injection
+    const selection = this.difficulty.applyMistakeToAttacks(rankedTargets);
+
+    if (!selection) {
+      return null;
+    }
+
+    // Log the decision
+    const targetName = selection.target.type === 'player'
+      ? 'opponent (direct)'
+      : selection.target.card?.name;
+
+    if (selection.wasMistake) {
+      console.log(`[${this.playerLabel}] Attack mistake! Picked ${targetName} instead of optimal`);
+    }
+
+    this.logThought(state, `Target: ${targetName} - ${selection.reason}`);
+
+    return selection.target;
   }
 
   /**
@@ -1116,8 +1208,21 @@ export const evaluateTrapActivation = (state, trap, eventContext, reactingPlayer
 /**
  * Create an AI controller for the specified player
  * @param {number} playerIndex - Player index (0 or 1)
- * @param {boolean} verboseLogging - Enable verbose AI thought logging
+ * @param {Object} options - Additional options
+ * @param {boolean} options.verboseLogging - Enable verbose AI thought logging
+ * @param {string} options.difficulty - 'easy' | 'medium' | 'hard'
+ * @param {boolean} options.showThinking - Show AI thoughts in game log
  */
-export const createAIController = (playerIndex = 1, verboseLogging = true) => {
-  return new AIController({ playerIndex, verboseLogging });
+export const createAIController = (playerIndex = 1, options = {}) => {
+  // Support legacy boolean parameter for backwards compatibility
+  if (typeof options === 'boolean') {
+    options = { verboseLogging: options };
+  }
+
+  return new AIController({
+    playerIndex,
+    verboseLogging: options.verboseLogging ?? true,
+    difficulty: options.difficulty ?? 'medium',
+    showThinking: options.showThinking ?? true,
+  });
 };

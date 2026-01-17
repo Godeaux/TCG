@@ -477,7 +477,7 @@ export class GameController {
 
   /**
    * Resolve an effect chain
-   * This handles selectTarget, nested effects, etc.
+   * This handles selectTarget, selectOption, nested effects, etc.
    *
    * @param {Object} result - Effect result object
    * @param {Object} context - Effect context
@@ -493,12 +493,19 @@ export class GameController {
     if (result.selectTarget) {
       const { selectTarget, ...immediateEffects } = result;
 
-      // Apply immediate effects first
+      // Apply immediate effects first, but check for nested UI requirements
       if (Object.keys(immediateEffects).length > 0) {
-        this.applyEffectResult(immediateEffects, context);
+        const nestedUI = this.applyEffectResult(immediateEffects, context, () => {
+          // After nested UI completes, show the outer selectTarget
+          this.resolveEffectChain({ selectTarget }, context, onComplete);
+        });
+        if (nestedUI) {
+          // Nested effect spawned UI - it will call the callback above when done
+          return;
+        }
       }
 
-      // Notify UI that selection is needed
+      // No nested UI - notify UI that selection is needed
       this.onSelectionNeeded({
         selectTarget,
         onSelect: (value) => {
@@ -513,9 +520,46 @@ export class GameController {
       return;
     }
 
+    // Handle selectOption (requires user interaction for choices)
+    if (result.selectOption) {
+      const { selectOption, ...immediateEffects } = result;
+
+      // Apply immediate effects first, but check for nested UI requirements
+      if (Object.keys(immediateEffects).length > 0) {
+        const nestedUI = this.applyEffectResult(immediateEffects, context, () => {
+          // After nested UI completes, show the outer selectOption
+          this.resolveEffectChain({ selectOption }, context, onComplete);
+        });
+        if (nestedUI) {
+          // Nested effect spawned UI - it will call the callback above when done
+          return;
+        }
+      }
+
+      // No nested UI - notify UI that option selection is needed
+      this.onSelectionNeeded({
+        selectOption,
+        onSelect: (option) => {
+          logMessage(this.state, `Chose: ${option.label}`);
+          const followUp = selectOption.onSelect(option);
+          this.resolveEffectChain(followUp, context, onComplete);
+        },
+        onCancel: () => {
+          onComplete?.();
+        },
+      });
+
+      return;
+    }
+
     // No selection needed - apply effects and complete
-    this.applyEffectResult(result, context);
-    onComplete?.();
+    // Pass onComplete so nested UI can be properly chained
+    const nestedUI = this.applyEffectResult(result, context, onComplete);
+    if (!nestedUI) {
+      // No nested UI, we're done
+      onComplete?.();
+    }
+    // If there was nested UI, onComplete will be called by the nested chain
   }
 
   /**
@@ -523,12 +567,21 @@ export class GameController {
    *
    * @param {Object} result - Effect result object
    * @param {Object} context - Effect context
+   * @param {Function} onComplete - Callback when chain completes (for nested UI handling)
+   * @returns {Object|undefined} - Returns UI result if nested effects require UI interaction
    */
-  applyEffectResult(result, context) {
+  applyEffectResult(result, context, onComplete) {
     // Delegate to effects.js for now
     // This will be refactored further in a future phase
-    applyEffect(this.state, result, context);
+    const uiResult = applyEffect(this.state, result, context);
     this.notifyStateChange();
+
+    // If applyEffect returned a UI result (from nested effects like playFromHand triggering
+    // a spell that needs targeting), we need to chain through it
+    if (uiResult && (uiResult.selectTarget || uiResult.selectOption)) {
+      this.resolveEffectChain(uiResult, context, onComplete);
+      return uiResult;
+    }
   }
 
   // ==========================================================================
@@ -557,7 +610,8 @@ export class GameController {
       });
 
       if (trapResult) {
-        this.applyEffectResult(trapResult, { playerIndex: opponentIndex });
+        // Use resolveEffectChain to handle any UI requirements from trap effects
+        this.resolveEffectChain(trapResult, { playerIndex: opponentIndex });
       }
 
       // Remove trap from hand and move to exile
@@ -590,7 +644,8 @@ export class GameController {
             });
 
             if (slainResult) {
-              this.applyEffectResult(slainResult, {
+              // Use resolveEffectChain to handle any UI requirements from onSlain effects
+              this.resolveEffectChain(slainResult, {
                 playerIndex: this.state.players.indexOf(player),
               });
             }

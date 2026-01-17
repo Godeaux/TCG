@@ -59,18 +59,28 @@ const getAIDelay = (state, fastDelay = 100) => {
 /**
  * Initialize the AI for a new game
  * Called when an AI game starts
+ * @param {Object} state - Game state
+ * @param {Object} options - AI options
+ * @param {string} options.difficulty - 'easy' | 'medium' | 'hard'
+ * @param {boolean} options.showThinking - Show AI thoughts in game log
  */
-export const initializeAI = (state) => {
+export const initializeAI = (state, options = {}) => {
   console.log('[AIManager] initializeAI called');
   console.log('[AIManager] state.menu.mode:', state.menu?.mode);
   console.log('[AIManager] isAIvsAIMode:', isAIvsAIMode(state), 'isAIMode:', isAIMode(state));
+
+  // Get difficulty from options or state.menu
+  const difficulty = options.difficulty ?? state.menu?.aiDifficulty ?? 'medium';
+  const showThinking = options.showThinking ?? state.menu?.aiShowThinking ?? true;
+
+  console.log(`[AIManager] AI difficulty: ${difficulty}, showThinking: ${showThinking}`);
 
   if (isAIvsAIMode(state)) {
     // AI vs AI mode: create two controllers
     console.log('[AIManager] Initializing AI vs AI mode - creating both controllers');
 
-    aiController0 = createAIController(0, true);  // AI for player 0 (bottom/watching)
-    aiController = createAIController(1, true);   // AI for player 1 (top/opponent)
+    aiController0 = createAIController(0, { difficulty, showThinking });  // AI for player 0
+    aiController = createAIController(1, { difficulty, showThinking });   // AI for player 1
     isAITurnInProgress = false;
 
     // Set AI player names
@@ -113,9 +123,10 @@ export const initializeAI = (state) => {
 
   // Regular AI mode: create one controller for player 1
   console.log('[AIManager] Initializing AI mode');
+  console.log(`[AIManager] AI difficulty: ${difficulty}, showThinking: ${showThinking}`);
 
   // AI is always player 1 (index 1) in regular AI mode
-  aiController = createAIController(1, true);
+  aiController = createAIController(1, { difficulty, showThinking });
   aiController0 = null;
   isAITurnInProgress = false;
 

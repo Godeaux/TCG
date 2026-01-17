@@ -229,7 +229,7 @@ const getTargetId = (element) => {
   if (element.classList.contains('player-field') || element.classList.contains('field-row')) {
     return `field-row-${element.classList.contains('player-field') ? 'player' : 'opponent'}`;
   }
-  if (element.classList.contains('player-badge')) {
+  if (element.classList.contains('player-badge') || element.classList.contains('scoreboard-player')) {
     return `player-${element.dataset.playerIndex}`;
   }
   if (element.classList.contains('card') && element.dataset.instanceId) {
@@ -1119,13 +1119,13 @@ const handleDragOver = (event) => {
 
   // For spells, also check if we're over the player field row (not just individual elements)
   let target = isSpell
-    ? event.target.closest('.field-slot, .player-badge, .card, .player-field')
-    : event.target.closest('.field-slot, .player-badge, .card');
+    ? event.target.closest('.field-slot, .player-badge, .scoreboard-player, .card, .player-field')
+    : event.target.closest('.field-slot, .player-badge, .scoreboard-player, .card');
 
   // If no direct target found, check if we're still within the player badge area
   // This prevents flickering when mouse moves between child elements
   if (!target) {
-    target = event.target.closest('.player-badge');
+    target = event.target.closest('.player-badge, .scoreboard-player');
   }
 
   // Ignore if hovering over the dragged card itself
@@ -1190,7 +1190,7 @@ const handleDragOver = (event) => {
     } else {
       target.classList.add('invalid-target');
     }
-  } else if (target.classList.contains('player-badge')) {
+  } else if (target.classList.contains('player-badge') || target.classList.contains('scoreboard-player')) {
     const isCombatPhase = latestState.phase === "Combat";
     const playerIndex = parseInt(target.dataset.playerIndex);
     const targetPlayer = latestState.players[playerIndex];
@@ -1272,8 +1272,8 @@ const handleDrop = (event) => {
 
   // For spells, also check for player-field container
   const dropTarget = isSpell
-    ? event.target.closest('.field-slot, .player-badge, .card, .player-field')
-    : event.target.closest('.field-slot, .player-badge, .card');
+    ? event.target.closest('.field-slot, .player-badge, .scoreboard-player, .card, .player-field')
+    : event.target.closest('.field-slot, .player-badge, .scoreboard-player, .card');
 
   clearDragVisuals();
 
@@ -1285,7 +1285,7 @@ const handleDrop = (event) => {
 
   if (dropTarget?.classList.contains('field-slot')) {
     handleFieldDrop(card, dropTarget);
-  } else if (dropTarget?.classList.contains('player-badge')) {
+  } else if (dropTarget?.classList.contains('player-badge') || dropTarget?.classList.contains('scoreboard-player')) {
     handlePlayerDrop(card, dropTarget);
   } else if (dropTarget?.classList.contains('card')) {
     const targetCard = getCardFromInstanceId(dropTarget.dataset.instanceId, latestState);
@@ -1463,8 +1463,8 @@ export const updateDropTargetVisuals = (elementBelow, card, cardElement) => {
 
   // For spells, also check for player-field container
   const target = isSpell
-    ? elementBelow?.closest('.field-slot, .player-badge, .card, .player-field')
-    : elementBelow?.closest('.field-slot, .player-badge, .card');
+    ? elementBelow?.closest('.field-slot, .player-badge, .scoreboard-player, .card, .player-field')
+    : elementBelow?.closest('.field-slot, .player-badge, .scoreboard-player, .card');
 
   // Ignore if hovering over the dragged card itself
   if (target === cardElement || target?.contains(cardElement)) {
@@ -1521,7 +1521,7 @@ export const updateDropTargetVisuals = (elementBelow, card, cardElement) => {
     } else {
       target.classList.add('invalid-target');
     }
-  } else if (target.classList.contains('player-badge')) {
+  } else if (target.classList.contains('player-badge') || target.classList.contains('scoreboard-player')) {
     const isCombatPhase = latestState.phase === "Combat";
     const playerIndex = parseInt(target.dataset.playerIndex);
     const targetPlayer = latestState.players[playerIndex];

@@ -27,8 +27,18 @@ export const showEmoteBubble = (emoteId, playerIndex) => {
   }
 
   // Find the player badge to anchor the bubble
-  const badgeSelector = playerIndex === 0 ? '.player-left' : '.player-right';
-  const badge = document.querySelector(badgeSelector);
+  // In scoreboard row: player 0 (local) is on right, player 1 (enemy) is on left
+  const badgeSelector = playerIndex === 0
+    ? '.scoreboard-right .scoreboard-player'
+    : '.scoreboard-left .scoreboard-player';
+  let badge = document.querySelector(badgeSelector);
+
+  // Fallback to old selector for compatibility
+  if (!badge) {
+    const fallbackSelector = playerIndex === 0 ? '.player-left' : '.player-right';
+    badge = document.querySelector(fallbackSelector);
+  }
+
   if (!badge) {
     console.warn(`Player badge not found for index ${playerIndex}`);
     return;

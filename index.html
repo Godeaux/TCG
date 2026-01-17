@@ -33,6 +33,11 @@
           <h2 id="deck-title">Deck Builder</h2>
           <div class="deck-status" id="deck-status"></div>
         </div>
+        <div class="deck-filter-row">
+          <input type="text" id="deck-filter-input" class="deck-filter-input"
+                 placeholder="Filter by name, keyword, or effect..." autocomplete="off" />
+          <button type="button" class="deck-filter-clear" id="deck-filter-clear">&times;</button>
+        </div>
         <div class="deck-tabs">
           <button class="deck-tab active" data-tab="catalog">Catalog</button>
           <button class="deck-tab" data-tab="deck">My Deck</button>
@@ -765,36 +770,12 @@
     <div class="opponent-drag-preview" id="opponent-drag-preview" aria-hidden="true"></div>
 
     <div class="game-container">
-      <header class="top-bar">
-        <div class="player-badge player-left" data-player-index="0">
-          <div class="player-info">
-            <span class="player-name" id="player1-name">Player 1</span>
-            <div class="player-stats">
-              <span id="player1-hp">❤️: 10</span>
-              <span id="player1-deck">🃏: 20</span>
-            </div>
-          </div>
-        </div>
-        <button class="emote-toggle emote-toggle-left" id="emote-toggle" title="Quick Chat" aria-label="Quick Chat">
-          <span class="emote-toggle-icon">💬</span>
-        </button>
-        <button class="surrender-btn" id="surrender-btn" title="Surrender" aria-label="Surrender">🏳️</button>
-        <button class="turn-badge" id="turn-badge" type="button" aria-label="Advance phase">
+      <header class="top-bar top-bar-minimal">
+        <!-- Turn badge kept for compatibility but hidden - main controls are in field-divider -->
+        <button class="turn-badge" id="turn-badge" type="button" aria-label="Advance phase" style="display: none;">
           <span class="turn-number" id="turn-number">Turn 1</span>
           <span class="phase-label" id="phase-label">Main</span>
         </button>
-        <button class="emote-toggle emote-toggle-right" id="emote-toggle-right" title="Quick Chat" aria-label="Quick Chat">
-          <span class="emote-toggle-icon">💬</span>
-        </button>
-        <div class="player-badge player-right" data-player-index="1">
-          <div class="player-info right">
-            <span class="player-name" id="player2-name">Player 2</span>
-            <div class="player-stats">
-              <span id="player2-hp">❤️: 10</span>
-              <span id="player2-deck">🃏: 20</span>
-            </div>
-          </div>
-        </div>
       </header>
 
       <div class="pages-container" id="pages-container">
@@ -818,10 +799,38 @@
             <!-- Center Column: Battlefield and Hand -->
             <div class="battlefield-center-column">
               <div class="battlefield-layout">
-                <!-- Opponent Hand Strip (shows card backs with hover/drag feedback) -->
-                <div class="opponent-hand-strip" id="opponent-hand-strip">
-                  <div class="opponent-hand-cards" id="opponent-hand-cards">
-                    <!-- Card backs will be rendered here by JavaScript -->
+                <!-- Scoreboard Row (player info + opponent hand cards) -->
+                <div class="scoreboard-row" id="scoreboard-row">
+                  <!-- LEFT: Enemy info -->
+                  <div class="scoreboard-left">
+                    <div class="scoreboard-player player-badge" data-player-index="1">
+                      <span class="player-name" id="player2-name">Enemy</span>
+                      <div class="scoreboard-stats">
+                        <span id="player2-hp">❤️: 10</span>
+                        <span id="player2-deck">🃏: 20</span>
+                      </div>
+                      <button class="emote-toggle" id="emote-toggle-right" title="Quick Chat" aria-label="Quick Chat">
+                        <span class="emote-toggle-icon">💬</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- CENTER: Enemy hand cards (unchanged centered position) -->
+                  <div class="scoreboard-center">
+                    <div class="opponent-hand-cards" id="opponent-hand-cards">
+                      <!-- Card backs will be rendered here by JavaScript -->
+                    </div>
+                  </div>
+
+                  <!-- RIGHT: Your info -->
+                  <div class="scoreboard-right">
+                    <div class="scoreboard-player player-badge" data-player-index="0">
+                      <span class="player-name" id="player1-name">You</span>
+                      <div class="scoreboard-stats">
+                        <span id="player1-hp">❤️: 10</span>
+                        <span id="player1-deck">🃏: 20</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div class="battlefield-region">
@@ -840,6 +849,13 @@
                       <p class="field-divider-text">
                         Food Chain™ (C) Food Chain TCG. All rights reserved.
                       </p>
+                      <div class="field-controls">
+                        <button class="field-turn-btn" id="field-turn-btn" type="button" aria-label="Advance phase">
+                          <span class="field-turn-number" id="field-turn-number">Turn 1</span>
+                          <span class="field-phase-label" id="field-phase-label">Main</span>
+                        </button>
+                        <button class="field-surrender-btn" id="field-surrender-btn" title="Surrender" aria-label="Surrender">🏳️</button>
+                      </div>
                       <button class="mobile-nav-right" id="mobile-nav-right" aria-label="View Game History">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                           <polyline points="9 18 15 12 9 6"></polyline>
