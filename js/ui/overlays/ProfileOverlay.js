@@ -108,7 +108,7 @@ const renderCollectionCard = (card, ownedRarity, onClick) => {
 
   // Create the card element
   const cardEl = renderCard(card, {
-    showEffectSummary: false,
+    showEffectSummary: true,
     onClick: () => onClick(card, ownedRarity),
   });
 
