@@ -7,6 +7,11 @@ import {
   isAIMode,
   isAIvsAIMode,
   isAnyAIMode,
+  isLocalPlayersTurn,
+  isMainPhase,
+  isCombatPhase,
+  isSetupComplete,
+  canPlayerMakeAnyMove,
 } from "./state/index.js";
 import { advancePhase, endTurn, startTurn } from "./game/index.js";
 import { renderGame, setupInitialDraw } from "./ui.js";
@@ -17,6 +22,7 @@ import {
   checkAndTriggerAITurn,
 } from "./ai/index.js";
 import { generateAIvsAIDecks } from "./ui/overlays/DeckBuilderOverlay.js";
+import { isSelectionActive } from "./ui/components/index.js";
 
 // Initialize the card registry (loads JSON card data)
 initializeCardRegistry();
@@ -64,6 +70,53 @@ const aiCallbacks = {
     // Generic UI update for AI actions
     refresh();
   },
+};
+
+// Auto-advance timeout tracking
+let autoAdvanceTimeout = null;
+
+// Check if player has no moves and should auto-advance
+const checkAutoAdvance = () => {
+  // Clear any pending auto-advance
+  if (autoAdvanceTimeout) {
+    clearTimeout(autoAdvanceTimeout);
+    autoAdvanceTimeout = null;
+  }
+
+  // Don't auto-advance if game isn't ready
+  if (!isSetupComplete(state)) return;
+  if (state.winner) return;
+
+  // Don't auto-advance during AI turns
+  if (!isLocalPlayersTurn(state)) return;
+
+  // Only auto-advance during Main phases or Combat phase
+  const isActionPhase = isMainPhase(state) || isCombatPhase(state);
+  if (!isActionPhase) return;
+
+  // Don't auto-advance if there's an active selection
+  if (isSelectionActive()) return;
+
+  // Don't auto-advance if there are pending effects
+  if (state.endOfTurnProcessing || state.beforeCombatProcessing) return;
+  if (state.endOfTurnQueue?.length > 0 || state.beforeCombatQueue?.length > 0) return;
+
+  // Check if player can make any moves
+  if (canPlayerMakeAnyMove(state, state.activePlayerIndex)) return;
+
+  // No moves available - auto-advance after a brief delay
+  autoAdvanceTimeout = setTimeout(() => {
+    // Re-check conditions in case something changed
+    if (!isLocalPlayersTurn(state)) return;
+    const stillActionPhase = isMainPhase(state) || isCombatPhase(state);
+    if (!stillActionPhase) return;
+    if (isSelectionActive()) return;
+    if (canPlayerMakeAnyMove(state, state.activePlayerIndex)) return;
+
+    console.log(`[Auto-Advance] No moves available in ${state.phase}, advancing automatically`);
+    advancePhase(state);
+    refresh();
+  }, 400); // Brief delay so player sees the state
 };
 
 const refresh = () => {
@@ -145,6 +198,9 @@ const refresh = () => {
   if (isAnyAIMode(state)) {
     checkAndTriggerAITurn(state, aiCallbacks);
   }
+
+  // Check if human player has no moves and should auto-advance
+  checkAutoAdvance();
 };
 
 refresh();

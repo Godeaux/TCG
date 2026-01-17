@@ -3243,6 +3243,52 @@ const setupSurrenderButton = () => {
 };
 
 /**
+ * Set up click-away handler to deselect cards
+ * Clicking on empty space (not cards, buttons, or interactive elements) clears the selection
+ */
+const setupClickAwayHandler = () => {
+  document.addEventListener('click', (e) => {
+    // Don't deselect if no card is selected
+    if (!selectedHandCardId) return;
+
+    // Don't deselect if we don't have state
+    if (!latestState) return;
+
+    // Check if the click was on an interactive element that should NOT deselect
+    const target = e.target;
+    const interactiveSelectors = [
+      '.card',           // Card elements
+      '.hand-card',      // Hand cards
+      '.field-card',     // Field cards
+      '.action-bar',     // Action bar
+      '.action-btn',     // Action buttons
+      'button',          // Any button
+      '.emote-toggle',   // Emote toggles
+      '.emote-panel',    // Emote panel
+      '.selection-panel', // Selection panel
+      '.inspector-content', // Card inspector
+      '.surrender-dialog', // Surrender dialog
+      '.field-turn-btn', // Turn button
+      '.scoreboard-player', // Scoreboard player badges
+      'input',           // Input fields
+      'select',          // Select dropdowns
+      'a',               // Links
+    ];
+
+    // Check if click target or any ancestor matches interactive selectors
+    const isInteractive = interactiveSelectors.some(selector =>
+      target.closest(selector) !== null
+    );
+
+    if (isInteractive) return;
+
+    // Click was on empty space - deselect the card
+    selectedHandCardId = null;
+    updateActionPanel(latestState, latestCallbacks);
+  });
+};
+
+/**
  * Set up click-to-continue handler for bug detector pause
  * When a bug is detected in AI vs AI mode, clicking anywhere resumes execution
  */
@@ -3294,12 +3340,14 @@ if (typeof window !== 'undefined') {
       setupMobileNavigation();
       setupLogCardLinks();
       setupSurrenderButton();
+      setupClickAwayHandler();
       setupBugDetectorResumeHandler();
     });
   } else {
     setupMobileNavigation();
     setupLogCardLinks();
     setupSurrenderButton();
+    setupClickAwayHandler();
     setupBugDetectorResumeHandler();
   }
 }

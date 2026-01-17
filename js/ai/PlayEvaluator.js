@@ -43,14 +43,22 @@ export class PlayEvaluator {
 
     // Start with base value
     let score = this.cardKnowledge.getBaseValue(card);
-    reasons.push(`Base value: ${score.toFixed(0)}`);
+    reasons.push(`Base: ${score.toFixed(0)}`);
 
-    // Add effect value
+    // Add effect value - MUST pass full context (state, aiPlayerIndex, card)
+    // This enables context-aware evaluation (e.g., "return enemies" = 0 if no enemies)
     if (card.effects) {
-      const effectValue = this.cardKnowledge.getEffectValue(card.effects, state);
+      const effectResult = this.cardKnowledge.getEffectValue(card.effects, state, aiPlayerIndex, card);
+      const effectValue = effectResult.value;
       score += effectValue;
-      if (effectValue > 0) {
-        reasons.push(`Effect value: +${effectValue.toFixed(0)}`);
+
+      // Add detailed effect reasons to the log
+      if (effectResult.reasons && effectResult.reasons.length > 0) {
+        for (const reason of effectResult.reasons) {
+          reasons.push(reason);
+        }
+      } else if (effectValue === 0 && card.effects.onPlay) {
+        reasons.push(`Effect: no valid targets`);
       }
     }
 
@@ -83,9 +91,11 @@ export class PlayEvaluator {
       reasons.push('Free play: +5');
     }
 
-    // Trap cards are situational - slightly lower priority
+    // Trap cards CANNOT be played - they trigger automatically from hand
+    // If a trap gets this far, give it a very negative score to prevent selection
     if (card.type === 'Trap') {
-      score -= 2; // Reactive, not proactive
+      score = -1000;
+      reasons.push('Trap: cannot be played (triggers automatically)');
     }
 
     return { score, reasons };

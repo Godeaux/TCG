@@ -131,6 +131,12 @@ export {
   hasAnyAttacks,
   hasCreatureAttacked,
   getAttackableCreatures,
+
+  // Move availability selectors
+  canCardBePlayed,
+  canPlayAnyCardFromHand,
+  getCreaturesThatCanAttack,
+  canPlayerMakeAnyMove,
 } from './selectors.js';
 
 // ============================================================================

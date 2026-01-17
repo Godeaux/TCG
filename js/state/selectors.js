@@ -524,3 +524,97 @@ export const getAttackableCreatures = (state, playerIndex) => {
     return hasHaste || !summonedThisTurn;
   });
 };
+
+// ============================================================================
+// MOVE AVAILABILITY SELECTORS
+// ============================================================================
+
+/**
+ * Check if a specific card can be legally played from hand
+ */
+export const canCardBePlayed = (state, card, playerIndex) => {
+  if (!card) return false;
+
+  // Check if we're in a main phase
+  if (!isMainPhase(state)) return false;
+
+  // Check card limit (unless it's a free card)
+  const isFreeCard =
+    card.type === "Free Spell" ||
+    card.type === "Trap" ||
+    card.keywords?.includes("Free Play");
+  if (!isFreeCard && wasCardPlayedThisTurn(state)) {
+    return false;
+  }
+
+  // Creatures need field space
+  if (card.type === "Predator" || card.type === "Prey") {
+    if (isFieldFull(state, playerIndex)) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
+/**
+ * Check if any card in hand can be played
+ */
+export const canPlayAnyCardFromHand = (state, playerIndex) => {
+  const hand = getPlayerHand(state, playerIndex);
+  return hand.some((card) => canCardBePlayed(state, card, playerIndex));
+};
+
+/**
+ * Get creatures that can actually attack (includes status effect checks)
+ * More comprehensive than getAttackableCreatures - includes frozen/paralyzed/passive/harmless
+ */
+export const getCreaturesThatCanAttack = (state, playerIndex) => {
+  return getPlayerCreatures(state, playerIndex).filter((creature) => {
+    // Must not have attacked already
+    if (hasCreatureAttacked(creature)) return false;
+
+    // Check status effects
+    if (creature.frozen) return false;
+    if (creature.paralyzed) return false;
+
+    // Check keywords that prevent attacking
+    const isPassive = creature.keywords?.includes("Passive");
+    const isHarmless =
+      creature.keywords?.includes("Harmless") || creature.attack === 0;
+    if (isPassive || isHarmless) return false;
+
+    // Check summoning sickness (unless Haste)
+    const hasHaste = creature.keywords?.includes("Haste");
+    const summonedThisTurn = creature.summonedTurn === state.turn;
+    if (!hasHaste && summonedThisTurn) return false;
+
+    return true;
+  });
+};
+
+/**
+ * Check if a player can make any meaningful move
+ * Used for auto-end turn detection
+ */
+export const canPlayerMakeAnyMove = (state, playerIndex) => {
+  // Main phases: check if any card can be played
+  if (isMainPhase(state)) {
+    if (canPlayAnyCardFromHand(state, playerIndex)) {
+      return true;
+    }
+    return false;
+  }
+
+  // Combat phase: check if any creature can attack
+  if (isCombatPhase(state)) {
+    const attackableCreatures = getCreaturesThatCanAttack(state, playerIndex);
+    if (attackableCreatures.length > 0) {
+      return true;
+    }
+    return false;
+  }
+
+  // Other phases (Start, Draw, Before Combat, End) auto-advance
+  return false;
+};

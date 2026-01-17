@@ -47,7 +47,7 @@ const MAX_RECOVERY_ATTEMPTS = 3;
 const getAIDelay = (state, fastDelay = 100) => {
   const speed = state.menu?.aiSpeed || (state.menu?.aiSlowMode ? 'slow' : 'fast');
   if (speed === 'slow') {
-    return fastDelay * 2.5; // 2.5x slower in slow mode
+    return fastDelay * 4; // 4x slower in slow mode
   }
   return fastDelay;
 };
@@ -70,7 +70,7 @@ export const initializeAI = (state, options = {}) => {
   console.log('[AIManager] isAIvsAIMode:', isAIvsAIMode(state), 'isAIMode:', isAIMode(state));
 
   // Get difficulty from options or state.menu
-  const difficulty = options.difficulty ?? state.menu?.aiDifficulty ?? 'medium';
+  const difficulty = options.difficulty ?? state.menu?.aiDifficulty ?? 'hard';
   const showThinking = options.showThinking ?? state.menu?.aiShowThinking ?? true;
 
   console.log(`[AIManager] AI difficulty: ${difficulty}, showThinking: ${showThinking}`);

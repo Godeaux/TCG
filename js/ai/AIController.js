@@ -350,10 +350,16 @@ export class AIController {
     const hasConsumablePrey = availablePrey.length > 0;
 
     // Filter to playable cards (respect card limit unless free play)
+    // IMPORTANT: Traps CANNOT be played - they trigger automatically from hand
     const playableCards = hand.filter(card => {
-      const isFree = card.type === "Free Spell" || card.type === "Trap" || isFreePlay(card);
+      // Traps are never "playable" - they trigger automatically when conditions are met
+      if (card.type === "Trap") {
+        return false;
+      }
 
-      // If card limit not used, any card is playable
+      const isFree = card.type === "Free Spell" || isFreePlay(card);
+
+      // If card limit not used, any non-trap card is playable
       if (!state.cardPlayedThisTurn) {
         return true;
       }
@@ -409,13 +415,13 @@ export class AIController {
       return null;
     }
 
-    // Log card evaluations (show top 5)
-    if (rankings.length > 1 && this.difficulty.isEnabled('showDetailedThinking')) {
+    // Log card evaluations (show top cards with scores)
+    if (rankings.length > 1) {
       const scoreStr = rankings
         .slice(0, 5)
         .map(r => `${r.card.name}=${r.score.toFixed(0)}`)
         .join(', ');
-      this.logThought(state, `Card scores: ${scoreStr}`);
+      this.logThought(state, `Evaluating: ${scoreStr}`);
     }
 
     // Apply difficulty-based mistake injection
@@ -425,12 +431,26 @@ export class AIController {
       return null;
     }
 
-    // Log the decision
+    // Find the full ranking entry for the selected card to get its reasons
+    const selectedRanking = rankings.find(r => r.card === selection.card);
+
+    // Log the detailed reasoning for the selected card
+    if (selectedRanking && selectedRanking.reasons && selectedRanking.reasons.length > 0) {
+      // Log the card name and score
+      this.logThought(state, `→ ${selection.card.name} (${selection.score.toFixed(0)}):`);
+
+      // Log each reason on its own line for clarity
+      for (const reason of selectedRanking.reasons) {
+        this.logThought(state, `   ${reason}`);
+      }
+    } else {
+      // Fallback if no detailed reasons
+      this.logThought(state, `→ ${selection.card.name} (${selection.score.toFixed(0)})`);
+    }
+
+    // Note if AI made a "mistake" (for difficulty purposes)
     if (selection.wasMistake) {
       console.log(`[${this.playerLabel}] Made a mistake! Picked ${selection.card.name} instead of ${rankings[0].card.name}`);
-      this.logThought(state, `Playing ${selection.card.name} (score: ${selection.score.toFixed(0)})`);
-    } else {
-      this.logThought(state, `Best card: ${selection.card.name} (score: ${selection.score.toFixed(0)})`);
     }
 
     return selection.card;
@@ -1032,19 +1052,7 @@ export class AIController {
     const opponent = this.getOpponentPlayer(state);
     const validTargets = getValidTargets(state, attacker, opponent);
 
-    // Use CombatEvaluator to find best target
-    const { target, score, reason } = this.combatEvaluator.findBestTarget(
-      state,
-      attacker,
-      validTargets,
-      this.playerIndex
-    );
-
-    if (!target) {
-      return null;
-    }
-
-    // Build ranked list for potential mistake injection
+    // Build ranked list with scores for all targets
     const rankedTargets = [];
 
     // Add player target if valid
@@ -1053,7 +1061,7 @@ export class AIController {
       const { score: playerScore, reason: playerReason } = this.combatEvaluator.evaluateAttack(
         state, attacker, playerTarget, this.playerIndex
       );
-      rankedTargets.push({ target: playerTarget, score: playerScore, reason: playerReason });
+      rankedTargets.push({ target: playerTarget, score: playerScore, reason: playerReason, name: 'Face' });
     }
 
     // Add creature targets
@@ -1062,11 +1070,24 @@ export class AIController {
       const { score: creatureScore, reason: creatureReason } = this.combatEvaluator.evaluateAttack(
         state, attacker, creatureTarget, this.playerIndex
       );
-      rankedTargets.push({ target: creatureTarget, score: creatureScore, reason: creatureReason });
+      rankedTargets.push({ target: creatureTarget, score: creatureScore, reason: creatureReason, name: creature.name });
+    }
+
+    if (rankedTargets.length === 0) {
+      return null;
     }
 
     // Sort by score descending
     rankedTargets.sort((a, b) => b.score - a.score);
+
+    // Log all target options with scores
+    if (rankedTargets.length > 1) {
+      const optionsStr = rankedTargets
+        .slice(0, 4)
+        .map(t => `${t.name}=${t.score.toFixed(0)}`)
+        .join(', ');
+      this.logThought(state, `${attacker.name} targets: ${optionsStr}`);
+    }
 
     // Apply difficulty-based mistake injection
     const selection = this.difficulty.applyMistakeToAttacks(rankedTargets);
@@ -1075,16 +1096,16 @@ export class AIController {
       return null;
     }
 
-    // Log the decision
+    // Log the detailed decision
     const targetName = selection.target.type === 'player'
-      ? 'opponent (direct)'
+      ? 'Face'
       : selection.target.card?.name;
 
     if (selection.wasMistake) {
       console.log(`[${this.playerLabel}] Attack mistake! Picked ${targetName} instead of optimal`);
     }
 
-    this.logThought(state, `Target: ${targetName} - ${selection.reason}`);
+    this.logThought(state, `→ ${targetName}: ${selection.reason}`);
 
     return selection.target;
   }
