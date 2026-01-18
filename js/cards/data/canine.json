@@ -1,0 +1,608 @@
+{
+  "meta": {
+    "deckName": "Canine",
+    "deckEmoji": "🐺",
+    "deckColor": "#8B4513",
+    "status": "beta",
+    "description": "Pack hunters that grow stronger together. Build wide boards and unleash devastating Howl buffs."
+  },
+  "tokens": [
+    {
+      "id": "token-wolf-pup",
+      "name": "Wolf Pup",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Pack"],
+      "tribe": "Canine",
+      "effectText": "Pack.",
+      "isToken": true
+    },
+    {
+      "id": "token-coyote-pup",
+      "name": "Coyote Pup",
+      "type": "Prey",
+      "atk": 0,
+      "hp": 1,
+      "nutrition": 0,
+      "keywords": [],
+      "tribe": "Canine",
+      "effectText": "",
+      "isToken": true
+    }
+  ],
+  "cards": [
+    {
+      "id": "canine-prey-fennec-fox",
+      "name": "Fennec Fox",
+      "type": "Prey",
+      "atk": 0,
+      "hp": 1,
+      "nutrition": 0,
+      "keywords": ["Free Play"],
+      "tribe": "Canine",
+      "effectText": "Play 2 Coyote Pups.",
+      "summons": ["token-coyote-pup"],
+      "effects": {
+        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-coyote-pup", "token-coyote-pup"] } }
+      }
+    },
+    {
+      "id": "canine-prey-kit-fox",
+      "name": "Kit Fox",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Pack"],
+      "tribe": "Canine",
+      "effectText": "Pack. Howl: All Canines gain Haste.",
+      "effects": {
+        "onPlay": { "type": "howl", "params": { "keyword": "Haste" } }
+      }
+    },
+    {
+      "id": "canine-prey-bat-eared-fox",
+      "name": "Bat-eared Fox",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Pack"],
+      "tribe": "Canine",
+      "effectText": "Pack. Draw 1.",
+      "effects": {
+        "onPlay": { "type": "draw", "params": { "count": 1 } }
+      }
+    },
+    {
+      "id": "canine-prey-coyote",
+      "name": "Coyote",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": ["Pack"],
+      "tribe": "Canine",
+      "effectText": "Pack. Play 1 Coyote Pup.",
+      "summons": ["token-coyote-pup"],
+      "effects": {
+        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-coyote-pup"] } }
+      }
+    },
+    {
+      "id": "canine-prey-golden-jackal",
+      "name": "Golden Jackal",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Pack", "Scavenge"],
+      "tribe": "Canine",
+      "effectText": "Pack. Scavenge."
+    },
+    {
+      "id": "canine-prey-black-backed-jackal",
+      "name": "Black-backed Jackal",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Pack", "Haste"],
+      "tribe": "Canine",
+      "effectText": "Pack. Haste."
+    },
+    {
+      "id": "canine-prey-dhole",
+      "name": "Dhole",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Pack"],
+      "tribe": "Canine",
+      "effectText": "Pack. Howl: All Canines gain +1/+0.",
+      "effects": {
+        "onPlay": { "type": "howl", "params": { "atk": 1, "hp": 0 } }
+      }
+    },
+    {
+      "id": "canine-prey-corsac-fox",
+      "name": "Corsac Fox",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Pack", "Hidden"],
+      "tribe": "Canine",
+      "effectText": "Pack. Hidden."
+    },
+    {
+      "id": "canine-prey-arctic-fox",
+      "name": "Arctic Fox",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Pack"],
+      "tribe": "Canine",
+      "effectText": "Pack. Target enemy creature gains Frozen.",
+      "effects": {
+        "onPlay": { "type": "selectEnemyToFreeze" }
+      }
+    },
+    {
+      "id": "canine-prey-red-fox",
+      "name": "Red Fox",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Pack", "Ambush"],
+      "tribe": "Canine",
+      "effectText": "Pack. Ambush."
+    },
+    {
+      "id": "canine-prey-side-striped-jackal",
+      "name": "Side-striped Jackal",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": ["Pack"],
+      "tribe": "Canine",
+      "effectText": "Pack. Slain, play 2 Coyote Pups.",
+      "summons": ["token-coyote-pup"],
+      "effects": {
+        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["token-coyote-pup", "token-coyote-pup"] } }
+      }
+    },
+    {
+      "id": "canine-prey-african-wild-dog",
+      "name": "African Wild Dog",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": ["Pack"],
+      "tribe": "Canine",
+      "effectText": "Pack. Howl: All Canines gain +1/+1.",
+      "effects": {
+        "onPlay": { "type": "howl", "params": { "atk": 1, "hp": 1 } }
+      }
+    },
+    {
+      "id": "canine-prey-dingo",
+      "name": "Dingo",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": ["Pack"],
+      "tribe": "Canine",
+      "effectText": "Pack. Play 1 Wolf Pup.",
+      "summons": ["token-wolf-pup"],
+      "effects": {
+        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-wolf-pup"] } }
+      }
+    },
+    {
+      "id": "canine-prey-maned-wolf",
+      "name": "Maned Wolf",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": ["Pack", "Acuity"],
+      "tribe": "Canine",
+      "effectText": "Pack. Acuity."
+    },
+    {
+      "id": "canine-prey-raccoon-dog",
+      "name": "Raccoon Dog",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 3,
+      "nutrition": 2,
+      "keywords": ["Pack"],
+      "tribe": "Canine",
+      "effectText": "Pack. Draw 1. Slain, draw 1.",
+      "effects": {
+        "onPlay": { "type": "draw", "params": { "count": 1 } },
+        "onSlain": { "type": "draw", "params": { "count": 1 } }
+      }
+    },
+    {
+      "id": "canine-prey-bush-dog",
+      "name": "Bush Dog",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": ["Pack", "Lure"],
+      "tribe": "Canine",
+      "effectText": "Pack. Lure."
+    },
+    {
+      "id": "canine-prey-ethiopian-wolf",
+      "name": "Ethiopian Wolf",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": ["Pack"],
+      "tribe": "Canine",
+      "effectText": "Pack. Howl: All Canines gain Barrier.",
+      "effects": {
+        "onPlay": { "type": "howl", "params": { "keyword": "Barrier" } }
+      }
+    },
+    {
+      "id": "canine-prey-indian-wild-dog",
+      "name": "Indian Wild Dog",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": ["Pack"],
+      "tribe": "Canine",
+      "effectText": "Pack. Play 2 Wolf Pups.",
+      "summons": ["token-wolf-pup"],
+      "effects": {
+        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-wolf-pup", "token-wolf-pup"] } }
+      }
+    },
+    {
+      "id": "canine-prey-timber-wolf",
+      "name": "Timber Wolf",
+      "type": "Prey",
+      "atk": 3,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": ["Pack"],
+      "tribe": "Canine",
+      "effectText": "Pack."
+    },
+    {
+      "id": "canine-prey-gray-wolf",
+      "name": "Gray Wolf",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 3,
+      "nutrition": 2,
+      "keywords": ["Pack"],
+      "tribe": "Canine",
+      "effectText": "Pack. Howl: All Canines gain +0/+1.",
+      "effects": {
+        "onPlay": { "type": "howl", "params": { "atk": 0, "hp": 1 } }
+      }
+    },
+    {
+      "id": "canine-prey-red-wolf",
+      "name": "Red Wolf",
+      "type": "Prey",
+      "atk": 3,
+      "hp": 3,
+      "nutrition": 3,
+      "keywords": ["Pack"],
+      "tribe": "Canine",
+      "effectText": "Pack. Howl: All Canines gain +1/+1.",
+      "effects": {
+        "onPlay": { "type": "howl", "params": { "atk": 1, "hp": 1 } }
+      }
+    },
+    {
+      "id": "canine-prey-arctic-wolf",
+      "name": "Arctic Wolf",
+      "type": "Prey",
+      "atk": 3,
+      "hp": 3,
+      "nutrition": 3,
+      "keywords": ["Pack", "Barrier"],
+      "tribe": "Canine",
+      "effectText": "Pack. Barrier."
+    },
+    {
+      "id": "canine-prey-black-wolf",
+      "name": "Black Wolf",
+      "type": "Prey",
+      "atk": 4,
+      "hp": 2,
+      "nutrition": 3,
+      "keywords": ["Pack", "Ambush"],
+      "tribe": "Canine",
+      "effectText": "Pack. Ambush."
+    },
+    {
+      "id": "canine-prey-alpha-wolf",
+      "name": "Alpha Wolf",
+      "type": "Prey",
+      "atk": 3,
+      "hp": 4,
+      "nutrition": 3,
+      "keywords": ["Pack"],
+      "tribe": "Canine",
+      "effectText": "Pack. Howl: All Canines gain +2/+0.",
+      "effects": {
+        "onPlay": { "type": "howl", "params": { "atk": 2, "hp": 0 } }
+      }
+    },
+    {
+      "id": "canine-prey-dire-wolf",
+      "name": "Dire Wolf",
+      "type": "Prey",
+      "atk": 4,
+      "hp": 4,
+      "nutrition": 4,
+      "keywords": ["Pack"],
+      "tribe": "Canine",
+      "effectText": "Pack. Howl: All Canines gain +2/+2.",
+      "effects": {
+        "onPlay": { "type": "howl", "params": { "atk": 2, "hp": 2 } }
+      }
+    },
+    {
+      "id": "canine-predator-coyote-scout",
+      "name": "Coyote Scout",
+      "type": "Predator",
+      "atk": 2,
+      "hp": 2,
+      "consumesType": "Prey",
+      "keywords": ["Pack"],
+      "tribe": "Canine",
+      "effectText": "Pack. When consumed: Draw 1.",
+      "effects": {
+        "onConsume": { "type": "draw", "params": { "count": 1 } }
+      }
+    },
+    {
+      "id": "canine-predator-jackal-hunter",
+      "name": "Jackal Hunter",
+      "type": "Predator",
+      "atk": 2,
+      "hp": 2,
+      "consumesType": "Prey",
+      "keywords": ["Pack", "Scavenge"],
+      "tribe": "Canine",
+      "effectText": "Pack. Scavenge."
+    },
+    {
+      "id": "canine-predator-dingo-tracker",
+      "name": "Dingo Tracker",
+      "type": "Predator",
+      "atk": 2,
+      "hp": 3,
+      "consumesType": "Prey",
+      "keywords": ["Pack", "Acuity"],
+      "tribe": "Canine",
+      "effectText": "Pack. Acuity."
+    },
+    {
+      "id": "canine-predator-wild-dog-pack-leader",
+      "name": "Wild Dog Pack Leader",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 3,
+      "consumesType": "Prey",
+      "keywords": ["Pack"],
+      "tribe": "Canine",
+      "effectText": "Pack. Howl: All Canines gain +1/+0.",
+      "effects": {
+        "onPlay": { "type": "howl", "params": { "atk": 1, "hp": 0 } }
+      }
+    },
+    {
+      "id": "canine-predator-wolf-hunter",
+      "name": "Wolf Hunter",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 3,
+      "consumesType": "Prey",
+      "keywords": ["Pack"],
+      "tribe": "Canine",
+      "effectText": "Pack. When consumed: Play 1 Wolf Pup.",
+      "summons": ["token-wolf-pup"],
+      "effects": {
+        "onConsume": { "type": "summonTokens", "params": { "tokenIds": ["token-wolf-pup"] } }
+      }
+    },
+    {
+      "id": "canine-predator-dire-wolf-hunter",
+      "name": "Dire Wolf Hunter",
+      "type": "Predator",
+      "atk": 4,
+      "hp": 4,
+      "consumesType": "Prey",
+      "keywords": ["Pack"],
+      "tribe": "Canine",
+      "effectText": "Pack. Howl: All Canines gain Haste.",
+      "effects": {
+        "onPlay": { "type": "howl", "params": { "keyword": "Haste" } }
+      }
+    },
+    {
+      "id": "canine-predator-alpha-hunter",
+      "name": "Alpha Hunter",
+      "type": "Predator",
+      "atk": 4,
+      "hp": 5,
+      "consumesType": "Prey",
+      "keywords": ["Pack"],
+      "tribe": "Canine",
+      "effectText": "Pack. When consumed: All Canines gain +1/+1 permanently.",
+      "effects": {
+        "onConsume": { "type": "buffStats", "params": { "targetType": "friendlyCanines", "stats": { "atk": 1, "hp": 1 } } }
+      }
+    },
+    {
+      "id": "canine-predator-wolf-pack-alpha",
+      "name": "Wolf Pack Alpha",
+      "type": "Predator",
+      "atk": 5,
+      "hp": 5,
+      "consumesType": "Prey",
+      "keywords": ["Pack"],
+      "tribe": "Canine",
+      "effectText": "Pack. Howl: All Canines gain +2/+1.",
+      "effects": {
+        "onPlay": { "type": "howl", "params": { "atk": 2, "hp": 1 } }
+      }
+    },
+    {
+      "id": "canine-spell-call-of-the-wild",
+      "name": "Call of the Wild",
+      "type": "Spell",
+      "effectText": "Play 3 Wolf Pups.",
+      "summons": ["token-wolf-pup"],
+      "effects": {
+        "effect": { "type": "summonTokens", "params": { "tokenIds": ["token-wolf-pup", "token-wolf-pup", "token-wolf-pup"] } }
+      }
+    },
+    {
+      "id": "canine-spell-pack-tactics",
+      "name": "Pack Tactics",
+      "type": "Spell",
+      "effectText": "All Canines gain +2/+0 until end of turn.",
+      "effects": {
+        "effect": { "type": "howl", "params": { "atk": 2, "hp": 0 } }
+      }
+    },
+    {
+      "id": "canine-spell-howl-of-the-alpha",
+      "name": "Howl of the Alpha",
+      "type": "Spell",
+      "effectText": "All Canines gain +1/+1 and Haste until end of turn.",
+      "effects": {
+        "effect": { "type": "howl", "params": { "atk": 1, "hp": 1, "keyword": "Haste" } }
+      }
+    },
+    {
+      "id": "canine-spell-coordinated-hunt",
+      "name": "Coordinated Hunt",
+      "type": "Spell",
+      "effectText": "Deal damage equal to the number of Canines you control to target creature.",
+      "effects": {
+        "effect": { "type": "selectCreatureForDamage", "params": { "amount": "canineCount", "label": "hunt" } }
+      }
+    },
+    {
+      "id": "canine-spell-pack-mentality",
+      "name": "Pack Mentality",
+      "type": "Spell",
+      "effectText": "Draw 1 for each Canine you control (max 3).",
+      "effects": {
+        "effect": { "type": "draw", "params": { "count": "canineCountMax3" } }
+      }
+    },
+    {
+      "id": "canine-spell-territorial-defense",
+      "name": "Territorial Defense",
+      "type": "Spell",
+      "effectText": "All Canines gain Barrier until end of turn.",
+      "effects": {
+        "effect": { "type": "howl", "params": { "keyword": "Barrier" } }
+      }
+    },
+    {
+      "id": "canine-freespell-quick-howl",
+      "name": "Quick Howl",
+      "type": "Free Spell",
+      "effectText": "All Canines gain +1/+0 until end of turn.",
+      "effects": {
+        "effect": { "type": "howl", "params": { "atk": 1, "hp": 0 } }
+      }
+    },
+    {
+      "id": "canine-freespell-pack-signal",
+      "name": "Pack Signal",
+      "type": "Free Spell",
+      "effectText": "Draw 1.",
+      "effects": {
+        "effect": { "type": "draw", "params": { "count": 1 } }
+      }
+    },
+    {
+      "id": "canine-freespell-rally-the-pack",
+      "name": "Rally the Pack",
+      "type": "Free Spell",
+      "effectText": "Play 1 Coyote Pup.",
+      "summons": ["token-coyote-pup"],
+      "effects": {
+        "effect": { "type": "summonTokens", "params": { "tokenIds": ["token-coyote-pup"] } }
+      }
+    },
+    {
+      "id": "canine-trap-ambush-site",
+      "name": "Ambush Site",
+      "type": "Trap",
+      "trigger": "rivalAttacks",
+      "effectText": "When attacked: Play 2 Wolf Pups. They gain Haste.",
+      "summons": ["token-wolf-pup"],
+      "effects": {
+        "effect": [
+          { "type": "summonTokens", "params": { "tokenIds": ["token-wolf-pup", "token-wolf-pup"] } },
+          { "type": "howl", "params": { "keyword": "Haste" } }
+        ]
+      }
+    },
+    {
+      "id": "canine-trap-wolves-den",
+      "name": "Wolf's Den",
+      "type": "Trap",
+      "trigger": "rivalAttacks",
+      "effectText": "When attacked: Negate the attack. Play 1 Wolf Pup.",
+      "summons": ["token-wolf-pup"],
+      "effects": {
+        "effect": [
+          { "type": "negateAttack" },
+          { "type": "summonTokens", "params": { "tokenIds": ["token-wolf-pup"] } }
+        ]
+      }
+    },
+    {
+      "id": "canine-trap-pack-ambush",
+      "name": "Pack Ambush",
+      "type": "Trap",
+      "trigger": "rivalAttacks",
+      "effectText": "When attacked: All Canines gain +2/+2 until end of turn.",
+      "effects": {
+        "effect": { "type": "howl", "params": { "atk": 2, "hp": 2 } }
+      }
+    },
+    {
+      "id": "canine-trap-territorial-warning",
+      "name": "Territorial Warning",
+      "type": "Trap",
+      "trigger": "rivalPlaysCreature",
+      "effectText": "When a creature is played: Return it to hand. Play 1 Wolf Pup.",
+      "summons": ["token-wolf-pup"],
+      "effects": {
+        "effect": [
+          { "type": "returnTriggeredToHand" },
+          { "type": "summonTokens", "params": { "tokenIds": ["token-wolf-pup"] } }
+        ]
+      }
+    }
+  ]
+}

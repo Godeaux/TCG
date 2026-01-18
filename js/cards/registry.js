@@ -17,6 +17,7 @@ import reptileData from './data/reptile.json' with { type: 'json' };
 import amphibianData from './data/amphibian.json' with { type: 'json' };
 import birdData from './data/bird.json' with { type: 'json' };
 import mammalData from './data/mammal.json' with { type: 'json' };
+import canineData from './data/canine.json' with { type: 'json' };
 import { resolveEffect } from './effectLibrary.js';
 
 // ============================================================================
@@ -42,6 +43,7 @@ const deckCatalogs = {
   amphibian: [],
   bird: [],
   mammal: [],
+  canine: [],
 };
 
 // ============================================================================
@@ -135,6 +137,20 @@ export const initializeCardRegistry = () => {
     cardRegistry.set(card.id, card);
   });
   deckCatalogs.mammal = sortCardsByType(mammalData.cards.filter(card => !card.id.includes('token')));
+
+  // Load canine tokens (if present in the JSON)
+  if (canineData.tokens) {
+    canineData.tokens.forEach(token => {
+      tokenRegistry.set(token.id, token);
+      cardRegistry.set(token.id, token);
+    });
+  }
+
+  // Load canine cards
+  canineData.cards.forEach(card => {
+    cardRegistry.set(card.id, card);
+  });
+  deckCatalogs.canine = sortCardsByType(canineData.cards.filter(card => !card.id.includes('token')));
 
   console.log(`[Card Registry] Initialized with ${cardRegistry.size} cards (${tokenRegistry.size} tokens)`);
 };

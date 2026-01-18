@@ -119,6 +119,14 @@ const DECK_OPTIONS = [
     panelClass: "deck-select-panel--amphibian",
     available: true,
   },
+  {
+    id: "canine",
+    name: "Canine",
+    emoji: "🐺",
+    panelClass: "deck-select-panel--canine",
+    available: true,
+    experimental: true,
+  },
 ];
 
 // Deck builder UI state
@@ -1128,11 +1136,13 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       panel.type = "button";
       panel.className = `deck-select-panel ${option.panelClass} ${
         option.available ? "" : "disabled"
-      }`;
+      }${option.experimental ? " experimental" : ""}`;
       panel.disabled = false; // Make all decks clickable per user request
       const progress = getDeckProgress(option.id);
       const progressText = `${progress.implemented}/${progress.total} Done`;
+      const experimentalBadge = option.experimental ? '<div class="deck-experimental-badge">Experimental</div>' : '';
       panel.innerHTML = `
+        ${experimentalBadge}
         <div class="deck-emoji">${option.emoji}</div>
         <div class="deck-name">${option.name}</div>
         <div class="deck-status">${option.available ? "Available" : progressText}</div>
@@ -1602,11 +1612,13 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
         panel.type = "button";
         panel.className = `deck-select-panel ${option.panelClass} ${
           option.available ? "" : "disabled"
-        }`;
+        }${option.experimental ? " experimental" : ""}`;
         panel.disabled = false; // Make all decks clickable
         const progress = getDeckProgress(option.id);
         const progressText = `${progress.implemented}/${progress.total} Done`;
+        const experimentalBadge = option.experimental ? '<div class="deck-experimental-badge">Experimental</div>' : '';
         panel.innerHTML = `
+          ${experimentalBadge}
           <div class="deck-emoji">${option.emoji}</div>
           <div class="deck-name">${option.name}</div>
           <div class="deck-status">${option.available ? "Available" : progressText}</div>
@@ -1770,11 +1782,13 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
     panel.type = "button";
     panel.className = `deck-select-panel ${option.panelClass} ${
       option.available ? "" : "disabled"
-    }`;
+    }${option.experimental ? " experimental" : ""}`;
     panel.disabled = false; // Make all decks clickable per user request
     const progress = getDeckProgress(option.id);
     const progressText = `${progress.implemented}/${progress.total} Done`;
+    const experimentalBadge = option.experimental ? '<div class="deck-experimental-badge">Experimental</div>' : '';
     panel.innerHTML = `
+      ${experimentalBadge}
       <div class="deck-emoji">${option.emoji}</div>
       <div class="deck-name">${option.name}</div>
       <div class="deck-status">${option.available ? "Available" : progressText}</div>

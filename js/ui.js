@@ -2139,7 +2139,7 @@ const continueResolveAttack = (state, attacker, target) => {
     attacker.instanceId
   );
   if (target.type === "player") {
-    const damage = resolveDirectAttack(state, attacker, target.player);
+    const damage = resolveDirectAttack(state, attacker, target.player, attackerOwnerIndex);
     effect = queueVisualEffect(state, {
       type: "attack",
       attackerId: attacker.instanceId,

@@ -92,6 +92,8 @@ export const renderField = (state, playerIndex, isOpponent, options = {}) => {
       showSacrifice: canSacrifice,
       showEffectSummary: true,
       draggable: true,
+      state,
+      ownerIndex: playerIndex,
       onAttack,
       onReturnToHand,
       onSacrifice,

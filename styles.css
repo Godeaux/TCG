@@ -4204,6 +4204,31 @@ button {
   background: linear-gradient(135deg, rgba(92, 180, 116, 0.85), rgba(26, 92, 54, 0.95));
 }
 
+.deck-select-panel--canine {
+  background: linear-gradient(135deg, rgba(139, 69, 19, 0.85), rgba(70, 40, 10, 0.95));
+}
+
+/* Experimental deck badge */
+.deck-experimental-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: linear-gradient(135deg, #ff6b35, #f7931e);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  z-index: 1;
+}
+
+.deck-select-panel.experimental {
+  position: relative;
+}
+
 .deck-builder {
   display: flex;
   flex-direction: column;

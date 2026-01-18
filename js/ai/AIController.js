@@ -1365,7 +1365,7 @@ export class AIController {
 
             if (target.type === 'player') {
               // Direct attack on player
-              resolveDirectAttack(state, attacker, target.player);
+              resolveDirectAttack(state, attacker, target.player, attackerOwnerIndex);
             } else if (target.type === 'creature') {
               // Validate target still exists on field after trap effects resolved
               const defender = state.players[defenderOwnerIndex];

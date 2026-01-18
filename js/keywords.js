@@ -18,6 +18,9 @@ export const KEYWORDS = {
   POISONOUS: "Poisonous",
   HARMLESS: "Harmless",
   FROZEN: "Frozen",
+  // Canine keywords (Experimental)
+  PACK: "Pack",
+  HOWL: "Howl",
 };
 
 export const KEYWORD_DESCRIPTIONS = {
@@ -40,6 +43,9 @@ export const KEYWORD_DESCRIPTIONS = {
   [KEYWORDS.POISONOUS]: "When defending, kills the attacker after combat.",
   [KEYWORDS.HARMLESS]: "Cannot attack (0 attack permanently).",
   [KEYWORDS.FROZEN]: "Cannot attack or be consumed. Thaws at the end of the creature-owning player's turn.",
+  // Canine keywords (Experimental)
+  [KEYWORDS.PACK]: "Gains +1 ATK for each other Canine you control.",
+  [KEYWORDS.HOWL]: "On play, triggers a Howl effect that buffs all Canines until end of turn.",
 };
 
 /**
@@ -95,3 +101,47 @@ export const hasPoisonous = (card) => hasKeyword(card, KEYWORDS.POISONOUS);
 export const isHarmless = (card) => hasKeyword(card, KEYWORDS.HARMLESS);
 
 export const isInedible = (card) => hasKeyword(card, KEYWORDS.INEDIBLE);
+
+// Canine keyword helpers
+export const hasPack = (card) => hasKeyword(card, KEYWORDS.PACK);
+
+/**
+ * Calculate Pack bonus for a creature.
+ * Pack gives +1 ATK for each OTHER Canine on the field.
+ * @param {Object} creature - The creature to calculate bonus for
+ * @param {Object} state - Game state
+ * @param {number} ownerIndex - Index of the creature's owner
+ * @returns {number} The Pack attack bonus
+ */
+export const calculatePackBonus = (creature, state, ownerIndex) => {
+  if (!creature || !hasPack(creature)) return 0;
+  if (!state?.players?.[ownerIndex]?.field) return 0;
+
+  const field = state.players[ownerIndex].field;
+  let otherCanines = 0;
+
+  for (const card of field) {
+    if (!card || card.instanceId === creature.instanceId) continue;
+    // Count cards with tribe "Canine" that have active abilities
+    if (card.tribe === "Canine" && areAbilitiesActive(card)) {
+      otherCanines++;
+    }
+  }
+
+  return otherCanines;
+};
+
+/**
+ * Get effective attack value for a creature, including Pack bonus.
+ * This should be used for combat damage calculations and display.
+ * @param {Object} creature - The creature
+ * @param {Object} state - Game state (optional, needed for Pack)
+ * @param {number} ownerIndex - Index of the creature's owner (optional, needed for Pack)
+ * @returns {number} The effective attack value
+ */
+export const getEffectiveAttack = (creature, state, ownerIndex) => {
+  if (!creature) return 0;
+  const baseAtk = creature.currentAtk ?? creature.atk ?? 0;
+  const packBonus = calculatePackBonus(creature, state, ownerIndex);
+  return baseAtk + packBonus;
+};

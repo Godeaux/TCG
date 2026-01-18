@@ -34,6 +34,7 @@ const KNOWN_EFFECT_TYPES = [
 
   // Targeting/selection effects
   'selectTargetForDamage',
+  'selectCreatureForDamage',
   'selectEnemyToKill',
   'selectEnemyToFreeze',
   'selectEnemyToParalyze',
@@ -143,6 +144,11 @@ const KNOWN_EFFECT_TYPES = [
 
   // Revival
   'reviveCreature',
+
+  // Canine effects (Experimental)
+  'howl',
+  'howlBuff',
+  'howlKeyword',
 ];
 
 /**

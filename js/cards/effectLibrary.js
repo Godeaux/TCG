@@ -174,12 +174,47 @@ export const heal = (amount) => ({ log }) => {
 };
 
 /**
- * Draw cards
- * @param {number} count - Number of cards to draw
+ * Resolve dynamic count values based on game state
+ * @param {number|string} count - Static number or dynamic count identifier
+ * @param {Object} context - Effect context with player, state, etc.
+ * @returns {number} - Resolved count
  */
-export const draw = (count) => ({ log }) => {
-  log(`Draw${count > 1 ? 's' : ''} ${count} card${count > 1 ? 's' : ''}.`);
-  return { draw: count };
+const resolveDynamicCount = (count, context) => {
+  if (typeof count === 'number') return count;
+
+  const { player } = context;
+
+  switch (count) {
+    case 'canineCountMax3': {
+      // Count Canines on field, max 3
+      const canineCount = player?.field?.filter(c => c && c.tribe === 'Canine').length || 0;
+      return Math.min(canineCount, 3);
+    }
+    case 'canineCount': {
+      // Count all Canines on field
+      return player?.field?.filter(c => c && c.tribe === 'Canine').length || 0;
+    }
+    default:
+      console.warn(`Unknown dynamic count: ${count}`);
+      return 0;
+  }
+};
+
+/**
+ * Draw cards
+ * @param {number|string} count - Number of cards to draw, or dynamic count identifier
+ */
+export const draw = (count) => (context) => {
+  const { log } = context;
+  const resolvedCount = resolveDynamicCount(count, context);
+
+  if (resolvedCount <= 0) {
+    log(`No cards to draw.`);
+    return {};
+  }
+
+  log(`Draw${resolvedCount > 1 ? 's' : ''} ${resolvedCount} card${resolvedCount > 1 ? 's' : ''}.`);
+  return { draw: resolvedCount };
 };
 
 /**
@@ -1156,6 +1191,15 @@ export const tutorAndEndTurn = () => (context) => {
  */
 export const selectCreatureForDamage = (amount, label = "damage") => (context) => {
   const { log, player, opponent, state } = context;
+
+  // Resolve dynamic amount values
+  const resolvedAmount = resolveDynamicCount(amount, context);
+
+  if (resolvedAmount <= 0) {
+    log(`No damage to deal (0 ${label}).`);
+    return {};
+  }
+
   const candidates = [
     ...player.field.filter(c => c && (c.type === 'Prey' || c.type === 'Predator' || c.type === 'prey' || c.type === 'predator') && !isInvisible(c, state)),
     ...opponent.field.filter(c => c && (c.type === 'Prey' || c.type === 'Predator' || c.type === 'prey' || c.type === 'predator') && !isInvisible(c, state))
@@ -1167,12 +1211,12 @@ export const selectCreatureForDamage = (amount, label = "damage") => (context) =
   }
 
   return makeTargetedSelection({
-    title: `Choose a target for ${amount} ${label}`,
+    title: `Choose a target for ${resolvedAmount} ${label}`,
     candidates: candidates.map(c => ({ label: c.name, value: c })),
     onSelect: (target) => {
-      log(`Targets ${target.name}.`);
+      log(`Targets ${target.name} for ${resolvedAmount} damage.`);
       return handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
-        damageCreature: { creature: target, amount, sourceLabel: label }
+        damageCreature: { creature: target, amount: resolvedAmount, sourceLabel: label }
       };
     }
   });
@@ -3246,6 +3290,158 @@ export const drawThenDiscard = (drawCount, discardCount = 1) => (context) => {
 };
 
 // ============================================================================
+// CANINE HOWL EFFECTS (Experimental)
+// ============================================================================
+
+/**
+ * Howl: Buff all Canines with stats until end of turn
+ * @param {Object} params - { atk, hp } - stat buffs to apply
+ */
+export const howlBuff = (params) => (context) => {
+  const { log, player, playerIndex, state, creature } = context;
+  const { atk = 0, hp = 0 } = params || {};
+
+  // Find all Canines on the player's field (including the creature that triggered Howl)
+  const canines = player.field.filter(card =>
+    card && card.tribe === "Canine"
+  );
+
+  if (canines.length === 0) {
+    log(`Howl echoes, but no Canines hear it.`);
+    return {};
+  }
+
+  // Track howl buffs on each Canine for end-of-turn cleanup
+  const howlBuffData = [];
+  canines.forEach(canine => {
+    // Initialize howlBuffs array if needed
+    if (!canine.howlBuffs) {
+      canine.howlBuffs = [];
+    }
+    // Record this howl buff
+    canine.howlBuffs.push({ atk, hp, appliedTurn: state.turn });
+    howlBuffData.push({ creature: canine, attack: atk, health: hp });
+  });
+
+  log(`🐺 HOWL: All Canines gain +${atk}/+${hp} until end of turn!`);
+
+  return {
+    buffCreatures: howlBuffData
+  };
+};
+
+/**
+ * Howl: Grant a keyword to all Canines until end of turn
+ * @param {Object} params - { keyword } - keyword to grant
+ */
+export const howlKeyword = (params) => (context) => {
+  const { log, player, playerIndex, state, creature } = context;
+  const { keyword } = params || {};
+
+  if (!keyword) {
+    console.warn("[howlKeyword] No keyword specified");
+    return {};
+  }
+
+  // Find all Canines on the player's field
+  const canines = player.field.filter(card =>
+    card && card.tribe === "Canine"
+  );
+
+  if (canines.length === 0) {
+    log(`Howl echoes, but no Canines hear it.`);
+    return {};
+  }
+
+  // Grant keyword to each Canine and track for cleanup
+  canines.forEach(canine => {
+    // Initialize arrays if needed
+    if (!canine.keywords) {
+      canine.keywords = [];
+    }
+    if (!canine.howlKeywords) {
+      canine.howlKeywords = [];
+    }
+
+    // Only add keyword if not already present
+    if (!canine.keywords.includes(keyword)) {
+      canine.keywords.push(keyword);
+    }
+
+    // Track this howl keyword for end-of-turn cleanup
+    canine.howlKeywords.push({ keyword, appliedTurn: state.turn });
+  });
+
+  log(`🐺 HOWL: All Canines gain ${keyword} until end of turn!`);
+
+  return {};
+};
+
+/**
+ * Combined howl effect that can apply both stats and keyword
+ * @param {Object} params - { atk, hp, keyword } - buffs and/or keyword to apply
+ */
+export const howl = (params) => (context) => {
+  const { log, player, state } = context;
+  const { atk = 0, hp = 0, keyword } = params || {};
+
+  // Find all Canines on the player's field
+  const canines = player.field.filter(card =>
+    card && card.tribe === "Canine"
+  );
+
+  if (canines.length === 0) {
+    log(`Howl echoes, but no Canines hear it.`);
+    return {};
+  }
+
+  const buffData = [];
+  const hasStatBuff = atk > 0 || hp > 0;
+  const hasKeyword = keyword && keyword.length > 0;
+
+  canines.forEach(canine => {
+    // Apply stat buffs
+    if (hasStatBuff) {
+      if (!canine.howlBuffs) {
+        canine.howlBuffs = [];
+      }
+      canine.howlBuffs.push({ atk, hp, appliedTurn: state.turn });
+      buffData.push({ creature: canine, attack: atk, health: hp });
+    }
+
+    // Grant keyword
+    if (hasKeyword) {
+      if (!canine.keywords) {
+        canine.keywords = [];
+      }
+      if (!canine.howlKeywords) {
+        canine.howlKeywords = [];
+      }
+      if (!canine.keywords.includes(keyword)) {
+        canine.keywords.push(keyword);
+      }
+      canine.howlKeywords.push({ keyword, appliedTurn: state.turn });
+    }
+  });
+
+  // Build log message
+  let message = `🐺 HOWL: All Canines gain`;
+  if (hasStatBuff) {
+    message += ` +${atk}/+${hp}`;
+  }
+  if (hasStatBuff && hasKeyword) {
+    message += ` and`;
+  }
+  if (hasKeyword) {
+    message += ` ${keyword}`;
+  }
+  message += ` until end of turn!`;
+  log(message);
+
+  return hasStatBuff ? { buffCreatures: buffData } : {};
+};
+
+// ============================================================================
 // EFFECT REGISTRY
 // ============================================================================
 
@@ -3270,6 +3466,11 @@ export const effectRegistry = {
   addKeyword,
   buffStats,
   buff,
+
+  // Canine Howl (Experimental)
+  howl,
+  howlBuff,
+  howlKeyword,
 
   // Selection
   selectTarget,
@@ -3561,6 +3762,16 @@ export const resolveEffect = (effectDef, context) => {
       specificEffect = effectFn(params.targetType, params.stats);
       break;
     case 'buff':
+      specificEffect = effectFn(params);
+      break;
+    // Canine Howl effects (Experimental)
+    case 'howl':
+      specificEffect = effectFn(params);
+      break;
+    case 'howlBuff':
+      specificEffect = effectFn(params);
+      break;
+    case 'howlKeyword':
       specificEffect = effectFn(params);
       break;
     case 'selectTarget':
