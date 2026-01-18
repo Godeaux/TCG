@@ -1143,6 +1143,13 @@ export const updateLobbySubscription = (state, { force = false } = {}) => {
 
   // Handle sync state broadcasts
   lobbyChannel.on('broadcast', { event: 'sync_state' }, ({ payload }) => {
+    console.log('[lobbyManager] Received sync_state broadcast:', {
+      hasPayload: !!payload,
+      hasGame: !!payload?.game,
+      turn: payload?.game?.turn,
+      phase: payload?.game?.phase,
+      activePlayer: payload?.game?.activePlayerIndex,
+    });
     callbacks.onApplySync?.(state, payload);
     callbacks.onUpdate?.();
   });

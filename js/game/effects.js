@@ -678,25 +678,42 @@ export const resolveEffectResult = (state, result, context) => {
       const summoned = placeToken(state, playerIndex, tokenData);
       console.log(`  → Summoned:`, summoned ? summoned.name : 'FAILED');
 
-      // Queue onPlay effects for summoned tokens (instead of immediately executing)
-      // This ensures UI requirements are properly chained through the controller
+      // Directly resolve token onPlay effects when summoned
+      // This ensures they trigger regardless of code path (controller or turnManager)
       if (summoned?.effects?.onPlay && !summoned?.abilitiesCancelled) {
         const opponentIndex = (playerIndex + 1) % 2;
-        pendingOnPlays.push({
+        console.log(`  → Triggering onPlay effect for token: ${summoned.name}`);
+
+        const onPlayResult = resolveCardEffect(summoned, 'onPlay', {
+          log: (message) => logMessage(state, message),
+          player: state.players[playerIndex],
+          opponent: state.players[opponentIndex],
           creature: summoned,
+          state,
           playerIndex,
           opponentIndex,
         });
+
+        // If the token's onPlay effect produces a result, resolve it
+        if (onPlayResult && Object.keys(onPlayResult).length > 0) {
+          console.log(`  → Token ${summoned.name} onPlay returned:`, Object.keys(onPlayResult));
+          const nestedResult = resolveEffectResult(state, onPlayResult, {
+            playerIndex,
+            opponentIndex,
+            card: summoned,
+          });
+          // If nested result requires UI, queue it for later handling
+          if (nestedResult && (nestedResult.selectTarget || nestedResult.selectOption)) {
+            pendingOnPlays.push(nestedResult);
+          }
+        }
       }
     });
 
-    // If any tokens need onPlay resolution, return the first one for chaining
-    // Additional onPlays will be handled via pendingOnPlayQueue for sequential processing
+    // If any token effects require UI interaction, return first one for controller
+    // (This handles edge cases where token effects need user selection)
     if (pendingOnPlays.length > 0) {
-      return {
-        pendingOnPlay: pendingOnPlays[0],
-        pendingOnPlayQueue: pendingOnPlays.slice(1),
-      };
+      return pendingOnPlays[0];
     }
   }
 
