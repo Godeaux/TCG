@@ -236,38 +236,62 @@ export const executeAITurn = async (state, callbacks) => {
   const playerLabel = state.activePlayerIndex === 0 ? 'AI-P1' : 'AI-P2';
   console.log(`[AIManager] Starting ${playerLabel} turn execution`);
 
-  // Start stuck detection for AI vs AI mode
-  if (isAIvsAIMode(state)) {
-    startStuckDetection(state, callbacks);
-  }
+  // Start stuck detection for all AI modes
+  startStuckDetection(state, callbacks);
+
+  // Create a timeout promise to prevent hanging forever
+  const AI_TURN_TIMEOUT_MS = 30000; // 30 seconds max for entire turn
+  let turnTimeoutId;
+  const turnTimeout = new Promise((_, reject) => {
+    turnTimeoutId = setTimeout(() => {
+      reject(new Error(`AI turn timed out after ${AI_TURN_TIMEOUT_MS / 1000}s`));
+    }, AI_TURN_TIMEOUT_MS);
+  });
 
   try {
-    await controller.takeTurn(state, {
-      onPlayCard: (card, slotIndex, options) => {
-        callbacks.onAIPlayCard?.(card, slotIndex, options);
-      },
-      onAttack: (attacker, target) => {
-        callbacks.onAIAttack?.(attacker, target);
-      },
-      onAdvancePhase: () => {
-        console.log(`[AIManager] onAdvancePhase wrapper called, phase: ${state.phase}`);
-        if (!callbacks.onAIAdvancePhase) {
-          console.error('[AIManager] ERROR: callbacks.onAIAdvancePhase is undefined!');
-        }
-        callbacks.onAIAdvancePhase?.();
-      },
-      onEndTurn: () => {
-        callbacks.onAIEndTurn?.();
-      },
-      onUpdate: () => {
-        callbacks.onUpdate?.();
-      },
-    });
+    // Race between the actual turn and the timeout
+    await Promise.race([
+      controller.takeTurn(state, {
+        onPlayCard: (card, slotIndex, options) => {
+          callbacks.onAIPlayCard?.(card, slotIndex, options);
+        },
+        onAttack: (attacker, target) => {
+          callbacks.onAIAttack?.(attacker, target);
+        },
+        onAdvancePhase: () => {
+          console.log(`[AIManager] onAdvancePhase wrapper called, phase: ${state.phase}`);
+          if (!callbacks.onAIAdvancePhase) {
+            console.error('[AIManager] ERROR: callbacks.onAIAdvancePhase is undefined!');
+          }
+          callbacks.onAIAdvancePhase?.();
+        },
+        onEndTurn: () => {
+          callbacks.onAIEndTurn?.();
+        },
+        onUpdate: () => {
+          callbacks.onUpdate?.();
+        },
+      }),
+      turnTimeout
+    ]);
   } catch (error) {
     console.error(`[AIManager] Error during ${playerLabel} turn:`, error);
+    // Clear any lingering UI state on error
+    state._aiIsSearching = false;
+    callbacks.onUpdate?.();
   } finally {
+    // Clear the timeout to prevent memory leaks
+    clearTimeout(turnTimeoutId);
+
     isAITurnInProgress = false;
     console.log(`[AIManager] ${playerLabel} turn complete, checking for next AI turn...`);
+
+    // Clear any lingering AI search state
+    state._aiIsSearching = false;
+    if (controller) {
+      controller.isSearching = false;
+      controller.isProcessing = false;
+    }
 
     // Mark turn as completed (resets stuck detection)
     if (isAIvsAIMode(state)) {
@@ -361,6 +385,7 @@ export const checkAndTriggerAITurn = (state, callbacks) => {
 
 /**
  * Start monitoring for stuck state
+ * Works for all AI modes, not just AI vs AI
  */
 const startStuckDetection = (state, callbacks) => {
   if (stuckDetectionTimer) {
@@ -368,7 +393,8 @@ const startStuckDetection = (state, callbacks) => {
   }
 
   stuckDetectionTimer = setTimeout(() => {
-    if (!isAIvsAIMode(state) || state.winner) {
+    // Check for game over
+    if (state.winner) {
       return;
     }
 
@@ -383,7 +409,11 @@ const startStuckDetection = (state, callbacks) => {
         attemptRecovery(state, callbacks);
       } else {
         console.error(`[AIManager] ❌ Max recovery attempts reached. Game appears permanently stuck.`);
-        logMessage(state, `⚠️ AI vs AI appears stuck after ${MAX_RECOVERY_ATTEMPTS} recovery attempts.`);
+        logMessage(state, `⚠️ AI appears stuck after ${MAX_RECOVERY_ATTEMPTS} recovery attempts.`);
+        // Force reset the stuck state so the player can continue
+        isAITurnInProgress = false;
+        state._aiIsSearching = false;
+        callbacks.onUpdate?.();
       }
     }
   }, STUCK_TIMEOUT_MS);

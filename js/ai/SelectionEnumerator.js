@@ -83,9 +83,12 @@ export class SelectionEnumerator {
           return [];
         }
 
+        // Check if this is a consumption selection
+        const isConsumption = request.selectTarget._isConsumption === true;
+
         for (const candidate of candidates) {
           const newSelections = [...previousSelections, {
-            type: 'target',
+            type: isConsumption ? 'consumption' : 'target',
             value: candidate.value,
             label: candidate.label || candidate.value?.name || 'target'
           }];
@@ -158,6 +161,10 @@ export class SelectionEnumerator {
     let pendingSelection = null;
     let completed = false;
 
+    // Check if we have a consumption selection to handle
+    // Consumption selections are marked with type: 'consumption'
+    const consumptionSelection = selections.find(s => s.type === 'consumption');
+
     // Create controller with selection-handling callbacks
     const controller = new GameController(clonedState, { localPlayerIndex: playerIndex }, {
       onStateChange: () => {},
@@ -166,6 +173,23 @@ export class SelectionEnumerator {
         // Check if we have a pre-determined answer for this selection
         if (selectionIndex < selections.length) {
           const answer = selections[selectionIndex];
+
+          // Skip consumption selections - they're handled separately
+          if (answer.type === 'consumption') {
+            selectionIndex++;
+            // Continue checking for more selections
+            if (selectionIndex < selections.length) {
+              const nextAnswer = selections[selectionIndex];
+              if (request.selectTarget && nextAnswer.type === 'target') {
+                selectionIndex++;
+                const onSelect = request.onSelect || request.selectTarget.onSelect;
+                if (onSelect) onSelect(nextAnswer.value);
+                return;
+              }
+            }
+            // Fall through to capture pending selection
+          }
+
           selectionIndex++;
 
           // Immediately invoke the appropriate callback with our pre-made choice
@@ -214,6 +238,62 @@ export class SelectionEnumerator {
           success: false,
           state: controller.state,
           pendingSelection
+        };
+      }
+
+      // Handle predator consumption - controller uses pendingConsumption instead of onSelectionNeeded
+      // This is a special case where we need to enumerate prey selection
+      if (result.needsSelection && controller.uiState?.pendingConsumption) {
+        const { availablePrey, predator, emptySlot, isFree } = controller.uiState.pendingConsumption;
+
+        // Check if we have a consumption selection already made
+        if (consumptionSelection) {
+          // Execute the consumption with the selected prey
+          const selectedPrey = Array.isArray(consumptionSelection.value)
+            ? consumptionSelection.value
+            : [consumptionSelection.value];
+
+          const consumeResult = controller.execute({
+            type: ActionTypes.SELECT_CONSUMPTION_TARGETS,
+            payload: {
+              predator,
+              prey: selectedPrey
+            }
+          });
+
+          // After consumption, check for more selections (e.g., onPlay effects)
+          if (pendingSelection) {
+            return {
+              success: false,
+              state: controller.state,
+              pendingSelection
+            };
+          }
+
+          return {
+            success: consumeResult.success,
+            state: controller.state,
+            error: consumeResult.success ? null : consumeResult.error
+          };
+        }
+
+        // No consumption selection yet - return available prey as candidates
+        const candidates = availablePrey.map(prey => ({
+          label: prey.name,
+          value: prey
+        }));
+
+        return {
+          success: false,
+          state: controller.state,
+          pendingSelection: {
+            selectTarget: {
+              candidates,
+              title: `Choose prey for ${predator.name} to consume`,
+              // Mark this as a consumption selection
+              _isConsumption: true
+            }
+          }
         };
       }
 

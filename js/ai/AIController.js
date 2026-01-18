@@ -36,6 +36,7 @@ import { DifficultyManager, DIFFICULTY_LEVELS } from './DifficultyManager.js';
 // Deep search AI module (for expert difficulty)
 import { GameTreeSearch } from './GameTreeSearch.js';
 import { MoveGenerator } from './MoveGenerator.js';
+import { AIWorkerManager } from './AIWorkerManager.js';
 
 // ============================================================================
 // AI CONFIGURATION
@@ -88,8 +89,27 @@ export class AIController {
     this.gameTreeSearch = new GameTreeSearch();
     this.moveGenerator = new MoveGenerator();
 
+    // Web Worker manager for non-blocking search
+    this.workerManager = new AIWorkerManager();
+    this.workerInitialized = false;
+
     // Track if we're currently searching (for UI indicator)
     this.isSearching = false;
+  }
+
+  /**
+   * Initialize the AI worker (should be called once on startup)
+   * This is async and can be called in the background
+   */
+  async initWorker() {
+    if (this.workerInitialized) return;
+    try {
+      await this.workerManager.init();
+      this.workerInitialized = true;
+      console.log(`[${this.playerLabel}] AI Worker initialized: ${this.workerManager.isWorkerAvailable() ? 'ready' : 'fallback mode'}`);
+    } catch (error) {
+      console.warn(`[${this.playerLabel}] AI Worker init failed:`, error);
+    }
   }
 
   /**
@@ -133,8 +153,8 @@ export class AIController {
   }
 
   /**
-   * Async version of findBestMoveWithSearch that yields periodically
-   * This keeps the UI responsive during deep search
+   * Async version of findBestMoveWithSearch that uses Web Worker for non-blocking search
+   * This keeps the UI completely responsive during deep search
    *
    * @param {Object} state - Game state
    * @param {Object} options - { maxTimeMs, verbose }
@@ -147,14 +167,23 @@ export class AIController {
     } = options;
 
     try {
-      const result = await this.gameTreeSearch.findBestMoveAsync(state, this.playerIndex, {
+      // Ensure worker is initialized
+      await this.initWorker();
+
+      // Use worker manager for non-blocking search
+      const result = await this.workerManager.search(state, this.playerIndex, {
         maxTimeMs,
         verbose
       });
 
       if (verbose && result.move) {
-        this.logThought(state, `[Search] Found: ${this.moveGenerator.describeMove(result.move)} (score: ${result.score})`);
-        console.log(`[${this.playerLabel}] Search stats: ${this.gameTreeSearch.getStatsString()}`);
+        const moveDesc = result.moveDescription || this.moveGenerator.describeMove(result.move);
+        this.logThought(state, `[Search] Found: ${moveDesc} (score: ${result.score})`);
+        if (this.workerManager.isWorkerAvailable()) {
+          console.log(`[${this.playerLabel}] Search via Worker - stats: Depth ${result.depth}, ${result.timeMs}ms`);
+        } else {
+          console.log(`[${this.playerLabel}] Search stats: ${this.gameTreeSearch.getStatsString()}`);
+        }
       }
 
       return result;
@@ -423,7 +452,7 @@ export class AIController {
 
   /**
    * Execute play phase using deep search (Expert difficulty)
-   * Uses alpha-beta search to find optimal moves
+   * Uses alpha-beta search to find optimal moves via Web Worker (non-blocking)
    */
   async executePlayPhaseWithSearch(state, callbacks) {
     const player = this.getAIPlayer(state);
@@ -432,23 +461,16 @@ export class AIController {
 
     this.logThought(state, `[Expert] Analyzing position with deep search...`);
 
-    // Mark that we're searching (for UI indicator)
-    this.isSearching = true;
-    state._aiIsSearching = true;
-    callbacks.onUpdate?.();
-
-    // Allow UI to render "AI is thinking..." before blocking search starts
-    // This uses requestAnimationFrame to ensure the browser paints first
-    await new Promise(resolve => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => resolve());
-      });
-    });
-
     while (actionsRemaining > 0) {
       actionsRemaining--;
 
-      // Run deep search to find best move (async version allows periodic yielding)
+      // Mark that we're searching (for UI indicator)
+      this.isSearching = true;
+      state._aiIsSearching = true;
+      callbacks.onUpdate?.();
+
+      // Run deep search via Web Worker (completely non-blocking)
+      // UI remains fully responsive during the search
       const searchResult = await this.findBestMoveWithSearchAsync(state, {
         maxTimeMs: this.difficulty.getSearchTime(),
         verbose: this.verboseLogging
@@ -457,6 +479,7 @@ export class AIController {
       // Clear searching state
       this.isSearching = false;
       state._aiIsSearching = false;
+      callbacks.onUpdate?.();
 
       if (!searchResult || !searchResult.move) {
         this.logThought(state, `[Expert] No good moves found, done playing`);
@@ -719,6 +742,11 @@ export class AIController {
         playerIndex,
         opponentIndex,
       });
+
+      // Handle selection results (AI auto-selects targets)
+      if (result) {
+        this.handleEffectResult(result, state);
+      }
 
       // Remove from hand and exile
       player.hand = player.hand.filter(c => c.instanceId !== card.instanceId);
@@ -1007,19 +1035,29 @@ export class AIController {
       return;
     }
 
-    // Handle target selection
+    // Handle target selection - AI auto-selects
     if (result.selectTarget) {
-      const candidates = typeof result.selectTarget.candidates === 'function'
-        ? result.selectTarget.candidates()
-        : result.selectTarget.candidates;
+      const { selectTarget, ...immediateEffects } = result;
+
+      // Apply any immediate effects first (that don't require selection)
+      if (Object.keys(immediateEffects).length > 0) {
+        resolveEffectResult(state, immediateEffects, {
+          playerIndex: this.playerIndex,
+          opponentIndex: 1 - this.playerIndex,
+        });
+      }
+
+      const candidates = typeof selectTarget.candidates === 'function'
+        ? selectTarget.candidates()
+        : selectTarget.candidates;
 
       if (candidates && candidates.length > 0) {
-        // AI picks the best target (for now, pick the first or highest value)
+        // AI picks the best target
         const target = this.selectBestTarget(candidates, state);
         this.logThought(state, `Selecting target: ${target.label || target.value?.name || 'target'}`);
 
         // Invoke the callback with the selected target
-        const followUp = result.selectTarget.onSelect(target.value);
+        const followUp = selectTarget.onSelect(target.value);
         this.handleEffectResult(followUp, state, depth + 1);
       } else {
         this.logThought(state, `No valid targets available`);
@@ -1028,9 +1066,19 @@ export class AIController {
       return;
     }
 
-    // Handle option selection
+    // Handle option selection - AI auto-selects
     if (result.selectOption) {
-      const options = result.selectOption.options || [];
+      const { selectOption, ...immediateEffects } = result;
+
+      // Apply any immediate effects first
+      if (Object.keys(immediateEffects).length > 0) {
+        resolveEffectResult(state, immediateEffects, {
+          playerIndex: this.playerIndex,
+          opponentIndex: 1 - this.playerIndex,
+        });
+      }
+
+      const options = selectOption.options || [];
 
       if (options.length > 0) {
         // AI picks the best option
@@ -1038,30 +1086,19 @@ export class AIController {
         this.logThought(state, `Selecting option: ${option.label || 'option'}`);
 
         // Invoke the callback with the selected option
-        const followUp = result.selectOption.onSelect(option);
+        const followUp = selectOption.onSelect(option);
         this.handleEffectResult(followUp, state, depth + 1);
       }
       cleanupDestroyed(state);
       return;
     }
 
-    // Handle kill targets (immediate effects)
-    if (result.killTargets) {
-      for (const target of result.killTargets) {
-        if (target && target.currentHp !== undefined) {
-          target.currentHp = 0;
-        }
-      }
-    }
-
-    // Handle damage targets
-    if (result.damageTargets) {
-      for (const { target, amount } of result.damageTargets) {
-        if (target && target.currentHp !== undefined) {
-          target.currentHp = Math.max(0, target.currentHp - amount);
-        }
-      }
-    }
+    // No selection required - apply all effect results through resolveEffectResult
+    // This handles addKeyword, buffCreature, heal, damageCreature, etc.
+    resolveEffectResult(state, result, {
+      playerIndex: this.playerIndex,
+      opponentIndex: 1 - this.playerIndex,
+    });
 
     cleanupDestroyed(state);
   }

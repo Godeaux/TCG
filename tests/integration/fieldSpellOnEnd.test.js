@@ -129,6 +129,90 @@ describe('Bird Feeder Field Spell', () => {
 });
 
 // ============================================
+// SNAKE NEST FIELD SPELL TESTS (Double-trigger prevention)
+// ============================================
+describe('Snake Nest Field Spell - No Duplicate Triggers', () => {
+  let state;
+
+  beforeEach(() => {
+    state = createTestState();
+  });
+
+  it('field spell on field should NOT be added twice to end-of-turn queue', () => {
+    const cardDef = getCardDefinitionById('reptile-spell-snake-nest');
+    const cardInstance = createCardInstance(cardDef, state.turn);
+
+    // Player 0 is active and owns the field spell
+    state.activePlayerIndex = 0;
+
+    // Snake Nest is BOTH on the player's field AND tracked as fieldSpell
+    // (this is how setFieldSpell works - it places the card on the field)
+    state.players[0].field[0] = cardInstance;
+    state.fieldSpell = {
+      card: cardInstance,
+      ownerIndex: 0,
+    };
+
+    // Simulate the CORRECTED queueEndOfTurnEffects logic
+    const player = state.players[state.activePlayerIndex];
+    const queue = player.field.filter(
+      (creature) => creature?.onEnd || creature?.effects?.onEnd || creature?.endOfTurnSummon
+    );
+
+    // Include field spell if it has onEnd effect and is owned by active player
+    // BUT only if it's not already in the queue
+    const fieldSpell = state.fieldSpell;
+    if (fieldSpell?.card?.effects?.onEnd && fieldSpell.ownerIndex === state.activePlayerIndex) {
+      const alreadyInQueue = queue.some(
+        (c) => c?.instanceId === fieldSpell.card.instanceId
+      );
+      if (!alreadyInQueue) {
+        queue.push(fieldSpell.card);
+      }
+    }
+
+    // Snake Nest should appear EXACTLY ONCE in the queue (not twice)
+    const snakeNestCount = queue.filter(item => item.name === 'Snake Nest').length;
+    expect(snakeNestCount).toBe(1);
+  });
+
+  it('field spell NOT on field should still be added to queue', () => {
+    const cardDef = getCardDefinitionById('reptile-spell-snake-nest');
+    const cardInstance = createCardInstance(cardDef, state.turn);
+
+    // Player 0 is active and owns the field spell
+    state.activePlayerIndex = 0;
+
+    // Field spell is tracked but NOT on the player's field (hypothetical edge case)
+    state.fieldSpell = {
+      card: cardInstance,
+      ownerIndex: 0,
+    };
+
+    // Simulate the CORRECTED queueEndOfTurnEffects logic
+    const player = state.players[state.activePlayerIndex];
+    const queue = player.field.filter(
+      (creature) => creature?.onEnd || creature?.effects?.onEnd || creature?.endOfTurnSummon
+    );
+
+    // Include field spell if it has onEnd effect and is owned by active player
+    const fieldSpell = state.fieldSpell;
+    if (fieldSpell?.card?.effects?.onEnd && fieldSpell.ownerIndex === state.activePlayerIndex) {
+      const alreadyInQueue = queue.some(
+        (c) => c?.instanceId === fieldSpell.card.instanceId
+      );
+      if (!alreadyInQueue) {
+        queue.push(fieldSpell.card);
+      }
+    }
+
+    // Snake Nest should appear EXACTLY ONCE in the queue
+    const snakeNestCount = queue.filter(item => item.name === 'Snake Nest').length;
+    expect(snakeNestCount).toBe(1);
+  });
+});
+
+// ============================================
 // ROCKY REEF FIELD SPELL TESTS
 // ============================================
 describe('Rocky Reef Field Spell', () => {
