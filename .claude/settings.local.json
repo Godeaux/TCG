@@ -11,7 +11,14 @@
       "Bash(cat:*)",
       "Bash(wc -l \"x:\\\\Food Chain\\\\TCG\\\\js\"/**/*.js)",
       "Bash(git -C \"x:\\\\Food Chain\\\\TCG\" log --oneline -20)",
-      "Bash(git -C \"x:\\\\Food Chain\\\\TCG\" log --all --oneline --graph)"
+      "Bash(git -C \"x:\\\\Food Chain\\\\TCG\" log --all --oneline --graph)",
+      "Bash(findstr:*)",
+      "Bash(test:*)",
+      "Bash(wc:*)",
+      "Bash(npm install:*)",
+      "Bash(wmic logicaldisk:*)",
+      "Bash(powershell:*)",
+      "Bash(npm test:*)"
     ]
   }
 }

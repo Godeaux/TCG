@@ -4,7 +4,7 @@ Instructions for Claude agents working on this codebase.
 
 ## Project
 
-Two-player card game (vanilla JS, ES6 modules, Supabase multiplayer). Predators eat prey for +1/+1 stats.
+Two-player card game (vanilla JS, ES6 modules, Supabase multiplayer).
 
 ## Architecture Rules
 
@@ -89,4 +89,4 @@ Goal: Eventually delete `effectHandlers.js` entirely.
 ## Reference Docs
 
 - **RULEBOOK.md** — Game rules (don't duplicate here)
-- **ARCHITECTURE.md** — System design details
+

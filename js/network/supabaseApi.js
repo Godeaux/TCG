@@ -1274,3 +1274,144 @@ export const unsubscribeFromFriendships = (channel) => {
     supabase.removeChannel(channel);
   }
 };
+
+// ============================================================================
+// DUEL INVITES
+// ============================================================================
+
+/**
+ * Send a duel invite to a friend
+ * Cancels any existing pending invites from this sender first (one at a time)
+ * @param {Object} params
+ * @param {string} params.senderId - Profile ID of sender
+ * @param {string} params.receiverId - Profile ID of receiver
+ * @param {string} params.lobbyCode - Lobby code to join on accept
+ * @returns {Promise<Object>} Created invite
+ */
+export const sendDuelInvite = async ({ senderId, receiverId, lobbyCode }) => {
+  console.log('[DUEL-SEND] Sending invite:', { senderId, receiverId, lobbyCode });
+
+  // Cancel any existing pending invites from this sender
+  await supabase
+    .from("duel_invites")
+    .update({ status: "cancelled" })
+    .eq("sender_id", senderId)
+    .eq("status", "pending");
+
+  // Create new invite (expires in 60 seconds)
+  const { data, error } = await supabase
+    .from("duel_invites")
+    .insert({
+      sender_id: senderId,
+      receiver_id: receiverId,
+      lobby_code: lobbyCode,
+      status: "pending",
+      expires_at: new Date(Date.now() + 60000).toISOString(),
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[DUEL-SEND] Error sending invite:', error);
+    throw error;
+  }
+
+  console.log('[DUEL-SEND] Invite sent successfully:', data);
+  return data;
+};
+
+/**
+ * Respond to a duel invite
+ * @param {Object} params
+ * @param {string} params.inviteId - ID of the invite
+ * @param {string} params.response - 'accepted' or 'declined'
+ * @returns {Promise<Object>} Updated invite
+ */
+export const respondToDuelInvite = async ({ inviteId, response }) => {
+  const { data, error } = await supabase
+    .from("duel_invites")
+    .update({ status: response })
+    .eq("id", inviteId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+/**
+ * Subscribe to incoming duel invites (new invites and cancellations)
+ * @param {string} profileId - Profile ID to subscribe for
+ * @param {Function} onInvite - Callback for new invites
+ * @param {Function} onCancelled - Callback for cancelled invites
+ * @param {Function} onResponse - Callback for invite responses (for sender)
+ * @returns {Object} Supabase channel for cleanup
+ */
+export const subscribeToDuelInvites = (profileId, onInvite, onCancelled, onResponse) => {
+  console.log('[DUEL-SUB] Creating subscription for profile:', profileId);
+
+  const channel = supabase
+    .channel(`duel-invites:${profileId}`)
+    // Listen for new invites (as receiver)
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "duel_invites",
+        filter: `receiver_id=eq.${profileId}`,
+      },
+      (payload) => {
+        console.log('[DUEL-SUB] INSERT event received:', payload);
+        console.log('[DUEL-SUB] INSERT payload.new:', JSON.stringify(payload.new));
+        onInvite?.(payload.new);
+      }
+    )
+    // Listen for updates (cancellations, responses)
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "duel_invites",
+        filter: `receiver_id=eq.${profileId}`,
+      },
+      (payload) => {
+        console.log('[DUEL-SUB] UPDATE event (receiver) received:', payload);
+        if (payload.new.status === "cancelled") {
+          onCancelled?.(payload.new);
+        }
+      }
+    )
+    // Listen for responses to invites we sent (as sender)
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "duel_invites",
+        filter: `sender_id=eq.${profileId}`,
+      },
+      (payload) => {
+        console.log('[DUEL-SUB] UPDATE event (sender) received:', payload);
+        if (payload.new.status === "accepted" || payload.new.status === "declined") {
+          onResponse?.(payload.new);
+        }
+      }
+    )
+    .subscribe((status, err) => {
+      console.log('[DUEL-SUB] Subscription status:', status, err || '');
+    });
+
+  return channel;
+};
+
+/**
+ * Unsubscribe from duel invites
+ * @param {Object} channel - Supabase channel to remove
+ */
+export const unsubscribeFromDuelInvites = (channel) => {
+  if (channel) {
+    supabase.removeChannel(channel);
+  }
+};

@@ -6551,6 +6551,153 @@ button {
   color: #60a5fa !important;
 }
 
+.friend-challenge-btn:hover {
+  background: rgba(251, 191, 36, 0.2) !important;
+  border-color: #fbbf24 !important;
+  color: #fbbf24 !important;
+}
+
+/* Duel Invite Popup */
+.duel-invite-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  animation: fadeIn 0.2s ease;
+}
+
+.duel-invite-popup {
+  background: var(--bg-card);
+  border: 2px solid var(--gold);
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 300px;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  animation: popIn 0.3s ease;
+}
+
+@keyframes popIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.duel-invite-header h3 {
+  margin: 0 0 16px 0;
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 24px;
+  letter-spacing: 1px;
+}
+
+.duel-invite-content {
+  margin-bottom: 20px;
+}
+
+.duel-invite-content p {
+  margin: 0 0 16px 0;
+  color: var(--text-primary);
+  font-size: 16px;
+}
+
+.duel-invite-timer {
+  font-size: 32px;
+  font-weight: bold;
+  color: var(--hp-red);
+  font-family: var(--font-display);
+}
+
+.duel-invite-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.duel-invite-accept,
+.duel-invite-decline,
+.duel-invite-dismiss {
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.duel-invite-accept {
+  background: var(--prey);
+  border: none;
+  color: white;
+}
+
+.duel-invite-accept:hover {
+  background: #2ecc71;
+  transform: scale(1.05);
+}
+
+.duel-invite-decline {
+  background: transparent;
+  border: 1px solid var(--hp-red);
+  color: var(--hp-red);
+}
+
+.duel-invite-decline:hover {
+  background: rgba(231, 76, 60, 0.2);
+}
+
+.duel-invite-dismiss {
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.duel-invite-dismiss:hover {
+  background: var(--bg-card);
+}
+
+.duel-invite-cancel {
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: transparent;
+  border: 1px solid var(--text-secondary);
+  color: var(--text-secondary);
+}
+
+.duel-invite-cancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--text-primary);
+  color: var(--text-primary);
+}
+
+.duel-invite-starting {
+  color: var(--prey);
+  font-weight: bold;
+  margin-top: 8px;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
 /* Friend Profile Modal */
 .modal {
   position: fixed;
