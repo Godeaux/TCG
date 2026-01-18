@@ -1640,6 +1640,12 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
     const items = candidates.map((candidate) => {
       const item = document.createElement("label");
       item.className = "selection-item";
+
+      // Mark recently drawn cards for visual indication
+      if (candidate.isRecentlyDrawn) {
+        item.classList.add("recently-drawn");
+      }
+
       const candidateCard = candidate.card ?? candidate.value;
       const canRenderCard = shouldRenderCards && isCardLike(candidateCard);
       if (canRenderCard) {

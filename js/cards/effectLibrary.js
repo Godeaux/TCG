@@ -982,16 +982,23 @@ export const selectEnemyToStripAbilities = () => (context) => {
  * @param {number} count - Number of cards to discard (default 1)
  */
 export const selectCardToDiscard = (count = 1) => (context) => {
-  const { log, player, playerIndex } = context;
+  const { log, player, playerIndex, state } = context;
 
   if (player.hand.length === 0) {
     log(`No cards in hand to discard.`);
     return {};
   }
 
+  // Track which cards were recently drawn for UI indication
+  const recentlyDrawn = state?.recentlyDrawnCards || [];
+
   return makeTargetedSelection({
     title: `Choose ${count} card${count > 1 ? 's' : ''} to discard`,
-    candidates: player.hand.map(card => ({ label: card.name, value: card })),
+    candidates: player.hand.map(card => ({
+      label: card.name,
+      value: card,
+      isRecentlyDrawn: recentlyDrawn.includes(card.instanceId)
+    })),
     onSelect: (card) => ({
       discardCards: { playerIndex, cards: [card] }
     }),
@@ -1678,8 +1685,7 @@ export const damageAllCreatures = (amount) => ({ log }) => {
 export const damageAllEnemyCreatures = (amount) => ({ log, opponent }) => {
   log(`Deals ${amount} damage to enemies.`);
   return {
-    damageAllCreatures: amount,
-    targetPlayer: opponent,
+    damageEnemyCreatures: amount,  // Only enemy creatures, not own creatures
     damageOpponent: amount  // Also damage the rival
   };
 };

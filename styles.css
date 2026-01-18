@@ -2096,6 +2096,27 @@ button {
   font-size: 12px;
 }
 
+/* Recently drawn card indicator for discard selection */
+.selection-item.recently-drawn {
+  position: relative;
+}
+
+.selection-item.recently-drawn::before {
+  content: "NEW";
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--prey);
+  color: var(--bg-main);
+  font-size: 10px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  z-index: 10;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 /* Option bubble styles for discrete effect choices */
 .selection-item.option-bubble {
   flex-direction: column;
@@ -7274,8 +7295,8 @@ button {
 
 /* Individual Pack Card */
 .pack-card {
-  width: 140px;
-  height: 190px;
+  width: 180px;
+  height: 252px;
   perspective: 1000px;
   cursor: pointer;
   position: relative; /* Contain the rarity glow */
@@ -7378,10 +7399,7 @@ button {
 /* Pack revealed card (actual card rendering) */
 .pack-revealed-card {
   width: 100%;
-  height: auto;
-  max-height: calc(100% - 30px);
-  transform: scale(0.9);
-  transform-origin: top center;
+  height: 100%;
 }
 
 .pack-revealed-card.card {
@@ -8145,8 +8163,8 @@ button {
   }
 
   .pack-card {
-    width: 100px;
-    height: 140px;
+    width: 130px;
+    height: 182px;
   }
 
   .style-color-grid {

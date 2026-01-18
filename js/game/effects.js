@@ -133,11 +133,22 @@ export const resolveEffectResult = (state, result, context) => {
   }
 
   if (result.draw) {
+    const player = state.players[context.playerIndex];
+    const handBefore = new Set(player.hand.map(c => c.instanceId));
+
     for (let i = 0; i < result.draw; i += 1) {
       drawCard(state, context.playerIndex);
     }
+
+    // Track recently drawn cards for UI indication (e.g., in discard selection)
+    const drawnInstanceIds = player.hand
+      .filter(c => !handBefore.has(c.instanceId))
+      .map(c => c.instanceId);
+    state.recentlyDrawnCards = state.recentlyDrawnCards || [];
+    state.recentlyDrawnCards.push(...drawnInstanceIds);
+
     // Don't reveal card names - hidden information
-    logGameAction(state, BUFF, `${state.players[context.playerIndex].name} draws ${result.draw} card(s).`);
+    logGameAction(state, BUFF, `${player.name} draws ${result.draw} card(s).`);
   }
 
   if (result.heal) {
@@ -840,6 +851,8 @@ export const resolveEffectResult = (state, result, context) => {
       }
       logGameAction(state, DEBUFF, `${player.name} discards ${formatCardForLog(card)}.`);
     });
+    // Clear recently drawn tracking after discard selection completes
+    state.recentlyDrawnCards = [];
   }
 
   if (result.returnToHand) {

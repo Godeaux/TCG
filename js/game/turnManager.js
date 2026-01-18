@@ -142,6 +142,7 @@ const handleRegen = (state) => {
 export const startTurn = (state) => {
   state.cardPlayedThisTurn = false;
   state.extendedConsumption = null; // Clear extended consumption window on turn start
+  state.recentlyDrawnCards = []; // Clear recently drawn tracking for new turn
   resetCombat(state);
   logGameAction(state, PHASE, `Turn ${state.turn}: ${state.players[state.activePlayerIndex].name}'s Turn`);
   runStartOfTurnEffects(state);
