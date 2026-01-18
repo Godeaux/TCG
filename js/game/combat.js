@@ -9,6 +9,7 @@ import {
   hasAmbush,
   areAbilitiesActive,
   hasToxic,
+  hasPoisonous,
 } from "../keywords.js";
 import { logMessage, queueVisualEffect, logGameAction, LOG_CATEGORIES, getKeywordEmoji, formatCardForLog } from "../state/gameState.js";
 import { resolveEffectResult } from "./effects.js";
@@ -85,7 +86,8 @@ export const resolveCreatureCombat = (state, attacker, defender, attackerOwnerIn
   const defenderResult = applyDamage(defender, attacker.currentAtk, state, defenderOwnerIndex);
   const defenderDamage = defenderResult.damage;
   const defenderSurvived = defender.currentHp > 0;
-  const defenderDealsDamage = !ambushAttack || defenderSurvived;
+  // Ambush: attacker NEVER takes combat damage when attacking (per developer glossary)
+  const defenderDealsDamage = !ambushAttack;
   let attackerDamage = 0;
 
   if (defenderResult.barrierBlocked) {
@@ -154,9 +156,26 @@ export const resolveCreatureCombat = (state, attacker, defender, attackerOwnerIn
     logGameAction(state, DEATH, `${formatCardForLog(attacker)} is slain!`);
   }
 
-  if (ambushAttack && !defenderSurvived) {
+  // Ambush: always log when active (attacker never takes damage)
+  if (ambushAttack) {
     queueKeywordEffect(state, attacker, "Ambush", attackerOwnerIndex);
     logGameAction(state, COMBAT, `${getKeywordEmoji("Ambush")} AMBUSH: ${formatCardForLog(attacker)} avoids all damage!`);
+  }
+
+  // Poisonous: when DEFENDING, kill the attacking enemy after combat
+  // Only triggers if defender has Poisonous, is defending (not attacking), and dealt counter-damage
+  if (hasPoisonous(defender) && areAbilitiesActive(defender) && !ambushAttack && defender.currentAtk > 0 && attacker.currentHp > 0) {
+    queueKeywordEffect(state, defender, "Poisonous", defenderOwnerIndex);
+    attacker.currentHp = 0;
+    attacker.diedInCombat = true;
+    attacker.slainBy = {
+      instanceId: defender.instanceId,
+      name: defender.name,
+      type: defender.type,
+      currentAtk: defender.currentAtk,
+      currentHp: defender.currentHp,
+    };
+    logGameAction(state, DEATH, `${getKeywordEmoji("Poisonous")} POISONOUS: ${formatCardForLog(defender)} kills ${formatCardForLog(attacker)} with poison!`);
   }
 
   return { attackerDamage, defenderDamage };

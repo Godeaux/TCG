@@ -607,10 +607,11 @@ const updateActionPanel = (state, callbacks = {}) => {
   const actions = document.createElement("div");
   actions.className = "action-buttons";
 
-  const isFree =
-    selectedCard.type === "Free Spell" || selectedCard.type === "Trap" || isFreePlay(selectedCard);
+  // Free Spell and Trap bypass limit entirely
+  // Free Play keyword requires limit available but doesn't consume it
+  const isTrulyFree = selectedCard.type === "Free Spell" || selectedCard.type === "Trap";
   const playDisabled =
-    !isLocalTurn || !canPlayCard(state) || (!isFree && !cardLimitAvailable(state));
+    !isLocalTurn || !canPlayCard(state) || (!isTrulyFree && !cardLimitAvailable(state));
 
   const playButton = document.createElement("button");
   playButton.className = "action-btn primary";
@@ -1692,8 +1693,12 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
       const followUp = onSelect(option);
       resolveEffectChain(state, followUp, context, onUpdate, onComplete);
       cleanupDestroyed(state);
-      onUpdate?.();
-      broadcastSyncState(state);
+      // Only call onUpdate if followUp doesn't require further UI interaction
+      // (selectTarget/selectOption panels get destroyed by full re-render)
+      if (!followUp?.selectTarget && !followUp?.selectOption) {
+        onUpdate?.();
+        broadcastSyncState(state);
+      }
     };
 
     // AI vs AI mode: auto-select the first option
@@ -2226,12 +2231,21 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) 
   const playerIndex = state.activePlayerIndex;
   const opponentIndex = (state.activePlayerIndex + 1) % 2;
 
-  const isFree = card.type === "Free Spell" || card.type === "Trap" || isFreePlay(card);
-  if (!isFree && !cardLimitAvailable(state)) {
+  // Free Spell and Trap types bypass limit entirely
+  // Free Play keyword requires limit available but doesn't consume it
+  const isTrulyFree = card.type === "Free Spell" || card.type === "Trap";
+  const hasFreePlayKeyword = isFreePlay(card);
+
+  // Only truly free cards bypass the limit check entirely
+  // Free Play keyword cards still require the limit to be available
+  if (!isTrulyFree && !cardLimitAvailable(state)) {
     logMessage(state, "You have already played a card this turn.");
     onUpdate?.();
     return;
   }
+
+  // Determine if playing this card consumes the card limit
+  const consumesLimit = !isTrulyFree && !hasFreePlayKeyword;
 
   // Clear extended consumption window when a card is being played
   state.extendedConsumption = null;
@@ -2257,7 +2271,7 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) 
         player.exile.push(card);
       }
       player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
-      if (!isFree) {
+      if (consumesLimit) {
         state.cardPlayedThisTurn = true;
       }
       onUpdate?.();
@@ -2439,7 +2453,7 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) 
                   () => cleanupDestroyed(state)
                 );
               }
-              if (!isFree) {
+              if (consumesLimit) {
                 state.cardPlayedThisTurn = true;
               }
               pendingConsumption = null;
@@ -2545,11 +2559,12 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) 
           () => cleanupDestroyed(state)
         );
       }
-      // Dry-dropped predators lose Free Play, so recalculate isFree
-      const isFreeAfterPlay = card.type === "Predator" && creature.dryDropped
-        ? isFreePlay(creature)
-        : isFree;
-      if (!isFreeAfterPlay) {
+      // Dry-dropped predators always consume the limit (abilities suppressed)
+      // Others use the predetermined consumesLimit
+      const consumesLimitAfterPlay = card.type === "Predator" && creature.dryDropped
+        ? true
+        : consumesLimit;
+      if (consumesLimitAfterPlay) {
         state.cardPlayedThisTurn = true;
       }
       onUpdate?.();

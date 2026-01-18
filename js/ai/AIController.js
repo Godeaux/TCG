@@ -15,7 +15,7 @@
 
 import { canPlayCard, cardLimitAvailable } from '../game/turnManager.js';
 import { getValidTargets, resolveCreatureCombat, resolveDirectAttack, cleanupDestroyed } from '../game/combat.js';
-import { isFreePlay, isPassive, isHarmless, isEdible, hasScavenge, hasHaste } from '../keywords.js';
+import { isFreePlay, isPassive, isHarmless, isEdible, isInedible, hasScavenge, hasHaste } from '../keywords.js';
 import { isCreatureCard, createCardInstance } from '../cardTypes.js';
 import { logMessage, queueVisualEffect } from '../state/gameState.js';
 import { consumePrey } from '../game/consumption.js';
@@ -345,7 +345,7 @@ export class AIController {
 
     // Find available prey for consumption (needed to check if Free Play predators can be played)
     const availablePrey = player.field.filter(c =>
-      c && !c.frozen && (c.type === 'Prey' || (c.type === 'Predator' && isEdible(c)))
+      c && !c.frozen && !isInedible(c) && (c.type === 'Prey' || (c.type === 'Predator' && isEdible(c)))
     );
     const hasConsumablePrey = availablePrey.length > 0;
 
@@ -625,9 +625,9 @@ export class AIController {
     const player = this.getAIPlayer(state);
     const isFree = isFreePlay(card);
 
-    // Find available prey to consume (not frozen)
+    // Find available prey to consume (not frozen and not inedible)
     const availablePrey = player.field.filter(c =>
-      c && !c.frozen && (c.type === 'Prey' || (c.type === 'Predator' && isEdible(c)))
+      c && !c.frozen && !isInedible(c) && (c.type === 'Prey' || (c.type === 'Predator' && isEdible(c)))
     );
 
     // Remove from hand

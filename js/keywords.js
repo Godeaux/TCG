@@ -9,6 +9,7 @@ export const KEYWORDS = {
   ACUITY: "Acuity",
   IMMUNE: "Immune",
   EDIBLE: "Edible",
+  INEDIBLE: "Inedible",
   SCAVENGE: "Scavenge",
   NEUROTOXIC: "Neurotoxic",
   AMBUSH: "Ambush",
@@ -29,12 +30,12 @@ export const KEYWORD_DESCRIPTIONS = {
   [KEYWORDS.ACUITY]: "Can target Hidden and Invisible creatures.",
   [KEYWORDS.IMMUNE]: "Only takes damage from direct creature attacks.",
   [KEYWORDS.EDIBLE]: "Can be consumed as prey; nutrition equals its ATK.",
+  [KEYWORDS.INEDIBLE]: "Cannot be consumed.",
   [KEYWORDS.SCAVENGE]: "May consume from the carrion pile when played.",
   [KEYWORDS.NEUROTOXIC]: "Combat damage freezes the target until it dies next turn.",
-  [KEYWORDS.AMBUSH]:
-    "If it kills its target when attacking, it takes no damage; otherwise it takes damage normally.",
+  [KEYWORDS.AMBUSH]: "When attacking, cannot be dealt combat damage.",
   [KEYWORDS.TOXIC]: "Kills any creature it damages in combat regardless of HP.",
-  [KEYWORDS.POISONOUS]: "Deals 1 damage to opponent at end of their turn.",
+  [KEYWORDS.POISONOUS]: "When defending, kills the attacking enemy after combat.",
   [KEYWORDS.HARMLESS]: "Cannot attack (0 attack permanently).",
   [KEYWORDS.FROZEN]: "Cannot attack or be consumed. Thaws at the end of the creature-owning player's turn.",
 };
@@ -90,3 +91,5 @@ export const hasToxic = (card) => hasKeyword(card, KEYWORDS.TOXIC);
 export const hasPoisonous = (card) => hasKeyword(card, KEYWORDS.POISONOUS);
 
 export const isHarmless = (card) => hasKeyword(card, KEYWORDS.HARMLESS);
+
+export const isInedible = (card) => hasKeyword(card, KEYWORDS.INEDIBLE);

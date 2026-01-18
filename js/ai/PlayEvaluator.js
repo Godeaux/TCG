@@ -11,7 +11,7 @@
  * - Synergy detection
  */
 
-import { KEYWORDS, hasKeyword, hasHaste, hasLure, isEdible, isFreePlay } from '../keywords.js';
+import { KEYWORDS, hasKeyword, hasHaste, hasLure, isEdible, isInedible, isFreePlay } from '../keywords.js';
 import { isCreatureCard } from '../cardTypes.js';
 import { ThreatDetector } from './ThreatDetector.js';
 import { CardKnowledgeBase } from './CardKnowledgeBase.js';
@@ -222,9 +222,9 @@ export class PlayEvaluator {
     const ai = state.players[aiPlayerIndex];
     let bonus = 0;
 
-    // Find available prey
+    // Find available prey (not frozen and not inedible)
     const availablePrey = ai.field.filter(c =>
-      c && !c.frozen && (c.type === 'Prey' || isEdible(c))
+      c && !c.frozen && !isInedible(c) && (c.type === 'Prey' || isEdible(c))
     );
 
     if (availablePrey.length === 0) {

@@ -143,6 +143,8 @@ const refresh = () => {
     onSetupChoose: (playerIndex) => {
       chooseFirstPlayer(state, playerIndex);
       startTurn(state);
+      // Auto-advance through Start → Draw → Main 1 (consistent with endTurn flow)
+      advancePhase(state);
       refresh();
 
       // In AI vs AI mode, explicitly trigger the first AI turn after a short delay

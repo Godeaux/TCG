@@ -5293,18 +5293,19 @@ button {
   width: 100%;
   height: 100%;
   background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.95) 100%);
-  display: flex;
+  display: none;  /* Hard hide by default to prevent flash on page load */
   align-items: center;
   justify-content: center;
   z-index: 10000;
   opacity: 0;
-  visibility: hidden;
-  transition: opacity 1s ease, visibility 1s ease;
+  pointer-events: none;
+  transition: opacity 1s ease;
 }
 
 .victory-overlay.show {
+  display: flex;
   opacity: 1;
-  visibility: visible;
+  pointer-events: auto;
 }
 
 .victory-container {

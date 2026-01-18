@@ -18,7 +18,7 @@
 
 import { getActivePlayer, getOpponentPlayer, logMessage } from '../../state/gameState.js';
 import { canPlayCard, cardLimitAvailable } from '../../game/turnManager.js';
-import { isFreePlay, isPassive, isHarmless, isEdible, isHidden, isInvisible, hasAcuity, hasHaste } from '../../keywords.js';
+import { isFreePlay, isPassive, isHarmless, isEdible, isInedible, isHidden, isInvisible, hasAcuity, hasHaste } from '../../keywords.js';
 import { createCardInstance } from '../../cardTypes.js';
 import { consumePrey } from '../../game/consumption.js';
 import { cleanupDestroyed } from '../../game/combat.js';
@@ -303,7 +303,8 @@ const canConsumePreyDirectly = (predator, prey, state) => {
   if (predator.type !== 'Predator') return false;
   if (prey.type !== 'Prey' && !(prey.type === 'Predator' && isEdible(prey))) return false;
   if (predator.frozen) return false;  // Frozen predator cannot consume
-  if (prey.frozen) return false;
+  if (prey.frozen) return false;      // Frozen prey cannot be consumed
+  if (isInedible(prey)) return false; // Inedible creatures cannot be consumed
 
   const activePlayer = getActivePlayer(state);
   if (!activePlayer.field.includes(predator) && !activePlayer.hand.includes(predator)) return false;
@@ -583,8 +584,53 @@ const placeCreatureInSpecificSlot = (card, slotIndex) => {
   const state = latestState;
   const player = getActivePlayer(state);
 
-  const isFree = card.type === "Free Spell" || card.type === "Trap" || isFreePlay(card);
-  if (!isFree && !cardLimitAvailable(state)) {
+  // Free Spell and Trap types don't need card limit at all
+  // Free Play keyword cards don't CONSUME the limit but DO require it available (unless consuming prey)
+  const isTrulyFree = card.type === "Free Spell" || card.type === "Trap";
+  const hasFreePlay = isFreePlay(card);
+  const isFree = isTrulyFree || hasFreePlay;
+
+  // For predators, check prey availability to determine if Free Play can bypass limit
+  if (card.type === "Predator") {
+    const availablePrey = player.field.filter(
+      (slot) => slot && (slot.type === "Prey" || (slot.type === "Predator" && isEdible(slot)))
+    );
+    const ediblePrey = availablePrey.filter((slot) => !slot.frozen && !isInedible(slot));
+
+    // Free Play predators need either: available prey to consume, OR card limit available
+    // Non-Free Play predators always need card limit available
+    const canPlayFreeWithPrey = hasFreePlay && ediblePrey.length > 0;
+    if (!isTrulyFree && !canPlayFreeWithPrey && !cardLimitAvailable(state)) {
+      logMessage(state, "You have already played a card this turn.");
+      latestCallbacks.onUpdate?.();
+      return;
+    }
+
+    player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
+    const creature = createCardInstance(card, state.turn);
+
+    if (ediblePrey.length > 0) {
+      startConsumptionForSpecificSlot(creature, slotIndex, ediblePrey, card);
+      return;
+    }
+
+    creature.dryDropped = true;
+    logMessage(state, `${creature.name} enters play with no consumption.`);
+
+    player.field[slotIndex] = creature;
+    triggerPlayTraps(state, creature, latestCallbacks.onUpdate, () => {
+      // Dry-dropped predators always consume limit (abilities suppressed = no Free Play)
+      if (!isTrulyFree) {
+        state.cardPlayedThisTurn = true;
+      }
+      latestCallbacks.onUpdate?.();
+      broadcastSyncState(state);
+    });
+    return;
+  }
+
+  // Non-predators (Prey, Spells): check card limit
+  if (!isTrulyFree && !cardLimitAvailable(state)) {
     logMessage(state, "You have already played a card this turn.");
     latestCallbacks.onUpdate?.();
     return;
@@ -592,30 +638,6 @@ const placeCreatureInSpecificSlot = (card, slotIndex) => {
 
   player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
   const creature = createCardInstance(card, state.turn);
-
-  if (card.type === "Predator") {
-    const availablePrey = player.field.filter(
-      (slot) => slot && (slot.type === "Prey" || (slot.type === "Predator" && isEdible(slot)))
-    );
-    const ediblePrey = availablePrey.filter((slot) => !slot.frozen);
-
-    if (ediblePrey.length > 0) {
-      startConsumptionForSpecificSlot(creature, slotIndex, ediblePrey, card);
-      return;
-    }
-
-    // Free Play predators can only bypass the card limit by consuming prey
-    // If card limit already used and this is a Free Play predator, block the play
-    if (isFreePlay(card) && state.cardPlayedThisTurn) {
-      logMessage(state, `${card.name} requires consuming prey to play for free (you've already played a card this turn).`);
-      player.hand.push(card); // Return card to hand
-      latestCallbacks.onUpdate?.();
-      return;
-    }
-
-    creature.dryDropped = true;
-    logMessage(state, `${creature.name} enters play with no consumption.`);
-  }
 
   player.field[slotIndex] = creature;
 

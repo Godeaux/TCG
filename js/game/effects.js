@@ -1,8 +1,9 @@
 import { drawCard, logMessage, queueVisualEffect, logGameAction, LOG_CATEGORIES, formatKeyword, formatKeywordList, getKeywordEmoji, formatCardForLog } from "../state/gameState.js";
 import { createCardInstance, isCreatureCard } from "../cardTypes.js";
 import { consumePrey } from "./consumption.js";
-import { isImmune, areAbilitiesActive } from "../keywords.js";
+import { isImmune, areAbilitiesActive, hasBarrier } from "../keywords.js";
 import { getTokenById, getCardDefinitionById, resolveCardEffect } from "../cards/index.js";
+import { endTurn } from "./turnManager.js";
 
 const { DAMAGE, DEATH, SUMMON, BUFF, DEBUFF, HEAL, CHOICE, SPELL } = LOG_CATEGORIES;
 
@@ -481,6 +482,10 @@ export const resolveEffectResult = (state, result, context) => {
     if (keyword === "Barrier") {
       creature.hasBarrier = true;
     }
+    // Only set frozen flag - frozenDiesTurn is ONLY set by Neurotoxic in combat.js
+    if (keyword === "Frozen") {
+      creature.frozen = true;
+    }
   }
 
   if (result.addEndOfTurnSummon) {
@@ -827,9 +832,30 @@ export const resolveEffectResult = (state, result, context) => {
       }
 
       removeCardFromField(state, targetCard);
+
+      // Tokens cannot return to hand - destroy them instead
+      if (targetCard.isToken) {
+        state.players[returnToIndex].exile.push(targetCard);
+        logGameAction(state, DEATH, `${formatCardForLog(targetCard)} is destroyed (tokens cannot return to hand).`);
+        return;
+      }
+
       // Reset currentHp/currentAtk to base values when returning to hand
       if (targetCard.hp !== undefined) targetCard.currentHp = targetCard.hp;
       if (targetCard.atk !== undefined) targetCard.currentAtk = targetCard.atk;
+
+      // Reset all dynamic state when returning to hand
+      const originalCard = getCardDefinitionById(targetCard.id);
+      targetCard.keywords = originalCard?.keywords ? [...originalCard.keywords] : [];
+      targetCard.frozen = false;
+      targetCard.frozenDiesTurn = null;
+      targetCard.paralyzed = false;
+      targetCard.paralyzedUntilTurn = null;
+      targetCard.hasBarrier = originalCard?.keywords?.includes("Barrier") || false;
+      targetCard.abilitiesCancelled = false;
+      targetCard.hasAttacked = false;
+      targetCard.summonedTurn = null;
+
       state.players[returnToIndex].hand.push(targetCard);
       logGameAction(state, BUFF, `${formatCardForLog(targetCard)} returns to ${state.players[returnToIndex].name}'s hand.`);
     });
@@ -1078,6 +1104,11 @@ export const resolveEffectResult = (state, result, context) => {
         logGameAction(state, SUMMON, `${formatCardForLog(creature)} revives!`);
       }
     }
+  }
+
+  // End the current turn (used by tutorAndEndTurn effect)
+  if (result.endTurn) {
+    endTurn(state);
   }
 
   // Return any UI-related results for the caller to handle

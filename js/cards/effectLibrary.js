@@ -1085,6 +1085,32 @@ export const tutorFromDeck = (cardType = 'any') => (context) => {
 };
 
 /**
+ * Tutor: Select a card from deck to add to hand, then end the turn
+ * Used by Angler card
+ */
+export const tutorAndEndTurn = () => (context) => {
+  const { log, player, playerIndex } = context;
+
+  if (player.deck.length === 0) {
+    log(`Deck is empty.`);
+    return { endTurn: true };
+  }
+
+  return makeTargetedSelection({
+    title: `Choose a card to add to hand (turn will end)`,
+    candidates: () => player.deck.map(card => ({ label: card.name, value: card })),
+    onSelect: (card) => {
+      log(`Added ${card.name} to hand. Turn ends.`);
+      return {
+        addToHand: { playerIndex, card, fromDeck: true },
+        endTurn: true
+      };
+    },
+    renderCards: true
+  });
+};
+
+/**
  * Select any creature to deal damage to (before combat)
  * @param {number} amount - Damage amount
  * @param {string} label - Damage source label (e.g., "strike", "shock")
@@ -1800,6 +1826,36 @@ export const selectPreyForBuff = (stats) => (context) => {
   return makeTargetedSelection({
     title: `Choose a prey to gain +${attack}/+${health}`,
     candidates: prey.map(t => ({ label: t.name, value: t })),
+    onSelect: (target) => {
+      log(`Targets ${target.name}.`);
+      return handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
+        buffCreature: { creature: target, attack, health }
+      };
+    }
+  });
+};
+
+/**
+ * Select any creature (Prey or Predator) and buff it
+ * Used by Sunken Treasure (+3/+3 option) and Sable Fur token
+ * @param {Object} stats - { attack, health }
+ */
+export const selectCreatureForBuff = (stats) => (context) => {
+  const { log, player, opponent, state } = context;
+  const { attack = 0, health = 0 } = stats;
+  const creatures = [
+    ...player.field.filter(c => c && isCreatureCard(c) && !isInvisible(c, state)),
+    ...opponent.field.filter(c => c && isCreatureCard(c) && !isInvisible(c, state))
+  ];
+
+  if (creatures.length === 0) {
+    log(`No creatures to target.`);
+    return {};
+  }
+
+  return makeTargetedSelection({
+    title: `Choose a creature to gain +${attack}/+${health}`,
+    candidates: creatures.map(t => ({ label: t.name, value: t })),
     onSelect: (target) => {
       log(`Targets ${target.name}.`);
       return handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
@@ -3215,6 +3271,7 @@ export const effectRegistry = {
   selectEnemyPreyToKill,
   selectEnemyToKill,
   tutorFromDeck,
+  tutorAndEndTurn,
   selectCreatureForDamage,
   selectTargetForDamage,
   selectEnemyPreyToConsume,
@@ -3241,6 +3298,7 @@ export const effectRegistry = {
   selectEnemyCreatureForDamage,
   selectCreatureToCopy,
   selectPreyForBuff,
+  selectCreatureForBuff,
   selectCreatureToTransform,
   selectEnemyToSteal,
 
@@ -3554,6 +3612,9 @@ export const resolveEffect = (effectDef, context) => {
     case 'tutorFromDeck':
       specificEffect = effectFn(params.cardType);
       break;
+    case 'tutorAndEndTurn':
+      specificEffect = effectFn();
+      break;
     case 'selectCreatureForDamage':
       specificEffect = effectFn(params.amount, params.label);
       break;
@@ -3623,6 +3684,9 @@ export const resolveEffect = (effectDef, context) => {
       break;
     case 'selectPreyForBuff':
       specificEffect = effectFn(params.stats);
+      break;
+    case 'selectCreatureForBuff':
+      specificEffect = effectFn(params);
       break;
     case 'selectCreatureToTransform':
       specificEffect = effectFn(params.newCardId);

@@ -1,7 +1,6 @@
 import { drawCard, logMessage, resetCombat, logGameAction, LOG_CATEGORIES, getKeywordEmoji } from "../state/gameState.js";
 import { cleanupDestroyed } from "./combat.js";
 import { resolveEffectResult } from "./effects.js";
-import { hasPoisonous } from "../keywords.js";
 import { logPlainMessage } from "./historyLog.js";
 import { resolveCardEffect } from "../cards/index.js";
 
@@ -136,23 +135,6 @@ const handleRegen = (state) => {
         creature.currentHp = baseHp;
         logGameAction(state, HEAL, `${creature.name} regenerates to full health (+${healAmount} HP).`);
       }
-    }
-  });
-};
-
-const handlePoisonousDamage = (state) => {
-  const activePlayerIndex = state.activePlayerIndex;
-  const opponentIndex = (activePlayerIndex + 1) % 2;
-  const activePlayer = state.players[activePlayerIndex];
-  const opponentPlayer = state.players[opponentIndex];
-
-  // Poison triggers at end of "their" (opponent's) turn
-  // So at end of active player's turn, the OPPONENT's poisonous creatures damage the ACTIVE player
-  // This means: my poison hurts my enemy at the end of my enemy's turn
-  opponentPlayer.field.forEach((creature) => {
-    if (creature && hasPoisonous(creature)) {
-      activePlayer.hp -= 1;
-      logGameAction(state, DAMAGE, `${creature.name}'s ${getKeywordEmoji("Poisonous")} poison damages ${activePlayer.name} for 1.`);
     }
   });
 };
@@ -362,7 +344,6 @@ export const finalizeEndPhase = (state) => {
 
   logGameAction(state, PHASE, `Processing end-of-turn effects...`);
   handleRegen(state);
-  handlePoisonousDamage(state);
   handleFrozenThaw(state);       // Thaw regular frozen creatures first
   handleNeurotoxicDeaths(state); // Then kill Neurotoxic-frozen creatures
   clearParalysis(state);
