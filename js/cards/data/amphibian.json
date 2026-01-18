@@ -14,16 +14,7 @@
         "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-radiated-tree-frog", "token-radiated-tree-frog"] } }
       }
     },
-    {
-      "id": "amphibian-prey-radiated-tree-frogs",
-      "name": "Radiated Tree Frogs",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": ["Immune"]
-    },
-    {
+        {
       "id": "amphibian-prey-confusing-rocket-frog",
       "name": "Confusing Rocket Frog",
       "type": "Prey",
@@ -56,10 +47,10 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Poisonous"],
-      "effectText": "End of turn, play Empress Newt.",
+      "effectText": "End of turn, play 2 Empress Newts.",
       "summons": ["token-empress-newt"],
       "effects": {
-        "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-empress-newt"] } }
+        "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-empress-newt", "token-empress-newt"] } }
       }
     },
     {
@@ -107,6 +98,7 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
+      "keywords": ["Poisonous"],
       "effectText": "Draw 1. Play Golden Mantella.",
       "summons": ["token-golden-mantella"],
       "effects": {
@@ -147,7 +139,7 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Poisonous"],
-      "effectText": "End of turn; play Hidden Egg.",
+      "effectText": "End of turn, play Hidden Eleuth Egg.",
       "summons": ["token-hidden-eleuth-egg"],
       "effects": {
         "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-hidden-eleuth-egg"] } }
@@ -199,10 +191,11 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Play 2 Red-tailed Knobby Newts.",
+      "effectText": "Play 2 Red-tailed Knobby Newts. Defending, neurotoxic.",
       "summons": ["token-red-tailed-knobby-newt"],
       "effects": {
-        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-red-tailed-knobby-newt", "token-red-tailed-knobby-newt"] } }
+        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-red-tailed-knobby-newt", "token-red-tailed-knobby-newt"] } },
+        "onDefend": { "type": "applyNeurotoxicToAttacker" }
       }
     },
     {
@@ -236,7 +229,7 @@
       "name": "Tomato Frog",
       "type": "Prey",
       "atk": 1,
-      "hp": 1,
+      "hp": 2,
       "nutrition": 2,
       "effectText": "Discard; add Tomato to hand. Defending; attacking enemy gains Frozen.",
       "effects": {
@@ -296,26 +289,15 @@
       }
     },
     {
-      "id": "amphibian-predator-indian-bullfrogs",
-      "name": "Indian Bullfrogs",
+      "id": "amphibian-predator-indian-bullfrog",
+      "name": "Indian Bullfrog",
       "type": "Predator",
       "atk": 2,
       "hp": 2,
-      "effectText": "Play Indian BullFrog.",
-      "summons": ["token-indian-bullfrog"],
+      "effectText": "Play Tiger Frog. Deal 1 damage to any target.",
+      "summons": ["token-tiger-frog"],
       "effects": {
-        "onConsume": { "type": "summonTokens", "params": { "tokenIds": ["token-indian-bullfrog"] } }
-      }
-    },
-    {
-      "id": "amphibian-predator-tiger-frog",
-      "name": "Tiger Frog",
-      "type": "Predator",
-      "atk": 2,
-      "hp": 2,
-      "effectText": "Deal 2 damage to rival.",
-      "effects": {
-        "onConsume": { "type": "damageOpponent", "params": { "amount": 2 } }
+        "onConsume": { "type": "summonAndDamage", "params": { "tokenIds": ["token-tiger-frog"], "damage": 1 } }
       }
     },
     {
@@ -334,8 +316,8 @@
       "id": "amphibian-predator-mountain-chicken",
       "name": "Mountain Chicken",
       "type": "Predator",
-      "atk": 3,
-      "hp": 3,
+      "atk": 4,
+      "hp": 4,
       "keywords": ["Edible"],
       "effectText": "End of turn, play Mountain Chicken Egg.",
       "summons": ["token-mountain-chicken-egg"],
@@ -505,21 +487,7 @@
         }
       }
     },
-    {
-      "id": "amphibian-spell-pacify",
-      "name": "Pacify",
-      "type": "Spell",
-      "effectText": "Target enemy gains passive.",
-      "effects": {
-        "effect": {
-          "type": "selectEnemyForKeyword",
-          "params": {
-            "keyword": "Passive"
-          }
-        }
-      }
-    },
-    {
+        {
       "id": "amphibian-spell-pounce-plummet",
       "name": "Pounce Plummet",
       "type": "Spell",
@@ -626,21 +594,7 @@
         }
       }
     },
-    {
-      "id": "amphibian-free-spell-spell-overload",
-      "name": "Spell Overload",
-      "type": "Free Spell",
-      "effectText": "Play 2 spells from your hand.",
-      "effects": {
-        "effect": {
-          "type": "playSpellsFromHand",
-          "params": {
-            "count": 2
-          }
-        }
-      }
-    },
-    {
+        {
       "id": "amphibian-field-spell-wishing-well",
       "name": "Wishing Well",
       "type": "Spell",

@@ -31,18 +31,16 @@
       }
     },
     {
-      "id": "mammal-prey-arctic-hare",
-      "name": "Arctic Hare",
+      "id": "mammal-prey-snowshoe-hare",
+      "name": "Snowshoe Hare",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Hidden"],
-      "effectText": "Target enemy gains Frozen. Start of turn, play Arctic Hare.",
-      "summons": ["mammal-prey-arctic-hare"],
+      "keywords": ["Haste", "Hidden"],
+      "effectText": "Target enemy gains Frozen.",
       "effects": {
-        "onPlay": { "type": "selectEnemyToFreeze" },
-        "onStart": { "type": "summonTokens", "params": { "tokenIds": ["mammal-prey-arctic-hare"] } }
+        "onPlay": { "type": "selectEnemyToFreeze" }
       }
     },
     {
@@ -64,9 +62,10 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "End of turn, play 2 Kits.",
+      "effectText": "Slain, heal 1. End of turn, play 2 Kits.",
       "summons": ["token-kit"],
       "effects": {
+        "onSlain": { "type": "heal", "params": { "amount": 1 } },
         "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-kit", "token-kit"] } }
       }
     },
@@ -122,13 +121,13 @@
       }
     },
     {
-      "id": "mammal-prey-northern-koala",
-      "name": "Northern Koala",
+      "id": "mammal-prey-black-tree-kangaroo",
+      "name": "Black Tree-kangaroo",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Hidden"],
+      "keywords": ["Ambush", "Hidden"],
       "effectText": "Slain, play Joey.",
       "summons": ["token-joey"],
       "effects": {
@@ -162,10 +161,22 @@
       }
     },
     {
+      "id": "mammal-prey-sable",
+      "name": "Sable",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "effectText": "Slain, add Sable Fur to hand.",
+      "effects": {
+        "onSlain": { "type": "addToHand", "params": { "cardId": "token-sable-fur" } }
+      }
+    },
+    {
       "id": "mammal-prey-pronghorn",
       "name": "Pronghorn",
       "type": "Prey",
-      "atk": 1,
+      "atk": 2,
       "hp": 2,
       "nutrition": 2,
       "effectText": "Deal 2 damage to any target.",
@@ -180,9 +191,23 @@
       "atk": 2,
       "hp": 2,
       "nutrition": 2,
-      "effectText": "End of turn, draw 2.",
+      "effectText": "Draw 2.",
       "effects": {
-        "onEnd": { "type": "draw", "params": { "count": 2 } }
+        "onPlay": { "type": "draw", "params": { "count": 2 } }
+      }
+    },
+    {
+      "id": "mammal-prey-black-springbok",
+      "name": "Black Springbok",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": ["Ambush", "Haste"],
+      "effectText": "Play White Springbok.",
+      "summons": ["token-white-springbok"],
+      "effects": {
+        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-white-springbok"] } }
       }
     },
     {
@@ -222,8 +247,8 @@
       }
     },
     {
-      "id": "mammal-prey-imperial-zebra",
-      "name": "Imperial Zebra",
+      "id": "mammal-prey-mountain-zebra",
+      "name": "Mountain Zebra",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -243,8 +268,8 @@
       }
     },
     {
-      "id": "mammal-prey-reindeer-rudolph",
-      "name": "Reindeer, Rudolph",
+      "id": "mammal-prey-mountain-reindeer",
+      "name": "Mountain Reindeer",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -285,19 +310,7 @@
       "nutrition": 3,
       "keywords": ["Barrier"]
     },
-    {
-      "id": "mammal-prey-american-aberdeen",
-      "name": "American Aberdeen",
-      "type": "Prey",
-      "atk": 3,
-      "hp": 3,
-      "nutrition": 3,
-      "effectText": "Slain; add Angus to hand.",
-      "effects": {
-        "onSlain": { "type": "addToHand", "params": { "cardId": "token-angus" } }
-      }
-    },
-    {
+        {
       "id": "mammal-predator-dholes",
       "name": "Dholes",
       "type": "Predator",
@@ -472,12 +485,12 @@
       }
     },
     {
-      "id": "mammal-spell-silver-bullet",
-      "name": "Silver Bullet",
+      "id": "mammal-spell-rifle",
+      "name": "Rifle",
       "type": "Spell",
-      "effectText": "Discard 1. Draw 1. Kill target enemy.",
+      "effectText": "Kill target enemy.",
       "effects": {
-        "effect": { "type": "discardDrawAndKillEnemy" }
+        "effect": { "type": "selectEnemyToKill" }
       }
     },
     {
@@ -543,8 +556,8 @@
       }
     },
     {
-      "id": "mammal-trap-animal-rights",
-      "name": "Animal Rights",
+      "id": "mammal-trap-human-intervention",
+      "name": "Human Intervention",
       "type": "Trap",
       "trigger": "targeted",
       "effectText": "When target creature is targeted, return it to hand.",

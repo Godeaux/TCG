@@ -8,13 +8,13 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Haste"],
-      "effectText": "Play Flying Fish.",
+      "effectText": "Play 2 Flying Fish.",
       "summons": ["token-flying-fish"],
       "effects": {
         "onPlay": {
           "type": "summonTokens",
           "params": {
-            "tokenIds": ["token-flying-fish"]
+            "tokenIds": ["token-flying-fish", "token-flying-fish"]
           }
         }
       }
@@ -101,26 +101,7 @@
         ]
       }
     },
-    {
-      "id": "fish-prey-hardhead-catfish",
-      "name": "Hardhead Catfish",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": ["Barrier"],
-      "effectText": "Slain: play Catfish.",
-      "summons": ["token-catfish"],
-      "effects": {
-        "onSlain": {
-          "type": "summonTokens",
-          "params": {
-            "tokenIds": ["token-catfish"]
-          }
-        }
-      }
-    },
-    {
+        {
       "id": "fish-prey-leafy-seadragon",
       "name": "Leafy Seadragon",
       "type": "Prey",
@@ -281,25 +262,7 @@
       "nutrition": 1,
       "keywords": ["Invisible", "Neurotoxic"]
     },
-    {
-      "id": "fish-prey-golden-kingfish",
-      "name": "Golden Kingfish",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 2,
-      "nutrition": 1,
-      "keywords": [],
-      "effectText": "Draw 2. Target pred gains end of turn, play Golden Trevally. Discard: target pred gains end of turn, play Golden Trevally.",
-      "summons": ["token-golden-trevally"],
-      "effects": {
-        "onPlay": [
-          { "type": "draw", "params": { "count": 2 } },
-          { "type": "selectPredatorForEndEffect", "params": { "tokenId": "token-golden-trevally" } }
-        ],
-        "discardEffect": { "type": "selectPredatorForEndEffect", "params": { "tokenId": "token-golden-trevally" } }
-      }
-    },
-    {
+        {
       "id": "fish-prey-cannibal-fish",
       "name": "Cannibal Fish",
       "type": "Prey",
@@ -443,22 +406,19 @@
       "hp": 3,
       "nutrition": 3,
       "keywords": [],
-      "effectText": "Draw 3, then discard 1.",
+      "effectText": "Discard, draw 1. Discard 1. Draw 3.",
       "effects": {
         "onPlay": [
           {
-            "type": "draw",
-            "params": {
-              "count": 3
-            }
+            "type": "selectCardToDiscard",
+            "params": { "count": 1 }
           },
           {
-            "type": "selectCardToDiscard",
-            "params": {
-              "count": 1
-            }
+            "type": "draw",
+            "params": { "count": 3 }
           }
-        ]
+        ],
+        "discardEffect": { "type": "draw", "params": { "count": 1 } }
       }
     },
     {
@@ -671,6 +631,47 @@
       }
     },
     {
+      "id": "fish-spell-sunken-treasure",
+      "name": "Sunken Treasure",
+      "type": "Spell",
+      "effectText": "Either draw 3, heal 3, or target creature gains +3/+3.",
+      "effects": {
+        "effect": {
+          "type": "chooseOption",
+          "params": {
+            "title": "Sunken Treasure: choose an option",
+            "options": [
+              { "label": "Draw 3", "description": "Draw 3 cards", "effect": { "type": "draw", "params": { "count": 3 } } },
+              { "label": "Heal 3", "description": "Heal 3 HP", "effect": { "type": "heal", "params": { "amount": 3 } } },
+              { "label": "+3/+3", "description": "Target creature gains +3/+3", "effect": { "type": "selectCreatureForBuff", "params": { "attack": 3, "health": 3 } } }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-field-spell-rocky-reef",
+      "name": "Rocky Reef",
+      "type": "Spell",
+      "isFieldSpell": true,
+      "effectText": "End of turn, play Clouded Moray.",
+      "summons": ["token-clouded-moray"],
+      "effects": {
+        "effect": {
+          "type": "setFieldSpell",
+          "params": {
+            "cardId": "fish-field-spell-rocky-reef"
+          }
+        },
+        "onEnd": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": ["token-clouded-moray"]
+          }
+        }
+      }
+    },
+    {
       "id": "fish-spell-harpoon",
       "name": "Harpoon",
       "type": "Spell",
@@ -684,44 +685,13 @@
         }
       }
     },
-    {
-      "id": "fish-spell-ship-of-gold",
-      "name": "Ship of Gold",
-      "type": "Spell",
-      "effectText": "Draw 4.",
-      "effects": {
-        "effect": {
-          "type": "draw",
-          "params": {
-            "count": 4
-          }
-        }
-      }
-    },
-    {
+        {
       "id": "fish-free-spell-angler",
       "name": "Angler",
       "type": "Free Spell",
-      "effectText": "Either play a prey or add a prey from deck to hand.",
+      "effectText": "Add a card from deck to hand. End turn.",
       "effects": {
-        "effect": {
-          "type": "chooseOption",
-          "params": {
-            "title": "Angler: choose an option",
-            "options": [
-              {
-                "label": "Play a prey from hand",
-                "description": "Play a prey card from your hand",
-                "effect": { "type": "selectPreyFromHandToPlay" }
-              },
-              {
-                "label": "Add a prey from deck to hand",
-                "description": "Search your deck for a prey card",
-                "effect": { "type": "tutorFromDeck", "params": { "cardType": "prey" } }
-              }
-            ]
-          }
-        }
+        "effect": { "type": "tutorAndEndTurn" }
       }
     },
     {
@@ -742,9 +712,12 @@
       "id": "fish-spell-washout",
       "name": "Washout",
       "type": "Spell",
-      "effectText": "Enemies lose abilities.",
+      "effectText": "Enemies lose abilities. Deal 2 damage to enemies.",
       "effects": {
-        "effect": { "type": "removeAbilitiesAll" }
+        "effect": [
+          { "type": "removeAbilitiesAll" },
+          { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } }
+        ]
       }
     },
     {
@@ -756,29 +729,7 @@
         "effect": { "type": "selectEnemyToStripAbilities" }
       }
     },
-    {
-      "id": "fish-spell-magnificent-sea-anemone",
-      "name": "Magnificent Sea Anemone",
-      "type": "Spell",
-      "isFieldSpell": true,
-      "effectText": "End of turn, play Oscellaris Clownfish.",
-      "summons": ["token-oscellaris-clownfish"],
-      "effects": {
-        "effect": {
-          "type": "setFieldSpell",
-          "params": {
-            "cardId": "fish-spell-magnificent-sea-anemone"
-          }
-        },
-        "onEnd": {
-          "type": "summonTokens",
-          "params": {
-            "tokenIds": ["token-oscellaris-clownfish"]
-          }
-        }
-      }
-    },
-    {
+        {
       "id": "fish-trap-cramp",
       "name": "Cramp",
       "type": "Trap",

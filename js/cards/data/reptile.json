@@ -68,16 +68,7 @@
         "onPlay": { "type": "summonAndDamageOpponent", "params": { "tokenIds": ["token-lava-lizard", "token-lava-lizard"], "damage": 1 } }
       }
     },
-    {
-      "id": "reptile-prey-great-flying-dragon",
-      "name": "Great Flying Dragon",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": ["Immune", "Hidden"]
-    },
-    {
+        {
       "id": "reptile-prey-green-anole",
       "name": "Green Anole",
       "type": "Prey",
@@ -104,20 +95,7 @@
         "onPlay": { "type": "draw", "params": { "count": 3 } }
       }
     },
-    {
-      "id": "reptile-prey-gold-flying-snake",
-      "name": "Gold Flying Snake",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": ["Free Play"],
-      "effectText": "Draw 1.",
-      "effects": {
-        "onPlay": { "type": "draw", "params": { "count": 1 } }
-      }
-    },
-    {
+        {
       "id": "reptile-prey-golden-lancehead",
       "name": "Golden Lancehead",
       "type": "Prey",
@@ -155,10 +133,12 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Invisible"],
-      "effectText": "Start of turn, deal 1 damage to rival. End of turn, deal 1 damage to rival.",
+      "effectText": "Start of turn, deal 1 damage to opponents.",
       "effects": {
-        "onStart": { "type": "damageOpponent", "params": { "amount": 1 } },
-        "onEnd": { "type": "damageOpponent", "params": { "amount": 1 } }
+        "onStart": [
+          { "type": "damageOpponent", "params": { "amount": 1 } },
+          { "type": "damageAllEnemyCreatures", "params": { "amount": 1 } }
+        ]
       }
     },
     {
@@ -181,6 +161,15 @@
       "effectText": "Barrier. Neurotoxic when defending."
     },
     {
+      "id": "reptile-prey-saw-scaled-viper",
+      "name": "Saw-scaled Viper",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Free Play", "Toxic"]
+    },
+    {
       "id": "reptile-prey-plumed-basilisk",
       "name": "Plumed Basilisk",
       "type": "Prey",
@@ -188,7 +177,7 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Free Play"],
-      "effectText": "Freeze target enemy creature.",
+      "effectText": "Target enemy gains frozen.",
       "effects": {
         "onPlay": { "type": "selectEnemyToFreeze" }
       }
@@ -517,8 +506,8 @@
       }
     },
     {
-      "id": "reptile-free-spell-shed",
-      "name": "Shed",
+      "id": "reptile-free-spell-ecdysis",
+      "name": "Ecdysis",
       "type": "Free Spell",
       "effectText": "Regen target creature.",
       "effects": {
@@ -526,8 +515,8 @@
       }
     },
     {
-      "id": "reptile-free-spell-spite",
-      "name": "Spite",
+      "id": "reptile-free-spell-vengeful",
+      "name": "Vengeful",
       "type": "Free Spell",
       "effectText": "Target creature gains Poisonous.",
       "effects": {
@@ -542,8 +531,8 @@
       }
     },
     {
-      "id": "reptile-free-spell-survivor",
-      "name": "Survivor",
+      "id": "reptile-free-spell-cold-blooded",
+      "name": "Cold-blooded",
       "type": "Free Spell",
       "effectText": "Target creature gains +1/+1.",
       "effects": {
@@ -555,6 +544,15 @@
             "effect": { "buff": { "attack": 1, "health": 1 } }
           }
         }
+      }
+    },
+    {
+      "id": "reptile-free-spell-surprise",
+      "name": "Surprise",
+      "type": "Free Spell",
+      "effectText": "Deal 2 damage to target enemy.",
+      "effects": {
+        "effect": { "type": "selectEnemyCreatureForDamage", "params": { "amount": 2, "label": "surprise" } }
       }
     },
     {

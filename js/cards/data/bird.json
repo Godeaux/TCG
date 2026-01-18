@@ -7,7 +7,7 @@
       "atk": 0,
       "hp": 2,
       "nutrition": 2,
-      "keywords": ["Invisible"],
+      "keywords": ["Harmless", "Invisible"],
       "effectText": "Slain, add Kākāpō Feathers to hand.",
       "effects": {
         "onSlain": { "type": "addToHand", "params": { "cardId": "token-kakapo-feathers" } }
@@ -25,16 +25,7 @@
         "onPlay": { "type": "revealAndTutor" }
       }
     },
-    {
-      "id": "bird-prey-carrion-crow",
-      "name": "Carrion Crow",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": ["Scavenge"]
-    },
-    {
+        {
       "id": "bird-prey-common-swift",
       "name": "Common Swift",
       "type": "Prey",
@@ -44,12 +35,26 @@
       "keywords": ["Free Play", "Haste"]
     },
     {
+      "id": "bird-prey-doctor-bird",
+      "name": "Doctor Bird",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Free Play"],
+      "effectText": "Heal 1.",
+      "effects": {
+        "onPlay": { "type": "heal", "params": { "amount": 1 } }
+      }
+    },
+    {
       "id": "bird-prey-doves",
       "name": "Doves",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
+      "keywords": ["Passive"],
       "effectText": "Play Dove. Heal 3.",
       "summons": ["token-dove"],
       "effects": {
@@ -66,56 +71,24 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "End of turn, either heal 4 or deal 2 damage to opponents.",
+      "effectText": "End of turn, deal 2 damage to opponents.",
       "effects": {
-        "onEnd": {
-          "type": "chooseOption",
-          "params": {
-            "title": "Choose Eurasian Magpie's effect",
-            "options": [
-              {
-                "label": "Heal 4",
-                "description": "Heal 4 HP",
-                "effect": { "type": "heal", "params": { "amount": 4 } }
-              },
-              {
-                "label": "Deal 2 damage",
-                "description": "Deal 2 damage to rival and all enemy creatures",
-                "effect": [
-                  { "type": "damageOpponent", "params": { "amount": 2 } },
-                  { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } }
-                ]
-              }
-            ]
-          }
-        }
+        "onEnd": [
+          { "type": "damageOpponent", "params": { "amount": 2 } },
+          { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } }
+        ]
       }
     },
     {
-      "id": "bird-prey-florida-grasshopper-sparrow",
-      "name": "Florida Grasshopper Sparrow",
+      "id": "bird-prey-golden-headed-manakin",
+      "name": "Golden-Headed Manakin",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Free Play"],
-      "effectText": "Play Sparrow Egg.",
-      "summons": ["token-sparrow-egg"],
+      "effectText": "End of turn, draw 3.",
       "effects": {
-        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-sparrow-egg"] } }
-      }
-    },
-    {
-      "id": "bird-prey-sparrow",
-      "name": "Sparrow",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "effectText": "End of turn, play Sparrow Egg.",
-      "summons": ["token-sparrow-egg"],
-      "effects": {
-        "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-sparrow-egg"] } }
+        "onEnd": { "type": "draw", "params": { "count": 3 } }
       }
     },
     {
@@ -412,15 +385,7 @@
         "onConsume": { "type": "addToHand", "params": { "cardId": "token-red-tailfeathers" } }
       }
     },
-    {
-      "id": "bird-predator-bald-eagle",
-      "name": "Bald Eagle",
-      "type": "Predator",
-      "atk": 3,
-      "hp": 3,
-      "keywords": ["Scavenge"]
-    },
-    {
+        {
       "id": "bird-predator-monkey-eating-eagle",
       "name": "Monkey-eating Eagle",
       "type": "Predator",
@@ -549,35 +514,12 @@
       }
     },
     {
-      "id": "bird-free-spell-clouds",
-      "name": "Clouds",
+      "id": "bird-free-spell-white-feathers",
+      "name": "White Feathers",
       "type": "Free Spell",
-      "effectText": "Target creature gains Immune.",
+      "effectText": "Heal 2.",
       "effects": {
-        "effect": {
-          "type": "selectFromGroup",
-          "params": {
-            "targetGroup": "all-creatures",
-            "title": "Choose a creature to gain Immune",
-            "effect": { "keyword": "Immune" }
-          }
-        }
-      }
-    },
-    {
-      "id": "bird-free-spell-tailwind",
-      "name": "Tailwind",
-      "type": "Free Spell",
-      "effectText": "Target creature gains haste.",
-      "effects": {
-        "effect": {
-          "type": "selectFromGroup",
-          "params": {
-            "targetGroup": "all-creatures",
-            "title": "Choose a creature to gain Haste",
-            "effect": { "keyword": "Haste" }
-          }
-        }
+        "effect": { "type": "heal", "params": { "amount": 2 } }
       }
     },
     {
