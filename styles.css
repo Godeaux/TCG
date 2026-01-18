@@ -2594,7 +2594,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 16px;
+  /*min-height: 16px; taking this out so it doesn't unnecessarily take up space*/
 }
 
 .card-content-area .card-effect {
@@ -4147,11 +4147,19 @@ button {
   padding-bottom: 8px;
 }
 
-
+/* Mobile deck builder - 2 column grid with properly sized cards */
+@media (max-width: 500px) {
+  .deck-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 4px;
+    align-items: start;
+  }
 
   .deck-grid .card {
     width: 100%;
-    /* aspect-ratio alone determines height from column width - no min-height needed */
+    /* min-height as fallback for browsers where aspect-ratio doesn't work in grid context */
+    min-height: 200px;
     aspect-ratio: 5 / 7;
   }
 }
@@ -4709,6 +4717,33 @@ button {
   /* Hide field surrender button on mobile - tap player name instead */
   .field-surrender-btn {
     display: none;
+  }
+
+  /* Mobile scoreboard: prevent opponent hand from pushing player names off-screen */
+  .scoreboard-row {
+    overflow: visible; /* Allow cards to overflow visually */
+  }
+
+  .scoreboard-left,
+  .scoreboard-right {
+    flex-shrink: 0; /* Don't shrink player info */
+    z-index: 10; /* Above opponent hand cards */
+    position: relative; /* Enable z-index */
+  }
+
+  .scoreboard-center {
+    flex: 1 1 0; /* Can shrink to 0 width */
+    min-width: 0; /* Allow shrinking below content size */
+    overflow: visible; /* Cards can overflow visually */
+    position: relative;
+  }
+
+  .opponent-hand-cards {
+    position: absolute; /* Take out of flow so it doesn't expand parent */
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1; /* Below player names/badges */
   }
 
   .emote-toggle {
