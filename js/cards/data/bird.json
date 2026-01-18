@@ -9,6 +9,7 @@
       "nutrition": 2,
       "keywords": ["Harmless", "Invisible"],
       "effectText": "Slain, add Kākāpō Feathers to hand.",
+      "summons": ["token-kakapo-feathers"],
       "effects": {
         "onSlain": { "type": "addToHand", "params": { "cardId": "token-kakapo-feathers" } }
       }
@@ -254,6 +255,7 @@
       "nutrition": 2,
       "keywords": ["Barrier", "Lure"],
       "effectText": "Slain, add Rainbow Feathers to hand.",
+      "summons": ["token-rainbow-feathers"],
       "effects": {
         "onSlain": { "type": "addToHand", "params": { "cardId": "token-rainbow-feathers" } }
       }
@@ -304,6 +306,7 @@
       "hp": 3,
       "nutrition": 3,
       "effectText": "Add Feed to hand.",
+      "summons": ["token-feed"],
       "effects": {
         "onPlay": { "type": "addToHand", "params": { "cardId": "token-feed" } }
       }
@@ -381,6 +384,7 @@
       "atk": 3,
       "hp": 2,
       "effectText": "Add Red Tailfeathers to hand.",
+      "summons": ["token-red-tailfeathers"],
       "effects": {
         "onConsume": { "type": "addToHand", "params": { "cardId": "token-red-tailfeathers" } }
       }
@@ -478,9 +482,9 @@
             "title": "Shotgun: choose an effect",
             "options": [
               {
-                "label": "Deal 2 damage to rival",
+                "label": "Deal 2 damage to rival and creatures",
                 "description": "Deal 2 damage to Rival and Rival's creatures",
-                "effect": { "type": "damageOpponent", "params": { "amount": 2 } }
+                "effect": { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } }
               },
               {
                 "label": "Deal 6 damage to target Rival's creature",

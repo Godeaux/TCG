@@ -1155,6 +1155,56 @@ export const resolveEffectResult = (state, result, context) => {
     }
   }
 
+  // Regenerate a single creature (from effectLibrary)
+  if (result.regenCreature) {
+    const creature = result.regenCreature;
+    if (creature) {
+      const baseHp = creature.hp || 1;
+      if (creature.currentHp < baseHp) {
+        const healAmount = baseHp - creature.currentHp;
+        creature.currentHp = baseHp;
+        const ownerIndex = findCardOwnerIndex(state, creature);
+        if (ownerIndex >= 0 && healAmount > 0) {
+          const slotIndex = state.players[ownerIndex].field.findIndex(c => c?.instanceId === creature.instanceId);
+          queueVisualEffect(state, {
+            type: "heal",
+            cardId: creature.instanceId,
+            ownerIndex,
+            slotIndex,
+            amount: healAmount,
+          });
+        }
+        logGameAction(state, HEAL, `${formatCardForLog(creature)} regenerates to full health (+${healAmount} HP).`);
+      }
+    }
+  }
+
+  // Regenerate multiple creatures (from effectLibrary)
+  if (result.regenCreatures) {
+    const creatures = Array.isArray(result.regenCreatures) ? result.regenCreatures : [result.regenCreatures];
+    creatures.forEach(creature => {
+      if (creature) {
+        const baseHp = creature.hp || 1;
+        if (creature.currentHp < baseHp) {
+          const healAmount = baseHp - creature.currentHp;
+          creature.currentHp = baseHp;
+          const ownerIndex = findCardOwnerIndex(state, creature);
+          if (ownerIndex >= 0 && healAmount > 0) {
+            const slotIndex = state.players[ownerIndex].field.findIndex(c => c?.instanceId === creature.instanceId);
+            queueVisualEffect(state, {
+              type: "heal",
+              cardId: creature.instanceId,
+              ownerIndex,
+              slotIndex,
+              amount: healAmount,
+            });
+          }
+          logGameAction(state, HEAL, `${formatCardForLog(creature)} regenerates to full health (+${healAmount} HP).`);
+        }
+      }
+    });
+  }
+
   // Revive a creature (resurrect it to the field)
   if (result.reviveCreature) {
     const { creature, playerIndex } = result.reviveCreature;

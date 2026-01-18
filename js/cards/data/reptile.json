@@ -371,6 +371,7 @@
       "hp": 4,
       "keywords": [],
       "effectText": "Slain, add Alligator Skin to hand.",
+      "summons": ["token-alligator-skin"],
       "effects": {
         "onSlain": { "type": "addToHand", "params": { "cardId": "token-alligator-skin" } }
       }

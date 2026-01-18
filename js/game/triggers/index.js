@@ -24,4 +24,6 @@ export {
   getReactingPlayerIndex,
   clearPendingReaction,
   isReactionTimedOut,
+  hasPendingReactionCallback,
+  invokePendingReactionCallback,
 } from './reactionSystem.js';

@@ -380,6 +380,7 @@
       "nutrition": 2,
       "keywords": [],
       "effectText": "Slain: add Salmon to hand.",
+      "summons": ["token-salmon"],
       "effects": {
         "onSlain": {
           "type": "addToHand",
@@ -445,6 +446,7 @@
       "hp": 3,
       "keywords": ["Barrier"],
       "effectText": "Slain: add Scale Arrows to hand.",
+      "summons": ["token-scale-arrows"],
       "effects": {
         "onSlain": {
           "type": "addToHand",

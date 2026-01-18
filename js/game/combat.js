@@ -46,6 +46,10 @@ export const getValidTargets = (state, attacker, opponent) => {
     if (!isCreatureCard(card)) {
       return false;
     }
+    // Field spells cannot be attacked
+    if (card.isFieldSpell) {
+      return false;
+    }
     if (hasPrecision) {
       return true;
     }

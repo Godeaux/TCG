@@ -168,6 +168,7 @@
       "hp": 1,
       "nutrition": 1,
       "effectText": "Slain, add Sable Fur to hand.",
+      "summons": ["token-sable-fur"],
       "effects": {
         "onSlain": { "type": "addToHand", "params": { "cardId": "token-sable-fur" } }
       }
@@ -218,6 +219,7 @@
       "hp": 3,
       "nutrition": 3,
       "effectText": "End of turn, add Fresh Milk to hand.",
+      "summons": ["token-fresh-milk"],
       "effects": {
         "onEnd": { "type": "addToHand", "params": { "cardId": "token-fresh-milk" } }
       }
@@ -275,6 +277,7 @@
       "hp": 2,
       "nutrition": 2,
       "effectText": "Add Present to hand.",
+      "summons": ["token-present"],
       "effects": {
         "onPlay": { "type": "addToHand", "params": { "cardId": "token-present" } }
       }
@@ -288,6 +291,7 @@
       "nutrition": 2,
       "keywords": ["Immune"],
       "effectText": "Slain, add Qiviut to hand.",
+      "summons": ["token-qiviut"],
       "effects": {
         "onSlain": { "type": "addToHand", "params": { "cardId": "token-qiviut" } }
       }
@@ -440,6 +444,7 @@
       "atk": 5,
       "hp": 5,
       "effectText": "Add Salmon to hand.",
+      "summons": ["token-salmon"],
       "effects": {
         "onConsume": { "type": "addToHand", "params": { "cardId": "token-salmon" } }
       }

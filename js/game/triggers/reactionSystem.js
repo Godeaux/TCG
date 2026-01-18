@@ -465,3 +465,27 @@ export const isReactionTimedOut = (state) => {
   const elapsed = (Date.now() - state.pendingReaction.timerStart) / 1000;
   return elapsed >= REACTION_TIMER_SECONDS;
 };
+
+/**
+ * Check if there's a locally stored pending reaction callback
+ * Used for multiplayer sync when remote player resolves the reaction
+ */
+export const hasPendingReactionCallback = () => {
+  return pendingReactionCallback !== null;
+};
+
+/**
+ * Invoke and clear the pending reaction callback
+ * Used when the reaction was resolved by the remote player via sync
+ * Returns true if a callback was invoked, false otherwise
+ */
+export const invokePendingReactionCallback = () => {
+  const callback = pendingReactionCallback;
+  pendingReactionCallback = null;
+  if (callback) {
+    console.log('[ReactionSystem] Invoking pending callback from sync');
+    callback();
+    return true;
+  }
+  return false;
+};

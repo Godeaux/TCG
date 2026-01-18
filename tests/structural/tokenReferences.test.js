@@ -16,7 +16,7 @@ beforeAll(() => {
 });
 
 /**
- * Extract all token IDs from a card's effects
+ * Extract all token IDs from a card's effects (summonTokens only)
  */
 const extractTokenIds = (card) => {
   const tokenIds = new Set();
@@ -65,6 +65,64 @@ const extractTokenIds = (card) => {
   if (card.summons) {
     const ids = Array.isArray(card.summons) ? card.summons : [card.summons];
     ids.forEach((id) => tokenIds.add(id));
+  }
+
+  return Array.from(tokenIds);
+};
+
+/**
+ * Extract all token IDs from a card's effects (including addToHand, transformCard, etc.)
+ * This finds ALL token references, not just summons
+ */
+const extractAllTokenReferences = (card) => {
+  const tokenIds = new Set();
+
+  const traverse = (obj) => {
+    if (!obj) return;
+
+    if (Array.isArray(obj)) {
+      obj.forEach(traverse);
+      return;
+    }
+
+    if (typeof obj === 'object') {
+      // Check for tokenIds param (summonTokens)
+      if (obj.tokenIds) {
+        const ids = Array.isArray(obj.tokenIds) ? obj.tokenIds : [obj.tokenIds];
+        ids.forEach((id) => {
+          if (typeof id === 'string' && id.startsWith('token-')) {
+            tokenIds.add(id);
+          }
+        });
+      }
+
+      // Check for addToHand with token cardId
+      if (obj.type === 'addToHand' && obj.params?.cardId?.startsWith('token-')) {
+        tokenIds.add(obj.params.cardId);
+      }
+
+      // Check for transformCard with token newCardId
+      if (obj.type === 'transformCard' && obj.params?.newCardId?.startsWith('token-')) {
+        tokenIds.add(obj.params.newCardId);
+      }
+
+      // Check for transformOnStart
+      if (obj.transformOnStart?.startsWith('token-')) {
+        tokenIds.add(obj.transformOnStart);
+      }
+
+      // Traverse nested
+      Object.values(obj).forEach(traverse);
+    }
+  };
+
+  if (card.effects) {
+    traverse(card.effects);
+  }
+
+  // Check transformOnStart at card level
+  if (card.transformOnStart?.startsWith('token-')) {
+    tokenIds.add(card.transformOnStart);
   }
 
   return Array.from(tokenIds);
@@ -141,6 +199,31 @@ describe('Token References Validation', () => {
         // Always pass - just log the warning
         expect(true).toBe(true);
       });
+    });
+  });
+
+  describe('Summons Property for Inspector Display', () => {
+    // Cards that reference tokens should have the summons property set
+    // so the inspector and deck builder can display token info
+    const nonTokenCards = allCards.filter((c) => !c.isToken);
+
+    nonTokenCards.forEach((card) => {
+      const tokenRefs = extractAllTokenReferences(card);
+      if (tokenRefs.length > 0) {
+        it(`${card.id} has summons property for token display`, () => {
+          const summons = card.summons || [];
+          const missingSummons = tokenRefs.filter(
+            (ref) => !summons.includes(ref)
+          );
+
+          expect(
+            missingSummons.length,
+            `Card "${card.id}" references tokens [${tokenRefs.join(', ')}] but summons property is missing or incomplete. ` +
+            `Missing: [${missingSummons.join(', ')}]. ` +
+            `Add "summons": [${tokenRefs.map(t => `"${t}"`).join(', ')}] to the card definition.`
+          ).toBe(0);
+        });
+      }
     });
   });
 });

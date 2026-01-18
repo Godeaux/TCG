@@ -1280,6 +1280,9 @@ export class AIController {
       return;
     }
 
+    // Clear any stale negation flag from previous attacks to prevent false negations
+    state._lastReactionNegatedAttack = undefined;
+
     const attackerOwnerIndex = this.playerIndex;
     const defenderOwnerIndex = 1 - this.playerIndex;
 

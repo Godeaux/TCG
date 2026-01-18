@@ -117,6 +117,7 @@
       "nutrition": 1,
       "keywords": ["Poisonous"],
       "effectText": "Draw 1. Sacrifice; add Golden Blowdart to hand.",
+      "summons": ["token-golden-blowdart"],
       "effects": {
         "onPlay": { "type": "draw", "params": { "count": 1 } },
         "sacrificeEffect": { "type": "addToHand", "params": { "cardId": "token-golden-blowdart" } }
@@ -168,6 +169,7 @@
       "nutrition": 1,
       "keywords": ["Poisonous"],
       "effectText": "Sacrifice; add Phantasmal Darts to hand.",
+      "summons": ["token-phantasmal-darts"],
       "effects": {
         "sacrificeEffect": { "type": "addToHand", "params": { "cardId": "token-phantasmal-darts" } }
       }
@@ -232,6 +234,7 @@
       "hp": 2,
       "nutrition": 2,
       "effectText": "Discard; add Tomato to hand. Defending; attacker gains Frozen.",
+      "summons": ["token-tomato"],
       "effects": {
         "discardEffect": { "type": "addToHand", "params": { "cardId": "token-tomato" } },
         "onDefend": { "type": "freezeAttacker" }
@@ -332,6 +335,7 @@
       "atk": 3,
       "hp": 3,
       "effectText": "Add Titicaca Water to hand.",
+      "summons": ["token-titicaca-water"],
       "effects": {
         "onConsume": { "type": "addToHand", "params": { "cardId": "token-titicaca-water" } }
       }

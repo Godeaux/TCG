@@ -33,6 +33,38 @@ import { isInvisible } from "../keywords.js";
 import { isCreatureCard } from "../cardTypes.js";
 
 // ============================================================================
+// CARD SORTING FOR SELECTION UIs
+// ============================================================================
+
+/**
+ * Card type priority for sorting (matches deck builder order)
+ */
+const CARD_TYPE_PRIORITY = {
+  'Prey': 0, 'prey': 0,
+  'Predator': 1, 'predator': 1,
+  'Spell': 2, 'spell': 2,
+  'Free Spell': 3, 'free spell': 3,
+  'Trap': 4, 'trap': 4,
+};
+
+/**
+ * Sort cards by type for selection UIs
+ * Order: Prey → Predator → Spell → Free Spell → Trap
+ * This hides draw order information from players
+ */
+const sortCardsForSelection = (cards) => {
+  return [...cards].sort((a, b) => {
+    const priorityA = CARD_TYPE_PRIORITY[a.type] ?? 99;
+    const priorityB = CARD_TYPE_PRIORITY[b.type] ?? 99;
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB;
+    }
+    // Within same type, sort by name for consistency
+    return (a.name || '').localeCompare(b.name || '');
+  });
+};
+
+// ============================================================================
 // SELECTION HELPERS
 // ============================================================================
 
@@ -1083,7 +1115,7 @@ export const tutorFromDeck = (cardType = 'any') => (context) => {
 
   return makeTargetedSelection({
     title: `Choose a card to add to hand`,
-    candidates: () => validCards.map(card => ({ label: card.name, value: card })),
+    candidates: () => sortCardsForSelection(validCards).map(card => ({ label: card.name, value: card })),
     onSelect: (card) => ({
       addToHand: { playerIndex, card, fromDeck: true }
     }),
@@ -1105,7 +1137,7 @@ export const tutorAndEndTurn = () => (context) => {
 
   return makeTargetedSelection({
     title: `Choose a card to add to hand (turn will end)`,
-    candidates: () => player.deck.map(card => ({ label: card.name, value: card })),
+    candidates: () => sortCardsForSelection(player.deck).map(card => ({ label: card.name, value: card })),
     onSelect: (card) => {
       log(`Added ${card.name} to hand. Turn ends.`);
       return {
@@ -2362,7 +2394,7 @@ export const selectCreatureFromDeckWithKeyword = (keyword) => (context) => {
 
   return makeTargetedSelection({
     title: `Choose a creature to play (gains ${keyword})`,
-    candidates: creatures.map(c => ({ label: c.name, value: c, card: c })),
+    candidates: sortCardsForSelection(creatures).map(c => ({ label: c.name, value: c, card: c })),
     renderCards: true,
     onSelect: (target) => ({
       playFromDeck: { playerIndex, card: target, grantKeyword: keyword }
@@ -2385,7 +2417,7 @@ export const selectCarrionToPlayWithKeyword = (keyword) => (context) => {
 
   return makeTargetedSelection({
     title: `Choose a creature to revive (gains ${keyword})`,
-    candidates: creatures.map(c => ({ label: c.name, value: c, card: c })),
+    candidates: sortCardsForSelection(creatures).map(c => ({ label: c.name, value: c, card: c })),
     renderCards: true,
     onSelect: (target) => ({
       playFromCarrion: { playerIndex, card: target, grantKeyword: keyword }
@@ -2498,7 +2530,7 @@ export const selectCarrionToAddToHand = () => (context) => {
 
   return makeTargetedSelection({
     title: "Choose a carrion to add to hand",
-    candidates: creatures.map(c => ({ label: c.name, value: c, card: c })),
+    candidates: sortCardsForSelection(creatures).map(c => ({ label: c.name, value: c, card: c })),
     renderCards: true,
     onSelect: (target) => ({
       addCarrionToHand: { playerIndex, card: target }
@@ -2611,7 +2643,7 @@ export const forceDiscardAndTutor = (discardCount) => (context) => {
     forceDiscard: { playerIndex: opponentIndex, count: discardCount },
     selectTarget: {
       title: "Choose a card from deck to add to hand",
-      candidates: () => player.deck.map(c => ({ label: c.name, value: c, card: c })),
+      candidates: () => sortCardsForSelection(player.deck).map(c => ({ label: c.name, value: c, card: c })),
       renderCards: true,
       onSelect: (card) => ({
         addToHand: { playerIndex, card, fromDeck: true }
@@ -2690,7 +2722,7 @@ export const revealAndTutor = () => (context) => {
     revealHand: { playerIndex: opponentIndex, durationMs: 3000 },
     selectTarget: {
       title: "Choose a card from deck to add to hand",
-      candidates: () => player.deck.map(c => ({ label: c.name, value: c, card: c })),
+      candidates: () => sortCardsForSelection(player.deck).map(c => ({ label: c.name, value: c, card: c })),
       renderCards: true,
       onSelect: (card) => ({
         addToHand: { playerIndex, card, fromDeck: true }
@@ -2708,7 +2740,7 @@ export const tutorAndPlaySpell = () => (context) => {
   return {
     selectTarget: {
       title: "Choose a card from deck to add to hand",
-      candidates: () => player.deck.map(c => ({ label: c.name, value: c, card: c })),
+      candidates: () => sortCardsForSelection(player.deck).map(c => ({ label: c.name, value: c, card: c })),
       renderCards: true,
       onSelect: (card) => {
         const spells = player.hand.filter(c => c.type === 'Spell' || c.type === 'Free Spell');
@@ -2720,7 +2752,7 @@ export const tutorAndPlaySpell = () => (context) => {
           addToHand: { playerIndex, card, fromDeck: true },
           selectTarget: {
             title: "Choose a spell to play",
-            candidates: () => spells.map(s => ({ label: s.name, value: s, card: s })),
+            candidates: () => sortCardsForSelection(spells).map(s => ({ label: s.name, value: s, card: s })),
             renderCards: true,
             onSelect: (spell) => ({
               playFromHand: { playerIndex, card: spell }
@@ -2939,7 +2971,7 @@ export const addCarrionAndTutor = () => (context) => {
     return {
       selectTarget: {
         title: "Choose a card from deck to add to hand",
-        candidates: () => player.deck.map(c => ({ label: c.name, value: c, card: c })),
+        candidates: () => sortCardsForSelection(player.deck).map(c => ({ label: c.name, value: c, card: c })),
         renderCards: true,
         onSelect: (card) => ({
           addToHand: { playerIndex, card, fromDeck: true }
@@ -2950,13 +2982,13 @@ export const addCarrionAndTutor = () => (context) => {
 
   return makeTargetedSelection({
     title: "Choose a carrion to add to hand",
-    candidates: carrion.map(c => ({ label: c.name, value: c, card: c })),
+    candidates: sortCardsForSelection(carrion).map(c => ({ label: c.name, value: c, card: c })),
     renderCards: true,
     onSelect: (carrionCard) => ({
       addCarrionToHand: { playerIndex, card: carrionCard },
       selectTarget: {
         title: "Choose a card from deck to add to hand",
-        candidates: () => player.deck.map(c => ({ label: c.name, value: c, card: c })),
+        candidates: () => sortCardsForSelection(player.deck).map(c => ({ label: c.name, value: c, card: c })),
         renderCards: true,
         onSelect: (deckCard) => ({
           addToHand: { playerIndex, card: deckCard, fromDeck: true }
@@ -3137,7 +3169,7 @@ export const healAndTutor = (healAmount) => (context) => {
     heal: healAmount,
     selectTarget: {
       title: "Choose a card from deck to add to hand",
-      candidates: () => player.deck.map(c => ({ label: c.name, value: c, card: c })),
+      candidates: () => sortCardsForSelection(player.deck).map(c => ({ label: c.name, value: c, card: c })),
       renderCards: true,
       onSelect: (card) => ({
         addToHand: { playerIndex, card, fromDeck: true }

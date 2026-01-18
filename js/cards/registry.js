@@ -72,10 +72,14 @@ const getCardTypePriority = (card) => {
 };
 
 /**
- * Sort cards by type priority
+ * Sort cards by type priority (for display in selection UIs)
+ * Order: Prey → Predator → Spell → Field Spell → Free Spell → Trap
  * Maintains original order within each type category
+ *
+ * @param {Array} cards - Cards to sort
+ * @returns {Array} - Sorted copy of cards array
  */
-const sortCardsByType = (cards) => {
+export const sortCardsByType = (cards) => {
   return [...cards].sort((a, b) => {
     const priorityA = getCardTypePriority(a);
     const priorityB = getCardTypePriority(b);

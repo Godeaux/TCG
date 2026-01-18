@@ -110,6 +110,8 @@ import {
   TRIGGER_EVENTS,
   createReactionWindow,
   resolveReaction,
+  hasPendingReactionCallback,
+  invokePendingReactionCallback,
 } from "./game/triggers/index.js";
 
 // Deck builder overlays (extracted module)
@@ -2238,6 +2240,9 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
   // Clear extended consumption window when an attack is declared
   state.extendedConsumption = null;
 
+  // Clear any stale negation flag from previous attacks to prevent false negations
+  state._lastReactionNegatedAttack = undefined;
+
   const attackerIndex = state.players.indexOf(getActivePlayer(state));
 
   const windowCreated = createReactionWindow({
@@ -3814,10 +3819,21 @@ export const renderGame = (state, callbacks = {}) => {
     onUpdate: () => callbacks.onUpdate?.(),
     onDeckComplete: (selections) => callbacks.onDeckComplete?.(selections),
     onApplySync: (s, payload, options) => {
+      // Track if pendingReaction was set before sync (to detect remote resolution)
+      const hadPendingReaction = s.pendingReaction !== null;
+      const hadLocalCallback = hasPendingReactionCallback();
+
       // Apply core state changes from serialization module
       applyLobbySyncPayload(s, payload, options);
       // Apply UI-specific post-processing (deck rehydration, callbacks, recovery)
       handleSyncPostProcessing(s, payload, options);
+
+      // If pendingReaction was cleared by remote player and we have a local callback,
+      // invoke it to continue the attack flow (fixes multiplayer trap decline bug)
+      if (hadPendingReaction && hadLocalCallback && s.pendingReaction === null) {
+        console.log('[onApplySync] pendingReaction cleared via sync, invoking local callback');
+        invokePendingReactionCallback();
+      }
     },
     onEmoteReceived: (emoteId, senderPlayerIndex) => {
       // Show the emote bubble for the sender

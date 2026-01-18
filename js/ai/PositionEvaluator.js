@@ -557,10 +557,8 @@ export class PositionEvaluator {
       p1Field: state.players[1]?.field.filter(c => c).length ?? 0,
     });
 
-    // Limit history to prevent memory issues
-    if (state.advantageHistory.length > 100) {
-      state.advantageHistory.shift();
-    }
+    // Keep all history - the graph rendering handles condensing for display
+    // Games rarely exceed 50 turns (100 snapshots), so memory is not a concern
   }
 
   /**
