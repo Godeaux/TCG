@@ -173,7 +173,9 @@ export const advancePhase = (state) => {
   // If no before-combat effects exist, skip directly to Combat
   if (state.phase === "Before Combat") {
     const player = state.players[state.activePlayerIndex];
-    const beforeCombatCreatures = player.field.filter((creature) => creature?.onBeforeCombat || creature?.effects?.onBeforeCombat);
+    const beforeCombatCreatures = player.field.filter((creature) =>
+      (creature?.onBeforeCombat || creature?.effects?.onBeforeCombat) && !creature?.abilitiesCancelled
+    );
     if (beforeCombatCreatures.length === 0) {
       // No before-combat effects, skip to Combat
       state.phase = "Combat";

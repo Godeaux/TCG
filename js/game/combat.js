@@ -178,8 +178,9 @@ export const cleanupDestroyed = (state, { silent = false } = {}) => {
         destroyedCreatures.push({ card, player: player.name });
 
         // Check for onSlain effect (either function or object-based)
+        // Triggers when HP <= 0 regardless of cause (combat, effect damage, etc.)
         const hasOnSlainEffect = card.onSlain || card.effects?.onSlain;
-        if (!silent && hasOnSlainEffect && card.diedInCombat && !card.abilitiesCancelled) {
+        if (!silent && hasOnSlainEffect && !card.abilitiesCancelled) {
           logGameAction(state, DEATH, `${formatCardForLog(card)} onSlain effect triggers...`);
           const playerIndex = state.players.indexOf(player);
           const opponentIndex = (playerIndex + 1) % 2;

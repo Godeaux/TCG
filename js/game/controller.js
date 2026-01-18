@@ -576,6 +576,51 @@ export class GameController {
     const uiResult = applyEffect(this.state, result, context);
     this.notifyStateChange();
 
+    // Handle pendingOnPlay - triggered from copyAbilities or summonTokens when
+    // an effect needs to resolve onPlay sequentially (for proper UI chaining)
+    if (uiResult && uiResult.pendingOnPlay) {
+      const { creature, playerIndex, opponentIndex } = uiResult.pendingOnPlay;
+      const pendingQueue = uiResult.pendingOnPlayQueue || [];
+      console.log(`[applyEffectResult] Processing pendingOnPlay for ${creature.name}, queue length: ${pendingQueue.length}`);
+
+      // Resolve the creature's onPlay effect through the normal chain
+      const onPlayResult = resolveCardEffect(creature, 'onPlay', {
+        log: (message) => logMessage(this.state, message),
+        player: this.state.players[playerIndex],
+        opponent: this.state.players[opponentIndex],
+        playerIndex,
+        opponentIndex,
+        state: this.state,
+        creature,
+      });
+
+      // Create a callback that processes the next pending onPlay in the queue
+      const processNextInQueue = () => {
+        if (pendingQueue.length > 0) {
+          console.log(`[applyEffectResult] Processing next in queue, ${pendingQueue.length} remaining`);
+          const next = pendingQueue.shift();
+          this.applyEffectResult(
+            { pendingOnPlay: next, pendingOnPlayQueue: pendingQueue },
+            context,
+            onComplete
+          );
+        } else {
+          onComplete?.();
+        }
+      };
+
+      if (onPlayResult) {
+        // Chain the onPlay result - this handles any UI requirements
+        // After this chain completes, process the next pending onPlay
+        this.resolveEffectChain(onPlayResult, { ...context, playerIndex, opponentIndex }, processNextInQueue);
+        return onPlayResult;
+      } else {
+        // No result from onPlay, process next in queue
+        processNextInQueue();
+        return;
+      }
+    }
+
     // If applyEffect returned a UI result (from nested effects like playFromHand triggering
     // a spell that needs targeting), we need to chain through it
     if (uiResult && (uiResult.selectTarget || uiResult.selectOption)) {

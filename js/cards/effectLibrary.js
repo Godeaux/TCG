@@ -63,6 +63,72 @@ export const handleTargetedResponse = ({ target, source, log, player, opponent, 
 };
 
 // ============================================================================
+// STALE REFERENCE PROTECTION
+// ============================================================================
+
+/**
+ * Get the current creature from field by instanceId to avoid stale references.
+ * Multiplayer sync can replace field objects, making event context references stale.
+ * This helper looks up the CURRENT creature on the field.
+ *
+ * @param {Object} staleCreature - The potentially stale creature reference
+ * @param {Object} state - Game state
+ * @param {number} ownerIndex - Index of the player who owns the creature
+ * @returns {Object} - The current creature reference, or the original if not found
+ */
+export const getCurrentCreatureFromField = (staleCreature, state, ownerIndex) => {
+  if (!staleCreature || !state || ownerIndex === undefined || ownerIndex === null) {
+    return staleCreature;
+  }
+  const ownerPlayer = state.players[ownerIndex];
+  if (!ownerPlayer?.field) {
+    return staleCreature;
+  }
+  const currentCreature = ownerPlayer.field.find(
+    c => c?.instanceId === staleCreature.instanceId
+  );
+  return currentCreature || staleCreature;
+};
+
+/**
+ * Extract the creature from trap context, handling various formats.
+ * Trap effects receive context in different ways depending on the trigger.
+ *
+ * @param {Object} context - The effect context
+ * @returns {Object} - The creature reference (may be stale)
+ */
+export const getCreatureFromTrapContext = (context) => {
+  const { target, attacker, creature } = context;
+  // Try different context properties in order of specificity
+  return target?.card ?? target ?? attacker ?? creature;
+};
+
+/**
+ * Get the fresh creature reference for trap effects.
+ * Combines extraction and stale reference protection.
+ *
+ * @param {Object} context - The effect context
+ * @returns {Object} - The current creature reference
+ */
+export const getFreshCreatureForTrap = (context) => {
+  const { state, opponentIndex, playerIndex } = context;
+  const staleCreature = getCreatureFromTrapContext(context);
+
+  if (!staleCreature) {
+    return null;
+  }
+
+  // Try opponent's field first (most common for trap triggers)
+  // Then try active player's field as fallback
+  let creature = getCurrentCreatureFromField(staleCreature, state, opponentIndex);
+  if (creature === staleCreature && playerIndex !== undefined) {
+    creature = getCurrentCreatureFromField(staleCreature, state, playerIndex);
+  }
+
+  return creature;
+};
+
+// ============================================================================
 // BASIC EFFECTS
 // ============================================================================
 
@@ -1712,25 +1778,12 @@ export const selectEnemyToSteal = (damage = 0) => (context) => {
  * reference issues that can occur when multiplayer sync replaces field objects.
  */
 export const removeTriggeredCreatureAbilities = () => (context) => {
-  const { log, target, attacker, state, opponentIndex } = context;
-  const staleCreature = target?.card ?? target ?? attacker;
+  const { log } = context;
+  const creature = getFreshCreatureForTrap(context);
 
-  if (!staleCreature) {
+  if (!creature) {
     log(`No creature to strip abilities from.`);
     return {};
-  }
-
-  // Look up the CURRENT creature on field by instanceId to avoid stale reference
-  // (multiplayer sync can replace field objects, making eventContext.card stale)
-  let creature = staleCreature;
-  if (state && opponentIndex !== undefined) {
-    const triggeringPlayer = state.players[opponentIndex];
-    const currentCreature = triggeringPlayer?.field?.find(
-      c => c?.instanceId === staleCreature.instanceId
-    );
-    if (currentCreature) {
-      creature = currentCreature;
-    }
   }
 
   log(`${creature.name} loses its abilities.`);
@@ -1767,8 +1820,8 @@ export const negateAndSummon = (tokenIds) => ({ log, playerIndex }) => {
  * Return the triggered creature to hand (for trap effects like Fly Off)
  */
 export const returnTriggeredToHand = () => (context) => {
-  const { log, target, playerIndex } = context;
-  const creature = target?.card ?? target;
+  const { log, playerIndex } = context;
+  const creature = getFreshCreatureForTrap(context);
 
   if (!creature) {
     log(`No creature to return.`);
@@ -1783,17 +1836,18 @@ export const returnTriggeredToHand = () => (context) => {
  * Negate attack and kill the attacker
  */
 export const negateAndKillAttacker = () => (context) => {
-  const { log, attacker } = context;
+  const { log } = context;
+  const creature = getFreshCreatureForTrap(context);
 
-  if (!attacker) {
+  if (!creature) {
     log(`No attacker to kill.`);
     return { negateAttack: true };
   }
 
-  log(`Attack negated. ${attacker.name} is destroyed.`);
+  log(`Attack negated. ${creature.name} is destroyed.`);
   return {
     negateAttack: true,
-    killTargets: [attacker]
+    killTargets: [creature]
   };
 };
 
@@ -2211,8 +2265,8 @@ export const selectCreatureToSacrificeAndDraw = (drawCount) => (context) => {
  * Return the targeted creature to hand (for trap effects)
  */
 export const returnTargetedToHand = () => (context) => {
-  const { log, target, state } = context;
-  const creature = target?.card ?? target;
+  const { log, state } = context;
+  const creature = getFreshCreatureForTrap(context);
 
   if (!creature) {
     log(`No creature to return.`);
@@ -2221,7 +2275,7 @@ export const returnTargetedToHand = () => (context) => {
 
   // Find which player owns this creature
   const ownerIndex = state?.players?.findIndex(p =>
-    p.field.some(c => c === creature)
+    p.field.some(c => c?.instanceId === creature.instanceId)
   ) ?? 0;
 
   log(`${creature.name} returns to hand.`);
@@ -3177,15 +3231,76 @@ export const resolveEffect = (effectDef, context) => {
       }
     }
 
-    // Merge all results into a single object
+    // Merge results, handling UI-requiring effects (selectTarget, selectOption) specially
     if (results.length === 0) {
       return {};
     }
     if (results.length === 1) {
       return results[0];
     }
-    // Multiple results - merge them
-    return Object.assign({}, ...results);
+
+    // Separate UI results from immediate results
+    const uiResults = results.filter(r => r.selectTarget || r.selectOption);
+    const immediateResults = results.filter(r => !r.selectTarget && !r.selectOption);
+
+    // If no UI results, just merge everything
+    if (uiResults.length === 0) {
+      return Object.assign({}, ...results);
+    }
+
+    // If only one UI result, merge immediate results with it
+    if (uiResults.length === 1) {
+      return Object.assign({}, ...immediateResults, uiResults[0]);
+    }
+
+    // Multiple UI results - chain them sequentially
+    // Return the first UI result with immediate effects, and queue the rest
+    const [firstUI, ...restUI] = uiResults;
+    const merged = Object.assign({}, ...immediateResults, firstUI);
+
+    // Wrap the original onSelect to chain the next UI effect after selection completes
+    if (firstUI.selectTarget) {
+      const originalOnSelect = firstUI.selectTarget.onSelect;
+      merged.selectTarget = {
+        ...firstUI.selectTarget,
+        onSelect: (value) => {
+          const result = originalOnSelect(value);
+          // Chain the next UI effect
+          if (restUI.length > 0) {
+            const nextUI = restUI.shift();
+            // Return the next UI as a pending selection to be chained
+            return {
+              ...result,
+              ...(restUI.length > 0 ? { pendingSelections: restUI } : {}),
+              ...(nextUI.selectTarget ? { selectTarget: nextUI.selectTarget } : {}),
+              ...(nextUI.selectOption ? { selectOption: nextUI.selectOption } : {}),
+            };
+          }
+          return result;
+        }
+      };
+    } else if (firstUI.selectOption) {
+      const originalOnSelect = firstUI.selectOption.onSelect;
+      merged.selectOption = {
+        ...firstUI.selectOption,
+        onSelect: (option) => {
+          const result = originalOnSelect(option);
+          // Chain the next UI effect
+          if (restUI.length > 0) {
+            const nextUI = restUI.shift();
+            return {
+              ...result,
+              ...(restUI.length > 0 ? { pendingSelections: restUI } : {}),
+              ...(nextUI.selectTarget ? { selectTarget: nextUI.selectTarget } : {}),
+              ...(nextUI.selectOption ? { selectOption: nextUI.selectOption } : {}),
+            };
+          }
+          return result;
+        }
+      };
+    }
+
+    return merged;
   }
 
   // Handle single effect object

@@ -511,32 +511,23 @@ export const resolveEffectResult = (state, result, context) => {
     const abilitiesDesc = effectsList ? `${keywordsList}, effects: ${effectsList}` : keywordsList;
     logGameAction(state, CHOICE, `${formatCardForLog(target)} copies ${formatCardForLog(source)}'s abilities: ${abilitiesDesc}.`);
 
-    // Trigger the copied onPlay effect immediately (if source had one)
+    // Queue the copied onPlay for sequential resolution (if source had one)
+    // This ensures onPlay effects are resolved AFTER copyAbilities completes,
+    // preventing race conditions with user selection UI
     if (sourceHasOnPlay && !target.abilitiesCancelled) {
       const playerIndex = context.playerIndex ?? findCardOwnerIndex(state, target);
       const opponentIndex = (playerIndex + 1) % 2;
-      console.log(`[copyAbilities] Triggering copied onPlay for ${target.name}, playerIndex: ${playerIndex}`);
+      console.log(`[copyAbilities] Queueing copied onPlay for ${target.name}, playerIndex: ${playerIndex}`);
 
-      const copiedOnPlayResult = resolveCardEffect(target, 'onPlay', {
-        log: (message) => logMessage(state, message),
-        player: state.players[playerIndex],
-        opponent: state.players[opponentIndex],
-        playerIndex,
-        opponentIndex,
-        state,
-        creature: target,
-      });
-
-      console.log(`[copyAbilities] Copied onPlay result:`, copiedOnPlayResult);
-
-      if (copiedOnPlayResult && Object.keys(copiedOnPlayResult).length > 0) {
-        // Recursively resolve the copied effect
-        const nestedResult = resolveEffectResult(state, copiedOnPlayResult, { ...context, playerIndex });
-        // If nested result needs UI, return it to bubble up
-        if (nestedResult && (nestedResult.selectTarget || nestedResult.selectOption)) {
-          return nestedResult;
+      // Mark that we need to trigger onPlay after this effect completes
+      // The caller (controller) will handle chaining this through resolveEffectChain
+      return {
+        pendingOnPlay: {
+          creature: target,
+          playerIndex,
+          opponentIndex,
         }
-      }
+      };
     }
   }
 
@@ -578,6 +569,10 @@ export const resolveEffectResult = (state, result, context) => {
   if (result.summonTokens) {
     const { playerIndex, tokens } = result.summonTokens;
     console.log(`🎯 [effects.js summonTokens] playerIndex: ${playerIndex}, tokens:`, tokens);
+
+    // Collect any pending onPlay effects from summoned tokens for sequential chaining
+    const pendingOnPlays = [];
+
     tokens.forEach((tokenIdOrData) => {
       // Resolve token ID to token definition if it's a string
       // Try tokens.json first, then fall back to regular card definitions
@@ -594,27 +589,27 @@ export const resolveEffectResult = (state, result, context) => {
 
       const summoned = placeToken(state, playerIndex, tokenData);
       console.log(`  → Summoned:`, summoned ? summoned.name : 'FAILED');
-      // Trigger onPlay effect for summoned token (use resolveCardEffect for effects object)
+
+      // Queue onPlay effects for summoned tokens (instead of immediately executing)
+      // This ensures UI requirements are properly chained through the controller
       if (summoned?.effects?.onPlay && !summoned?.abilitiesCancelled) {
         const opponentIndex = (playerIndex + 1) % 2;
-        const resultOnPlay = resolveCardEffect(summoned, 'onPlay', {
-          log: (message) => logMessage(state, message),
-          player: state.players[playerIndex],
-          opponent: state.players[opponentIndex],
+        pendingOnPlays.push({
           creature: summoned,
-          state,
           playerIndex,
           opponentIndex,
         });
-        if (resultOnPlay) {
-          resolveEffectResult(state, resultOnPlay, {
-            playerIndex,
-            opponentIndex,
-            card: summoned,
-          });
-        }
       }
     });
+
+    // If any tokens need onPlay resolution, return the first one for chaining
+    // Additional onPlays will be handled via pendingOnPlayQueue for sequential processing
+    if (pendingOnPlays.length > 0) {
+      return {
+        pendingOnPlay: pendingOnPlays[0],
+        pendingOnPlayQueue: pendingOnPlays.slice(1),
+      };
+    }
   }
 
   if (result.addToHand) {
