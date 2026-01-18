@@ -29,6 +29,7 @@ export const KEYWORD_EMOJIS = {
   Edible: "\uD83C\uDF56",    // 🍖
   Scavenge: "\uD83E\uDDB4",  // 🦴
   Neurotoxic: "\uD83E\uDDCA", // 🧊
+  Neurotoxined: "\uD83D\uDC80", // 💀 (status: dying from neurotoxin)
   Ambush: "\uD83D\uDC0D",    // 🐍
   Toxic: "\u2620\uFE0F",     // ☠️
   Poisonous: "\uD83E\uDDEA", // 🧪

@@ -11,6 +11,8 @@
  * - Prevent scattered state access logic
  */
 
+import { isEdible, isInedible } from '../keywords.js';
+
 // ============================================================================
 // PLAYER SELECTORS
 // ============================================================================
@@ -116,12 +118,17 @@ export const getRemotePlayer = (state) => {
 
 /**
  * Check if it's the local player's turn
+ * - Simulation mode: always (simulated states allow any player to act)
  * - AI vs AI mode: never (both players are AI, no human interaction)
  * - AI mode: only when player 0 is active (human is player 0)
  * - Online mode: when local player is active
  * - Local mode: always (hot-seat play, both players take turns on same device)
  */
 export const isLocalPlayersTurn = (state) => {
+  // Simulation mode: always allow (used by AI search and position evaluator)
+  if (state._isSimulation) {
+    return true;
+  }
   // AI vs AI: no human player, so never the local player's turn
   if (isAIvsAIMode(state)) {
     return false;
@@ -594,13 +601,67 @@ export const getCreaturesThatCanAttack = (state, playerIndex) => {
 };
 
 /**
+ * Get nutrition value of a creature (for consumption checks)
+ */
+const getNutritionValue = (creature) => {
+  if (!creature) return 0;
+  // For Prey, use nutrition stat; for Edible Predators, use ATK
+  if (creature.type === 'Prey') {
+    return creature.nutrition ?? 0;
+  }
+  if (creature.type === 'Predator' && isEdible(creature)) {
+    return creature.currentAtk ?? creature.atk ?? 0;
+  }
+  return 0;
+};
+
+/**
+ * Check if a player can consume any prey with their predators
+ * Used for auto-end turn detection during Main phases
+ */
+export const canConsumeAnyPrey = (state, playerIndex) => {
+  const player = state.players[playerIndex];
+  if (!player) return false;
+
+  // Get all predators on field that aren't frozen
+  const predators = player.field.filter(
+    (c) => c && c.type === 'Predator' && !c.frozen
+  );
+  if (predators.length === 0) return false;
+
+  // Get all consumable creatures on field (Prey or Edible Predators, not frozen, not inedible)
+  const consumableCreatures = player.field.filter(
+    (c) => c && !c.frozen && !isInedible(c) &&
+      (c.type === 'Prey' || (c.type === 'Predator' && isEdible(c)))
+  );
+  if (consumableCreatures.length === 0) return false;
+
+  // Check if any predator can consume any prey
+  for (const predator of predators) {
+    const predatorAtk = predator.currentAtk ?? predator.atk ?? 0;
+    for (const prey of consumableCreatures) {
+      if (predator.instanceId === prey.instanceId) continue; // Can't consume itself
+      const preyNut = getNutritionValue(prey);
+      if (preyNut <= predatorAtk) {
+        return true; // Found a valid consumption
+      }
+    }
+  }
+
+  return false;
+};
+
+/**
  * Check if a player can make any meaningful move
  * Used for auto-end turn detection
  */
 export const canPlayerMakeAnyMove = (state, playerIndex) => {
-  // Main phases: check if any card can be played
+  // Main phases: check if any card can be played OR any consumption is possible
   if (isMainPhase(state)) {
     if (canPlayAnyCardFromHand(state, playerIndex)) {
+      return true;
+    }
+    if (canConsumeAnyPrey(state, playerIndex)) {
       return true;
     }
     return false;

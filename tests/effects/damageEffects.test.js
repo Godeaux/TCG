@@ -187,14 +187,14 @@ describe('Damage All Enemies Multiple Effect', () => {
     const damageFn = effectLibrary.damageAllEnemiesMultiple(2, 3);
     const result = damageFn(context);
 
-    expect(result.damageAllCreatures).toBe(6); // 2 * 3
+    expect(result.damageEnemyCreatures).toBe(6); // 2 * 3
   });
 
   it('defaults to 2 applications', () => {
     const damageFn = effectLibrary.damageAllEnemiesMultiple(3);
     const result = damageFn(context);
 
-    expect(result.damageAllCreatures).toBe(6); // 3 * 2
+    expect(result.damageEnemyCreatures).toBe(6); // 3 * 2
   });
 });
 
@@ -355,12 +355,12 @@ describe('Damage Opponents And Add To Hand Effect', () => {
     context = createEffectContext(state, 0);
   });
 
-  it('returns damageOpponent, damageAllCreatures, and addToHand', () => {
+  it('returns damageOpponent, damageEnemyCreatures, and addToHand', () => {
     const damageFn = effectLibrary.damageOpponentsAndAddToHand(2, 'fish-prey-atlantic-flying-fish');
     const result = damageFn(context);
 
     expect(result.damageOpponent).toBe(2);
-    expect(result.damageAllCreatures).toBe(2);
+    expect(result.damageEnemyCreatures).toBe(2);
     expect(result.addToHand).toBeDefined();
     expect(result.addToHand.card).toBe('fish-prey-atlantic-flying-fish');
   });

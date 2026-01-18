@@ -102,6 +102,7 @@ export const createGameState = () => {
       editingDeckName: null,
     },
     log: [],
+    advantageHistory: [],  // Tracks position advantage over time for graphing
     combat: {
       declaredAttacks: [],
     },

@@ -71,7 +71,7 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "End of turn, deal 2 damage to opponents.",
+      "effectText": "End of turn, deal 2 damage to Rival and Rival's creatures.",
       "effects": {
         "onEnd": [
           { "type": "damageOpponent", "params": { "amount": 2 } },
@@ -201,7 +201,7 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Consume target enemy prey.",
+      "effectText": "Consume target Rival's prey.",
       "effects": {
         "onPlay": { "type": "selectEnemyPreyToConsume" }
       }
@@ -326,7 +326,7 @@
       "type": "Predator",
       "atk": 2,
       "hp": 2,
-      "effectText": "Kill enemy prey. Destroy target field spell.",
+      "effectText": "Kill Rival's prey. Destroy target field spell.",
       "effects": {
         "onConsume": { "type": "killPreyAndDestroyField" }
       }
@@ -391,7 +391,7 @@
       "type": "Predator",
       "atk": 3,
       "hp": 3,
-      "effectText": "Consume target enemy prey.",
+      "effectText": "Consume target Rival's prey.",
       "effects": {
         "onConsume": { "type": "selectEnemyPreyToConsume" }
       }
@@ -421,7 +421,7 @@
       "type": "Predator",
       "atk": 4,
       "hp": 4,
-      "effectText": "End of turn, kill target enemy.",
+      "effectText": "End of turn, kill target Rival's creature.",
       "effects": {
         "onEnd": { "type": "selectEnemyToKill" }
       }
@@ -432,7 +432,7 @@
       "type": "Predator",
       "atk": 5,
       "hp": 5,
-      "effectText": "Add target enemy to hand.",
+      "effectText": "Add target Rival's creature to hand.",
       "effects": {
         "onConsume": { "type": "selectEnemyToReturnToOpponentHand" }
       }
@@ -470,7 +470,7 @@
       "id": "bird-spell-shotgun",
       "name": "Shotgun",
       "type": "Spell",
-      "effectText": "Either deal 2 damage to opponents or deal 6 damage to target enemy.",
+      "effectText": "Either deal 2 damage to Rival and Rival's creatures or deal 6 damage to target Rival's creature.",
       "effects": {
         "effect": {
           "type": "chooseOption",
@@ -479,12 +479,12 @@
             "options": [
               {
                 "label": "Deal 2 damage to rival",
-                "description": "Deal 2 damage to the opponent",
+                "description": "Deal 2 damage to Rival and Rival's creatures",
                 "effect": { "type": "damageOpponent", "params": { "amount": 2 } }
               },
               {
-                "label": "Deal 6 damage to target enemy",
-                "description": "Select an enemy creature for 6 damage",
+                "label": "Deal 6 damage to target Rival's creature",
+                "description": "Select a Rival's creature for 6 damage",
                 "effect": { "type": "selectEnemyCreatureForDamage", "params": { "amount": 6, "label": "shotgun" } }
               }
             ]
@@ -543,6 +543,10 @@
           "params": {
             "cardId": "bird-field-spell-bird-feeder"
           }
+        },
+        "onEnd": {
+          "type": "selectCreatureForBuff",
+          "params": { "attack": 1, "health": 1 }
         }
       }
     },
@@ -551,7 +555,7 @@
       "name": "Alleyway Mobbing",
       "type": "Trap",
       "trigger": "directAttack",
-      "effectText": "When target enemy attacks directly, negate attack. Play 3 Bushtits.",
+      "effectText": "When Rival's creature attacks directly, negate attack. Play 3 Bushtits.",
       "summons": ["token-bushtit"],
       "effects": {
         "effect": {

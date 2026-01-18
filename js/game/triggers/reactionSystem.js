@@ -178,7 +178,12 @@ export const resolveReaction = ({
   resolveEffectChain,
   cleanupDestroyed,
 }) => {
-  if (!state.pendingReaction) return;
+  console.log('[ReactionSystem] resolveReaction called:', { activated, reactionIndex });
+
+  if (!state.pendingReaction) {
+    console.warn('[ReactionSystem] No pending reaction to resolve');
+    return;
+  }
 
   const {
     event,
@@ -187,6 +192,14 @@ export const resolveReaction = ({
     reactions,
     eventContext,
   } = state.pendingReaction;
+
+  console.log('[ReactionSystem] Processing reaction:', {
+    event,
+    reactingPlayerIndex,
+    triggeringPlayerIndex,
+    reactionCount: reactions?.length,
+    trapName: reactions?.[0]?.card?.name,
+  });
 
   const reactingPlayer = state.players[reactingPlayerIndex];
 
@@ -199,6 +212,7 @@ export const resolveReaction = ({
 
   // If not activated, just continue
   if (!activated || reactions.length === 0) {
+    console.log('[ReactionSystem] Reaction not activated or no reactions');
     callback?.();
     onUpdate?.();
     broadcast?.(state);
@@ -208,6 +222,7 @@ export const resolveReaction = ({
   // Get the reaction to activate
   const reaction = reactions[reactionIndex];
   if (!reaction) {
+    console.warn('[ReactionSystem] Reaction at index', reactionIndex, 'not found');
     callback?.();
     onUpdate?.();
     broadcast?.(state);
@@ -216,6 +231,7 @@ export const resolveReaction = ({
 
   // Process the trap activation
   if (reaction.type === 'trap') {
+    console.log('[ReactionSystem] Activating trap:', reaction.card?.name);
     // Bug detection: snapshot before trap activation
     const detector = getBugDetector();
     if (detector?.isEnabled()) {
@@ -252,12 +268,24 @@ export const resolveReaction = ({
       triggeringPlayerIndex,
     });
 
-    // Resolve the trap's effect
-    const result = resolveCardEffect(reaction.card, 'effect', {
-      log: (message) => logMessage(state, message),
-      state,
-      ...effectContext,
-    });
+    // Resolve the trap's effect with error handling
+    let result;
+    try {
+      console.log('[ReactionSystem] Resolving trap effect...');
+      result = resolveCardEffect(reaction.card, 'effect', {
+        log: (message) => logMessage(state, message),
+        state,
+        ...effectContext,
+      });
+      console.log('[ReactionSystem] Trap effect resolved:', result);
+    } catch (error) {
+      console.error('[ReactionSystem] Error resolving trap effect:', error);
+      // Continue game flow even if effect fails
+      callback?.();
+      onUpdate?.();
+      broadcast?.(state);
+      return;
+    }
 
     // Track if this reaction negated an attack (for attack resolution)
     if (event === TRIGGER_EVENTS.ATTACK_DECLARED && result?.negateAttack) {
@@ -266,8 +294,10 @@ export const resolveReaction = ({
 
     // Handle negated play - return card to hand
     if (event === TRIGGER_EVENTS.CARD_PLAYED && result?.negatePlay) {
+      console.log('[ReactionSystem] Handling negated play');
       const playedCard = eventContext?.card;
       if (playedCard) {
+        const triggeringPlayer = state.players[triggeringPlayerIndex];
         // Remove from field
         const slot = triggeringPlayer.field.findIndex(
           (c) => c && c.instanceId === playedCard.instanceId
@@ -288,37 +318,48 @@ export const resolveReaction = ({
 
     // Apply effect chain if needed, with proper callbacks for async effects
     if (result && resolveEffectChain) {
-      resolveEffectChain(
-        state,
-        result,
-        {
-          playerIndex: reactingPlayerIndex,
-          opponentIndex: triggeringPlayerIndex,
-        },
-        onUpdate,
-        () => {
-          // Effect chain completed - continue game flow
-          cleanupDestroyed?.(state);
-          // Bug detection: check after trap effect chain completed
-          if (detector?.isEnabled()) {
-            detector.afterAction(state);
+      console.log('[ReactionSystem] Starting effect chain resolution');
+      try {
+        resolveEffectChain(
+          state,
+          result,
+          {
+            playerIndex: reactingPlayerIndex,
+            opponentIndex: triggeringPlayerIndex,
+          },
+          onUpdate,
+          () => {
+            // Effect chain completed - continue game flow
+            console.log('[ReactionSystem] Effect chain completed');
+            cleanupDestroyed?.(state);
+            // Bug detection: check after trap effect chain completed
+            if (detector?.isEnabled()) {
+              detector.afterAction(state);
+            }
+            callback?.();
+            onUpdate?.();
+            broadcast?.(state);
+          },
+          () => {
+            // Effect chain cancelled - still continue game flow
+            console.log('[ReactionSystem] Effect chain cancelled');
+            cleanupDestroyed?.(state);
+            // Bug detection: check after trap effect chain cancelled
+            if (detector?.isEnabled()) {
+              detector.afterAction(state);
+            }
+            callback?.();
+            onUpdate?.();
+            broadcast?.(state);
           }
-          callback?.();
-          onUpdate?.();
-          broadcast?.(state);
-        },
-        () => {
-          // Effect chain cancelled - still continue game flow
-          cleanupDestroyed?.(state);
-          // Bug detection: check after trap effect chain cancelled
-          if (detector?.isEnabled()) {
-            detector.afterAction(state);
-          }
-          callback?.();
-          onUpdate?.();
-          broadcast?.(state);
-        }
-      );
+        );
+      } catch (error) {
+        console.error('[ReactionSystem] Error in effect chain:', error);
+        // Continue game flow even if effect chain fails
+        callback?.();
+        onUpdate?.();
+        broadcast?.(state);
+      }
       return; // Wait for effect chain to complete
     }
 

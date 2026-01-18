@@ -43,8 +43,10 @@ export const getLobbyChannel = () => {
  */
 export const sendLobbyBroadcast = (event, payload) => {
   if (!lobbyChannel) {
+    console.warn(`[sendLobbyBroadcast] No lobby channel set - broadcast "${event}" dropped!`);
     return;
   }
+  console.log(`[sendLobbyBroadcast] Sending "${event}" event via lobby channel`);
   lobbyChannel.send({
     type: "broadcast",
     event,

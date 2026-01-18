@@ -18,7 +18,9 @@
       "Bash(npm install:*)",
       "Bash(wmic logicaldisk:*)",
       "Bash(powershell:*)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(npx vitest:*)",
+      "Bash(echo:*)"
     ]
   }
 }

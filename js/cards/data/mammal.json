@@ -21,7 +21,7 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Play 2 Arctic Ground Squirrels. Target enemy gains Frozen.",
+      "effectText": "Play 2 Arctic Ground Squirrels. Target Rival's creature gains Frozen.",
       "summons": ["token-arctic-ground-squirrel"],
       "effects": {
         "onPlay": {
@@ -38,7 +38,7 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Haste", "Hidden"],
-      "effectText": "Target enemy gains Frozen.",
+      "effectText": "Target Rival's creature gains Frozen.",
       "effects": {
         "onPlay": { "type": "selectEnemyToFreeze" }
       }
@@ -241,7 +241,7 @@
       "atk": 2,
       "hp": 2,
       "nutrition": 2,
-      "effectText": "Return enemies to hand.",
+      "effectText": "Return Rival's creatures to hand.",
       "effects": {
         "onPlay": { "type": "returnAllEnemies" }
       }
@@ -316,7 +316,7 @@
       "type": "Predator",
       "atk": 1,
       "hp": 1,
-      "effectText": "Play 2 Dholes. Kill target enemy.",
+      "effectText": "Play 2 Dholes. Kill target Rival's creature.",
       "summons": ["token-dhole"],
       "effects": {
         "onConsume": {
@@ -450,7 +450,7 @@
       "type": "Predator",
       "atk": 5,
       "hp": 5,
-      "effectText": "Freeze enemies.",
+      "effectText": "Freeze Rival's creatures.",
       "effects": {
         "onConsume": { "type": "freezeAllEnemies" }
       }
@@ -461,7 +461,7 @@
       "type": "Predator",
       "atk": 6,
       "hp": 6,
-      "effectText": "Kill target enemy.",
+      "effectText": "Kill target Rival's creature.",
       "effects": {
         "onConsume": { "type": "selectEnemyToKill" }
       }
@@ -470,7 +470,7 @@
       "id": "mammal-spell-blizzard",
       "name": "Blizzard",
       "type": "Spell",
-      "effectText": "Deal 2 damage to opponents. Enemies gain frozen.",
+      "effectText": "Deal 2 damage to Rival and Rival's creatures. Rival's creatures gain Frozen.",
       "effects": {
         "effect": { "type": "damageOpponentAndFreezeEnemies", "params": { "damage": 2 } }
       }
@@ -488,7 +488,7 @@
       "id": "mammal-spell-rifle",
       "name": "Rifle",
       "type": "Spell",
-      "effectText": "Kill target enemy.",
+      "effectText": "Kill target Rival's creature.",
       "effects": {
         "effect": { "type": "selectEnemyToKill" }
       }
@@ -524,7 +524,7 @@
       "id": "mammal-free-spell-tranquilizer",
       "name": "Tranquilizer",
       "type": "Free Spell",
-      "effectText": "Target enemy gains Frozen.",
+      "effectText": "Target Rival's creature gains Frozen.",
       "effects": {
         "effect": { "type": "selectEnemyToFreeze" }
       }
@@ -570,7 +570,7 @@
       "name": "Pitfall",
       "type": "Trap",
       "trigger": "directAttack",
-      "effectText": "When target enemy attacks directly, negate attack. Enemies gain frozen.",
+      "effectText": "When Rival's creature attacks directly, negate attack. Rival's creatures gain Frozen.",
       "effects": {
         "effect": { "type": "negateAndFreezeEnemies" }
       }
@@ -580,7 +580,7 @@
       "name": "Snow Squall",
       "type": "Trap",
       "trigger": "indirectDamage",
-      "effectText": "When damaged indirectly, negate damage. Enemies gain frozen.",
+      "effectText": "When damaged indirectly, negate damage. Rival's creatures gain Frozen.",
       "effects": {
         "effect": { "type": "negateDamageAndFreezeEnemies" }
       }

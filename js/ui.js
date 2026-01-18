@@ -8,7 +8,7 @@ import {
   LOG_CATEGORIES,
   formatCardForLog,
 } from "./state/gameState.js";
-import { canPlayCard, cardLimitAvailable, finalizeEndPhase } from "./game/turnManager.js";
+import { canPlayCard, cardLimitAvailable, finalizeEndPhase, initPositionEvaluator } from "./game/turnManager.js";
 import { createCardInstance } from "./cardTypes.js";
 import { consumePrey } from "./game/consumption.js";
 import {
@@ -32,6 +32,10 @@ import {
 import { resolveEffectResult, stripAbilities } from "./game/effects.js";
 import { deckCatalogs, getCardDefinitionById, resolveCardEffect, getAllCards, getCardByName } from "./cards/index.js";
 import { getCardImagePath, hasCardImage, getCachedCardImage, isCardImageCached, preloadCardImages } from "./cardImages.js";
+import { positionEvaluator } from "./ai/PositionEvaluator.js";
+
+// Initialize the position evaluator in turnManager to avoid circular dependency
+initPositionEvaluator(positionEvaluator);
 
 // ============================================================================
 // IMPORTS FROM NEW REFACTORED MODULES
@@ -294,6 +298,39 @@ const lobbyError = document.getElementById("lobby-error");
 let pendingConsumption = null;
 let inspectedCardId = null;
 let deckHighlighted = null;
+
+// AI thinking ellipsis animation state
+let aiThinkingEllipsisFrame = 0;
+let aiThinkingEllipsisInterval = null;
+
+/**
+ * Start the animated ellipsis for "Still thinking" indicator
+ * @param {HTMLElement} element - The element to update with animated text
+ */
+function startAIThinkingEllipsisAnimation(element) {
+  if (aiThinkingEllipsisInterval) return; // Already running
+
+  // Update immediately
+  aiThinkingEllipsisFrame = 0;
+  element.textContent = "Still thinking";
+
+  aiThinkingEllipsisInterval = setInterval(() => {
+    aiThinkingEllipsisFrame = (aiThinkingEllipsisFrame + 1) % 4;
+    const dots = ".".repeat(aiThinkingEllipsisFrame);
+    element.textContent = `Still thinking${dots}`;
+  }, 400);
+}
+
+/**
+ * Stop the animated ellipsis animation
+ */
+function stopAIThinkingEllipsisAnimation() {
+  if (aiThinkingEllipsisInterval) {
+    clearInterval(aiThinkingEllipsisInterval);
+    aiThinkingEllipsisInterval = null;
+    aiThinkingEllipsisFrame = 0;
+  }
+}
 let currentPage = 0;
 let deckActiveTab = "catalog";
 let latestState = null;
@@ -830,7 +867,24 @@ const updateIndicators = (state, controlsLocked) => {
     fieldTurnNumber.textContent = `Turn ${state.turn}`;
   }
   if (fieldPhaseLabel) {
-    fieldPhaseLabel.textContent = state.phase;
+    // Show AI thinking indicator when deep search is running
+    if (state._aiIsSearching) {
+      fieldPhaseLabel.classList.add("ai-thinking");
+
+      if (state._aiStillThinking) {
+        // Show "Still thinking" with animated ellipsis after 2 seconds
+        startAIThinkingEllipsisAnimation(fieldPhaseLabel);
+      } else {
+        // Show initial "AI is thinking..."
+        stopAIThinkingEllipsisAnimation();
+        fieldPhaseLabel.textContent = "AI is thinking...";
+      }
+    } else {
+      // Not searching - show normal phase
+      stopAIThinkingEllipsisAnimation();
+      fieldPhaseLabel.textContent = state.phase;
+      fieldPhaseLabel.classList.remove("ai-thinking");
+    }
   }
   if (fieldTurnBtn) {
     fieldTurnBtn.disabled = controlsLocked;
@@ -919,7 +973,132 @@ const updatePlayerStats = (state, index, role, onUpdate = null) => {
     if (exileEl) {
       exileEl.textContent = player.exile.length;
     }
+
+    // Update advantage display
+    renderAdvantageDisplay(state, index);
   }
+};
+
+// ============================================================================
+// ADVANTAGE DISPLAY
+// ============================================================================
+
+/**
+ * Render the advantage tracker display
+ *
+ * @param {Object} state - Game state
+ * @param {number} playerIndex - Active player's perspective
+ */
+const renderAdvantageDisplay = (state, playerIndex) => {
+  const valueEl = document.getElementById('advantage-value');
+  const descEl = document.getElementById('advantage-description');
+  const graphToggle = document.getElementById('graph-toggle');
+
+  if (!valueEl || !descEl) return;
+
+  // Calculate advantage from the active player's perspective
+  const advantage = positionEvaluator.calculateAdvantage(state, playerIndex);
+  const formatted = positionEvaluator.formatAdvantageDisplay(advantage);
+
+  valueEl.textContent = formatted.text;
+  valueEl.style.color = formatted.color;
+  descEl.textContent = formatted.description;
+
+  // Setup graph toggle if not already initialized
+  if (graphToggle && !graphToggle._initialized) {
+    graphToggle._initialized = true;
+    graphToggle.onclick = () => {
+      const container = document.getElementById('advantage-graph-container');
+      if (container) {
+        const isExpanded = container.style.display !== 'none';
+        container.style.display = isExpanded ? 'none' : 'block';
+        graphToggle.classList.toggle('active', !isExpanded);
+        if (!isExpanded) {
+          renderAdvantageGraph(state, playerIndex);
+        }
+      }
+    };
+  }
+
+  // Update graph if visible
+  const graphContainer = document.getElementById('advantage-graph-container');
+  if (graphContainer && graphContainer.style.display !== 'none') {
+    renderAdvantageGraph(state, playerIndex);
+  }
+};
+
+/**
+ * Render the advantage history graph using canvas
+ *
+ * @param {Object} state - Game state
+ * @param {number} playerIndex - Player perspective
+ */
+const renderAdvantageGraph = (state, playerIndex) => {
+  const canvas = document.getElementById('advantage-graph');
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  const history = positionEvaluator.getAdvantageHistory(state);
+
+  // Clear canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (history.length < 2) {
+    // Not enough data to graph
+    ctx.fillStyle = '#666';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Not enough data', canvas.width / 2, canvas.height / 2);
+    return;
+  }
+
+  const width = canvas.width;
+  const height = canvas.height;
+  const padding = 10;
+  const graphWidth = width - padding * 2;
+  const graphHeight = height - padding * 2;
+
+  // Get values (apply perspective)
+  const values = history.map(h => playerIndex === 0 ? h.advantage : -h.advantage);
+  const maxVal = Math.max(30, ...values.map(Math.abs));
+
+  // Draw zero line
+  ctx.beginPath();
+  ctx.strokeStyle = '#444';
+  ctx.lineWidth = 1;
+  const zeroY = padding + graphHeight / 2;
+  ctx.moveTo(padding, zeroY);
+  ctx.lineTo(width - padding, zeroY);
+  ctx.stroke();
+
+  // Draw advantage line
+  ctx.beginPath();
+  ctx.strokeStyle = '#4a9';
+  ctx.lineWidth = 2;
+
+  values.forEach((value, i) => {
+    const x = padding + (i / (values.length - 1)) * graphWidth;
+    const normalizedValue = value / maxVal;
+    const y = padding + graphHeight / 2 - (normalizedValue * graphHeight / 2);
+
+    if (i === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  });
+
+  ctx.stroke();
+
+  // Draw current point
+  const lastValue = values[values.length - 1];
+  const lastX = width - padding;
+  const lastY = padding + graphHeight / 2 - (lastValue / maxVal * graphHeight / 2);
+
+  ctx.beginPath();
+  ctx.fillStyle = lastValue > 0 ? '#4a9' : lastValue < 0 ? '#e74' : '#888';
+  ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
+  ctx.fill();
 };
 
 // ============================================================================
@@ -1787,6 +1966,28 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
     console.log("[resolveEffectChain] Nested UI result detected, recursing:", uiResult);
     resolveEffectChain(state, uiResult, context, onUpdate, onComplete, onCancel);
     return;
+  }
+
+  // Handle pendingOnPlay - resolve the copied onPlay effect
+  if (uiResult && uiResult.pendingOnPlay) {
+    const { creature, playerIndex, opponentIndex } = uiResult.pendingOnPlay;
+    console.log(`[resolveEffectChain] Processing pendingOnPlay for ${creature.name}`);
+
+    // Resolve the creature's onPlay effect
+    const onPlayResult = resolveCardEffect(creature, 'onPlay', {
+      log: (message) => logMessage(state, message),
+      player: state.players[playerIndex],
+      opponent: state.players[opponentIndex],
+      creature,
+      state,
+      playerIndex,
+      opponentIndex,
+    });
+
+    if (onPlayResult && Object.keys(onPlayResult).length > 0) {
+      resolveEffectChain(state, onPlayResult, { playerIndex, opponentIndex, card: creature }, onUpdate, onComplete, onCancel);
+      return;
+    }
   }
 
   onUpdate?.();

@@ -33,6 +33,11 @@ import { CombatEvaluator } from './CombatEvaluator.js';
 import { CardKnowledgeBase } from './CardKnowledgeBase.js';
 import { DifficultyManager, DIFFICULTY_LEVELS } from './DifficultyManager.js';
 
+// Deep search AI module (for expert difficulty)
+import { GameTreeSearch } from './GameTreeSearch.js';
+import { MoveGenerator } from './MoveGenerator.js';
+import { AIWorkerManager } from './AIWorkerManager.js';
+
 // ============================================================================
 // AI CONFIGURATION
 // ============================================================================
@@ -78,6 +83,114 @@ export class AIController {
     this.threatDetector = new ThreatDetector();
     this.playEvaluator = new PlayEvaluator(this.threatDetector, cardKnowledge);
     this.combatEvaluator = new CombatEvaluator(this.threatDetector);
+
+    // Initialize deep search components (for expert difficulty)
+    // useDeepSearch is controlled by difficulty.isDeepSearchEnabled()
+    this.gameTreeSearch = new GameTreeSearch();
+    this.moveGenerator = new MoveGenerator();
+
+    // Web Worker manager for non-blocking search
+    this.workerManager = new AIWorkerManager();
+    this.workerInitialized = false;
+
+    // Track if we're currently searching (for UI indicator)
+    this.isSearching = false;
+  }
+
+  /**
+   * Initialize the AI worker (should be called once on startup)
+   * This is async and can be called in the background
+   */
+  async initWorker() {
+    if (this.workerInitialized) return;
+    try {
+      await this.workerManager.init();
+      this.workerInitialized = true;
+      console.log(`[${this.playerLabel}] AI Worker initialized: ${this.workerManager.isWorkerAvailable() ? 'ready' : 'fallback mode'}`);
+    } catch (error) {
+      console.warn(`[${this.playerLabel}] AI Worker init failed:`, error);
+    }
+  }
+
+  /**
+   * Check if deep search should be used for this turn
+   * @returns {boolean}
+   */
+  shouldUseDeepSearch() {
+    return this.difficulty.isDeepSearchEnabled();
+  }
+
+  /**
+   * Use deep search to find the best move
+   * Returns a fully-specified move from the search
+   *
+   * @param {Object} state - Game state
+   * @param {Object} options - { maxTimeMs, verbose }
+   * @returns {{move: Object, score: number, stats: Object}|null}
+   */
+  findBestMoveWithSearch(state, options = {}) {
+    const {
+      maxTimeMs = this.difficulty.getSearchTime?.() ?? 2000,
+      verbose = this.verboseLogging
+    } = options;
+
+    try {
+      const result = this.gameTreeSearch.findBestMove(state, this.playerIndex, {
+        maxTimeMs,
+        verbose
+      });
+
+      if (verbose && result.move) {
+        this.logThought(state, `[Search] Found: ${this.moveGenerator.describeMove(result.move)} (score: ${result.score})`);
+        console.log(`[${this.playerLabel}] Search stats: ${this.gameTreeSearch.getStatsString()}`);
+      }
+
+      return result;
+    } catch (error) {
+      console.error(`[${this.playerLabel}] Deep search error:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Async version of findBestMoveWithSearch that uses Web Worker for non-blocking search
+   * This keeps the UI completely responsive during deep search
+   *
+   * @param {Object} state - Game state
+   * @param {Object} options - { maxTimeMs, verbose }
+   * @returns {Promise<{move: Object, score: number, stats: Object}|null>}
+   */
+  async findBestMoveWithSearchAsync(state, options = {}) {
+    const {
+      maxTimeMs = this.difficulty.getSearchTime?.() ?? 2000,
+      verbose = this.verboseLogging
+    } = options;
+
+    try {
+      // Ensure worker is initialized
+      await this.initWorker();
+
+      // Use worker manager for non-blocking search
+      const result = await this.workerManager.search(state, this.playerIndex, {
+        maxTimeMs,
+        verbose
+      });
+
+      if (verbose && result.move) {
+        const moveDesc = result.moveDescription || this.moveGenerator.describeMove(result.move);
+        this.logThought(state, `[Search] Found: ${moveDesc} (score: ${result.score})`);
+        if (this.workerManager.isWorkerAvailable()) {
+          console.log(`[${this.playerLabel}] Search via Worker - stats: Depth ${result.depth}, ${result.timeMs}ms`);
+        } else {
+          console.log(`[${this.playerLabel}] Search stats: ${this.gameTreeSearch.getStatsString()}`);
+        }
+      }
+
+      return result;
+    } catch (error) {
+      console.error(`[${this.playerLabel}] Deep search error:`, error);
+      return null;
+    }
   }
 
   /**
@@ -238,6 +351,7 @@ export class AIController {
 
   /**
    * Execute play phase - play cards from hand
+   * Uses deep search when Expert difficulty is enabled
    */
   async executePlayPhase(state, callbacks) {
     const player = this.getAIPlayer(state);
@@ -263,6 +377,12 @@ export class AIController {
       if (ourLethal.hasLethal) {
         this.logStrategicThought(state, `Lethal detected! ${ourLethal.damage} damage available`);
       }
+    }
+
+    // Expert mode: Use deep search for the entire turn
+    if (this.shouldUseDeepSearch()) {
+      await this.executePlayPhaseWithSearch(state, callbacks);
+      return;
     }
 
     this.logThought(state, `Evaluating play options...`);
@@ -327,6 +447,107 @@ export class AIController {
     }
 
     // Clear any lingering AI visuals
+    clearAIVisuals();
+  }
+
+  /**
+   * Execute play phase using deep search (Expert difficulty)
+   * Uses alpha-beta search to find optimal moves via Web Worker (non-blocking)
+   */
+  async executePlayPhaseWithSearch(state, callbacks) {
+    const player = this.getAIPlayer(state);
+    const delays = this.getDelays(state);
+    let actionsRemaining = 10;
+
+    this.logThought(state, `[Expert] Analyzing position with deep search...`);
+
+    while (actionsRemaining > 0) {
+      actionsRemaining--;
+
+      // Mark that we're searching (for UI indicator)
+      this.isSearching = true;
+      state._aiIsSearching = true;
+      state._aiSearchStartTime = Date.now();
+      state._aiStillThinking = false;
+      callbacks.onUpdate?.();
+
+      // Start a timer to show "Still thinking..." after 2 seconds
+      const stillThinkingTimer = setInterval(() => {
+        if (this.isSearching && Date.now() - state._aiSearchStartTime >= 2000) {
+          state._aiStillThinking = true;
+          callbacks.onUpdate?.();
+        }
+      }, 500);
+
+      // Run deep search via Web Worker (completely non-blocking)
+      // UI remains fully responsive during the search
+      const searchResult = await this.findBestMoveWithSearchAsync(state, {
+        maxTimeMs: this.difficulty.getSearchTime(),
+        verbose: this.verboseLogging
+      });
+
+      // Clear the timer and searching state
+      clearInterval(stillThinkingTimer);
+      this.isSearching = false;
+      state._aiIsSearching = false;
+      state._aiStillThinking = false;
+      delete state._aiSearchStartTime;
+      callbacks.onUpdate?.();
+
+      if (!searchResult || !searchResult.move) {
+        this.logThought(state, `[Expert] No good moves found, done playing`);
+        break;
+      }
+
+      const move = searchResult.move;
+
+      // Check move type
+      if (move.type === 'END_TURN') {
+        this.logThought(state, `[Expert] Best action is to end turn (score: ${searchResult.score.toFixed(0)})`);
+        break;
+      }
+
+      if (move.type === 'ATTACK') {
+        // Skip attacks during play phase - they'll be handled in combat phase
+        this.logThought(state, `[Expert] Attack move found - saving for combat phase`);
+        break;
+      }
+
+      if (move.type === 'PLAY_CARD') {
+        const card = move.card;
+        const slot = move.slot;
+
+        // Log the decision with search stats
+        const statsStr = this.difficulty.isEnabled('showSearchStats')
+          ? ` [depth ${searchResult.depth}, nodes ${searchResult.stats?.nodes || 0}]`
+          : '';
+        this.logThought(state, `[Expert] Playing: ${card.name} (score: ${searchResult.score.toFixed(0)})${statsStr}`, true);
+
+        // Visual animation
+        const cardIndex = player.hand.findIndex(c => c.instanceId === card.instanceId);
+        if (cardIndex >= 0) {
+          if (isCreatureCard(card) && slot !== null && slot >= 0) {
+            await simulateAICardDrag(cardIndex, slot, state, this.playerIndex);
+          } else {
+            await simulateAICardPlay(cardIndex, { playerIndex: this.playerIndex });
+          }
+        }
+
+        // Execute the play
+        const playResult = await this.executeCardPlay(state, card, slot, callbacks);
+
+        if (!playResult.success) {
+          this.logThought(state, `[Expert] Failed to play: ${playResult.error}`);
+          break;
+        }
+
+        await this.delay(delays.BETWEEN_ACTIONS, state);
+      }
+    }
+
+    // Clear searching state and visuals
+    this.isSearching = false;
+    state._aiIsSearching = false;
     clearAIVisuals();
   }
 
@@ -534,6 +755,11 @@ export class AIController {
         playerIndex,
         opponentIndex,
       });
+
+      // Handle selection results (AI auto-selects targets)
+      if (result) {
+        this.handleEffectResult(result, state);
+      }
 
       // Remove from hand and exile
       player.hand = player.hand.filter(c => c.instanceId !== card.instanceId);
@@ -779,9 +1005,8 @@ export class AIController {
         opponentIndex: 1 - this.playerIndex,
       });
 
-      if (result) {
-        cleanupDestroyed(state);
-      }
+      // Handle selection results (AI auto-selects)
+      this.handleEffectResult(result, state);
     }
   }
 
@@ -804,10 +1029,132 @@ export class AIController {
         consumedPrey,
       });
 
-      if (result) {
-        cleanupDestroyed(state);
+      // Handle selection results (AI auto-selects)
+      this.handleEffectResult(result, state);
+    }
+  }
+
+  /**
+   * Handle effect results that may require selections
+   * AI automatically selects the best target or option
+   */
+  handleEffectResult(result, state, depth = 0) {
+    if (!result) return;
+
+    // Prevent infinite recursion
+    if (depth > 10) {
+      console.warn(`[${this.playerLabel}] Effect chain too deep, stopping`);
+      cleanupDestroyed(state);
+      return;
+    }
+
+    // Handle target selection - AI auto-selects
+    if (result.selectTarget) {
+      const { selectTarget, ...immediateEffects } = result;
+
+      // Apply any immediate effects first (that don't require selection)
+      if (Object.keys(immediateEffects).length > 0) {
+        resolveEffectResult(state, immediateEffects, {
+          playerIndex: this.playerIndex,
+          opponentIndex: 1 - this.playerIndex,
+        });
+      }
+
+      const candidates = typeof selectTarget.candidates === 'function'
+        ? selectTarget.candidates()
+        : selectTarget.candidates;
+
+      if (candidates && candidates.length > 0) {
+        // AI picks the best target
+        const target = this.selectBestTarget(candidates, state);
+        this.logThought(state, `Selecting target: ${target.label || target.value?.name || 'target'}`);
+
+        // Invoke the callback with the selected target
+        const followUp = selectTarget.onSelect(target.value);
+        this.handleEffectResult(followUp, state, depth + 1);
+      } else {
+        this.logThought(state, `No valid targets available`);
+      }
+      cleanupDestroyed(state);
+      return;
+    }
+
+    // Handle option selection - AI auto-selects
+    if (result.selectOption) {
+      const { selectOption, ...immediateEffects } = result;
+
+      // Apply any immediate effects first
+      if (Object.keys(immediateEffects).length > 0) {
+        resolveEffectResult(state, immediateEffects, {
+          playerIndex: this.playerIndex,
+          opponentIndex: 1 - this.playerIndex,
+        });
+      }
+
+      const options = selectOption.options || [];
+
+      if (options.length > 0) {
+        // AI picks the best option
+        const option = this.selectBestOption(options, state);
+        this.logThought(state, `Selecting option: ${option.label || 'option'}`);
+
+        // Invoke the callback with the selected option
+        const followUp = selectOption.onSelect(option);
+        this.handleEffectResult(followUp, state, depth + 1);
+      }
+      cleanupDestroyed(state);
+      return;
+    }
+
+    // No selection required - apply all effect results through resolveEffectResult
+    // This handles addKeyword, buffCreature, heal, damageCreature, etc.
+    resolveEffectResult(state, result, {
+      playerIndex: this.playerIndex,
+      opponentIndex: 1 - this.playerIndex,
+    });
+
+    cleanupDestroyed(state);
+  }
+
+  /**
+   * Select the best target from candidates
+   * Used for effects like "kill target prey"
+   */
+  selectBestTarget(candidates, state) {
+    if (!candidates || candidates.length === 0) return null;
+
+    // Simple heuristic: pick the highest value target
+    // Value = ATK * 2 + HP (prefer killing high-attack threats)
+    let bestCandidate = candidates[0];
+    let bestValue = -Infinity;
+
+    for (const candidate of candidates) {
+      const creature = candidate.value;
+      if (!creature) continue;
+
+      const atk = creature.currentAtk ?? creature.atk ?? 0;
+      const hp = creature.currentHp ?? creature.hp ?? 0;
+      const value = atk * 2 + hp;
+
+      if (value > bestValue) {
+        bestValue = value;
+        bestCandidate = candidate;
       }
     }
+
+    return bestCandidate;
+  }
+
+  /**
+   * Select the best option from choices
+   * Used for modal effects
+   */
+  selectBestOption(options, state) {
+    if (!options || options.length === 0) return null;
+
+    // For now, pick the first option (could be improved with heuristics)
+    // TODO: Evaluate options based on game state
+    return options[0];
   }
 
   /**
@@ -1063,6 +1410,8 @@ export class AIController {
   selectAttacker(state) {
     const player = this.getAIPlayer(state);
 
+    // NOTE: Summoning sickness only prevents attacking the PLAYER, not creatures
+    // So we include all creatures that can attack - targeting is checked separately
     const availableAttackers = player.field.filter(card => {
       if (!card || !isCreatureCard(card)) return false;
       if (card.currentHp <= 0) return false; // Dead creatures can't attack
@@ -1070,11 +1419,6 @@ export class AIController {
       if (isPassive(card)) return false;
       if (isHarmless(card)) return false;
       if (card.frozen || card.paralyzed) return false;
-      // Check summoning sickness (unless has haste)
-      // Use hasHaste() which checks areAbilitiesActive() (dry-dropped = no keywords)
-      if (card.summonedTurn === state.turn && !hasHaste(card)) {
-        return false;
-      }
       return true;
     });
 

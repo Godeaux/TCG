@@ -338,6 +338,228 @@ export class ThreatDetector {
   }
 
   /**
+   * Analyze all available ways to kill a critical threat
+   * Returns attack combinations that could eliminate the threat
+   *
+   * @param {Object} state - Current game state
+   * @param {Object} threat - The threatening creature
+   * @param {number} aiPlayerIndex - AI's player index
+   * @returns {Object} - { canKill, solutions: [...], bestSolution }
+   */
+  analyzeKillOptions(state, threat, aiPlayerIndex) {
+    const ai = state.players[aiPlayerIndex];
+    const threatHp = threat.currentHp ?? threat.hp ?? 0;
+
+    // Get available attackers (can attack this turn)
+    // NOTE: Summoning sickness only prevents attacking the PLAYER, not creatures
+    // So we include all creatures that can attack when evaluating kill options
+    const attackers = ai.field.filter(creature => {
+      if (!creature) return false;
+      if (creature.currentHp <= 0) return false;
+      if (creature.hasAttacked) return false;
+      if (isPassive(creature)) return false;
+      if (hasKeyword(creature, KEYWORDS.HARMLESS)) return false;
+      if (creature.frozen || creature.paralyzed) return false;
+      return true;
+    });
+
+    const solutions = [];
+
+    // Check single-creature kills
+    for (const attacker of attackers) {
+      const atkPower = attacker.currentAtk ?? attacker.atk ?? 0;
+      const hasToxicKeyword = hasKeyword(attacker, KEYWORDS.TOXIC);
+
+      if (atkPower >= threatHp || hasToxicKeyword) {
+        solutions.push({
+          type: 'single',
+          attackers: [attacker],
+          totalDamage: atkPower,
+          kills: true,
+          lossCount: 1, // We lose this attacker in the trade
+        });
+      }
+    }
+
+    // Check two-creature combinations
+    for (let i = 0; i < attackers.length; i++) {
+      for (let j = i + 1; j < attackers.length; j++) {
+        const a1 = attackers[i];
+        const a2 = attackers[j];
+        const atk1 = a1.currentAtk ?? a1.atk ?? 0;
+        const atk2 = a2.currentAtk ?? a2.atk ?? 0;
+
+        // First attacker softens, second kills
+        if (atk1 + atk2 >= threatHp) {
+          solutions.push({
+            type: 'combo',
+            attackers: [a1, a2],
+            totalDamage: atk1 + atk2,
+            kills: true,
+            lossCount: 2, // Both die in sequential attacks
+          });
+        }
+      }
+    }
+
+    // Sort by efficiency (prefer losing fewer creatures)
+    solutions.sort((a, b) => a.lossCount - b.lossCount);
+
+    return {
+      canKill: solutions.length > 0,
+      solutions,
+      bestSolution: solutions[0] || null,
+    };
+  }
+
+  /**
+   * Calculate how much damage we can deal to a threat without killing it
+   * Useful for "softening" when we can't kill outright
+   *
+   * @param {Object} state - Current game state
+   * @param {Object} threat - The threatening creature
+   * @param {number} aiPlayerIndex - AI's player index
+   * @returns {Object} - { maxDamage, remainingHp, attackersNeeded }
+   */
+  analyzeSofteningPotential(state, threat, aiPlayerIndex) {
+    const ai = state.players[aiPlayerIndex];
+    const threatHp = threat.currentHp ?? threat.hp ?? 0;
+
+    // NOTE: Summoning sickness only prevents attacking the PLAYER, not creatures
+    const attackers = ai.field.filter(creature => {
+      if (!creature) return false;
+      if (creature.currentHp <= 0) return false;
+      if (creature.hasAttacked) return false;
+      if (isPassive(creature)) return false;
+      if (hasKeyword(creature, KEYWORDS.HARMLESS)) return false;
+      if (creature.frozen || creature.paralyzed) return false;
+      return true;
+    });
+
+    let maxDamage = 0;
+    const attackersUsed = [];
+
+    for (const attacker of attackers) {
+      const atkPower = attacker.currentAtk ?? attacker.atk ?? 0;
+      maxDamage += atkPower;
+      attackersUsed.push(attacker);
+    }
+
+    return {
+      maxDamage,
+      remainingHp: Math.max(0, threatHp - maxDamage),
+      attackersNeeded: attackersUsed,
+      canKill: maxDamage >= threatHp,
+    };
+  }
+
+  /**
+   * Evaluate if we have creatures that provide defensive value
+   * (Lure creatures, high HP blockers that can survive attacks)
+   *
+   * @param {Object} state - Current game state
+   * @param {number} aiPlayerIndex - AI's player index
+   * @returns {Object} - { hasDefense, lureCreatures, blockers }
+   */
+  analyzeDefensivePosition(state, aiPlayerIndex) {
+    const ai = state.players[aiPlayerIndex];
+
+    const lureCreatures = ai.field.filter(c =>
+      c && hasKeyword(c, KEYWORDS.LURE) && c.currentHp > 0
+    );
+
+    // Blockers are creatures that could absorb damage
+    const blockers = ai.field.filter(c => {
+      if (!c) return false;
+      if (c.currentHp <= 0) return false;
+      // A good blocker has decent HP
+      return (c.currentHp ?? c.hp ?? 0) >= 2;
+    });
+
+    return {
+      hasDefense: lureCreatures.length > 0 || blockers.length > 0,
+      lureCreatures,
+      blockers,
+      lureTotalHp: lureCreatures.reduce((sum, c) => sum + (c.currentHp ?? c.hp ?? 0), 0),
+    };
+  }
+
+  /**
+   * Comprehensive survival analysis - what are our options to not die?
+   *
+   * @param {Object} state - Current game state
+   * @param {number} aiPlayerIndex - AI's player index
+   * @returns {Object} - Detailed survival analysis
+   */
+  analyzeSurvivalOptions(state, aiPlayerIndex) {
+    const ai = state.players[aiPlayerIndex];
+    const lethalCheck = this.detectLethal(state, aiPlayerIndex);
+
+    if (!lethalCheck.isLethal) {
+      return {
+        inDanger: false,
+        survivalPossible: true,
+        options: [],
+      };
+    }
+
+    const options = [];
+    const mustKills = this.findMustKillTargets(state, aiPlayerIndex);
+    const criticalThreats = mustKills.filter(mk => mk.priority === 'critical');
+
+    // Analyze each critical threat
+    for (const { creature: threat } of criticalThreats) {
+      const killOptions = this.analyzeKillOptions(state, threat, aiPlayerIndex);
+
+      if (killOptions.canKill) {
+        options.push({
+          type: 'kill_threat',
+          threat,
+          solution: killOptions.bestSolution,
+          effectiveness: 'removes_threat',
+        });
+      } else {
+        // Can we soften it enough that we survive one more turn?
+        const softening = this.analyzeSofteningPotential(state, threat, aiPlayerIndex);
+        const threatAtk = threat.currentAtk ?? threat.atk ?? 0;
+        const newThisAfterSoftening = softening.remainingHp > 0;
+
+        // Even if we can't kill, damage is better than nothing
+        if (softening.maxDamage > 0) {
+          options.push({
+            type: 'soften_threat',
+            threat,
+            damage: softening.maxDamage,
+            remainingHp: softening.remainingHp,
+            effectiveness: newThisAfterSoftening ? 'partial' : 'kills_threat',
+          });
+        }
+      }
+    }
+
+    // Check defensive options
+    const defense = this.analyzeDefensivePosition(state, aiPlayerIndex);
+    if (defense.lureCreatures.length > 0) {
+      options.push({
+        type: 'has_lure',
+        creatures: defense.lureCreatures,
+        effectiveness: 'redirects_damage',
+      });
+    }
+
+    return {
+      inDanger: true,
+      aiHp: ai.hp,
+      incomingDamage: lethalCheck.damage,
+      survivalPossible: options.some(o =>
+        o.effectiveness === 'removes_threat' || o.effectiveness === 'kills_threat'
+      ),
+      options,
+      criticalThreats,
+    };
+  }
+
+  /**
    * Calculate potential damage after playing a card
    * Used to detect if playing something enables lethal
    *

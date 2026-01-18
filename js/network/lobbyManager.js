@@ -153,12 +153,17 @@ export const getLocalPlayerIndex = (state) => {
 
 /**
  * Check if it's the local player's turn
+ * - Simulation mode: always (simulated states allow any player to act)
  * - AI vs AI mode: never (both players are AI, no human interaction)
  * - AI mode: only when player 0 is active (human is player 0)
  * - Online mode: when local player is active
  * - Local mode: always (hot-seat play, both players take turns on same device)
  */
 export const isLocalPlayersTurn = (state) => {
+  // Simulation mode: always allow (used by AI search and position evaluator)
+  if (state._isSimulation) {
+    return true;
+  }
   // AI vs AI: no human player, so never the local player's turn
   if (isAIvsAIMode(state)) {
     return false;
@@ -364,10 +369,21 @@ export const savePlayerCardsToDatabase = async (state, cards) => {
     return [];
   }
 
+  // Deduplicate by card id, keeping highest rarity
+  // (Prevents "ON CONFLICT DO UPDATE cannot affect row a second time" error)
+  const cardMap = new Map();
+  cardsToSave.forEach((card) => {
+    const existing = cardMap.get(card.id);
+    if (!existing || rarityOrder.indexOf(card.packRarity) > rarityOrder.indexOf(existing.packRarity)) {
+      cardMap.set(card.id, card);
+    }
+  });
+  const deduplicatedCards = Array.from(cardMap.values());
+
   const api = await loadSupabaseApi(state);
   const savedCards = await api.savePlayerCards({
     profileId: state.menu.profile.id,
-    cards: cardsToSave.map((c) => ({ cardId: c.id, rarity: c.packRarity })),
+    cards: deduplicatedCards.map((c) => ({ cardId: c.id, rarity: c.packRarity })),
   });
 
   // Update local Map with saved cards
@@ -1143,6 +1159,13 @@ export const updateLobbySubscription = (state, { force = false } = {}) => {
 
   // Handle sync state broadcasts
   lobbyChannel.on('broadcast', { event: 'sync_state' }, ({ payload }) => {
+    console.log('[lobbyManager] Received sync_state broadcast:', {
+      hasPayload: !!payload,
+      hasGame: !!payload?.game,
+      turn: payload?.game?.turn,
+      phase: payload?.game?.phase,
+      activePlayer: payload?.game?.activePlayerIndex,
+    });
     callbacks.onApplySync?.(state, payload);
     callbacks.onUpdate?.();
   });

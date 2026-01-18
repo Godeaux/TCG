@@ -152,6 +152,111 @@ const getTotalEnemyValue = (ctx) => {
 };
 
 // ============================================================================
+// GAME STATE CONTEXT ANALYSIS
+// ============================================================================
+
+/**
+ * Analyze the current game phase/tempo
+ * @param {Object} ctx - Context with state
+ * @returns {Object} - { phase, urgency, tempo }
+ */
+const analyzeGamePhase = (ctx) => {
+  const ai = getAI(ctx);
+  const opponent = getOpponent(ctx);
+
+  if (!ai || !opponent) {
+    return { phase: 'mid', urgency: 'normal', tempo: 'neutral' };
+  }
+
+  const turn = ctx.state?.turn || 1;
+
+  // Game phase based on turn and resources
+  let phase;
+  if (turn <= 2) {
+    phase = 'early';
+  } else if (turn <= 5 || (ai.deck?.length > 10 && opponent.deck?.length > 10)) {
+    phase = 'mid';
+  } else {
+    phase = 'late';
+  }
+
+  // Urgency based on HP differential
+  let urgency;
+  if (ai.hp <= 3) {
+    urgency = 'critical';
+  } else if (ai.hp <= 5) {
+    urgency = 'high';
+  } else if (opponent.hp <= 3) {
+    urgency = 'lethal_push';
+  } else if (opponent.hp <= 5) {
+    urgency = 'aggressive';
+  } else {
+    urgency = 'normal';
+  }
+
+  // Tempo: who has initiative?
+  const aiCreatures = getFriendlyCreatures(ctx);
+  const enemyCreatures = getEnemyCreatures(ctx);
+  const aiPower = aiCreatures.reduce((sum, c) => sum + (c.currentAtk ?? c.atk ?? 0), 0);
+  const enemyPower = enemyCreatures.reduce((sum, c) => sum + (c.currentAtk ?? c.atk ?? 0), 0);
+
+  let tempo;
+  if (aiPower > enemyPower * 1.5) {
+    tempo = 'ahead';
+  } else if (enemyPower > aiPower * 1.5) {
+    tempo = 'behind';
+  } else {
+    tempo = 'even';
+  }
+
+  return { phase, urgency, tempo };
+};
+
+/**
+ * Get board advantage score
+ * @param {Object} ctx - Context with state
+ * @returns {number} - Positive = AI ahead, Negative = behind
+ */
+const getBoardAdvantage = (ctx) => {
+  const aiCreatures = getFriendlyCreatures(ctx);
+  const enemyCreatures = getEnemyCreatures(ctx);
+
+  const aiValue = aiCreatures.reduce((sum, c) => sum + getCreatureValue(c), 0);
+  const enemyValue = enemyCreatures.reduce((sum, c) => sum + getCreatureValue(c), 0);
+
+  return aiValue - enemyValue;
+};
+
+/**
+ * Get total potential damage AI can deal this turn
+ * @param {Object} ctx - Context with state
+ * @returns {number} - Potential damage
+ */
+const getPotentialDamage = (ctx) => {
+  const ai = getAI(ctx);
+  const state = ctx.state;
+  if (!ai || !state) return 0;
+
+  return ai.field
+    .filter(c => c && c.currentHp > 0 && !c.hasAttacked && !c.frozen && !c.paralyzed)
+    .filter(c => !isPassive(c) && !hasKeyword(c, KEYWORDS.HARMLESS))
+    .filter(c => c.summonedTurn !== state.turn || hasHaste(c))
+    .reduce((sum, c) => sum + (c.currentAtk ?? c.atk ?? 0), 0);
+};
+
+/**
+ * Get hand advantage (card count difference)
+ * @param {Object} ctx - Context with state
+ * @returns {number} - Positive = AI has more cards
+ */
+const getHandAdvantage = (ctx) => {
+  const ai = getAI(ctx);
+  const opponent = getOpponent(ctx);
+  if (!ai || !opponent) return 0;
+  return (ai.hand?.length || 0) - (opponent.hand?.length || 0);
+};
+
+// ============================================================================
 // CONTEXT-AWARE EFFECT VALUES
 // ============================================================================
 
@@ -182,28 +287,80 @@ export const EFFECT_VALUES = {
       return { value: 0, reason: `heal: already at full HP (${ai.hp}/10)` };
     }
 
+    const gamePhase = analyzeGamePhase(ctx);
+
     // Value scales with how much we can actually heal
     const effectiveHeal = Math.min(amount, missingHp);
     let value = effectiveHeal * 3;
+    let notes = [];
 
     // Healing is more valuable when low on HP
-    let bonus = '';
-    if (ai.hp <= 3) { value *= 1.5; bonus = ' (critical HP bonus)'; }
-    else if (ai.hp <= 5) { value *= 1.2; bonus = ' (low HP bonus)'; }
+    if (ai.hp <= 3) {
+      value *= 1.8;
+      notes.push('critical HP');
+    } else if (ai.hp <= 5) {
+      value *= 1.3;
+      notes.push('low HP');
+    }
 
-    return { value, reason: `heal ${effectiveHeal}/${amount} → ${value.toFixed(0)}${bonus}` };
+    // Healing less valuable when we're ahead and aggressive
+    if (gamePhase.urgency === 'lethal_push') {
+      value *= 0.5;
+      notes.push('pushing lethal');
+    }
+
+    // Healing more valuable when behind on tempo (need to stabilize)
+    if (gamePhase.tempo === 'behind') {
+      value *= 1.2;
+      notes.push('stabilizing');
+    }
+
+    const noteStr = notes.length > 0 ? ` (${notes.join(', ')})` : '';
+    return { value, reason: `heal ${effectiveHeal}/${amount} → ${value.toFixed(0)}${noteStr}` };
   },
 
   'draw': (ctx) => {
     const count = ctx.params?.count || 1;
     const ai = getAI(ctx);
+    const gamePhase = analyzeGamePhase(ctx);
+    let notes = [];
 
-    // Drawing is slightly less valuable if hand is already large
+    // Base value per card
+    let valuePerCard = 8;
+
+    // Drawing is less valuable if hand is already large
     if (ai && ai.hand?.length >= 6) {
-      return { value: count * 5, reason: `draw ${count} cards (hand full: ${ai.hand.length}) → ${count * 5}` };
+      valuePerCard = 4;
+      notes.push(`hand ${ai.hand.length}/7`);
     }
 
-    return { value: count * 8, reason: `draw ${count} cards → ${count * 8}` };
+    // Drawing is MORE valuable early game (building options)
+    if (gamePhase.phase === 'early') {
+      valuePerCard *= 1.2;
+      notes.push('early game');
+    }
+
+    // Drawing is LESS valuable when pushing lethal (tempo matters)
+    if (gamePhase.urgency === 'lethal_push') {
+      valuePerCard *= 0.7;
+      notes.push('need tempo');
+    }
+
+    // Drawing is MORE valuable when behind (need answers)
+    if (gamePhase.tempo === 'behind') {
+      valuePerCard *= 1.3;
+      notes.push('finding answers');
+    }
+
+    // Check deck size - don't overdraw
+    if (ai && ai.deck?.length <= count) {
+      valuePerCard *= 0.5;
+      notes.push('low deck');
+    }
+
+    const value = count * valuePerCard;
+    const noteStr = notes.length > 0 ? ` (${notes.join(', ')})` : '';
+    return { value, reason: `draw ${count} → ${value.toFixed(0)}${noteStr}` };
   },
 
   'damageOpponent': (ctx) => {
@@ -319,6 +476,9 @@ export const EFFECT_VALUES = {
     const amount = ctx.params?.amount || 1;
     const enemies = getEnemyCreatures(ctx);
     const friendlies = getFriendlyCreatures(ctx);
+    const gamePhase = analyzeGamePhase(ctx);
+    const boardAdv = getBoardAdvantage(ctx);
+    let notes = [];
 
     if (enemies.length === 0 && friendlies.length === 0) {
       return { value: 0, reason: `${amount} dmg all: 0 creatures on board → 0` };
@@ -348,10 +508,30 @@ export const EFFECT_VALUES = {
       }
     }
 
-    const netValue = enemyDamageValue - friendlyDamageValue;
+    let netValue = enemyDamageValue - friendlyDamageValue;
+
+    // AoE damage MORE valuable when behind (need to catch up)
+    if (boardAdv < -10 && enemyKills > friendlyKills) {
+      netValue += 10;
+      notes.push('equalizing');
+    }
+
+    // AoE damage LESS valuable when ahead (preserve board state)
+    if (boardAdv > 10 && friendlyKills > 0) {
+      netValue -= 8;
+      notes.push('risky when ahead');
+    }
+
+    // In critical HP, killing threats is more valuable
+    if (gamePhase.urgency === 'critical' && enemyKills > 0) {
+      netValue += 12;
+      notes.push('survival priority');
+    }
+
+    const noteStr = notes.length > 0 ? ` (${notes.join(', ')})` : '';
     return {
       value: netValue,
-      reason: `${amount} dmg all: kills ${enemyKills}/${enemies.length} enemies (+${enemyDamageValue.toFixed(0)}), ${friendlyKills}/${friendlies.length} ours (-${friendlyDamageValue.toFixed(0)}) → ${netValue.toFixed(0)}`
+      reason: `${amount}dmg all: ${enemyKills}/${enemies.length}e, ${friendlyKills}/${friendlies.length}f → ${netValue.toFixed(0)}${noteStr}`
     };
   },
 
@@ -397,14 +577,43 @@ export const EFFECT_VALUES = {
   'killAll': (ctx) => {
     const enemies = getEnemyCreatures(ctx);
     const friendlies = getFriendlyCreatures(ctx);
+    const gamePhase = analyzeGamePhase(ctx);
+    const boardAdv = getBoardAdvantage(ctx);
+    let notes = [];
 
     const enemyValue = enemies.reduce((sum, c) => sum + getCreatureValue(c), 0);
     const friendlyValue = friendlies.reduce((sum, c) => sum + getCreatureValue(c), 0);
 
-    const netValue = enemyValue - friendlyValue;
+    let netValue = enemyValue - friendlyValue;
+
+    // Board wipes are MORE valuable when we're behind on board
+    if (boardAdv < -10) {
+      netValue += 15;
+      notes.push('resetting bad board');
+    }
+
+    // Board wipes are LESS valuable when we're significantly ahead
+    if (boardAdv > 15) {
+      netValue -= 10;
+      notes.push('throwing away lead');
+    }
+
+    // In critical situations, wiping is valuable for survival
+    if (gamePhase.urgency === 'critical' && enemies.length > 0) {
+      netValue += 20;
+      notes.push('desperate survival');
+    }
+
+    // Don't wipe when pushing lethal (we need our creatures)
+    if (gamePhase.urgency === 'lethal_push' && friendlies.length > 0) {
+      netValue -= 30;
+      notes.push('need attackers');
+    }
+
+    const noteStr = notes.length > 0 ? ` (${notes.join(', ')})` : '';
     return {
       value: netValue,
-      reason: `kill all: ${enemies.length} enemies (${enemyValue.toFixed(0)}) vs ${friendlies.length} ours (${friendlyValue.toFixed(0)}) → ${netValue.toFixed(0)}`
+      reason: `kill all: ${enemies.length}e vs ${friendlies.length}f → ${netValue.toFixed(0)}${noteStr}`
     };
   },
 
@@ -565,14 +774,39 @@ export const EFFECT_VALUES = {
       return { value: 0, reason: `freeze enemies: 0 unfrozen enemies → 0` };
     }
 
+    const gamePhase = analyzeGamePhase(ctx);
+    let notes = [];
+
     let value = 0;
     for (const enemy of enemies) {
       const atk = enemy.currentAtk ?? enemy.atk ?? 0;
       value += 6 + atk * 2;
     }
+
+    // Freeze is MORE valuable when we're behind (buys time)
+    if (gamePhase.tempo === 'behind' || gamePhase.urgency === 'critical') {
+      value *= 1.5;
+      notes.push('survival');
+    }
+
+    // Freeze is MORE valuable when we have lethal on board (prevents blocks)
+    const potentialDmg = getPotentialDamage(ctx);
+    const opponent = getOpponent(ctx);
+    if (opponent && potentialDmg >= opponent.hp) {
+      value *= 1.8;
+      notes.push('enables lethal');
+    }
+
+    // Freeze is less valuable when we're far ahead (overkill)
+    if (gamePhase.tempo === 'ahead' && gamePhase.urgency === 'normal') {
+      value *= 0.8;
+      notes.push('already ahead');
+    }
+
+    const noteStr = notes.length > 0 ? ` (${notes.join(', ')})` : '';
     return {
       value,
-      reason: `freeze ${enemies.length} enemies (${enemies.map(e => e.name).join(', ')}) → ${value.toFixed(0)}`
+      reason: `freeze ${enemies.length} enemies → ${value.toFixed(0)}${noteStr}`
     };
   },
 

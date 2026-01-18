@@ -4,6 +4,18 @@ import { resolveEffectResult } from "./effects.js";
 import { logPlainMessage } from "./historyLog.js";
 import { resolveCardEffect } from "../cards/index.js";
 
+// Lazy-loaded to avoid circular dependency during module initialization
+// The positionEvaluator is loaded by ui.js, so we fetch it once available
+let _positionEvaluator = null;
+
+// Initialize the evaluator after modules are loaded
+// This is called by ui.js after it imports PositionEvaluator
+export const initPositionEvaluator = (evaluator) => {
+  _positionEvaluator = evaluator;
+};
+
+const getPositionEvaluator = () => _positionEvaluator;
+
 const { PHASE, BUFF, DEBUFF, DAMAGE, DEATH, HEAL } = LOG_CATEGORIES;
 
 const PHASES = ["Start", "Draw", "Main 1", "Before Combat", "Combat", "Main 2", "End"];
@@ -77,6 +89,21 @@ const queueEndOfTurnEffects = (state) => {
   state.endOfTurnQueue = player.field.filter(
     (creature) => creature?.onEnd || creature?.effects?.onEnd || creature?.endOfTurnSummon
   );
+
+  // Include field spell if it has onEnd effect and is owned by active player
+  // BUT only if it's not already in the queue (field spells are placed on the field,
+  // so they would already be picked up by the filter above)
+  const fieldSpell = state.fieldSpell;
+  if (fieldSpell?.card?.effects?.onEnd && fieldSpell.ownerIndex === state.activePlayerIndex) {
+    // Check if field spell is already in the queue (by instanceId)
+    const alreadyInQueue = state.endOfTurnQueue.some(
+      (c) => c?.instanceId === fieldSpell.card.instanceId
+    );
+    if (!alreadyInQueue) {
+      state.endOfTurnQueue.push(fieldSpell.card);
+    }
+  }
+
   state.endOfTurnProcessing = false;
   state.endOfTurnFinalized = false;
 };
@@ -145,6 +172,13 @@ export const startTurn = (state) => {
   state.recentlyDrawnCards = []; // Clear recently drawn tracking for new turn
   resetCombat(state);
   logGameAction(state, PHASE, `Turn ${state.turn}: ${state.players[state.activePlayerIndex].name}'s Turn`);
+
+  // Snapshot advantage for history tracking (lazy-loaded to avoid circular dependency)
+  const evaluator = getPositionEvaluator();
+  if (evaluator) {
+    evaluator.snapshotAdvantage(state, 'turn_start');
+  }
+
   runStartOfTurnEffects(state);
   cleanupDestroyed(state);
 };
@@ -290,7 +324,14 @@ export const endTurn = (state) => {
     logMessage(state, "Resolve end-of-turn effects before ending the turn.");
     return;
   }
-  if (state.phase === "End") {
+
+  // Always run end-of-turn processing regardless of current phase
+  // This ensures effects like Neurotoxin death, Frozen thaw, and Regen trigger correctly
+  // even when players skip directly from Main phase to End Turn
+  if (!state.endOfTurnFinalized) {
+    // Advance to End phase for proper phase tracking
+    state.phase = "End";
+    logPlainMessage(state, `━━━ PHASE: END ━━━`);
     finalizeEndPhase(state);
   }
 

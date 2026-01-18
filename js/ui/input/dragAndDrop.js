@@ -18,7 +18,7 @@
 
 import { getActivePlayer, getOpponentPlayer, logMessage } from '../../state/gameState.js';
 import { canPlayCard, cardLimitAvailable } from '../../game/turnManager.js';
-import { isFreePlay, isPassive, isHarmless, isEdible, isInedible, isHidden, isInvisible, hasAcuity, hasHaste } from '../../keywords.js';
+import { isFreePlay, isPassive, isHarmless, isEdible, isInedible, isHidden, isInvisible, hasAcuity, hasHaste, hasLure } from '../../keywords.js';
 import { createCardInstance } from '../../cardTypes.js';
 import { consumePrey } from '../../game/consumption.js';
 import { cleanupDestroyed } from '../../game/combat.js';
@@ -265,6 +265,7 @@ const getCardFromInstanceId = (instanceId, state) => {
 
 /**
  * Check if attacker can attack target
+ * Respects Lure keyword - if opponent has Lure creatures, only they can be attacked
  */
 const isValidAttackTarget = (attacker, target, state) => {
   if (!attacker || !target) return false;
@@ -277,8 +278,22 @@ const isValidAttackTarget = (attacker, target, state) => {
   if (targetPlayer === attackerPlayer) return false;
 
   // Can't attack Hidden or Invisible creatures (unless attacker has Acuity)
-  if ((isHidden(target) || isInvisible(target)) && !hasAcuity(attacker)) {
+  const hasPrecision = hasAcuity(attacker);
+  if ((isHidden(target) || isInvisible(target)) && !hasPrecision) {
     return false;
+  }
+
+  // Check for Lure creatures - if any exist, only they can be targeted
+  const targetableCreatures = targetPlayer.field.filter(card => {
+    if (!card || (card.type !== 'Predator' && card.type !== 'Prey')) return false;
+    if (hasPrecision) return true;
+    return !isHidden(card) && !isInvisible(card);
+  });
+
+  const lureCreatures = targetableCreatures.filter(card => hasLure(card));
+  if (lureCreatures.length > 0) {
+    // Must attack a Lure creature - check if target has Lure
+    return hasLure(target);
   }
 
   return true;
@@ -884,6 +899,16 @@ const handlePlayerDrop = (card, playerBadge) => {
   // Check if creature can attack player directly (must have Haste or be summoned on previous turn)
   const canAttackPlayerDirectly = hasHaste(card) || card.summonedTurn < latestState.turn;
 
+  // Check for Lure creatures - if any exist, can't attack player directly
+  const hasPrecision = hasAcuity(card);
+  const targetableCreatures = targetPlayer.field.filter(c => {
+    if (!c || (c.type !== 'Predator' && c.type !== 'Prey')) return false;
+    if (hasPrecision) return true;
+    return !isHidden(c) && !isInvisible(c);
+  });
+  const lureCreatures = targetableCreatures.filter(c => hasLure(c));
+  const lureBlocksDirectAttack = lureCreatures.length > 0;
+
   const canAttack =
     isCardOnOurField &&
     isTargetOpponent &&
@@ -895,13 +920,35 @@ const handlePlayerDrop = (card, playerBadge) => {
     !card.frozen &&
     !card.paralyzed &&
     isCreature &&
-    canAttackPlayerDirectly;
+    canAttackPlayerDirectly &&
+    !lureBlocksDirectAttack;
 
   if (!canAttack) {
-    if (!canAttackPlayerDirectly && isCreature && !card.hasAttacked) {
-      logMessage(latestState, `${card.name} cannot attack the turn it was summoned without Haste.`);
-    } else {
+    // Provide specific error messages for each failure condition
+    if (!isCreature) {
+      logMessage(latestState, "Only creatures can attack.");
+    } else if (!isCardOnOurField) {
+      logMessage(latestState, "You can only attack with creatures on your field.");
+    } else if (!isTargetOpponent) {
+      logMessage(latestState, "You cannot attack yourself.");
+    } else if (!isLocalPlayersTurn(latestState)) {
+      logMessage(latestState, "You can only attack on your turn.");
+    } else if (latestState.phase !== "Combat") {
       logMessage(latestState, "Combat can only be declared during the Combat phase.");
+    } else if (card.hasAttacked) {
+      logMessage(latestState, `${card.name} has already attacked this turn.`);
+    } else if (card.frozen) {
+      logMessage(latestState, `${card.name} is frozen and cannot attack.`);
+    } else if (card.paralyzed) {
+      logMessage(latestState, `${card.name} is paralyzed and cannot attack.`);
+    } else if (isPassive(card)) {
+      logMessage(latestState, `${card.name} has Passive and cannot attack.`);
+    } else if (isHarmless(card)) {
+      logMessage(latestState, `${card.name} is Harmless and cannot attack.`);
+    } else if (lureBlocksDirectAttack) {
+      logMessage(latestState, `${card.name} must attack ${lureCreatures[0].name} (Lure) first.`);
+    } else if (!canAttackPlayerDirectly) {
+      logMessage(latestState, `${card.name} cannot attack the turn it was summoned without Haste.`);
     }
     revertCardToOriginalPosition();
     latestCallbacks.onUpdate?.();
@@ -964,7 +1011,24 @@ const handleCreatureDrop = (attacker, target) => {
     isCreature;
 
   if (!canAttack) {
-    logMessage(latestState, "Combat can only be declared during the Combat phase.");
+    // Provide specific error messages for each failure condition
+    if (!isCreature) {
+      logMessage(latestState, "Only creatures can attack.");
+    } else if (!isLocalPlayersTurn(latestState)) {
+      logMessage(latestState, "You can only attack on your turn.");
+    } else if (latestState.phase !== "Combat") {
+      logMessage(latestState, "Combat can only be declared during the Combat phase.");
+    } else if (attacker.hasAttacked) {
+      logMessage(latestState, `${attacker.name} has already attacked this turn.`);
+    } else if (attacker.frozen) {
+      logMessage(latestState, `${attacker.name} is frozen and cannot attack.`);
+    } else if (attacker.paralyzed) {
+      logMessage(latestState, `${attacker.name} is paralyzed and cannot attack.`);
+    } else if (isPassive(attacker)) {
+      logMessage(latestState, `${attacker.name} has Passive and cannot attack.`);
+    } else if (isHarmless(attacker)) {
+      logMessage(latestState, `${attacker.name} is Harmless and cannot attack.`);
+    }
     latestCallbacks.onUpdate?.();
     revertCardToOriginalPosition();
     return;
@@ -1231,7 +1295,18 @@ const handleDragOver = (event) => {
         (draggedCard.type === 'Predator' || draggedCard.type === 'Prey')) {
       // Check if creature can attack player directly (must have Haste or not played this turn)
       const canAttackPlayerDirectly = hasHaste(draggedCard) || draggedCard.summonedTurn < latestState.turn;
-      if (canAttackPlayerDirectly) {
+
+      // Check for Lure creatures - if any exist, can't attack player directly
+      const hasPrecision = hasAcuity(draggedCard);
+      const targetableCreatures = targetPlayer.field.filter(card => {
+        if (!card || (card.type !== 'Predator' && card.type !== 'Prey')) return false;
+        if (hasPrecision) return true;
+        return !isHidden(card) && !isInvisible(card);
+      });
+      const lureCreatures = targetableCreatures.filter(card => hasLure(card));
+      const lureBlocksDirectAttack = lureCreatures.length > 0;
+
+      if (canAttackPlayerDirectly && !lureBlocksDirectAttack) {
         target.classList.add('valid-drop-zone');
       } else {
         target.classList.add('invalid-target');

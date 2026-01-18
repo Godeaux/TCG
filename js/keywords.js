@@ -12,6 +12,7 @@ export const KEYWORDS = {
   INEDIBLE: "Inedible",
   SCAVENGE: "Scavenge",
   NEUROTOXIC: "Neurotoxic",
+  NEUROTOXINED: "Neurotoxined",  // Status: affected by neurotoxin, will die
   AMBUSH: "Ambush",
   TOXIC: "Toxic",
   POISONOUS: "Poisonous",
@@ -23,7 +24,7 @@ export const KEYWORD_DESCRIPTIONS = {
   [KEYWORDS.HASTE]: "Can attack the Rival directly on the turn it is played.",
   [KEYWORDS.FREE_PLAY]: "Does not count toward the one-card-per-turn limit.",
   [KEYWORDS.HIDDEN]: "Cannot be targeted by attacks, but can be targeted by spells.",
-  [KEYWORDS.LURE]: "Enemies must attack this creature if able.",
+  [KEYWORDS.LURE]: "Rival's creatures must attack this creature if able.",
   [KEYWORDS.INVISIBLE]: "Cannot be targeted by attacks or spells.",
   [KEYWORDS.PASSIVE]: "Cannot attack but can still defend and be consumed.",
   [KEYWORDS.BARRIER]: "Negates the first instance of damage taken.",
@@ -33,9 +34,10 @@ export const KEYWORD_DESCRIPTIONS = {
   [KEYWORDS.INEDIBLE]: "Cannot be consumed.",
   [KEYWORDS.SCAVENGE]: "May consume from the carrion pile when played.",
   [KEYWORDS.NEUROTOXIC]: "Combat damage freezes the target until it dies next turn.",
+  [KEYWORDS.NEUROTOXINED]: "This creature has been poisoned and will die at the end of its owner's turn.",
   [KEYWORDS.AMBUSH]: "When attacking, cannot be dealt combat damage.",
   [KEYWORDS.TOXIC]: "Kills any creature it damages in combat regardless of HP.",
-  [KEYWORDS.POISONOUS]: "When defending, kills the attacking enemy after combat.",
+  [KEYWORDS.POISONOUS]: "When defending, kills the attacker after combat.",
   [KEYWORDS.HARMLESS]: "Cannot attack (0 attack permanently).",
   [KEYWORDS.FROZEN]: "Cannot attack or be consumed. Thaws at the end of the creature-owning player's turn.",
 };

@@ -257,10 +257,10 @@ export const destroy = (params) => (context) => {
   if (targetType === 'enemyCreatures') {
     const targets = opponent.field.filter(c => c && isCreatureCard(c));
     if (targets.length === 0) {
-      log(`No enemy creatures to destroy.`);
+      log(`No Rival's creatures to destroy.`);
       return {};
     }
-    log(`All enemy creatures are destroyed.`);
+    log(`All Rival's creatures are destroyed.`);
     return { destroyCreatures: { creatures: targets, ownerIndex: opponentIndex } };
   }
 
@@ -284,12 +284,12 @@ export const destroy = (params) => (context) => {
   if (targetType === 'targetEnemy') {
     const targets = opponent.field.filter(c => c && isCreatureCard(c) && !isInvisible(c, state));
     if (targets.length === 0) {
-      log(`No enemy creatures to target.`);
+      log(`No Rival's creatures to target.`);
       return {};
     }
 
     return makeTargetedSelection({
-      title: 'Choose an enemy creature to destroy',
+      title: "Choose a Rival's creature to destroy",
       candidates: targets.map(t => ({ label: t.name, value: t })),
       onSelect: (target) => {
         log(`${target.name} is destroyed.`);
@@ -457,7 +457,7 @@ export const buff = (params) => (context) => {
     title = "Choose a creature to buff";
   } else if (target === 'targetEnemy') {
     validTargets = opponent.field.filter(c => c && isCreatureCard(c) && !isInvisible(c, state));
-    title = "Choose an enemy to buff";
+    title = "Choose a Rival's creature to buff";
   }
 
   if (validTargets.length === 0) {
@@ -825,7 +825,7 @@ export const killAll = (targetType) => (context) => {
     log(`All predator creatures are destroyed.`);
   } else if (targetType === 'all-enemy') {
     targets = opponent.field.filter(c => c && !isInvisible(c, state));
-    log(`All enemy creatures are destroyed.`);
+    log(`All Rival's creatures are destroyed.`);
   } else if (targetType === 'all') {
     targets = [
       ...player.field.filter(c => c),
@@ -892,11 +892,11 @@ export const removeAbilitiesAll = () => (context) => {
   const targets = opponent.field.filter(c => c && (c.type === 'Prey' || c.type === 'Predator' || c.type === 'prey' || c.type === 'predator'));
 
   if (targets.length === 0) {
-    log(`No enemy creatures to strip abilities.`);
+    log(`No Rival's creatures to strip abilities.`);
     return {};
   }
 
-  log(`All enemy creatures lose their abilities.`);
+  log(`All Rival's creatures lose their abilities.`);
   return { removeAbilitiesAll: targets };
 };
 
@@ -961,12 +961,12 @@ export const selectEnemyToStripAbilities = () => (context) => {
   const targets = opponent.field.filter(c => c && (c.type === 'Prey' || c.type === 'Predator' || c.type === 'prey' || c.type === 'predator') && !isInvisible(c, state));
 
   if (targets.length === 0) {
-    log(`No enemy creatures to strip abilities.`);
+    log(`No Rival's creatures to strip abilities.`);
     return {};
   }
 
   return makeTargetedSelection({
-    title: "Choose an enemy creature to strip abilities",
+    title: "Choose a Rival's creature to strip abilities",
     candidates: targets.map(t => ({ label: t.name, value: t })),
     onSelect: (target) => {
       log(`Targets ${target.name}.`);
@@ -1014,12 +1014,12 @@ export const selectEnemyPreyToKill = () => (context) => {
   const targets = opponent.field.filter(c => c && (c.type === 'Prey' || c.type === 'prey') && !isInvisible(c, state));
 
   if (targets.length === 0) {
-    log(`No enemy prey to kill.`);
+    log(`No Rival's prey to kill.`);
     return {};
   }
 
   return makeTargetedSelection({
-    title: "Choose an enemy prey to kill",
+    title: "Choose a Rival's prey to kill",
     candidates: targets.map(t => ({ label: t.name, value: t })),
     onSelect: (target) => {
       log(`Targets ${target.name}.`);
@@ -1038,12 +1038,12 @@ export const selectEnemyToKill = () => (context) => {
   const targets = opponent.field.filter(c => c && (c.type === 'Prey' || c.type === 'Predator' || c.type === 'prey' || c.type === 'predator'));
 
   if (targets.length === 0) {
-    log(`No enemy creatures to kill.`);
+    log(`No Rival's creatures to kill.`);
     return {};
   }
 
   return makeTargetedSelection({
-    title: "Choose an enemy creature to kill",
+    title: "Choose a Rival's creature to kill",
     candidates: targets.map(t => ({ label: t.name, value: t })),
     onSelect: (target) => {
       log(`Targets ${target.name}.`);
@@ -1164,7 +1164,7 @@ export const selectTargetForDamage = (amount, label = "damage") => (context) => 
   }));
 
   candidates.push({
-    label: `Rival (${opponent.name || 'Opponent'})`,
+    label: `Rival (${opponent.name || 'Rival'})`,
     value: { type: 'player' }
   });
 
@@ -1199,12 +1199,12 @@ export const selectEnemyPreyToConsume = () => (context) => {
   const targets = opponent.field.filter(c => c && (c.type === 'Prey' || c.type === 'prey') && !isInvisible(c, state));
 
   if (targets.length === 0) {
-    log(`No enemy prey to consume.`);
+    log(`No Rival's prey to consume.`);
     return {};
   }
 
   return makeTargetedSelection({
-    title: "Choose an enemy prey to consume",
+    title: "Choose a Rival's prey to consume",
     candidates: targets.map(t => ({ label: t.name, value: t, card: t })),
     onSelect: (target) => {
       log(`Targets ${target.name}.`);
@@ -1653,12 +1653,12 @@ export const selectEnemyToParalyze = () => (context) => {
   const targets = opponent.field.filter(c => c && isCreatureCard(c) && !isInvisible(c, state));
 
   if (targets.length === 0) {
-    log(`No enemy creatures to paralyze.`);
+    log(`No Rival's creatures to paralyze.`);
     return {};
   }
 
   return makeTargetedSelection({
-    title: "Choose an enemy creature to paralyze",
+    title: "Choose a Rival's creature to paralyze",
     candidates: targets.map(t => ({ label: t.name, value: t })),
     onSelect: (target) => {
       log(`Targets ${target.name}.`);
@@ -1683,7 +1683,7 @@ export const damageAllCreatures = (amount) => ({ log }) => {
  * @param {number} amount - Damage amount
  */
 export const damageAllEnemyCreatures = (amount) => ({ log, opponent }) => {
-  log(`Deals ${amount} damage to enemies.`);
+  log(`Deals ${amount} damage to Rival's creatures.`);
   return {
     damageEnemyCreatures: amount,  // Only enemy creatures, not own creatures
     damageOpponent: amount  // Also damage the rival
@@ -1705,10 +1705,10 @@ export const damageBothPlayers = (amount) => ({ log }) => {
 export const returnAllEnemies = () => ({ log, opponent, opponentIndex }) => {
   const enemies = opponent.field.filter(c => c && isCreatureCard(c));
   if (enemies.length === 0) {
-    log(`No enemies to return.`);
+    log(`No Rival's creatures to return.`);
     return {};
   }
-  log(`All enemy creatures returned to hand.`);
+  log(`All Rival's creatures returned to hand.`);
   return { returnToHand: { playerIndex: opponentIndex, creatures: enemies } };
 };
 
@@ -1718,10 +1718,10 @@ export const returnAllEnemies = () => ({ log, opponent, opponentIndex }) => {
 export const killEnemyTokens = () => ({ log, opponent }) => {
   const tokens = opponent.field.filter(c => c?.isToken || c?.id?.startsWith("token-"));
   if (tokens.length === 0) {
-    log(`No enemy tokens to kill.`);
+    log(`No Rival's tokens to kill.`);
     return {};
   }
-  log(`All enemy tokens are destroyed.`);
+  log(`All Rival's tokens are destroyed.`);
   return { killTargets: tokens };
 };
 
@@ -1729,7 +1729,7 @@ export const killEnemyTokens = () => ({ log, opponent }) => {
  * Kill all enemy creatures
  */
 export const killAllEnemyCreatures = () => ({ log, opponentIndex }) => {
-  log(`All enemy creatures are destroyed.`);
+  log(`All Rival's creatures are destroyed.`);
   return { killEnemyCreatures: opponentIndex };
 };
 
@@ -1742,12 +1742,12 @@ export const selectEnemyForKeyword = (keyword) => (context) => {
   const targets = opponent.field.filter(c => c && isCreatureCard(c) && !isInvisible(c, state));
 
   if (targets.length === 0) {
-    log(`No enemy creatures to target.`);
+    log(`No Rival's creatures to target.`);
     return {};
   }
 
   return makeTargetedSelection({
-    title: `Choose an enemy creature to gain ${keyword}`,
+    title: `Choose a Rival's creature to gain ${keyword}`,
     candidates: targets.map(t => ({ label: t.name, value: t })),
     onSelect: (target) => {
       log(`${target.name} gains ${keyword}.`);
@@ -1768,12 +1768,12 @@ export const selectEnemyCreatureForDamage = (amount, label = "damage") => (conte
   const targets = opponent.field.filter(c => c && isCreatureCard(c) && !isInvisible(c, state));
 
   if (targets.length === 0) {
-    log(`No enemy creatures to target.`);
+    log(`No Rival's creatures to target.`);
     return {};
   }
 
   return makeTargetedSelection({
-    title: `Choose an enemy creature for ${amount} ${label}`,
+    title: `Choose a Rival's creature for ${amount} ${label}`,
     candidates: targets.map(t => ({ label: t.name, value: t })),
     onSelect: (target) => {
       log(`Targets ${target.name}.`);
@@ -1908,12 +1908,12 @@ export const selectEnemyToSteal = (damage = 0) => (context) => {
   const targets = opponent.field.filter(c => c && isCreatureCard(c) && !isInvisible(c, state));
 
   if (targets.length === 0) {
-    log(`No enemy creatures to steal.`);
+    log(`No Rival's creatures to steal.`);
     return {};
   }
 
   return makeTargetedSelection({
-    title: "Choose an enemy creature",
+    title: "Choose a Rival's creature",
     candidates: targets.map(t => ({ label: t.name, value: t })),
     onSelect: (target) => {
       log(`Targets ${target.name}.`);
@@ -2107,14 +2107,14 @@ export const damageRivalAndSelectEnemy = (rivalDamage, creatureDamage) => (conte
   const enemies = opponent.field.filter(c => c && isCreatureCard(c) && !isInvisible(c, state));
 
   if (enemies.length === 0) {
-    log(`Deals ${rivalDamage} damage to rival, but no enemies to target.`);
+    log(`Deals ${rivalDamage} damage to rival, but no Rival's creatures to target.`);
     return { damageOpponent: rivalDamage };
   }
 
   return {
     damageOpponent: rivalDamage,
     selectTarget: {
-      title: `Choose an enemy for ${creatureDamage} damage`,
+      title: `Choose a Rival's creature for ${creatureDamage} damage`,
       candidates: enemies.map(t => ({ label: t.name, value: t })),
       onSelect: (target) =>
         handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
@@ -2130,10 +2130,10 @@ export const damageRivalAndSelectEnemy = (rivalDamage, creatureDamage) => (conte
  * @param {string} cardId - Card ID to add to hand
  */
 export const damageOpponentsAndAddToHand = (damage, cardId) => ({ log, opponent, playerIndex }) => {
-  log(`Deals ${damage} damage to rival and enemies. Adding card to hand.`);
+  log(`Deals ${damage} damage to Rival and Rival's creatures. Adding card to hand.`);
   return {
     damageOpponent: damage,
-    damageAllCreatures: damage,
+    damageEnemyCreatures: damage,
     targetPlayer: opponent,
     addToHand: { playerIndex, card: cardId }
   };
@@ -2146,8 +2146,8 @@ export const damageOpponentsAndAddToHand = (damage, cardId) => ({ log, opponent,
  */
 export const damageAllEnemiesMultiple = (amount, applications = 2) => ({ log, opponent }) => {
   const totalDamage = amount * applications;
-  log(`Deals ${totalDamage} total damage to enemy creatures.`);
-  return { damageAllCreatures: totalDamage, targetPlayer: opponent };
+  log(`Deals ${totalDamage} total damage to Rival's creatures.`);
+  return { damageEnemyCreatures: totalDamage, targetPlayer: opponent };
 };
 
 /**
@@ -2157,7 +2157,7 @@ export const destroyFieldSpellsAndKillTokens = () => (context) => {
   const { log, opponent, state } = context;
   const tokens = opponent.field.filter(c => c?.isToken || c?.id?.startsWith("token-"));
 
-  log(`Destroying field spells and enemy tokens.`);
+  log(`Destroying field spells and Rival's tokens.`);
   return {
     removeFieldSpell: true,
     killTargets: tokens
@@ -2177,7 +2177,7 @@ export const healAndSelectTargetForDamage = (healAmount, damageAmount) => (conte
   ];
   const candidates = [
     ...creatures.map(c => ({ label: c.name, value: { type: 'creature', creature: c } })),
-    { label: `Rival (${opponent.name || 'Opponent'})`, value: { type: 'player' } }
+    { label: `Rival (${opponent.name || 'Rival'})`, value: { type: 'player' } }
   ];
 
   return {
@@ -2270,12 +2270,12 @@ export const selectEnemyToFreeze = () => (context) => {
   const targets = opponent.field.filter(c => c && isCreatureCard(c) && !isInvisible(c, state));
 
   if (targets.length === 0) {
-    log(`No enemy creatures to freeze.`);
+    log(`No Rival's creatures to freeze.`);
     return {};
   }
 
   return makeTargetedSelection({
-    title: "Choose an enemy creature to freeze",
+    title: "Choose a Rival's creature to freeze",
     candidates: targets.map(t => ({ label: t.name, value: t })),
     onSelect: (target) =>
       handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
@@ -2290,10 +2290,10 @@ export const selectEnemyToFreeze = () => (context) => {
 export const freezeAllEnemies = () => ({ log, opponent }) => {
   const enemies = opponent.field.filter(c => c && isCreatureCard(c));
   if (enemies.length === 0) {
-    log(`No enemies to freeze.`);
+    log(`No Rival's creatures to freeze.`);
     return {};
   }
-  log(`All enemy creatures gain Frozen.`);
+  log(`All Rival's creatures gain Frozen.`);
   return { grantKeywordToAll: { creatures: enemies, keyword: 'Frozen' } };
 };
 
@@ -2316,7 +2316,7 @@ export const removeFrozenFromFriendlies = () => ({ log, player }) => {
  */
 export const damageOpponentAndFreezeEnemies = (damage) => ({ log, opponent }) => {
   const enemies = opponent.field.filter(c => c && isCreatureCard(c));
-  log(`Deals ${damage} damage to rival. Enemies gain Frozen.`);
+  log(`Deals ${damage} damage to rival. Rival's creatures gain Frozen.`);
   return {
     damageOpponent: damage,
     grantKeywordToAll: { creatures: enemies, keyword: 'Frozen' }
@@ -2328,7 +2328,7 @@ export const damageOpponentAndFreezeEnemies = (damage) => ({ log, opponent }) =>
  */
 export const negateAndFreezeEnemies = () => ({ log, opponent }) => {
   const enemies = opponent.field.filter(c => c && isCreatureCard(c));
-  log(`Attack negated. Enemies gain Frozen.`);
+  log(`Attack negated. Rival's creatures gain Frozen.`);
   return {
     negateAttack: true,
     grantKeywordToAll: { creatures: enemies, keyword: 'Frozen' }
@@ -2340,7 +2340,7 @@ export const negateAndFreezeEnemies = () => ({ log, opponent }) => {
  */
 export const negateDamageAndFreezeEnemies = () => ({ log, opponent }) => {
   const enemies = opponent.field.filter(c => c && isCreatureCard(c));
-  log(`Damage negated. Enemies gain Frozen.`);
+  log(`Damage negated. Rival's creatures gain Frozen.`);
   return {
     negateDamage: true,
     grantKeywordToAll: { creatures: enemies, keyword: 'Frozen' }
@@ -2516,14 +2516,14 @@ export const summonAndSelectEnemyToFreeze = (tokenIds) => (context) => {
   const targets = opponent.field.filter(c => c && isCreatureCard(c) && !isInvisible(c, state));
 
   if (targets.length === 0) {
-    log(`Summoning tokens, but no enemies to freeze.`);
+    log(`Summoning tokens, but no Rival's creatures to freeze.`);
     return { summonTokens: { playerIndex, tokens } };
   }
 
   return {
     summonTokens: { playerIndex, tokens },
     selectTarget: {
-      title: "Choose an enemy to freeze",
+      title: "Choose a Rival's creature to freeze",
       candidates: targets.map(t => ({ label: t.name, value: t })),
       onSelect: (target) =>
         handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
@@ -2543,14 +2543,14 @@ export const summonAndSelectEnemyToKill = (tokenIds) => (context) => {
   const targets = opponent.field.filter(c => c && isCreatureCard(c) && !isInvisible(c, state));
 
   if (targets.length === 0) {
-    log(`Summoning tokens, but no enemies to kill.`);
+    log(`Summoning tokens, but no Rival's creatures to kill.`);
     return { summonTokens: { playerIndex, tokens } };
   }
 
   return {
     summonTokens: { playerIndex, tokens },
     selectTarget: {
-      title: "Choose an enemy to kill",
+      title: "Choose a Rival's creature to kill",
       candidates: targets.map(t => ({ label: t.name, value: t })),
       onSelect: (target) =>
         handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
@@ -2628,12 +2628,12 @@ export const selectEnemyToReturn = () => (context) => {
   const targets = opponent.field.filter(c => c && isCreatureCard(c) && !isInvisible(c, state));
 
   if (targets.length === 0) {
-    log(`No enemies to return.`);
+    log(`No Rival's creatures to return.`);
     return {};
   }
 
   return makeTargetedSelection({
-    title: "Choose an enemy to return to hand",
+    title: "Choose a Rival's creature to return to hand",
     candidates: targets.map(t => ({ label: t.name, value: t })),
     onSelect: (target) =>
       handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
@@ -2755,7 +2755,7 @@ export const damageAllAndFreezeAll = (damage) => ({ log, player, opponent, creat
  * @param {number} damage - Damage amount
  */
 export const damageEnemiesAndEndTurn = (damage) => ({ log }) => {
-  log(`Deals ${damage} damage to enemies. Turn ends.`);
+  log(`Deals ${damage} damage to Rival's creatures. Turn ends.`);
   return {
     damageEnemyCreatures: damage,
     endTurn: true
@@ -2912,11 +2912,11 @@ export const killPreyAndDestroyField = () => (context) => {
   return {
     removeFieldSpell: true,
     selectTarget: {
-      title: "Choose an enemy prey to kill",
+      title: "Choose a Rival's prey to kill",
       candidates: preyTargets.length > 0 ? preyTargets.map(t => ({ label: t.name, value: t })) : [{ label: 'No prey', value: null }],
       onSelect: (target) => {
         if (!target) {
-          log(`No enemy prey to kill.`);
+          log(`No Rival's prey to kill.`);
           return {};
         }
         return handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
@@ -2974,12 +2974,12 @@ export const selectEnemyToReturnToOpponentHand = () => (context) => {
   const targets = opponent.field.filter(c => c && isCreatureCard(c) && !isInvisible(c, state));
 
   if (targets.length === 0) {
-    log(`No enemies to return.`);
+    log(`No Rival's creatures to return.`);
     return {};
   }
 
   return makeTargetedSelection({
-    title: "Choose an enemy to return to their hand",
+    title: "Choose a Rival's creature to return to their hand",
     candidates: targets.map(t => ({ label: t.name, value: t })),
     onSelect: (target) =>
       handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
@@ -3094,10 +3094,10 @@ export const freezeAttacker = () => ({ log, attacker }) => {
 export const damageEnemiesAfterCombat = (damage) => ({ log, opponent }) => {
   const enemies = opponent.field.filter(c => c && isCreatureCard(c));
   if (enemies.length === 0) {
-    log(`No enemies to damage.`);
+    log(`No Rival's creatures to damage.`);
     return {};
   }
-  log(`Deals ${damage} damage to all enemies.`);
+  log(`Deals ${damage} damage to all Rival's creatures.`);
   return { damageCreatures: { creatures: enemies, amount: damage } };
 };
 
@@ -3114,7 +3114,7 @@ export const eatPreyInsteadOfAttacking = () => (context) => {
   }
 
   return makeTargetedSelection({
-    title: "Choose an enemy prey to eat",
+    title: "Choose a Rival's prey to eat",
     candidates: preyTargets.map(t => ({ label: t.name, value: t })),
     onSelect: (target) => {
       const response = handleTargetedResponse({ target, source: creature, log, player, opponent, state });
@@ -3168,11 +3168,11 @@ export const discardDrawAndKillEnemy = () => (context) => {
         discardCards: { playerIndex, cards: [discardCard] },
         draw: 1,
         selectTarget: {
-          title: "Choose an enemy to kill",
+          title: "Choose a Rival's creature to kill",
           candidates: enemies.length > 0 ? enemies.map(t => ({ label: t.name, value: t })) : [{ label: 'No targets', value: null }],
           onSelect: (target) => {
             if (!target) {
-              log(`No enemies to kill.`);
+              log(`No Rival's creatures to kill.`);
               return {};
             }
             return handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {

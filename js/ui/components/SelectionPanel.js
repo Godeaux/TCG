@@ -52,16 +52,33 @@ export const renderSelectionPanel = ({ title, items, onConfirm, confirmLabel = "
     return;
   }
 
-  // Add title
+  // Add header with title and hide button
+  const header = document.createElement("div");
+  header.className = "selection-header";
+
   const titleElement = document.createElement("strong");
   titleElement.textContent = title;
-  selectionPanel.appendChild(titleElement);
+  header.appendChild(titleElement);
 
-  // Add items
+  const hideButton = document.createElement("button");
+  hideButton.className = "hide-panel-btn";
+  hideButton.textContent = "Hide";
+  hideButton.onclick = () => {
+    selectionPanel.classList.toggle("minimized");
+    hideButton.textContent = selectionPanel.classList.contains("minimized") ? "Show" : "Hide";
+  };
+  header.appendChild(hideButton);
+
+  selectionPanel.appendChild(header);
+
+  // Add items in a collapsible content wrapper
+  const content = document.createElement("div");
+  content.className = "selection-content";
+
   const list = document.createElement("div");
   list.className = "selection-list";
   items.forEach((item) => list.appendChild(item));
-  selectionPanel.appendChild(list);
+  content.appendChild(list);
 
   // Add confirm button if needed
   if (confirmLabel) {
@@ -69,8 +86,10 @@ export const renderSelectionPanel = ({ title, items, onConfirm, confirmLabel = "
     confirmButton.className = "secondary";
     confirmButton.textContent = confirmLabel;
     confirmButton.onclick = onConfirm;
-    selectionPanel.appendChild(confirmButton);
+    content.appendChild(confirmButton);
   }
+
+  selectionPanel.appendChild(content);
 
   // Mark action bar as having selection
   actionBar?.classList.add("has-selection");
