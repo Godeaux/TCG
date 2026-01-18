@@ -364,10 +364,21 @@ export const savePlayerCardsToDatabase = async (state, cards) => {
     return [];
   }
 
+  // Deduplicate by card id, keeping highest rarity
+  // (Prevents "ON CONFLICT DO UPDATE cannot affect row a second time" error)
+  const cardMap = new Map();
+  cardsToSave.forEach((card) => {
+    const existing = cardMap.get(card.id);
+    if (!existing || rarityOrder.indexOf(card.packRarity) > rarityOrder.indexOf(existing.packRarity)) {
+      cardMap.set(card.id, card);
+    }
+  });
+  const deduplicatedCards = Array.from(cardMap.values());
+
   const api = await loadSupabaseApi(state);
   const savedCards = await api.savePlayerCards({
     profileId: state.menu.profile.id,
-    cards: cardsToSave.map((c) => ({ cardId: c.id, rarity: c.packRarity })),
+    cards: deduplicatedCards.map((c) => ({ cardId: c.id, rarity: c.packRarity })),
   });
 
   // Update local Map with saved cards

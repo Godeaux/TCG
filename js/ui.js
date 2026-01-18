@@ -1789,6 +1789,28 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
     return;
   }
 
+  // Handle pendingOnPlay - resolve the copied onPlay effect
+  if (uiResult && uiResult.pendingOnPlay) {
+    const { creature, playerIndex, opponentIndex } = uiResult.pendingOnPlay;
+    console.log(`[resolveEffectChain] Processing pendingOnPlay for ${creature.name}`);
+
+    // Resolve the creature's onPlay effect
+    const onPlayResult = resolveCardEffect(creature, 'onPlay', {
+      log: (message) => logMessage(state, message),
+      player: state.players[playerIndex],
+      opponent: state.players[opponentIndex],
+      creature,
+      state,
+      playerIndex,
+      opponentIndex,
+    });
+
+    if (onPlayResult && Object.keys(onPlayResult).length > 0) {
+      resolveEffectChain(state, onPlayResult, { playerIndex, opponentIndex, card: creature }, onUpdate, onComplete, onCancel);
+      return;
+    }
+  }
+
   onUpdate?.();
   broadcastSyncState(state);
   console.log("[resolveEffectChain] About to call onComplete");

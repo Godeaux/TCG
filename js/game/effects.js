@@ -1181,7 +1181,7 @@ export const resolveEffectResult = (state, result, context) => {
 
   // Return any UI-related results for the caller to handle
   // These need to bubble up to the UI layer (resolveEffectChain)
-  if (result.selectOption || result.selectTarget) {
+  if (result.selectOption || result.selectTarget || result.pendingOnPlay) {
     return result;
   }
 };

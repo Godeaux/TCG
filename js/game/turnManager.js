@@ -77,6 +77,13 @@ const queueEndOfTurnEffects = (state) => {
   state.endOfTurnQueue = player.field.filter(
     (creature) => creature?.onEnd || creature?.effects?.onEnd || creature?.endOfTurnSummon
   );
+
+  // Include field spell if it has onEnd effect and is owned by active player
+  const fieldSpell = state.fieldSpell;
+  if (fieldSpell?.card?.effects?.onEnd && fieldSpell.ownerIndex === state.activePlayerIndex) {
+    state.endOfTurnQueue.push(fieldSpell.card);
+  }
+
   state.endOfTurnProcessing = false;
   state.endOfTurnFinalized = false;
 };

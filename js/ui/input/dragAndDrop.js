@@ -924,12 +924,31 @@ const handlePlayerDrop = (card, playerBadge) => {
     !lureBlocksDirectAttack;
 
   if (!canAttack) {
-    if (lureBlocksDirectAttack && isCreature && !card.hasAttacked) {
-      logMessage(latestState, `${card.name} must attack ${lureCreatures[0].name} (Lure) first.`);
-    } else if (!canAttackPlayerDirectly && isCreature && !card.hasAttacked) {
-      logMessage(latestState, `${card.name} cannot attack the turn it was summoned without Haste.`);
-    } else {
+    // Provide specific error messages for each failure condition
+    if (!isCreature) {
+      logMessage(latestState, "Only creatures can attack.");
+    } else if (!isCardOnOurField) {
+      logMessage(latestState, "You can only attack with creatures on your field.");
+    } else if (!isTargetOpponent) {
+      logMessage(latestState, "You cannot attack yourself.");
+    } else if (!isLocalPlayersTurn(latestState)) {
+      logMessage(latestState, "You can only attack on your turn.");
+    } else if (latestState.phase !== "Combat") {
       logMessage(latestState, "Combat can only be declared during the Combat phase.");
+    } else if (card.hasAttacked) {
+      logMessage(latestState, `${card.name} has already attacked this turn.`);
+    } else if (card.frozen) {
+      logMessage(latestState, `${card.name} is frozen and cannot attack.`);
+    } else if (card.paralyzed) {
+      logMessage(latestState, `${card.name} is paralyzed and cannot attack.`);
+    } else if (isPassive(card)) {
+      logMessage(latestState, `${card.name} has Passive and cannot attack.`);
+    } else if (isHarmless(card)) {
+      logMessage(latestState, `${card.name} is Harmless and cannot attack.`);
+    } else if (lureBlocksDirectAttack) {
+      logMessage(latestState, `${card.name} must attack ${lureCreatures[0].name} (Lure) first.`);
+    } else if (!canAttackPlayerDirectly) {
+      logMessage(latestState, `${card.name} cannot attack the turn it was summoned without Haste.`);
     }
     revertCardToOriginalPosition();
     latestCallbacks.onUpdate?.();
@@ -992,7 +1011,24 @@ const handleCreatureDrop = (attacker, target) => {
     isCreature;
 
   if (!canAttack) {
-    logMessage(latestState, "Combat can only be declared during the Combat phase.");
+    // Provide specific error messages for each failure condition
+    if (!isCreature) {
+      logMessage(latestState, "Only creatures can attack.");
+    } else if (!isLocalPlayersTurn(latestState)) {
+      logMessage(latestState, "You can only attack on your turn.");
+    } else if (latestState.phase !== "Combat") {
+      logMessage(latestState, "Combat can only be declared during the Combat phase.");
+    } else if (attacker.hasAttacked) {
+      logMessage(latestState, `${attacker.name} has already attacked this turn.`);
+    } else if (attacker.frozen) {
+      logMessage(latestState, `${attacker.name} is frozen and cannot attack.`);
+    } else if (attacker.paralyzed) {
+      logMessage(latestState, `${attacker.name} is paralyzed and cannot attack.`);
+    } else if (isPassive(attacker)) {
+      logMessage(latestState, `${attacker.name} has Passive and cannot attack.`);
+    } else if (isHarmless(attacker)) {
+      logMessage(latestState, `${attacker.name} is Harmless and cannot attack.`);
+    }
     latestCallbacks.onUpdate?.();
     revertCardToOriginalPosition();
     return;

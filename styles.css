@@ -2053,6 +2053,51 @@ button {
   max-width: 100%;
 }
 
+/* Selection panel header with title and hide button */
+.selection-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.selection-header strong {
+  flex: 1;
+}
+
+.hide-panel-btn {
+  padding: 4px 8px;
+  font-size: 11px;
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.hide-panel-btn:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+/* Selection panel content wrapper */
+.selection-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Minimized state - hide content, show only header */
+#selection-panel.minimized .selection-content {
+  display: none;
+}
+
+#selection-panel.minimized {
+  padding: 4px 8px;
+}
+
 @keyframes active-breathe {
   0%,
   100% {

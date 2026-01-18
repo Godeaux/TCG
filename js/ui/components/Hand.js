@@ -15,9 +15,7 @@
  */
 
 import { renderCard } from './Card.js';
-import { getLocalPlayerIndex, isAnyAIMode } from '../../state/selectors.js';
-import { canPlayCard, cardLimitAvailable } from '../../game/turnManager.js';
-import { isFreePlay } from '../../keywords.js';
+import { getLocalPlayerIndex, isAnyAIMode, canCardBePlayed } from '../../state/selectors.js';
 
 // ============================================================================
 // HAND OVERLAP CALCULATION
@@ -216,11 +214,8 @@ export const renderHand = (state, options = {}) => {
     return;
   }
 
-  // Check if it's the player's turn and we're in a main phase (for pulse effect)
+  // Check if it's the player's turn (for pulse effect - canCardBePlayed handles phase check)
   const isPlayerTurn = state.activePlayerIndex === playerIndex;
-  const isMainPhase = canPlayCard(state); // canPlayCard checks for Main 1 or Main 2 phase
-  const hasCardLimit = cardLimitAvailable(state); // True if no card played this turn yet
-  const hasEmptySlot = player.field.some(slot => slot === null);
 
   // Render actual cards with fan/arc effect
   const cardCount = player.hand.length;
@@ -259,18 +254,12 @@ export const renderHand = (state, options = {}) => {
 
     // Add playable pulse if this specific card can be played this turn
     // Note: Traps don't get the pulse since they're set face-down (not "played" in the normal sense)
-    if (isPlayerTurn && isMainPhase) {
-      const isTrap = card.type === "Trap";
-      const isFreeCard = card.type === "Free Spell" || isFreePlay(card);
-      const canPlayThisCard = isFreeCard || hasCardLimit;
-
-      // For creatures, also check if there's somewhere to play them
-      const isCreature = card.type === "Predator" || card.type === "Prey";
-      const creatureCanBePlayed = !isCreature || hasEmptySlot;
-
-      if (canPlayThisCard && creatureCanBePlayed && !isTrap) {
-        cardElement.classList.add('playable-pulse');
-      }
+    // Use canCardBePlayed selector which handles all edge cases:
+    // - Main phase check
+    // - Card limit (Free Spell/Free Play bypass this)
+    // - Field space for creatures
+    if (isPlayerTurn && card.type !== "Trap" && canCardBePlayed(state, card, playerIndex)) {
+      cardElement.classList.add('playable-pulse');
     }
 
     handGrid.appendChild(cardElement);

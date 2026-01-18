@@ -543,6 +543,10 @@
           "params": {
             "cardId": "bird-field-spell-bird-feeder"
           }
+        },
+        "onEnd": {
+          "type": "selectCreatureForBuff",
+          "params": { "attack": 1, "health": 1 }
         }
       }
     },
