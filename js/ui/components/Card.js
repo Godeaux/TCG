@@ -202,8 +202,8 @@ export const renderKeywordTags = (card) => {
     tags.push(`<span class="keyword-field-spell">Field Spell</span>`);
   }
 
-  // Add regular keywords
-  if (card.keywords?.length) {
+  // Add regular keywords (ensure array to avoid string iteration)
+  if (Array.isArray(card.keywords) && card.keywords.length) {
     tags.push(...card.keywords.map((keyword) => `<span>${keyword}</span>`));
   }
 

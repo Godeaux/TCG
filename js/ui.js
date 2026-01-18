@@ -1577,9 +1577,11 @@ const setInspectorContentFor = (panel, card, showImage = true) => {
     panel.innerHTML = `<p class="muted">Tap a card to see its full details.</p>`;
     return;
   }
-  const keywords = card.keywords?.length ? card.keywords.join(", ") : "";
-  const keywordDetails = card.keywords?.length
-    ? card.keywords
+  // Ensure keywords is an array to avoid string iteration issues (e.g., "[Circular]")
+  const cardKeywords = Array.isArray(card.keywords) ? card.keywords : [];
+  const keywords = cardKeywords.length ? cardKeywords.join(", ") : "";
+  const keywordDetails = cardKeywords.length
+    ? cardKeywords
         .map((keyword) => {
           const detail = KEYWORD_DESCRIPTIONS[keyword] ?? "No description available.";
           return `<li><strong>${keyword}:</strong> ${detail}</li>`;
@@ -1588,7 +1590,7 @@ const setInspectorContentFor = (panel, card, showImage = true) => {
     : "";
   const tokenKeywordDetails = card.summons
     ?.map((tokenId) => getCardDefinitionById(tokenId))
-    .filter((token) => token && token.keywords?.length)
+    .filter((token) => token && Array.isArray(token.keywords) && token.keywords.length)
     .map((token) => {
       const tokenDetails = token.keywords
         .map((keyword) => {

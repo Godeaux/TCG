@@ -198,8 +198,8 @@ const cardMatchesFilter = (card, filterText) => {
 
   // Search in name
   if (card.name?.toLowerCase().includes(search)) return true;
-  // Search in keywords array
-  if (card.keywords?.some((kw) => kw.toLowerCase().includes(search))) return true;
+  // Search in keywords array (ensure it's an array first)
+  if (Array.isArray(card.keywords) && card.keywords.some((kw) => kw.toLowerCase().includes(search))) return true;
   // Search in effectText
   if (card.effectText?.toLowerCase().includes(search)) return true;
 
@@ -543,9 +543,11 @@ const setDeckInspectorContent = (card) => {
     panel.innerHTML = `<p class="muted">Tap a card to see its full details.</p>`;
     return;
   }
-  const keywords = card.keywords?.length ? card.keywords.join(", ") : "";
-  const keywordDetails = card.keywords?.length
-    ? card.keywords
+  // Ensure keywords is an array to avoid string iteration issues (e.g., "[Circular]")
+  const cardKeywords = Array.isArray(card.keywords) ? card.keywords : [];
+  const keywords = cardKeywords.length ? cardKeywords.join(", ") : "";
+  const keywordDetails = cardKeywords.length
+    ? cardKeywords
         .map((keyword) => {
           const detail = KEYWORD_DESCRIPTIONS[keyword] ?? "No description available.";
           return `<li><strong>${keyword}:</strong> ${detail}</li>`;
@@ -554,7 +556,7 @@ const setDeckInspectorContent = (card) => {
     : "";
   const tokenKeywordDetails = card.summons
     ?.map((tokenId) => getCardDefinitionById(tokenId))
-    .filter((token) => token && token.keywords?.length)
+    .filter((token) => token && Array.isArray(token.keywords) && token.keywords.length)
     .map((token) => {
       const tokenDetails = token.keywords
         .map((keyword) => {

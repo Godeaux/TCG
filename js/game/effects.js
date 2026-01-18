@@ -535,8 +535,8 @@ export const resolveEffectResult = (state, result, context) => {
     target.effect = null;
     target.hasBarrier = false;
 
-    // Now copy from source
-    const sourceKeywords = source.keywords || [];
+    // Now copy from source (ensure array to avoid spreading strings)
+    const sourceKeywords = Array.isArray(source.keywords) ? source.keywords : [];
     target.keywords = [...sourceKeywords];
 
     // Copy Barrier state if source has it
@@ -914,7 +914,7 @@ export const resolveEffectResult = (state, result, context) => {
 
       // Reset all dynamic state when returning to hand
       const originalCard = getCardDefinitionById(targetCard.id);
-      targetCard.keywords = originalCard?.keywords ? [...originalCard.keywords] : [];
+      targetCard.keywords = Array.isArray(originalCard?.keywords) ? [...originalCard.keywords] : [];
       targetCard.frozen = false;
       targetCard.frozenDiesTurn = null;
       targetCard.paralyzed = false;
