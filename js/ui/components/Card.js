@@ -98,36 +98,38 @@ const renderEffectSvg = (effectText) => {
   if (!effectText) return '';
 
   // Shorter lines = larger text relative to card width
-  const lines = wrapTextToLines(effectText, 22);
+  // 24 chars balances readability with fitting text in viewBox
+  const lines = wrapTextToLines(effectText, 24);
 
-  // Fixed viewBox dimensions - matches typical card effect area aspect ratio
-  const viewBoxWidth = 100;
+  // Fixed viewBox dimensions - wider to accommodate text without clipping
+  const viewBoxWidth = 240;
   const viewBoxHeight = 55;
 
   // Scale font size based on line count to fill available space
+  // Font sizes scaled for viewBox width 240
   const lineCount = lines.length;
   let fontSize, lineHeight, startY;
 
   if (lineCount <= 1) {
+    fontSize = 19;
+    lineHeight = 21;
+    startY = 35;
+  } else if (lineCount <= 2) {
     fontSize = 16;
     lineHeight = 18;
-    startY = 32; // Center single line
-  } else if (lineCount <= 2) {
+    startY = 22;
+  } else if (lineCount <= 3) {
     fontSize = 14;
     lineHeight = 16;
-    startY = 20;
-  } else if (lineCount <= 3) {
+    startY = 16;
+  } else if (lineCount <= 4) {
     fontSize = 12;
     lineHeight = 14;
-    startY = 14;
-  } else if (lineCount <= 4) {
-    fontSize = 11;
-    lineHeight = 13;
-    startY = 10;
+    startY = 12;
   } else {
     fontSize = 10;
-    lineHeight = 11;
-    startY = 6;
+    lineHeight = 12;
+    startY = 8;
   }
 
   // Create text elements for each line, centered
