@@ -455,9 +455,9 @@
           "params": {
             "title": "Ambiguity: choose an outcome",
             "options": [
-              { "label": "Draw 3 cards", "description": "Draw 3 cards from your deck", "effect": { "draw": 3 } },
-              { "label": "Heal 3", "description": "Restore 3 HP", "effect": { "heal": 3 } },
-              { "label": "Deal 3 damage to rival", "description": "Deal 3 damage to opponent", "effect": { "damage": 3 } }
+              { "label": "Draw 3 cards", "description": "Draw 3 cards from your deck", "effect": { "type": "draw", "params": { "count": 3 } } },
+              { "label": "Heal 3", "description": "Restore 3 HP", "effect": { "type": "heal", "params": { "amount": 3 } } },
+              { "label": "Deal 3 damage to rival", "description": "Deal 3 damage to opponent", "effect": { "type": "damageOpponent", "params": { "amount": 3 } } }
             ]
           }
         }
@@ -618,9 +618,9 @@
           "params": {
             "title": "Slime: choose an outcome",
             "options": [
-              { "label": "Draw 1", "description": "Draw 1 card from your deck", "effect": { "draw": 1 } },
-              { "label": "Heal 1", "description": "Restore 1 HP", "effect": { "heal": 1 } },
-              { "label": "Deal 1 damage to rival", "description": "Deal 1 damage to opponent", "effect": { "damage": 1 } }
+              { "label": "Draw 1", "description": "Draw 1 card from your deck", "effect": { "type": "draw", "params": { "count": 1 } } },
+              { "label": "Heal 1", "description": "Restore 1 HP", "effect": { "type": "heal", "params": { "amount": 1 } } },
+              { "label": "Deal 1 damage to rival", "description": "Deal 1 damage to opponent", "effect": { "type": "damageOpponent", "params": { "amount": 1 } } }
             ]
           }
         }

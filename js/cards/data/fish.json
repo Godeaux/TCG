@@ -318,12 +318,12 @@
               {
                 "label": "Summon Lancetfish",
                 "description": "Play a 2/2 Lancetfish token",
-                "effect": { "summonTokens": ["token-lancetfish"] }
+                "effect": { "type": "summonTokens", "params": { "tokenIds": ["token-lancetfish"] } }
               },
               {
                 "label": "Grow Stronger",
                 "description": "This creature gains +2/+2",
-                "effect": { "buff": { "attack": 2, "health": 2 } }
+                "effect": { "type": "buff", "params": { "attack": 2, "health": 2, "target": "self" } }
               }
             ]
           }

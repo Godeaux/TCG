@@ -235,8 +235,8 @@
           "params": {
             "title": "Choose an effect",
             "options": [
-              { "label": "Deal 2 damage", "description": "Deal 2 damage to rival", "effect": { "damage": 2 } },
-              { "label": "Heal 2", "description": "Heal 2 HP", "effect": { "heal": 2 } }
+              { "label": "Deal 2 damage", "description": "Deal 2 damage to rival", "effect": { "type": "damageOpponent", "params": { "amount": 2 } } },
+              { "label": "Heal 2", "description": "Heal 2 HP", "effect": { "type": "heal", "params": { "amount": 2 } } }
             ]
           }
         }

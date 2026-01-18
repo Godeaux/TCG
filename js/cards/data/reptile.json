@@ -366,9 +366,9 @@
           "params": {
             "title": "Choose Chinese Alligator's effect",
             "options": [
-              { "label": "Draw 3", "description": "Draw 3 cards", "effect": { "draw": 3 } },
-              { "label": "Heal 3", "description": "Heal 3 HP", "effect": { "heal": 3 } },
-              { "label": "Deal 3 damage", "description": "Deal 3 damage to rival", "effect": { "damage": 3 } }
+              { "label": "Draw 3", "description": "Draw 3 cards", "effect": { "type": "draw", "params": { "count": 3 } } },
+              { "label": "Heal 3", "description": "Heal 3 HP", "effect": { "type": "heal", "params": { "amount": 3 } } },
+              { "label": "Deal 3 damage", "description": "Deal 3 damage to rival", "effect": { "type": "damageOpponent", "params": { "amount": 3 } } }
             ]
           }
         }

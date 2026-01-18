@@ -243,6 +243,64 @@ export const killCreature = (targetType) => (context) => {
   return { killCreature: targetCreature };
 };
 
+/**
+ * Destroy a creature or creatures (removes from field WITHOUT reducing HP to 0)
+ * This bypasses onSlain effects since HP doesn't reach 0.
+ *
+ * @param {Object} params - { target: 'targetEnemy' | 'enemyCreatures' | 'allCreatures' }
+ */
+export const destroy = (params) => (context) => {
+  const { log, opponent, player, state, opponentIndex, playerIndex } = context;
+  const targetType = params?.target || 'targetEnemy';
+
+  // Destroy all enemy creatures
+  if (targetType === 'enemyCreatures') {
+    const targets = opponent.field.filter(c => c && isCreatureCard(c));
+    if (targets.length === 0) {
+      log(`No enemy creatures to destroy.`);
+      return {};
+    }
+    log(`All enemy creatures are destroyed.`);
+    return { destroyCreatures: { creatures: targets, ownerIndex: opponentIndex } };
+  }
+
+  // Destroy all creatures (both sides)
+  if (targetType === 'allCreatures') {
+    const allTargets = [];
+    const playerTargets = player.field.filter(c => c && isCreatureCard(c));
+    const opponentTargets = opponent.field.filter(c => c && isCreatureCard(c));
+    if (playerTargets.length === 0 && opponentTargets.length === 0) {
+      log(`No creatures to destroy.`);
+      return {};
+    }
+    log(`All creatures are destroyed.`);
+    return {
+      destroyCreatures: { creatures: playerTargets, ownerIndex: playerIndex },
+      destroyCreaturesOpponent: { creatures: opponentTargets, ownerIndex: opponentIndex }
+    };
+  }
+
+  // Target selection: destroy a single enemy creature
+  if (targetType === 'targetEnemy') {
+    const targets = opponent.field.filter(c => c && isCreatureCard(c) && !isInvisible(c, state));
+    if (targets.length === 0) {
+      log(`No enemy creatures to target.`);
+      return {};
+    }
+
+    return makeTargetedSelection({
+      title: 'Choose an enemy creature to destroy',
+      candidates: targets.map(t => ({ label: t.name, value: t })),
+      onSelect: (target) => {
+        log(`${target.name} is destroyed.`);
+        return { destroyCreatures: { creatures: [target], ownerIndex: opponentIndex } };
+      }
+    });
+  }
+
+  return {};
+};
+
 // ============================================================================
 // KEYWORD EFFECTS
 // ============================================================================
@@ -1431,6 +1489,51 @@ export const chooseOption = (params) => (context) => {
       onSelect: (selectedOption) => {
         log(`Chose: ${selectedOption.label}`);
         return resolveOptionEffect(selectedOption.effect, context);
+      }
+    }
+  };
+};
+
+/**
+ * Simple choice effect - presents options with inline effect definitions
+ * Format: { choices: [{ label, type, params }, ...] }
+ * This is a simpler alternative to chooseOption for straightforward choices.
+ *
+ * @param {Object} params - { choices: Array of { label, type, params } }
+ */
+export const choice = (params) => (context) => {
+  const { log } = context;
+  const { choices } = params;
+
+  if (!choices || choices.length === 0) {
+    log(`No choices available.`);
+    return {};
+  }
+
+  // If only one choice, auto-select it
+  if (choices.length === 1) {
+    log(`${choices[0].label}`);
+    // Convert choice to proper effect format and resolve
+    const effectDef = { type: choices[0].type, params: choices[0].params };
+    return resolveEffect(effectDef, context);
+  }
+
+  return {
+    selectOption: {
+      title: 'Choose an option',
+      options: choices.map((opt, index) => ({
+        id: index,
+        label: opt.label,
+        description: opt.description || '',
+        // Store the type and params for resolution
+        choiceType: opt.type,
+        choiceParams: opt.params
+      })),
+      onSelect: (selectedOption) => {
+        log(`Chose: ${selectedOption.label}`);
+        // Convert choice to proper effect format and resolve
+        const effectDef = { type: selectedOption.choiceType, params: selectedOption.choiceParams };
+        return resolveEffect(effectDef, context);
       }
     }
   };
@@ -3066,6 +3169,7 @@ export const effectRegistry = {
   addToHand,
   transformCard,
   killCreature,
+  destroy,
 
   // Keywords & Buffs
   grantKeyword,
@@ -3121,6 +3225,7 @@ export const effectRegistry = {
   // Flexible selection primitives
   selectFromGroup,
   chooseOption,
+  choice,
 
   // Field & Global effects
   setFieldSpell,
@@ -3347,6 +3452,9 @@ export const resolveEffect = (effectDef, context) => {
     case 'killCreature':
       specificEffect = effectFn(params.targetType);
       break;
+    case 'destroy':
+      specificEffect = effectFn(params);
+      break;
     case 'grantKeyword':
       specificEffect = effectFn(params.targetType, params.keyword);
       break;
@@ -3470,6 +3578,10 @@ export const resolveEffect = (effectDef, context) => {
       break;
     case 'chooseOption':
       // Pass the entire params object to chooseOption
+      specificEffect = effectFn(params);
+      break;
+    case 'choice':
+      // Pass the entire params object to choice (simpler format with inline effects)
       specificEffect = effectFn(params);
       break;
     // Field & Global effects

@@ -73,8 +73,19 @@
           "params": {
             "title": "Choose Eurasian Magpie's effect",
             "options": [
-              { "label": "Heal 4", "description": "Heal 4 HP", "effect": { "heal": 4 } },
-              { "label": "Deal 2 damage", "description": "Deal 2 damage to rival and all enemy creatures", "effect": { "damageOpponent": 2, "damageEnemyCreatures": 2 } }
+              {
+                "label": "Heal 4",
+                "description": "Heal 4 HP",
+                "effect": { "type": "heal", "params": { "amount": 4 } }
+              },
+              {
+                "label": "Deal 2 damage",
+                "description": "Deal 2 damage to rival and all enemy creatures",
+                "effect": [
+                  { "type": "damageOpponent", "params": { "amount": 2 } },
+                  { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } }
+                ]
+              }
             ]
           }
         }
@@ -504,7 +515,7 @@
               {
                 "label": "Deal 2 damage to rival",
                 "description": "Deal 2 damage to the opponent",
-                "effect": { "damage": 2 }
+                "effect": { "type": "damageOpponent", "params": { "amount": 2 } }
               },
               {
                 "label": "Deal 6 damage to target enemy",

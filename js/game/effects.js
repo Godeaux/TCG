@@ -274,6 +274,40 @@ export const resolveEffectResult = (state, result, context) => {
     logGameAction(state, DEATH, `${enemy.name}'s creatures are destroyed.`);
   }
 
+  // Destroy creatures - removes from field WITHOUT reducing HP to 0 (bypasses onSlain)
+  if (result.destroyCreatures) {
+    const { creatures, ownerIndex } = result.destroyCreatures;
+    const owner = state.players[ownerIndex];
+    creatures.forEach((creature) => {
+      if (creature) {
+        // Find and remove from field directly (not via HP reduction)
+        const slotIndex = owner.field.findIndex(c => c?.instanceId === creature.instanceId);
+        if (slotIndex >= 0) {
+          owner.field[slotIndex] = null;
+          // Move to exile instead of carrion since it wasn't "killed"
+          owner.exile.push(creature);
+          logGameAction(state, DEATH, `${formatCardForLog(creature)} is destroyed (exiled).`);
+        }
+      }
+    });
+  }
+
+  // Handle destroy for opponent side (for allCreatures)
+  if (result.destroyCreaturesOpponent) {
+    const { creatures, ownerIndex } = result.destroyCreaturesOpponent;
+    const owner = state.players[ownerIndex];
+    creatures.forEach((creature) => {
+      if (creature) {
+        const slotIndex = owner.field.findIndex(c => c?.instanceId === creature.instanceId);
+        if (slotIndex >= 0) {
+          owner.field[slotIndex] = null;
+          owner.exile.push(creature);
+          logGameAction(state, DEATH, `${formatCardForLog(creature)} is destroyed (exiled).`);
+        }
+      }
+    });
+  }
+
   if (result.teamBuff) {
     const { player, atk, hp } = result.teamBuff;
     player.field.forEach((creature) => {
