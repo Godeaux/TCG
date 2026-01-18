@@ -1,0 +1,27 @@
+{
+  "name": "TCG",
+  "version": "1.0.0",
+  "description": "A web-based two-player trading card game featuring a unique consumption mechanic where predator creatures gain power by consuming prey.",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Godeaux/TCG.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Godeaux/TCG/issues"
+  },
+  "homepage": "https://github.com/Godeaux/TCG#readme",
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.0.17",
+    "vitest": "^4.0.17"
+  }
+}

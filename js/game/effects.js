@@ -562,6 +562,13 @@ export const resolveEffectResult = (state, result, context) => {
     // Copy the effect property as well (for cards using the single 'effect' property)
     target.effect = source.effect || null;
 
+    // Update effect text to show copied abilities
+    if (source.effectText) {
+      target.effectText = `(Copied) ${source.effectText}`;
+    } else {
+      target.effectText = "(Copied) No effect text.";
+    }
+
     const keywordsList = sourceKeywords.length > 0 ? formatKeywordList(sourceKeywords) : "no keywords";
     const effectsList = source.effects ? Object.keys(source.effects).filter(k => source.effects[k]).join(", ") : "";
     const abilitiesDesc = effectsList ? `${keywordsList}, effects: ${effectsList}` : keywordsList;
