@@ -4685,6 +4685,32 @@ button {
     display: none;
   }
 
+  /* Mobile field divider layout - prevent overlap with nav buttons */
+ .field-divider { /* mobile */
+    padding-left: 48px; /* Space for left nav button */
+    padding-right: 48px; /* Space for right nav button */
+    justify-content: flex-start; /* Left-align content */
+  }
+
+  .field-divider-text {
+    text-align: left;
+    flex-shrink: 1;
+    margin-right: auto; /* Push controls to the right */
+  }
+
+  .field-controls {
+    position: relative; /* Remove absolute positioning on mobile */
+    right: auto;
+    top: auto;
+    transform: none;
+    flex-shrink: 0;
+  }
+
+  /* Hide field surrender button on mobile - tap player name instead */
+  .field-surrender-btn {
+    display: none;
+  }
+
   .emote-toggle {
     width: 28px;
     height: 28px;
@@ -4880,27 +4906,7 @@ button {
     padding: 0 1px;
   }
 
-  /* Mobile hand cards: use percentages instead of fixed pixels */
-  .hand-grid .card .card-content-area {
-    overflow: visible !important; /* Allow effect text to show */
-  }
-
-  .hand-grid .card .card-content-area .card-stats-row {
-    flex: 0 0 18% !important;
-    min-height: 0 !important;
-    max-height: none !important;
-  }
-
-  .hand-grid .card .card-content-area .card-keywords {
-    flex: 0 0 12% !important;
-    min-height: 0 !important;
-  }
-
-  .hand-grid .card .card-content-area .card-effect {
-    flex: 1 1 auto !important; /* Take remaining space */
-    min-height: 0 !important;
-    overflow: visible !important; /* Prevent SVG clipping */
-  }
+  /* Mobile hand cards: rely on desktop layout - SVG effect text scales automatically */
 
   .hand-grid .card .card-actions button {
     font-size: 9px !important;
