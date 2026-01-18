@@ -53,6 +53,7 @@ const getMenuElements = () => ({
   lobbyJoinForm: document.getElementById("lobby-join-form"),
   lobbyJoinCancel: document.getElementById("lobby-join-cancel"),
   lobbyError: document.getElementById("lobby-error"),
+  lobbyCodeInput: document.getElementById("lobby-code"),
 });
 
 // ============================================================================
@@ -287,6 +288,15 @@ const renderMultiplayerScreen = (state, elements) => {
   // Cancel button in join form
   if (elements.lobbyJoinCancel) {
     elements.lobbyJoinCancel.disabled = loading;
+  }
+
+  // Clear lobby code input when there's an existing lobby to avoid confusion
+  // User should use Rejoin button, not type a code
+  if (elements.lobbyCodeInput && hasExistingLobby && !hasLobby) {
+    elements.lobbyCodeInput.value = "";
+    elements.lobbyCodeInput.placeholder = `Rejoin: ${existingLobby.code}`;
+  } else if (elements.lobbyCodeInput && !hasExistingLobby && !hasLobby) {
+    elements.lobbyCodeInput.placeholder = "ABC123";
   }
 
   // Update error message

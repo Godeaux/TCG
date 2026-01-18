@@ -91,6 +91,7 @@ import {
 import {
   renderProfileOverlay,
   hideProfileOverlay,
+  setupDuelInviteListener,
 } from "./ui/overlays/ProfileOverlay.js";
 
 // Pack opening overlay (extracted module)
@@ -2060,6 +2061,23 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
         return;
       }
 
+      // Check if target creature still exists on field (may have been returned to hand by trap like Fly Off)
+      if (target.type === 'creature') {
+        const defenderIndex = (attackerIndex + 1) % 2;
+        const defender = state.players[defenderIndex];
+        const targetStillOnField = defender.field.some(
+          c => c && c.instanceId === target.card.instanceId
+        );
+
+        if (!targetStillOnField) {
+          logMessage(state, `${attacker.name}'s attack fizzles - target no longer on field.`);
+          attacker.hasAttacked = true;
+          onUpdate?.();
+          broadcastSyncState(state);
+          return;
+        }
+      }
+
       resolveAttack(state, attacker, target, wasNegated);
       onUpdate?.();
       broadcastSyncState(state);
@@ -3853,7 +3871,165 @@ export const renderGame = (state, callbacks = {}) => {
       }
       callbacks.onUpdate?.();
     },
+    // Duel invite callbacks
+    onChallengeFriend: async (friendId, friendUsername) => {
+      // Create a fresh lobby and send duel invite
+      try {
+        const { handleCreateDuelLobby } = await import('./network/lobbyManager.js');
+        const { sendDuelInvite, closeLobby } = await import('./network/supabaseApi.js');
+        const { showAwaitingResponse } = await import('./ui/overlays/DuelInviteOverlay.js');
+
+        const lobbyResult = await handleCreateDuelLobby(state);
+        if (lobbyResult.success && state.menu?.lobby?.code) {
+          await sendDuelInvite({
+            senderId: state.menu.profile.id,
+            receiverId: friendId,
+            lobbyCode: state.menu.lobby.code,
+          });
+
+          // Store the challenged friend's name for callbacks
+          state.menu.pendingChallenge = {
+            friendId,
+            friendUsername,
+            lobbyCode: state.menu.lobby.code,
+          };
+
+          // Show awaiting response popup (stay on current screen)
+          showAwaitingResponse(friendUsername, {
+            onCancel: async () => {
+              // Close the lobby we created
+              if (state.menu?.lobby?.id) {
+                try {
+                  await closeLobby({
+                    lobbyId: state.menu.lobby.id,
+                    userId: state.menu.profile.id,
+                  });
+                } catch (e) {
+                  console.log('Could not close lobby:', e);
+                }
+                state.menu.lobby = null;
+              }
+              state.menu.pendingChallenge = null;
+              callbacks.onUpdate?.();
+            },
+            onTimeout: async () => {
+              // Invite timed out - close the lobby
+              if (state.menu?.lobby?.id) {
+                try {
+                  await closeLobby({
+                    lobbyId: state.menu.lobby.id,
+                    userId: state.menu.profile.id,
+                  });
+                } catch (e) {
+                  console.log('Could not close lobby:', e);
+                }
+                state.menu.lobby = null;
+              }
+              state.menu.pendingChallenge = null;
+              callbacks.onUpdate?.();
+            },
+          });
+
+          callbacks.onUpdate?.();
+        }
+      } catch (e) {
+        console.error('Failed to send challenge:', e);
+      }
+    },
+    onAcceptChallenge: async (lobbyCode) => {
+      // Join the lobby from the invite
+      try {
+        const result = await lobbyHandleJoinLobby(state, lobbyCode);
+        if (result.success) {
+          // Navigate directly to the lobby (deck selection)
+          setMenuStage(state, 'lobby');
+          callbacks.onUpdate?.();
+        }
+      } catch (e) {
+        console.error('Failed to join lobby from invite:', e);
+      }
+    },
+    onChallengeAccepted: async (lobbyCode, receiverName) => {
+      // Opponent accepted our challenge
+      const { showChallengeAccepted } = await import('./ui/overlays/DuelInviteOverlay.js');
+      const friendName = state.menu.pendingChallenge?.friendUsername || receiverName || 'Opponent';
+      showChallengeAccepted(friendName);
+
+      // Navigate to deck selection after a brief moment
+      setTimeout(() => {
+        state.menu.pendingChallenge = null;
+        setMenuStage(state, 'lobby');
+        callbacks.onUpdate?.();
+      }, 1500);
+    },
+    onChallengeDeclined: async () => {
+      // Opponent declined our challenge
+      const { showChallengeDeclined } = await import('./ui/overlays/DuelInviteOverlay.js');
+      const { closeLobby } = await import('./network/supabaseApi.js');
+
+      const friendName = state.menu.pendingChallenge?.friendUsername || 'Opponent';
+      showChallengeDeclined(friendName);
+
+      // Close the lobby we created
+      if (state.menu?.lobby?.id) {
+        try {
+          await closeLobby({
+            lobbyId: state.menu.lobby.id,
+            userId: state.menu.profile.id,
+          });
+        } catch (e) {
+          console.log('Could not close lobby:', e);
+        }
+        state.menu.lobby = null;
+      }
+      state.menu.pendingChallenge = null;
+    },
   });
+
+  // Set up duel invite listener (runs on every render when logged in)
+  if (state.menu?.profile?.id) {
+    setupDuelInviteListener(state.menu.profile.id, {
+      onAcceptChallenge: async (lobbyCode) => {
+        try {
+          const result = await lobbyHandleJoinLobby(state, lobbyCode);
+          if (result.success) {
+            setMenuStage(state, 'lobby');
+            callbacks.onUpdate?.();
+          }
+        } catch (e) {
+          console.error('Failed to join lobby from invite:', e);
+        }
+      },
+      onChallengeAccepted: async (lobbyCode) => {
+        const { showChallengeAccepted } = await import('./ui/overlays/DuelInviteOverlay.js');
+        const friendName = state.menu.pendingChallenge?.friendUsername || 'Opponent';
+        showChallengeAccepted(friendName);
+        setTimeout(() => {
+          state.menu.pendingChallenge = null;
+          setMenuStage(state, 'lobby');
+          callbacks.onUpdate?.();
+        }, 1500);
+      },
+      onChallengeDeclined: async () => {
+        const { showChallengeDeclined } = await import('./ui/overlays/DuelInviteOverlay.js');
+        const { closeLobby } = await import('./network/supabaseApi.js');
+        const friendName = state.menu.pendingChallenge?.friendUsername || 'Opponent';
+        showChallengeDeclined(friendName);
+        if (state.menu?.lobby?.id) {
+          try {
+            await closeLobby({
+              lobbyId: state.menu.lobby.id,
+              userId: state.menu.profile.id,
+            });
+          } catch (e) {
+            console.log('Could not close lobby:', e);
+          }
+          state.menu.lobby = null;
+        }
+        state.menu.pendingChallenge = null;
+      },
+    });
+  }
 
   // Pack opening overlay
   renderPackOpeningOverlay(state, {

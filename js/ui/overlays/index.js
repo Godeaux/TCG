@@ -91,6 +91,7 @@ export {
   resetProfileState,
   showFriendProfile,
   hideFriendProfile,
+  setupDuelInviteListener,
 } from './ProfileOverlay.js';
 
 // ============================================================================
@@ -102,3 +103,19 @@ export {
   hidePackOpeningOverlay,
   startPackOpening,
 } from './PackOpeningOverlay.js';
+
+// ============================================================================
+// DUEL INVITE OVERLAY
+// ============================================================================
+
+export {
+  showDuelInvitePopup,
+  showInviteCancelled,
+  hideDuelInvitePopup,
+  hasDuelInvitePopup,
+  showAwaitingResponse,
+  showChallengeAccepted,
+  showChallengeDeclined,
+  hideAwaitingResponse,
+  hasAwaitingResponse,
+} from './DuelInviteOverlay.js';

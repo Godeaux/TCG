@@ -1017,8 +1017,19 @@ export class AIController {
               // Direct attack on player
               resolveDirectAttack(state, attacker, target.player);
             } else if (target.type === 'creature') {
-              // Creature combat
-              resolveCreatureCombat(state, attacker, target.card, attackerOwnerIndex, defenderOwnerIndex);
+              // Validate target still exists on field after trap effects resolved
+              const defender = state.players[defenderOwnerIndex];
+              const targetStillOnField = defender.field.some(
+                c => c && c.instanceId === target.card.instanceId
+              );
+
+              if (!targetStillOnField) {
+                // Target was removed by trap (e.g., Fly Off returned it to hand)
+                logMessage(state, `${attacker.name}'s attack fizzles - target no longer on field.`);
+              } else {
+                // Creature combat
+                resolveCreatureCombat(state, attacker, target.card, attackerOwnerIndex, defenderOwnerIndex);
+              }
             }
           } else {
             logMessage(state, `${attacker.name}'s attack was negated.`);

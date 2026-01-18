@@ -730,6 +730,7 @@ export const stopSessionValidation = () => {
 
 /**
  * Check if user has an existing active lobby
+ * Stores the most recent lobby code in localStorage for persistence
  */
 export const checkExistingLobby = async (state) => {
   if (!state.menu.profile) {
@@ -741,10 +742,61 @@ export const checkExistingLobby = async (state) => {
     const api = await loadSupabaseApi(state);
     const existingLobby = await api.findExistingLobby({ userId: state.menu.profile.id });
     state.menu.existingLobby = existingLobby;
+
+    // Store in localStorage for faster UI on page refresh
+    if (existingLobby?.code) {
+      localStorage.setItem('lastLobbyCode', existingLobby.code);
+    } else {
+      localStorage.removeItem('lastLobbyCode');
+    }
+
     callbacks.onUpdate?.();
   } catch (error) {
     console.error('Failed to check for existing lobby:', error);
     state.menu.existingLobby = null;
+  }
+};
+
+/**
+ * Create a fresh lobby for duel invites (always new, no rejoin logic)
+ * Does NOT navigate to lobby screen - caller handles UI
+ */
+export const handleCreateDuelLobby = async (state) => {
+  if (!state.menu.profile) {
+    return { success: false, error: 'Login required to create a lobby.' };
+  }
+
+  try {
+    const api = await loadSupabaseApi(state);
+
+    // Close any existing lobbies first
+    if (state.menu.lobby) {
+      try {
+        await api.closeLobby({ lobbyId: state.menu.lobby.id, userId: state.menu.profile.id });
+      } catch (e) {
+        console.log('Could not close existing lobby:', e);
+      }
+      state.menu.lobby = null;
+    }
+
+    // Always create a brand new lobby with forceNew
+    const lobby = await api.createLobby({
+      hostId: state.menu.profile.id,
+      forceNew: true,
+    });
+
+    state.menu.lobby = lobby;
+    state.menu.existingLobby = null;
+    state.menu.gameInProgress = false;
+
+    // Subscribe to lobby updates
+    updateLobbySubscription(state);
+    updateLobbyPlayerNames(state, lobby);
+
+    return { success: true, lobby };
+  } catch (error) {
+    const message = error.message || 'Failed to create lobby.';
+    return { success: false, error: message };
   }
 };
 
