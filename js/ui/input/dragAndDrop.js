@@ -429,6 +429,12 @@ const getRelativePosition = (event) => {
  */
 const revertCardToOriginalPosition = () => {
   if (draggedCardElement && originalParent && originalIndex >= 0) {
+    // Skip if element was orphaned or already re-rendered
+    // This prevents visual duplicates when renderField() has already recreated the card
+    if (!draggedCardElement.isConnected || draggedCardElement.parentElement !== originalParent) {
+      return;
+    }
+
     const children = Array.from(originalParent.children);
     if (originalIndex < children.length) {
       originalParent.insertBefore(draggedCardElement, children[originalIndex]);

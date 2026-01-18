@@ -193,6 +193,7 @@ export const resetCombat = (state) => {
     player.field.forEach((card) => {
       if (card) {
         card.hasAttacked = false;
+        card.beforeCombatFiredThisAttack = false; // Reset per-attack beforeCombat flag
       }
     });
   });

@@ -181,6 +181,53 @@ export const resolveCreatureCombat = (state, attacker, defender, attackerOwnerIn
   return { attackerDamage, defenderDamage };
 };
 
+/**
+ * Check if attacker has a beforeCombat effect that needs to trigger
+ * @param {Object} attacker - The attacking creature
+ * @returns {boolean} True if attacker has an active beforeCombat effect
+ */
+export const hasBeforeCombatEffect = (attacker) => {
+  if (!attacker || attacker.abilitiesCancelled) return false;
+  return !!(attacker.effects?.onBeforeCombat || attacker.onBeforeCombat);
+};
+
+/**
+ * Initiate combat between attacker and defender with beforeCombat check
+ *
+ * This function checks if the attacker has a beforeCombat effect that needs
+ * to fire first. If so, it returns an indicator object. The caller is
+ * responsible for triggering the effect and then calling resolveCreatureCombat.
+ *
+ * @param {Object} state - Game state
+ * @param {Object} attacker - The attacking creature
+ * @param {Object} defender - The defending creature (or null for direct attack)
+ * @param {number} attackerOwnerIndex - Index of attacker's owner
+ * @param {number} defenderOwnerIndex - Index of defender's owner (or target player index)
+ * @returns {Object} Combat result or { needsBeforeCombat: true, ... } if effect needs to fire first
+ */
+export const initiateCombat = (state, attacker, defender, attackerOwnerIndex, defenderOwnerIndex) => {
+  // Check if attacker has beforeCombat effect that hasn't fired this attack
+  if (hasBeforeCombatEffect(attacker) && !attacker.beforeCombatFiredThisAttack) {
+    // Return indicator that beforeCombat needs to resolve first
+    return {
+      needsBeforeCombat: true,
+      attacker,
+      defender,
+      attackerOwnerIndex,
+      defenderOwnerIndex,
+    };
+  }
+
+  // No beforeCombat or already fired - proceed directly to combat
+  if (defender) {
+    return resolveCreatureCombat(state, attacker, defender, attackerOwnerIndex, defenderOwnerIndex);
+  } else {
+    // Direct attack (defender is null, defenderOwnerIndex is the target player)
+    const opponent = state.players[defenderOwnerIndex];
+    return { directDamage: resolveDirectAttack(state, attacker, opponent) };
+  }
+};
+
 export const resolveDirectAttack = (state, attacker, opponent) => {
   const previousHp = opponent.hp;
   opponent.hp -= attacker.currentAtk;

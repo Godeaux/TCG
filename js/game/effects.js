@@ -506,49 +506,55 @@ export const resolveEffectResult = (state, result, context) => {
   if (result.copyAbilities) {
     const { target, source } = result.copyAbilities;
 
-    // Copy keywords (handle undefined with fallback to empty array)
-    const targetKeywords = target.keywords || [];
+    // Check if source has onPlay effect that should be triggered (before we clear target)
+    const sourceHasOnPlay = source.effects?.onPlay || source.onPlay;
+
+    // REPLACEMENT MODE: Clear target's existing abilities first
+    // This ensures the copy is a true replacement, not a merge
+    target.keywords = [];
+    target.effects = {};
+    target.onPlay = null;
+    target.onConsume = null;
+    target.onSlain = null;
+    target.onStart = null;
+    target.onEnd = null;
+    target.onBeforeCombat = null;
+    target.onDefend = null;
+    target.onTargeted = null;
+    target.effect = null;
+    target.hasBarrier = false;
+
+    // Now copy from source
     const sourceKeywords = source.keywords || [];
-    target.keywords = Array.from(new Set([...targetKeywords, ...sourceKeywords]));
+    target.keywords = [...sourceKeywords];
 
     // Copy Barrier state if source has it
     if (sourceKeywords.includes("Barrier")) {
       target.hasBarrier = true;
     }
 
-    // Check if source has onPlay effect that should be triggered
-    const sourceHasOnPlay = source.effects?.onPlay || source.onPlay;
-
     // Copy effects object (for onPlay, onConsume, onSlain, and other triggered abilities)
     if (source.effects) {
-      target.effects = target.effects || {};
-      target.effects.onPlay = target.effects.onPlay ?? source.effects.onPlay;
-      target.effects.onConsume = target.effects.onConsume ?? source.effects.onConsume;
-      target.effects.onSlain = target.effects.onSlain ?? source.effects.onSlain;
-      target.effects.onStart = target.effects.onStart ?? source.effects.onStart;
-      target.effects.onEnd = target.effects.onEnd ?? source.effects.onEnd;
-      target.effects.onBeforeCombat = target.effects.onBeforeCombat ?? source.effects.onBeforeCombat;
-      target.effects.onDefend = target.effects.onDefend ?? source.effects.onDefend;
-      target.effects.onTargeted = target.effects.onTargeted ?? source.effects.onTargeted;
+      target.effects = { ...source.effects };
     }
 
     // Also copy direct function properties if they exist (for backwards compatibility)
-    target.onPlay = target.onPlay ?? source.onPlay;
-    target.onConsume = target.onConsume ?? source.onConsume;
-    target.onSlain = target.onSlain ?? source.onSlain;
-    target.onStart = target.onStart ?? source.onStart;
-    target.onEnd = target.onEnd ?? source.onEnd;
-    target.onBeforeCombat = target.onBeforeCombat ?? source.onBeforeCombat;
-    target.onDefend = target.onDefend ?? source.onDefend;
-    target.onTargeted = target.onTargeted ?? source.onTargeted;
+    target.onPlay = source.onPlay || null;
+    target.onConsume = source.onConsume || null;
+    target.onSlain = source.onSlain || null;
+    target.onStart = source.onStart || null;
+    target.onEnd = source.onEnd || null;
+    target.onBeforeCombat = source.onBeforeCombat || null;
+    target.onDefend = source.onDefend || null;
+    target.onTargeted = source.onTargeted || null;
 
     // Copy the effect property as well (for cards using the single 'effect' property)
-    target.effect = target.effect ?? source.effect;
+    target.effect = source.effect || null;
 
     const keywordsList = sourceKeywords.length > 0 ? formatKeywordList(sourceKeywords) : "no keywords";
     const effectsList = source.effects ? Object.keys(source.effects).filter(k => source.effects[k]).join(", ") : "";
     const abilitiesDesc = effectsList ? `${keywordsList}, effects: ${effectsList}` : keywordsList;
-    logGameAction(state, CHOICE, `${formatCardForLog(target)} copies ${formatCardForLog(source)}'s abilities: ${abilitiesDesc}.`);
+    logGameAction(state, CHOICE, `${formatCardForLog(target)} copies ${formatCardForLog(source)}'s abilities (replacing original): ${abilitiesDesc}.`);
 
     // Queue the copied onPlay for sequential resolution (if source had one)
     // This ensures onPlay effects are resolved AFTER copyAbilities completes,
@@ -568,6 +574,31 @@ export const resolveEffectResult = (state, result, context) => {
         }
       };
     }
+  }
+
+  if (result.copyStats) {
+    const { target, source } = result.copyStats;
+
+    // Copy ATK (use current if available, otherwise base)
+    const sourceAtk = source.currentAtk ?? source.atk ?? 0;
+    target.atk = source.atk ?? sourceAtk;
+    target.currentAtk = sourceAtk;
+
+    // Copy HP
+    const sourceHp = source.hp ?? 1;
+    const sourceCurrentHp = source.currentHp ?? sourceHp;
+    target.hp = sourceHp;
+    target.currentHp = sourceCurrentHp;
+
+    // Copy nutrition value (for prey creatures)
+    if (source.nutrition !== undefined) {
+      target.nutrition = source.nutrition;
+    }
+
+    logGameAction(state, BUFF,
+      `${formatCardForLog(target)} copies ${formatCardForLog(source)}'s stats: ` +
+      `${sourceAtk}/${sourceCurrentHp}${source.nutrition !== undefined ? ` (Nut: ${source.nutrition})` : ''}.`
+    );
   }
 
   if (result.removeAbilities) {

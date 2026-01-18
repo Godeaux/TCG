@@ -173,25 +173,13 @@ export const advancePhase = (state) => {
     state.extendedConsumption = null;
   }
 
-  // Handle Before Combat auto-skip (streamlined turn flow)
-  // If no before-combat effects exist, skip directly to Combat
+  // Before Combat phase is now skipped - beforeCombat effects fire per-attack
+  // Each creature's beforeCombat effect triggers right before that creature attacks
   if (state.phase === "Before Combat") {
-    const player = state.players[state.activePlayerIndex];
-    const beforeCombatCreatures = player.field.filter((creature) =>
-      (creature?.onBeforeCombat || creature?.effects?.onBeforeCombat) && !creature?.abilitiesCancelled
-    );
-    if (beforeCombatCreatures.length === 0) {
-      // No before-combat effects, skip to Combat
-      state.phase = "Combat";
-    } else {
-      // Has effects, set up queue for processing
-      state.beforeCombatQueue = beforeCombatCreatures;
-      state.beforeCombatProcessing = false;
-      logPlainMessage(state, `━━━ PHASE: BEFORE COMBAT ━━━`);
-      logGameAction(state, PHASE, `${beforeCombatCreatures.length} before-combat effect(s) queued: ${beforeCombatCreatures.map(c => c.name).join(', ')}`);
-      state.broadcast?.(state);
-      return; // Wait for effects to be resolved before continuing to Combat
-    }
+    state.phase = "Combat";
+    // Clear any legacy queue state
+    state.beforeCombatQueue = [];
+    state.beforeCombatProcessing = false;
   }
 
   // Log phase transition using plain message for separator bars

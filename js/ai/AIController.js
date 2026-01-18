@@ -14,7 +14,7 @@
  */
 
 import { canPlayCard, cardLimitAvailable } from '../game/turnManager.js';
-import { getValidTargets, resolveCreatureCombat, resolveDirectAttack, cleanupDestroyed } from '../game/combat.js';
+import { getValidTargets, resolveCreatureCombat, resolveDirectAttack, cleanupDestroyed, hasBeforeCombatEffect } from '../game/combat.js';
 import { isFreePlay, isPassive, isHarmless, isEdible, isInedible, hasScavenge, hasHaste } from '../keywords.js';
 import { isCreatureCard, createCardInstance } from '../cardTypes.js';
 import { logMessage, queueVisualEffect } from '../state/gameState.js';
@@ -981,6 +981,38 @@ export class AIController {
           }
 
           if (!wasNegated) {
+            // Check for beforeCombat effect that needs to fire before this attack
+            if (hasBeforeCombatEffect(attacker) && !attacker.beforeCombatFiredThisAttack) {
+              attacker.beforeCombatFiredThisAttack = true;
+              const opponentIndex = (attackerOwnerIndex + 1) % 2;
+              logMessage(state, `${attacker.name}'s before-combat effect triggers...`);
+              const bcResult = resolveCardEffect(attacker, 'onBeforeCombat', {
+                log: (message) => logMessage(state, message),
+                player: state.players[attackerOwnerIndex],
+                opponent: state.players[opponentIndex],
+                creature: attacker,
+                state,
+                playerIndex: attackerOwnerIndex,
+                opponentIndex,
+              });
+              if (bcResult) {
+                resolveEffectResult(state, bcResult, {
+                  playerIndex: attackerOwnerIndex,
+                  opponentIndex,
+                  card: attacker,
+                });
+              }
+              cleanupDestroyed(state);
+              // Check if attacker was destroyed by their own beforeCombat effect
+              if (attacker.currentHp <= 0) {
+                logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
+                callbacks.onUpdate?.();
+                state.broadcast?.(state);
+                resolve();
+                return;
+              }
+            }
+
             if (target.type === 'player') {
               // Direct attack on player
               resolveDirectAttack(state, attacker, target.player);

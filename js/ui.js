@@ -16,6 +16,7 @@ import {
   resolveCreatureCombat,
   resolveDirectAttack,
   cleanupDestroyed,
+  hasBeforeCombatEffect,
 } from "./game/combat.js";
 import {
   isFreePlay,
@@ -1822,6 +1823,65 @@ const resolveAttack = (state, attacker, target, negateAttack = false) => {
     return;
   }
 
+  // Check for beforeCombat effect that needs to fire before this attack
+  if (hasBeforeCombatEffect(attacker) && !attacker.beforeCombatFiredThisAttack) {
+    attacker.beforeCombatFiredThisAttack = true;
+    const playerIndex = state.activePlayerIndex;
+    const opponentIndex = (playerIndex + 1) % 2;
+
+    logMessage(state, `${attacker.name}'s before-combat effect triggers...`);
+    const result = resolveCardEffect(attacker, 'onBeforeCombat', {
+      log: (message) => logMessage(state, message),
+      player: state.players[playerIndex],
+      opponent: state.players[opponentIndex],
+      creature: attacker,
+      state,
+      playerIndex,
+      opponentIndex,
+    });
+
+    if (result) {
+      // Effect needs UI interaction - resolve it then continue with attack
+      resolveEffectChain(
+        state,
+        result,
+        { playerIndex, opponentIndex, card: attacker },
+        () => {
+          render(state);
+          broadcastSyncState(state);
+        },
+        () => {
+          // After beforeCombat effect resolves, continue with the actual attack
+          cleanupDestroyed(state);
+          // Check if attacker was destroyed by their own beforeCombat effect
+          if (attacker.currentHp <= 0) {
+            logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
+            attacker.hasAttacked = true;
+            state.broadcast?.(state);
+            return;
+          }
+          // Continue with the rest of resolveAttack logic
+          continueResolveAttack(state, attacker, target);
+        }
+      );
+      return;
+    }
+    // No UI needed for this effect, cleanup and continue
+    cleanupDestroyed(state);
+    if (attacker.currentHp <= 0) {
+      logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
+      attacker.hasAttacked = true;
+      state.broadcast?.(state);
+      return;
+    }
+  }
+
+  // Continue with normal attack resolution
+  continueResolveAttack(state, attacker, target);
+};
+
+// Continuation of resolveAttack after beforeCombat effects
+const continueResolveAttack = (state, attacker, target) => {
   if (target.type === "creature" && (target.card.onDefend || target.card.effects?.onDefend)) {
     const defender = target.card;
     const playerIndex = state.activePlayerIndex;
@@ -2808,6 +2868,10 @@ const navigateToPage = (pageIndex) => {
 // initNavigation moved to ./ui/input/inputRouter.js
 // Now initialized via initializeInput() from ./ui/input/index.js
 
+// DEPRECATED: This queue-based system is no longer used.
+// beforeCombat effects now trigger per-attack in resolveAttack(), not per-phase.
+// This function remains for backwards compatibility but will always return early
+// since the Before Combat phase auto-skips and the queue is never populated.
 const processBeforeCombatQueue = (state, onUpdate) => {
   if (state.phase !== "Before Combat") {
     return;

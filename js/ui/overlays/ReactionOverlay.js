@@ -252,11 +252,14 @@ export const renderReactionOverlay = (state, callbacks = {}) => {
   overlay.setAttribute("aria-hidden", "false");
 
   const localIndex = getLocalPlayerIndex(state);
-  // In local mode, the reacting player is always the non-active player
   // In online mode, check if local player is the reacting player
+  // In AI mode, only show trap details to the reacting player (hide AI's trap from human)
+  // In local 2P mode, show buttons (the device holder decides)
   const isReactingPlayer = isOnlineMode(state)
     ? localIndex === reactingPlayerIndex
-    : true; // In local mode, show buttons (the device holder decides)
+    : isAIMode(state)
+      ? localIndex === reactingPlayerIndex
+      : true;
 
   // Get context description for what triggered this reaction
   const contextDescription = getReactionContextDescription(state.pendingReaction, state.players, false);
