@@ -240,27 +240,59 @@ export class CombatEvaluator {
   findBestTarget(state, attacker, validTargets, aiPlayerIndex) {
     const opponent = state.players[1 - aiPlayerIndex];
 
-    // SURVIVAL PRIORITY: If facing lethal, killing critical threats trumps everything
-    const mustKills = this.threatDetector.findMustKillTargets(state, aiPlayerIndex);
-    const criticalThreats = mustKills.filter(mk => mk.priority === 'critical');
+    // SURVIVAL ANALYSIS: Comprehensive check for lethal threats
+    const survivalAnalysis = this.threatDetector.analyzeSurvivalOptions(state, aiPlayerIndex);
 
-    if (criticalThreats.length > 0) {
-      // Check if any valid target is a critical threat we can kill
-      for (const creature of validTargets.creatures || []) {
-        const isCritical = criticalThreats.some(
-          ct => ct.creature.instanceId === creature.instanceId
+    if (survivalAnalysis.inDanger) {
+      // We're facing lethal! Survival is the #1 priority
+      const criticalThreats = survivalAnalysis.criticalThreats || [];
+
+      for (const { creature: threat } of criticalThreats) {
+        // Check if THIS attacker can target this threat
+        const isValidTarget = (validTargets.creatures || []).some(
+          c => c.instanceId === threat.instanceId
         );
-        if (isCritical) {
-          const creatureTarget = { type: 'creature', card: creature };
-          const trade = this.analyzeTradeOutcome(attacker, creature);
-          if (trade.weKill) {
-            // Survival is non-negotiable - return immediately
+        if (!isValidTarget) continue;
+
+        const creatureTarget = { type: 'creature', card: threat };
+        const trade = this.analyzeTradeOutcome(attacker, threat);
+        const atkPower = attacker.currentAtk ?? attacker.atk ?? 0;
+        const threatHp = threat.currentHp ?? threat.hp ?? 0;
+
+        // CASE 1: We can kill the threat - do it!
+        if (trade.weKill) {
+          return {
+            target: creatureTarget,
+            score: 500,
+            reason: `SURVIVAL: Kill ${threat.name} (${atkPower} dmg kills ${threatHp} HP) or we die!`
+          };
+        }
+
+        // CASE 2: We can't kill alone, but check if this is part of a combo
+        const killOptions = this.threatDetector.analyzeKillOptions(state, threat, aiPlayerIndex);
+        if (killOptions.canKill) {
+          const combo = killOptions.bestSolution;
+          const isPartOfCombo = combo.attackers.some(a => a.instanceId === attacker.instanceId);
+          if (isPartOfCombo) {
             return {
               target: creatureTarget,
-              score: 500,
-              reason: `SURVIVAL: Must kill ${creature.name} or we die!`
+              score: 450,
+              reason: `SURVIVAL: Attack ${threat.name} as part of kill combo!`
             };
           }
+        }
+
+        // CASE 3: Can't kill even with combo - but should we soften?
+        // Softening is valuable if it gives us a chance next turn
+        if (atkPower > 0) {
+          const newHp = threatHp - atkPower;
+          // Softening is better than doing nothing - at least we tried
+          // Score high enough to beat face attacks when facing lethal
+          return {
+            target: creatureTarget,
+            score: 300, // High enough to beat face attacks (typically 30-60)
+            reason: `SURVIVAL: Soften ${threat.name} (${threatHp}→${newHp} HP) - can't kill but must try!`
+          };
         }
       }
     }
@@ -310,6 +342,8 @@ export class CombatEvaluator {
     const plan = [];
 
     // Get all available attackers
+    // NOTE: Summoning sickness only prevents attacking the PLAYER, not creatures
+    // So we include all creatures that can attack, and check player-targeting later
     let availableAttackers = ai.field.filter(creature => {
       if (!creature) return false;
       if (creature.currentHp <= 0) return false;
@@ -317,11 +351,6 @@ export class CombatEvaluator {
       if (isPassive(creature)) return false;
       if (hasKeyword(creature, KEYWORDS.HARMLESS)) return false;
       if (creature.frozen || creature.paralyzed) return false;
-      // Summoning sickness check
-      const hasHasteKeyword = hasKeyword(creature, KEYWORDS.HASTE);
-      if (creature.summonedTurn === state.turn && !hasHasteKeyword) {
-        return false;
-      }
       return true;
     });
 
@@ -346,6 +375,64 @@ export class CombatEvaluator {
         }
       }
       return plan;
+    }
+
+    // SURVIVAL CHECK: If facing lethal, coordinate attacks to kill threats
+    const survivalAnalysis = this.threatDetector.analyzeSurvivalOptions(state, aiPlayerIndex);
+    if (survivalAnalysis.inDanger && survivalAnalysis.criticalThreats.length > 0) {
+      // Plan coordinated attack on the most dangerous threat
+      for (const { creature: threat } of survivalAnalysis.criticalThreats) {
+        const killOptions = this.threatDetector.analyzeKillOptions(state, threat, aiPlayerIndex);
+
+        if (killOptions.canKill && killOptions.bestSolution) {
+          const solution = killOptions.bestSolution;
+          // Add all attackers in the solution to the plan
+          for (let i = 0; i < solution.attackers.length; i++) {
+            const attacker = solution.attackers[i];
+            const validTargets = getValidTargets(state, attacker, opponent);
+            const canTargetThreat = validTargets.creatures?.some(
+              c => c.instanceId === threat.instanceId
+            );
+
+            if (canTargetThreat) {
+              plan.push({
+                attacker,
+                target: { type: 'creature', card: threat },
+                score: 500 - i, // First attacker slightly higher priority
+                reason: solution.type === 'combo'
+                  ? `SURVIVAL COMBO: ${i === 0 ? 'Soften' : 'Kill'} ${threat.name}`
+                  : `SURVIVAL: Kill ${threat.name}`,
+              });
+            }
+          }
+          // Return early - survival plan takes priority
+          return plan;
+        }
+
+        // Can't kill, but soften the threat
+        const softening = this.threatDetector.analyzeSofteningPotential(state, threat, aiPlayerIndex);
+        if (softening.maxDamage > 0) {
+          for (const attacker of softening.attackersNeeded) {
+            const validTargets = getValidTargets(state, attacker, opponent);
+            const canTargetThreat = validTargets.creatures?.some(
+              c => c.instanceId === threat.instanceId
+            );
+
+            if (canTargetThreat) {
+              const threatHp = threat.currentHp ?? threat.hp ?? 0;
+              const atkPower = attacker.currentAtk ?? attacker.atk ?? 0;
+              plan.push({
+                attacker,
+                target: { type: 'creature', card: threat },
+                score: 300,
+                reason: `SURVIVAL: Soften ${threat.name} (${threatHp}→${threatHp - atkPower} HP)`,
+              });
+            }
+          }
+          // Return early - survival plan takes priority
+          return plan;
+        }
+      }
     }
 
     // Otherwise, evaluate each attacker

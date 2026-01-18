@@ -36,7 +36,7 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Passive", "Immune"],
-      "effectText": "End of turn; consume target enemy prey.",
+      "effectText": "End of turn; consume target Rival's prey.",
       "effects": {
         "onEnd": { "type": "selectEnemyPreyToConsume" }
       }
@@ -567,7 +567,7 @@
       "atk": 5,
       "hp": 5,
       "keywords": ["Acuity"],
-      "effectText": "Kill target enemy.",
+      "effectText": "Kill target Rival's creature.",
       "effects": {
         "onConsume": { "type": "selectEnemyToKill" }
       }
@@ -593,7 +593,7 @@
       "id": "fish-spell-net",
       "name": "Net",
       "type": "Spell",
-      "effectText": "Kill enemy prey.",
+      "effectText": "Kill Rival's prey.",
       "effects": {
         "effect": { "type": "selectEnemyPreyToKill" }
       }
@@ -675,7 +675,7 @@
       "id": "fish-spell-harpoon",
       "name": "Harpoon",
       "type": "Spell",
-      "effectText": "Deal 4 damage to target enemy then gain control of it.",
+      "effectText": "Deal 4 damage to target Rival's creature then gain control of it.",
       "effects": {
         "effect": {
           "type": "selectEnemyToSteal",
@@ -712,7 +712,7 @@
       "id": "fish-spell-washout",
       "name": "Washout",
       "type": "Spell",
-      "effectText": "Enemies lose abilities. Deal 2 damage to enemies.",
+      "effectText": "Rival's creatures lose abilities. Deal 2 damage to Rival's creatures.",
       "effects": {
         "effect": [
           { "type": "removeAbilitiesAll" },
@@ -724,7 +724,7 @@
       "id": "fish-free-spell-undertow",
       "name": "Undertow",
       "type": "Free Spell",
-      "effectText": "Target enemy loses abilities.",
+      "effectText": "Target Rival's creature loses abilities.",
       "effects": {
         "effect": { "type": "selectEnemyToStripAbilities" }
       }
@@ -754,7 +754,7 @@
       "name": "Maelstrom",
       "type": "Trap",
       "trigger": "directAttack",
-      "effectText": "When target enemy attacks directly, negate attack. Deal 2 damage to players & animals.",
+      "effectText": "When Rival's creature attacks directly, negate attack. Deal 2 damage to players & creatures.",
       "effects": {
         "effect": [
           { "type": "negateAttack" },

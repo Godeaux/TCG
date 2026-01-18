@@ -73,7 +73,7 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Enemies gain frozen.",
+      "effectText": "Rival's creatures gain Frozen.",
       "effects": {
         "onPlay": { "type": "freezeAllEnemies" }
       }
@@ -179,7 +179,7 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Deal 2 damage to opponents.",
+      "effectText": "Deal 2 damage to Rival and Rival's creatures.",
       "effects": {
         "onPlay": { "type": "damageOpponent", "params": { "amount": 2 } }
       }
@@ -231,7 +231,7 @@
       "atk": 1,
       "hp": 2,
       "nutrition": 2,
-      "effectText": "Discard; add Tomato to hand. Defending; attacking enemy gains Frozen.",
+      "effectText": "Discard; add Tomato to hand. Defending; attacker gains Frozen.",
       "effects": {
         "discardEffect": { "type": "addToHand", "params": { "cardId": "token-tomato" } },
         "onDefend": { "type": "freezeAttacker" }
@@ -367,7 +367,7 @@
       "type": "Predator",
       "atk": 4,
       "hp": 4,
-      "effectText": "Deal 4 damage to enemies. End turn.",
+      "effectText": "Deal 4 damage to Rival's creatures. End turn.",
       "effects": {
         "onConsume": { "type": "damageEnemiesAndEndTurn", "params": { "damage": 4 } }
       }
@@ -408,7 +408,7 @@
       "type": "Predator",
       "atk": 5,
       "hp": 5,
-      "effectText": "After combat, deal 2 damage to enemies.",
+      "effectText": "After combat, deal 2 damage to Rival's creatures.",
       "effects": {
         "onAfterCombat": { "type": "damageEnemiesAfterCombat", "params": { "damage": 2 } }
       }
@@ -439,7 +439,7 @@
             "options": [
               { "label": "Draw 3 cards", "description": "Draw 3 cards from your deck", "effect": { "type": "draw", "params": { "count": 3 } } },
               { "label": "Heal 3", "description": "Restore 3 HP", "effect": { "type": "heal", "params": { "amount": 3 } } },
-              { "label": "Deal 3 damage to rival", "description": "Deal 3 damage to opponent", "effect": { "type": "damageOpponent", "params": { "amount": 3 } } }
+              { "label": "Deal 3 damage to rival", "description": "Deal 3 damage to Rival", "effect": { "type": "damageOpponent", "params": { "amount": 3 } } }
             ]
           }
         }
@@ -449,7 +449,7 @@
       "id": "amphibian-spell-bounce",
       "name": "Bounce",
       "type": "Spell",
-      "effectText": "Return enemies to hand.",
+      "effectText": "Return Rival's creatures to hand.",
       "effects": {
         "effect": {
           "type": "returnAllEnemies",
@@ -461,7 +461,7 @@
       "id": "amphibian-spell-leapfrog",
       "name": "Leapfrog",
       "type": "Spell",
-      "effectText": "Deal 3 damage to rival. Deal 3 damage to target enemy.",
+      "effectText": "Deal 3 damage to Rival. Deal 3 damage to target Rival's creature.",
       "effects": {
         "effect": {
           "type": "damageRivalAndSelectEnemy",
@@ -476,7 +476,7 @@
       "id": "amphibian-spell-monsoon",
       "name": "Monsoon",
       "type": "Spell",
-      "effectText": "Deal 2 damage to opponents. Add Rainbow to hand.",
+      "effectText": "Deal 2 damage to Rival and Rival's creatures. Add Rainbow to hand.",
       "effects": {
         "effect": {
           "type": "damageOpponentsAndAddToHand",
@@ -491,7 +491,7 @@
       "id": "amphibian-spell-pounce-plummet",
       "name": "Pounce Plummet",
       "type": "Spell",
-      "effectText": "Deal 2 damage to all enemies twice.",
+      "effectText": "Deal 2 damage to all Rival's creatures twice.",
       "effects": {
         "effect": {
           "type": "damageAllEnemiesMultiple",
@@ -515,7 +515,7 @@
       "id": "amphibian-spell-terrain-shift",
       "name": "Terrain Shift",
       "type": "Spell",
-      "effectText": "Destroy target field spells. Kill enemy tokens.",
+      "effectText": "Destroy target field spells. Kill Rival's tokens.",
       "effects": {
         "effect": {
           "type": "destroyFieldSpellsAndKillTokens",
@@ -588,7 +588,7 @@
             "options": [
               { "label": "Draw 1", "description": "Draw 1 card from your deck", "effect": { "type": "draw", "params": { "count": 1 } } },
               { "label": "Heal 1", "description": "Restore 1 HP", "effect": { "type": "heal", "params": { "amount": 1 } } },
-              { "label": "Deal 1 damage to rival", "description": "Deal 1 damage to opponent", "effect": { "type": "damageOpponent", "params": { "amount": 1 } } }
+              { "label": "Deal 1 damage to rival", "description": "Deal 1 damage to Rival", "effect": { "type": "damageOpponent", "params": { "amount": 1 } } }
             ]
           }
         }
@@ -614,7 +614,7 @@
       "name": "Blowdart",
       "type": "Trap",
       "trigger": "directAttack",
-      "effectText": "When target enemy attacks directly, negate attack & kill it.",
+      "effectText": "When Rival's creature attacks directly, negate attack & kill it.",
       "effects": {
         "effect": {
           "type": "negateAndKillAttacker",

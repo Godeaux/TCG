@@ -15,7 +15,7 @@
  * - getCardEffectSummary: Effect text generation
  */
 
-import { KEYWORD_DESCRIPTIONS } from '../../keywords.js';
+import { KEYWORD_DESCRIPTIONS, areAbilitiesActive } from '../../keywords.js';
 import {
   hasCardImage,
   getCardImagePath,
@@ -389,7 +389,7 @@ export const getStatusIndicators = (card) => {
   if (card.abilitiesCancelled) {
     indicators.push("🚫");
   }
-  if (card.hasBarrier) {
+  if (card.hasBarrier && areAbilitiesActive(card)) {
     indicators.push("🛡️");
   }
   if (card.frozen) {

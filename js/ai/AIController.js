@@ -467,7 +467,17 @@ export class AIController {
       // Mark that we're searching (for UI indicator)
       this.isSearching = true;
       state._aiIsSearching = true;
+      state._aiSearchStartTime = Date.now();
+      state._aiStillThinking = false;
       callbacks.onUpdate?.();
+
+      // Start a timer to show "Still thinking..." after 2 seconds
+      const stillThinkingTimer = setInterval(() => {
+        if (this.isSearching && Date.now() - state._aiSearchStartTime >= 2000) {
+          state._aiStillThinking = true;
+          callbacks.onUpdate?.();
+        }
+      }, 500);
 
       // Run deep search via Web Worker (completely non-blocking)
       // UI remains fully responsive during the search
@@ -476,9 +486,12 @@ export class AIController {
         verbose: this.verboseLogging
       });
 
-      // Clear searching state
+      // Clear the timer and searching state
+      clearInterval(stillThinkingTimer);
       this.isSearching = false;
       state._aiIsSearching = false;
+      state._aiStillThinking = false;
+      delete state._aiSearchStartTime;
       callbacks.onUpdate?.();
 
       if (!searchResult || !searchResult.move) {
@@ -1397,6 +1410,8 @@ export class AIController {
   selectAttacker(state) {
     const player = this.getAIPlayer(state);
 
+    // NOTE: Summoning sickness only prevents attacking the PLAYER, not creatures
+    // So we include all creatures that can attack - targeting is checked separately
     const availableAttackers = player.field.filter(card => {
       if (!card || !isCreatureCard(card)) return false;
       if (card.currentHp <= 0) return false; // Dead creatures can't attack
@@ -1404,11 +1419,6 @@ export class AIController {
       if (isPassive(card)) return false;
       if (isHarmless(card)) return false;
       if (card.frozen || card.paralyzed) return false;
-      // Check summoning sickness (unless has haste)
-      // Use hasHaste() which checks areAbilitiesActive() (dry-dropped = no keywords)
-      if (card.summonedTurn === state.turn && !hasHaste(card)) {
-        return false;
-      }
       return true;
     });
 

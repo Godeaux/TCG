@@ -102,7 +102,7 @@ export class AIWorkerManager {
 
   /**
    * Run AI search
-   * Uses worker if available, falls back to sync search otherwise
+   * Uses worker if available, falls back to async search otherwise
    *
    * @param {Object} state - Game state
    * @param {number} playerIndex - Player to find move for
@@ -112,10 +112,12 @@ export class AIWorkerManager {
   async search(state, playerIndex, options = {}) {
     // If worker is available and ready, use it
     if (this.useWorker && this.worker && this.isReady) {
+      console.log('[AIWorkerManager] Using Web Worker for search');
       return this.searchWithWorker(state, playerIndex, options);
     }
 
-    // Fallback to synchronous search (blocking but at least works)
+    // Fallback to async search (yields between depth iterations)
+    console.log('[AIWorkerManager] Using FALLBACK (main thread) for search');
     return this.searchFallback(state, playerIndex, options);
   }
 
@@ -127,16 +129,26 @@ export class AIWorkerManager {
       // Store the pending search handlers
       this.pendingSearch = { resolve, reject };
 
-      // Clone state to remove any non-serializable data
-      const cleanState = this.cleanStateForWorker(state);
-
-      // Send search request to worker
-      this.worker.postMessage({
-        type: 'SEARCH',
-        state: cleanState,
-        playerIndex,
-        options
-      });
+      // Let postMessage handle cloning - don't block main thread with structuredClone
+      // Only fall back to manual JSON cleaning if postMessage fails (circular refs)
+      try {
+        this.worker.postMessage({
+          type: 'SEARCH',
+          state,  // postMessage will structuredClone internally
+          playerIndex,
+          options
+        });
+      } catch (error) {
+        // DataCloneError = circular refs or functions, fall back to JSON
+        console.warn('[AIWorkerManager] postMessage failed, using JSON fallback:', error.message);
+        const cleanState = this.cleanStateForWorkerJSON(state);
+        this.worker.postMessage({
+          type: 'SEARCH',
+          state: cleanState,
+          playerIndex,
+          options
+        });
+      }
 
       // Set a timeout in case worker hangs
       const timeoutMs = (options.maxTimeMs || 2000) + 1000; // Add 1s buffer
@@ -144,7 +156,7 @@ export class AIWorkerManager {
         if (this.pendingSearch) {
           console.warn('[AIWorkerManager] Search timed out, using fallback');
           this.pendingSearch = null;
-          // Fall back to sync search
+          // Fall back to async search
           resolve(this.searchFallback(state, playerIndex, options));
         }
       }, timeoutMs);
@@ -152,17 +164,20 @@ export class AIWorkerManager {
   }
 
   /**
-   * Fallback synchronous search (blocks main thread but works everywhere)
+   * Fallback async search - yields between depth iterations to keep UI responsive
    */
   async searchFallback(state, playerIndex, options) {
-    // Yield to UI before blocking
+    console.log('[AIWorkerManager] Fallback: yielding to UI before search');
+
+    // Yield to UI before starting
     await new Promise(resolve => {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => resolve());
       });
     });
 
-    const result = this.fallbackSearch.findBestMove(state, playerIndex, options);
+    // Use ASYNC version that yields between depth iterations
+    const result = await this.fallbackSearch.findBestMoveAsync(state, playerIndex, options);
 
     return {
       move: result.move,
@@ -175,26 +190,20 @@ export class AIWorkerManager {
   }
 
   /**
-   * Clean state for transfer to worker
-   * Removes functions and other non-serializable data
+   * Clean state for transfer to worker using JSON (fallback when postMessage fails)
+   * Removes functions and circular references
    */
-  cleanStateForWorker(state) {
-    try {
-      // structuredClone handles most cases
-      return structuredClone(state);
-    } catch {
-      // Fallback: JSON round-trip (loses some data but safe)
-      const seen = new WeakSet();
-      const json = JSON.stringify(state, (key, value) => {
-        if (typeof value === 'function') return undefined;
-        if (typeof value === 'object' && value !== null) {
-          if (seen.has(value)) return '[Circular]';
-          seen.add(value);
-        }
-        return value;
-      });
-      return JSON.parse(json);
-    }
+  cleanStateForWorkerJSON(state) {
+    const seen = new WeakSet();
+    const json = JSON.stringify(state, (key, value) => {
+      if (typeof value === 'function') return undefined;
+      if (typeof value === 'object' && value !== null) {
+        if (seen.has(value)) return '[Circular]';
+        seen.add(value);
+      }
+      return value;
+    });
+    return JSON.parse(json);
   }
 
   /**

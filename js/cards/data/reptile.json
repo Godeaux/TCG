@@ -49,7 +49,7 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": [],
-      "effectText": "Freeze all enemy creatures.",
+      "effectText": "Freeze all Rival's creatures.",
       "effects": {
         "onPlay": { "type": "freezeAllEnemies" }
       }
@@ -133,7 +133,7 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Invisible"],
-      "effectText": "Start of turn, deal 1 damage to opponents.",
+      "effectText": "Start of turn, deal 1 damage to Rival and Rival's creatures.",
       "effects": {
         "onStart": [
           { "type": "damageOpponent", "params": { "amount": 1 } },
@@ -177,7 +177,7 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Free Play"],
-      "effectText": "Target enemy gains frozen.",
+      "effectText": "Target Rival's creature gains Frozen.",
       "effects": {
         "onPlay": { "type": "selectEnemyToFreeze" }
       }
@@ -279,7 +279,7 @@
       "hp": 3,
       "nutrition": 3,
       "keywords": [],
-      "effectText": "Deal 2 damage to enemies.",
+      "effectText": "Deal 2 damage to Rival's creatures.",
       "effects": {
         "onPlay": { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } }
       }
@@ -300,7 +300,7 @@
       "atk": 2,
       "hp": 3,
       "keywords": [],
-      "effectText": "Deal 2 damage to opponents.",
+      "effectText": "Deal 2 damage to Rival and Rival's creatures.",
       "effects": {
         "onConsume": { "type": "damageOpponent", "params": { "amount": 2 } }
       }
@@ -312,7 +312,7 @@
       "atk": 2,
       "hp": 4,
       "keywords": [],
-      "effectText": "Kill enemy prey.",
+      "effectText": "Kill Rival's prey.",
       "effects": {
         "onConsume": { "type": "selectEnemyPreyToKill" }
       }
@@ -444,7 +444,7 @@
       "atk": 6,
       "hp": 6,
       "keywords": [],
-      "effectText": "Kill target enemy.",
+      "effectText": "Kill target Rival's creature.",
       "effects": {
         "onConsume": { "type": "selectEnemyToKill" }
       }
@@ -453,7 +453,7 @@
       "id": "reptile-spell-scythian-arrows",
       "name": "Scythian Arrows",
       "type": "Spell",
-      "effectText": "Discard 1. Kill enemies.",
+      "effectText": "Discard 1. Kill Rival's creatures.",
       "effects": {
         "effect": {
           "type": "discardThenKillAllEnemies",
@@ -488,7 +488,7 @@
       "id": "reptile-spell-paralyze",
       "name": "Paralyze",
       "type": "Spell",
-      "effectText": "Paralyze target enemy creature (cannot attack but can still be consumed).",
+      "effectText": "Paralyze target Rival's creature (cannot attack but can still be consumed).",
       "effects": {
         "effect": {
           "type": "selectEnemyToParalyze",
@@ -550,7 +550,7 @@
       "id": "reptile-free-spell-surprise",
       "name": "Surprise",
       "type": "Free Spell",
-      "effectText": "Deal 2 damage to target enemy.",
+      "effectText": "Deal 2 damage to target Rival's creature.",
       "effects": {
         "effect": { "type": "selectEnemyCreatureForDamage", "params": { "amount": 2, "label": "surprise" } }
       }
@@ -613,7 +613,7 @@
       "name": "Snake Pit",
       "type": "Trap",
       "trigger": "directAttack",
-      "effectText": "When target enemy attacks directly, negate attack. Play Snakes.",
+      "effectText": "When Rival's creature attacks directly, negate attack. Play Snakes.",
       "summons": ["token-snakes"],
       "effects": {
         "effect": {

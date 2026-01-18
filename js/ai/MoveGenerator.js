@@ -259,8 +259,8 @@ export class MoveGenerator {
         });
       }
 
-      // Can attack face only if no Lure
-      if (lureCreatures.length === 0) {
+      // Can attack face only if no Lure AND no summoning sickness (or has Haste)
+      if (lureCreatures.length === 0 && this.canAttackPlayer(attacker, state)) {
         moves.push({
           type: 'ATTACK',
           attackerInstanceId: attacker.instanceId,
@@ -288,11 +288,22 @@ export class MoveGenerator {
     if (isPassive(creature)) return false;
     if (hasKeyword(creature, KEYWORDS.HARMLESS)) return false;
 
-    // Summoning sickness (unless has Haste)
+    // NOTE: Summoning sickness only prevents attacking the PLAYER, not creatures
+    // So we don't check it here - we check it when generating face attacks
+
+    return true;
+  }
+
+  /**
+   * Check if a creature can attack the player directly
+   * (requires no summoning sickness, or Haste)
+   */
+  canAttackPlayer(creature, state) {
+    if (!this.canAttack(creature, state)) return false;
+    // Summoning sickness prevents face attacks (unless has Haste)
     if (creature.summonedTurn === state.turn && !hasKeyword(creature, KEYWORDS.HASTE)) {
       return false;
     }
-
     return true;
   }
 

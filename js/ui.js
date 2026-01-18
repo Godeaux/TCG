@@ -298,6 +298,39 @@ const lobbyError = document.getElementById("lobby-error");
 let pendingConsumption = null;
 let inspectedCardId = null;
 let deckHighlighted = null;
+
+// AI thinking ellipsis animation state
+let aiThinkingEllipsisFrame = 0;
+let aiThinkingEllipsisInterval = null;
+
+/**
+ * Start the animated ellipsis for "Still thinking" indicator
+ * @param {HTMLElement} element - The element to update with animated text
+ */
+function startAIThinkingEllipsisAnimation(element) {
+  if (aiThinkingEllipsisInterval) return; // Already running
+
+  // Update immediately
+  aiThinkingEllipsisFrame = 0;
+  element.textContent = "Still thinking";
+
+  aiThinkingEllipsisInterval = setInterval(() => {
+    aiThinkingEllipsisFrame = (aiThinkingEllipsisFrame + 1) % 4;
+    const dots = ".".repeat(aiThinkingEllipsisFrame);
+    element.textContent = `Still thinking${dots}`;
+  }, 400);
+}
+
+/**
+ * Stop the animated ellipsis animation
+ */
+function stopAIThinkingEllipsisAnimation() {
+  if (aiThinkingEllipsisInterval) {
+    clearInterval(aiThinkingEllipsisInterval);
+    aiThinkingEllipsisInterval = null;
+    aiThinkingEllipsisFrame = 0;
+  }
+}
 let currentPage = 0;
 let deckActiveTab = "catalog";
 let latestState = null;
@@ -836,9 +869,19 @@ const updateIndicators = (state, controlsLocked) => {
   if (fieldPhaseLabel) {
     // Show AI thinking indicator when deep search is running
     if (state._aiIsSearching) {
-      fieldPhaseLabel.textContent = "AI is thinking...";
       fieldPhaseLabel.classList.add("ai-thinking");
+
+      if (state._aiStillThinking) {
+        // Show "Still thinking" with animated ellipsis after 2 seconds
+        startAIThinkingEllipsisAnimation(fieldPhaseLabel);
+      } else {
+        // Show initial "AI is thinking..."
+        stopAIThinkingEllipsisAnimation();
+        fieldPhaseLabel.textContent = "AI is thinking...";
+      }
     } else {
+      // Not searching - show normal phase
+      stopAIThinkingEllipsisAnimation();
       fieldPhaseLabel.textContent = state.phase;
       fieldPhaseLabel.classList.remove("ai-thinking");
     }
