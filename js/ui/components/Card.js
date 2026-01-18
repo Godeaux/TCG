@@ -205,6 +205,12 @@ export const renderKeywordTags = (card) => {
     tags.push(...card.keywords.map((keyword) => `<span>${keyword}</span>`));
   }
 
+  // Add Neurotoxined status for creatures poisoned by neurotoxin
+  // (frozenDiesTurn is set when hit by Neurotoxic damage, different from regular Frozen)
+  if (card.frozenDiesTurn) {
+    tags.push(`<span class="keyword-status-deadly">💀 Neurotoxined</span>`);
+  }
+
   return tags.join("");
 };
 

@@ -153,12 +153,17 @@ export const getLocalPlayerIndex = (state) => {
 
 /**
  * Check if it's the local player's turn
+ * - Simulation mode: always (simulated states allow any player to act)
  * - AI vs AI mode: never (both players are AI, no human interaction)
  * - AI mode: only when player 0 is active (human is player 0)
  * - Online mode: when local player is active
  * - Local mode: always (hot-seat play, both players take turns on same device)
  */
 export const isLocalPlayersTurn = (state) => {
+  // Simulation mode: always allow (used by AI search and position evaluator)
+  if (state._isSimulation) {
+    return true;
+  }
   // AI vs AI: no human player, so never the local player's turn
   if (isAIvsAIMode(state)) {
     return false;

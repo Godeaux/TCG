@@ -530,6 +530,29 @@ const initNavigation = () => {
     latestState.menu.aiSettings.selectedDeckId = e.target.value || null;
   });
 
+  // AI Setup: Difficulty selection
+  const difficultyOptions = document.getElementById("ai-difficulty-options");
+  difficultyOptions?.addEventListener("click", (e) => {
+    const btn = e.target.closest(".btn-difficulty");
+    if (!btn) return;
+
+    const difficulty = btn.dataset.difficulty;
+    if (!difficulty) return;
+
+    // Update UI - remove active from all, add to clicked
+    difficultyOptions.querySelectorAll(".btn-difficulty").forEach(b => {
+      b.classList.remove("active");
+    });
+    btn.classList.add("active");
+
+    // Store in state
+    if (latestState) {
+      latestState.menu = latestState.menu || {};
+      latestState.menu.aiDifficulty = difficulty;
+      console.log(`[AI Setup] Difficulty set to: ${difficulty}`);
+    }
+  });
+
   // AI Setup: Start game (when using saved deck)
   elements.aiStartGame?.addEventListener("click", () => {
     if (!latestState) return;

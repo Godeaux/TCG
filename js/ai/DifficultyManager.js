@@ -8,6 +8,7 @@
  * - Easy: Makes frequent mistakes, no threat detection, faster thinking
  * - Medium: Occasional mistakes, threat detection enabled
  * - Hard: Optimal play, full lookahead, longer thinking (feels smarter)
+ * - Expert: Uses deep game tree search for all decisions (alpha-beta pruning)
  */
 
 // ============================================================================
@@ -72,6 +73,7 @@ export const DIFFICULTY_LEVELS = {
     lethalDetectionEnabled: true,
     advancedTradeAnalysis: true,
     trapAwareness: true,        // Considers opponent might have traps
+    useDeepSearch: false,       // Uses heuristics, not deep search
 
     // Timing (longer thinking = feels smarter)
     thinkingDelay: { min: 800, max: 1500 },
@@ -79,6 +81,34 @@ export const DIFFICULTY_LEVELS = {
 
     // Logging
     showDetailedThinking: true,
+  },
+
+  expert: {
+    name: 'Expert',
+    description: 'Deep thinking AI using alpha-beta search',
+
+    // Mistake injection - none
+    mistakeChance: 0,
+    mistakeDepth: 1,
+
+    // Feature toggles - all enabled plus deep search
+    threatDetectionEnabled: true,
+    lethalDetectionEnabled: true,
+    advancedTradeAnalysis: true,
+    trapAwareness: true,
+    useDeepSearch: true,        // Uses game tree search for decisions
+
+    // Deep search parameters
+    searchTimeMs: 2000,         // 2 seconds per decision
+    searchDepth: 6,             // Max depth for alpha-beta
+
+    // Timing (includes search time, so base delay is lower)
+    thinkingDelay: { min: 100, max: 300 },  // Search handles the "thinking"
+    betweenActionsDelay: { min: 200, max: 500 },
+
+    // Logging
+    showDetailedThinking: true,
+    showSearchStats: true,      // Show search statistics
   },
 };
 
@@ -136,9 +166,37 @@ export class DifficultyManager {
         return this.config.trapAwareness;
       case 'showDetailedThinking':
         return this.config.showDetailedThinking;
+      case 'useDeepSearch':
+        return this.config.useDeepSearch ?? false;
+      case 'showSearchStats':
+        return this.config.showSearchStats ?? false;
       default:
         return true;
     }
+  }
+
+  /**
+   * Check if deep search is enabled at current difficulty
+   * @returns {boolean}
+   */
+  isDeepSearchEnabled() {
+    return this.config.useDeepSearch ?? false;
+  }
+
+  /**
+   * Get the search time limit for deep search
+   * @returns {number} - Time in milliseconds
+   */
+  getSearchTime() {
+    return this.config.searchTimeMs ?? 2000;
+  }
+
+  /**
+   * Get the max search depth for alpha-beta
+   * @returns {number}
+   */
+  getSearchDepth() {
+    return this.config.searchDepth ?? 6;
   }
 
   /**

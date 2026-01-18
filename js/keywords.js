@@ -12,6 +12,7 @@ export const KEYWORDS = {
   INEDIBLE: "Inedible",
   SCAVENGE: "Scavenge",
   NEUROTOXIC: "Neurotoxic",
+  NEUROTOXINED: "Neurotoxined",  // Status: affected by neurotoxin, will die
   AMBUSH: "Ambush",
   TOXIC: "Toxic",
   POISONOUS: "Poisonous",
@@ -33,6 +34,7 @@ export const KEYWORD_DESCRIPTIONS = {
   [KEYWORDS.INEDIBLE]: "Cannot be consumed.",
   [KEYWORDS.SCAVENGE]: "May consume from the carrion pile when played.",
   [KEYWORDS.NEUROTOXIC]: "Combat damage freezes the target until it dies next turn.",
+  [KEYWORDS.NEUROTOXINED]: "This creature has been poisoned and will die at the end of its owner's turn.",
   [KEYWORDS.AMBUSH]: "When attacking, cannot be dealt combat damage.",
   [KEYWORDS.TOXIC]: "Kills any creature it damages in combat regardless of HP.",
   [KEYWORDS.POISONOUS]: "When defending, kills the attacking enemy after combat.",

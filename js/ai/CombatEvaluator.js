@@ -207,12 +207,13 @@ export class CombatEvaluator {
         reason += ' [2nd threat]';
       }
 
-      // Must-kill targets get extra priority
+      // Must-kill targets get extra priority (critical = survival, high = important)
       const mustKills = this.threatDetector.findMustKillTargets(state, aiPlayerIndex);
-      const isMustKill = mustKills.some(mk => mk.creature.instanceId === defender.instanceId);
-      if (isMustKill && trade.weKill) {
-        score += 25;
-        reason += ' [MUST KILL]';
+      const mustKillEntry = mustKills.find(mk => mk.creature.instanceId === defender.instanceId);
+      if (mustKillEntry && trade.weKill) {
+        const isCritical = mustKillEntry.priority === 'critical';
+        score += isCritical ? 200 : 25;
+        reason += isCritical ? ' [SURVIVAL - MUST KILL]' : ' [MUST KILL]';
       }
 
       // Neurotoxic consideration - if they're Neurotoxic and we don't kill them, we get frozen
@@ -237,11 +238,37 @@ export class CombatEvaluator {
    * @returns {Object} - { target, score, reason }
    */
   findBestTarget(state, attacker, validTargets, aiPlayerIndex) {
+    const opponent = state.players[1 - aiPlayerIndex];
+
+    // SURVIVAL PRIORITY: If facing lethal, killing critical threats trumps everything
+    const mustKills = this.threatDetector.findMustKillTargets(state, aiPlayerIndex);
+    const criticalThreats = mustKills.filter(mk => mk.priority === 'critical');
+
+    if (criticalThreats.length > 0) {
+      // Check if any valid target is a critical threat we can kill
+      for (const creature of validTargets.creatures || []) {
+        const isCritical = criticalThreats.some(
+          ct => ct.creature.instanceId === creature.instanceId
+        );
+        if (isCritical) {
+          const creatureTarget = { type: 'creature', card: creature };
+          const trade = this.analyzeTradeOutcome(attacker, creature);
+          if (trade.weKill) {
+            // Survival is non-negotiable - return immediately
+            return {
+              target: creatureTarget,
+              score: 500,
+              reason: `SURVIVAL: Must kill ${creature.name} or we die!`
+            };
+          }
+        }
+      }
+    }
+
+    // Normal evaluation continues if no survival-critical action found
     let bestTarget = null;
     let bestScore = -Infinity;
     let bestReason = '';
-
-    const opponent = state.players[1 - aiPlayerIndex];
 
     // Evaluate player target
     if (validTargets.player) {

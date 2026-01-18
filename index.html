@@ -652,6 +652,26 @@
           </div>
         </div>
 
+        <!-- AI Difficulty Selector -->
+        <div class="ai-setup-section ai-difficulty-section">
+          <label class="ai-difficulty-label">AI Difficulty</label>
+          <div class="ai-difficulty-options" id="ai-difficulty-options">
+            <button class="btn-difficulty" data-difficulty="easy" title="Makes occasional mistakes">
+              <span class="difficulty-name">Easy</span>
+            </button>
+            <button class="btn-difficulty" data-difficulty="medium" title="Balanced opponent">
+              <span class="difficulty-name">Medium</span>
+            </button>
+            <button class="btn-difficulty active" data-difficulty="hard" title="Plays optimally">
+              <span class="difficulty-name">Hard</span>
+            </button>
+            <button class="btn-difficulty" data-difficulty="expert" title="Deep search AI">
+              <span class="difficulty-name">Expert</span>
+              <span class="difficulty-badge">NEW</span>
+            </button>
+          </div>
+        </div>
+
         <div class="ai-setup-section" id="ai-deck-section">
           <div class="ai-deck-options">
             <button class="btn-deck-option" id="ai-deck-random" data-deck="random">
@@ -899,6 +919,22 @@
               </div>
               <!-- Piles Information - anchored to bottom -->
               <div class="piles-section">
+                <!-- Advantage Display -->
+                <div class="advantage-display" id="advantage-display">
+                  <div class="advantage-header">
+                    <span>Advantage</span>
+                    <button class="graph-toggle" id="graph-toggle" title="Toggle graph">📊</button>
+                  </div>
+                  <div class="advantage-value" id="advantage-value">+0</div>
+                  <div class="advantage-description" id="advantage-description">Even</div>
+                </div>
+
+                <!-- Collapsible Graph -->
+                <div class="advantage-graph-container" id="advantage-graph-container" style="display: none;">
+                  <canvas id="advantage-graph" width="200" height="80"></canvas>
+                </div>
+
+                <!-- Existing Piles -->
                 <div class="piles-grid">
                   <div class="pile-item" id="carrion-pile-container">
                     <span>Carrion</span>
