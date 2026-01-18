@@ -82,12 +82,34 @@ const queueEndOfTurnEffects = (state) => {
   state.endOfTurnFinalized = false;
 };
 
-const handleFrozenDeaths = (state) => {
+// Handle Neurotoxic deaths - creatures frozen by Neurotoxic (with frozenDiesTurn set) die
+const handleNeurotoxicDeaths = (state) => {
   const player = state.players[state.activePlayerIndex];
   player.field.forEach((creature) => {
-    if (creature?.frozen && creature.frozenDiesTurn <= state.turn) {
+    // Only kill creatures with frozenDiesTurn set (from Neurotoxic)
+    // Regular Frozen doesn't set frozenDiesTurn
+    if (creature?.frozen && creature.frozenDiesTurn && creature.frozenDiesTurn <= state.turn) {
       creature.currentHp = 0;
-      logGameAction(state, DEATH, `${creature.name} succumbs to ${getKeywordEmoji("Frozen")} frozen toxin.`);
+      logGameAction(state, DEATH, `${creature.name} succumbs to ${getKeywordEmoji("Neurotoxic")} neurotoxin.`);
+    }
+  });
+};
+
+// Handle regular Frozen thawing - creatures frozen (without frozenDiesTurn) thaw at end of owner's turn
+const handleFrozenThaw = (state) => {
+  const player = state.players[state.activePlayerIndex];
+  player.field.forEach((creature) => {
+    // Thaw creatures that are frozen but NOT by Neurotoxic (no frozenDiesTurn)
+    if (creature?.frozen && !creature.frozenDiesTurn) {
+      creature.frozen = false;
+      // Remove Frozen keyword if present
+      if (creature.keywords) {
+        const frozenIndex = creature.keywords.indexOf("Frozen");
+        if (frozenIndex >= 0) {
+          creature.keywords.splice(frozenIndex, 1);
+        }
+      }
+      logGameAction(state, BUFF, `${creature.name} thaws out.`);
     }
   });
 };
@@ -341,7 +363,8 @@ export const finalizeEndPhase = (state) => {
   logGameAction(state, PHASE, `Processing end-of-turn effects...`);
   handleRegen(state);
   handlePoisonousDamage(state);
-  handleFrozenDeaths(state);
+  handleFrozenThaw(state);       // Thaw regular frozen creatures first
+  handleNeurotoxicDeaths(state); // Then kill Neurotoxic-frozen creatures
   clearParalysis(state);
   cleanupDestroyed(state);
 

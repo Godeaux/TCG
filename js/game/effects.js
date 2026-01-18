@@ -340,9 +340,9 @@ export const resolveEffectResult = (state, result, context) => {
       if (creature && keyword === "Barrier") {
         creature.hasBarrier = true;
       }
+      // Only set frozen flag - frozenDiesTurn is ONLY set by Neurotoxic in combat.js
       if (creature && keyword === "Frozen") {
         creature.frozen = true;
-        creature.frozenDiesTurn = state.turn + 1;
       }
     });
   }
@@ -426,9 +426,9 @@ export const resolveEffectResult = (state, result, context) => {
     if (creature && keyword === "Barrier") {
       creature.hasBarrier = true;
     }
+    // Only set frozen flag - frozenDiesTurn is ONLY set by Neurotoxic in combat.js
     if (creature && keyword === "Frozen") {
       creature.frozen = true;
-      creature.frozenDiesTurn = state.turn + 1;
     }
   }
 
@@ -950,7 +950,8 @@ export const resolveEffectResult = (state, result, context) => {
   if (result.freezeCreature) {
     const { creature } = result.freezeCreature;
     creature.frozen = true;
-    creature.frozenDiesTurn = state.turn + 1;
+    // Regular Frozen does NOT set frozenDiesTurn - creatures thaw at end of owner's turn
+    // Only Neurotoxic (from combat.js) sets frozenDiesTurn to kill frozen creatures
     logGameAction(state, DEBUFF, `${formatCardForLog(creature)} is ${formatKeyword("Frozen")}.`);
   }
 
@@ -959,7 +960,7 @@ export const resolveEffectResult = (state, result, context) => {
     enemy.field.forEach((creature) => {
       if (creature && (creature.type === "Predator" || creature.type === "Prey")) {
         creature.frozen = true;
-        creature.frozenDiesTurn = state.turn + 1;
+        // Regular Frozen does NOT set frozenDiesTurn - creatures thaw at end of owner's turn
         logGameAction(state, DEBUFF, `${formatCardForLog(creature)} is ${formatKeyword("Frozen")}.`);
       }
     });
@@ -977,7 +978,7 @@ export const resolveEffectResult = (state, result, context) => {
     result.freezeCreatures.forEach((creature) => {
       if (creature) {
         creature.frozen = true;
-        creature.frozenDiesTurn = state.turn + 1;
+        // Regular Frozen does NOT set frozenDiesTurn - creatures thaw at end of owner's turn
         logGameAction(state, DEBUFF, `${formatCardForLog(creature)} is ${formatKeyword("Frozen")}.`);
       }
     });
@@ -1028,9 +1029,9 @@ export const resolveEffectResult = (state, result, context) => {
       if (!creature.keywords.includes(keyword)) {
         creature.keywords.push(keyword);
       }
+      // Only set frozen flag - frozenDiesTurn is ONLY set by Neurotoxic in combat.js
       if (keyword === "Frozen") {
         creature.frozen = true;
-        creature.frozenDiesTurn = state.turn + 1;
       }
     }
   }
