@@ -36,7 +36,10 @@
       "nutrition": 1,
       "effectText": "Add a card from deck to hand. Play a spell.",
       "effects": {
-        "onPlay": { "type": "tutorAndPlaySpell" }
+        "onPlay": [
+          { "type": "tutorFromDeck", "params": {} },
+          { "type": "playSpellFromHand", "params": {} }
+        ]
       }
     },
     {
@@ -63,7 +66,7 @@
       "keywords": ["Immune", "Poisonous"],
       "effectText": "Deal 2 damage to rival.",
       "effects": {
-        "onPlay": { "type": "damageOpponent", "params": { "amount": 2 } }
+        "onPlay": { "type": "damageRival", "params": { "amount": 2 } }
       }
     },
     {
@@ -88,7 +91,10 @@
       "keywords": ["Invisible"],
       "effectText": "Draw 1. Rival reveals hand.",
       "effects": {
-        "onPlay": { "type": "drawAndRevealHand", "params": { "drawCount": 1 } }
+        "onPlay": [
+          { "type": "draw", "params": { "count": 1 } },
+          { "type": "revealHand", "params": {} }
+        ]
       }
     },
     {
@@ -183,7 +189,10 @@
       "nutrition": 1,
       "effectText": "Deal 2 damage to Rival and Rival's creatures.",
       "effects": {
-        "onPlay": { "type": "damageOpponent", "params": { "amount": 2 } }
+        "onPlay": [
+          { "type": "damageRival", "params": { "amount": 2 } },
+          { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } }
+        ]
       }
     },
     {
@@ -209,7 +218,11 @@
       "nutrition": 1,
       "effectText": "Deal 2 damage to players & other animals. Animals gain frozen.",
       "effects": {
-        "onPlay": { "type": "damageAllAndFreezeAll", "params": { "damage": 2 } }
+        "onPlay": [
+          { "type": "damageBothPlayers", "params": { "amount": 2 } },
+          { "type": "damageAllCreatures", "params": { "amount": 2 } },
+          { "type": "freezeAllCreatures", "params": {} }
+        ]
       }
     },
     {
@@ -300,7 +313,10 @@
       "effectText": "Play Tiger Frog. Deal 1 damage to any target.",
       "summons": ["token-tiger-frog"],
       "effects": {
-        "onConsume": { "type": "summonAndDamage", "params": { "tokenIds": ["token-tiger-frog"], "damage": 1 } }
+        "onConsume": [
+          { "type": "summonTokens", "params": { "tokenIds": ["token-tiger-frog"] } },
+          { "type": "selectFromGroup", "params": { "targetGroup": "all-entities", "title": "Choose a target for damage", "effect": { "damage": 1, "label": "bullfrog" } } }
+        ]
       }
     },
     {
@@ -373,7 +389,10 @@
       "hp": 4,
       "effectText": "Deal 4 damage to Rival's creatures. End turn.",
       "effects": {
-        "onConsume": { "type": "damageEnemiesAndEndTurn", "params": { "damage": 4 } }
+        "onConsume": [
+          { "type": "damageAllEnemyCreatures", "params": { "amount": 4 } },
+          { "type": "endTurn", "params": {} }
+        ]
       }
     },
     {
@@ -384,7 +403,7 @@
       "hp": 4,
       "effectText": "Deal 4 damage to rival.",
       "effects": {
-        "onConsume": { "type": "damageOpponent", "params": { "amount": 4 } }
+        "onConsume": { "type": "damageRival", "params": { "amount": 4 } }
       }
     },
     {
@@ -403,7 +422,10 @@
       "hp": 4,
       "effectText": "Regen other creatures. Heal 4.",
       "effects": {
-        "onConsume": { "type": "regenOthersAndHeal", "params": { "healAmount": 4 } }
+        "onConsume": [
+          { "type": "regenOtherCreatures", "params": {} },
+          { "type": "heal", "params": { "amount": 4 } }
+        ]
       }
     },
     {
@@ -443,7 +465,7 @@
             "options": [
               { "label": "Draw 3 cards", "description": "Draw 3 cards from your deck", "effect": { "type": "draw", "params": { "count": 3 } } },
               { "label": "Heal 3", "description": "Restore 3 HP", "effect": { "type": "heal", "params": { "amount": 3 } } },
-              { "label": "Deal 3 damage to rival", "description": "Deal 3 damage to Rival", "effect": { "type": "damageOpponent", "params": { "amount": 3 } } }
+              { "label": "Deal 3 damage to rival", "description": "Deal 3 damage to Rival", "effect": { "type": "damageRival", "params": { "amount": 3 } } }
             ]
           }
         }
@@ -467,13 +489,10 @@
       "type": "Spell",
       "effectText": "Deal 3 damage to Rival. Deal 3 damage to target Rival's creature.",
       "effects": {
-        "effect": {
-          "type": "damageRivalAndSelectEnemy",
-          "params": {
-            "rivalDamage": 3,
-            "creatureDamage": 3
-          }
-        }
+        "effect": [
+          { "type": "damageRival", "params": { "amount": 3 } },
+          { "type": "selectTarget", "params": { "group": "enemy-creatures", "effect": "damage", "amount": 3 } }
+        ]
       }
     },
     {
@@ -481,14 +500,13 @@
       "name": "Monsoon",
       "type": "Spell",
       "effectText": "Deal 2 damage to Rival and Rival's creatures. Add Rainbow to hand.",
+      "summons": ["token-rainbow"],
       "effects": {
-        "effect": {
-          "type": "damageOpponentsAndAddToHand",
-          "params": {
-            "damage": 2,
-            "cardId": "token-rainbow"
-          }
-        }
+        "effect": [
+          { "type": "damageRival", "params": { "amount": 2 } },
+          { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } },
+          { "type": "addToHand", "params": { "cardId": "token-rainbow" } }
+        ]
       }
     },
         {
@@ -497,13 +515,10 @@
       "type": "Spell",
       "effectText": "Deal 2 damage to all Rival's creatures twice.",
       "effects": {
-        "effect": {
-          "type": "damageAllEnemiesMultiple",
-          "params": {
-            "amount": 2,
-            "applications": 2
-          }
-        }
+        "effect": [
+          { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } },
+          { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } }
+        ]
       }
     },
     {
@@ -521,10 +536,10 @@
       "type": "Spell",
       "effectText": "Destroy target field spells. Kill Rival's tokens.",
       "effects": {
-        "effect": {
-          "type": "destroyFieldSpellsAndKillTokens",
-          "params": {}
-        }
+        "effect": [
+          { "type": "destroyFieldSpells", "params": {} },
+          { "type": "killEnemyTokens", "params": {} }
+        ]
       }
     },
     {
@@ -533,13 +548,10 @@
       "type": "Spell",
       "effectText": "Deal 3 damage to any target. Heal 3.",
       "effects": {
-        "effect": {
-          "type": "healAndSelectTargetForDamage",
-          "params": {
-            "healAmount": 3,
-            "damageAmount": 3
-          }
-        }
+        "effect": [
+          { "type": "selectTarget", "params": { "group": "any", "effect": "damage", "amount": 3 } },
+          { "type": "heal", "params": { "amount": 3 } }
+        ]
       }
     },
     {
@@ -594,7 +606,7 @@
             "options": [
               { "label": "Draw 1", "description": "Draw 1 card from your deck", "effect": { "type": "draw", "params": { "count": 1 } } },
               { "label": "Heal 1", "description": "Restore 1 HP", "effect": { "type": "heal", "params": { "amount": 1 } } },
-              { "label": "Deal 1 damage to rival", "description": "Deal 1 damage to Rival", "effect": { "type": "damageOpponent", "params": { "amount": 1 } } }
+              { "label": "Deal 1 damage to rival", "description": "Deal 1 damage to Rival", "effect": { "type": "damageRival", "params": { "amount": 1 } } }
             ]
           }
         }
@@ -630,10 +642,10 @@
       "trigger": "directAttack",
       "effectText": "When Rival's creature attacks directly, negate attack & kill it.",
       "effects": {
-        "effect": {
-          "type": "negateAndKillAttacker",
-          "params": {}
-        }
+        "effect": [
+          { "type": "negateAttack", "params": {} },
+          { "type": "killAttacker", "params": {} }
+        ]
       }
     },
     {
@@ -643,10 +655,10 @@
       "trigger": "rivalPlaysCard",
       "effectText": "When rival plays a card, negate play. Rival may play a different card.",
       "effects": {
-        "effect": {
-          "type": "negateAndAllowReplay",
-          "params": {}
-        }
+        "effect": [
+          { "type": "negatePlay", "params": {} },
+          { "type": "allowReplay", "params": { "excludeNegated": true } }
+        ]
       }
     },
     {

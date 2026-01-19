@@ -19,6 +19,7 @@ import birdData from './data/bird.json' with { type: 'json' };
 import mammalData from './data/mammal.json' with { type: 'json' };
 import canineData from './data/canine.json' with { type: 'json' };
 import { resolveEffect } from './effectLibrary.js';
+import { validateCardEffects } from './effectValidator.js';
 
 // ============================================================================
 // CARD REGISTRIES
@@ -153,6 +154,36 @@ export const initializeCardRegistry = () => {
   deckCatalogs.canine = sortCardsByType(canineData.cards.filter(card => !card.id.includes('token')));
 
   console.log(`[Card Registry] Initialized with ${cardRegistry.size} cards (${tokenRegistry.size} tokens)`);
+
+  // Validate all card effects (warns on invalid effects)
+  validateAllCardEffects();
+};
+
+/**
+ * Validate all cards in the registry and log any errors
+ */
+const validateAllCardEffects = () => {
+  let invalidCount = 0;
+  const errors = [];
+
+  for (const card of cardRegistry.values()) {
+    const cardErrors = validateCardEffects(card);
+    if (cardErrors.length > 0) {
+      invalidCount++;
+      errors.push({ id: card.id, errors: cardErrors });
+    }
+  }
+
+  if (invalidCount > 0) {
+    console.warn(`[Card Registry] ⚠️ ${invalidCount} cards have invalid effects:`);
+    for (const { id, errors: cardErrors } of errors.slice(0, 10)) {
+      console.warn(`  ${id}:`);
+      cardErrors.forEach(e => console.warn(`    - ${e}`));
+    }
+    if (errors.length > 10) {
+      console.warn(`  ... and ${errors.length - 10} more cards with errors`);
+    }
+  }
 };
 
 // ============================================================================

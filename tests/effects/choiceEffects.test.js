@@ -239,44 +239,6 @@ describe('Add Keyword Effect', () => {
   });
 });
 
-describe('Select Predator For Keyword Effect', () => {
-  let state;
-  let context;
-
-  beforeEach(() => {
-    state = createTestState();
-    createTestCreature('fish-predator-sailfish', 0, 0, state);
-    context = createEffectContext(state, 0);
-  });
-
-  it('returns selectTarget prompt with predators', () => {
-    const selectFn = effectLibrary.selectPredatorForKeyword('Haste');
-    const result = selectFn(context);
-
-    expect(result.selectTarget).toBeDefined();
-    expect(result.selectTarget.candidates.length).toBe(1);
-  });
-
-  it('returns empty result when no predators', () => {
-    state.players[0].field = [null, null, null];
-    const selectFn = effectLibrary.selectPredatorForKeyword('Haste');
-    const result = selectFn(context);
-
-    expect(result).toEqual({});
-  });
-
-  it('onSelect returns addKeyword result', () => {
-    const selectFn = effectLibrary.selectPredatorForKeyword('Immune');
-    const result = selectFn(context);
-
-    const target = result.selectTarget.candidates[0].value;
-    const selectionResult = result.selectTarget.onSelect(target);
-
-    expect(selectionResult.addKeyword).toBeDefined();
-    expect(selectionResult.addKeyword.keyword).toBe('Immune');
-  });
-});
-
 describe('Select Prey For Buff Effect', () => {
   let state;
   let context;
@@ -359,42 +321,3 @@ describe('Select Creature For Buff Effect', () => {
   });
 });
 
-describe('Select Prey From Hand To Play Effect', () => {
-  let state;
-  let context;
-
-  beforeEach(() => {
-    state = createTestState();
-    state.players[0].hand = [
-      { id: 'prey-1', instanceId: 'prey-inst-1', name: 'Test Prey', type: 'Prey' },
-    ];
-    context = createEffectContext(state, 0);
-  });
-
-  it('returns selectTarget prompt with prey in hand', () => {
-    const selectFn = effectLibrary.selectPreyFromHandToPlay();
-    const result = selectFn(context);
-
-    expect(result.selectTarget).toBeDefined();
-    expect(result.selectTarget.candidates.length).toBe(1);
-  });
-
-  it('returns empty result when no prey in hand', () => {
-    state.players[0].hand = [];
-    const selectFn = effectLibrary.selectPreyFromHandToPlay();
-    const result = selectFn(context);
-
-    expect(result).toEqual({});
-  });
-
-  it('onSelect returns playFromHand result', () => {
-    const selectFn = effectLibrary.selectPreyFromHandToPlay();
-    const result = selectFn(context);
-
-    const card = result.selectTarget.candidates[0].value;
-    const selectionResult = result.selectTarget.onSelect(card);
-
-    expect(selectionResult.playFromHand).toBeDefined();
-    expect(selectionResult.playFromHand.card).toBe(card);
-  });
-});

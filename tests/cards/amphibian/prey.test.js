@@ -71,7 +71,20 @@ describe('Amphibian Prey Cards', () => {
 
     it('onPlay tutors and plays spell', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.onPlay.type).toBe('tutorAndPlaySpell');
+      const effects = card.effects.onPlay;
+
+      // Should be an array of primitives
+      expect(Array.isArray(effects)).toBe(true);
+
+      // Should have tutorFromDeck primitive
+      expect(effects).toContainEqual(
+        expect.objectContaining({ type: 'tutorFromDeck' })
+      );
+
+      // Should have playSpellFromHand primitive
+      expect(effects).toContainEqual(
+        expect.objectContaining({ type: 'playSpellFromHand' })
+      );
     });
   });
 
@@ -107,7 +120,7 @@ describe('Amphibian Prey Cards', () => {
 
     it('onPlay deals 2 damage to rival', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.onPlay.type).toBe('damageOpponent');
+      expect(card.effects.onPlay.type).toBe('damageRival');
       expect(card.effects.onPlay.params.amount).toBe(2);
     });
   });
@@ -151,8 +164,20 @@ describe('Amphibian Prey Cards', () => {
 
     it('onPlay draws 1 and reveals hand', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.onPlay.type).toBe('drawAndRevealHand');
-      expect(card.effects.onPlay.params.drawCount).toBe(1);
+      const effects = card.effects.onPlay;
+
+      // Should be an array of primitives
+      expect(Array.isArray(effects)).toBe(true);
+
+      // Should have draw primitive
+      expect(effects).toContainEqual(
+        expect.objectContaining({ type: 'draw', params: { count: 1 } })
+      );
+
+      // Should have revealHand primitive
+      expect(effects).toContainEqual(
+        expect.objectContaining({ type: 'revealHand' })
+      );
     });
   });
 
@@ -278,10 +303,22 @@ describe('Amphibian Prey Cards', () => {
   describe('Purple Frog', () => {
     const cardId = 'amphibian-prey-purple-frog';
 
-    it('onPlay deals 2 damage to opponent', () => {
+    it('onPlay deals 2 damage to Rival and Rival\'s creatures', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.onPlay.type).toBe('damageOpponent');
-      expect(card.effects.onPlay.params.amount).toBe(2);
+      const effects = card.effects.onPlay;
+
+      // Should be an array of primitives
+      expect(Array.isArray(effects)).toBe(true);
+
+      // Should have damageRival primitive
+      expect(effects).toContainEqual(
+        expect.objectContaining({ type: 'damageRival', params: { amount: 2 } })
+      );
+
+      // Should have damageAllEnemyCreatures primitive
+      expect(effects).toContainEqual(
+        expect.objectContaining({ type: 'damageAllEnemyCreatures', params: { amount: 2 } })
+      );
     });
   });
 
@@ -311,8 +348,25 @@ describe('Amphibian Prey Cards', () => {
 
     it('onPlay deals damage and freezes all', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.onPlay.type).toBe('damageAllAndFreezeAll');
-      expect(card.effects.onPlay.params.damage).toBe(2);
+      const effects = card.effects.onPlay;
+
+      // Should be an array of primitives
+      expect(Array.isArray(effects)).toBe(true);
+
+      // Should have damageBothPlayers primitive
+      expect(effects).toContainEqual(
+        expect.objectContaining({ type: 'damageBothPlayers', params: { amount: 2 } })
+      );
+
+      // Should have damageAllCreatures primitive
+      expect(effects).toContainEqual(
+        expect.objectContaining({ type: 'damageAllCreatures', params: { amount: 2 } })
+      );
+
+      // Should have freezeAllCreatures primitive
+      expect(effects).toContainEqual(
+        expect.objectContaining({ type: 'freezeAllCreatures' })
+      );
     });
   });
 

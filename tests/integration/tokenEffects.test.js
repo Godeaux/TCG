@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createTestState, createTestCreature, addCardToHand } from '../setup/testHelpers.js';
+import { createTestState, createTestCreature, addCardToHand, getCardDefinitionById } from '../setup/testHelpers.js';
 import { createEffectContext } from '../setup/mockFactory.js';
 import { resolveEffectResult } from '../../js/game/effects.js';
 import { resolveCardEffect, getTokenById } from '../../js/cards/index.js';
@@ -24,13 +24,13 @@ describe('Token onPlay Effects', () => {
   });
 
   describe('Lava Lizard Token', () => {
-    it('token has damageOpponent onPlay effect defined', () => {
+    it('token has damageRival onPlay effect defined', () => {
       // Verify the token definition has the expected effect
       const token = getTokenById('token-lava-lizard');
 
       expect(token).toBeDefined();
       expect(token.effects?.onPlay).toBeDefined();
-      expect(token.effects.onPlay.type).toBe('damageOpponent');
+      expect(token.effects.onPlay.type).toBe('damageRival');
       expect(token.effects.onPlay.params.amount).toBe(1);
     });
 
@@ -72,20 +72,28 @@ describe('Token onPlay Effects', () => {
   });
 
   describe('Galapagos Lava Lizards Card', () => {
-    it('playing card summons 2 tokens with damage and deals additional 1 damage', () => {
-      // Galapagos Lava Lizards: summonAndDamageOpponent with 2 tokens + 1 damage
+    it('card effect array contains summonTokens and damageRival primitives', () => {
+      // Galapagos Lava Lizards now uses primitive array instead of compound effect
+      const card = getCardDefinitionById('reptile-prey-galapagos-lava-lizards');
+
+      expect(Array.isArray(card.effects.onPlay)).toBe(true);
+      expect(card.effects.onPlay).toContainEqual(
+        expect.objectContaining({ type: 'summonTokens', params: { tokenIds: ['token-lava-lizard', 'token-lava-lizard'] } })
+      );
+      expect(card.effects.onPlay).toContainEqual(
+        expect.objectContaining({ type: 'damageRival', params: { amount: 1 } })
+      );
+    });
+
+    it('summonTokens primitive works correctly', () => {
       const initialHp = state.players[1].hp;
 
-      // Get the summonAndDamageOpponent effect
-      const effectFn = effectLibrary.summonAndDamageOpponent(
-        ['token-lava-lizard', 'token-lava-lizard'],
-        1
-      );
-      const result = effectFn(context);
+      // Test the summonTokens primitive directly
+      const summonFn = effectLibrary.summonTokens(['token-lava-lizard', 'token-lava-lizard']);
+      const result = summonFn(context);
 
-      // Should return summonTokens and damageOpponent
       expect(result.summonTokens).toBeDefined();
-      expect(result.damageOpponent).toBe(1);
+      expect(result.summonTokens.tokens.length).toBe(2);
 
       // Resolve the effect
       resolveEffectResult(state, result, context);
@@ -94,8 +102,8 @@ describe('Token onPlay Effects', () => {
       const tokens = state.players[0].field.filter(c => c?.id === 'token-lava-lizard');
       expect(tokens.length).toBe(2);
 
-      // Total damage: 1 (card effect) + 1 (token 1 onPlay) + 1 (token 2 onPlay) = 3
-      expect(state.players[1].hp).toBe(initialHp - 3);
+      // Each token onPlay deals 1 damage
+      expect(state.players[1].hp).toBe(initialHp - 2);
     });
   });
 

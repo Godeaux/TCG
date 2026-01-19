@@ -276,28 +276,39 @@ describe('Fish Predator Cards', () => {
       expect(card.hp).toBe(4);
     });
 
-    it('onConsume plays a prey from hand', () => {
+    it('onConsume plays a prey from hand via selectFromGroup', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.onConsume.type).toBe('selectPreyFromHandToPlay');
+      expect(card.effects.onConsume.type).toBe('selectFromGroup');
+      expect(card.effects.onConsume.params.targetGroup).toBe('hand-prey');
+      expect(card.effects.onConsume.params.effect.play).toBe(true);
     });
 
-    it('selectPreyFromHandToPlay returns selectTarget for hand prey', () => {
+    it('selectFromGroup with hand-prey returns selectTarget for hand prey when multiple targets', () => {
       const state = createTestState();
       addCardToHand(state, 'fish-prey-atlantic-flying-fish', 0);
+      addCardToHand(state, 'fish-prey-blobfish', 0);
       const context = createEffectContext(state, 0);
 
-      const selectFn = effectLibrary.selectPreyFromHandToPlay();
+      const selectFn = effectLibrary.selectFromGroup({
+        targetGroup: 'hand-prey',
+        title: 'Choose a prey to play',
+        effect: { play: true }
+      });
       const result = selectFn(context);
 
       expect(result.selectTarget).toBeDefined();
-      expect(result.selectTarget.candidates.length).toBe(1);
+      expect(result.selectTarget.candidates.length).toBe(2);
     });
 
     it('returns empty when no prey in hand', () => {
       const state = createTestState();
       const context = createEffectContext(state, 0);
 
-      const selectFn = effectLibrary.selectPreyFromHandToPlay();
+      const selectFn = effectLibrary.selectFromGroup({
+        targetGroup: 'hand-prey',
+        title: 'Choose a prey to play',
+        effect: { play: true }
+      });
       const result = selectFn(context);
 
       expect(result).toEqual({});
@@ -348,22 +359,29 @@ describe('Fish Predator Cards', () => {
       expect(card.hp).toBe(4);
     });
 
-    it('onConsume copies abilities from carrion predator', () => {
+    it('onConsume copies abilities from carrion predator via selectFromGroup', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.onConsume.type).toBe('selectCarrionPredToCopyAbilities');
+      expect(card.effects.onConsume.type).toBe('selectFromGroup');
+      expect(card.effects.onConsume.params.targetGroup).toBe('carrion-predators');
+      expect(card.effects.onConsume.params.effect.copyAbilities).toBe(true);
     });
 
-    it('selectCarrionPredToCopyAbilities returns selectTarget for carrion predators', () => {
+    it('selectFromGroup with carrion-predators returns selectTarget', () => {
       const state = createTestState();
       const { creature } = createTestCreature(cardId, 0, 0, state);
       addCardToCarrion(state, 'fish-predator-sailfish', 0);
+      addCardToCarrion(state, 'fish-predator-wahoo', 0);
       const context = createEffectContext(state, 0, { creature });
 
-      const selectFn = effectLibrary.selectCarrionPredToCopyAbilities();
+      const selectFn = effectLibrary.selectFromGroup({
+        targetGroup: 'carrion-predators',
+        title: 'Choose a predator to copy abilities from',
+        effect: { copyAbilities: true }
+      });
       const result = selectFn(context);
 
       expect(result.selectTarget).toBeDefined();
-      expect(result.selectTarget.candidates.length).toBe(1);
+      expect(result.selectTarget.candidates.length).toBe(2);
     });
 
     it('returns empty when no predators in carrion', () => {
@@ -372,7 +390,11 @@ describe('Fish Predator Cards', () => {
       addCardToCarrion(state, 'fish-prey-atlantic-flying-fish', 0); // Prey, not predator
       const context = createEffectContext(state, 0, { creature });
 
-      const selectFn = effectLibrary.selectCarrionPredToCopyAbilities();
+      const selectFn = effectLibrary.selectFromGroup({
+        targetGroup: 'carrion-predators',
+        title: 'Choose a predator to copy abilities from',
+        effect: { copyAbilities: true }
+      });
       const result = selectFn(context);
 
       expect(result).toEqual({});

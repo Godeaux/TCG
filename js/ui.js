@@ -8,6 +8,7 @@ import {
   LOG_CATEGORIES,
   formatCardForLog,
 } from "./state/gameState.js";
+import { initCardTooltip, showCardTooltip, hideCardTooltip } from "./ui/components/CardTooltip.js";
 import { canPlayCard, cardLimitAvailable, finalizeEndPhase, initPositionEvaluator } from "./game/turnManager.js";
 import { createCardInstance } from "./cardTypes.js";
 import { consumePrey } from "./game/consumption.js";
@@ -27,11 +28,10 @@ import {
   isHidden,
   isInvisible,
   hasAcuity,
-  KEYWORD_DESCRIPTIONS,
 } from "./keywords.js";
 import { resolveEffectResult, stripAbilities } from "./game/effects.js";
-import { deckCatalogs, getCardDefinitionById, resolveCardEffect, getAllCards, getCardByName } from "./cards/index.js";
-import { getCardImagePath, hasCardImage, getCachedCardImage, isCardImageCached, preloadCardImages } from "./cardImages.js";
+import { deckCatalogs, resolveCardEffect, getAllCards, getCardByName, getCardDefinitionById } from "./cards/index.js";
+import { getCachedCardImage, isCardImageCached, preloadCardImages } from "./cardImages.js";
 import { positionEvaluator } from "./ai/PositionEvaluator.js";
 
 // Initialize the position evaluator in turnManager to avoid circular dependency
@@ -125,8 +125,6 @@ import {
 import {
   renderCard,
   renderDeckCard,
-  renderCardStats,
-  getCardEffectSummary,
   cardTypeClass,
   renderCardInnerHtml,
   isCardLike,
@@ -285,7 +283,6 @@ const selectionPanel = document.getElementById("selection-panel");
 const actionBar = document.getElementById("action-bar");
 const actionPanel = document.getElementById("action-panel");
 const gameHistoryLog = document.getElementById("game-history-log");
-const inspectorPanel = document.getElementById("card-inspector");
 const pagesContainer = document.getElementById("pages-container");
 const pageDots = document.getElementById("page-dots");
 const navLeft = document.getElementById("nav-left");
@@ -815,23 +812,35 @@ const appendLog = (state) => {
 };
 
 /**
- * Set up click handler for card links in the history log (event delegation)
+ * Set up hover handlers for card links in the history log (event delegation)
  */
 const setupLogCardLinks = () => {
   if (!gameHistoryLog) return;
 
-  gameHistoryLog.addEventListener('click', (e) => {
+  // Get the game log panel for consistent tooltip anchoring
+  const gameLogPanel = document.querySelector('.game-log-panel');
+
+  // Log card links - show tooltip on hover
+  gameHistoryLog.addEventListener('mouseenter', (e) => {
     const cardLink = e.target.closest('.log-card-link');
     if (cardLink) {
       const cardId = cardLink.dataset.cardId;
       if (cardId) {
-        const card = getCardDefinitionById(cardId);
-        if (card) {
-          setInspectorContent(card);
+        const cardDef = getCardDefinitionById(cardId);
+        if (cardDef) {
+          // Show tooltip anchored to the left of the game log panel
+          showCardTooltip(cardDef, cardLink, { anchorRight: gameLogPanel });
         }
       }
     }
-  });
+  }, true); // Use capture to handle dynamically added elements
+
+  gameHistoryLog.addEventListener('mouseleave', (e) => {
+    const cardLink = e.target.closest('.log-card-link');
+    if (cardLink) {
+      hideCardTooltip();
+    }
+  }, true);
 };
 
 const updateIndicators = (state, controlsLocked) => {
@@ -1161,6 +1170,8 @@ const initHandPreview = () => {
       card.classList.remove("hand-focus");
     });
     currentFocusedCard = null;
+    // Hide the tooltip when focus is cleared
+    hideCardTooltip();
     // Broadcast hover cleared to opponent (unless we're about to set new focus)
     if (broadcast && latestState) {
       broadcastHandHover(latestState, null);
@@ -1198,7 +1209,8 @@ const initHandPreview = () => {
     if (card) {
       inspectedCardId = card.instanceId;
       // Don't update selectedHandCardId on hover - only on click
-      setInspectorContent(card);
+      // Show info boxes only for hand cards (no enlarged preview since card is already focused)
+      showCardTooltip(card, cardElement, { showPreview: false });
     }
   };
 
@@ -1568,121 +1580,7 @@ const initEmoteSystem = (state) => {
 // Import: renderDeckCardNew
 
 // shuffle and buildRandomDeck moved to DeckBuilderOverlay.js
-
-const setInspectorContentFor = (panel, card, showImage = true) => {
-  if (!panel) {
-    return;
-  }
-  if (!card) {
-    panel.innerHTML = `<p class="muted">Tap a card to see its full details.</p>`;
-    return;
-  }
-  // Ensure keywords is an array to avoid string iteration issues (e.g., "[Circular]")
-  const cardKeywords = Array.isArray(card.keywords) ? card.keywords : [];
-  const keywords = cardKeywords.length ? cardKeywords.join(", ") : "";
-  const keywordDetails = cardKeywords.length
-    ? cardKeywords
-        .map((keyword) => {
-          const detail = KEYWORD_DESCRIPTIONS[keyword] ?? "No description available.";
-          return `<li><strong>${keyword}:</strong> ${detail}</li>`;
-        })
-        .join("")
-    : "";
-  const tokenKeywordDetails = card.summons
-    ?.map((tokenId) => getCardDefinitionById(tokenId))
-    .filter((token) => token && Array.isArray(token.keywords) && token.keywords.length)
-    .map((token) => {
-      const tokenDetails = token.keywords
-        .map((keyword) => {
-          const detail = KEYWORD_DESCRIPTIONS[keyword] ?? "No description available.";
-          return `<li><strong>${keyword}:</strong> ${detail}</li>`;
-        })
-        .join("");
-      return `
-        <div class="token-keyword-group">
-          <div class="meta">${token.name} — ${token.type} keywords</div>
-          <ul>${tokenDetails}</ul>
-        </div>
-      `;
-    })
-    .join("");
-  const stats = renderCardStats(card)
-    .map((stat) => `${stat.emoji} ${stat.value}`)
-    .join(" • ");
-  const effectSummary = getCardEffectSummary(card, {
-    includeKeywordDetails: true,
-    includeTokenDetails: true,
-  });
-  const statusTags = [
-    card.dryDropped ? "🍂 Dry dropped" : null,
-    card.abilitiesCancelled ? "🚫 Abilities canceled" : null,
-    card.hasBarrier ? "🛡️ Barrier" : null,
-    card.frozen ? "❄️ Frozen" : null,
-    card.isToken ? "⚪ Token" : null,
-  ].filter(Boolean);
-  const keywordLabel = keywords ? `Keywords: ${keywords}` : "";
-  const statusLabel = statusTags.length ? `Status: ${statusTags.join(" • ")}` : "";
-  const keywordBlock =
-    keywordDetails || tokenKeywordDetails
-      ? `<div class="keyword-glossary">
-          <strong>Keyword Glossary</strong>
-          ${keywordDetails ? `<ul>${keywordDetails}</ul>` : ""}
-          ${
-            tokenKeywordDetails
-              ? `<div class="keyword-divider">***</div>${tokenKeywordDetails}`
-              : ""
-          }
-        </div>`
-      : "";
-  const effectBlock = effectSummary
-    ? `<div class="effect"><strong>Effect:</strong> ${effectSummary}</div>`
-    : "";
-
-  // Inspector card image with error handling (hides on 404)
-  const inspectorImageHtml = showImage && hasCardImage(card.id)
-    ? `<img src="${getCardImagePath(card.id)}" alt="" class="inspector-card-image-img"
-         onerror="this.parentElement.style.display='none';">`
-    : '';
-  
-  // Add rarity class to the card name if card has rarity
-  const nameRarityClass = card.rarity ? ` class="rarity-${card.rarity}"` : '';
-
-  // Build layout based on whether we show image
-  if (showImage) {
-    panel.innerHTML = `
-      <div class="inspector-card-layout">
-        <div class="inspector-card-image">
-          <div class="inspector-image-container">
-            ${inspectorImageHtml}
-          </div>
-        </div>
-        <div class="inspector-card-content">
-          <h4${nameRarityClass}>${card.name}</h4>
-          <div class="meta">${card.type}${stats ? ` • ${stats}` : ""}</div>
-          ${keywordLabel ? `<div class="meta">${keywordLabel}</div>` : ""}
-          ${statusLabel ? `<div class="meta">${statusLabel}</div>` : ""}
-          ${effectBlock}
-          ${keywordBlock || `<div class="meta muted">No keyword glossary entries for this card.</div>`}
-        </div>
-      </div>
-    `;
-  } else {
-    // Deck construction mode - no image, more space for content
-    panel.innerHTML = `
-      <div class="inspector-card-content inspector-deck-mode">
-        <h4${nameRarityClass}>${card.name}</h4>
-        <div class="meta">${card.type}${stats ? ` • ${stats}` : ""}</div>
-        ${keywordLabel ? `<div class="meta">${keywordLabel}</div>` : ""}
-        ${statusLabel ? `<div class="meta">${statusLabel}</div>` : ""}
-        ${effectBlock}
-        ${keywordBlock || `<div class="meta muted">No keyword glossary entries for this card.</div>`}
-      </div>
-    `;
-  }
-};
-
-const setInspectorContent = (card) => setInspectorContentFor(inspectorPanel, card, true); // Show image during battle
-// setDeckInspectorContent moved to DeckBuilderOverlay.js
+// setInspectorContent removed - tooltips now handled by CardTooltip.js
 
 const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCancel) => {
   // Handle null, undefined, or empty object results - immediately complete
@@ -2061,7 +1959,7 @@ const resolveAttack = (state, attacker, target, negateAttack = false, negatedBy 
         result,
         { playerIndex, opponentIndex, card: attacker },
         () => {
-          render(state);
+          renderGame(state);
           broadcastSyncState(state);
         },
         () => {
@@ -3294,6 +3192,13 @@ const showCarrionPilePopup = (player, opponent, onUpdate) => {
         showEffectSummary: true,
         useBaseStats: true,
       });
+      // Add hover tooltip listeners
+      cardElement.addEventListener('mouseenter', () => {
+        showCardTooltip(card, cardElement);
+      });
+      cardElement.addEventListener('mouseleave', () => {
+        hideCardTooltip();
+      });
       item.appendChild(cardElement);
       items.push(item);
     });
@@ -3317,6 +3222,13 @@ const showCarrionPilePopup = (player, opponent, onUpdate) => {
       const cardElement = renderCard(card, {
         showEffectSummary: true,
         useBaseStats: true,
+      });
+      // Add hover tooltip listeners
+      cardElement.addEventListener('mouseenter', () => {
+        showCardTooltip(card, cardElement);
+      });
+      cardElement.addEventListener('mouseleave', () => {
+        hideCardTooltip();
       });
       item.appendChild(cardElement);
       items.push(item);
@@ -3356,6 +3268,13 @@ const showExilePilePopup = (player, opponent, onUpdate) => {
         showEffectSummary: true,
         useBaseStats: true,
       });
+      // Add hover tooltip listeners
+      cardElement.addEventListener('mouseenter', () => {
+        showCardTooltip(card, cardElement);
+      });
+      cardElement.addEventListener('mouseleave', () => {
+        hideCardTooltip();
+      });
       item.appendChild(cardElement);
       items.push(item);
     });
@@ -3379,6 +3298,13 @@ const showExilePilePopup = (player, opponent, onUpdate) => {
       const cardElement = renderCard(card, {
         showEffectSummary: true,
         useBaseStats: true,
+      });
+      // Add hover tooltip listeners
+      cardElement.addEventListener('mouseenter', () => {
+        showCardTooltip(card, cardElement);
+      });
+      cardElement.addEventListener('mouseleave', () => {
+        hideCardTooltip();
       });
       item.appendChild(cardElement);
       items.push(item);
@@ -3675,6 +3601,7 @@ if (typeof window !== 'undefined') {
       setupSurrenderButton();
       setupClickAwayHandler();
       setupBugDetectorResumeHandler();
+      initCardTooltip();
     });
   } else {
     setupMobileNavigation();
@@ -3682,6 +3609,7 @@ if (typeof window !== 'undefined') {
     setupSurrenderButton();
     setupClickAwayHandler();
     setupBugDetectorResumeHandler();
+    initCardTooltip();
   }
 }
 
@@ -3928,9 +3856,9 @@ export const renderGame = (state, callbacks = {}) => {
   if (!touchInitialized) {
     initTouchHandlers({
       onCardFocus: (card, element) => {
-        if (card) {
+        if (card && element) {
           inspectedCardId = card.instanceId;
-          setInspectorContent(card);
+          showCardTooltip(card, element);
         }
       },
     });
@@ -3992,18 +3920,12 @@ export const renderGame = (state, callbacks = {}) => {
   // Update pile counts from viewing player's perspective
   updatePlayerStats(state, activeIndex, "active");
   // Field rendering (uses extracted Field component)
-  const fieldInspectCallback = (card) => {
-    inspectedCardId = card.instanceId;
-    setInspectorContent(card);
-  };
-  renderField(state, opponentIndex, true, {
-    onInspect: fieldInspectCallback,
-  });
+  // Note: Hover tooltips are handled directly in Field.js via CardTooltip
+  renderField(state, opponentIndex, true, {});
   renderField(state, activeIndex, false, {
     onAttack: (card) => handleAttackSelection(state, card, callbacks.onUpdate),
     onReturnToHand: (card) => handleReturnToHand(state, card, callbacks.onUpdate),
     onSacrifice: (card) => handleSacrifice(state, card, callbacks.onUpdate),
-    onInspect: fieldInspectCallback,
   });
   // Opponent hand strip (shows card backs with hover/drag feedback)
   renderOpponentHandStrip(state, { opponentIndex });
@@ -4300,16 +4222,15 @@ export const renderGame = (state, callbacks = {}) => {
     };
   }
 
-  const inspectedCard = state.players
-    .flatMap((player) => player.field.concat(player.hand))
-    .find((card) => card && card.instanceId === inspectedCardId);
-  if (inspectedCard) {
-    setInspectorContent(inspectedCard);
-  } else if (inspectedCardId) {
-    inspectedCardId = null;
-    setInspectorContent(null);
-  } else {
-    setInspectorContent(null);
+  // Note: Inspector panel removed - tooltips are shown on hover via CardTooltip.js
+  // Clear inspectedCardId if the card no longer exists
+  if (inspectedCardId) {
+    const inspectedCard = state.players
+      .flatMap((player) => player.field.concat(player.hand))
+      .find((card) => card && card.instanceId === inspectedCardId);
+    if (!inspectedCard) {
+      inspectedCardId = null;
+    }
   }
 };
 

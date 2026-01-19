@@ -304,11 +304,11 @@ describe('playFromHand/Deck → onPlay Chains', () => {
     });
 
     it('playing creature with damage onPlay via effect deals damage', () => {
-      // Create a custom card with damageOpponent onPlay
+      // Create a custom card with damageRival onPlay
       const cardDef = getCardDefinitionById('fish-prey-atlantic-flying-fish');
       const cardInHand = createCardInstance(cardDef, state.turn);
       cardInHand.effects = {
-        onPlay: { type: 'damageOpponent', params: { amount: 2 } }
+        onPlay: { type: 'damageRival', params: { amount: 2 } }
       };
       state.players[0].hand.push(cardInHand);
 

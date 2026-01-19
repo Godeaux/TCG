@@ -800,23 +800,8 @@
 
       <div class="pages-container" id="pages-container">
         <section class="page page-battlefield active" data-page="0">
-          <div class="battlefield-layout-three-column">
-            <!-- Left Column: Card Inspector -->
-            <div class="battlefield-left-column">
-              <div class="card-inspector-panel">
-                <div class="inspector-header">
-                  <h3>Card Inspector</h3>
-                  <button class="mobile-panel-close" id="close-inspector" aria-label="Close Inspector">✕</button>
-                </div>
-                <div class="inspector-content" id="card-inspector">
-                  <div class="inspector-placeholder">
-                    <p>Click on a card to see details</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Center Column: Battlefield and Hand -->
+          <div class="battlefield-layout-two-column">
+            <!-- Main Column: Battlefield and Hand -->
             <div class="battlefield-center-column">
               <div class="battlefield-layout">
                 <!-- Scoreboard Row (player info + opponent hand cards) -->
@@ -950,6 +935,12 @@
           </div>
         </section>
       </div>
+
+    <!-- Card Hover Tooltip (Hearthstone-style) -->
+    <div class="card-hover-tooltip" id="card-hover-tooltip" aria-hidden="true">
+      <div class="tooltip-card-preview" id="tooltip-card-preview"></div>
+      <div class="tooltip-info-boxes" id="tooltip-info-boxes"></div>
+    </div>
 
     <script type="module" src="js/main.js"></script>
   </body>

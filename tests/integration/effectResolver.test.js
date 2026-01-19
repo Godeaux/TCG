@@ -1072,7 +1072,7 @@ describe('Full Effect Chain Resolution', () => {
       state.players[1].hp = 10;
       const context = createEffectContext(state, 0);
 
-      const damageFn = effectLibrary.damageOpponent(4);
+      const damageFn = effectLibrary.damageRival(4);
       const result = damageFn(context);
 
       resolveEffectResult(state, result, context);

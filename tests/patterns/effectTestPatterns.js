@@ -228,19 +228,19 @@ export const testSelectTargetForDamageEffect = (cardId, trigger, expectedAmount)
 };
 
 /**
- * Test damage to opponent effect
+ * Test damage to rival effect
  */
-export const testDamageOpponentEffect = (cardId, trigger, expectedAmount) => {
-  describe(`${trigger} damage opponent effect`, () => {
-    it(`has damageOpponent type with amount ${expectedAmount}`, () => {
+export const testDamageRivalEffect = (cardId, trigger, expectedAmount) => {
+  describe(`${trigger} damage rival effect`, () => {
+    it(`has damageRival type with amount ${expectedAmount}`, () => {
       const card = getCardDefinitionById(cardId);
-      const effect = getEffectByType(card.effects?.[trigger], 'damageOpponent');
+      const effect = getEffectByType(card.effects?.[trigger], 'damageRival');
       expect(effect).toBeDefined();
       expect(effect.params?.amount).toBe(expectedAmount);
     });
 
     it('damage function returns correct result', () => {
-      const damageFn = effectLibrary.damageOpponent(expectedAmount);
+      const damageFn = effectLibrary.damageRival(expectedAmount);
       const state = createTestState();
       const context = createEffectContext(state, 0);
 

@@ -250,28 +250,38 @@ describe('Game Flow Integration Tests', () => {
       state = createTestState();
     });
 
-    it('selectCarrionToAddToHand retrieves card from carrion', () => {
+    it('selectFromGroup with friendly-carrion addToHand retrieves card from carrion', () => {
       addCardToCarrion(state, 'fish-prey-atlantic-flying-fish', 0);
+      addCardToCarrion(state, 'fish-prey-blobfish', 0); // Add second for selection UI
       const context = createEffectContext(state, 0);
 
-      const selectFn = effectLibrary.selectCarrionToAddToHand();
+      const selectFn = effectLibrary.selectFromGroup({
+        targetGroup: 'friendly-carrion',
+        title: 'Choose a carrion to add to hand',
+        effect: { addToHand: true }
+      });
       const result = selectFn(context);
 
       expect(result.selectTarget).toBeDefined();
-      expect(result.selectTarget.candidates.length).toBe(1);
+      expect(result.selectTarget.candidates.length).toBe(2);
 
-      const card = result.selectTarget.candidates[0].value;
-      const selectionResult = result.selectTarget.onSelect(card);
+      const selection = result.selectTarget.candidates[0].value;
+      const selectionResult = result.selectTarget.onSelect(selection);
 
       expect(selectionResult.addCarrionToHand).toBeDefined();
     });
 
-    it('selectCarrionToCopyAbilities works with carrion creatures', () => {
+    it('selectFromGroup with carrion copyAbilities works with carrion creatures', () => {
       const { creature } = createTestCreature('fish-prey-atlantic-flying-fish', 0, 0, state);
       addCardToCarrion(state, 'fish-prey-blobfish', 0);
+      addCardToCarrion(state, 'fish-predator-sailfish', 0); // Add second for selection UI
       const context = createEffectContext(state, 0, { creature });
 
-      const selectFn = effectLibrary.selectCarrionToCopyAbilities();
+      const selectFn = effectLibrary.selectFromGroup({
+        targetGroup: 'carrion',
+        title: 'Choose a carrion to copy abilities from',
+        effect: { copyAbilities: true }
+      });
       const result = selectFn(context);
 
       expect(result.selectTarget).toBeDefined();
@@ -309,8 +319,9 @@ describe('Game Flow Integration Tests', () => {
 
     it('Spearfish Remora discardEffect grants Ambush', () => {
       const card = getCardDefinitionById('fish-prey-spearfish-remora');
-      expect(card.effects.discardEffect.type).toBe('selectPredatorForKeyword');
-      expect(card.effects.discardEffect.params.keyword).toBe('Ambush');
+      expect(card.effects.discardEffect.type).toBe('selectFromGroup');
+      expect(card.effects.discardEffect.params.targetGroup).toBe('friendly-predators');
+      expect(card.effects.discardEffect.params.effect.keyword).toBe('Ambush');
     });
 
     it('Silver King has both onPlay and discardEffect', () => {

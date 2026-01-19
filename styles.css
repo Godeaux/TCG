@@ -426,6 +426,19 @@ button {
   overflow: visible; /* Allow hand cards to overflow upward */
 }
 
+/* Two-column layout (no left inspector) */
+.battlefield-layout-two-column {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+  gap: clamp(10px, 1.5vw, 18px);
+  height: 100%;
+  max-height: 100%;
+  min-height: var(--min-battlefield-height);
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+}
+
 .battlefield-left-column,
 .battlefield-right-column {
   display: flex;
@@ -8564,4 +8577,98 @@ button {
   .style-color-grid {
     grid-template-columns: repeat(4, 1fr);
   }
+}
+
+/* ============================================================================
+   CARD HOVER TOOLTIP SYSTEM (Hearthstone-style)
+   ============================================================================ */
+
+.card-hover-tooltip {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  display: flex;
+  gap: 12px;
+  opacity: 0;
+  transition: opacity 0.15s ease-in-out;
+}
+
+.card-hover-tooltip.visible {
+  opacity: 1;
+}
+
+.card-hover-tooltip.position-left {
+  flex-direction: row-reverse;
+}
+
+.card-hover-tooltip.position-right {
+  flex-direction: row;
+}
+
+/* Enlarged card preview - uses dynamic width from JS */
+.tooltip-card-preview {
+  width: var(--tooltip-card-width, 320px);
+  flex-shrink: 0;
+}
+
+.tooltip-card-preview .card {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 5 / 7;
+  transform: none !important;
+  margin: 0;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.7),
+              0 0 30px rgba(212, 168, 83, 0.4);
+  border: 2px solid var(--gold);
+}
+
+.tooltip-card-preview .card.tooltip-card {
+  pointer-events: none;
+}
+
+/* Info-only mode (hand cards) - no card preview, just info boxes */
+.card-hover-tooltip.info-only .tooltip-card-preview {
+  display: none;
+}
+
+/* Info boxes container */
+.tooltip-info-boxes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 260px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+/* Individual info box */
+.tooltip-info-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 10px 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  min-width: 180px;
+}
+
+.tooltip-info-box.keyword-box {
+  border-left: 4px solid var(--gold);
+}
+
+.tooltip-info-box.status-box {
+  border-left: 4px solid var(--hp-red);
+}
+
+.tooltip-info-box-title {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gold-light);
+  margin-bottom: 6px;
+}
+
+.tooltip-info-box-description {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
 }

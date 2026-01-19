@@ -103,21 +103,28 @@ describe('Fish Prey Cards', () => {
       expect(card.keywords).toContain('Immune');
     });
 
-    it('onEnd has selectEnemyPreyToConsume effect', () => {
+    it('onEnd uses selectFromGroup to consume enemy prey', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.onEnd.type).toBe('selectEnemyPreyToConsume');
+      expect(card.effects.onEnd.type).toBe('selectFromGroup');
+      expect(card.effects.onEnd.params.targetGroup).toBe('enemy-prey');
+      expect(card.effects.onEnd.params.effect.consume).toBe(true);
     });
 
-    it('effect returns selectTarget for enemy prey', () => {
+    it('selectFromGroup returns selectTarget for enemy prey when multiple targets', () => {
       const state = createTestState();
-      createTestCreature('fish-prey-atlantic-flying-fish', 1, 0, state); // Enemy prey
+      createTestCreature('fish-prey-atlantic-flying-fish', 1, 0, state); // Enemy prey 1
+      createTestCreature('fish-prey-blobfish', 1, 1, state); // Enemy prey 2
       const context = createEffectContext(state, 0);
 
-      const selectFn = effectLibrary.selectEnemyPreyToConsume();
+      const selectFn = effectLibrary.selectFromGroup({
+        targetGroup: 'enemy-prey',
+        title: 'Choose a prey to consume',
+        effect: { consume: true }
+      });
       const result = selectFn(context);
 
       expect(result.selectTarget).toBeDefined();
-      expect(result.selectTarget.candidates.length).toBe(1);
+      expect(result.selectTarget.candidates.length).toBe(2);
     });
 
     it('returns empty when no enemy prey', () => {
@@ -125,7 +132,11 @@ describe('Fish Prey Cards', () => {
       createTestCreature('fish-predator-sailfish', 1, 0, state); // Enemy predator, not prey
       const context = createEffectContext(state, 0);
 
-      const selectFn = effectLibrary.selectEnemyPreyToConsume();
+      const selectFn = effectLibrary.selectFromGroup({
+        targetGroup: 'enemy-prey',
+        title: 'Choose a prey to consume',
+        effect: { consume: true }
+      });
       const result = selectFn(context);
 
       expect(result).toEqual({});
@@ -436,23 +447,13 @@ describe('Fish Prey Cards', () => {
       expect(card.keywords).toContain('Free Play');
     });
 
-    it('discardEffect grants Ambush to predator', () => {
+    it('discardEffect grants Ambush to predator via selectFromGroup', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.discardEffect.type).toBe('selectPredatorForKeyword');
-      expect(card.effects.discardEffect.params.keyword).toBe('Ambush');
+      expect(card.effects.discardEffect.type).toBe('selectFromGroup');
+      expect(card.effects.discardEffect.params.targetGroup).toBe('friendly-predators');
+      expect(card.effects.discardEffect.params.effect.keyword).toBe('Ambush');
     });
 
-    it('selectPredatorForKeyword returns selectTarget for friendly predators', () => {
-      const state = createTestState();
-      createTestCreature('fish-predator-sailfish', 0, 0, state);
-      const context = createEffectContext(state, 0);
-
-      const selectFn = effectLibrary.selectPredatorForKeyword('Ambush');
-      const result = selectFn(context);
-
-      expect(result.selectTarget).toBeDefined();
-      expect(result.selectTarget.candidates.length).toBe(1);
-    });
   });
 
   // ============================================

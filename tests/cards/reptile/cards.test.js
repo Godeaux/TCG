@@ -159,7 +159,7 @@ describe('Reptile Cards', () => {
   // ============================================
   describe('Reptile Effect Execution', () => {
     describe('Carrion copy abilities for reptiles', () => {
-      it('selectCarrionToCopyAbilities works with reptile carrion', () => {
+      it('selectFromGroup with carrion copyAbilities works with reptile carrion', () => {
         const state = createTestState();
         const { creature } = createTestCreature('fish-prey-atlantic-flying-fish', 0, 0, state);
 
@@ -167,9 +167,14 @@ describe('Reptile Cards', () => {
         const reptilePreyId = reptileCards.find(c => c.type === 'Prey')?.id;
         if (reptilePreyId) {
           addCardToCarrion(state, reptilePreyId, 0);
+          addCardToCarrion(state, 'fish-prey-blobfish', 0); // Add second for selection UI
           const context = createEffectContext(state, 0, { creature });
 
-          const selectFn = effectLibrary.selectCarrionToCopyAbilities();
+          const selectFn = effectLibrary.selectFromGroup({
+            targetGroup: 'carrion',
+            title: 'Choose a carrion to copy abilities from',
+            effect: { copyAbilities: true }
+          });
           const result = selectFn(context);
 
           expect(result.selectTarget).toBeDefined();

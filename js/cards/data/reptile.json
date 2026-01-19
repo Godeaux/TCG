@@ -65,7 +65,10 @@
       "effectText": "Play 2 Lava Lizards. Deal 1 damage to rival.",
       "summons": ["token-lava-lizard"],
       "effects": {
-        "onPlay": { "type": "summonAndDamageOpponent", "params": { "tokenIds": ["token-lava-lizard", "token-lava-lizard"], "damage": 1 } }
+        "onPlay": [
+          { "type": "summonTokens", "params": { "tokenIds": ["token-lava-lizard", "token-lava-lizard"] } },
+          { "type": "damageRival", "params": { "amount": 1 } }
+        ]
       }
     },
         {
@@ -136,7 +139,7 @@
       "effectText": "Start of turn, deal 1 damage to Rival and Rival's creatures.",
       "effects": {
         "onStart": [
-          { "type": "damageOpponent", "params": { "amount": 1 } },
+          { "type": "damageRival", "params": { "amount": 1 } },
           { "type": "damageAllEnemyCreatures", "params": { "amount": 1 } }
         ]
       }
@@ -192,7 +195,7 @@
       "keywords": [],
       "effectText": "Copy abilities of target animal.",
       "effects": {
-        "onPlay": { "type": "selectCreatureToCopyAbilities" }
+        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "other-creatures", "title": "Choose a creature to copy abilities from", "effect": { "copyAbilitiesFrom": true } } }
       }
     },
     {
@@ -268,7 +271,10 @@
       "keywords": [],
       "effectText": "Deal 2 damage to players & other animals.",
       "effects": {
-        "onPlay": { "type": "damagePlayersAndOtherCreatures", "params": { "damage": 2 } }
+        "onPlay": [
+          { "type": "damageBothPlayers", "params": { "amount": 2 } },
+          { "type": "damageOtherCreatures", "params": { "amount": 2 } }
+        ]
       }
     },
     {
@@ -302,7 +308,10 @@
       "keywords": [],
       "effectText": "Deal 2 damage to Rival and Rival's creatures.",
       "effects": {
-        "onConsume": { "type": "damageOpponent", "params": { "amount": 2 } }
+        "onConsume": [
+          { "type": "damageRival", "params": { "amount": 2 } },
+          { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } }
+        ]
       }
     },
     {
@@ -326,7 +335,7 @@
       "keywords": ["Neurotoxic"],
       "effectText": "Slain, deal 3 damage to rival.",
       "effects": {
-        "onSlain": { "type": "damageOpponent", "params": { "amount": 3 } }
+        "onSlain": { "type": "damageRival", "params": { "amount": 3 } }
       }
     },
     {
@@ -357,7 +366,7 @@
             "options": [
               { "label": "Draw 3", "description": "Draw 3 cards", "effect": { "type": "draw", "params": { "count": 3 } } },
               { "label": "Heal 3", "description": "Heal 3 HP", "effect": { "type": "heal", "params": { "amount": 3 } } },
-              { "label": "Deal 3 damage", "description": "Deal 3 damage to rival", "effect": { "type": "damageOpponent", "params": { "amount": 3 } } }
+              { "label": "Deal 3 damage", "description": "Deal 3 damage to rival", "effect": { "type": "damageRival", "params": { "amount": 3 } } }
             ]
           }
         }
@@ -401,7 +410,7 @@
       "keywords": [],
       "effectText": "Copy abilities of a carrion pred.",
       "effects": {
-        "onConsume": { "type": "selectCarrionPredToCopyAbilities" }
+        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "carrion-predators", "title": "Choose a carrion predator to copy", "effect": { "copyAbilities": true } } }
       }
     },
     {
@@ -413,7 +422,10 @@
       "keywords": [],
       "effectText": "Heal 2. Add a card from deck to hand.",
       "effects": {
-        "onConsume": { "type": "healAndTutor", "params": { "healAmount": 2 } }
+        "onConsume": [
+          { "type": "heal", "params": { "amount": 2 } },
+          { "type": "tutorFromDeck", "params": {} }
+        ]
       }
     },
     {
@@ -456,12 +468,10 @@
       "type": "Spell",
       "effectText": "Discard 1. Kill Rival's creatures.",
       "effects": {
-        "effect": {
-          "type": "discardThenKillAllEnemies",
-          "params": {
-            "discardCount": 1
-          }
-        }
+        "effect": [
+          { "type": "selectAndDiscard", "params": { "count": 1 } },
+          { "type": "killAllEnemyCreatures", "params": {} }
+        ]
       }
     },
     {
@@ -470,10 +480,10 @@
       "type": "Spell",
       "effectText": "Destroy field spells. Kill animals.",
       "effects": {
-        "effect": {
-          "type": "destroyEverything",
-          "params": {}
-        }
+        "effect": [
+          { "type": "destroyFieldSpells", "params": {} },
+          { "type": "killAll", "params": { "targetType": "all" } }
+        ]
       }
     },
     {
@@ -491,10 +501,7 @@
       "type": "Spell",
       "effectText": "Paralyze target Rival's creature (cannot attack but can still be consumed).",
       "effects": {
-        "effect": {
-          "type": "selectEnemyToParalyze",
-          "params": {}
-        }
+        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a Rival's creature to paralyze", "effect": { "paralyze": true } } }
       }
     },
     {
@@ -592,12 +599,10 @@
       "trigger": "indirectDamage",
       "effectText": "When you receive indirect damage, negate it and heal 3 HP.",
       "effects": {
-        "effect": {
-          "type": "negateDamageAndHeal",
-          "params": {
-            "healAmount": 3
-          }
-        }
+        "effect": [
+          { "type": "negateDamage", "params": {} },
+          { "type": "heal", "params": { "amount": 3 } }
+        ]
       }
     },
     {
@@ -607,13 +612,10 @@
       "trigger": "rivalDraws",
       "effectText": "When rival draws, they must discard 1 card, then you draw 1 card.",
       "effects": {
-        "effect": {
-          "type": "forceOpponentDiscardThenDraw",
-          "params": {
-            "discardCount": 1,
-            "drawCount": 1
-          }
-        }
+        "effect": [
+          { "type": "forceOpponentDiscard", "params": { "count": 1 } },
+          { "type": "draw", "params": { "count": 1 } }
+        ]
       }
     },
     {
@@ -624,12 +626,10 @@
       "effectText": "When Rival's creature attacks directly, negate attack. Play Snakes.",
       "summons": ["token-snakes"],
       "effects": {
-        "effect": {
-          "type": "negateAndSummon",
-          "params": {
-            "tokenIds": ["token-snakes"]
-          }
-        }
+        "effect": [
+          { "type": "negateAttack", "params": {} },
+          { "type": "summonTokens", "params": { "tokenIds": ["token-snakes"] } }
+        ]
       }
     }
   ]

@@ -38,7 +38,7 @@
       "keywords": ["Passive", "Immune"],
       "effectText": "End of turn; consume target Rival's prey.",
       "effects": {
-        "onEnd": { "type": "selectEnemyPreyToConsume" }
+        "onEnd": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-prey", "title": "Choose a Rival's prey to consume", "effect": { "consume": true } } }
       }
     },
     {
@@ -253,12 +253,7 @@
       "keywords": ["Free Play"],
       "effectText": "Discard: target pred gains Ambush.",
       "effects": {
-        "discardEffect": {
-          "type": "selectPredatorForKeyword",
-          "params": {
-            "keyword": "Ambush"
-          }
-        }
+        "discardEffect": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-predators", "title": "Choose a predator to gain Ambush", "effect": { "keyword": "Ambush" } } }
       }
     },
     {
@@ -531,7 +526,7 @@
       "keywords": [],
       "effectText": "Play a prey.",
       "effects": {
-        "onConsume": { "type": "selectPreyFromHandToPlay" }
+        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "hand-prey", "title": "Choose a prey to play", "effect": { "play": true } } }
       }
     },
     {
@@ -561,7 +556,7 @@
       "keywords": [],
       "effectText": "Copy abilities of a carrion pred.",
       "effects": {
-        "onConsume": { "type": "selectCarrionPredToCopyAbilities" }
+        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "carrion-predators", "title": "Choose a carrion predator to copy", "effect": { "copyAbilities": true } } }
       }
     },
     {
@@ -689,12 +684,7 @@
       "type": "Spell",
       "effectText": "Deal 4 damage to target Rival's creature then gain control of it.",
       "effects": {
-        "effect": {
-          "type": "selectEnemyToSteal",
-          "params": {
-            "damage": 4
-          }
-        }
+        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a Rival's creature", "effect": { "damage": 4, "steal": true } } }
       }
     },
         {
@@ -703,7 +693,10 @@
       "type": "Free Spell",
       "effectText": "Add a card from deck to hand. End turn.",
       "effects": {
-        "effect": { "type": "tutorAndEndTurn" }
+        "effect": [
+          { "type": "tutorFromDeck", "params": {} },
+          { "type": "endTurn", "params": {} }
+        ]
       }
     },
     {
@@ -712,12 +705,7 @@
       "type": "Free Spell",
       "effectText": "Target pred gains Edible.",
       "effects": {
-        "effect": {
-          "type": "selectPredatorForKeyword",
-          "params": {
-            "keyword": "Edible"
-          }
-        }
+        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-predators", "title": "Choose a predator to gain Edible", "effect": { "keyword": "Edible" } } }
       }
     },
     {
@@ -738,7 +726,7 @@
       "type": "Free Spell",
       "effectText": "Target Rival's creature loses abilities.",
       "effects": {
-        "effect": { "type": "selectEnemyToStripAbilities" }
+        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a Rival's creature to strip abilities", "effect": { "removeAbilities": true } } }
       }
     },
         {

@@ -23,30 +23,37 @@ describe('Mexican Violetear - Copy Abilities', () => {
   });
 
   describe('Card Definition', () => {
-    it('Mexican Violetear has selectCarrionToCopyAbilities onPlay', () => {
+    it('Mexican Violetear has selectFromGroup onPlay for carrion abilities', () => {
       const card = getCardDefinitionById('bird-prey-mexican-violetear');
       expect(card).toBeDefined();
       expect(card.effects).toBeDefined();
       expect(card.effects.onPlay).toBeDefined();
-      expect(card.effects.onPlay.type).toBe('selectCarrionToCopyAbilities');
+      expect(card.effects.onPlay.type).toBe('selectFromGroup');
+      expect(card.effects.onPlay.params.targetGroup).toBe('carrion');
+      expect(card.effects.onPlay.params.effect.copyAbilities).toBe(true);
     });
   });
 
-  describe('selectCarrionToCopyAbilities Effect', () => {
+  describe('selectFromGroup Effect with carrion copyAbilities', () => {
     it('returns selectTarget when carrion available', async () => {
       const { creature } = createTestCreature('bird-prey-mexican-violetear', 0, 0, state);
 
-      // Add a creature to carrion
+      // Add creatures to carrion
       addCardToCarrion(state, 'fish-prey-atlantic-flying-fish', 0);
+      addCardToCarrion(state, 'fish-prey-blobfish', 0); // Add second for selection UI
 
       const context = createEffectContext(state, 0, { creature });
 
-      const { selectCarrionToCopyAbilities } = await import('../../js/cards/effectLibrary.js');
-      const effectFn = selectCarrionToCopyAbilities();
+      const { selectFromGroup } = await import('../../js/cards/effectLibrary.js');
+      const effectFn = selectFromGroup({
+        targetGroup: 'carrion',
+        title: 'Choose a carrion to copy abilities from',
+        effect: { copyAbilities: true }
+      });
       const result = effectFn(context);
 
       expect(result.selectTarget).toBeDefined();
-      expect(result.selectTarget.candidates.length).toBe(1);
+      expect(result.selectTarget.candidates.length).toBe(2);
       expect(result.selectTarget.onSelect).toBeInstanceOf(Function);
     });
 
@@ -56,9 +63,14 @@ describe('Mexican Violetear - Copy Abilities', () => {
 
       // Empty carrion
       state.players[0].carrion = [];
+      state.players[1].carrion = [];
 
-      const { selectCarrionToCopyAbilities } = await import('../../js/cards/effectLibrary.js');
-      const effectFn = selectCarrionToCopyAbilities();
+      const { selectFromGroup } = await import('../../js/cards/effectLibrary.js');
+      const effectFn = selectFromGroup({
+        targetGroup: 'carrion',
+        title: 'Choose a carrion to copy abilities from',
+        effect: { copyAbilities: true }
+      });
       const result = effectFn(context);
 
       expect(result).toEqual({});
@@ -66,20 +78,26 @@ describe('Mexican Violetear - Copy Abilities', () => {
 
     it('onSelect returns copyAbilities result', async () => {
       const { creature: target } = createTestCreature('bird-prey-mexican-violetear', 0, 0, state);
-      const source = addCardToCarrion(state, 'fish-prey-atlantic-flying-fish', 0);
+      addCardToCarrion(state, 'fish-prey-atlantic-flying-fish', 0);
+      addCardToCarrion(state, 'fish-prey-blobfish', 0); // Add second for selection UI
 
       const context = createEffectContext(state, 0, { creature: target });
 
-      const { selectCarrionToCopyAbilities } = await import('../../js/cards/effectLibrary.js');
-      const effectFn = selectCarrionToCopyAbilities();
+      const { selectFromGroup } = await import('../../js/cards/effectLibrary.js');
+      const effectFn = selectFromGroup({
+        targetGroup: 'carrion',
+        title: 'Choose a carrion to copy abilities from',
+        effect: { copyAbilities: true }
+      });
       const result = effectFn(context);
 
       // Simulate selection
-      const selectResult = result.selectTarget.onSelect(source);
+      const selection = result.selectTarget.candidates[0].value;
+      const selectResult = result.selectTarget.onSelect(selection);
 
       expect(selectResult.copyAbilities).toBeDefined();
       expect(selectResult.copyAbilities.target).toBe(target);
-      expect(selectResult.copyAbilities.source).toBe(source);
+      expect(selectResult.copyAbilities.source).toBe(selection.creature);
     });
   });
 });
@@ -256,16 +274,18 @@ describe('Moluccan Cockatoo - Copy Abilities from Field', () => {
   });
 
   describe('Card Definition', () => {
-    it('Moluccan Cockatoo has selectCreatureToCopyAbilities onPlay', () => {
+    it('Moluccan Cockatoo has selectFromGroup onPlay for creature abilities', () => {
       const card = getCardDefinitionById('bird-prey-moluccan-cockatoo');
       expect(card).toBeDefined();
       expect(card.effects).toBeDefined();
       expect(card.effects.onPlay).toBeDefined();
-      expect(card.effects.onPlay.type).toBe('selectCreatureToCopyAbilities');
+      expect(card.effects.onPlay.type).toBe('selectFromGroup');
+      expect(card.effects.onPlay.params.targetGroup).toBe('other-creatures');
+      expect(card.effects.onPlay.params.effect.copyAbilitiesFrom).toBe(true);
     });
   });
 
-  describe('selectCreatureToCopyAbilities Effect', () => {
+  describe('selectFromGroup Effect for copying abilities', () => {
     it('returns selectTarget when field creatures available', async () => {
       const { creature } = createTestCreature('bird-prey-moluccan-cockatoo', 0, 0, state);
 
@@ -274,28 +294,39 @@ describe('Moluccan Cockatoo - Copy Abilities from Field', () => {
 
       const context = createEffectContext(state, 0, { creature });
 
-      const { selectCreatureToCopyAbilities } = await import('../../js/cards/effectLibrary.js');
-      const effectFn = selectCreatureToCopyAbilities();
+      const { selectFromGroup } = await import('../../js/cards/effectLibrary.js');
+      const effectFn = selectFromGroup({
+        targetGroup: 'other-creatures',
+        title: 'Choose a creature to copy abilities from',
+        effect: { copyAbilitiesFrom: true }
+      });
       const result = effectFn(context);
 
-      expect(result.selectTarget).toBeDefined();
-      // Should have 2 candidates (cockatoo itself and sailfish)
-      expect(result.selectTarget.candidates.length).toBeGreaterThanOrEqual(1);
-      expect(result.selectTarget.onSelect).toBeInstanceOf(Function);
+      // With only one valid target (sailfish - excludes self), auto-selects
+      // Check that result has copyAbilities (auto-selected)
+      expect(result.copyAbilities).toBeDefined();
     });
 
-    it('onSelect returns copyAbilities result', async () => {
+    it('onSelect returns copyAbilities result when multiple targets', async () => {
       const { creature: target } = createTestCreature('bird-prey-moluccan-cockatoo', 0, 0, state);
       const { creature: source } = createTestCreature('fish-predator-sailfish', 0, 1, state);
+      createTestCreature('fish-prey-blobfish', 0, 2, state); // Add second target for selection UI
 
       const context = createEffectContext(state, 0, { creature: target });
 
-      const { selectCreatureToCopyAbilities } = await import('../../js/cards/effectLibrary.js');
-      const effectFn = selectCreatureToCopyAbilities();
+      const { selectFromGroup } = await import('../../js/cards/effectLibrary.js');
+      const effectFn = selectFromGroup({
+        targetGroup: 'other-creatures',
+        title: 'Choose a creature to copy abilities from',
+        effect: { copyAbilitiesFrom: true }
+      });
       const result = effectFn(context);
 
+      expect(result.selectTarget).toBeDefined();
+      expect(result.selectTarget.candidates.length).toBe(2);
+
       // Simulate selection
-      const selectResult = result.selectTarget.onSelect(source);
+      const selectResult = result.selectTarget.onSelect({ type: 'creature', creature: source, ownerIndex: 0 });
 
       expect(selectResult.copyAbilities).toBeDefined();
       expect(selectResult.copyAbilities.target).toBe(target);
@@ -316,15 +347,15 @@ describe('Copy Ability Full End-to-End Execution', () => {
   });
 
   describe('Copied onPlay with simple effects', () => {
-    it('copied damageOpponent onPlay actually damages opponent when triggered', () => {
+    it('copied damageRival onPlay actually damages opponent when triggered', () => {
       const { creature: target } = createTestCreature('bird-prey-mexican-violetear', 0, 0, state);
       const initialOpponentHp = state.players[1].hp;
 
-      // Create a source with damageOpponent onPlay
+      // Create a source with damageRival onPlay
       const sourceDef = getCardDefinitionById('fish-prey-atlantic-flying-fish');
       const source = createCardInstance(sourceDef, state.turn);
       source.effects = {
-        onPlay: { type: 'damageOpponent', params: { amount: 3 } }
+        onPlay: { type: 'damageRival', params: { amount: 3 } }
       };
       state.players[0].carrion.push(source);
 

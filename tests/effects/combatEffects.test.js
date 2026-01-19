@@ -132,71 +132,8 @@ describe('Negate And Kill Attacker Effect', () => {
   });
 });
 
-describe('Negate Damage And Heal Effect', () => {
-  let state;
-  let context;
-
-  beforeEach(() => {
-    state = createTestState();
-    context = createEffectContext(state, 0);
-  });
-
-  it('returns negateDamage and heal result', () => {
-    const negateFn = effectLibrary.negateDamageAndHeal(3);
-    const result = negateFn(context);
-
-    expect(result.negateDamage).toBe(true);
-    expect(result.heal).toBe(3);
-  });
-
-  it('logs the action', () => {
-    const negateFn = effectLibrary.negateDamageAndHeal(2);
-    negateFn(context);
-
-    expect(context.log.getMessages()).toContain('Damage negated. Healing 2 HP.');
-  });
-});
-
-describe('Negate And Freeze Enemies Effect', () => {
-  let state;
-  let context;
-
-  beforeEach(() => {
-    state = createTestState();
-    createTestCreature('fish-prey-atlantic-flying-fish', 1, 0, state);
-    createTestCreature('fish-prey-blobfish', 1, 1, state);
-    context = createEffectContext(state, 0);
-  });
-
-  it('returns negateAttack and grantKeywordToAll with Frozen', () => {
-    const negateFn = effectLibrary.negateAndFreezeEnemies();
-    const result = negateFn(context);
-
-    expect(result.negateAttack).toBe(true);
-    expect(result.grantKeywordToAll).toBeDefined();
-    expect(result.grantKeywordToAll.keyword).toBe('Frozen');
-  });
-});
-
-describe('Negate Damage And Freeze Enemies Effect', () => {
-  let state;
-  let context;
-
-  beforeEach(() => {
-    state = createTestState();
-    createTestCreature('fish-prey-atlantic-flying-fish', 1, 0, state);
-    context = createEffectContext(state, 0);
-  });
-
-  it('returns negateDamage and grantKeywordToAll with Frozen', () => {
-    const negateFn = effectLibrary.negateDamageAndFreezeEnemies();
-    const result = negateFn(context);
-
-    expect(result.negateDamage).toBe(true);
-    expect(result.grantKeywordToAll).toBeDefined();
-    expect(result.grantKeywordToAll.keyword).toBe('Frozen');
-  });
-});
+// Note: Compound effects like negateDamageAndHeal, negateAndFreezeEnemies, negateDamageAndFreezeEnemies
+// have been replaced with primitive arrays in card JSON (e.g., [{ type: 'negateDamage' }, { type: 'heal', params: { amount: 3 } }])
 
 describe('Deal Damage To Attacker Effect', () => {
   let state;

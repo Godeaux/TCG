@@ -129,14 +129,14 @@ describe('Damage Opponent Effect', () => {
   });
 
   it('returns damageOpponent result with correct amount', () => {
-    const damageFn = effectLibrary.damageOpponent(3);
+    const damageFn = effectLibrary.damageRival(3);
     const result = damageFn(context);
 
     expect(result.damageOpponent).toBe(3);
   });
 
   it('deals damage to opponent', () => {
-    const damageFn = effectLibrary.damageOpponent(4);
+    const damageFn = effectLibrary.damageRival(4);
     const result = damageFn(context);
 
     resolveEffectResult(state, result, context);
@@ -146,7 +146,7 @@ describe('Damage Opponent Effect', () => {
 
   it('can reduce opponent HP below zero', () => {
     state.players[1].hp = 2;
-    const damageFn = effectLibrary.damageOpponent(5);
+    const damageFn = effectLibrary.damageRival(5);
     const result = damageFn(context);
 
     resolveEffectResult(state, result, context);
@@ -155,7 +155,7 @@ describe('Damage Opponent Effect', () => {
   });
 
   it('logs the damage action', () => {
-    const damageFn = effectLibrary.damageOpponent(2);
+    const damageFn = effectLibrary.damageRival(2);
     damageFn(context);
 
     expect(context.log.getMessages()).toContain('Deals 2 damage to rival.');

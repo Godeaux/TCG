@@ -23,7 +23,10 @@
       "nutrition": 1,
       "effectText": "Rival reveals hand. Add a card from deck to hand.",
       "effects": {
-        "onPlay": { "type": "revealAndTutor" }
+        "onPlay": [
+          { "type": "revealHand", "params": {} },
+          { "type": "tutorFromDeck", "params": {} }
+        ]
       }
     },
         {
@@ -75,7 +78,7 @@
       "effectText": "End of turn, deal 2 damage to Rival and Rival's creatures.",
       "effects": {
         "onEnd": [
-          { "type": "damageOpponent", "params": { "amount": 2 } },
+          { "type": "damageRival", "params": { "amount": 2 } },
           { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } }
         ]
       }
@@ -117,7 +120,7 @@
       "nutrition": 1,
       "effectText": "Copy abilities of a carrion.",
       "effects": {
-        "onPlay": { "type": "selectCarrionToCopyAbilities" }
+        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "carrion", "title": "Choose a carrion to copy abilities from", "effect": { "copyAbilities": true } } }
       }
     },
     {
@@ -129,7 +132,7 @@
       "nutrition": 1,
       "effectText": "Copy stats of target animal.",
       "effects": {
-        "onPlay": { "type": "selectCreatureToCopyStats" }
+        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "other-creatures", "title": "Choose a creature to copy stats from", "effect": { "copyStats": true } } }
       }
     },
     {
@@ -141,7 +144,7 @@
       "nutrition": 1,
       "effectText": "Copy abilities of target animal.",
       "effects": {
-        "onPlay": { "type": "selectCreatureToCopyAbilities" }
+        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "other-creatures", "title": "Choose a creature to copy abilities from", "effect": { "copyAbilitiesFrom": true } } }
       }
     },
     {
@@ -154,7 +157,11 @@
       "effectText": "Play Oriental Magpie. Heal 2. Regen target creature.",
       "summons": ["token-oriental-magpie"],
       "effects": {
-        "onPlay": { "type": "summonHealAndRegen", "params": { "tokenIds": ["token-oriental-magpie"], "healAmount": 2 } }
+        "onPlay": [
+          { "type": "summonTokens", "params": { "tokenIds": ["token-oriental-magpie"] } },
+          { "type": "heal", "params": { "amount": 2 } },
+          { "type": "selectFromGroup", "params": { "targetGroup": "all-creatures", "title": "Choose a creature to regenerate", "effect": { "regen": true } } }
+        ]
       }
     },
     {
@@ -179,7 +186,7 @@
       "nutrition": 1,
       "effectText": "Copy stats of a carrion.",
       "effects": {
-        "onPlay": { "type": "selectCarrionToCopyStats" }
+        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "carrion", "title": "Choose a carrion to copy stats from", "effect": { "copyStats": true } } }
       }
     },
     {
@@ -229,7 +236,7 @@
       "effectText": "After combat, deal 2 damage. End of turn, deal 2 damage to rival.",
       "effects": {
         "onAfterCombat": { "type": "selectFromGroup", "params": { "targetGroup": "all-entities", "title": "Choose a target for damage", "effect": { "damage": 2, "label": "stink" } } },
-        "onEnd": { "type": "damageOpponent", "params": { "amount": 2 } }
+        "onEnd": { "type": "damageRival", "params": { "amount": 2 } }
       }
     },
     {
@@ -331,7 +338,10 @@
       "hp": 2,
       "effectText": "Kill Rival's prey. Destroy target field spell.",
       "effects": {
-        "onConsume": { "type": "killPreyAndDestroyField" }
+        "onConsume": [
+          { "type": "selectFromGroup", "params": { "targetGroup": "enemy-prey", "title": "Choose a prey to kill", "effect": { "kill": true } } },
+          { "type": "destroyFieldSpells", "params": {} }
+        ]
       }
     },
     {
@@ -342,7 +352,10 @@
       "hp": 2,
       "effectText": "Add a carrion to hand. Add a card from deck to hand.",
       "effects": {
-        "onConsume": { "type": "addCarrionAndTutor" }
+        "onConsume": [
+          { "type": "selectFromGroup", "params": { "targetGroup": "friendly-carrion", "title": "Choose a carrion to add to hand", "effect": { "addToHand": true } } },
+          { "type": "tutorFromDeck", "params": {} }
+        ]
       }
     },
     {
@@ -484,7 +497,10 @@
               {
                 "label": "Deal 2 damage to rival and creatures",
                 "description": "Deal 2 damage to Rival and Rival's creatures",
-                "effect": { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } }
+                "effect": [
+                  { "type": "damageRival", "params": { "amount": 2 } },
+                  { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } }
+                ]
               },
               {
                 "label": "Deal 6 damage to target Rival's creature",
@@ -562,12 +578,10 @@
       "effectText": "When Rival's creature attacks directly, negate attack. Play 3 Bushtits.",
       "summons": ["token-bushtit"],
       "effects": {
-        "effect": {
-          "type": "negateAndSummon",
-          "params": {
-            "tokenIds": ["token-bushtit", "token-bushtit", "token-bushtit"]
-          }
-        }
+        "effect": [
+          { "type": "negateAttack", "params": {} },
+          { "type": "summonTokens", "params": { "tokenIds": ["token-bushtit", "token-bushtit", "token-bushtit"] } }
+        ]
       }
     },
     {

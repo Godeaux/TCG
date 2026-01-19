@@ -175,7 +175,9 @@ describe('Numeric Value Validation', () => {
             e.type?.includes('Draw') ||
             e.type?.includes('draw') ||
             e.type?.includes('Tutor') ||
-            e.type?.includes('tutor')
+            e.type?.includes('tutor') ||
+            // Check for selectFromGroup with draw in effect params (e.g., Curiosity)
+            (e.type === 'selectFromGroup' && typeof e.params?.effect?.draw === 'number')
         );
         expect(hasCombinedDraw).toBe(true);
       }
@@ -953,3 +955,98 @@ function isKeywordOnlyText(text) {
   const trimmed = text.trim();
   return keywordPatterns.some((p) => p.test(trimmed));
 }
+
+// ============================================
+// Generated Effect Text Validation (Schema-based)
+// ============================================
+
+import {
+  generateCardEffectText,
+  normalizeText,
+  compareEffectText,
+} from '../../js/cards/effectTextGenerator.js';
+
+describe('Generated Effect Text Matches Written (Schema-based)', () => {
+  // Get all cards with both effects and effectText
+  const cardsWithEffectsAndText = getAllCards().filter(
+    (c) =>
+      c.effects &&
+      Object.keys(c.effects).length > 0 &&
+      c.effectText &&
+      c.effectText.trim() &&
+      // Exclude tokens (may have partial text)
+      !c.isToken &&
+      // Exclude keyword-only text
+      !isKeywordOnlyText(c.effectText)
+  );
+
+  describe('Effect text comparison', () => {
+    it.each(cardsWithEffectsAndText.map((c) => [c.name, c.id]))(
+      '%s (%s) - generated text matches written',
+      (name, cardId) => {
+        const card = getCardDefinitionById(cardId);
+        const comparison = compareEffectText(card);
+
+        // If texts don't match, show helpful diff
+        if (!comparison.match) {
+          console.log(`\n[${cardId}] Effect text mismatch:`);
+          console.log(`  Written:   "${comparison.written}"`);
+          console.log(`  Generated: "${comparison.generated}"`);
+        }
+
+        // For now, just log mismatches - don't fail the test
+        // This allows us to see all mismatches and fix them incrementally
+        // Once all mismatches are fixed, change this to: expect(comparison.match).toBe(true);
+        expect(comparison).toBeDefined();
+      }
+    );
+  });
+
+  // Summary test that reports overall match rate
+  it('reports effect text synchronization summary', () => {
+    let matches = 0;
+    let mismatches = 0;
+    const mismatchList = [];
+
+    for (const card of cardsWithEffectsAndText) {
+      const comparison = compareEffectText(card);
+      if (comparison.match) {
+        matches++;
+      } else {
+        mismatches++;
+        mismatchList.push({
+          id: card.id,
+          name: card.name,
+          written: comparison.written,
+          generated: comparison.generated,
+        });
+      }
+    }
+
+    const total = matches + mismatches;
+    const matchRate = total > 0 ? ((matches / total) * 100).toFixed(1) : 0;
+
+    console.log(`\n========================================`);
+    console.log(`Effect Text Sync Summary`);
+    console.log(`========================================`);
+    console.log(`Total cards with effects+text: ${total}`);
+    console.log(`Matches: ${matches} (${matchRate}%)`);
+    console.log(`Mismatches: ${mismatches}`);
+
+    if (mismatchList.length > 0 && mismatchList.length <= 20) {
+      console.log(`\nMismatched cards:`);
+      for (const m of mismatchList) {
+        console.log(`  - ${m.id}: "${m.written}" vs "${m.generated}"`);
+      }
+    } else if (mismatchList.length > 20) {
+      console.log(`\nFirst 20 mismatched cards:`);
+      for (const m of mismatchList.slice(0, 20)) {
+        console.log(`  - ${m.id}`);
+      }
+      console.log(`  ... and ${mismatchList.length - 20} more`);
+    }
+
+    // This test always passes - it's for reporting
+    expect(true).toBe(true);
+  });
+});

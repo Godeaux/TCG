@@ -24,10 +24,10 @@
       "effectText": "Play 2 Arctic Ground Squirrels. Target Rival's creature gains Frozen.",
       "summons": ["token-arctic-ground-squirrel"],
       "effects": {
-        "onPlay": {
-          "type": "summonAndSelectEnemyToFreeze",
-          "params": { "tokenIds": ["token-arctic-ground-squirrel", "token-arctic-ground-squirrel"] }
-        }
+        "onPlay": [
+          { "type": "summonTokens", "params": { "tokenIds": ["token-arctic-ground-squirrel", "token-arctic-ground-squirrel"] } },
+          { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to freeze", "effect": { "keyword": "Frozen" } } }
+        ]
       }
     },
     {
@@ -52,7 +52,10 @@
       "nutrition": 1,
       "effectText": "Rival reveals hand. Kill target prey.",
       "effects": {
-        "onPlay": { "type": "revealHandAndSelectPreyToKill" }
+        "onPlay": [
+          { "type": "revealHand", "params": {} },
+          { "type": "selectFromGroup", "params": { "targetGroup": "all-prey", "title": "Choose a prey to kill", "effect": { "kill": true } } }
+        ]
       }
     },
     {
@@ -157,7 +160,10 @@
       "nutrition": 1,
       "effectText": "Rival discards 1. Add a card from deck to hand.",
       "effects": {
-        "onPlay": { "type": "forceDiscardAndTutor", "params": { "discardCount": 1 } }
+        "onPlay": [
+          { "type": "forceOpponentDiscard", "params": { "count": 1 } },
+          { "type": "tutorFromDeck", "params": {} }
+        ]
       }
     },
     {
@@ -233,7 +239,7 @@
       "nutrition": 2,
       "effectText": "Add a carrion to hand.",
       "effects": {
-        "onPlay": { "type": "selectCarrionToAddToHand" }
+        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-carrion", "title": "Choose a carrion to add to hand", "effect": { "addToHand": true } } }
       }
     },
     {
@@ -262,7 +268,7 @@
           "params": {
             "title": "Choose an effect",
             "options": [
-              { "label": "Deal 2 damage", "description": "Deal 2 damage to rival", "effect": { "type": "damageOpponent", "params": { "amount": 2 } } },
+              { "label": "Deal 2 damage", "description": "Deal 2 damage to rival", "effect": { "type": "damageRival", "params": { "amount": 2 } } },
               { "label": "Heal 2", "description": "Heal 2 HP", "effect": { "type": "heal", "params": { "amount": 2 } } }
             ]
           }
@@ -323,10 +329,10 @@
       "effectText": "Play 2 Dholes. Kill target Rival's creature.",
       "summons": ["token-dhole"],
       "effects": {
-        "onConsume": {
-          "type": "summonAndSelectEnemyToKill",
-          "params": { "tokenIds": ["token-dhole", "token-dhole"] }
-        }
+        "onConsume": [
+          { "type": "summonTokens", "params": { "tokenIds": ["token-dhole", "token-dhole"] } },
+          { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to kill", "effect": { "kill": true } } }
+        ]
       }
     },
     {
@@ -374,7 +380,7 @@
       "hp": 3,
       "effectText": "Sacrifice; play a carrion.",
       "effects": {
-        "onConsume": { "type": "selectCarrionToPlayWithKeyword", "params": { "keyword": null } }
+        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-carrion", "title": "Choose a carrion to play", "effect": { "play": true } } }
       }
     },
     {
@@ -415,7 +421,7 @@
       "hp": 3,
       "effectText": "Copy abilities of a carrion.",
       "effects": {
-        "onConsume": { "type": "selectCarrionToCopyAbilities" }
+        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "carrion", "title": "Choose a carrion to copy abilities from", "effect": { "copyAbilities": true } } }
       }
     },
     {
@@ -477,7 +483,11 @@
       "type": "Spell",
       "effectText": "Deal 2 damage to Rival and Rival's creatures. Rival's creatures gain Frozen.",
       "effects": {
-        "effect": { "type": "damageOpponentAndFreezeEnemies", "params": { "damage": 2 } }
+        "effect": [
+          { "type": "damageRival", "params": { "amount": 2 } },
+          { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } },
+          { "type": "freezeAllEnemies", "params": {} }
+        ]
       }
     },
     {
@@ -513,7 +523,7 @@
       "type": "Spell",
       "effectText": "Play a carrion; it gains Frozen.",
       "effects": {
-        "effect": { "type": "selectCarrionToPlayWithKeyword", "params": { "keyword": "Frozen" } }
+        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-carrion", "title": "Choose a carrion to play", "effect": { "play": true, "keyword": "Frozen" } } }
       }
     },
     {
@@ -522,7 +532,7 @@
       "type": "Free Spell",
       "effectText": "Sacrifice target creature, draw 3.",
       "effects": {
-        "effect": { "type": "selectCreatureToSacrificeAndDraw", "params": { "drawCount": 3 } }
+        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-creatures", "title": "Choose a creature to sacrifice", "effect": { "sacrifice": true, "draw": 3 } } }
       }
     },
     {
@@ -577,7 +587,10 @@
       "trigger": "directAttack",
       "effectText": "When Rival's creature attacks directly, negate attack. Rival's creatures gain Frozen.",
       "effects": {
-        "effect": { "type": "negateAndFreezeEnemies" }
+        "effect": [
+          { "type": "negateAttack", "params": {} },
+          { "type": "freezeAllEnemies", "params": {} }
+        ]
       }
     },
     {
@@ -587,7 +600,10 @@
       "trigger": "indirectDamage",
       "effectText": "When damaged indirectly, negate damage. Rival's creatures gain Frozen.",
       "effects": {
-        "effect": { "type": "negateDamageAndFreezeEnemies" }
+        "effect": [
+          { "type": "negateDamage", "params": {} },
+          { "type": "freezeAllEnemies", "params": {} }
+        ]
       }
     },
     {
@@ -597,7 +613,7 @@
       "trigger": "slain",
       "effectText": "When target defending creature is slain; play a carrion, it gains Frozen.",
       "effects": {
-        "effect": { "type": "selectCarrionToPlayWithKeyword", "params": { "keyword": "Frozen" } }
+        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-carrion", "title": "Choose a carrion to play", "effect": { "play": true, "keyword": "Frozen" } } }
       }
     }
   ]

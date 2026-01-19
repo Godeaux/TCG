@@ -51,10 +51,14 @@ describe('Mammal Cards', () => {
     describe('Arctic Ground Squirrels', () => {
       const cardId = 'mammal-prey-arctic-ground-squirrels';
 
-      it('onPlay summons 2 tokens and freezes enemy', () => {
+      it('onPlay summons 2 tokens and freezes enemy via primitives', () => {
         const card = getCardDefinitionById(cardId);
-        expect(card.effects.onPlay.type).toBe('summonAndSelectEnemyToFreeze');
-        expect(card.effects.onPlay.params.tokenIds.length).toBe(2);
+        expect(Array.isArray(card.effects.onPlay)).toBe(true);
+        expect(card.effects.onPlay[0].type).toBe('summonTokens');
+        expect(card.effects.onPlay[0].params.tokenIds.length).toBe(2);
+        expect(card.effects.onPlay[1].type).toBe('selectFromGroup');
+        expect(card.effects.onPlay[1].params.targetGroup).toBe('enemy-creatures');
+        expect(card.effects.onPlay[1].params.effect.keyword).toBe('Frozen');
       });
     });
 
@@ -78,9 +82,13 @@ describe('Mammal Cards', () => {
     describe('Bobcat', () => {
       const cardId = 'mammal-prey-bobcat';
 
-      it('onPlay reveals hand and selects prey to kill', () => {
+      it('onPlay reveals hand and selects prey to kill via primitives', () => {
         const card = getCardDefinitionById(cardId);
-        expect(card.effects.onPlay.type).toBe('revealHandAndSelectPreyToKill');
+        expect(Array.isArray(card.effects.onPlay)).toBe(true);
+        expect(card.effects.onPlay[0].type).toBe('revealHand');
+        expect(card.effects.onPlay[1].type).toBe('selectFromGroup');
+        expect(card.effects.onPlay[1].params.targetGroup).toBe('all-prey');
+        expect(card.effects.onPlay[1].params.effect.kill).toBe(true);
       });
     });
 
@@ -180,10 +188,12 @@ describe('Mammal Cards', () => {
     describe('Red-handed Howler', () => {
       const cardId = 'mammal-prey-red-handed-howler';
 
-      it('onPlay forces discard and tutors', () => {
+      it('onPlay forces discard and tutors via primitives', () => {
         const card = getCardDefinitionById(cardId);
-        expect(card.effects.onPlay.type).toBe('forceDiscardAndTutor');
-        expect(card.effects.onPlay.params.discardCount).toBe(1);
+        expect(Array.isArray(card.effects.onPlay)).toBe(true);
+        expect(card.effects.onPlay[0].type).toBe('forceOpponentDiscard');
+        expect(card.effects.onPlay[0].params.count).toBe(1);
+        expect(card.effects.onPlay[1].type).toBe('tutorFromDeck');
       });
     });
 

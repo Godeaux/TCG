@@ -44,7 +44,7 @@ describe('Amphibian Spell Cards', () => {
       expect(options[0].effect.params.count).toBe(3);
       expect(options[1].effect.type).toBe('heal');
       expect(options[1].effect.params.amount).toBe(3);
-      expect(options[2].effect.type).toBe('damageOpponent');
+      expect(options[2].effect.type).toBe('damageRival');
       expect(options[2].effect.params.amount).toBe(3);
     });
   });
@@ -92,9 +92,23 @@ describe('Amphibian Spell Cards', () => {
 
     it('effect damages rival and selects enemy', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.effect.type).toBe('damageRivalAndSelectEnemy');
-      expect(card.effects.effect.params.rivalDamage).toBe(3);
-      expect(card.effects.effect.params.creatureDamage).toBe(3);
+      const effects = card.effects.effect;
+
+      // Should be an array of primitives
+      expect(Array.isArray(effects)).toBe(true);
+
+      // Should have damageRival primitive
+      expect(effects).toContainEqual(
+        expect.objectContaining({ type: 'damageRival', params: { amount: 3 } })
+      );
+
+      // Should have selectTarget primitive for creature damage
+      expect(effects).toContainEqual(
+        expect.objectContaining({
+          type: 'selectTarget',
+          params: expect.objectContaining({ group: 'enemy-creatures', effect: 'damage', amount: 3 })
+        })
+      );
     });
   });
 
@@ -111,9 +125,25 @@ describe('Amphibian Spell Cards', () => {
 
     it('effect damages opponents and adds Rainbow to hand', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.effect.type).toBe('damageOpponentsAndAddToHand');
-      expect(card.effects.effect.params.damage).toBe(2);
-      expect(card.effects.effect.params.cardId).toBe('token-rainbow');
+      const effects = card.effects.effect;
+
+      // Should be an array of primitives
+      expect(Array.isArray(effects)).toBe(true);
+
+      // Should have damageRival primitive
+      expect(effects).toContainEqual(
+        expect.objectContaining({ type: 'damageRival', params: { amount: 2 } })
+      );
+
+      // Should have damageAllEnemyCreatures primitive
+      expect(effects).toContainEqual(
+        expect.objectContaining({ type: 'damageAllEnemyCreatures', params: { amount: 2 } })
+      );
+
+      // Should have addToHand primitive
+      expect(effects).toContainEqual(
+        expect.objectContaining({ type: 'addToHand', params: { cardId: 'token-rainbow' } })
+      );
     });
   });
 
@@ -130,9 +160,17 @@ describe('Amphibian Spell Cards', () => {
 
     it('effect deals 2 damage to all enemies twice', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.effect.type).toBe('damageAllEnemiesMultiple');
-      expect(card.effects.effect.params.amount).toBe(2);
-      expect(card.effects.effect.params.applications).toBe(2);
+      const effects = card.effects.effect;
+
+      // Should be an array with two damageAllEnemyCreatures primitives
+      expect(Array.isArray(effects)).toBe(true);
+      expect(effects.length).toBe(2);
+
+      // Both should be damageAllEnemyCreatures with amount 2
+      effects.forEach(effect => {
+        expect(effect.type).toBe('damageAllEnemyCreatures');
+        expect(effect.params.amount).toBe(2);
+      });
     });
   });
 
@@ -169,7 +207,20 @@ describe('Amphibian Spell Cards', () => {
 
     it('effect destroys field spells and kills tokens', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.effect.type).toBe('destroyFieldSpellsAndKillTokens');
+      const effects = card.effects.effect;
+
+      // Should be an array of primitives
+      expect(Array.isArray(effects)).toBe(true);
+
+      // Should have destroyFieldSpells primitive
+      expect(effects).toContainEqual(
+        expect.objectContaining({ type: 'destroyFieldSpells' })
+      );
+
+      // Should have killEnemyTokens primitive
+      expect(effects).toContainEqual(
+        expect.objectContaining({ type: 'killEnemyTokens' })
+      );
     });
   });
 
@@ -186,9 +237,23 @@ describe('Amphibian Spell Cards', () => {
 
     it('effect heals and deals damage to target', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.effect.type).toBe('healAndSelectTargetForDamage');
-      expect(card.effects.effect.params.healAmount).toBe(3);
-      expect(card.effects.effect.params.damageAmount).toBe(3);
+      const effects = card.effects.effect;
+
+      // Should be an array of primitives
+      expect(Array.isArray(effects)).toBe(true);
+
+      // Should have selectTarget primitive for damage
+      expect(effects).toContainEqual(
+        expect.objectContaining({
+          type: 'selectTarget',
+          params: expect.objectContaining({ group: 'any', effect: 'damage', amount: 3 })
+        })
+      );
+
+      // Should have heal primitive
+      expect(effects).toContainEqual(
+        expect.objectContaining({ type: 'heal', params: { amount: 3 } })
+      );
     });
   });
 });
@@ -332,7 +397,20 @@ describe('Amphibian Trap Cards', () => {
 
     it('effect negates and kills attacker', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.effect.type).toBe('negateAndKillAttacker');
+      const effects = card.effects.effect;
+
+      // Should be an array of primitives
+      expect(Array.isArray(effects)).toBe(true);
+
+      // Should have negateAttack primitive
+      expect(effects).toContainEqual(
+        expect.objectContaining({ type: 'negateAttack' })
+      );
+
+      // Should have killAttacker primitive
+      expect(effects).toContainEqual(
+        expect.objectContaining({ type: 'killAttacker' })
+      );
     });
 
     it('negateAndKillAttacker returns negateAttack and killTargets', () => {
@@ -411,7 +489,23 @@ describe('Amphibian Trap Cards', () => {
 
     it('effect negates and allows replay', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.effect.type).toBe('negateAndAllowReplay');
+      const effects = card.effects.effect;
+
+      // Should be an array of primitives
+      expect(Array.isArray(effects)).toBe(true);
+
+      // Should have negatePlay primitive
+      expect(effects).toContainEqual(
+        expect.objectContaining({ type: 'negatePlay' })
+      );
+
+      // Should have allowReplay primitive with excludeNegated flag
+      expect(effects).toContainEqual(
+        expect.objectContaining({
+          type: 'allowReplay',
+          params: expect.objectContaining({ excludeNegated: true })
+        })
+      );
     });
   });
 
