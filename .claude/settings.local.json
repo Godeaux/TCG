@@ -29,7 +29,8 @@
       "Bash(node:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(sort:*)"
     ]
   }
 }

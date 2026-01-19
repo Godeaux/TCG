@@ -221,6 +221,10 @@ export const showCardTooltip = (card, targetElement, options = {}) => {
 
   // Position and show
   positionTooltip(targetElement, { showPreview, anchorRight });
+
+  // Move tooltip to end of body to ensure it's rendered on top of all overlays
+  document.body.appendChild(tooltipElement);
+  tooltipElement.style.zIndex = '100000'; // Ensure tooltip is above overlays
   tooltipElement.classList.add('visible');
   tooltipElement.setAttribute('aria-hidden', 'false');
 };

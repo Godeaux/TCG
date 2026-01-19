@@ -4379,8 +4379,6 @@ button {
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 1400px;
-  max-height: calc(95vh - 40px);
   overflow: hidden;
 }
 
@@ -8905,7 +8903,7 @@ button {
 
 .card-hover-tooltip {
   position: fixed;
-  z-index: 9999;
+  z-index: 100000 !important;
   pointer-events: none;
   display: flex;
   gap: 12px;
@@ -8957,8 +8955,7 @@ button {
   flex-direction: column;
   gap: 8px;
   max-width: 260px;
-  max-height: 500px;
-  overflow-y: auto;
+  overflow-y: visible;
 }
 
 /* Individual info box */
@@ -9020,7 +9017,7 @@ button {
 
 /* Mini token card */
 .tooltip-token-card {
-  transform: scale(0.7);
+  transform: scale(1);
   transform-origin: top center;
   pointer-events: none;
   margin-bottom: -40px; /* Compensate for scale leaving empty space */
@@ -9028,7 +9025,8 @@ button {
 
 /* Ensure token cards maintain 5:7 proportion */
 .tooltip-token-preview .card {
-  height: 180px;
+  height: 250px;
   width: auto;
   aspect-ratio: 5 / 7;
+  overflow: visible;
 }
