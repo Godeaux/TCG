@@ -26,15 +26,68 @@ import { KEYWORD_DESCRIPTIONS } from '../../keywords.js';
 // ============================================================================
 
 // Effect types that are implemented in effectLibrary.js
+// This list mirrors effectRegistry in effectLibrary.js - update both when adding effects
 const IMPLEMENTED_EFFECTS = new Set([
-  'draw', 'heal', 'damageOpponent', 'damagePlayer', 'buffStats', 'buffCreature',
-  'summonTokens', 'killAll', 'selectEnemyPreyToKill', 'selectEnemyToKill',
-  'selectCreatureForDamage', 'selectTargetForDamage', 'selectCreatureToRestore',
-  'grantKeyword', 'grantBarrier', 'removeAbilities', 'selectEnemyToStripAbilities',
-  'selectEnemyPreyToConsume', 'selectPredatorForKeyword', 'tutorFromDeck',
-  'selectPreyFromHandToPlay', 'selectCarrionPredToCopyAbilities', 'selectFromGroup',
-  'chooseOption', 'addToHand', 'transformCard', 'freeze', 'spawnFromPool',
-  'discardRandom', 'discard', 'selectEnemyToAddToHand'
+  // Basic effects
+  'heal', 'draw', 'damageRival', 'damageCreature', 'summonTokens', 'addToHand',
+  'transformCard', 'killCreature', 'destroy',
+
+  // Keywords & Buffs
+  'grantKeyword', 'addKeyword', 'buffStats', 'buff', 'grantBarrier',
+
+  // Canine Howl
+  'howl', 'howlBuff', 'howlKeyword',
+
+  // Selection primitives
+  'selectTarget', 'selectConsume', 'selectFromGroup', 'chooseOption', 'choice',
+
+  // Conditional & Composite
+  'conditional', 'hasCardsInHand', 'hasCreaturesOnField', 'opponentHasCreatures',
+  'composite', 'repeat',
+
+  // Combat modifiers
+  'negateAttack', 'negateDamage', 'negatePlay', 'allowReplay', 'killAttacker',
+  'negateCombat', 'negateAndKillAttacker', 'negateAndDamageAll', 'negateAndAllowReplay',
+
+  // Utility effects
+  'freezeAllCreatures', 'discardCards', 'revealCards', 'tutor', 'copyAbilities',
+  'stealCreature', 'killAll', 'revealHand', 'removeAbilities', 'removeAbilitiesAll',
+
+  // Selection-based effects
+  'selectPredatorForEndEffect', 'selectCardToDiscard', 'selectAndDiscard',
+  'selectEnemyToKill', 'tutorFromDeck', 'selectCreatureForDamage',
+  'selectTargetForDamage', 'selectEnemyPreyToConsume', 'selectCreatureToRestore',
+
+  // Field & Global effects
+  'setFieldSpell', 'destroyFieldSpells', 'damageAllCreatures', 'damageAllEnemyCreatures',
+  'damageBothPlayers', 'damageOtherCreatures', 'returnAllEnemies', 'killEnemyTokens',
+  'killAllEnemyCreatures', 'selectEnemyForKeyword', 'selectEnemyCreatureForDamage',
+  'selectCreatureToCopy', 'selectPreyForBuff', 'selectCreatureForBuff',
+  'selectCreatureToTransform', 'removeTriggeredCreatureAbilities', 'returnTriggeredToHand',
+
+  // Amphibian effects
+  'damageRivalAndSelectEnemy', 'damageAllEnemiesMultiple', 'destroyFieldSpellsAndKillTokens',
+  'healAndSelectTargetForDamage', 'playSpellsFromHand',
+
+  // Arachnid web effects
+  'webAllEnemies', 'webAttacker', 'webTarget', 'webRandomEnemy',
+  'damageWebbed', 'drawPerWebbed', 'healPerWebbed',
+
+  // Mammal freeze/utility effects
+  'selectEnemyToFreeze', 'freezeAllEnemies', 'removeFrozenFromFriendlies',
+  'selectCreatureFromDeckWithKeyword', 'returnTargetedToHand',
+  'selectFriendlyCreatureToSacrifice', 'reviveCreature', 'regenSelf',
+  'selectEnemyToReturn', 'discardDrawAndKillEnemy', 'drawThenDiscard',
+
+  // Additional creature effects
+  'forceOpponentDiscard', 'drawAndRevealHand', 'tutorAndPlaySpell',
+  'damageAllAndFreezeAll', 'endTurn', 'regenOtherCreatures', 'playSpellFromHand',
+  'selectEnemyToReturnToOpponentHand', 'drawAndEmpowerPredator',
+  'trackAttackForRegenHeal', 'dealDamageToAttacker', 'applyNeurotoxicToAttacker',
+  'freezeAttacker', 'damageEnemiesAfterCombat', 'eatPreyInsteadOfAttacking',
+
+  // Legacy aliases (kept for backward compatibility)
+  'damageOpponent', 'damagePlayer', 'freeze', 'discard',
 ]);
 
 /**
