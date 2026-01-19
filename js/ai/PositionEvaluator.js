@@ -244,8 +244,8 @@ export class PositionEvaluator {
     const opponentBoardValue = this.evaluateBoardValue(opponent.field, state, 1 - playerIndex);
     score += (playerBoardValue - opponentBoardValue);
 
-    // Hand advantage
-    score += (player.hand.length - opponent.hand.length) * 3;
+    // Hand advantage - cards are valuable resources
+    score += (player.hand.length - opponent.hand.length) * 8;
 
     // Deck advantage (less immediate impact)
     score += (player.deck.length - opponent.deck.length) * 0.5;
@@ -544,6 +544,51 @@ export class PositionEvaluator {
 
     const advantage = this.calculateAdvantage(state, 0);
 
+    // Deep clone field creatures for hologram replay
+    const cloneField = (field) => field.map(c => c ? {
+      id: c.id,
+      name: c.name,
+      instanceId: c.instanceId,
+      type: c.type,
+      currentAtk: c.currentAtk,
+      currentHp: c.currentHp,
+      atk: c.atk,
+      hp: c.hp,
+      keywords: c.keywords ? [...c.keywords] : [],
+      image: c.image,
+      // Track buff/debuff state for visual indication
+      atkBuffed: c.currentAtk > c.atk,
+      atkDebuffed: c.currentAtk < c.atk,
+      hpBuffed: c.currentHp > c.hp,
+      hpDamaged: c.currentHp < c.hp,
+    } : null);
+
+    // Track deaths from previous snapshot
+    const previousSnapshot = state.advantageHistory[state.advantageHistory.length - 1];
+    const deaths = [];
+
+    if (previousSnapshot) {
+      // Check each player's field for creatures that died
+      for (let p = 0; p < 2; p++) {
+        const prevField = previousSnapshot.fields?.[p] || [];
+        const currField = state.players[p]?.field || [];
+
+        prevField.forEach((prevCreature, slot) => {
+          if (prevCreature) {
+            // Check if creature is still on field (by instanceId)
+            const stillAlive = currField.some(c => c?.instanceId === prevCreature.instanceId);
+            if (!stillAlive) {
+              deaths.push({
+                player: p,
+                slot,
+                creature: prevCreature,
+              });
+            }
+          }
+        });
+      }
+    }
+
     state.advantageHistory.push({
       turn: state.turn,
       phase: state.phase,
@@ -555,12 +600,17 @@ export class PositionEvaluator {
       p1Hp: state.players[1]?.hp ?? 0,
       p0Field: state.players[0]?.field.filter(c => c).length ?? 0,
       p1Field: state.players[1]?.field.filter(c => c).length ?? 0,
+      // Full field state for hologram display
+      fields: [
+        cloneField(state.players[0]?.field || [null, null, null]),
+        cloneField(state.players[1]?.field || [null, null, null]),
+      ],
+      // Deaths that occurred since previous snapshot
+      deaths,
     });
 
-    // Limit history to prevent memory issues
-    if (state.advantageHistory.length > 100) {
-      state.advantageHistory.shift();
-    }
+    // Keep all history - the graph rendering handles condensing for display
+    // Games rarely exceed 50 turns (100 snapshots), so memory is not a concern
   }
 
   /**

@@ -18,7 +18,7 @@ const KNOWN_EFFECT_TYPES = [
   // Basic effects
   'heal',
   'draw',
-  'damageOpponent',
+  'damageRival',
   'damageCreature',
   'summonTokens',
   'addToHand',
@@ -33,55 +33,49 @@ const KNOWN_EFFECT_TYPES = [
   'addKeyword',
 
   // Targeting/selection effects
+  'selectTarget',
   'selectTargetForDamage',
+  'selectCreatureForDamage',
   'selectEnemyToKill',
   'selectEnemyToFreeze',
   'selectEnemyToParalyze',
   'selectCreatureToCopy',
-  'selectCreatureToCopyStats',
-  'selectCreatureToCopyAbilities',
-  'selectCarrionToCopyAbilities',
-  'selectCarrionToCopyStats',
-  'selectCarrionPredToCopyAbilities',
-  'selectCarrionToAddToHand',
-  'selectCarrionToPlayWithKeyword',
   'selectCardToDiscard',
+  'selectAndDiscard',
   'selectCreatureForBuff',
   'selectCreatureFromDeckWithKeyword',
-  'selectCreatureToRegen',
   'selectCreatureToRestore',
-  'selectCreatureToSacrificeAndDraw',
   'selectCreatureToTransform',
   'selectEnemyCreatureForDamage',
   'selectEnemyPreyToConsume',
-  'selectEnemyPreyToKill',
   'selectEnemyToReturnToOpponentHand',
-  'selectEnemyToSteal',
-  'selectEnemyToStripAbilities',
   'selectFromGroup',
-  'selectPredatorForKeyword',
   'selectPreyForBuff',
-  'selectPreyFromHandToPlay',
 
   // Mass effects
   'killAll',
+  'killAllEnemyCreatures',
   'freezeAllEnemies',
+  'freezeAllCreatures',
   'returnAllEnemies',
   'damageAllCreatures',
+  'damageBothPlayers',
   'damageAllEnemyCreatures',
   'damageAllEnemiesMultiple',
   'damageAllAndFreezeAll',
+  'damageOtherCreatures',
   'removeAbilitiesAll',
 
   // Combat/trap effects
   'negateAttack',
   'negateCombat',
+  'negateDamage',
+  'negatePlay',
+  'allowReplay',
+  'killAttacker',
   'negateAndKillAttacker',
   'negateAndSummon',
   'negateAndAllowReplay',
-  'negateAndFreezeEnemies',
-  'negateDamageAndHeal',
-  'negateDamageAndFreezeEnemies',
   'applyNeurotoxicToAttacker',
   'dealDamageToAttacker',
   'freezeAttacker',
@@ -96,23 +90,12 @@ const KNOWN_EFFECT_TYPES = [
   // Tutor effects
   'tutorFromDeck',
   'tutorAndPlaySpell',
-  'tutorAndEndTurn',
-  'addCarrionAndTutor',
-  'forceDiscardAndTutor',
-  'healAndTutor',
-  'revealAndTutor',
 
   // Field spells
   'setFieldSpell',
+  'destroyFieldSpells',
   'destroyFieldSpellsAndKillTokens',
-  'killPreyAndDestroyField',
-
-  // Summoning variants
-  'summonAndDamage',
-  'summonAndDamageOpponent',
-  'summonAndSelectEnemyToKill',
-  'summonAndSelectEnemyToFreeze',
-  'summonHealAndRegen',
+  'killEnemyTokens',
 
   // Combat tracking
   'trackAttackForRegenHeal',
@@ -121,28 +104,35 @@ const KNOWN_EFFECT_TYPES = [
 
   // Compound effects
   'damageBothPlayers',
-  'damageOpponentAndFreezeEnemies',
-  'damageOpponentsAndAddToHand',
   'damagePlayersAndOtherCreatures',
   'damageRivalAndSelectEnemy',
-  'damageEnemiesAndEndTurn',
   'healAndSelectTargetForDamage',
-  'regenOthersAndHeal',
   'discardThenKillAllEnemies',
-  'destroyEverything',
   'removeFrozenFromFriendlies',
 
   // Reveal effects
   'revealHand',
   'drawAndRevealHand',
-  'revealHandAndSelectPreyToKill',
 
   // Discard effects
   'forceOpponentDiscard',
   'forceOpponentDiscardThenDraw',
 
-  // Revival
+  // Revival / Regen
   'reviveCreature',
+  'regenSelf',
+  'regenOtherCreatures',
+
+  // Turn control
+  'endTurn',
+
+  // Play from hand
+  'playSpellFromHand',
+
+  // Canine effects (Experimental)
+  'howl',
+  'howlBuff',
+  'howlKeyword',
 ];
 
 /**

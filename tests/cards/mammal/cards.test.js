@@ -51,10 +51,37 @@ describe('Mammal Cards', () => {
     describe('Arctic Ground Squirrels', () => {
       const cardId = 'mammal-prey-arctic-ground-squirrels';
 
-      it('onPlay summons 2 tokens and freezes enemy', () => {
+      it('onPlay summons 2 tokens and freezes enemy via primitives', () => {
         const card = getCardDefinitionById(cardId);
-        expect(card.effects.onPlay.type).toBe('summonAndSelectEnemyToFreeze');
-        expect(card.effects.onPlay.params.tokenIds.length).toBe(2);
+        expect(Array.isArray(card.effects.onPlay)).toBe(true);
+        expect(card.effects.onPlay[0].type).toBe('summonTokens');
+        expect(card.effects.onPlay[0].params.tokenIds.length).toBe(2);
+        expect(card.effects.onPlay[1].type).toBe('selectFromGroup');
+        expect(card.effects.onPlay[1].params.targetGroup).toBe('enemy-creatures');
+        expect(card.effects.onPlay[1].params.effect.keyword).toBe('Frozen');
+      });
+
+      it('summoned tokens have Frozen keyword and frozen property set', () => {
+        const tokenDef = getCardDefinitionById('token-arctic-ground-squirrel');
+        expect(tokenDef).not.toBeNull();
+        expect(tokenDef.keywords).toContain('Frozen');
+
+        // When token is instantiated, frozen property should be set
+        const state = createTestState();
+        const { creature: tokenInstance } = createTestCreature('token-arctic-ground-squirrel', 0, 0, state);
+        expect(tokenInstance.frozen).toBe(true);
+        expect(tokenInstance.keywords).toContain('Frozen');
+      });
+
+      it('frozen tokens cannot attack', async () => {
+        const { getCreaturesThatCanAttack } = await import('../../../js/state/selectors.js');
+
+        const state = createTestState();
+        const { creature: tokenInstance } = createTestCreature('token-arctic-ground-squirrel', 0, 0, state);
+
+        // Frozen tokens should not be able to attack
+        const attackers = getCreaturesThatCanAttack(state, 0);
+        expect(attackers).not.toContain(tokenInstance);
       });
     });
 
@@ -67,18 +94,24 @@ describe('Mammal Cards', () => {
         expect(card.keywords).toContain('Hidden');
       });
 
-      it('onPlay freezes enemy', () => {
+      it('onPlay freezes enemy via selectFromGroup', () => {
         const card = getCardDefinitionById(cardId);
-        expect(card.effects.onPlay.type).toBe('selectEnemyToFreeze');
+        expect(card.effects.onPlay.type).toBe('selectFromGroup');
+        expect(card.effects.onPlay.params.targetGroup).toBe('enemy-creatures');
+        expect(card.effects.onPlay.params.effect.keyword).toBe('Frozen');
       });
     });
 
     describe('Bobcat', () => {
       const cardId = 'mammal-prey-bobcat';
 
-      it('onPlay reveals hand and selects prey to kill', () => {
+      it('onPlay reveals hand and selects prey to kill via primitives', () => {
         const card = getCardDefinitionById(cardId);
-        expect(card.effects.onPlay.type).toBe('revealHandAndSelectPreyToKill');
+        expect(Array.isArray(card.effects.onPlay)).toBe(true);
+        expect(card.effects.onPlay[0].type).toBe('revealHand');
+        expect(card.effects.onPlay[1].type).toBe('selectFromGroup');
+        expect(card.effects.onPlay[1].params.targetGroup).toBe('all-prey');
+        expect(card.effects.onPlay[1].params.effect.kill).toBe(true);
       });
     });
 
@@ -112,10 +145,10 @@ describe('Mammal Cards', () => {
     describe('Japanese Weasel', () => {
       const cardId = 'mammal-prey-japanese-weasel';
 
-      it('onPlay deals 3 damage to target', () => {
+      it('onPlay deals 3 damage to target via selectFromGroup', () => {
         const card = getCardDefinitionById(cardId);
-        expect(card.effects.onPlay.type).toBe('selectTargetForDamage');
-        expect(card.effects.onPlay.params.amount).toBe(3);
+        expect(card.effects.onPlay.type).toBe('selectFromGroup');
+        expect(card.effects.onPlay.params.effect.damage).toBe(3);
       });
     });
 
@@ -178,10 +211,12 @@ describe('Mammal Cards', () => {
     describe('Red-handed Howler', () => {
       const cardId = 'mammal-prey-red-handed-howler';
 
-      it('onPlay forces discard and tutors', () => {
+      it('onPlay forces discard and tutors via primitives', () => {
         const card = getCardDefinitionById(cardId);
-        expect(card.effects.onPlay.type).toBe('forceDiscardAndTutor');
-        expect(card.effects.onPlay.params.discardCount).toBe(1);
+        expect(Array.isArray(card.effects.onPlay)).toBe(true);
+        expect(card.effects.onPlay[0].type).toBe('forceOpponentDiscard');
+        expect(card.effects.onPlay[0].params.count).toBe(1);
+        expect(card.effects.onPlay[1].type).toBe('tutorFromDeck');
       });
     });
 
@@ -205,10 +240,10 @@ describe('Mammal Cards', () => {
         expect(card.nutrition).toBe(2);
       });
 
-      it('onPlay deals 2 damage to target', () => {
+      it('onPlay deals 2 damage to target via selectFromGroup', () => {
         const card = getCardDefinitionById(cardId);
-        expect(card.effects.onPlay.type).toBe('selectTargetForDamage');
-        expect(card.effects.onPlay.params.amount).toBe(2);
+        expect(card.effects.onPlay.type).toBe('selectFromGroup');
+        expect(card.effects.onPlay.params.effect.damage).toBe(2);
       });
     });
 

@@ -114,12 +114,11 @@ describe('Damage All Enemy Creatures Effect', () => {
     context = createEffectContext(state, 0);
   });
 
-  it('returns damageEnemyCreatures and damageOpponent result', () => {
+  it('returns damageEnemyCreatures result', () => {
     const damageFn = effectLibrary.damageAllEnemyCreatures(2);
     const result = damageFn(context);
 
     expect(result.damageEnemyCreatures).toBe(2);
-    expect(result.damageOpponent).toBe(2);
   });
 });
 
@@ -147,7 +146,7 @@ describe('Damage Both Players Effect', () => {
   });
 });
 
-describe('Damage Players And Other Creatures Effect', () => {
+describe('Damage Other Creatures Effect', () => {
   let state;
   let creature;
   let context;
@@ -161,17 +160,20 @@ describe('Damage Players And Other Creatures Effect', () => {
     context = createEffectContext(state, 0, { creature });
   });
 
-  it('returns damageBothPlayers and damageCreatures', () => {
-    const damageFn = effectLibrary.damagePlayersAndOtherCreatures(2);
+  it('returns damageCreatures excluding self', () => {
+    const damageFn = effectLibrary.damageOtherCreatures(2);
     const result = damageFn(context);
 
-    expect(result.damageBothPlayers).toBe(2);
     expect(result.damageCreatures).toBeDefined();
+    expect(result.damageCreatures.amount).toBe(2);
     // Should damage other creatures but not self
     expect(result.damageCreatures.creatures.length).toBe(2);
     expect(result.damageCreatures.creatures).not.toContain(creature);
   });
 });
+
+// Note: damagePlayersAndOtherCreatures compound effect has been replaced with primitive arrays in card JSON
+// (e.g., [{ type: 'damageBothPlayers', params: { amount: 2 } }, { type: 'damageOtherCreatures', params: { amount: 2 } }])
 
 describe('Damage All Enemies Multiple Effect', () => {
   let state;
@@ -328,60 +330,5 @@ describe('Damage All And Freeze All Effect', () => {
   });
 });
 
-describe('Damage Enemies And End Turn Effect', () => {
-  let state;
-  let context;
-
-  beforeEach(() => {
-    state = createTestState();
-    context = createEffectContext(state, 0);
-  });
-
-  it('returns damageEnemyCreatures and endTurn', () => {
-    const damageFn = effectLibrary.damageEnemiesAndEndTurn(3);
-    const result = damageFn(context);
-
-    expect(result.damageEnemyCreatures).toBe(3);
-    expect(result.endTurn).toBe(true);
-  });
-});
-
-describe('Damage Opponents And Add To Hand Effect', () => {
-  let state;
-  let context;
-
-  beforeEach(() => {
-    state = createTestState();
-    context = createEffectContext(state, 0);
-  });
-
-  it('returns damageOpponent, damageEnemyCreatures, and addToHand', () => {
-    const damageFn = effectLibrary.damageOpponentsAndAddToHand(2, 'fish-prey-atlantic-flying-fish');
-    const result = damageFn(context);
-
-    expect(result.damageOpponent).toBe(2);
-    expect(result.damageEnemyCreatures).toBe(2);
-    expect(result.addToHand).toBeDefined();
-    expect(result.addToHand.card).toBe('fish-prey-atlantic-flying-fish');
-  });
-});
-
-describe('Damage Opponent And Freeze Enemies Effect', () => {
-  let state;
-  let context;
-
-  beforeEach(() => {
-    state = createTestState();
-    createTestCreature('fish-prey-atlantic-flying-fish', 1, 0, state);
-    context = createEffectContext(state, 0);
-  });
-
-  it('returns damageOpponent and grantKeywordToAll with Frozen', () => {
-    const damageFn = effectLibrary.damageOpponentAndFreezeEnemies(3);
-    const result = damageFn(context);
-
-    expect(result.damageOpponent).toBe(3);
-    expect(result.grantKeywordToAll).toBeDefined();
-    expect(result.grantKeywordToAll.keyword).toBe('Frozen');
-  });
-});
+// Note: damageOpponentAndFreezeEnemies compound effect has been replaced with primitive arrays in card JSON
+// (e.g., [{ type: 'damageRival', params: { amount: 2 } }, { type: 'damageAllEnemyCreatures', params: { amount: 2 } }, { type: 'freezeAllEnemies' }])

@@ -69,6 +69,8 @@ const AI_VS_AI_DECK_OPTIONS = [
   { id: "mammal", name: "Mammal", emoji: "🐻" },
   { id: "reptile", name: "Reptile", emoji: "🦎" },
   { id: "amphibian", name: "Amphibian", emoji: "🐸" },
+  { id: "canine", name: "Canine", emoji: "🐺", experimental: true },
+  { id: "arachnid", name: "Arachnid", emoji: "🕷️", experimental: true },
 ];
 
 // ============================================================================
@@ -148,14 +150,18 @@ const populateAIvsAIDeckPicker = (elements) => {
 
   // Create deck buttons for both sides
   AI_VS_AI_DECK_OPTIONS.forEach((option) => {
+    const experimentalBadge = option.experimental ? '<span class="deck-experimental-badge">Beta</span>' : '';
+    const experimentalClass = option.experimental ? ' experimental' : '';
+
     // Left side button
     const leftBtn = document.createElement("button");
     leftBtn.type = "button";
-    leftBtn.className = "ai-vs-ai-deck-btn";
+    leftBtn.className = `ai-vs-ai-deck-btn${experimentalClass}`;
     leftBtn.dataset.deckId = option.id;
     leftBtn.innerHTML = `
       <span class="deck-emoji">${option.emoji}</span>
       <span class="deck-name">${option.name}</span>
+      ${experimentalBadge}
     `;
     leftBtn.onclick = () => handleAIvsAIDeckSelect("left", option.id, elements);
     aiVsAiDecksLeft.appendChild(leftBtn);
@@ -163,11 +169,12 @@ const populateAIvsAIDeckPicker = (elements) => {
     // Right side button
     const rightBtn = document.createElement("button");
     rightBtn.type = "button";
-    rightBtn.className = "ai-vs-ai-deck-btn";
+    rightBtn.className = `ai-vs-ai-deck-btn${experimentalClass}`;
     rightBtn.dataset.deckId = option.id;
     rightBtn.innerHTML = `
       <span class="deck-emoji">${option.emoji}</span>
       <span class="deck-name">${option.name}</span>
+      ${experimentalBadge}
     `;
     rightBtn.onclick = () => handleAIvsAIDeckSelect("right", option.id, elements);
     aiVsAiDecksRight.appendChild(rightBtn);

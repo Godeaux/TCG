@@ -18,69 +18,12 @@ import { logMessage } from '../../state/gameState.js';
 import { buildLobbySyncPayload, sendLobbyBroadcast, getSupabaseApi, ensureDecksLoaded } from '../../network/index.js';
 import { getLocalPlayerIndex, isAIMode, isAIvsAIMode } from '../../state/selectors.js';
 import { renderDeckCard, renderCardStats, getCardEffectSummary } from '../components/Card.js';
+import { showCardTooltip, hideCardTooltip } from '../components/CardTooltip.js';
 import { KEYWORD_DESCRIPTIONS } from '../../keywords.js';
 
 // ============================================================================
 // MODULE-LEVEL STATE
 // ============================================================================
-
-// Effect types that are implemented in effectLibrary.js
-const IMPLEMENTED_EFFECTS = new Set([
-  'draw', 'heal', 'damageOpponent', 'damagePlayer', 'buffStats', 'buffCreature',
-  'summonTokens', 'killAll', 'selectEnemyPreyToKill', 'selectEnemyToKill',
-  'selectCreatureForDamage', 'selectTargetForDamage', 'selectCreatureToRestore',
-  'grantKeyword', 'grantBarrier', 'removeAbilities', 'selectEnemyToStripAbilities',
-  'selectEnemyPreyToConsume', 'selectPredatorForKeyword', 'tutorFromDeck',
-  'selectPreyFromHandToPlay', 'selectCarrionPredToCopyAbilities', 'selectFromGroup',
-  'chooseOption', 'addToHand', 'transformCard', 'freeze', 'spawnFromPool',
-  'discardRandom', 'discard', 'selectEnemyToAddToHand'
-]);
-
-/**
- * Check if an effect definition is implemented
- */
-const isEffectImplemented = (effect) => {
-  if (!effect) return true;
-  if (typeof effect === 'string') return false; // String placeholder = not implemented
-  if (Array.isArray(effect)) {
-    return effect.every(e => isEffectImplemented(e));
-  }
-  if (typeof effect === 'object') {
-    if (effect.type) {
-      return IMPLEMENTED_EFFECTS.has(effect.type);
-    }
-    for (const key of Object.keys(effect)) {
-      if (!isEffectImplemented(effect[key])) return false;
-    }
-    return true;
-  }
-  return true;
-};
-
-/**
- * Check if a card is fully implemented
- */
-const isCardImplemented = (card) => {
-  if (!card.effects) return true;
-  const triggers = ['onPlay', 'onConsume', 'onSlain', 'onStart', 'onEnd', 'effect', 'onAttack', 'onDamage'];
-  for (const trigger of triggers) {
-    if (card.effects[trigger] && !isEffectImplemented(card.effects[trigger])) {
-      return false;
-    }
-  }
-  return true;
-};
-
-/**
- * Get implementation progress for a deck
- * @returns {{ implemented: number, total: number }}
- */
-const getDeckProgress = (deckId) => {
-  const catalog = deckCatalogs[deckId] ?? [];
-  const nonTokens = catalog.filter(c => !c.id.startsWith('token-'));
-  const implemented = nonTokens.filter(c => isCardImplemented(c)).length;
-  return { implemented, total: nonTokens.length };
-};
 
 // Deck options available for selection
 const DECK_OPTIONS = [
@@ -118,6 +61,22 @@ const DECK_OPTIONS = [
     emoji: "🐸",
     panelClass: "deck-select-panel--amphibian",
     available: true,
+  },
+  {
+    id: "canine",
+    name: "Canine",
+    emoji: "🐺",
+    panelClass: "deck-select-panel--canine",
+    available: true,
+    experimental: true,
+  },
+  {
+    id: "arachnid",
+    name: "Arachnid",
+    emoji: "🕷️",
+    panelClass: "deck-select-panel--arachnid",
+    available: true,
+    experimental: true,
   },
 ];
 
@@ -157,9 +116,11 @@ const getDeckElements = () => ({
   deckExit: document.getElementById("deck-exit"),
   deckLoadList: document.getElementById("deck-load-list"),
   deckManageList: document.getElementById("deck-manage-list"),
-  deckInspectorPanel: document.getElementById("deck-inspector-panel"),
   deckFilterInput: document.getElementById("deck-filter-input"),
   deckFilterClear: document.getElementById("deck-filter-clear"),
+  // New Hearthstone-style deck list sidebar
+  deckListCards: document.getElementById("deck-list-cards"),
+  deckListCount: document.getElementById("deck-list-count"),
 });
 
 // ============================================================================
@@ -198,8 +159,8 @@ const cardMatchesFilter = (card, filterText) => {
 
   // Search in name
   if (card.name?.toLowerCase().includes(search)) return true;
-  // Search in keywords array
-  if (card.keywords?.some((kw) => kw.toLowerCase().includes(search))) return true;
+  // Search in keywords array (ensure it's an array first)
+  if (Array.isArray(card.keywords) && card.keywords.some((kw) => kw.toLowerCase().includes(search))) return true;
   // Search in effectText
   if (card.effectText?.toLowerCase().includes(search)) return true;
 
@@ -339,6 +300,231 @@ const sortDeckByCategory = (cards, catalogOrder) => {
     return catalogIndexA - catalogIndexB;
   });
 };
+
+// ============================================================================
+// DECK LIST SIDEBAR (Hearthstone-style)
+// ============================================================================
+
+/**
+ * Create a deck list row element for a card
+ * @param {Object} card - Card data
+ * @param {Object} options - Options including callbacks
+ * @returns {HTMLElement}
+ */
+const createDeckListRow = (card, options = {}) => {
+  const { onRemove, onDragStart, onClick } = options;
+
+  const row = document.createElement('div');
+  row.className = 'deck-list-row';
+  row.dataset.cardId = card.id;
+  row.dataset.type = card.type;
+  row.draggable = true;
+
+  // Mini art thumbnail
+  const art = document.createElement('div');
+  art.className = 'deck-list-row-art';
+  if (card.image) {
+    art.style.backgroundImage = `url(${card.image})`;
+  } else {
+    art.textContent = card.emoji || '🃏';
+    art.style.display = 'flex';
+    art.style.alignItems = 'center';
+    art.style.justifyContent = 'center';
+    art.style.fontSize = '16px';
+  }
+
+  // Info section
+  const info = document.createElement('div');
+  info.className = 'deck-list-row-info';
+
+  const name = document.createElement('div');
+  name.className = 'deck-list-row-name';
+  name.textContent = card.name;
+
+  const type = document.createElement('div');
+  type.className = 'deck-list-row-type';
+  type.textContent = card.type;
+
+  info.appendChild(name);
+  info.appendChild(type);
+
+  row.appendChild(art);
+  row.appendChild(info);
+
+  // Hover to show expanded tooltip
+  row.addEventListener('mouseenter', () => {
+    showCardTooltip(card, row, { showPreview: true });
+  });
+  row.addEventListener('mouseleave', () => {
+    hideCardTooltip();
+  });
+
+  // Click to remove
+  row.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (onClick) onClick(card);
+    else if (onRemove) onRemove(card);
+  });
+
+  // Drag to remove
+  row.addEventListener('dragstart', (e) => {
+    e.dataTransfer.setData('text/plain', JSON.stringify({ cardId: card.id, source: 'deck-list' }));
+    e.dataTransfer.effectAllowed = 'move';
+    row.classList.add('dragging');
+    if (onDragStart) onDragStart(card);
+  });
+
+  row.addEventListener('dragend', () => {
+    row.classList.remove('dragging');
+  });
+
+  return row;
+};
+
+/**
+ * Render the deck list sidebar
+ * @param {Array} selectedCards - Array of cards in the deck
+ * @param {Object} options - Options including callbacks
+ */
+const renderDeckListSidebar = (selectedCards, options = {}) => {
+  const elements = getDeckElements();
+  const { deckListCards, deckListCount } = elements;
+  const { onRemove, onCardClick, catalogOrder = [] } = options;
+
+  if (!deckListCards) return;
+
+  // Update count
+  if (deckListCount) {
+    deckListCount.textContent = `${selectedCards.length}/20`;
+    deckListCount.classList.toggle('complete', selectedCards.length === 20);
+  }
+
+  // Clear and render
+  deckListCards.innerHTML = '';
+
+  if (selectedCards.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'deck-list-empty';
+    empty.innerHTML = `
+      <div class="deck-list-empty-icon">📋</div>
+      <div>Drag cards here<br>or double-click to add</div>
+    `;
+    deckListCards.appendChild(empty);
+    return;
+  }
+
+  // Sort cards by type then alphabetically
+  const sorted = [...selectedCards].sort((a, b) => {
+    const typeOrderA = CARD_TYPE_ORDER[a.type] ?? 99;
+    const typeOrderB = CARD_TYPE_ORDER[b.type] ?? 99;
+    if (typeOrderA !== typeOrderB) return typeOrderA - typeOrderB;
+    return a.name.localeCompare(b.name);
+  });
+
+  sorted.forEach((card) => {
+    const row = createDeckListRow(card, {
+      onRemove,
+      onClick: onCardClick,
+    });
+    deckListCards.appendChild(row);
+  });
+};
+
+// Track drop zone setup to avoid duplicate listeners
+let dropZoneSetup = false;
+let currentDropHandler = null;
+
+/**
+ * Setup drag-drop zone for deck list sidebar
+ * @param {Function} onDrop - Callback when a card is dropped
+ */
+const setupDeckListDropZone = (onDrop) => {
+  const elements = getDeckElements();
+  const { deckListCards } = elements;
+  // Get the entire sidebar element
+  const sidebar = document.querySelector('.deck-builder-sidebar');
+
+  if (!deckListCards && !sidebar) return;
+
+  // Store the current drop handler for use in the event
+  currentDropHandler = onDrop;
+
+  // Only add listeners once
+  if (dropZoneSetup) return;
+  dropZoneSetup = true;
+
+  // Setup drop handling on the sidebar (entire right panel)
+  const dropTargets = [sidebar, deckListCards].filter(Boolean);
+
+  dropTargets.forEach((target) => {
+    target.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      sidebar?.classList.add('drag-active');
+      deckListCards?.classList.add('drag-active');
+    });
+
+    target.addEventListener('dragleave', (e) => {
+      // Only remove class if actually leaving the sidebar
+      if (sidebar && !sidebar.contains(e.relatedTarget)) {
+        sidebar.classList.remove('drag-active');
+        deckListCards?.classList.remove('drag-active');
+      }
+    });
+
+    target.addEventListener('drop', (e) => {
+      e.preventDefault();
+      sidebar?.classList.remove('drag-active');
+      deckListCards?.classList.remove('drag-active');
+
+      try {
+        const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+        if (data.cardId && data.source !== 'deck-list' && currentDropHandler) {
+          currentDropHandler(data.cardId);
+        }
+      } catch (err) {
+        // Invalid drag data
+      }
+    });
+  });
+};
+
+// Track expanded card state for click-to-expand
+let expandedCardElement = null;
+let expandedCardOverlay = null;
+
+/**
+ * Show expanded card overlay (1.5x with tooltips)
+ * @param {Object} card - Card data
+ * @param {HTMLElement} sourceElement - Element that was clicked
+ */
+const showExpandedCard = (card, sourceElement) => {
+  // Use the existing tooltip system
+  showCardTooltip(card, sourceElement, { showPreview: true });
+  expandedCardElement = sourceElement;
+};
+
+/**
+ * Hide expanded card overlay
+ */
+const hideExpandedCard = () => {
+  hideCardTooltip();
+  expandedCardElement = null;
+};
+
+/**
+ * Setup click-outside handler for expanded card
+ */
+const setupExpandedCardDismiss = () => {
+  document.addEventListener('click', (e) => {
+    if (expandedCardElement && !e.target.closest('.card-hover-tooltip') && !e.target.closest('.deck-card')) {
+      hideExpandedCard();
+    }
+  }, true);
+};
+
+// Initialize dismiss handler once
+let dismissHandlerSetup = false;
 
 /**
  * Apply menu loading state
@@ -543,9 +729,11 @@ const setDeckInspectorContent = (card) => {
     panel.innerHTML = `<p class="muted">Tap a card to see its full details.</p>`;
     return;
   }
-  const keywords = card.keywords?.length ? card.keywords.join(", ") : "";
-  const keywordDetails = card.keywords?.length
-    ? card.keywords
+  // Ensure keywords is an array to avoid string iteration issues (e.g., "[Circular]")
+  const cardKeywords = Array.isArray(card.keywords) ? card.keywords : [];
+  const keywords = cardKeywords.length ? cardKeywords.join(", ") : "";
+  const keywordDetails = cardKeywords.length
+    ? cardKeywords
         .map((keyword) => {
           const detail = KEYWORD_DESCRIPTIONS[keyword] ?? "No description available.";
           return `<li><strong>${keyword}:</strong> ${detail}</li>`;
@@ -554,7 +742,7 @@ const setDeckInspectorContent = (card) => {
     : "";
   const tokenKeywordDetails = card.summons
     ?.map((tokenId) => getCardDefinitionById(tokenId))
-    .filter((token) => token && token.keywords?.length)
+    .filter((token) => token && Array.isArray(token.keywords) && token.keywords.length)
     .map((token) => {
       const tokenDetails = token.keywords
         .map((keyword) => {
@@ -625,7 +813,8 @@ const updateDeckTabs = (state) => {
   // Only show manage tab when NOT actively building a deck (to prevent accidental navigation loss)
   const isActivelyBuilding = state.catalogBuilder?.stage === "build";
   const showManage = isCatalogMode(state) && !isActivelyBuilding;
-  const allowedTabs = new Set(["catalog", "deck"]);
+  // "deck" tab removed - deck is now always visible in sidebar
+  const allowedTabs = new Set(["catalog"]);
   if (showLoad) {
     allowedTabs.add("load");
   }
@@ -1126,15 +1315,15 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       panel.type = "button";
       panel.className = `deck-select-panel ${option.panelClass} ${
         option.available ? "" : "disabled"
-      }`;
+      }${option.experimental ? " experimental" : ""}`;
       panel.disabled = false; // Make all decks clickable per user request
-      const progress = getDeckProgress(option.id);
-      const progressText = `${progress.implemented}/${progress.total} Done`;
+      const experimentalBadge = option.experimental ? '<div class="deck-experimental-badge">Experimental</div>' : '';
       panel.innerHTML = `
+        ${experimentalBadge}
         <div class="deck-emoji">${option.emoji}</div>
         <div class="deck-name">${option.name}</div>
-        <div class="deck-status">${option.available ? "Available" : progressText}</div>
-        <div class="deck-meta">${option.available ? "Select deck" : "Theorycraft"}</div>
+        <div class="deck-status">Available</div>
+        <div class="deck-meta">Select deck</div>
       `;
       panel.onclick = () => {
         const catalog = deckCatalogs[option.id] ?? [];
@@ -1600,15 +1789,15 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
         panel.type = "button";
         panel.className = `deck-select-panel ${option.panelClass} ${
           option.available ? "" : "disabled"
-        }`;
+        }${option.experimental ? " experimental" : ""}`;
         panel.disabled = false; // Make all decks clickable
-        const progress = getDeckProgress(option.id);
-        const progressText = `${progress.implemented}/${progress.total} Done`;
+        const experimentalBadge = option.experimental ? '<div class="deck-experimental-badge">Experimental</div>' : '';
         panel.innerHTML = `
+          ${experimentalBadge}
           <div class="deck-emoji">${option.emoji}</div>
           <div class="deck-name">${option.name}</div>
-          <div class="deck-status">${option.available ? "Available" : progressText}</div>
-          <div class="deck-meta">${option.available ? "Random deck" : "Theorycraft"}</div>
+          <div class="deck-status">Available</div>
+          <div class="deck-meta">Random deck</div>
         `;
         panel.onclick = () => {
           // Generate random deck from this category using existing function
@@ -1768,15 +1957,15 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
     panel.type = "button";
     panel.className = `deck-select-panel ${option.panelClass} ${
       option.available ? "" : "disabled"
-    }`;
+    }${option.experimental ? " experimental" : ""}`;
     panel.disabled = false; // Make all decks clickable per user request
-    const progress = getDeckProgress(option.id);
-    const progressText = `${progress.implemented}/${progress.total} Done`;
+    const experimentalBadge = option.experimental ? '<div class="deck-experimental-badge">Experimental</div>' : '';
     panel.innerHTML = `
+      ${experimentalBadge}
       <div class="deck-emoji">${option.emoji}</div>
       <div class="deck-name">${option.name}</div>
-      <div class="deck-status">${option.available ? "Available" : progressText}</div>
-      <div class="deck-meta">${option.available ? "Select deck" : "Theorycraft"}</div>
+      <div class="deck-status">Available</div>
+      <div class="deck-meta">Select deck</div>
     `;
     panel.onclick = () => {
       const catalog = deckCatalogs[option.id] ?? [];
@@ -1892,73 +2081,94 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
 
   updateDeckTabs(state);
   clearPanel(deckFullRow);
-  clearPanel(deckAddedRow);
-  if (!deckHighlighted) {
-    setDeckInspectorContent(null);
-  }
 
   // Bind filter input events
   bindFilterEvents(callbacks);
 
-  // Apply filter to both available and selected for display
-  const filteredAvailable = filterCards(available);
-  const filteredSelected = filterCards(selected);
+  // Setup click-outside dismiss handler (once)
+  if (!dismissHandlerSetup) {
+    setupExpandedCardDismiss();
+    dismissHandlerSetup = true;
+  }
 
+  // Helper to add card to deck
+  const addCardToDeck = (card) => {
+    const actualIndex = available.findIndex((c) => c.id === card.id);
+    if (actualIndex === -1) return;
+    if (selected.length >= 20) {
+      logMessage(state, "Deck is full. Remove a card before adding another.");
+      return;
+    }
+    selected.push(card);
+    available.splice(actualIndex, 1);
+    sortDeckByCategory(selected, catalogOrder);
+    hideExpandedCard();
+    callbacks.onUpdate?.();
+  };
+
+  // Helper to remove card from deck
+  const removeCardFromDeck = (card) => {
+    const actualIndex = selected.findIndex((c) => c.id === card.id);
+    if (actualIndex === -1) return;
+    selected.splice(actualIndex, 1);
+    available.push(card);
+    available.sort((a, b) => catalogOrder.indexOf(a.id) - catalogOrder.indexOf(b.id));
+    hideExpandedCard();
+    callbacks.onUpdate?.();
+  };
+
+  // Apply filter to available cards
+  const filteredAvailable = filterCards(available);
+
+  // Render catalog cards with hover tooltip + double-click/drag to add
   filteredAvailable.forEach((card) => {
-    const isHighlighted = deckHighlighted?.list === "available" && deckHighlighted?.id === card.id;
+    const isInDeck = selected.some((c) => c.id === card.id);
     const cardElement = renderDeckCard(card, {
-      highlighted: isHighlighted,
-      onClick: () => {
-        // Find actual index in original array
-        const actualIndex = available.findIndex((c) => c.id === card.id);
-        if (deckHighlighted?.list === "available" && deckHighlighted?.id === card.id) {
-          if (selected.length >= 20) {
-            logMessage(state, "Deck is full. Remove a card before adding another.");
-            callbacks.onUpdate?.();
-            return;
-          }
-          selected.push(card);
-          if (actualIndex !== -1) available.splice(actualIndex, 1);
-          // Sort deck by category (Prey > Predator > Spell > Free Spell > Trap)
-          sortDeckByCategory(selected, catalogOrder);
-          deckHighlighted = null;
-          callbacks.onUpdate?.();
-          return;
-        }
-        deckHighlighted = { list: "available", id: card.id };
-        setDeckInspectorContent(card);
-        callbacks.onUpdate?.();
+      highlighted: false,
+      selected: isInDeck,
+      onDoubleClick: () => {
+        // Double click: add to deck
+        addCardToDeck(card);
       },
     });
+
+    // Hover to show expanded tooltip
+    cardElement.addEventListener('mouseenter', () => {
+      showCardTooltip(card, cardElement, { showPreview: true });
+    });
+    cardElement.addEventListener('mouseleave', () => {
+      hideCardTooltip();
+    });
+
+    // Make card draggable
+    cardElement.draggable = true;
+    cardElement.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', JSON.stringify({ cardId: card.id, source: 'catalog' }));
+      e.dataTransfer.effectAllowed = 'copy';
+      cardElement.classList.add('dragging');
+      hideCardTooltip(); // Hide tooltip when dragging starts
+    });
+    cardElement.addEventListener('dragend', () => {
+      cardElement.classList.remove('dragging');
+    });
+
     deckFullRow.appendChild(cardElement);
   });
 
-  filteredSelected.forEach((card) => {
-    const isHighlighted = deckHighlighted?.list === "selected" && deckHighlighted?.id === card.id;
-    const cardElement = renderDeckCard(card, {
-      highlighted: isHighlighted,
-      selected: true,
-      onClick: () => {
-        // Find actual index in original array
-        const actualIndex = selected.findIndex((c) => c.id === card.id);
-        if (deckHighlighted?.list === "selected" && deckHighlighted?.id === card.id) {
-          if (actualIndex !== -1) selected.splice(actualIndex, 1);
-          available.push(card);
-          available.sort(
-            (a, b) =>
-              catalogOrder.indexOf(a.id) -
-              catalogOrder.indexOf(b.id)
-          );
-          deckHighlighted = null;
-          callbacks.onUpdate?.();
-          return;
-        }
-        deckHighlighted = { list: "selected", id: card.id };
-        setDeckInspectorContent(card);
-        callbacks.onUpdate?.();
-      },
-    });
-    deckAddedRow.appendChild(cardElement);
+  // Setup deck list drop zone (for drag-drop to add)
+  setupDeckListDropZone((cardId) => {
+    const card = available.find((c) => c.id === cardId);
+    if (card) addCardToDeck(card);
+  });
+
+  // Render deck list sidebar
+  renderDeckListSidebar(selected, {
+    catalogOrder,
+    onRemove: removeCardFromDeck,
+    onCardClick: (card) => {
+      // Click on deck list row: remove the card
+      removeCardFromDeck(card);
+    },
   });
 
   renderDeckManagePanel(state, callbacks);
@@ -2133,8 +2343,8 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
       <div class="deck-status-item">Waiting for ${opponentName} to finish deck selection.</div>
     `;
     clearPanel(deckFullRow);
-    clearPanel(deckAddedRow);
-    setDeckInspectorContent(null);
+    // Clear deck list sidebar
+    renderDeckListSidebar([], {});
     if (deckSave) {
       deckSave.classList.add("hidden");
       deckSave.disabled = true;
@@ -2176,73 +2386,94 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
 
   updateDeckTabs(state);
   clearPanel(deckFullRow);
-  clearPanel(deckAddedRow);
-  if (!deckHighlighted) {
-    setDeckInspectorContent(null);
-  }
 
   // Bind filter input events
   bindFilterEvents(callbacks);
 
-  // Apply filter to both available and selected for display
-  const filteredAvailable = filterCards(available);
-  const filteredSelected = filterCards(selected);
+  // Setup click-outside dismiss handler (once)
+  if (!dismissHandlerSetup) {
+    setupExpandedCardDismiss();
+    dismissHandlerSetup = true;
+  }
 
+  // Helper to add card to deck
+  const addCardToDeck = (card) => {
+    const actualIndex = available.findIndex((c) => c.id === card.id);
+    if (actualIndex === -1) return;
+    if (selected.length >= 20) {
+      logMessage(state, "Deck is full. Remove a card before adding another.");
+      return;
+    }
+    selected.push(card);
+    available.splice(actualIndex, 1);
+    sortDeckByCategory(selected, catalogOrder);
+    hideExpandedCard();
+    callbacks.onUpdate?.();
+  };
+
+  // Helper to remove card from deck
+  const removeCardFromDeck = (card) => {
+    const actualIndex = selected.findIndex((c) => c.id === card.id);
+    if (actualIndex === -1) return;
+    selected.splice(actualIndex, 1);
+    available.push(card);
+    available.sort((a, b) => catalogOrder.indexOf(a.id) - catalogOrder.indexOf(b.id));
+    hideExpandedCard();
+    callbacks.onUpdate?.();
+  };
+
+  // Apply filter to available cards
+  const filteredAvailable = filterCards(available);
+
+  // Render catalog cards with hover tooltip + double-click/drag to add
   filteredAvailable.forEach((card) => {
-    const isHighlighted = deckHighlighted?.list === "available" && deckHighlighted?.id === card.id;
+    const isInDeck = selected.some((c) => c.id === card.id);
     const cardElement = renderDeckCard(card, {
-      highlighted: isHighlighted,
-      onClick: () => {
-        // Find actual index in original array
-        const actualIndex = available.findIndex((c) => c.id === card.id);
-        if (deckHighlighted?.list === "available" && deckHighlighted?.id === card.id) {
-          if (selected.length >= 20) {
-            logMessage(state, "Deck is full. Remove a card before adding another.");
-            callbacks.onUpdate?.();
-            return;
-          }
-          selected.push(card);
-          if (actualIndex !== -1) available.splice(actualIndex, 1);
-          // Sort deck by category (Prey > Predator > Spell > Free Spell > Trap)
-          sortDeckByCategory(selected, catalogOrder);
-          deckHighlighted = null;
-          callbacks.onUpdate?.();
-          return;
-        }
-        deckHighlighted = { list: "available", id: card.id };
-        setDeckInspectorContent(card);
-        callbacks.onUpdate?.();
+      highlighted: false,
+      selected: isInDeck,
+      onDoubleClick: () => {
+        // Double click: add to deck
+        addCardToDeck(card);
       },
     });
+
+    // Hover to show expanded tooltip
+    cardElement.addEventListener('mouseenter', () => {
+      showCardTooltip(card, cardElement, { showPreview: true });
+    });
+    cardElement.addEventListener('mouseleave', () => {
+      hideCardTooltip();
+    });
+
+    // Make card draggable
+    cardElement.draggable = true;
+    cardElement.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', JSON.stringify({ cardId: card.id, source: 'catalog' }));
+      e.dataTransfer.effectAllowed = 'copy';
+      cardElement.classList.add('dragging');
+      hideCardTooltip(); // Hide tooltip when dragging starts
+    });
+    cardElement.addEventListener('dragend', () => {
+      cardElement.classList.remove('dragging');
+    });
+
     deckFullRow.appendChild(cardElement);
   });
 
-  filteredSelected.forEach((card) => {
-    const isHighlighted = deckHighlighted?.list === "selected" && deckHighlighted?.id === card.id;
-    const cardElement = renderDeckCard(card, {
-      highlighted: isHighlighted,
-      selected: true,
-      onClick: () => {
-        // Find actual index in original array
-        const actualIndex = selected.findIndex((c) => c.id === card.id);
-        if (deckHighlighted?.list === "selected" && deckHighlighted?.id === card.id) {
-          if (actualIndex !== -1) selected.splice(actualIndex, 1);
-          available.push(card);
-          available.sort(
-            (a, b) =>
-              catalogOrder.indexOf(a.id) -
-              catalogOrder.indexOf(b.id)
-          );
-          deckHighlighted = null;
-          callbacks.onUpdate?.();
-          return;
-        }
-        deckHighlighted = { list: "selected", id: card.id };
-        setDeckInspectorContent(card);
-        callbacks.onUpdate?.();
-      },
-    });
-    deckAddedRow.appendChild(cardElement);
+  // Setup deck list drop zone (for drag-drop to add)
+  setupDeckListDropZone((cardId) => {
+    const card = available.find((c) => c.id === cardId);
+    if (card) addCardToDeck(card);
+  });
+
+  // Render deck list sidebar
+  renderDeckListSidebar(selected, {
+    catalogOrder,
+    onRemove: removeCardFromDeck,
+    onCardClick: (card) => {
+      // Click on deck list row: remove the card
+      removeCardFromDeck(card);
+    },
   });
 
   renderDeckLoadPanel(state, playerIndex, callbacks);

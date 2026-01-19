@@ -643,8 +643,8 @@ export const checkConflictingKeywords = (state) => {
       if (!creature) return;
 
       const keywords = [
-        ...(creature.keywords || []),
-        ...(creature.grantedKeywords || []),
+        ...(Array.isArray(creature.keywords) ? creature.keywords : []),
+        ...(Array.isArray(creature.grantedKeywords) ? creature.grantedKeywords : []),
       ];
 
       for (const [kw1, kw2] of conflicts) {
@@ -998,9 +998,9 @@ export const checkVenomousEffect = (state, before, action) => {
   const { attacker, target } = action.payload || {};
   if (!attacker || target?.type !== 'creature') return bugs;
 
-  // Check if attacker has Venomous
-  const keywords = attacker.keywords || [];
-  const grantedKeywords = attacker.grantedKeywords || [];
+  // Check if attacker has Venomous (ensure arrays to avoid string spreading)
+  const keywords = Array.isArray(attacker.keywords) ? attacker.keywords : [];
+  const grantedKeywords = Array.isArray(attacker.grantedKeywords) ? attacker.grantedKeywords : [];
   const allKeywords = [...keywords, ...grantedKeywords];
 
   if (!allKeywords.includes('Venomous')) return bugs;

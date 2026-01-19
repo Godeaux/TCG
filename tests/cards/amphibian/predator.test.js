@@ -36,11 +36,13 @@ describe('Amphibian Predator Cards', () => {
       expect(card.type).toBe('Predator');
     });
 
-    it('onConsume summons Tiger Frog and deals 1 damage', () => {
+    it('onConsume summons Tiger Frog and deals 1 damage via primitives', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.onConsume.type).toBe('summonAndDamage');
-      expect(card.effects.onConsume.params.tokenIds).toContain('token-tiger-frog');
-      expect(card.effects.onConsume.params.damage).toBe(1);
+      expect(Array.isArray(card.effects.onConsume)).toBe(true);
+      expect(card.effects.onConsume[0].type).toBe('summonTokens');
+      expect(card.effects.onConsume[0].params.tokenIds).toContain('token-tiger-frog');
+      expect(card.effects.onConsume[1].type).toBe('selectFromGroup');
+      expect(card.effects.onConsume[1].params.effect.damage).toBe(1);
     });
   });
 
@@ -163,8 +165,20 @@ describe('Amphibian Predator Cards', () => {
 
     it('onConsume deals 4 damage to enemies and ends turn', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.onConsume.type).toBe('damageEnemiesAndEndTurn');
-      expect(card.effects.onConsume.params.damage).toBe(4);
+      const effects = card.effects.onConsume;
+
+      // Should be an array of primitives
+      expect(Array.isArray(effects)).toBe(true);
+
+      // Should have damageAllEnemyCreatures primitive
+      expect(effects).toContainEqual(
+        expect.objectContaining({ type: 'damageAllEnemyCreatures', params: { amount: 4 } })
+      );
+
+      // Should have endTurn primitive
+      expect(effects).toContainEqual(
+        expect.objectContaining({ type: 'endTurn' })
+      );
     });
   });
 
@@ -182,7 +196,7 @@ describe('Amphibian Predator Cards', () => {
 
     it('onConsume deals 4 damage to rival', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.onConsume.type).toBe('damageOpponent');
+      expect(card.effects.onConsume.type).toBe('damageRival');
       expect(card.effects.onConsume.params.amount).toBe(4);
     });
   });
@@ -224,8 +238,20 @@ describe('Amphibian Predator Cards', () => {
 
     it('onConsume regens others and heals 4', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.onConsume.type).toBe('regenOthersAndHeal');
-      expect(card.effects.onConsume.params.healAmount).toBe(4);
+      const effects = card.effects.onConsume;
+
+      // Should be an array of primitives
+      expect(Array.isArray(effects)).toBe(true);
+
+      // Should have regenOtherCreatures primitive
+      expect(effects).toContainEqual(
+        expect.objectContaining({ type: 'regenOtherCreatures' })
+      );
+
+      // Should have heal primitive
+      expect(effects).toContainEqual(
+        expect.objectContaining({ type: 'heal', params: { amount: 4 } })
+      );
     });
   });
 

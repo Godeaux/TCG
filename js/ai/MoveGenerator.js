@@ -284,7 +284,7 @@ export class MoveGenerator {
     if (!creature) return false;
     if (creature.currentHp <= 0) return false;
     if (creature.hasAttacked) return false;
-    if (creature.frozen || creature.paralyzed) return false;
+    if (creature.frozen || creature.paralyzed || creature.webbed) return false;
     if (isPassive(creature)) return false;
     if (hasKeyword(creature, KEYWORDS.HARMLESS)) return false;
 

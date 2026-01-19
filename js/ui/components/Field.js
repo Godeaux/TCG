@@ -15,6 +15,7 @@
 import { renderCard } from './Card.js';
 import { isPassive, isHarmless } from '../../keywords.js';
 import { isLocalPlayersTurn } from '../../state/selectors.js';
+import { showCardTooltip, hideCardTooltip, hideCardTooltipImmediate } from './CardTooltip.js';
 
 // ============================================================================
 // FIELD RENDERING
@@ -34,6 +35,9 @@ import { isLocalPlayersTurn } from '../../state/selectors.js';
  */
 export const renderField = (state, playerIndex, isOpponent, options = {}) => {
   const { onAttack, onInspect, onReturnToHand, onSacrifice } = options;
+
+  // Hide any active tooltip since field cards may be removed/changed
+  hideCardTooltipImmediate();
 
   const fieldRow = document.querySelector(isOpponent ? ".opponent-field" : ".player-field");
   if (!fieldRow) {
@@ -92,10 +96,19 @@ export const renderField = (state, playerIndex, isOpponent, options = {}) => {
       showSacrifice: canSacrifice,
       showEffectSummary: true,
       draggable: true,
+      state,
+      ownerIndex: playerIndex,
       onAttack,
       onReturnToHand,
       onSacrifice,
-      onInspect,
+    });
+
+    // Add hover tooltip listeners (Hearthstone-style)
+    cardElement.addEventListener('mouseenter', () => {
+      showCardTooltip(card, cardElement);
+    });
+    cardElement.addEventListener('mouseleave', () => {
+      hideCardTooltip();
     });
 
     // Add attack pulse if creature can attack

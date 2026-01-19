@@ -33,22 +33,30 @@ describe('Fish Spell Cards', () => {
       expect(card.type).toBe('Spell');
     });
 
-    it('effect kills enemy prey', () => {
+    it('effect kills enemy prey via selectFromGroup', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.effect.type).toBe('selectEnemyPreyToKill');
+      expect(card.effects.effect.type).toBe('selectFromGroup');
+      expect(card.effects.effect.params.targetGroup).toBe('enemy-prey');
+      expect(card.effects.effect.params.effect.kill).toBe(true);
     });
 
-    it('selectEnemyPreyToKill targets only prey', () => {
+    it('selectFromGroup targets only prey (excludes predators)', () => {
       const state = createTestState();
       createTestCreature('fish-prey-atlantic-flying-fish', 1, 0, state);
-      createTestCreature('fish-predator-sailfish', 1, 1, state);
+      createTestCreature('fish-prey-blobfish', 1, 1, state); // Another prey for selection UI
+      createTestCreature('fish-predator-sailfish', 1, 2, state); // Predator should be excluded
       const context = createEffectContext(state, 0);
 
-      const selectFn = effectLibrary.selectEnemyPreyToKill();
+      const selectFn = effectLibrary.selectFromGroup({
+        targetGroup: 'enemy-prey',
+        title: 'Kill enemy prey',
+        effect: { kill: true },
+      });
       const result = selectFn(context);
 
-      expect(result.selectTarget.candidates.length).toBe(1);
-      expect(result.selectTarget.candidates[0].value.type).toBe('Prey');
+      // Should only show prey, not predators
+      expect(result.selectTarget.candidates.length).toBe(2);
+      expect(result.selectTarget.candidates.every(c => c.value.creature.type === 'Prey')).toBe(true);
     });
   });
 
@@ -147,12 +155,12 @@ describe('Fish Spell Cards', () => {
       expect(option2.effect.params.amount).toBe(3);
     });
 
-    it('option 3 gives target creature +3/+3', () => {
+    it('option 3 gives target creature +3/+3 via selectFromGroup', () => {
       const card = getCardDefinitionById(cardId);
       const option3 = card.effects.effect.params.options[2];
-      expect(option3.effect.type).toBe('selectCreatureForBuff');
-      expect(option3.effect.params.attack).toBe(3);
-      expect(option3.effect.params.health).toBe(3);
+      expect(option3.effect.type).toBe('selectFromGroup');
+      expect(option3.effect.params.effect.buff.attack).toBe(3);
+      expect(option3.effect.params.effect.buff.health).toBe(3);
     });
   });
 
@@ -204,22 +212,29 @@ describe('Fish Spell Cards', () => {
       expect(card.type).toBe('Spell');
     });
 
-    it('effect steals enemy after dealing damage', () => {
+    it('effect damages and steals enemy via selectFromGroup', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.effect.type).toBe('selectEnemyToSteal');
-      expect(card.effects.effect.params.damage).toBe(4);
+      expect(card.effects.effect.type).toBe('selectFromGroup');
+      expect(card.effects.effect.params.targetGroup).toBe('enemy-creatures');
+      expect(card.effects.effect.params.effect.damage).toBe(4);
+      expect(card.effects.effect.params.effect.steal).toBe(true);
     });
 
-    it('selectEnemyToSteal returns selectTarget for enemies', () => {
+    it('selectFromGroup returns selectTarget for enemies when multiple targets', () => {
       const state = createTestState();
       createTestCreature('fish-prey-atlantic-flying-fish', 1, 0, state);
+      createTestCreature('fish-prey-blobfish', 1, 1, state);
       const context = createEffectContext(state, 0);
 
-      const selectFn = effectLibrary.selectEnemyToSteal(4);
+      const selectFn = effectLibrary.selectFromGroup({
+        targetGroup: 'enemy-creatures',
+        title: 'Choose a creature',
+        effect: { damage: 4, steal: true }
+      });
       const result = selectFn(context);
 
       expect(result.selectTarget).toBeDefined();
-      expect(result.selectTarget.candidates.length).toBe(1);
+      expect(result.selectTarget.candidates.length).toBe(2);
     });
   });
 
@@ -234,20 +249,15 @@ describe('Fish Spell Cards', () => {
       expect(card.type).toBe('Free Spell');
     });
 
-    it('effect tutors and ends turn', () => {
+    it('effect is array of tutorFromDeck and endTurn', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.effect.type).toBe('tutorAndEndTurn');
-    });
-
-    it('tutorAndEndTurn returns selectTarget for deck cards', () => {
-      const state = createTestState();
-      addCardToDeck(state, 'fish-prey-atlantic-flying-fish', 0);
-      const context = createEffectContext(state, 0);
-
-      const tutorFn = effectLibrary.tutorAndEndTurn();
-      const result = tutorFn(context);
-
-      expect(result.selectTarget).toBeDefined();
+      expect(Array.isArray(card.effects.effect)).toBe(true);
+      expect(card.effects.effect).toContainEqual(
+        expect.objectContaining({ type: 'tutorFromDeck' })
+      );
+      expect(card.effects.effect).toContainEqual(
+        expect.objectContaining({ type: 'endTurn' })
+      );
     });
   });
 
@@ -262,23 +272,29 @@ describe('Fish Spell Cards', () => {
       expect(card.type).toBe('Free Spell');
     });
 
-    it('effect grants Edible to target predator', () => {
+    it('effect grants Edible to target predator via selectFromGroup', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.effect.type).toBe('selectPredatorForKeyword');
-      expect(card.effects.effect.params.keyword).toBe('Edible');
+      expect(card.effects.effect.type).toBe('selectFromGroup');
+      expect(card.effects.effect.params.targetGroup).toBe('friendly-predators');
+      expect(card.effects.effect.params.effect.keyword).toBe('Edible');
     });
 
-    it('selectPredatorForKeyword targets only friendly predators', () => {
+    it('selectFromGroup with friendly-predators targets only friendly predators', () => {
       const state = createTestState();
       createTestCreature('fish-predator-sailfish', 0, 0, state);
-      createTestCreature('fish-prey-atlantic-flying-fish', 0, 1, state);
+      createTestCreature('fish-predator-wahoo', 0, 1, state); // Second predator for selection UI
+      createTestCreature('fish-prey-atlantic-flying-fish', 0, 2, state);
       const context = createEffectContext(state, 0);
 
-      const selectFn = effectLibrary.selectPredatorForKeyword('Edible');
+      const selectFn = effectLibrary.selectFromGroup({
+        targetGroup: 'friendly-predators',
+        title: 'Choose a predator',
+        effect: { keyword: 'Edible' }
+      });
       const result = selectFn(context);
 
-      expect(result.selectTarget.candidates.length).toBe(1);
-      expect(result.selectTarget.candidates[0].value.type).toBe('Predator');
+      expect(result.selectTarget).toBeDefined();
+      expect(result.selectTarget.candidates.length).toBe(2); // Only predators, not prey
     });
   });
 
@@ -313,21 +329,28 @@ describe('Fish Spell Cards', () => {
       expect(card.type).toBe('Free Spell');
     });
 
-    it('effect strips abilities from target enemy', () => {
+    it('effect strips abilities from target enemy via selectFromGroup', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.effect.type).toBe('selectEnemyToStripAbilities');
+      expect(card.effects.effect.type).toBe('selectFromGroup');
+      expect(card.effects.effect.params.targetGroup).toBe('enemy-creatures');
+      expect(card.effects.effect.params.effect.removeAbilities).toBe(true);
     });
 
-    it('selectEnemyToStripAbilities returns selectTarget for enemies', () => {
+    it('selectFromGroup with removeAbilities returns selectTarget for enemies when multiple targets', () => {
       const state = createTestState();
       createTestCreature('fish-prey-atlantic-flying-fish', 1, 0, state);
+      createTestCreature('fish-prey-blobfish', 1, 1, state);
       const context = createEffectContext(state, 0);
 
-      const selectFn = effectLibrary.selectEnemyToStripAbilities();
+      const selectFn = effectLibrary.selectFromGroup({
+        targetGroup: 'enemy-creatures',
+        title: 'Choose a creature',
+        effect: { removeAbilities: true }
+      });
       const result = selectFn(context);
 
       expect(result.selectTarget).toBeDefined();
-      expect(result.selectTarget.candidates.length).toBe(1);
+      expect(result.selectTarget.candidates.length).toBe(2);
     });
   });
 });

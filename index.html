@@ -29,42 +29,50 @@
 
     <div class="overlay deck-overlay" id="deck-overlay" aria-hidden="true">
       <div class="overlay-content deck-builder">
-        <div class="deck-header">
-          <h2 id="deck-title">Deck Builder</h2>
-          <div class="deck-status" id="deck-status"></div>
-        </div>
-        <div class="deck-filter-row">
-          <input type="text" id="deck-filter-input" class="deck-filter-input"
-                 placeholder="Filter by name, keyword, or effect..." autocomplete="off" />
-          <button type="button" class="deck-filter-clear" id="deck-filter-clear">&times;</button>
-        </div>
-        <div class="deck-tabs">
-          <button class="deck-tab active" data-tab="catalog">Catalog</button>
-          <button class="deck-tab" data-tab="deck">My Deck</button>
-          <button class="deck-tab" data-tab="load">Load Deck</button>
-          <button class="deck-tab" data-tab="manage">Manage Decks</button>
-        </div>
-        <div class="deck-content">
-          <div class="deck-panel deck-catalog-panel active">
-            <div class="deck-grid" id="deck-full-row"></div>
+        <div class="deck-builder-layout">
+          <!-- Left side: Catalog (75%) -->
+          <div class="deck-builder-main">
+            <div class="deck-header">
+              <h2 id="deck-title">Deck Builder</h2>
+              <div class="deck-status" id="deck-status"></div>
+            </div>
+            <div class="deck-filter-row">
+              <input type="text" id="deck-filter-input" class="deck-filter-input"
+                     placeholder="Filter by name, keyword, or effect..." autocomplete="off" />
+              <button type="button" class="deck-filter-clear" id="deck-filter-clear">&times;</button>
+            </div>
+            <div class="deck-tabs">
+              <button class="deck-tab active" data-tab="catalog">Catalog</button>
+              <button class="deck-tab" data-tab="load">Load Deck</button>
+              <button class="deck-tab" data-tab="manage">Manage Decks</button>
+            </div>
+            <div class="deck-content">
+              <div class="deck-panel deck-catalog-panel active">
+                <div class="deck-grid" id="deck-full-row"></div>
+              </div>
+              <div class="deck-panel deck-load-panel">
+                <div class="deck-load-list" id="deck-load-list"></div>
+              </div>
+              <div class="deck-panel deck-manage-panel">
+                <div class="deck-manage-list" id="deck-manage-list"></div>
+              </div>
+            </div>
+            <div class="deck-actions">
+              <button class="deck-exit" id="deck-exit" type="button">Back</button>
+              <button class="deck-save" id="deck-save" type="button">Save Deck</button>
+              <button class="deck-random" id="deck-random" type="button">Random</button>
+              <button class="deck-load" id="deck-load" type="button">Load Deck</button>
+              <button class="btn-primary" id="deck-confirm" type="button">Confirm Deck</button>
+            </div>
           </div>
-          <div class="deck-panel deck-added-panel">
-            <div class="deck-grid" id="deck-added-row"></div>
+          <!-- Right side: Deck List (25%) -->
+          <div class="deck-builder-sidebar">
+            <div class="deck-list-header">
+              <span class="deck-list-title">Your Deck</span>
+              <span class="deck-list-count" id="deck-list-count">0/20</span>
+            </div>
+            <div class="deck-list-cards" id="deck-list-cards"></div>
           </div>
-          <div class="deck-panel deck-load-panel">
-            <div class="deck-load-list" id="deck-load-list"></div>
-          </div>
-          <div class="deck-panel deck-manage-panel">
-            <div class="deck-manage-list" id="deck-manage-list"></div>
-          </div>
-        </div>
-        <div class="deck-inspector" id="deck-inspector-panel"></div>
-        <div class="deck-actions">
-          <button class="deck-exit" id="deck-exit" type="button">Back</button>
-          <button class="deck-save" id="deck-save" type="button">Save Deck</button>
-          <button class="deck-random" id="deck-random" type="button">Random</button>
-          <button class="deck-load" id="deck-load" type="button">Load Deck</button>
-          <button class="btn-primary" id="deck-confirm" type="button">Confirm Deck</button>
         </div>
       </div>
     </div>
@@ -800,23 +808,8 @@
 
       <div class="pages-container" id="pages-container">
         <section class="page page-battlefield active" data-page="0">
-          <div class="battlefield-layout-three-column">
-            <!-- Left Column: Card Inspector -->
-            <div class="battlefield-left-column">
-              <div class="card-inspector-panel">
-                <div class="inspector-header">
-                  <h3>Card Inspector</h3>
-                  <button class="mobile-panel-close" id="close-inspector" aria-label="Close Inspector">✕</button>
-                </div>
-                <div class="inspector-content" id="card-inspector">
-                  <div class="inspector-placeholder">
-                    <p>Click on a card to see details</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Center Column: Battlefield and Hand -->
+          <div class="battlefield-layout-two-column">
+            <!-- Main Column: Battlefield and Hand -->
             <div class="battlefield-center-column">
               <div class="battlefield-layout">
                 <!-- Scoreboard Row (player info + opponent hand cards) -->
@@ -874,6 +867,7 @@
                           <span class="field-turn-number" id="field-turn-number">Turn 1</span>
                           <span class="field-phase-label" id="field-phase-label">Main</span>
                         </button>
+                        <button class="field-resync-btn" id="field-resync-btn" title="Request Resync" aria-label="Request Resync">📶</button>
                         <button class="field-surrender-btn" id="field-surrender-btn" title="Surrender" aria-label="Surrender">🏳️</button>
                       </div>
                       <button class="mobile-nav-right" id="mobile-nav-right" aria-label="View Game History">
@@ -950,6 +944,14 @@
           </div>
         </section>
       </div>
+
+    <!-- Bug Report Overlay and Bug Button are created dynamically via JS and appended to body -->
+
+    <!-- Card Hover Tooltip (Hearthstone-style) -->
+    <div class="card-hover-tooltip" id="card-hover-tooltip" aria-hidden="true">
+      <div class="tooltip-card-preview" id="tooltip-card-preview"></div>
+      <div class="tooltip-info-boxes" id="tooltip-info-boxes"></div>
+    </div>
 
     <script type="module" src="js/main.js"></script>
   </body>

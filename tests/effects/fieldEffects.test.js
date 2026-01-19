@@ -162,30 +162,8 @@ describe('Kill Enemy Tokens Effect', () => {
   });
 });
 
-describe('Destroy Everything Effect', () => {
-  let state;
-  let context;
-
-  beforeEach(() => {
-    state = createTestState();
-    context = createEffectContext(state, 0);
-  });
-
-  it('returns killAllCreatures and removeFieldSpell', () => {
-    const destroyFn = effectLibrary.destroyEverything();
-    const result = destroyFn(context);
-
-    expect(result.killAllCreatures).toBe(true);
-    expect(result.removeFieldSpell).toBe(true);
-  });
-
-  it('logs the destruction', () => {
-    const destroyFn = effectLibrary.destroyEverything();
-    destroyFn(context);
-
-    expect(context.log.getMessages()).toContain('Everything is destroyed.');
-  });
-});
+// Note: destroyEverything compound effect has been replaced with primitive arrays in card JSON
+// (e.g., [{ type: 'killAll', params: { group: 'all' } }, { type: 'destroyFieldSpells' }])
 
 describe('Reveal Hand Effect', () => {
   let state;
@@ -390,14 +368,14 @@ describe('Force Opponent Discard Effect', () => {
     context = createEffectContext(state, 0);
   });
 
-  it('returns pendingChoice result', () => {
+  it('returns selectTarget result for opponent selection', () => {
     const discardFn = effectLibrary.forceOpponentDiscard(1);
     const result = discardFn(context);
 
-    expect(result.pendingChoice).toBeDefined();
-    expect(result.pendingChoice.type).toBe('discard');
-    expect(result.pendingChoice.forPlayer).toBe(1);
-    expect(result.pendingChoice.count).toBe(1);
+    expect(result.selectTarget).toBeDefined();
+    expect(result.selectTarget.title).toContain('discard');
+    expect(result.selectTarget.isOpponentSelection).toBe(true);
+    expect(result.selectTarget.selectingPlayerIndex).toBe(1);
   });
 
   it('returns empty result when opponent has no cards', () => {
@@ -406,28 +384,5 @@ describe('Force Opponent Discard Effect', () => {
     const result = discardFn(context);
 
     expect(result).toEqual({});
-  });
-});
-
-describe('Regen Others And Heal Effect', () => {
-  let state;
-  let creature;
-  let context;
-
-  beforeEach(() => {
-    const setup = createTestCreature('fish-prey-atlantic-flying-fish', 0, 0);
-    state = setup.state;
-    creature = setup.creature;
-    createTestCreature('fish-prey-blobfish', 0, 1, state);
-    context = createEffectContext(state, 0, { creature });
-  });
-
-  it('returns regenCreatures and heal', () => {
-    const regenFn = effectLibrary.regenOthersAndHeal(3);
-    const result = regenFn(context);
-
-    expect(result.regenCreatures).toBeDefined();
-    expect(result.regenCreatures.length).toBe(1); // Not including self
-    expect(result.heal).toBe(3);
   });
 });

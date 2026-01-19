@@ -255,5 +255,6 @@ export const chooseFirstPlayer = (state, chosenIndex) => {
   state.cardPlayedThisTurn = false;
   state.passPending = false;
   state.setup.stage = "complete";
+  state.advantageHistory = []; // Reset advantage graph for new game
   logMessage(state, `${state.players[chosenIndex].name} will take the first turn.`);
 };

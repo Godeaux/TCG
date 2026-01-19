@@ -18,45 +18,58 @@ beforeAll(() => {
   ensureRegistryInitialized();
 });
 
-describe('Select Carrion To Add To Hand Effect', () => {
+describe('selectFromGroup with friendly-carrion addToHand Effect', () => {
   let state;
   let context;
 
   beforeEach(() => {
     state = createTestState();
     addCardToCarrion(state, 'fish-prey-atlantic-flying-fish', 0);
+    addCardToCarrion(state, 'fish-prey-blobfish', 0); // Add second for selection UI
     context = createEffectContext(state, 0);
   });
 
-  it('returns selectTarget prompt', () => {
-    const selectFn = effectLibrary.selectCarrionToAddToHand();
+  it('returns selectTarget prompt for friendly-carrion', () => {
+    const selectFn = effectLibrary.selectFromGroup({
+      targetGroup: 'friendly-carrion',
+      title: 'Choose a carrion to add to hand',
+      effect: { addToHand: true }
+    });
     const result = selectFn(context);
 
     expect(result.selectTarget).toBeDefined();
-    expect(result.selectTarget.candidates.length).toBe(1);
+    expect(result.selectTarget.candidates.length).toBe(2);
   });
 
   it('returns empty result when carrion is empty', () => {
     state.players[0].carrion = [];
-    const selectFn = effectLibrary.selectCarrionToAddToHand();
+    const selectFn = effectLibrary.selectFromGroup({
+      targetGroup: 'friendly-carrion',
+      title: 'Choose a carrion to add to hand',
+      effect: { addToHand: true }
+    });
     const result = selectFn(context);
 
     expect(result).toEqual({});
   });
 
   it('onSelect returns addCarrionToHand result', () => {
-    const selectFn = effectLibrary.selectCarrionToAddToHand();
+    const selectFn = effectLibrary.selectFromGroup({
+      targetGroup: 'friendly-carrion',
+      title: 'Choose a carrion to add to hand',
+      effect: { addToHand: true }
+    });
     const result = selectFn(context);
 
-    const card = result.selectTarget.candidates[0].value;
-    const selectionResult = result.selectTarget.onSelect(card);
+    const selection = result.selectTarget.candidates[0].value;
+    const selectionResult = result.selectTarget.onSelect(selection);
 
     expect(selectionResult.addCarrionToHand).toBeDefined();
-    expect(selectionResult.addCarrionToHand.card).toBe(card);
+    expect(selectionResult.addCarrionToHand.creature).toBe(selection.creature);
   });
 });
 
-describe('Select Carrion To Copy Abilities Effect', () => {
+describe('selectFromGroup with carrion copyAbilities Effect', () => {
   let state;
   let creature;
   let context;
@@ -66,39 +79,53 @@ describe('Select Carrion To Copy Abilities Effect', () => {
     state = setup.state;
     creature = setup.creature;
     addCardToCarrion(state, 'fish-prey-blobfish', 0);
+    addCardToCarrion(state, 'fish-predator-sailfish', 0); // Add second for selection UI
     context = createEffectContext(state, 0, { creature });
   });
 
-  it('returns selectTarget prompt', () => {
-    const selectFn = effectLibrary.selectCarrionToCopyAbilities();
+  it('returns selectTarget prompt for carrion', () => {
+    const selectFn = effectLibrary.selectFromGroup({
+      targetGroup: 'carrion',
+      title: 'Choose a carrion to copy abilities from',
+      effect: { copyAbilities: true }
+    });
     const result = selectFn(context);
 
     expect(result.selectTarget).toBeDefined();
-    expect(result.selectTarget.candidates.length).toBe(1);
+    expect(result.selectTarget.candidates.length).toBe(2);
   });
 
   it('returns empty result when carrion is empty', () => {
     state.players[0].carrion = [];
-    const selectFn = effectLibrary.selectCarrionToCopyAbilities();
+    state.players[1].carrion = [];
+    const selectFn = effectLibrary.selectFromGroup({
+      targetGroup: 'carrion',
+      title: 'Choose a carrion to copy abilities from',
+      effect: { copyAbilities: true }
+    });
     const result = selectFn(context);
 
     expect(result).toEqual({});
   });
 
   it('onSelect returns copyAbilities result', () => {
-    const selectFn = effectLibrary.selectCarrionToCopyAbilities();
+    const selectFn = effectLibrary.selectFromGroup({
+      targetGroup: 'carrion',
+      title: 'Choose a carrion to copy abilities from',
+      effect: { copyAbilities: true }
+    });
     const result = selectFn(context);
 
-    const source = result.selectTarget.candidates[0].value;
-    const selectionResult = result.selectTarget.onSelect(source);
+    const selection = result.selectTarget.candidates[0].value;
+    const selectionResult = result.selectTarget.onSelect(selection);
 
     expect(selectionResult.copyAbilities).toBeDefined();
     expect(selectionResult.copyAbilities.target).toBe(creature);
-    expect(selectionResult.copyAbilities.source).toBe(source);
+    expect(selectionResult.copyAbilities.source).toBe(selection.creature);
   });
 });
 
-describe('Select Carrion Predator To Copy Abilities Effect', () => {
+describe('selectFromGroup with carrion-predators copyAbilities Effect', () => {
   let state;
   let creature;
   let context;
@@ -108,27 +135,37 @@ describe('Select Carrion Predator To Copy Abilities Effect', () => {
     state = setup.state;
     creature = setup.creature;
     addCardToCarrion(state, 'fish-predator-sailfish', 0);
+    addCardToCarrion(state, 'fish-predator-wahoo', 0); // Add second for selection UI
     context = createEffectContext(state, 0, { creature });
   });
 
-  it('returns selectTarget prompt', () => {
-    const selectFn = effectLibrary.selectCarrionPredToCopyAbilities();
+  it('returns selectTarget prompt for carrion-predators', () => {
+    const selectFn = effectLibrary.selectFromGroup({
+      targetGroup: 'carrion-predators',
+      title: 'Choose a predator to copy abilities from',
+      effect: { copyAbilities: true }
+    });
     const result = selectFn(context);
 
     expect(result.selectTarget).toBeDefined();
-    expect(result.selectTarget.candidates.length).toBe(1);
+    expect(result.selectTarget.candidates.length).toBe(2);
   });
 
   it('returns empty result when no predators in carrion', () => {
     state.players[0].carrion = [];
-    const selectFn = effectLibrary.selectCarrionPredToCopyAbilities();
+    state.players[1].carrion = [];
+    const selectFn = effectLibrary.selectFromGroup({
+      targetGroup: 'carrion-predators',
+      title: 'Choose a predator to copy abilities from',
+      effect: { copyAbilities: true }
+    });
     const result = selectFn(context);
 
     expect(result).toEqual({});
   });
 });
 
-describe('Select Carrion To Copy Stats Effect', () => {
+describe('selectFromGroup with carrion copyStats Effect', () => {
   let state;
   let creature;
   let context;
@@ -138,27 +175,41 @@ describe('Select Carrion To Copy Stats Effect', () => {
     state = setup.state;
     creature = setup.creature;
     addCardToCarrion(state, 'fish-prey-blobfish', 0);
+    addCardToCarrion(state, 'fish-predator-sailfish', 0); // Add second for selection UI
     context = createEffectContext(state, 0, { creature });
   });
 
-  it('returns selectTarget prompt', () => {
-    const selectFn = effectLibrary.selectCarrionToCopyStats();
+  it('returns selectTarget prompt for carrion', () => {
+    const selectFn = effectLibrary.selectFromGroup({
+      targetGroup: 'carrion',
+      title: 'Choose a carrion to copy stats from',
+      effect: { copyStats: true }
+    });
     const result = selectFn(context);
 
     expect(result.selectTarget).toBeDefined();
-    expect(result.selectTarget.candidates.length).toBe(1);
+    expect(result.selectTarget.candidates.length).toBe(2);
   });
 
   it('returns empty result when carrion is empty', () => {
     state.players[0].carrion = [];
-    const selectFn = effectLibrary.selectCarrionToCopyStats();
+    state.players[1].carrion = [];
+    const selectFn = effectLibrary.selectFromGroup({
+      targetGroup: 'carrion',
+      title: 'Choose a carrion to copy stats from',
+      effect: { copyStats: true }
+    });
     const result = selectFn(context);
 
     expect(result).toEqual({});
   });
 
   it('onSelect returns copyStats result', () => {
-    const selectFn = effectLibrary.selectCarrionToCopyStats();
+    const selectFn = effectLibrary.selectFromGroup({
+      targetGroup: 'carrion',
+      title: 'Choose a carrion to copy stats from',
+      effect: { copyStats: true }
+    });
     const result = selectFn(context);
 
     const source = result.selectTarget.candidates[0].value;
@@ -166,46 +217,59 @@ describe('Select Carrion To Copy Stats Effect', () => {
 
     expect(selectionResult.copyStats).toBeDefined();
     expect(selectionResult.copyStats.target).toBe(creature);
-    expect(selectionResult.copyStats.source).toBe(source);
+    expect(selectionResult.copyStats.source).toBe(source.creature);
   });
 });
 
-describe('Select Carrion To Play With Keyword Effect', () => {
+describe('selectFromGroup with friendly-carrion play + keyword Effect', () => {
   let state;
   let context;
 
   beforeEach(() => {
     state = createTestState();
     addCardToCarrion(state, 'fish-prey-atlantic-flying-fish', 0);
+    addCardToCarrion(state, 'fish-prey-blobfish', 0); // Add second for selection UI
     context = createEffectContext(state, 0);
   });
 
-  it('returns selectTarget prompt', () => {
-    const selectFn = effectLibrary.selectCarrionToPlayWithKeyword('Frozen');
+  it('returns selectTarget prompt for friendly-carrion', () => {
+    const selectFn = effectLibrary.selectFromGroup({
+      targetGroup: 'friendly-carrion',
+      title: 'Choose a carrion to play',
+      effect: { play: true, keyword: 'Frozen' }
+    });
     const result = selectFn(context);
 
     expect(result.selectTarget).toBeDefined();
-    expect(result.selectTarget.candidates.length).toBe(1);
+    expect(result.selectTarget.candidates.length).toBe(2);
   });
 
   it('returns empty result when carrion is empty', () => {
     state.players[0].carrion = [];
-    const selectFn = effectLibrary.selectCarrionToPlayWithKeyword('Haste');
+    const selectFn = effectLibrary.selectFromGroup({
+      targetGroup: 'friendly-carrion',
+      title: 'Choose a carrion to play',
+      effect: { play: true, keyword: 'Haste' }
+    });
     const result = selectFn(context);
 
     expect(result).toEqual({});
   });
 
   it('onSelect returns playFromCarrion result with keyword', () => {
-    const selectFn = effectLibrary.selectCarrionToPlayWithKeyword('Immune');
+    const selectFn = effectLibrary.selectFromGroup({
+      targetGroup: 'friendly-carrion',
+      title: 'Choose a carrion to play',
+      effect: { play: true, keyword: 'Immune' }
+    });
     const result = selectFn(context);
 
-    const card = result.selectTarget.candidates[0].value;
-    const selectionResult = result.selectTarget.onSelect(card);
+    const selection = result.selectTarget.candidates[0].value;
+    const selectionResult = result.selectTarget.onSelect(selection);
 
     expect(selectionResult.playFromCarrion).toBeDefined();
-    expect(selectionResult.playFromCarrion.card).toBe(card);
-    expect(selectionResult.playFromCarrion.grantKeyword).toBe('Immune');
+    expect(selectionResult.playFromCarrion.creature).toBe(selection.creature);
+    expect(selectionResult.playFromCarrion.keyword).toBe('Immune');
   });
 });
 
@@ -319,7 +383,7 @@ describe('Select Creature To Copy Effect', () => {
   });
 });
 
-describe('Select Creature To Copy Stats Effect', () => {
+describe('selectFromGroup with creature copyStats Effect', () => {
   let state;
   let creature;
   let context;
@@ -329,28 +393,41 @@ describe('Select Creature To Copy Stats Effect', () => {
     state = setup.state;
     creature = setup.creature;
     createTestCreature('fish-prey-blobfish', 1, 0, state);
+    createTestCreature('fish-predator-sailfish', 1, 1, state); // Add second for selection UI
     context = createEffectContext(state, 0, { creature });
   });
 
-  it('returns selectTarget prompt', () => {
-    const selectFn = effectLibrary.selectCreatureToCopyStats();
+  it('returns selectTarget prompt for other-creatures', () => {
+    const selectFn = effectLibrary.selectFromGroup({
+      targetGroup: 'other-creatures',
+      title: 'Choose a creature to copy stats from',
+      effect: { copyStats: true }
+    });
     const result = selectFn(context);
 
     expect(result.selectTarget).toBeDefined();
     // Should not include self
-    expect(result.selectTarget.candidates.length).toBe(1);
+    expect(result.selectTarget.candidates.length).toBe(2);
   });
 
   it('returns empty result when no other creatures', () => {
     state.players[1].field = [null, null, null];
-    const selectFn = effectLibrary.selectCreatureToCopyStats();
+    const selectFn = effectLibrary.selectFromGroup({
+      targetGroup: 'other-creatures',
+      title: 'Choose a creature to copy stats from',
+      effect: { copyStats: true }
+    });
     const result = selectFn(context);
 
     expect(result).toEqual({});
   });
 
   it('onSelect returns copyStats result', () => {
-    const selectFn = effectLibrary.selectCreatureToCopyStats();
+    const selectFn = effectLibrary.selectFromGroup({
+      targetGroup: 'other-creatures',
+      title: 'Choose a creature to copy stats from',
+      effect: { copyStats: true }
+    });
     const result = selectFn(context);
 
     const target = result.selectTarget.candidates[0].value;
@@ -358,11 +435,11 @@ describe('Select Creature To Copy Stats Effect', () => {
 
     expect(selectionResult.copyStats).toBeDefined();
     expect(selectionResult.copyStats.target).toBe(creature);
-    expect(selectionResult.copyStats.source).toBe(target);
+    expect(selectionResult.copyStats.source).toBe(target.creature);
   });
 });
 
-describe('Select Creature To Copy Abilities Effect', () => {
+describe('selectFromGroup with copyAbilitiesFrom Effect', () => {
   let state;
   let creature;
   let context;
@@ -372,27 +449,40 @@ describe('Select Creature To Copy Abilities Effect', () => {
     state = setup.state;
     creature = setup.creature;
     createTestCreature('fish-prey-blobfish', 1, 0, state);
+    createTestCreature('fish-prey-blobfish', 1, 1, state); // Add second target for selection UI
     context = createEffectContext(state, 0, { creature });
   });
 
-  it('returns selectTarget prompt', () => {
-    const selectFn = effectLibrary.selectCreatureToCopyAbilities();
+  it('returns selectTarget prompt for other-creatures', () => {
+    const selectFn = effectLibrary.selectFromGroup({
+      targetGroup: 'other-creatures',
+      title: 'Choose a creature to copy abilities from',
+      effect: { copyAbilitiesFrom: true }
+    });
     const result = selectFn(context);
 
     expect(result.selectTarget).toBeDefined();
-    expect(result.selectTarget.candidates.length).toBe(1);
+    expect(result.selectTarget.candidates.length).toBe(2);
   });
 
   it('returns empty result when no other creatures', () => {
     state.players[1].field = [null, null, null];
-    const selectFn = effectLibrary.selectCreatureToCopyAbilities();
+    const selectFn = effectLibrary.selectFromGroup({
+      targetGroup: 'other-creatures',
+      title: 'Choose a creature to copy abilities from',
+      effect: { copyAbilitiesFrom: true }
+    });
     const result = selectFn(context);
 
     expect(result).toEqual({});
   });
 
   it('onSelect returns copyAbilities result', () => {
-    const selectFn = effectLibrary.selectCreatureToCopyAbilities();
+    const selectFn = effectLibrary.selectFromGroup({
+      targetGroup: 'other-creatures',
+      title: 'Choose a creature to copy abilities from',
+      effect: { copyAbilitiesFrom: true }
+    });
     const result = selectFn(context);
 
     const target = result.selectTarget.candidates[0].value;
@@ -400,7 +490,7 @@ describe('Select Creature To Copy Abilities Effect', () => {
 
     expect(selectionResult.copyAbilities).toBeDefined();
     expect(selectionResult.copyAbilities.target).toBe(creature);
-    expect(selectionResult.copyAbilities.source).toBe(target);
+    expect(selectionResult.copyAbilities.source).toBe(target.creature);
   });
 });
 
@@ -434,38 +524,3 @@ describe('Revive Creature Effect', () => {
   });
 });
 
-describe('Add Carrion And Tutor Effect', () => {
-  let state;
-  let context;
-
-  beforeEach(() => {
-    state = createTestState();
-    addCardToCarrion(state, 'fish-prey-atlantic-flying-fish', 0);
-    state.players[0].deck = [
-      { id: 'deck-1', instanceId: 'deck-inst-1', name: 'Deck Card' },
-    ];
-    context = createEffectContext(state, 0);
-  });
-
-  it('returns selectTarget for carrion first', () => {
-    const addFn = effectLibrary.addCarrionAndTutor();
-    const result = addFn(context);
-
-    expect(result.selectTarget).toBeDefined();
-    // First selection is from carrion
-    expect(result.selectTarget.candidates.length).toBe(1);
-  });
-
-  it('returns just tutor selectTarget when carrion is empty', () => {
-    state.players[0].carrion = [];
-    const addFn = effectLibrary.addCarrionAndTutor();
-    const result = addFn(context);
-
-    expect(result.selectTarget).toBeDefined();
-    // Should be deck cards (candidates is a function)
-    const candidates = typeof result.selectTarget.candidates === 'function'
-      ? result.selectTarget.candidates()
-      : result.selectTarget.candidates;
-    expect(candidates.length).toBe(1);
-  });
-});

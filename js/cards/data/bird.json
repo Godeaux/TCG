@@ -8,7 +8,7 @@
       "hp": 2,
       "nutrition": 2,
       "keywords": ["Harmless", "Invisible"],
-      "effectText": "Slain, add Kākāpō Feathers to hand.",
+      "summons": ["token-kakapo-feathers"],
       "effects": {
         "onSlain": { "type": "addToHand", "params": { "cardId": "token-kakapo-feathers" } }
       }
@@ -20,12 +20,14 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Rival reveals hand. Add a card from deck to hand.",
       "effects": {
-        "onPlay": { "type": "revealAndTutor" }
+        "onPlay": [
+          { "type": "revealHand", "params": {} },
+          { "type": "tutorFromDeck", "params": {} }
+        ]
       }
     },
-        {
+    {
       "id": "bird-prey-common-swift",
       "name": "Common Swift",
       "type": "Prey",
@@ -42,7 +44,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Free Play"],
-      "effectText": "Heal 1.",
       "effects": {
         "onPlay": { "type": "heal", "params": { "amount": 1 } }
       }
@@ -55,7 +56,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Passive"],
-      "effectText": "Play Dove. Heal 3.",
       "summons": ["token-dove"],
       "effects": {
         "onPlay": [
@@ -71,10 +71,9 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "End of turn, deal 2 damage to Rival and Rival's creatures.",
       "effects": {
         "onEnd": [
-          { "type": "damageOpponent", "params": { "amount": 2 } },
+          { "type": "damageRival", "params": { "amount": 2 } },
           { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } }
         ]
       }
@@ -86,7 +85,6 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "End of turn, draw 3.",
       "effects": {
         "onEnd": { "type": "draw", "params": { "count": 3 } }
       }
@@ -98,7 +96,6 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Play 2 Golden Song Sparrows. Draw 1.",
       "summons": ["token-golden-song-sparrow"],
       "effects": {
         "onPlay": [
@@ -114,9 +111,8 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Copy abilities of a carrion.",
       "effects": {
-        "onPlay": { "type": "selectCarrionToCopyAbilities" }
+        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "carrion", "title": "Choose a carrion to copy abilities from", "effect": { "copyAbilities": true } } }
       }
     },
     {
@@ -126,9 +122,8 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Copy stats of target animal.",
       "effects": {
-        "onPlay": { "type": "selectCreatureToCopyStats" }
+        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "other-creatures", "title": "Choose a creature to copy stats from", "effect": { "copyStats": true } } }
       }
     },
     {
@@ -138,9 +133,8 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Copy abilities of target animal.",
       "effects": {
-        "onPlay": { "type": "selectCreatureToCopyAbilities" }
+        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "other-creatures", "title": "Choose a creature to copy abilities from", "effect": { "copyAbilitiesFrom": true } } }
       }
     },
     {
@@ -150,10 +144,13 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Play Oriental Magpie. Heal 2. Regen target creature.",
       "summons": ["token-oriental-magpie"],
       "effects": {
-        "onPlay": { "type": "summonHealAndRegen", "params": { "tokenIds": ["token-oriental-magpie"], "healAmount": 2 } }
+        "onPlay": [
+          { "type": "summonTokens", "params": { "tokenIds": ["token-oriental-magpie"] } },
+          { "type": "heal", "params": { "amount": 2 } },
+          { "type": "selectFromGroup", "params": { "targetGroup": "all-creatures", "title": "Choose a creature to regenerate", "effect": { "regen": true } } }
+        ]
       }
     },
     {
@@ -163,7 +160,6 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Discard, creatures gains +1/+0. Creatures gains +1/+0.",
       "effects": {
         "onPlay": { "type": "buffStats", "params": { "targetType": "all-friendly", "stats": { "attack": 1, "health": 0 } } },
         "discardEffect": { "type": "buffStats", "params": { "targetType": "all-friendly", "stats": { "attack": 1, "health": 0 } } }
@@ -176,9 +172,8 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Copy stats of a carrion.",
       "effects": {
-        "onPlay": { "type": "selectCarrionToCopyStats" }
+        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "carrion", "title": "Choose a carrion to copy stats from", "effect": { "copyStats": true } } }
       }
     },
     {
@@ -188,7 +183,6 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "End of turn, play 2 Blue Eggs.",
       "summons": ["token-blue-egg"],
       "effects": {
         "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-blue-egg", "token-blue-egg"] } }
@@ -201,7 +195,6 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Consume target Rival's prey.",
       "effects": {
         "onPlay": { "type": "selectEnemyPreyToConsume" }
       }
@@ -213,9 +206,8 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "End of turn, deal 3 damage to any target.",
       "effects": {
-        "onEnd": { "type": "selectTargetForDamage", "params": { "amount": 3, "label": "sonic" } }
+        "onEnd": { "type": "selectFromGroup", "params": { "targetGroup": "all-entities", "title": "Choose a target for damage", "effect": { "damage": 3, "label": "sonic" } } }
       }
     },
     {
@@ -225,10 +217,9 @@
       "atk": 2,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "After combat, deal 2 damage. End of turn, deal 2 damage to rival.",
       "effects": {
-        "onAfterCombat": { "type": "selectTargetForDamage", "params": { "amount": 2, "label": "stink" } },
-        "onEnd": { "type": "damageOpponent", "params": { "amount": 2 } }
+        "onAfterCombat": { "type": "selectFromGroup", "params": { "targetGroup": "all-entities", "title": "Choose a target for damage", "effect": { "damage": 2, "label": "stink" } } },
+        "onEnd": { "type": "damageRival", "params": { "amount": 2 } }
       }
     },
     {
@@ -238,7 +229,6 @@
       "atk": 2,
       "hp": 2,
       "nutrition": 2,
-      "effectText": "Draw 1. End of turn, play Golden Egg.",
       "summons": ["token-golden-egg"],
       "effects": {
         "onPlay": { "type": "draw", "params": { "count": 1 } },
@@ -253,7 +243,7 @@
       "hp": 2,
       "nutrition": 2,
       "keywords": ["Barrier", "Lure"],
-      "effectText": "Slain, add Rainbow Feathers to hand.",
+      "summons": ["token-rainbow-feathers"],
       "effects": {
         "onSlain": { "type": "addToHand", "params": { "cardId": "token-rainbow-feathers" } }
       }
@@ -265,7 +255,6 @@
       "atk": 2,
       "hp": 2,
       "nutrition": 2,
-      "effectText": "Slain, play Hen.",
       "summons": ["token-hen"],
       "effects": {
         "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["token-hen"] } }
@@ -278,7 +267,6 @@
       "atk": 3,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Can attack three times.",
       "effects": {
         "multiAttack": "pileated-woodpecker-triple-attack"
       }
@@ -291,7 +279,6 @@
       "hp": 3,
       "nutrition": 3,
       "keywords": ["Ambush"],
-      "effectText": "Heal 3.",
       "effects": {
         "onPlay": { "type": "heal", "params": { "amount": 3 } }
       }
@@ -303,7 +290,7 @@
       "atk": 3,
       "hp": 3,
       "nutrition": 3,
-      "effectText": "Add Feed to hand.",
+      "summons": ["token-feed"],
       "effects": {
         "onPlay": { "type": "addToHand", "params": { "cardId": "token-feed" } }
       }
@@ -315,7 +302,6 @@
       "atk": 2,
       "hp": 2,
       "keywords": ["Ambush"],
-      "effectText": "After combat, heal 2.",
       "effects": {
         "onAfterCombat": { "type": "heal", "params": { "amount": 2 } }
       }
@@ -326,9 +312,11 @@
       "type": "Predator",
       "atk": 2,
       "hp": 2,
-      "effectText": "Kill Rival's prey. Destroy target field spell.",
       "effects": {
-        "onConsume": { "type": "killPreyAndDestroyField" }
+        "onConsume": [
+          { "type": "selectFromGroup", "params": { "targetGroup": "enemy-prey", "title": "Choose a prey to kill", "effect": { "kill": true } } },
+          { "type": "destroyFieldSpells", "params": {} }
+        ]
       }
     },
     {
@@ -337,9 +325,11 @@
       "type": "Predator",
       "atk": 2,
       "hp": 2,
-      "effectText": "Add a carrion to hand. Add a card from deck to hand.",
       "effects": {
-        "onConsume": { "type": "addCarrionAndTutor" }
+        "onConsume": [
+          { "type": "selectFromGroup", "params": { "targetGroup": "friendly-carrion", "title": "Choose a carrion to add to hand", "effect": { "addToHand": true } } },
+          { "type": "tutorFromDeck", "params": {} }
+        ]
       }
     },
     {
@@ -348,7 +338,6 @@
       "type": "Predator",
       "atk": 2,
       "hp": 2,
-      "effectText": "Play 2 Toxic Snakes.",
       "summons": ["token-toxic-snake"],
       "effects": {
         "onConsume": { "type": "summonTokens", "params": { "tokenIds": ["token-toxic-snake", "token-toxic-snake"] } }
@@ -360,7 +349,6 @@
       "type": "Predator",
       "atk": 2,
       "hp": 2,
-      "effectText": "Play Wolf Hawk.",
       "summons": ["token-wolf-hawk"],
       "effects": {
         "onConsume": { "type": "summonTokens", "params": { "tokenIds": ["token-wolf-hawk"] } }
@@ -380,18 +368,17 @@
       "type": "Predator",
       "atk": 3,
       "hp": 2,
-      "effectText": "Add Red Tailfeathers to hand.",
+      "summons": ["token-red-tailfeathers"],
       "effects": {
         "onConsume": { "type": "addToHand", "params": { "cardId": "token-red-tailfeathers" } }
       }
     },
-        {
+    {
       "id": "bird-predator-monkey-eating-eagle",
       "name": "Monkey-eating Eagle",
       "type": "Predator",
       "atk": 3,
       "hp": 3,
-      "effectText": "Consume target Rival's prey.",
       "effects": {
         "onConsume": { "type": "selectEnemyPreyToConsume" }
       }
@@ -410,7 +397,6 @@
       "type": "Predator",
       "atk": 4,
       "hp": 4,
-      "effectText": "Draw 4.",
       "effects": {
         "onConsume": { "type": "draw", "params": { "count": 4 } }
       }
@@ -421,9 +407,8 @@
       "type": "Predator",
       "atk": 4,
       "hp": 4,
-      "effectText": "End of turn, kill target Rival's creature.",
       "effects": {
-        "onEnd": { "type": "selectEnemyToKill" }
+        "onEnd": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to kill", "effect": { "kill": true } } }
       }
     },
     {
@@ -432,7 +417,6 @@
       "type": "Predator",
       "atk": 5,
       "hp": 5,
-      "effectText": "Add target Rival's creature to hand.",
       "effects": {
         "onConsume": { "type": "selectEnemyToReturnToOpponentHand" }
       }
@@ -449,7 +433,6 @@
       "id": "bird-spell-bird-food",
       "name": "Bird Food",
       "type": "Spell",
-      "effectText": "Creatures gain +2/+2.",
       "effects": {
         "effect": { "type": "buffStats", "params": { "targetType": "all-friendly", "stats": { "attack": 2, "health": 2 } } }
       }
@@ -458,7 +441,6 @@
       "id": "bird-spell-birds-of-a-feather",
       "name": "Birds of a Feather",
       "type": "Spell",
-      "effectText": "Play copy of target creature.",
       "effects": {
         "effect": {
           "type": "selectCreatureToCopy",
@@ -470,7 +452,6 @@
       "id": "bird-spell-shotgun",
       "name": "Shotgun",
       "type": "Spell",
-      "effectText": "Either deal 2 damage to Rival and Rival's creatures or deal 6 damage to target Rival's creature.",
       "effects": {
         "effect": {
           "type": "chooseOption",
@@ -478,14 +459,17 @@
             "title": "Shotgun: choose an effect",
             "options": [
               {
-                "label": "Deal 2 damage to rival",
+                "label": "Deal 2 damage to rival and creatures",
                 "description": "Deal 2 damage to Rival and Rival's creatures",
-                "effect": { "type": "damageOpponent", "params": { "amount": 2 } }
+                "effect": [
+                  { "type": "damageRival", "params": { "amount": 2 } },
+                  { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } }
+                ]
               },
               {
                 "label": "Deal 6 damage to target Rival's creature",
                 "description": "Select a Rival's creature for 6 damage",
-                "effect": { "type": "selectEnemyCreatureForDamage", "params": { "amount": 6, "label": "shotgun" } }
+                "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature for damage", "effect": { "damage": 6, "label": "shotgun" } } }
               }
             ]
           }
@@ -496,7 +480,6 @@
       "id": "bird-spell-swan-song",
       "name": "Swan Song",
       "type": "Spell",
-      "effectText": "Heal 3. Gain barrier.",
       "effects": {
         "effect": [
           { "type": "heal", "params": { "amount": 3 } },
@@ -508,7 +491,6 @@
       "id": "bird-free-spell-birds-eye-view",
       "name": "Bird's Eye View",
       "type": "Free Spell",
-      "effectText": "Rival reveals hand.",
       "effects": {
         "effect": { "type": "revealHand", "params": { "durationMs": 5000 } }
       }
@@ -517,7 +499,6 @@
       "id": "bird-free-spell-white-feathers",
       "name": "White Feathers",
       "type": "Free Spell",
-      "effectText": "Heal 2.",
       "effects": {
         "effect": { "type": "heal", "params": { "amount": 2 } }
       }
@@ -526,9 +507,8 @@
       "id": "bird-free-spell-white-missile",
       "name": "White Missile",
       "type": "Free Spell",
-      "effectText": "Deal 1 damage to any target.",
       "effects": {
-        "effect": { "type": "selectTargetForDamage", "params": { "amount": 1, "label": "white missile" } }
+        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "all-entities", "title": "Choose a target for damage", "effect": { "damage": 1, "label": "white missile" } } }
       }
     },
     {
@@ -536,7 +516,6 @@
       "name": "Bird Feeder",
       "type": "Spell",
       "isFieldSpell": true,
-      "effectText": "End of turn, target creature gains +1/+1.",
       "effects": {
         "effect": {
           "type": "setFieldSpell",
@@ -545,8 +524,8 @@
           }
         },
         "onEnd": {
-          "type": "selectCreatureForBuff",
-          "params": { "attack": 1, "health": 1 }
+          "type": "selectFromGroup",
+          "params": { "targetGroup": "all-creatures", "title": "Choose a creature to buff", "effect": { "buff": { "attack": 1, "health": 1 } } }
         }
       }
     },
@@ -555,15 +534,12 @@
       "name": "Alleyway Mobbing",
       "type": "Trap",
       "trigger": "directAttack",
-      "effectText": "When Rival's creature attacks directly, negate attack. Play 3 Bushtits.",
       "summons": ["token-bushtit"],
       "effects": {
-        "effect": {
-          "type": "negateAndSummon",
-          "params": {
-            "tokenIds": ["token-bushtit", "token-bushtit", "token-bushtit"]
-          }
-        }
+        "effect": [
+          { "type": "negateAttack", "params": {} },
+          { "type": "summonTokens", "params": { "tokenIds": ["token-bushtit", "token-bushtit", "token-bushtit"] } }
+        ]
       }
     },
     {
@@ -571,7 +547,6 @@
       "name": "Fly Off",
       "type": "Trap",
       "trigger": "defending",
-      "effectText": "When target creature is defending, return it to hand.",
       "effects": {
         "effect": {
           "type": "returnTriggeredToHand",
@@ -584,7 +559,6 @@
       "name": "Icarus",
       "type": "Trap",
       "trigger": "lifeZero",
-      "effectText": "When life is 0, heal 1.",
       "effects": {
         "effect": { "type": "heal", "params": { "amount": 1 } }
       }

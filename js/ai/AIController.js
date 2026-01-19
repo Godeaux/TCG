@@ -1280,6 +1280,9 @@ export class AIController {
       return;
     }
 
+    // Clear any stale negation flag from previous attacks to prevent false negations
+    state._lastReactionNegatedAttack = undefined;
+
     const attackerOwnerIndex = this.playerIndex;
     const defenderOwnerIndex = 1 - this.playerIndex;
 
@@ -1362,7 +1365,7 @@ export class AIController {
 
             if (target.type === 'player') {
               // Direct attack on player
-              resolveDirectAttack(state, attacker, target.player);
+              resolveDirectAttack(state, attacker, target.player, attackerOwnerIndex);
             } else if (target.type === 'creature') {
               // Validate target still exists on field after trap effects resolved
               const defender = state.players[defenderOwnerIndex];

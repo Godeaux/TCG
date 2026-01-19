@@ -8,7 +8,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": [],
-      "effectText": "Play Brown Anole.",
       "summons": ["token-brown-anole"],
       "effects": {
         "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-brown-anole"] } }
@@ -22,7 +21,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": [],
-      "effectText": "Slain, become Tailless.",
       "summons": ["token-tailless"],
       "effects": {
         "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["token-tailless"] } }
@@ -36,7 +34,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Barrier", "Lure", "Poisonous"],
-      "effectText": "Barrier. Lure. Poisonous. Slain, heal 3.",
       "effects": {
         "onSlain": { "type": "heal", "params": { "amount": 3 } }
       }
@@ -49,7 +46,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": [],
-      "effectText": "Freeze all Rival's creatures.",
       "effects": {
         "onPlay": { "type": "freezeAllEnemies" }
       }
@@ -62,13 +58,15 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": [],
-      "effectText": "Play 2 Lava Lizards. Deal 1 damage to rival.",
       "summons": ["token-lava-lizard"],
       "effects": {
-        "onPlay": { "type": "summonAndDamageOpponent", "params": { "tokenIds": ["token-lava-lizard", "token-lava-lizard"], "damage": 1 } }
+        "onPlay": [
+          { "type": "summonTokens", "params": { "tokenIds": ["token-lava-lizard", "token-lava-lizard"] } },
+          { "type": "damageRival", "params": { "amount": 1 } }
+        ]
       }
     },
-        {
+    {
       "id": "reptile-prey-green-anole",
       "name": "Green Anole",
       "type": "Prey",
@@ -76,7 +74,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": [],
-      "effectText": "End of turn, play Carolina Anole.",
       "summons": ["token-carolina-anole"],
       "effects": {
         "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-carolina-anole"] } }
@@ -90,12 +87,11 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": [],
-      "effectText": "Draw 3.",
       "effects": {
         "onPlay": { "type": "draw", "params": { "count": 3 } }
       }
     },
-        {
+    {
       "id": "reptile-prey-golden-lancehead",
       "name": "Golden Lancehead",
       "type": "Prey",
@@ -103,7 +99,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Toxic"],
-      "effectText": "Draw 1. Toxic.",
       "effects": {
         "onPlay": { "type": "draw", "params": { "count": 1 } }
       }
@@ -116,7 +111,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": [],
-      "effectText": "Draw 1. Play Golden Tegu Egg.",
       "summons": ["token-golden-tegu-egg"],
       "effects": {
         "onPlay": [
@@ -133,10 +127,9 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Invisible"],
-      "effectText": "Start of turn, deal 1 damage to Rival and Rival's creatures.",
       "effects": {
         "onStart": [
-          { "type": "damageOpponent", "params": { "amount": 1 } },
+          { "type": "damageRival", "params": { "amount": 1 } },
           { "type": "damageAllEnemyCreatures", "params": { "amount": 1 } }
         ]
       }
@@ -157,8 +150,7 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Barrier", "Neurotoxic"],
-      "effectText": "Barrier. Neurotoxic when defending."
+      "keywords": ["Barrier", "Neurotoxic"]
     },
     {
       "id": "reptile-prey-saw-scaled-viper",
@@ -177,9 +169,8 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Free Play"],
-      "effectText": "Target Rival's creature gains Frozen.",
       "effects": {
-        "onPlay": { "type": "selectEnemyToFreeze" }
+        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to freeze", "effect": { "keyword": "Frozen" } } }
       }
     },
     {
@@ -190,9 +181,8 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": [],
-      "effectText": "Copy abilities of target animal.",
       "effects": {
-        "onPlay": { "type": "selectCreatureToCopyAbilities" }
+        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "other-creatures", "title": "Choose a creature to copy abilities from", "effect": { "copyAbilitiesFrom": true } } }
       }
     },
     {
@@ -203,9 +193,8 @@
       "hp": 3,
       "nutrition": 2,
       "keywords": [],
-      "effectText": "Before combat, deal 2 damage.",
       "effects": {
-        "onBeforeCombat": { "type": "selectTargetForDamage", "params": { "amount": 2, "label": "snapping turtle" } }
+        "onBeforeCombat": { "type": "selectFromGroup", "params": { "targetGroup": "all-entities", "title": "Choose a target for damage", "effect": { "damage": 2, "label": "snapping turtle" } } }
       }
     },
     {
@@ -216,7 +205,6 @@
       "hp": 3,
       "nutrition": 2,
       "keywords": [],
-      "effectText": "Defending before combat, deal 2 damage.",
       "effects": {
         "onDefend": { "type": "dealDamageToAttacker", "params": { "damage": 2 } }
       }
@@ -228,8 +216,7 @@
       "atk": 2,
       "hp": 2,
       "nutrition": 2,
-      "keywords": ["Hidden", "Toxic"],
-      "effectText": "Hidden. Toxic."
+      "keywords": ["Hidden", "Toxic"]
     },
     {
       "id": "reptile-prey-king-brown-snake",
@@ -239,7 +226,6 @@
       "hp": 2,
       "nutrition": 2,
       "keywords": ["Toxic"],
-      "effectText": "Toxic. Add a card from deck to hand.",
       "effects": {
         "onPlay": { "type": "tutorFromDeck" }
       }
@@ -252,7 +238,6 @@
       "hp": 3,
       "nutrition": 3,
       "keywords": [],
-      "effectText": "Start of turn, play Giant Tortoise.",
       "summons": ["token-giant-tortoise"],
       "effects": {
         "onStart": { "type": "summonTokens", "params": { "tokenIds": ["token-giant-tortoise"] } }
@@ -266,9 +251,11 @@
       "hp": 3,
       "nutrition": 3,
       "keywords": [],
-      "effectText": "Deal 2 damage to players & other animals.",
       "effects": {
-        "onPlay": { "type": "damagePlayersAndOtherCreatures", "params": { "damage": 2 } }
+        "onPlay": [
+          { "type": "damageBothPlayers", "params": { "amount": 2 } },
+          { "type": "damageOtherCreatures", "params": { "amount": 2 } }
+        ]
       }
     },
     {
@@ -279,7 +266,6 @@
       "hp": 3,
       "nutrition": 3,
       "keywords": [],
-      "effectText": "Deal 2 damage to Rival's creatures.",
       "effects": {
         "onPlay": { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } }
       }
@@ -300,9 +286,11 @@
       "atk": 2,
       "hp": 3,
       "keywords": [],
-      "effectText": "Deal 2 damage to Rival and Rival's creatures.",
       "effects": {
-        "onConsume": { "type": "damageOpponent", "params": { "amount": 2 } }
+        "onConsume": [
+          { "type": "damageRival", "params": { "amount": 2 } },
+          { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } }
+        ]
       }
     },
     {
@@ -312,9 +300,8 @@
       "atk": 2,
       "hp": 4,
       "keywords": [],
-      "effectText": "Kill Rival's prey.",
       "effects": {
-        "onConsume": { "type": "selectEnemyPreyToKill" }
+        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-prey", "title": "Choose a prey to kill", "effect": { "kill": true } } }
       }
     },
     {
@@ -324,9 +311,8 @@
       "atk": 3,
       "hp": 2,
       "keywords": ["Neurotoxic"],
-      "effectText": "Slain, deal 3 damage to rival.",
       "effects": {
-        "onSlain": { "type": "damageOpponent", "params": { "amount": 3 } }
+        "onSlain": { "type": "damageRival", "params": { "amount": 3 } }
       }
     },
     {
@@ -336,7 +322,6 @@
       "atk": 3,
       "hp": 3,
       "keywords": [],
-      "effectText": "If attacked in combat, during Main 2 phase: regen itself and heal player 2 HP.",
       "effects": {
         "onBeforeCombat": { "type": "trackAttackForRegenHeal", "params": { "healAmount": 2 } }
       }
@@ -348,7 +333,6 @@
       "atk": 3,
       "hp": 3,
       "keywords": [],
-      "effectText": "Either draw 3, heal 3, or deal 3 damage to rival.",
       "effects": {
         "onConsume": {
           "type": "chooseOption",
@@ -357,7 +341,7 @@
             "options": [
               { "label": "Draw 3", "description": "Draw 3 cards", "effect": { "type": "draw", "params": { "count": 3 } } },
               { "label": "Heal 3", "description": "Heal 3 HP", "effect": { "type": "heal", "params": { "amount": 3 } } },
-              { "label": "Deal 3 damage", "description": "Deal 3 damage to rival", "effect": { "type": "damageOpponent", "params": { "amount": 3 } } }
+              { "label": "Deal 3 damage", "description": "Deal 3 damage to rival", "effect": { "type": "damageRival", "params": { "amount": 3 } } }
             ]
           }
         }
@@ -370,7 +354,7 @@
       "atk": 4,
       "hp": 4,
       "keywords": [],
-      "effectText": "Slain, add Alligator Skin to hand.",
+      "summons": ["token-alligator-skin"],
       "effects": {
         "onSlain": { "type": "addToHand", "params": { "cardId": "token-alligator-skin" } }
       }
@@ -398,9 +382,8 @@
       "atk": 4,
       "hp": 4,
       "keywords": [],
-      "effectText": "Copy abilities of a carrion pred.",
       "effects": {
-        "onConsume": { "type": "selectCarrionPredToCopyAbilities" }
+        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "carrion-predators", "title": "Choose a carrion predator to copy", "effect": { "copyAbilities": true } } }
       }
     },
     {
@@ -410,9 +393,11 @@
       "atk": 4,
       "hp": 4,
       "keywords": [],
-      "effectText": "Heal 2. Add a card from deck to hand.",
       "effects": {
-        "onConsume": { "type": "healAndTutor", "params": { "healAmount": 2 } }
+        "onConsume": [
+          { "type": "heal", "params": { "amount": 2 } },
+          { "type": "tutorFromDeck", "params": {} }
+        ]
       }
     },
     {
@@ -421,8 +406,7 @@
       "type": "Predator",
       "atk": 4,
       "hp": 4,
-      "keywords": ["Immune", "Toxic"],
-      "effectText": "Immune. Toxic."
+      "keywords": ["Immune", "Toxic"]
     },
     {
       "id": "reptile-predator-nile-crocodile",
@@ -431,9 +415,8 @@
       "atk": 5,
       "hp": 5,
       "keywords": [],
-      "effectText": "Deal 3 damage to any target. Slain, heal 3.",
       "effects": {
-        "onConsume": { "type": "selectTargetForDamage", "params": { "amount": 3, "label": "chomp" } },
+        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "all-entities", "title": "Choose a target for damage", "effect": { "damage": 3, "label": "chomp" } } },
         "onSlain": { "type": "heal", "params": { "amount": 3 } }
       }
     },
@@ -444,42 +427,36 @@
       "atk": 6,
       "hp": 6,
       "keywords": [],
-      "effectText": "Kill target Rival's creature.",
       "effects": {
-        "onConsume": { "type": "selectEnemyToKill" }
+        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to kill", "effect": { "kill": true } } }
       }
     },
     {
       "id": "reptile-spell-scythian-arrows",
       "name": "Scythian Arrows",
       "type": "Spell",
-      "effectText": "Discard 1. Kill Rival's creatures.",
       "effects": {
-        "effect": {
-          "type": "discardThenKillAllEnemies",
-          "params": {
-            "discardCount": 1
-          }
-        }
+        "effect": [
+          { "type": "selectAndDiscard", "params": { "count": 1 } },
+          { "type": "killAllEnemyCreatures", "params": {} }
+        ]
       }
     },
     {
       "id": "reptile-spell-meteor",
       "name": "Meteor",
       "type": "Spell",
-      "effectText": "Destroy field spells. Kill animals.",
       "effects": {
-        "effect": {
-          "type": "destroyEverything",
-          "params": {}
-        }
+        "effect": [
+          { "type": "destroyFieldSpells", "params": {} },
+          { "type": "killAll", "params": { "targetType": "all" } }
+        ]
       }
     },
     {
       "id": "reptile-spell-snake-wine",
       "name": "Snake Wine",
       "type": "Spell",
-      "effectText": "Heal 7.",
       "effects": {
         "effect": { "type": "heal", "params": { "amount": 7 } }
       }
@@ -488,19 +465,14 @@
       "id": "reptile-spell-paralyze",
       "name": "Paralyze",
       "type": "Spell",
-      "effectText": "Paralyze target Rival's creature (cannot attack but can still be consumed).",
       "effects": {
-        "effect": {
-          "type": "selectEnemyToParalyze",
-          "params": {}
-        }
+        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a Rival's creature to paralyze", "effect": { "paralyze": true } } }
       }
     },
     {
       "id": "reptile-spell-sunshine",
       "name": "Sunshine",
       "type": "Spell",
-      "effectText": "Creatures gain +2/+2.",
       "effects": {
         "effect": { "type": "buffStats", "params": { "targetType": "all-friendly", "stats": { "attack": 2, "health": 2 } } }
       }
@@ -509,16 +481,21 @@
       "id": "reptile-free-spell-ecdysis",
       "name": "Ecdysis",
       "type": "Free Spell",
-      "effectText": "Regen target creature.",
       "effects": {
-        "effect": { "type": "selectCreatureToRestore" }
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "all-creatures",
+            "title": "Choose a creature to regen",
+            "effect": { "regen": true }
+          }
+        }
       }
     },
     {
       "id": "reptile-free-spell-vengeful",
       "name": "Vengeful",
       "type": "Free Spell",
-      "effectText": "Target creature gains Poisonous.",
       "effects": {
         "effect": {
           "type": "selectFromGroup",
@@ -534,7 +511,6 @@
       "id": "reptile-free-spell-cold-blooded",
       "name": "Cold-blooded",
       "type": "Free Spell",
-      "effectText": "Target creature gains +1/+1.",
       "effects": {
         "effect": {
           "type": "selectFromGroup",
@@ -550,9 +526,8 @@
       "id": "reptile-free-spell-surprise",
       "name": "Surprise",
       "type": "Free Spell",
-      "effectText": "Deal 2 damage to target Rival's creature.",
       "effects": {
-        "effect": { "type": "selectEnemyCreatureForDamage", "params": { "amount": 2, "label": "surprise" } }
+        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature for damage", "effect": { "damage": 2, "label": "surprise" } } }
       }
     },
     {
@@ -560,7 +535,6 @@
       "name": "Snake Nest",
       "type": "Spell",
       "isFieldSpell": true,
-      "effectText": "End of turn, play Poisonous Snake.",
       "summons": ["token-poisonous-snake"],
       "effects": {
         "effect": {
@@ -582,14 +556,11 @@
       "name": "Scales",
       "type": "Trap",
       "trigger": "indirectDamage",
-      "effectText": "When you receive indirect damage, negate it and heal 3 HP.",
       "effects": {
-        "effect": {
-          "type": "negateDamageAndHeal",
-          "params": {
-            "healAmount": 3
-          }
-        }
+        "effect": [
+          { "type": "negateDamage", "params": {} },
+          { "type": "heal", "params": { "amount": 3 } }
+        ]
       }
     },
     {
@@ -597,15 +568,11 @@
       "name": "Snake Oil",
       "type": "Trap",
       "trigger": "rivalDraws",
-      "effectText": "When rival draws, they must discard 1 card, then you draw 1 card.",
       "effects": {
-        "effect": {
-          "type": "forceOpponentDiscardThenDraw",
-          "params": {
-            "discardCount": 1,
-            "drawCount": 1
-          }
-        }
+        "effect": [
+          { "type": "forceOpponentDiscard", "params": { "count": 1 } },
+          { "type": "draw", "params": { "count": 1 } }
+        ]
       }
     },
     {
@@ -613,15 +580,12 @@
       "name": "Snake Pit",
       "type": "Trap",
       "trigger": "directAttack",
-      "effectText": "When Rival's creature attacks directly, negate attack. Play Snakes.",
       "summons": ["token-snakes"],
       "effects": {
-        "effect": {
-          "type": "negateAndSummon",
-          "params": {
-            "tokenIds": ["token-snakes"]
-          }
-        }
+        "effect": [
+          { "type": "negateAttack", "params": {} },
+          { "type": "summonTokens", "params": { "tokenIds": ["token-snakes"] } }
+        ]
       }
     }
   ]

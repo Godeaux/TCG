@@ -8,6 +8,7 @@ import {
   LOG_CATEGORIES,
   formatCardForLog,
 } from "./state/gameState.js";
+import { initCardTooltip, showCardTooltip, hideCardTooltip } from "./ui/components/CardTooltip.js";
 import { canPlayCard, cardLimitAvailable, finalizeEndPhase, initPositionEvaluator } from "./game/turnManager.js";
 import { createCardInstance } from "./cardTypes.js";
 import { consumePrey } from "./game/consumption.js";
@@ -27,11 +28,10 @@ import {
   isHidden,
   isInvisible,
   hasAcuity,
-  KEYWORD_DESCRIPTIONS,
 } from "./keywords.js";
 import { resolveEffectResult, stripAbilities } from "./game/effects.js";
-import { deckCatalogs, getCardDefinitionById, resolveCardEffect, getAllCards, getCardByName } from "./cards/index.js";
-import { getCardImagePath, hasCardImage, getCachedCardImage, isCardImageCached, preloadCardImages } from "./cardImages.js";
+import { deckCatalogs, resolveCardEffect, getAllCards, getCardByName, getCardDefinitionById } from "./cards/index.js";
+import { getCachedCardImage, isCardImageCached, preloadCardImages } from "./cardImages.js";
 import { positionEvaluator } from "./ai/PositionEvaluator.js";
 
 // Initialize the position evaluator in turnManager to avoid circular dependency
@@ -105,11 +105,24 @@ import {
   startPackOpening,
 } from "./ui/overlays/PackOpeningOverlay.js";
 
+// Bug report overlay (extracted module)
+import {
+  showBugReportOverlay,
+  hideBugReportOverlay,
+} from "./ui/overlays/BugReportOverlay.js";
+
+// Bug button component
+import {
+  initBugButton,
+} from "./ui/components/BugButton.js";
+
 // Trigger/Reaction system (extracted module)
 import {
   TRIGGER_EVENTS,
   createReactionWindow,
   resolveReaction,
+  hasPendingReactionCallback,
+  invokePendingReactionCallback,
 } from "./game/triggers/index.js";
 
 // Deck builder overlays (extracted module)
@@ -123,8 +136,6 @@ import {
 import {
   renderCard,
   renderDeckCard,
-  renderCardStats,
-  getCardEffectSummary,
   cardTypeClass,
   renderCardInnerHtml,
   isCardLike,
@@ -208,6 +219,7 @@ import {
   broadcastHandHover,
   broadcastHandDrag,
   broadcastCursorMove,
+  requestSyncFromOpponent,
 } from "./network/index.js";
 
 // Lobby manager (extracted module)
@@ -283,7 +295,6 @@ const selectionPanel = document.getElementById("selection-panel");
 const actionBar = document.getElementById("action-bar");
 const actionPanel = document.getElementById("action-panel");
 const gameHistoryLog = document.getElementById("game-history-log");
-const inspectorPanel = document.getElementById("card-inspector");
 const pagesContainer = document.getElementById("pages-container");
 const pageDots = document.getElementById("page-dots");
 const navLeft = document.getElementById("nav-left");
@@ -813,23 +824,35 @@ const appendLog = (state) => {
 };
 
 /**
- * Set up click handler for card links in the history log (event delegation)
+ * Set up hover handlers for card links in the history log (event delegation)
  */
 const setupLogCardLinks = () => {
   if (!gameHistoryLog) return;
 
-  gameHistoryLog.addEventListener('click', (e) => {
+  // Get the game log panel for consistent tooltip anchoring
+  const gameLogPanel = document.querySelector('.game-log-panel');
+
+  // Log card links - show tooltip on hover
+  gameHistoryLog.addEventListener('mouseenter', (e) => {
     const cardLink = e.target.closest('.log-card-link');
     if (cardLink) {
       const cardId = cardLink.dataset.cardId;
       if (cardId) {
-        const card = getCardDefinitionById(cardId);
-        if (card) {
-          setInspectorContent(card);
+        const cardDef = getCardDefinitionById(cardId);
+        if (cardDef) {
+          // Show tooltip anchored to the left of the game log panel
+          showCardTooltip(cardDef, cardLink, { anchorRight: gameLogPanel });
         }
       }
     }
-  });
+  }, true); // Use capture to handle dynamically added elements
+
+  gameHistoryLog.addEventListener('mouseleave', (e) => {
+    const cardLink = e.target.closest('.log-card-link');
+    if (cardLink) {
+      hideCardTooltip();
+    }
+  }, true);
 };
 
 const updateIndicators = (state, controlsLocked) => {
@@ -1028,6 +1051,148 @@ const renderAdvantageDisplay = (state, playerIndex) => {
 };
 
 /**
+ * State for hologram display
+ */
+let hologramState = {
+  active: false,
+  snapshotIndex: -1,
+  nodePositions: [], // [{x, y, index}] for hit detection
+};
+
+/**
+ * Clear hologram display and restore normal view
+ */
+const clearHologramDisplay = () => {
+  if (!hologramState.active) return;
+
+  hologramState.active = false;
+  hologramState.snapshotIndex = -1;
+
+  // Remove hologram overlay elements
+  document.querySelectorAll('.hologram-overlay').forEach(el => el.remove());
+  document.querySelectorAll('.hologram-death-marker').forEach(el => el.remove());
+
+  // Remove hologram class from fields
+  document.querySelectorAll('.player-field, .opponent-field').forEach(field => {
+    field.classList.remove('hologram-active');
+  });
+
+  // Remove hologram HP displays
+  document.querySelectorAll('.hologram-hp').forEach(el => el.remove());
+};
+
+/**
+ * Display hologram of past board state
+ *
+ * @param {Object} snapshot - Historical snapshot data
+ * @param {Object} nextSnapshot - Next snapshot (for death indicators)
+ * @param {number} playerIndex - Current player's perspective
+ */
+const displayHologram = (snapshot, nextSnapshot, playerIndex) => {
+  if (!snapshot || !snapshot.fields) return;
+
+  hologramState.active = true;
+
+  // Add hologram class to fields
+  document.querySelectorAll('.player-field, .opponent-field').forEach(field => {
+    field.classList.add('hologram-active');
+  });
+
+  // Display hologram HP values
+  const playerHpEl = document.querySelector('.player-hp');
+  const opponentHpEl = document.querySelector('.opponent-hp');
+
+  if (playerHpEl) {
+    const existingHolo = playerHpEl.querySelector('.hologram-hp');
+    if (existingHolo) existingHolo.remove();
+    const holoHp = document.createElement('div');
+    holoHp.className = 'hologram-hp';
+    holoHp.textContent = `(Turn ${snapshot.turn}: ${playerIndex === 0 ? snapshot.p0Hp : snapshot.p1Hp} HP)`;
+    playerHpEl.appendChild(holoHp);
+  }
+
+  if (opponentHpEl) {
+    const existingHolo = opponentHpEl.querySelector('.hologram-hp');
+    if (existingHolo) existingHolo.remove();
+    const holoHp = document.createElement('div');
+    holoHp.className = 'hologram-hp';
+    holoHp.textContent = `(Turn ${snapshot.turn}: ${playerIndex === 0 ? snapshot.p1Hp : snapshot.p0Hp} HP)`;
+    opponentHpEl.appendChild(holoHp);
+  }
+
+  // Get deaths that will happen after this snapshot (from next snapshot)
+  const upcomingDeaths = nextSnapshot?.deaths || [];
+
+  // Render hologram creatures on both fields
+  renderHologramField(snapshot, upcomingDeaths, playerIndex, false); // Player's field
+  renderHologramField(snapshot, upcomingDeaths, playerIndex, true);  // Opponent's field
+};
+
+/**
+ * Render hologram overlay for a field
+ *
+ * @param {Object} snapshot - Historical snapshot data
+ * @param {Array} upcomingDeaths - Deaths that happen after this snapshot
+ * @param {number} playerIndex - Current player's perspective
+ * @param {boolean} isOpponent - Whether this is the opponent's field
+ */
+const renderHologramField = (snapshot, upcomingDeaths, playerIndex, isOpponent) => {
+  const fieldSelector = isOpponent ? '.opponent-field' : '.player-field';
+  const fieldRow = document.querySelector(fieldSelector);
+  if (!fieldRow) return;
+
+  // Remove existing hologram overlays for this field
+  fieldRow.querySelectorAll('.hologram-overlay').forEach(el => el.remove());
+  fieldRow.querySelectorAll('.hologram-death-marker').forEach(el => el.remove());
+
+  const slots = Array.from(fieldRow.querySelectorAll('.field-slot'));
+  const fieldIndex = isOpponent
+    ? (playerIndex === 0 ? 1 : 0)
+    : playerIndex;
+
+  const holoField = snapshot.fields[fieldIndex] || [];
+
+  slots.forEach((slot, index) => {
+    const holoCreature = holoField[index];
+
+    // Create hologram overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'hologram-overlay';
+
+    if (holoCreature) {
+      // Check if this creature will die before the next snapshot
+      const willDie = upcomingDeaths.some(d =>
+        d.creature.instanceId === holoCreature.instanceId
+      );
+
+      overlay.innerHTML = `
+        <div class="hologram-creature ${willDie ? 'will-die' : ''}">
+          <div class="hologram-name">${holoCreature.name}</div>
+          <div class="hologram-stats">
+            <span class="hologram-atk ${holoCreature.atkBuffed ? 'buffed' : ''} ${holoCreature.atkDebuffed ? 'debuffed' : ''}">${holoCreature.currentAtk}</span>
+            /
+            <span class="hologram-hp-stat ${holoCreature.hpDamaged ? 'damaged' : ''} ${holoCreature.hpBuffed ? 'buffed' : ''}">${holoCreature.currentHp}</span>
+          </div>
+        </div>
+      `;
+
+      // Add death marker if creature will die
+      if (willDie) {
+        const deathMarker = document.createElement('div');
+        deathMarker.className = 'hologram-death-marker';
+        deathMarker.innerHTML = '💀';
+        deathMarker.title = `${holoCreature.name} dies this turn`;
+        slot.appendChild(deathMarker);
+      }
+    } else {
+      overlay.innerHTML = '<div class="hologram-empty">Empty</div>';
+    }
+
+    slot.appendChild(overlay);
+  });
+};
+
+/**
  * Render the advantage history graph using canvas
  *
  * @param {Object} state - Game state
@@ -1040,6 +1205,9 @@ const renderAdvantageGraph = (state, playerIndex) => {
   const ctx = canvas.getContext('2d');
   const history = positionEvaluator.getAdvantageHistory(state);
 
+  // Store reference for mouse events
+  canvas._graphState = { history, playerIndex };
+
   // Clear canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -1049,6 +1217,7 @@ const renderAdvantageGraph = (state, playerIndex) => {
     ctx.font = '10px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('Not enough data', canvas.width / 2, canvas.height / 2);
+    hologramState.nodePositions = [];
     return;
   }
 
@@ -1076,10 +1245,15 @@ const renderAdvantageGraph = (state, playerIndex) => {
   ctx.strokeStyle = '#4a9';
   ctx.lineWidth = 2;
 
+  // Calculate node positions and draw line
+  const nodePositions = [];
+
   values.forEach((value, i) => {
-    const x = padding + (i / (values.length - 1)) * graphWidth;
+    const x = padding + (i / Math.max(1, values.length - 1)) * graphWidth;
     const normalizedValue = value / maxVal;
     const y = padding + graphHeight / 2 - (normalizedValue * graphHeight / 2);
+
+    nodePositions.push({ x, y, index: i, value });
 
     if (i === 0) {
       ctx.moveTo(x, y);
@@ -1090,15 +1264,83 @@ const renderAdvantageGraph = (state, playerIndex) => {
 
   ctx.stroke();
 
-  // Draw current point
-  const lastValue = values[values.length - 1];
-  const lastX = width - padding;
-  const lastY = padding + graphHeight / 2 - (lastValue / maxVal * graphHeight / 2);
+  // Store node positions for hit detection
+  hologramState.nodePositions = nodePositions;
 
-  ctx.beginPath();
-  ctx.fillStyle = lastValue > 0 ? '#4a9' : lastValue < 0 ? '#e74' : '#888';
-  ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
-  ctx.fill();
+  // Draw nodes at each data point
+  const nodeRadius = 4;
+  const hoveredIndex = hologramState.active ? hologramState.snapshotIndex : -1;
+
+  nodePositions.forEach(({ x, y, index, value }) => {
+    ctx.beginPath();
+
+    // Highlight hovered node
+    if (index === hoveredIndex) {
+      ctx.fillStyle = '#fff';
+      ctx.arc(x, y, nodeRadius + 2, 0, Math.PI * 2);
+    } else {
+      ctx.fillStyle = value > 0 ? '#4a9' : value < 0 ? '#e74' : '#888';
+      ctx.arc(x, y, nodeRadius, 0, Math.PI * 2);
+    }
+
+    ctx.fill();
+
+    // Add subtle border to nodes
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  });
+
+  // Setup mouse event handlers (only once)
+  if (!canvas._hologramHandlersAttached) {
+    canvas._hologramHandlersAttached = true;
+
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const mouseX = (e.clientX - rect.left) * scaleX;
+      const mouseY = (e.clientY - rect.top) * scaleY;
+
+      const hitRadius = 8;
+      let hitNode = null;
+
+      for (const node of hologramState.nodePositions) {
+        const dx = mouseX - node.x;
+        const dy = mouseY - node.y;
+        if (dx * dx + dy * dy < hitRadius * hitRadius) {
+          hitNode = node;
+          break;
+        }
+      }
+
+      if (hitNode && canvas._graphState) {
+        if (hologramState.snapshotIndex !== hitNode.index) {
+          hologramState.snapshotIndex = hitNode.index;
+          const snapshot = canvas._graphState.history[hitNode.index];
+          const nextSnapshot = canvas._graphState.history[hitNode.index + 1] || null;
+          displayHologram(snapshot, nextSnapshot, canvas._graphState.playerIndex);
+          // Redraw graph to show highlighted node
+          renderAdvantageGraph(latestState, canvas._graphState.playerIndex);
+        }
+        canvas.style.cursor = 'pointer';
+      } else if (hologramState.active) {
+        clearHologramDisplay();
+        if (canvas._graphState) {
+          renderAdvantageGraph(latestState, canvas._graphState.playerIndex);
+        }
+        canvas.style.cursor = 'default';
+      }
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      clearHologramDisplay();
+      if (canvas._graphState) {
+        renderAdvantageGraph(latestState, canvas._graphState.playerIndex);
+      }
+      canvas.style.cursor = 'default';
+    });
+  }
 };
 
 // ============================================================================
@@ -1159,6 +1401,8 @@ const initHandPreview = () => {
       card.classList.remove("hand-focus");
     });
     currentFocusedCard = null;
+    // Hide the tooltip when focus is cleared
+    hideCardTooltip();
     // Broadcast hover cleared to opponent (unless we're about to set new focus)
     if (broadcast && latestState) {
       broadcastHandHover(latestState, null);
@@ -1196,7 +1440,8 @@ const initHandPreview = () => {
     if (card) {
       inspectedCardId = card.instanceId;
       // Don't update selectedHandCardId on hover - only on click
-      setInspectorContent(card);
+      // Show info boxes only for hand cards (no enlarged preview since card is already focused)
+      showCardTooltip(card, cardElement, { showPreview: false });
     }
   };
 
@@ -1231,8 +1476,8 @@ const initHandPreview = () => {
       return;
     }
 
-    // Calculate horizontal distance from cursor to each card's center
-    // Use horizontal distance primarily since cards are laid out horizontally
+    // Calculate distance from cursor to each card
+    // Hearthstone-style: only focus if cursor is actually near a card
     let closestCard = null;
     let closestDistance = Infinity;
     let currentFocusDistance = Infinity;
@@ -1241,8 +1486,16 @@ const initHandPreview = () => {
       const rect = getCardBaseRect(card);
       const centerX = rect.left + rect.width / 2;
 
-      // Use primarily horizontal distance for hand cards
+      // Calculate horizontal distance (primary) and check vertical bounds
       const dx = Math.abs(event.clientX - centerX);
+      const dy = event.clientY - rect.top; // Distance from top of card
+
+      // Only consider this card if cursor is vertically within card bounds (with margin)
+      // Allow some margin above and below the card
+      const verticalMargin = rect.height * 0.3;
+      if (dy < -verticalMargin || dy > rect.height + verticalMargin) {
+        return; // Cursor too far above or below this card
+      }
 
       if (dx < closestDistance) {
         closestDistance = dx;
@@ -1254,6 +1507,16 @@ const initHandPreview = () => {
         currentFocusDistance = dx;
       }
     });
+
+    // Maximum horizontal distance threshold - roughly half a card width plus margin
+    // If cursor is too far from any card horizontally, clear focus
+    const firstCard = cards[0];
+    const maxDistance = firstCard ? getCardBaseRect(firstCard).width * 0.7 : 80;
+
+    if (closestDistance > maxDistance) {
+      clearFocus();
+      return;
+    }
 
     // Apply hysteresis: only switch if new card is significantly closer
     if (currentFocusedCard && currentFocusedCard !== closestCard) {
@@ -1566,119 +1829,7 @@ const initEmoteSystem = (state) => {
 // Import: renderDeckCardNew
 
 // shuffle and buildRandomDeck moved to DeckBuilderOverlay.js
-
-const setInspectorContentFor = (panel, card, showImage = true) => {
-  if (!panel) {
-    return;
-  }
-  if (!card) {
-    panel.innerHTML = `<p class="muted">Tap a card to see its full details.</p>`;
-    return;
-  }
-  const keywords = card.keywords?.length ? card.keywords.join(", ") : "";
-  const keywordDetails = card.keywords?.length
-    ? card.keywords
-        .map((keyword) => {
-          const detail = KEYWORD_DESCRIPTIONS[keyword] ?? "No description available.";
-          return `<li><strong>${keyword}:</strong> ${detail}</li>`;
-        })
-        .join("")
-    : "";
-  const tokenKeywordDetails = card.summons
-    ?.map((tokenId) => getCardDefinitionById(tokenId))
-    .filter((token) => token && token.keywords?.length)
-    .map((token) => {
-      const tokenDetails = token.keywords
-        .map((keyword) => {
-          const detail = KEYWORD_DESCRIPTIONS[keyword] ?? "No description available.";
-          return `<li><strong>${keyword}:</strong> ${detail}</li>`;
-        })
-        .join("");
-      return `
-        <div class="token-keyword-group">
-          <div class="meta">${token.name} — ${token.type} keywords</div>
-          <ul>${tokenDetails}</ul>
-        </div>
-      `;
-    })
-    .join("");
-  const stats = renderCardStats(card)
-    .map((stat) => `${stat.emoji} ${stat.value}`)
-    .join(" • ");
-  const effectSummary = getCardEffectSummary(card, {
-    includeKeywordDetails: true,
-    includeTokenDetails: true,
-  });
-  const statusTags = [
-    card.dryDropped ? "🍂 Dry dropped" : null,
-    card.abilitiesCancelled ? "🚫 Abilities canceled" : null,
-    card.hasBarrier ? "🛡️ Barrier" : null,
-    card.frozen ? "❄️ Frozen" : null,
-    card.isToken ? "⚪ Token" : null,
-  ].filter(Boolean);
-  const keywordLabel = keywords ? `Keywords: ${keywords}` : "";
-  const statusLabel = statusTags.length ? `Status: ${statusTags.join(" • ")}` : "";
-  const keywordBlock =
-    keywordDetails || tokenKeywordDetails
-      ? `<div class="keyword-glossary">
-          <strong>Keyword Glossary</strong>
-          ${keywordDetails ? `<ul>${keywordDetails}</ul>` : ""}
-          ${
-            tokenKeywordDetails
-              ? `<div class="keyword-divider">***</div>${tokenKeywordDetails}`
-              : ""
-          }
-        </div>`
-      : "";
-  const effectBlock = effectSummary
-    ? `<div class="effect"><strong>Effect:</strong> ${effectSummary}</div>`
-    : "";
-
-  // Inspector card image with error handling (hides on 404)
-  const inspectorImageHtml = showImage && hasCardImage(card.id)
-    ? `<img src="${getCardImagePath(card.id)}" alt="" class="inspector-card-image-img"
-         onerror="this.parentElement.style.display='none';">`
-    : '';
-  
-  // Add rarity class to the card name if card has rarity
-  const nameRarityClass = card.rarity ? ` class="rarity-${card.rarity}"` : '';
-
-  // Build layout based on whether we show image
-  if (showImage) {
-    panel.innerHTML = `
-      <div class="inspector-card-layout">
-        <div class="inspector-card-image">
-          <div class="inspector-image-container">
-            ${inspectorImageHtml}
-          </div>
-        </div>
-        <div class="inspector-card-content">
-          <h4${nameRarityClass}>${card.name}</h4>
-          <div class="meta">${card.type}${stats ? ` • ${stats}` : ""}</div>
-          ${keywordLabel ? `<div class="meta">${keywordLabel}</div>` : ""}
-          ${statusLabel ? `<div class="meta">${statusLabel}</div>` : ""}
-          ${effectBlock}
-          ${keywordBlock || `<div class="meta muted">No keyword glossary entries for this card.</div>`}
-        </div>
-      </div>
-    `;
-  } else {
-    // Deck construction mode - no image, more space for content
-    panel.innerHTML = `
-      <div class="inspector-card-content inspector-deck-mode">
-        <h4${nameRarityClass}>${card.name}</h4>
-        <div class="meta">${card.type}${stats ? ` • ${stats}` : ""}</div>
-        ${keywordLabel ? `<div class="meta">${keywordLabel}</div>` : ""}
-        ${statusLabel ? `<div class="meta">${statusLabel}</div>` : ""}
-        ${effectBlock}
-        ${keywordBlock || `<div class="meta muted">No keyword glossary entries for this card.</div>`}
-      </div>
-    `;
-  }
-};
-
-const setInspectorContent = (card) => setInspectorContentFor(inspectorPanel, card, true); // Show image during battle
-// setDeckInspectorContent moved to DeckBuilderOverlay.js
+// setInspectorContent removed - tooltips now handled by CardTooltip.js
 
 const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCancel) => {
   // Handle null, undefined, or empty object results - immediately complete
@@ -2022,9 +2173,11 @@ const findCardByInstanceId = (state, instanceId) =>
     .flatMap((player) => player.field.concat(player.hand, player.carrion, player.exile))
     .find((card) => card?.instanceId === instanceId);
 
-const resolveAttack = (state, attacker, target, negateAttack = false) => {
+const resolveAttack = (state, attacker, target, negateAttack = false, negatedBy = null) => {
   if (negateAttack) {
-    logMessage(state, `${attacker.name}'s attack was negated.`);
+    const targetName = target.type === 'creature' ? target.card.name : 'the player';
+    const sourceText = negatedBy ? ` by ${negatedBy}` : '';
+    logMessage(state, `${attacker.name}'s attack on ${targetName} was negated${sourceText}.`);
     attacker.hasAttacked = true;
     state.broadcast?.(state);
     cleanupDestroyed(state);
@@ -2055,7 +2208,7 @@ const resolveAttack = (state, attacker, target, negateAttack = false) => {
         result,
         { playerIndex, opponentIndex, card: attacker },
         () => {
-          render(state);
+          renderGame(state);
           broadcastSyncState(state);
         },
         () => {
@@ -2135,7 +2288,7 @@ const continueResolveAttack = (state, attacker, target) => {
     attacker.instanceId
   );
   if (target.type === "player") {
-    const damage = resolveDirectAttack(state, attacker, target.player);
+    const damage = resolveDirectAttack(state, attacker, target.player, attackerOwnerIndex);
     effect = queueVisualEffect(state, {
       type: "attack",
       attackerId: attacker.instanceId,
@@ -2238,6 +2391,10 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
   // Clear extended consumption window when an attack is declared
   state.extendedConsumption = null;
 
+  // Clear any stale negation flag from previous attacks to prevent false negations
+  state._lastReactionNegatedAttack = undefined;
+  state._lastReactionNegatedBy = undefined;
+
   const attackerIndex = state.players.indexOf(getActivePlayer(state));
 
   const windowCreated = createReactionWindow({
@@ -2252,7 +2409,9 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
       // After reaction resolves, continue with attack
       // The attack might have been negated by the trap effect
       const wasNegated = state._lastReactionNegatedAttack ?? false;
+      const negatedBy = state._lastReactionNegatedBy;
       state._lastReactionNegatedAttack = undefined;
+      state._lastReactionNegatedBy = undefined;
 
       // Check if attacker still exists and has HP
       if (attacker.currentHp <= 0) {
@@ -2279,7 +2438,7 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
         }
       }
 
-      resolveAttack(state, attacker, target, wasNegated);
+      resolveAttack(state, attacker, target, wasNegated, negatedBy);
       onUpdate?.();
       broadcastSyncState(state);
     },
@@ -3282,6 +3441,13 @@ const showCarrionPilePopup = (player, opponent, onUpdate) => {
         showEffectSummary: true,
         useBaseStats: true,
       });
+      // Add hover tooltip listeners
+      cardElement.addEventListener('mouseenter', () => {
+        showCardTooltip(card, cardElement);
+      });
+      cardElement.addEventListener('mouseleave', () => {
+        hideCardTooltip();
+      });
       item.appendChild(cardElement);
       items.push(item);
     });
@@ -3305,6 +3471,13 @@ const showCarrionPilePopup = (player, opponent, onUpdate) => {
       const cardElement = renderCard(card, {
         showEffectSummary: true,
         useBaseStats: true,
+      });
+      // Add hover tooltip listeners
+      cardElement.addEventListener('mouseenter', () => {
+        showCardTooltip(card, cardElement);
+      });
+      cardElement.addEventListener('mouseleave', () => {
+        hideCardTooltip();
       });
       item.appendChild(cardElement);
       items.push(item);
@@ -3344,6 +3517,13 @@ const showExilePilePopup = (player, opponent, onUpdate) => {
         showEffectSummary: true,
         useBaseStats: true,
       });
+      // Add hover tooltip listeners
+      cardElement.addEventListener('mouseenter', () => {
+        showCardTooltip(card, cardElement);
+      });
+      cardElement.addEventListener('mouseleave', () => {
+        hideCardTooltip();
+      });
       item.appendChild(cardElement);
       items.push(item);
     });
@@ -3367,6 +3547,13 @@ const showExilePilePopup = (player, opponent, onUpdate) => {
       const cardElement = renderCard(card, {
         showEffectSummary: true,
         useBaseStats: true,
+      });
+      // Add hover tooltip listeners
+      cardElement.addEventListener('mouseenter', () => {
+        showCardTooltip(card, cardElement);
+      });
+      cardElement.addEventListener('mouseleave', () => {
+        hideCardTooltip();
       });
       item.appendChild(cardElement);
       items.push(item);
@@ -3564,6 +3751,34 @@ const setupSurrenderButton = () => {
 };
 
 /**
+ * Set up resync button click handler (for multiplayer desync recovery)
+ */
+const setupResyncButton = () => {
+  const resyncBtn = document.getElementById('field-resync-btn');
+  if (resyncBtn) {
+    resyncBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!latestState) return;
+
+      if (isOnlineMode(latestState)) {
+        console.log('[Resync] Manual resync requested by user');
+        requestSyncFromOpponent(latestState);
+      }
+    });
+  }
+};
+
+/**
+ * Update resync button visibility based on online mode
+ */
+const updateResyncButtonVisibility = (state) => {
+  const resyncBtn = document.getElementById('field-resync-btn');
+  if (resyncBtn) {
+    resyncBtn.classList.toggle('online', isOnlineMode(state));
+  }
+};
+
+/**
  * Set up click-away handler to deselect cards
  * Clicking on empty space (not cards, buttons, or interactive elements) clears the selection
  */
@@ -3654,6 +3869,23 @@ const setupBugDetectorResumeHandler = () => {
   }, 100);
 };
 
+/**
+ * Set up the bug reporting button
+ * Uses latestState to get current profile ID for submissions
+ */
+const setupBugReportButton = () => {
+  initBugButton({
+    onReportBug: () => {
+      const profileId = latestState?.menu?.profile?.id;
+      showBugReportOverlay({ profileId, tab: 'report' });
+    },
+    onViewBugs: () => {
+      const profileId = latestState?.menu?.profile?.id;
+      showBugReportOverlay({ profileId, tab: 'list' });
+    },
+  });
+};
+
 // Initialize mobile features and log card links when DOM is ready
 if (typeof window !== 'undefined') {
   if (document.readyState === 'loading') {
@@ -3661,15 +3893,21 @@ if (typeof window !== 'undefined') {
       setupMobileNavigation();
       setupLogCardLinks();
       setupSurrenderButton();
+      setupResyncButton();
       setupClickAwayHandler();
       setupBugDetectorResumeHandler();
+      initCardTooltip();
+      setupBugReportButton();
     });
   } else {
     setupMobileNavigation();
     setupLogCardLinks();
     setupSurrenderButton();
+    setupResyncButton();
     setupClickAwayHandler();
     setupBugDetectorResumeHandler();
+    initCardTooltip();
+    setupBugReportButton();
   }
 }
 
@@ -3681,6 +3919,9 @@ export const renderGame = (state, callbacks = {}) => {
 
   latestState = state;
   latestCallbacks = callbacks;
+
+  // Update resync button visibility based on online mode
+  updateResyncButtonVisibility(state);
 
   // Set up victory menu callback (only once)
   setVictoryMenuCallback(() => {
@@ -3814,10 +4055,21 @@ export const renderGame = (state, callbacks = {}) => {
     onUpdate: () => callbacks.onUpdate?.(),
     onDeckComplete: (selections) => callbacks.onDeckComplete?.(selections),
     onApplySync: (s, payload, options) => {
+      // Track if pendingReaction was set before sync (to detect remote resolution)
+      const hadPendingReaction = s.pendingReaction !== null;
+      const hadLocalCallback = hasPendingReactionCallback();
+
       // Apply core state changes from serialization module
       applyLobbySyncPayload(s, payload, options);
       // Apply UI-specific post-processing (deck rehydration, callbacks, recovery)
       handleSyncPostProcessing(s, payload, options);
+
+      // If pendingReaction was cleared by remote player and we have a local callback,
+      // invoke it to continue the attack flow (fixes multiplayer trap decline bug)
+      if (hadPendingReaction && hadLocalCallback && s.pendingReaction === null) {
+        console.log('[onApplySync] pendingReaction cleared via sync, invoking local callback');
+        invokePendingReactionCallback();
+      }
     },
     onEmoteReceived: (emoteId, senderPlayerIndex) => {
       // Show the emote bubble for the sender
@@ -3905,9 +4157,9 @@ export const renderGame = (state, callbacks = {}) => {
   if (!touchInitialized) {
     initTouchHandlers({
       onCardFocus: (card, element) => {
-        if (card) {
+        if (card && element) {
           inspectedCardId = card.instanceId;
-          setInspectorContent(card);
+          showCardTooltip(card, element);
         }
       },
     });
@@ -3969,19 +4221,16 @@ export const renderGame = (state, callbacks = {}) => {
   // Update pile counts from viewing player's perspective
   updatePlayerStats(state, activeIndex, "active");
   // Field rendering (uses extracted Field component)
-  const fieldInspectCallback = (card) => {
-    inspectedCardId = card.instanceId;
-    setInspectorContent(card);
-  };
-  renderField(state, opponentIndex, true, {
-    onInspect: fieldInspectCallback,
-  });
-  renderField(state, activeIndex, false, {
-    onAttack: (card) => handleAttackSelection(state, card, callbacks.onUpdate),
-    onReturnToHand: (card) => handleReturnToHand(state, card, callbacks.onUpdate),
-    onSacrifice: (card) => handleSacrifice(state, card, callbacks.onUpdate),
-    onInspect: fieldInspectCallback,
-  });
+  // Note: Hover tooltips are handled directly in Field.js via CardTooltip
+  // Skip field rendering if hologram is active (don't overwrite historical view)
+  if (!hologramState.active) {
+    renderField(state, opponentIndex, true, {});
+    renderField(state, activeIndex, false, {
+      onAttack: (card) => handleAttackSelection(state, card, callbacks.onUpdate),
+      onReturnToHand: (card) => handleReturnToHand(state, card, callbacks.onUpdate),
+      onSacrifice: (card) => handleSacrifice(state, card, callbacks.onUpdate),
+    });
+  }
   // Opponent hand strip (shows card backs with hover/drag feedback)
   renderOpponentHandStrip(state, { opponentIndex });
   // Hand rendering (uses extracted Hand component)
@@ -4277,16 +4526,15 @@ export const renderGame = (state, callbacks = {}) => {
     };
   }
 
-  const inspectedCard = state.players
-    .flatMap((player) => player.field.concat(player.hand))
-    .find((card) => card && card.instanceId === inspectedCardId);
-  if (inspectedCard) {
-    setInspectorContent(inspectedCard);
-  } else if (inspectedCardId) {
-    inspectedCardId = null;
-    setInspectorContent(null);
-  } else {
-    setInspectorContent(null);
+  // Note: Inspector panel removed - tooltips are shown on hover via CardTooltip.js
+  // Clear inspectedCardId if the card no longer exists
+  if (inspectedCardId) {
+    const inspectedCard = state.players
+      .flatMap((player) => player.field.concat(player.hand))
+      .find((card) => card && card.instanceId === inspectedCardId);
+    if (!inspectedCard) {
+      inspectedCardId = null;
+    }
   }
 };
 

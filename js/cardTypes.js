@@ -1,4 +1,4 @@
-import { hasBarrier } from "./keywords.js";
+import { hasBarrier, hasFrozen } from "./keywords.js";
 
 export const isCreatureCard = (card) =>
   card && (card.type === "Predator" || card.type === "Prey");
@@ -8,7 +8,8 @@ export const createCardInstance = (cardData, turn) => {
     ...cardData,
     instanceId: crypto.randomUUID(),
     // Deep copy keywords array to prevent shared mutation between instances
-    keywords: cardData.keywords ? [...cardData.keywords] : [],
+    // Must check Array.isArray to avoid spreading strings like "[Circular]" into chars
+    keywords: Array.isArray(cardData.keywords) ? [...cardData.keywords] : [],
   };
 
   if (isCreatureCard(cardData)) {
@@ -19,6 +20,8 @@ export const createCardInstance = (cardData, turn) => {
       summonedTurn: turn,
       hasAttacked: false,
       hasBarrier: hasBarrier(cardData),
+      // Set frozen property if creature has Frozen keyword (e.g., Arctic Ground Squirrel tokens)
+      frozen: hasFrozen(cardData),
     };
   }
 

@@ -8,7 +8,6 @@
       "hp": 1,
       "nutrition": 0,
       "keywords": ["Free Play"],
-      "effectText": "Play 2 Pups.",
       "summons": ["token-pup"],
       "effects": {
         "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-pup", "token-pup"] } }
@@ -21,13 +20,12 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Play 2 Arctic Ground Squirrels. Target Rival's creature gains Frozen.",
       "summons": ["token-arctic-ground-squirrel"],
       "effects": {
-        "onPlay": {
-          "type": "summonAndSelectEnemyToFreeze",
-          "params": { "tokenIds": ["token-arctic-ground-squirrel", "token-arctic-ground-squirrel"] }
-        }
+        "onPlay": [
+          { "type": "summonTokens", "params": { "tokenIds": ["token-arctic-ground-squirrel", "token-arctic-ground-squirrel"] } },
+          { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to freeze", "effect": { "keyword": "Frozen" } } }
+        ]
       }
     },
     {
@@ -38,9 +36,8 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Haste", "Hidden"],
-      "effectText": "Target Rival's creature gains Frozen.",
       "effects": {
-        "onPlay": { "type": "selectEnemyToFreeze" }
+        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to freeze", "effect": { "keyword": "Frozen" } } }
       }
     },
     {
@@ -50,9 +47,11 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Rival reveals hand. Kill target prey.",
       "effects": {
-        "onPlay": { "type": "revealHandAndSelectPreyToKill" }
+        "onPlay": [
+          { "type": "revealHand", "params": {} },
+          { "type": "selectFromGroup", "params": { "targetGroup": "all-prey", "title": "Choose a prey to kill", "effect": { "kill": true } } }
+        ]
       }
     },
     {
@@ -62,7 +61,6 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Slain, heal 1. End of turn, play 2 Kits.",
       "summons": ["token-kit"],
       "effects": {
         "onSlain": { "type": "heal", "params": { "amount": 1 } },
@@ -77,7 +75,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Free Play"],
-      "effectText": "Draw 1.",
       "effects": {
         "onPlay": { "type": "draw", "params": { "count": 1 } }
       }
@@ -89,9 +86,8 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Deal 3 damage to any target.",
       "effects": {
-        "onPlay": { "type": "selectTargetForDamage", "params": { "amount": 3, "label": "weasel" } }
+        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "all-entities", "title": "Choose a target for damage", "effect": { "damage": 3, "label": "weasel" } } }
       }
     },
     {
@@ -101,7 +97,6 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Play 2 Pups. Slain, play 3 Pups.",
       "summons": ["token-pup"],
       "effects": {
         "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-pup", "token-pup"] } },
@@ -115,7 +110,6 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Slain, revive.",
       "effects": {
         "onSlain": { "type": "reviveCreature" }
       }
@@ -128,7 +122,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Ambush", "Hidden"],
-      "effectText": "Slain, play Joey.",
       "summons": ["token-joey"],
       "effects": {
         "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["token-joey"] } }
@@ -142,7 +135,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Poisonous"],
-      "effectText": "Play 2 Mammal Eggs.",
       "summons": ["token-mammal-egg"],
       "effects": {
         "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-mammal-egg", "token-mammal-egg"] } }
@@ -155,9 +147,11 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Rival discards 1. Add a card from deck to hand.",
       "effects": {
-        "onPlay": { "type": "forceDiscardAndTutor", "params": { "discardCount": 1 } }
+        "onPlay": [
+          { "type": "forceOpponentDiscard", "params": { "count": 1 } },
+          { "type": "tutorFromDeck", "params": {} }
+        ]
       }
     },
     {
@@ -167,7 +161,7 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Slain, add Sable Fur to hand.",
+      "summons": ["token-sable-fur"],
       "effects": {
         "onSlain": { "type": "addToHand", "params": { "cardId": "token-sable-fur" } }
       }
@@ -179,9 +173,8 @@
       "atk": 2,
       "hp": 2,
       "nutrition": 2,
-      "effectText": "Deal 2 damage to any target.",
       "effects": {
-        "onPlay": { "type": "selectTargetForDamage", "params": { "amount": 2, "label": "pronghorn" } }
+        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "all-entities", "title": "Choose a target for damage", "effect": { "damage": 2, "label": "pronghorn" } } }
       }
     },
     {
@@ -191,7 +184,6 @@
       "atk": 2,
       "hp": 2,
       "nutrition": 2,
-      "effectText": "Draw 2.",
       "effects": {
         "onPlay": { "type": "draw", "params": { "count": 2 } }
       }
@@ -204,7 +196,6 @@
       "hp": 2,
       "nutrition": 2,
       "keywords": ["Ambush", "Haste"],
-      "effectText": "Play White Springbok.",
       "summons": ["token-white-springbok"],
       "effects": {
         "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-white-springbok"] } }
@@ -217,7 +208,7 @@
       "atk": 1,
       "hp": 3,
       "nutrition": 3,
-      "effectText": "End of turn, add Fresh Milk to hand.",
+      "summons": ["token-fresh-milk"],
       "effects": {
         "onEnd": { "type": "addToHand", "params": { "cardId": "token-fresh-milk" } }
       }
@@ -229,9 +220,8 @@
       "atk": 2,
       "hp": 2,
       "nutrition": 2,
-      "effectText": "Add a carrion to hand.",
       "effects": {
-        "onPlay": { "type": "selectCarrionToAddToHand" }
+        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-carrion", "title": "Choose a carrion to add to hand", "effect": { "addToHand": true } } }
       }
     },
     {
@@ -241,7 +231,6 @@
       "atk": 2,
       "hp": 2,
       "nutrition": 2,
-      "effectText": "Return Rival's creatures to hand.",
       "effects": {
         "onPlay": { "type": "returnAllEnemies" }
       }
@@ -253,14 +242,13 @@
       "atk": 2,
       "hp": 2,
       "nutrition": 2,
-      "effectText": "Either deal 2 damage to rival or heal 2.",
       "effects": {
         "onPlay": {
           "type": "chooseOption",
           "params": {
             "title": "Choose an effect",
             "options": [
-              { "label": "Deal 2 damage", "description": "Deal 2 damage to rival", "effect": { "type": "damageOpponent", "params": { "amount": 2 } } },
+              { "label": "Deal 2 damage", "description": "Deal 2 damage to rival", "effect": { "type": "damageRival", "params": { "amount": 2 } } },
               { "label": "Heal 2", "description": "Heal 2 HP", "effect": { "type": "heal", "params": { "amount": 2 } } }
             ]
           }
@@ -274,7 +262,7 @@
       "atk": 2,
       "hp": 2,
       "nutrition": 2,
-      "effectText": "Add Present to hand.",
+      "summons": ["token-present"],
       "effects": {
         "onPlay": { "type": "addToHand", "params": { "cardId": "token-present" } }
       }
@@ -287,7 +275,7 @@
       "hp": 2,
       "nutrition": 2,
       "keywords": ["Immune"],
-      "effectText": "Slain, add Qiviut to hand.",
+      "summons": ["token-qiviut"],
       "effects": {
         "onSlain": { "type": "addToHand", "params": { "cardId": "token-qiviut" } }
       }
@@ -310,19 +298,18 @@
       "nutrition": 3,
       "keywords": ["Barrier"]
     },
-        {
+    {
       "id": "mammal-predator-dholes",
       "name": "Dholes",
       "type": "Predator",
       "atk": 1,
       "hp": 1,
-      "effectText": "Play 2 Dholes. Kill target Rival's creature.",
       "summons": ["token-dhole"],
       "effects": {
-        "onConsume": {
-          "type": "summonAndSelectEnemyToKill",
-          "params": { "tokenIds": ["token-dhole", "token-dhole"] }
-        }
+        "onConsume": [
+          { "type": "summonTokens", "params": { "tokenIds": ["token-dhole", "token-dhole"] } },
+          { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to kill", "effect": { "kill": true } } }
+        ]
       }
     },
     {
@@ -332,7 +319,6 @@
       "atk": 2,
       "hp": 1,
       "keywords": ["Free Play"],
-      "effectText": "Rival reveals hand.",
       "effects": {
         "onConsume": { "type": "revealHand", "params": { "durationMs": 5000 } }
       }
@@ -343,7 +329,6 @@
       "type": "Predator",
       "atk": 2,
       "hp": 2,
-      "effectText": "Play Gray Wolf.",
       "summons": ["mammal-predator-gray-wolf"],
       "effects": {
         "onConsume": { "type": "summonTokens", "params": { "tokenIds": ["mammal-predator-gray-wolf"] } }
@@ -356,7 +341,6 @@
       "atk": 3,
       "hp": 2,
       "keywords": ["Ambush"],
-      "effectText": "Slain, play Black Leopard.",
       "summons": ["token-black-leopard"],
       "effects": {
         "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["token-black-leopard"] } }
@@ -368,9 +352,8 @@
       "type": "Predator",
       "atk": 3,
       "hp": 3,
-      "effectText": "Sacrifice; play a carrion.",
       "effects": {
-        "onConsume": { "type": "selectCarrionToPlayWithKeyword", "params": { "keyword": null } }
+        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-carrion", "title": "Choose a carrion to play", "effect": { "play": true } } }
       }
     },
     {
@@ -379,7 +362,6 @@
       "type": "Predator",
       "atk": 3,
       "hp": 3,
-      "effectText": "Attacking before combat, deal 3 damage.",
       "effects": {
         "onBeforeCombat": { "type": "damageCreature", "params": { "targetType": "target", "amount": 3, "sourceLabel": "cougar" } }
       }
@@ -398,7 +380,6 @@
       "type": "Predator",
       "atk": 3,
       "hp": 3,
-      "effectText": "Creatures gain +1/+1.",
       "effects": {
         "onConsume": { "type": "buffStats", "params": { "targetType": "all-friendly", "stats": { "attack": 1, "health": 1 } } }
       }
@@ -409,9 +390,8 @@
       "type": "Predator",
       "atk": 3,
       "hp": 3,
-      "effectText": "Copy abilities of a carrion.",
       "effects": {
-        "onConsume": { "type": "selectCarrionToCopyAbilities" }
+        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "carrion", "title": "Choose a carrion to copy abilities from", "effect": { "copyAbilities": true } } }
       }
     },
     {
@@ -428,9 +408,8 @@
       "type": "Predator",
       "atk": 4,
       "hp": 4,
-      "effectText": "End of turn, regen.",
       "effects": {
-        "onEnd": { "type": "selectCreatureToRegen" }
+        "onEnd": { "type": "regenSelf" }
       }
     },
     {
@@ -439,7 +418,7 @@
       "type": "Predator",
       "atk": 5,
       "hp": 5,
-      "effectText": "Add Salmon to hand.",
+      "summons": ["token-salmon"],
       "effects": {
         "onConsume": { "type": "addToHand", "params": { "cardId": "token-salmon" } }
       }
@@ -450,7 +429,6 @@
       "type": "Predator",
       "atk": 5,
       "hp": 5,
-      "effectText": "Freeze Rival's creatures.",
       "effects": {
         "onConsume": { "type": "freezeAllEnemies" }
       }
@@ -461,25 +439,26 @@
       "type": "Predator",
       "atk": 6,
       "hp": 6,
-      "effectText": "Kill target Rival's creature.",
       "effects": {
-        "onConsume": { "type": "selectEnemyToKill" }
+        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to kill", "effect": { "kill": true } } }
       }
     },
     {
       "id": "mammal-spell-blizzard",
       "name": "Blizzard",
       "type": "Spell",
-      "effectText": "Deal 2 damage to Rival and Rival's creatures. Rival's creatures gain Frozen.",
       "effects": {
-        "effect": { "type": "damageOpponentAndFreezeEnemies", "params": { "damage": 2 } }
+        "effect": [
+          { "type": "damageRival", "params": { "amount": 2 } },
+          { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } },
+          { "type": "freezeAllEnemies", "params": {} }
+        ]
       }
     },
     {
       "id": "mammal-spell-milk",
       "name": "Milk",
       "type": "Spell",
-      "effectText": "Creatures gain +2/+2.",
       "effects": {
         "effect": { "type": "buffStats", "params": { "targetType": "all-friendly", "stats": { "attack": 2, "health": 2 } } }
       }
@@ -488,16 +467,14 @@
       "id": "mammal-spell-rifle",
       "name": "Rifle",
       "type": "Spell",
-      "effectText": "Kill target Rival's creature.",
       "effects": {
-        "effect": { "type": "selectEnemyToKill" }
+        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to kill", "effect": { "kill": true } } }
       }
     },
     {
       "id": "mammal-spell-six-layered-neocortex",
       "name": "Six-layered Neocortex",
       "type": "Spell",
-      "effectText": "Play a creature from deck; it gains Frozen.",
       "effects": {
         "effect": { "type": "selectCreatureFromDeckWithKeyword", "params": { "keyword": "Frozen" } }
       }
@@ -506,34 +483,30 @@
       "id": "mammal-spell-white-hart",
       "name": "White Hart",
       "type": "Spell",
-      "effectText": "Play a carrion; it gains Frozen.",
       "effects": {
-        "effect": { "type": "selectCarrionToPlayWithKeyword", "params": { "keyword": "Frozen" } }
+        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-carrion", "title": "Choose a carrion to play", "effect": { "play": true, "keyword": "Frozen" } } }
       }
     },
     {
       "id": "mammal-free-spell-curiosity",
       "name": "Curiosity",
       "type": "Free Spell",
-      "effectText": "Sacrifice target creature, draw 3.",
       "effects": {
-        "effect": { "type": "selectCreatureToSacrificeAndDraw", "params": { "drawCount": 3 } }
+        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-creatures", "title": "Choose a creature to sacrifice", "effect": { "sacrifice": true, "draw": 3 } } }
       }
     },
     {
       "id": "mammal-free-spell-tranquilizer",
       "name": "Tranquilizer",
       "type": "Free Spell",
-      "effectText": "Target Rival's creature gains Frozen.",
       "effects": {
-        "effect": { "type": "selectEnemyToFreeze" }
+        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to freeze", "effect": { "keyword": "Frozen" } } }
       }
     },
     {
       "id": "mammal-free-spell-warm-blood",
       "name": "Warm Blood",
       "type": "Free Spell",
-      "effectText": "Creatures lose frozen.",
       "effects": {
         "effect": { "type": "removeFrozenFromFriendlies" }
       }
@@ -543,7 +516,6 @@
       "name": "Wolves Den",
       "type": "Spell",
       "isFieldSpell": true,
-      "effectText": "End of turn, play Wolf.",
       "summons": ["token-wolf"],
       "effects": {
         "effect": { "type": "setFieldSpell", "params": { "cardId": "mammal-field-spell-wolves-den" } },
@@ -560,7 +532,6 @@
       "name": "Human Intervention",
       "type": "Trap",
       "trigger": "targeted",
-      "effectText": "When target creature is targeted, return it to hand.",
       "effects": {
         "effect": { "type": "returnTargetedToHand" }
       }
@@ -570,9 +541,11 @@
       "name": "Pitfall",
       "type": "Trap",
       "trigger": "directAttack",
-      "effectText": "When Rival's creature attacks directly, negate attack. Rival's creatures gain Frozen.",
       "effects": {
-        "effect": { "type": "negateAndFreezeEnemies" }
+        "effect": [
+          { "type": "negateAttack", "params": {} },
+          { "type": "freezeAllEnemies", "params": {} }
+        ]
       }
     },
     {
@@ -580,9 +553,11 @@
       "name": "Snow Squall",
       "type": "Trap",
       "trigger": "indirectDamage",
-      "effectText": "When damaged indirectly, negate damage. Rival's creatures gain Frozen.",
       "effects": {
-        "effect": { "type": "negateDamageAndFreezeEnemies" }
+        "effect": [
+          { "type": "negateDamage", "params": {} },
+          { "type": "freezeAllEnemies", "params": {} }
+        ]
       }
     },
     {
@@ -590,9 +565,8 @@
       "name": "Burial Ground",
       "type": "Trap",
       "trigger": "slain",
-      "effectText": "When target defending creature is slain; play a carrion, it gains Frozen.",
       "effects": {
-        "effect": { "type": "selectCarrionToPlayWithKeyword", "params": { "keyword": "Frozen" } }
+        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-carrion", "title": "Choose a carrion to play", "effect": { "play": true, "keyword": "Frozen" } } }
       }
     }
   ]

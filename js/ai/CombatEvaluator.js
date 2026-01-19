@@ -479,7 +479,7 @@ export class CombatEvaluator {
 
     // Generally, attack if we have creatures and any reasonable targets
     const hasAttackers = ai.field.some(c =>
-      c && !c.hasAttacked && !isPassive(c) && !c.frozen
+      c && !c.hasAttacked && !isPassive(c) && !c.frozen && !c.webbed
     );
 
     return hasAttackers;

@@ -301,12 +301,10 @@ export const executeAITurn = async (state, callbacks) => {
     // After this AI's turn completes, check if the next player is also AI
     // This is needed because when onEndTurn calls refresh() -> checkAndTriggerAITurn,
     // isAITurnInProgress was still true, so the next turn wasn't triggered
-    if (isAIvsAIMode(state) && !state.winner) {
-      // Don't schedule next turn if AI is paused
-      if (state.menu?.aiSpeed === 'paused') {
-        console.log('[AIManager] AI is paused, not scheduling next turn');
-        return;
-      }
+    const shouldScheduleNextTurn = isAIvsAIMode(state) && !state.winner && state.menu?.aiSpeed !== 'paused';
+    if (state.menu?.aiSpeed === 'paused') {
+      console.log('[AIManager] AI is paused, not scheduling next turn');
+    } else if (shouldScheduleNextTurn) {
       const nextDelay = getAIDelay(state, 200);
       setTimeout(() => {
         checkAndTriggerAITurn(state, callbacks);

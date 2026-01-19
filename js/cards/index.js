@@ -42,6 +42,7 @@ export {
   // Card helpers
   hasEffect,
   getEffectTypes,
+  sortCardsByType,
 } from './registry.js';
 
 // Re-export effect library utilities

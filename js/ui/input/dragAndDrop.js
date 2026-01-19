@@ -19,6 +19,7 @@
 import { getActivePlayer, getOpponentPlayer, logMessage } from '../../state/gameState.js';
 import { canPlayCard, cardLimitAvailable } from '../../game/turnManager.js';
 import { isFreePlay, isPassive, isHarmless, isEdible, isInedible, isHidden, isInvisible, hasAcuity, hasHaste, hasLure } from '../../keywords.js';
+import { hideCardTooltipImmediate } from '../components/CardTooltip.js';
 import { createCardInstance } from '../../cardTypes.js';
 import { consumePrey } from '../../game/consumption.js';
 import { cleanupDestroyed } from '../../game/combat.js';
@@ -1052,6 +1053,9 @@ const handleCreatureDrop = (attacker, target) => {
  * Handle drag start event
  */
 const handleDragStart = (event) => {
+  // Immediately hide any card tooltip when dragging starts
+  hideCardTooltipImmediate();
+
   const cardElement = event.target.closest('.draggable-card');
   if (!cardElement) return;
 

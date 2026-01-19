@@ -15,7 +15,7 @@
  * - getCardEffectSummary: Effect text generation
  */
 
-import { KEYWORD_DESCRIPTIONS, areAbilitiesActive } from '../../keywords.js';
+import { KEYWORD_DESCRIPTIONS, areAbilitiesActive, getEffectiveAttack } from '../../keywords.js';
 import {
   hasCardImage,
   getCardImagePath,
@@ -162,14 +162,23 @@ const renderEffectSvg = (effectText) => {
 /**
  * Render card stats (ATK, HP, NUT) with emoji format
  * @param {Object} card - Card instance
- * @param {Object} options - Options { useBaseStats: boolean }
+ * @param {Object} options - Options { useBaseStats, state, ownerIndex }
  * @returns {Array} Array of stat objects { emoji, value, className }
  */
 export const renderCardStats = (card, options = {}) => {
-  const { useBaseStats = false } = options;
+  const { useBaseStats = false, state = null, ownerIndex = null } = options;
   const stats = [];
   if (card.type === "Predator" || card.type === "Prey") {
-    const atk = useBaseStats ? card.atk : (card.currentAtk ?? card.atk);
+    // Use getEffectiveAttack to include Pack bonus when state is available
+    let atk;
+    if (useBaseStats) {
+      atk = card.atk;
+    } else if (state !== null && ownerIndex !== null) {
+      // Include Pack bonus for display
+      atk = getEffectiveAttack(card, state, ownerIndex);
+    } else {
+      atk = card.currentAtk ?? card.atk;
+    }
     const hp = useBaseStats ? card.hp : (card.currentHp ?? card.hp);
     stats.push({ emoji: "⚔", value: atk, className: "atk" });
     stats.push({ emoji: "❤", value: hp, className: "hp" });
@@ -202,8 +211,8 @@ export const renderKeywordTags = (card) => {
     tags.push(`<span class="keyword-field-spell">Field Spell</span>`);
   }
 
-  // Add regular keywords
-  if (card.keywords?.length) {
+  // Add regular keywords (ensure array to avoid string iteration)
+  if (Array.isArray(card.keywords) && card.keywords.length) {
     tags.push(...card.keywords.map((keyword) => `<span>${keyword}</span>`));
   }
 
@@ -410,11 +419,11 @@ export const getStatusIndicators = (card) => {
 /**
  * Render inner HTML structure of a card
  * @param {Object} card - Card to render
- * @param {Object} options - { showEffectSummary, useBaseStats }
+ * @param {Object} options - { showEffectSummary, useBaseStats, state, ownerIndex }
  * @returns {string} Inner HTML for card
  */
-export const renderCardInnerHtml = (card, { showEffectSummary, useBaseStats } = {}) => {
-  const stats = renderCardStats(card, { useBaseStats });
+export const renderCardInnerHtml = (card, { showEffectSummary, useBaseStats, state, ownerIndex } = {}) => {
+  const stats = renderCardStats(card, { useBaseStats, state, ownerIndex });
   const hasNut = hasNutrition(card);
 
   // Build stats row with emoji format - if no nutrition, stats split the row in half
@@ -619,6 +628,8 @@ export const renderCard = (card, options = {}) => {
     showSacrifice = false,
     showEffectSummary = false,
     useBaseStats = false,
+    state = null,
+    ownerIndex = null,
     onPlay,
     onAttack,
     onDiscard,
@@ -652,7 +663,7 @@ export const renderCard = (card, options = {}) => {
   const inner = document.createElement("div");
   inner.className = "card-inner";
 
-  inner.innerHTML = renderCardInnerHtml(card, { showEffectSummary, useBaseStats });
+  inner.innerHTML = renderCardInnerHtml(card, { showEffectSummary, useBaseStats, state, ownerIndex });
 
   // Add action buttons if needed
   if (showPlay || showAttack || showDiscard || showReturnToHand || showSacrifice) {
@@ -735,6 +746,18 @@ export const renderCard = (card, options = {}) => {
       onClick(card);
     }
   });
+
+  // Add double-click handler if provided
+  const { onDoubleClick } = options;
+  if (onDoubleClick) {
+    cardElement.addEventListener("dblclick", (event) => {
+      if (event.target.closest("button")) {
+        return;
+      }
+      event.preventDefault();
+      onDoubleClick(card);
+    });
+  }
 
   // Auto-adjust text to fit
   // If sizes are cached, apply immediately (no layout thrashing)

@@ -244,3 +244,106 @@ describe('Return All Enemies Effect', () => {
     expect(messages.some((m) => m.toLowerCase().includes('return'))).toBe(true);
   });
 });
+
+describe('Regen Self Effect', () => {
+  let state;
+  let context;
+
+  beforeEach(() => {
+    state = createTestState();
+    // Create a creature that will be the source of the regen effect
+    const creature = createTestCreature('fish-prey-atlantic-flying-fish', 0, 0, state);
+    context = createEffectContext(state, 0);
+    context.creature = creature;
+  });
+
+  it('returns regenCreature result with the source creature', () => {
+    const regenFn = effectLibrary.regenSelf();
+    const result = regenFn(context);
+
+    expect(result.regenCreature).toBeDefined();
+    expect(result.regenCreature).toBe(context.creature);
+  });
+
+  it('logs the regeneration', () => {
+    const regenFn = effectLibrary.regenSelf();
+    regenFn(context);
+
+    const messages = context.log.getMessages();
+    expect(messages.some((m) => m.toLowerCase().includes('regenerate'))).toBe(true);
+  });
+
+  it('returns empty result when no creature in context', () => {
+    context.creature = null;
+    const regenFn = effectLibrary.regenSelf();
+    const result = regenFn(context);
+
+    expect(result).toEqual({});
+  });
+});
+
+describe('Select From Group - Regen Effect', () => {
+  let state;
+  let context;
+
+  beforeEach(() => {
+    state = createTestState();
+    // Create creatures for selection
+    createTestCreature('fish-prey-atlantic-flying-fish', 0, 0, state);
+    createTestCreature('fish-prey-blobfish', 1, 0, state);
+    context = createEffectContext(state, 0);
+  });
+
+  it('returns a selectTarget prompt for all-creatures group', () => {
+    const selectFn = effectLibrary.selectFromGroup({
+      targetGroup: 'all-creatures',
+      title: 'Choose a creature to regen',
+      effect: { regen: true },
+    });
+    const result = selectFn(context);
+
+    expect(result.selectTarget).toBeDefined();
+    expect(result.selectTarget.title).toBe('Choose a creature to regen');
+  });
+
+  it('includes both friendly and enemy creatures as candidates', () => {
+    const selectFn = effectLibrary.selectFromGroup({
+      targetGroup: 'all-creatures',
+      title: 'Choose a creature to regen',
+      effect: { regen: true },
+    });
+    const result = selectFn(context);
+
+    // Should have 2 creatures (1 friendly, 1 enemy)
+    expect(result.selectTarget.candidates.length).toBe(2);
+  });
+
+  it('onSelect with regen effect returns regenCreature result', () => {
+    const selectFn = effectLibrary.selectFromGroup({
+      targetGroup: 'all-creatures',
+      title: 'Choose a creature to regen',
+      effect: { regen: true },
+    });
+    const result = selectFn(context);
+
+    const target = result.selectTarget.candidates[0].value;
+    const selectionResult = result.selectTarget.onSelect(target);
+
+    expect(selectionResult.regenCreature).toBeDefined();
+    expect(selectionResult.regenCreature).toBe(target.creature);
+  });
+
+  it('returns empty result when no valid targets', () => {
+    state.players[0].field = [null, null, null];
+    state.players[1].field = [null, null, null];
+
+    const selectFn = effectLibrary.selectFromGroup({
+      targetGroup: 'all-creatures',
+      title: 'Choose a creature to regen',
+      effect: { regen: true },
+    });
+    const result = selectFn(context);
+
+    expect(result).toEqual({});
+  });
+});

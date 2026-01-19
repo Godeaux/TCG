@@ -65,7 +65,7 @@ describe('Resource Boundary Edge Cases', () => {
     describe('HP at Zero or Negative', () => {
       it('damage can reduce HP below zero', () => {
         state.players[1].hp = 2;
-        const damageFn = effectLibrary.damageOpponent(5);
+        const damageFn = effectLibrary.damageRival(5);
         const result = damageFn(context);
 
         resolveEffectResult(state, result, context);
@@ -201,7 +201,7 @@ describe('Resource Boundary Edge Cases', () => {
 
     it('damage 0 does nothing', () => {
       const initialHp = state.players[1].hp;
-      const damageFn = effectLibrary.damageOpponent(0);
+      const damageFn = effectLibrary.damageRival(0);
       const result = damageFn(context);
 
       resolveEffectResult(state, result, context);
@@ -210,7 +210,7 @@ describe('Resource Boundary Edge Cases', () => {
 
     it('large damage amount works correctly', () => {
       state.players[1].hp = 10;
-      const damageFn = effectLibrary.damageOpponent(100);
+      const damageFn = effectLibrary.damageRival(100);
       const result = damageFn(context);
 
       resolveEffectResult(state, result, context);

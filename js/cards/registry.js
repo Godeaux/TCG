@@ -17,7 +17,11 @@ import reptileData from './data/reptile.json' with { type: 'json' };
 import amphibianData from './data/amphibian.json' with { type: 'json' };
 import birdData from './data/bird.json' with { type: 'json' };
 import mammalData from './data/mammal.json' with { type: 'json' };
+import canineData from './data/canine.json' with { type: 'json' };
+import arachnidData from './data/arachnid.json' with { type: 'json' };
 import { resolveEffect } from './effectLibrary.js';
+import { validateCardEffects } from './effectValidator.js';
+import { generateCardEffectText } from './effectTextGenerator.js';
 
 // ============================================================================
 // CARD REGISTRIES
@@ -42,6 +46,8 @@ const deckCatalogs = {
   amphibian: [],
   bird: [],
   mammal: [],
+  canine: [],
+  arachnid: [],
 };
 
 // ============================================================================
@@ -72,10 +78,14 @@ const getCardTypePriority = (card) => {
 };
 
 /**
- * Sort cards by type priority
+ * Sort cards by type priority (for display in selection UIs)
+ * Order: Prey → Predator → Spell → Field Spell → Free Spell → Trap
  * Maintains original order within each type category
+ *
+ * @param {Array} cards - Cards to sort
+ * @returns {Array} - Sorted copy of cards array
  */
-const sortCardsByType = (cards) => {
+export const sortCardsByType = (cards) => {
   return [...cards].sort((a, b) => {
     const priorityA = getCardTypePriority(a);
     const priorityB = getCardTypePriority(b);
@@ -132,7 +142,80 @@ export const initializeCardRegistry = () => {
   });
   deckCatalogs.mammal = sortCardsByType(mammalData.cards.filter(card => !card.id.includes('token')));
 
+  // Load canine tokens (if present in the JSON)
+  if (canineData.tokens) {
+    canineData.tokens.forEach(token => {
+      tokenRegistry.set(token.id, token);
+      cardRegistry.set(token.id, token);
+    });
+  }
+
+  // Load canine cards
+  canineData.cards.forEach(card => {
+    cardRegistry.set(card.id, card);
+  });
+  deckCatalogs.canine = sortCardsByType(canineData.cards.filter(card => !card.id.includes('token')));
+
+  // Load arachnid tokens (if present in the JSON)
+  if (arachnidData.tokens) {
+    arachnidData.tokens.forEach(token => {
+      tokenRegistry.set(token.id, token);
+      cardRegistry.set(token.id, token);
+    });
+  }
+
+  // Load arachnid cards
+  arachnidData.cards.forEach(card => {
+    cardRegistry.set(card.id, card);
+  });
+  deckCatalogs.arachnid = sortCardsByType(arachnidData.cards.filter(card => !card.id.includes('token')));
+
   console.log(`[Card Registry] Initialized with ${cardRegistry.size} cards (${tokenRegistry.size} tokens)`);
+
+  // Generate effectText for all cards from their effects (single source of truth)
+  generateAllEffectText();
+
+  // Validate all card effects (warns on invalid effects)
+  validateAllCardEffects();
+};
+
+/**
+ * Generate effectText for all cards from their effects
+ * This ensures effectText always matches actual effect behavior
+ */
+const generateAllEffectText = () => {
+  for (const card of cardRegistry.values()) {
+    if (card.effects && Object.keys(card.effects).length > 0) {
+      card.effectText = generateCardEffectText(card);
+    }
+  }
+};
+
+/**
+ * Validate all cards in the registry and log any errors
+ */
+const validateAllCardEffects = () => {
+  let invalidCount = 0;
+  const errors = [];
+
+  for (const card of cardRegistry.values()) {
+    const cardErrors = validateCardEffects(card);
+    if (cardErrors.length > 0) {
+      invalidCount++;
+      errors.push({ id: card.id, errors: cardErrors });
+    }
+  }
+
+  if (invalidCount > 0) {
+    console.warn(`[Card Registry] ⚠️ ${invalidCount} cards have invalid effects:`);
+    for (const { id, errors: cardErrors } of errors.slice(0, 10)) {
+      console.warn(`  ${id}:`);
+      cardErrors.forEach(e => console.warn(`    - ${e}`));
+    }
+    if (errors.length > 10) {
+      console.warn(`  ... and ${errors.length - 10} more cards with errors`);
+    }
+  }
 };
 
 // ============================================================================

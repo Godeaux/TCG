@@ -30,9 +30,9 @@ describe('Bird Feeder Field Spell', () => {
       const card = getCardDefinitionById('bird-field-spell-bird-feeder');
       expect(card.effects).toBeDefined();
       expect(card.effects.onEnd).toBeDefined();
-      expect(card.effects.onEnd.type).toBe('selectCreatureForBuff');
-      expect(card.effects.onEnd.params.attack).toBe(1);
-      expect(card.effects.onEnd.params.health).toBe(1);
+      expect(card.effects.onEnd.type).toBe('selectFromGroup');
+      expect(card.effects.onEnd.params.effect.buff.attack).toBe(1);
+      expect(card.effects.onEnd.params.effect.buff.health).toBe(1);
     });
 
     it('Bird Feeder has setFieldSpell effect for playing', () => {

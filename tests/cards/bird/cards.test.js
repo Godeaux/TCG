@@ -55,7 +55,13 @@ describe('Bird Cards', () => {
 
       it('onPlay reveals hand and tutors', () => {
         const card = getCardDefinitionById(cardId);
-        expect(card.effects.onPlay.type).toBe('revealAndTutor');
+        expect(Array.isArray(card.effects.onPlay)).toBe(true);
+        expect(card.effects.onPlay).toContainEqual(
+          expect.objectContaining({ type: 'revealHand' })
+        );
+        expect(card.effects.onPlay).toContainEqual(
+          expect.objectContaining({ type: 'tutorFromDeck' })
+        );
       });
     });
 
@@ -111,48 +117,62 @@ describe('Bird Cards', () => {
     describe('Mexican Violetear', () => {
       const cardId = 'bird-prey-mexican-violetear';
 
-      it('onPlay copies abilities from carrion', () => {
+      it('onPlay copies abilities from carrion via selectFromGroup', () => {
         const card = getCardDefinitionById(cardId);
-        expect(card.effects.onPlay.type).toBe('selectCarrionToCopyAbilities');
+        expect(card.effects.onPlay.type).toBe('selectFromGroup');
+        expect(card.effects.onPlay.params.targetGroup).toBe('carrion');
+        expect(card.effects.onPlay.params.effect.copyAbilities).toBe(true);
       });
 
-      it('selectCarrionToCopyAbilities returns selectTarget', () => {
+      it('selectFromGroup with carrion returns selectTarget', () => {
         const state = createTestState();
         const { creature } = createTestCreature(cardId, 0, 0, state);
         addCardToCarrion(state, 'fish-prey-blobfish', 0);
+        addCardToCarrion(state, 'fish-predator-sailfish', 0);
         const context = createEffectContext(state, 0, { creature });
 
-        const selectFn = effectLibrary.selectCarrionToCopyAbilities();
+        const selectFn = effectLibrary.selectFromGroup({
+          targetGroup: 'carrion',
+          title: 'Choose a carrion to copy abilities from',
+          effect: { copyAbilities: true }
+        });
         const result = selectFn(context);
 
         expect(result.selectTarget).toBeDefined();
+        expect(result.selectTarget.candidates.length).toBe(2);
       });
     });
 
     describe('Mockingbird', () => {
       const cardId = 'bird-prey-mockingbird';
 
-      it('onPlay copies stats of target creature', () => {
+      it('onPlay copies stats of target creature via selectFromGroup', () => {
         const card = getCardDefinitionById(cardId);
-        expect(card.effects.onPlay.type).toBe('selectCreatureToCopyStats');
+        expect(card.effects.onPlay.type).toBe('selectFromGroup');
+        expect(card.effects.onPlay.params.targetGroup).toBe('other-creatures');
+        expect(card.effects.onPlay.params.effect.copyStats).toBe(true);
       });
     });
 
     describe('Moluccan Cockatoo', () => {
       const cardId = 'bird-prey-moluccan-cockatoo';
 
-      it('onPlay copies abilities of target creature', () => {
+      it('onPlay copies abilities of target creature via selectFromGroup', () => {
         const card = getCardDefinitionById(cardId);
-        expect(card.effects.onPlay.type).toBe('selectCreatureToCopyAbilities');
+        expect(card.effects.onPlay.type).toBe('selectFromGroup');
+        expect(card.effects.onPlay.params.targetGroup).toBe('other-creatures');
+        expect(card.effects.onPlay.params.effect.copyAbilitiesFrom).toBe(true);
       });
     });
 
     describe('Raven', () => {
       const cardId = 'bird-prey-raven';
 
-      it('onPlay copies stats from carrion', () => {
+      it('onPlay copies stats from carrion via selectFromGroup', () => {
         const card = getCardDefinitionById(cardId);
-        expect(card.effects.onPlay.type).toBe('selectCarrionToCopyStats');
+        expect(card.effects.onPlay.type).toBe('selectFromGroup');
+        expect(card.effects.onPlay.params.targetGroup).toBe('carrion');
+        expect(card.effects.onPlay.params.effect.copyStats).toBe(true);
       });
     });
 
@@ -181,8 +201,19 @@ describe('Bird Cards', () => {
 
       it('onPlay summons, heals, and regens', () => {
         const card = getCardDefinitionById(cardId);
-        expect(card.effects.onPlay.type).toBe('summonHealAndRegen');
-        expect(card.effects.onPlay.params.healAmount).toBe(2);
+        expect(Array.isArray(card.effects.onPlay)).toBe(true);
+        expect(card.effects.onPlay).toContainEqual(
+          expect.objectContaining({ type: 'summonTokens' })
+        );
+        expect(card.effects.onPlay).toContainEqual(
+          expect.objectContaining({ type: 'heal', params: { amount: 2 } })
+        );
+        expect(card.effects.onPlay).toContainEqual(
+          expect.objectContaining({
+            type: 'selectFromGroup',
+            params: expect.objectContaining({ effect: { regen: true } })
+          })
+        );
       });
     });
   });

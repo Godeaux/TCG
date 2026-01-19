@@ -304,11 +304,11 @@ describe('playFromHand/Deck → onPlay Chains', () => {
     });
 
     it('playing creature with damage onPlay via effect deals damage', () => {
-      // Create a custom card with damageOpponent onPlay
+      // Create a custom card with damageRival onPlay
       const cardDef = getCardDefinitionById('fish-prey-atlantic-flying-fish');
       const cardInHand = createCardInstance(cardDef, state.turn);
       cardInHand.effects = {
-        onPlay: { type: 'damageOpponent', params: { amount: 2 } }
+        onPlay: { type: 'damageRival', params: { amount: 2 } }
       };
       state.players[0].hand.push(cardInHand);
 
@@ -564,11 +564,12 @@ describe('Nested Selection Effects', () => {
   });
 
   it('onPlay with selection returns selectTarget for UI handling', () => {
-    // Use a card with selectEnemyToFreeze onPlay
+    // Use a card with selectFromGroup onPlay (migrated from selectEnemyToFreeze)
     const { creature } = createTestCreature('reptile-prey-plumed-basilisk', 0, 0, state);
 
-    // Add enemy to freeze
+    // Add multiple enemies so selection UI appears (auto-selects with single candidate)
     createTestCreature('fish-prey-blobfish', 1, 0, state);
+    createTestCreature('fish-prey-atlantic-flying-fish', 1, 1, state);
 
     const context = createEffectContext(state, 0, { creature });
 
@@ -585,12 +586,13 @@ describe('Nested Selection Effects', () => {
 
     // Verify: returns selection UI
     expect(onPlayResult.selectTarget).toBeDefined();
-    expect(onPlayResult.selectTarget.candidates.length).toBe(1);
+    expect(onPlayResult.selectTarget.candidates.length).toBe(2);
   });
 
   it('selection callback produces further effect result', () => {
     const { creature } = createTestCreature('reptile-prey-plumed-basilisk', 0, 0, state);
     const { creature: enemy } = createTestCreature('fish-prey-blobfish', 1, 0, state);
+    createTestCreature('fish-prey-atlantic-flying-fish', 1, 1, state); // Add second enemy for selection UI
 
     const context = createEffectContext(state, 0, { creature });
 
@@ -605,14 +607,19 @@ describe('Nested Selection Effects', () => {
       opponentIndex: 1,
     });
 
+    // Find the enemy candidate in the selection
+    const enemyCandidate = onPlayResult.selectTarget.candidates.find(
+      c => c.value.creature === enemy
+    );
+
     // Simulate selection
-    const selectionResult = onPlayResult.selectTarget.onSelect(enemy);
+    const selectionResult = onPlayResult.selectTarget.onSelect(enemyCandidate.value);
 
     // Resolve selection result
     resolveEffectResult(state, selectionResult, context);
 
-    // Verify: enemy is frozen
-    expect(enemy.frozen).toBe(true);
+    // Verify: enemy gained Frozen keyword
+    expect(enemy.keywords).toContain('Frozen');
   });
 });
 

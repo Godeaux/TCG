@@ -30,6 +30,7 @@ import { getActivePlayer } from '../../state/gameState.js';
 import { handlePlayCard } from '../../ui.js';
 import { isPassive, isHarmless } from '../../keywords.js';
 import { isLocalPlayersTurn } from '../../state/selectors.js';
+import { hideCardTooltipImmediate } from '../components/CardTooltip.js';
 
 // ============================================================================
 // MODULE-LEVEL STATE
@@ -302,6 +303,7 @@ const handleTouchMove = (e) => {
   if (!isDragging && dy < -VERTICAL_DRAG_THRESHOLD) {
     isDragging = true;
     touchedCardElement.classList.add('dragging');
+    hideCardTooltipImmediate();
 
     // Track hand index for drag broadcasting
     const state = getLatestState();
@@ -552,6 +554,7 @@ const handleFieldTouchMove = (e) => {
   if (!isDragging && distance > FIELD_DRAG_THRESHOLD) {
     isDragging = true;
     touchedCardElement.classList.add('dragging');
+    hideCardTooltipImmediate();
 
     // Create drag preview
     dragPreview = createDragPreview(touchedCardElement, touch.clientX, touch.clientY);

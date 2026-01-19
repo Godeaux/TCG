@@ -29,8 +29,40 @@
  *   }
  */
 
-import { isInvisible } from "../keywords.js";
+import { isInvisible, KEYWORDS } from "../keywords.js";
 import { isCreatureCard } from "../cardTypes.js";
+
+// ============================================================================
+// CARD SORTING FOR SELECTION UIs
+// ============================================================================
+
+/**
+ * Card type priority for sorting (matches deck builder order)
+ */
+const CARD_TYPE_PRIORITY = {
+  'Prey': 0, 'prey': 0,
+  'Predator': 1, 'predator': 1,
+  'Spell': 2, 'spell': 2,
+  'Free Spell': 3, 'free spell': 3,
+  'Trap': 4, 'trap': 4,
+};
+
+/**
+ * Sort cards by type for selection UIs
+ * Order: Prey → Predator → Spell → Free Spell → Trap
+ * This hides draw order information from players
+ */
+const sortCardsForSelection = (cards) => {
+  return [...cards].sort((a, b) => {
+    const priorityA = CARD_TYPE_PRIORITY[a.type] ?? 99;
+    const priorityB = CARD_TYPE_PRIORITY[b.type] ?? 99;
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB;
+    }
+    // Within same type, sort by name for consistency
+    return (a.name || '').localeCompare(b.name || '');
+  });
+};
 
 // ============================================================================
 // SELECTION HELPERS
@@ -142,19 +174,54 @@ export const heal = (amount) => ({ log }) => {
 };
 
 /**
- * Draw cards
- * @param {number} count - Number of cards to draw
+ * Resolve dynamic count values based on game state
+ * @param {number|string} count - Static number or dynamic count identifier
+ * @param {Object} context - Effect context with player, state, etc.
+ * @returns {number} - Resolved count
  */
-export const draw = (count) => ({ log }) => {
-  log(`Draw${count > 1 ? 's' : ''} ${count} card${count > 1 ? 's' : ''}.`);
-  return { draw: count };
+const resolveDynamicCount = (count, context) => {
+  if (typeof count === 'number') return count;
+
+  const { player } = context;
+
+  switch (count) {
+    case 'canineCountMax3': {
+      // Count Canines on field, max 3
+      const canineCount = player?.field?.filter(c => c && c.tribe === 'Canine').length || 0;
+      return Math.min(canineCount, 3);
+    }
+    case 'canineCount': {
+      // Count all Canines on field
+      return player?.field?.filter(c => c && c.tribe === 'Canine').length || 0;
+    }
+    default:
+      console.warn(`Unknown dynamic count: ${count}`);
+      return 0;
+  }
 };
 
 /**
- * Deal damage to opponent
+ * Draw cards
+ * @param {number|string} count - Number of cards to draw, or dynamic count identifier
+ */
+export const draw = (count) => (context) => {
+  const { log } = context;
+  const resolvedCount = resolveDynamicCount(count, context);
+
+  if (resolvedCount <= 0) {
+    log(`No cards to draw.`);
+    return {};
+  }
+
+  log(`Draw${resolvedCount > 1 ? 's' : ''} ${resolvedCount} card${resolvedCount > 1 ? 's' : ''}.`);
+  return { draw: resolvedCount };
+};
+
+/**
+ * Deal damage to rival
  * @param {number} amount - Damage amount
  */
-export const damageOpponent = (amount) => ({ log }) => {
+export const damageRival = (amount) => ({ log }) => {
   log(`Deals ${amount} damage to rival.`);
   return { damageOpponent: amount };
 };
@@ -674,6 +741,23 @@ export const negateDamage = () => ({ log }) => {
 };
 
 /**
+ * Negate a card play (returns card to hand)
+ */
+export const negatePlay = () => ({ log }) => {
+  log("Card play is negated.");
+  return { negatePlay: true };
+};
+
+/**
+ * Allow opponent to replay a different card (after negation)
+ * @param {boolean} excludeNegated - If true, the negated card cannot be replayed
+ */
+export const allowReplay = (excludeNegated = false) => ({ log }) => {
+  log("Rival may play a different card.");
+  return { allowReplay: true, excludeNegated };
+};
+
+/**
  * Kill the attacking creature
  */
 export const killAttacker = () => ({ log, attacker }) => {
@@ -905,31 +989,6 @@ export const removeAbilitiesAll = () => (context) => {
 // ============================================================================
 
 /**
- * Select a friendly predator to grant a keyword
- * @param {string} keyword - Keyword to grant
- */
-export const selectPredatorForKeyword = (keyword) => (context) => {
-  const { log, player, opponent, state } = context;
-  const targets = player.field.filter(c => c && (c.type === 'Predator' || c.type === 'predator'));
-
-  if (targets.length === 0) {
-    log(`No predators to grant ${keyword}.`);
-    return {};
-  }
-
-  return makeTargetedSelection({
-    title: `Choose a predator to gain ${keyword}`,
-    candidates: targets.map(t => ({ label: t.name, value: t })),
-    onSelect: (target) => {
-      log(`${target.name} gains ${keyword}.`);
-      return handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
-        addKeyword: { creature: target, keyword }
-      };
-    }
-  });
-};
-
-/**
  * Select a predator to grant end-of-turn token summon
  * @param {string} tokenId - Token ID to summon at end of turn
  */
@@ -949,30 +1008,6 @@ export const selectPredatorForEndEffect = (tokenId) => (context) => {
     onSelect: (target) => {
       log(`${target.name} gains: End of turn, play token.`);
       return { empowerWithEndEffect: { creature: target, tokenId } };
-    }
-  });
-};
-
-/**
- * Select an enemy creature to strip abilities
- */
-export const selectEnemyToStripAbilities = () => (context) => {
-  const { log, opponent, player, state } = context;
-  const targets = opponent.field.filter(c => c && (c.type === 'Prey' || c.type === 'Predator' || c.type === 'prey' || c.type === 'predator') && !isInvisible(c, state));
-
-  if (targets.length === 0) {
-    log(`No Rival's creatures to strip abilities.`);
-    return {};
-  }
-
-  return makeTargetedSelection({
-    title: "Choose a Rival's creature to strip abilities",
-    candidates: targets.map(t => ({ label: t.name, value: t })),
-    onSelect: (target) => {
-      log(`Targets ${target.name}.`);
-      return handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
-        removeAbilities: target
-      };
     }
   });
 };
@@ -1003,30 +1038,6 @@ export const selectCardToDiscard = (count = 1) => (context) => {
       discardCards: { playerIndex, cards: [card] }
     }),
     renderCards: true
-  });
-};
-
-/**
- * Select an enemy prey to kill
- */
-export const selectEnemyPreyToKill = () => (context) => {
-  const { log, opponent, player, state } = context;
-  const targets = opponent.field.filter(c => c && (c.type === 'Prey' || c.type === 'prey') && !isInvisible(c, state));
-
-  if (targets.length === 0) {
-    log(`No Rival's prey to kill.`);
-    return {};
-  }
-
-  return makeTargetedSelection({
-    title: "Choose a Rival's prey to kill",
-    candidates: targets.map(t => ({ label: t.name, value: t })),
-    onSelect: (target) => {
-      log(`Targets ${target.name}.`);
-      return handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
-        killTargets: [target]
-      };
-    }
   });
 };
 
@@ -1083,36 +1094,10 @@ export const tutorFromDeck = (cardType = 'any') => (context) => {
 
   return makeTargetedSelection({
     title: `Choose a card to add to hand`,
-    candidates: () => validCards.map(card => ({ label: card.name, value: card })),
+    candidates: () => sortCardsForSelection(validCards).map(card => ({ label: card.name, value: card })),
     onSelect: (card) => ({
       addToHand: { playerIndex, card, fromDeck: true }
     }),
-    renderCards: true
-  });
-};
-
-/**
- * Tutor: Select a card from deck to add to hand, then end the turn
- * Used by Angler card
- */
-export const tutorAndEndTurn = () => (context) => {
-  const { log, player, playerIndex } = context;
-
-  if (player.deck.length === 0) {
-    log(`Deck is empty.`);
-    return { endTurn: true };
-  }
-
-  return makeTargetedSelection({
-    title: `Choose a card to add to hand (turn will end)`,
-    candidates: () => player.deck.map(card => ({ label: card.name, value: card })),
-    onSelect: (card) => {
-      log(`Added ${card.name} to hand. Turn ends.`);
-      return {
-        addToHand: { playerIndex, card, fromDeck: true },
-        endTurn: true
-      };
-    },
     renderCards: true
   });
 };
@@ -1124,6 +1109,15 @@ export const tutorAndEndTurn = () => (context) => {
  */
 export const selectCreatureForDamage = (amount, label = "damage") => (context) => {
   const { log, player, opponent, state } = context;
+
+  // Resolve dynamic amount values
+  const resolvedAmount = resolveDynamicCount(amount, context);
+
+  if (resolvedAmount <= 0) {
+    log(`No damage to deal (0 ${label}).`);
+    return {};
+  }
+
   const candidates = [
     ...player.field.filter(c => c && (c.type === 'Prey' || c.type === 'Predator' || c.type === 'prey' || c.type === 'predator') && !isInvisible(c, state)),
     ...opponent.field.filter(c => c && (c.type === 'Prey' || c.type === 'Predator' || c.type === 'prey' || c.type === 'predator') && !isInvisible(c, state))
@@ -1135,12 +1129,12 @@ export const selectCreatureForDamage = (amount, label = "damage") => (context) =
   }
 
   return makeTargetedSelection({
-    title: `Choose a target for ${amount} ${label}`,
+    title: `Choose a target for ${resolvedAmount} ${label}`,
     candidates: candidates.map(c => ({ label: c.name, value: c })),
     onSelect: (target) => {
-      log(`Targets ${target.name}.`);
+      log(`Targets ${target.name} for ${resolvedAmount} damage.`);
       return handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
-        damageCreature: { creature: target, amount, sourceLabel: label }
+        damageCreature: { creature: target, amount: resolvedAmount, sourceLabel: label }
       };
     }
   });
@@ -1244,54 +1238,6 @@ export const selectCreatureToRestore = () => (context) => {
   });
 };
 
-/**
- * Select a prey from hand to play
- */
-export const selectPreyFromHandToPlay = () => (context) => {
-  const { log, player, playerIndex } = context;
-  const preyInHand = player.hand.filter(card => card.type === 'Prey' || card.type === 'prey');
-
-  if (preyInHand.length === 0) {
-    log(`No prey in hand to play.`);
-    return {};
-  }
-
-  return makeTargetedSelection({
-    title: "Choose a prey to play",
-    candidates: preyInHand.map(card => ({ label: card.name, value: card, card: card })),
-    onSelect: (card) => {
-      log(`Plays ${card.name} from hand.`);
-      return {
-        playFromHand: { playerIndex, card }
-      };
-    },
-    renderCards: true
-  });
-};
-
-/**
- * Select a carrion predator to copy abilities from
- */
-export const selectCarrionPredToCopyAbilities = () => (context) => {
-  const { log, player, creature } = context;
-  const carrionPreds = player.carrion.filter(card => card && (card.type === 'Predator' || card.type === 'predator'));
-
-  if (carrionPreds.length === 0) {
-    log(`No predator in carrion to copy.`);
-    return {};
-  }
-
-  return makeTargetedSelection({
-    title: "Choose a carrion predator to copy",
-    candidates: carrionPreds.map(card => ({ label: card.name, value: card, card: card })),
-    onSelect: (target) => {
-      log(`Copies ${target.name}'s abilities.`);
-      return { copyAbilities: { target: creature, source: target } };
-    },
-    renderCards: true
-  });
-};
-
 // ============================================================================
 // FLEXIBLE TARGET GROUP SELECTION
 // ============================================================================
@@ -1371,6 +1317,80 @@ const buildTargetCandidates = (targetGroup, context) => {
       candidates = [
         { label: `${player.name || 'Self'}`, value: { type: 'player', playerIndex } }
       ];
+      break;
+
+    case 'enemy-prey':
+      candidates = opponent.field
+        .filter(c => c && c.type === 'Prey' && !isInvisible(c, state))
+        .map(c => ({ label: c.name, value: { type: 'creature', creature: c, ownerIndex: opponentIndex }, card: c }));
+      break;
+
+    case 'friendly-prey':
+      candidates = player.field
+        .filter(c => c && c.type === 'Prey')
+        .map(c => ({ label: c.name, value: { type: 'creature', creature: c, ownerIndex: playerIndex }, card: c }));
+      break;
+
+    case 'all-prey':
+      candidates = [
+        ...player.field
+          .filter(c => c && c.type === 'Prey')
+          .map(c => ({ label: c.name, value: { type: 'creature', creature: c, ownerIndex: playerIndex }, card: c })),
+        ...opponent.field
+          .filter(c => c && c.type === 'Prey' && !isInvisible(c, state))
+          .map(c => ({ label: c.name, value: { type: 'creature', creature: c, ownerIndex: opponentIndex }, card: c }))
+      ];
+      break;
+
+    case 'friendly-predators':
+      candidates = player.field
+        .filter(c => c && (c.type === 'Predator' || c.type === 'predator'))
+        .map(c => ({ label: c.name, value: { type: 'creature', creature: c, ownerIndex: playerIndex }, card: c }));
+      break;
+
+    case 'carrion-predators':
+      candidates = player.carrion
+        .filter(c => c && (c.type === 'Predator' || c.type === 'predator'))
+        .map(c => ({ label: c.name, value: { type: 'carrion', creature: c, ownerIndex: playerIndex }, card: c }));
+      break;
+
+    case 'hand-prey':
+      candidates = player.hand
+        .filter(c => c && (c.type === 'Prey' || c.type === 'prey'))
+        .map(c => ({ label: c.name, value: { type: 'hand', card: c, ownerIndex: playerIndex }, card: c }));
+      break;
+
+    case 'other-creatures': {
+      // All creatures except the source creature (for copy abilities, etc.)
+      const sourceCreature = context.creature;
+      candidates = [
+        ...player.field
+          .filter(c => c && isCreatureCard(c) && c !== sourceCreature)
+          .map(c => ({ label: c.name, value: { type: 'creature', creature: c, ownerIndex: playerIndex }, card: c })),
+        ...opponent.field
+          .filter(c => c && isCreatureCard(c) && !isInvisible(c, state) && c !== sourceCreature)
+          .map(c => ({ label: c.name, value: { type: 'creature', creature: c, ownerIndex: opponentIndex }, card: c }))
+      ];
+      break;
+    }
+
+    case 'carrion':
+      // All carrion cards from either player's carrion pile
+      candidates = [
+        ...player.carrion
+          .filter(c => c)
+          .map(c => ({ label: c.name, value: { type: 'carrion', creature: c, ownerIndex: playerIndex }, card: c })),
+        ...opponent.carrion
+          .filter(c => c)
+          .map(c => ({ label: c.name, value: { type: 'carrion', creature: c, ownerIndex: opponentIndex }, card: c }))
+      ];
+      break;
+
+    case 'friendly-carrion':
+      // Only the player's own carrion pile
+      candidates = player.carrion
+        .filter(c => c)
+        .map(c => ({ label: c.name, value: { type: 'carrion', creature: c, ownerIndex: playerIndex }, card: c }));
       break;
 
     default:
@@ -1465,6 +1485,100 @@ const applyEffectToSelection = (selection, effectDef, context) => {
   if (effectDef.keyword && selection.type === 'creature') {
     log(`${selection.creature.name} gains ${effectDef.keyword}.`);
     result.addKeyword = { creature: selection.creature, keyword: effectDef.keyword };
+  }
+
+  if (effectDef.regen && selection.type === 'creature') {
+    log(`${selection.creature.name} regenerates.`);
+    result.regenCreature = selection.creature;
+  }
+
+  if (effectDef.consume && selection.type === 'creature') {
+    log(`${selection.creature.name} is consumed.`);
+    // If consuming an enemy creature, use consumeEnemyPrey
+    if (selection.ownerIndex !== context.playerIndex) {
+      result.consumeEnemyPrey = {
+        predator: context.creature,
+        prey: selection.creature,
+        opponentIndex: selection.ownerIndex
+      };
+    } else {
+      // Consuming own creature (standard predator consume)
+      result.consumeCreature = selection.creature;
+    }
+  }
+
+  if (effectDef.removeAbilities && selection.type === 'creature') {
+    log(`${selection.creature.name} loses abilities.`);
+    result.removeAbilities = selection.creature;
+  }
+
+  if (effectDef.steal && selection.type === 'creature') {
+    log(`Takes control of ${selection.creature.name}.`);
+    result.stealCreature = {
+      creature: selection.creature,
+      fromIndex: selection.ownerIndex,
+      toIndex: context.playerIndex
+    };
+  }
+
+  if (effectDef.copyAbilities && selection.type === 'carrion') {
+    log(`Copies ${selection.creature.name}'s abilities.`);
+    result.copyAbilities = { target: context.creature, source: selection.creature };
+  }
+
+  // Copy stats from carrion (e.g., Raven)
+  if (effectDef.copyStats && selection.type === 'carrion') {
+    log(`Copies ${selection.creature.name}'s stats.`);
+    result.copyStats = { target: context.creature, source: selection.creature };
+  }
+
+  // Copy stats from creature (e.g., Mockingbird)
+  if (effectDef.copyStats && selection.type === 'creature') {
+    log(`Copies ${selection.creature.name}'s stats.`);
+    result.copyStats = { target: context.creature, source: selection.creature };
+  }
+
+  if (effectDef.play && selection.type === 'hand') {
+    log(`Plays ${selection.card.name} from hand.`);
+    result.playFromHand = { playerIndex: context.playerIndex, card: selection.card };
+  }
+
+  // Copy abilities FROM selected creature TO the context creature (e.g., Veiled Chameleon)
+  if (effectDef.copyAbilitiesFrom && selection.type === 'creature') {
+    log(`Copies abilities from ${selection.creature.name}.`);
+    result.copyAbilities = { target: context.creature, source: selection.creature };
+  }
+
+  // Paralyze the selected creature (cannot attack but can be consumed)
+  if (effectDef.paralyze && selection.type === 'creature') {
+    log(`${selection.creature.name} is paralyzed.`);
+    result.paralyzeCreature = { creature: selection.creature };
+  }
+
+  // Add carrion to hand (e.g., Hart)
+  if (effectDef.addToHand && selection.type === 'carrion') {
+    log(`Adds ${selection.creature.name} from carrion to hand.`);
+    result.addCarrionToHand = { creature: selection.creature, ownerIndex: selection.ownerIndex };
+  }
+
+  // Play from carrion (e.g., Jaguar, White Hart, Burial Ground)
+  if (effectDef.play && selection.type === 'carrion') {
+    log(`Plays ${selection.creature.name} from carrion${effectDef.keyword ? ` with ${effectDef.keyword}` : ''}.`);
+    result.playFromCarrion = {
+      creature: selection.creature,
+      ownerIndex: selection.ownerIndex,
+      keyword: effectDef.keyword || null
+    };
+  }
+
+  // Sacrifice creature (e.g., Curiosity)
+  if (effectDef.sacrifice && selection.type === 'creature') {
+    log(`${selection.creature.name} is sacrificed.`);
+    result.sacrificeCreature = { creature: selection.creature, ownerIndex: selection.ownerIndex };
+    // Chain additional effects if specified
+    if (effectDef.draw) {
+      result.draw = effectDef.draw;
+    }
   }
 
   // If we accumulated any simple effects, return them
@@ -1646,30 +1760,6 @@ export const destroyFieldSpells = () => ({ log }) => {
 };
 
 /**
- * Paralyze a target enemy creature
- */
-export const selectEnemyToParalyze = () => (context) => {
-  const { log, opponent, player, state } = context;
-  const targets = opponent.field.filter(c => c && isCreatureCard(c) && !isInvisible(c, state));
-
-  if (targets.length === 0) {
-    log(`No Rival's creatures to paralyze.`);
-    return {};
-  }
-
-  return makeTargetedSelection({
-    title: "Choose a Rival's creature to paralyze",
-    candidates: targets.map(t => ({ label: t.name, value: t })),
-    onSelect: (target) => {
-      log(`Targets ${target.name}.`);
-      return handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
-        paralyzeCreature: { creature: target }
-      };
-    }
-  });
-};
-
-/**
  * Deal damage to all creatures
  * @param {number} amount - Damage amount
  */
@@ -1682,12 +1772,9 @@ export const damageAllCreatures = (amount) => ({ log }) => {
  * Deal damage to all enemy creatures and the rival (enemies = creatures + rival)
  * @param {number} amount - Damage amount
  */
-export const damageAllEnemyCreatures = (amount) => ({ log, opponent }) => {
+export const damageAllEnemyCreatures = (amount) => ({ log }) => {
   log(`Deals ${amount} damage to Rival's creatures.`);
-  return {
-    damageEnemyCreatures: amount,  // Only enemy creatures, not own creatures
-    damageOpponent: amount  // Also damage the rival
-  };
+  return { damageEnemyCreatures: amount };
 };
 
 /**
@@ -1697,6 +1784,80 @@ export const damageAllEnemyCreatures = (amount) => ({ log, opponent }) => {
 export const damageBothPlayers = (amount) => ({ log }) => {
   log(`Deals ${amount} damage to both players.`);
   return { damageBothPlayers: amount };
+};
+
+/**
+ * Deal damage to all creatures except the source creature
+ * @param {number} amount - Damage amount
+ */
+export const damageOtherCreatures = (amount) => ({ log, player, opponent, creature }) => {
+  const allOtherCreatures = [
+    ...player.field.filter(c => c && isCreatureCard(c) && c !== creature),
+    ...opponent.field.filter(c => c && isCreatureCard(c))
+  ];
+  log(`Deals ${amount} damage to other creatures.`);
+  return { damageCreatures: { creatures: allOtherCreatures, amount } };
+};
+
+/**
+ * Player selects a card from their hand to discard
+ * @param {number} count - Number of cards to discard (default 1)
+ */
+export const selectAndDiscard = (count = 1) => (context) => {
+  const { log, player, playerIndex, playedCard } = context;
+
+  // Filter out the card being played (if any)
+  const discardableCands = player.hand.filter(c => c && c !== playedCard);
+
+  if (discardableCands.length === 0) {
+    log(`No cards available to discard.`);
+    return {};
+  }
+
+  return {
+    selectTarget: {
+      title: `Choose ${count} card${count > 1 ? 's' : ''} to discard`,
+      candidates: discardableCands.map(c => ({ label: c.name, value: c, card: c })),
+      renderCards: true,
+      onSelect: (card) => {
+        log(`Discards ${card.name}.`);
+        return { discardCards: { playerIndex, cards: [card] } };
+      }
+    }
+  };
+};
+
+/**
+ * Force opponent to select and discard a card from their hand
+ * @param {number} count - Number of cards to discard (default 1)
+ */
+export const forceOpponentDiscard = (count = 1) => (context) => {
+  const { log, state, defenderIndex, opponentIndex: ctxOpponentIndex, playerIndex } = context;
+
+  // In trap context, defenderIndex is the player being attacked. The trap owner is (defenderIndex).
+  // The opponent (who triggered the trap) would be the other player.
+  // For Snake Oil: trigger is rivalDraws, so the opponent drew cards and must now discard.
+  const opponentIndex = defenderIndex !== undefined ? (defenderIndex + 1) % 2 : ctxOpponentIndex;
+  const opponent = state?.players?.[opponentIndex];
+
+  if (!opponent || opponent.hand.length === 0) {
+    log(`Rival has no cards to discard.`);
+    return {};
+  }
+
+  return {
+    selectTarget: {
+      title: `Choose ${count} card${count > 1 ? 's' : ''} to discard`,
+      candidates: () => opponent.hand.map(c => ({ label: c.name, value: c, card: c })),
+      renderCards: true,
+      isOpponentSelection: true,
+      selectingPlayerIndex: opponentIndex,
+      onSelect: (card) => {
+        log(`Rival discards ${card.name}.`);
+        return { discardCards: { playerIndex: opponentIndex, cards: [card] } };
+      }
+    }
+  };
 };
 
 /**
@@ -1899,38 +2060,6 @@ export const selectCreatureToTransform = (newCardId) => (context) => {
   });
 };
 
-/**
- * Select an enemy creature and steal it (deal damage first, then gain control)
- * @param {number} damage - Damage to deal before stealing
- */
-export const selectEnemyToSteal = (damage = 0) => (context) => {
-  const { log, opponent, player, state, playerIndex, opponentIndex } = context;
-  const targets = opponent.field.filter(c => c && isCreatureCard(c) && !isInvisible(c, state));
-
-  if (targets.length === 0) {
-    log(`No Rival's creatures to steal.`);
-    return {};
-  }
-
-  return makeTargetedSelection({
-    title: "Choose a Rival's creature",
-    candidates: targets.map(t => ({ label: t.name, value: t })),
-    onSelect: (target) => {
-      log(`Targets ${target.name}.`);
-      const response = handleTargetedResponse({ target, source: null, log, player, opponent, state });
-      if (response?.returnToHand) return response;
-
-      const result = {
-        stealCreature: { creature: target, fromIndex: opponentIndex, toIndex: playerIndex }
-      };
-      if (damage > 0) {
-        result.damageCreature = { creature: target, amount: damage };
-      }
-      return result;
-    }
-  });
-};
-
 // ============================================================================
 // TRAP EFFECT PRIMITIVES
 // ============================================================================
@@ -1970,18 +2099,6 @@ export const negateAndDamageAll = (creatureDamage, playerDamage) => ({ log }) =>
 };
 
 /**
- * Negate attack and summon tokens
- * @param {string[]} tokenIds - Token IDs to summon
- */
-export const negateAndSummon = (tokenIds) => ({ log, playerIndex }) => {
-  log(`Attack negated. Summoning tokens.`);
-  return {
-    negateAttack: true,
-    summonTokens: { playerIndex, tokens: tokenIds }
-  };
-};
-
-/**
  * Return the triggered creature to hand (for trap effects like Fly Off)
  */
 export const returnTriggeredToHand = () => (context) => {
@@ -2017,84 +2134,11 @@ export const negateAndKillAttacker = () => (context) => {
 };
 
 /**
- * Negate damage and heal player (for defensive traps)
- * @param {number} healAmount - Amount to heal
- */
-export const negateDamageAndHeal = (healAmount) => ({ log }) => {
-  log(`Damage negated. Healing ${healAmount} HP.`);
-  return {
-    negateDamage: true,
-    heal: healAmount
-  };
-};
-
-/**
  * Negate combat (for trap effects)
  */
 export const negateCombat = () => ({ log }) => {
   log(`Combat negated.`);
   return { negateCombat: true };
-};
-
-/**
- * Force opponent to discard, then draw cards
- * @param {number} discardCount - Cards opponent must discard
- * @param {number} drawCount - Cards to draw after
- */
-export const forceOpponentDiscardThenDraw = (discardCount, drawCount) => (context) => {
-  const { log, state, defenderIndex } = context;
-  const opponentIndex = defenderIndex !== undefined ? (defenderIndex + 1) % 2 : context.opponentIndex;
-  const opponent = state?.players?.[opponentIndex];
-
-  if (!opponent || opponent.hand.length === 0) {
-    log(`Rival has no cards to discard.`);
-    return { draw: drawCount };
-  }
-
-  return {
-    selectTarget: {
-      title: `Choose ${discardCount} card${discardCount > 1 ? 's' : ''} to discard`,
-      candidates: () => opponent.hand.map((card) => ({ label: card.name, value: card })),
-      onSelect: (card) => ({
-        discardCards: { playerIndex: opponentIndex, cards: [card] },
-        draw: drawCount,
-      }),
-    },
-  };
-};
-
-/**
- * Discard cards then kill all enemy creatures
- * @param {number} discardCount - Cards to discard (0 = no discard required)
- */
-export const discardThenKillAllEnemies = (discardCount = 0) => (context) => {
-  const { log, player, playerIndex, opponentIndex } = context;
-
-  if (discardCount === 0 || player.hand.length === 0) {
-    if (discardCount > 0) {
-      log(`No cards to discard.`);
-    }
-    return { killEnemyCreatures: opponentIndex };
-  }
-
-  return {
-    selectTarget: {
-      title: `Choose ${discardCount} card${discardCount > 1 ? 's' : ''} to discard`,
-      candidates: player.hand.map((card) => ({ label: card.name, value: card })),
-      onSelect: (card) => ({
-        discardCards: { playerIndex, cards: [card] },
-        killEnemyCreatures: opponentIndex,
-      }),
-    },
-  };
-};
-
-/**
- * Kill all creatures and destroy field spells
- */
-export const destroyEverything = () => ({ log }) => {
-  log(`Everything is destroyed.`);
-  return { killAllCreatures: true, removeFieldSpell: true };
 };
 
 /**
@@ -2121,21 +2165,6 @@ export const damageRivalAndSelectEnemy = (rivalDamage, creatureDamage) => (conte
           damageCreature: { creature: target, amount: creatureDamage }
         }
     }
-  };
-};
-
-/**
- * Deal damage to opponent and all enemy creatures, then add a card to hand
- * @param {number} damage - Damage amount
- * @param {string} cardId - Card ID to add to hand
- */
-export const damageOpponentsAndAddToHand = (damage, cardId) => ({ log, opponent, playerIndex }) => {
-  log(`Deals ${damage} damage to Rival and Rival's creatures. Adding card to hand.`);
-  return {
-    damageOpponent: damage,
-    damageEnemyCreatures: damage,
-    targetPlayer: opponent,
-    addToHand: { playerIndex, card: cardId }
   };
 };
 
@@ -2311,43 +2340,6 @@ export const removeFrozenFromFriendlies = () => ({ log, player }) => {
 };
 
 /**
- * Deal damage to opponent and freeze all enemies
- * @param {number} damage - Damage to deal to opponent
- */
-export const damageOpponentAndFreezeEnemies = (damage) => ({ log, opponent }) => {
-  const enemies = opponent.field.filter(c => c && isCreatureCard(c));
-  log(`Deals ${damage} damage to rival. Rival's creatures gain Frozen.`);
-  return {
-    damageOpponent: damage,
-    grantKeywordToAll: { creatures: enemies, keyword: 'Frozen' }
-  };
-};
-
-/**
- * Negate attack and freeze all enemies
- */
-export const negateAndFreezeEnemies = () => ({ log, opponent }) => {
-  const enemies = opponent.field.filter(c => c && isCreatureCard(c));
-  log(`Attack negated. Rival's creatures gain Frozen.`);
-  return {
-    negateAttack: true,
-    grantKeywordToAll: { creatures: enemies, keyword: 'Frozen' }
-  };
-};
-
-/**
- * Negate damage and freeze all enemies
- */
-export const negateDamageAndFreezeEnemies = () => ({ log, opponent }) => {
-  const enemies = opponent.field.filter(c => c && isCreatureCard(c));
-  log(`Damage negated. Rival's creatures gain Frozen.`);
-  return {
-    negateDamage: true,
-    grantKeywordToAll: { creatures: enemies, keyword: 'Frozen' }
-  };
-};
-
-/**
  * Select a creature from deck and play it with a keyword
  * @param {string} keyword - Keyword to grant (e.g., 'Frozen')
  */
@@ -2362,67 +2354,11 @@ export const selectCreatureFromDeckWithKeyword = (keyword) => (context) => {
 
   return makeTargetedSelection({
     title: `Choose a creature to play (gains ${keyword})`,
-    candidates: creatures.map(c => ({ label: c.name, value: c, card: c })),
+    candidates: sortCardsForSelection(creatures).map(c => ({ label: c.name, value: c, card: c })),
     renderCards: true,
     onSelect: (target) => ({
       playFromDeck: { playerIndex, card: target, grantKeyword: keyword }
     })
-  });
-};
-
-/**
- * Select a creature from carrion and play it with a keyword
- * @param {string} keyword - Keyword to grant (e.g., 'Frozen')
- */
-export const selectCarrionToPlayWithKeyword = (keyword) => (context) => {
-  const { log, player, playerIndex } = context;
-  const creatures = player.carrion.filter(c => c && isCreatureCard(c));
-
-  if (creatures.length === 0) {
-    log(`No creatures in carrion.`);
-    return {};
-  }
-
-  return makeTargetedSelection({
-    title: `Choose a creature to revive (gains ${keyword})`,
-    candidates: creatures.map(c => ({ label: c.name, value: c, card: c })),
-    renderCards: true,
-    onSelect: (target) => ({
-      playFromCarrion: { playerIndex, card: target, grantKeyword: keyword }
-    })
-  });
-};
-
-/**
- * Select a target creature and sacrifice it, then draw cards
- * @param {number} drawCount - Number of cards to draw
- */
-export const selectCreatureToSacrificeAndDraw = (drawCount) => (context) => {
-  const { log, player, opponent, state, playerIndex, opponentIndex } = context;
-  const candidates = [
-    ...player.field.filter(c => c && isCreatureCard(c)).map(c => ({ creature: c, ownerIndex: playerIndex })),
-    ...opponent.field.filter(c => c && isCreatureCard(c) && !isInvisible(c, state)).map(c => ({ creature: c, ownerIndex: opponentIndex }))
-  ];
-
-  if (candidates.length === 0) {
-    log(`No creatures to sacrifice.`);
-    return {};
-  }
-
-  return makeTargetedSelection({
-    title: "Choose a creature to sacrifice",
-    candidates: candidates.map(c => ({ label: c.creature.name, value: c, card: c.creature })),
-    renderCards: true,
-    onSelect: (selection) => {
-      const response = handleTargetedResponse({ target: selection.creature, source: null, log, player, opponent, state });
-      if (response?.returnToHand) return response;
-
-      log(`${selection.creature.name} is sacrificed. Drawing ${drawCount} cards.`);
-      return {
-        killCreature: selection.creature,
-        draw: drawCount
-      };
-    }
   });
 };
 
@@ -2485,85 +2421,9 @@ export const reviveCreature = () => (context) => {
 };
 
 /**
- * Select a creature from carrion to add to hand
+ * Regenerate self (the source creature restores to full health)
  */
-export const selectCarrionToAddToHand = () => (context) => {
-  const { log, player, playerIndex } = context;
-  const creatures = player.carrion.filter(c => c && isCreatureCard(c));
-
-  if (creatures.length === 0) {
-    log(`No creatures in carrion.`);
-    return {};
-  }
-
-  return makeTargetedSelection({
-    title: "Choose a carrion to add to hand",
-    candidates: creatures.map(c => ({ label: c.name, value: c, card: c })),
-    renderCards: true,
-    onSelect: (target) => ({
-      addCarrionToHand: { playerIndex, card: target }
-    })
-  });
-};
-
-/**
- * Summon tokens and select enemy to freeze
- * @param {string[]} tokenIds - Tokens to summon
- */
-export const summonAndSelectEnemyToFreeze = (tokenIds) => (context) => {
-  const { log, playerIndex, opponent, player, state } = context;
-  const tokens = Array.isArray(tokenIds) ? tokenIds : [tokenIds];
-  const targets = opponent.field.filter(c => c && isCreatureCard(c) && !isInvisible(c, state));
-
-  if (targets.length === 0) {
-    log(`Summoning tokens, but no Rival's creatures to freeze.`);
-    return { summonTokens: { playerIndex, tokens } };
-  }
-
-  return {
-    summonTokens: { playerIndex, tokens },
-    selectTarget: {
-      title: "Choose a Rival's creature to freeze",
-      candidates: targets.map(t => ({ label: t.name, value: t })),
-      onSelect: (target) =>
-        handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
-          addKeyword: { creature: target, keyword: 'Frozen' }
-        }
-    }
-  };
-};
-
-/**
- * Summon tokens and select enemy to kill
- * @param {string[]} tokenIds - Tokens to summon
- */
-export const summonAndSelectEnemyToKill = (tokenIds) => (context) => {
-  const { log, playerIndex, opponent, player, state } = context;
-  const tokens = Array.isArray(tokenIds) ? tokenIds : [tokenIds];
-  const targets = opponent.field.filter(c => c && isCreatureCard(c) && !isInvisible(c, state));
-
-  if (targets.length === 0) {
-    log(`Summoning tokens, but no Rival's creatures to kill.`);
-    return { summonTokens: { playerIndex, tokens } };
-  }
-
-  return {
-    summonTokens: { playerIndex, tokens },
-    selectTarget: {
-      title: "Choose a Rival's creature to kill",
-      candidates: targets.map(t => ({ label: t.name, value: t })),
-      onSelect: (target) =>
-        handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
-          killCreature: target
-        }
-    }
-  };
-};
-
-/**
- * Regenerate a creature (restore to full health)
- */
-export const selectCreatureToRegen = () => (context) => {
+export const regenSelf = () => (context) => {
   const { log, creature } = context;
 
   if (!creature) {
@@ -2573,51 +2433,6 @@ export const selectCreatureToRegen = () => (context) => {
 
   log(`${creature.name} regenerates.`);
   return { regenCreature: creature };
-};
-
-/**
- * Reveal opponent's hand and select a prey to kill
- */
-export const revealHandAndSelectPreyToKill = () => (context) => {
-  const { log, opponent, player, state, opponentIndex } = context;
-  const targets = opponent.field.filter(c => c && (c.type === 'Prey' || c.type === 'prey') && !isInvisible(c, state));
-
-  return {
-    revealHand: { playerIndex: opponentIndex, durationMs: 3000 },
-    selectTarget: {
-      title: "Choose a prey to kill",
-      candidates: targets.length > 0 ? targets.map(t => ({ label: t.name, value: t })) : [{ label: 'No targets', value: null }],
-      onSelect: (target) => {
-        if (!target) {
-          log(`No prey to kill.`);
-          return {};
-        }
-        return handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
-          killCreature: target
-        };
-      }
-    }
-  };
-};
-
-/**
- * Force opponent to discard and tutor from deck
- * @param {number} discardCount - Cards opponent must discard
- */
-export const forceDiscardAndTutor = (discardCount) => (context) => {
-  const { log, player, playerIndex, opponentIndex } = context;
-
-  return {
-    forceDiscard: { playerIndex: opponentIndex, count: discardCount },
-    selectTarget: {
-      title: "Choose a card from deck to add to hand",
-      candidates: () => player.deck.map(c => ({ label: c.name, value: c, card: c })),
-      renderCards: true,
-      onSelect: (card) => ({
-        addToHand: { playerIndex, card, fromDeck: true }
-      })
-    }
-  };
 };
 
 /**
@@ -2643,32 +2458,6 @@ export const selectEnemyToReturn = () => (context) => {
 };
 
 /**
- * Force opponent to discard cards
- * @param {number} count - Cards to discard
- */
-export const forceOpponentDiscard = (count) => (context) => {
-  const { log, state, opponentIndex } = context;
-  const opponent = state?.players?.[opponentIndex];
-
-  if (!opponent || opponent.hand.length === 0) {
-    log(`Rival has no cards to discard.`);
-    return {};
-  }
-
-  log(`Rival discards ${count}.`);
-
-  // Set pending choice for opponent to handle (serializable format)
-  return {
-    pendingChoice: {
-      type: 'discard',
-      forPlayer: opponentIndex,
-      count,
-      title: `Choose ${count} card${count > 1 ? 's' : ''} to discard`,
-    }
-  };
-};
-
-/**
  * Draw cards and reveal opponent's hand
  * @param {number} drawCount - Cards to draw
  */
@@ -2681,25 +2470,6 @@ export const drawAndRevealHand = (drawCount) => ({ log, opponentIndex }) => {
 };
 
 /**
- * Reveal opponent's hand and tutor from deck
- */
-export const revealAndTutor = () => (context) => {
-  const { log, player, playerIndex, opponentIndex } = context;
-
-  return {
-    revealHand: { playerIndex: opponentIndex, durationMs: 3000 },
-    selectTarget: {
-      title: "Choose a card from deck to add to hand",
-      candidates: () => player.deck.map(c => ({ label: c.name, value: c, card: c })),
-      renderCards: true,
-      onSelect: (card) => ({
-        addToHand: { playerIndex, card, fromDeck: true }
-      })
-    }
-  };
-};
-
-/**
  * Tutor from deck then play a spell from hand
  */
 export const tutorAndPlaySpell = () => (context) => {
@@ -2708,7 +2478,7 @@ export const tutorAndPlaySpell = () => (context) => {
   return {
     selectTarget: {
       title: "Choose a card from deck to add to hand",
-      candidates: () => player.deck.map(c => ({ label: c.name, value: c, card: c })),
+      candidates: () => sortCardsForSelection(player.deck).map(c => ({ label: c.name, value: c, card: c })),
       renderCards: true,
       onSelect: (card) => {
         const spells = player.hand.filter(c => c.type === 'Spell' || c.type === 'Free Spell');
@@ -2720,7 +2490,7 @@ export const tutorAndPlaySpell = () => (context) => {
           addToHand: { playerIndex, card, fromDeck: true },
           selectTarget: {
             title: "Choose a spell to play",
-            candidates: () => spells.map(s => ({ label: s.name, value: s, card: s })),
+            candidates: () => sortCardsForSelection(spells).map(s => ({ label: s.name, value: s, card: s })),
             renderCards: true,
             onSelect: (spell) => ({
               playFromHand: { playerIndex, card: spell }
@@ -2751,218 +2521,49 @@ export const damageAllAndFreezeAll = (damage) => ({ log, player, opponent, creat
 };
 
 /**
- * Deal damage to enemy creatures and end turn
- * @param {number} damage - Damage amount
+ * End turn immediately
+ * Pure primitive - just ends the turn
  */
-export const damageEnemiesAndEndTurn = (damage) => ({ log }) => {
-  log(`Deals ${damage} damage to Rival's creatures. Turn ends.`);
-  return {
-    damageEnemyCreatures: damage,
-    endTurn: true
-  };
+export const endTurn = () => ({ log }) => {
+  log(`Turn ends.`);
+  return { endTurn: true };
 };
 
 /**
- * Regen all other friendly creatures and heal player
- * @param {number} healAmount - Amount to heal
+ * Regenerate all other friendly creatures (not self)
+ * Pure primitive - separated from heal for composability
  */
-export const regenOthersAndHeal = (healAmount) => ({ log, player, creature }) => {
+export const regenOtherCreatures = () => ({ log, player, creature }) => {
   const others = player.field.filter(c => c && isCreatureCard(c) && c !== creature);
-  log(`Regenerates other creatures. Heals ${healAmount}.`);
-  return {
-    regenCreatures: others,
-    heal: healAmount
-  };
-};
-
-/**
- * Select any creature from carrion to copy abilities
- */
-export const selectCarrionToCopyAbilities = () => (context) => {
-  const { log, player, creature } = context;
-  const carrion = player.carrion.filter(c => c && isCreatureCard(c));
-
-  if (carrion.length === 0) {
-    log(`No creatures in carrion.`);
+  if (others.length === 0) {
+    log(`No other creatures to regenerate.`);
     return {};
   }
-
-  return makeTargetedSelection({
-    title: "Choose a carrion to copy abilities from",
-    candidates: carrion.map(c => ({ label: c.name, value: c, card: c })),
-    renderCards: true,
-    onSelect: (target) => {
-      log(`Copies abilities from ${target.name}.`);
-      return { copyAbilities: { target: creature, source: target } };
-    }
-  });
+  log(`Regenerates other creatures.`);
+  return { regenCreatures: others };
 };
 
 /**
- * Select target creature to copy stats (ATK/HP)
+ * Play a spell from hand (used after tutoring)
+ * Allows player to select a spell from hand and play it
  */
-export const selectCreatureToCopyStats = () => (context) => {
-  const { log, player, opponent, state, creature } = context;
-  const candidates = [
-    ...player.field.filter(c => c && isCreatureCard(c) && c !== creature),
-    ...opponent.field.filter(c => c && isCreatureCard(c) && !isInvisible(c, state))
-  ];
-
-  if (candidates.length === 0) {
-    log(`No creatures to copy stats from.`);
-    return {};
-  }
-
-  return makeTargetedSelection({
-    title: "Choose a creature to copy stats from",
-    candidates: candidates.map(c => ({ label: c.name, value: c, card: c })),
-    renderCards: true,
-    onSelect: (target) => {
-      log(`Copies stats from ${target.name}.`);
-      return { copyStats: { target: creature, source: target } };
-    }
-  });
-};
-
-/**
- * Select target creature to copy abilities
- */
-export const selectCreatureToCopyAbilities = () => (context) => {
-  const { log, player, opponent, state, creature } = context;
-  const candidates = [
-    ...player.field.filter(c => c && isCreatureCard(c) && c !== creature),
-    ...opponent.field.filter(c => c && isCreatureCard(c) && !isInvisible(c, state))
-  ];
-
-  if (candidates.length === 0) {
-    log(`No creatures to copy abilities from.`);
-    return {};
-  }
-
-  return makeTargetedSelection({
-    title: "Choose a creature to copy abilities from",
-    candidates: candidates.map(c => ({ label: c.name, value: c, card: c })),
-    renderCards: true,
-    onSelect: (target) => {
-      log(`Copies abilities from ${target.name}.`);
-      return { copyAbilities: { target: creature, source: target } };
-    }
-  });
-};
-
-/**
- * Select any creature from carrion to copy stats
- */
-export const selectCarrionToCopyStats = () => (context) => {
-  const { log, player, creature } = context;
-  const carrion = player.carrion.filter(c => c && isCreatureCard(c));
-
-  if (carrion.length === 0) {
-    log(`No creatures in carrion.`);
-    return {};
-  }
-
-  return makeTargetedSelection({
-    title: "Choose a carrion to copy stats from",
-    candidates: carrion.map(c => ({ label: c.name, value: c, card: c })),
-    renderCards: true,
-    onSelect: (target) => {
-      log(`Copies stats from ${target.name}.`);
-      return { copyStats: { target: creature, source: target } };
-    }
-  });
-};
-
-/**
- * Summon tokens, heal, and regen target creature
- * @param {string[]} tokenIds - Tokens to summon
- * @param {number} healAmount - Amount to heal
- */
-export const summonHealAndRegen = (tokenIds, healAmount) => (context) => {
-  const { log, player, opponent, state, playerIndex } = context;
-  const tokens = Array.isArray(tokenIds) ? tokenIds : [tokenIds];
-  const creatures = [
-    ...player.field.filter(c => c && isCreatureCard(c)),
-    ...opponent.field.filter(c => c && isCreatureCard(c) && !isInvisible(c, state))
-  ];
-
-  return {
-    summonTokens: { playerIndex, tokens },
-    heal: healAmount,
-    selectTarget: {
-      title: "Choose a creature to regenerate",
-      candidates: creatures.length > 0 ? creatures.map(c => ({ label: c.name, value: c, card: c })) : [{ label: 'No targets', value: null }],
-      renderCards: true,
-      onSelect: (target) => {
-        if (!target) return {};
-        log(`Regenerates ${target.name}.`);
-        return { regenCreature: target };
-      }
-    }
-  };
-};
-
-/**
- * Kill enemy prey and destroy field spell
- */
-export const killPreyAndDestroyField = () => (context) => {
-  const { log, opponent, player, state } = context;
-  const preyTargets = opponent.field.filter(c => c && (c.type === 'Prey' || c.type === 'prey') && !isInvisible(c, state));
-
-  return {
-    removeFieldSpell: true,
-    selectTarget: {
-      title: "Choose a Rival's prey to kill",
-      candidates: preyTargets.length > 0 ? preyTargets.map(t => ({ label: t.name, value: t })) : [{ label: 'No prey', value: null }],
-      onSelect: (target) => {
-        if (!target) {
-          log(`No Rival's prey to kill.`);
-          return {};
-        }
-        return handleTargetedResponse({ target, source: null, log, player, opponent, state }) || {
-          killCreature: target
-        };
-      }
-    }
-  };
-};
-
-/**
- * Add a carrion to hand, then tutor from deck
- */
-export const addCarrionAndTutor = () => (context) => {
+export const playSpellFromHand = () => (context) => {
   const { log, player, playerIndex } = context;
-  const carrion = player.carrion.filter(c => c && isCreatureCard(c));
+  const spells = player.hand.filter(c => c && (c.type === 'Spell' || c.type === 'spell' || c.type === 'Free Spell' || c.type === 'free spell'));
 
-  if (carrion.length === 0) {
-    // Just tutor if no carrion
-    return {
-      selectTarget: {
-        title: "Choose a card from deck to add to hand",
-        candidates: () => player.deck.map(c => ({ label: c.name, value: c, card: c })),
-        renderCards: true,
-        onSelect: (card) => ({
-          addToHand: { playerIndex, card, fromDeck: true }
-        })
-      }
-    };
+  if (spells.length === 0) {
+    log(`No spells in hand to play.`);
+    return {};
   }
 
   return makeTargetedSelection({
-    title: "Choose a carrion to add to hand",
-    candidates: carrion.map(c => ({ label: c.name, value: c, card: c })),
+    title: "Choose a spell to play",
+    candidates: spells.map(c => ({ label: c.name, value: c, card: c })),
     renderCards: true,
-    onSelect: (carrionCard) => ({
-      addCarrionToHand: { playerIndex, card: carrionCard },
-      selectTarget: {
-        title: "Choose a card from deck to add to hand",
-        candidates: () => player.deck.map(c => ({ label: c.name, value: c, card: c })),
-        renderCards: true,
-        onSelect: (deckCard) => ({
-          addToHand: { playerIndex, card: deckCard, fromDeck: true }
-        })
-      }
-    })
+    onSelect: (spell) => {
+      log(`Playing ${spell.name} from hand.`);
+      return { playFromHand: { playerIndex, card: spell } };
+    }
   });
 };
 
@@ -2986,37 +2587,6 @@ export const selectEnemyToReturnToOpponentHand = () => (context) => {
         returnToHand: { creatures: [target], playerIndex: opponentIndex }
       }
   });
-};
-
-/**
- * Summon tokens and deal damage to opponent
- * @param {string[]} tokenIds - Tokens to summon
- * @param {number} damage - Damage to opponent
- */
-export const summonAndDamageOpponent = (tokenIds, damage) => ({ log, playerIndex }) => {
-  const tokens = Array.isArray(tokenIds) ? tokenIds : [tokenIds];
-  log(`Summoning tokens and dealing ${damage} damage to rival.`);
-  return {
-    summonTokens: { playerIndex, tokens },
-    damageOpponent: damage
-  };
-};
-
-/**
- * Deal damage to both players and all other creatures (both friendly and enemy, excluding self)
- * @param {number} damage - Damage amount
- */
-export const damagePlayersAndOtherCreatures = (damage) => ({ log, player, opponent, creature }) => {
-  // All creatures on both fields, excluding self
-  const allOtherCreatures = [
-    ...player.field.filter(c => c && isCreatureCard(c) && c !== creature),
-    ...opponent.field.filter(c => c && isCreatureCard(c))
-  ];
-  log(`Deals ${damage} damage to players and other creatures.`);
-  return {
-    damageBothPlayers: damage,
-    damageCreatures: { creatures: allOtherCreatures, amount: damage }
-  };
 };
 
 /**
@@ -3126,24 +2696,140 @@ export const eatPreyInsteadOfAttacking = () => (context) => {
   });
 };
 
-/**
- * Heal and tutor from deck
- * @param {number} healAmount - Amount to heal
- */
-export const healAndTutor = (healAmount) => (context) => {
-  const { log, player, playerIndex } = context;
+// ============================================================================
+// ARACHNID WEB EFFECTS (Experimental)
+// ============================================================================
 
-  return {
-    heal: healAmount,
-    selectTarget: {
-      title: "Choose a card from deck to add to hand",
-      candidates: () => player.deck.map(c => ({ label: c.name, value: c, card: c })),
-      renderCards: true,
-      onSelect: (card) => ({
-        addToHand: { playerIndex, card, fromDeck: true }
-      })
+/**
+ * Apply Webbed status to a creature
+ * Webbed creatures cannot attack and persist until they take damage
+ */
+const applyWebbed = (creature, log) => {
+  if (!creature) return {};
+  if (!creature.keywords) {
+    creature.keywords = [];
+  }
+  if (!creature.keywords.includes(KEYWORDS.WEBBED)) {
+    creature.keywords.push(KEYWORDS.WEBBED);
+    creature.webbed = true;
+    log(`🕸️ ${creature.name} is trapped in a web!`);
+  }
+  return {};
+};
+
+/**
+ * Web all enemy creatures
+ */
+export const webAllEnemies = () => ({ log, opponent }) => {
+  const enemies = opponent.field.filter(c => c && isCreatureCard(c));
+  if (enemies.length === 0) {
+    log(`No Rival's creatures to web.`);
+    return {};
+  }
+  enemies.forEach(creature => {
+    applyWebbed(creature, log);
+  });
+  return {};
+};
+
+/**
+ * Defend trigger: web the attacking enemy
+ */
+export const webAttacker = () => ({ log, attacker }) => {
+  if (!attacker) return {};
+  applyWebbed(attacker, log);
+  return {};
+};
+
+/**
+ * Select an enemy creature to web
+ */
+export const webTarget = () => (context) => {
+  const { log, opponent, state } = context;
+  const enemies = opponent.field.filter(c => c && isCreatureCard(c) && !isInvisible(c, state));
+
+  if (enemies.length === 0) {
+    log(`No Rival's creatures to web.`);
+    return {};
+  }
+
+  return makeTargetedSelection({
+    title: "Choose a creature to trap in web",
+    candidates: enemies.map(c => ({ label: c.name, value: c })),
+    onSelect: (target) => {
+      applyWebbed(target, log);
+      return {};
     }
-  };
+  });
+};
+
+/**
+ * Web a random enemy creature (for field spells)
+ */
+export const webRandomEnemy = () => ({ log, opponent }) => {
+  const enemies = opponent.field.filter(c => c && isCreatureCard(c));
+  if (enemies.length === 0) {
+    log(`No Rival's creatures to web.`);
+    return {};
+  }
+  const target = enemies[Math.floor(Math.random() * enemies.length)];
+  applyWebbed(target, log);
+  return {};
+};
+
+/**
+ * Deal damage to all Webbed enemy creatures
+ * @param {number} damage - Damage amount
+ */
+export const damageWebbed = (damage) => ({ log, opponent }) => {
+  const webbedCreatures = opponent.field.filter(c =>
+    c && isCreatureCard(c) && c.keywords?.includes(KEYWORDS.WEBBED)
+  );
+
+  if (webbedCreatures.length === 0) {
+    log(`No Webbed creatures to damage.`);
+    return {};
+  }
+
+  log(`🕷️ Deals ${damage} damage to all Webbed creatures.`);
+  return { damageCreatures: { creatures: webbedCreatures, amount: damage } };
+};
+
+/**
+ * Draw cards equal to number of Webbed enemies (max 3)
+ */
+export const drawPerWebbed = () => ({ log, opponent }) => {
+  const webbedCount = opponent.field.filter(c =>
+    c && isCreatureCard(c) && c.keywords?.includes(KEYWORDS.WEBBED)
+  ).length;
+
+  if (webbedCount === 0) {
+    log(`No Webbed creatures - no cards drawn.`);
+    return {};
+  }
+
+  const drawCount = Math.min(webbedCount, 3);
+  log(`🕸️ Drawing ${drawCount} card(s) for Webbed enemies.`);
+  return { draw: drawCount };
+};
+
+/**
+ * Heal player for each Webbed enemy
+ * @param {number} healPerWebbed - Heal amount per Webbed creature
+ */
+export const healPerWebbed = (healPerWebbed) => ({ log, opponent }) => {
+  const webbedCount = opponent.field.filter(c =>
+    c && isCreatureCard(c) && c.keywords?.includes(KEYWORDS.WEBBED)
+  ).length;
+
+  if (webbedCount === 0) {
+    log(`No Webbed creatures - no healing.`);
+    return {};
+  }
+
+  const totalHeal = webbedCount * healPerWebbed;
+  log(`🕸️ Healing ${totalHeal} HP for ${webbedCount} Webbed enemy creature(s).`);
+  return { heal: totalHeal };
 };
 
 /**
@@ -3214,6 +2900,158 @@ export const drawThenDiscard = (drawCount, discardCount = 1) => (context) => {
 };
 
 // ============================================================================
+// CANINE HOWL EFFECTS (Experimental)
+// ============================================================================
+
+/**
+ * Howl: Buff all Canines with stats until end of turn
+ * @param {Object} params - { atk, hp } - stat buffs to apply
+ */
+export const howlBuff = (params) => (context) => {
+  const { log, player, playerIndex, state, creature } = context;
+  const { atk = 0, hp = 0 } = params || {};
+
+  // Find all Canines on the player's field (including the creature that triggered Howl)
+  const canines = player.field.filter(card =>
+    card && card.tribe === "Canine"
+  );
+
+  if (canines.length === 0) {
+    log(`Howl echoes, but no Canines hear it.`);
+    return {};
+  }
+
+  // Track howl buffs on each Canine for end-of-turn cleanup
+  const howlBuffData = [];
+  canines.forEach(canine => {
+    // Initialize howlBuffs array if needed
+    if (!canine.howlBuffs) {
+      canine.howlBuffs = [];
+    }
+    // Record this howl buff
+    canine.howlBuffs.push({ atk, hp, appliedTurn: state.turn });
+    howlBuffData.push({ creature: canine, attack: atk, health: hp });
+  });
+
+  log(`🐺 HOWL: All Canines gain +${atk}/+${hp} until end of turn!`);
+
+  return {
+    buffCreatures: howlBuffData
+  };
+};
+
+/**
+ * Howl: Grant a keyword to all Canines until end of turn
+ * @param {Object} params - { keyword } - keyword to grant
+ */
+export const howlKeyword = (params) => (context) => {
+  const { log, player, playerIndex, state, creature } = context;
+  const { keyword } = params || {};
+
+  if (!keyword) {
+    console.warn("[howlKeyword] No keyword specified");
+    return {};
+  }
+
+  // Find all Canines on the player's field
+  const canines = player.field.filter(card =>
+    card && card.tribe === "Canine"
+  );
+
+  if (canines.length === 0) {
+    log(`Howl echoes, but no Canines hear it.`);
+    return {};
+  }
+
+  // Grant keyword to each Canine and track for cleanup
+  canines.forEach(canine => {
+    // Initialize arrays if needed
+    if (!canine.keywords) {
+      canine.keywords = [];
+    }
+    if (!canine.howlKeywords) {
+      canine.howlKeywords = [];
+    }
+
+    // Only add keyword if not already present
+    if (!canine.keywords.includes(keyword)) {
+      canine.keywords.push(keyword);
+    }
+
+    // Track this howl keyword for end-of-turn cleanup
+    canine.howlKeywords.push({ keyword, appliedTurn: state.turn });
+  });
+
+  log(`🐺 HOWL: All Canines gain ${keyword} until end of turn!`);
+
+  return {};
+};
+
+/**
+ * Combined howl effect that can apply both stats and keyword
+ * @param {Object} params - { atk, hp, keyword } - buffs and/or keyword to apply
+ */
+export const howl = (params) => (context) => {
+  const { log, player, state } = context;
+  const { atk = 0, hp = 0, keyword } = params || {};
+
+  // Find all Canines on the player's field
+  const canines = player.field.filter(card =>
+    card && card.tribe === "Canine"
+  );
+
+  if (canines.length === 0) {
+    log(`Howl echoes, but no Canines hear it.`);
+    return {};
+  }
+
+  const buffData = [];
+  const hasStatBuff = atk > 0 || hp > 0;
+  const hasKeyword = keyword && keyword.length > 0;
+
+  canines.forEach(canine => {
+    // Apply stat buffs
+    if (hasStatBuff) {
+      if (!canine.howlBuffs) {
+        canine.howlBuffs = [];
+      }
+      canine.howlBuffs.push({ atk, hp, appliedTurn: state.turn });
+      buffData.push({ creature: canine, attack: atk, health: hp });
+    }
+
+    // Grant keyword
+    if (hasKeyword) {
+      if (!canine.keywords) {
+        canine.keywords = [];
+      }
+      if (!canine.howlKeywords) {
+        canine.howlKeywords = [];
+      }
+      if (!canine.keywords.includes(keyword)) {
+        canine.keywords.push(keyword);
+      }
+      canine.howlKeywords.push({ keyword, appliedTurn: state.turn });
+    }
+  });
+
+  // Build log message
+  let message = `🐺 HOWL: All Canines gain`;
+  if (hasStatBuff) {
+    message += ` +${atk}/+${hp}`;
+  }
+  if (hasStatBuff && hasKeyword) {
+    message += ` and`;
+  }
+  if (hasKeyword) {
+    message += ` ${keyword}`;
+  }
+  message += ` until end of turn!`;
+  log(message);
+
+  return hasStatBuff ? { buffCreatures: buffData } : {};
+};
+
+// ============================================================================
 // EFFECT REGISTRY
 // ============================================================================
 
@@ -3225,7 +3063,7 @@ export const effectRegistry = {
   // Basic
   heal,
   draw,
-  damageOpponent,
+  damageRival,
   damageCreature,
   summonTokens,
   addToHand,
@@ -3238,6 +3076,11 @@ export const effectRegistry = {
   addKeyword,
   buffStats,
   buff,
+
+  // Canine Howl (Experimental)
+  howl,
+  howlBuff,
+  howlKeyword,
 
   // Selection
   selectTarget,
@@ -3256,6 +3099,8 @@ export const effectRegistry = {
   // Advanced
   negateAttack,
   negateDamage,
+  negatePlay,
+  allowReplay,
   killAttacker,
   freezeAllCreatures,
   discardCards,
@@ -3270,20 +3115,15 @@ export const effectRegistry = {
   removeAbilitiesAll,
 
   // Selection-based
-  selectPredatorForKeyword,
   selectPredatorForEndEffect,
-  selectEnemyToStripAbilities,
   selectCardToDiscard,
-  selectEnemyPreyToKill,
+  selectAndDiscard,
   selectEnemyToKill,
   tutorFromDeck,
-  tutorAndEndTurn,
   selectCreatureForDamage,
   selectTargetForDamage,
   selectEnemyPreyToConsume,
   selectCreatureToRestore,
-  selectPreyFromHandToPlay,
-  selectCarrionPredToCopyAbilities,
 
   // Flexible selection primitives
   selectFromGroup,
@@ -3293,10 +3133,10 @@ export const effectRegistry = {
   // Field & Global effects
   setFieldSpell,
   destroyFieldSpells,
-  selectEnemyToParalyze,
   damageAllCreatures,
   damageAllEnemyCreatures,
   damageBothPlayers,
+  damageOtherCreatures,
   returnAllEnemies,
   killEnemyTokens,
   killAllEnemyCreatures,
@@ -3306,48 +3146,40 @@ export const effectRegistry = {
   selectPreyForBuff,
   selectCreatureForBuff,
   selectCreatureToTransform,
-  selectEnemyToSteal,
 
   // Trap effect primitives
   removeTriggeredCreatureAbilities,
   negateAndDamageAll,
-  negateAndSummon,
   returnTriggeredToHand,
   negateAndKillAttacker,
-  negateDamageAndHeal,
   negateCombat,
-  forceOpponentDiscardThenDraw,
-  discardThenKillAllEnemies,
-  destroyEverything,
 
   // Amphibian special effects
   damageRivalAndSelectEnemy,
-  damageOpponentsAndAddToHand,
   damageAllEnemiesMultiple,
   destroyFieldSpellsAndKillTokens,
   healAndSelectTargetForDamage,
   negateAndAllowReplay,
   playSpellsFromHand,
 
+  // Arachnid web effects (Experimental)
+  webAllEnemies,
+  webAttacker,
+  webTarget,
+  webRandomEnemy,
+  damageWebbed,
+  drawPerWebbed,
+  healPerWebbed,
+
   // Mammal freeze effects
   selectEnemyToFreeze,
   freezeAllEnemies,
   removeFrozenFromFriendlies,
-  damageOpponentAndFreezeEnemies,
-  negateAndFreezeEnemies,
-  negateDamageAndFreezeEnemies,
   selectCreatureFromDeckWithKeyword,
-  selectCarrionToPlayWithKeyword,
-  selectCreatureToSacrificeAndDraw,
   returnTargetedToHand,
   selectFriendlyCreatureToSacrifice,
   reviveCreature,
-  selectCarrionToAddToHand,
-  summonAndSelectEnemyToFreeze,
-  summonAndSelectEnemyToKill,
-  selectCreatureToRegen,
-  revealHandAndSelectPreyToKill,
-  forceDiscardAndTutor,
+  regenSelf,
   selectEnemyToReturn,
   discardDrawAndKillEnemy,
   drawThenDiscard,
@@ -3355,22 +3187,12 @@ export const effectRegistry = {
   // Additional creature effect primitives
   forceOpponentDiscard,
   drawAndRevealHand,
-  revealAndTutor,
   tutorAndPlaySpell,
   damageAllAndFreezeAll,
-  damageEnemiesAndEndTurn,
-  regenOthersAndHeal,
-  selectCarrionToCopyAbilities,
-  selectCreatureToCopyStats,
-  selectCreatureToCopyAbilities,
-  selectCarrionToCopyStats,
-  summonHealAndRegen,
-  killPreyAndDestroyField,
-  addCarrionAndTutor,
+  endTurn,
+  regenOtherCreatures,
+  playSpellFromHand,
   selectEnemyToReturnToOpponentHand,
-  summonAndDamageOpponent,
-  damagePlayersAndOtherCreatures,
-  healAndTutor,
   drawAndEmpowerPredator,
   trackAttackForRegenHeal,
   dealDamageToAttacker,
@@ -3498,7 +3320,7 @@ export const resolveEffect = (effectDef, context) => {
     case 'draw':
       specificEffect = effectFn(params.count);
       break;
-    case 'damageOpponent':
+    case 'damageRival':
       specificEffect = effectFn(params.amount);
       break;
     case 'damageCreature':
@@ -3529,6 +3351,16 @@ export const resolveEffect = (effectDef, context) => {
       specificEffect = effectFn(params.targetType, params.stats);
       break;
     case 'buff':
+      specificEffect = effectFn(params);
+      break;
+    // Canine Howl effects (Experimental)
+    case 'howl':
+      specificEffect = effectFn(params);
+      break;
+    case 'howlBuff':
+      specificEffect = effectFn(params);
+      break;
+    case 'howlKeyword':
       specificEffect = effectFn(params);
       break;
     case 'selectTarget':
@@ -3597,29 +3429,20 @@ export const resolveEffect = (effectDef, context) => {
     case 'removeAbilitiesAll':
       specificEffect = effectFn();
       break;
-    case 'selectPredatorForKeyword':
-      specificEffect = effectFn(params.keyword);
-      break;
     case 'selectPredatorForEndEffect':
       specificEffect = effectFn(params.tokenId);
-      break;
-    case 'selectEnemyToStripAbilities':
-      specificEffect = effectFn();
       break;
     case 'selectCardToDiscard':
       specificEffect = effectFn(params.count);
       break;
-    case 'selectEnemyPreyToKill':
-      specificEffect = effectFn();
+    case 'selectAndDiscard':
+      specificEffect = effectFn(params.count || 1);
       break;
     case 'selectEnemyToKill':
       specificEffect = effectFn();
       break;
     case 'tutorFromDeck':
       specificEffect = effectFn(params.cardType);
-      break;
-    case 'tutorAndEndTurn':
-      specificEffect = effectFn();
       break;
     case 'selectCreatureForDamage':
       specificEffect = effectFn(params.amount, params.label);
@@ -3631,12 +3454,6 @@ export const resolveEffect = (effectDef, context) => {
       specificEffect = effectFn();
       break;
     case 'selectCreatureToRestore':
-      specificEffect = effectFn();
-      break;
-    case 'selectPreyFromHandToPlay':
-      specificEffect = effectFn();
-      break;
-    case 'selectCarrionPredToCopyAbilities':
       specificEffect = effectFn();
       break;
     case 'selectFromGroup':
@@ -3658,9 +3475,6 @@ export const resolveEffect = (effectDef, context) => {
     case 'destroyFieldSpells':
       specificEffect = effectFn();
       break;
-    case 'selectEnemyToParalyze':
-      specificEffect = effectFn();
-      break;
     case 'damageAllCreatures':
       specificEffect = effectFn(params.amount);
       break;
@@ -3668,6 +3482,9 @@ export const resolveEffect = (effectDef, context) => {
       specificEffect = effectFn(params.amount);
       break;
     case 'damageBothPlayers':
+      specificEffect = effectFn(params.amount);
+      break;
+    case 'damageOtherCreatures':
       specificEffect = effectFn(params.amount);
       break;
     case 'returnAllEnemies':
@@ -3697,9 +3514,6 @@ export const resolveEffect = (effectDef, context) => {
     case 'selectCreatureToTransform':
       specificEffect = effectFn(params.newCardId);
       break;
-    case 'selectEnemyToSteal':
-      specificEffect = effectFn(params.damage);
-      break;
     // Trap effect primitives
     case 'removeTriggeredCreatureAbilities':
       specificEffect = effectFn();
@@ -3707,36 +3521,18 @@ export const resolveEffect = (effectDef, context) => {
     case 'negateAndDamageAll':
       specificEffect = effectFn(params.creatureDamage, params.playerDamage);
       break;
-    case 'negateAndSummon':
-      specificEffect = effectFn(params.tokenIds);
-      break;
     case 'returnTriggeredToHand':
       specificEffect = effectFn();
       break;
     case 'negateAndKillAttacker':
       specificEffect = effectFn();
       break;
-    case 'negateDamageAndHeal':
-      specificEffect = effectFn(params.healAmount);
-      break;
     case 'negateCombat':
-      specificEffect = effectFn();
-      break;
-    case 'forceOpponentDiscardThenDraw':
-      specificEffect = effectFn(params.discardCount, params.drawCount);
-      break;
-    case 'discardThenKillAllEnemies':
-      specificEffect = effectFn(params.discardCount);
-      break;
-    case 'destroyEverything':
       specificEffect = effectFn();
       break;
     // Amphibian special effects
     case 'damageRivalAndSelectEnemy':
       specificEffect = effectFn(params.rivalDamage, params.creatureDamage);
-      break;
-    case 'damageOpponentsAndAddToHand':
-      specificEffect = effectFn(params.damage, params.cardId);
       break;
     case 'damageAllEnemiesMultiple':
       specificEffect = effectFn(params.amount, params.applications);
@@ -3753,6 +3549,28 @@ export const resolveEffect = (effectDef, context) => {
     case 'playSpellsFromHand':
       specificEffect = effectFn(params.count);
       break;
+    // Arachnid web effects
+    case 'webAllEnemies':
+      specificEffect = effectFn();
+      break;
+    case 'webAttacker':
+      specificEffect = effectFn();
+      break;
+    case 'webTarget':
+      specificEffect = effectFn();
+      break;
+    case 'webRandomEnemy':
+      specificEffect = effectFn();
+      break;
+    case 'damageWebbed':
+      specificEffect = effectFn(params.damage);
+      break;
+    case 'drawPerWebbed':
+      specificEffect = effectFn();
+      break;
+    case 'healPerWebbed':
+      specificEffect = effectFn(params.healPerWebbed);
+      break;
     // Mammal freeze effects
     case 'selectEnemyToFreeze':
       specificEffect = effectFn();
@@ -3763,23 +3581,8 @@ export const resolveEffect = (effectDef, context) => {
     case 'removeFrozenFromFriendlies':
       specificEffect = effectFn();
       break;
-    case 'damageOpponentAndFreezeEnemies':
-      specificEffect = effectFn(params.damage);
-      break;
-    case 'negateAndFreezeEnemies':
-      specificEffect = effectFn();
-      break;
-    case 'negateDamageAndFreezeEnemies':
-      specificEffect = effectFn();
-      break;
     case 'selectCreatureFromDeckWithKeyword':
       specificEffect = effectFn(params.keyword);
-      break;
-    case 'selectCarrionToPlayWithKeyword':
-      specificEffect = effectFn(params.keyword);
-      break;
-    case 'selectCreatureToSacrificeAndDraw':
-      specificEffect = effectFn(params.drawCount);
       break;
     case 'returnTargetedToHand':
       specificEffect = effectFn();
@@ -3790,23 +3593,8 @@ export const resolveEffect = (effectDef, context) => {
     case 'reviveCreature':
       specificEffect = effectFn();
       break;
-    case 'selectCarrionToAddToHand':
+    case 'regenSelf':
       specificEffect = effectFn();
-      break;
-    case 'summonAndSelectEnemyToFreeze':
-      specificEffect = effectFn(params.tokenIds);
-      break;
-    case 'summonAndSelectEnemyToKill':
-      specificEffect = effectFn(params.tokenIds);
-      break;
-    case 'selectCreatureToRegen':
-      specificEffect = effectFn();
-      break;
-    case 'revealHandAndSelectPreyToKill':
-      specificEffect = effectFn();
-      break;
-    case 'forceDiscardAndTutor':
-      specificEffect = effectFn(params.discardCount);
       break;
     case 'selectEnemyToReturn':
       specificEffect = effectFn();
@@ -3821,53 +3609,23 @@ export const resolveEffect = (effectDef, context) => {
     case 'drawAndRevealHand':
       specificEffect = effectFn(params.drawCount);
       break;
-    case 'revealAndTutor':
-      specificEffect = effectFn();
-      break;
     case 'tutorAndPlaySpell':
       specificEffect = effectFn();
       break;
     case 'damageAllAndFreezeAll':
       specificEffect = effectFn(params.damage);
       break;
-    case 'damageEnemiesAndEndTurn':
-      specificEffect = effectFn(params.damage);
-      break;
-    case 'regenOthersAndHeal':
-      specificEffect = effectFn(params.healAmount);
-      break;
-    case 'selectCarrionToCopyAbilities':
+    case 'endTurn':
       specificEffect = effectFn();
       break;
-    case 'selectCreatureToCopyStats':
+    case 'regenOtherCreatures':
       specificEffect = effectFn();
       break;
-    case 'selectCreatureToCopyAbilities':
-      specificEffect = effectFn();
-      break;
-    case 'selectCarrionToCopyStats':
-      specificEffect = effectFn();
-      break;
-    case 'summonHealAndRegen':
-      specificEffect = effectFn(params.tokenIds, params.healAmount);
-      break;
-    case 'killPreyAndDestroyField':
-      specificEffect = effectFn();
-      break;
-    case 'addCarrionAndTutor':
+    case 'playSpellFromHand':
       specificEffect = effectFn();
       break;
     case 'selectEnemyToReturnToOpponentHand':
       specificEffect = effectFn();
-      break;
-    case 'summonAndDamageOpponent':
-      specificEffect = effectFn(params.tokenIds, params.damage);
-      break;
-    case 'damagePlayersAndOtherCreatures':
-      specificEffect = effectFn(params.damage);
-      break;
-    case 'healAndTutor':
-      specificEffect = effectFn(params.healAmount);
       break;
     case 'drawAndEmpowerPredator':
       specificEffect = effectFn(params.drawCount, params.tokenId);

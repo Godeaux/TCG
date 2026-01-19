@@ -7,7 +7,12 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint js/",
+    "lint:fix": "eslint js/ --fix",
+    "format": "prettier --write \"js/**/*.js\" \"tests/**/*.js\"",
+    "format:check": "prettier --check \"js/**/*.js\" \"tests/**/*.js\"",
+    "prepare": "husky"
   },
   "repository": {
     "type": "git",
@@ -20,8 +25,22 @@
     "url": "https://github.com/Godeaux/TCG/issues"
   },
   "homepage": "https://github.com/Godeaux/TCG#readme",
+  "lint-staged": {
+    "js/**/*.js": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "tests/**/*.js": [
+      "prettier --write"
+    ]
+  },
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
     "@vitest/coverage-v8": "^4.0.17",
+    "eslint": "^9.39.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.8.0",
     "vitest": "^4.0.17"
   }
 }
