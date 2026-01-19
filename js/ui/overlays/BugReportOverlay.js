@@ -31,6 +31,8 @@ let userVotes = new Set();
 let bugChannel = null;
 let editingBugId = null;
 let overlayElement = null;
+let currentProfileId = null;
+let currentCallbacks = {};
 
 // ============================================================================
 // OVERLAY HTML TEMPLATE
@@ -511,6 +513,10 @@ const handleSubmit = async (profileId, callbacks) => {
  * @param {Object} [options.callbacks] - Callback functions
  */
 export const showBugReportOverlay = async ({ profileId, tab = 'report', callbacks = {} }) => {
+  // Update current context for event handlers
+  currentProfileId = profileId;
+  currentCallbacks = callbacks;
+
   // Create overlay dynamically if it doesn't exist
   if (!overlayElement) {
     overlayElement = document.createElement('div');
@@ -524,6 +530,28 @@ export const showBugReportOverlay = async ({ profileId, tab = 'report', callback
 
     // Set extremely high z-index to ensure it's above everything
     overlayElement.style.zIndex = '100001';
+
+    // Setup event handlers ONCE when overlay is created
+    const elements = getElements();
+
+    elements.closeBtn?.addEventListener('click', hideBugReportOverlay);
+    elements.tabReport?.addEventListener('click', () => switchTab('report'));
+    elements.tabList?.addEventListener('click', () => {
+      switchTab('list');
+      renderBugList(currentProfileId, currentCallbacks);
+    });
+
+    elements.submitBtn?.addEventListener('click', () => handleSubmit(currentProfileId, currentCallbacks));
+    elements.cancelBtn?.addEventListener('click', () => {
+      stopEditing();
+    });
+
+    // Close on overlay background click
+    overlayElement.addEventListener('click', (e) => {
+      if (e.target === overlayElement) {
+        hideBugReportOverlay();
+      }
+    });
   }
 
   const elements = getElements();
@@ -541,27 +569,7 @@ export const showBugReportOverlay = async ({ profileId, tab = 'report', callback
   await Promise.all([loadBugReports(), loadUserVotes(profileId)]);
   renderBugList(profileId, callbacks);
 
-  // Setup event handlers
-  elements.closeBtn?.addEventListener('click', hideBugReportOverlay);
-  elements.tabReport?.addEventListener('click', () => switchTab('report'));
-  elements.tabList?.addEventListener('click', () => {
-    switchTab('list');
-    renderBugList(profileId, callbacks);
-  });
-
-  elements.submitBtn?.addEventListener('click', () => handleSubmit(profileId, callbacks));
-  elements.cancelBtn?.addEventListener('click', () => {
-    stopEditing();
-  });
-
-  // Close on overlay background click
-  elements.overlay?.addEventListener('click', (e) => {
-    if (e.target === elements.overlay) {
-      hideBugReportOverlay();
-    }
-  });
-
-  // Close on escape
+  // Close on escape (added fresh each time, removed on close)
   const escHandler = (e) => {
     if (e.key === 'Escape') {
       hideBugReportOverlay();
@@ -577,7 +585,7 @@ export const showBugReportOverlay = async ({ profileId, tab = 'report', callback
   bugChannel = subscribeToBugReports(async () => {
     await loadBugReports();
     if (currentTab === 'list') {
-      renderBugList(profileId, callbacks);
+      renderBugList(currentProfileId, currentCallbacks);
     }
   });
 };
