@@ -747,6 +747,18 @@ export const renderCard = (card, options = {}) => {
     }
   });
 
+  // Add double-click handler if provided
+  const { onDoubleClick } = options;
+  if (onDoubleClick) {
+    cardElement.addEventListener("dblclick", (event) => {
+      if (event.target.closest("button")) {
+        return;
+      }
+      event.preventDefault();
+      onDoubleClick(card);
+    });
+  }
+
   // Auto-adjust text to fit
   // If sizes are cached, apply immediately (no layout thrashing)
   // Otherwise defer to after paint to allow measurement
