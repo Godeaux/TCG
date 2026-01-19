@@ -662,12 +662,15 @@ export const EFFECT_VALUES = {
   // ========================
 
   'buffStats': (ctx) => {
-    const atk = ctx.params?.attack || ctx.params?.atk || 0;
-    const hp = ctx.params?.health || ctx.params?.hp || 0;
+    // Stats can be at params.attack/health OR params.stats.attack/health
+    const atk = ctx.params?.stats?.attack || ctx.params?.attack || ctx.params?.atk || 0;
+    const hp = ctx.params?.stats?.health || ctx.params?.health || ctx.params?.hp || 0;
     const friendlies = getFriendlyCreatures(ctx);
 
     if (friendlies.length === 0) {
-      return { value: 0, reason: `buff +${atk}/+${hp}: 0 friendly creatures → 0` };
+      // WASTED CARD - heavily penalize playing a buff with no targets
+      // This is worse than passing because you lose the card entirely
+      return { value: -15, reason: `buff +${atk}/+${hp}: 0 friendly creatures (WASTE) → -15` };
     }
 
     const value = (atk + hp) * 2.5;
@@ -675,12 +678,14 @@ export const EFFECT_VALUES = {
   },
 
   'buff': (ctx) => {
-    const atk = ctx.params?.attack || ctx.params?.atk || 0;
-    const hp = ctx.params?.health || ctx.params?.hp || 0;
+    // Stats can be at params.attack/health OR params.stats.attack/health
+    const atk = ctx.params?.stats?.attack || ctx.params?.attack || ctx.params?.atk || 0;
+    const hp = ctx.params?.stats?.health || ctx.params?.health || ctx.params?.hp || 0;
     const friendlies = getFriendlyCreatures(ctx);
 
     if (friendlies.length === 0) {
-      return { value: 0, reason: `buff +${atk}/+${hp}: 0 friendly creatures → 0` };
+      // WASTED CARD - heavily penalize playing a buff with no targets
+      return { value: -15, reason: `buff +${atk}/+${hp}: 0 friendly creatures (WASTE) → -15` };
     }
 
     const value = (atk + hp) * 2.5;
@@ -696,7 +701,8 @@ export const EFFECT_VALUES = {
     const friendlies = getFriendlyCreatures(ctx);
 
     if (friendlies.length === 0) {
-      return { value: 0, reason: `grant ${keyword}: 0 friendly creatures → 0` };
+      // WASTED CARD - no creatures to grant keyword to
+      return { value: -15, reason: `grant ${keyword}: 0 friendly creatures (WASTE) → -15` };
     }
 
     const value = KEYWORD_VALUES[keyword] || 5;
@@ -708,7 +714,8 @@ export const EFFECT_VALUES = {
     const friendlies = getFriendlyCreatures(ctx);
 
     if (friendlies.length === 0) {
-      return { value: 0, reason: `add ${keyword}: 0 friendly creatures → 0` };
+      // WASTED CARD - no creatures to add keyword to
+      return { value: -15, reason: `add ${keyword}: 0 friendly creatures (WASTE) → -15` };
     }
 
     const value = KEYWORD_VALUES[keyword] || 5;

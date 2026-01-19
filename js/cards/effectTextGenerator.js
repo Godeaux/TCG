@@ -39,11 +39,39 @@ export function generateCardEffectText(card) {
     discardEffect: 'Discard: ',
   };
 
+  // Trap trigger prefixes (used when card.type === 'Trap' and trigger === 'effect')
+  const trapTriggerPrefixes = {
+    rivalPlaysPred: 'When Rival plays a Predator, ',
+    rivalPlaysPrey: 'When Rival plays a Prey, ',
+    directAttack: "When Rival's creature attacks directly, ",
+    indirectDamage: 'When you receive indirect damage, ',
+    rivalDraws: 'When Rival draws, ',
+    rivalPlaysCard: 'When Rival plays a card, ',
+    defending: 'When defending, ',
+    lifeZero: 'When life is 0, ',
+    targeted: 'When targeted, ',
+    slain: 'When slain, ',
+    rivalAttacks: 'When attacked, ',
+    rivalPlaysCreature: 'When a creature is played, ',
+  };
+
   for (const trigger of triggerOrder) {
     const effect = card.effects[trigger];
     if (!effect) continue;
 
-    const prefix = triggerPrefixes[trigger] || '';
+    // Determine prefix
+    let prefix = triggerPrefixes[trigger] || '';
+
+    // Skip "When consumed:" for Predators (it's implicit)
+    if (trigger === 'onConsume' && card.type === 'Predator') {
+      prefix = '';
+    }
+
+    // Add trap trigger prefix for Trap cards
+    if (trigger === 'effect' && card.type === 'Trap' && card.trigger) {
+      prefix = trapTriggerPrefixes[card.trigger] || '';
+    }
+
     const text = generateEffectText(effect);
 
     if (text) {
@@ -127,6 +155,11 @@ export function normalizeText(text) {
     .replace(/\.$/g, '')         // Remove trailing period
     // Common substitutions for comparison
     .replace(/\bpred\b/g, 'predator')  // "pred" → "predator"
+    .replace(/\beither\s+/g, 'choose, ')  // "either X or Y" → "choose: X or Y"
+    .replace(/\bbecome\b/g, 'play')  // "become X" → "play X" (transforms)
+    .replace(/\bportugese\s+man\s+o'\s*war/g, "man o' war")  // Token name normalization
+    .replace(/\bportugese\s+man-o'-war/g, "man o' war")
+    .replace(/\bportugese\s/g, '')  // Remove "Portuguese" prefix for token names
     .trim();
 }
 

@@ -368,9 +368,11 @@ describe('Amphibian Field Spell Cards', () => {
       expect(card.effects.onEnd.params.effect.regen).toBe(true);
     });
 
-    it('effectText matches effects (sets field spell + end of turn regen)', () => {
+    it('effectText is generated from effects (field spell + end of turn regen)', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effectText).toBe('End of turn, regen target creature.');
+      // effectText is now generated from effects - verify it contains expected parts
+      expect(card.effectText).toContain('End of turn');
+      expect(card.effectText).toContain('Regen');
       // Verify both effects exist
       expect(card.effects.effect).toBeDefined(); // setFieldSpell
       expect(card.effects.onEnd).toBeDefined(); // regen

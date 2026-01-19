@@ -303,8 +303,9 @@ describe('Cards with effectText have effects object', () => {
 
 describe('Specific Effect Validation', () => {
   describe('Negate attack text has negate effect', () => {
+    // Filter by effectText patterns - generated text uses "Negate the attack"
     const cardsWithNegate = getAllCards().filter(
-      (c) => c.effectText && /\bnegate (direct )?attack/i.test(c.effectText)
+      (c) => c.effectText && /\bnegate (the )?(direct )?attack/i.test(c.effectText)
     );
 
     it.each(cardsWithNegate.map((c) => [c.name, c.id]))(
@@ -399,20 +400,13 @@ describe('Regen Effect Validation', () => {
       !hasEffectTypeMatching(c.effects, /AndRegen|RegenAnd/i)
   );
 
-  // Cards that say "End of turn, regen." or similar self-regen patterns
+  // Cards that say "End of turn; Regen." or similar self-regen patterns
   // Must have standalone regen (no target, no "gains Regen", no "other creatures")
-  const cardsWithSelfRegen = getAllCards().filter(
-    (c) =>
-      c.effectText &&
-      // Match patterns like "End of turn, regen." or "regen." at end
-      /\bregen\.$/i.test(c.effectText) &&
-      // Exclude "gains Regen" (keyword grant)
-      !/gains? regen/i.test(c.effectText) &&
-      // Exclude "regen other creatures" (different pattern)
-      !/regen other/i.test(c.effectText) &&
-      // Exclude "regen itself" (compound effects)
-      !/regen itself/i.test(c.effectText)
-  );
+  // Since effectText is now generated from effects, we check for the regenSelf effect directly
+  const cardsWithSelfRegen = getAllCards().filter((c) => {
+    if (!c.effects) return false;
+    return hasEffectType(c.effects, 'regenSelf');
+  });
 
   describe('Targeted regen has selectFromGroup effect', () => {
     it.each(cardsWithTargetedRegen.map((c) => [c.name, c.id]))(
@@ -797,20 +791,26 @@ describe('Keyword Grant Validation', () => {
 // ============================================
 
 describe('Consume Trigger Validation', () => {
-  const cardsWithConsumeText = getAllCards().filter(
-    (c) =>
-      c.effectText &&
-      /\b(When consumed|On consume)[,:;]/i.test(c.effectText) &&
-      c.type !== 'Trap'
+  // Since effectText is now generated from effects, Predator cards don't have "When consumed:" prefix
+  // (it's implicit for predators). We validate that cards with onConsume have proper effects.
+  const cardsWithOnConsume = getAllCards().filter(
+    (c) => c.effects && c.effects.onConsume
   );
 
-  describe('Cards mentioning "When consumed" have onConsume trigger', () => {
-    it.each(cardsWithConsumeText.map((c) => [c.name, c.id]))(
+  describe('Cards with onConsume trigger have valid effects', () => {
+    it.each(cardsWithOnConsume.map((c) => [c.name, c.id]))(
       '%s (%s)',
       (name, cardId) => {
         const card = getCardDefinitionById(cardId);
-        const triggers = getTriggerTypes(card.effects);
-        expect(triggers).toContain('onConsume');
+        expect(card.effects.onConsume).toBeDefined();
+        // Verify the effect has a type
+        const effect = card.effects.onConsume;
+        if (Array.isArray(effect)) {
+          expect(effect.length).toBeGreaterThan(0);
+          expect(effect[0].type).toBeDefined();
+        } else {
+          expect(effect.type).toBeDefined();
+        }
       }
     );
   });
@@ -863,19 +863,14 @@ describe('Trap Card Validation', () => {
     );
   });
 
-  // Trap trigger/text matching
-  // Only match traps that specifically trigger on defending, not just mention it
+  // Trap trigger validation - filter by trigger property directly
+  // Since effectText is now generated from effects, we validate trigger-based behavior
   const trapsWithDefending = allTraps.filter(
-    (c) =>
-      c.effectText &&
-      /\bwhen target creature is defending\b/i.test(c.effectText)
+    (c) => c.trigger === 'defending'
   );
 
   const trapsWithSlain = allTraps.filter(
-    (c) =>
-      c.effectText &&
-      (/\bwhen .* is slain\b/i.test(c.effectText) ||
-        /\bwhen .* slain\b/i.test(c.effectText))
+    (c) => c.trigger === 'slain' || c.trigger === 'creatureSlain'
   );
 
   const trapsWithAttacked = allTraps.filter(

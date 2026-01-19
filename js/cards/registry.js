@@ -20,6 +20,7 @@ import mammalData from './data/mammal.json' with { type: 'json' };
 import canineData from './data/canine.json' with { type: 'json' };
 import { resolveEffect } from './effectLibrary.js';
 import { validateCardEffects } from './effectValidator.js';
+import { generateCardEffectText } from './effectTextGenerator.js';
 
 // ============================================================================
 // CARD REGISTRIES
@@ -155,8 +156,23 @@ export const initializeCardRegistry = () => {
 
   console.log(`[Card Registry] Initialized with ${cardRegistry.size} cards (${tokenRegistry.size} tokens)`);
 
+  // Generate effectText for all cards from their effects (single source of truth)
+  generateAllEffectText();
+
   // Validate all card effects (warns on invalid effects)
   validateAllCardEffects();
+};
+
+/**
+ * Generate effectText for all cards from their effects
+ * This ensures effectText always matches actual effect behavior
+ */
+const generateAllEffectText = () => {
+  for (const card of cardRegistry.values()) {
+    if (card.effects && Object.keys(card.effects).length > 0) {
+      card.effectText = generateCardEffectText(card);
+    }
+  }
 };
 
 /**

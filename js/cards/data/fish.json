@@ -8,7 +8,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Haste"],
-      "effectText": "Play 2 Flying Fish.",
       "summons": ["token-flying-fish"],
       "effects": {
         "onPlay": {
@@ -36,7 +35,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Passive", "Immune"],
-      "effectText": "End of turn; consume target Rival's prey.",
       "effects": {
         "onEnd": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-prey", "title": "Choose a Rival's prey to consume", "effect": { "consume": true } } }
       }
@@ -49,7 +47,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": [],
-      "effectText": "Draw 2. Rival reveals hand.",
       "effects": {
         "onPlay": [
           {
@@ -75,7 +72,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Ambush", "Hidden"],
-      "effectText": "Discard: negate direct attack.",
       "effects": {
         "discardEffect": { "type": "negateAttack" }
       }
@@ -88,7 +84,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": [],
-      "effectText": "Draw 1. Creatures gain barrier.",
       "effects": {
         "onPlay": [
           {
@@ -101,7 +96,7 @@
         ]
       }
     },
-        {
+    {
       "id": "fish-prey-leafy-seadragon",
       "name": "Leafy Seadragon",
       "type": "Prey",
@@ -109,7 +104,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Invisible"],
-      "effectText": "Start of turn, play Leafy.",
       "summons": ["token-leafy"],
       "effects": {
         "onStart": {
@@ -128,7 +122,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Passive"],
-      "effectText": "Play 2 Portuguese Man O' War. Defending before combat, deal 1 damage.",
       "summons": ["token-man-o-war"],
       "effects": {
         "onPlay": {
@@ -164,7 +157,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": [],
-      "effectText": "Heal 1. Before combat, deal 3 damage.",
       "effects": {
         "onPlay": {
           "type": "heal",
@@ -190,7 +182,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": [],
-      "effectText": "Play 2 Sardines. Heal 1. Slain: play Sardine.",
       "summons": ["token-sardine"],
       "effects": {
         "onPlay": [
@@ -223,7 +214,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": [],
-      "effectText": "Heal 4. Regen target creature.",
       "effects": {
         "onPlay": [
           {
@@ -251,7 +241,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Free Play"],
-      "effectText": "Discard: target pred gains Ambush.",
       "effects": {
         "discardEffect": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-predators", "title": "Choose a predator to gain Ambush", "effect": { "keyword": "Ambush" } } }
       }
@@ -265,7 +254,7 @@
       "nutrition": 1,
       "keywords": ["Invisible", "Neurotoxic"]
     },
-        {
+    {
       "id": "fish-prey-cannibal-fish",
       "name": "Cannibal Fish",
       "type": "Prey",
@@ -273,7 +262,6 @@
       "hp": 1,
       "nutrition": 2,
       "keywords": [],
-      "effectText": "Either play Lancetfish or gain +2/+2.",
       "summons": ["token-lancetfish"],
       "effects": {
         "onPlay": {
@@ -304,7 +292,6 @@
       "hp": 2,
       "nutrition": 2,
       "keywords": ["Ambush"],
-      "effectText": "Creatures gain +1/+0.",
       "effects": {
         "onPlay": {
           "type": "buffStats",
@@ -326,7 +313,6 @@
       "hp": 2,
       "nutrition": 2,
       "keywords": ["Lure"],
-      "effectText": "Play 2 Angler Eggs.",
       "summons": ["token-angler-egg"],
       "effects": {
         "onPlay": {
@@ -345,7 +331,6 @@
       "hp": 2,
       "nutrition": 2,
       "keywords": [],
-      "effectText": "Before combat, deal 2 damage.",
       "effects": {
         "onBeforeCombat": {
           "type": "selectFromGroup",
@@ -365,7 +350,6 @@
       "hp": 2,
       "nutrition": 2,
       "keywords": [],
-      "effectText": "Draw 2.",
       "effects": {
         "onPlay": {
           "type": "draw",
@@ -383,7 +367,6 @@
       "hp": 2,
       "nutrition": 2,
       "keywords": [],
-      "effectText": "Slain: add Salmon to hand.",
       "summons": ["token-salmon"],
       "effects": {
         "onSlain": {
@@ -411,7 +394,6 @@
       "hp": 3,
       "nutrition": 3,
       "keywords": [],
-      "effectText": "Discard, draw 1. Discard 1. Draw 3.",
       "effects": {
         "onPlay": [
           {
@@ -449,7 +431,6 @@
       "atk": 3,
       "hp": 3,
       "keywords": ["Barrier"],
-      "effectText": "Slain: add Scale Arrows to hand.",
       "summons": ["token-scale-arrows"],
       "effects": {
         "onSlain": {
@@ -467,7 +448,6 @@
       "atk": 3,
       "hp": 3,
       "keywords": ["Edible"],
-      "effectText": "Play 2 Tuna Eggs.",
       "summons": ["token-tuna-egg"],
       "effects": {
         "onConsume": {
@@ -485,7 +465,6 @@
       "atk": 3,
       "hp": 3,
       "keywords": ["Edible"],
-      "effectText": "Kill target prey.",
       "effects": {
         "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-prey", "title": "Choose a prey to kill", "effect": { "kill": true } } }
       }
@@ -497,7 +476,6 @@
       "atk": 3,
       "hp": 3,
       "keywords": [],
-      "effectText": "Deal 3 damage to any target.",
       "effects": {
         "onConsume": {
           "type": "selectFromGroup",
@@ -524,7 +502,6 @@
       "atk": 4,
       "hp": 4,
       "keywords": [],
-      "effectText": "Play a prey.",
       "effects": {
         "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "hand-prey", "title": "Choose a prey to play", "effect": { "play": true } } }
       }
@@ -536,7 +513,6 @@
       "atk": 4,
       "hp": 4,
       "keywords": [],
-      "effectText": "Creatures gain Immune.",
       "effects": {
         "onConsume": {
           "type": "grantKeyword",
@@ -554,7 +530,6 @@
       "atk": 4,
       "hp": 4,
       "keywords": [],
-      "effectText": "Copy abilities of a carrion pred.",
       "effects": {
         "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "carrion-predators", "title": "Choose a carrion predator to copy", "effect": { "copyAbilities": true } } }
       }
@@ -574,7 +549,6 @@
       "atk": 5,
       "hp": 5,
       "keywords": ["Acuity"],
-      "effectText": "Kill target Rival's creature.",
       "effects": {
         "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to kill", "effect": { "kill": true } } }
       }
@@ -586,7 +560,6 @@
       "atk": 6,
       "hp": 6,
       "keywords": [],
-      "effectText": "Add a card from deck to hand.",
       "effects": {
         "onConsume": {
           "type": "tutorFromDeck",
@@ -600,7 +573,6 @@
       "id": "fish-spell-net",
       "name": "Net",
       "type": "Spell",
-      "effectText": "Kill Rival's prey.",
       "effects": {
         "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-prey", "title": "Choose a prey to kill", "effect": { "kill": true } } }
       }
@@ -609,7 +581,6 @@
       "id": "fish-spell-fish-food",
       "name": "Fish Food",
       "type": "Spell",
-      "effectText": "Creatures gain +2/+2.",
       "effects": {
         "effect": {
           "type": "buffStats",
@@ -627,7 +598,6 @@
       "id": "fish-spell-flood",
       "name": "Flood",
       "type": "Spell",
-      "effectText": "Kill animals.",
       "effects": {
         "effect": {
           "type": "killAll",
@@ -641,7 +611,6 @@
       "id": "fish-spell-sunken-treasure",
       "name": "Sunken Treasure",
       "type": "Spell",
-      "effectText": "Either draw 3, heal 3, or target creature gains +3/+3.",
       "effects": {
         "effect": {
           "type": "chooseOption",
@@ -661,7 +630,6 @@
       "name": "Rocky Reef",
       "type": "Spell",
       "isFieldSpell": true,
-      "effectText": "End of turn, play Clouded Moray.",
       "summons": ["token-clouded-moray"],
       "effects": {
         "effect": {
@@ -682,16 +650,14 @@
       "id": "fish-spell-harpoon",
       "name": "Harpoon",
       "type": "Spell",
-      "effectText": "Deal 4 damage to target Rival's creature then gain control of it.",
       "effects": {
         "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a Rival's creature", "effect": { "damage": 4, "steal": true } } }
       }
     },
-        {
+    {
       "id": "fish-free-spell-angler",
       "name": "Angler",
       "type": "Free Spell",
-      "effectText": "Add a card from deck to hand. End turn.",
       "effects": {
         "effect": [
           { "type": "tutorFromDeck", "params": {} },
@@ -703,7 +669,6 @@
       "id": "fish-free-spell-edible",
       "name": "Edible",
       "type": "Free Spell",
-      "effectText": "Target pred gains Edible.",
       "effects": {
         "effect": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-predators", "title": "Choose a predator to gain Edible", "effect": { "keyword": "Edible" } } }
       }
@@ -712,7 +677,6 @@
       "id": "fish-spell-washout",
       "name": "Washout",
       "type": "Spell",
-      "effectText": "Rival's creatures lose abilities. Deal 2 damage to Rival's creatures.",
       "effects": {
         "effect": [
           { "type": "removeAbilitiesAll" },
@@ -724,17 +688,15 @@
       "id": "fish-free-spell-undertow",
       "name": "Undertow",
       "type": "Free Spell",
-      "effectText": "Target Rival's creature loses abilities.",
       "effects": {
         "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a Rival's creature to strip abilities", "effect": { "removeAbilities": true } } }
       }
     },
-        {
+    {
       "id": "fish-trap-cramp",
       "name": "Cramp",
       "type": "Trap",
       "trigger": "rivalPlaysPred",
-      "effectText": "When rival plays a pred it loses abilities.",
       "effects": {
         "effect": { "type": "removeTriggeredCreatureAbilities" }
       }
@@ -744,7 +706,6 @@
       "name": "Riptide",
       "type": "Trap",
       "trigger": "rivalPlaysPrey",
-      "effectText": "When rival plays a prey it loses abilities.",
       "effects": {
         "effect": { "type": "removeTriggeredCreatureAbilities" }
       }
@@ -754,7 +715,6 @@
       "name": "Maelstrom",
       "type": "Trap",
       "trigger": "directAttack",
-      "effectText": "When Rival's creature attacks directly, negate attack. Deal 2 damage to players & creatures.",
       "effects": {
         "effect": [
           { "type": "negateAttack" },

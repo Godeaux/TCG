@@ -307,7 +307,7 @@ export const EFFECT_SCHEMA = {
 
   trackAttackForRegenHeal: {
     params: { healAmount: { type: 'number', required: true } },
-    text: (p) => `After attacking, heal ${p.healAmount}`,
+    text: (p) => `Regen and heal ${p.healAmount} after combat`,
   },
 
   // ==========================================
@@ -446,7 +446,7 @@ export const EFFECT_SCHEMA = {
 
   grantBarrier: {
     params: {},
-    text: () => `Target gains Barrier`,
+    text: () => `Friendly creatures gain Barrier`,
   },
 
   freezeAllEnemies: {
@@ -569,7 +569,27 @@ export const EFFECT_SCHEMA = {
       options: { type: 'array', required: true },
     },
     text: (p) => {
-      const options = p.options.map(o => o.label || o.description).join(' or ');
+      // Generate text from actual effects, not just labels
+      const options = p.options.map(o => {
+        const effect = o.effect;
+        if (!effect) return o.label || o.description;
+
+        // Generate readable text from the effect
+        if (effect.type === 'summonTokens') {
+          return `Play ${formatTokenList(effect.params?.tokenIds)}`;
+        }
+        if (effect.type === 'buff' && effect.params?.target === 'self') {
+          return `Gain +${effect.params.attack}/${effect.params.health > 0 ? '+' : ''}${effect.params.health}`;
+        }
+        if (effect.type === 'draw') {
+          return `Draw ${effect.params?.count || 1}`;
+        }
+        if (effect.type === 'heal') {
+          return `Heal ${effect.params?.amount}`;
+        }
+        // Fallback to label
+        return o.label || o.description;
+      }).join(' or ');
       return `Choose: ${options}`;
     },
   },

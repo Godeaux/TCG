@@ -8,13 +8,12 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Immune"],
-      "effectText": "Play 2 Radiated Tree Frogs.",
       "summons": ["token-radiated-tree-frog"],
       "effects": {
         "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-radiated-tree-frog", "token-radiated-tree-frog"] } }
       }
     },
-        {
+    {
       "id": "amphibian-prey-confusing-rocket-frog",
       "name": "Confusing Rocket Frog",
       "type": "Prey",
@@ -22,7 +21,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Free Play"],
-      "effectText": "Rival discards 1.",
       "effects": {
         "onPlay": { "type": "forceOpponentDiscard", "params": { "count": 1 } }
       }
@@ -34,7 +32,6 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Add a card from deck to hand. Play a spell.",
       "effects": {
         "onPlay": [
           { "type": "tutorFromDeck", "params": {} },
@@ -50,7 +47,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Poisonous"],
-      "effectText": "End of turn, play 2 Empress Newts.",
       "summons": ["token-empress-newt"],
       "effects": {
         "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-empress-newt", "token-empress-newt"] } }
@@ -64,7 +60,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Immune", "Poisonous"],
-      "effectText": "Deal 2 damage to rival.",
       "effects": {
         "onPlay": { "type": "damageRival", "params": { "amount": 2 } }
       }
@@ -76,7 +71,6 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Rival's creatures gain Frozen.",
       "effects": {
         "onPlay": { "type": "freezeAllEnemies" }
       }
@@ -89,7 +83,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Invisible"],
-      "effectText": "Draw 1. Rival reveals hand.",
       "effects": {
         "onPlay": [
           { "type": "draw", "params": { "count": 1 } },
@@ -105,7 +98,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Poisonous"],
-      "effectText": "Draw 1. Play Golden Mantella.",
       "summons": ["token-golden-mantella"],
       "effects": {
         "onPlay": [
@@ -122,7 +114,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Poisonous"],
-      "effectText": "Draw 1. Sacrifice; add Golden Blowdart to hand.",
       "summons": ["token-golden-blowdart"],
       "effects": {
         "onPlay": { "type": "draw", "params": { "count": 1 } },
@@ -146,7 +137,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Poisonous"],
-      "effectText": "End of turn, play Hidden Eleuth Egg.",
       "summons": ["token-hidden-eleuth-egg"],
       "effects": {
         "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-hidden-eleuth-egg"] } }
@@ -160,7 +150,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Poisonous"],
-      "effectText": "Draw 2. Slain, draw 1.",
       "effects": {
         "onPlay": { "type": "draw", "params": { "count": 2 } },
         "onSlain": { "type": "draw", "params": { "count": 1 } }
@@ -174,7 +163,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Poisonous"],
-      "effectText": "Sacrifice; add Phantasmal Darts to hand.",
       "summons": ["token-phantasmal-darts"],
       "effects": {
         "sacrificeEffect": { "type": "addToHand", "params": { "cardId": "token-phantasmal-darts" } }
@@ -187,7 +175,6 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Deal 2 damage to Rival and Rival's creatures.",
       "effects": {
         "onPlay": [
           { "type": "damageRival", "params": { "amount": 2 } },
@@ -202,7 +189,6 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Play 2 Red-tailed Knobby Newts. Defending, neurotoxic.",
       "summons": ["token-red-tailed-knobby-newt"],
       "effects": {
         "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-red-tailed-knobby-newt", "token-red-tailed-knobby-newt"] } },
@@ -216,7 +202,6 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "effectText": "Deal 2 damage to players & other animals. Animals gain frozen.",
       "effects": {
         "onPlay": [
           { "type": "damageBothPlayers", "params": { "amount": 2 } },
@@ -233,7 +218,6 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Free Play", "Hidden"],
-      "effectText": "Play Turtle Froglet.",
       "summons": ["token-turtle-froglet"],
       "effects": {
         "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-turtle-froglet"] } }
@@ -246,7 +230,6 @@
       "atk": 1,
       "hp": 2,
       "nutrition": 2,
-      "effectText": "Discard; add Tomato to hand. Defending; attacker gains Frozen.",
       "summons": ["token-tomato"],
       "effects": {
         "discardEffect": { "type": "addToHand", "params": { "cardId": "token-tomato" } },
@@ -260,7 +243,6 @@
       "atk": 1,
       "hp": 2,
       "nutrition": 2,
-      "effectText": "Instead of attacking; may consume target prey.",
       "effects": {
         "attackReplacement": { "type": "eatPreyInsteadOfAttacking" }
       }
@@ -272,7 +254,6 @@
       "atk": 1,
       "hp": 2,
       "nutrition": 2,
-      "effectText": "Slain, play 3 Froglets.",
       "summons": ["token-froglet"],
       "effects": {
         "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["token-froglet", "token-froglet", "token-froglet"] } }
@@ -285,7 +266,6 @@
       "atk": 2,
       "hp": 2,
       "nutrition": 2,
-      "effectText": "Heal 4. End of turn, regen.",
       "effects": {
         "onPlay": { "type": "heal", "params": { "amount": 4 } },
         "onEnd": { "type": "regenSelf" }
@@ -298,7 +278,6 @@
       "atk": 2,
       "hp": 2,
       "nutrition": 2,
-      "effectText": "End of turn, play Bigfoot Tadpole.",
       "summons": ["token-bigfoot-tadpole"],
       "effects": {
         "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-bigfoot-tadpole"] } }
@@ -310,7 +289,6 @@
       "type": "Predator",
       "atk": 2,
       "hp": 2,
-      "effectText": "Play Tiger Frog. Deal 1 damage to any target.",
       "summons": ["token-tiger-frog"],
       "effects": {
         "onConsume": [
@@ -325,7 +303,6 @@
       "type": "Predator",
       "atk": 3,
       "hp": 3,
-      "effectText": "Play American Bullfrog.",
       "summons": ["token-american-bullfrog"],
       "effects": {
         "onConsume": { "type": "summonTokens", "params": { "tokenIds": ["token-american-bullfrog"] } }
@@ -338,7 +315,6 @@
       "atk": 4,
       "hp": 4,
       "keywords": ["Edible"],
-      "effectText": "End of turn, play Mountain Chicken Egg.",
       "summons": ["token-mountain-chicken-egg"],
       "effects": {
         "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-mountain-chicken-egg"] } }
@@ -350,7 +326,6 @@
       "type": "Predator",
       "atk": 3,
       "hp": 3,
-      "effectText": "Add Titicaca Water to hand.",
       "summons": ["token-titicaca-water"],
       "effects": {
         "onConsume": { "type": "addToHand", "params": { "cardId": "token-titicaca-water" } }
@@ -362,7 +337,6 @@
       "type": "Predator",
       "atk": 4,
       "hp": 4,
-      "effectText": "Play Pixie Frog.",
       "summons": ["token-pixie-frog"],
       "effects": {
         "onConsume": { "type": "summonTokens", "params": { "tokenIds": ["token-pixie-frog"] } }
@@ -375,7 +349,6 @@
       "atk": 4,
       "hp": 4,
       "keywords": ["Poisonous"],
-      "effectText": "Play 2 Poisonous Eggs.",
       "summons": ["token-poisonous-egg"],
       "effects": {
         "onConsume": { "type": "summonTokens", "params": { "tokenIds": ["token-poisonous-egg", "token-poisonous-egg"] } }
@@ -387,7 +360,6 @@
       "type": "Predator",
       "atk": 4,
       "hp": 4,
-      "effectText": "Deal 4 damage to Rival's creatures. End turn.",
       "effects": {
         "onConsume": [
           { "type": "damageAllEnemyCreatures", "params": { "amount": 4 } },
@@ -401,7 +373,6 @@
       "type": "Predator",
       "atk": 4,
       "hp": 4,
-      "effectText": "Deal 4 damage to rival.",
       "effects": {
         "onConsume": { "type": "damageRival", "params": { "amount": 4 } }
       }
@@ -420,7 +391,6 @@
       "type": "Predator",
       "atk": 4,
       "hp": 4,
-      "effectText": "Regen other creatures. Heal 4.",
       "effects": {
         "onConsume": [
           { "type": "regenOtherCreatures", "params": {} },
@@ -434,7 +404,6 @@
       "type": "Predator",
       "atk": 5,
       "hp": 5,
-      "effectText": "After combat, deal 2 damage to Rival's creatures.",
       "effects": {
         "onAfterCombat": { "type": "damageEnemiesAfterCombat", "params": { "damage": 2 } }
       }
@@ -446,7 +415,6 @@
       "atk": 6,
       "hp": 6,
       "keywords": ["Lure"],
-      "effectText": "Play Chinese Salamander.",
       "summons": ["token-chinese-salamander"],
       "effects": {
         "onConsume": { "type": "summonTokens", "params": { "tokenIds": ["token-chinese-salamander"] } }
@@ -456,7 +424,6 @@
       "id": "amphibian-spell-ambiguity",
       "name": "Ambiguity",
       "type": "Spell",
-      "effectText": "Either draw 3, heal 3, or deal 3 damage to rival.",
       "effects": {
         "effect": {
           "type": "chooseOption",
@@ -475,7 +442,6 @@
       "id": "amphibian-spell-bounce",
       "name": "Bounce",
       "type": "Spell",
-      "effectText": "Return Rival's creatures to hand.",
       "effects": {
         "effect": {
           "type": "returnAllEnemies",
@@ -487,7 +453,6 @@
       "id": "amphibian-spell-leapfrog",
       "name": "Leapfrog",
       "type": "Spell",
-      "effectText": "Deal 3 damage to Rival. Deal 3 damage to target Rival's creature.",
       "effects": {
         "effect": [
           { "type": "damageRival", "params": { "amount": 3 } },
@@ -499,7 +464,6 @@
       "id": "amphibian-spell-monsoon",
       "name": "Monsoon",
       "type": "Spell",
-      "effectText": "Deal 2 damage to Rival and Rival's creatures. Add Rainbow to hand.",
       "summons": ["token-rainbow"],
       "effects": {
         "effect": [
@@ -509,11 +473,10 @@
         ]
       }
     },
-        {
+    {
       "id": "amphibian-spell-pounce-plummet",
       "name": "Pounce Plummet",
       "type": "Spell",
-      "effectText": "Deal 2 damage to all Rival's creatures twice.",
       "effects": {
         "effect": [
           { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } },
@@ -525,7 +488,6 @@
       "id": "amphibian-spell-shower",
       "name": "Shower",
       "type": "Spell",
-      "effectText": "Creatures gain +2/+2.",
       "effects": {
         "effect": { "type": "buffStats", "params": { "targetType": "all-friendly", "stats": { "attack": 2, "health": 2 } } }
       }
@@ -534,7 +496,6 @@
       "id": "amphibian-spell-terrain-shift",
       "name": "Terrain Shift",
       "type": "Spell",
-      "effectText": "Destroy target field spells. Kill Rival's tokens.",
       "effects": {
         "effect": [
           { "type": "destroyFieldSpells", "params": {} },
@@ -546,7 +507,6 @@
       "id": "amphibian-spell-whitewater",
       "name": "Whitewater",
       "type": "Spell",
-      "effectText": "Deal 3 damage to any target. Heal 3.",
       "effects": {
         "effect": [
           { "type": "selectTarget", "params": { "group": "any", "effect": "damage", "amount": 3 } },
@@ -558,7 +518,6 @@
       "id": "amphibian-free-spell-metamorphosis",
       "name": "Metamorphosis",
       "type": "Free Spell",
-      "effectText": "Target prey creature gains +2/+2.",
       "effects": {
         "effect": {
           "type": "selectFromGroup",
@@ -574,7 +533,6 @@
       "id": "amphibian-free-spell-newt",
       "name": "Newt",
       "type": "Free Spell",
-      "effectText": "Target animal becomes Newt.",
       "effects": {
         "effect": {
           "type": "selectCreatureToTransform",
@@ -588,7 +546,6 @@
       "id": "amphibian-free-spell-sleight-of-hand",
       "name": "Sleight of Hand",
       "type": "Free Spell",
-      "effectText": "Draw 2.",
       "effects": {
         "effect": { "type": "draw", "params": { "count": 2 } }
       }
@@ -597,7 +554,6 @@
       "id": "amphibian-free-spell-slime",
       "name": "Slime",
       "type": "Free Spell",
-      "effectText": "Either draw 1, heal 1, or deal 1 damage to rival.",
       "effects": {
         "effect": {
           "type": "chooseOption",
@@ -612,12 +568,11 @@
         }
       }
     },
-        {
+    {
       "id": "amphibian-field-spell-wishing-well",
       "name": "Wishing Well",
       "type": "Spell",
       "isFieldSpell": true,
-      "effectText": "End of turn, regen target creature.",
       "effects": {
         "effect": {
           "type": "setFieldSpell",
@@ -640,7 +595,6 @@
       "name": "Blowdart",
       "type": "Trap",
       "trigger": "directAttack",
-      "effectText": "When Rival's creature attacks directly, negate attack & kill it.",
       "effects": {
         "effect": [
           { "type": "negateAttack", "params": {} },
@@ -653,7 +607,6 @@
       "name": "Rebound",
       "type": "Trap",
       "trigger": "rivalPlaysCard",
-      "effectText": "When rival plays a card, negate play. Rival may play a different card.",
       "effects": {
         "effect": [
           { "type": "negatePlay", "params": {} },
@@ -666,7 +619,6 @@
       "name": "Slip",
       "type": "Trap",
       "trigger": "defending",
-      "effectText": "When target creature is defending, negate combat.",
       "effects": {
         "effect": {
           "type": "negateCombat",
