@@ -25,64 +25,6 @@ import { KEYWORD_DESCRIPTIONS } from '../../keywords.js';
 // MODULE-LEVEL STATE
 // ============================================================================
 
-// Effect types that are implemented in effectLibrary.js
-const IMPLEMENTED_EFFECTS = new Set([
-  'draw', 'heal', 'damageOpponent', 'damagePlayer', 'buffStats', 'buffCreature',
-  'summonTokens', 'killAll', 'selectEnemyPreyToKill', 'selectEnemyToKill',
-  'selectCreatureForDamage', 'selectTargetForDamage', 'selectCreatureToRestore',
-  'grantKeyword', 'grantBarrier', 'removeAbilities', 'selectEnemyToStripAbilities',
-  'selectEnemyPreyToConsume', 'selectPredatorForKeyword', 'tutorFromDeck',
-  'selectPreyFromHandToPlay', 'selectCarrionPredToCopyAbilities', 'selectFromGroup',
-  'chooseOption', 'addToHand', 'transformCard', 'freeze', 'spawnFromPool',
-  'discardRandom', 'discard', 'selectEnemyToAddToHand'
-]);
-
-/**
- * Check if an effect definition is implemented
- */
-const isEffectImplemented = (effect) => {
-  if (!effect) return true;
-  if (typeof effect === 'string') return false; // String placeholder = not implemented
-  if (Array.isArray(effect)) {
-    return effect.every(e => isEffectImplemented(e));
-  }
-  if (typeof effect === 'object') {
-    if (effect.type) {
-      return IMPLEMENTED_EFFECTS.has(effect.type);
-    }
-    for (const key of Object.keys(effect)) {
-      if (!isEffectImplemented(effect[key])) return false;
-    }
-    return true;
-  }
-  return true;
-};
-
-/**
- * Check if a card is fully implemented
- */
-const isCardImplemented = (card) => {
-  if (!card.effects) return true;
-  const triggers = ['onPlay', 'onConsume', 'onSlain', 'onStart', 'onEnd', 'effect', 'onAttack', 'onDamage'];
-  for (const trigger of triggers) {
-    if (card.effects[trigger] && !isEffectImplemented(card.effects[trigger])) {
-      return false;
-    }
-  }
-  return true;
-};
-
-/**
- * Get implementation progress for a deck
- * @returns {{ implemented: number, total: number }}
- */
-const getDeckProgress = (deckId) => {
-  const catalog = deckCatalogs[deckId] ?? [];
-  const nonTokens = catalog.filter(c => !c.id.startsWith('token-'));
-  const implemented = nonTokens.filter(c => isCardImplemented(c)).length;
-  return { implemented, total: nonTokens.length };
-};
-
 // Deck options available for selection
 const DECK_OPTIONS = [
   {
@@ -1375,15 +1317,13 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
         option.available ? "" : "disabled"
       }${option.experimental ? " experimental" : ""}`;
       panel.disabled = false; // Make all decks clickable per user request
-      const progress = getDeckProgress(option.id);
-      const progressText = `${progress.implemented}/${progress.total} Done`;
       const experimentalBadge = option.experimental ? '<div class="deck-experimental-badge">Experimental</div>' : '';
       panel.innerHTML = `
         ${experimentalBadge}
         <div class="deck-emoji">${option.emoji}</div>
         <div class="deck-name">${option.name}</div>
-        <div class="deck-status">${option.available ? "Available" : progressText}</div>
-        <div class="deck-meta">${option.available ? "Select deck" : "Theorycraft"}</div>
+        <div class="deck-status">Available</div>
+        <div class="deck-meta">Select deck</div>
       `;
       panel.onclick = () => {
         const catalog = deckCatalogs[option.id] ?? [];
@@ -1851,15 +1791,13 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
           option.available ? "" : "disabled"
         }${option.experimental ? " experimental" : ""}`;
         panel.disabled = false; // Make all decks clickable
-        const progress = getDeckProgress(option.id);
-        const progressText = `${progress.implemented}/${progress.total} Done`;
         const experimentalBadge = option.experimental ? '<div class="deck-experimental-badge">Experimental</div>' : '';
         panel.innerHTML = `
           ${experimentalBadge}
           <div class="deck-emoji">${option.emoji}</div>
           <div class="deck-name">${option.name}</div>
-          <div class="deck-status">${option.available ? "Available" : progressText}</div>
-          <div class="deck-meta">${option.available ? "Random deck" : "Theorycraft"}</div>
+          <div class="deck-status">Available</div>
+          <div class="deck-meta">Random deck</div>
         `;
         panel.onclick = () => {
           // Generate random deck from this category using existing function
@@ -2021,15 +1959,13 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       option.available ? "" : "disabled"
     }${option.experimental ? " experimental" : ""}`;
     panel.disabled = false; // Make all decks clickable per user request
-    const progress = getDeckProgress(option.id);
-    const progressText = `${progress.implemented}/${progress.total} Done`;
     const experimentalBadge = option.experimental ? '<div class="deck-experimental-badge">Experimental</div>' : '';
     panel.innerHTML = `
       ${experimentalBadge}
       <div class="deck-emoji">${option.emoji}</div>
       <div class="deck-name">${option.name}</div>
-      <div class="deck-status">${option.available ? "Available" : progressText}</div>
-      <div class="deck-meta">${option.available ? "Select deck" : "Theorycraft"}</div>
+      <div class="deck-status">Available</div>
+      <div class="deck-meta">Select deck</div>
     `;
     panel.onclick = () => {
       const catalog = deckCatalogs[option.id] ?? [];
