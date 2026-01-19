@@ -275,7 +275,7 @@
       "effectText": "Heal 4. End of turn, regen.",
       "effects": {
         "onPlay": { "type": "heal", "params": { "amount": 4 } },
-        "onEnd": { "type": "selectCreatureToRestore" }
+        "onEnd": { "type": "regenSelf" }
       }
     },
     {
@@ -549,9 +549,11 @@
       "effectText": "Target prey creature gains +2/+2.",
       "effects": {
         "effect": {
-          "type": "selectPreyForBuff",
+          "type": "selectFromGroup",
           "params": {
-            "stats": { "attack": 2, "health": 2 }
+            "targetGroup": "all-prey",
+            "title": "Choose a prey to buff",
+            "effect": { "buff": { "attack": 2, "health": 2 } }
           }
         }
       }
@@ -609,6 +611,14 @@
           "type": "setFieldSpell",
           "params": {
             "cardId": "amphibian-field-spell-wishing-well"
+          }
+        },
+        "onEnd": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "all-creatures",
+            "title": "Choose a creature to regen",
+            "effect": { "regen": true }
           }
         }
       }

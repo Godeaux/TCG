@@ -333,18 +333,22 @@ describe('Fish Prey Cards', () => {
       expect(card.effects.onPlay.params.amount).toBe(1);
     });
 
-    it('onBeforeCombat deals 3 damage to target', () => {
+    it('onBeforeCombat deals 3 damage to target via selectFromGroup', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.onBeforeCombat.type).toBe('selectTargetForDamage');
-      expect(card.effects.onBeforeCombat.params.amount).toBe(3);
+      expect(card.effects.onBeforeCombat.type).toBe('selectFromGroup');
+      expect(card.effects.onBeforeCombat.params.effect.damage).toBe(3);
     });
 
-    it('selectTargetForDamage returns selectTarget prompt', () => {
+    it('selectFromGroup damage returns selectTarget prompt', () => {
       const state = createTestState();
       createTestCreature('fish-prey-atlantic-flying-fish', 1, 0, state);
       const context = createEffectContext(state, 0);
 
-      const damageFn = effectLibrary.selectTargetForDamage(3);
+      const damageFn = effectLibrary.selectFromGroup({
+        targetGroup: 'all-entities',
+        title: 'Deal 3 damage',
+        effect: { damage: 3 },
+      });
       const result = damageFn(context);
 
       expect(result.selectTarget).toBeDefined();
@@ -393,12 +397,13 @@ describe('Fish Prey Cards', () => {
       expect(card.nutrition).toBe(1);
     });
 
-    it('onPlay is array with heal 4 and selectCreatureToRestore', () => {
+    it('onPlay is array with heal 4 and selectFromGroup regen', () => {
       const card = getCardDefinitionById(cardId);
       expect(Array.isArray(card.effects.onPlay)).toBe(true);
       expect(card.effects.onPlay[0].type).toBe('heal');
       expect(card.effects.onPlay[0].params.amount).toBe(4);
-      expect(card.effects.onPlay[1].type).toBe('selectCreatureToRestore');
+      expect(card.effects.onPlay[1].type).toBe('selectFromGroup');
+      expect(card.effects.onPlay[1].params.effect.regen).toBe(true);
     });
 
     it('heal 4 returns correct result', () => {
@@ -570,10 +575,10 @@ describe('Fish Prey Cards', () => {
       expect(card.nutrition).toBe(2);
     });
 
-    it('onBeforeCombat deals 2 damage to target', () => {
+    it('onBeforeCombat deals 2 damage to target via selectFromGroup', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.onBeforeCombat.type).toBe('selectTargetForDamage');
-      expect(card.effects.onBeforeCombat.params.amount).toBe(2);
+      expect(card.effects.onBeforeCombat.type).toBe('selectFromGroup');
+      expect(card.effects.onBeforeCombat.params.effect.damage).toBe(2);
     });
   });
 

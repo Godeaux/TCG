@@ -290,6 +290,7 @@ export const resolveReaction = ({
     // Track if this reaction negated an attack (for attack resolution)
     if (event === TRIGGER_EVENTS.ATTACK_DECLARED && result?.negateAttack) {
       state._lastReactionNegatedAttack = true;
+      state._lastReactionNegatedBy = reaction.card?.name || 'a trap';
     }
 
     // Handle negated play - return card to hand

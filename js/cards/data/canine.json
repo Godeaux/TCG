@@ -149,7 +149,7 @@
       "tribe": "Canine",
       "effectText": "Pack. Target enemy creature gains Frozen.",
       "effects": {
-        "onPlay": { "type": "selectEnemyToFreeze" }
+        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to freeze", "effect": { "keyword": "Frozen" } } }
       }
     },
     {

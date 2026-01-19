@@ -40,7 +40,7 @@
       "keywords": ["Haste", "Hidden"],
       "effectText": "Target Rival's creature gains Frozen.",
       "effects": {
-        "onPlay": { "type": "selectEnemyToFreeze" }
+        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to freeze", "effect": { "keyword": "Frozen" } } }
       }
     },
     {
@@ -91,7 +91,7 @@
       "nutrition": 1,
       "effectText": "Deal 3 damage to any target.",
       "effects": {
-        "onPlay": { "type": "selectTargetForDamage", "params": { "amount": 3, "label": "weasel" } }
+        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "all-entities", "title": "Choose a target for damage", "effect": { "damage": 3, "label": "weasel" } } }
       }
     },
     {
@@ -182,7 +182,7 @@
       "nutrition": 2,
       "effectText": "Deal 2 damage to any target.",
       "effects": {
-        "onPlay": { "type": "selectTargetForDamage", "params": { "amount": 2, "label": "pronghorn" } }
+        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "all-entities", "title": "Choose a target for damage", "effect": { "damage": 2, "label": "pronghorn" } } }
       }
     },
     {
@@ -434,7 +434,7 @@
       "hp": 4,
       "effectText": "End of turn, regen.",
       "effects": {
-        "onEnd": { "type": "selectCreatureToRegen" }
+        "onEnd": { "type": "regenSelf" }
       }
     },
     {
@@ -468,7 +468,7 @@
       "hp": 6,
       "effectText": "Kill target Rival's creature.",
       "effects": {
-        "onConsume": { "type": "selectEnemyToKill" }
+        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to kill", "effect": { "kill": true } } }
       }
     },
     {
@@ -495,7 +495,7 @@
       "type": "Spell",
       "effectText": "Kill target Rival's creature.",
       "effects": {
-        "effect": { "type": "selectEnemyToKill" }
+        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to kill", "effect": { "kill": true } } }
       }
     },
     {
@@ -531,7 +531,7 @@
       "type": "Free Spell",
       "effectText": "Target Rival's creature gains Frozen.",
       "effects": {
-        "effect": { "type": "selectEnemyToFreeze" }
+        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to freeze", "effect": { "keyword": "Frozen" } } }
       }
     },
     {

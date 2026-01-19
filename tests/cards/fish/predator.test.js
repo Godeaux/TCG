@@ -152,28 +152,55 @@ describe('Fish Predator Cards', () => {
       expect(card.keywords).toContain('Edible');
     });
 
-    it('onConsume selects enemy prey to kill', () => {
+    it('onConsume selects enemy prey to kill via selectFromGroup', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.onConsume.type).toBe('selectEnemyPreyToKill');
+      expect(card.effects.onConsume.type).toBe('selectFromGroup');
+      expect(card.effects.onConsume.params.targetGroup).toBe('enemy-prey');
+      expect(card.effects.onConsume.params.effect.kill).toBe(true);
     });
 
-    it('selectEnemyPreyToKill returns selectTarget for enemy prey', () => {
+    it('selectFromGroup returns selectTarget for enemy prey (with multiple candidates)', () => {
+      const state = createTestState();
+      createTestCreature('fish-prey-atlantic-flying-fish', 1, 0, state);
+      createTestCreature('fish-prey-blobfish', 1, 1, state); // Add second prey for selection UI
+      const context = createEffectContext(state, 0);
+
+      const selectFn = effectLibrary.selectFromGroup({
+        targetGroup: 'enemy-prey',
+        title: 'Kill enemy prey',
+        effect: { kill: true },
+      });
+      const result = selectFn(context);
+
+      expect(result.selectTarget).toBeDefined();
+      expect(result.selectTarget.candidates.length).toBe(2);
+    });
+
+    it('selectFromGroup auto-selects when only one candidate', () => {
       const state = createTestState();
       createTestCreature('fish-prey-atlantic-flying-fish', 1, 0, state);
       const context = createEffectContext(state, 0);
 
-      const selectFn = effectLibrary.selectEnemyPreyToKill();
+      const selectFn = effectLibrary.selectFromGroup({
+        targetGroup: 'enemy-prey',
+        title: 'Kill enemy prey',
+        effect: { kill: true },
+      });
       const result = selectFn(context);
 
-      expect(result.selectTarget).toBeDefined();
-      expect(result.selectTarget.candidates.length).toBe(1);
+      // With single candidate, auto-selects and returns kill result directly
+      expect(result.killCreature).toBeDefined();
     });
 
     it('returns empty when no enemy prey exists', () => {
       const state = createTestState();
       const context = createEffectContext(state, 0);
 
-      const selectFn = effectLibrary.selectEnemyPreyToKill();
+      const selectFn = effectLibrary.selectFromGroup({
+        targetGroup: 'enemy-prey',
+        title: 'Kill enemy prey',
+        effect: { kill: true },
+      });
       const result = selectFn(context);
 
       expect(result).toEqual({});
@@ -192,18 +219,22 @@ describe('Fish Predator Cards', () => {
       expect(card.hp).toBe(3);
     });
 
-    it('onConsume deals 3 damage to target', () => {
+    it('onConsume deals 3 damage to target via selectFromGroup', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.onConsume.type).toBe('selectTargetForDamage');
-      expect(card.effects.onConsume.params.amount).toBe(3);
+      expect(card.effects.onConsume.type).toBe('selectFromGroup');
+      expect(card.effects.onConsume.params.effect.damage).toBe(3);
     });
 
-    it('selectTargetForDamage returns selectTarget prompt', () => {
+    it('selectFromGroup damage returns selectTarget prompt', () => {
       const state = createTestState();
       createTestCreature('fish-prey-atlantic-flying-fish', 1, 0, state);
       const context = createEffectContext(state, 0);
 
-      const damageFn = effectLibrary.selectTargetForDamage(3);
+      const damageFn = effectLibrary.selectFromGroup({
+        targetGroup: 'all-entities',
+        title: 'Deal 3 damage',
+        effect: { damage: 3 },
+      });
       const result = damageFn(context);
 
       expect(result.selectTarget).toBeDefined();
@@ -383,21 +414,44 @@ describe('Fish Predator Cards', () => {
       expect(card.keywords).toContain('Acuity');
     });
 
-    it('onConsume kills target enemy', () => {
+    it('onConsume kills target enemy via selectFromGroup', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.onConsume.type).toBe('selectEnemyToKill');
+      expect(card.effects.onConsume.type).toBe('selectFromGroup');
+      expect(card.effects.onConsume.params.targetGroup).toBe('enemy-creatures');
+      expect(card.effects.onConsume.params.effect.kill).toBe(true);
     });
 
-    it('selectEnemyToKill returns selectTarget for enemies', () => {
+    it('selectFromGroup kill returns selectTarget for enemies (with multiple candidates)', () => {
+      const state = createTestState();
+      createTestCreature('fish-prey-atlantic-flying-fish', 1, 0, state);
+      createTestCreature('fish-predator-sailfish', 1, 1, state); // Add second creature for selection UI
+      const context = createEffectContext(state, 0);
+
+      const selectFn = effectLibrary.selectFromGroup({
+        targetGroup: 'enemy-creatures',
+        title: 'Kill enemy creature',
+        effect: { kill: true },
+      });
+      const result = selectFn(context);
+
+      expect(result.selectTarget).toBeDefined();
+      expect(result.selectTarget.candidates.length).toBe(2);
+    });
+
+    it('selectFromGroup auto-selects when only one enemy', () => {
       const state = createTestState();
       createTestCreature('fish-prey-atlantic-flying-fish', 1, 0, state);
       const context = createEffectContext(state, 0);
 
-      const selectFn = effectLibrary.selectEnemyToKill();
+      const selectFn = effectLibrary.selectFromGroup({
+        targetGroup: 'enemy-creatures',
+        title: 'Kill enemy creature',
+        effect: { kill: true },
+      });
       const result = selectFn(context);
 
-      expect(result.selectTarget).toBeDefined();
-      expect(result.selectTarget.candidates.length).toBe(1);
+      // With single candidate, auto-selects and returns kill result directly
+      expect(result.killCreature).toBeDefined();
     });
   });
 

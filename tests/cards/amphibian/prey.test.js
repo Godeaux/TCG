@@ -404,9 +404,9 @@ describe('Amphibian Prey Cards', () => {
       expect(card.effects.onPlay.params.amount).toBe(4);
     });
 
-    it('onEnd restores a creature', () => {
+    it('onEnd regenerates self', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.onEnd.type).toBe('selectCreatureToRestore');
+      expect(card.effects.onEnd.type).toBe('regenSelf');
     });
   });
 

@@ -337,6 +337,6 @@ describe('Freeze All Enemies Effect', () => {
     const freezeFn = effectLibrary.freezeAllEnemies();
     freezeFn(context);
 
-    expect(context.log.getMessages()).toContain('All enemy creatures gain Frozen.');
+    expect(context.log.getMessages()).toContain("All Rival's creatures gain Frozen.");
   });
 });

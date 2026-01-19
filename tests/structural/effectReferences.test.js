@@ -142,8 +142,9 @@ const KNOWN_EFFECT_TYPES = [
   'forceOpponentDiscard',
   'forceOpponentDiscardThenDraw',
 
-  // Revival
+  // Revival / Regen
   'reviveCreature',
+  'regenSelf',
 
   // Canine effects (Experimental)
   'howl',

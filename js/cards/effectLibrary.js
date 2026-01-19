@@ -1449,6 +1449,29 @@ const buildTargetCandidates = (targetGroup, context) => {
       ];
       break;
 
+    case 'enemy-prey':
+      candidates = opponent.field
+        .filter(c => c && c.type === 'Prey' && !isInvisible(c, state))
+        .map(c => ({ label: c.name, value: { type: 'creature', creature: c, ownerIndex: opponentIndex }, card: c }));
+      break;
+
+    case 'friendly-prey':
+      candidates = player.field
+        .filter(c => c && c.type === 'Prey')
+        .map(c => ({ label: c.name, value: { type: 'creature', creature: c, ownerIndex: playerIndex }, card: c }));
+      break;
+
+    case 'all-prey':
+      candidates = [
+        ...player.field
+          .filter(c => c && c.type === 'Prey')
+          .map(c => ({ label: c.name, value: { type: 'creature', creature: c, ownerIndex: playerIndex }, card: c })),
+        ...opponent.field
+          .filter(c => c && c.type === 'Prey' && !isInvisible(c, state))
+          .map(c => ({ label: c.name, value: { type: 'creature', creature: c, ownerIndex: opponentIndex }, card: c }))
+      ];
+      break;
+
     default:
       console.warn(`Unknown target group: ${targetGroup}`);
   }
@@ -1541,6 +1564,16 @@ const applyEffectToSelection = (selection, effectDef, context) => {
   if (effectDef.keyword && selection.type === 'creature') {
     log(`${selection.creature.name} gains ${effectDef.keyword}.`);
     result.addKeyword = { creature: selection.creature, keyword: effectDef.keyword };
+  }
+
+  if (effectDef.regen && selection.type === 'creature') {
+    log(`${selection.creature.name} regenerates.`);
+    result.regenCreature = selection.creature;
+  }
+
+  if (effectDef.consume && selection.type === 'creature') {
+    log(`${selection.creature.name} is consumed.`);
+    result.consumeCreature = selection.creature;
   }
 
   // If we accumulated any simple effects, return them
@@ -2637,9 +2670,9 @@ export const summonAndSelectEnemyToKill = (tokenIds) => (context) => {
 };
 
 /**
- * Regenerate a creature (restore to full health)
+ * Regenerate self (the source creature restores to full health)
  */
-export const selectCreatureToRegen = () => (context) => {
+export const regenSelf = () => (context) => {
   const { log, creature } = context;
 
   if (!creature) {
@@ -2650,6 +2683,9 @@ export const selectCreatureToRegen = () => (context) => {
   log(`${creature.name} regenerates.`);
   return { regenCreature: creature };
 };
+
+// Legacy alias
+export const selectCreatureToRegen = regenSelf;
 
 /**
  * Reveal opponent's hand and select a prey to kill
@@ -3579,6 +3615,7 @@ export const effectRegistry = {
   summonAndSelectEnemyToFreeze,
   summonAndSelectEnemyToKill,
   selectCreatureToRegen,
+  regenSelf,
   revealHandAndSelectPreyToKill,
   forceDiscardAndTutor,
   selectEnemyToReturn,
@@ -4043,6 +4080,7 @@ export const resolveEffect = (effectDef, context) => {
       specificEffect = effectFn(params.tokenIds);
       break;
     case 'selectCreatureToRegen':
+    case 'regenSelf':
       specificEffect = effectFn();
       break;
     case 'revealHandAndSelectPreyToKill':

@@ -173,10 +173,11 @@
           }
         },
         "onBeforeCombat": {
-          "type": "selectTargetForDamage",
+          "type": "selectFromGroup",
           "params": {
-            "amount": 3,
-            "label": "strike"
+            "targetGroup": "all-entities",
+            "title": "Choose a target for damage",
+            "effect": { "damage": 3, "label": "strike" }
           }
         }
       }
@@ -231,7 +232,14 @@
               "amount": 4
             }
           },
-          { "type": "selectCreatureToRestore" }
+          {
+            "type": "selectFromGroup",
+            "params": {
+              "targetGroup": "all-creatures",
+              "title": "Choose a creature to regen",
+              "effect": { "regen": true }
+            }
+          }
         ]
       }
     },
@@ -345,10 +353,11 @@
       "effectText": "Before combat, deal 2 damage.",
       "effects": {
         "onBeforeCombat": {
-          "type": "selectTargetForDamage",
+          "type": "selectFromGroup",
           "params": {
-            "amount": 2,
-            "label": "shock"
+            "targetGroup": "all-entities",
+            "title": "Choose a target for damage",
+            "effect": { "damage": 2, "label": "shock" }
           }
         }
       }
@@ -483,7 +492,7 @@
       "keywords": ["Edible"],
       "effectText": "Kill target prey.",
       "effects": {
-        "onConsume": { "type": "selectEnemyPreyToKill" }
+        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-prey", "title": "Choose a prey to kill", "effect": { "kill": true } } }
       }
     },
     {
@@ -496,10 +505,11 @@
       "effectText": "Deal 3 damage to any target.",
       "effects": {
         "onConsume": {
-          "type": "selectTargetForDamage",
+          "type": "selectFromGroup",
           "params": {
-            "amount": 3,
-            "label": "damage"
+            "targetGroup": "all-entities",
+            "title": "Choose a target for damage",
+            "effect": { "damage": 3, "label": "damage" }
           }
         }
       }
@@ -571,7 +581,7 @@
       "keywords": ["Acuity"],
       "effectText": "Kill target Rival's creature.",
       "effects": {
-        "onConsume": { "type": "selectEnemyToKill" }
+        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to kill", "effect": { "kill": true } } }
       }
     },
     {
@@ -597,7 +607,7 @@
       "type": "Spell",
       "effectText": "Kill Rival's prey.",
       "effects": {
-        "effect": { "type": "selectEnemyPreyToKill" }
+        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-prey", "title": "Choose a prey to kill", "effect": { "kill": true } } }
       }
     },
     {
@@ -645,7 +655,7 @@
             "options": [
               { "label": "Draw 3", "description": "Draw 3 cards", "effect": { "type": "draw", "params": { "count": 3 } } },
               { "label": "Heal 3", "description": "Heal 3 HP", "effect": { "type": "heal", "params": { "amount": 3 } } },
-              { "label": "+3/+3", "description": "Target creature gains +3/+3", "effect": { "type": "selectCreatureForBuff", "params": { "attack": 3, "health": 3 } } }
+              { "label": "+3/+3", "description": "Target creature gains +3/+3", "effect": { "type": "selectFromGroup", "params": { "targetGroup": "all-creatures", "title": "Choose a creature to buff", "effect": { "buff": { "attack": 3, "health": 3 } } } } }
             ]
           }
         }

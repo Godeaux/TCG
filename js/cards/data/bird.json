@@ -216,7 +216,7 @@
       "nutrition": 1,
       "effectText": "End of turn, deal 3 damage to any target.",
       "effects": {
-        "onEnd": { "type": "selectTargetForDamage", "params": { "amount": 3, "label": "sonic" } }
+        "onEnd": { "type": "selectFromGroup", "params": { "targetGroup": "all-entities", "title": "Choose a target for damage", "effect": { "damage": 3, "label": "sonic" } } }
       }
     },
     {
@@ -228,7 +228,7 @@
       "nutrition": 1,
       "effectText": "After combat, deal 2 damage. End of turn, deal 2 damage to rival.",
       "effects": {
-        "onAfterCombat": { "type": "selectTargetForDamage", "params": { "amount": 2, "label": "stink" } },
+        "onAfterCombat": { "type": "selectFromGroup", "params": { "targetGroup": "all-entities", "title": "Choose a target for damage", "effect": { "damage": 2, "label": "stink" } } },
         "onEnd": { "type": "damageOpponent", "params": { "amount": 2 } }
       }
     },
@@ -427,7 +427,7 @@
       "hp": 4,
       "effectText": "End of turn, kill target Rival's creature.",
       "effects": {
-        "onEnd": { "type": "selectEnemyToKill" }
+        "onEnd": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to kill", "effect": { "kill": true } } }
       }
     },
     {
@@ -489,7 +489,7 @@
               {
                 "label": "Deal 6 damage to target Rival's creature",
                 "description": "Select a Rival's creature for 6 damage",
-                "effect": { "type": "selectEnemyCreatureForDamage", "params": { "amount": 6, "label": "shotgun" } }
+                "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature for damage", "effect": { "damage": 6, "label": "shotgun" } } }
               }
             ]
           }
@@ -532,7 +532,7 @@
       "type": "Free Spell",
       "effectText": "Deal 1 damage to any target.",
       "effects": {
-        "effect": { "type": "selectTargetForDamage", "params": { "amount": 1, "label": "white missile" } }
+        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "all-entities", "title": "Choose a target for damage", "effect": { "damage": 1, "label": "white missile" } } }
       }
     },
     {
@@ -549,8 +549,8 @@
           }
         },
         "onEnd": {
-          "type": "selectCreatureForBuff",
-          "params": { "attack": 1, "health": 1 }
+          "type": "selectFromGroup",
+          "params": { "targetGroup": "all-creatures", "title": "Choose a creature to buff", "effect": { "buff": { "attack": 1, "health": 1 } } }
         }
       }
     },

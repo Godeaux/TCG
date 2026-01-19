@@ -67,9 +67,11 @@ describe('Mammal Cards', () => {
         expect(card.keywords).toContain('Hidden');
       });
 
-      it('onPlay freezes enemy', () => {
+      it('onPlay freezes enemy via selectFromGroup', () => {
         const card = getCardDefinitionById(cardId);
-        expect(card.effects.onPlay.type).toBe('selectEnemyToFreeze');
+        expect(card.effects.onPlay.type).toBe('selectFromGroup');
+        expect(card.effects.onPlay.params.targetGroup).toBe('enemy-creatures');
+        expect(card.effects.onPlay.params.effect.keyword).toBe('Frozen');
       });
     });
 
@@ -112,10 +114,10 @@ describe('Mammal Cards', () => {
     describe('Japanese Weasel', () => {
       const cardId = 'mammal-prey-japanese-weasel';
 
-      it('onPlay deals 3 damage to target', () => {
+      it('onPlay deals 3 damage to target via selectFromGroup', () => {
         const card = getCardDefinitionById(cardId);
-        expect(card.effects.onPlay.type).toBe('selectTargetForDamage');
-        expect(card.effects.onPlay.params.amount).toBe(3);
+        expect(card.effects.onPlay.type).toBe('selectFromGroup');
+        expect(card.effects.onPlay.params.effect.damage).toBe(3);
       });
     });
 
@@ -205,10 +207,10 @@ describe('Mammal Cards', () => {
         expect(card.nutrition).toBe(2);
       });
 
-      it('onPlay deals 2 damage to target', () => {
+      it('onPlay deals 2 damage to target via selectFromGroup', () => {
         const card = getCardDefinitionById(cardId);
-        expect(card.effects.onPlay.type).toBe('selectTargetForDamage');
-        expect(card.effects.onPlay.params.amount).toBe(2);
+        expect(card.effects.onPlay.type).toBe('selectFromGroup');
+        expect(card.effects.onPlay.params.effect.damage).toBe(2);
       });
     });
 

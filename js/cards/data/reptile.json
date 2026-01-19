@@ -179,7 +179,7 @@
       "keywords": ["Free Play"],
       "effectText": "Target Rival's creature gains Frozen.",
       "effects": {
-        "onPlay": { "type": "selectEnemyToFreeze" }
+        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to freeze", "effect": { "keyword": "Frozen" } } }
       }
     },
     {
@@ -205,7 +205,7 @@
       "keywords": [],
       "effectText": "Before combat, deal 2 damage.",
       "effects": {
-        "onBeforeCombat": { "type": "selectTargetForDamage", "params": { "amount": 2, "label": "snapping turtle" } }
+        "onBeforeCombat": { "type": "selectFromGroup", "params": { "targetGroup": "all-entities", "title": "Choose a target for damage", "effect": { "damage": 2, "label": "snapping turtle" } } }
       }
     },
     {
@@ -314,7 +314,7 @@
       "keywords": [],
       "effectText": "Kill Rival's prey.",
       "effects": {
-        "onConsume": { "type": "selectEnemyPreyToKill" }
+        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-prey", "title": "Choose a prey to kill", "effect": { "kill": true } } }
       }
     },
     {
@@ -434,7 +434,7 @@
       "keywords": [],
       "effectText": "Deal 3 damage to any target. Slain, heal 3.",
       "effects": {
-        "onConsume": { "type": "selectTargetForDamage", "params": { "amount": 3, "label": "chomp" } },
+        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "all-entities", "title": "Choose a target for damage", "effect": { "damage": 3, "label": "chomp" } } },
         "onSlain": { "type": "heal", "params": { "amount": 3 } }
       }
     },
@@ -447,7 +447,7 @@
       "keywords": [],
       "effectText": "Kill target Rival's creature.",
       "effects": {
-        "onConsume": { "type": "selectEnemyToKill" }
+        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to kill", "effect": { "kill": true } } }
       }
     },
     {
@@ -512,7 +512,14 @@
       "type": "Free Spell",
       "effectText": "Regen target creature.",
       "effects": {
-        "effect": { "type": "selectCreatureToRestore" }
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "all-creatures",
+            "title": "Choose a creature to regen",
+            "effect": { "regen": true }
+          }
+        }
       }
     },
     {
@@ -553,7 +560,7 @@
       "type": "Free Spell",
       "effectText": "Deal 2 damage to target Rival's creature.",
       "effects": {
-        "effect": { "type": "selectEnemyCreatureForDamage", "params": { "amount": 2, "label": "surprise" } }
+        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature for damage", "effect": { "damage": 2, "label": "surprise" } } }
       }
     },
     {

@@ -2026,9 +2026,11 @@ const findCardByInstanceId = (state, instanceId) =>
     .flatMap((player) => player.field.concat(player.hand, player.carrion, player.exile))
     .find((card) => card?.instanceId === instanceId);
 
-const resolveAttack = (state, attacker, target, negateAttack = false) => {
+const resolveAttack = (state, attacker, target, negateAttack = false, negatedBy = null) => {
   if (negateAttack) {
-    logMessage(state, `${attacker.name}'s attack was negated.`);
+    const targetName = target.type === 'creature' ? target.card.name : 'the player';
+    const sourceText = negatedBy ? ` by ${negatedBy}` : '';
+    logMessage(state, `${attacker.name}'s attack on ${targetName} was negated${sourceText}.`);
     attacker.hasAttacked = true;
     state.broadcast?.(state);
     cleanupDestroyed(state);
@@ -2244,6 +2246,7 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
 
   // Clear any stale negation flag from previous attacks to prevent false negations
   state._lastReactionNegatedAttack = undefined;
+  state._lastReactionNegatedBy = undefined;
 
   const attackerIndex = state.players.indexOf(getActivePlayer(state));
 
@@ -2259,7 +2262,9 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
       // After reaction resolves, continue with attack
       // The attack might have been negated by the trap effect
       const wasNegated = state._lastReactionNegatedAttack ?? false;
+      const negatedBy = state._lastReactionNegatedBy;
       state._lastReactionNegatedAttack = undefined;
+      state._lastReactionNegatedBy = undefined;
 
       // Check if attacker still exists and has HP
       if (attacker.currentHp <= 0) {
@@ -2286,7 +2291,7 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
         }
       }
 
-      resolveAttack(state, attacker, target, wasNegated);
+      resolveAttack(state, attacker, target, wasNegated, negatedBy);
       onUpdate?.();
       broadcastSyncState(state);
     },

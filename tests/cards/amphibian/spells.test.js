@@ -205,11 +205,12 @@ describe('Amphibian Free Spell Cards', () => {
       expect(card.type).toBe('Free Spell');
     });
 
-    it('effect buffs target prey +2/+2', () => {
+    it('effect buffs target prey +2/+2 via selectFromGroup', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.effect.type).toBe('selectPreyForBuff');
-      expect(card.effects.effect.params.stats.attack).toBe(2);
-      expect(card.effects.effect.params.stats.health).toBe(2);
+      expect(card.effects.effect.type).toBe('selectFromGroup');
+      expect(card.effects.effect.params.targetGroup).toBe('all-prey');
+      expect(card.effects.effect.params.effect.buff.attack).toBe(2);
+      expect(card.effects.effect.params.effect.buff.health).toBe(2);
     });
   });
 
@@ -294,6 +295,21 @@ describe('Amphibian Field Spell Cards', () => {
       expect(card.effects.effect.type).toBe('setFieldSpell');
       expect(card.effects.effect.params.cardId).toBe(cardId);
     });
+
+    it('has onEnd effect for regen via selectFromGroup', () => {
+      const card = getCardDefinitionById(cardId);
+      expect(card.effects.onEnd).toBeDefined();
+      expect(card.effects.onEnd.type).toBe('selectFromGroup');
+      expect(card.effects.onEnd.params.effect.regen).toBe(true);
+    });
+
+    it('effectText matches effects (sets field spell + end of turn regen)', () => {
+      const card = getCardDefinitionById(cardId);
+      expect(card.effectText).toBe('End of turn, regen target creature.');
+      // Verify both effects exist
+      expect(card.effects.effect).toBeDefined(); // setFieldSpell
+      expect(card.effects.onEnd).toBeDefined(); // regen
+    });
   });
 });
 
@@ -317,6 +333,63 @@ describe('Amphibian Trap Cards', () => {
     it('effect negates and kills attacker', () => {
       const card = getCardDefinitionById(cardId);
       expect(card.effects.effect.type).toBe('negateAndKillAttacker');
+    });
+
+    it('negateAndKillAttacker returns negateAttack and killTargets', () => {
+      const state = createTestState();
+      // Set up attacker on opponent's field (player 1)
+      const { creature: attacker } = createTestCreature('fish-predator-sailfish', 1, 0, state);
+      // Set up trap on player 0
+      const { trap } = createTestTrap(cardId, 0, state);
+
+      // Create trap context with attacker info
+      const context = createTrapContext(state, trap, attacker, 0);
+
+      const negateFn = effectLibrary.negateAndKillAttacker();
+      const result = negateFn(context);
+
+      expect(result.negateAttack).toBe(true);
+      expect(result.killTargets).toBeDefined();
+      expect(result.killTargets.length).toBe(1);
+      expect(result.killTargets[0]).toBe(attacker);
+    });
+
+    it('negateAndKillAttacker still negates when attacker is null', () => {
+      const state = createTestState();
+      const { trap } = createTestTrap(cardId, 0, state);
+
+      // Create context without an attacker
+      const context = createTrapContext(state, trap, null, 0);
+
+      const negateFn = effectLibrary.negateAndKillAttacker();
+      const result = negateFn(context);
+
+      // Should still negate the attack even if no creature to kill
+      expect(result.negateAttack).toBe(true);
+      expect(result.killTargets).toBeUndefined();
+    });
+
+    it('logs correct message when killing attacker', () => {
+      const state = createTestState();
+      const { creature: attacker } = createTestCreature('fish-predator-sailfish', 1, 0, state);
+      const { trap } = createTestTrap(cardId, 0, state);
+      const context = createTrapContext(state, trap, attacker, 0);
+
+      const negateFn = effectLibrary.negateAndKillAttacker();
+      negateFn(context);
+
+      expect(context.log.getMessages()).toContain(`Attack negated. ${attacker.name} is destroyed.`);
+    });
+
+    it('logs correct message when no attacker', () => {
+      const state = createTestState();
+      const { trap } = createTestTrap(cardId, 0, state);
+      const context = createTrapContext(state, trap, null, 0);
+
+      const negateFn = effectLibrary.negateAndKillAttacker();
+      negateFn(context);
+
+      expect(context.log.getMessages()).toContain('No attacker to kill.');
     });
   });
 

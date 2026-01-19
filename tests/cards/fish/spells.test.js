@@ -33,22 +33,30 @@ describe('Fish Spell Cards', () => {
       expect(card.type).toBe('Spell');
     });
 
-    it('effect kills enemy prey', () => {
+    it('effect kills enemy prey via selectFromGroup', () => {
       const card = getCardDefinitionById(cardId);
-      expect(card.effects.effect.type).toBe('selectEnemyPreyToKill');
+      expect(card.effects.effect.type).toBe('selectFromGroup');
+      expect(card.effects.effect.params.targetGroup).toBe('enemy-prey');
+      expect(card.effects.effect.params.effect.kill).toBe(true);
     });
 
-    it('selectEnemyPreyToKill targets only prey', () => {
+    it('selectFromGroup targets only prey (excludes predators)', () => {
       const state = createTestState();
       createTestCreature('fish-prey-atlantic-flying-fish', 1, 0, state);
-      createTestCreature('fish-predator-sailfish', 1, 1, state);
+      createTestCreature('fish-prey-blobfish', 1, 1, state); // Another prey for selection UI
+      createTestCreature('fish-predator-sailfish', 1, 2, state); // Predator should be excluded
       const context = createEffectContext(state, 0);
 
-      const selectFn = effectLibrary.selectEnemyPreyToKill();
+      const selectFn = effectLibrary.selectFromGroup({
+        targetGroup: 'enemy-prey',
+        title: 'Kill enemy prey',
+        effect: { kill: true },
+      });
       const result = selectFn(context);
 
-      expect(result.selectTarget.candidates.length).toBe(1);
-      expect(result.selectTarget.candidates[0].value.type).toBe('Prey');
+      // Should only show prey, not predators
+      expect(result.selectTarget.candidates.length).toBe(2);
+      expect(result.selectTarget.candidates.every(c => c.value.creature.type === 'Prey')).toBe(true);
     });
   });
 
@@ -147,12 +155,12 @@ describe('Fish Spell Cards', () => {
       expect(option2.effect.params.amount).toBe(3);
     });
 
-    it('option 3 gives target creature +3/+3', () => {
+    it('option 3 gives target creature +3/+3 via selectFromGroup', () => {
       const card = getCardDefinitionById(cardId);
       const option3 = card.effects.effect.params.options[2];
-      expect(option3.effect.type).toBe('selectCreatureForBuff');
-      expect(option3.effect.params.attack).toBe(3);
-      expect(option3.effect.params.health).toBe(3);
+      expect(option3.effect.type).toBe('selectFromGroup');
+      expect(option3.effect.params.effect.buff.attack).toBe(3);
+      expect(option3.effect.params.effect.buff.health).toBe(3);
     });
   });
 

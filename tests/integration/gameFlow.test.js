@@ -128,19 +128,25 @@ describe('Game Flow Integration Tests', () => {
     });
 
     it('predator with onConsume effect triggers when consuming prey', () => {
-      // Goliath Grouper has onConsume: selectEnemyPreyToKill
+      // Goliath Grouper has onConsume: selectFromGroup (migrated from selectEnemyPreyToKill)
       const card = getCardDefinitionById('fish-predator-goliath-grouper');
-      expect(card.effects.onConsume.type).toBe('selectEnemyPreyToKill');
+      expect(card.effects.onConsume.type).toBe('selectFromGroup');
+      expect(card.effects.onConsume.params.targetGroup).toBe('enemy-prey');
 
-      // Create enemy prey
+      // Create multiple enemy prey for selection UI (auto-selects with single candidate)
       createTestCreature('fish-prey-atlantic-flying-fish', 1, 0, state);
+      createTestCreature('fish-prey-blobfish', 1, 1, state);
       const context = createEffectContext(state, 0);
 
-      const selectFn = effectLibrary.selectEnemyPreyToKill();
+      const selectFn = effectLibrary.selectFromGroup({
+        targetGroup: 'enemy-prey',
+        title: 'Kill enemy prey',
+        effect: { kill: true },
+      });
       const result = selectFn(context);
 
       expect(result.selectTarget).toBeDefined();
-      expect(result.selectTarget.candidates.length).toBe(1);
+      expect(result.selectTarget.candidates.length).toBe(2);
     });
 
     it('Orca onConsume tutors from deck', () => {
