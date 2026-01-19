@@ -3,9 +3,12 @@
  *
  * A floating action button for bug reporting.
  * Shows a small popup menu with "Report Bug" and "View Known Bugs" options.
+ *
+ * Dynamically appends to document.body to ensure it renders above all overlays.
  */
 
 let isMenuOpen = false;
+let containerElement = null;
 
 /**
  * Initialize the bug button and its menu
@@ -14,10 +17,23 @@ let isMenuOpen = false;
  * @param {Function} callbacks.onViewBugs - Called when "View Known Bugs" is clicked
  */
 export const initBugButton = (callbacks = {}) => {
-  const container = document.getElementById('bug-button-container');
-  if (!container) return;
+  // Remove existing container if re-initializing
+  if (containerElement) {
+    containerElement.remove();
+  }
 
-  container.innerHTML = `
+  // Create container dynamically and append to body for maximum z-index control
+  containerElement = document.createElement('div');
+  containerElement.id = 'bug-button-container';
+  containerElement.className = 'bug-button-container';
+
+  // Append to body to escape any stacking contexts
+  document.body.appendChild(containerElement);
+
+  // Set extremely high z-index via JS to ensure it's above everything
+  containerElement.style.zIndex = '100000';
+
+  containerElement.innerHTML = `
     <div class="bug-menu" id="bug-menu">
       <button class="bug-menu-item" id="bug-menu-report">
         <span class="bug-menu-icon">📝</span>
@@ -33,10 +49,9 @@ export const initBugButton = (callbacks = {}) => {
     </button>
   `;
 
-  const fab = container.querySelector('#bug-fab');
-  const menu = container.querySelector('#bug-menu');
-  const reportBtn = container.querySelector('#bug-menu-report');
-  const viewBtn = container.querySelector('#bug-menu-view');
+  const fab = containerElement.querySelector('#bug-fab');
+  const reportBtn = containerElement.querySelector('#bug-menu-report');
+  const viewBtn = containerElement.querySelector('#bug-menu-view');
 
   // Toggle menu on FAB click
   fab?.addEventListener('click', (e) => {
@@ -58,7 +73,7 @@ export const initBugButton = (callbacks = {}) => {
 
   // Close menu when clicking outside
   document.addEventListener('click', (e) => {
-    if (isMenuOpen && !container.contains(e.target)) {
+    if (isMenuOpen && containerElement && !containerElement.contains(e.target)) {
       hideBugMenu();
     }
   });
