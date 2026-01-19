@@ -945,73 +945,7 @@
         </section>
       </div>
 
-    <!-- Bug Report Overlay -->
-    <div class="overlay bug-report-overlay" id="bug-report-overlay" aria-hidden="true">
-      <div class="overlay-content bug-report-card">
-        <div class="bug-report-header">
-          <h2>Bug Tracker</h2>
-          <button class="bug-overlay-close" id="bug-overlay-close" aria-label="Close">&#10005;</button>
-        </div>
-
-        <!-- Tabs -->
-        <div class="bug-tabs">
-          <button class="bug-tab active" id="bug-tab-report">Report Bug</button>
-          <button class="bug-tab" id="bug-tab-list">Known Bugs</button>
-        </div>
-
-        <!-- Report Bug Tab -->
-        <div class="bug-report-content" id="bug-report-content">
-          <h3 class="bug-form-title" id="bug-form-title">Report a Bug</h3>
-          <div class="bug-form">
-            <label class="bug-label" for="bug-title-input">Title *</label>
-            <input
-              type="text"
-              class="menu-input"
-              id="bug-title-input"
-              placeholder="Brief description of the bug..."
-              maxlength="100"
-            />
-
-            <label class="bug-label" for="bug-description-input">Description</label>
-            <textarea
-              class="menu-input bug-textarea"
-              id="bug-description-input"
-              placeholder="What happened? Steps to reproduce?"
-              rows="4"
-              maxlength="1000"
-            ></textarea>
-
-            <label class="bug-label" for="bug-category-select">Category</label>
-            <select class="menu-input" id="bug-category-select">
-              <option value="gameplay">Gameplay</option>
-              <option value="ui">UI/UX</option>
-              <option value="multiplayer">Multiplayer</option>
-              <option value="cards">Cards</option>
-              <option value="ai">AI</option>
-              <option value="other">Other</option>
-            </select>
-
-            <div class="bug-form-error" id="bug-form-error"></div>
-
-            <div class="bug-form-actions">
-              <button class="btn-secondary bug-cancel-btn" id="bug-cancel-btn" style="display: none;">Cancel</button>
-              <button class="btn-primary bug-submit-btn" id="bug-submit-btn">Submit Report</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Known Bugs List Tab -->
-        <div class="bug-list-content" id="bug-list-content" style="display: none;">
-          <div class="bug-list-loading" id="bug-list-loading">Loading bugs...</div>
-          <div class="bug-list-empty" id="bug-list-empty" style="display: none;">
-            No bugs reported yet. Be the first to report one!
-          </div>
-          <div class="bug-list" id="bug-list"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bug Button is created dynamically via JS and appended to body -->
+    <!-- Bug Report Overlay and Bug Button are created dynamically via JS and appended to body -->
 
     <!-- Card Hover Tooltip (Hearthstone-style) -->
     <div class="card-hover-tooltip" id="card-hover-tooltip" aria-hidden="true">

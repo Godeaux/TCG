@@ -30,31 +30,104 @@ let bugReports = [];
 let userVotes = new Set();
 let bugChannel = null;
 let editingBugId = null;
+let overlayElement = null;
+
+// ============================================================================
+// OVERLAY HTML TEMPLATE
+// ============================================================================
+
+const createOverlayHTML = () => `
+  <div class="overlay-content bug-report-card">
+    <div class="bug-report-header">
+      <h2>Bug Tracker</h2>
+      <button class="bug-overlay-close" id="bug-overlay-close" aria-label="Close">&#10005;</button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="bug-tabs">
+      <button class="bug-tab active" id="bug-tab-report">Report Bug</button>
+      <button class="bug-tab" id="bug-tab-list">Known Bugs</button>
+    </div>
+
+    <!-- Report Bug Tab -->
+    <div class="bug-report-content" id="bug-report-content">
+      <h3 class="bug-form-title" id="bug-form-title">Report a Bug</h3>
+      <div class="bug-form">
+        <label class="bug-label" for="bug-title-input">Title *</label>
+        <input
+          type="text"
+          class="menu-input"
+          id="bug-title-input"
+          placeholder="Brief description of the bug..."
+          maxlength="100"
+        />
+
+        <label class="bug-label" for="bug-description-input">Description</label>
+        <textarea
+          class="menu-input bug-textarea"
+          id="bug-description-input"
+          placeholder="What happened? Steps to reproduce?"
+          rows="4"
+          maxlength="1000"
+        ></textarea>
+
+        <label class="bug-label" for="bug-category-select">Category</label>
+        <select class="menu-input" id="bug-category-select">
+          <option value="gameplay">Gameplay</option>
+          <option value="ui">UI/UX</option>
+          <option value="multiplayer">Multiplayer</option>
+          <option value="cards">Cards</option>
+          <option value="ai">AI</option>
+          <option value="other">Other</option>
+        </select>
+
+        <div class="bug-form-error" id="bug-form-error"></div>
+
+        <div class="bug-form-actions">
+          <button class="btn-secondary bug-cancel-btn" id="bug-cancel-btn" style="display: none;">Cancel</button>
+          <button class="btn-primary bug-submit-btn" id="bug-submit-btn">Submit Report</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Known Bugs List Tab -->
+    <div class="bug-list-content" id="bug-list-content" style="display: none;">
+      <div class="bug-list-loading" id="bug-list-loading">Loading bugs...</div>
+      <div class="bug-list-empty" id="bug-list-empty" style="display: none;">
+        No bugs reported yet. Be the first to report one!
+      </div>
+      <div class="bug-list" id="bug-list"></div>
+    </div>
+  </div>
+`;
 
 // ============================================================================
 // DOM ELEMENTS
 // ============================================================================
 
-const getElements = () => ({
-  overlay: document.getElementById('bug-report-overlay'),
-  closeBtn: document.getElementById('bug-overlay-close'),
-  tabReport: document.getElementById('bug-tab-report'),
-  tabList: document.getElementById('bug-tab-list'),
-  reportContent: document.getElementById('bug-report-content'),
-  listContent: document.getElementById('bug-list-content'),
-  // Report form
-  titleInput: document.getElementById('bug-title-input'),
-  descriptionInput: document.getElementById('bug-description-input'),
-  categorySelect: document.getElementById('bug-category-select'),
-  submitBtn: document.getElementById('bug-submit-btn'),
-  cancelBtn: document.getElementById('bug-cancel-btn'),
-  formError: document.getElementById('bug-form-error'),
-  formTitle: document.getElementById('bug-form-title'),
-  // List
-  bugList: document.getElementById('bug-list'),
-  listLoading: document.getElementById('bug-list-loading'),
-  listEmpty: document.getElementById('bug-list-empty'),
-});
+const getElements = () => {
+  if (!overlayElement) return {};
+  return {
+    overlay: overlayElement,
+    closeBtn: overlayElement.querySelector('#bug-overlay-close'),
+    tabReport: overlayElement.querySelector('#bug-tab-report'),
+    tabList: overlayElement.querySelector('#bug-tab-list'),
+    reportContent: overlayElement.querySelector('#bug-report-content'),
+    listContent: overlayElement.querySelector('#bug-list-content'),
+    // Report form
+    titleInput: overlayElement.querySelector('#bug-title-input'),
+    descriptionInput: overlayElement.querySelector('#bug-description-input'),
+    categorySelect: overlayElement.querySelector('#bug-category-select'),
+    submitBtn: overlayElement.querySelector('#bug-submit-btn'),
+    cancelBtn: overlayElement.querySelector('#bug-cancel-btn'),
+    formError: overlayElement.querySelector('#bug-form-error'),
+    formTitle: overlayElement.querySelector('#bug-form-title'),
+    // List
+    bugList: overlayElement.querySelector('#bug-list'),
+    listLoading: overlayElement.querySelector('#bug-list-loading'),
+    listEmpty: overlayElement.querySelector('#bug-list-empty'),
+  };
+};
 
 // ============================================================================
 // HELPERS
@@ -438,6 +511,21 @@ const handleSubmit = async (profileId, callbacks) => {
  * @param {Object} [options.callbacks] - Callback functions
  */
 export const showBugReportOverlay = async ({ profileId, tab = 'report', callbacks = {} }) => {
+  // Create overlay dynamically if it doesn't exist
+  if (!overlayElement) {
+    overlayElement = document.createElement('div');
+    overlayElement.id = 'bug-report-overlay';
+    overlayElement.className = 'overlay bug-report-overlay';
+    overlayElement.setAttribute('aria-hidden', 'true');
+    overlayElement.innerHTML = createOverlayHTML();
+
+    // Append to body to escape stacking contexts
+    document.body.appendChild(overlayElement);
+
+    // Set extremely high z-index to ensure it's above everything
+    overlayElement.style.zIndex = '100001';
+  }
+
   const elements = getElements();
   if (!elements.overlay) return;
 
