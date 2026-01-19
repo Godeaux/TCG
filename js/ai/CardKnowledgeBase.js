@@ -238,7 +238,7 @@ const getPotentialDamage = (ctx) => {
   if (!ai || !state) return 0;
 
   return ai.field
-    .filter(c => c && c.currentHp > 0 && !c.hasAttacked && !c.frozen && !c.paralyzed)
+    .filter(c => c && c.currentHp > 0 && !c.hasAttacked && !c.frozen && !c.paralyzed && !c.webbed)
     .filter(c => !isPassive(c) && !hasKeyword(c, KEYWORDS.HARMLESS))
     .filter(c => c.summonedTurn !== state.turn || hasHaste(c))
     .reduce((sum, c) => sum + (c.currentAtk ?? c.atk ?? 0), 0);

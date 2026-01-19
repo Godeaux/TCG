@@ -26,7 +26,7 @@ export function generateCardEffectText(card) {
   // effectText only describes triggered/activated abilities
 
   // Generate text for each trigger type
-  const triggerOrder = ['onPlay', 'onConsume', 'onSlain', 'onDefend', 'onBeforeCombat', 'onAfterCombat', 'onStart', 'onEnd', 'effect', 'discardEffect'];
+  const triggerOrder = ['onPlay', 'onConsume', 'onSlain', 'onDefend', 'onBeforeCombat', 'onAfterCombat', 'onStart', 'onEnd', 'effect', 'discardEffect', 'sacrificeEffect', 'attackReplacement'];
   // Trigger prefixes match common written patterns
   const triggerPrefixes = {
     onConsume: 'When consumed: ',
@@ -37,6 +37,8 @@ export function generateCardEffectText(card) {
     onStart: 'Start of turn, ',
     onEnd: 'End of turn; ',
     discardEffect: 'Discard: ',
+    sacrificeEffect: 'Sacrifice: ',
+    attackReplacement: '',  // No prefix - effect text itself describes the replacement
   };
 
   // Trap trigger prefixes (used when card.type === 'Trap' and trigger === 'effect')

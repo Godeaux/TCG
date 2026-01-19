@@ -127,6 +127,14 @@ const DECK_OPTIONS = [
     available: true,
     experimental: true,
   },
+  {
+    id: "arachnid",
+    name: "Arachnid",
+    emoji: "🕷️",
+    panelClass: "deck-select-panel--arachnid",
+    available: true,
+    experimental: true,
+  },
 ];
 
 // Deck builder UI state

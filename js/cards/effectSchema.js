@@ -30,6 +30,9 @@ const TOKEN_NAMES = {
   'token-hatchling': { singular: 'Hatchling', plural: 'Hatchlings' },
   'token-chick': { singular: 'Chick', plural: 'Chicks' },
   'token-salmon': { singular: 'Salmon', plural: 'Salmon' },
+  // Arachnid tokens
+  'token-spiderling': { singular: 'Spiderling', plural: 'Spiderlings' },
+  'token-egg-sac': { singular: 'Egg Sac', plural: 'Egg Sacs' },
 };
 
 /**
@@ -518,6 +521,45 @@ export const EFFECT_SCHEMA = {
     text: () => `Attacker gains Frozen`,
   },
 
+  // ==========================================
+  // ARACHNID WEB EFFECTS (Experimental)
+  // ==========================================
+
+  webAllEnemies: {
+    params: {},
+    text: () => `Rival's creatures gain Webbed`,
+  },
+
+  webAttacker: {
+    params: {},
+    text: () => `Attacker gains Webbed`,
+  },
+
+  webTarget: {
+    params: {},
+    text: () => `Target creature gains Webbed`,
+  },
+
+  webRandomEnemy: {
+    params: {},
+    text: () => `A random Rival's creature gains Webbed`,
+  },
+
+  damageWebbed: {
+    params: { damage: { type: 'number', required: true } },
+    text: (p) => `Deal ${p.damage} damage to all Webbed creatures`,
+  },
+
+  drawPerWebbed: {
+    params: {},
+    text: () => `Draw 1 for each Webbed Rival's creature (max 3)`,
+  },
+
+  healPerWebbed: {
+    params: { healPerWebbed: { type: 'number', required: true } },
+    text: (p) => `Heal ${p.healPerWebbed} for each Webbed Rival's creature`,
+  },
+
   applyNeurotoxicToAttacker: {
     params: {},
     text: () => `Apply Neurotoxic to attacker`,
@@ -710,7 +752,7 @@ export const EFFECT_SCHEMA = {
 
   eatPreyInsteadOfAttacking: {
     params: {},
-    text: () => `Eat prey instead of attacking`,
+    text: () => `Instead of attacking, may eat target prey`,
   },
 
   selectEnemyPreyToConsume: {

@@ -29,7 +29,7 @@
  *   }
  */
 
-import { isInvisible } from "../keywords.js";
+import { isInvisible, KEYWORDS } from "../keywords.js";
 import { isCreatureCard } from "../cardTypes.js";
 
 // ============================================================================
@@ -2696,6 +2696,142 @@ export const eatPreyInsteadOfAttacking = () => (context) => {
   });
 };
 
+// ============================================================================
+// ARACHNID WEB EFFECTS (Experimental)
+// ============================================================================
+
+/**
+ * Apply Webbed status to a creature
+ * Webbed creatures cannot attack and persist until they take damage
+ */
+const applyWebbed = (creature, log) => {
+  if (!creature) return {};
+  if (!creature.keywords) {
+    creature.keywords = [];
+  }
+  if (!creature.keywords.includes(KEYWORDS.WEBBED)) {
+    creature.keywords.push(KEYWORDS.WEBBED);
+    creature.webbed = true;
+    log(`🕸️ ${creature.name} is trapped in a web!`);
+  }
+  return {};
+};
+
+/**
+ * Web all enemy creatures
+ */
+export const webAllEnemies = () => ({ log, opponent }) => {
+  const enemies = opponent.field.filter(c => c && isCreatureCard(c));
+  if (enemies.length === 0) {
+    log(`No Rival's creatures to web.`);
+    return {};
+  }
+  enemies.forEach(creature => {
+    applyWebbed(creature, log);
+  });
+  return {};
+};
+
+/**
+ * Defend trigger: web the attacking enemy
+ */
+export const webAttacker = () => ({ log, attacker }) => {
+  if (!attacker) return {};
+  applyWebbed(attacker, log);
+  return {};
+};
+
+/**
+ * Select an enemy creature to web
+ */
+export const webTarget = () => (context) => {
+  const { log, opponent, state } = context;
+  const enemies = opponent.field.filter(c => c && isCreatureCard(c) && !isInvisible(c, state));
+
+  if (enemies.length === 0) {
+    log(`No Rival's creatures to web.`);
+    return {};
+  }
+
+  return makeTargetedSelection({
+    title: "Choose a creature to trap in web",
+    candidates: enemies.map(c => ({ label: c.name, value: c })),
+    onSelect: (target) => {
+      applyWebbed(target, log);
+      return {};
+    }
+  });
+};
+
+/**
+ * Web a random enemy creature (for field spells)
+ */
+export const webRandomEnemy = () => ({ log, opponent }) => {
+  const enemies = opponent.field.filter(c => c && isCreatureCard(c));
+  if (enemies.length === 0) {
+    log(`No Rival's creatures to web.`);
+    return {};
+  }
+  const target = enemies[Math.floor(Math.random() * enemies.length)];
+  applyWebbed(target, log);
+  return {};
+};
+
+/**
+ * Deal damage to all Webbed enemy creatures
+ * @param {number} damage - Damage amount
+ */
+export const damageWebbed = (damage) => ({ log, opponent }) => {
+  const webbedCreatures = opponent.field.filter(c =>
+    c && isCreatureCard(c) && c.keywords?.includes(KEYWORDS.WEBBED)
+  );
+
+  if (webbedCreatures.length === 0) {
+    log(`No Webbed creatures to damage.`);
+    return {};
+  }
+
+  log(`🕷️ Deals ${damage} damage to all Webbed creatures.`);
+  return { damageCreatures: { creatures: webbedCreatures, amount: damage } };
+};
+
+/**
+ * Draw cards equal to number of Webbed enemies (max 3)
+ */
+export const drawPerWebbed = () => ({ log, opponent }) => {
+  const webbedCount = opponent.field.filter(c =>
+    c && isCreatureCard(c) && c.keywords?.includes(KEYWORDS.WEBBED)
+  ).length;
+
+  if (webbedCount === 0) {
+    log(`No Webbed creatures - no cards drawn.`);
+    return {};
+  }
+
+  const drawCount = Math.min(webbedCount, 3);
+  log(`🕸️ Drawing ${drawCount} card(s) for Webbed enemies.`);
+  return { draw: drawCount };
+};
+
+/**
+ * Heal player for each Webbed enemy
+ * @param {number} healPerWebbed - Heal amount per Webbed creature
+ */
+export const healPerWebbed = (healPerWebbed) => ({ log, opponent }) => {
+  const webbedCount = opponent.field.filter(c =>
+    c && isCreatureCard(c) && c.keywords?.includes(KEYWORDS.WEBBED)
+  ).length;
+
+  if (webbedCount === 0) {
+    log(`No Webbed creatures - no healing.`);
+    return {};
+  }
+
+  const totalHeal = webbedCount * healPerWebbed;
+  log(`🕸️ Healing ${totalHeal} HP for ${webbedCount} Webbed enemy creature(s).`);
+  return { heal: totalHeal };
+};
+
 /**
  * Discard a card, draw a card, then kill target enemy (Silver Bullet)
  */
@@ -3025,6 +3161,15 @@ export const effectRegistry = {
   healAndSelectTargetForDamage,
   negateAndAllowReplay,
   playSpellsFromHand,
+
+  // Arachnid web effects (Experimental)
+  webAllEnemies,
+  webAttacker,
+  webTarget,
+  webRandomEnemy,
+  damageWebbed,
+  drawPerWebbed,
+  healPerWebbed,
 
   // Mammal freeze effects
   selectEnemyToFreeze,
@@ -3403,6 +3548,28 @@ export const resolveEffect = (effectDef, context) => {
       break;
     case 'playSpellsFromHand':
       specificEffect = effectFn(params.count);
+      break;
+    // Arachnid web effects
+    case 'webAllEnemies':
+      specificEffect = effectFn();
+      break;
+    case 'webAttacker':
+      specificEffect = effectFn();
+      break;
+    case 'webTarget':
+      specificEffect = effectFn();
+      break;
+    case 'webRandomEnemy':
+      specificEffect = effectFn();
+      break;
+    case 'damageWebbed':
+      specificEffect = effectFn(params.damage);
+      break;
+    case 'drawPerWebbed':
+      specificEffect = effectFn();
+      break;
+    case 'healPerWebbed':
+      specificEffect = effectFn(params.healPerWebbed);
       break;
     // Mammal freeze effects
     case 'selectEnemyToFreeze':

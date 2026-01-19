@@ -244,8 +244,8 @@ export class PositionEvaluator {
     const opponentBoardValue = this.evaluateBoardValue(opponent.field, state, 1 - playerIndex);
     score += (playerBoardValue - opponentBoardValue);
 
-    // Hand advantage
-    score += (player.hand.length - opponent.hand.length) * 3;
+    // Hand advantage - cards are valuable resources
+    score += (player.hand.length - opponent.hand.length) * 8;
 
     // Deck advantage (less immediate impact)
     score += (player.deck.length - opponent.deck.length) * 0.5;

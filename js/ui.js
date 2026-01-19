@@ -208,6 +208,7 @@ import {
   broadcastHandHover,
   broadcastHandDrag,
   broadcastCursorMove,
+  requestSyncFromOpponent,
 } from "./network/index.js";
 
 // Lobby manager (extracted module)
@@ -1464,8 +1465,8 @@ const initHandPreview = () => {
       return;
     }
 
-    // Calculate horizontal distance from cursor to each card's center
-    // Use horizontal distance primarily since cards are laid out horizontally
+    // Calculate distance from cursor to each card
+    // Hearthstone-style: only focus if cursor is actually near a card
     let closestCard = null;
     let closestDistance = Infinity;
     let currentFocusDistance = Infinity;
@@ -1474,8 +1475,16 @@ const initHandPreview = () => {
       const rect = getCardBaseRect(card);
       const centerX = rect.left + rect.width / 2;
 
-      // Use primarily horizontal distance for hand cards
+      // Calculate horizontal distance (primary) and check vertical bounds
       const dx = Math.abs(event.clientX - centerX);
+      const dy = event.clientY - rect.top; // Distance from top of card
+
+      // Only consider this card if cursor is vertically within card bounds (with margin)
+      // Allow some margin above and below the card
+      const verticalMargin = rect.height * 0.3;
+      if (dy < -verticalMargin || dy > rect.height + verticalMargin) {
+        return; // Cursor too far above or below this card
+      }
 
       if (dx < closestDistance) {
         closestDistance = dx;
@@ -1487,6 +1496,16 @@ const initHandPreview = () => {
         currentFocusDistance = dx;
       }
     });
+
+    // Maximum horizontal distance threshold - roughly half a card width plus margin
+    // If cursor is too far from any card horizontally, clear focus
+    const firstCard = cards[0];
+    const maxDistance = firstCard ? getCardBaseRect(firstCard).width * 0.7 : 80;
+
+    if (closestDistance > maxDistance) {
+      clearFocus();
+      return;
+    }
 
     // Apply hysteresis: only switch if new card is significantly closer
     if (currentFocusedCard && currentFocusedCard !== closestCard) {
@@ -3721,6 +3740,34 @@ const setupSurrenderButton = () => {
 };
 
 /**
+ * Set up resync button click handler (for multiplayer desync recovery)
+ */
+const setupResyncButton = () => {
+  const resyncBtn = document.getElementById('field-resync-btn');
+  if (resyncBtn) {
+    resyncBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!latestState) return;
+
+      if (isOnlineMode(latestState)) {
+        console.log('[Resync] Manual resync requested by user');
+        requestSyncFromOpponent(latestState);
+      }
+    });
+  }
+};
+
+/**
+ * Update resync button visibility based on online mode
+ */
+const updateResyncButtonVisibility = (state) => {
+  const resyncBtn = document.getElementById('field-resync-btn');
+  if (resyncBtn) {
+    resyncBtn.classList.toggle('online', isOnlineMode(state));
+  }
+};
+
+/**
  * Set up click-away handler to deselect cards
  * Clicking on empty space (not cards, buttons, or interactive elements) clears the selection
  */
@@ -3818,6 +3865,7 @@ if (typeof window !== 'undefined') {
       setupMobileNavigation();
       setupLogCardLinks();
       setupSurrenderButton();
+      setupResyncButton();
       setupClickAwayHandler();
       setupBugDetectorResumeHandler();
       initCardTooltip();
@@ -3826,6 +3874,7 @@ if (typeof window !== 'undefined') {
     setupMobileNavigation();
     setupLogCardLinks();
     setupSurrenderButton();
+    setupResyncButton();
     setupClickAwayHandler();
     setupBugDetectorResumeHandler();
     initCardTooltip();
@@ -3840,6 +3889,9 @@ export const renderGame = (state, callbacks = {}) => {
 
   latestState = state;
   latestCallbacks = callbacks;
+
+  // Update resync button visibility based on online mode
+  updateResyncButtonVisibility(state);
 
   // Set up victory menu callback (only once)
   setVictoryMenuCallback(() => {

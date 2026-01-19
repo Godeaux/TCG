@@ -73,9 +73,15 @@ export class PlayEvaluator {
     // Offensive adjustments: can we set up lethal?
     score += this.evaluateOffensiveValue(card, state, aiPlayerIndex, reasons);
 
-    // Consumption value for predators
+    // Consumption opportunity for predators (intelligent evaluation)
+    // Considers: actual effect value, prey on field vs in hand, opportunity cost
     if (card.type === 'Predator') {
-      score += this.evaluateConsumptionValue(card, state, aiPlayerIndex, reasons);
+      score += this.evaluateConsumptionOpportunity(card, state, aiPlayerIndex, reasons);
+    }
+
+    // Setup value for prey (bonus when predator with valuable effect is in hand)
+    if (card.type === 'Prey') {
+      score += this.evaluateSetupValue(card, state, aiPlayerIndex, reasons);
     }
 
     // Synergy with existing field
@@ -210,57 +216,137 @@ export class PlayEvaluator {
   }
 
   /**
-   * Evaluate the value of consuming prey with a predator
+   * Simulate the value of consuming with this predator
+   * Calculates what the predator gains from consumption (stats + onConsume effect)
+   *
+   * @param {Object} predator - Predator card
+   * @param {Object} state - Current game state
+   * @param {number} aiPlayerIndex - AI's player index
+   * @returns {number} - Total value of consumption
+   */
+  simulateConsumeValue(predator, state, aiPlayerIndex) {
+    let value = 0;
+
+    // Nutrition bonus: +1 ATK, +1 HP per nutrition consumed
+    // Assume consuming 1 prey with average nutrition
+    const avgNutrition = 1.5; // Most prey have 1-2 nutrition
+    value += avgNutrition * 4; // ~6 points for stat boost
+
+    // onConsume ability value - this is the KEY differentiator
+    if (predator.effects?.onConsume) {
+      // Use CardKnowledgeBase to evaluate the effect IN CONTEXT
+      const effectResult = this.cardKnowledge.evaluateSingleEffect(
+        predator.effects.onConsume,
+        { state, aiPlayerIndex, card: predator, trigger: 'onConsume' }
+      );
+      value += effectResult.value;
+    }
+
+    return value;
+  }
+
+  /**
+   * Evaluate predator play by simulating consumption value
+   * Intelligently compares: "What do I get WITH consumption vs WITHOUT?"
    *
    * @param {Object} card - Predator card
    * @param {Object} state - Current game state
    * @param {number} aiPlayerIndex - AI's player index
    * @param {Array} reasons - Reasons array to append to
-   * @returns {number} - Consumption value bonus
+   * @returns {number} - Consumption opportunity value (can be negative)
    */
-  evaluateConsumptionValue(card, state, aiPlayerIndex, reasons) {
+  evaluateConsumptionOpportunity(card, state, aiPlayerIndex, reasons) {
     const ai = state.players[aiPlayerIndex];
-    let bonus = 0;
 
-    // Find available prey (not frozen and not inedible)
+    // Calculate value IF we could consume (simulated)
+    const consumeValue = this.simulateConsumeValue(card, state, aiPlayerIndex);
+
+    // Find available prey on field (not frozen and not inedible)
     const availablePrey = ai.field.filter(c =>
       c && !c.frozen && !isInedible(c) && (c.type === 'Prey' || isEdible(c))
     );
 
-    if (availablePrey.length === 0) {
-      // Dry drop penalty - no consumption bonus, ability won't trigger
-      bonus -= 10;
-      reasons.push('Dry drop (no prey): -10');
-      return bonus;
+    if (availablePrey.length > 0) {
+      // We CAN consume - add full consume value
+      reasons.push(`Consume value: +${consumeValue.toFixed(0)}`);
+
+      // Also consider sacrifice cost
+      const bestPrey = availablePrey[0];
+      const sacrificeValue = (bestPrey.currentAtk ?? bestPrey.atk ?? 0) +
+                            (bestPrey.currentHp ?? bestPrey.hp ?? 0);
+      if (sacrificeValue >= 5) {
+        reasons.push(`Sacrifice cost: -3`);
+        return consumeValue - 3;
+      }
+
+      return consumeValue;
     }
 
-    // Calculate nutrition bonus
-    const totalNutrition = availablePrey.slice(0, 3).reduce((sum, prey) => {
-      return sum + (prey.nutrition ?? 1);
-    }, 0);
+    // No prey on field - check if we have prey in hand (setup opportunity)
+    const preyInHand = ai.hand.filter(c =>
+      c && c.type === 'Prey' && c.uid !== card.uid
+    );
 
-    // +1 ATK and +1 HP per nutrition = ~4 value per nutrition
-    bonus += totalNutrition * 4;
-    reasons.push(`Consumption (${totalNutrition} nutrition): +${totalNutrition * 4}`);
+    if (preyInHand.length > 0 && consumeValue > 0) {
+      // We COULD get this value if we played prey first
+      // The "opportunity cost" of dry dropping = losing this value
+      // But we might get it next turn, so discount by tempo factor
+      const tempoDiscount = 0.7; // Value is worth less if delayed
+      const opportunityCost = consumeValue * tempoDiscount;
 
-    // Bonus for activating ability
-    if (card.effects?.onConsume) {
-      bonus += 10;
-      reasons.push('Ability activates: +10');
+      reasons.push(`Dry drop loses ${consumeValue.toFixed(0)} consume value (prey in hand)`);
+      reasons.push(`Setup opportunity: play prey first → get effect next turn`);
+
+      // Return NEGATIVE of the opportunity cost - this is what we're giving up
+      return -opportunityCost;
     }
 
-    // Consider what we're sacrificing
-    const sacrificeValue = availablePrey.slice(0, 1).reduce((sum, prey) => {
-      return sum + (prey.currentAtk ?? prey.atk ?? 0) + (prey.currentHp ?? prey.hp ?? 0);
-    }, 0);
-
-    // If sacrificing a lot of stats, reduce bonus slightly
-    if (sacrificeValue >= 5) {
-      bonus -= 3;
-      reasons.push(`Sacrifice cost: -3`);
+    // No prey anywhere - small penalty for missing potential
+    if (consumeValue > 0) {
+      reasons.push(`No prey available, missing ${consumeValue.toFixed(0)} consume value`);
+      return -5; // Small penalty - not our fault, just unfortunate
     }
 
-    return bonus;
+    return 0;
+  }
+
+  /**
+   * Evaluate setup value - playing prey when predator is waiting
+   * Gives bonus for enabling consumption next turn
+   *
+   * @param {Object} card - Prey card
+   * @param {Object} state - Current game state
+   * @param {number} aiPlayerIndex - AI's player index
+   * @param {Array} reasons - Reasons array to append to
+   * @returns {number} - Setup value bonus
+   */
+  evaluateSetupValue(card, state, aiPlayerIndex, reasons) {
+    if (card.type !== 'Prey') return 0;
+
+    const ai = state.players[aiPlayerIndex];
+    const predatorsInHand = ai.hand.filter(c => c && c.type === 'Predator');
+
+    if (predatorsInHand.length === 0) return 0;
+
+    // Find best predator's consume value
+    let bestConsumeValue = 0;
+    let bestPredator = null;
+    for (const pred of predatorsInHand) {
+      const consumeVal = this.simulateConsumeValue(pred, state, aiPlayerIndex);
+      if (consumeVal > bestConsumeValue) {
+        bestConsumeValue = consumeVal;
+        bestPredator = pred;
+      }
+    }
+
+    if (bestConsumeValue > 0) {
+      // Discount for delayed payoff (next turn)
+      const setupBonus = Math.round(bestConsumeValue * 0.5);
+      reasons.push(`Setup: enables ${bestConsumeValue.toFixed(0)} consume value next turn → +${setupBonus}`);
+      return setupBonus;
+    }
+
+    return 0;
   }
 
   /**

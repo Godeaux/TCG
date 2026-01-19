@@ -3,6 +3,7 @@ import { cleanupDestroyed } from "./combat.js";
 import { resolveEffectResult } from "./effects.js";
 import { logPlainMessage } from "./historyLog.js";
 import { resolveCardEffect } from "../cards/index.js";
+import { calculateTotalVenom, hasWebbed, KEYWORDS } from "../keywords.js";
 
 // Lazy-loaded to avoid circular dependency during module initialization
 // The positionEvaluator is loaded by ui.js, so we fetch it once available
@@ -218,6 +219,44 @@ const handleHowlCleanup = (state) => {
   }
 };
 
+// Handle Venom damage - deal damage to all Webbed enemy creatures at end of turn
+const handleVenomDamage = (state) => {
+  const activePlayerIndex = state.activePlayerIndex;
+  const opponentIndex = (activePlayerIndex + 1) % 2;
+  const opponent = state.players[opponentIndex];
+
+  // Calculate total venom from all friendly creatures
+  const totalVenom = calculateTotalVenom(state, activePlayerIndex);
+  if (totalVenom <= 0) return;
+
+  // Find all Webbed enemy creatures
+  const webbedCreatures = opponent.field.filter((creature) => creature && hasWebbed(creature));
+  if (webbedCreatures.length === 0) return;
+
+  logGameAction(state, DAMAGE, `🕷️ Venom activates! Dealing ${totalVenom} damage to ${webbedCreatures.length} Webbed creature(s).`);
+
+  // Deal venom damage to each Webbed creature
+  webbedCreatures.forEach((creature) => {
+    const previousHp = creature.currentHp ?? creature.hp;
+    creature.currentHp = previousHp - totalVenom;
+
+    // Remove Webbed status since the creature took damage
+    if (creature.keywords) {
+      const webbedIndex = creature.keywords.indexOf(KEYWORDS.WEBBED);
+      if (webbedIndex >= 0) {
+        creature.keywords.splice(webbedIndex, 1);
+      }
+    }
+    creature.webbed = false;
+
+    if (creature.currentHp <= 0) {
+      logGameAction(state, DEATH, `🕷️ ${creature.name} is killed by venom! (${previousHp} → ${creature.currentHp} HP)`);
+    } else {
+      logGameAction(state, DAMAGE, `🕷️ ${creature.name} takes ${totalVenom} venom damage and breaks free from web. (${previousHp} → ${creature.currentHp} HP)`);
+    }
+  });
+};
+
 export const startTurn = (state) => {
   state.cardPlayedThisTurn = false;
   state.extendedConsumption = null; // Clear extended consumption window on turn start
@@ -315,7 +354,7 @@ export const advancePhase = (state) => {
   if (state.phase === "Combat") {
     const player = state.players[state.activePlayerIndex];
     const readyAttackers = player.field.filter(c =>
-      c && (c.type === "Predator" || c.type === "Prey") && !c.hasAttacked && !c.frozen && !c.paralyzed
+      c && (c.type === "Predator" || c.type === "Prey") && !c.hasAttacked && !c.frozen && !c.paralyzed && !c.webbed
     );
     logGameAction(state, PHASE, `${player.name} has ${readyAttackers.length} creature(s) ready to attack.`);
     resetCombat(state);
@@ -427,6 +466,7 @@ export const finalizeEndPhase = (state) => {
   logGameAction(state, PHASE, `Processing end-of-turn effects...`);
   handleRegen(state);
   handleHowlCleanup(state);      // Remove temporary Howl buffs from Canines
+  handleVenomDamage(state);      // Deal venom damage to Webbed enemies (before thaw/cleanup)
   handleFrozenThaw(state);       // Thaw regular frozen creatures first
   handleNeurotoxicDeaths(state); // Then kill Neurotoxic-frozen creatures
   clearParalysis(state);

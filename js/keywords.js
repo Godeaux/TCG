@@ -21,6 +21,10 @@ export const KEYWORDS = {
   // Canine keywords (Experimental)
   PACK: "Pack",
   HOWL: "Howl",
+  // Arachnid keywords (Experimental)
+  WEB: "Web",
+  WEBBED: "Webbed",
+  VENOM: "Venom",
 };
 
 export const KEYWORD_DESCRIPTIONS = {
@@ -46,6 +50,10 @@ export const KEYWORD_DESCRIPTIONS = {
   // Canine keywords (Experimental)
   [KEYWORDS.PACK]: "Gains +1 ATK for each other Canine you control.",
   [KEYWORDS.HOWL]: "On play, triggers a Howl effect that buffs all Canines until end of turn.",
+  // Arachnid keywords (Experimental)
+  [KEYWORDS.WEB]: "Can apply Webbed status to enemy creatures.",
+  [KEYWORDS.WEBBED]: "Cannot attack. Status persists until the creature takes damage.",
+  [KEYWORDS.VENOM]: "At end of turn, deals damage to each Webbed enemy creature.",
 };
 
 /**
@@ -146,4 +154,52 @@ export const getEffectiveAttack = (creature, state, ownerIndex) => {
   const baseAtk = creature.currentAtk ?? creature.atk ?? 0;
   const packBonus = calculatePackBonus(creature, state, ownerIndex);
   return baseAtk + packBonus;
+};
+
+// Arachnid keyword helpers
+export const hasWeb = (card) => hasKeyword(card, KEYWORDS.WEB);
+export const hasWebbed = (card) => hasKeyword(card, KEYWORDS.WEBBED);
+
+/**
+ * Get Venom value for a creature.
+ * Venom is a numeric keyword (e.g., "Venom 2" = 2 damage per Webbed enemy).
+ * @param {Object} card - The creature card
+ * @returns {number} The Venom damage value (0 if no Venom)
+ */
+export const getVenomValue = (card) => {
+  if (!areAbilitiesActive(card) || !card.keywords) return 0;
+  for (const kw of card.keywords) {
+    if (typeof kw === "string" && kw.startsWith("Venom")) {
+      const parts = kw.split(" ");
+      return parts.length > 1 ? parseInt(parts[1], 10) : 1;
+    }
+  }
+  return 0;
+};
+
+/**
+ * Check if a creature has any Venom keyword.
+ * @param {Object} card - The creature card
+ * @returns {boolean} True if creature has Venom
+ */
+export const hasVenom = (card) => getVenomValue(card) > 0;
+
+/**
+ * Calculate total Venom damage from all friendly creatures.
+ * @param {Object} state - Game state
+ * @param {number} playerIndex - Index of the player with Venom creatures
+ * @returns {number} Total Venom damage to apply to each Webbed enemy
+ */
+export const calculateTotalVenom = (state, playerIndex) => {
+  if (!state?.players?.[playerIndex]?.field) return 0;
+
+  const field = state.players[playerIndex].field;
+  let totalVenom = 0;
+
+  for (const card of field) {
+    if (!card) continue;
+    totalVenom += getVenomValue(card);
+  }
+
+  return totalVenom;
 };
