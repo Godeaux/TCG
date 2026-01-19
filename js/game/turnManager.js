@@ -124,9 +124,14 @@ const handleNeurotoxicDeaths = (state) => {
 // Handle regular Frozen thawing - creatures frozen (without frozenDiesTurn) thaw at end of owner's turn
 const handleFrozenThaw = (state) => {
   const player = state.players[state.activePlayerIndex];
-  player.field.forEach((creature) => {
+  console.log(`[FROZEN-DEBUG] handleFrozenThaw called for player ${state.activePlayerIndex} (${player.name}), turn ${state.turn}`);
+  player.field.forEach((creature, slot) => {
+    if (creature) {
+      console.log(`[FROZEN-DEBUG] Slot ${slot}: ${creature.name} - frozen=${creature.frozen}, frozenDiesTurn=${creature.frozenDiesTurn}, keywords=${JSON.stringify(creature.keywords)}`);
+    }
     // Thaw creatures that are frozen but NOT by Neurotoxic (no frozenDiesTurn)
     if (creature?.frozen && !creature.frozenDiesTurn) {
+      console.log(`[FROZEN-DEBUG] Thawing ${creature.name}`);
       creature.frozen = false;
       // Remove Frozen keyword if present
       if (creature.keywords) {
@@ -136,6 +141,8 @@ const handleFrozenThaw = (state) => {
         }
       }
       logGameAction(state, BUFF, `${creature.name} thaws out.`);
+    } else if (creature?.frozen) {
+      console.log(`[FROZEN-DEBUG] NOT thawing ${creature.name} because frozenDiesTurn=${creature.frozenDiesTurn}`);
     }
   });
 };

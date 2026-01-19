@@ -82,6 +82,8 @@ export const isPassive = (card) => hasKeyword(card, KEYWORDS.PASSIVE);
 
 export const hasBarrier = (card) => hasKeyword(card, KEYWORDS.BARRIER);
 
+export const hasFrozen = (card) => hasKeyword(card, KEYWORDS.FROZEN);
+
 export const hasAcuity = (card) => hasKeyword(card, KEYWORDS.ACUITY);
 
 export const isImmune = (card) => hasKeyword(card, KEYWORDS.IMMUNE);

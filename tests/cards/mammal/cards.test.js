@@ -60,6 +60,29 @@ describe('Mammal Cards', () => {
         expect(card.effects.onPlay[1].params.targetGroup).toBe('enemy-creatures');
         expect(card.effects.onPlay[1].params.effect.keyword).toBe('Frozen');
       });
+
+      it('summoned tokens have Frozen keyword and frozen property set', () => {
+        const tokenDef = getCardDefinitionById('token-arctic-ground-squirrel');
+        expect(tokenDef).not.toBeNull();
+        expect(tokenDef.keywords).toContain('Frozen');
+
+        // When token is instantiated, frozen property should be set
+        const state = createTestState();
+        const { creature: tokenInstance } = createTestCreature('token-arctic-ground-squirrel', 0, 0, state);
+        expect(tokenInstance.frozen).toBe(true);
+        expect(tokenInstance.keywords).toContain('Frozen');
+      });
+
+      it('frozen tokens cannot attack', async () => {
+        const { getCreaturesThatCanAttack } = await import('../../../js/state/selectors.js');
+
+        const state = createTestState();
+        const { creature: tokenInstance } = createTestCreature('token-arctic-ground-squirrel', 0, 0, state);
+
+        // Frozen tokens should not be able to attack
+        const attackers = getCreaturesThatCanAttack(state, 0);
+        expect(attackers).not.toContain(tokenInstance);
+      });
     });
 
     describe('Snowshoe Hare', () => {

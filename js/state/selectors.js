@@ -11,7 +11,7 @@
  * - Prevent scattered state access logic
  */
 
-import { isEdible, isInedible } from '../keywords.js';
+import { isEdible, isInedible, isFreePlay } from '../keywords.js';
 
 // ============================================================================
 // PLAYER SELECTORS
@@ -545,13 +545,29 @@ export const canCardBePlayed = (state, card, playerIndex) => {
   // Check if we're in a main phase
   if (!isMainPhase(state)) return false;
 
-  // Check card limit (unless it's a free card)
-  const isFreeCard =
-    card.type === "Free Spell" ||
-    card.type === "Trap" ||
-    card.keywords?.includes("Free Play");
-  if (!isFreeCard && wasCardPlayedThisTurn(state)) {
-    return false;
+  // Check card limit
+  // - Free Spell and Trap types completely bypass the limit
+  // - Free Play keyword cards require the limit to be available,
+  //   UNLESS it's a predator with prey to consume
+  const isTrulyFree = card.type === "Free Spell" || card.type === "Trap";
+  const hasFreePlayKeyword = isFreePlay(card);
+
+  if (!isTrulyFree && wasCardPlayedThisTurn(state)) {
+    // Card limit already used - check if Free Play predator can consume prey
+    if (hasFreePlayKeyword && card.type === "Predator") {
+      // Check if there's prey to consume (which allows bypassing the limit)
+      const player = state.players[playerIndex];
+      const hasConsumablePrey = player?.field.some(c =>
+        c && !c.frozen && !isInedible(c) &&
+        (c.type === 'Prey' || (c.type === 'Predator' && isEdible(c)))
+      );
+      if (!hasConsumablePrey) {
+        return false; // No prey to consume, can't play
+      }
+      // Has prey - can still play by consuming
+    } else {
+      return false; // Not a Free Play predator with prey
+    }
   }
 
   // Creatures need field space

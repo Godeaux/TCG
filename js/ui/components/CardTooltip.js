@@ -7,6 +7,7 @@
 
 import { renderCard, getStatusIndicators } from './Card.js';
 import { KEYWORD_DESCRIPTIONS, areAbilitiesActive } from '../../keywords.js';
+import { getTokenById } from '../../cards/registry.js';
 
 // ============================================================================
 // STATUS EFFECT DESCRIPTIONS
@@ -46,6 +47,104 @@ const STATUS_DESCRIPTIONS = {
     emoji: '💀',
     name: 'Neurotoxined',
     description: "Poisoned by neurotoxin. Will die at end of owner's turn.",
+  },
+};
+
+// ============================================================================
+// TRIGGER KEYWORD DESCRIPTIONS
+// ============================================================================
+
+/**
+ * Trigger keyword descriptions for tooltip info boxes.
+ * These explain what each trigger prefix means.
+ * Keys are the text patterns to detect in effectText.
+ */
+const TRIGGER_DESCRIPTIONS = {
+  // Creature triggers
+  'Slain:': {
+    name: 'Slain',
+    description: 'Triggers when this creature is killed by combat damage or an effect.',
+  },
+  'When consumed:': {
+    name: 'When Consumed',
+    description: 'Triggers when this creature is consumed as prey by a predator.',
+  },
+  'Defending:': {
+    name: 'Defending',
+    description: 'Triggers when this creature is attacked by an enemy creature.',
+  },
+  'Before combat,': {
+    name: 'Before Combat',
+    description: 'Triggers at the start of combat, before damage is dealt.',
+  },
+  'After combat,': {
+    name: 'After Combat',
+    description: 'Triggers after combat damage has been dealt.',
+  },
+  'Start of turn,': {
+    name: 'Start of Turn',
+    description: "Triggers at the beginning of this creature's owner's turn.",
+  },
+  'End of turn;': {
+    name: 'End of Turn',
+    description: "Triggers at the end of this creature's owner's turn.",
+  },
+  'Discard:': {
+    name: 'Discard',
+    description: 'Triggers when this card is discarded from hand.',
+  },
+  'Howl:': {
+    name: 'Howl',
+    description: 'When played, this effect buffs all friendly Canines until end of turn.',
+  },
+  // Trap triggers
+  'When Rival plays a Predator,': {
+    name: 'Trap: Rival Plays Predator',
+    description: 'This trap triggers when your opponent plays a Predator card.',
+  },
+  'When Rival plays a Prey,': {
+    name: 'Trap: Rival Plays Prey',
+    description: 'This trap triggers when your opponent plays a Prey card.',
+  },
+  "When Rival's creature attacks directly,": {
+    name: 'Trap: Direct Attack',
+    description: 'This trap triggers when an enemy creature attacks you directly.',
+  },
+  'When you receive indirect damage,': {
+    name: 'Trap: Indirect Damage',
+    description: 'This trap triggers when you take non-combat damage.',
+  },
+  'When Rival draws,': {
+    name: 'Trap: Rival Draws',
+    description: 'This trap triggers when your opponent draws a card.',
+  },
+  'When Rival plays a card,': {
+    name: 'Trap: Rival Plays Card',
+    description: 'This trap triggers when your opponent plays any card.',
+  },
+  'When defending,': {
+    name: 'Trap: Defending',
+    description: 'This trap triggers when one of your creatures is attacked.',
+  },
+  'When life is 0,': {
+    name: 'Trap: Life Zero',
+    description: 'This trap triggers when your life points reach 0.',
+  },
+  'When targeted,': {
+    name: 'Trap: Targeted',
+    description: 'This trap triggers when one of your cards is targeted.',
+  },
+  'When slain,': {
+    name: 'Trap: Slain',
+    description: 'This trap triggers when one of your creatures is slain.',
+  },
+  'When attacked,': {
+    name: 'Trap: Attacked',
+    description: 'This trap triggers when your opponent declares an attack.',
+  },
+  'When a creature is played,': {
+    name: 'Trap: Creature Played',
+    description: 'This trap triggers when any creature is played.',
   },
 };
 
@@ -177,6 +276,95 @@ const renderCardPreview = (card) => {
 };
 
 /**
+ * Detect trigger keywords in effect text.
+ * @param {string} effectText - Card's effect text
+ * @returns {Array<{pattern: string, info: Object}>} Array of detected triggers
+ */
+const detectTriggerKeywords = (effectText) => {
+  if (!effectText) return [];
+
+  const detected = [];
+  for (const [pattern, info] of Object.entries(TRIGGER_DESCRIPTIONS)) {
+    if (effectText.includes(pattern)) {
+      detected.push({ pattern, info });
+    }
+  }
+  return detected;
+};
+
+/**
+ * Extract unique token IDs from a card's effects.
+ * Recursively searches through all effect definitions.
+ * @param {Object} card - Card data
+ * @returns {Array<string>} Array of unique token IDs
+ */
+const extractTokenIds = (card) => {
+  if (!card.effects) return [];
+
+  const tokenIds = new Set();
+
+  const searchEffect = (effect) => {
+    if (!effect) return;
+
+    // Array of effects
+    if (Array.isArray(effect)) {
+      effect.forEach(e => searchEffect(e));
+      return;
+    }
+
+    // Object-based effect
+    if (typeof effect === 'object') {
+      // Check for summonTokens effect type
+      if (effect.type === 'summonTokens' && effect.params?.tokenIds) {
+        effect.params.tokenIds.forEach(id => tokenIds.add(id));
+      }
+
+      // Check for addToHand effect type (for tokens added to hand)
+      if (effect.type === 'addToHand' && effect.params?.cardId?.startsWith('token-')) {
+        tokenIds.add(effect.params.cardId);
+      }
+
+      // Check nested effects (like in chooseOption)
+      if (effect.params?.options) {
+        effect.params.options.forEach(opt => {
+          if (opt.effect) searchEffect(opt.effect);
+        });
+      }
+      if (effect.params?.choices) {
+        effect.params.choices.forEach(choice => searchEffect(choice));
+      }
+    }
+  };
+
+  // Search all trigger types
+  for (const triggerEffect of Object.values(card.effects)) {
+    searchEffect(triggerEffect);
+  }
+
+  return Array.from(tokenIds);
+};
+
+/**
+ * Create a mini-card preview element for tokens.
+ * @param {Object} token - Token card data
+ * @returns {HTMLElement}
+ */
+const createTokenPreview = (token) => {
+  const container = document.createElement('div');
+  container.className = 'tooltip-token-preview';
+
+  // Create a mini version of the card
+  const cardElement = renderCard(token, {
+    showEffectSummary: true,
+    draggable: false,
+  });
+  cardElement.classList.add('tooltip-token-card');
+
+  container.appendChild(cardElement);
+  return container;
+};
+
+/**
  * Render keyword and status info boxes.
  * @param {Object} card - Card data
  */
@@ -194,6 +382,13 @@ const renderInfoBoxes = (card) => {
       }
     });
   }
+
+  // Add trigger keyword boxes (detected from effect text)
+  const effectText = card.effectText || '';
+  const detectedTriggers = detectTriggerKeywords(effectText);
+  detectedTriggers.forEach(({ info }) => {
+    infoBoxesElement.appendChild(createInfoBox(info.name, info.description, 'trigger'));
+  });
 
   // Add status effect boxes
   // Check each status property on the card
@@ -225,6 +420,28 @@ const renderInfoBoxes = (card) => {
   if (card.neurotoxined) {
     const info = STATUS_DESCRIPTIONS.neurotoxined;
     infoBoxesElement.appendChild(createInfoBox(`${info.emoji} ${info.name}`, info.description, 'status'));
+  }
+
+  // Add token previews for cards that summon tokens
+  const tokenIds = extractTokenIds(card);
+  if (tokenIds.length > 0) {
+    // Add a section header for tokens
+    const tokenHeader = document.createElement('div');
+    tokenHeader.className = 'tooltip-token-header';
+    tokenHeader.textContent = tokenIds.length === 1 ? 'Summoned Token' : 'Summoned Tokens';
+    infoBoxesElement.appendChild(tokenHeader);
+
+    // Add unique token previews
+    const seenTokens = new Set();
+    tokenIds.forEach(tokenId => {
+      if (seenTokens.has(tokenId)) return;
+      seenTokens.add(tokenId);
+
+      const token = getTokenById(tokenId);
+      if (token) {
+        infoBoxesElement.appendChild(createTokenPreview(token));
+      }
+    });
   }
 };
 

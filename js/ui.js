@@ -1039,6 +1039,148 @@ const renderAdvantageDisplay = (state, playerIndex) => {
 };
 
 /**
+ * State for hologram display
+ */
+let hologramState = {
+  active: false,
+  snapshotIndex: -1,
+  nodePositions: [], // [{x, y, index}] for hit detection
+};
+
+/**
+ * Clear hologram display and restore normal view
+ */
+const clearHologramDisplay = () => {
+  if (!hologramState.active) return;
+
+  hologramState.active = false;
+  hologramState.snapshotIndex = -1;
+
+  // Remove hologram overlay elements
+  document.querySelectorAll('.hologram-overlay').forEach(el => el.remove());
+  document.querySelectorAll('.hologram-death-marker').forEach(el => el.remove());
+
+  // Remove hologram class from fields
+  document.querySelectorAll('.player-field, .opponent-field').forEach(field => {
+    field.classList.remove('hologram-active');
+  });
+
+  // Remove hologram HP displays
+  document.querySelectorAll('.hologram-hp').forEach(el => el.remove());
+};
+
+/**
+ * Display hologram of past board state
+ *
+ * @param {Object} snapshot - Historical snapshot data
+ * @param {Object} nextSnapshot - Next snapshot (for death indicators)
+ * @param {number} playerIndex - Current player's perspective
+ */
+const displayHologram = (snapshot, nextSnapshot, playerIndex) => {
+  if (!snapshot || !snapshot.fields) return;
+
+  hologramState.active = true;
+
+  // Add hologram class to fields
+  document.querySelectorAll('.player-field, .opponent-field').forEach(field => {
+    field.classList.add('hologram-active');
+  });
+
+  // Display hologram HP values
+  const playerHpEl = document.querySelector('.player-hp');
+  const opponentHpEl = document.querySelector('.opponent-hp');
+
+  if (playerHpEl) {
+    const existingHolo = playerHpEl.querySelector('.hologram-hp');
+    if (existingHolo) existingHolo.remove();
+    const holoHp = document.createElement('div');
+    holoHp.className = 'hologram-hp';
+    holoHp.textContent = `(Turn ${snapshot.turn}: ${playerIndex === 0 ? snapshot.p0Hp : snapshot.p1Hp} HP)`;
+    playerHpEl.appendChild(holoHp);
+  }
+
+  if (opponentHpEl) {
+    const existingHolo = opponentHpEl.querySelector('.hologram-hp');
+    if (existingHolo) existingHolo.remove();
+    const holoHp = document.createElement('div');
+    holoHp.className = 'hologram-hp';
+    holoHp.textContent = `(Turn ${snapshot.turn}: ${playerIndex === 0 ? snapshot.p1Hp : snapshot.p0Hp} HP)`;
+    opponentHpEl.appendChild(holoHp);
+  }
+
+  // Get deaths that will happen after this snapshot (from next snapshot)
+  const upcomingDeaths = nextSnapshot?.deaths || [];
+
+  // Render hologram creatures on both fields
+  renderHologramField(snapshot, upcomingDeaths, playerIndex, false); // Player's field
+  renderHologramField(snapshot, upcomingDeaths, playerIndex, true);  // Opponent's field
+};
+
+/**
+ * Render hologram overlay for a field
+ *
+ * @param {Object} snapshot - Historical snapshot data
+ * @param {Array} upcomingDeaths - Deaths that happen after this snapshot
+ * @param {number} playerIndex - Current player's perspective
+ * @param {boolean} isOpponent - Whether this is the opponent's field
+ */
+const renderHologramField = (snapshot, upcomingDeaths, playerIndex, isOpponent) => {
+  const fieldSelector = isOpponent ? '.opponent-field' : '.player-field';
+  const fieldRow = document.querySelector(fieldSelector);
+  if (!fieldRow) return;
+
+  // Remove existing hologram overlays for this field
+  fieldRow.querySelectorAll('.hologram-overlay').forEach(el => el.remove());
+  fieldRow.querySelectorAll('.hologram-death-marker').forEach(el => el.remove());
+
+  const slots = Array.from(fieldRow.querySelectorAll('.field-slot'));
+  const fieldIndex = isOpponent
+    ? (playerIndex === 0 ? 1 : 0)
+    : playerIndex;
+
+  const holoField = snapshot.fields[fieldIndex] || [];
+
+  slots.forEach((slot, index) => {
+    const holoCreature = holoField[index];
+
+    // Create hologram overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'hologram-overlay';
+
+    if (holoCreature) {
+      // Check if this creature will die before the next snapshot
+      const willDie = upcomingDeaths.some(d =>
+        d.creature.instanceId === holoCreature.instanceId
+      );
+
+      overlay.innerHTML = `
+        <div class="hologram-creature ${willDie ? 'will-die' : ''}">
+          <div class="hologram-name">${holoCreature.name}</div>
+          <div class="hologram-stats">
+            <span class="hologram-atk ${holoCreature.atkBuffed ? 'buffed' : ''} ${holoCreature.atkDebuffed ? 'debuffed' : ''}">${holoCreature.currentAtk}</span>
+            /
+            <span class="hologram-hp-stat ${holoCreature.hpDamaged ? 'damaged' : ''} ${holoCreature.hpBuffed ? 'buffed' : ''}">${holoCreature.currentHp}</span>
+          </div>
+        </div>
+      `;
+
+      // Add death marker if creature will die
+      if (willDie) {
+        const deathMarker = document.createElement('div');
+        deathMarker.className = 'hologram-death-marker';
+        deathMarker.innerHTML = '💀';
+        deathMarker.title = `${holoCreature.name} dies this turn`;
+        slot.appendChild(deathMarker);
+      }
+    } else {
+      overlay.innerHTML = '<div class="hologram-empty">Empty</div>';
+    }
+
+    slot.appendChild(overlay);
+  });
+};
+
+/**
  * Render the advantage history graph using canvas
  *
  * @param {Object} state - Game state
@@ -1051,6 +1193,9 @@ const renderAdvantageGraph = (state, playerIndex) => {
   const ctx = canvas.getContext('2d');
   const history = positionEvaluator.getAdvantageHistory(state);
 
+  // Store reference for mouse events
+  canvas._graphState = { history, playerIndex };
+
   // Clear canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -1060,6 +1205,7 @@ const renderAdvantageGraph = (state, playerIndex) => {
     ctx.font = '10px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('Not enough data', canvas.width / 2, canvas.height / 2);
+    hologramState.nodePositions = [];
     return;
   }
 
@@ -1087,10 +1233,15 @@ const renderAdvantageGraph = (state, playerIndex) => {
   ctx.strokeStyle = '#4a9';
   ctx.lineWidth = 2;
 
+  // Calculate node positions and draw line
+  const nodePositions = [];
+
   values.forEach((value, i) => {
-    const x = padding + (i / (values.length - 1)) * graphWidth;
+    const x = padding + (i / Math.max(1, values.length - 1)) * graphWidth;
     const normalizedValue = value / maxVal;
     const y = padding + graphHeight / 2 - (normalizedValue * graphHeight / 2);
+
+    nodePositions.push({ x, y, index: i, value });
 
     if (i === 0) {
       ctx.moveTo(x, y);
@@ -1101,15 +1252,83 @@ const renderAdvantageGraph = (state, playerIndex) => {
 
   ctx.stroke();
 
-  // Draw current point
-  const lastValue = values[values.length - 1];
-  const lastX = width - padding;
-  const lastY = padding + graphHeight / 2 - (lastValue / maxVal * graphHeight / 2);
+  // Store node positions for hit detection
+  hologramState.nodePositions = nodePositions;
 
-  ctx.beginPath();
-  ctx.fillStyle = lastValue > 0 ? '#4a9' : lastValue < 0 ? '#e74' : '#888';
-  ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
-  ctx.fill();
+  // Draw nodes at each data point
+  const nodeRadius = 4;
+  const hoveredIndex = hologramState.active ? hologramState.snapshotIndex : -1;
+
+  nodePositions.forEach(({ x, y, index, value }) => {
+    ctx.beginPath();
+
+    // Highlight hovered node
+    if (index === hoveredIndex) {
+      ctx.fillStyle = '#fff';
+      ctx.arc(x, y, nodeRadius + 2, 0, Math.PI * 2);
+    } else {
+      ctx.fillStyle = value > 0 ? '#4a9' : value < 0 ? '#e74' : '#888';
+      ctx.arc(x, y, nodeRadius, 0, Math.PI * 2);
+    }
+
+    ctx.fill();
+
+    // Add subtle border to nodes
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  });
+
+  // Setup mouse event handlers (only once)
+  if (!canvas._hologramHandlersAttached) {
+    canvas._hologramHandlersAttached = true;
+
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const mouseX = (e.clientX - rect.left) * scaleX;
+      const mouseY = (e.clientY - rect.top) * scaleY;
+
+      const hitRadius = 8;
+      let hitNode = null;
+
+      for (const node of hologramState.nodePositions) {
+        const dx = mouseX - node.x;
+        const dy = mouseY - node.y;
+        if (dx * dx + dy * dy < hitRadius * hitRadius) {
+          hitNode = node;
+          break;
+        }
+      }
+
+      if (hitNode && canvas._graphState) {
+        if (hologramState.snapshotIndex !== hitNode.index) {
+          hologramState.snapshotIndex = hitNode.index;
+          const snapshot = canvas._graphState.history[hitNode.index];
+          const nextSnapshot = canvas._graphState.history[hitNode.index + 1] || null;
+          displayHologram(snapshot, nextSnapshot, canvas._graphState.playerIndex);
+          // Redraw graph to show highlighted node
+          renderAdvantageGraph(latestState, canvas._graphState.playerIndex);
+        }
+        canvas.style.cursor = 'pointer';
+      } else if (hologramState.active) {
+        clearHologramDisplay();
+        if (canvas._graphState) {
+          renderAdvantageGraph(latestState, canvas._graphState.playerIndex);
+        }
+        canvas.style.cursor = 'default';
+      }
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      clearHologramDisplay();
+      if (canvas._graphState) {
+        renderAdvantageGraph(latestState, canvas._graphState.playerIndex);
+      }
+      canvas.style.cursor = 'default';
+    });
+  }
 };
 
 // ============================================================================
@@ -3921,12 +4140,15 @@ export const renderGame = (state, callbacks = {}) => {
   updatePlayerStats(state, activeIndex, "active");
   // Field rendering (uses extracted Field component)
   // Note: Hover tooltips are handled directly in Field.js via CardTooltip
-  renderField(state, opponentIndex, true, {});
-  renderField(state, activeIndex, false, {
-    onAttack: (card) => handleAttackSelection(state, card, callbacks.onUpdate),
-    onReturnToHand: (card) => handleReturnToHand(state, card, callbacks.onUpdate),
-    onSacrifice: (card) => handleSacrifice(state, card, callbacks.onUpdate),
-  });
+  // Skip field rendering if hologram is active (don't overwrite historical view)
+  if (!hologramState.active) {
+    renderField(state, opponentIndex, true, {});
+    renderField(state, activeIndex, false, {
+      onAttack: (card) => handleAttackSelection(state, card, callbacks.onUpdate),
+      onReturnToHand: (card) => handleReturnToHand(state, card, callbacks.onUpdate),
+      onSacrifice: (card) => handleSacrifice(state, card, callbacks.onUpdate),
+    });
+  }
   // Opponent hand strip (shows card backs with hover/drag feedback)
   renderOpponentHandStrip(state, { opponentIndex });
   // Hand rendering (uses extracted Hand component)

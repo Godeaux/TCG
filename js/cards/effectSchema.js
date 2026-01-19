@@ -33,6 +33,65 @@ const TOKEN_NAMES = {
 };
 
 /**
+ * Generate text for a single effect from its type and params
+ * Used by choice/chooseOption to generate text from actual behavior, not labels
+ */
+function generateEffectTextFromParams(type, params) {
+  if (!type) return null;
+
+  switch (type) {
+    case 'heal':
+      return `Heal ${params?.amount || 1}`;
+    case 'draw':
+      return `Draw ${params?.count || 1}`;
+    case 'buff':
+      if (params?.target === 'targetCreature') {
+        return `Target creature gains +${params.attack || 0}/+${params.health || 0}`;
+      }
+      if (params?.target === 'self') {
+        return `Gain +${params.attack || 0}/+${params.health || 0}`;
+      }
+      return `+${params?.attack || 0}/+${params?.health || 0}`;
+    case 'addKeyword':
+      if (params?.target === 'targetCreature') {
+        return `Target creature gains ${params.keyword}`;
+      }
+      return `Gain ${params?.keyword}`;
+    case 'summonTokens':
+      return `Play ${formatTokenList(params?.tokenIds)}`;
+    case 'damageRival':
+      return `Deal ${params?.amount || 1} damage to Rival`;
+    case 'damageAllEnemyCreatures':
+      return `Deal ${params?.amount || 1} damage to Rival's creatures`;
+    case 'kill':
+      return 'Kill target';
+    case 'selectFromGroup': {
+      // Generate text from inner effect, not label
+      const innerEffect = params?.effect;
+      if (!innerEffect) return null;
+      const targetGroup = params?.targetGroup;
+      const isEnemy = targetGroup?.includes('enemy');
+
+      if (innerEffect.damage) {
+        return `Deal ${innerEffect.damage} damage to target ${isEnemy ? "Rival's creature" : 'creature'}`;
+      }
+      if (innerEffect.buff) {
+        return `Target creature gains +${innerEffect.buff.attack || 0}/+${innerEffect.buff.health || 0}`;
+      }
+      if (innerEffect.keyword) {
+        return `Target creature gains ${innerEffect.keyword}`;
+      }
+      if (innerEffect.kill) {
+        return `Kill target ${isEnemy ? "Rival's creature" : 'creature'}`;
+      }
+      return null;
+    }
+    default:
+      return null; // No generation available
+  }
+}
+
+/**
  * Format a list of token IDs into readable text
  * e.g., ["token-wolf-pup", "token-wolf-pup"] => "2 Wolf Pups"
  */
@@ -569,26 +628,20 @@ export const EFFECT_SCHEMA = {
       options: { type: 'array', required: true },
     },
     text: (p) => {
-      // Generate text from actual effects, not just labels
+      // Generate text from actual effect params, not labels (prevents drift)
       const options = p.options.map(o => {
         const effect = o.effect;
         if (!effect) return o.label || o.description;
 
-        // Generate readable text from the effect
-        if (effect.type === 'summonTokens') {
-          return `Play ${formatTokenList(effect.params?.tokenIds)}`;
+        // Handle array of effects
+        if (Array.isArray(effect)) {
+          const parts = effect.map(e => generateEffectTextFromParams(e.type, e.params)).filter(Boolean);
+          if (parts.length > 0) return parts.join(' and ');
+          return o.label || o.description;
         }
-        if (effect.type === 'buff' && effect.params?.target === 'self') {
-          return `Gain +${effect.params.attack}/${effect.params.health > 0 ? '+' : ''}${effect.params.health}`;
-        }
-        if (effect.type === 'draw') {
-          return `Draw ${effect.params?.count || 1}`;
-        }
-        if (effect.type === 'heal') {
-          return `Heal ${effect.params?.amount}`;
-        }
-        // Fallback to label
-        return o.label || o.description;
+
+        const generated = generateEffectTextFromParams(effect.type, effect.params);
+        return generated || o.label || o.description; // Fallback to label only if generation fails
       }).join(' or ');
       return `Choose: ${options}`;
     },
@@ -597,7 +650,11 @@ export const EFFECT_SCHEMA = {
   choice: {
     params: { choices: { type: 'array', required: true } },
     text: (p) => {
-      const options = p.choices.map(c => c.label).join(' or ');
+      // Generate text from actual effect params, not labels (prevents drift)
+      const options = p.choices.map(c => {
+        const generated = generateEffectTextFromParams(c.type, c.params);
+        return generated || c.label; // Fallback to label only if generation fails
+      }).join(' or ');
       return `Choose: ${options}`;
     },
   },
