@@ -119,3 +119,13 @@ export {
   hideAwaitingResponse,
   hasAwaitingResponse,
 } from './DuelInviteOverlay.js';
+
+// ============================================================================
+// BUG REPORT OVERLAY
+// ============================================================================
+
+export {
+  showBugReportOverlay,
+  hideBugReportOverlay,
+  isBugReportOverlayVisible,
+} from './BugReportOverlay.js';

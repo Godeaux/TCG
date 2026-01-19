@@ -113,3 +113,15 @@ export {
   NAME_FONTS,
   NAME_COLORS,
 } from './StyledName.js';
+
+// ============================================================================
+// BUG BUTTON
+// ============================================================================
+
+export {
+  initBugButton,
+  showBugMenu,
+  hideBugMenu,
+  toggleBugMenu,
+  isBugMenuVisible,
+} from './BugButton.js';

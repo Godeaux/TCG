@@ -1415,3 +1415,284 @@ export const unsubscribeFromDuelInvites = (channel) => {
     supabase.removeChannel(channel);
   }
 };
+
+// ============================================================================
+// Bug Reports
+// ============================================================================
+
+/**
+ * Fetch all bug reports with reporter info and vote counts
+ * @returns {Promise<Array>} List of bug reports
+ */
+export const fetchBugReports = async () => {
+  await ensureSession();
+
+  const { data, error } = await supabase
+    .from("bug_reports")
+    .select(`
+      id,
+      profile_id,
+      title,
+      description,
+      category,
+      status,
+      created_at,
+      updated_at,
+      profiles:profile_id (username)
+    `)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  // Fetch votes separately for each report
+  const reportsWithVotes = await Promise.all(
+    (data ?? []).map(async (report) => {
+      const { count } = await supabase
+        .from("bug_report_votes")
+        .select("*", { count: "exact", head: true })
+        .eq("bug_report_id", report.id);
+
+      return {
+        ...report,
+        reporter_username: report.profiles?.username ?? "Anonymous",
+        vote_count: count ?? 0,
+      };
+    })
+  );
+
+  return reportsWithVotes;
+};
+
+/**
+ * Check if user has voted on a bug report
+ * @param {string} bugReportId - Bug report ID
+ * @param {string} profileId - User's profile ID
+ * @returns {Promise<boolean>} True if user has voted
+ */
+export const hasVotedOnBug = async (bugReportId, profileId) => {
+  if (!bugReportId || !profileId) return false;
+
+  const { data, error } = await supabase
+    .from("bug_report_votes")
+    .select("id")
+    .eq("bug_report_id", bugReportId)
+    .eq("profile_id", profileId)
+    .maybeSingle();
+
+  if (error) return false;
+  return !!data;
+};
+
+/**
+ * Fetch votes for current user on all bug reports
+ * @param {string} profileId - User's profile ID
+ * @returns {Promise<Set<string>>} Set of bug report IDs user has voted on
+ */
+export const fetchUserBugVotes = async (profileId) => {
+  if (!profileId) return new Set();
+
+  const { data, error } = await supabase
+    .from("bug_report_votes")
+    .select("bug_report_id")
+    .eq("profile_id", profileId);
+
+  if (error) return new Set();
+  return new Set((data ?? []).map((v) => v.bug_report_id));
+};
+
+/**
+ * Submit a new bug report
+ * @param {Object} params
+ * @param {string} params.profileId - Reporter's profile ID
+ * @param {string} params.title - Bug title
+ * @param {string} params.description - Bug description
+ * @param {string} params.category - Bug category
+ * @returns {Promise<Object>} Created bug report
+ */
+export const submitBugReport = async ({
+  profileId,
+  title,
+  description,
+  category,
+}) => {
+  if (!profileId) throw new Error("Must be logged in to report bugs.");
+  if (!title?.trim()) throw new Error("Title is required.");
+
+  await ensureSession();
+
+  const { data, error } = await supabase
+    .from("bug_reports")
+    .insert({
+      profile_id: profileId,
+      title: title.trim(),
+      description: description?.trim() || null,
+      category: category || "other",
+      status: "open",
+    })
+    .select("id, title")
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+/**
+ * Update an existing bug report
+ * @param {Object} params
+ * @param {string} params.bugReportId - Bug report ID
+ * @param {string} params.profileId - User's profile ID (for ownership check)
+ * @param {string} [params.title] - New title
+ * @param {string} [params.description] - New description
+ * @param {string} [params.category] - New category
+ * @returns {Promise<Object>} Updated bug report
+ */
+export const updateBugReport = async ({
+  bugReportId,
+  profileId,
+  title,
+  description,
+  category,
+}) => {
+  if (!bugReportId) throw new Error("Bug report ID is required.");
+  if (!profileId) throw new Error("Must be logged in.");
+
+  const updates = { updated_at: new Date().toISOString() };
+  if (title !== undefined) updates.title = title.trim();
+  if (description !== undefined) updates.description = description?.trim() || null;
+  if (category !== undefined) updates.category = category;
+
+  const { data, error } = await supabase
+    .from("bug_reports")
+    .update(updates)
+    .eq("id", bugReportId)
+    .eq("profile_id", profileId) // Only owner can edit
+    .select("id, title")
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+/**
+ * Delete a bug report
+ * @param {string} bugReportId - Bug report ID
+ * @param {string} profileId - User's profile ID (for ownership check)
+ * @returns {Promise<void>}
+ */
+export const deleteBugReport = async (bugReportId, profileId) => {
+  if (!bugReportId) throw new Error("Bug report ID is required.");
+  if (!profileId) throw new Error("Must be logged in.");
+
+  const { error } = await supabase
+    .from("bug_reports")
+    .delete()
+    .eq("id", bugReportId)
+    .eq("profile_id", profileId); // Only owner can delete
+
+  if (error) throw error;
+};
+
+/**
+ * Toggle vote on a bug report (+1)
+ * @param {string} bugReportId - Bug report ID
+ * @param {string} profileId - Voter's profile ID
+ * @returns {Promise<{voted: boolean, newCount: number}>} New vote state
+ */
+export const toggleBugVote = async (bugReportId, profileId) => {
+  if (!bugReportId) throw new Error("Bug report ID is required.");
+  if (!profileId) throw new Error("Must be logged in to vote.");
+
+  await ensureSession();
+
+  // Check if already voted
+  const { data: existingVote } = await supabase
+    .from("bug_report_votes")
+    .select("id")
+    .eq("bug_report_id", bugReportId)
+    .eq("profile_id", profileId)
+    .maybeSingle();
+
+  if (existingVote) {
+    // Remove vote
+    await supabase
+      .from("bug_report_votes")
+      .delete()
+      .eq("id", existingVote.id);
+  } else {
+    // Add vote
+    await supabase.from("bug_report_votes").insert({
+      bug_report_id: bugReportId,
+      profile_id: profileId,
+    });
+  }
+
+  // Get new count
+  const { count } = await supabase
+    .from("bug_report_votes")
+    .select("*", { count: "exact", head: true })
+    .eq("bug_report_id", bugReportId);
+
+  return { voted: !existingVote, newCount: count ?? 0 };
+};
+
+/**
+ * Update bug report status (community moderated)
+ * @param {string} bugReportId - Bug report ID
+ * @param {string} status - New status: open, acknowledged, fixed, wont_fix
+ * @returns {Promise<Object>} Updated bug report
+ */
+export const updateBugStatus = async (bugReportId, status) => {
+  if (!bugReportId) throw new Error("Bug report ID is required.");
+
+  const validStatuses = ["open", "acknowledged", "fixed", "wont_fix"];
+  if (!validStatuses.includes(status)) {
+    throw new Error("Invalid status.");
+  }
+
+  await ensureSession();
+
+  const { data, error } = await supabase
+    .from("bug_reports")
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq("id", bugReportId)
+    .select("id, status")
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+/**
+ * Subscribe to bug report changes (real-time)
+ * @param {Function} onUpdate - Callback when bugs change
+ * @returns {Object} Supabase channel
+ */
+export const subscribeToBugReports = (onUpdate) => {
+  if (!onUpdate) return null;
+
+  const channel = supabase
+    .channel("bug_reports_changes")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "bug_reports" },
+      () => onUpdate()
+    )
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "bug_report_votes" },
+      () => onUpdate()
+    )
+    .subscribe();
+
+  return channel;
+};
+
+/**
+ * Unsubscribe from bug report changes
+ * @param {Object} channel - Supabase channel
+ */
+export const unsubscribeFromBugReports = (channel) => {
+  if (channel) {
+    supabase.removeChannel(channel);
+  }
+};

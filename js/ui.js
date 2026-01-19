@@ -105,6 +105,17 @@ import {
   startPackOpening,
 } from "./ui/overlays/PackOpeningOverlay.js";
 
+// Bug report overlay (extracted module)
+import {
+  showBugReportOverlay,
+  hideBugReportOverlay,
+} from "./ui/overlays/BugReportOverlay.js";
+
+// Bug button component
+import {
+  initBugButton,
+} from "./ui/components/BugButton.js";
+
 // Trigger/Reaction system (extracted module)
 import {
   TRIGGER_EVENTS,
@@ -3858,6 +3869,23 @@ const setupBugDetectorResumeHandler = () => {
   }, 100);
 };
 
+/**
+ * Set up the bug reporting button
+ * Uses latestState to get current profile ID for submissions
+ */
+const setupBugReportButton = () => {
+  initBugButton({
+    onReportBug: () => {
+      const profileId = latestState?.menu?.profile?.id;
+      showBugReportOverlay({ profileId, tab: 'report' });
+    },
+    onViewBugs: () => {
+      const profileId = latestState?.menu?.profile?.id;
+      showBugReportOverlay({ profileId, tab: 'list' });
+    },
+  });
+};
+
 // Initialize mobile features and log card links when DOM is ready
 if (typeof window !== 'undefined') {
   if (document.readyState === 'loading') {
@@ -3869,6 +3897,7 @@ if (typeof window !== 'undefined') {
       setupClickAwayHandler();
       setupBugDetectorResumeHandler();
       initCardTooltip();
+      setupBugReportButton();
     });
   } else {
     setupMobileNavigation();
@@ -3878,6 +3907,7 @@ if (typeof window !== 'undefined') {
     setupClickAwayHandler();
     setupBugDetectorResumeHandler();
     initCardTooltip();
+    setupBugReportButton();
   }
 }
 
