@@ -26,9 +26,9 @@ export const KEYWORDS = {
   WEBBED: 'Webbed',
   VENOM: 'Venom',
   // Feline keywords (Experimental)
+  STALK: 'Stalk',
+  STALKING: 'Stalking', // Status: creature is currently stalking
   PRIDE: 'Pride',
-  STALKED: 'Stalked',
-  POUNCE: 'Pounce',
 };
 
 export const KEYWORD_DESCRIPTIONS = {
@@ -61,9 +61,12 @@ export const KEYWORD_DESCRIPTIONS = {
   [KEYWORDS.WEBBED]: 'Cannot attack. Status persists until the creature takes damage.',
   [KEYWORDS.VENOM]: 'At end of turn, deals damage to each Webbed enemy creature.',
   // Feline keywords (Experimental)
-  [KEYWORDS.PRIDE]: 'Gains +1 ATK for each other Feline with Pride you control.',
-  [KEYWORDS.STALKED]: 'Marked by a predator. Pounce attacks deal bonus damage to this creature.',
-  [KEYWORDS.POUNCE]: 'At end of turn, deals damage to each Stalked enemy creature.',
+  [KEYWORDS.STALK]:
+    'Can enter Stalking instead of attacking. While Stalking: gain Hidden and +1 ATK per turn (max +3). Attack once to ambush, then lose Hidden and bonus.',
+  [KEYWORDS.STALKING]:
+    'Currently stalking prey. Has Hidden. Gains +1 ATK at start of turn. Attacking ends the stalk.',
+  [KEYWORDS.PRIDE]:
+    'Coordinated Hunt: When this attacks, another Pride creature may join (deals damage, skips its attack). Only primary takes counter-damage.',
 };
 
 /**
@@ -152,19 +155,19 @@ export const calculatePackBonus = (creature, state, ownerIndex) => {
 };
 
 /**
- * Get effective attack value for a creature, including Pack and Pride bonuses.
+ * Get effective attack value for a creature, including Pack and Stalk bonuses.
  * This should be used for combat damage calculations and display.
  * @param {Object} creature - The creature
- * @param {Object} state - Game state (optional, needed for Pack/Pride)
- * @param {number} ownerIndex - Index of the creature's owner (optional, needed for Pack/Pride)
+ * @param {Object} state - Game state (optional, needed for Pack)
+ * @param {number} ownerIndex - Index of the creature's owner (optional, needed for Pack)
  * @returns {number} The effective attack value
  */
 export const getEffectiveAttack = (creature, state, ownerIndex) => {
   if (!creature) return 0;
   const baseAtk = creature.currentAtk ?? creature.atk ?? 0;
   const packBonus = calculatePackBonus(creature, state, ownerIndex);
-  const prideBonus = calculatePrideBonus(creature, state, ownerIndex);
-  return baseAtk + packBonus + prideBonus;
+  const stalkBonus = creature.stalkBonus || 0; // Stalk bonus from stalking
+  return baseAtk + packBonus + stalkBonus;
 };
 
 // Arachnid keyword helpers
@@ -216,75 +219,95 @@ export const calculateTotalVenom = (state, playerIndex) => {
 };
 
 // Feline keyword helpers
+export const hasStalk = (card) => hasKeyword(card, KEYWORDS.STALK);
+export const isStalking = (card) => hasKeyword(card, KEYWORDS.STALKING);
 export const hasPride = (card) => hasKeyword(card, KEYWORDS.PRIDE);
-export const hasStalked = (card) => hasKeyword(card, KEYWORDS.STALKED);
 
 /**
- * Calculate Pride bonus for a creature.
- * Pride gives +1 ATK for each OTHER Feline with Pride on the field.
- * @param {Object} creature - The creature to calculate bonus for
+ * Enter Stalking mode for a creature with Stalk ability.
+ * Grants Hidden and starts tracking stalk bonus.
+ * @param {Object} creature - The creature to enter stalking
+ */
+export const enterStalking = (creature) => {
+  if (!creature || !hasStalk(creature)) return false;
+  if (isStalking(creature)) return false; // Already stalking
+
+  // Add Stalking status
+  if (!creature.keywords) creature.keywords = [];
+  if (!creature.keywords.includes(KEYWORDS.STALKING)) {
+    creature.keywords.push(KEYWORDS.STALKING);
+  }
+  // Grant Hidden while stalking
+  if (!creature.keywords.includes(KEYWORDS.HIDDEN)) {
+    creature.keywords.push(KEYWORDS.HIDDEN);
+  }
+  // Initialize stalk bonus tracker
+  creature.stalkBonus = 0;
+  creature.stalkingFromHidden = true; // Track that Hidden came from stalking
+  return true;
+};
+
+/**
+ * Increment stalk bonus for a stalking creature (called at start of turn).
+ * Max bonus is +3 ATK.
+ * @param {Object} creature - The stalking creature
+ * @returns {number} The new stalk bonus
+ */
+export const incrementStalkBonus = (creature) => {
+  if (!creature || !isStalking(creature)) return 0;
+  creature.stalkBonus = Math.min((creature.stalkBonus || 0) + 1, 3);
+  return creature.stalkBonus;
+};
+
+/**
+ * Get the current stalk bonus for a creature.
+ * @param {Object} creature - The creature
+ * @returns {number} Current stalk ATK bonus (0 if not stalking)
+ */
+export const getStalkBonus = (creature) => {
+  if (!creature || !isStalking(creature)) return 0;
+  return creature.stalkBonus || 0;
+};
+
+/**
+ * End stalking mode after an attack (ambush completed).
+ * Removes Hidden, Stalking status, and resets stalk bonus.
+ * @param {Object} creature - The creature that attacked from stalking
+ */
+export const endStalking = (creature) => {
+  if (!creature) return;
+
+  // Remove Stalking status
+  if (creature.keywords) {
+    const stalkingIdx = creature.keywords.indexOf(KEYWORDS.STALKING);
+    if (stalkingIdx >= 0) creature.keywords.splice(stalkingIdx, 1);
+
+    // Only remove Hidden if it came from stalking
+    if (creature.stalkingFromHidden) {
+      const hiddenIdx = creature.keywords.indexOf(KEYWORDS.HIDDEN);
+      if (hiddenIdx >= 0) creature.keywords.splice(hiddenIdx, 1);
+    }
+  }
+
+  // Reset stalk bonus
+  creature.stalkBonus = 0;
+  creature.stalkingFromHidden = false;
+};
+
+/**
+ * Get other Pride creatures that could join a coordinated attack.
  * @param {Object} state - Game state
  * @param {number} ownerIndex - Index of the creature's owner
- * @returns {number} The Pride attack bonus
+ * @param {Object} attacker - The primary attacking creature (to exclude)
+ * @returns {Array} Array of Pride creatures that can join
  */
-export const calculatePrideBonus = (creature, state, ownerIndex) => {
-  if (!creature || !hasPride(creature)) return 0;
-  if (!state?.players?.[ownerIndex]?.field) return 0;
+export const getAvailablePrideAllies = (state, ownerIndex, attacker) => {
+  if (!state?.players?.[ownerIndex]?.field) return [];
 
-  const field = state.players[ownerIndex].field;
-  let otherPrideFelines = 0;
-
-  for (const card of field) {
-    if (!card || card.instanceId === creature.instanceId) continue;
-    // Count Feline cards with Pride keyword that have active abilities
-    if (card.tribe === 'Feline' && hasPride(card) && areAbilitiesActive(card)) {
-      otherPrideFelines++;
-    }
-  }
-
-  return otherPrideFelines;
-};
-
-/**
- * Get Pounce value for a creature.
- * Pounce is a numeric keyword (e.g., "Pounce 2" = 2 damage per Stalked enemy).
- * @param {Object} card - The creature card
- * @returns {number} The Pounce damage value (0 if no Pounce)
- */
-export const getPounceValue = (card) => {
-  if (!areAbilitiesActive(card) || !card.keywords) return 0;
-  for (const kw of card.keywords) {
-    if (typeof kw === 'string' && kw.startsWith('Pounce')) {
-      const parts = kw.split(' ');
-      return parts.length > 1 ? parseInt(parts[1], 10) : 1;
-    }
-  }
-  return 0;
-};
-
-/**
- * Check if a creature has any Pounce keyword.
- * @param {Object} card - The creature card
- * @returns {boolean} True if creature has Pounce
- */
-export const hasPounce = (card) => getPounceValue(card) > 0;
-
-/**
- * Calculate total Pounce damage from all friendly creatures.
- * @param {Object} state - Game state
- * @param {number} playerIndex - Index of the player with Pounce creatures
- * @returns {number} Total Pounce damage to apply to each Stalked enemy
- */
-export const calculateTotalPounce = (state, playerIndex) => {
-  if (!state?.players?.[playerIndex]?.field) return 0;
-
-  const field = state.players[playerIndex].field;
-  let totalPounce = 0;
-
-  for (const card of field) {
-    if (!card) continue;
-    totalPounce += getPounceValue(card);
-  }
-
-  return totalPounce;
+  return state.players[ownerIndex].field.filter((card) => {
+    if (!card || card.instanceId === attacker?.instanceId) return false;
+    if (!hasPride(card) || !areAbilitiesActive(card)) return false;
+    if (card.hasAttackedThisTurn || card.joinedPrideAttack) return false;
+    return true;
+  });
 };

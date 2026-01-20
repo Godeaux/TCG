@@ -12,6 +12,10 @@ import {
   hasPoisonous,
   getEffectiveAttack,
   hasWeb,
+  isStalking,
+  endStalking,
+  hasPride,
+  getAvailablePrideAllies,
   KEYWORDS,
 } from '../keywords.js';
 import {
@@ -283,6 +287,18 @@ export const resolveCreatureCombat = (
     );
   }
 
+  // Stalk: End stalking after attacking from stalk (ambush completed)
+  // The stalk bonus was already applied via getEffectiveAttack, now remove it
+  if (isStalking(attacker)) {
+    const stalkBonusUsed = attacker.stalkBonus || 0;
+    endStalking(attacker);
+    logGameAction(
+      state,
+      COMBAT,
+      `🐆 AMBUSH: ${formatCardForLog(attacker)} strikes from the shadows! (+${stalkBonusUsed} ATK bonus applied, stalking ends)`
+    );
+  }
+
   return { attackerDamage, defenderDamage };
 };
 
@@ -427,4 +443,144 @@ export const cleanupDestroyed = (state, { silent = false } = {}) => {
   if (!silent) {
     state.broadcast?.(state);
   }
+};
+
+/**
+ * Check if a Pride coordinated hunt can occur.
+ * Returns available Pride allies that can join the attack.
+ * @param {Object} state - Game state
+ * @param {Object} attacker - The primary attacking creature
+ * @param {number} attackerOwnerIndex - Index of attacker's owner
+ * @returns {Array} Array of Pride creatures that can join
+ */
+export const checkPrideCoordinatedHunt = (state, attacker, attackerOwnerIndex) => {
+  // Only Pride creatures can initiate coordinated hunts
+  if (!hasPride(attacker) || !areAbilitiesActive(attacker)) {
+    return [];
+  }
+  return getAvailablePrideAllies(state, attackerOwnerIndex, attacker);
+};
+
+/**
+ * Resolve Pride coordinated hunt damage.
+ * The ally deals damage to the defender but takes no counter-damage.
+ * The ally's attack is consumed for the turn.
+ *
+ * @param {Object} state - Game state
+ * @param {Object} ally - The Pride ally joining the attack
+ * @param {Object} defender - The defending creature (or null for direct attack)
+ * @param {number} allyOwnerIndex - Index of ally's owner
+ * @param {number} defenderOwnerIndex - Index of defender's owner
+ * @returns {Object} Result of the coordinated damage
+ */
+export const resolvePrideCoordinatedDamage = (
+  state,
+  ally,
+  defender,
+  allyOwnerIndex,
+  defenderOwnerIndex
+) => {
+  const allyEffectiveAtk = getEffectiveAttack(ally, state, allyOwnerIndex);
+
+  // Mark ally as having joined a Pride attack (can't attack or join again this turn)
+  ally.joinedPrideAttack = true;
+  ally.hasAttackedThisTurn = true;
+
+  if (defender) {
+    // Coordinated attack on creature
+    const defenderPreHp = defender.currentHp;
+    const damageResult = applyDamageForPride(defender, allyEffectiveAtk, state, defenderOwnerIndex);
+
+    logGameAction(
+      state,
+      COMBAT,
+      `🦁 PRIDE HUNT: ${formatCardForLog(ally)} joins the attack! Deals ${damageResult.damage} damage to ${formatCardForLog(defender)} (${defenderPreHp} → ${defender.currentHp})`
+    );
+
+    // Toxic from ally still applies
+    if (hasToxic(ally) && damageResult.damage > 0 && defender.currentHp > 0) {
+      queueKeywordEffect(state, ally, 'Toxic', allyOwnerIndex);
+      defender.currentHp = 0;
+      logGameAction(
+        state,
+        DEATH,
+        `${getKeywordEmoji('Toxic')} TOXIC: ${formatCardForLog(defender)} is killed by ${formatCardForLog(ally)}'s toxic venom during coordinated hunt!`
+      );
+    }
+
+    if (defender.currentHp <= 0) {
+      defender.diedInCombat = true;
+      defender.slainBy = {
+        instanceId: ally.instanceId,
+        name: ally.name,
+        type: ally.type,
+        currentAtk: allyEffectiveAtk,
+        currentHp: ally.currentHp,
+      };
+      logGameAction(state, DEATH, `${formatCardForLog(defender)} is slain by the coordinated hunt!`);
+    }
+
+    return { damage: damageResult.damage, barrierBlocked: damageResult.barrierBlocked };
+  } else {
+    // Direct attack on player
+    const opponent = state.players[defenderOwnerIndex];
+    const previousHp = opponent.hp;
+    opponent.hp -= allyEffectiveAtk;
+
+    logGameAction(
+      state,
+      COMBAT,
+      `🦁 PRIDE HUNT: ${formatCardForLog(ally)} joins the direct attack! Hits ${opponent.name} for ${allyEffectiveAtk} damage (${previousHp} → ${opponent.hp} HP)`
+    );
+
+    return { damage: allyEffectiveAtk, barrierBlocked: false };
+  }
+};
+
+/**
+ * Apply damage for Pride coordinated attack (helper to avoid exposing applyDamage)
+ */
+const applyDamageForPride = (creature, amount, state, ownerIndex) => {
+  if (amount <= 0) {
+    return { damage: 0, barrierBlocked: false };
+  }
+  if (creature.hasBarrier && areAbilitiesActive(creature)) {
+    creature.hasBarrier = false;
+    queueKeywordEffect(state, creature, 'Barrier', ownerIndex);
+    logGameAction(
+      state,
+      BUFF,
+      `${formatCardForLog(creature)}'s ${getKeywordEmoji('Barrier')} Barrier blocks the coordinated attack!`
+    );
+    return { damage: 0, barrierBlocked: true };
+  }
+  creature.currentHp -= amount;
+
+  // Clear Webbed status when creature takes damage
+  if (creature.webbed) {
+    creature.webbed = false;
+    if (creature.keywords) {
+      const webbedIndex = creature.keywords.indexOf(KEYWORDS.WEBBED);
+      if (webbedIndex >= 0) {
+        creature.keywords.splice(webbedIndex, 1);
+      }
+    }
+  }
+
+  return { damage: amount, barrierBlocked: false };
+};
+
+/**
+ * Reset Pride attack flags at end of turn.
+ * Called during turn cleanup.
+ * @param {Object} state - Game state
+ */
+export const resetPrideFlags = (state) => {
+  state.players.forEach((player) => {
+    player.field.forEach((creature) => {
+      if (creature) {
+        creature.joinedPrideAttack = false;
+      }
+    });
+  });
 };

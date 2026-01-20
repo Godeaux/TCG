@@ -6,15 +6,15 @@ import {
   LOG_CATEGORIES,
   getKeywordEmoji,
 } from '../state/gameState.js';
-import { cleanupDestroyed } from './combat.js';
+import { cleanupDestroyed, resetPrideFlags } from './combat.js';
 import { resolveEffectResult } from './effects.js';
 import { logPlainMessage } from './historyLog.js';
 import { resolveCardEffect } from '../cards/index.js';
 import {
   calculateTotalVenom,
   hasWebbed,
-  calculateTotalPounce,
-  hasStalked,
+  isStalking,
+  incrementStalkBonus,
   KEYWORDS,
 } from '../keywords.js';
 
@@ -100,6 +100,9 @@ const runStartOfTurnEffects = (state) => {
       );
     }
   });
+
+  // Handle Stalk bonus increment for stalking creatures (Feline mechanic)
+  handleStalkBonusIncrement(state);
 
   // Field spells live on the field and are handled in the loop above.
 };
@@ -302,52 +305,20 @@ const handleVenomDamage = (state) => {
   });
 };
 
-// Handle Pounce damage - deal damage to all Stalked enemy creatures at end of turn
-const handlePounceDamage = (state) => {
-  const activePlayerIndex = state.activePlayerIndex;
-  const opponentIndex = (activePlayerIndex + 1) % 2;
-  const opponent = state.players[opponentIndex];
-
-  // Calculate total pounce from all friendly creatures
-  const totalPounce = calculateTotalPounce(state, activePlayerIndex);
-  if (totalPounce <= 0) return;
-
-  // Find all Stalked enemy creatures
-  const stalkedCreatures = opponent.field.filter((creature) => creature && hasStalked(creature));
-  if (stalkedCreatures.length === 0) return;
-
-  logGameAction(
-    state,
-    DAMAGE,
-    `🐆 Pounce activates! Dealing ${totalPounce} damage to ${stalkedCreatures.length} Stalked creature(s).`
-  );
-
-  // Deal pounce damage to each Stalked creature
-  stalkedCreatures.forEach((creature) => {
-    const previousHp = creature.currentHp ?? creature.hp;
-    creature.currentHp = previousHp - totalPounce;
-
-    // Remove Stalked status since the creature was pounced on
-    if (creature.keywords) {
-      const stalkedIndex = creature.keywords.indexOf(KEYWORDS.STALKED);
-      if (stalkedIndex >= 0) {
-        creature.keywords.splice(stalkedIndex, 1);
+// Handle Stalk bonus increment - stalking creatures gain +1 ATK at start of their owner's turn (max +3)
+const handleStalkBonusIncrement = (state) => {
+  const activePlayer = state.players[state.activePlayerIndex];
+  activePlayer.field.forEach((creature) => {
+    if (creature && isStalking(creature)) {
+      const previousBonus = creature.stalkBonus || 0;
+      const newBonus = incrementStalkBonus(creature);
+      if (newBonus > previousBonus) {
+        logGameAction(
+          state,
+          BUFF,
+          `🐆 ${creature.name} stalks patiently... (+${newBonus} ATK from stalking, max +3)`
+        );
       }
-    }
-    creature.stalked = false;
-
-    if (creature.currentHp <= 0) {
-      logGameAction(
-        state,
-        DEATH,
-        `🐆 ${creature.name} is killed by the pounce! (${previousHp} → ${creature.currentHp} HP)`
-      );
-    } else {
-      logGameAction(
-        state,
-        DAMAGE,
-        `🐆 ${creature.name} takes ${totalPounce} pounce damage and escapes the stalk. (${previousHp} → ${creature.currentHp} HP)`
-      );
     }
   });
 };
@@ -621,10 +592,10 @@ export const finalizeEndPhase = (state) => {
   handleRegen(state);
   handleHowlCleanup(state); // Remove temporary Howl buffs from Canines
   handleVenomDamage(state); // Deal venom damage to Webbed enemies (before thaw/cleanup)
-  handlePounceDamage(state); // Deal pounce damage to Stalked enemies (Feline mechanic)
   handleFrozenThaw(state); // Thaw regular frozen creatures first
   handleNeurotoxicDeaths(state); // Then kill Neurotoxic-frozen creatures
   clearParalysis(state);
+  resetPrideFlags(state); // Reset Pride joinedPrideAttack flags (Feline mechanic)
   cleanupDestroyed(state);
 
   const player = state.players[state.activePlayerIndex];

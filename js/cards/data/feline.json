@@ -4,7 +4,7 @@
     "deckEmoji": "🐆",
     "deckColor": "#C19A6B",
     "status": "experimental",
-    "description": "Choose your hunting style: Ambush Predators stalk and pounce for burst damage, Pursuit Hunters use speed to overwhelm, or Pride Hunters coordinate attacks with pack tactics."
+    "description": "Choose your hunting style: Stalk creatures wait patiently, building power before striking from the shadows. Pride hunters coordinate attacks for devastating combined damage. Pursuit hunters use speed to overwhelm."
   },
   "tokens": [
     {
@@ -28,33 +28,19 @@
       "keywords": ["Pride"],
       "tribe": "Feline",
       "isToken": true
-    },
-    {
-      "id": "token-wounded-prey",
-      "name": "Wounded Prey",
-      "type": "Prey",
-      "atk": 0,
-      "hp": 1,
-      "nutrition": 2,
-      "keywords": ["Passive"],
-      "tribe": "Feline",
-      "isToken": true
     }
   ],
   "cards": [
     {
-      "_comment": "=== AMBUSH SPECIALISTS (Stalk/Pounce archetype) - Patient solo hunters ===",
+      "_comment": "=== AMBUSH SPECIALISTS (Stalk archetype) - Patient solo hunters ===",
       "id": "feline-prey-sand-cat",
       "name": "Sand Cat",
       "type": "Prey",
       "atk": 1,
       "hp": 2,
       "nutrition": 1,
-      "keywords": ["Hidden"],
-      "tribe": "Feline",
-      "effects": {
-        "onPlay": { "type": "stalkRandomEnemy" }
-      }
+      "keywords": ["Stalk"],
+      "tribe": "Feline"
     },
     {
       "id": "feline-prey-black-footed-cat",
@@ -63,34 +49,31 @@
       "atk": 2,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Ambush"],
-      "tribe": "Feline",
-      "effects": {
-        "onPlay": { "type": "drawIfEnemyStalked" }
-      }
+      "keywords": ["Stalk", "Ambush"],
+      "tribe": "Feline"
     },
     {
       "id": "feline-prey-pallas-cat",
       "name": "Pallas's Cat",
       "type": "Prey",
       "atk": 1,
-      "hp": 2,
+      "hp": 3,
       "nutrition": 1,
-      "keywords": ["Barrier"],
-      "tribe": "Feline",
-      "effects": {
-        "onSlain": { "type": "stalkRandomEnemy" }
-      }
+      "keywords": ["Stalk", "Barrier"],
+      "tribe": "Feline"
     },
     {
       "id": "feline-prey-jungle-cat",
       "name": "Jungle Cat",
       "type": "Prey",
-      "atk": 1,
+      "atk": 2,
       "hp": 2,
       "nutrition": 1,
-      "keywords": ["Hidden"],
-      "tribe": "Feline"
+      "keywords": ["Stalk"],
+      "tribe": "Feline",
+      "effects": {
+        "onPlay": { "type": "enterStalkModeOnPlay" }
+      }
     },
     {
       "id": "feline-prey-african-wildcat",
@@ -99,10 +82,10 @@
       "atk": 1,
       "hp": 2,
       "nutrition": 1,
-      "keywords": [],
+      "keywords": ["Stalk"],
       "tribe": "Feline",
       "effects": {
-        "onPlay": { "type": "stalkTarget" }
+        "onSlain": { "type": "draw", "params": { "count": 1 } }
       }
     },
     {
@@ -112,7 +95,7 @@
       "atk": 2,
       "hp": 2,
       "nutrition": 2,
-      "keywords": [],
+      "keywords": ["Stalk"],
       "tribe": "Feline",
       "effects": {
         "onDefend": { "type": "damageCreature", "params": { "targetType": "attacker", "amount": 1 } }
@@ -125,24 +108,20 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 0,
-      "keywords": ["Free Play"],
-      "tribe": "Feline",
-      "effects": {
-        "onPlay": { "type": "stalkRandomEnemy" }
-      }
+      "keywords": ["Stalk", "Free Play"],
+      "tribe": "Feline"
     },
     {
-      "id": "feline-prey-flat-headed-cat",
-      "name": "Flat-Headed Cat",
+      "id": "feline-prey-fishing-cat",
+      "name": "Fishing Cat",
       "type": "Prey",
-      "atk": 1,
+      "atk": 2,
       "hp": 2,
       "nutrition": 1,
-      "keywords": [],
+      "keywords": ["Stalk"],
       "tribe": "Feline",
-      "summons": ["token-wounded-prey"],
       "effects": {
-        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-wounded-prey"] } }
+        "onPlay": { "type": "draw", "params": { "count": 1 } }
       }
     },
     {
@@ -183,8 +162,8 @@
       "id": "feline-prey-asian-golden-cat",
       "name": "Asian Golden Cat",
       "type": "Prey",
-      "atk": 3,
-      "hp": 1,
+      "atk": 2,
+      "hp": 3,
       "nutrition": 2,
       "keywords": ["Haste"],
       "tribe": "Feline"
@@ -206,8 +185,11 @@
       "atk": 2,
       "hp": 2,
       "nutrition": 1,
-      "keywords": ["Hidden"],
-      "tribe": "Feline"
+      "keywords": ["Haste"],
+      "tribe": "Feline",
+      "effects": {
+        "onPlay": { "type": "chasePrey", "params": { "atkBonus": 1 } }
+      }
     },
     {
       "id": "feline-prey-pampas-cat",
@@ -219,7 +201,7 @@
       "keywords": [],
       "tribe": "Feline",
       "effects": {
-        "onPlay": { "type": "chasePrey", "params": { "atkBonus": 1 } }
+        "onPlay": { "type": "chasePrey", "params": { "atkBonus": 2 } }
       }
     },
     {
@@ -236,7 +218,7 @@
       }
     },
     {
-      "_comment": "=== PRIDE HUNTERS (Pack tactics archetype) - Coordinated lion attacks ===",
+      "_comment": "=== PRIDE HUNTERS (Coordinated Hunt archetype) - Pack tactics ===",
       "id": "feline-prey-lioness",
       "name": "Lioness",
       "type": "Prey",
@@ -244,17 +226,14 @@
       "hp": 2,
       "nutrition": 2,
       "keywords": ["Pride"],
-      "tribe": "Feline",
-      "effects": {
-        "onPlay": { "type": "stalkRandomEnemy" }
-      }
+      "tribe": "Feline"
     },
     {
       "id": "feline-prey-young-lion",
       "name": "Young Lion",
       "type": "Prey",
-      "atk": 1,
-      "hp": 3,
+      "atk": 2,
+      "hp": 2,
       "nutrition": 1,
       "keywords": ["Pride"],
       "tribe": "Feline"
@@ -278,7 +257,7 @@
       "name": "Asiatic Lioness",
       "type": "Prey",
       "atk": 2,
-      "hp": 2,
+      "hp": 3,
       "nutrition": 2,
       "keywords": ["Pride", "Barrier"],
       "tribe": "Feline"
@@ -293,15 +272,15 @@
       "keywords": ["Pride"],
       "tribe": "Feline",
       "effects": {
-        "onPlay": { "type": "coordinatedStrike", "params": { "atkBonus": 1 } }
+        "onPlay": { "type": "drawPerPride" }
       }
     },
     {
       "id": "feline-prey-barbary-lioness",
       "name": "Barbary Lioness",
       "type": "Prey",
-      "atk": 2,
-      "hp": 3,
+      "atk": 3,
+      "hp": 2,
       "nutrition": 2,
       "keywords": ["Pride"],
       "tribe": "Feline"
@@ -310,11 +289,14 @@
       "id": "feline-prey-cave-lioness",
       "name": "Cave Lioness",
       "type": "Prey",
-      "atk": 3,
-      "hp": 2,
+      "atk": 2,
+      "hp": 3,
       "nutrition": 2,
       "keywords": ["Pride"],
-      "tribe": "Feline"
+      "tribe": "Feline",
+      "effects": {
+        "onSlain": { "type": "buffAllPride", "params": { "bonus": 1 } }
+      }
     },
     {
       "id": "feline-prey-tsavo-lioness",
@@ -326,22 +308,21 @@
       "keywords": ["Pride"],
       "tribe": "Feline",
       "effects": {
-        "onSlain": { "type": "coordinatedStrike", "params": { "atkBonus": 1 } }
+        "onPlay": { "type": "grantPride" }
       }
     },
     {
-      "_comment": "=== PREDATORS - AMBUSH MASTERS ===",
+      "_comment": "=== PREDATORS - STALK APEX ===",
       "id": "feline-predator-bengal-tiger",
       "name": "Bengal Tiger",
       "type": "Predator",
       "atk": 4,
       "hp": 4,
-      "keywords": ["Pounce 2"],
+      "keywords": ["Stalk"],
       "tribe": "Feline",
       "consumesType": "Prey",
       "effects": {
-        "onPlay": { "type": "stalkTarget" },
-        "onConsume": { "type": "damageStalked", "params": { "damage": 2 } }
+        "onPlay": { "type": "enterStalkModeOnPlay" }
       }
     },
     {
@@ -350,12 +331,9 @@
       "type": "Predator",
       "atk": 4,
       "hp": 3,
-      "keywords": ["Pounce 2", "Acuity"],
+      "keywords": ["Stalk", "Acuity"],
       "tribe": "Feline",
-      "consumesType": "Prey",
-      "effects": {
-        "onConsume": { "type": "stalkAllEnemies" }
-      }
+      "consumesType": "Prey"
     },
     {
       "id": "feline-predator-snow-leopard",
@@ -363,9 +341,12 @@
       "type": "Predator",
       "atk": 3,
       "hp": 3,
-      "keywords": ["Hidden", "Pounce 2"],
+      "keywords": ["Stalk", "Ambush"],
       "tribe": "Feline",
-      "consumesType": "Prey"
+      "consumesType": "Prey",
+      "effects": {
+        "onConsume": { "type": "enterStalkModeOnPlay" }
+      }
     },
     {
       "id": "feline-predator-clouded-leopard",
@@ -373,11 +354,11 @@
       "type": "Predator",
       "atk": 3,
       "hp": 2,
-      "keywords": ["Acuity", "Pounce 1"],
+      "keywords": ["Stalk"],
       "tribe": "Feline",
       "consumesType": "Prey",
       "effects": {
-        "onPlay": { "type": "stalkRandomEnemy" }
+        "onPlay": { "type": "drawPerStalking" }
       }
     },
     {
@@ -441,8 +422,7 @@
       "tribe": "Feline",
       "consumesType": "Prey",
       "effects": {
-        "onPlay": { "type": "coordinatedStrike", "params": { "atkBonus": 1 } },
-        "onConsume": { "type": "coordinatedStrike", "params": { "atkBonus": 1 } }
+        "onPlay": { "type": "buffAllPride", "params": { "bonus": 1 } }
       }
     },
     {
@@ -479,28 +459,17 @@
       "tribe": "Feline",
       "consumesType": "Prey",
       "effects": {
-        "onConsume": { "type": "coordinatedStrike", "params": { "atkBonus": 2 } }
+        "onConsume": { "type": "summonTokensPerPride", "params": { "tokenId": "token-pride-cub" } }
       }
     },
     {
       "_comment": "=== SPELLS ===",
-      "id": "feline-spell-ambush-strike",
-      "name": "Ambush Strike",
+      "id": "feline-spell-ambush-from-cover",
+      "name": "Ambush from Cover",
       "type": "Spell",
       "tribe": "Feline",
       "effects": {
-        "effect": [
-          { "type": "stalkTarget" },
-          {
-            "type": "selectFromGroup",
-            "params": {
-              "targetGroup": "enemy-creatures",
-              "title": "Choose a Stalked creature to strike",
-              "filter": { "keyword": "Stalked" },
-              "effect": { "damage": 3 }
-            }
-          }
-        ]
+        "effect": { "type": "enterStalkMode" }
       }
     },
     {
@@ -509,23 +478,19 @@
       "type": "Spell",
       "tribe": "Feline",
       "effects": {
-        "effect": {
-          "type": "selectFromGroup",
-          "params": {
-            "targetGroup": "friendly-creatures",
-            "title": "Choose a creature to give the chase",
-            "effect": { "buffAtk": 3, "keyword": "Haste" }
-          }
-        }
+        "effect": { "type": "chasePrey", "params": { "atkBonus": 3 } }
       }
     },
     {
-      "id": "feline-spell-pride-tactics",
-      "name": "Pride Tactics",
+      "id": "feline-spell-pride-rally",
+      "name": "Pride Rally",
       "type": "Spell",
       "tribe": "Feline",
       "effects": {
-        "effect": { "type": "coordinatedStrike", "params": { "atkBonus": 2 } }
+        "effect": [
+          { "type": "buffAllPride", "params": { "bonus": 2 } },
+          { "type": "drawPerPride" }
+        ]
       }
     },
     {
@@ -554,13 +519,13 @@
       }
     },
     {
-      "id": "feline-spell-patient-stalker",
-      "name": "Patient Stalker",
+      "id": "feline-spell-primal-roar",
+      "name": "Primal Roar",
       "type": "Spell",
       "tribe": "Feline",
       "effects": {
         "effect": [
-          { "type": "stalkAllEnemies" },
+          { "type": "healPerPride", "params": { "healPer": 1 } },
           { "type": "draw", "params": { "count": 1 } }
         ]
       }
@@ -661,7 +626,15 @@
       "trigger": "creatureAttacks",
       "tribe": "Feline",
       "effects": {
-        "effect": { "type": "stalkAttacker" }
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "friendly-creatures",
+            "filter": { "keyword": "Stalk" },
+            "title": "Choose a creature to enter stalking mode",
+            "effect": { "enterStalking": true }
+          }
+        }
       }
     }
   ]

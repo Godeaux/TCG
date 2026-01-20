@@ -29,7 +29,13 @@
  *   }
  */
 
-import { isInvisible, KEYWORDS } from '../keywords.js';
+import {
+  isInvisible,
+  KEYWORDS,
+  enterStalking as enterStalkingHelper,
+  isStalking,
+  hasPride,
+} from '../keywords.js';
 import { isCreatureCard } from '../cardTypes.js';
 
 // ============================================================================
@@ -3236,208 +3242,226 @@ export const summonTokensPerWebbed =
 // ============================================================================
 
 /**
- * Apply Stalked status to a creature.
- * Stalked creatures take bonus damage from Pounce abilities.
+ * Make a friendly creature with Stalk enter stalking mode.
+ * While stalking: gains Hidden, +1 ATK per turn (max +3).
+ * Attacks once to ambush, then loses Hidden and bonus.
  */
-const applyStalked = (creature, log) => {
-  if (!creature || !creature.keywords) return;
-  if (!creature.keywords.includes(KEYWORDS.STALKED)) {
-    creature.keywords.push(KEYWORDS.STALKED);
-    creature.stalked = true;
-    log(`🐆 ${creature.name} is being stalked!`);
-  }
-  return {};
-};
+export const enterStalkMode = () => (context) => {
+  const { log, player } = context;
+  const stalkCreatures = player.field.filter(
+    (c) => c && isCreatureCard(c) && c.keywords?.includes('Stalk') && !isStalking(c)
+  );
 
-/**
- * Stalk all enemy creatures
- */
-export const stalkAllEnemies =
-  () =>
-  ({ log, opponent }) => {
-    const enemies = opponent.field.filter((c) => c && isCreatureCard(c));
-    if (enemies.length === 0) {
-      log(`No Rival's creatures to stalk.`);
-      return {};
-    }
-    enemies.forEach((creature) => {
-      applyStalked(creature, log);
-    });
-    return {};
-  };
-
-/**
- * Defend trigger: stalk the attacking enemy
- */
-export const stalkAttacker =
-  () =>
-  ({ log, attacker }) => {
-    if (!attacker) return {};
-    applyStalked(attacker, log);
-    return {};
-  };
-
-/**
- * Select an enemy creature to stalk
- */
-export const stalkTarget = () => (context) => {
-  const { log, opponent, state } = context;
-  const enemies = opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
-
-  if (enemies.length === 0) {
-    log(`No Rival's creatures to stalk.`);
+  if (stalkCreatures.length === 0) {
+    log(`No creatures with Stalk available to enter stalking mode.`);
     return {};
   }
 
   return makeTargetedSelection({
-    title: 'Choose a creature to stalk',
-    candidates: enemies.map((c) => ({ label: c.name, value: c })),
+    title: 'Choose a creature to enter stalking mode',
+    candidates: stalkCreatures.map((c) => ({ label: c.name, value: c })),
     onSelect: (target) => {
-      applyStalked(target, log);
+      if (enterStalkingHelper(target)) {
+        log(`🐆 ${target.name} enters stalking mode! (Gains Hidden, builds +1 ATK/turn)`);
+      }
       return {};
     },
   });
 };
 
 /**
- * Stalk a random enemy creature
+ * Make the played creature enter stalking mode immediately (on play effect).
  */
-export const stalkRandomEnemy =
+export const enterStalkModeOnPlay =
   () =>
-  ({ log, opponent }) => {
-    const enemies = opponent.field.filter((c) => c && isCreatureCard(c));
-    if (enemies.length === 0) {
-      log(`No Rival's creatures to stalk.`);
+  ({ log, creature }) => {
+    if (!creature || !creature.keywords?.includes('Stalk')) {
       return {};
     }
-    const target = enemies[Math.floor(Math.random() * enemies.length)];
-    applyStalked(target, log);
+    if (enterStalkingHelper(creature)) {
+      log(`🐆 ${creature.name} enters stalking mode! (Gains Hidden, builds +1 ATK/turn)`);
+    }
     return {};
   };
 
 /**
- * Deal damage to all Stalked enemy creatures
- * @param {number} damage - Damage amount
+ * Count stalking friendly creatures (for effects that scale).
  */
-export const damageStalked =
-  (damage) =>
-  ({ log, opponent }) => {
-    const stalkedCreatures = opponent.field.filter(
-      (c) => c && isCreatureCard(c) && c.keywords?.includes(KEYWORDS.STALKED)
-    );
-
-    if (stalkedCreatures.length === 0) {
-      log(`No Stalked creatures to damage.`);
-      return {};
-    }
-
-    log(`🐆 Pounces for ${damage} damage to all Stalked creatures!`);
-    return { damageCreatures: { creatures: stalkedCreatures, amount: damage } };
-  };
+const countStalkingFriendlies = (player) => {
+  return player.field.filter((c) => c && isCreatureCard(c) && isStalking(c)).length;
+};
 
 /**
- * Draw cards equal to number of Stalked enemies (max 3)
+ * Draw cards based on number of stalking friendly creatures (max 3).
  */
-export const drawPerStalked =
+export const drawPerStalking =
   () =>
-  ({ log, opponent }) => {
-    const stalkedCount = opponent.field.filter(
-      (c) => c && isCreatureCard(c) && c.keywords?.includes(KEYWORDS.STALKED)
-    ).length;
-
-    if (stalkedCount === 0) {
-      log(`No Stalked creatures - no cards drawn.`);
+  ({ log, player }) => {
+    const stalkingCount = countStalkingFriendlies(player);
+    if (stalkingCount === 0) {
+      log(`No stalking creatures - no cards drawn.`);
       return {};
     }
-
-    const drawCount = Math.min(stalkedCount, 3);
-    log(`🐆 Drawing ${drawCount} card(s) for Stalked enemies.`);
+    const drawCount = Math.min(stalkingCount, 3);
+    log(`🐆 Drawing ${drawCount} card(s) for stalking creatures.`);
     return { draw: drawCount };
   };
 
 /**
- * Draw a card if any enemy creature is Stalked
+ * Buff ATK of all stalking creatures.
+ * @param {number} bonus - ATK bonus to give each stalking creature
  */
-export const drawIfEnemyStalked = () => ({ log, opponent }) => {
-  const hasStalked = opponent.field.some(
-    (c) => c && isCreatureCard(c) && c.keywords?.includes(KEYWORDS.STALKED)
-  );
-
-  if (!hasStalked) {
-    log(`No Stalked enemies - no card drawn.`);
-    return {};
-  }
-
-  log(`🐆 Enemy creature is Stalked - drawing a card!`);
-  return { draw: 1 };
-};
-
-/**
- * Buff creature's ATK based on number of Stalked enemy creatures
- * @param {number} bonus - ATK bonus per Stalked creature
- */
-export const buffAtkPerStalked =
+export const buffAllStalking =
   (bonus = 1) =>
-  ({ log, opponent, creature }) => {
-    const stalkedCount = opponent.field.filter(
-      (c) => c && isCreatureCard(c) && c.keywords?.includes(KEYWORDS.STALKED)
-    ).length;
-
-    if (stalkedCount === 0) {
-      log(`No Stalked enemies - no ATK bonus.`);
+  ({ log, player }) => {
+    const stalkingCreatures = player.field.filter((c) => c && isCreatureCard(c) && isStalking(c));
+    if (stalkingCreatures.length === 0) {
+      log(`No stalking creatures to buff.`);
       return {};
     }
-
-    const totalBonus = stalkedCount * bonus;
-    log(`🐆 Gains +${totalBonus} ATK from ${stalkedCount} Stalked enemy creature(s)!`);
-    return { buffCreature: { creature, atk: totalBonus } };
+    log(`🐆 All stalking creatures gain +${bonus} ATK!`);
+    return {
+      buffCreatures: {
+        creatures: stalkingCreatures,
+        atk: bonus,
+      },
+    };
   };
 
 /**
- * Summon tokens based on number of Stalked enemy creatures
- * @param {string} tokenId - Token ID to summon
+ * Count Pride creatures (for effects that scale with Pride count).
  */
-export const summonTokensPerStalked =
-  (tokenId) =>
-  ({ log, opponent, playerIndex }) => {
-    const stalkedCount = opponent.field.filter(
-      (c) => c && isCreatureCard(c) && c.keywords?.includes(KEYWORDS.STALKED)
-    ).length;
+const countPrideCreatures = (player) => {
+  return player.field.filter((c) => c && isCreatureCard(c) && hasPride(c)).length;
+};
 
-    if (stalkedCount === 0) {
-      log(`No Stalked enemies - no tokens summoned.`);
+/**
+ * Draw a card for each Pride creature you control (max 3).
+ */
+export const drawPerPride =
+  () =>
+  ({ log, player }) => {
+    const prideCount = countPrideCreatures(player);
+    if (prideCount === 0) {
+      log(`No Pride creatures - no cards drawn.`);
       return {};
     }
+    const drawCount = Math.min(prideCount, 3);
+    log(`🦁 Drawing ${drawCount} card(s) for Pride creatures.`);
+    return { draw: drawCount };
+  };
 
-    const tokens = Array(stalkedCount).fill(tokenId);
-    log(`🐆 Summons ${stalkedCount} cub(s) from ${stalkedCount} Stalked enemy creature(s)!`);
+/**
+ * Buff ATK of all Pride creatures.
+ * @param {number} bonus - ATK bonus to give each Pride creature
+ */
+export const buffAllPride =
+  (bonus = 1) =>
+  ({ log, player }) => {
+    const prideCreatures = player.field.filter((c) => c && isCreatureCard(c) && hasPride(c));
+    if (prideCreatures.length === 0) {
+      log(`No Pride creatures to buff.`);
+      return {};
+    }
+    log(`🦁 All Pride creatures gain +${bonus} ATK!`);
+    return {
+      buffCreatures: {
+        creatures: prideCreatures,
+        atk: bonus,
+      },
+    };
+  };
+
+/**
+ * Summon tokens based on number of Pride creatures.
+ * @param {string} tokenId - Token ID to summon
+ */
+export const summonTokensPerPride =
+  (tokenId) =>
+  ({ log, player, playerIndex }) => {
+    const prideCount = countPrideCreatures(player);
+    if (prideCount === 0) {
+      log(`No Pride creatures - no tokens summoned.`);
+      return {};
+    }
+    const tokens = Array(prideCount).fill(tokenId);
+    log(`🦁 Summons ${prideCount} cub(s) for ${prideCount} Pride creature(s)!`);
     return { summonTokens: { playerIndex, tokens } };
   };
 
 /**
- * Coordinated attack - buff all friendly Pride creatures
- * @param {number} atkBonus - ATK bonus to give
+ * Heal player based on number of Pride creatures.
+ * @param {number} healPer - HP to heal per Pride creature
  */
-export const coordinatedStrike =
-  (atkBonus = 2) =>
+export const healPerPride =
+  (healPer = 1) =>
   ({ log, player }) => {
-    const prideCreatures = player.field.filter(
-      (c) => c && isCreatureCard(c) && c.keywords?.includes('Pride')
-    );
-
-    if (prideCreatures.length === 0) {
-      log(`No Pride creatures to coordinate.`);
+    const prideCount = countPrideCreatures(player);
+    if (prideCount === 0) {
+      log(`No Pride creatures - no healing.`);
       return {};
     }
-
-    log(`🦁 Pride coordinates attack! All Pride creatures gain +${atkBonus} ATK!`);
-    return {
-      buffCreatures: {
-        creatures: prideCreatures,
-        atk: atkBonus,
-      },
-    };
+    const totalHeal = prideCount * healPer;
+    log(`🦁 Heals ${totalHeal} HP for ${prideCount} Pride creature(s)!`);
+    return { heal: totalHeal };
   };
+
+/**
+ * Grant a creature the Pride keyword.
+ */
+export const grantPride = () => (context) => {
+  const { log, player, state } = context;
+  const eligibleCreatures = player.field.filter(
+    (c) => c && isCreatureCard(c) && !hasPride(c) && !isInvisible(c, state)
+  );
+
+  if (eligibleCreatures.length === 0) {
+    log(`No creatures available to join the pride.`);
+    return {};
+  }
+
+  return makeTargetedSelection({
+    title: 'Choose a creature to join the Pride',
+    candidates: eligibleCreatures.map((c) => ({ label: c.name, value: c })),
+    onSelect: (target) => {
+      if (!target.keywords) target.keywords = [];
+      if (!target.keywords.includes('Pride')) {
+        target.keywords.push('Pride');
+        log(`🦁 ${target.name} joins the Pride! (Can now participate in coordinated hunts)`);
+      }
+      return {};
+    },
+  });
+};
+
+/**
+ * Deal damage to target equal to this creature's stalk bonus.
+ * Used for "precision strike" type effects.
+ */
+export const damageEqualToStalkBonus = () => (context) => {
+  const { log, creature, opponent, state } = context;
+  const stalkBonus = creature?.stalkBonus || 0;
+
+  if (stalkBonus === 0) {
+    log(`No stalk bonus accumulated - no damage dealt.`);
+    return {};
+  }
+
+  const enemies = opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
+  if (enemies.length === 0) {
+    log(`No enemy creatures to strike.`);
+    return {};
+  }
+
+  return makeTargetedSelection({
+    title: `Deal ${stalkBonus} damage to target (from stalk bonus)`,
+    candidates: enemies.map((c) => ({ label: c.name, value: c })),
+    onSelect: (target) => {
+      log(`🐆 Precision strike! Deals ${stalkBonus} damage to ${target.name}!`);
+      return { damageCreatures: { creatures: [target], amount: stalkBonus } };
+    },
+  });
+};
 
 /**
  * Grant Haste and bonus ATK to target creature (for pursuit hunters)
@@ -3812,17 +3836,17 @@ export const effectRegistry = {
   buffAtkPerWebbed,
   summonTokensPerWebbed,
 
-  // Feline stalk/pounce effects (Experimental)
-  stalkAllEnemies,
-  stalkAttacker,
-  stalkTarget,
-  stalkRandomEnemy,
-  damageStalked,
-  drawPerStalked,
-  drawIfEnemyStalked,
-  buffAtkPerStalked,
-  summonTokensPerStalked,
-  coordinatedStrike,
+  // Feline stalk/pride effects (Experimental)
+  enterStalkMode,
+  enterStalkModeOnPlay,
+  drawPerStalking,
+  buffAllStalking,
+  drawPerPride,
+  buffAllPride,
+  summonTokensPerPride,
+  healPerPride,
+  grantPride,
+  damageEqualToStalkBonus,
   chasePrey,
 
   // Mammal freeze effects
