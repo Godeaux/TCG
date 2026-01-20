@@ -128,6 +128,14 @@ export function generateEffectText(effect) {
 export function generateSingleEffectText(effect) {
   if (!effect || !effect.type) return '';
 
+  // Handle composite effects specially - recursively generate text for each inner effect
+  if (effect.type === 'composite' && Array.isArray(effect.effects)) {
+    const parts = effect.effects
+      .map((innerEffect) => generateSingleEffectText(innerEffect))
+      .filter((text) => text && !text.startsWith('['));
+    return parts.join('. ');
+  }
+
   // Check if we have a schema for this type
   if (!isValidEffectType(effect.type)) {
     return `[${effect.type}]`; // Fallback for unknown types

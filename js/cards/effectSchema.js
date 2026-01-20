@@ -685,6 +685,65 @@ export const EFFECT_SCHEMA = {
   },
 
   // ==========================================
+  // CRUSTACEAN SHELL/MOLT EFFECTS
+  // ==========================================
+
+  grantShell: {
+    params: { shellLevel: { type: 'number', required: false } },
+    text: (p) => `Target creature gains Shell ${p.shellLevel || 1}`,
+  },
+
+  grantMolt: {
+    params: {},
+    text: () => `Target creature gains Molt`,
+  },
+
+  regenerateAllShells: {
+    params: {},
+    text: () => `All Shell creatures regenerate`,
+  },
+
+  buffAllShell: {
+    params: { bonus: { type: 'number', required: false } },
+    text: (p) => `Shell creatures gain +${p.bonus || 1} ATK`,
+  },
+
+  buffAllMolt: {
+    params: { bonus: { type: 'number', required: false } },
+    text: (p) => `Molt creatures gain +${p.bonus || 1} ATK`,
+  },
+
+  drawPerShell: {
+    params: {},
+    text: () => `Draw 1 per Shell creature (max 3)`,
+  },
+
+  drawPerMolt: {
+    params: {},
+    text: () => `Draw 1 per Molt creature (max 3)`,
+  },
+
+  healPerShell: {
+    params: { healPer: { type: 'number', required: false } },
+    text: (p) => `Heal ${p.healPer || 1} per Shell creature`,
+  },
+
+  summonTokensPerShell: {
+    params: { tokenId: { type: 'string', required: true } },
+    text: () => `Summon 1 token per Shell creature`,
+  },
+
+  damageEqualToTotalShell: {
+    params: {},
+    text: () => `Deal damage equal to total Shell level`,
+  },
+
+  buffHpPerShell: {
+    params: {},
+    text: () => `Creatures gain HP equal to Shell count`,
+  },
+
+  // ==========================================
   // CREATURE REMOVAL EFFECTS
   // ==========================================
 
