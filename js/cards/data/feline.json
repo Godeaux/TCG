@@ -64,7 +64,10 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": ["Ambush"],
-      "tribe": "Feline"
+      "tribe": "Feline",
+      "effects": {
+        "onPlay": { "type": "drawIfEnemyStalked" }
+      }
     },
     {
       "id": "feline-prey-pallas-cat",
@@ -137,8 +140,9 @@
       "nutrition": 1,
       "keywords": [],
       "tribe": "Feline",
+      "summons": ["token-wounded-prey"],
       "effects": {
-        "onPlay": { "type": "drawIfEnemyStalked" }
+        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-wounded-prey"] } }
       }
     },
     {
@@ -170,14 +174,17 @@
       "hp": 2,
       "nutrition": 2,
       "keywords": ["Haste"],
-      "tribe": "Feline"
+      "tribe": "Feline",
+      "effects": {
+        "onSlain": { "type": "draw", "params": { "count": 1 } }
+      }
     },
     {
       "id": "feline-prey-asian-golden-cat",
       "name": "Asian Golden Cat",
       "type": "Prey",
-      "atk": 2,
-      "hp": 2,
+      "atk": 3,
+      "hp": 1,
       "nutrition": 2,
       "keywords": ["Haste"],
       "tribe": "Feline"
@@ -189,7 +196,7 @@
       "atk": 2,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Haste"],
+      "keywords": ["Haste", "Ambush"],
       "tribe": "Feline"
     },
     {
@@ -197,9 +204,9 @@
       "name": "Geoffroy's Cat",
       "type": "Prey",
       "atk": 2,
-      "hp": 1,
+      "hp": 2,
       "nutrition": 1,
-      "keywords": ["Haste"],
+      "keywords": ["Hidden"],
       "tribe": "Feline"
     },
     {
@@ -237,15 +244,18 @@
       "hp": 2,
       "nutrition": 2,
       "keywords": ["Pride"],
-      "tribe": "Feline"
+      "tribe": "Feline",
+      "effects": {
+        "onPlay": { "type": "stalkRandomEnemy" }
+      }
     },
     {
       "id": "feline-prey-young-lion",
       "name": "Young Lion",
       "type": "Prey",
-      "atk": 2,
-      "hp": 2,
-      "nutrition": 2,
+      "atk": 1,
+      "hp": 3,
+      "nutrition": 1,
       "keywords": ["Pride"],
       "tribe": "Feline"
     },
@@ -479,14 +489,18 @@
       "type": "Spell",
       "tribe": "Feline",
       "effects": {
-        "effect": {
-          "type": "selectFromGroup",
-          "params": {
-            "targetGroup": "friendly-creatures",
-            "title": "Choose a creature to empower",
-            "effect": { "buffAtk": 2, "keyword": "Haste" }
+        "effect": [
+          { "type": "stalkTarget" },
+          {
+            "type": "selectFromGroup",
+            "params": {
+              "targetGroup": "enemy-creatures",
+              "title": "Choose a Stalked creature to strike",
+              "filter": { "keyword": "Stalked" },
+              "effect": { "damage": 3 }
+            }
           }
-        }
+        ]
       }
     },
     {
@@ -500,7 +514,7 @@
           "params": {
             "targetGroup": "friendly-creatures",
             "title": "Choose a creature to give the chase",
-            "effect": { "buffAtk": 2, "buffHp": 1, "keyword": "Haste" }
+            "effect": { "buffAtk": 3, "keyword": "Haste" }
           }
         }
       }

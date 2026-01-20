@@ -10,7 +10,13 @@ import { cleanupDestroyed } from './combat.js';
 import { resolveEffectResult } from './effects.js';
 import { logPlainMessage } from './historyLog.js';
 import { resolveCardEffect } from '../cards/index.js';
-import { calculateTotalVenom, hasWebbed, KEYWORDS } from '../keywords.js';
+import {
+  calculateTotalVenom,
+  hasWebbed,
+  calculateTotalPounce,
+  hasStalked,
+  KEYWORDS,
+} from '../keywords.js';
 
 // Lazy-loaded to avoid circular dependency during module initialization
 // The positionEvaluator is loaded by ui.js, so we fetch it once available
@@ -296,6 +302,56 @@ const handleVenomDamage = (state) => {
   });
 };
 
+// Handle Pounce damage - deal damage to all Stalked enemy creatures at end of turn
+const handlePounceDamage = (state) => {
+  const activePlayerIndex = state.activePlayerIndex;
+  const opponentIndex = (activePlayerIndex + 1) % 2;
+  const opponent = state.players[opponentIndex];
+
+  // Calculate total pounce from all friendly creatures
+  const totalPounce = calculateTotalPounce(state, activePlayerIndex);
+  if (totalPounce <= 0) return;
+
+  // Find all Stalked enemy creatures
+  const stalkedCreatures = opponent.field.filter((creature) => creature && hasStalked(creature));
+  if (stalkedCreatures.length === 0) return;
+
+  logGameAction(
+    state,
+    DAMAGE,
+    `🐆 Pounce activates! Dealing ${totalPounce} damage to ${stalkedCreatures.length} Stalked creature(s).`
+  );
+
+  // Deal pounce damage to each Stalked creature
+  stalkedCreatures.forEach((creature) => {
+    const previousHp = creature.currentHp ?? creature.hp;
+    creature.currentHp = previousHp - totalPounce;
+
+    // Remove Stalked status since the creature was pounced on
+    if (creature.keywords) {
+      const stalkedIndex = creature.keywords.indexOf(KEYWORDS.STALKED);
+      if (stalkedIndex >= 0) {
+        creature.keywords.splice(stalkedIndex, 1);
+      }
+    }
+    creature.stalked = false;
+
+    if (creature.currentHp <= 0) {
+      logGameAction(
+        state,
+        DEATH,
+        `🐆 ${creature.name} is killed by the pounce! (${previousHp} → ${creature.currentHp} HP)`
+      );
+    } else {
+      logGameAction(
+        state,
+        DAMAGE,
+        `🐆 ${creature.name} takes ${totalPounce} pounce damage and escapes the stalk. (${previousHp} → ${creature.currentHp} HP)`
+      );
+    }
+  });
+};
+
 export const startTurn = (state) => {
   state.cardPlayedThisTurn = false;
   state.extendedConsumption = null; // Clear extended consumption window on turn start
@@ -565,6 +621,7 @@ export const finalizeEndPhase = (state) => {
   handleRegen(state);
   handleHowlCleanup(state); // Remove temporary Howl buffs from Canines
   handleVenomDamage(state); // Deal venom damage to Webbed enemies (before thaw/cleanup)
+  handlePounceDamage(state); // Deal pounce damage to Stalked enemies (Feline mechanic)
   handleFrozenThaw(state); // Thaw regular frozen creatures first
   handleNeurotoxicDeaths(state); // Then kill Neurotoxic-frozen creatures
   clearParalysis(state);
