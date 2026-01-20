@@ -35,13 +35,15 @@ export const checkZombieCreatures = (state) => {
           bugs.push({
             type: 'zombie_creature',
             severity: 'high',
-            message: `Zombie creature: ${creature.name} has ${hp} HP but is still on field (Player ${playerIndex + 1}, slot ${slotIndex})`,
+            message: `INVARIANT VIOLATED: Creature death. Expected "${creature.name}" to be removed from field after reaching ${hp} HP. Creature remains in Player ${playerIndex + 1} slot ${slotIndex}. Check cleanupDestroyed() calls.`,
             details: {
               creature: creature.name,
               instanceId: creature.instanceId,
               hp,
               playerIndex,
               slotIndex,
+              expected: 'Creature should be destroyed and moved to carrion when HP <= 0',
+              actual: `Creature still on field with ${hp} HP`,
             },
           });
         }
@@ -62,22 +64,51 @@ export const checkDuplicateIds = (state) => {
   const bugs = [];
   const allIds = getAllInstanceIds(state);
   const seen = new Set();
-  const duplicates = new Set();
+  const duplicates = new Map(); // Map id -> array of locations
+
+  // Track where each card is located
+  const findCardLocations = (id) => {
+    const locations = [];
+    state.players.forEach((player, pIdx) => {
+      player.hand?.forEach((card, idx) => {
+        if (card?.instanceId === id) locations.push(`P${pIdx + 1} hand[${idx}]`);
+      });
+      player.field?.forEach((card, idx) => {
+        if (card?.instanceId === id) locations.push(`P${pIdx + 1} field[${idx}]`);
+      });
+      player.carrion?.forEach((card, idx) => {
+        if (card?.instanceId === id) locations.push(`P${pIdx + 1} carrion[${idx}]`);
+      });
+      player.deck?.forEach((card, idx) => {
+        if (card?.instanceId === id) locations.push(`P${pIdx + 1} deck[${idx}]`);
+      });
+    });
+    return locations;
+  };
 
   allIds.forEach(id => {
     if (seen.has(id)) {
-      duplicates.add(id);
+      if (!duplicates.has(id)) {
+        duplicates.set(id, findCardLocations(id));
+      }
     }
     seen.add(id);
   });
 
   if (duplicates.size > 0) {
+    const duplicateList = [...duplicates.entries()];
+    const firstDupe = duplicateList[0];
+    const locationStr = firstDupe[1].join(', ');
+
     bugs.push({
       type: 'duplicate_ids',
       severity: 'high',
-      message: `Duplicate card instance IDs detected: ${[...duplicates].join(', ')}`,
+      message: `INVARIANT VIOLATED: Card uniqueness. Expected each card to have unique instanceId. Found ${duplicates.size} duplicate ID(s): "${firstDupe[0]}" appears in: ${locationStr}`,
       details: {
-        duplicateIds: [...duplicates],
+        duplicateIds: [...duplicates.keys()],
+        locations: Object.fromEntries(duplicates),
+        expected: 'Each card instance should have a globally unique instanceId',
+        actual: `${duplicates.size} ID(s) are shared between multiple cards`,
       },
     });
   }
@@ -269,14 +300,16 @@ export const checkSummoningSickness = (state, before, action) => {
           bugs.push({
             type: 'summoning_sickness',
             severity: 'high',
-            message: `${creature.name} made a direct attack on the turn it was played without Haste`,
+            message: `RULE VIOLATED: Summoning sickness. Attempted direct player attack with "${creature.name}" (summoned turn ${creature.summonedTurn}, current turn ${state.turn}). Expected: Creature without Haste cannot attack player directly on turn it was played. Actual: Attack was allowed.`,
             details: {
               creature: creature.name,
               instanceId: creature.instanceId,
               summonedTurn: creature.summonedTurn,
               currentTurn: state.turn,
-              hasHaste,
+              hasHaste: creatureHasHaste,
               targetType: 'player',
+              expected: 'Creature should be blocked from direct attack without Haste on summon turn',
+              actual: 'Direct attack on player was executed',
             },
           });
         }
@@ -316,13 +349,15 @@ export const checkDryDropKeywords = (state) => {
           bugs.push({
             type: 'dry_drop_keyword_retained',
             severity: 'high',
-            message: `Dry-dropped ${creature.name} still has: ${problematicKeywords.join(', ')}`,
+            message: `RULE VIOLATED: Dry drop penalty. "${creature.name}" was dry-dropped but still has active keywords: ${problematicKeywords.join(', ')}. Expected: Dry-dropped predators lose all abilities until end of turn. Actual: Keywords are still functional.`,
             details: {
               creature: creature.name,
               instanceId: creature.instanceId,
               retainedKeywords: problematicKeywords,
               playerIndex,
               slotIndex,
+              expected: 'Dry-dropped creature should have no active abilities',
+              actual: `Keywords ${problematicKeywords.join(', ')} are still active`,
             },
           });
         }
@@ -383,18 +418,22 @@ export const checkBarrierBypass = (state, before, action) => {
   if (targetAfter) {
     const hpBefore = targetBefore.currentHp ?? targetBefore.hp;
     const hpAfter = targetAfter.currentHp ?? targetAfter.hp;
+    const damageTaken = hpBefore - hpAfter;
 
-    if (hpAfter < hpBefore && targetBefore.hasBarrier) {
+    if (damageTaken > 0 && targetBefore.hasBarrier) {
       bugs.push({
         type: 'barrier_bypass',
         severity: 'high',
-        message: `${targetBefore.name} had Barrier but took ${hpBefore - hpAfter} damage`,
+        message: `RULE VIOLATED: Barrier keyword. "${targetBefore.name}" had Barrier but took ${damageTaken} damage (HP: ${hpBefore} → ${hpAfter}). Expected: First damage instance should pop Barrier, not reduce HP. Actual: HP was reduced.`,
         details: {
           creature: targetBefore.name,
           instanceId: targetInstanceId,
           hpBefore,
           hpAfter,
+          damageTaken,
           hadBarrier: true,
+          expected: 'Barrier should absorb damage and be consumed',
+          actual: `Creature took ${damageTaken} damage through Barrier`,
         },
       });
     }
@@ -462,10 +501,12 @@ export const checkPassiveHarmlessAttack = (state, before, action) => {
     bugs.push({
       type: 'passive_attack',
       severity: 'high',
-      message: `${attackerBefore.name} attacked despite having Passive keyword`,
+      message: `RULE VIOLATED: Passive keyword. "${attackerBefore.name}" attacked despite having Passive keyword. Expected: Creatures with Passive cannot attack (can still be attacked). Actual: Attack action was executed.`,
       details: {
         creature: attackerBefore.name,
         instanceId: attacker.instanceId,
+        expected: 'Passive creatures cannot attack',
+        actual: 'Attack was allowed to execute',
       },
     });
   }
@@ -522,11 +563,14 @@ export const checkHiddenTargeting = (state, before, action) => {
     bugs.push({
       type: 'hidden_targeted',
       severity: 'high',
-      message: `${targetBefore.name} was targeted by attack despite having Hidden keyword (attacker lacks Acuity)`,
+      message: `RULE VIOLATED: Hidden keyword. "${targetBefore.name}" was targeted by attack despite having Hidden keyword (attacker "${attacker.name}" lacks Acuity). Expected: Hidden creatures cannot be targeted by attacks unless attacker has Acuity. Actual: Attack targeting was allowed.`,
       details: {
         creature: targetBefore.name,
+        attacker: attacker.name,
         instanceId: targetInstanceId,
         attackerHasAcuity: false,
+        expected: 'Hidden creature should be untargetable by attacks',
+        actual: 'Attack was allowed to target Hidden creature',
       },
     });
   }
@@ -535,11 +579,14 @@ export const checkHiddenTargeting = (state, before, action) => {
     bugs.push({
       type: 'invisible_targeted',
       severity: 'high',
-      message: `${targetBefore.name} was targeted by attack despite having Invisible keyword (attacker lacks Acuity)`,
+      message: `RULE VIOLATED: Invisible keyword. "${targetBefore.name}" was targeted by attack despite having Invisible keyword (attacker "${attacker.name}" lacks Acuity). Expected: Invisible creatures cannot be targeted by attacks or spells unless attacker has Acuity. Actual: Attack targeting was allowed.`,
       details: {
         creature: targetBefore.name,
+        attacker: attacker.name,
         instanceId: targetInstanceId,
         attackerHasAcuity: false,
+        expected: 'Invisible creature should be untargetable',
+        actual: 'Attack was allowed to target Invisible creature',
       },
     });
   }
@@ -595,11 +642,13 @@ export const checkLureBypass = (state, before, action) => {
       bugs.push({
         type: 'lure_bypass',
         severity: 'high',
-        message: `${attacker.name} attacked ${target.card.name} while ${lureCreatures[0].name} has Lure`,
+        message: `RULE VIOLATED: Lure keyword. "${attacker.name}" attacked "${target.card.name}" but opponent has "${lureCreatures[0].name}" with Lure. Expected: When opponent has creature with Lure, all attacks must target that creature. Actual: Different creature was targeted.`,
         details: {
           attacker: attacker.name,
           target: target.card.name,
           lureCreature: lureCreatures[0].name,
+          expected: `All attacks should target ${lureCreatures[0].name} (has Lure)`,
+          actual: `Attack targeted ${target.card.name} instead`,
         },
       });
     }
@@ -610,10 +659,12 @@ export const checkLureBypass = (state, before, action) => {
     bugs.push({
       type: 'lure_bypass_direct',
       severity: 'high',
-      message: `${attacker.name} attacked player directly while ${lureCreatures[0].name} has Lure`,
+      message: `RULE VIOLATED: Lure keyword. "${attacker.name}" attacked player directly but opponent has "${lureCreatures[0].name}" with Lure. Expected: Cannot attack player when opponent has Lure creature. Actual: Direct attack was executed.`,
       details: {
         attacker: attacker.name,
         lureCreature: lureCreatures[0].name,
+        expected: `Attack should be forced to target ${lureCreatures[0].name} (has Lure)`,
+        actual: 'Direct attack on player was allowed',
       },
     });
   }

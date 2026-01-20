@@ -14,6 +14,52 @@
 import * as SimDB from './SimulationDatabase.js';
 
 // ============================================================================
+// BUG CLASSIFICATION
+// ============================================================================
+
+/**
+ * Structural bugs are state-level issues that don't depend on WHEN they're detected.
+ * They represent invalid state that exists regardless of the current action.
+ * These should be deduplicated by type + card only (not action/phase).
+ */
+const STRUCTURAL_BUG_TYPES = new Set([
+  // State corruption - the state itself is invalid
+  'duplicate_ids',
+  'zombie_creature',
+  'field_not_array',
+  'field_slot_count',
+  'missing_instance_id',
+  'missing_name',
+  'missing_type',
+
+  // Stat bound violations - static state issues
+  'hp_underflow',
+  'hp_overflow',
+  'negative_attack',
+  'stat_overflow',
+  'negative_nutrition',
+  'excessive_nutrition',
+
+  // Data integrity - persisted state problems
+  'invalid_carrion_card',
+  'exile_missing_id',
+  'conflicting_keywords',
+  'hand_overflow',
+
+  // Turn state issues
+  'invalid_active_player',
+]);
+
+/**
+ * Check if a bug type is structural (state-level, not action-dependent)
+ * @param {string} bugType
+ * @returns {boolean}
+ */
+const isStructuralBug = (bugType) => {
+  return STRUCTURAL_BUG_TYPES.has(bugType);
+};
+
+// ============================================================================
 // FINGERPRINT GENERATION
 // ============================================================================
 
@@ -66,6 +112,18 @@ const extractCardIdentifier = (bugDetails) => {
  * Generate a deterministic fingerprint for a bug
  * Same bug = same fingerprint, regardless of when/where it occurs
  *
+ * For STRUCTURAL bugs (invalid state), fingerprint is based only on:
+ * - Bug type
+ * - Card involved (if any)
+ * This ensures duplicate_ids detected during PLAY_CARD and DECLARE_ATTACK are the same bug.
+ *
+ * For BEHAVIORAL bugs (rule violations during specific actions), fingerprint includes:
+ * - Bug type
+ * - Action type
+ * - Game phase
+ * - Card involved
+ * This distinguishes e.g. "summoning sickness during attack" from other contexts.
+ *
  * @param {Object} bug - Bug object from invariant checks
  * @param {Object} context - Context about when bug occurred
  * @param {Object} context.action - The action that was being executed
@@ -73,21 +131,25 @@ const extractCardIdentifier = (bugDetails) => {
  * @returns {string} - Hex fingerprint (8 characters)
  */
 export const generateFingerprint = (bug, context = {}) => {
+  const bugType = bug.type || 'unknown_type';
+  const cardId = extractCardIdentifier(bug.details);
+
+  // Structural bugs: fingerprint based on type + card only
+  // These are state-level issues that don't depend on when they're detected
+  if (isStructuralBug(bugType)) {
+    const components = [bugType, cardId];
+    const str = components.join('|').toLowerCase();
+    return hashString(str);
+  }
+
+  // Behavioral bugs: include action context for specificity
   const components = [
-    // Primary identifier: bug type
-    bug.type || 'unknown_type',
-
-    // Action context
+    bugType,
     context.action?.type || 'NO_ACTION',
-
-    // Game phase
     context.phase || 'UNKNOWN_PHASE',
-
-    // Card involved (normalized)
-    extractCardIdentifier(bug.details),
+    cardId,
   ];
 
-  // Join and hash
   const str = components.join('|').toLowerCase();
   return hashString(str);
 };
@@ -99,11 +161,24 @@ export const generateFingerprint = (bug, context = {}) => {
  * @returns {string}
  */
 export const describeFingerprintComponents = (bug, context = {}) => {
+  const bugType = bug.type || 'unknown';
+  const cardId = extractCardIdentifier(bug.details);
+
+  // For structural bugs, only type + card matter
+  if (isStructuralBug(bugType)) {
+    return [
+      `Type: ${bugType}`,
+      `Card: ${cardId}`,
+      `(structural - action/phase ignored)`,
+    ].join(', ');
+  }
+
+  // For behavioral bugs, include action context
   return [
-    `Type: ${bug.type || 'unknown'}`,
+    `Type: ${bugType}`,
     `Action: ${context.action?.type || 'none'}`,
     `Phase: ${context.phase || 'unknown'}`,
-    `Card: ${extractCardIdentifier(bug.details)}`,
+    `Card: ${cardId}`,
   ].join(', ');
 };
 

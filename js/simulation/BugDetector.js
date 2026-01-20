@@ -375,6 +375,7 @@ export class BugDetector {
   constructor(options = {}) {
     this.enabled = false;
     this.paused = false;
+    this.simulationMode = false; // When true, don't pause on bugs
     this.pauseCallback = null;
     this.resumeCallback = null;
     this.bugsDetected = [];
@@ -407,10 +408,13 @@ export class BugDetector {
 
   /**
    * Enable bug detection (call when AI vs AI mode starts)
+   * @param {Object} options
+   * @param {boolean} options.simulationMode - If true, don't pause on bugs (for unattended runs)
    */
-  enable() {
+  enable(options = {}) {
     this.enabled = true;
     this.paused = false;
+    this.simulationMode = options.simulationMode || false;
     this.bugsDetected = [];
     this.actionHistory = [];
     this.stats = {
@@ -420,7 +424,30 @@ export class BugDetector {
       bugsBySeverity: { low: 0, medium: 0, high: 0, critical: 0 },
       startTime: Date.now(),
     };
-    console.log('[BugDetector] Enabled');
+    console.log(`[BugDetector] Enabled (simulationMode: ${this.simulationMode})`);
+  }
+
+  /**
+   * Enable simulation mode (no pausing on bugs, for unattended runs)
+   */
+  enableSimulationMode() {
+    this.simulationMode = true;
+    console.log('[BugDetector] Simulation mode enabled - bugs recorded but won\'t pause');
+  }
+
+  /**
+   * Disable simulation mode (resume normal pause-on-bug behavior)
+   */
+  disableSimulationMode() {
+    this.simulationMode = false;
+    console.log('[BugDetector] Simulation mode disabled - will pause on bugs');
+  }
+
+  /**
+   * Check if in simulation mode
+   */
+  isSimulationMode() {
+    return this.simulationMode;
   }
 
   /**
@@ -806,8 +833,10 @@ export class BugDetector {
     // Notify callback
     this.onBugDetected(bugReports);
 
-    // Pause execution
-    this.pause();
+    // Pause execution (skip in simulation mode for unattended runs)
+    if (!this.simulationMode) {
+      this.pause();
+    }
   }
 
   /**
