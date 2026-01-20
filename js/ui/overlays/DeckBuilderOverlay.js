@@ -83,6 +83,14 @@ const DECK_OPTIONS = [
     available: true,
     experimental: true,
   },
+  {
+    id: 'feline',
+    name: 'Feline',
+    emoji: '🐆',
+    panelClass: 'deck-select-panel--feline',
+    available: true,
+    experimental: true,
+  },
 ];
 
 // Deck builder UI state

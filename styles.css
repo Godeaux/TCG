@@ -4322,6 +4322,10 @@ button {
   background: linear-gradient(135deg, rgba(48, 48, 48, 0.85), rgba(20, 20, 20, 0.95));
 }
 
+.deck-select-panel--feline {
+  background: linear-gradient(135deg, rgba(193, 154, 107, 0.85), rgba(139, 90, 43, 0.95));
+}
+
 /* Experimental deck badge */
 .deck-experimental-badge {
   position: absolute;
