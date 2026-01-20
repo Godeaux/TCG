@@ -3211,6 +3211,27 @@ export const buffAtkPerWebbed =
   };
 
 /**
+ * Summon tokens based on number of Webbed enemy creatures
+ * @param {string} tokenId - Token ID to summon
+ */
+export const summonTokensPerWebbed =
+  (tokenId) =>
+  ({ log, opponent, playerIndex }) => {
+    const webbedCount = opponent.field.filter(
+      (c) => c && isCreatureCard(c) && c.keywords?.includes(KEYWORDS.WEBBED)
+    ).length;
+
+    if (webbedCount === 0) {
+      log(`No Webbed enemies - no tokens summoned.`);
+      return {};
+    }
+
+    const tokens = Array(webbedCount).fill(tokenId);
+    log(`🕷️ Summons ${webbedCount} Spiderling(s) from ${webbedCount} Webbed enemy creature(s)!`);
+    return { summonTokens: { playerIndex, tokens } };
+  };
+
+/**
  * Discard a card, draw a card, then kill target enemy (Silver Bullet)
  */
 export const discardDrawAndKillEnemy = () => (context) => {
@@ -3553,6 +3574,7 @@ export const effectRegistry = {
   healPerWebbed,
   drawIfEnemyWebbed,
   buffAtkPerWebbed,
+  summonTokensPerWebbed,
 
   // Mammal freeze effects
   selectEnemyToFreeze,
@@ -3959,6 +3981,9 @@ export const resolveEffect = (effectDef, context) => {
       break;
     case 'buffAtkPerWebbed':
       specificEffect = effectFn(params.bonus || 1);
+      break;
+    case 'summonTokensPerWebbed':
+      specificEffect = effectFn(params.tokenId);
       break;
     // Mammal freeze effects
     case 'selectEnemyToFreeze':
