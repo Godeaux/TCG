@@ -8,6 +8,7 @@
       "cost": 1,
       "atk": 1,
       "hp": 2,
+      "nutrition": 1,
       "shellLevel": 1,
       "keywords": ["Shell"],
       "flavorText": "Home is where the shell is."
@@ -20,6 +21,7 @@
       "cost": 1,
       "atk": 1,
       "hp": 1,
+      "nutrition": 1,
       "shellLevel": 1,
       "keywords": ["Shell"],
       "effects": {
@@ -38,6 +40,7 @@
       "cost": 2,
       "atk": 1,
       "hp": 3,
+      "nutrition": 2,
       "shellLevel": 2,
       "keywords": ["Shell"],
       "flavorText": "Burrows deep when danger approaches."
@@ -50,6 +53,7 @@
       "cost": 2,
       "atk": 2,
       "hp": 2,
+      "nutrition": 2,
       "shellLevel": 1,
       "keywords": ["Shell"],
       "effects": {
@@ -68,6 +72,7 @@
       "cost": 2,
       "atk": 1,
       "hp": 2,
+      "nutrition": 2,
       "shellLevel": 2,
       "keywords": ["Shell", "Barrier"],
       "flavorText": "Fragile-looking but deceptively tough."
@@ -80,6 +85,7 @@
       "cost": 2,
       "atk": 1,
       "hp": 2,
+      "nutrition": 2,
       "shellLevel": 1,
       "keywords": ["Shell"],
       "effects": {
@@ -98,6 +104,7 @@
       "cost": 3,
       "atk": 2,
       "hp": 4,
+      "nutrition": 3,
       "shellLevel": 2,
       "keywords": ["Shell"],
       "flavorText": "Blends perfectly with the seafloor."
@@ -110,6 +117,7 @@
       "cost": 3,
       "atk": 1,
       "hp": 3,
+      "nutrition": 3,
       "shellLevel": 3,
       "keywords": ["Shell", "Hidden"],
       "flavorText": "Adorns itself with camouflage."
@@ -186,6 +194,7 @@
       "cost": 1,
       "atk": 1,
       "hp": 1,
+      "nutrition": 1,
       "keywords": ["Molt"],
       "flavorText": "Transparent and nearly invisible."
     },
@@ -197,6 +206,7 @@
       "cost": 1,
       "atk": 0,
       "hp": 2,
+      "nutrition": 2,
       "keywords": ["Molt", "Edible"],
       "flavorText": "The foundation of the ocean food chain."
     },
@@ -208,6 +218,7 @@
       "cost": 2,
       "atk": 1,
       "hp": 2,
+      "nutrition": 2,
       "keywords": ["Molt"],
       "effects": {
         "onPlay": {
@@ -224,6 +235,7 @@
       "cost": 2,
       "atk": 1,
       "hp": 3,
+      "nutrition": 2,
       "keywords": ["Molt", "Hidden"],
       "flavorText": "So clear you can see right through it."
     },
@@ -235,6 +247,7 @@
       "cost": 2,
       "atk": 2,
       "hp": 2,
+      "nutrition": 2,
       "keywords": ["Molt", "Haste"],
       "flavorText": "Scuttles with surprising speed."
     },
@@ -246,6 +259,7 @@
       "cost": 3,
       "atk": 2,
       "hp": 3,
+      "nutrition": 3,
       "keywords": ["Molt"],
       "effects": {
         "onPlay": {
@@ -262,6 +276,7 @@
       "cost": 3,
       "atk": 2,
       "hp": 4,
+      "nutrition": 3,
       "keywords": ["Molt"],
       "effects": {
         "onPlay": {
@@ -334,6 +349,7 @@
           ]
         }
       },
+      "effectText": "Grant Molt to a friendly creature. Draw a card.",
       "flavorText": "The largest crustacean in the Atlantic."
     },
     {
@@ -344,6 +360,7 @@
       "cost": 2,
       "atk": 2,
       "hp": 2,
+      "nutrition": 2,
       "shellLevel": 1,
       "keywords": ["Shell", "Molt"],
       "flavorText": "Carries anemones like boxing gloves."
@@ -356,6 +373,7 @@
       "cost": 2,
       "atk": 1,
       "hp": 3,
+      "nutrition": 2,
       "shellLevel": 1,
       "keywords": ["Shell", "Molt"],
       "flavorText": "Thrives in the murky shallows."
@@ -368,6 +386,7 @@
       "cost": 3,
       "atk": 1,
       "hp": 4,
+      "nutrition": 3,
       "shellLevel": 2,
       "keywords": ["Shell", "Molt"],
       "flavorText": "Ancient survivor of countless extinctions."
@@ -380,6 +399,7 @@
       "cost": 3,
       "atk": 2,
       "hp": 3,
+      "nutrition": 3,
       "shellLevel": 1,
       "keywords": ["Shell", "Molt", "Haste"],
       "flavorText": "Soft shell hides a fierce spirit."
@@ -392,6 +412,7 @@
       "cost": 3,
       "atk": 2,
       "hp": 4,
+      "nutrition": 3,
       "shellLevel": 2,
       "keywords": ["Shell", "Molt"],
       "effects": {
@@ -410,6 +431,7 @@
       "cost": 2,
       "atk": 2,
       "hp": 2,
+      "nutrition": 2,
       "keywords": ["Haste"],
       "effects": {
         "onPlay": {
@@ -427,6 +449,7 @@
       "cost": 3,
       "atk": 2,
       "hp": 3,
+      "nutrition": 3,
       "keywords": [],
       "effects": {
         "onPlay": {
@@ -501,6 +524,7 @@
           ]
         }
       },
+      "effectText": "Regenerate all friendly Shells to full. Draw a card.",
       "flavorText": "Steals anything it can carry."
     },
     {
@@ -548,6 +572,7 @@
           ]
         }
       },
+      "effectText": "Regenerate all friendly Shells. Heal 3 to your Rival.",
       "flavorText": "A sanctuary for the shelled."
     },
     {
@@ -566,6 +591,7 @@
           ]
         }
       },
+      "effectText": "Give all Shell creatures +2/+2. Give all Molt creatures +2/+2.",
       "flavorText": "Attack from all angles."
     },
     {
@@ -584,6 +610,7 @@
           ]
         }
       },
+      "effectText": "Grant Molt and Shell (1) to a friendly creature.",
       "flavorText": "The abyss protects its own."
     },
     {
@@ -723,6 +750,7 @@
           ]
         }
       },
+      "effectText": "Negate the attack. Deal 2 damage to the attacker.",
       "flavorText": "Once grabbed, never released."
     },
     {
@@ -733,6 +761,7 @@
       "cost": 0,
       "atk": 1,
       "hp": 1,
+      "nutrition": 1,
       "shellLevel": 1,
       "keywords": ["Shell"],
       "isToken": true,
@@ -746,6 +775,7 @@
       "cost": 0,
       "atk": 0,
       "hp": 1,
+      "nutrition": 1,
       "keywords": ["Passive"],
       "isToken": true,
       "flavorText": "An empty husk of what was."
