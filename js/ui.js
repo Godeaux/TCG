@@ -4263,7 +4263,7 @@ export const renderGame = (state, callbacks = {}) => {
   renderSetupOverlay(state, callbacks);
   renderDeckBuilderOverlay(state, callbacks);
   // Menu overlays (uses extracted MenuOverlay module)
-  renderMenuOverlays(state);
+  renderMenuOverlays(state, callbacks);
   // Note: Lobby subscriptions are managed by lobbyManager.js (handleCreateLobby/handleJoinLobby)
   // No need to call updateLobbySubscription here - it's set up when entering a lobby
 

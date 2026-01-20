@@ -12,6 +12,50 @@
  * - renderMenuOverlays: Main menu overlay coordinator
  */
 
+import {
+  initializePresence,
+  subscribeToOnlineStatus,
+  isPresenceInitialized,
+  getOnlineCount,
+} from "../../network/presenceManager.js";
+
+// ============================================================================
+// ONLINE PRESENCE STATE
+// ============================================================================
+
+let onlineCount = 0;
+let presenceUnsubscribe = null;
+let onUpdateCallback = null;
+
+/**
+ * Initialize presence tracking for main menu
+ * Called when menu renders with a logged-in user
+ */
+const ensurePresenceInitialized = (profileId, onUpdate) => {
+  if (!profileId) return;
+
+  // Store the update callback for re-renders
+  onUpdateCallback = onUpdate;
+
+  // Already initialized with this profile
+  if (isPresenceInitialized()) return;
+
+  // Initialize presence
+  initializePresence(profileId);
+
+  // Subscribe to count updates if not already subscribed
+  if (!presenceUnsubscribe) {
+    presenceUnsubscribe = subscribeToOnlineStatus((users) => {
+      const newCount = users.size;
+      if (newCount !== onlineCount) {
+        onlineCount = newCount;
+        // Trigger UI update when count changes
+        onUpdateCallback?.();
+      }
+    });
+  }
+};
+
 // ============================================================================
 // DOM ELEMENTS
 // ============================================================================
@@ -100,8 +144,9 @@ const getOpponentDisplayName = (state) => {
  * Controls which overlay is visible based on menu stage
  *
  * @param {Object} state - Game state
+ * @param {Object} callbacks - Callbacks including onUpdate
  */
-export const renderMenuOverlays = (state) => {
+export const renderMenuOverlays = (state, callbacks) => {
   if (!state.menu) {
     return;
   }
@@ -148,8 +193,19 @@ export const renderMenuOverlays = (state) => {
 
   // Update main menu button text and states
   const isLoggedIn = Boolean(state.menu.profile);
+
+  // Initialize presence tracking when logged in
+  if (isLoggedIn) {
+    ensurePresenceInitialized(state.menu.profile.id, callbacks?.onUpdate);
+  }
+
   if (elements.menuLogin) {
-    elements.menuLogin.textContent = isLoggedIn ? "Multiplayer" : "Login";
+    // Show online count on multiplayer button when logged in
+    if (isLoggedIn && onlineCount > 0) {
+      elements.menuLogin.textContent = `Multiplayer (${onlineCount})`;
+    } else {
+      elements.menuLogin.textContent = isLoggedIn ? "Multiplayer" : "Login";
+    }
     elements.menuLogin.disabled = state.menu.loading;
   }
   if (elements.menuLogout) {

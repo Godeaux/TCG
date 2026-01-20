@@ -128,6 +128,22 @@ export const resetPresenceState = async () => {
  */
 export const getCurrentPresenceProfileId = () => currentProfileId;
 
+/**
+ * Get the count of online users
+ * @returns {number} Number of online users
+ */
+export const getOnlineCount = () => {
+  return getOnlineUsers().size;
+};
+
+/**
+ * Check if presence is currently initialized
+ * @returns {boolean} True if presence channel exists
+ */
+export const isPresenceInitialized = () => {
+  return presenceChannel !== null;
+};
+
 // ============================================================================
 // INTERNAL
 // ============================================================================

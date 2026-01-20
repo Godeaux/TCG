@@ -24,6 +24,20 @@ const ensureSession = async () => {
 };
 
 /**
+ * Get the current auth user ID (creates anonymous session if needed)
+ * @returns {Promise<string|null>} Auth user ID or null
+ */
+export const getAuthUserId = async () => {
+  try {
+    const session = await ensureSession();
+    return session?.user?.id ?? null;
+  } catch (e) {
+    console.error("Failed to get auth user ID:", e);
+    return null;
+  }
+};
+
+/**
  * Check if a username already exists
  * @param {string} username - Username to check
  * @returns {Promise<Object|null>} Profile if exists, null otherwise
