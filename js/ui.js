@@ -994,8 +994,8 @@ const updatePlayerStats = (state, index, role, onUpdate = null) => {
   if (role === "active") {
     const carrionEl = document.getElementById("active-carrion");
     const exileEl = document.getElementById("active-exile");
+    const opponent = state.players[(index + 1) % 2];
     if (carrionEl) {
-      const opponent = state.players[(index + 1) % 2];
       carrionEl.innerHTML = `<span style="color: var(--prey);">${player.carrion.length}</span> / <span style="color: var(--hp-red);">${opponent.carrion.length}</span>`;
     }
     if (exileEl) {
