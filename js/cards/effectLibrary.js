@@ -3211,24 +3211,6 @@ export const buffAtkPerWebbed =
   };
 
 /**
- * Deal damage to all enemy creatures
- * @param {number} amount - Damage amount
- */
-export const damageAllEnemies =
-  (amount) =>
-  ({ log, opponent }) => {
-    const enemies = opponent.field.filter((c) => c && isCreatureCard(c));
-
-    if (enemies.length === 0) {
-      log(`No enemy creatures to damage.`);
-      return {};
-    }
-
-    log(`💥 Deals ${amount} damage to all enemy creatures!`);
-    return { damageCreatures: { creatures: enemies, amount } };
-  };
-
-/**
  * Discard a card, draw a card, then kill target enemy (Silver Bullet)
  */
 export const discardDrawAndKillEnemy = () => (context) => {
@@ -3571,7 +3553,6 @@ export const effectRegistry = {
   healPerWebbed,
   drawIfEnemyWebbed,
   buffAtkPerWebbed,
-  damageAllEnemies,
 
   // Mammal freeze effects
   selectEnemyToFreeze,
@@ -3978,9 +3959,6 @@ export const resolveEffect = (effectDef, context) => {
       break;
     case 'buffAtkPerWebbed':
       specificEffect = effectFn(params.bonus || 1);
-      break;
-    case 'damageAllEnemies':
-      specificEffect = effectFn(params.amount);
       break;
     // Mammal freeze effects
     case 'selectEnemyToFreeze':
