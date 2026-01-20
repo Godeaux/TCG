@@ -684,6 +684,46 @@ export const EFFECT_SCHEMA = {
     text: (p) => `Target creature gains +${p.atkBonus || 2} ATK and Haste`,
   },
 
+  enterStalkMode: {
+    params: {},
+    text: () => `A Stalk creature enters stalking mode`,
+  },
+
+  enterStalkModeOnPlay: {
+    params: {},
+    text: () => `Enters stalking mode`,
+  },
+
+  drawPerStalking: {
+    params: {},
+    text: () => `Draw 1 per stalking creature (max 3)`,
+  },
+
+  grantPride: {
+    params: {},
+    text: () => `Target creature joins the Pride`,
+  },
+
+  drawPerPride: {
+    params: {},
+    text: () => `Draw 1 per Pride creature (max 3)`,
+  },
+
+  buffAllPride: {
+    params: { bonus: { type: 'number', required: false } },
+    text: (p) => `Pride creatures gain +${p.bonus || 1} ATK`,
+  },
+
+  summonTokensPerPride: {
+    params: { tokenId: { type: 'string', required: true } },
+    text: () => `Summon 1 token per Pride creature`,
+  },
+
+  healPerPride: {
+    params: { healPer: { type: 'number', required: false } },
+    text: (p) => `Heal ${p.healPer || 1} per Pride creature`,
+  },
+
   // ==========================================
   // CRUSTACEAN SHELL/MOLT EFFECTS
   // ==========================================
