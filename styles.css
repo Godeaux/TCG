@@ -2784,6 +2784,27 @@ button {
   min-height: 0; /* Allow SVG to shrink with container */
 }
 
+/* SVG name/title - scales proportionally with card */
+.card-name-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* SVG stats - scales proportionally with card */
+.card-stats-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* SVG keywords - scales proportionally with card */
+.card-keywords-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
 /* Image container: ~50% of card height */
 .card-image-container {
   flex: 0 0 50%;

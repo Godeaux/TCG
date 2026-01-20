@@ -155,6 +155,160 @@ const renderEffectSvg = (effectText) => {
   `;
 };
 
+/**
+ * Render card name as SVG that scales with card size
+ * @param {string} name - Card name
+ * @param {string} rarityClass - Optional rarity class for styling
+ * @returns {string} SVG markup
+ */
+const renderNameSvg = (name, rarityClass = '') => {
+  if (!name) return '';
+
+  const viewBoxWidth = 200;
+  const viewBoxHeight = 24;
+
+  // Escape HTML entities
+  const escapedName = name
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+
+  // Adjust font size based on name length for better fit
+  let fontSize = 18;
+  if (name.length > 15) fontSize = 16;
+  if (name.length > 20) fontSize = 14;
+  if (name.length > 25) fontSize = 12;
+
+  // Map rarity to fill colors (matching existing CSS)
+  let fillColor = '#e2e8f0'; // default
+  if (rarityClass.includes('rarity-uncommon')) fillColor = '#22c55e';
+  if (rarityClass.includes('rarity-rare')) fillColor = '#3b82f6';
+  if (rarityClass.includes('rarity-epic')) fillColor = '#a855f7';
+  if (rarityClass.includes('rarity-legendary')) fillColor = '#f59e0b';
+
+  return `
+    <svg class="card-name-svg" viewBox="0 0 ${viewBoxWidth} ${viewBoxHeight}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+      <style>
+        text { font-family: system-ui, -apple-system, sans-serif; font-weight: 600; }
+      </style>
+      <text x="50%" y="18" text-anchor="middle" font-size="${fontSize}" fill="${fillColor}">${escapedName}</text>
+    </svg>
+  `;
+};
+
+/**
+ * Render card stats as SVG that scales with card size
+ * @param {Array} stats - Array of stat objects { emoji, value, className }
+ * @param {boolean} hasNut - Whether the card has nutrition stat
+ * @returns {string} SVG markup
+ */
+const renderStatsSvg = (stats, hasNut) => {
+  if (!stats || stats.length === 0) return '';
+
+  const viewBoxWidth = 200;
+  const viewBoxHeight = 22;
+  const fontSize = 14;
+
+  // Calculate spacing based on number of stats
+  const statCount = stats.length;
+  const spacing = viewBoxWidth / (statCount + 1);
+
+  const statElements = stats.map((stat, i) => {
+    const x = spacing * (i + 1);
+    // Color based on stat type
+    let fillColor = '#a0aec0';
+    if (stat.className === 'atk') fillColor = '#f97316'; // orange
+    if (stat.className === 'hp') fillColor = '#ef4444'; // red
+    if (stat.className === 'nut') fillColor = '#a855f7'; // purple
+
+    return `<text x="${x}" y="16" text-anchor="middle" font-size="${fontSize}" fill="${fillColor}">${stat.emoji} ${stat.value}</text>`;
+  }).join('');
+
+  return `
+    <svg class="card-stats-svg" viewBox="0 0 ${viewBoxWidth} ${viewBoxHeight}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+      <style>
+        text { font-family: system-ui, -apple-system, sans-serif; font-weight: 600; }
+      </style>
+      ${statElements}
+    </svg>
+  `;
+};
+
+/**
+ * Render keywords as SVG that scales with card size
+ * @param {Object} card - Card with keywords array
+ * @returns {string} SVG markup
+ */
+const renderKeywordsSvg = (card) => {
+  const tags = [];
+
+  // Add Field Spell tag
+  if (card.isFieldSpell) {
+    tags.push({ text: 'Field Spell', isFieldSpell: true });
+  }
+
+  // Add regular keywords
+  if (Array.isArray(card.keywords) && card.keywords.length) {
+    tags.push(...card.keywords.map(keyword => ({ text: keyword })));
+  }
+
+  // Add Neurotoxined status
+  if (card.frozenDiesTurn) {
+    tags.push({ text: '💀 Neurotoxined', isDeadly: true });
+  }
+
+  if (tags.length === 0) return '';
+
+  const viewBoxWidth = 200;
+  const viewBoxHeight = 20;
+  const fontSize = 12;
+
+  // Calculate total text width estimate and spacing
+  const totalChars = tags.reduce((sum, tag) => sum + tag.text.length, 0);
+  const avgCharWidth = 7; // approximate pixels per character at fontSize 12
+  const totalTextWidth = totalChars * avgCharWidth + (tags.length - 1) * 10; // with gaps
+
+  // If content is too wide, reduce font size
+  let adjustedFontSize = fontSize;
+  if (totalTextWidth > viewBoxWidth - 20) {
+    adjustedFontSize = Math.max(8, fontSize * (viewBoxWidth - 20) / totalTextWidth);
+  }
+
+  // Calculate x positions for each tag (centered layout)
+  let currentX = viewBoxWidth / 2;
+  const tagWidths = tags.map(tag => tag.text.length * avgCharWidth * (adjustedFontSize / fontSize));
+  const totalWidth = tagWidths.reduce((sum, w) => sum + w, 0) + (tags.length - 1) * 8;
+  let startX = (viewBoxWidth - totalWidth) / 2;
+
+  const tagElements = tags.map((tag, i) => {
+    const x = startX + tagWidths.slice(0, i).reduce((sum, w) => sum + w + 8, 0) + tagWidths[i] / 2;
+
+    // Escape HTML entities
+    const escapedText = tag.text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+
+    // Color based on tag type - white for keywords to pop
+    let fillColor = '#ffffff'; // white for regular keywords
+    if (tag.isFieldSpell) fillColor = '#22c55e'; // green
+    if (tag.isDeadly) fillColor = '#ef4444'; // red
+
+    return `<text x="${x}" y="14" text-anchor="middle" font-size="${adjustedFontSize}" font-weight="600" fill="${fillColor}">${escapedText}</text>`;
+  }).join('');
+
+  return `
+    <svg class="card-keywords-svg" viewBox="0 0 ${viewBoxWidth} ${viewBoxHeight}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+      <style>
+        text { font-family: system-ui, -apple-system, sans-serif; }
+      </style>
+      ${tagElements}
+    </svg>
+  `;
+};
+
 // ============================================================================
 // CARD STATS RENDERING
 // ============================================================================
@@ -426,14 +580,6 @@ export const renderCardInnerHtml = (card, { showEffectSummary, useBaseStats, sta
   const stats = renderCardStats(card, { useBaseStats, state, ownerIndex });
   const hasNut = hasNutrition(card);
 
-  // Build stats row with emoji format - if no nutrition, stats split the row in half
-  const statsHtml = stats.length > 0
-    ? stats.map(
-        (stat) =>
-          `<span class="card-stat ${stat.className}${!hasNut ? ' no-nut' : ''}">${stat.emoji} ${stat.value}</span>`
-      ).join("")
-    : "";
-
   const effectSummary = showEffectSummary ? getCardEffectSummary(card) : "";
   // Use SVG for effect text - scales perfectly with card size
   const effectRow = effectSummary
@@ -454,141 +600,18 @@ export const renderCardInnerHtml = (card, { showEffectSummary, useBaseStats, sta
   // Add rarity class to card name if card has a rarity
   const nameRarityClass = card.rarity ? ` rarity-${card.rarity}` : '';
 
+  // Use SVG rendering for title, stats, and keywords - scales proportionally with card size
   return `
-    <div class="card-name${nameRarityClass}">${card.name}</div>
+    <div class="card-name${nameRarityClass}">${renderNameSvg(card.name, nameRarityClass)}</div>
     <div class="card-image-container">
       ${imageHtml}
     </div>
     <div class="card-content-area">
-      <div class="card-stats-row${!hasNut && stats.length > 0 ? ' two-stats' : ''}">${statsHtml}</div>
-      <div class="card-keywords">${renderKeywordTags(card)}</div>
+      <div class="card-stats-row${!hasNut && stats.length > 0 ? ' two-stats' : ''}">${renderStatsSvg(stats, hasNut)}</div>
+      <div class="card-keywords">${renderKeywordsSvg(card)}</div>
       ${effectRow}
     </div>
   `;
-};
-
-// ============================================================================
-// TEXT AUTO-SIZING
-// ============================================================================
-
-// Cache adjusted font sizes by card ID to prevent recalculation jitter
-const fontSizeCache = new Map();
-
-/**
- * Apply cached font sizes to a card element (no recalculation)
- */
-const applyCachedFontSizes = (cardId, inner) => {
-  const cached = fontSizeCache.get(cardId);
-  if (!cached) return false;
-
-  const nameElement = inner.querySelector('.card-name');
-  const statsRow = inner.querySelector('.card-stats-row');
-  const effectElement = inner.querySelector('.card-effect');
-  const keywordsElement = inner.querySelector('.card-keywords');
-
-  if (cached.name && nameElement) {
-    nameElement.style.fontSize = `${cached.name}px`;
-  }
-  if (cached.stats && statsRow) {
-    const statElements = statsRow.querySelectorAll('.card-stat');
-    statElements.forEach(stat => {
-      stat.style.fontSize = `${cached.stats}px`;
-      stat.style.padding = `${Math.max(1, cached.stats * 0.18)}px ${Math.max(3, cached.stats * 0.55)}px`;
-    });
-  }
-  if (cached.effect && effectElement) {
-    effectElement.style.fontSize = `${cached.effect}px`;
-  }
-  if (cached.keywords && keywordsElement) {
-    keywordsElement.style.fontSize = `${cached.keywords}px`;
-  }
-
-  return true;
-};
-
-/**
- * Auto-adjust text size to fit card constraints
- * This prevents text overflow and makes cards readable
- * Results are cached by card ID for instant application on re-renders
- */
-const adjustTextToFit = (cardElement, inner, cardId) => {
-  // If we have cached sizes for this card, apply them instantly
-  if (cardId && applyCachedFontSizes(cardId, inner)) {
-    return;
-  }
-
-  const nameElement = inner.querySelector('.card-name');
-  const statsRow = inner.querySelector('.card-stats-row');
-  const keywordsElement = inner.querySelector('.card-keywords');
-  const effectElement = inner.querySelector('.card-effect');
-
-  const cachedSizes = {};
-
-  // Adjust card name to fit on one line
-  if (nameElement && nameElement.scrollWidth > nameElement.clientWidth) {
-    let fontSize = 13;
-    const minFontSize = 7;
-    const step = 0.5;
-
-    while (fontSize > minFontSize && nameElement.scrollWidth > nameElement.clientWidth) {
-      fontSize -= step;
-      nameElement.style.fontSize = `${fontSize}px`;
-    }
-    cachedSizes.name = fontSize;
-  }
-
-  // Adjust stats row to fit without horizontal overflow
-  if (statsRow && statsRow.scrollWidth > statsRow.clientWidth) {
-    let fontSize = 11;
-    const minFontSize = 6;
-    const step = 0.5;
-
-    const statElements = statsRow.querySelectorAll('.card-stat');
-    while (fontSize > minFontSize && statsRow.scrollWidth > statsRow.clientWidth) {
-      fontSize -= step;
-      statElements.forEach(stat => {
-        stat.style.fontSize = `${fontSize}px`;
-        stat.style.padding = `${Math.max(1, fontSize * 0.18)}px ${Math.max(3, fontSize * 0.55)}px`;
-      });
-    }
-    cachedSizes.stats = fontSize;
-  }
-
-  // Adjust effect text to fit available space
-  if (effectElement && effectElement.textContent.trim()) {
-    let fontSize = 9;
-    const minFontSize = 6;
-    const step = 0.5;
-    let attempts = 0;
-    const maxAttempts = 10;
-
-    while (attempts < maxAttempts && fontSize > minFontSize) {
-      effectElement.style.fontSize = `${fontSize}px`;
-      if (effectElement.scrollHeight <= effectElement.clientHeight + 2) {
-        break;
-      }
-      fontSize -= step;
-      attempts++;
-    }
-    cachedSizes.effect = fontSize;
-  }
-
-  // Adjust keywords if they overflow
-  if (keywordsElement && keywordsElement.scrollWidth > keywordsElement.clientWidth) {
-    let fontSize = 11;
-    const minFontSize = 7;
-
-    while (fontSize > minFontSize && keywordsElement.scrollWidth > keywordsElement.clientWidth) {
-      fontSize -= 0.5;
-      keywordsElement.style.fontSize = `${fontSize}px`;
-    }
-    cachedSizes.keywords = fontSize;
-  }
-
-  // Cache the computed sizes for this card
-  if (cardId && Object.keys(cachedSizes).length > 0) {
-    fontSizeCache.set(cardId, cachedSizes);
-  }
 };
 
 // ============================================================================
@@ -759,14 +782,7 @@ export const renderCard = (card, options = {}) => {
     });
   }
 
-  // Auto-adjust text to fit
-  // If sizes are cached, apply immediately (no layout thrashing)
-  // Otherwise defer to after paint to allow measurement
-  if (fontSizeCache.has(card.id)) {
-    applyCachedFontSizes(card.id, inner);
-  } else {
-    setTimeout(() => adjustTextToFit(cardElement, inner, card.id), 0);
-  }
+  // Text scaling is now handled by SVG viewBox - no manual adjustment needed
 
   return cardElement;
 };
