@@ -30,7 +30,8 @@
       "Bash(git diff:*)",
       "Bash(git log:*)",
       "Bash(timeout:*)",
-      "Bash(sort:*)"
+      "Bash(sort:*)",
+      "Bash(npx eslint:*)"
     ]
   }
 }

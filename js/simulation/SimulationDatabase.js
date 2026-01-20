@@ -1,3 +1,4 @@
+/* global indexedDB */
 /**
  * SimulationDatabase.js
  *
