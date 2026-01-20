@@ -515,16 +515,21 @@ const setupDeckListDropZone = (onDrop) => {
 // Track expanded card state for click-to-expand
 let expandedCardElement = null;
 let expandedCardOverlay = null;
+let expandedCardData = null;
+let expandedCardAddCallback = null;
 
 /**
  * Show expanded card overlay (1.5x with tooltips)
  * @param {Object} card - Card data
  * @param {HTMLElement} sourceElement - Element that was clicked
+ * @param {Function} onAdd - Callback to add card to deck (for mobile tap-to-add)
  */
-const showExpandedCard = (card, sourceElement) => {
+const showExpandedCard = (card, sourceElement, onAdd = null) => {
   // Use the existing tooltip system
   showCardTooltip(card, sourceElement, { showPreview: true });
   expandedCardElement = sourceElement;
+  expandedCardData = card;
+  expandedCardAddCallback = onAdd;
 };
 
 /**
@@ -533,15 +538,34 @@ const showExpandedCard = (card, sourceElement) => {
 const hideExpandedCard = () => {
   hideCardTooltip();
   expandedCardElement = null;
+  expandedCardData = null;
+  expandedCardAddCallback = null;
 };
 
 /**
  * Setup click-outside handler for expanded card
+ * Also handles tap-to-add on mobile
  */
 const setupExpandedCardDismiss = () => {
   document.addEventListener('click', (e) => {
-    if (expandedCardElement && !e.target.closest('.card-hover-tooltip') && !e.target.closest('.deck-card')) {
-      hideExpandedCard();
+    if (expandedCardElement) {
+      // Check if user tapped on the tooltip card itself (mobile tap-to-add)
+      const clickedTooltip = e.target.closest('.card-hover-tooltip');
+      const clickedTooltipCard = e.target.closest('.tooltip-card-preview');
+
+      if (clickedTooltipCard && expandedCardAddCallback) {
+        // Tap on expanded card - add to deck
+        e.preventDefault();
+        e.stopPropagation();
+        expandedCardAddCallback(expandedCardData);
+        hideExpandedCard();
+        return;
+      }
+
+      // Click outside tooltip and deck card - dismiss
+      if (!clickedTooltip && !e.target.closest('.deck-card')) {
+        hideExpandedCard();
+      }
     }
   }, true);
 };
@@ -2155,12 +2179,21 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
       },
     });
 
-    // Hover to show expanded tooltip
+    // Hover to show expanded tooltip (desktop)
     cardElement.addEventListener('mouseenter', () => {
-      showCardTooltip(card, cardElement, { showPreview: true });
+      showExpandedCard(card, cardElement, addCardToDeck);
     });
     cardElement.addEventListener('mouseleave', () => {
-      hideCardTooltip();
+      hideExpandedCard();
+    });
+
+    // Touch to show expanded card (mobile) - tap shows card, tap again on expanded to add
+    cardElement.addEventListener('touchend', (e) => {
+      // Only handle if this looks like a tap (not drag)
+      if (e.changedTouches.length === 1) {
+        e.preventDefault();
+        showExpandedCard(card, cardElement, addCardToDeck);
+      }
     });
 
     // Make card draggable
@@ -2169,7 +2202,7 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
       e.dataTransfer.setData('text/plain', JSON.stringify({ cardId: card.id, source: 'catalog' }));
       e.dataTransfer.effectAllowed = 'copy';
       cardElement.classList.add('dragging');
-      hideCardTooltip(); // Hide tooltip when dragging starts
+      hideExpandedCard(); // Hide tooltip when dragging starts
     });
     cardElement.addEventListener('dragend', () => {
       cardElement.classList.remove('dragging');
@@ -2463,12 +2496,21 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
       },
     });
 
-    // Hover to show expanded tooltip
+    // Hover to show expanded tooltip (desktop)
     cardElement.addEventListener('mouseenter', () => {
-      showCardTooltip(card, cardElement, { showPreview: true });
+      showExpandedCard(card, cardElement, addCardToDeck);
     });
     cardElement.addEventListener('mouseleave', () => {
-      hideCardTooltip();
+      hideExpandedCard();
+    });
+
+    // Touch to show expanded card (mobile) - tap shows card, tap again on expanded to add
+    cardElement.addEventListener('touchend', (e) => {
+      // Only handle if this looks like a tap (not drag)
+      if (e.changedTouches.length === 1) {
+        e.preventDefault();
+        showExpandedCard(card, cardElement, addCardToDeck);
+      }
     });
 
     // Make card draggable
@@ -2477,7 +2519,7 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
       e.dataTransfer.setData('text/plain', JSON.stringify({ cardId: card.id, source: 'catalog' }));
       e.dataTransfer.effectAllowed = 'copy';
       cardElement.classList.add('dragging');
-      hideCardTooltip(); // Hide tooltip when dragging starts
+      hideExpandedCard(); // Hide tooltip when dragging starts
     });
     cardElement.addEventListener('dragend', () => {
       cardElement.classList.remove('dragging');
