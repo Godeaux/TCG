@@ -4705,6 +4705,15 @@ button {
   align-content: start;
 }
 
+/* Hide drawer toggle and backdrop on desktop (will be overridden by mobile media query) */
+.deck-drawer-toggle {
+  display: none;
+}
+
+.deck-drawer-backdrop {
+  display: none;
+}
+
 /* Mobile deck builder - 2 column grid with properly sized cards */
 @media (max-width: 768px) {
   .deck-grid {
@@ -4794,15 +4803,6 @@ button {
   .deck-drawer-toggle:active {
     transform: scale(0.95);
   }
-}
-
-/* Hide drawer toggle on desktop */
-.deck-drawer-toggle {
-  display: none;
-}
-
-.deck-drawer-backdrop {
-  display: none;
 }
 
 .deck-card {
