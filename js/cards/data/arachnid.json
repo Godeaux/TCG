@@ -14,7 +14,7 @@
       "atk": 0,
       "hp": 1,
       "nutrition": 0,
-      "keywords": ["Web"],
+      "keywords": [],
       "tribe": "Arachnid",
       "isToken": true
     },
@@ -35,7 +35,7 @@
         "atk": 0,
         "hp": 1,
         "nutrition": 0,
-        "keywords": ["Web"],
+        "keywords": [],
         "tribe": "Arachnid",
         "isToken": true
       }
@@ -49,7 +49,7 @@
       "atk": 0,
       "hp": 1,
       "nutrition": 0,
-      "keywords": ["Web", "Free Play"],
+      "keywords": ["Free Play"],
       "tribe": "Arachnid"
     },
     {
@@ -69,7 +69,7 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Web", "Venom 1"],
+      "keywords": ["Venom 1"],
       "tribe": "Arachnid"
     },
     {
@@ -99,7 +99,7 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Web"],
+      "keywords": [],
       "tribe": "Arachnid",
       "effects": {
         "onSlain": { "type": "webRandomEnemy" }
@@ -112,7 +112,7 @@
       "atk": 0,
       "hp": 2,
       "nutrition": 1,
-      "keywords": ["Web"],
+      "keywords": [],
       "tribe": "Arachnid",
       "effects": {
         "onDefend": { "type": "webAttacker" }
@@ -135,7 +135,7 @@
       "atk": 1,
       "hp": 2,
       "nutrition": 1,
-      "keywords": ["Web"],
+      "keywords": [],
       "tribe": "Arachnid",
       "effects": {
         "onPlay": { "type": "drawPerWebbed" }
@@ -148,7 +148,7 @@
       "atk": 2,
       "hp": 2,
       "nutrition": 2,
-      "keywords": ["Web"],
+      "keywords": [],
       "tribe": "Arachnid",
       "summons": ["token-spiderling"],
       "effects": {
@@ -162,12 +162,167 @@
       "atk": 0,
       "hp": 3,
       "nutrition": 1,
-      "keywords": ["Web"],
+      "keywords": [],
       "tribe": "Arachnid",
       "summons": ["token-spiderling"],
       "effects": {
         "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["token-spiderling", "token-spiderling"] } }
       }
+    },
+    {
+      "id": "arachnid-prey-tick",
+      "name": "Tick",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Free Play"],
+      "tribe": "Arachnid"
+    },
+    {
+      "id": "arachnid-prey-writing-spider",
+      "name": "Writing Spider",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Arachnid",
+      "effects": {
+        "onPlay": { "type": "webTarget" }
+      }
+    },
+    {
+      "id": "arachnid-prey-cellar-spider",
+      "name": "Cellar Spider",
+      "type": "Prey",
+      "atk": 0,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": ["Passive"],
+      "tribe": "Arachnid",
+      "summons": ["token-spiderling"],
+      "effects": {
+        "onStart": { "type": "summonTokens", "params": { "tokenIds": ["token-spiderling"] } }
+      }
+    },
+    {
+      "id": "arachnid-prey-fishing-spider",
+      "name": "Fishing Spider",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Arachnid",
+      "effects": {
+        "onPlay": { "type": "drawIfEnemyWebbed" }
+      }
+    },
+    {
+      "id": "arachnid-prey-water-spider",
+      "name": "Water Spider",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 3,
+      "nutrition": 1,
+      "keywords": ["Barrier"],
+      "tribe": "Arachnid"
+    },
+    {
+      "id": "arachnid-prey-golden-silk-orb-weaver",
+      "name": "Golden Silk Orb-Weaver",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": [],
+      "tribe": "Arachnid",
+      "effects": {
+        "onDefend": { "type": "webAttacker" }
+      }
+    },
+    {
+      "id": "arachnid-prey-sun-spider",
+      "name": "Sun Spider",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": [],
+      "tribe": "Arachnid",
+      "effects": {
+        "onPlay": { "type": "buffAtkPerWebbed", "params": { "bonus": 1 } }
+      }
+    },
+    {
+      "id": "arachnid-prey-whip-scorpion",
+      "name": "Whip Scorpion",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Venom 1", "Ambush"],
+      "tribe": "Arachnid"
+    },
+    {
+      "id": "arachnid-prey-camel-spider",
+      "name": "Camel Spider",
+      "type": "Prey",
+      "atk": 3,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": ["Haste"],
+      "tribe": "Arachnid"
+    },
+    {
+      "id": "arachnid-prey-pseudoscorpion",
+      "name": "Pseudoscorpion",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Arachnid",
+      "effects": {
+        "onSlain": { "type": "damageCreature", "params": { "targetType": "attacker", "amount": 1 } }
+      }
+    },
+    {
+      "id": "arachnid-prey-harvestman",
+      "name": "Harvestman",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Arachnid",
+      "effects": {
+        "onAllyDeath": { "type": "draw", "params": { "count": 1 } }
+      }
+    },
+    {
+      "id": "arachnid-prey-cobweb-spider",
+      "name": "Cobweb Spider",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Arachnid",
+      "effects": {
+        "onPlay": { "type": "draw", "params": { "count": 1 } }
+      }
+    },
+    {
+      "id": "arachnid-prey-lynx-spider",
+      "name": "Lynx Spider",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Web"],
+      "tribe": "Arachnid"
     },
     {
       "id": "arachnid-predator-huntsman-spider",
@@ -235,6 +390,91 @@
       }
     },
     {
+      "id": "arachnid-predator-giant-huntsman",
+      "name": "Giant Huntsman",
+      "type": "Predator",
+      "atk": 4,
+      "hp": 3,
+      "keywords": ["Haste"],
+      "tribe": "Arachnid",
+      "consumesType": "Prey",
+      "effects": {
+        "onPlay": { "type": "webTarget" }
+      }
+    },
+    {
+      "id": "arachnid-predator-desert-tarantula",
+      "name": "Desert Tarantula",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 3,
+      "keywords": ["Venom 1"],
+      "tribe": "Arachnid",
+      "consumesType": "Prey",
+      "effects": {
+        "onConsume": { "type": "damageWebbed", "params": { "damage": 1 } }
+      }
+    },
+    {
+      "id": "arachnid-predator-vinegaroon",
+      "name": "Vinegaroon",
+      "type": "Predator",
+      "atk": 4,
+      "hp": 2,
+      "keywords": [],
+      "tribe": "Arachnid",
+      "consumesType": "Prey",
+      "effects": {
+        "onPlay": { "type": "webTarget" }
+      }
+    },
+    {
+      "id": "arachnid-predator-sydney-funnel-web",
+      "name": "Sydney Funnel-Web",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 3,
+      "keywords": ["Venom 2", "Toxic"],
+      "tribe": "Arachnid",
+      "consumesType": "Prey"
+    },
+    {
+      "id": "arachnid-predator-redback-spider",
+      "name": "Redback Spider",
+      "type": "Predator",
+      "atk": 2,
+      "hp": 3,
+      "keywords": ["Venom 1"],
+      "tribe": "Arachnid",
+      "consumesType": "Prey",
+      "effects": {
+        "onSlain": { "type": "damageAllEnemies", "params": { "amount": 2 } }
+      }
+    },
+    {
+      "id": "arachnid-predator-brazilian-wandering-spider",
+      "name": "Brazilian Wandering Spider",
+      "type": "Predator",
+      "atk": 4,
+      "hp": 4,
+      "keywords": ["Venom 2"],
+      "tribe": "Arachnid",
+      "consumesType": "Prey",
+      "effects": {
+        "onPlay": { "type": "webAllEnemies" }
+      }
+    },
+    {
+      "id": "arachnid-predator-giant-desert-centipede",
+      "name": "Giant Desert Centipede",
+      "type": "Predator",
+      "atk": 5,
+      "hp": 3,
+      "keywords": ["Venom 1", "Haste"],
+      "tribe": "Arachnid",
+      "consumesType": "Prey"
+    },
+    {
       "id": "arachnid-spell-web-bomb",
       "name": "Web Bomb",
       "type": "Spell",
@@ -261,12 +501,117 @@
       }
     },
     {
+      "id": "arachnid-spell-ensnare",
+      "name": "Ensnare",
+      "type": "Spell",
+      "tribe": "Arachnid",
+      "effects": {
+        "effect": [
+          { "type": "webAllEnemies" },
+          { "type": "draw", "params": { "count": 1 } }
+        ]
+      }
+    },
+    {
+      "id": "arachnid-spell-cocoon",
+      "name": "Cocoon",
+      "type": "Spell",
+      "tribe": "Arachnid",
+      "effects": {
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "enemy-creatures",
+            "title": "Choose a creature to cocoon",
+            "effect": { "web": true, "freeze": true }
+          }
+        }
+      }
+    },
+    {
+      "id": "arachnid-spell-swarm",
+      "name": "Swarm",
+      "type": "Spell",
+      "tribe": "Arachnid",
+      "summons": ["token-spiderling"],
+      "effects": {
+        "effect": { "type": "summonTokens", "params": { "tokenIds": ["token-spiderling", "token-spiderling", "token-spiderling"] } }
+      }
+    },
+    {
+      "id": "arachnid-spell-predators-pounce",
+      "name": "Predator's Pounce",
+      "type": "Spell",
+      "tribe": "Arachnid",
+      "effects": {
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "friendly-creatures",
+            "title": "Choose a creature to buff",
+            "effect": { "buffAtk": 3, "grantKeyword": "Haste" }
+          }
+        }
+      }
+    },
+    {
+      "id": "arachnid-spell-venomous-bite",
+      "name": "Venomous Bite",
+      "type": "Spell",
+      "tribe": "Arachnid",
+      "effects": {
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "enemy-creatures",
+            "title": "Choose a creature to bite",
+            "effect": { "damage": 3 }
+          }
+        }
+      }
+    },
+    {
       "id": "arachnid-freespell-silk-thread",
       "name": "Silk Thread",
       "type": "Free Spell",
       "tribe": "Arachnid",
       "effects": {
         "effect": { "type": "webTarget" }
+      }
+    },
+    {
+      "id": "arachnid-freespell-shed-exoskeleton",
+      "name": "Shed Exoskeleton",
+      "type": "Free Spell",
+      "tribe": "Arachnid",
+      "effects": {
+        "effect": { "type": "grantBarrier" }
+      }
+    },
+    {
+      "id": "arachnid-freespell-quick-spin",
+      "name": "Quick Spin",
+      "type": "Free Spell",
+      "tribe": "Arachnid",
+      "effects": {
+        "effect": { "type": "webRandomEnemy" }
+      }
+    },
+    {
+      "id": "arachnid-freespell-venom-spit",
+      "name": "Venom Spit",
+      "type": "Free Spell",
+      "tribe": "Arachnid",
+      "effects": {
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "enemy-creatures",
+            "title": "Choose a Webbed creature",
+            "filter": { "keyword": "Webbed" },
+            "effect": { "damage": 2 }
+          }
+        }
       }
     },
     {
@@ -280,6 +625,26 @@
           { "type": "webAttacker" },
           { "type": "negateAttack" }
         ]
+      }
+    },
+    {
+      "id": "arachnid-trap-sticky-web",
+      "name": "Sticky Web",
+      "type": "Trap",
+      "trigger": "creatureAttacks",
+      "tribe": "Arachnid",
+      "effects": {
+        "effect": { "type": "webAttacker" }
+      }
+    },
+    {
+      "id": "arachnid-trap-venomous-ambush",
+      "name": "Venomous Ambush",
+      "type": "Trap",
+      "trigger": "directAttack",
+      "tribe": "Arachnid",
+      "effects": {
+        "effect": { "type": "damageCreature", "params": { "targetType": "attacker", "amount": 3 } }
       }
     }
   ]

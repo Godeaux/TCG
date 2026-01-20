@@ -11,6 +11,8 @@ import {
   hasToxic,
   hasPoisonous,
   getEffectiveAttack,
+  hasWeb,
+  KEYWORDS,
 } from '../keywords.js';
 import {
   logMessage,
@@ -75,17 +77,31 @@ export const getValidTargets = (state, attacker, opponent) => {
 
 const applyDamage = (creature, amount, state, ownerIndex) => {
   if (amount <= 0) {
-    return { damage: 0, barrierBlocked: false };
+    return { damage: 0, barrierBlocked: false, webbedCleared: false };
   }
   if (creature.hasBarrier && areAbilitiesActive(creature)) {
     creature.hasBarrier = false;
     if (state && ownerIndex !== undefined) {
       queueKeywordEffect(state, creature, 'Barrier', ownerIndex);
     }
-    return { damage: 0, barrierBlocked: true };
+    return { damage: 0, barrierBlocked: true, webbedCleared: false };
   }
   creature.currentHp -= amount;
-  return { damage: amount, barrierBlocked: false };
+
+  // Clear Webbed status when creature takes damage
+  let webbedCleared = false;
+  if (creature.webbed) {
+    creature.webbed = false;
+    if (creature.keywords) {
+      const webbedIndex = creature.keywords.indexOf(KEYWORDS.WEBBED);
+      if (webbedIndex >= 0) {
+        creature.keywords.splice(webbedIndex, 1);
+      }
+    }
+    webbedCleared = true;
+  }
+
+  return { damage: amount, barrierBlocked: false, webbedCleared };
 };
 
 export const resolveCreatureCombat = (
@@ -186,6 +202,23 @@ export const resolveCreatureCombat = (
       state,
       DEBUFF,
       `${getKeywordEmoji('Neurotoxic')} ${formatCardForLog(attacker)} is frozen by neurotoxin (dies turn ${state.turn + 1}).`
+    );
+  }
+
+  // Web: attacker applies Webbed to defender on attack (if defender survives)
+  if (hasWeb(attacker) && defenderDamage > 0 && defender.currentHp > 0 && !defender.webbed) {
+    queueKeywordEffect(state, attacker, 'Web', attackerOwnerIndex);
+    defender.webbed = true;
+    if (!defender.keywords) {
+      defender.keywords = [];
+    }
+    if (!defender.keywords.includes(KEYWORDS.WEBBED)) {
+      defender.keywords.push(KEYWORDS.WEBBED);
+    }
+    logGameAction(
+      state,
+      DEBUFF,
+      `${getKeywordEmoji('Web')} WEB: ${formatCardForLog(defender)} is trapped in a web by ${formatCardForLog(attacker)}!`
     );
   }
 

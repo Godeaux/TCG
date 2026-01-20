@@ -962,6 +962,7 @@ const handlePlayerDrop = (card, playerBadge) => {
     !isHarmless(card) &&
     !card.frozen &&
     !card.paralyzed &&
+    !card.webbed &&
     isCreature &&
     canAttackPlayerDirectly &&
     !lureBlocksDirectAttack;
@@ -984,6 +985,8 @@ const handlePlayerDrop = (card, playerBadge) => {
       logMessage(latestState, `${card.name} is frozen and cannot attack.`);
     } else if (card.paralyzed) {
       logMessage(latestState, `${card.name} is paralyzed and cannot attack.`);
+    } else if (card.webbed) {
+      logMessage(latestState, `${card.name} is trapped in a web and cannot attack.`);
     } else if (isPassive(card)) {
       logMessage(latestState, `${card.name} has Passive and cannot attack.`);
     } else if (isHarmless(card)) {
@@ -1059,6 +1062,7 @@ const handleCreatureDrop = (attacker, target) => {
     !isHarmless(attacker) &&
     !attacker.frozen &&
     !attacker.paralyzed &&
+    !attacker.webbed &&
     isCreature;
 
   if (!canAttack) {
@@ -1075,6 +1079,8 @@ const handleCreatureDrop = (attacker, target) => {
       logMessage(latestState, `${attacker.name} is frozen and cannot attack.`);
     } else if (attacker.paralyzed) {
       logMessage(latestState, `${attacker.name} is paralyzed and cannot attack.`);
+    } else if (attacker.webbed) {
+      logMessage(latestState, `${attacker.name} is trapped in a web and cannot attack.`);
     } else if (isPassive(attacker)) {
       logMessage(latestState, `${attacker.name} has Passive and cannot attack.`);
     } else if (isHarmless(attacker)) {
@@ -1142,7 +1148,8 @@ const handleDragStart = (event) => {
     !isPassive(card) &&
     !isHarmless(card) &&
     !card.frozen &&
-    !card.paralyzed;
+    !card.paralyzed &&
+    !card.webbed;
   const isCombatDrag = isOnField && canCreatureAttack;
 
   // For field cards, allow drag if in extended consumption mode OR valid combat attack

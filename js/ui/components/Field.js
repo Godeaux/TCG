@@ -71,6 +71,7 @@ export const renderField = (state, playerIndex, isOpponent, options = {}) => {
       !isHarmless(card) &&
       !card.frozen &&
       !card.paralyzed &&
+      !card.webbed &&
       isCreature;
 
     // Determine if creature can be returned to hand (played via effect, not from hand)

@@ -53,7 +53,7 @@ export const KEYWORD_DESCRIPTIONS = {
   [KEYWORDS.PACK]: 'Gains +1 ATK for each other Canine you control.',
   [KEYWORDS.HOWL]: 'On play, triggers a Howl effect that buffs all Canines until end of turn.',
   // Arachnid keywords (Experimental)
-  [KEYWORDS.WEB]: 'Can apply Webbed status to enemy creatures.',
+  [KEYWORDS.WEB]: 'On attack, applies Webbed to the defender (if it survives).',
   [KEYWORDS.WEBBED]: 'Cannot attack. Status persists until the creature takes damage.',
   [KEYWORDS.VENOM]: 'At end of turn, deals damage to each Webbed enemy creature.',
 };
