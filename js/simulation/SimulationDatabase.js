@@ -55,7 +55,7 @@ const initDatabase = () => {
       if (!db.objectStoreNames.contains(STORES.GAMES)) {
         const gamesStore = db.createObjectStore(STORES.GAMES, {
           keyPath: 'id',
-          autoIncrement: true
+          autoIncrement: true,
         });
         gamesStore.createIndex('timestamp', 'timestamp', { unique: false });
         gamesStore.createIndex('winner', 'winner', { unique: false });
@@ -64,7 +64,7 @@ const initDatabase = () => {
       // Card stats store - aggregated per-card statistics
       if (!db.objectStoreNames.contains(STORES.CARD_STATS)) {
         const cardStore = db.createObjectStore(STORES.CARD_STATS, {
-          keyPath: 'cardId'
+          keyPath: 'cardId',
         });
         cardStore.createIndex('winRate', 'winRate', { unique: false });
         cardStore.createIndex('playCount', 'playCount', { unique: false });
@@ -73,7 +73,7 @@ const initDatabase = () => {
       // Bugs store - bug occurrences with fingerprints
       if (!db.objectStoreNames.contains(STORES.BUGS)) {
         const bugsStore = db.createObjectStore(STORES.BUGS, {
-          keyPath: 'fingerprint'
+          keyPath: 'fingerprint',
         });
         bugsStore.createIndex('occurrenceCount', 'occurrenceCount', { unique: false });
         bugsStore.createIndex('lastSeen', 'lastSeen', { unique: false });
@@ -250,7 +250,7 @@ export const updateCardStats = async (cardStats) => {
     const tx = db.transaction(STORES.CARD_STATS, 'readwrite');
     const store = tx.objectStore(STORES.CARD_STATS);
 
-    cardStats.forEach(stat => {
+    cardStats.forEach((stat) => {
       const getRequest = store.get(stat.cardId);
 
       getRequest.onsuccess = () => {
@@ -278,9 +278,7 @@ export const updateCardStats = async (cardStats) => {
 
         // Calculate win rate
         const totalGames = existing.winCount + existing.lossCount;
-        existing.winRate = totalGames > 0
-          ? Math.round((existing.winCount / totalGames) * 100)
-          : 0;
+        existing.winRate = totalGames > 0 ? Math.round((existing.winCount / totalGames) * 100) : 0;
 
         store.put(existing);
       };
@@ -318,7 +316,7 @@ export const getTopCardsByWinRate = async (limit = 10, minGames = 5) => {
   const allStats = await getAllCardStats();
 
   return allStats
-    .filter(c => c.gamesInDeck >= minGames)
+    .filter((c) => c.gamesInDeck >= minGames)
     .sort((a, b) => b.winRate - a.winRate)
     .slice(0, limit);
 };
@@ -333,7 +331,7 @@ export const getWorstCardsByWinRate = async (limit = 10, minGames = 5) => {
   const allStats = await getAllCardStats();
 
   return allStats
-    .filter(c => c.gamesInDeck >= minGames)
+    .filter((c) => c.gamesInDeck >= minGames)
     .sort((a, b) => a.winRate - b.winRate)
     .slice(0, limit);
 };
@@ -395,10 +393,7 @@ export const recordBug = async (fingerprint, bugData) => {
           occurrenceCount: existing.occurrenceCount + 1,
           lastSeen: now,
           // Keep last 5 sample reports
-          sampleReports: [
-            bugData,
-            ...(existing.sampleReports || []).slice(0, 4),
-          ],
+          sampleReports: [bugData, ...(existing.sampleReports || []).slice(0, 4)],
         };
       } else {
         // New bug
@@ -471,7 +466,7 @@ export const getAllBugs = async () => {
  */
 export const getUnsyncedBugs = async () => {
   const bugs = await getAllBugs();
-  return bugs.filter(b => !b.syncedToCloud);
+  return bugs.filter((b) => !b.syncedToCloud);
 };
 
 /**
@@ -552,16 +547,17 @@ export const getSimulationStats = async () => {
 
   // Calculate win distribution
   const wins = { player0: 0, player1: 0, draw: 0 };
-  recentGames.forEach(g => {
+  recentGames.forEach((g) => {
     if (g.winner === 0) wins.player0++;
     else if (g.winner === 1) wins.player1++;
     else wins.draw++;
   });
 
   // Calculate average game length
-  const avgTurns = recentGames.length > 0
-    ? Math.round(recentGames.reduce((sum, g) => sum + (g.turns || 0), 0) / recentGames.length)
-    : 0;
+  const avgTurns =
+    recentGames.length > 0
+      ? Math.round(recentGames.reduce((sum, g) => sum + (g.turns || 0), 0) / recentGames.length)
+      : 0;
 
   // Total bugs found
   const totalBugOccurrences = bugs.reduce((sum, b) => sum + b.occurrenceCount, 0);
@@ -569,7 +565,7 @@ export const getSimulationStats = async () => {
 
   // Cards with highest bug involvement
   const buggyCards = cardStats
-    .filter(c => c.bugInvolvements > 0)
+    .filter((c) => c.bugInvolvements > 0)
     .sort((a, b) => b.bugInvolvements - a.bugInvolvements)
     .slice(0, 5);
 

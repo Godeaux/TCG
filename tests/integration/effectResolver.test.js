@@ -369,7 +369,11 @@ describe('Buff Effect Resolution', () => {
       const { creature: c1 } = createTestCreature('fish-prey-atlantic-flying-fish', 0, 0, state);
       const { creature: c2 } = createTestCreature('fish-prey-blobfish', 0, 1, state);
 
-      resolveEffectResult(state, { buffAllCreatures: { creatures: [c1, c2], attack: 1, health: 1 } }, context);
+      resolveEffectResult(
+        state,
+        { buffAllCreatures: { creatures: [c1, c2], attack: 1, health: 1 } },
+        context
+      );
 
       expect(c1.currentAtk).toBeGreaterThan(0);
       expect(c2.currentAtk).toBeGreaterThan(0);
@@ -391,7 +395,11 @@ describe('Buff Effect Resolution', () => {
       const c1InitialAtk = c1.currentAtk;
       const c2InitialAtk = c2.currentAtk;
 
-      resolveEffectResult(state, { teamBuff: { player: state.players[0], atk: 2, hp: 2 } }, context);
+      resolveEffectResult(
+        state,
+        { teamBuff: { player: state.players[0], atk: 2, hp: 2 } },
+        context
+      );
 
       expect(c1.currentAtk).toBe(c1InitialAtk + 2);
       expect(c2.currentAtk).toBe(c2InitialAtk + 2);
@@ -428,7 +436,7 @@ describe('Keyword Effect Resolution', () => {
 
       resolveEffectResult(state, { addKeyword: { creature, keyword: 'Haste' } }, context);
 
-      const hasteCount = creature.keywords.filter(k => k === 'Haste').length;
+      const hasteCount = creature.keywords.filter((k) => k === 'Haste').length;
       expect(hasteCount).toBe(1);
     });
 
@@ -455,7 +463,11 @@ describe('Keyword Effect Resolution', () => {
       const { creature: c1 } = createTestCreature('fish-prey-atlantic-flying-fish', 1, 0, state);
       const { creature: c2 } = createTestCreature('fish-prey-blobfish', 1, 1, state);
 
-      resolveEffectResult(state, { grantKeywordToAll: { creatures: [c1, c2], keyword: 'Frozen' } }, context);
+      resolveEffectResult(
+        state,
+        { grantKeywordToAll: { creatures: [c1, c2], keyword: 'Frozen' } },
+        context
+      );
 
       expect(c1.keywords).toContain('Frozen');
       expect(c2.keywords).toContain('Frozen');
@@ -481,7 +493,11 @@ describe('Keyword Effect Resolution', () => {
       c2.keywords.push('Frozen');
       c2.frozen = true;
 
-      resolveEffectResult(state, { removeKeywordFromAll: { creatures: [c1, c2], keyword: 'Frozen' } }, context);
+      resolveEffectResult(
+        state,
+        { removeKeywordFromAll: { creatures: [c1, c2], keyword: 'Frozen' } },
+        context
+      );
 
       expect(c1.keywords).not.toContain('Frozen');
       expect(c2.keywords).not.toContain('Frozen');
@@ -527,40 +543,52 @@ describe('Summon Effect Resolution', () => {
     });
 
     it('places token on empty field slot', () => {
-      const initialFieldCount = state.players[0].field.filter(c => c !== null).length;
+      const initialFieldCount = state.players[0].field.filter((c) => c !== null).length;
 
-      resolveEffectResult(state, {
-        summonTokens: {
-          playerIndex: 0,
-          tokens: ['token-flying-fish']
-        }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          summonTokens: {
+            playerIndex: 0,
+            tokens: ['token-flying-fish'],
+          },
+        },
+        context
+      );
 
-      const newFieldCount = state.players[0].field.filter(c => c !== null).length;
+      const newFieldCount = state.players[0].field.filter((c) => c !== null).length;
       expect(newFieldCount).toBe(initialFieldCount + 1);
     });
 
     it('summoned token has isToken flag', () => {
-      resolveEffectResult(state, {
-        summonTokens: {
-          playerIndex: 0,
-          tokens: ['token-flying-fish']
-        }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          summonTokens: {
+            playerIndex: 0,
+            tokens: ['token-flying-fish'],
+          },
+        },
+        context
+      );
 
-      const token = state.players[0].field.find(c => c !== null);
+      const token = state.players[0].field.find((c) => c !== null);
       expect(token.isToken).toBe(true);
     });
 
     it('summons multiple tokens', () => {
-      resolveEffectResult(state, {
-        summonTokens: {
-          playerIndex: 0,
-          tokens: ['token-flying-fish', 'token-flying-fish']
-        }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          summonTokens: {
+            playerIndex: 0,
+            tokens: ['token-flying-fish', 'token-flying-fish'],
+          },
+        },
+        context
+      );
 
-      const fieldCount = state.players[0].field.filter(c => c !== null).length;
+      const fieldCount = state.players[0].field.filter((c) => c !== null).length;
       expect(fieldCount).toBe(2);
     });
   });
@@ -583,12 +611,16 @@ describe('Hand Manipulation Resolution', () => {
       const card = addCardToHand(state, 'fish-prey-atlantic-flying-fish', 0);
       const initialHandSize = state.players[0].hand.length;
 
-      resolveEffectResult(state, {
-        discardCards: {
-          playerIndex: 0,
-          cards: [card]
-        }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          discardCards: {
+            playerIndex: 0,
+            cards: [card],
+          },
+        },
+        context
+      );
 
       expect(state.players[0].hand.length).toBe(initialHandSize - 1);
     });
@@ -597,12 +629,16 @@ describe('Hand Manipulation Resolution', () => {
       const card = addCardToHand(state, 'fish-prey-atlantic-flying-fish', 0);
       const initialCarrionSize = state.players[0].carrion.length;
 
-      resolveEffectResult(state, {
-        discardCards: {
-          playerIndex: 0,
-          cards: [card]
-        }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          discardCards: {
+            playerIndex: 0,
+            cards: [card],
+          },
+        },
+        context
+      );
 
       expect(state.players[0].carrion.length).toBe(initialCarrionSize + 1);
     });
@@ -611,12 +647,16 @@ describe('Hand Manipulation Resolution', () => {
       const card = addCardToHand(state, 'fish-spell-net', 0);
       const initialExileSize = state.players[0].exile.length;
 
-      resolveEffectResult(state, {
-        discardCards: {
-          playerIndex: 0,
-          cards: [card]
-        }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          discardCards: {
+            playerIndex: 0,
+            cards: [card],
+          },
+        },
+        context
+      );
 
       expect(state.players[0].exile.length).toBe(initialExileSize + 1);
     });
@@ -637,12 +677,16 @@ describe('Hand Manipulation Resolution', () => {
       const initialCarrionSize = state.players[0].carrion.length;
       const initialHandSize = state.players[0].hand.length;
 
-      resolveEffectResult(state, {
-        addCarrionToHand: {
-          playerIndex: 0,
-          card
-        }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          addCarrionToHand: {
+            playerIndex: 0,
+            card,
+          },
+        },
+        context
+      );
 
       expect(state.players[0].carrion.length).toBe(initialCarrionSize - 1);
       expect(state.players[0].hand.length).toBe(initialHandSize + 1);
@@ -667,12 +711,16 @@ describe('Field Manipulation Resolution', () => {
       const { creature } = createTestCreature('fish-prey-atlantic-flying-fish', 1, 0, state);
       const initialHandSize = state.players[1].hand.length;
 
-      resolveEffectResult(state, {
-        returnToHand: {
-          creatures: [creature],
-          playerIndex: 1
-        }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          returnToHand: {
+            creatures: [creature],
+            playerIndex: 1,
+          },
+        },
+        context
+      );
 
       expect(state.players[1].hand.length).toBe(initialHandSize + 1);
       expect(state.players[1].field[0]).toBe(null);
@@ -686,14 +734,18 @@ describe('Field Manipulation Resolution', () => {
       const baseAtk = creature.atk;
       const baseHp = creature.hp;
 
-      resolveEffectResult(state, {
-        returnToHand: {
-          creatures: [creature],
-          playerIndex: 1
-        }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          returnToHand: {
+            creatures: [creature],
+            playerIndex: 1,
+          },
+        },
+        context
+      );
 
-      const returnedCard = state.players[1].hand.find(c => c.instanceId === creature.instanceId);
+      const returnedCard = state.players[1].hand.find((c) => c.instanceId === creature.instanceId);
       expect(returnedCard.currentAtk).toBe(baseAtk);
       expect(returnedCard.currentHp).toBe(baseHp);
       expect(returnedCard.frozen).toBe(false);
@@ -705,12 +757,16 @@ describe('Field Manipulation Resolution', () => {
       const initialHandSize = state.players[1].hand.length;
       const initialExileSize = state.players[1].exile.length;
 
-      resolveEffectResult(state, {
-        returnToHand: {
-          creatures: [creature],
-          playerIndex: 1
-        }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          returnToHand: {
+            creatures: [creature],
+            playerIndex: 1,
+          },
+        },
+        context
+      );
 
       expect(state.players[1].hand.length).toBe(initialHandSize); // Not added to hand
       expect(state.players[1].exile.length).toBe(initialExileSize + 1); // Exiled instead
@@ -729,16 +785,20 @@ describe('Field Manipulation Resolution', () => {
     it('moves creature from opponent to player field', () => {
       const { creature } = createTestCreature('fish-prey-atlantic-flying-fish', 1, 0, state);
 
-      resolveEffectResult(state, {
-        stealCreature: {
-          creature,
-          fromIndex: 1,
-          toIndex: 0
-        }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          stealCreature: {
+            creature,
+            fromIndex: 1,
+            toIndex: 0,
+          },
+        },
+        context
+      );
 
       expect(state.players[1].field[0]).toBe(null);
-      expect(state.players[0].field.some(c => c?.instanceId === creature.instanceId)).toBe(true);
+      expect(state.players[0].field.some((c) => c?.instanceId === creature.instanceId)).toBe(true);
     });
 
     it('stolen creature gets summoning sickness', () => {
@@ -746,13 +806,17 @@ describe('Field Manipulation Resolution', () => {
       creature.summonedTurn = 1;
       state.turn = 5;
 
-      resolveEffectResult(state, {
-        stealCreature: {
-          creature,
-          fromIndex: 1,
-          toIndex: 0
-        }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          stealCreature: {
+            creature,
+            fromIndex: 1,
+            toIndex: 0,
+          },
+        },
+        context
+      );
 
       expect(creature.summonedTurn).toBe(5);
     });
@@ -771,12 +835,16 @@ describe('Field Manipulation Resolution', () => {
       const { creature } = createTestCreature('fish-prey-atlantic-flying-fish', 0, 0, state);
       const originalInstanceId = creature.instanceId;
 
-      resolveEffectResult(state, {
-        transformCard: {
-          card: creature,
-          newCardData: 'fish-prey-blobfish'
-        }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          transformCard: {
+            card: creature,
+            newCardData: 'fish-prey-blobfish',
+          },
+        },
+        context
+      );
 
       const transformed = state.players[0].field[0];
       expect(transformed.instanceId).not.toBe(originalInstanceId);
@@ -800,15 +868,24 @@ describe('Copy Effect Resolution', () => {
     });
 
     it('copies attack and HP from source to target', () => {
-      const { creature: target } = createTestCreature('fish-prey-atlantic-flying-fish', 0, 0, state);
+      const { creature: target } = createTestCreature(
+        'fish-prey-atlantic-flying-fish',
+        0,
+        0,
+        state
+      );
       const { creature: source } = createTestCreature('fish-predator-sailfish', 1, 0, state);
 
-      resolveEffectResult(state, {
-        copyStats: {
-          target,
-          source
-        }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          copyStats: {
+            target,
+            source,
+          },
+        },
+        context
+      );
 
       expect(target.currentAtk).toBe(source.currentAtk);
       expect(target.currentHp).toBe(source.currentHp);
@@ -825,33 +902,51 @@ describe('Copy Effect Resolution', () => {
     });
 
     it('copies keywords from source to target', () => {
-      const { creature: target } = createTestCreature('fish-prey-atlantic-flying-fish', 0, 0, state);
+      const { creature: target } = createTestCreature(
+        'fish-prey-atlantic-flying-fish',
+        0,
+        0,
+        state
+      );
       const { creature: source } = createTestCreature('fish-predator-sailfish', 1, 0, state);
 
-      resolveEffectResult(state, {
-        copyAbilities: {
-          target,
-          source
-        }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          copyAbilities: {
+            target,
+            source,
+          },
+        },
+        context
+      );
 
       // Target should have source's keywords
-      source.keywords.forEach(keyword => {
+      source.keywords.forEach((keyword) => {
         expect(target.keywords).toContain(keyword);
       });
     });
 
     it('replaces target abilities (not merges)', () => {
-      const { creature: target } = createTestCreature('fish-prey-atlantic-flying-fish', 0, 0, state);
+      const { creature: target } = createTestCreature(
+        'fish-prey-atlantic-flying-fish',
+        0,
+        0,
+        state
+      );
       const { creature: source } = createTestCreature('fish-predator-sailfish', 1, 0, state);
       target.keywords = ['Frozen']; // Give target a unique keyword
 
-      resolveEffectResult(state, {
-        copyAbilities: {
-          target,
-          source
-        }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          copyAbilities: {
+            target,
+            source,
+          },
+        },
+        context
+      );
 
       // Target's original keyword should be replaced by source's keywords
       expect(target.keywords).not.toContain('Frozen');
@@ -859,36 +954,54 @@ describe('Copy Effect Resolution', () => {
     });
 
     it('updates effectText to show "(Copied)" prefix with source effect text', () => {
-      const { creature: target } = createTestCreature('fish-prey-atlantic-flying-fish', 0, 0, state);
+      const { creature: target } = createTestCreature(
+        'fish-prey-atlantic-flying-fish',
+        0,
+        0,
+        state
+      );
       const { creature: source } = createTestCreature('fish-prey-golden-dorado', 1, 0, state);
 
       // Golden Dorado has effectText "Draw 2."
       expect(source.effectText).toBe('Draw 2.');
 
-      resolveEffectResult(state, {
-        copyAbilities: {
-          target,
-          source
-        }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          copyAbilities: {
+            target,
+            source,
+          },
+        },
+        context
+      );
 
       // Target's effect text should now show "(Copied)" followed by source's effect text
       expect(target.effectText).toBe('(Copied) Draw 2.');
     });
 
     it('handles source with no effectText', () => {
-      const { creature: target } = createTestCreature('fish-prey-atlantic-flying-fish', 0, 0, state);
+      const { creature: target } = createTestCreature(
+        'fish-prey-atlantic-flying-fish',
+        0,
+        0,
+        state
+      );
       const { creature: source } = createTestCreature('fish-predator-sailfish', 1, 0, state);
 
       // Sailfish has no effectText (only keywords)
       source.effectText = undefined;
 
-      resolveEffectResult(state, {
-        copyAbilities: {
-          target,
-          source
-        }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          copyAbilities: {
+            target,
+            source,
+          },
+        },
+        context
+      );
 
       expect(target.effectText).toBe('(Copied) No effect text.');
     });
@@ -911,9 +1024,13 @@ describe('Freeze Effect Resolution', () => {
     it('sets frozen flag on creature', () => {
       const { creature } = createTestCreature('fish-prey-atlantic-flying-fish', 1, 0, state);
 
-      resolveEffectResult(state, {
-        freezeCreature: { creature }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          freezeCreature: { creature },
+        },
+        context
+      );
 
       expect(creature.frozen).toBe(true);
     });
@@ -921,9 +1038,13 @@ describe('Freeze Effect Resolution', () => {
     it('does not set frozenDiesTurn (only Neurotoxic does)', () => {
       const { creature } = createTestCreature('fish-prey-atlantic-flying-fish', 1, 0, state);
 
-      resolveEffectResult(state, {
-        freezeCreature: { creature }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          freezeCreature: { creature },
+        },
+        context
+      );
 
       expect(creature.frozenDiesTurn).toBeUndefined();
     });
@@ -995,12 +1116,16 @@ describe('Field Spell Resolution', () => {
   });
 
   it('sets field spell on state', () => {
-    resolveEffectResult(state, {
-      setFieldSpell: {
-        ownerIndex: 0,
-        cardData: 'fish-field-spell-rocky-reef'
-      }
-    }, context);
+    resolveEffectResult(
+      state,
+      {
+        setFieldSpell: {
+          ownerIndex: 0,
+          cardData: 'fish-field-spell-rocky-reef',
+        },
+      },
+      context
+    );
 
     expect(state.fieldSpell).toBeDefined();
     expect(state.fieldSpell.ownerIndex).toBe(0);
@@ -1008,34 +1133,46 @@ describe('Field Spell Resolution', () => {
 
   it('removes existing field spell when new one is set', () => {
     // Set initial field spell
-    resolveEffectResult(state, {
-      setFieldSpell: {
-        ownerIndex: 0,
-        cardData: 'fish-field-spell-rocky-reef'
-      }
-    }, context);
+    resolveEffectResult(
+      state,
+      {
+        setFieldSpell: {
+          ownerIndex: 0,
+          cardData: 'fish-field-spell-rocky-reef',
+        },
+      },
+      context
+    );
 
     const firstSpell = state.fieldSpell.card;
 
     // Set new field spell
-    resolveEffectResult(state, {
-      setFieldSpell: {
-        ownerIndex: 1,
-        cardData: 'fish-field-spell-rocky-reef'
-      }
-    }, context);
+    resolveEffectResult(
+      state,
+      {
+        setFieldSpell: {
+          ownerIndex: 1,
+          cardData: 'fish-field-spell-rocky-reef',
+        },
+      },
+      context
+    );
 
     expect(state.fieldSpell.ownerIndex).toBe(1);
-    expect(state.players[0].exile.some(c => c.instanceId === firstSpell.instanceId)).toBe(true);
+    expect(state.players[0].exile.some((c) => c.instanceId === firstSpell.instanceId)).toBe(true);
   });
 
   it('removes field spell', () => {
-    resolveEffectResult(state, {
-      setFieldSpell: {
-        ownerIndex: 0,
-        cardData: 'fish-field-spell-rocky-reef'
-      }
-    }, context);
+    resolveEffectResult(
+      state,
+      {
+        setFieldSpell: {
+          ownerIndex: 0,
+          cardData: 'fish-field-spell-rocky-reef',
+        },
+      },
+      context
+    );
 
     resolveEffectResult(state, { removeFieldSpell: true }, context);
 
@@ -1117,7 +1254,7 @@ describe('Full Effect Chain Resolution', () => {
 
       resolveEffectResult(state, result, context);
 
-      const fieldCount = state.players[0].field.filter(c => c !== null).length;
+      const fieldCount = state.players[0].field.filter((c) => c !== null).length;
       expect(fieldCount).toBe(2);
     });
 

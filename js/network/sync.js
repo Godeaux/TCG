@@ -48,7 +48,7 @@ export const sendLobbyBroadcast = (event, payload) => {
   }
   console.log(`[sendLobbyBroadcast] Sending "${event}" event via lobby channel`);
   lobbyChannel.send({
-    type: "broadcast",
+    type: 'broadcast',
     event,
     payload,
   });
@@ -65,7 +65,7 @@ export const broadcastSyncState = (state) => {
     return;
   }
   const payload = buildLobbySyncPayload(state);
-  console.log("Broadcasting sync state, payload structure:", {
+  console.log('Broadcasting sync state, payload structure:', {
     hasGame: !!payload.game,
     hasPlayers: !!payload.game?.players,
     playerCount: payload.game?.players?.length,
@@ -73,7 +73,7 @@ export const broadcastSyncState = (state) => {
     player0FieldCount: payload.game?.players?.[0]?.field?.length,
     player0HandSample: payload.game?.players?.[0]?.hand?.[0],
   });
-  sendLobbyBroadcast("sync_state", payload);
+  sendLobbyBroadcast('sync_state', payload);
 
   // Also save to database for reconnection support
   saveGameStateToDatabase(state);
@@ -95,7 +95,7 @@ export const broadcastSyncState = (state) => {
  */
 export const saveGameStateToDatabase = async (state) => {
   if (!isOnlineMode(state) || !state.menu?.lobby?.id) {
-    console.log("Skipping save - not online or no lobby");
+    console.log('Skipping save - not online or no lobby');
     return;
   }
 
@@ -103,8 +103,8 @@ export const saveGameStateToDatabase = async (state) => {
   // This ensures the database always has the most up-to-date state from both players
   try {
     const payload = buildLobbySyncPayload(state);
-    console.log("Saving game state to DB for lobby:", state.menu.lobby.id);
-    console.log("Game state payload structure:", {
+    console.log('Saving game state to DB for lobby:', state.menu.lobby.id);
+    console.log('Game state payload structure:', {
       hasGame: !!payload.game,
       hasPlayers: !!payload.game?.players,
       player0HandCount: payload.game?.players?.[0]?.hand?.length,
@@ -119,9 +119,9 @@ export const saveGameStateToDatabase = async (state) => {
       gameState: payload,
       actionSequence: 0, // Will be used for future conflict resolution
     });
-    console.log("Game state saved successfully");
+    console.log('Game state saved successfully');
   } catch (error) {
-    console.error("Failed to save game state:", error);
+    console.error('Failed to save game state:', error);
     // Don't throw - we don't want to break gameplay if DB save fails
   }
 };
@@ -134,8 +134,8 @@ export const requestSyncFromOpponent = (state) => {
   if (!isOnlineMode(state)) {
     return;
   }
-  console.log("Requesting sync from opponent");
-  sendLobbyBroadcast("sync_request", {
+  console.log('Requesting sync from opponent');
+  sendLobbyBroadcast('sync_request', {
     senderId: state.menu?.profile?.id ?? null,
     timestamp: Date.now(),
   });
@@ -150,7 +150,7 @@ export const broadcastEmote = (state, emoteId) => {
   if (!isOnlineMode(state)) {
     return;
   }
-  sendLobbyBroadcast("emote", {
+  sendLobbyBroadcast('emote', {
     senderId: state.menu?.profile?.id ?? null,
     emoteId,
     timestamp: Date.now(),
@@ -184,7 +184,7 @@ export const broadcastCursorMove = (state, position) => {
     return;
   }
   lastCursorBroadcast = now;
-  sendLobbyBroadcast("cursor_move", {
+  sendLobbyBroadcast('cursor_move', {
     senderId: state.menu?.profile?.id ?? null,
     position,
     timestamp: now,
@@ -219,7 +219,7 @@ export const broadcastHandHover = (state, cardIndex) => {
 
   lastHoverBroadcast = now;
   lastHoveredIndex = cardIndex;
-  sendLobbyBroadcast("hand_hover", {
+  sendLobbyBroadcast('hand_hover', {
     senderId: state.menu?.profile?.id ?? null,
     cardIndex,
     timestamp: now,
@@ -237,7 +237,7 @@ export const broadcastHandDrag = (state, dragInfo) => {
   if (!isOnlineMode(state)) {
     return;
   }
-  sendLobbyBroadcast("hand_drag", {
+  sendLobbyBroadcast('hand_drag', {
     senderId: state.menu?.profile?.id ?? null,
     ...dragInfo,
     timestamp: Date.now(),

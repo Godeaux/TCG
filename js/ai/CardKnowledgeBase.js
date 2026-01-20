@@ -24,23 +24,23 @@ import { isCreatureCard } from '../cardTypes.js';
  * Positive = good for the card owner, Negative = downside
  */
 export const KEYWORD_VALUES = {
-  [KEYWORDS.HASTE]: 12,        // Attack immediately - very strong
-  [KEYWORDS.BARRIER]: 10,      // Absorb one hit - defensive value
-  [KEYWORDS.AMBUSH]: 9,        // Safe trades when attacking
-  [KEYWORDS.TOXIC]: 15,        // Instant kill on damage - extremely strong
-  [KEYWORDS.NEUROTOXIC]: 12,   // Freeze applied until kills on end of next turn - very strong
-  [KEYWORDS.INVISIBLE]: 10,    // Can't be targeted at all
-  [KEYWORDS.HIDDEN]: 7,        // Can't be attacked
-  [KEYWORDS.IMMUNE]: 8,        // Only creature damage works
-  [KEYWORDS.LURE]: 6,          // Forces attacks (defensive value)
-  [KEYWORDS.SCAVENGE]: 5,      // Consume from carrion
-  [KEYWORDS.ACUITY]: 4,        // Target hidden/invisible
-  [KEYWORDS.FREE_PLAY]: 6,     // Doesn't use card limit
-  [KEYWORDS.POISONOUS]: 4,     // 1 damage to opponent each turn
-  [KEYWORDS.EDIBLE]: -3,       // Can be consumed by opponent
-  [KEYWORDS.PASSIVE]: -10,     // Cannot attack
-  [KEYWORDS.HARMLESS]: -12,    // 0 attack permanently
-  [KEYWORDS.FROZEN]: -15,      // Cannot act or be consumed for this turn
+  [KEYWORDS.HASTE]: 12, // Attack immediately - very strong
+  [KEYWORDS.BARRIER]: 10, // Absorb one hit - defensive value
+  [KEYWORDS.AMBUSH]: 9, // Safe trades when attacking
+  [KEYWORDS.TOXIC]: 15, // Instant kill on damage - extremely strong
+  [KEYWORDS.NEUROTOXIC]: 12, // Freeze applied until kills on end of next turn - very strong
+  [KEYWORDS.INVISIBLE]: 10, // Can't be targeted at all
+  [KEYWORDS.HIDDEN]: 7, // Can't be attacked
+  [KEYWORDS.IMMUNE]: 8, // Only creature damage works
+  [KEYWORDS.LURE]: 6, // Forces attacks (defensive value)
+  [KEYWORDS.SCAVENGE]: 5, // Consume from carrion
+  [KEYWORDS.ACUITY]: 4, // Target hidden/invisible
+  [KEYWORDS.FREE_PLAY]: 6, // Doesn't use card limit
+  [KEYWORDS.POISONOUS]: 4, // 1 damage to opponent each turn
+  [KEYWORDS.EDIBLE]: -3, // Can be consumed by opponent
+  [KEYWORDS.PASSIVE]: -10, // Cannot attack
+  [KEYWORDS.HARMLESS]: -12, // 0 attack permanently
+  [KEYWORDS.FROZEN]: -15, // Cannot act or be consumed for this turn
 };
 
 // ============================================================================
@@ -53,15 +53,15 @@ export const KEYWORD_VALUES = {
 const getEnemyCreatures = (ctx) => {
   if (!ctx?.state || ctx.aiPlayerIndex === undefined) return [];
   const opponent = ctx.state.players[1 - ctx.aiPlayerIndex];
-  return (opponent?.field || []).filter(c => c && c.currentHp > 0);
+  return (opponent?.field || []).filter((c) => c && c.currentHp > 0);
 };
 
 /**
  * Get opponent's creatures that can be attacked/targeted (not invisible)
  */
 const getTargetableEnemyCreatures = (ctx) => {
-  return getEnemyCreatures(ctx).filter(c =>
-    !hasKeyword(c, KEYWORDS.INVISIBLE) || hasKeyword(ctx.card, KEYWORDS.ACUITY)
+  return getEnemyCreatures(ctx).filter(
+    (c) => !hasKeyword(c, KEYWORDS.INVISIBLE) || hasKeyword(ctx.card, KEYWORDS.ACUITY)
   );
 };
 
@@ -69,14 +69,14 @@ const getTargetableEnemyCreatures = (ctx) => {
  * Get opponent's prey creatures
  */
 const getEnemyPrey = (ctx) => {
-  return getEnemyCreatures(ctx).filter(c => c.type === 'Prey');
+  return getEnemyCreatures(ctx).filter((c) => c.type === 'Prey');
 };
 
 /**
  * Get opponent's token creatures
  */
 const getEnemyTokens = (ctx) => {
-  return getEnemyCreatures(ctx).filter(c => c.isToken);
+  return getEnemyCreatures(ctx).filter((c) => c.isToken);
 };
 
 /**
@@ -85,15 +85,15 @@ const getEnemyTokens = (ctx) => {
 const getFriendlyCreatures = (ctx) => {
   if (!ctx?.state || ctx.aiPlayerIndex === undefined) return [];
   const ai = ctx.state.players[ctx.aiPlayerIndex];
-  return (ai?.field || []).filter(c => c && c.currentHp > 0);
+  return (ai?.field || []).filter((c) => c && c.currentHp > 0);
 };
 
 /**
  * Get AI's prey creatures (for consumption)
  */
 const getFriendlyPrey = (ctx) => {
-  return getFriendlyCreatures(ctx).filter(c =>
-    c.type === 'Prey' || hasKeyword(c, KEYWORDS.EDIBLE)
+  return getFriendlyCreatures(ctx).filter(
+    (c) => c.type === 'Prey' || hasKeyword(c, KEYWORDS.EDIBLE)
   );
 };
 
@@ -101,7 +101,7 @@ const getFriendlyPrey = (ctx) => {
  * Get AI's predators
  */
 const getFriendlyPredators = (ctx) => {
-  return getFriendlyCreatures(ctx).filter(c => c.type === 'Predator');
+  return getFriendlyCreatures(ctx).filter((c) => c.type === 'Predator');
 };
 
 /**
@@ -238,9 +238,9 @@ const getPotentialDamage = (ctx) => {
   if (!ai || !state) return 0;
 
   return ai.field
-    .filter(c => c && c.currentHp > 0 && !c.hasAttacked && !c.frozen && !c.paralyzed && !c.webbed)
-    .filter(c => !isPassive(c) && !hasKeyword(c, KEYWORDS.HARMLESS))
-    .filter(c => c.summonedTurn !== state.turn || hasHaste(c))
+    .filter((c) => c && c.currentHp > 0 && !c.hasAttacked && !c.frozen && !c.paralyzed && !c.webbed)
+    .filter((c) => !isPassive(c) && !hasKeyword(c, KEYWORDS.HARMLESS))
+    .filter((c) => c.summonedTurn !== state.turn || hasHaste(c))
     .reduce((sum, c) => sum + (c.currentAtk ?? c.atk ?? 0), 0);
 };
 
@@ -277,7 +277,7 @@ export const EFFECT_VALUES = {
   // RESOURCE EFFECTS
   // ========================
 
-  'heal': (ctx) => {
+  heal: (ctx) => {
     const amount = ctx.params?.amount || 1;
     const ai = getAI(ctx);
     if (!ai) return { value: amount * 3, reason: `heal ${amount} (no context)` };
@@ -319,7 +319,7 @@ export const EFFECT_VALUES = {
     return { value, reason: `heal ${effectiveHeal}/${amount} → ${value.toFixed(0)}${noteStr}` };
   },
 
-  'draw': (ctx) => {
+  draw: (ctx) => {
     const count = ctx.params?.count || 1;
     const ai = getAI(ctx);
     const gamePhase = analyzeGamePhase(ctx);
@@ -363,7 +363,7 @@ export const EFFECT_VALUES = {
     return { value, reason: `draw ${count} → ${value.toFixed(0)}${noteStr}` };
   },
 
-  'damageOpponent': (ctx) => {
+  damageOpponent: (ctx) => {
     const amount = ctx.params?.amount || 1;
     const opponent = getOpponent(ctx);
 
@@ -378,18 +378,24 @@ export const EFFECT_VALUES = {
     let bonus = '';
 
     // Damage is more valuable when opponent is low
-    if (opponent.hp <= 3) { value *= 1.5; bonus = ` (opp at ${opponent.hp} HP)`; }
-    else if (opponent.hp <= 5) { value *= 1.3; bonus = ` (opp at ${opponent.hp} HP)`; }
+    if (opponent.hp <= 3) {
+      value *= 1.5;
+      bonus = ` (opp at ${opponent.hp} HP)`;
+    } else if (opponent.hp <= 5) {
+      value *= 1.3;
+      bonus = ` (opp at ${opponent.hp} HP)`;
+    }
 
     return { value, reason: `${amount} dmg to opponent${bonus} → ${value.toFixed(0)}` };
   },
 
-  'damageBothPlayers': (ctx) => {
+  damageBothPlayers: (ctx) => {
     const amount = ctx.params?.amount || 1;
     const ai = getAI(ctx);
     const opponent = getOpponent(ctx);
 
-    if (!ai || !opponent) return { value: amount * 2, reason: `damage both ${amount} (no context)` };
+    if (!ai || !opponent)
+      return { value: amount * 2, reason: `damage both ${amount} (no context)` };
 
     // Bad if it would kill us
     if (amount >= ai.hp) {
@@ -398,22 +404,31 @@ export const EFFECT_VALUES = {
 
     // Good if it kills them first
     if (amount >= opponent.hp && amount < ai.hp) {
-      return { value: 80, reason: `${amount} dmg kills opponent (${opponent.hp} HP) but not us (${ai.hp}) → 80` };
+      return {
+        value: 80,
+        reason: `${amount} dmg kills opponent (${opponent.hp} HP) but not us (${ai.hp}) → 80`,
+      };
     }
 
     // Generally risky - only good if we're ahead on HP
     const hpDiff = ai.hp - opponent.hp;
     if (hpDiff > amount) {
-      return { value: amount * 3, reason: `${amount} dmg both, we lead by ${hpDiff} HP → ${amount * 3}` };
+      return {
+        value: amount * 3,
+        reason: `${amount} dmg both, we lead by ${hpDiff} HP → ${amount * 3}`,
+      };
     }
-    return { value: amount * 1, reason: `${amount} dmg both, risky (${ai.hp} vs ${opponent.hp}) → ${amount}` };
+    return {
+      value: amount * 1,
+      reason: `${amount} dmg both, risky (${ai.hp} vs ${opponent.hp}) → ${amount}`,
+    };
   },
 
   // ========================
   // TOKEN/SUMMONING EFFECTS
   // ========================
 
-  'summonTokens': (ctx) => {
+  summonTokens: (ctx) => {
     const count = Array.isArray(ctx.params?.tokenIds) ? ctx.params.tokenIds.length : 1;
 
     // Check if we have field space
@@ -421,16 +436,22 @@ export const EFFECT_VALUES = {
     const availableSpace = 7 - currentCreatures;
 
     if (availableSpace <= 0) {
-      return { value: -5, reason: `summon ${count} tokens: field full (${currentCreatures}/7) → -5` };
+      return {
+        value: -5,
+        reason: `summon ${count} tokens: field full (${currentCreatures}/7) → -5`,
+      };
     }
 
     // Value reduced if summoning more than we can fit
     const effectiveSummons = Math.min(count, availableSpace);
     const value = effectiveSummons * 6;
-    return { value, reason: `summon ${effectiveSummons}/${count} tokens (${currentCreatures} on field) → ${value}` };
+    return {
+      value,
+      reason: `summon ${effectiveSummons}/${count} tokens (${currentCreatures} on field) → ${value}`,
+    };
   },
 
-  'addToHand': (ctx) => {
+  addToHand: (ctx) => {
     const ai = getAI(ctx);
     if (ai && ai.hand?.length >= 7) {
       return { value: 2, reason: `add to hand: hand nearly full (${ai.hand.length}) → 2` };
@@ -442,7 +463,7 @@ export const EFFECT_VALUES = {
   // CREATURE DAMAGE/REMOVAL
   // ========================
 
-  'damageCreature': (ctx) => {
+  damageCreature: (ctx) => {
     const amount = ctx.params?.amount || 1;
     const enemies = getTargetableEnemyCreatures(ctx);
     if (enemies.length === 0) {
@@ -468,11 +489,11 @@ export const EFFECT_VALUES = {
     const killsTarget = bestTarget && amount >= (bestTarget.currentHp ?? bestTarget.hp ?? 0);
     return {
       value: bestValue,
-      reason: `${amount} dmg: ${enemies.length} targets, best=${bestTarget?.name || '?'}${killsTarget ? ' (kills)' : ''} → ${bestValue.toFixed(0)}`
+      reason: `${amount} dmg: ${enemies.length} targets, best=${bestTarget?.name || '?'}${killsTarget ? ' (kills)' : ''} → ${bestValue.toFixed(0)}`,
     };
   },
 
-  'damageAllCreatures': (ctx) => {
+  damageAllCreatures: (ctx) => {
     const amount = ctx.params?.amount || 1;
     const enemies = getEnemyCreatures(ctx);
     const friendlies = getFriendlyCreatures(ctx);
@@ -531,11 +552,11 @@ export const EFFECT_VALUES = {
     const noteStr = notes.length > 0 ? ` (${notes.join(', ')})` : '';
     return {
       value: netValue,
-      reason: `${amount}dmg all: ${enemyKills}/${enemies.length}e, ${friendlyKills}/${friendlies.length}f → ${netValue.toFixed(0)}${noteStr}`
+      reason: `${amount}dmg all: ${enemyKills}/${enemies.length}e, ${friendlyKills}/${friendlies.length}f → ${netValue.toFixed(0)}${noteStr}`,
     };
   },
 
-  'damageAllEnemyCreatures': (ctx) => {
+  damageAllEnemyCreatures: (ctx) => {
     const amount = ctx.params?.amount || 1;
     const enemies = getEnemyCreatures(ctx);
 
@@ -556,25 +577,25 @@ export const EFFECT_VALUES = {
     }
     return {
       value: totalValue,
-      reason: `${amount} dmg to ${enemies.length} enemies, kills ${kills} → ${totalValue.toFixed(0)}`
+      reason: `${amount} dmg to ${enemies.length} enemies, kills ${kills} → ${totalValue.toFixed(0)}`,
     };
   },
 
-  'killCreature': (ctx) => {
+  killCreature: (ctx) => {
     const enemies = getTargetableEnemyCreatures(ctx);
     if (enemies.length === 0) {
       return { value: 0, reason: `kill creature: 0 targetable enemies → 0` };
     }
 
     const bestValue = Math.max(...enemies.map(getCreatureValue));
-    const bestTarget = enemies.find(e => getCreatureValue(e) === bestValue);
+    const bestTarget = enemies.find((e) => getCreatureValue(e) === bestValue);
     return {
       value: bestValue,
-      reason: `kill: ${enemies.length} targets, best=${bestTarget?.name || '?'} → ${bestValue.toFixed(0)}`
+      reason: `kill: ${enemies.length} targets, best=${bestTarget?.name || '?'} → ${bestValue.toFixed(0)}`,
     };
   },
 
-  'killAll': (ctx) => {
+  killAll: (ctx) => {
     const enemies = getEnemyCreatures(ctx);
     const friendlies = getFriendlyCreatures(ctx);
     const gamePhase = analyzeGamePhase(ctx);
@@ -613,11 +634,11 @@ export const EFFECT_VALUES = {
     const noteStr = notes.length > 0 ? ` (${notes.join(', ')})` : '';
     return {
       value: netValue,
-      reason: `kill all: ${enemies.length}e vs ${friendlies.length}f → ${netValue.toFixed(0)}${noteStr}`
+      reason: `kill all: ${enemies.length}e vs ${friendlies.length}f → ${netValue.toFixed(0)}${noteStr}`,
     };
   },
 
-  'killAllEnemyCreatures': (ctx) => {
+  killAllEnemyCreatures: (ctx) => {
     const enemies = getEnemyCreatures(ctx);
     if (enemies.length === 0) {
       return { value: 0, reason: `kill all enemies: 0 enemies on field → 0` };
@@ -626,11 +647,11 @@ export const EFFECT_VALUES = {
     const totalValue = enemies.reduce((sum, c) => sum + getCreatureValue(c), 0);
     return {
       value: totalValue,
-      reason: `kill all ${enemies.length} enemies → ${totalValue.toFixed(0)}`
+      reason: `kill all ${enemies.length} enemies → ${totalValue.toFixed(0)}`,
     };
   },
 
-  'killEnemyTokens': (ctx) => {
+  killEnemyTokens: (ctx) => {
     const tokens = getEnemyTokens(ctx);
     if (tokens.length === 0) {
       return { value: 0, reason: `kill tokens: 0 enemy tokens → 0` };
@@ -639,11 +660,11 @@ export const EFFECT_VALUES = {
     const totalValue = tokens.reduce((sum, c) => sum + getCreatureValue(c), 0);
     return {
       value: totalValue,
-      reason: `kill ${tokens.length} enemy tokens → ${totalValue.toFixed(0)}`
+      reason: `kill ${tokens.length} enemy tokens → ${totalValue.toFixed(0)}`,
     };
   },
 
-  'destroyEverything': (ctx) => {
+  destroyEverything: (ctx) => {
     const enemies = getEnemyCreatures(ctx);
     const friendlies = getFriendlyCreatures(ctx);
 
@@ -653,7 +674,7 @@ export const EFFECT_VALUES = {
     const netValue = enemyValue - friendlyValue - 5;
     return {
       value: netValue,
-      reason: `destroy all: enemies=${enemyValue.toFixed(0)}, ours=${friendlyValue.toFixed(0)}, net=${netValue.toFixed(0)}`
+      reason: `destroy all: enemies=${enemyValue.toFixed(0)}, ours=${friendlyValue.toFixed(0)}, net=${netValue.toFixed(0)}`,
     };
   },
 
@@ -661,7 +682,7 @@ export const EFFECT_VALUES = {
   // STAT MODIFICATION
   // ========================
 
-  'buffStats': (ctx) => {
+  buffStats: (ctx) => {
     // Stats can be at params.attack/health OR params.stats.attack/health
     const atk = ctx.params?.stats?.attack || ctx.params?.attack || ctx.params?.atk || 0;
     const hp = ctx.params?.stats?.health || ctx.params?.health || ctx.params?.hp || 0;
@@ -674,10 +695,13 @@ export const EFFECT_VALUES = {
     }
 
     const value = (atk + hp) * 2.5;
-    return { value, reason: `buff +${atk}/+${hp} (${friendlies.length} creatures) → ${value.toFixed(0)}` };
+    return {
+      value,
+      reason: `buff +${atk}/+${hp} (${friendlies.length} creatures) → ${value.toFixed(0)}`,
+    };
   },
 
-  'buff': (ctx) => {
+  buff: (ctx) => {
     // Stats can be at params.attack/health OR params.stats.attack/health
     const atk = ctx.params?.stats?.attack || ctx.params?.attack || ctx.params?.atk || 0;
     const hp = ctx.params?.stats?.health || ctx.params?.health || ctx.params?.hp || 0;
@@ -689,14 +713,17 @@ export const EFFECT_VALUES = {
     }
 
     const value = (atk + hp) * 2.5;
-    return { value, reason: `buff +${atk}/+${hp} (${friendlies.length} creatures) → ${value.toFixed(0)}` };
+    return {
+      value,
+      reason: `buff +${atk}/+${hp} (${friendlies.length} creatures) → ${value.toFixed(0)}`,
+    };
   },
 
   // ========================
   // KEYWORDS
   // ========================
 
-  'grantKeyword': (ctx) => {
+  grantKeyword: (ctx) => {
     const keyword = ctx.params?.keyword;
     const friendlies = getFriendlyCreatures(ctx);
 
@@ -709,7 +736,7 @@ export const EFFECT_VALUES = {
     return { value, reason: `grant ${keyword} (${friendlies.length} creatures) → ${value}` };
   },
 
-  'addKeyword': (ctx) => {
+  addKeyword: (ctx) => {
     const keyword = ctx.params?.keyword;
     const friendlies = getFriendlyCreatures(ctx);
 
@@ -722,35 +749,31 @@ export const EFFECT_VALUES = {
     return { value, reason: `add ${keyword} (${friendlies.length} creatures) → ${value}` };
   },
 
-  'removeAbilities': (ctx) => {
+  removeAbilities: (ctx) => {
     const enemies = getTargetableEnemyCreatures(ctx);
     if (enemies.length === 0) {
       return { value: 0, reason: `remove abilities: 0 targetable enemies → 0` };
     }
 
-    const enemyKeywords = enemies.reduce((sum, c) =>
-      sum + (c.keywords?.length || 0), 0
-    );
+    const enemyKeywords = enemies.reduce((sum, c) => sum + (c.keywords?.length || 0), 0);
     const value = enemyKeywords > 0 ? 8 + enemyKeywords * 2 : 0;
     return {
       value,
-      reason: `remove abilities: ${enemies.length} enemies, ${enemyKeywords} keywords → ${value}`
+      reason: `remove abilities: ${enemies.length} enemies, ${enemyKeywords} keywords → ${value}`,
     };
   },
 
-  'removeAbilitiesAll': (ctx) => {
+  removeAbilitiesAll: (ctx) => {
     const enemies = getEnemyCreatures(ctx);
     if (enemies.length === 0) {
       return { value: 0, reason: `remove all abilities: 0 enemies → 0` };
     }
 
-    const enemyKeywords = enemies.reduce((sum, c) =>
-      sum + (c.keywords?.length || 0), 0
-    );
+    const enemyKeywords = enemies.reduce((sum, c) => sum + (c.keywords?.length || 0), 0);
     const value = enemyKeywords > 0 ? 12 + enemyKeywords * 2 : 0;
     return {
       value,
-      reason: `remove all abilities: ${enemies.length} enemies, ${enemyKeywords} keywords → ${value}`
+      reason: `remove all abilities: ${enemies.length} enemies, ${enemyKeywords} keywords → ${value}`,
     };
   },
 
@@ -758,12 +781,12 @@ export const EFFECT_VALUES = {
   // CONTROL EFFECTS
   // ========================
 
-  'freezeAllCreatures': (ctx) => {
+  freezeAllCreatures: (ctx) => {
     const enemies = getEnemyCreatures(ctx);
     const friendlies = getFriendlyCreatures(ctx);
 
-    const unfrozenEnemies = enemies.filter(c => !c.frozen);
-    const unfrozenFriendlies = friendlies.filter(c => !c.frozen);
+    const unfrozenEnemies = enemies.filter((c) => !c.frozen);
+    const unfrozenFriendlies = friendlies.filter((c) => !c.frozen);
 
     const enemyValue = unfrozenEnemies.length * 8;
     const friendlyValue = unfrozenFriendlies.length * 6;
@@ -771,12 +794,12 @@ export const EFFECT_VALUES = {
     const netValue = enemyValue - friendlyValue;
     return {
       value: netValue,
-      reason: `freeze all: ${unfrozenEnemies.length} enemies (+${enemyValue}), ${unfrozenFriendlies.length} ours (-${friendlyValue}) → ${netValue}`
+      reason: `freeze all: ${unfrozenEnemies.length} enemies (+${enemyValue}), ${unfrozenFriendlies.length} ours (-${friendlyValue}) → ${netValue}`,
     };
   },
 
-  'freezeAllEnemies': (ctx) => {
-    const enemies = getEnemyCreatures(ctx).filter(c => !c.frozen);
+  freezeAllEnemies: (ctx) => {
+    const enemies = getEnemyCreatures(ctx).filter((c) => !c.frozen);
     if (enemies.length === 0) {
       return { value: 0, reason: `freeze enemies: 0 unfrozen enemies → 0` };
     }
@@ -813,41 +836,43 @@ export const EFFECT_VALUES = {
     const noteStr = notes.length > 0 ? ` (${notes.join(', ')})` : '';
     return {
       value,
-      reason: `freeze ${enemies.length} enemies → ${value.toFixed(0)}${noteStr}`
+      reason: `freeze ${enemies.length} enemies → ${value.toFixed(0)}${noteStr}`,
     };
   },
 
-  'stealCreature': (ctx) => {
+  stealCreature: (ctx) => {
     const enemies = getTargetableEnemyCreatures(ctx);
     if (enemies.length === 0) {
       return { value: 0, reason: `steal: 0 targetable enemies → 0` };
     }
 
     const bestValue = Math.max(...enemies.map(getCreatureValue));
-    const bestTarget = enemies.find(e => getCreatureValue(e) === bestValue);
+    const bestTarget = enemies.find((e) => getCreatureValue(e) === bestValue);
     const value = bestValue * 2;
     return {
       value,
-      reason: `steal: best=${bestTarget?.name || '?'} (val=${bestValue.toFixed(0)}×2) → ${value.toFixed(0)}`
+      reason: `steal: best=${bestTarget?.name || '?'} (val=${bestValue.toFixed(0)}×2) → ${value.toFixed(0)}`,
     };
   },
 
-  'returnToHand': (ctx) => {
+  returnToHand: (ctx) => {
     const enemies = getTargetableEnemyCreatures(ctx);
     if (enemies.length === 0) {
       return { value: 0, reason: `bounce: 0 targetable enemies → 0` };
     }
 
-    const bestValue = Math.max(...enemies.map(c => getCreatureValue(c) * 0.7));
-    const bestTarget = enemies.reduce((best, e) =>
-      getCreatureValue(e) > getCreatureValue(best) ? e : best, enemies[0]);
+    const bestValue = Math.max(...enemies.map((c) => getCreatureValue(c) * 0.7));
+    const bestTarget = enemies.reduce(
+      (best, e) => (getCreatureValue(e) > getCreatureValue(best) ? e : best),
+      enemies[0]
+    );
     return {
       value: bestValue,
-      reason: `bounce: ${enemies.length} targets, best=${bestTarget?.name || '?'} → ${bestValue.toFixed(0)}`
+      reason: `bounce: ${enemies.length} targets, best=${bestTarget?.name || '?'} → ${bestValue.toFixed(0)}`,
     };
   },
 
-  'returnAllEnemies': (ctx) => {
+  returnAllEnemies: (ctx) => {
     const enemies = getEnemyCreatures(ctx);
     if (enemies.length === 0) {
       return { value: 0, reason: `bounce all: 0 enemies on field → 0` };
@@ -859,7 +884,7 @@ export const EFFECT_VALUES = {
 
     return {
       value,
-      reason: `bounce ${enemies.length} enemies (${enemies.map(e => e.name).join(', ')}): ${totalValue.toFixed(0)} + multi ${multiBonus} → ${value.toFixed(0)}`
+      reason: `bounce ${enemies.length} enemies (${enemies.map((e) => e.name).join(', ')}): ${totalValue.toFixed(0)} + multi ${multiBonus} → ${value.toFixed(0)}`,
     };
   },
 
@@ -867,23 +892,23 @@ export const EFFECT_VALUES = {
   // COMBAT MODIFIERS (TRAPS)
   // ========================
 
-  'negateAttack': () => ({ value: 12, reason: `negate attack → 12` }),
-  'negateDamage': () => ({ value: 10, reason: `negate damage → 10` }),
-  'negateCombat': () => ({ value: 12, reason: `negate combat → 12` }),
-  'killAttacker': () => ({ value: 15, reason: `kill attacker → 15` }),
-  'negateAndKillAttacker': () => ({ value: 22, reason: `negate & kill attacker → 22` }),
+  negateAttack: () => ({ value: 12, reason: `negate attack → 12` }),
+  negateDamage: () => ({ value: 10, reason: `negate damage → 10` }),
+  negateCombat: () => ({ value: 12, reason: `negate combat → 12` }),
+  killAttacker: () => ({ value: 15, reason: `kill attacker → 15` }),
+  negateAndKillAttacker: () => ({ value: 22, reason: `negate & kill attacker → 22` }),
 
   // ========================
   // CARD ADVANTAGE
   // ========================
 
-  'discardCards': (ctx) => {
+  discardCards: (ctx) => {
     const count = ctx.params?.count || 1;
     const value = -(count * 6);
     return { value, reason: `discard ${count} cards (cost) → ${value}` };
   },
 
-  'forceOpponentDiscard': (ctx) => {
+  forceOpponentDiscard: (ctx) => {
     const count = ctx.params?.count || 1;
     const opponent = getOpponent(ctx);
 
@@ -898,24 +923,27 @@ export const EFFECT_VALUES = {
 
     const effectiveDiscard = Math.min(count, oppHand);
     const value = effectiveDiscard * 5;
-    return { value, reason: `force discard ${effectiveDiscard}/${count} (opp has ${oppHand}) → ${value}` };
+    return {
+      value,
+      reason: `force discard ${effectiveDiscard}/${count} (opp has ${oppHand}) → ${value}`,
+    };
   },
 
-  'revealHand': () => ({ value: 3, reason: `reveal hand → 3` }),
-  'tutor': () => ({ value: 10, reason: `tutor → 10` }),
-  'tutorFromDeck': () => ({ value: 10, reason: `tutor from deck → 10` }),
+  revealHand: () => ({ value: 3, reason: `reveal hand → 3` }),
+  tutor: () => ({ value: 10, reason: `tutor → 10` }),
+  tutorFromDeck: () => ({ value: 10, reason: `tutor from deck → 10` }),
 
   // ========================
   // TRANSFORM/COPY
   // ========================
 
-  'transformCard': () => ({ value: 5, reason: `transform → 5` }),
-  'copyAbilities': (ctx) => {
+  transformCard: () => ({ value: 5, reason: `transform → 5` }),
+  copyAbilities: (ctx) => {
     const enemies = getEnemyCreatures(ctx);
     const friendlies = getFriendlyCreatures(ctx);
     const allCreatures = [...enemies, ...friendlies];
 
-    const maxKeywords = Math.max(0, ...allCreatures.map(c => c.keywords?.length || 0));
+    const maxKeywords = Math.max(0, ...allCreatures.map((c) => c.keywords?.length || 0));
     const value = maxKeywords > 0 ? 5 + maxKeywords * 3 : 2;
     return { value, reason: `copy abilities: max ${maxKeywords} keywords on field → ${value}` };
   },
@@ -924,7 +952,7 @@ export const EFFECT_VALUES = {
   // COMPOSITE/META EFFECTS
   // ========================
 
-  'composite': (ctx) => {
+  composite: (ctx) => {
     if (!ctx.params?.effects || !Array.isArray(ctx.params.effects)) {
       return { value: 5, reason: `composite (no sub-effects) → 5` };
     }
@@ -938,7 +966,8 @@ export const EFFECT_VALUES = {
         const subCtx = { ...ctx, params: effect?.params || {} };
         const result = evaluator(subCtx);
         const subValue = typeof result === 'object' ? result.value : result;
-        const subReason = typeof result === 'object' ? result.reason : `${effect?.type}: ${subValue}`;
+        const subReason =
+          typeof result === 'object' ? result.reason : `${effect?.type}: ${subValue}`;
         totalValue += subValue;
         subReasons.push(subReason);
       }
@@ -946,7 +975,7 @@ export const EFFECT_VALUES = {
 
     return {
       value: totalValue,
-      reason: `composite: [${subReasons.join(' + ')}] → ${totalValue.toFixed(0)}`
+      reason: `composite: [${subReasons.join(' + ')}] → ${totalValue.toFixed(0)}`,
     };
   },
 
@@ -954,7 +983,7 @@ export const EFFECT_VALUES = {
   // SELECTION EFFECTS (user picks target)
   // ========================
 
-  'selectTarget': (ctx) => {
+  selectTarget: (ctx) => {
     const enemies = getTargetableEnemyCreatures(ctx);
     if (enemies.length === 0) {
       return { value: 0, reason: `select target: 0 enemies → 0` };
@@ -962,7 +991,7 @@ export const EFFECT_VALUES = {
     return { value: 8, reason: `select target: ${enemies.length} enemies → 8` };
   },
 
-  'selectConsume': (ctx) => {
+  selectConsume: (ctx) => {
     const prey = getFriendlyPrey(ctx);
     if (prey.length === 0) {
       return { value: 0, reason: `select consume: 0 prey → 0` };
@@ -970,7 +999,7 @@ export const EFFECT_VALUES = {
     return { value: 6, reason: `select consume: ${prey.length} prey → 6` };
   },
 
-  'selectEnemyPreyToKill': (ctx) => {
+  selectEnemyPreyToKill: (ctx) => {
     const enemyPrey = getEnemyPrey(ctx);
     if (enemyPrey.length === 0) {
       return { value: 0, reason: `kill enemy prey: 0 prey → 0` };
@@ -979,18 +1008,18 @@ export const EFFECT_VALUES = {
     return { value, reason: `kill enemy prey: ${enemyPrey.length} targets → ${value.toFixed(0)}` };
   },
 
-  'selectEnemyToKill': (ctx) => {
+  selectEnemyToKill: (ctx) => {
     const enemies = getTargetableEnemyCreatures(ctx);
     if (enemies.length === 0) {
       return { value: 0, reason: `select enemy to kill: 0 targets → 0` };
     }
     const value = Math.max(...enemies.map(getCreatureValue));
-    const bestTarget = enemies.find(e => getCreatureValue(e) === value);
+    const bestTarget = enemies.find((e) => getCreatureValue(e) === value);
     return { value, reason: `select kill: best=${bestTarget?.name || '?'} → ${value.toFixed(0)}` };
   },
 
-  'selectEnemyToFreeze': (ctx) => {
-    const enemies = getTargetableEnemyCreatures(ctx).filter(c => !c.frozen);
+  selectEnemyToFreeze: (ctx) => {
+    const enemies = getTargetableEnemyCreatures(ctx).filter((c) => !c.frozen);
     if (enemies.length === 0) {
       return { value: 0, reason: `select freeze: 0 unfrozen targets → 0` };
     }
@@ -1005,10 +1034,13 @@ export const EFFECT_VALUES = {
         bestTarget = enemy;
       }
     }
-    return { value: bestValue, reason: `select freeze: best=${bestTarget?.name || '?'} → ${bestValue}` };
+    return {
+      value: bestValue,
+      reason: `select freeze: best=${bestTarget?.name || '?'} → ${bestValue}`,
+    };
   },
 
-  'selectEnemyToParalyze': (ctx) => {
+  selectEnemyToParalyze: (ctx) => {
     const enemies = getTargetableEnemyCreatures(ctx);
     if (enemies.length === 0) {
       return { value: 0, reason: `select paralyze: 0 targets → 0` };
@@ -1016,27 +1048,27 @@ export const EFFECT_VALUES = {
     return { value: 10, reason: `select paralyze: ${enemies.length} targets → 10` };
   },
 
-  'selectEnemyToSteal': (ctx) => {
+  selectEnemyToSteal: (ctx) => {
     const enemies = getTargetableEnemyCreatures(ctx);
     if (enemies.length === 0) {
       return { value: 0, reason: `select steal: 0 targets → 0` };
     }
-    const value = Math.max(...enemies.map(c => getCreatureValue(c) * 2));
+    const value = Math.max(...enemies.map((c) => getCreatureValue(c) * 2));
     return { value, reason: `select steal: ${enemies.length} targets → ${value.toFixed(0)}` };
   },
 
-  'selectEnemyToStripAbilities': (ctx) => {
+  selectEnemyToStripAbilities: (ctx) => {
     const enemies = getTargetableEnemyCreatures(ctx);
     if (enemies.length === 0) {
       return { value: 0, reason: `strip abilities: 0 targets → 0` };
     }
 
-    const maxKeywords = Math.max(0, ...enemies.map(c => c.keywords?.length || 0));
+    const maxKeywords = Math.max(0, ...enemies.map((c) => c.keywords?.length || 0));
     const value = maxKeywords > 0 ? 8 : 0;
     return { value, reason: `strip abilities: max ${maxKeywords} keywords → ${value}` };
   },
 
-  'selectCreatureForDamage': (ctx) => {
+  selectCreatureForDamage: (ctx) => {
     const amount = ctx.params?.amount || 2;
     const enemies = getTargetableEnemyCreatures(ctx);
     if (enemies.length === 0) {
@@ -1056,11 +1088,11 @@ export const EFFECT_VALUES = {
     const kills = bestTarget && amount >= (bestTarget.currentHp ?? bestTarget.hp ?? 0);
     return {
       value: bestValue,
-      reason: `${amount} dmg select: best=${bestTarget?.name || '?'}${kills ? ' (kills)' : ''} → ${bestValue.toFixed(0)}`
+      reason: `${amount} dmg select: best=${bestTarget?.name || '?'}${kills ? ' (kills)' : ''} → ${bestValue.toFixed(0)}`,
     };
   },
 
-  'selectTargetForDamage': (ctx) => {
+  selectTargetForDamage: (ctx) => {
     const amount = ctx.params?.amount || 2;
     const enemies = getTargetableEnemyCreatures(ctx);
     const opponent = getOpponent(ctx);
@@ -1078,16 +1110,16 @@ export const EFFECT_VALUES = {
     }
     return {
       value: bestValue,
-      reason: `${amount} dmg any: best=${bestChoice || '?'} → ${bestValue.toFixed(0)}`
+      reason: `${amount} dmg any: best=${bestChoice || '?'} → ${bestValue.toFixed(0)}`,
     };
   },
 
-  'selectEnemyToReturn': (ctx) => {
+  selectEnemyToReturn: (ctx) => {
     const enemies = getTargetableEnemyCreatures(ctx);
     if (enemies.length === 0) {
       return { value: 0, reason: `select bounce: 0 targets → 0` };
     }
-    const value = Math.max(...enemies.map(c => getCreatureValue(c) * 0.7));
+    const value = Math.max(...enemies.map((c) => getCreatureValue(c) * 0.7));
     return { value, reason: `select bounce: ${enemies.length} targets → ${value.toFixed(0)}` };
   },
 
@@ -1095,14 +1127,14 @@ export const EFFECT_VALUES = {
   // FIELD SPELLS
   // ========================
 
-  'setFieldSpell': () => ({ value: 8, reason: `set field spell → 8` }),
-  'destroyFieldSpells': () => ({ value: 6, reason: `destroy field spells → 6` }),
+  setFieldSpell: () => ({ value: 8, reason: `set field spell → 8` }),
+  destroyFieldSpells: () => ({ value: 6, reason: `destroy field spells → 6` }),
 
   // ========================
   // DEFAULT FALLBACK
   // ========================
 
-  'default': (ctx) => ({ value: 5, reason: `${ctx?.effectDef?.type || 'unknown'} (default) → 5` }),
+  default: (ctx) => ({ value: 5, reason: `${ctx?.effectDef?.type || 'unknown'} (default) → 5` }),
 };
 
 // ============================================================================
@@ -1140,14 +1172,12 @@ export class CardKnowledgeBase {
 
       // Add keyword values
       value += this.getKeywordValue(card.keywords);
-
     } else if (card.type === 'Spell' || card.type === 'Free Spell') {
       // Spells: base value + effect value (calculated separately)
       value = 5;
       if (card.type === 'Free Spell') {
         value += 4; // Free spells are more efficient
       }
-
     } else if (card.type === 'Trap') {
       // Traps: reactive value
       value = 8;
@@ -1250,12 +1280,12 @@ export class CardKnowledgeBase {
     if (!card || !field) return 0;
 
     let bonus = 0;
-    const activeField = field.filter(c => c);
+    const activeField = field.filter((c) => c);
 
     // Predator synergy: having prey to consume
     if (card.type === 'Predator') {
-      const preyCount = activeField.filter(c =>
-        c.type === 'Prey' || (c.type === 'Predator' && c.keywords?.includes(KEYWORDS.EDIBLE))
+      const preyCount = activeField.filter(
+        (c) => c.type === 'Prey' || (c.type === 'Predator' && c.keywords?.includes(KEYWORDS.EDIBLE))
       ).length;
 
       if (preyCount > 0) {
@@ -1268,9 +1298,7 @@ export class CardKnowledgeBase {
     // Keyword synergies
     if (card.keywords?.includes(KEYWORDS.LURE)) {
       // Lure is better when we have other valuable creatures
-      const valuableCreatures = activeField.filter(c =>
-        (c.currentAtk || c.atk || 0) >= 3
-      ).length;
+      const valuableCreatures = activeField.filter((c) => (c.currentAtk || c.atk || 0) >= 3).length;
       bonus += valuableCreatures * 3;
     }
 

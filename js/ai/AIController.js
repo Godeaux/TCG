@@ -14,12 +14,31 @@
  */
 
 import { canPlayCard, cardLimitAvailable } from '../game/turnManager.js';
-import { getValidTargets, resolveCreatureCombat, resolveDirectAttack, cleanupDestroyed, hasBeforeCombatEffect } from '../game/combat.js';
-import { isFreePlay, isPassive, isHarmless, isEdible, isInedible, hasScavenge, hasHaste } from '../keywords.js';
+import {
+  getValidTargets,
+  resolveCreatureCombat,
+  resolveDirectAttack,
+  cleanupDestroyed,
+  hasBeforeCombatEffect,
+} from '../game/combat.js';
+import {
+  isFreePlay,
+  isPassive,
+  isHarmless,
+  isEdible,
+  isInedible,
+  hasScavenge,
+  hasHaste,
+} from '../keywords.js';
 import { isCreatureCard, createCardInstance } from '../cardTypes.js';
 import { logMessage, queueVisualEffect } from '../state/gameState.js';
 import { consumePrey } from '../game/consumption.js';
-import { simulateAICardPlay, simulateAICardDrag, simulateAICombatSequence, clearAIVisuals } from './aiVisuals.js';
+import {
+  simulateAICardPlay,
+  simulateAICardDrag,
+  simulateAICombatSequence,
+  clearAIVisuals,
+} from './aiVisuals.js';
 import { resolveCardEffect } from '../cards/index.js';
 import { resolveEffectResult } from '../game/effects.js';
 import { createReactionWindow, TRIGGER_EVENTS } from '../game/triggers/index.js';
@@ -44,11 +63,11 @@ import { AIWorkerManager } from './AIWorkerManager.js';
 
 // Normal delays (turtle mode in AI vs AI)
 const AI_DELAYS = {
-  THINKING: { min: 500, max: 1500 },      // Initial "thinking" delay
-  BETWEEN_ACTIONS: { min: 500, max: 1200 },  // Delay between each action
-  END_TURN: { min: 300, max: 600 },      // Delay before ending turn
-  PHASE_ADVANCE: 300,  // Fixed delay for phase advances
-  TRAP_CONSIDERATION: 1000,  // "AI is considering..." delay for trap decisions
+  THINKING: { min: 500, max: 1500 }, // Initial "thinking" delay
+  BETWEEN_ACTIONS: { min: 500, max: 1200 }, // Delay between each action
+  END_TURN: { min: 300, max: 600 }, // Delay before ending turn
+  PHASE_ADVANCE: 300, // Fixed delay for phase advances
+  TRAP_CONSIDERATION: 1000, // "AI is considering..." delay for trap decisions
 };
 
 // Instant mode delays (bunny mode in AI vs AI) - minimal delays to prevent race conditions
@@ -106,7 +125,9 @@ export class AIController {
     try {
       await this.workerManager.init();
       this.workerInitialized = true;
-      console.log(`[${this.playerLabel}] AI Worker initialized: ${this.workerManager.isWorkerAvailable() ? 'ready' : 'fallback mode'}`);
+      console.log(
+        `[${this.playerLabel}] AI Worker initialized: ${this.workerManager.isWorkerAvailable() ? 'ready' : 'fallback mode'}`
+      );
     } catch (error) {
       console.warn(`[${this.playerLabel}] AI Worker init failed:`, error);
     }
@@ -129,19 +150,20 @@ export class AIController {
    * @returns {{move: Object, score: number, stats: Object}|null}
    */
   findBestMoveWithSearch(state, options = {}) {
-    const {
-      maxTimeMs = this.difficulty.getSearchTime?.() ?? 2000,
-      verbose = this.verboseLogging
-    } = options;
+    const { maxTimeMs = this.difficulty.getSearchTime?.() ?? 2000, verbose = this.verboseLogging } =
+      options;
 
     try {
       const result = this.gameTreeSearch.findBestMove(state, this.playerIndex, {
         maxTimeMs,
-        verbose
+        verbose,
       });
 
       if (verbose && result.move) {
-        this.logThought(state, `[Search] Found: ${this.moveGenerator.describeMove(result.move)} (score: ${result.score})`);
+        this.logThought(
+          state,
+          `[Search] Found: ${this.moveGenerator.describeMove(result.move)} (score: ${result.score})`
+        );
         console.log(`[${this.playerLabel}] Search stats: ${this.gameTreeSearch.getStatsString()}`);
       }
 
@@ -161,10 +183,8 @@ export class AIController {
    * @returns {Promise<{move: Object, score: number, stats: Object}|null>}
    */
   async findBestMoveWithSearchAsync(state, options = {}) {
-    const {
-      maxTimeMs = this.difficulty.getSearchTime?.() ?? 2000,
-      verbose = this.verboseLogging
-    } = options;
+    const { maxTimeMs = this.difficulty.getSearchTime?.() ?? 2000, verbose = this.verboseLogging } =
+      options;
 
     try {
       // Ensure worker is initialized
@@ -173,16 +193,20 @@ export class AIController {
       // Use worker manager for non-blocking search
       const result = await this.workerManager.search(state, this.playerIndex, {
         maxTimeMs,
-        verbose
+        verbose,
       });
 
       if (verbose && result.move) {
         const moveDesc = result.moveDescription || this.moveGenerator.describeMove(result.move);
         this.logThought(state, `[Search] Found: ${moveDesc} (score: ${result.score})`);
         if (this.workerManager.isWorkerAvailable()) {
-          console.log(`[${this.playerLabel}] Search via Worker - stats: Depth ${result.depth}, ${result.timeMs}ms`);
+          console.log(
+            `[${this.playerLabel}] Search via Worker - stats: Depth ${result.depth}, ${result.timeMs}ms`
+          );
         } else {
-          console.log(`[${this.playerLabel}] Search stats: ${this.gameTreeSearch.getStatsString()}`);
+          console.log(
+            `[${this.playerLabel}] Search stats: ${this.gameTreeSearch.getStatsString()}`
+          );
         }
       }
 
@@ -278,7 +302,9 @@ export class AIController {
     }
 
     if (!this.isAITurn(state)) {
-      console.log(`[${this.playerLabel}] Not AI turn (active: ${state.activePlayerIndex}, mine: ${this.playerIndex}), skipping`);
+      console.log(
+        `[${this.playerLabel}] Not AI turn (active: ${state.activePlayerIndex}, mine: ${this.playerIndex}), skipping`
+      );
       return;
     }
 
@@ -288,10 +314,12 @@ export class AIController {
 
     console.log(`[${this.playerLabel}] === STARTING TURN ===`);
     console.log(`[${this.playerLabel}] Phase: ${state.phase}, Turn: ${state.turn}`);
-    console.log(`[${this.playerLabel}] Hand size: ${player.hand.length}, Field slots filled: ${player.field.filter(s => s).length}/3`);
+    console.log(
+      `[${this.playerLabel}] Hand size: ${player.hand.length}, Field slots filled: ${player.field.filter((s) => s).length}/3`
+    );
 
     this.logThought(state, `Starting turn ${state.turn}, phase: ${state.phase}`);
-    this.logThought(state, `Hand: ${player.hand.map(c => c.name).join(', ') || 'empty'}`);
+    this.logThought(state, `Hand: ${player.hand.map((c) => c.name).join(', ') || 'empty'}`);
 
     try {
       // Initial thinking delay
@@ -299,16 +327,22 @@ export class AIController {
 
       // Advance through early phases to get to Main 1
       // Phase order: Start → Draw → Main 1 → Before Combat → Combat → Main 2 → End
-      console.log(`[${this.playerLabel}] About to advance through early phases. Current phase: ${state.phase}`);
+      console.log(
+        `[${this.playerLabel}] About to advance through early phases. Current phase: ${state.phase}`
+      );
       let phaseLoopCount = 0;
       while (state.phase === 'Start' || state.phase === 'Draw') {
         phaseLoopCount++;
         if (phaseLoopCount > 10) {
-          console.error(`[${this.playerLabel}] Phase loop exceeded 10 iterations! Breaking to prevent infinite loop.`);
+          console.error(
+            `[${this.playerLabel}] Phase loop exceeded 10 iterations! Breaking to prevent infinite loop.`
+          );
           break;
         }
         const phaseBefore = state.phase;
-        console.log(`[${this.playerLabel}] Phase loop iteration ${phaseLoopCount}, calling onAdvancePhase from phase: ${phaseBefore}`);
+        console.log(
+          `[${this.playerLabel}] Phase loop iteration ${phaseLoopCount}, calling onAdvancePhase from phase: ${phaseBefore}`
+        );
         callbacks.onAdvancePhase?.();
         console.log(`[${this.playerLabel}] After onAdvancePhase, phase is now: ${state.phase}`);
         await this.delay(delays.PHASE_ADVANCE, state);
@@ -341,7 +375,6 @@ export class AIController {
       this.logThought(state, `Ending turn`);
       await this.delay(delays.END_TURN, state);
       callbacks.onEndTurn?.();
-
     } catch (error) {
       console.error(`[${this.playerLabel}] Error during turn:`, error);
     } finally {
@@ -359,17 +392,27 @@ export class AIController {
     let actionsRemaining = 10; // Safety limit
     const attemptedCards = new Set(); // Track attempted cards to prevent infinite loops
 
-    console.log(`[${this.playerLabel}] executePlayPhase - phase: ${state.phase}, cardPlayedThisTurn: ${state.cardPlayedThisTurn}`);
-    console.log(`[${this.playerLabel}] Hand: ${player.hand.map(c => c.name).join(', ')}`);
-    console.log(`[${this.playerLabel}] Field: ${player.field.map(c => c?.name || 'empty').join(', ')}`);
+    console.log(
+      `[${this.playerLabel}] executePlayPhase - phase: ${state.phase}, cardPlayedThisTurn: ${state.cardPlayedThisTurn}`
+    );
+    console.log(`[${this.playerLabel}] Hand: ${player.hand.map((c) => c.name).join(', ')}`);
+    console.log(
+      `[${this.playerLabel}] Field: ${player.field.map((c) => c?.name || 'empty').join(', ')}`
+    );
 
     // Strategic analysis at start of play phase
     if (this.difficulty.isEnabled('threatDetection')) {
       const dangerLevel = this.threatDetector.assessDangerLevel(state, this.playerIndex);
       if (dangerLevel.level === 'critical') {
-        this.logStrategicThought(state, `DANGER! ${dangerLevel.lethal.damage} damage incoming - need defense!`);
+        this.logStrategicThought(
+          state,
+          `DANGER! ${dangerLevel.lethal.damage} damage incoming - need defense!`
+        );
       } else if (dangerLevel.level === 'danger') {
-        this.logStrategicThought(state, `Caution: ${dangerLevel.lethal.damage} potential damage on board`);
+        this.logStrategicThought(
+          state,
+          `Caution: ${dangerLevel.lethal.damage} potential damage on board`
+        );
       }
 
       // Check for our lethal
@@ -399,17 +442,19 @@ export class AIController {
 
       // Safety check: prevent attempting the same card twice (indicates a bug)
       if (attemptedCards.has(cardToPlay.instanceId)) {
-        console.error(`[${this.playerLabel}] BUG: Attempted to play same card twice: ${cardToPlay.name}`);
+        console.error(
+          `[${this.playerLabel}] BUG: Attempted to play same card twice: ${cardToPlay.name}`
+        );
         this.logThought(state, `Error: Card selection loop detected, stopping`);
         break;
       }
       attemptedCards.add(cardToPlay.instanceId);
 
       // Find the card's index in hand for visual simulation
-      const cardIndex = player.hand.findIndex(c => c.instanceId === cardToPlay.instanceId);
+      const cardIndex = player.hand.findIndex((c) => c.instanceId === cardToPlay.instanceId);
 
       // Find empty field slot (needed for creatures and drag animation)
-      const emptySlot = player.field.findIndex(slot => slot === null);
+      const emptySlot = player.field.findIndex((slot) => slot === null);
       if (emptySlot === -1 && isCreatureCard(cardToPlay)) {
         this.logThought(state, `Field is full, cannot play creatures`);
         break;
@@ -435,10 +480,15 @@ export class AIController {
       }
 
       // Verify card was removed from hand (diagnostic check)
-      const stillInHand = player.hand.some(c => c.instanceId === cardToPlay.instanceId);
+      const stillInHand = player.hand.some((c) => c.instanceId === cardToPlay.instanceId);
       if (stillInHand) {
-        console.error(`[${this.playerLabel}] BUG: Card ${cardToPlay.name} still in hand after successful play!`);
-        console.error(`[${this.playerLabel}] Hand instanceIds:`, player.hand.map(c => c.instanceId));
+        console.error(
+          `[${this.playerLabel}] BUG: Card ${cardToPlay.name} still in hand after successful play!`
+        );
+        console.error(
+          `[${this.playerLabel}] Hand instanceIds:`,
+          player.hand.map((c) => c.instanceId)
+        );
         console.error(`[${this.playerLabel}] Card instanceId:`, cardToPlay.instanceId);
         break; // Prevent infinite loop
       }
@@ -483,7 +533,7 @@ export class AIController {
       // UI remains fully responsive during the search
       const searchResult = await this.findBestMoveWithSearchAsync(state, {
         maxTimeMs: this.difficulty.getSearchTime(),
-        verbose: this.verboseLogging
+        verbose: this.verboseLogging,
       });
 
       // Clear the timer and searching state
@@ -503,7 +553,10 @@ export class AIController {
 
       // Check move type
       if (move.type === 'END_TURN') {
-        this.logThought(state, `[Expert] Best action is to end turn (score: ${searchResult.score.toFixed(0)})`);
+        this.logThought(
+          state,
+          `[Expert] Best action is to end turn (score: ${searchResult.score.toFixed(0)})`
+        );
         break;
       }
 
@@ -521,10 +574,14 @@ export class AIController {
         const statsStr = this.difficulty.isEnabled('showSearchStats')
           ? ` [depth ${searchResult.depth}, nodes ${searchResult.stats?.nodes || 0}]`
           : '';
-        this.logThought(state, `[Expert] Playing: ${card.name} (score: ${searchResult.score.toFixed(0)})${statsStr}`, true);
+        this.logThought(
+          state,
+          `[Expert] Playing: ${card.name} (score: ${searchResult.score.toFixed(0)})${statsStr}`,
+          true
+        );
 
         // Visual animation
-        const cardIndex = player.hand.findIndex(c => c.instanceId === card.instanceId);
+        const cardIndex = player.hand.findIndex((c) => c.instanceId === card.instanceId);
         if (cardIndex >= 0) {
           if (isCreatureCard(card) && slot !== null && slot >= 0) {
             await simulateAICardDrag(cardIndex, slot, state, this.playerIndex);
@@ -560,25 +617,31 @@ export class AIController {
 
     // Check if we can play cards in this phase
     if (!canPlayCard(state)) {
-      console.log(`[${this.playerLabel}] selectCardToPlay: canPlayCard returned false (phase: ${state.phase}, setup: ${state.setup?.stage})`);
+      console.log(
+        `[${this.playerLabel}] selectCardToPlay: canPlayCard returned false (phase: ${state.phase}, setup: ${state.setup?.stage})`
+      );
       return null;
     }
 
     // Find available prey for consumption (needed to check if Free Play predators can be played)
-    const availablePrey = player.field.filter(c =>
-      c && !c.frozen && !isInedible(c) && (c.type === 'Prey' || (c.type === 'Predator' && isEdible(c)))
+    const availablePrey = player.field.filter(
+      (c) =>
+        c &&
+        !c.frozen &&
+        !isInedible(c) &&
+        (c.type === 'Prey' || (c.type === 'Predator' && isEdible(c)))
     );
     const hasConsumablePrey = availablePrey.length > 0;
 
     // Filter to playable cards (respect card limit unless free play)
     // IMPORTANT: Traps CANNOT be played - they trigger automatically from hand
-    const playableCards = hand.filter(card => {
+    const playableCards = hand.filter((card) => {
       // Traps are never "playable" - they trigger automatically when conditions are met
-      if (card.type === "Trap") {
+      if (card.type === 'Trap') {
         return false;
       }
 
-      const isFree = card.type === "Free Spell" || isFreePlay(card);
+      const isFree = card.type === 'Free Spell' || isFreePlay(card);
 
       // If card limit not used, any non-trap card is playable
       if (!state.cardPlayedThisTurn) {
@@ -592,14 +655,16 @@ export class AIController {
 
       // Free Play predators require prey to consume when card limit is used
       // (dry-dropped predators lose Free Play, so they'd violate the card limit)
-      if (card.type === "Predator" && isFreePlay(card) && !hasConsumablePrey) {
+      if (card.type === 'Predator' && isFreePlay(card) && !hasConsumablePrey) {
         return false;
       }
 
       return true;
     });
 
-    console.log(`[${this.playerLabel}] selectCardToPlay: hand has ${hand.length} cards, ${playableCards.length} playable (cardPlayedThisTurn: ${state.cardPlayedThisTurn})`);
+    console.log(
+      `[${this.playerLabel}] selectCardToPlay: hand has ${hand.length} cards, ${playableCards.length} playable (cardPlayedThisTurn: ${state.cardPlayedThisTurn})`
+    );
 
     if (playableCards.length === 0) {
       console.log(`[${this.playerLabel}] selectCardToPlay: no playable cards`);
@@ -607,15 +672,19 @@ export class AIController {
     }
 
     // Check field space for creatures
-    const hasFieldSpace = player.field.some(slot => slot === null);
-    const creaturesPlayable = playableCards.filter(c =>
+    const hasFieldSpace = player.field.some((slot) => slot === null);
+    const creaturesPlayable = playableCards.filter((c) =>
       isCreatureCard(c) ? hasFieldSpace : true
     );
 
-    console.log(`[${this.playerLabel}] selectCardToPlay: ${creaturesPlayable.length} cards can actually be played (hasFieldSpace: ${hasFieldSpace})`);
+    console.log(
+      `[${this.playerLabel}] selectCardToPlay: ${creaturesPlayable.length} cards can actually be played (hasFieldSpace: ${hasFieldSpace})`
+    );
 
     if (creaturesPlayable.length === 0) {
-      console.log(`[${this.playerLabel}] selectCardToPlay: no creatures playable (field full or only creatures in hand)`);
+      console.log(
+        `[${this.playerLabel}] selectCardToPlay: no creatures playable (field full or only creatures in hand)`
+      );
       return null;
     }
 
@@ -640,7 +709,7 @@ export class AIController {
     if (rankings.length > 1) {
       const scoreStr = rankings
         .slice(0, 5)
-        .map(r => `${r.card.name}=${r.score.toFixed(0)}`)
+        .map((r) => `${r.card.name}=${r.score.toFixed(0)}`)
         .join(', ');
       this.logThought(state, `Evaluating: ${scoreStr}`);
     }
@@ -653,7 +722,7 @@ export class AIController {
     }
 
     // Find the full ranking entry for the selected card to get its reasons
-    const selectedRanking = rankings.find(r => r.card === selection.card);
+    const selectedRanking = rankings.find((r) => r.card === selection.card);
 
     // Log the detailed reasoning for the selected card
     if (selectedRanking && selectedRanking.reasons && selectedRanking.reasons.length > 0) {
@@ -671,7 +740,9 @@ export class AIController {
 
     // Note if AI made a "mistake" (for difficulty purposes)
     if (selection.wasMistake) {
-      console.log(`[${this.playerLabel}] Made a mistake! Picked ${selection.card.name} instead of ${rankings[0].card.name}`);
+      console.log(
+        `[${this.playerLabel}] Made a mistake! Picked ${selection.card.name} instead of ${rankings[0].card.name}`
+      );
     }
 
     return selection.card;
@@ -694,9 +765,7 @@ export class AIController {
         score += 5;
         // Check if we have prey to consume
         const player = this.getAIPlayer(state);
-        const availablePrey = player.field.filter(c =>
-          c && (c.type === 'Prey' || isEdible(c))
-        );
+        const availablePrey = player.field.filter((c) => c && (c.type === 'Prey' || isEdible(c)));
         if (availablePrey.length > 0) {
           score += 10; // Can consume for value
         }
@@ -731,19 +800,23 @@ export class AIController {
     const opponent = this.getOpponentPlayer(state);
     const playerIndex = this.playerIndex;
     const opponentIndex = 1 - this.playerIndex;
-    const isFree = card.type === "Free Spell" || card.type === "Trap" || isFreePlay(card);
+    const isFree = card.type === 'Free Spell' || card.type === 'Trap' || isFreePlay(card);
 
     // Bug detection: snapshot before action
     const detector = getBugDetector();
     if (detector?.isEnabled()) {
-      detector.beforeAction(state, { type: 'PLAY_CARD', payload: { card, slotIndex } }, {
-        card,
-        playerIndex,
-      });
+      detector.beforeAction(
+        state,
+        { type: 'PLAY_CARD', payload: { card, slotIndex } },
+        {
+          card,
+          playerIndex,
+        }
+      );
     }
 
     // Handle spells
-    if (card.type === "Spell" || card.type === "Free Spell") {
+    if (card.type === 'Spell' || card.type === 'Free Spell') {
       logMessage(state, `${player.name} casts ${card.name}.`);
 
       // Execute spell effect
@@ -762,7 +835,7 @@ export class AIController {
       }
 
       // Remove from hand and exile
-      player.hand = player.hand.filter(c => c.instanceId !== card.instanceId);
+      player.hand = player.hand.filter((c) => c.instanceId !== card.instanceId);
       if (!card.isFieldSpell) {
         player.exile.push(card);
       }
@@ -783,16 +856,16 @@ export class AIController {
     }
 
     // Handle traps (AI doesn't play traps, they trigger automatically)
-    if (card.type === "Trap") {
+    if (card.type === 'Trap') {
       return { success: false, error: 'Traps trigger automatically' };
     }
 
     // Handle creatures
-    if (card.type === "Predator") {
+    if (card.type === 'Predator') {
       return this.executePredatorPlay(state, card, slotIndex, callbacks);
     }
 
-    if (card.type === "Prey") {
+    if (card.type === 'Prey') {
       return this.executePreyPlay(state, card, slotIndex, callbacks);
     }
 
@@ -809,14 +882,18 @@ export class AIController {
     // Bug detection: snapshot before action
     const detector = getBugDetector();
     if (detector?.isEnabled()) {
-      detector.beforeAction(state, { type: 'PLAY_CREATURE', payload: { card, slotIndex } }, {
-        card,
-        playerIndex: this.playerIndex,
-      });
+      detector.beforeAction(
+        state,
+        { type: 'PLAY_CREATURE', payload: { card, slotIndex } },
+        {
+          card,
+          playerIndex: this.playerIndex,
+        }
+      );
     }
 
     // Remove from hand
-    player.hand = player.hand.filter(c => c.instanceId !== card.instanceId);
+    player.hand = player.hand.filter((c) => c.instanceId !== card.instanceId);
 
     // Create card instance
     const creature = createCardInstance(card, state.turn);
@@ -852,12 +929,16 @@ export class AIController {
     const isFree = isFreePlay(card);
 
     // Find available prey to consume (not frozen and not inedible)
-    const availablePrey = player.field.filter(c =>
-      c && !c.frozen && !isInedible(c) && (c.type === 'Prey' || (c.type === 'Predator' && isEdible(c)))
+    const availablePrey = player.field.filter(
+      (c) =>
+        c &&
+        !c.frozen &&
+        !isInedible(c) &&
+        (c.type === 'Prey' || (c.type === 'Predator' && isEdible(c)))
     );
 
     // Remove from hand
-    player.hand = player.hand.filter(c => c.instanceId !== card.instanceId);
+    player.hand = player.hand.filter((c) => c.instanceId !== card.instanceId);
 
     // Create card instance
     const creature = createCardInstance(card, state.turn);
@@ -867,11 +948,15 @@ export class AIController {
     const isDryDrop = availablePrey.length === 0;
 
     if (detector?.isEnabled()) {
-      detector.beforeAction(state, { type: 'PLAY_PREDATOR', payload: { card, slotIndex } }, {
-        predator: creature,
-        playerIndex: this.playerIndex,
-        consumedPrey: isDryDrop ? [] : null, // Will be set after selection
-      });
+      detector.beforeAction(
+        state,
+        { type: 'PLAY_PREDATOR', payload: { card, slotIndex } },
+        {
+          predator: creature,
+          playerIndex: this.playerIndex,
+          consumedPrey: isDryDrop ? [] : null, // Will be set after selection
+        }
+      );
     }
 
     if (isDryDrop) {
@@ -920,9 +1005,10 @@ export class AIController {
     });
 
     // Find slot (may have changed if we consumed from the target slot)
-    const actualSlot = slotIndex !== null && player.field[slotIndex] === null
-      ? slotIndex
-      : player.field.findIndex(s => s === null);
+    const actualSlot =
+      slotIndex !== null && player.field[slotIndex] === null
+        ? slotIndex
+        : player.field.findIndex((s) => s === null);
 
     if (actualSlot === -1) {
       logMessage(state, `[AI] ERROR: No slot available after consumption`);
@@ -1060,14 +1146,18 @@ export class AIController {
         });
       }
 
-      const candidates = typeof selectTarget.candidates === 'function'
-        ? selectTarget.candidates()
-        : selectTarget.candidates;
+      const candidates =
+        typeof selectTarget.candidates === 'function'
+          ? selectTarget.candidates()
+          : selectTarget.candidates;
 
       if (candidates && candidates.length > 0) {
         // AI picks the best target
         const target = this.selectBestTarget(candidates, state);
-        this.logThought(state, `Selecting target: ${target.label || target.value?.name || 'target'}`);
+        this.logThought(
+          state,
+          `Selecting target: ${target.label || target.value?.name || 'target'}`
+        );
 
         // Invoke the callback with the selected target
         const followUp = selectTarget.onSelect(target.value);
@@ -1203,8 +1293,12 @@ export class AIController {
     this.logThought(state, `Evaluating combat options...`);
 
     // Log field state
-    const myCreatures = player.field.filter(c => c).map(c => `${c.name}(${c.currentAtk}/${c.currentHp})`);
-    const theirCreatures = opponent.field.filter(c => c).map(c => `${c.name}(${c.currentAtk}/${c.currentHp})`);
+    const myCreatures = player.field
+      .filter((c) => c)
+      .map((c) => `${c.name}(${c.currentAtk}/${c.currentHp})`);
+    const theirCreatures = opponent.field
+      .filter((c) => c)
+      .map((c) => `${c.name}(${c.currentAtk}/${c.currentHp})`);
     if (myCreatures.length > 0) {
       this.logThought(state, `My field: ${myCreatures.join(', ')}`);
     }
@@ -1216,7 +1310,10 @@ export class AIController {
     if (this.difficulty.isEnabled('lethalDetection')) {
       const ourLethal = this.threatDetector.detectOurLethal(state, this.playerIndex);
       if (ourLethal.hasLethal) {
-        this.logStrategicThought(state, `LETHAL! Going for the win with ${ourLethal.damage} damage!`);
+        this.logStrategicThought(
+          state,
+          `LETHAL! Going for the win with ${ourLethal.damage} damage!`
+        );
       }
     }
 
@@ -1225,7 +1322,10 @@ export class AIController {
       const mustKills = this.threatDetector.findMustKillTargets(state, this.playerIndex);
       if (mustKills.length > 0) {
         const topTarget = mustKills[0];
-        this.logStrategicThought(state, `Priority target: ${topTarget.creature.name} - ${topTarget.reason}`);
+        this.logStrategicThought(
+          state,
+          `Priority target: ${topTarget.creature.name} - ${topTarget.reason}`
+        );
       }
     }
 
@@ -1290,7 +1390,7 @@ export class AIController {
     const detector = getBugDetector();
     const attackAction = {
       type: 'DECLARE_ATTACK',
-      payload: { attacker, target }
+      payload: { attacker, target },
     };
     if (detector?.isEnabled()) {
       detector.beforeAction(state, attackAction, {
@@ -1370,7 +1470,7 @@ export class AIController {
               // Validate target still exists on field after trap effects resolved
               const defender = state.players[defenderOwnerIndex];
               const targetStillOnField = defender.field.some(
-                c => c && c.instanceId === target.card.instanceId
+                (c) => c && c.instanceId === target.card.instanceId
               );
 
               if (!targetStillOnField) {
@@ -1378,7 +1478,13 @@ export class AIController {
                 logMessage(state, `${attacker.name}'s attack fizzles - target no longer on field.`);
               } else {
                 // Creature combat
-                resolveCreatureCombat(state, attacker, target.card, attackerOwnerIndex, defenderOwnerIndex);
+                resolveCreatureCombat(
+                  state,
+                  attacker,
+                  target.card,
+                  attackerOwnerIndex,
+                  defenderOwnerIndex
+                );
               }
             }
           } else {
@@ -1415,7 +1521,7 @@ export class AIController {
 
     // NOTE: Summoning sickness only prevents attacking the PLAYER, not creatures
     // So we include all creatures that can attack - targeting is checked separately
-    const availableAttackers = player.field.filter(card => {
+    const availableAttackers = player.field.filter((card) => {
       if (!card || !isCreatureCard(card)) return false;
       if (card.currentHp <= 0) return false; // Dead creatures can't attack
       if (card.hasAttacked) return false;
@@ -1449,18 +1555,34 @@ export class AIController {
     if (validTargets.player) {
       const playerTarget = { type: 'player', player: opponent, playerIndex: 1 - this.playerIndex };
       const { score: playerScore, reason: playerReason } = this.combatEvaluator.evaluateAttack(
-        state, attacker, playerTarget, this.playerIndex
+        state,
+        attacker,
+        playerTarget,
+        this.playerIndex
       );
-      rankedTargets.push({ target: playerTarget, score: playerScore, reason: playerReason, name: 'Face' });
+      rankedTargets.push({
+        target: playerTarget,
+        score: playerScore,
+        reason: playerReason,
+        name: 'Face',
+      });
     }
 
     // Add creature targets
     for (const creature of validTargets.creatures || []) {
       const creatureTarget = { type: 'creature', card: creature };
       const { score: creatureScore, reason: creatureReason } = this.combatEvaluator.evaluateAttack(
-        state, attacker, creatureTarget, this.playerIndex
+        state,
+        attacker,
+        creatureTarget,
+        this.playerIndex
       );
-      rankedTargets.push({ target: creatureTarget, score: creatureScore, reason: creatureReason, name: creature.name });
+      rankedTargets.push({
+        target: creatureTarget,
+        score: creatureScore,
+        reason: creatureReason,
+        name: creature.name,
+      });
     }
 
     if (rankedTargets.length === 0) {
@@ -1474,7 +1596,7 @@ export class AIController {
     if (rankedTargets.length > 1) {
       const optionsStr = rankedTargets
         .slice(0, 4)
-        .map(t => `${t.name}=${t.score.toFixed(0)}`)
+        .map((t) => `${t.name}=${t.score.toFixed(0)}`)
         .join(', ');
       this.logThought(state, `${attacker.name} targets: ${optionsStr}`);
     }
@@ -1487,9 +1609,7 @@ export class AIController {
     }
 
     // Log the detailed decision
-    const targetName = selection.target.type === 'player'
-      ? 'Face'
-      : selection.target.card?.name;
+    const targetName = selection.target.type === 'player' ? 'Face' : selection.target.card?.name;
 
     if (selection.wasMistake) {
       console.log(`[${this.playerLabel}] Attack mistake! Picked ${targetName} instead of optimal`);
@@ -1517,7 +1637,7 @@ export class AIController {
       ms = msOrRange;
     }
 
-    return new Promise(resolve => setTimeout(resolve, ms * multiplier));
+    return new Promise((resolve) => setTimeout(resolve, ms * multiplier));
   }
 }
 
@@ -1564,7 +1684,7 @@ export const evaluateTrapActivation = (state, trap, eventContext, reactingPlayer
     case 'negatePlay': {
       const playedCard = eventContext.card;
       if (playedCard) {
-        value = ((playedCard.atk || 0) * 2) + (playedCard.hp || 0) + 5;
+        value = (playedCard.atk || 0) * 2 + (playedCard.hp || 0) + 5;
       } else {
         value = 12;
       }
@@ -1600,14 +1720,16 @@ export const evaluateTrapActivation = (state, trap, eventContext, reactingPlayer
   }
 
   // Add slight randomness (10-20%)
-  const randomFactor = 0.9 + (Math.random() * 0.2); // 0.9 to 1.1
+  const randomFactor = 0.9 + Math.random() * 0.2; // 0.9 to 1.1
   value *= randomFactor;
 
   // Threshold: activate if value > 8
   const threshold = 8;
   const shouldActivate = value > threshold;
 
-  console.log(`[AI Trap] ${trap.name}: value=${value.toFixed(1)}, threshold=${threshold}, activate=${shouldActivate}`);
+  console.log(
+    `[AI Trap] ${trap.name}: value=${value.toFixed(1)}, threshold=${threshold}, activate=${shouldActivate}`
+  );
 
   return shouldActivate;
 };

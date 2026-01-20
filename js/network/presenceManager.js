@@ -5,7 +5,7 @@
  * Tracks which users are online and notifies subscribers of status changes.
  */
 
-import { supabase } from "./supabaseClient.js";
+import { supabase } from './supabaseClient.js';
 
 // ============================================================================
 // STATE
@@ -35,7 +35,7 @@ export const initializePresence = async (profileId) => {
 
   currentProfileId = profileId;
 
-  presenceChannel = supabase.channel("online-users", {
+  presenceChannel = supabase.channel('online-users', {
     config: {
       presence: {
         key: profileId,
@@ -44,20 +44,20 @@ export const initializePresence = async (profileId) => {
   });
 
   presenceChannel
-    .on("presence", { event: "sync" }, () => {
+    .on('presence', { event: 'sync' }, () => {
       const state = presenceChannel.presenceState();
       notifyStatusChange(state);
     })
-    .on("presence", { event: "join" }, ({ key, newPresences }) => {
+    .on('presence', { event: 'join' }, ({ key, newPresences }) => {
       const state = presenceChannel.presenceState();
       notifyStatusChange(state);
     })
-    .on("presence", { event: "leave" }, ({ key, leftPresences }) => {
+    .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
       const state = presenceChannel.presenceState();
       notifyStatusChange(state);
     })
     .subscribe(async (status) => {
-      if (status === "SUBSCRIBED") {
+      if (status === 'SUBSCRIBED') {
         await presenceChannel.track({
           profile_id: profileId,
           online_at: new Date().toISOString(),
@@ -158,7 +158,7 @@ const notifyStatusChange = (state) => {
     try {
       cb(onlineIds);
     } catch (e) {
-      console.error("Error in online status callback:", e);
+      console.error('Error in online status callback:', e);
     }
   });
 };

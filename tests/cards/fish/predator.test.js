@@ -292,7 +292,7 @@ describe('Fish Predator Cards', () => {
       const selectFn = effectLibrary.selectFromGroup({
         targetGroup: 'hand-prey',
         title: 'Choose a prey to play',
-        effect: { play: true }
+        effect: { play: true },
       });
       const result = selectFn(context);
 
@@ -307,7 +307,7 @@ describe('Fish Predator Cards', () => {
       const selectFn = effectLibrary.selectFromGroup({
         targetGroup: 'hand-prey',
         title: 'Choose a prey to play',
-        effect: { play: true }
+        effect: { play: true },
       });
       const result = selectFn(context);
 
@@ -376,7 +376,7 @@ describe('Fish Predator Cards', () => {
       const selectFn = effectLibrary.selectFromGroup({
         targetGroup: 'carrion-predators',
         title: 'Choose a predator to copy abilities from',
-        effect: { copyAbilities: true }
+        effect: { copyAbilities: true },
       });
       const result = selectFn(context);
 
@@ -393,7 +393,7 @@ describe('Fish Predator Cards', () => {
       const selectFn = effectLibrary.selectFromGroup({
         targetGroup: 'carrion-predators',
         title: 'Choose a predator to copy abilities from',
-        effect: { copyAbilities: true }
+        effect: { copyAbilities: true },
       });
       const result = selectFn(context);
 
@@ -505,9 +505,10 @@ describe('Fish Predator Cards', () => {
       const result = tutorFn(context);
 
       expect(result.selectTarget).toBeDefined();
-      const candidates = typeof result.selectTarget.candidates === 'function'
-        ? result.selectTarget.candidates()
-        : result.selectTarget.candidates;
+      const candidates =
+        typeof result.selectTarget.candidates === 'function'
+          ? result.selectTarget.candidates()
+          : result.selectTarget.candidates;
       expect(candidates.length).toBe(2);
     });
 

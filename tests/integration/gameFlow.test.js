@@ -258,7 +258,7 @@ describe('Game Flow Integration Tests', () => {
       const selectFn = effectLibrary.selectFromGroup({
         targetGroup: 'friendly-carrion',
         title: 'Choose a carrion to add to hand',
-        effect: { addToHand: true }
+        effect: { addToHand: true },
       });
       const result = selectFn(context);
 
@@ -280,7 +280,7 @@ describe('Game Flow Integration Tests', () => {
       const selectFn = effectLibrary.selectFromGroup({
         targetGroup: 'carrion',
         title: 'Choose a carrion to copy abilities from',
-        effect: { copyAbilities: true }
+        effect: { copyAbilities: true },
       });
       const result = selectFn(context);
 

@@ -87,7 +87,7 @@ export class PositionEvaluator {
     // Execute using REAL game logic
     const result = simController.execute({
       type: ActionTypes.PLAY_CARD,
-      payload: { card, slotIndex }
+      payload: { card, slotIndex },
     });
 
     if (!result.success) {
@@ -101,7 +101,7 @@ export class PositionEvaluator {
       success: true,
       resultingState: after,
       changes: diff,
-      evaluation: this.evaluatePosition(after, playerIndex)
+      evaluation: this.evaluatePosition(after, playerIndex),
     };
   }
 
@@ -153,7 +153,7 @@ export class PositionEvaluator {
             card,
             slot,
             evaluation: result.evaluation,
-            changes: result.changes
+            changes: result.changes,
           });
         }
       }
@@ -181,10 +181,7 @@ export class PositionEvaluator {
 
     // Step 2: Simulate opponent's best response
     const opponentIndex = 1 - playerIndex;
-    const opponentOptions = this.evaluateHandOptions(
-      afterOurMove.resultingState,
-      opponentIndex
-    );
+    const opponentOptions = this.evaluateHandOptions(afterOurMove.resultingState, opponentIndex);
 
     // Assume opponent plays their best move
     const opponentBest = opponentOptions[0];
@@ -242,7 +239,7 @@ export class PositionEvaluator {
     // Board presence - creature value (context-aware)
     const playerBoardValue = this.evaluateBoardValue(player.field, state, playerIndex);
     const opponentBoardValue = this.evaluateBoardValue(opponent.field, state, 1 - playerIndex);
-    score += (playerBoardValue - opponentBoardValue);
+    score += playerBoardValue - opponentBoardValue;
 
     // Hand advantage - cards are valuable resources
     score += (player.hand.length - opponent.hand.length) * 8;
@@ -286,7 +283,7 @@ export class PositionEvaluator {
     const hp = creature.currentHp ?? creature.hp ?? 0;
 
     // Base value: ATK * 2 + HP
-    let value = (atk * 2) + hp;
+    let value = atk * 2 + hp;
 
     // Keyword bonuses (context-aware if state provided)
     value += this.getKeywordValue(creature, state, playerIndex);
@@ -316,11 +313,11 @@ export class PositionEvaluator {
 
     // TOXIC: Worth more when opponent has high-HP creatures to kill
     if (hasKeyword(creature, KEYWORDS.TOXIC)) {
-      const highHpTargets = opponent.field.filter(c =>
-        c && (c.currentHp ?? c.hp ?? 0) >= 4
+      const highHpTargets = opponent.field.filter(
+        (c) => c && (c.currentHp ?? c.hp ?? 0) >= 4
       ).length;
       // Base 4 + 3 per high-HP target (max ~16)
-      bonus += 4 + (highHpTargets * 3);
+      bonus += 4 + highHpTargets * 3;
     }
 
     // HASTE: Worth more if can attack THIS turn (hasn't used it yet)
@@ -345,24 +342,25 @@ export class PositionEvaluator {
     // AMBUSH: Worth more when there are creatures we can cleanly kill
     if (hasKeyword(creature, KEYWORDS.AMBUSH)) {
       const atkPower = creature.currentAtk ?? creature.atk ?? 0;
-      const killableTargets = opponent.field.filter(c =>
-        c && (c.currentHp ?? c.hp ?? 0) <= atkPower
+      const killableTargets = opponent.field.filter(
+        (c) => c && (c.currentHp ?? c.hp ?? 0) <= atkPower
       ).length;
       // Base 2 + 2 per killable target
-      bonus += 2 + (killableTargets * 2);
+      bonus += 2 + killableTargets * 2;
     }
 
     // LURE: Worth more when protecting valuable creatures
     if (hasKeyword(creature, KEYWORDS.LURE)) {
-      const valuableCreatures = player.field.filter(c =>
-        c && c !== creature && (
-          (c.currentAtk ?? c.atk ?? 0) >= 3 ||
-          hasKeyword(c, KEYWORDS.TOXIC) ||
-          hasKeyword(c, KEYWORDS.AMBUSH)
-        )
+      const valuableCreatures = player.field.filter(
+        (c) =>
+          c &&
+          c !== creature &&
+          ((c.currentAtk ?? c.atk ?? 0) >= 3 ||
+            hasKeyword(c, KEYWORDS.TOXIC) ||
+            hasKeyword(c, KEYWORDS.AMBUSH))
       ).length;
       // Base 2 + 3 per valuable creature protected
-      bonus += 2 + (valuableCreatures * 3);
+      bonus += 2 + valuableCreatures * 3;
     }
 
     // REGENERATION: Worth more when creature is damaged
@@ -449,13 +447,11 @@ export class PositionEvaluator {
     let score = 0;
 
     // Field slot availability (flexibility)
-    const emptySlots = player.field.filter(s => s === null).length;
+    const emptySlots = player.field.filter((s) => s === null).length;
     score += emptySlots * 2;
 
     // Vulnerable creatures (1 HP) are risky
-    const vulnerableCreatures = player.field.filter(
-      c => c && c.currentHp === 1
-    ).length;
+    const vulnerableCreatures = player.field.filter((c) => c && c.currentHp === 1).length;
     score -= vulnerableCreatures * 3;
 
     return score;
@@ -513,7 +509,7 @@ export class PositionEvaluator {
     return {
       text: `${sign}${advantage}`,
       color,
-      description
+      description,
     };
   }
 
@@ -545,23 +541,28 @@ export class PositionEvaluator {
     const advantage = this.calculateAdvantage(state, 0);
 
     // Deep clone field creatures for hologram replay
-    const cloneField = (field) => field.map(c => c ? {
-      id: c.id,
-      name: c.name,
-      instanceId: c.instanceId,
-      type: c.type,
-      currentAtk: c.currentAtk,
-      currentHp: c.currentHp,
-      atk: c.atk,
-      hp: c.hp,
-      keywords: c.keywords ? [...c.keywords] : [],
-      image: c.image,
-      // Track buff/debuff state for visual indication
-      atkBuffed: c.currentAtk > c.atk,
-      atkDebuffed: c.currentAtk < c.atk,
-      hpBuffed: c.currentHp > c.hp,
-      hpDamaged: c.currentHp < c.hp,
-    } : null);
+    const cloneField = (field) =>
+      field.map((c) =>
+        c
+          ? {
+              id: c.id,
+              name: c.name,
+              instanceId: c.instanceId,
+              type: c.type,
+              currentAtk: c.currentAtk,
+              currentHp: c.currentHp,
+              atk: c.atk,
+              hp: c.hp,
+              keywords: c.keywords ? [...c.keywords] : [],
+              image: c.image,
+              // Track buff/debuff state for visual indication
+              atkBuffed: c.currentAtk > c.atk,
+              atkDebuffed: c.currentAtk < c.atk,
+              hpBuffed: c.currentHp > c.hp,
+              hpDamaged: c.currentHp < c.hp,
+            }
+          : null
+      );
 
     // Track deaths from previous snapshot
     const previousSnapshot = state.advantageHistory[state.advantageHistory.length - 1];
@@ -576,7 +577,7 @@ export class PositionEvaluator {
         prevField.forEach((prevCreature, slot) => {
           if (prevCreature) {
             // Check if creature is still on field (by instanceId)
-            const stillAlive = currField.some(c => c?.instanceId === prevCreature.instanceId);
+            const stillAlive = currField.some((c) => c?.instanceId === prevCreature.instanceId);
             if (!stillAlive) {
               deaths.push({
                 player: p,
@@ -598,8 +599,8 @@ export class PositionEvaluator {
       // Additional context for tooltips
       p0Hp: state.players[0]?.hp ?? 0,
       p1Hp: state.players[1]?.hp ?? 0,
-      p0Field: state.players[0]?.field.filter(c => c).length ?? 0,
-      p1Field: state.players[1]?.field.filter(c => c).length ?? 0,
+      p0Field: state.players[0]?.field.filter((c) => c).length ?? 0,
+      p1Field: state.players[1]?.field.filter((c) => c).length ?? 0,
       // Full field state for hologram display
       fields: [
         cloneField(state.players[0]?.field || [null, null, null]),

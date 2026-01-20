@@ -13,7 +13,12 @@
  * - Live-synced so both players see the same state
  */
 
-import { getLocalPlayerIndex, isOnlineMode, isAIMode, isAIvsAIMode } from '../../state/selectors.js';
+import {
+  getLocalPlayerIndex,
+  isOnlineMode,
+  isAIMode,
+  isAIvsAIMode,
+} from '../../state/selectors.js';
 import { REACTION_TIMER_SECONDS } from '../../game/triggers/index.js';
 import { evaluateTrapActivation } from '../../ai/index.js';
 
@@ -29,7 +34,8 @@ import { evaluateTrapActivation } from '../../ai/index.js';
  * @returns {string} Description of the triggering event
  */
 const getReactionContextDescription = (pendingReaction, players, includeReactionName = false) => {
-  const { event, eventContext, triggeringPlayerIndex, reactingPlayerIndex, reactions } = pendingReaction;
+  const { event, eventContext, triggeringPlayerIndex, reactingPlayerIndex, reactions } =
+    pendingReaction;
   const triggeringPlayer = players[triggeringPlayerIndex];
   const reactingPlayer = players[reactingPlayerIndex];
 
@@ -121,12 +127,12 @@ let aiDecisionPending = false;
 // ============================================================================
 
 const getReactionElements = () => ({
-  overlay: document.getElementById("reaction-overlay"),
-  title: document.getElementById("reaction-title"),
-  subtitle: document.getElementById("reaction-subtitle"),
-  timer: document.getElementById("reaction-timer"),
-  timerValue: document.getElementById("reaction-timer-value"),
-  actions: document.getElementById("reaction-actions"),
+  overlay: document.getElementById('reaction-overlay'),
+  title: document.getElementById('reaction-title'),
+  subtitle: document.getElementById('reaction-subtitle'),
+  timer: document.getElementById('reaction-timer'),
+  timerValue: document.getElementById('reaction-timer-value'),
+  actions: document.getElementById('reaction-actions'),
 });
 
 // ============================================================================
@@ -138,7 +144,7 @@ const getReactionElements = () => ({
  */
 const clearActions = (actions) => {
   if (!actions) return;
-  actions.innerHTML = "";
+  actions.innerHTML = '';
 };
 
 /**
@@ -173,9 +179,9 @@ const startTimer = (state, onTimeout, onUpdate) => {
 
     // Add urgent styling when low on time
     if (remaining <= 5) {
-      elements.timer.classList.add("urgent");
+      elements.timer.classList.add('urgent');
     } else {
-      elements.timer.classList.remove("urgent");
+      elements.timer.classList.remove('urgent');
     }
 
     if (remaining <= 0) {
@@ -238,7 +244,8 @@ export const renderReactionOverlay = (state, callbacks = {}) => {
   }
 
   // Support both old (deciderIndex) and new (reactingPlayerIndex) formats
-  const reactingPlayerIndex = state.pendingReaction.reactingPlayerIndex ?? state.pendingReaction.deciderIndex;
+  const reactingPlayerIndex =
+    state.pendingReaction.reactingPlayerIndex ?? state.pendingReaction.deciderIndex;
   const reactions = state.pendingReaction.reactions;
   const reactingPlayer = state.players[reactingPlayerIndex];
 
@@ -248,8 +255,8 @@ export const renderReactionOverlay = (state, callbacks = {}) => {
   }
 
   // Show overlay
-  overlay.classList.add("active");
-  overlay.setAttribute("aria-hidden", "false");
+  overlay.classList.add('active');
+  overlay.setAttribute('aria-hidden', 'false');
 
   const localIndex = getLocalPlayerIndex(state);
   // In online mode, check if local player is the reacting player
@@ -262,38 +269,42 @@ export const renderReactionOverlay = (state, callbacks = {}) => {
       : true;
 
   // Get context description for what triggered this reaction
-  const contextDescription = getReactionContextDescription(state.pendingReaction, state.players, false);
+  const contextDescription = getReactionContextDescription(
+    state.pendingReaction,
+    state.players,
+    false
+  );
   const contextWithTrap = getReactionContextDescription(state.pendingReaction, state.players, true);
   const trapName = getActivatableTrapName(state.pendingReaction);
 
   // Set title and subtitle based on who is viewing
   if (isReactingPlayer) {
-    title.textContent = trapName ? `Activate ${trapName}?` : "Reaction";
+    title.textContent = trapName ? `Activate ${trapName}?` : 'Reaction';
     subtitle.textContent = contextDescription;
   } else {
-    title.textContent = "Waiting";
+    title.textContent = 'Waiting';
     // Don't reveal trap details to opponent - just show waiting message
     subtitle.textContent = `${reactingPlayer.name} is considering a response...`;
   }
 
   // Show timer
-  timer.style.display = "flex";
+  timer.style.display = 'flex';
 
   // Render action buttons
   clearActions(actions);
 
   if (isReactingPlayer) {
     // Activate button
-    const activateBtn = document.createElement("button");
-    activateBtn.className = "primary";
-    activateBtn.textContent = "Activate";
+    const activateBtn = document.createElement('button');
+    activateBtn.className = 'primary';
+    activateBtn.textContent = 'Activate';
     activateBtn.onclick = () => handleActivate(state, callbacks);
     actions.appendChild(activateBtn);
 
     // Pass button
-    const passBtn = document.createElement("button");
-    passBtn.className = "secondary";
-    passBtn.textContent = "Do not activate";
+    const passBtn = document.createElement('button');
+    passBtn.className = 'secondary';
+    passBtn.textContent = 'Do not activate';
     passBtn.onclick = () => handlePass(state, callbacks);
     actions.appendChild(passBtn);
 
@@ -301,9 +312,9 @@ export const renderReactionOverlay = (state, callbacks = {}) => {
     startTimer(state, () => handleTimeout(state, callbacks), callbacks.onUpdate);
   } else {
     // Non-reacting player sees waiting state
-    const waitingText = document.createElement("p");
-    waitingText.className = "muted";
-    waitingText.textContent = "Waiting for opponent...";
+    const waitingText = document.createElement('p');
+    waitingText.className = 'muted';
+    waitingText.textContent = 'Waiting for opponent...';
     actions.appendChild(waitingText);
 
     // Run timer visually for both players (live-sync)
@@ -311,8 +322,7 @@ export const renderReactionOverlay = (state, callbacks = {}) => {
   }
 
   // AI trap decision handling (both regular AI mode and AI vs AI mode)
-  const isAIReacting = (isAIMode(state) && reactingPlayerIndex === 1) ||
-                       isAIvsAIMode(state); // Both players are AI in AI vs AI mode
+  const isAIReacting = (isAIMode(state) && reactingPlayerIndex === 1) || isAIvsAIMode(state); // Both players are AI in AI vs AI mode
 
   if (isAIReacting && !aiDecisionPending) {
     aiDecisionPending = true;
@@ -328,9 +338,12 @@ export const renderReactionOverlay = (state, callbacks = {}) => {
     const delay = shouldActivate ? 1200 : 800;
 
     setTimeout(() => {
-      const currentReactingIndex = state.pendingReaction?.reactingPlayerIndex ?? state.pendingReaction?.deciderIndex;
+      const currentReactingIndex =
+        state.pendingReaction?.reactingPlayerIndex ?? state.pendingReaction?.deciderIndex;
       if (state.pendingReaction && currentReactingIndex === reactingPlayerIndex) {
-        console.log(`[AI] Trap decision: ${shouldActivate ? 'ACTIVATE' : 'PASS'} ${trap?.name || 'trap'}`);
+        console.log(
+          `[AI] Trap decision: ${shouldActivate ? 'ACTIVATE' : 'PASS'} ${trap?.name || 'trap'}`
+        );
         callbacks.onReactionDecision?.(shouldActivate);
       }
       aiDecisionPending = false;
@@ -347,11 +360,11 @@ export const hideReactionOverlay = () => {
 
   const { overlay, timer } = getReactionElements();
   if (overlay) {
-    overlay.classList.remove("active");
-    overlay.setAttribute("aria-hidden", "true");
+    overlay.classList.remove('active');
+    overlay.setAttribute('aria-hidden', 'true');
   }
   if (timer) {
-    timer.classList.remove("urgent");
+    timer.classList.remove('urgent');
   }
 };
 
@@ -360,13 +373,13 @@ export const hideReactionOverlay = () => {
  */
 export const isReactionOverlayActive = () => {
   const { overlay } = getReactionElements();
-  return overlay?.classList.contains("active") ?? false;
+  return overlay?.classList.contains('active') ?? false;
 };
 
 /**
  * Reset AI decision pending flag (call when restarting a game)
  */
 export const resetReactionAIState = () => {
-  console.log("[ReactionOverlay] Resetting AI decision pending flag");
+  console.log('[ReactionOverlay] Resetting AI decision pending flag');
   aiDecisionPending = false;
 };

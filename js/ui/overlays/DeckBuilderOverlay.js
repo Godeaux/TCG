@@ -15,7 +15,12 @@
 
 import { deckCatalogs, getCardDefinitionById } from '../../cards/index.js';
 import { logMessage } from '../../state/gameState.js';
-import { buildLobbySyncPayload, sendLobbyBroadcast, getSupabaseApi, ensureDecksLoaded } from '../../network/index.js';
+import {
+  buildLobbySyncPayload,
+  sendLobbyBroadcast,
+  getSupabaseApi,
+  ensureDecksLoaded,
+} from '../../network/index.js';
 import { getLocalPlayerIndex, isAIMode, isAIvsAIMode } from '../../state/selectors.js';
 import { renderDeckCard, renderCardStats, getCardEffectSummary } from '../components/Card.js';
 import { showCardTooltip, hideCardTooltip } from '../components/CardTooltip.js';
@@ -28,53 +33,53 @@ import { KEYWORD_DESCRIPTIONS } from '../../keywords.js';
 // Deck options available for selection
 const DECK_OPTIONS = [
   {
-    id: "fish",
-    name: "Fish",
-    emoji: "🐟",
-    panelClass: "deck-select-panel--fish",
+    id: 'fish',
+    name: 'Fish',
+    emoji: '🐟',
+    panelClass: 'deck-select-panel--fish',
     available: true,
   },
   {
-    id: "bird",
-    name: "Bird",
-    emoji: "🐦",
-    panelClass: "deck-select-panel--bird",
+    id: 'bird',
+    name: 'Bird',
+    emoji: '🐦',
+    panelClass: 'deck-select-panel--bird',
     available: true,
   },
   {
-    id: "mammal",
-    name: "Mammal",
-    emoji: "🐻",
-    panelClass: "deck-select-panel--mammal",
+    id: 'mammal',
+    name: 'Mammal',
+    emoji: '🐻',
+    panelClass: 'deck-select-panel--mammal',
     available: true,
   },
   {
-    id: "reptile",
-    name: "Reptile",
-    emoji: "🦎",
-    panelClass: "deck-select-panel--reptile",
+    id: 'reptile',
+    name: 'Reptile',
+    emoji: '🦎',
+    panelClass: 'deck-select-panel--reptile',
     available: true,
   },
   {
-    id: "amphibian",
-    name: "Amphibian",
-    emoji: "🐸",
-    panelClass: "deck-select-panel--amphibian",
+    id: 'amphibian',
+    name: 'Amphibian',
+    emoji: '🐸',
+    panelClass: 'deck-select-panel--amphibian',
     available: true,
   },
   {
-    id: "canine",
-    name: "Canine",
-    emoji: "🐺",
-    panelClass: "deck-select-panel--canine",
+    id: 'canine',
+    name: 'Canine',
+    emoji: '🐺',
+    panelClass: 'deck-select-panel--canine',
     available: true,
     experimental: true,
   },
   {
-    id: "arachnid",
-    name: "Arachnid",
-    emoji: "🕷️",
-    panelClass: "deck-select-panel--arachnid",
+    id: 'arachnid',
+    name: 'Arachnid',
+    emoji: '🕷️',
+    panelClass: 'deck-select-panel--arachnid',
     available: true,
     experimental: true,
   },
@@ -82,8 +87,8 @@ const DECK_OPTIONS = [
 
 // Deck builder UI state
 let deckHighlighted = null;
-let deckActiveTab = "catalog";
-let deckFilterText = "";
+let deckActiveTab = 'catalog';
+let deckFilterText = '';
 
 // Latest callbacks reference for async operations
 let latestCallbacks = {};
@@ -98,29 +103,29 @@ let waitingScreenFading = false;
 
 const getDeckElements = () => ({
   // Deck selection overlay
-  deckSelectOverlay: document.getElementById("deck-select-overlay"),
-  deckSelectTitle: document.getElementById("deck-select-title"),
-  deckSelectSubtitle: document.getElementById("deck-select-subtitle"),
-  deckSelectGrid: document.getElementById("deck-select-grid"),
+  deckSelectOverlay: document.getElementById('deck-select-overlay'),
+  deckSelectTitle: document.getElementById('deck-select-title'),
+  deckSelectSubtitle: document.getElementById('deck-select-subtitle'),
+  deckSelectGrid: document.getElementById('deck-select-grid'),
 
   // Deck builder overlay
-  deckOverlay: document.getElementById("deck-overlay"),
-  deckTitle: document.getElementById("deck-title"),
-  deckStatus: document.getElementById("deck-status"),
-  deckFullRow: document.getElementById("deck-full-row"),
-  deckAddedRow: document.getElementById("deck-added-row"),
-  deckConfirm: document.getElementById("deck-confirm"),
-  deckRandom: document.getElementById("deck-random"),
-  deckSave: document.getElementById("deck-save"),
-  deckLoad: document.getElementById("deck-load"),
-  deckExit: document.getElementById("deck-exit"),
-  deckLoadList: document.getElementById("deck-load-list"),
-  deckManageList: document.getElementById("deck-manage-list"),
-  deckFilterInput: document.getElementById("deck-filter-input"),
-  deckFilterClear: document.getElementById("deck-filter-clear"),
+  deckOverlay: document.getElementById('deck-overlay'),
+  deckTitle: document.getElementById('deck-title'),
+  deckStatus: document.getElementById('deck-status'),
+  deckFullRow: document.getElementById('deck-full-row'),
+  deckAddedRow: document.getElementById('deck-added-row'),
+  deckConfirm: document.getElementById('deck-confirm'),
+  deckRandom: document.getElementById('deck-random'),
+  deckSave: document.getElementById('deck-save'),
+  deckLoad: document.getElementById('deck-load'),
+  deckExit: document.getElementById('deck-exit'),
+  deckLoadList: document.getElementById('deck-load-list'),
+  deckManageList: document.getElementById('deck-manage-list'),
+  deckFilterInput: document.getElementById('deck-filter-input'),
+  deckFilterClear: document.getElementById('deck-filter-clear'),
   // New Hearthstone-style deck list sidebar
-  deckListCards: document.getElementById("deck-list-cards"),
-  deckListCount: document.getElementById("deck-list-count"),
+  deckListCards: document.getElementById('deck-list-cards'),
+  deckListCount: document.getElementById('deck-list-count'),
 });
 
 // ============================================================================
@@ -132,18 +137,18 @@ const getDeckElements = () => ({
  */
 const clearPanel = (panel) => {
   if (!panel) return;
-  panel.innerHTML = "";
+  panel.innerHTML = '';
 };
 
 /**
  * Check if in online mode
  */
-const isOnlineMode = (state) => state.menu?.mode === "online";
+const isOnlineMode = (state) => state.menu?.mode === 'online';
 
 /**
  * Check if in catalog mode
  */
-const isCatalogMode = (state) => state.menu?.stage === "catalog";
+const isCatalogMode = (state) => state.menu?.stage === 'catalog';
 
 /**
  * Check if a card matches the filter text
@@ -160,7 +165,8 @@ const cardMatchesFilter = (card, filterText) => {
   // Search in name
   if (card.name?.toLowerCase().includes(search)) return true;
   // Search in keywords array (ensure it's an array first)
-  if (Array.isArray(card.keywords) && card.keywords.some((kw) => kw.toLowerCase().includes(search))) return true;
+  if (Array.isArray(card.keywords) && card.keywords.some((kw) => kw.toLowerCase().includes(search)))
+    return true;
   // Search in effectText
   if (card.effectText?.toLowerCase().includes(search)) return true;
 
@@ -190,27 +196,27 @@ const bindFilterEvents = (callbacks) => {
 
   // Update clear button visibility
   if (deckFilterClear) {
-    deckFilterClear.classList.toggle("hidden", !deckFilterText);
+    deckFilterClear.classList.toggle('hidden', !deckFilterText);
   }
 
   // Input handler for real-time filtering
   deckFilterInput.oninput = (e) => {
     deckFilterText = e.target.value;
     if (deckFilterClear) {
-      deckFilterClear.classList.toggle("hidden", !deckFilterText);
+      deckFilterClear.classList.toggle('hidden', !deckFilterText);
     }
     callbacks?.onUpdate?.();
   };
 
   // Prevent form submission on enter, clear on escape
   deckFilterInput.onkeydown = (e) => {
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       e.preventDefault();
     }
-    if (e.key === "Escape") {
-      deckFilterText = "";
-      deckFilterInput.value = "";
-      if (deckFilterClear) deckFilterClear.classList.add("hidden");
+    if (e.key === 'Escape') {
+      deckFilterText = '';
+      deckFilterInput.value = '';
+      if (deckFilterClear) deckFilterClear.classList.add('hidden');
       callbacks?.onUpdate?.();
     }
   };
@@ -218,9 +224,9 @@ const bindFilterEvents = (callbacks) => {
   // Clear button handler
   if (deckFilterClear) {
     deckFilterClear.onclick = () => {
-      deckFilterText = "";
-      deckFilterInput.value = "";
-      deckFilterClear.classList.add("hidden");
+      deckFilterText = '';
+      deckFilterInput.value = '';
+      deckFilterClear.classList.add('hidden');
       deckFilterInput.focus();
       callbacks?.onUpdate?.();
     };
@@ -234,7 +240,7 @@ const getOpponentDisplayName = (state) => {
   const localIndex = getLocalPlayerIndex(state);
   const opponentIndex = (localIndex + 1) % 2;
   const opponentName = state.players?.[opponentIndex]?.name;
-  return opponentName || "Opponent";
+  return opponentName || 'Opponent';
 };
 
 /**
@@ -269,16 +275,16 @@ const setMenuSuccess = (state, message, callbacks, delay = 3000) => {
  * Prey > Predator > Spell > Free Spell > Trap
  */
 const CARD_TYPE_ORDER = {
-  'Prey': 0,
-  'prey': 0,
-  'Predator': 1,
-  'predator': 1,
-  'Spell': 2,
-  'spell': 2,
+  Prey: 0,
+  prey: 0,
+  Predator: 1,
+  predator: 1,
+  Spell: 2,
+  spell: 2,
   'Free Spell': 3,
   'free spell': 3,
-  'Trap': 4,
-  'trap': 4,
+  Trap: 4,
+  trap: 4,
 };
 
 /**
@@ -547,27 +553,31 @@ const hideExpandedCard = () => {
  * Also handles tap-to-add on mobile
  */
 const setupExpandedCardDismiss = () => {
-  document.addEventListener('click', (e) => {
-    if (expandedCardElement) {
-      // Check if user tapped on the tooltip card itself (mobile tap-to-add)
-      const clickedTooltip = e.target.closest('.card-hover-tooltip');
-      const clickedTooltipCard = e.target.closest('.tooltip-card-preview');
+  document.addEventListener(
+    'click',
+    (e) => {
+      if (expandedCardElement) {
+        // Check if user tapped on the tooltip card itself (mobile tap-to-add)
+        const clickedTooltip = e.target.closest('.card-hover-tooltip');
+        const clickedTooltipCard = e.target.closest('.tooltip-card-preview');
 
-      if (clickedTooltipCard && expandedCardAddCallback) {
-        // Tap on expanded card - add to deck
-        e.preventDefault();
-        e.stopPropagation();
-        expandedCardAddCallback(expandedCardData);
-        hideExpandedCard();
-        return;
-      }
+        if (clickedTooltipCard && expandedCardAddCallback) {
+          // Tap on expanded card - add to deck
+          e.preventDefault();
+          e.stopPropagation();
+          expandedCardAddCallback(expandedCardData);
+          hideExpandedCard();
+          return;
+        }
 
-      // Click outside tooltip and deck card - dismiss
-      if (!clickedTooltip && !e.target.closest('.deck-card')) {
-        hideExpandedCard();
+        // Click outside tooltip and deck card - dismiss
+        if (!clickedTooltip && !e.target.closest('.deck-card')) {
+          hideExpandedCard();
+        }
       }
-    }
-  }, true);
+    },
+    true
+  );
 };
 
 // Initialize dismiss handler once
@@ -622,13 +632,13 @@ const mapDeckIdsToCards = (deckId, deckIds = []) => {
 const findDeckCatalogId = (deckIds = []) => {
   const ids = deckIds.filter(Boolean);
   if (ids.length === 0) {
-    return "fish";
+    return 'fish';
   }
   return (
     Object.entries(deckCatalogs).find(([_, catalog]) => {
       const catalogIds = new Set(catalog.map((card) => card.id));
       return ids.every((id) => catalogIds.has(id));
-    })?.[0] ?? "fish"
+    })?.[0] ?? 'fish'
   );
 };
 
@@ -686,11 +696,11 @@ const buildRandomDeck = ({ available, selected, catalogOrder }) => {
     });
   };
 
-  takeCards((card) => card.type === "Predator", 6);
-  takeCards((card) => card.type === "Prey", 7);
-  takeCards((card) => card.type === "Spell", 4);
-  takeCards((card) => card.type === "Free Spell", 2);
-  takeCards((card) => card.type === "Trap", 1);
+  takeCards((card) => card.type === 'Predator', 6);
+  takeCards((card) => card.type === 'Prey', 7);
+  takeCards((card) => card.type === 'Spell', 4);
+  takeCards((card) => card.type === 'Free Spell', 2);
+  takeCards((card) => card.type === 'Trap', 1);
 
   selected.push(...picks);
 };
@@ -709,9 +719,9 @@ const generateDeckForPlayer = (state, playerIndex, specificDeckId = null) => {
 
   if (specificDeckId) {
     deckId = specificDeckId;
-    deckName = DECK_OPTIONS.find(opt => opt.id === specificDeckId)?.name ?? specificDeckId;
+    deckName = DECK_OPTIONS.find((opt) => opt.id === specificDeckId)?.name ?? specificDeckId;
   } else {
-    const availableDecks = DECK_OPTIONS.filter(opt => opt.available);
+    const availableDecks = DECK_OPTIONS.filter((opt) => opt.available);
     const randomOption = availableDecks[Math.floor(Math.random() * availableDecks.length)];
     deckId = randomOption?.id ?? 'fish';
     deckName = randomOption?.name ?? 'Fish';
@@ -731,7 +741,9 @@ const generateDeckForPlayer = (state, playerIndex, specificDeckId = null) => {
   state.deckBuilder.available[playerIndex] = available;
   state.deckBuilder.catalogOrder[playerIndex] = catalogOrder;
 
-  console.log(`[AI] Generated ${deckName} deck for player ${playerIndex} with ${selected.length} cards`);
+  console.log(
+    `[AI] Generated ${deckName} deck for player ${playerIndex} with ${selected.length} cards`
+  );
   return selected;
 };
 
@@ -778,25 +790,25 @@ const setDeckInspectorContent = (card) => {
   }
   // Ensure keywords is an array to avoid string iteration issues (e.g., "[Circular]")
   const cardKeywords = Array.isArray(card.keywords) ? card.keywords : [];
-  const keywords = cardKeywords.length ? cardKeywords.join(", ") : "";
+  const keywords = cardKeywords.length ? cardKeywords.join(', ') : '';
   const keywordDetails = cardKeywords.length
     ? cardKeywords
         .map((keyword) => {
-          const detail = KEYWORD_DESCRIPTIONS[keyword] ?? "No description available.";
+          const detail = KEYWORD_DESCRIPTIONS[keyword] ?? 'No description available.';
           return `<li><strong>${keyword}:</strong> ${detail}</li>`;
         })
-        .join("")
-    : "";
+        .join('')
+    : '';
   const tokenKeywordDetails = card.summons
     ?.map((tokenId) => getCardDefinitionById(tokenId))
     .filter((token) => token && Array.isArray(token.keywords) && token.keywords.length)
     .map((token) => {
       const tokenDetails = token.keywords
         .map((keyword) => {
-          const detail = KEYWORD_DESCRIPTIONS[keyword] ?? "No description available.";
+          const detail = KEYWORD_DESCRIPTIONS[keyword] ?? 'No description available.';
           return `<li><strong>${keyword}:</strong> ${detail}</li>`;
         })
-        .join("");
+        .join('');
       return `
         <div class="token-keyword-group">
           <div class="meta">${token.name} — ${token.type} keywords</div>
@@ -804,46 +816,46 @@ const setDeckInspectorContent = (card) => {
         </div>
       `;
     })
-    .join("");
+    .join('');
   const stats = renderCardStats(card)
     .map((stat) => `${stat.emoji} ${stat.value}`)
-    .join(" • ");
+    .join(' • ');
   const effectSummary = getCardEffectSummary(card, {
     includeKeywordDetails: true,
     includeTokenDetails: true,
   });
   const statusTags = [
-    card.dryDropped ? "🍂 Dry dropped" : null,
-    card.abilitiesCancelled ? "🚫 Abilities canceled" : null,
-    card.hasBarrier ? "🛡️ Barrier" : null,
-    card.frozen ? "❄️ Frozen" : null,
-    card.isToken ? "⚪ Token" : null,
+    card.dryDropped ? '🍂 Dry dropped' : null,
+    card.abilitiesCancelled ? '🚫 Abilities canceled' : null,
+    card.hasBarrier ? '🛡️ Barrier' : null,
+    card.frozen ? '❄️ Frozen' : null,
+    card.isToken ? '⚪ Token' : null,
   ].filter(Boolean);
-  const keywordLabel = keywords ? `Keywords: ${keywords}` : "";
-  const statusLabel = statusTags.length ? `Status: ${statusTags.join(" • ")}` : "";
+  const keywordLabel = keywords ? `Keywords: ${keywords}` : '';
+  const statusLabel = statusTags.length ? `Status: ${statusTags.join(' • ')}` : '';
   const keywordBlock =
     keywordDetails || tokenKeywordDetails
       ? `<div class="keyword-glossary">
           <strong>Keyword Glossary</strong>
-          ${keywordDetails ? `<ul>${keywordDetails}</ul>` : ""}
+          ${keywordDetails ? `<ul>${keywordDetails}</ul>` : ''}
           ${
             tokenKeywordDetails
               ? `<div class="keyword-divider">***</div>${tokenKeywordDetails}`
-              : ""
+              : ''
           }
         </div>`
-      : "";
+      : '';
   const effectBlock = effectSummary
     ? `<div class="effect"><strong>Effect:</strong> ${effectSummary}</div>`
-    : "";
+    : '';
 
   // Deck construction mode - no image, more space for content
   panel.innerHTML = `
     <div class="inspector-card-content inspector-deck-mode">
       <h4>${card.name}</h4>
-      <div class="meta">${card.type}${stats ? ` • ${stats}` : ""}</div>
-      ${keywordLabel ? `<div class="meta">${keywordLabel}</div>` : ""}
-      ${statusLabel ? `<div class="meta">${statusLabel}</div>` : ""}
+      <div class="meta">${card.type}${stats ? ` • ${stats}` : ''}</div>
+      ${keywordLabel ? `<div class="meta">${keywordLabel}</div>` : ''}
+      ${statusLabel ? `<div class="meta">${statusLabel}</div>` : ''}
       ${effectBlock}
       ${keywordBlock || `<div class="meta muted">No keyword glossary entries for this card.</div>`}
     </div>
@@ -854,30 +866,30 @@ const setDeckInspectorContent = (card) => {
  * Update deck builder tabs visibility and active state
  */
 const updateDeckTabs = (state) => {
-  const deckTabs = Array.from(document.querySelectorAll(".deck-tab"));
-  const deckPanels = Array.from(document.querySelectorAll(".deck-panel"));
+  const deckTabs = Array.from(document.querySelectorAll('.deck-tab'));
+  const deckPanels = Array.from(document.querySelectorAll('.deck-panel'));
   const showLoad = isOnlineMode(state) && !isCatalogMode(state);
   // Only show manage tab when NOT actively building a deck (to prevent accidental navigation loss)
-  const isActivelyBuilding = state.catalogBuilder?.stage === "build";
+  const isActivelyBuilding = state.catalogBuilder?.stage === 'build';
   const showManage = isCatalogMode(state) && !isActivelyBuilding;
   // "deck" tab removed - deck is now always visible in sidebar
-  const allowedTabs = new Set(["catalog"]);
+  const allowedTabs = new Set(['catalog']);
   if (showLoad) {
-    allowedTabs.add("load");
+    allowedTabs.add('load');
   }
   if (showManage) {
-    allowedTabs.add("manage");
+    allowedTabs.add('manage');
   }
 
   // Read from state for cross-module sync, fall back to local variable
   let currentTab = state.catalogBuilder?.activeTab ?? deckActiveTab;
 
   if (!allowedTabs.has(currentTab)) {
-    currentTab = "catalog";
+    currentTab = 'catalog';
     // Update both local and state variable
-    deckActiveTab = "catalog";
+    deckActiveTab = 'catalog';
     if (state.catalogBuilder) {
-      state.catalogBuilder.activeTab = "catalog";
+      state.catalogBuilder.activeTab = 'catalog';
     }
   } else {
     // Sync local variable with state
@@ -887,22 +899,22 @@ const updateDeckTabs = (state) => {
   deckTabs.forEach((tab) => {
     const tabKey = tab.dataset.tab;
     const shouldShow = allowedTabs.has(tabKey);
-    tab.classList.toggle("hidden", !shouldShow);
-    tab.classList.toggle("active", tabKey === currentTab);
+    tab.classList.toggle('hidden', !shouldShow);
+    tab.classList.toggle('active', tabKey === currentTab);
   });
 
   deckPanels.forEach((panel) => {
-    if (panel.classList.contains("deck-catalog-panel")) {
-      panel.classList.toggle("active", currentTab === "catalog");
+    if (panel.classList.contains('deck-catalog-panel')) {
+      panel.classList.toggle('active', currentTab === 'catalog');
     }
-    if (panel.classList.contains("deck-added-panel")) {
-      panel.classList.toggle("active", currentTab === "deck");
+    if (panel.classList.contains('deck-added-panel')) {
+      panel.classList.toggle('active', currentTab === 'deck');
     }
-    if (panel.classList.contains("deck-load-panel")) {
-      panel.classList.toggle("active", currentTab === "load");
+    if (panel.classList.contains('deck-load-panel')) {
+      panel.classList.toggle('active', currentTab === 'load');
     }
-    if (panel.classList.contains("deck-manage-panel")) {
-      panel.classList.toggle("active", currentTab === "manage");
+    if (panel.classList.contains('deck-manage-panel')) {
+      panel.classList.toggle('active', currentTab === 'manage');
     }
   });
 };
@@ -925,15 +937,15 @@ const renderDeckLoadPanel = (state, playerIndex, callbacks) => {
   clearPanel(deckLoadList);
   const decks = (state.menu.decks ?? []).slice(0, 3);
   if (decks.length === 0) {
-    const empty = document.createElement("div");
-    empty.className = "deck-slot";
-    empty.textContent = "No saved decks available. Build decks in Catalog.";
+    const empty = document.createElement('div');
+    empty.className = 'deck-slot';
+    empty.textContent = 'No saved decks available. Build decks in Catalog.';
     deckLoadList.appendChild(empty);
     return;
   }
   decks.forEach((deck) => {
-    const slot = document.createElement("div");
-    slot.className = "deck-slot";
+    const slot = document.createElement('div');
+    slot.className = 'deck-slot';
     slot.innerHTML = `
       <div class="deck-slot-header">
         <span>${deck.name}</span>
@@ -941,17 +953,17 @@ const renderDeckLoadPanel = (state, playerIndex, callbacks) => {
       </div>
       <div class="deck-slot-meta">Multiplayer Slot</div>
     `;
-    const actions = document.createElement("div");
-    actions.className = "deck-slot-actions";
-    const loadButton = document.createElement("button");
-    loadButton.type = "button";
-    loadButton.className = "primary";
-    loadButton.textContent = "Load Deck";
+    const actions = document.createElement('div');
+    actions.className = 'deck-slot-actions';
+    const loadButton = document.createElement('button');
+    loadButton.type = 'button';
+    loadButton.className = 'primary';
+    loadButton.textContent = 'Load Deck';
     loadButton.onclick = () => {
       applyDeckToBuilder(state, playerIndex, deck.deck);
       logMessage(state, `${state.players[playerIndex].name} loaded "${deck.name}".`);
-      if (state.menu?.mode === "online") {
-        sendLobbyBroadcast("deck_update", buildLobbySyncPayload(state));
+      if (state.menu?.mode === 'online') {
+        sendLobbyBroadcast('deck_update', buildLobbySyncPayload(state));
       }
       callbacks.onUpdate?.();
     };
@@ -977,9 +989,9 @@ const renderDeckManagePanel = (state, callbacks) => {
   }
   clearPanel(deckManageList);
   if (!state.menu.profile) {
-    const message = document.createElement("div");
-    message.className = "deck-slot";
-    message.textContent = "Login to manage decks.";
+    const message = document.createElement('div');
+    message.className = 'deck-slot';
+    message.textContent = 'Login to manage decks.';
     deckManageList.appendChild(message);
     return;
   }
@@ -987,12 +999,12 @@ const renderDeckManagePanel = (state, callbacks) => {
   const decks = state.menu.decks ?? [];
   const slots = Array.from({ length: 10 }, (_, index) => decks[index] ?? null);
 
-  const newDeckButton = document.createElement("button");
-  newDeckButton.type = "button";
-  newDeckButton.className = "primary";
-  newDeckButton.textContent = "Start New Deck";
+  const newDeckButton = document.createElement('button');
+  newDeckButton.type = 'button';
+  newDeckButton.className = 'primary';
+  newDeckButton.textContent = 'Start New Deck';
   newDeckButton.onclick = () => {
-    state.catalogBuilder.stage = "select";
+    state.catalogBuilder.stage = 'select';
     state.catalogBuilder.deckId = null;
     state.catalogBuilder.selections = [];
     state.catalogBuilder.available = [];
@@ -1000,13 +1012,13 @@ const renderDeckManagePanel = (state, callbacks) => {
     state.catalogBuilder.editingDeckId = null;
     state.catalogBuilder.editingDeckName = null;
     state.catalogBuilder.viewOnly = false;
-    state.catalogBuilder.activeTab = "catalog";
-    deckActiveTab = "catalog";
+    state.catalogBuilder.activeTab = 'catalog';
+    deckActiveTab = 'catalog';
     deckHighlighted = null;
     callbacks.onUpdate?.();
   };
-  const newDeckSlot = document.createElement("div");
-  newDeckSlot.className = "deck-slot";
+  const newDeckSlot = document.createElement('div');
+  newDeckSlot.className = 'deck-slot';
   newDeckSlot.innerHTML = `
     <div class="deck-slot-header">
       <span>Deck Slots</span>
@@ -1014,15 +1026,15 @@ const renderDeckManagePanel = (state, callbacks) => {
     </div>
     <div class="deck-slot-meta">Save up to ten decks per account.</div>
   `;
-  const newDeckActions = document.createElement("div");
-  newDeckActions.className = "deck-slot-actions";
+  const newDeckActions = document.createElement('div');
+  newDeckActions.className = 'deck-slot-actions';
   newDeckActions.appendChild(newDeckButton);
   newDeckSlot.appendChild(newDeckActions);
   deckManageList.appendChild(newDeckSlot);
 
   slots.forEach((deck, index) => {
-    const slot = document.createElement("div");
-    slot.className = "deck-slot";
+    const slot = document.createElement('div');
+    slot.className = 'deck-slot';
     if (!deck) {
       slot.innerHTML = `
         <div class="deck-slot-header">
@@ -1041,32 +1053,32 @@ const renderDeckManagePanel = (state, callbacks) => {
       </div>
       <div class="deck-slot-meta">20 cards</div>
     `;
-    const actions = document.createElement("div");
-    actions.className = "deck-slot-actions";
-    const editButton = document.createElement("button");
-    editButton.type = "button";
-    editButton.className = "primary";
-    editButton.textContent = "Edit";
+    const actions = document.createElement('div');
+    actions.className = 'deck-slot-actions';
+    const editButton = document.createElement('button');
+    editButton.type = 'button';
+    editButton.className = 'primary';
+    editButton.textContent = 'Edit';
     editButton.onclick = () => {
       const deckId = findDeckCatalogId(deck.deck);
       state.catalogBuilder.deckId = deckId;
-      state.catalogBuilder.stage = "build";
+      state.catalogBuilder.stage = 'build';
       state.catalogBuilder.selections = mapDeckIdsToCards(deckId, deck.deck);
       state.catalogBuilder.available = [];
       state.catalogBuilder.catalogOrder = [];
       state.catalogBuilder.editingDeckId = deck.id;
       state.catalogBuilder.editingDeckName = deck.name;
       initCatalogBuilder(state.catalogBuilder);
-      state.catalogBuilder.activeTab = "catalog";
-      deckActiveTab = "catalog";
+      state.catalogBuilder.activeTab = 'catalog';
+      deckActiveTab = 'catalog';
       deckHighlighted = null;
       callbacks.onUpdate?.();
     };
-    const renameButton = document.createElement("button");
-    renameButton.type = "button";
-    renameButton.textContent = "Rename";
+    const renameButton = document.createElement('button');
+    renameButton.type = 'button';
+    renameButton.textContent = 'Rename';
     renameButton.onclick = async () => {
-      const name = window.prompt("New deck name:", deck.name);
+      const name = window.prompt('New deck name:', deck.name);
       if (!name) {
         return;
       }
@@ -1080,16 +1092,16 @@ const renderDeckManagePanel = (state, callbacks) => {
         });
         await ensureDecksLoaded(state, { force: true });
       } catch (error) {
-        setMenuError(state, error.message || "Failed to rename deck.");
+        setMenuError(state, error.message || 'Failed to rename deck.');
       } finally {
         applyMenuLoading(state, false);
         callbacks.onUpdate?.();
       }
     };
-    const deleteButton = document.createElement("button");
-    deleteButton.type = "button";
-    deleteButton.className = "danger";
-    deleteButton.textContent = "Delete";
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.className = 'danger';
+    deleteButton.textContent = 'Delete';
     deleteButton.onclick = async () => {
       if (!window.confirm(`Delete "${deck.name}"?`)) {
         return;
@@ -1100,7 +1112,7 @@ const renderDeckManagePanel = (state, callbacks) => {
         await api.deleteDeck({ deckId: deck.id, ownerId: state.menu.profile.id });
         await ensureDecksLoaded(state, { force: true });
       } catch (error) {
-        setMenuError(state, error.message || "Failed to delete deck.");
+        setMenuError(state, error.message || 'Failed to delete deck.');
       } finally {
         applyMenuLoading(state, false);
         callbacks.onUpdate?.();
@@ -1127,26 +1139,21 @@ const renderDeckManagePanel = (state, callbacks) => {
  */
 export const renderDeckSelectionOverlay = (state, callbacks) => {
   const elements = getDeckElements();
-  const {
-    deckSelectOverlay,
-    deckSelectTitle,
-    deckSelectSubtitle,
-    deckSelectGrid,
-  } = elements;
+  const { deckSelectOverlay, deckSelectTitle, deckSelectSubtitle, deckSelectGrid } = elements;
 
   // Store callbacks for async operations
   latestCallbacks = callbacks;
 
   // AI vs AI mode: auto-generate both decks and skip selection UI
-  if (isAIvsAIMode(state) && state.menu?.stage === "ready") {
+  if (isAIvsAIMode(state) && state.menu?.stage === 'ready') {
     // Only process once (check if already complete)
-    if (state.deckSelection?.stage !== "complete") {
+    if (state.deckSelection?.stage !== 'complete') {
       console.log('[DeckBuilderOverlay] AI vs AI mode - generating both decks');
 
       // Initialize deck builder state if needed
       if (!state.deckBuilder) {
         state.deckBuilder = {
-          stage: "p1",
+          stage: 'p1',
           selections: [[], []],
           available: [[], []],
           catalogOrder: [[], []],
@@ -1154,7 +1161,7 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       }
       if (!state.deckSelection) {
         state.deckSelection = {
-          stage: "p1",
+          stage: 'p1',
           selections: [null, null],
         };
       }
@@ -1163,47 +1170,47 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       generateAIvsAIDecks(state);
 
       // Mark as complete
-      state.deckBuilder.stage = "complete";
-      state.deckSelection.stage = "complete";
+      state.deckBuilder.stage = 'complete';
+      state.deckSelection.stage = 'complete';
 
       // Trigger deck complete callback
       callbacks.onDeckComplete?.(state.deckBuilder.selections);
     }
 
     // Hide overlay
-    deckSelectOverlay?.classList.remove("active");
-    deckSelectOverlay?.setAttribute("aria-hidden", "true");
+    deckSelectOverlay?.classList.remove('active');
+    deckSelectOverlay?.setAttribute('aria-hidden', 'true');
     return;
   }
 
   // Catalog mode: deck management home screen or category selection
   if (isCatalogMode(state)) {
     // Home stage: show deck management overview with card-based layout
-    if (state.catalogBuilder?.stage === "home") {
-      deckSelectOverlay?.classList.add("active");
-      deckSelectOverlay?.setAttribute("aria-hidden", "false");
+    if (state.catalogBuilder?.stage === 'home') {
+      deckSelectOverlay?.classList.add('active');
+      deckSelectOverlay?.setAttribute('aria-hidden', 'false');
       if (deckSelectTitle) {
-        deckSelectTitle.textContent = "My Decks";
+        deckSelectTitle.textContent = 'My Decks';
       }
       if (deckSelectSubtitle) {
-        deckSelectSubtitle.textContent = "Manage your deck collection";
+        deckSelectSubtitle.textContent = 'Manage your deck collection';
       }
       clearPanel(deckSelectGrid);
 
       // Create card-style grid container
-      deckSelectGrid.className = "deck-select-grid deck-catalog-home";
+      deckSelectGrid.className = 'deck-select-grid deck-catalog-home';
 
       // 1. "View All Cards" option (always visible)
-      const viewAllCard = document.createElement("button");
-      viewAllCard.type = "button";
-      viewAllCard.className = "deck-catalog-card deck-catalog-card--view-all";
+      const viewAllCard = document.createElement('button');
+      viewAllCard.type = 'button';
+      viewAllCard.className = 'deck-catalog-card deck-catalog-card--view-all';
       viewAllCard.innerHTML = `
         <div class="deck-catalog-card__icon">📚</div>
         <div class="deck-catalog-card__title">View All Cards</div>
         <div class="deck-catalog-card__subtitle">Browse the complete card catalog</div>
       `;
       viewAllCard.onclick = () => {
-        state.catalogBuilder.stage = "select";
+        state.catalogBuilder.stage = 'select';
         state.catalogBuilder.viewOnly = true;
         callbacks.onUpdate?.();
       };
@@ -1212,8 +1219,8 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       // 2. Deck slots - only show if logged in
       if (!state.menu.profile) {
         // Not logged in - show login prompt
-        const loginPrompt = document.createElement("div");
-        loginPrompt.className = "deck-catalog-card deck-catalog-card--login-prompt";
+        const loginPrompt = document.createElement('div');
+        loginPrompt.className = 'deck-catalog-card deck-catalog-card--login-prompt';
         loginPrompt.innerHTML = `
           <div class="deck-catalog-card__icon">🔐</div>
           <div class="deck-catalog-card__title">Log in to create decks</div>
@@ -1228,8 +1235,10 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
         const maxSlots = 10;
         for (let i = 0; i < maxSlots; i++) {
           const deck = decks[i];
-          const card = document.createElement("div");
-          card.className = "deck-catalog-card" + (deck ? " deck-catalog-card--filled" : " deck-catalog-card--empty");
+          const card = document.createElement('div');
+          card.className =
+            'deck-catalog-card' +
+            (deck ? ' deck-catalog-card--filled' : ' deck-catalog-card--empty');
 
           if (deck) {
             // Filled deck slot
@@ -1244,26 +1253,26 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
             `;
 
             // Edit button handler
-            const editBtn = card.querySelector(".deck-catalog-card__btn--edit");
+            const editBtn = card.querySelector('.deck-catalog-card__btn--edit');
             editBtn.onclick = (e) => {
               e.stopPropagation();
               const deckId = findDeckCatalogId(deck.deck);
               state.catalogBuilder.deckId = deckId;
-              state.catalogBuilder.stage = "build";
+              state.catalogBuilder.stage = 'build';
               state.catalogBuilder.selections = mapDeckIdsToCards(deckId, deck.deck);
               state.catalogBuilder.available = [];
               state.catalogBuilder.catalogOrder = [];
               state.catalogBuilder.editingDeckId = deck.id;
               state.catalogBuilder.editingDeckName = deck.name;
               initCatalogBuilder(state.catalogBuilder);
-              state.catalogBuilder.activeTab = "catalog";
-              deckActiveTab = "catalog";
+              state.catalogBuilder.activeTab = 'catalog';
+              deckActiveTab = 'catalog';
               deckHighlighted = null;
               callbacks.onUpdate?.();
             };
 
             // Delete button handler
-            const deleteBtn = card.querySelector(".deck-catalog-card__btn--delete");
+            const deleteBtn = card.querySelector('.deck-catalog-card__btn--delete');
             deleteBtn.onclick = async (e) => {
               e.stopPropagation();
               if (!window.confirm(`Delete "${deck.name}"?`)) {
@@ -1275,7 +1284,7 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
                 await api.deleteDeck({ deckId: deck.id, ownerId: state.menu.profile.id });
                 await ensureDecksLoaded(state, { force: true });
               } catch (error) {
-                setMenuError(state, error.message || "Failed to delete deck.");
+                setMenuError(state, error.message || 'Failed to delete deck.');
               } finally {
                 applyMenuLoading(state, false);
                 callbacks.onUpdate?.();
@@ -1287,7 +1296,7 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
               if (e.target === editBtn || e.target === deleteBtn) return;
               editBtn.click();
             };
-            card.style.cursor = "pointer";
+            card.style.cursor = 'pointer';
           } else {
             // Empty deck slot - "Create New Deck"
             card.innerHTML = `
@@ -1295,9 +1304,9 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
               <div class="deck-catalog-card__title">Create New Deck</div>
               <div class="deck-catalog-card__subtitle">Slot ${i + 1} available</div>
             `;
-            card.style.cursor = "pointer";
+            card.style.cursor = 'pointer';
             card.onclick = () => {
-              state.catalogBuilder.stage = "select";
+              state.catalogBuilder.stage = 'select';
               state.catalogBuilder.viewOnly = false;
               callbacks.onUpdate?.();
             };
@@ -1308,14 +1317,14 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       }
 
       // Back button
-      const backContainer = document.createElement("div");
-      backContainer.className = "deck-catalog-back-container";
-      const backBtn = document.createElement("button");
-      backBtn.type = "button";
-      backBtn.className = "deck-catalog-back-btn";
-      backBtn.textContent = "Back to Menu";
+      const backContainer = document.createElement('div');
+      backContainer.className = 'deck-catalog-back-container';
+      const backBtn = document.createElement('button');
+      backBtn.type = 'button';
+      backBtn.className = 'deck-catalog-back-btn';
+      backBtn.textContent = 'Back to Menu';
       backBtn.onclick = () => {
-        state.menu.stage = "main";
+        state.menu.stage = 'main';
         state.catalogBuilder.stage = null;
         callbacks.onUpdate?.();
       };
@@ -1326,45 +1335,47 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
     }
 
     // Select stage: category selection for new deck or viewing cards
-    if (state.catalogBuilder?.stage !== "select") {
-      deckSelectOverlay?.classList.remove("active");
-      deckSelectOverlay?.setAttribute("aria-hidden", "true");
+    if (state.catalogBuilder?.stage !== 'select') {
+      deckSelectOverlay?.classList.remove('active');
+      deckSelectOverlay?.setAttribute('aria-hidden', 'true');
       return;
     }
-    deckSelectOverlay?.classList.add("active");
-    deckSelectOverlay?.setAttribute("aria-hidden", "false");
+    deckSelectOverlay?.classList.add('active');
+    deckSelectOverlay?.setAttribute('aria-hidden', 'false');
 
     const isViewOnly = state.catalogBuilder.viewOnly;
     if (deckSelectTitle) {
-      deckSelectTitle.textContent = isViewOnly ? "Card Catalog" : "New Deck";
+      deckSelectTitle.textContent = isViewOnly ? 'Card Catalog' : 'New Deck';
     }
     if (deckSelectSubtitle) {
       deckSelectSubtitle.textContent = isViewOnly
-        ? "Choose an animal category to browse cards."
-        : "Choose an animal category to build a new deck.";
+        ? 'Choose an animal category to browse cards.'
+        : 'Choose an animal category to build a new deck.';
     }
     clearPanel(deckSelectGrid);
-    deckSelectGrid.className = "deck-select-grid";
+    deckSelectGrid.className = 'deck-select-grid';
 
     // Back to home button
-    const backToHomeBtn = document.createElement("button");
-    backToHomeBtn.type = "button";
-    backToHomeBtn.className = "deck-select-back-btn";
-    backToHomeBtn.innerHTML = "← Back";
+    const backToHomeBtn = document.createElement('button');
+    backToHomeBtn.type = 'button';
+    backToHomeBtn.className = 'deck-select-back-btn';
+    backToHomeBtn.innerHTML = '← Back';
     backToHomeBtn.onclick = () => {
-      state.catalogBuilder.stage = "home";
+      state.catalogBuilder.stage = 'home';
       callbacks.onUpdate?.();
     };
     deckSelectGrid.appendChild(backToHomeBtn);
 
     DECK_OPTIONS.forEach((option) => {
-      const panel = document.createElement("button");
-      panel.type = "button";
+      const panel = document.createElement('button');
+      panel.type = 'button';
       panel.className = `deck-select-panel ${option.panelClass} ${
-        option.available ? "" : "disabled"
-      }${option.experimental ? " experimental" : ""}`;
+        option.available ? '' : 'disabled'
+      }${option.experimental ? ' experimental' : ''}`;
       panel.disabled = false; // Make all decks clickable per user request
-      const experimentalBadge = option.experimental ? '<div class="deck-experimental-badge">Experimental</div>' : '';
+      const experimentalBadge = option.experimental
+        ? '<div class="deck-experimental-badge">Experimental</div>'
+        : '';
       panel.innerHTML = `
         ${experimentalBadge}
         <div class="deck-emoji">${option.emoji}</div>
@@ -1375,14 +1386,14 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       panel.onclick = () => {
         const catalog = deckCatalogs[option.id] ?? [];
         state.catalogBuilder.deckId = option.id;
-        state.catalogBuilder.stage = "build";
+        state.catalogBuilder.stage = 'build';
         state.catalogBuilder.selections = [];
         state.catalogBuilder.available = cloneDeckCatalog(catalog);
         state.catalogBuilder.catalogOrder = catalog.map((card) => card.id);
         state.catalogBuilder.editingDeckId = null;
         state.catalogBuilder.editingDeckName = null;
-        state.catalogBuilder.activeTab = "catalog";
-        deckActiveTab = "catalog";
+        state.catalogBuilder.activeTab = 'catalog';
+        deckActiveTab = 'catalog';
         deckHighlighted = null;
         setDeckInspectorContent(null);
         callbacks.onUpdate?.();
@@ -1393,16 +1404,16 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
   }
 
   // Hide if not in ready stage
-  if (state.menu?.stage !== "ready") {
-    deckSelectOverlay?.classList.remove("active");
-    deckSelectOverlay?.setAttribute("aria-hidden", "true");
+  if (state.menu?.stage !== 'ready') {
+    deckSelectOverlay?.classList.remove('active');
+    deckSelectOverlay?.setAttribute('aria-hidden', 'true');
     return;
   }
 
   // Hide if deck selection not in progress
-  if (!state.deckSelection || !["p1", "p1-selected", "p2"].includes(state.deckSelection.stage)) {
-    deckSelectOverlay?.classList.remove("active");
-    deckSelectOverlay?.setAttribute("aria-hidden", "true");
+  if (!state.deckSelection || !['p1', 'p1-selected', 'p2'].includes(state.deckSelection.stage)) {
+    deckSelectOverlay?.classList.remove('active');
+    deckSelectOverlay?.setAttribute('aria-hidden', 'true');
     return;
   }
 
@@ -1429,29 +1440,31 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       localReady,
       opponentReady,
       lobby: { host_id: state.menu?.lobby?.host_id, guest_id: state.menu?.lobby?.guest_id },
-      profileId: state.menu?.profile?.id
+      profileId: state.menu?.profile?.id,
     });
     const localPlayer = state.players[localIndex];
     const opponentPlayer = state.players[opponentIndex];
-    const opponentName = opponentPlayer?.name || "Opponent";
+    const opponentName = opponentPlayer?.name || 'Opponent';
 
     // If both players are ready, proceed to setup
     // IMPORTANT: Also verify both decks are actually populated (not just ready status)
     // This prevents a race condition where ready status syncs before deck data
-    const bothDecksPopulated = state.deckBuilder.selections.every(deck => deck && deck.length > 0);
+    const bothDecksPopulated = state.deckBuilder.selections.every(
+      (deck) => deck && deck.length > 0
+    );
     console.log('[DeckBuilderOverlay] Ready check:', {
       localReady,
       opponentReady,
       bothDecksPopulated,
-      deckBuilderSelections: state.deckBuilder.selections.map(d => d?.length ?? 'null'),
+      deckBuilderSelections: state.deckBuilder.selections.map((d) => d?.length ?? 'null'),
       deckSelectionSelections: state.deckSelection.selections,
       waitingScreenFading,
     });
     if (localReady && opponentReady && bothDecksPopulated) {
       // If already fading or complete, just ensure overlay is hidden
-      if (state.deckSelection.stage === "complete" && state.deckBuilder.stage === "complete") {
-        deckSelectOverlay?.classList.remove("active");
-        deckSelectOverlay?.setAttribute("aria-hidden", "true");
+      if (state.deckSelection.stage === 'complete' && state.deckBuilder.stage === 'complete') {
+        deckSelectOverlay?.classList.remove('active');
+        deckSelectOverlay?.setAttribute('aria-hidden', 'true');
         return;
       }
 
@@ -1459,7 +1472,7 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       if (!waitingScreenFading && !waitingScreenFadeTimeout) {
         console.log('[DeckBuilderOverlay] Starting waiting screen fade-out');
         waitingScreenFading = true;
-        deckSelectOverlay?.classList.add("fading-out");
+        deckSelectOverlay?.classList.add('fading-out');
 
         waitingScreenFadeTimeout = setTimeout(() => {
           console.log('[DeckBuilderOverlay] Fade complete, proceeding to setup');
@@ -1467,12 +1480,12 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
           waitingScreenFadeTimeout = null;
 
           // Complete the deck selection
-          state.deckSelection.stage = "complete";
-          state.deckBuilder.stage = "complete";
+          state.deckSelection.stage = 'complete';
+          state.deckBuilder.stage = 'complete';
 
           // Hide the overlay
-          deckSelectOverlay?.classList.remove("active", "fading-out");
-          deckSelectOverlay?.setAttribute("aria-hidden", "true");
+          deckSelectOverlay?.classList.remove('active', 'fading-out');
+          deckSelectOverlay?.setAttribute('aria-hidden', 'true');
 
           // Trigger the deck complete callback
           callbacks.onDeckComplete?.(state.deckBuilder.selections);
@@ -1483,47 +1496,50 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
 
     // If local player is ready, show waiting screen with status boxes
     if (localReady) {
-      deckSelectOverlay?.classList.add("active");
-      deckSelectOverlay?.setAttribute("aria-hidden", "false");
+      deckSelectOverlay?.classList.add('active');
+      deckSelectOverlay?.setAttribute('aria-hidden', 'false');
       if (deckSelectTitle) {
-        deckSelectTitle.textContent = "Waiting for Players";
+        deckSelectTitle.textContent = 'Waiting for Players';
       }
       if (deckSelectSubtitle) {
-        deckSelectSubtitle.textContent = "Both players must confirm their deck to start the game.";
+        deckSelectSubtitle.textContent = 'Both players must confirm their deck to start the game.';
       }
       clearPanel(deckSelectGrid);
 
       // Create player status boxes
-      const statusContainer = document.createElement("div");
-      statusContainer.className = "player-ready-status";
-      statusContainer.style.cssText = "display: flex; justify-content: center; gap: 2rem; margin-top: 1rem;";
+      const statusContainer = document.createElement('div');
+      statusContainer.className = 'player-ready-status';
+      statusContainer.style.cssText =
+        'display: flex; justify-content: center; gap: 2rem; margin-top: 1rem;';
 
       // Local player box (always on left from their perspective)
-      const localBox = document.createElement("div");
-      localBox.className = "player-status-box";
-      localBox.style.cssText = "display: flex; flex-direction: column; align-items: center; padding: 1.5rem 2rem; border: 2px solid var(--color-border); border-radius: 8px; min-width: 140px;";
+      const localBox = document.createElement('div');
+      localBox.className = 'player-status-box';
+      localBox.style.cssText =
+        'display: flex; flex-direction: column; align-items: center; padding: 1.5rem 2rem; border: 2px solid var(--color-border); border-radius: 8px; min-width: 140px;';
       localBox.innerHTML = `
-        <div style="font-size: 2rem; margin-bottom: 0.5rem;">${localReady ? "✓" : "⏳"}</div>
-        <div style="font-weight: bold; margin-bottom: 0.25rem;">${localPlayer?.name || "You"}</div>
-        <div style="font-size: 0.85rem; color: var(--color-text-muted);">${localReady ? "Ready" : "Choosing..."}</div>
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;">${localReady ? '✓' : '⏳'}</div>
+        <div style="font-weight: bold; margin-bottom: 0.25rem;">${localPlayer?.name || 'You'}</div>
+        <div style="font-size: 0.85rem; color: var(--color-text-muted);">${localReady ? 'Ready' : 'Choosing...'}</div>
       `;
       if (localReady) {
-        localBox.style.borderColor = "var(--color-success, #4ade80)";
-        localBox.style.backgroundColor = "rgba(74, 222, 128, 0.1)";
+        localBox.style.borderColor = 'var(--color-success, #4ade80)';
+        localBox.style.backgroundColor = 'rgba(74, 222, 128, 0.1)';
       }
 
       // Opponent player box
-      const opponentBox = document.createElement("div");
-      opponentBox.className = "player-status-box";
-      opponentBox.style.cssText = "display: flex; flex-direction: column; align-items: center; padding: 1.5rem 2rem; border: 2px solid var(--color-border); border-radius: 8px; min-width: 140px;";
+      const opponentBox = document.createElement('div');
+      opponentBox.className = 'player-status-box';
+      opponentBox.style.cssText =
+        'display: flex; flex-direction: column; align-items: center; padding: 1.5rem 2rem; border: 2px solid var(--color-border); border-radius: 8px; min-width: 140px;';
       opponentBox.innerHTML = `
-        <div style="font-size: 2rem; margin-bottom: 0.5rem;">${opponentReady ? "✓" : "⏳"}</div>
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;">${opponentReady ? '✓' : '⏳'}</div>
         <div style="font-weight: bold; margin-bottom: 0.25rem;">${opponentName}</div>
-        <div style="font-size: 0.85rem; color: var(--color-text-muted);">${opponentReady ? "Ready" : "Choosing..."}</div>
+        <div style="font-size: 0.85rem; color: var(--color-text-muted);">${opponentReady ? 'Ready' : 'Choosing...'}</div>
       `;
       if (opponentReady) {
-        opponentBox.style.borderColor = "var(--color-success, #4ade80)";
-        opponentBox.style.backgroundColor = "rgba(74, 222, 128, 0.1)";
+        opponentBox.style.borderColor = 'var(--color-success, #4ade80)';
+        opponentBox.style.backgroundColor = 'rgba(74, 222, 128, 0.1)';
       }
 
       statusContainer.appendChild(localBox);
@@ -1533,8 +1549,8 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
     }
 
     // Local player hasn't confirmed yet - show deck selection
-    deckSelectOverlay?.classList.add("active");
-    deckSelectOverlay?.setAttribute("aria-hidden", "false");
+    deckSelectOverlay?.classList.add('active');
+    deckSelectOverlay?.setAttribute('aria-hidden', 'false');
 
     ensureDecksLoaded(state);
 
@@ -1545,77 +1561,83 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       localIndex,
       localSelection,
       hasSelectedDeck,
-      allSelections: state.deckSelection.selections
+      allSelections: state.deckSelection.selections,
     });
 
     if (deckSelectTitle) {
       deckSelectTitle.textContent = hasSelectedDeck
         ? `Deck Selected - Confirm to Continue`
-        : `${localPlayer?.name || "Player"} Load Deck`;
+        : `${localPlayer?.name || 'Player'} Load Deck`;
     }
     if (deckSelectSubtitle) {
       deckSelectSubtitle.textContent = hasSelectedDeck
-        ? "Your deck is loaded. Click Confirm when ready to play."
-        : "Choose a saved deck or create a random one.";
+        ? 'Your deck is loaded. Click Confirm when ready to play.'
+        : 'Choose a saved deck or create a random one.';
     }
     clearPanel(deckSelectGrid);
 
     const decks = state.menu.decks ?? [];
     if (decks.length === 0) {
       // Show message but DON'T return - fall through to "Create a deck" button
-      const empty = document.createElement("div");
-      empty.className = "deck-slot";
-      empty.textContent = "No saved decks yet. Create one below!";
+      const empty = document.createElement('div');
+      empty.className = 'deck-slot';
+      empty.textContent = 'No saved decks yet. Create one below!';
       deckSelectGrid?.appendChild(empty);
     }
 
     // Show deck options (only if there are saved decks)
     decks.forEach((deck) => {
-      const isSelected = localSelection && state.deckBuilder.selections[localIndex]?.length > 0
-        && deck.deck.every((id, i) => state.deckBuilder.selections[localIndex][i]?.id === id ||
-           state.deckBuilder.selections[localIndex].some(card => card.id === id));
+      const isSelected =
+        localSelection &&
+        state.deckBuilder.selections[localIndex]?.length > 0 &&
+        deck.deck.every(
+          (id, i) =>
+            state.deckBuilder.selections[localIndex][i]?.id === id ||
+            state.deckBuilder.selections[localIndex].some((card) => card.id === id)
+        );
 
-      const slot = document.createElement("div");
-      slot.className = "deck-slot" + (isSelected ? " selected" : "");
+      const slot = document.createElement('div');
+      slot.className = 'deck-slot' + (isSelected ? ' selected' : '');
       if (isSelected) {
-        slot.style.borderColor = "var(--color-primary, #3b82f6)";
-        slot.style.backgroundColor = "rgba(59, 130, 246, 0.1)";
+        slot.style.borderColor = 'var(--color-primary, #3b82f6)';
+        slot.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
       }
 
-      const loadButton = document.createElement("button");
-      loadButton.type = "button";
-      loadButton.className = isSelected ? "btn-secondary" : "primary";
-      loadButton.textContent = isSelected ? "Selected" : "Select Deck";
+      const loadButton = document.createElement('button');
+      loadButton.type = 'button';
+      loadButton.className = isSelected ? 'btn-secondary' : 'primary';
+      loadButton.textContent = isSelected ? 'Selected' : 'Select Deck';
       loadButton.disabled = isSelected;
       loadButton.onclick = () => {
         applyDeckToBuilder(state, localIndex, deck.deck);
         // Don't reveal full deck name in log - just confirm deck was selected
-        logMessage(state, `${localPlayer?.name || "Player"} selected a deck.`);
+        logMessage(state, `${localPlayer?.name || 'Player'} selected a deck.`);
         callbacks.onUpdate?.();
       };
       slot.innerHTML = `
         <div class="deck-slot-header">
           <span>${deck.name}</span>
-          <span class="deck-slot-meta">${isSelected ? "✓ Selected" : "20 cards"}</span>
+          <span class="deck-slot-meta">${isSelected ? '✓ Selected' : '20 cards'}</span>
         </div>
         <div class="deck-slot-meta">Multiplayer Slot</div>
       `;
-      const actions = document.createElement("div");
-      actions.className = "deck-slot-actions";
+      const actions = document.createElement('div');
+      actions.className = 'deck-slot-actions';
       actions.appendChild(loadButton);
       slot.appendChild(actions);
       deckSelectGrid?.appendChild(slot);
     });
 
     // Add "Create a deck (Not saved)" button
-    const createDeckContainer = document.createElement("div");
-    createDeckContainer.style.cssText = "margin-top: 1.5rem; text-align: center; padding-top: 1rem; border-top: 1px solid var(--color-border);";
+    const createDeckContainer = document.createElement('div');
+    createDeckContainer.style.cssText =
+      'margin-top: 1.5rem; text-align: center; padding-top: 1rem; border-top: 1px solid var(--color-border);';
 
-    const createDeckButton = document.createElement("button");
-    createDeckButton.type = "button";
-    createDeckButton.className = "btn-secondary";
-    createDeckButton.style.cssText = "padding: 0.5rem 1rem; font-size: 0.9rem;";
-    createDeckButton.textContent = "Create a deck (Not saved)";
+    const createDeckButton = document.createElement('button');
+    createDeckButton.type = 'button';
+    createDeckButton.className = 'btn-secondary';
+    createDeckButton.style.cssText = 'padding: 0.5rem 1rem; font-size: 0.9rem;';
+    createDeckButton.textContent = 'Create a deck (Not saved)';
     createDeckButton.onclick = () => {
       state.deckSelection.skipSavedDecks = true;
       callbacks.onUpdate?.();
@@ -1626,18 +1648,18 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
 
     // Add confirm button if deck is selected
     if (hasSelectedDeck) {
-      const confirmContainer = document.createElement("div");
-      confirmContainer.style.cssText = "margin-top: 1.5rem; text-align: center;";
+      const confirmContainer = document.createElement('div');
+      confirmContainer.style.cssText = 'margin-top: 1.5rem; text-align: center;';
 
-      const confirmButton = document.createElement("button");
-      confirmButton.type = "button";
-      confirmButton.className = "btn-primary";
-      confirmButton.style.cssText = "padding: 0.75rem 2rem; font-size: 1.1rem;";
-      confirmButton.textContent = "Confirm Deck & Ready Up";
+      const confirmButton = document.createElement('button');
+      confirmButton.type = 'button';
+      confirmButton.className = 'btn-primary';
+      confirmButton.style.cssText = 'padding: 0.75rem 2rem; font-size: 1.1rem;';
+      confirmButton.textContent = 'Confirm Deck & Ready Up';
       confirmButton.onclick = () => {
         state.deckSelection.readyStatus[localIndex] = true;
-        logMessage(state, `${localPlayer?.name || "Player"} is ready!`);
-        sendLobbyBroadcast("deck_update", buildLobbySyncPayload(state));
+        logMessage(state, `${localPlayer?.name || 'Player'} is ready!`);
+        sendLobbyBroadcast('deck_update', buildLobbySyncPayload(state));
         callbacks.onUpdate?.();
       };
 
@@ -1650,13 +1672,13 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
   // Online mode: deck type selection (when skipSavedDecks is true)
   // This handles the case where user clicks "Create a deck (Not saved)" in multiplayer
   if (isOnlineMode(state) && state.deckSelection.skipSavedDecks) {
-    deckSelectOverlay?.classList.add("active");
-    deckSelectOverlay?.setAttribute("aria-hidden", "false");
+    deckSelectOverlay?.classList.add('active');
+    deckSelectOverlay?.setAttribute('aria-hidden', 'false');
 
     const localPlayer = state.players[localIndex];
     const localSelection = state.deckSelection.selections[localIndex];
-    const hasSelectedDeck = Boolean(localSelection) &&
-      state.deckBuilder.selections[localIndex]?.length === 20;
+    const hasSelectedDeck =
+      Boolean(localSelection) && state.deckBuilder.selections[localIndex]?.length === 20;
 
     // Initialize readyStatus if not present
     if (!state.deckSelection.readyStatus) {
@@ -1668,20 +1690,22 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
     const opponentReady = state.deckSelection.readyStatus[opponentIndex];
 
     // If both players are ready, proceed to setup
-    const bothDecksPopulated = state.deckBuilder.selections.every(deck => deck && deck.length > 0);
+    const bothDecksPopulated = state.deckBuilder.selections.every(
+      (deck) => deck && deck.length > 0
+    );
     console.log('[DeckBuilderOverlay] Ready check (random deck path):', {
       localReady,
       opponentReady,
       bothDecksPopulated,
-      deckBuilderSelections: state.deckBuilder.selections.map(d => d?.length ?? 'null'),
+      deckBuilderSelections: state.deckBuilder.selections.map((d) => d?.length ?? 'null'),
       deckSelectionSelections: state.deckSelection.selections,
       waitingScreenFading,
     });
     if (localReady && opponentReady && bothDecksPopulated) {
       // If already fading or complete, just ensure overlay is hidden
-      if (state.deckSelection.stage === "complete" && state.deckBuilder.stage === "complete") {
-        deckSelectOverlay?.classList.remove("active");
-        deckSelectOverlay?.setAttribute("aria-hidden", "true");
+      if (state.deckSelection.stage === 'complete' && state.deckBuilder.stage === 'complete') {
+        deckSelectOverlay?.classList.remove('active');
+        deckSelectOverlay?.setAttribute('aria-hidden', 'true');
         return;
       }
 
@@ -1689,7 +1713,7 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       if (!waitingScreenFading && !waitingScreenFadeTimeout) {
         console.log('[DeckBuilderOverlay] Starting waiting screen fade-out (random deck path)');
         waitingScreenFading = true;
-        deckSelectOverlay?.classList.add("fading-out");
+        deckSelectOverlay?.classList.add('fading-out');
 
         waitingScreenFadeTimeout = setTimeout(() => {
           console.log('[DeckBuilderOverlay] Fade complete, proceeding to setup (random deck path)');
@@ -1697,12 +1721,12 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
           waitingScreenFadeTimeout = null;
 
           // Complete the deck selection
-          state.deckSelection.stage = "complete";
-          state.deckBuilder.stage = "complete";
+          state.deckSelection.stage = 'complete';
+          state.deckBuilder.stage = 'complete';
 
           // Hide the overlay
-          deckSelectOverlay?.classList.remove("active", "fading-out");
-          deckSelectOverlay?.setAttribute("aria-hidden", "true");
+          deckSelectOverlay?.classList.remove('active', 'fading-out');
+          deckSelectOverlay?.setAttribute('aria-hidden', 'true');
 
           // Trigger the deck complete callback
           callbacks.onDeckComplete?.(state.deckBuilder.selections);
@@ -1714,44 +1738,47 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
     // If local player is ready, show waiting screen
     if (localReady) {
       if (deckSelectTitle) {
-        deckSelectTitle.textContent = "Waiting for Players";
+        deckSelectTitle.textContent = 'Waiting for Players';
       }
       if (deckSelectSubtitle) {
-        deckSelectSubtitle.textContent = "Both players must confirm their deck to start the game.";
+        deckSelectSubtitle.textContent = 'Both players must confirm their deck to start the game.';
       }
       clearPanel(deckSelectGrid);
 
       // Create player status boxes (similar to saved deck flow)
-      const statusContainer = document.createElement("div");
-      statusContainer.className = "player-ready-status";
-      statusContainer.style.cssText = "display: flex; justify-content: center; gap: 2rem; margin-top: 1rem;";
+      const statusContainer = document.createElement('div');
+      statusContainer.className = 'player-ready-status';
+      statusContainer.style.cssText =
+        'display: flex; justify-content: center; gap: 2rem; margin-top: 1rem;';
 
-      const localBox = document.createElement("div");
-      localBox.className = "player-status-box";
-      localBox.style.cssText = "display: flex; flex-direction: column; align-items: center; padding: 1.5rem 2rem; border: 2px solid var(--color-border); border-radius: 8px; min-width: 140px;";
+      const localBox = document.createElement('div');
+      localBox.className = 'player-status-box';
+      localBox.style.cssText =
+        'display: flex; flex-direction: column; align-items: center; padding: 1.5rem 2rem; border: 2px solid var(--color-border); border-radius: 8px; min-width: 140px;';
       localBox.innerHTML = `
-        <div style="font-size: 2rem; margin-bottom: 0.5rem;">${localReady ? "✓" : "⏳"}</div>
-        <div style="font-weight: bold; margin-bottom: 0.25rem;">${localPlayer?.name || "You"}</div>
-        <div style="font-size: 0.85rem; color: var(--color-text-muted);">${localReady ? "Ready" : "Choosing..."}</div>
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;">${localReady ? '✓' : '⏳'}</div>
+        <div style="font-weight: bold; margin-bottom: 0.25rem;">${localPlayer?.name || 'You'}</div>
+        <div style="font-size: 0.85rem; color: var(--color-text-muted);">${localReady ? 'Ready' : 'Choosing...'}</div>
       `;
       if (localReady) {
-        localBox.style.borderColor = "var(--color-success, #4ade80)";
-        localBox.style.backgroundColor = "rgba(74, 222, 128, 0.1)";
+        localBox.style.borderColor = 'var(--color-success, #4ade80)';
+        localBox.style.backgroundColor = 'rgba(74, 222, 128, 0.1)';
       }
 
       const opponentPlayer = state.players[opponentIndex];
-      const opponentName = opponentPlayer?.name || "Opponent";
-      const opponentBox = document.createElement("div");
-      opponentBox.className = "player-status-box";
-      opponentBox.style.cssText = "display: flex; flex-direction: column; align-items: center; padding: 1.5rem 2rem; border: 2px solid var(--color-border); border-radius: 8px; min-width: 140px;";
+      const opponentName = opponentPlayer?.name || 'Opponent';
+      const opponentBox = document.createElement('div');
+      opponentBox.className = 'player-status-box';
+      opponentBox.style.cssText =
+        'display: flex; flex-direction: column; align-items: center; padding: 1.5rem 2rem; border: 2px solid var(--color-border); border-radius: 8px; min-width: 140px;';
       opponentBox.innerHTML = `
-        <div style="font-size: 2rem; margin-bottom: 0.5rem;">${opponentReady ? "✓" : "⏳"}</div>
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;">${opponentReady ? '✓' : '⏳'}</div>
         <div style="font-weight: bold; margin-bottom: 0.25rem;">${opponentName}</div>
-        <div style="font-size: 0.85rem; color: var(--color-text-muted);">${opponentReady ? "Ready" : "Choosing..."}</div>
+        <div style="font-size: 0.85rem; color: var(--color-text-muted);">${opponentReady ? 'Ready' : 'Choosing...'}</div>
       `;
       if (opponentReady) {
-        opponentBox.style.borderColor = "var(--color-success, #4ade80)";
-        opponentBox.style.backgroundColor = "rgba(74, 222, 128, 0.1)";
+        opponentBox.style.borderColor = 'var(--color-success, #4ade80)';
+        opponentBox.style.backgroundColor = 'rgba(74, 222, 128, 0.1)';
       }
 
       statusContainer.appendChild(localBox);
@@ -1767,16 +1794,18 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
         deckSelectTitle.textContent = `Random ${localSelection} Deck Ready`;
       }
       if (deckSelectSubtitle) {
-        deckSelectSubtitle.textContent = "Your random deck has been generated. Click Confirm when ready to play.";
+        deckSelectSubtitle.textContent =
+          'Your random deck has been generated. Click Confirm when ready to play.';
       }
       clearPanel(deckSelectGrid);
 
       // Show deck info
-      const deckInfo = document.createElement("div");
-      deckInfo.className = "deck-slot selected";
-      deckInfo.style.borderColor = "var(--color-primary, #3b82f6)";
-      deckInfo.style.backgroundColor = "rgba(59, 130, 246, 0.1)";
-      const deckName = DECK_OPTIONS.find(opt => opt.id === localSelection)?.name ?? localSelection;
+      const deckInfo = document.createElement('div');
+      deckInfo.className = 'deck-slot selected';
+      deckInfo.style.borderColor = 'var(--color-primary, #3b82f6)';
+      deckInfo.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+      const deckName =
+        DECK_OPTIONS.find((opt) => opt.id === localSelection)?.name ?? localSelection;
       deckInfo.innerHTML = `
         <div class="deck-slot-header">
           <span>Random ${deckName} Deck</span>
@@ -1787,18 +1816,18 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       deckSelectGrid?.appendChild(deckInfo);
 
       // Add confirm button
-      const confirmContainer = document.createElement("div");
-      confirmContainer.style.cssText = "margin-top: 1.5rem; text-align: center;";
+      const confirmContainer = document.createElement('div');
+      confirmContainer.style.cssText = 'margin-top: 1.5rem; text-align: center;';
 
-      const confirmButton = document.createElement("button");
-      confirmButton.type = "button";
-      confirmButton.className = "btn-primary";
-      confirmButton.style.cssText = "padding: 0.75rem 2rem; font-size: 1.1rem;";
-      confirmButton.textContent = "Confirm Deck & Ready Up";
+      const confirmButton = document.createElement('button');
+      confirmButton.type = 'button';
+      confirmButton.className = 'btn-primary';
+      confirmButton.style.cssText = 'padding: 0.75rem 2rem; font-size: 1.1rem;';
+      confirmButton.textContent = 'Confirm Deck & Ready Up';
       confirmButton.onclick = () => {
         state.deckSelection.readyStatus[localIndex] = true;
-        logMessage(state, `${localPlayer?.name || "Player"} is ready!`);
-        sendLobbyBroadcast("deck_update", buildLobbySyncPayload(state));
+        logMessage(state, `${localPlayer?.name || 'Player'} is ready!`);
+        sendLobbyBroadcast('deck_update', buildLobbySyncPayload(state));
         callbacks.onUpdate?.();
       };
 
@@ -1806,13 +1835,13 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       deckSelectGrid?.appendChild(confirmContainer);
 
       // Add back button to choose different type
-      const backContainer = document.createElement("div");
-      backContainer.style.cssText = "margin-top: 1rem; text-align: center;";
-      const backButton = document.createElement("button");
-      backButton.type = "button";
-      backButton.className = "btn-secondary";
-      backButton.style.cssText = "padding: 0.5rem 1rem; font-size: 0.9rem;";
-      backButton.textContent = "Choose Different Type";
+      const backContainer = document.createElement('div');
+      backContainer.style.cssText = 'margin-top: 1rem; text-align: center;';
+      const backButton = document.createElement('button');
+      backButton.type = 'button';
+      backButton.className = 'btn-secondary';
+      backButton.style.cssText = 'padding: 0.5rem 1rem; font-size: 0.9rem;';
+      backButton.textContent = 'Choose Different Type';
       backButton.onclick = () => {
         // Clear the selection to go back to deck type selection
         state.deckSelection.selections[localIndex] = null;
@@ -1824,21 +1853,24 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
     } else {
       // Show deck type selection
       if (deckSelectTitle) {
-        deckSelectTitle.textContent = `${localPlayer?.name || "Player"} - Choose Deck Type`;
+        deckSelectTitle.textContent = `${localPlayer?.name || 'Player'} - Choose Deck Type`;
       }
       if (deckSelectSubtitle) {
-        deckSelectSubtitle.textContent = "Select a deck category. A random deck will be generated for you.";
+        deckSelectSubtitle.textContent =
+          'Select a deck category. A random deck will be generated for you.';
       }
       clearPanel(deckSelectGrid);
 
       DECK_OPTIONS.forEach((option) => {
-        const panel = document.createElement("button");
-        panel.type = "button";
+        const panel = document.createElement('button');
+        panel.type = 'button';
         panel.className = `deck-select-panel ${option.panelClass} ${
-          option.available ? "" : "disabled"
-        }${option.experimental ? " experimental" : ""}`;
+          option.available ? '' : 'disabled'
+        }${option.experimental ? ' experimental' : ''}`;
         panel.disabled = false; // Make all decks clickable
-        const experimentalBadge = option.experimental ? '<div class="deck-experimental-badge">Experimental</div>' : '';
+        const experimentalBadge = option.experimental
+          ? '<div class="deck-experimental-badge">Experimental</div>'
+          : '';
         panel.innerHTML = `
           ${experimentalBadge}
           <div class="deck-emoji">${option.emoji}</div>
@@ -1849,21 +1881,25 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
         panel.onclick = () => {
           // Generate random deck from this category using existing function
           generateDeckForPlayer(state, localIndex, option.id);
-          logMessage(state, `${localPlayer?.name || "Player"} created a random ${option.name} deck.`);
-          sendLobbyBroadcast("deck_update", buildLobbySyncPayload(state));
+          logMessage(
+            state,
+            `${localPlayer?.name || 'Player'} created a random ${option.name} deck.`
+          );
+          sendLobbyBroadcast('deck_update', buildLobbySyncPayload(state));
           callbacks.onUpdate?.();
         };
         deckSelectGrid?.appendChild(panel);
       });
 
       // Add back button to return to saved decks view
-      const backContainer = document.createElement("div");
-      backContainer.style.cssText = "margin-top: 1.5rem; text-align: center; padding-top: 1rem; border-top: 1px solid var(--color-border);";
-      const backButton = document.createElement("button");
-      backButton.type = "button";
-      backButton.className = "btn-secondary";
-      backButton.style.cssText = "padding: 0.5rem 1rem; font-size: 0.9rem;";
-      backButton.textContent = "Back to Saved Decks";
+      const backContainer = document.createElement('div');
+      backContainer.style.cssText =
+        'margin-top: 1.5rem; text-align: center; padding-top: 1rem; border-top: 1px solid var(--color-border);';
+      const backButton = document.createElement('button');
+      backButton.type = 'button';
+      backButton.className = 'btn-secondary';
+      backButton.style.cssText = 'padding: 0.5rem 1rem; font-size: 0.9rem;';
+      backButton.textContent = 'Back to Saved Decks';
       backButton.onclick = () => {
         state.deckSelection.skipSavedDecks = false;
         callbacks.onUpdate?.();
@@ -1875,12 +1911,12 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
   }
 
   // Local/AI mode: sequential deck selection
-  deckSelectOverlay?.classList.add("active");
-  deckSelectOverlay?.setAttribute("aria-hidden", "false");
+  deckSelectOverlay?.classList.add('active');
+  deckSelectOverlay?.setAttribute('aria-hidden', 'false');
 
-  const isPlayerOne = state.deckSelection.stage === "p1";
+  const isPlayerOne = state.deckSelection.stage === 'p1';
   const playerIndex = isPlayerOne ? 0 : 1;
-  const isLocalTurn = playerIndex === localIndex || state.menu?.mode !== "online";
+  const isLocalTurn = playerIndex === localIndex || state.menu?.mode !== 'online';
   const player = state.players[playerIndex];
 
   // Show waiting message if not local player's turn (for local mode hand-off)
@@ -1899,7 +1935,8 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
   // AI mode: show saved decks first for player 1 (unless skipSavedDecks is set)
   ensureDecksLoaded(state);
   const savedDecks = state.menu?.decks ?? [];
-  const showSavedDecks = isAIMode(state) && isPlayerOne && savedDecks.length > 0 && !state.deckSelection.skipSavedDecks;
+  const showSavedDecks =
+    isAIMode(state) && isPlayerOne && savedDecks.length > 0 && !state.deckSelection.skipSavedDecks;
 
   if (showSavedDecks) {
     // Show saved deck selection for AI mode
@@ -1907,7 +1944,7 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       deckSelectTitle.textContent = `${player.name} - Load Deck`;
     }
     if (deckSelectSubtitle) {
-      deckSelectSubtitle.textContent = "Choose one of your saved decks or create a new one.";
+      deckSelectSubtitle.textContent = 'Choose one of your saved decks or create a new one.';
     }
     clearPanel(deckSelectGrid);
 
@@ -1916,20 +1953,24 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
 
     // Show saved deck options
     savedDecks.forEach((deck) => {
-      const isSelected = hasSelectedDeck && state.deckBuilder.selections[playerIndex]?.length > 0
-        && deck.deck.every((id) => state.deckBuilder.selections[playerIndex].some(card => card.id === id));
+      const isSelected =
+        hasSelectedDeck &&
+        state.deckBuilder.selections[playerIndex]?.length > 0 &&
+        deck.deck.every((id) =>
+          state.deckBuilder.selections[playerIndex].some((card) => card.id === id)
+        );
 
-      const slot = document.createElement("div");
-      slot.className = "deck-slot" + (isSelected ? " selected" : "");
+      const slot = document.createElement('div');
+      slot.className = 'deck-slot' + (isSelected ? ' selected' : '');
       if (isSelected) {
-        slot.style.borderColor = "var(--color-primary, #3b82f6)";
-        slot.style.backgroundColor = "rgba(59, 130, 246, 0.1)";
+        slot.style.borderColor = 'var(--color-primary, #3b82f6)';
+        slot.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
       }
 
-      const loadButton = document.createElement("button");
-      loadButton.type = "button";
-      loadButton.className = isSelected ? "btn-secondary" : "primary";
-      loadButton.textContent = isSelected ? "Selected" : "Select Deck";
+      const loadButton = document.createElement('button');
+      loadButton.type = 'button';
+      loadButton.className = isSelected ? 'btn-secondary' : 'primary';
+      loadButton.textContent = isSelected ? 'Selected' : 'Select Deck';
       loadButton.disabled = isSelected;
       loadButton.onclick = () => {
         applyDeckToBuilder(state, playerIndex, deck.deck);
@@ -1940,26 +1981,27 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       slot.innerHTML = `
         <div class="deck-slot-header">
           <span>${deck.name}</span>
-          <span class="deck-slot-meta">${isSelected ? "✓ Selected" : "20 cards"}</span>
+          <span class="deck-slot-meta">${isSelected ? '✓ Selected' : '20 cards'}</span>
         </div>
         <div class="deck-slot-meta">Saved Deck</div>
       `;
-      const actions = document.createElement("div");
-      actions.className = "deck-slot-actions";
+      const actions = document.createElement('div');
+      actions.className = 'deck-slot-actions';
       actions.appendChild(loadButton);
       slot.appendChild(actions);
       deckSelectGrid?.appendChild(slot);
     });
 
     // Add "Create a deck (Not saved)" button
-    const createDeckContainer = document.createElement("div");
-    createDeckContainer.style.cssText = "margin-top: 1.5rem; text-align: center; padding-top: 1rem; border-top: 1px solid var(--color-border);";
+    const createDeckContainer = document.createElement('div');
+    createDeckContainer.style.cssText =
+      'margin-top: 1.5rem; text-align: center; padding-top: 1rem; border-top: 1px solid var(--color-border);';
 
-    const createDeckButton = document.createElement("button");
-    createDeckButton.type = "button";
-    createDeckButton.className = "btn-secondary";
-    createDeckButton.style.cssText = "padding: 0.5rem 1rem; font-size: 0.9rem;";
-    createDeckButton.textContent = "Create a deck (Not saved)";
+    const createDeckButton = document.createElement('button');
+    createDeckButton.type = 'button';
+    createDeckButton.className = 'btn-secondary';
+    createDeckButton.style.cssText = 'padding: 0.5rem 1rem; font-size: 0.9rem;';
+    createDeckButton.textContent = 'Create a deck (Not saved)';
     createDeckButton.onclick = () => {
       state.deckSelection.skipSavedDecks = true;
       callbacks.onUpdate?.();
@@ -1970,16 +2012,16 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
 
     // Add confirm button if deck is selected
     if (hasSelectedDeck) {
-      const confirmContainer = document.createElement("div");
-      confirmContainer.style.cssText = "margin-top: 1rem; text-align: center;";
+      const confirmContainer = document.createElement('div');
+      confirmContainer.style.cssText = 'margin-top: 1rem; text-align: center;';
 
-      const confirmButton = document.createElement("button");
-      confirmButton.type = "button";
-      confirmButton.className = "btn-primary";
-      confirmButton.style.cssText = "padding: 0.75rem 2rem; font-size: 1.1rem;";
-      confirmButton.textContent = "Confirm Deck & Start Game";
+      const confirmButton = document.createElement('button');
+      confirmButton.type = 'button';
+      confirmButton.className = 'btn-primary';
+      confirmButton.style.cssText = 'padding: 0.75rem 2rem; font-size: 1.1rem;';
+      confirmButton.textContent = 'Confirm Deck & Start Game';
       confirmButton.onclick = () => {
-        state.deckSelection.stage = "p1-selected";
+        state.deckSelection.stage = 'p1-selected';
         logMessage(state, `${player.name} confirmed their deck.`);
         callbacks.onUpdate?.();
       };
@@ -2000,13 +2042,15 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
   clearPanel(deckSelectGrid);
 
   DECK_OPTIONS.forEach((option) => {
-    const panel = document.createElement("button");
-    panel.type = "button";
+    const panel = document.createElement('button');
+    panel.type = 'button';
     panel.className = `deck-select-panel ${option.panelClass} ${
-      option.available ? "" : "disabled"
-    }${option.experimental ? " experimental" : ""}`;
+      option.available ? '' : 'disabled'
+    }${option.experimental ? ' experimental' : ''}`;
     panel.disabled = false; // Make all decks clickable per user request
-    const experimentalBadge = option.experimental ? '<div class="deck-experimental-badge">Experimental</div>' : '';
+    const experimentalBadge = option.experimental
+      ? '<div class="deck-experimental-badge">Experimental</div>'
+      : '';
     panel.innerHTML = `
       ${experimentalBadge}
       <div class="deck-emoji">${option.emoji}</div>
@@ -2020,10 +2064,10 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       state.deckBuilder.available[playerIndex] = cloneDeckCatalog(catalog);
       state.deckBuilder.catalogOrder[playerIndex] = catalog.map((card) => card.id);
       state.deckBuilder.selections[playerIndex] = [];
-      state.deckSelection.stage = isPlayerOne ? "p1-selected" : "complete";
+      state.deckSelection.stage = isPlayerOne ? 'p1-selected' : 'complete';
       logMessage(state, `${player.name} selected the ${option.name} deck.`);
-      if (state.menu?.mode === "online") {
-        sendLobbyBroadcast("deck_update", buildLobbySyncPayload(state));
+      if (state.menu?.mode === 'online') {
+        sendLobbyBroadcast('deck_update', buildLobbySyncPayload(state));
       }
       callbacks.onUpdate?.();
     };
@@ -2060,46 +2104,51 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
   // Store callbacks for async operations
   latestCallbacks = callbacks;
 
-  if (state.menu?.stage !== "catalog") {
-    deckOverlay.classList.remove("active");
-    deckOverlay.setAttribute("aria-hidden", "true");
+  if (state.menu?.stage !== 'catalog') {
+    deckOverlay.classList.remove('active');
+    deckOverlay.setAttribute('aria-hidden', 'true');
     return;
   }
-  if (!state.catalogBuilder || state.catalogBuilder.stage !== "build") {
-    deckOverlay.classList.remove("active");
-    deckOverlay.setAttribute("aria-hidden", "true");
+  if (!state.catalogBuilder || state.catalogBuilder.stage !== 'build') {
+    deckOverlay.classList.remove('active');
+    deckOverlay.setAttribute('aria-hidden', 'true');
     return;
   }
   initCatalogBuilder(state.catalogBuilder);
   const available = state.catalogBuilder.available;
   const selected = state.catalogBuilder.selections;
   const catalogOrder = state.catalogBuilder.catalogOrder ?? [];
-  console.log('renderCatalogBuilderOverlay - available length:', available.length, 'selected length:', selected.length);
-  const predatorCount = selected.filter((card) => card.type === "Predator").length;
-  const preyCount = selected.filter((card) => card.type === "Prey").length;
+  console.log(
+    'renderCatalogBuilderOverlay - available length:',
+    available.length,
+    'selected length:',
+    selected.length
+  );
+  const predatorCount = selected.filter((card) => card.type === 'Predator').length;
+  const preyCount = selected.filter((card) => card.type === 'Prey').length;
   const totalCount = selected.length;
   const hasValidCount = totalCount === 20;
   const preyRuleValid = preyCount > predatorCount;
 
-  deckOverlay.classList.add("active");
-  deckOverlay.setAttribute("aria-hidden", "false");
-  deckTitle.textContent = "Deck Catalog Builder";
+  deckOverlay.classList.add('active');
+  deckOverlay.setAttribute('aria-hidden', 'false');
+  deckTitle.textContent = 'Deck Catalog Builder';
 
   // Set default deck name for new decks if not already set
   if (!state.catalogBuilder.editingDeckName) {
-    state.catalogBuilder.editingDeckName = "New Deck";
+    state.catalogBuilder.editingDeckName = 'New Deck';
   }
 
   // Build status HTML with deck name input and success/error messages
   const isEditing = Boolean(state.catalogBuilder.editingDeckId);
-  const deckNameLabel = isEditing ? "Editing:" : "Deck Name:";
+  const deckNameLabel = isEditing ? 'Editing:' : 'Deck Name:';
   let statusHtml = `
     <div class="deck-status-item deck-name-row">
       <label for="deck-name-input">${deckNameLabel}</label>
       <input type="text" id="deck-name-input" class="deck-name-input" value="${state.catalogBuilder.editingDeckName || 'New Deck'}" maxlength="30" placeholder="Deck name" />
     </div>
     <div class="deck-status-item">Cards selected: <strong>${totalCount}/20</strong></div>
-    <div class="deck-status-item ${preyRuleValid ? "" : "invalid"}">
+    <div class="deck-status-item ${preyRuleValid ? '' : 'invalid'}">
       Prey: <strong>${preyCount}</strong> • Predators: <strong>${predatorCount}</strong>
     </div>
   `;
@@ -2112,14 +2161,14 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
   deckStatus.innerHTML = statusHtml;
 
   // Bind deck name input change handler
-  const deckNameInput = document.getElementById("deck-name-input");
+  const deckNameInput = document.getElementById('deck-name-input');
   if (deckNameInput) {
     deckNameInput.oninput = (e) => {
       state.catalogBuilder.editingDeckName = e.target.value;
     };
     // Prevent form submission on enter, just blur the input
     deckNameInput.onkeydown = (e) => {
-      if (e.key === "Enter") {
+      if (e.key === 'Enter') {
         e.preventDefault();
         deckNameInput.blur();
       }
@@ -2143,7 +2192,7 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
     const actualIndex = available.findIndex((c) => c.id === card.id);
     if (actualIndex === -1) return;
     if (selected.length >= 20) {
-      logMessage(state, "Deck is full. Remove a card before adding another.");
+      logMessage(state, 'Deck is full. Remove a card before adding another.');
       return;
     }
     selected.push(card);
@@ -2233,22 +2282,21 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
   renderDeckManagePanel(state, callbacks);
 
   if (deckSave) {
-    const isSaveTab = deckActiveTab === "catalog";
-    deckSave.classList.toggle("hidden", !state.menu.profile);
-    deckSave.textContent = state.catalogBuilder.editingDeckId ? "Update Deck" : "Save Deck";
-    deckSave.disabled =
-      !hasValidCount || !preyRuleValid || !isSaveTab || state.menu.loading;
+    const isSaveTab = deckActiveTab === 'catalog';
+    deckSave.classList.toggle('hidden', !state.menu.profile);
+    deckSave.textContent = state.catalogBuilder.editingDeckId ? 'Update Deck' : 'Save Deck';
+    deckSave.disabled = !hasValidCount || !preyRuleValid || !isSaveTab || state.menu.loading;
     deckSave.onclick = async () => {
       if (!hasValidCount || !preyRuleValid || !isSaveTab) {
         return;
       }
       if (!state.menu.profile) {
-        setMenuError(state, "Login required to save decks.");
+        setMenuError(state, 'Login required to save decks.');
         callbacks.onUpdate?.();
         return;
       }
       if (!state.catalogBuilder.editingDeckId && (state.menu.decks ?? []).length >= 10) {
-        setMenuError(state, "Deck slots full. Delete a deck to save a new one.");
+        setMenuError(state, 'Deck slots full. Delete a deck to save a new one.');
         callbacks.onUpdate?.();
         return;
       }
@@ -2270,7 +2318,7 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
           logMessage(state, `Updated deck "${savedDeckName}".`);
         } else {
           // Use the deck name from the inline input (defaults to "New Deck")
-          const deckName = state.catalogBuilder.editingDeckName || "New Deck";
+          const deckName = state.catalogBuilder.editingDeckName || 'New Deck';
           await api.saveDeck({
             ownerId: state.menu.profile.id,
             name: deckName,
@@ -2284,7 +2332,7 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
         applyMenuLoading(state, false);
         setMenuSuccess(state, `Deck "${savedDeckName}" saved successfully!`, callbacks);
       } catch (error) {
-        const message = error.message || "Failed to save deck.";
+        const message = error.message || 'Failed to save deck.';
         setMenuError(state, message);
         logMessage(state, message);
         applyMenuLoading(state, false);
@@ -2308,13 +2356,13 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
   }
 
   if (deckConfirm) {
-    deckConfirm.classList.add("hidden");
+    deckConfirm.classList.add('hidden');
   }
   if (deckLoad) {
-    deckLoad.classList.add("hidden");
+    deckLoad.classList.add('hidden');
   }
   if (deckExit) {
-    deckExit.classList.remove("hidden");
+    deckExit.classList.remove('hidden');
     deckExit.disabled = state.menu.loading;
   }
 };
@@ -2355,48 +2403,48 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
   }
 
   // Hide if not in ready stage
-  if (state.menu?.stage !== "ready") {
-    deckOverlay.classList.remove("active");
-    deckOverlay.setAttribute("aria-hidden", "true");
+  if (state.menu?.stage !== 'ready') {
+    deckOverlay.classList.remove('active');
+    deckOverlay.setAttribute('aria-hidden', 'true');
     return;
   }
 
   // Hide deck builder if decks are complete OR if game is in progress
-  const deckBuilderComplete = !state.deckBuilder || state.deckBuilder.stage === "complete";
+  const deckBuilderComplete = !state.deckBuilder || state.deckBuilder.stage === 'complete';
   const gameInProgress = state.menu?.gameInProgress === true;
   if (deckBuilderComplete || gameInProgress) {
-    deckOverlay.classList.remove("active");
-    deckOverlay.setAttribute("aria-hidden", "true");
+    deckOverlay.classList.remove('active');
+    deckOverlay.setAttribute('aria-hidden', 'true');
     deckHighlighted = null;
-    deckFilterText = "";
+    deckFilterText = '';
     return;
   }
 
   // Online mode: deck builder is skipped (players load saved decks directly)
   // Hide overlay if we're in online mode and still in deck selection
   if (isOnlineMode(state)) {
-    deckOverlay.classList.remove("active");
-    deckOverlay.setAttribute("aria-hidden", "true");
+    deckOverlay.classList.remove('active');
+    deckOverlay.setAttribute('aria-hidden', 'true');
     return;
   }
 
-  const isPlayerOne = state.deckBuilder.stage === "p1";
+  const isPlayerOne = state.deckBuilder.stage === 'p1';
   const playerIndex = isPlayerOne ? 0 : 1;
   const localIndex = getLocalPlayerIndex(state);
   const isLocalTurn = playerIndex === localIndex;
 
   // Hide if no deck selection made yet
   if (!state.deckSelection?.selections?.[playerIndex]) {
-    deckOverlay.classList.remove("active");
-    deckOverlay.setAttribute("aria-hidden", "true");
+    deckOverlay.classList.remove('active');
+    deckOverlay.setAttribute('aria-hidden', 'true');
     return;
   }
 
   // Show waiting message if not local player's turn
   if (!isLocalTurn) {
     const opponentName = getOpponentDisplayName(state);
-    deckOverlay.classList.add("active");
-    deckOverlay.setAttribute("aria-hidden", "false");
+    deckOverlay.classList.add('active');
+    deckOverlay.setAttribute('aria-hidden', 'false');
     deckTitle.textContent = `${opponentName} is choosing a deck`;
     deckStatus.innerHTML = `
       <div class="deck-status-item">Waiting for ${opponentName} to finish deck selection.</div>
@@ -2405,15 +2453,15 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
     // Clear deck list sidebar
     renderDeckListSidebar([], {});
     if (deckSave) {
-      deckSave.classList.add("hidden");
+      deckSave.classList.add('hidden');
       deckSave.disabled = true;
     }
     if (deckLoad) {
-      deckLoad.classList.add("hidden");
+      deckLoad.classList.add('hidden');
       deckLoad.disabled = true;
     }
     if (deckExit) {
-      deckExit.classList.add("hidden");
+      deckExit.classList.add('hidden');
       deckExit.disabled = true;
     }
     if (deckRandom) {
@@ -2427,18 +2475,18 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
   const available = state.deckBuilder.available[playerIndex];
   const selected = state.deckBuilder.selections[playerIndex];
   const catalogOrder = state.deckBuilder.catalogOrder[playerIndex] ?? [];
-  const predatorCount = selected.filter((card) => card.type === "Predator").length;
-  const preyCount = selected.filter((card) => card.type === "Prey").length;
+  const predatorCount = selected.filter((card) => card.type === 'Predator').length;
+  const preyCount = selected.filter((card) => card.type === 'Prey').length;
   const totalCount = selected.length;
   const hasValidCount = totalCount === 20;
   const preyRuleValid = preyCount > predatorCount;
 
-  deckOverlay.classList.add("active");
-  deckOverlay.setAttribute("aria-hidden", "false");
+  deckOverlay.classList.add('active');
+  deckOverlay.setAttribute('aria-hidden', 'false');
   deckTitle.textContent = `${player.name} Deck Builder`;
   deckStatus.innerHTML = `
     <div class="deck-status-item">Cards selected: <strong>${totalCount}/20</strong></div>
-    <div class="deck-status-item ${preyRuleValid ? "" : "invalid"}">
+    <div class="deck-status-item ${preyRuleValid ? '' : 'invalid'}">
       Prey: <strong>${preyCount}</strong> • Predators: <strong>${predatorCount}</strong>
     </div>
   `;
@@ -2460,7 +2508,7 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
     const actualIndex = available.findIndex((c) => c.id === card.id);
     if (actualIndex === -1) return;
     if (selected.length >= 20) {
-      logMessage(state, "Deck is full. Remove a card before adding another.");
+      logMessage(state, 'Deck is full. Remove a card before adding another.');
       return;
     }
     selected.push(card);
@@ -2547,8 +2595,8 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
   renderDeckLoadPanel(state, playerIndex, callbacks);
 
   deckConfirm.disabled = !(hasValidCount && preyRuleValid);
-  deckConfirm.textContent = isPlayerOne ? "Confirm Player 1 Deck" : "Confirm Player 2 Deck";
-  deckConfirm.classList.remove("hidden");
+  deckConfirm.textContent = isPlayerOne ? 'Confirm Player 1 Deck' : 'Confirm Player 2 Deck';
+  deckConfirm.classList.remove('hidden');
   deckConfirm.onclick = () => {
     if (!hasValidCount || !preyRuleValid) {
       return;
@@ -2556,10 +2604,10 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
     if (isPlayerOne) {
       // In AI mode, auto-generate AI's deck and skip to complete
       if (isAIMode(state)) {
-        logMessage(state, "Your deck is locked in. Generating AI deck...");
+        logMessage(state, 'Your deck is locked in. Generating AI deck...');
         generateAIDeck(state);
-        state.deckBuilder.stage = "complete";
-        state.deckSelection.stage = "complete";  // Must also set this for setup phase to trigger
+        state.deckBuilder.stage = 'complete';
+        state.deckSelection.stage = 'complete'; // Must also set this for setup phase to trigger
         deckHighlighted = null;
         setDeckInspectorContent(null);
         callbacks.onDeckComplete?.(state.deckBuilder.selections);
@@ -2568,23 +2616,23 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
       }
 
       // Normal local multiplayer: hand off to Player 2
-      state.deckBuilder.stage = "p2";
-      state.deckSelection.stage = "p2";
-      logMessage(state, "Player 1 deck locked in. Hand off to Player 2.");
+      state.deckBuilder.stage = 'p2';
+      state.deckSelection.stage = 'p2';
+      logMessage(state, 'Player 1 deck locked in. Hand off to Player 2.');
       deckHighlighted = null;
       setDeckInspectorContent(null);
-      if (state.menu?.mode === "online") {
-        sendLobbyBroadcast("deck_update", buildLobbySyncPayload(state));
+      if (state.menu?.mode === 'online') {
+        sendLobbyBroadcast('deck_update', buildLobbySyncPayload(state));
       }
       callbacks.onUpdate?.();
       return;
     }
-    state.deckBuilder.stage = "complete";
+    state.deckBuilder.stage = 'complete';
     deckHighlighted = null;
     setDeckInspectorContent(null);
-    if (state.menu?.mode === "online") {
+    if (state.menu?.mode === 'online') {
       state.menu.onlineDecksReady = true;
-      sendLobbyBroadcast("deck_update", buildLobbySyncPayload(state));
+      sendLobbyBroadcast('deck_update', buildLobbySyncPayload(state));
       // In online mode, don't call onDeckComplete directly - let renderDeckSelectionOverlay
       // handle it after verifying both decks are synced (prevents race condition)
       callbacks.onUpdate?.();
@@ -2596,7 +2644,7 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
   };
 
   if (deckSave) {
-    deckSave.classList.add("hidden");
+    deckSave.classList.add('hidden');
     deckSave.disabled = true;
   }
 
@@ -2615,35 +2663,35 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
   }
 
   if (deckLoad) {
-    deckLoad.classList.toggle("hidden", !isOnlineMode(state));
+    deckLoad.classList.toggle('hidden', !isOnlineMode(state));
     deckLoad.disabled = state.menu.loading || !isOnlineMode(state);
     deckLoad.onclick = () => {
       if (state.catalogBuilder) {
-        state.catalogBuilder.activeTab = "load";
+        state.catalogBuilder.activeTab = 'load';
       }
-      deckActiveTab = "load";
+      deckActiveTab = 'load';
       updateDeckTabs(state);
       callbacks.onUpdate?.();
     };
   }
   if (deckExit) {
     // Show back button to return to deck type selection
-    deckExit.classList.remove("hidden");
+    deckExit.classList.remove('hidden');
     deckExit.disabled = state.menu.loading;
-    deckExit.textContent = "← Back";
+    deckExit.textContent = '← Back';
     deckExit.onclick = () => {
       // Reset current player's deck selection to go back to type selection
       if (isPlayerOne) {
         // Player 1 goes back to deck type selection
-        state.deckBuilder.stage = "p1";
-        state.deckSelection.stage = "p1";
+        state.deckBuilder.stage = 'p1';
+        state.deckSelection.stage = 'p1';
         state.deckSelection.selections[0] = null;
         state.deckBuilder.selections[0] = [];
         state.deckBuilder.available[0] = [];
       } else {
         // Player 2 goes back to deck type selection (keeps P1's selection)
-        state.deckBuilder.stage = "p2";
-        state.deckSelection.stage = "p2";
+        state.deckBuilder.stage = 'p2';
+        state.deckSelection.stage = 'p2';
         state.deckSelection.selections[1] = null;
         state.deckBuilder.selections[1] = [];
         state.deckBuilder.available[1] = [];
@@ -2660,8 +2708,8 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
  */
 export const resetDeckBuilderState = () => {
   deckHighlighted = null;
-  deckActiveTab = "catalog";
-  deckFilterText = "";
+  deckActiveTab = 'catalog';
+  deckFilterText = '';
 
   // Clear any pending fade timeout
   if (waitingScreenFadeTimeout) {

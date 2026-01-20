@@ -70,7 +70,12 @@ describe('Lure Keyword', () => {
     it('forces attacks to target Lure creature when present', () => {
       // Setup: Enemy has Indian Peacock (Lure) and another creature
       const { creature: peacock } = createTestCreature('bird-prey-indian-peacock', 1, 0, state);
-      const { creature: flyingFish } = createTestCreature('fish-prey-atlantic-flying-fish', 1, 1, state);
+      const { creature: flyingFish } = createTestCreature(
+        'fish-prey-atlantic-flying-fish',
+        1,
+        1,
+        state
+      );
 
       // Attacker
       const { creature: attacker } = createTestCreature('fish-predator-sailfish', 0, 0, state);
@@ -89,7 +94,12 @@ describe('Lure Keyword', () => {
       const { creature: peacock } = createTestCreature('bird-prey-indian-peacock', 1, 0, state);
 
       // Attacker with Haste (can normally attack player directly)
-      const { creature: attacker } = createTestCreature('fish-prey-atlantic-flying-fish', 0, 0, state);
+      const { creature: attacker } = createTestCreature(
+        'fish-prey-atlantic-flying-fish',
+        0,
+        0,
+        state
+      );
       attacker.keywords.push('Haste');
       attacker.summonedTurn = state.turn; // Summoned this turn
 
@@ -104,7 +114,12 @@ describe('Lure Keyword', () => {
 
     it('allows all targets when no Lure creature present', () => {
       // Setup: Enemy has two creatures, neither has Lure
-      const { creature: creature1 } = createTestCreature('fish-prey-atlantic-flying-fish', 1, 0, state);
+      const { creature: creature1 } = createTestCreature(
+        'fish-prey-atlantic-flying-fish',
+        1,
+        0,
+        state
+      );
       const { creature: creature2 } = createTestCreature('fish-prey-golden-dorado', 1, 1, state);
 
       // Attacker with Haste
@@ -138,7 +153,12 @@ describe('Lure Keyword', () => {
     it('Hidden creature with Lure can still taunt', () => {
       // Note: This is an edge case - Hidden + Lure combo might be invalid by rules
       // But let's test what actually happens
-      const { creature: lureCreature } = createTestCreature('bird-prey-indian-peacock', 1, 0, state);
+      const { creature: lureCreature } = createTestCreature(
+        'bird-prey-indian-peacock',
+        1,
+        0,
+        state
+      );
       lureCreature.keywords.push('Hidden'); // Add Hidden
 
       const { creature: attacker } = createTestCreature('fish-predator-sailfish', 0, 0, state);
@@ -157,7 +177,12 @@ describe('Lure Keyword', () => {
       lureCreature.keywords = ['Lure']; // Force Lure keyword
       lureCreature.dryDropped = true; // Mark as dry-dropped
 
-      const { creature: otherCreature } = createTestCreature('fish-prey-atlantic-flying-fish', 1, 1, state);
+      const { creature: otherCreature } = createTestCreature(
+        'fish-prey-atlantic-flying-fish',
+        1,
+        1,
+        state
+      );
       const { creature: attacker } = createTestCreature('fish-predator-sailfish', 0, 0, state);
       attacker.summonedTurn = state.turn - 1; // Can attack player
 
@@ -187,7 +212,12 @@ describe('Lure Keyword', () => {
       // Indian Peacock is on defender side (player 1)
       const { creature: peacock } = createTestCreature('bird-prey-indian-peacock', 1, 0, state);
       // Another creature on same side
-      const { creature: otherPrey } = createTestCreature('fish-prey-atlantic-flying-fish', 1, 1, state);
+      const { creature: otherPrey } = createTestCreature(
+        'fish-prey-atlantic-flying-fish',
+        1,
+        1,
+        state
+      );
 
       // Attacker on player 0
       const { creature: attacker } = createTestCreature('fish-predator-sailfish', 0, 0, state);

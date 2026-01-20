@@ -93,7 +93,7 @@ export const createUIState = () => ({
   /**
    * Active tab in deck builder ("catalog" | "load" | "manage")
    */
-  deckActiveTab: "catalog",
+  deckActiveTab: 'catalog',
 
   /**
    * Whether decks have been loaded from database
@@ -230,7 +230,7 @@ export const clearSelections = (uiState) => {
  * @param {Object} uiState - UI state object
  */
 export const resetDeckBuilder = (uiState) => {
-  uiState.deckActiveTab = "catalog";
+  uiState.deckActiveTab = 'catalog';
   uiState.deckHighlighted = null;
   uiState.currentPage = 0;
 };

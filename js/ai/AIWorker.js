@@ -19,7 +19,7 @@ const moveGenerator = new MoveGenerator();
 /**
  * Handle messages from main thread
  */
-self.onmessage = function(event) {
+self.onmessage = function (event) {
   const { type, state, playerIndex, options } = event.data;
 
   if (type === 'SEARCH') {
@@ -36,13 +36,13 @@ self.onmessage = function(event) {
           depth: result.depth,
           stats: result.stats,
           timeMs: result.timeMs,
-          moveDescription: result.move ? moveGenerator.describeMove(result.move) : null
-        }
+          moveDescription: result.move ? moveGenerator.describeMove(result.move) : null,
+        },
       });
     } catch (error) {
       self.postMessage({
         type: 'ERROR',
-        error: error.message || 'Search failed'
+        error: error.message || 'Search failed',
       });
     }
   } else if (type === 'PING') {

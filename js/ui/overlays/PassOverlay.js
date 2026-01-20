@@ -16,9 +16,9 @@
 // ============================================================================
 
 const getPassElements = () => ({
-  overlay: document.getElementById("pass-overlay"),
-  title: document.getElementById("pass-title"),
-  confirm: document.getElementById("pass-confirm"),
+  overlay: document.getElementById('pass-overlay'),
+  title: document.getElementById('pass-title'),
+  confirm: document.getElementById('pass-confirm'),
 });
 
 // ============================================================================
@@ -46,14 +46,14 @@ export const renderPassOverlay = (state, passPending, callbacks = {}) => {
     if (title) {
       title.textContent = `Pass to ${state.players[activeIndex].name}`;
     }
-    overlay.classList.add("active");
-    overlay.setAttribute("aria-hidden", "false");
+    overlay.classList.add('active');
+    overlay.setAttribute('aria-hidden', 'false');
     if (confirm) {
       confirm.onclick = callbacks.onConfirmPass;
     }
   } else {
-    overlay.classList.remove("active");
-    overlay.setAttribute("aria-hidden", "true");
+    overlay.classList.remove('active');
+    overlay.setAttribute('aria-hidden', 'true');
   }
 };
 
@@ -63,7 +63,7 @@ export const renderPassOverlay = (state, passPending, callbacks = {}) => {
 export const hidePassOverlay = () => {
   const { overlay } = getPassElements();
   if (overlay) {
-    overlay.classList.remove("active");
-    overlay.setAttribute("aria-hidden", "true");
+    overlay.classList.remove('active');
+    overlay.setAttribute('aria-hidden', 'true');
   }
 };

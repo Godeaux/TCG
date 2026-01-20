@@ -31,8 +31,8 @@ export const showDuelInvitePopup = (invite, senderName, callbacks = {}) => {
   hideDuelInvitePopup();
 
   // Create popup container
-  const overlay = document.createElement("div");
-  overlay.className = "duel-invite-overlay";
+  const overlay = document.createElement('div');
+  overlay.className = 'duel-invite-overlay';
   overlay.dataset.inviteId = invite.id;
 
   // Calculate time remaining
@@ -57,9 +57,9 @@ export const showDuelInvitePopup = (invite, senderName, callbacks = {}) => {
   `;
 
   // Wire up buttons
-  const acceptBtn = overlay.querySelector(".duel-invite-accept");
-  const declineBtn = overlay.querySelector(".duel-invite-decline");
-  const timerEl = overlay.querySelector(".duel-invite-timer");
+  const acceptBtn = overlay.querySelector('.duel-invite-accept');
+  const declineBtn = overlay.querySelector('.duel-invite-decline');
+  const timerEl = overlay.querySelector('.duel-invite-timer');
 
   acceptBtn.onclick = () => {
     hideDuelInvitePopup();
@@ -104,7 +104,7 @@ export const showInviteCancelled = (inviteId) => {
   }
 
   // Update popup content
-  const popup = activePopup.querySelector(".duel-invite-popup");
+  const popup = activePopup.querySelector('.duel-invite-popup');
   if (popup) {
     popup.innerHTML = `
       <div class="duel-invite-header">
@@ -118,7 +118,7 @@ export const showInviteCancelled = (inviteId) => {
       </div>
     `;
 
-    const dismissBtn = popup.querySelector(".duel-invite-dismiss");
+    const dismissBtn = popup.querySelector('.duel-invite-dismiss');
     dismissBtn.onclick = hideDuelInvitePopup;
   }
 };
@@ -158,8 +158,8 @@ export const showAwaitingResponse = (receiverName, callbacks = {}) => {
   hideAwaitingResponse();
 
   // Create popup container
-  const overlay = document.createElement("div");
-  overlay.className = "duel-invite-overlay awaiting";
+  const overlay = document.createElement('div');
+  overlay.className = 'duel-invite-overlay awaiting';
 
   let timeRemaining = 60;
 
@@ -179,8 +179,8 @@ export const showAwaitingResponse = (receiverName, callbacks = {}) => {
   `;
 
   // Wire up cancel button
-  const cancelBtn = overlay.querySelector(".duel-invite-cancel");
-  const timerEl = overlay.querySelector(".duel-invite-timer");
+  const cancelBtn = overlay.querySelector('.duel-invite-cancel');
+  const timerEl = overlay.querySelector('.duel-invite-timer');
 
   cancelBtn.onclick = () => {
     hideAwaitingResponse();
@@ -217,7 +217,7 @@ export const showChallengeAccepted = (receiverName) => {
   }
 
   // Update popup content
-  const popup = awaitingPopup.querySelector(".duel-invite-popup");
+  const popup = awaitingPopup.querySelector('.duel-invite-popup');
   if (popup) {
     popup.innerHTML = `
       <div class="duel-invite-header">
@@ -249,7 +249,7 @@ export const showChallengeDeclined = (receiverName) => {
   }
 
   // Update popup content
-  const popup = awaitingPopup.querySelector(".duel-invite-popup");
+  const popup = awaitingPopup.querySelector('.duel-invite-popup');
   if (popup) {
     popup.innerHTML = `
       <div class="duel-invite-header">
@@ -263,7 +263,7 @@ export const showChallengeDeclined = (receiverName) => {
       </div>
     `;
 
-    const dismissBtn = popup.querySelector(".duel-invite-dismiss");
+    const dismissBtn = popup.querySelector('.duel-invite-dismiss');
     dismissBtn.onclick = hideAwaitingResponse;
   }
 };
@@ -295,7 +295,7 @@ export const hasAwaitingResponse = () => {
  * Escape HTML to prevent XSS
  */
 const escapeHtml = (text) => {
-  const div = document.createElement("div");
+  const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
 };

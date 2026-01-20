@@ -24,21 +24,13 @@
 // INPUT ROUTER (Main Entry Point)
 // ============================================================================
 
-export {
-  initializeInput,
-  updateInputState,
-  updateInputCallbacks,
-} from './inputRouter.js';
+export { initializeInput, updateInputState, updateInputCallbacks } from './inputRouter.js';
 
 // ============================================================================
 // DRAG AND DROP
 // ============================================================================
 
-export {
-  initDragAndDrop,
-  updateDragState,
-  updateDragCallbacks,
-} from './dragAndDrop.js';
+export { initDragAndDrop, updateDragState, updateDragCallbacks } from './dragAndDrop.js';
 
 // ============================================================================
 // TOUCH HANDLERS (Mobile)

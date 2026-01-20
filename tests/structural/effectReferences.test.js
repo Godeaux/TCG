@@ -187,7 +187,10 @@ describe('Effect References Validation', () => {
 
     it('should have collected effect types from cards', () => {
       expect(allEffectTypes.size).toBeGreaterThan(0);
-      console.log(`Found ${allEffectTypes.size} unique effect types:`, Array.from(allEffectTypes).sort());
+      console.log(
+        `Found ${allEffectTypes.size} unique effect types:`,
+        Array.from(allEffectTypes).sort()
+      );
     });
 
     Array.from(allEffectTypes).forEach((effectType) => {
@@ -201,9 +204,7 @@ describe('Effect References Validation', () => {
   });
 
   describe('Card Effect Definitions', () => {
-    const cardsWithEffects = allCards.filter(
-      (c) => c.effects && Object.keys(c.effects).length > 0
-    );
+    const cardsWithEffects = allCards.filter((c) => c.effects && Object.keys(c.effects).length > 0);
 
     cardsWithEffects.forEach((card) => {
       const effectTypes = [];
@@ -223,5 +224,4 @@ describe('Effect References Validation', () => {
       }
     });
   });
-
 });

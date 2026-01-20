@@ -11,11 +11,18 @@ import {
   hasToxic,
   hasPoisonous,
   getEffectiveAttack,
-} from "../keywords.js";
-import { logMessage, queueVisualEffect, logGameAction, LOG_CATEGORIES, getKeywordEmoji, formatCardForLog } from "../state/gameState.js";
-import { resolveEffectResult } from "./effects.js";
-import { isCreatureCard } from "../cardTypes.js";
-import { resolveCardEffect } from "../cards/index.js";
+} from '../keywords.js';
+import {
+  logMessage,
+  queueVisualEffect,
+  logGameAction,
+  LOG_CATEGORIES,
+  getKeywordEmoji,
+  formatCardForLog,
+} from '../state/gameState.js';
+import { resolveEffectResult } from './effects.js';
+import { isCreatureCard } from '../cardTypes.js';
+import { resolveCardEffect } from '../cards/index.js';
 
 const { COMBAT, DEATH, BUFF, DEBUFF } = LOG_CATEGORIES;
 
@@ -26,7 +33,7 @@ const queueKeywordEffect = (state, card, keyword, ownerIndex) => {
   const player = state.players[ownerIndex];
   const slotIndex = player?.field?.findIndex((slot) => slot?.instanceId === card.instanceId) ?? -1;
   queueVisualEffect(state, {
-    type: "keyword",
+    type: 'keyword',
     keyword,
     cardId: card.instanceId,
     ownerIndex,
@@ -73,7 +80,7 @@ const applyDamage = (creature, amount, state, ownerIndex) => {
   if (creature.hasBarrier && areAbilitiesActive(creature)) {
     creature.hasBarrier = false;
     if (state && ownerIndex !== undefined) {
-      queueKeywordEffect(state, creature, "Barrier", ownerIndex);
+      queueKeywordEffect(state, creature, 'Barrier', ownerIndex);
     }
     return { damage: 0, barrierBlocked: true };
   }
@@ -81,12 +88,22 @@ const applyDamage = (creature, amount, state, ownerIndex) => {
   return { damage: amount, barrierBlocked: false };
 };
 
-export const resolveCreatureCombat = (state, attacker, defender, attackerOwnerIndex, defenderOwnerIndex) => {
+export const resolveCreatureCombat = (
+  state,
+  attacker,
+  defender,
+  attackerOwnerIndex,
+  defenderOwnerIndex
+) => {
   // Calculate effective attack values (includes Pack bonus for Canines)
   const attackerEffectiveAtk = getEffectiveAttack(attacker, state, attackerOwnerIndex);
   const defenderEffectiveAtk = getEffectiveAttack(defender, state, defenderOwnerIndex);
 
-  logGameAction(state, COMBAT, `${formatCardForLog(attacker)} (${attackerEffectiveAtk}/${attacker.currentHp}) attacks ${formatCardForLog(defender)} (${defenderEffectiveAtk}/${defender.currentHp})`);
+  logGameAction(
+    state,
+    COMBAT,
+    `${formatCardForLog(attacker)} (${attackerEffectiveAtk}/${attacker.currentHp}) attacks ${formatCardForLog(defender)} (${defenderEffectiveAtk}/${defender.currentHp})`
+  );
 
   const ambushAttack = hasAmbush(attacker);
   const attackerPreHp = attacker.currentHp;
@@ -100,44 +117,76 @@ export const resolveCreatureCombat = (state, attacker, defender, attackerOwnerIn
   let attackerDamage = 0;
 
   if (defenderResult.barrierBlocked) {
-    logGameAction(state, BUFF, `${formatCardForLog(defender)}'s ${getKeywordEmoji("Barrier")} Barrier blocks the attack!`);
+    logGameAction(
+      state,
+      BUFF,
+      `${formatCardForLog(defender)}'s ${getKeywordEmoji('Barrier')} Barrier blocks the attack!`
+    );
   } else if (defenderDamage > 0) {
-    logGameAction(state, COMBAT, `${formatCardForLog(attacker)} deals ${defenderDamage} damage to ${formatCardForLog(defender)} (${defenderPreHp} → ${defender.currentHp})`);
+    logGameAction(
+      state,
+      COMBAT,
+      `${formatCardForLog(attacker)} deals ${defenderDamage} damage to ${formatCardForLog(defender)} (${defenderPreHp} → ${defender.currentHp})`
+    );
   }
 
   if (defenderDealsDamage) {
     const attackerResult = applyDamage(attacker, defenderEffectiveAtk, state, attackerOwnerIndex);
     attackerDamage = attackerResult.damage;
     if (attackerResult.barrierBlocked) {
-      logGameAction(state, BUFF, `${formatCardForLog(attacker)}'s ${getKeywordEmoji("Barrier")} Barrier blocks the counter-attack!`);
+      logGameAction(
+        state,
+        BUFF,
+        `${formatCardForLog(attacker)}'s ${getKeywordEmoji('Barrier')} Barrier blocks the counter-attack!`
+      );
     } else if (attackerDamage > 0) {
-      logGameAction(state, COMBAT, `${formatCardForLog(defender)} deals ${attackerDamage} damage to ${formatCardForLog(attacker)} (${attackerPreHp} → ${attacker.currentHp})`);
+      logGameAction(
+        state,
+        COMBAT,
+        `${formatCardForLog(defender)} deals ${attackerDamage} damage to ${formatCardForLog(attacker)} (${attackerPreHp} → ${attacker.currentHp})`
+      );
     }
   }
 
   // Toxic kills any creature it damages, regardless of HP
   if (hasToxic(attacker) && defenderDamage > 0 && defender.currentHp > 0) {
-    queueKeywordEffect(state, attacker, "Toxic", attackerOwnerIndex);
+    queueKeywordEffect(state, attacker, 'Toxic', attackerOwnerIndex);
     defender.currentHp = 0;
-    logGameAction(state, DEATH, `${getKeywordEmoji("Toxic")} TOXIC: ${formatCardForLog(defender)} is killed by ${formatCardForLog(attacker)}'s toxic venom!`);
+    logGameAction(
+      state,
+      DEATH,
+      `${getKeywordEmoji('Toxic')} TOXIC: ${formatCardForLog(defender)} is killed by ${formatCardForLog(attacker)}'s toxic venom!`
+    );
   }
   if (defenderDealsDamage && hasToxic(defender) && attackerDamage > 0 && attacker.currentHp > 0) {
-    queueKeywordEffect(state, defender, "Toxic", defenderOwnerIndex);
+    queueKeywordEffect(state, defender, 'Toxic', defenderOwnerIndex);
     attacker.currentHp = 0;
-    logGameAction(state, DEATH, `${getKeywordEmoji("Toxic")} TOXIC: ${formatCardForLog(attacker)} is killed by ${formatCardForLog(defender)}'s toxic venom!`);
+    logGameAction(
+      state,
+      DEATH,
+      `${getKeywordEmoji('Toxic')} TOXIC: ${formatCardForLog(attacker)} is killed by ${formatCardForLog(defender)}'s toxic venom!`
+    );
   }
 
   if (hasNeurotoxic(attacker) && attackerEffectiveAtk > 0) {
-    queueKeywordEffect(state, attacker, "Neurotoxic", attackerOwnerIndex);
+    queueKeywordEffect(state, attacker, 'Neurotoxic', attackerOwnerIndex);
     defender.frozen = true;
     defender.frozenDiesTurn = state.turn + 1;
-    logGameAction(state, DEBUFF, `${getKeywordEmoji("Neurotoxic")} ${formatCardForLog(defender)} is frozen by neurotoxin (dies turn ${state.turn + 1}).`);
+    logGameAction(
+      state,
+      DEBUFF,
+      `${getKeywordEmoji('Neurotoxic')} ${formatCardForLog(defender)} is frozen by neurotoxin (dies turn ${state.turn + 1}).`
+    );
   }
   if (defenderDealsDamage && hasNeurotoxic(defender) && defenderEffectiveAtk > 0) {
-    queueKeywordEffect(state, defender, "Neurotoxic", defenderOwnerIndex);
+    queueKeywordEffect(state, defender, 'Neurotoxic', defenderOwnerIndex);
     attacker.frozen = true;
     attacker.frozenDiesTurn = state.turn + 1;
-    logGameAction(state, DEBUFF, `${getKeywordEmoji("Neurotoxic")} ${formatCardForLog(attacker)} is frozen by neurotoxin (dies turn ${state.turn + 1}).`);
+    logGameAction(
+      state,
+      DEBUFF,
+      `${getKeywordEmoji('Neurotoxic')} ${formatCardForLog(attacker)} is frozen by neurotoxin (dies turn ${state.turn + 1}).`
+    );
   }
 
   if (defender.currentHp <= 0) {
@@ -167,14 +216,24 @@ export const resolveCreatureCombat = (state, attacker, defender, attackerOwnerIn
 
   // Ambush: always log when active (attacker never takes damage)
   if (ambushAttack) {
-    queueKeywordEffect(state, attacker, "Ambush", attackerOwnerIndex);
-    logGameAction(state, COMBAT, `${getKeywordEmoji("Ambush")} AMBUSH: ${formatCardForLog(attacker)} avoids all damage!`);
+    queueKeywordEffect(state, attacker, 'Ambush', attackerOwnerIndex);
+    logGameAction(
+      state,
+      COMBAT,
+      `${getKeywordEmoji('Ambush')} AMBUSH: ${formatCardForLog(attacker)} avoids all damage!`
+    );
   }
 
   // Poisonous: when DEFENDING, kill the attacking enemy after combat
   // Only triggers if defender has Poisonous, is defending (not attacking), and dealt counter-damage
-  if (hasPoisonous(defender) && areAbilitiesActive(defender) && !ambushAttack && defenderEffectiveAtk > 0 && attacker.currentHp > 0) {
-    queueKeywordEffect(state, defender, "Poisonous", defenderOwnerIndex);
+  if (
+    hasPoisonous(defender) &&
+    areAbilitiesActive(defender) &&
+    !ambushAttack &&
+    defenderEffectiveAtk > 0 &&
+    attacker.currentHp > 0
+  ) {
+    queueKeywordEffect(state, defender, 'Poisonous', defenderOwnerIndex);
     attacker.currentHp = 0;
     attacker.diedInCombat = true;
     attacker.slainBy = {
@@ -184,7 +243,11 @@ export const resolveCreatureCombat = (state, attacker, defender, attackerOwnerIn
       currentAtk: defenderEffectiveAtk,
       currentHp: defender.currentHp,
     };
-    logGameAction(state, DEATH, `${getKeywordEmoji("Poisonous")} POISONOUS: ${formatCardForLog(defender)} kills ${formatCardForLog(attacker)} with poison!`);
+    logGameAction(
+      state,
+      DEATH,
+      `${getKeywordEmoji('Poisonous')} POISONOUS: ${formatCardForLog(defender)} kills ${formatCardForLog(attacker)} with poison!`
+    );
   }
 
   return { attackerDamage, defenderDamage };
@@ -214,7 +277,13 @@ export const hasBeforeCombatEffect = (attacker) => {
  * @param {number} defenderOwnerIndex - Index of defender's owner (or target player index)
  * @returns {Object} Combat result or { needsBeforeCombat: true, ... } if effect needs to fire first
  */
-export const initiateCombat = (state, attacker, defender, attackerOwnerIndex, defenderOwnerIndex) => {
+export const initiateCombat = (
+  state,
+  attacker,
+  defender,
+  attackerOwnerIndex,
+  defenderOwnerIndex
+) => {
   // Check if attacker has beforeCombat effect that hasn't fired this attack
   if (hasBeforeCombatEffect(attacker) && !attacker.beforeCombatFiredThisAttack) {
     // Return indicator that beforeCombat needs to resolve first
@@ -241,7 +310,11 @@ export const resolveDirectAttack = (state, attacker, opponent, attackerOwnerInde
   const effectiveAtk = getEffectiveAttack(attacker, state, attackerOwnerIndex);
   const previousHp = opponent.hp;
   opponent.hp -= effectiveAtk;
-  logGameAction(state, COMBAT, `DIRECT ATTACK: ${formatCardForLog(attacker)} hits ${opponent.name} for ${effectiveAtk} damage! (${previousHp} → ${opponent.hp} HP)`);
+  logGameAction(
+    state,
+    COMBAT,
+    `DIRECT ATTACK: ${formatCardForLog(attacker)} hits ${opponent.name} for ${effectiveAtk} damage! (${previousHp} → ${opponent.hp} HP)`
+  );
   return effectiveAtk;
 };
 
@@ -296,7 +369,11 @@ export const cleanupDestroyed = (state, { silent = false } = {}) => {
         }
         player.carrion.push(card);
         if (!silent) {
-          logGameAction(state, DEATH, `${formatCardForLog(card)} → ${player.name}'s Carrion (${player.carrion.length} cards)`);
+          logGameAction(
+            state,
+            DEATH,
+            `${formatCardForLog(card)} → ${player.name}'s Carrion (${player.carrion.length} cards)`
+          );
         }
         if (state.fieldSpell?.card?.instanceId === card.instanceId) {
           state.fieldSpell = null;

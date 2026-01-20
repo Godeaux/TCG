@@ -39,33 +39,33 @@ export const renderField = (state, playerIndex, isOpponent, options = {}) => {
   // Hide any active tooltip since field cards may be removed/changed
   hideCardTooltipImmediate();
 
-  const fieldRow = document.querySelector(isOpponent ? ".opponent-field" : ".player-field");
+  const fieldRow = document.querySelector(isOpponent ? '.opponent-field' : '.player-field');
   if (!fieldRow) {
     return;
   }
 
-  const slots = Array.from(fieldRow.querySelectorAll(".field-slot"));
+  const slots = Array.from(fieldRow.querySelectorAll('.field-slot'));
   const player = state.players[playerIndex];
 
   slots.forEach((slot, index) => {
-    slot.innerHTML = "";
+    slot.innerHTML = '';
     const card = player.field[index] ?? null;
 
     if (!card) {
-      slot.textContent = "Empty Slot";
+      slot.textContent = 'Empty Slot';
       // Make empty slots drop targets
-      slot.classList.add("empty-field-slot");
+      slot.classList.add('empty-field-slot');
       slot.dataset.slotIndex = index;
       return;
     }
 
-    const isCreature = card.type === "Predator" || card.type === "Prey";
+    const isCreature = card.type === 'Predator' || card.type === 'Prey';
 
     // Determine if creature can attack
     const canAttack =
       !isOpponent &&
       isLocalPlayersTurn(state) &&
-      state.phase === "Combat" &&
+      state.phase === 'Combat' &&
       !card.hasAttacked &&
       !isPassive(card) &&
       !isHarmless(card) &&
@@ -74,7 +74,7 @@ export const renderField = (state, playerIndex, isOpponent, options = {}) => {
       isCreature;
 
     // Determine if creature can be returned to hand (played via effect, not from hand)
-    const isMainPhase = state.phase === "Main 1" || state.phase === "Main 2";
+    const isMainPhase = state.phase === 'Main 1' || state.phase === 'Main 2';
     const canReturnToHand =
       !isOpponent &&
       isLocalPlayersTurn(state) &&
@@ -84,11 +84,7 @@ export const renderField = (state, playerIndex, isOpponent, options = {}) => {
 
     // Determine if creature can be sacrificed (has sacrificeEffect and is in main phase)
     const canSacrifice =
-      !isOpponent &&
-      isLocalPlayersTurn(state) &&
-      isMainPhase &&
-      card.sacrificeEffect &&
-      isCreature;
+      !isOpponent && isLocalPlayersTurn(state) && isMainPhase && card.sacrificeEffect && isCreature;
 
     const cardElement = renderCard(card, {
       showAttack: canAttack,
@@ -124,15 +120,15 @@ export const renderField = (state, playerIndex, isOpponent, options = {}) => {
  * Clear a field (set all slots to empty)
  */
 export const clearField = (isOpponent) => {
-  const fieldRow = document.querySelector(isOpponent ? ".opponent-field" : ".player-field");
+  const fieldRow = document.querySelector(isOpponent ? '.opponent-field' : '.player-field');
   if (!fieldRow) {
     return;
   }
 
-  const slots = Array.from(fieldRow.querySelectorAll(".field-slot"));
+  const slots = Array.from(fieldRow.querySelectorAll('.field-slot'));
   slots.forEach((slot) => {
-    slot.innerHTML = "";
-    slot.textContent = "Empty Slot";
-    slot.classList.add("empty-field-slot");
+    slot.innerHTML = '';
+    slot.textContent = 'Empty Slot';
+    slot.classList.add('empty-field-slot');
   });
 };

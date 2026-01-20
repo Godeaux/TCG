@@ -26,8 +26,8 @@ import {
 // ============================================================================
 
 // AI controllers (one for regular AI mode, two for AI vs AI mode)
-let aiController = null;       // Player 1 AI (used in both modes)
-let aiController0 = null;      // Player 0 AI (only used in AI vs AI mode)
+let aiController = null; // Player 1 AI (used in both modes)
+let aiController0 = null; // Player 0 AI (only used in AI vs AI mode)
 let isAITurnInProgress = false;
 
 // ============================================================================
@@ -86,8 +86,8 @@ export const initializeAI = (state, options = {}) => {
     // AI vs AI mode: create two controllers
     console.log('[AIManager] Initializing AI vs AI mode - creating both controllers');
 
-    aiController0 = createAIController(0, { difficulty, showThinking });  // AI for player 0
-    aiController = createAIController(1, { difficulty, showThinking });   // AI for player 1
+    aiController0 = createAIController(0, { difficulty, showThinking }); // AI for player 0
+    aiController = createAIController(1, { difficulty, showThinking }); // AI for player 1
     isAITurnInProgress = false;
 
     // Set AI player names
@@ -214,7 +214,9 @@ export const isAIProcessing = () => {
  * This is called from the game loop when it's detected that AI should act
  */
 export const executeAITurn = async (state, callbacks) => {
-  console.log(`[AIManager] executeAITurn called, activePlayer: ${state.activePlayerIndex}, inProgress: ${isAITurnInProgress}`);
+  console.log(
+    `[AIManager] executeAITurn called, activePlayer: ${state.activePlayerIndex}, inProgress: ${isAITurnInProgress}`
+  );
 
   // Check if bug detector is paused
   const detector = getBugDetector();
@@ -233,11 +235,16 @@ export const executeAITurn = async (state, callbacks) => {
   }
 
   const controller = getActiveAIController(state);
-  console.log(`[AIManager] executeAITurn: got controller:`, controller ? `playerIndex=${controller.playerIndex}` : 'null');
+  console.log(
+    `[AIManager] executeAITurn: got controller:`,
+    controller ? `playerIndex=${controller.playerIndex}` : 'null'
+  );
 
   if (!controller) {
     console.log('[AIManager] executeAITurn: no controller found, returning');
-    console.log(`[AIManager] aiController0: ${aiController0 ? 'exists' : 'null'}, aiController: ${aiController ? 'exists' : 'null'}`);
+    console.log(
+      `[AIManager] aiController0: ${aiController0 ? 'exists' : 'null'}, aiController: ${aiController ? 'exists' : 'null'}`
+    );
     return;
   }
 
@@ -286,7 +293,7 @@ export const executeAITurn = async (state, callbacks) => {
           callbacks.onUpdate?.();
         },
       }),
-      turnTimeout
+      turnTimeout,
     ]);
   } catch (error) {
     console.error(`[AIManager] Error during ${playerLabel} turn:`, error);
@@ -315,7 +322,8 @@ export const executeAITurn = async (state, callbacks) => {
     // After this AI's turn completes, check if the next player is also AI
     // This is needed because when onEndTurn calls refresh() -> checkAndTriggerAITurn,
     // isAITurnInProgress was still true, so the next turn wasn't triggered
-    const shouldScheduleNextTurn = isAIvsAIMode(state) && !state.winner && state.menu?.aiSpeed !== 'paused';
+    const shouldScheduleNextTurn =
+      isAIvsAIMode(state) && !state.winner && state.menu?.aiSpeed !== 'paused';
     if (state.menu?.aiSpeed === 'paused') {
       console.log('[AIManager] AI is paused, not scheduling next turn');
     } else if (shouldScheduleNextTurn) {
@@ -332,10 +340,18 @@ export const executeAITurn = async (state, callbacks) => {
  * This should be called after each state update
  */
 export const checkAndTriggerAITurn = (state, callbacks) => {
-  console.log(`[AIManager] checkAndTriggerAITurn called - mode: ${state.menu?.mode}, phase: ${state.phase}, turn: ${state.turn}, activePlayer: ${state.activePlayerIndex}`);
-  console.log(`[AIManager] checkAndTriggerAITurn - isAnyAIMode: ${isAnyAIMode(state)}, isAIvsAIMode: ${isAIvsAIMode(state)}`);
-  console.log(`[AIManager] checkAndTriggerAITurn - setup.stage: ${state.setup?.stage}, winner: ${state.winner}, isAITurnInProgress: ${isAITurnInProgress}`);
-  console.log(`[AIManager] checkAndTriggerAITurn - aiController0: ${aiController0 ? 'exists' : 'null'}, aiController: ${aiController ? 'exists' : 'null'}`);
+  console.log(
+    `[AIManager] checkAndTriggerAITurn called - mode: ${state.menu?.mode}, phase: ${state.phase}, turn: ${state.turn}, activePlayer: ${state.activePlayerIndex}`
+  );
+  console.log(
+    `[AIManager] checkAndTriggerAITurn - isAnyAIMode: ${isAnyAIMode(state)}, isAIvsAIMode: ${isAIvsAIMode(state)}`
+  );
+  console.log(
+    `[AIManager] checkAndTriggerAITurn - setup.stage: ${state.setup?.stage}, winner: ${state.winner}, isAITurnInProgress: ${isAITurnInProgress}`
+  );
+  console.log(
+    `[AIManager] checkAndTriggerAITurn - aiController0: ${aiController0 ? 'exists' : 'null'}, aiController: ${aiController ? 'exists' : 'null'}`
+  );
 
   // Check if bug detector is paused
   const detector = getBugDetector();
@@ -357,7 +373,9 @@ export const checkAndTriggerAITurn = (state, callbacks) => {
 
   // Don't trigger if game hasn't started or is over
   if (state.setup?.stage !== 'complete') {
-    console.log(`[AIManager] checkAndTriggerAITurn: setup not complete (stage: ${state.setup?.stage}), skipping`);
+    console.log(
+      `[AIManager] checkAndTriggerAITurn: setup not complete (stage: ${state.setup?.stage}), skipping`
+    );
     return;
   }
 
@@ -377,11 +395,15 @@ export const checkAndTriggerAITurn = (state, callbacks) => {
   console.log(`[AIManager] checkAndTriggerAITurn - isAIsTurn: ${aisTurn}`);
 
   if (aisTurn) {
-    console.log(`[AIManager] checkAndTriggerAITurn: triggering AI turn for player ${state.activePlayerIndex}`);
+    console.log(
+      `[AIManager] checkAndTriggerAITurn: triggering AI turn for player ${state.activePlayerIndex}`
+    );
     // Use setTimeout to allow UI to update first
     // Shorter delay for AI vs AI mode for faster gameplay
     const delay = isAIvsAIMode(state) ? 200 : 500;
-    console.log(`[AIManager] checkAndTriggerAITurn: scheduling executeAITurn with ${delay}ms delay`);
+    console.log(
+      `[AIManager] checkAndTriggerAITurn: scheduling executeAITurn with ${delay}ms delay`
+    );
     setTimeout(() => {
       console.log(`[AIManager] setTimeout fired, calling executeAITurn`);
       executeAITurn(state, callbacks);
@@ -413,14 +435,20 @@ const startStuckDetection = (state, callbacks) => {
     // Check if AI turn is still in progress (potential stuck)
     if (isAITurnInProgress) {
       consecutiveStuckCount++;
-      console.error(`[AIManager] ⚠️ STUCK DETECTED: AI turn in progress for ${STUCK_TIMEOUT_MS / 1000}s`);
+      console.error(
+        `[AIManager] ⚠️ STUCK DETECTED: AI turn in progress for ${STUCK_TIMEOUT_MS / 1000}s`
+      );
       logStuckState(state);
 
       if (consecutiveStuckCount < MAX_RECOVERY_ATTEMPTS) {
-        console.log(`[AIManager] Attempting recovery (attempt ${consecutiveStuckCount}/${MAX_RECOVERY_ATTEMPTS})...`);
+        console.log(
+          `[AIManager] Attempting recovery (attempt ${consecutiveStuckCount}/${MAX_RECOVERY_ATTEMPTS})...`
+        );
         attemptRecovery(state, callbacks);
       } else {
-        console.error(`[AIManager] ❌ Max recovery attempts reached. Game appears permanently stuck.`);
+        console.error(
+          `[AIManager] ❌ Max recovery attempts reached. Game appears permanently stuck.`
+        );
         logMessage(state, `⚠️ AI appears stuck after ${MAX_RECOVERY_ATTEMPTS} recovery attempts.`);
         // Force reset the stuck state so the player can continue
         isAITurnInProgress = false;
@@ -447,7 +475,10 @@ const logStuckState = (state) => {
   const activePlayer = state.players[state.activePlayerIndex];
   if (activePlayer) {
     console.log('Active Player Hand Size:', activePlayer.hand?.length);
-    console.log('Active Player Field:', activePlayer.field?.map(c => c?.name || 'empty').join(', '));
+    console.log(
+      'Active Player Field:',
+      activePlayer.field?.map((c) => c?.name || 'empty').join(', ')
+    );
     console.log('Active Player HP:', activePlayer.hp);
     console.log('Active Player Deck Size:', activePlayer.deck?.length);
   }

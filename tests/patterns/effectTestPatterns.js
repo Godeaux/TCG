@@ -14,7 +14,11 @@ import {
   addCardToCarrion,
   getCardDefinitionById,
 } from '../setup/testHelpers.js';
-import { createEffectContext, createCombatContext, createTrapContext } from '../setup/mockFactory.js';
+import {
+  createEffectContext,
+  createCombatContext,
+  createTrapContext,
+} from '../setup/mockFactory.js';
 import * as effectLibrary from '../../js/cards/effectLibrary.js';
 
 // ============================================
@@ -99,9 +103,7 @@ export const testEffectParams = (cardId, trigger, expectedParams) => {
     expect(effect).toBeDefined();
 
     // Handle array - check first matching effect
-    const effectObj = Array.isArray(effect)
-      ? effect.find((e) => e.params)
-      : effect;
+    const effectObj = Array.isArray(effect) ? effect.find((e) => e.params) : effect;
 
     for (const [key, value] of Object.entries(expectedParams)) {
       expect(effectObj.params?.[key]).toEqual(value);
@@ -261,8 +263,9 @@ export const testBuffEffect = (cardId, trigger, expectedAtk, expectedHp, target 
   describe(`${trigger} buff effect`, () => {
     it(`has buff type with +${expectedAtk}/+${expectedHp}`, () => {
       const card = getCardDefinitionById(cardId);
-      const effect = getEffectByType(card.effects?.[trigger], 'buff') ||
-                     getEffectByType(card.effects?.[trigger], 'buffStats');
+      const effect =
+        getEffectByType(card.effects?.[trigger], 'buff') ||
+        getEffectByType(card.effects?.[trigger], 'buffStats');
       expect(effect).toBeDefined();
 
       // Handle different param structures
@@ -288,8 +291,9 @@ export const testGrantKeywordEffect = (cardId, trigger, expectedKeyword) => {
   describe(`${trigger} grant keyword effect`, () => {
     it(`has grantKeyword type for ${expectedKeyword}`, () => {
       const card = getCardDefinitionById(cardId);
-      const effect = getEffectByType(card.effects?.[trigger], 'grantKeyword') ||
-                     getEffectByType(card.effects?.[trigger], 'addKeyword');
+      const effect =
+        getEffectByType(card.effects?.[trigger], 'grantKeyword') ||
+        getEffectByType(card.effects?.[trigger], 'addKeyword');
       expect(effect).toBeDefined();
       expect(effect.params?.keyword).toBe(expectedKeyword);
     });

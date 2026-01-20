@@ -11,7 +11,14 @@
  * - Plan optimal attack ordering
  */
 
-import { KEYWORDS, hasKeyword, hasAmbush, hasToxic, hasNeurotoxic, isPassive } from '../keywords.js';
+import {
+  KEYWORDS,
+  hasKeyword,
+  hasAmbush,
+  hasToxic,
+  hasNeurotoxic,
+  isPassive,
+} from '../keywords.js';
 import { ThreatDetector } from './ThreatDetector.js';
 
 // ============================================================================
@@ -19,10 +26,10 @@ import { ThreatDetector } from './ThreatDetector.js';
 // ============================================================================
 
 export const TRADE_OUTCOMES = {
-  WE_WIN: 'we-win',       // We kill them, we survive
-  TRADE: 'trade',          // Both die
-  WE_LOSE: 'we-lose',      // They survive, we die
-  NEITHER: 'neither',      // Neither dies (chip damage)
+  WE_WIN: 'we-win', // We kill them, we survive
+  TRADE: 'trade', // Both die
+  WE_LOSE: 'we-lose', // They survive, we die
+  NEITHER: 'neither', // Neither dies (chip damage)
 };
 
 // ============================================================================
@@ -43,7 +50,13 @@ export class CombatEvaluator {
    */
   analyzeTradeOutcome(attacker, defender) {
     if (!attacker || !defender) {
-      return { type: TRADE_OUTCOMES.NEITHER, weKill: false, weSurvive: true, theyKill: false, theySurvive: true };
+      return {
+        type: TRADE_OUTCOMES.NEITHER,
+        weKill: false,
+        weSurvive: true,
+        theyKill: false,
+        theySurvive: true,
+      };
     }
 
     const atkPower = attacker.currentAtk ?? attacker.atk ?? 0;
@@ -136,7 +149,7 @@ export class CombatEvaluator {
       let faceScore = atkPower * 10;
 
       // Bonus if opponent has few/no blockers
-      const oppCreatures = opponent.field.filter(c => c && !c.frozen && !isPassive(c)).length;
+      const oppCreatures = opponent.field.filter((c) => c && !c.frozen && !isPassive(c)).length;
       if (oppCreatures === 0) {
         faceScore += 15; // Clear path
       }
@@ -198,7 +211,7 @@ export class CombatEvaluator {
 
       // Threat prioritization bonus
       const threats = this.threatDetector.rankThreats(state, aiPlayerIndex);
-      const threatIndex = threats.findIndex(t => t.creature.instanceId === defender.instanceId);
+      const threatIndex = threats.findIndex((t) => t.creature.instanceId === defender.instanceId);
       if (threatIndex === 0) {
         score += 15;
         reason += ' [TOP THREAT]';
@@ -209,7 +222,7 @@ export class CombatEvaluator {
 
       // Must-kill targets get extra priority (critical = survival, high = important)
       const mustKills = this.threatDetector.findMustKillTargets(state, aiPlayerIndex);
-      const mustKillEntry = mustKills.find(mk => mk.creature.instanceId === defender.instanceId);
+      const mustKillEntry = mustKills.find((mk) => mk.creature.instanceId === defender.instanceId);
       if (mustKillEntry && trade.weKill) {
         const isCritical = mustKillEntry.priority === 'critical';
         score += isCritical ? 200 : 25;
@@ -250,7 +263,7 @@ export class CombatEvaluator {
       for (const { creature: threat } of criticalThreats) {
         // Check if THIS attacker can target this threat
         const isValidTarget = (validTargets.creatures || []).some(
-          c => c.instanceId === threat.instanceId
+          (c) => c.instanceId === threat.instanceId
         );
         if (!isValidTarget) continue;
 
@@ -264,7 +277,7 @@ export class CombatEvaluator {
           return {
             target: creatureTarget,
             score: 500,
-            reason: `SURVIVAL: Kill ${threat.name} (${atkPower} dmg kills ${threatHp} HP) or we die!`
+            reason: `SURVIVAL: Kill ${threat.name} (${atkPower} dmg kills ${threatHp} HP) or we die!`,
           };
         }
 
@@ -272,12 +285,12 @@ export class CombatEvaluator {
         const killOptions = this.threatDetector.analyzeKillOptions(state, threat, aiPlayerIndex);
         if (killOptions.canKill) {
           const combo = killOptions.bestSolution;
-          const isPartOfCombo = combo.attackers.some(a => a.instanceId === attacker.instanceId);
+          const isPartOfCombo = combo.attackers.some((a) => a.instanceId === attacker.instanceId);
           if (isPartOfCombo) {
             return {
               target: creatureTarget,
               score: 450,
-              reason: `SURVIVAL: Attack ${threat.name} as part of kill combo!`
+              reason: `SURVIVAL: Attack ${threat.name} as part of kill combo!`,
             };
           }
         }
@@ -291,7 +304,7 @@ export class CombatEvaluator {
           return {
             target: creatureTarget,
             score: 300, // High enough to beat face attacks (typically 30-60)
-            reason: `SURVIVAL: Soften ${threat.name} (${threatHp}→${newHp} HP) - can't kill but must try!`
+            reason: `SURVIVAL: Soften ${threat.name} (${threatHp}→${newHp} HP) - can't kill but must try!`,
           };
         }
       }
@@ -344,7 +357,7 @@ export class CombatEvaluator {
     // Get all available attackers
     // NOTE: Summoning sickness only prevents attacking the PLAYER, not creatures
     // So we include all creatures that can attack, and check player-targeting later
-    let availableAttackers = ai.field.filter(creature => {
+    let availableAttackers = ai.field.filter((creature) => {
       if (!creature) return false;
       if (creature.currentHp <= 0) return false;
       if (creature.hasAttacked) return false;
@@ -355,7 +368,7 @@ export class CombatEvaluator {
     });
 
     // Simulate attacks in order
-    const simulatedOppField = opponent.field.map(c => c ? { ...c } : null);
+    const simulatedOppField = opponent.field.map((c) => (c ? { ...c } : null));
     let simulatedOppHp = opponent.hp;
 
     // First, check if we can win right now
@@ -391,7 +404,7 @@ export class CombatEvaluator {
             const attacker = solution.attackers[i];
             const validTargets = getValidTargets(state, attacker, opponent);
             const canTargetThreat = validTargets.creatures?.some(
-              c => c.instanceId === threat.instanceId
+              (c) => c.instanceId === threat.instanceId
             );
 
             if (canTargetThreat) {
@@ -399,9 +412,10 @@ export class CombatEvaluator {
                 attacker,
                 target: { type: 'creature', card: threat },
                 score: 500 - i, // First attacker slightly higher priority
-                reason: solution.type === 'combo'
-                  ? `SURVIVAL COMBO: ${i === 0 ? 'Soften' : 'Kill'} ${threat.name}`
-                  : `SURVIVAL: Kill ${threat.name}`,
+                reason:
+                  solution.type === 'combo'
+                    ? `SURVIVAL COMBO: ${i === 0 ? 'Soften' : 'Kill'} ${threat.name}`
+                    : `SURVIVAL: Kill ${threat.name}`,
               });
             }
           }
@@ -410,12 +424,16 @@ export class CombatEvaluator {
         }
 
         // Can't kill, but soften the threat
-        const softening = this.threatDetector.analyzeSofteningPotential(state, threat, aiPlayerIndex);
+        const softening = this.threatDetector.analyzeSofteningPotential(
+          state,
+          threat,
+          aiPlayerIndex
+        );
         if (softening.maxDamage > 0) {
           for (const attacker of softening.attackersNeeded) {
             const validTargets = getValidTargets(state, attacker, opponent);
             const canTargetThreat = validTargets.creatures?.some(
-              c => c.instanceId === threat.instanceId
+              (c) => c.instanceId === threat.instanceId
             );
 
             if (canTargetThreat) {
@@ -439,10 +457,14 @@ export class CombatEvaluator {
     for (const attacker of availableAttackers) {
       const validTargets = getValidTargets(state, attacker, opponent);
       const { target, score, reason } = this.findBestTarget(
-        state, attacker, validTargets, aiPlayerIndex
+        state,
+        attacker,
+        validTargets,
+        aiPlayerIndex
       );
 
-      if (target && score > -50) { // Only include attacks that aren't terrible
+      if (target && score > -50) {
+        // Only include attacks that aren't terrible
         plan.push({ attacker, target, score, reason });
       }
     }
@@ -478,8 +500,8 @@ export class CombatEvaluator {
     }
 
     // Generally, attack if we have creatures and any reasonable targets
-    const hasAttackers = ai.field.some(c =>
-      c && !c.hasAttacked && !isPassive(c) && !c.frozen && !c.webbed
+    const hasAttackers = ai.field.some(
+      (c) => c && !c.hasAttacked && !isPassive(c) && !c.frozen && !c.webbed
     );
 
     return hasAttackers;

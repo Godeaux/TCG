@@ -26,7 +26,20 @@ export function generateCardEffectText(card) {
   // effectText only describes triggered/activated abilities
 
   // Generate text for each trigger type
-  const triggerOrder = ['onPlay', 'onConsume', 'onSlain', 'onDefend', 'onBeforeCombat', 'onAfterCombat', 'onStart', 'onEnd', 'effect', 'discardEffect', 'sacrificeEffect', 'attackReplacement'];
+  const triggerOrder = [
+    'onPlay',
+    'onConsume',
+    'onSlain',
+    'onDefend',
+    'onBeforeCombat',
+    'onAfterCombat',
+    'onStart',
+    'onEnd',
+    'effect',
+    'discardEffect',
+    'sacrificeEffect',
+    'attackReplacement',
+  ];
   // Trigger prefixes match common written patterns
   const triggerPrefixes = {
     onConsume: 'When consumed: ',
@@ -38,7 +51,7 @@ export function generateCardEffectText(card) {
     onEnd: 'End of turn; ',
     discardEffect: 'Discard: ',
     sacrificeEffect: 'Sacrifice: ',
-    attackReplacement: '',  // No prefix - effect text itself describes the replacement
+    attackReplacement: '', // No prefix - effect text itself describes the replacement
   };
 
   // Trap trigger prefixes (used when card.type === 'Trap' and trigger === 'effect')
@@ -99,8 +112,8 @@ export function generateEffectText(effect) {
 
   if (Array.isArray(effect)) {
     return effect
-      .map(e => generateSingleEffectText(e))
-      .filter(t => t)
+      .map((e) => generateSingleEffectText(e))
+      .filter((t) => t)
       .join('. ');
   }
 
@@ -148,21 +161,23 @@ export function generateSingleEffectText(effect) {
 export function normalizeText(text) {
   if (!text) return '';
 
-  return text
-    .toLowerCase()
-    .replace(/\s+/g, ' ')        // Collapse whitespace
-    .replace(/\.\s*\./g, '.')    // Remove double periods
-    .replace(/[,;:]\s*/g, ', ')  // Standardize all trigger punctuation to comma
-    .replace(/\s+\./g, '.')      // Remove space before period
-    .replace(/\.$/g, '')         // Remove trailing period
-    // Common substitutions for comparison
-    .replace(/\bpred\b/g, 'predator')  // "pred" → "predator"
-    .replace(/\beither\s+/g, 'choose, ')  // "either X or Y" → "choose: X or Y"
-    .replace(/\bbecome\b/g, 'play')  // "become X" → "play X" (transforms)
-    .replace(/\bportugese\s+man\s+o'\s*war/g, "man o' war")  // Token name normalization
-    .replace(/\bportugese\s+man-o'-war/g, "man o' war")
-    .replace(/\bportugese\s/g, '')  // Remove "Portuguese" prefix for token names
-    .trim();
+  return (
+    text
+      .toLowerCase()
+      .replace(/\s+/g, ' ') // Collapse whitespace
+      .replace(/\.\s*\./g, '.') // Remove double periods
+      .replace(/[,;:]\s*/g, ', ') // Standardize all trigger punctuation to comma
+      .replace(/\s+\./g, '.') // Remove space before period
+      .replace(/\.$/g, '') // Remove trailing period
+      // Common substitutions for comparison
+      .replace(/\bpred\b/g, 'predator') // "pred" → "predator"
+      .replace(/\beither\s+/g, 'choose, ') // "either X or Y" → "choose: X or Y"
+      .replace(/\bbecome\b/g, 'play') // "become X" → "play X" (transforms)
+      .replace(/\bportugese\s+man\s+o'\s*war/g, "man o' war") // Token name normalization
+      .replace(/\bportugese\s+man-o'-war/g, "man o' war")
+      .replace(/\bportugese\s/g, '') // Remove "Portuguese" prefix for token names
+      .trim()
+  );
 }
 
 /**
@@ -180,8 +195,8 @@ export function compareEffectText(card) {
   const match = normalizedWritten === normalizedGenerated;
 
   return {
-    match,  // Used by tests
-    matches: match,  // Alias for compatibility
+    match, // Used by tests
+    matches: match, // Alias for compatibility
     written,
     generated,
     normalizedWritten,

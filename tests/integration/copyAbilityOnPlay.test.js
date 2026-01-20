@@ -6,7 +6,12 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createTestState, createTestCreature, addCardToCarrion, getCardDefinitionById } from '../setup/testHelpers.js';
+import {
+  createTestState,
+  createTestCreature,
+  addCardToCarrion,
+  getCardDefinitionById,
+} from '../setup/testHelpers.js';
 import { createEffectContext } from '../setup/mockFactory.js';
 import { resolveEffectResult } from '../../js/game/effects.js';
 import { resolveCardEffect } from '../../js/cards/index.js';
@@ -48,7 +53,7 @@ describe('Mexican Violetear - Copy Abilities', () => {
       const effectFn = selectFromGroup({
         targetGroup: 'carrion',
         title: 'Choose a carrion to copy abilities from',
-        effect: { copyAbilities: true }
+        effect: { copyAbilities: true },
       });
       const result = effectFn(context);
 
@@ -69,7 +74,7 @@ describe('Mexican Violetear - Copy Abilities', () => {
       const effectFn = selectFromGroup({
         targetGroup: 'carrion',
         title: 'Choose a carrion to copy abilities from',
-        effect: { copyAbilities: true }
+        effect: { copyAbilities: true },
       });
       const result = effectFn(context);
 
@@ -87,7 +92,7 @@ describe('Mexican Violetear - Copy Abilities', () => {
       const effectFn = selectFromGroup({
         targetGroup: 'carrion',
         title: 'Choose a carrion to copy abilities from',
-        effect: { copyAbilities: true }
+        effect: { copyAbilities: true },
       });
       const result = effectFn(context);
 
@@ -163,7 +168,7 @@ describe('copyAbilities Effect Resolution', () => {
     const sourceDef = getCardDefinitionById('fish-prey-atlantic-flying-fish');
     const source = createCardInstance(sourceDef, state.turn);
     source.effects = {
-      onPlay: { type: 'drawCards', params: { amount: 1 } }
+      onPlay: { type: 'drawCards', params: { amount: 1 } },
     };
     state.players[0].carrion.push(source);
 
@@ -184,7 +189,7 @@ describe('copyAbilities Effect Resolution', () => {
     const sourceDef = getCardDefinitionById('fish-prey-atlantic-flying-fish');
     const source = createCardInstance(sourceDef, state.turn);
     source.effects = {
-      onPlay: { type: 'drawCards', params: { amount: 1 } }
+      onPlay: { type: 'drawCards', params: { amount: 1 } },
     };
     state.players[0].carrion.push(source);
 
@@ -233,7 +238,7 @@ describe('Copy Ability End-to-End onPlay Trigger', () => {
     const sourceDef = getCardDefinitionById('fish-prey-atlantic-flying-fish');
     const source = createCardInstance(sourceDef, state.turn);
     source.effects = {
-      onPlay: { type: 'damageOpponent', params: { amount: 2 } }
+      onPlay: { type: 'damageOpponent', params: { amount: 2 } },
     };
     state.players[0].carrion.push(source);
 
@@ -298,7 +303,7 @@ describe('Moluccan Cockatoo - Copy Abilities from Field', () => {
       const effectFn = selectFromGroup({
         targetGroup: 'other-creatures',
         title: 'Choose a creature to copy abilities from',
-        effect: { copyAbilitiesFrom: true }
+        effect: { copyAbilitiesFrom: true },
       });
       const result = effectFn(context);
 
@@ -318,7 +323,7 @@ describe('Moluccan Cockatoo - Copy Abilities from Field', () => {
       const effectFn = selectFromGroup({
         targetGroup: 'other-creatures',
         title: 'Choose a creature to copy abilities from',
-        effect: { copyAbilitiesFrom: true }
+        effect: { copyAbilitiesFrom: true },
       });
       const result = effectFn(context);
 
@@ -326,7 +331,11 @@ describe('Moluccan Cockatoo - Copy Abilities from Field', () => {
       expect(result.selectTarget.candidates.length).toBe(2);
 
       // Simulate selection
-      const selectResult = result.selectTarget.onSelect({ type: 'creature', creature: source, ownerIndex: 0 });
+      const selectResult = result.selectTarget.onSelect({
+        type: 'creature',
+        creature: source,
+        ownerIndex: 0,
+      });
 
       expect(selectResult.copyAbilities).toBeDefined();
       expect(selectResult.copyAbilities.target).toBe(target);
@@ -355,7 +364,7 @@ describe('Copy Ability Full End-to-End Execution', () => {
       const sourceDef = getCardDefinitionById('fish-prey-atlantic-flying-fish');
       const source = createCardInstance(sourceDef, state.turn);
       source.effects = {
-        onPlay: { type: 'damageRival', params: { amount: 3 } }
+        onPlay: { type: 'damageRival', params: { amount: 3 } },
       };
       state.players[0].carrion.push(source);
 
@@ -394,7 +403,7 @@ describe('Copy Ability Full End-to-End Execution', () => {
       const sourceDef = getCardDefinitionById('fish-prey-atlantic-flying-fish');
       const source = createCardInstance(sourceDef, state.turn);
       source.effects = {
-        onPlay: { type: 'heal', params: { amount: 3 } }
+        onPlay: { type: 'heal', params: { amount: 3 } },
       };
       state.players[0].carrion.push(source);
 
@@ -433,7 +442,7 @@ describe('Copy Ability Full End-to-End Execution', () => {
       const sourceDef = getCardDefinitionById('fish-prey-atlantic-flying-fish');
       const source = createCardInstance(sourceDef, state.turn);
       source.effects = {
-        onPlay: { type: 'draw', params: { count: 2 } }
+        onPlay: { type: 'draw', params: { count: 2 } },
       };
       state.players[0].carrion.push(source);
 
@@ -488,7 +497,7 @@ describe('Copy Ability Full End-to-End Execution', () => {
       resolveEffectResult(state, onPlayResult, { playerIndex: 0, opponentIndex: 1 });
 
       // Verify: tokens were summoned
-      const lavaLizards = state.players[0].field.filter(c => c?.id === 'token-lava-lizard');
+      const lavaLizards = state.players[0].field.filter((c) => c?.id === 'token-lava-lizard');
       expect(lavaLizards.length).toBe(2);
 
       // Verify: token onPlay effects triggered (each deals 1 damage + 1 from summonAndDamageOpponent = 3 total)
@@ -520,7 +529,7 @@ describe('Copy Ability Full End-to-End Execution', () => {
       resolveEffectResult(state, onPlayResult, { playerIndex: 0, opponentIndex: 1 });
 
       // Verify: tokens were summoned (Mexican Violetear in slot 0, 2 Flying Fish in slots 1 and 2)
-      const flyingFish = state.players[0].field.filter(c => c?.id === 'token-flying-fish');
+      const flyingFish = state.players[0].field.filter((c) => c?.id === 'token-flying-fish');
       expect(flyingFish.length).toBe(2);
     });
 
@@ -550,7 +559,7 @@ describe('Copy Ability Full End-to-End Execution', () => {
       resolveEffectResult(state, onPlayResult, { playerIndex: 0, opponentIndex: 1 });
 
       // Verify: sardine tokens were summoned
-      const sardines = state.players[0].field.filter(c => c?.id === 'token-sardine');
+      const sardines = state.players[0].field.filter((c) => c?.id === 'token-sardine');
       expect(sardines.length).toBe(2);
 
       // Verify: healing occurred (Rainbow Sardines heals 1, each sardine token heals 1 on summon = 3 total)
@@ -569,7 +578,7 @@ describe('Copy Ability Full End-to-End Execution', () => {
       const sourceDef = getCardDefinitionById('fish-prey-atlantic-flying-fish');
       const source = createCardInstance(sourceDef, state.turn);
       source.effects = {
-        onPlay: { type: 'selectEnemyToFreeze' }
+        onPlay: { type: 'selectEnemyToFreeze' },
       };
       state.players[0].carrion.push(source);
 
@@ -605,7 +614,7 @@ describe('Copy Ability Full End-to-End Execution', () => {
       const sourceDef = getCardDefinitionById('fish-prey-atlantic-flying-fish');
       const source = createCardInstance(sourceDef, state.turn);
       source.effects = {
-        onPlay: { type: 'selectEnemyToFreeze' }
+        onPlay: { type: 'selectEnemyToFreeze' },
       };
       state.players[0].carrion.push(source);
 
@@ -646,7 +655,7 @@ describe('Copy Ability Full End-to-End Execution', () => {
       const sourceDef = getCardDefinitionById('fish-prey-atlantic-flying-fish');
       const source = createCardInstance(sourceDef, state.turn);
       source.effects = {
-        onPlay: { type: 'damageOpponent', params: { amount: 2 } }
+        onPlay: { type: 'damageOpponent', params: { amount: 2 } },
       };
       state.players[0].carrion.push(source);
 

@@ -44,7 +44,11 @@ describe('Field Limit Edge Cases', () => {
       it('summon 3 tokens with empty field succeeds', () => {
         state.players[0].field = [null, null, null];
 
-        const summonFn = effectLibrary.summonTokens(['token-flying-fish', 'token-flying-fish', 'token-flying-fish']);
+        const summonFn = effectLibrary.summonTokens([
+          'token-flying-fish',
+          'token-flying-fish',
+          'token-flying-fish',
+        ]);
         const result = summonFn(context);
 
         expect(result.summonTokens).toBeDefined();
@@ -91,7 +95,11 @@ describe('Field Limit Edge Cases', () => {
         createTestCreature('fish-prey-atlantic-flying-fish', 0, 0, state);
         createTestCreature('fish-prey-blobfish', 0, 1, state);
 
-        const summonFn = effectLibrary.summonTokens(['token-flying-fish', 'token-flying-fish', 'token-flying-fish']);
+        const summonFn = effectLibrary.summonTokens([
+          'token-flying-fish',
+          'token-flying-fish',
+          'token-flying-fish',
+        ]);
         const result = summonFn(context);
 
         // Effect returns all requested, game logic handles placement

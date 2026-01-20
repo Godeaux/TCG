@@ -35,7 +35,7 @@ export class GameTreeSearch {
       nodes: 0,
       pruned: 0,
       cacheHits: 0,
-      maxDepthReached: 0
+      maxDepthReached: 0,
     };
 
     // Configuration
@@ -55,7 +55,7 @@ export class GameTreeSearch {
     const {
       maxTimeMs = this.defaultMaxTime,
       maxDepth = this.defaultMaxDepth,
-      verbose = false
+      verbose = false,
     } = options;
 
     const startTime = Date.now();
@@ -72,7 +72,7 @@ export class GameTreeSearch {
       nodes: 0,
       pruned: 0,
       cacheHits: 0,
-      maxDepthReached: 0
+      maxDepthReached: 0,
     };
 
     // Iterative deepening: search at depth 1, then 2, then 3...
@@ -101,8 +101,8 @@ export class GameTreeSearch {
       if (verbose) {
         console.log(
           `[Search] Depth ${depth}: score=${result.score.toFixed(0)} ` +
-          `nodes=${this.stats.nodes} pruned=${this.stats.pruned} ` +
-          `time=${Date.now() - iterationStart}ms`
+            `nodes=${this.stats.nodes} pruned=${this.stats.pruned} ` +
+            `time=${Date.now() - iterationStart}ms`
         );
       }
 
@@ -136,7 +136,7 @@ export class GameTreeSearch {
       score: bestScore,
       depth: searchDepth,
       stats: { ...this.stats },
-      timeMs: Date.now() - startTime
+      timeMs: Date.now() - startTime,
     };
   }
 
@@ -153,7 +153,7 @@ export class GameTreeSearch {
     const {
       maxTimeMs = this.defaultMaxTime,
       maxDepth = this.defaultMaxDepth,
-      verbose = false
+      verbose = false,
     } = options;
 
     const startTime = Date.now();
@@ -169,7 +169,7 @@ export class GameTreeSearch {
       nodes: 0,
       pruned: 0,
       cacheHits: 0,
-      maxDepthReached: 0
+      maxDepthReached: 0,
     };
 
     // Iterative deepening with async yielding
@@ -177,7 +177,7 @@ export class GameTreeSearch {
       const iterationStart = Date.now();
 
       // Yield to allow UI to update between depth iterations
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
 
       const result = this.alphaBeta(
         state,
@@ -201,8 +201,8 @@ export class GameTreeSearch {
       if (verbose) {
         console.log(
           `[Search] Depth ${depth}: score=${result.score.toFixed(0)} ` +
-          `nodes=${this.stats.nodes} pruned=${this.stats.pruned} ` +
-          `time=${Date.now() - iterationStart}ms`
+            `nodes=${this.stats.nodes} pruned=${this.stats.pruned} ` +
+            `time=${Date.now() - iterationStart}ms`
         );
       }
 
@@ -236,7 +236,7 @@ export class GameTreeSearch {
       score: bestScore,
       depth: searchDepth,
       stats: { ...this.stats },
-      timeMs: Date.now() - startTime
+      timeMs: Date.now() - startTime,
     };
   }
 
@@ -258,7 +258,7 @@ export class GameTreeSearch {
     if (depth === 0) {
       return {
         score: this.evaluator.evaluatePosition(state, playerIndex),
-        move: null
+        move: null,
       };
     }
 
@@ -266,7 +266,7 @@ export class GameTreeSearch {
     if (this.isGameOver(state)) {
       return {
         score: this.evaluateTerminal(state, playerIndex),
-        move: null
+        move: null,
       };
     }
 
@@ -289,14 +289,14 @@ export class GameTreeSearch {
     }
 
     // Generate moves for current player
-    const currentPlayer = maximizing ? playerIndex : (1 - playerIndex);
+    const currentPlayer = maximizing ? playerIndex : 1 - playerIndex;
     const moves = this.moveGenerator.generateMoves(state, currentPlayer);
 
     // No moves available - evaluate current position
     if (moves.length === 0) {
       return {
         score: this.evaluator.evaluatePosition(state, playerIndex),
-        move: null
+        move: null,
       };
     }
 
@@ -375,7 +375,7 @@ export class GameTreeSearch {
         score: bestScore,
         move: bestMove,
         depth,
-        flag
+        flag,
       });
     }
 
@@ -433,7 +433,7 @@ export class GameTreeSearch {
       active: state.activePlayerIndex,
       cardPlayed: state.cardPlayedThisTurn,
       p0: this.hashPlayer(state.players[0]),
-      p1: this.hashPlayer(state.players[1])
+      p1: this.hashPlayer(state.players[1]),
     };
 
     return JSON.stringify(hashData);
@@ -450,15 +450,19 @@ export class GameTreeSearch {
       hp: player.hp,
       handSize: player.hand?.length || 0,
       deckSize: player.deck?.length || 0,
-      field: player.field?.map(c => c ? {
-        id: c.id,
-        atk: c.currentAtk ?? c.atk,
-        hp: c.currentHp ?? c.hp,
-        attacked: c.hasAttacked,
-        frozen: c.frozen,
-        summonTurn: c.summonedTurn
-      } : null),
-      carrionSize: player.carrion?.length || 0
+      field: player.field?.map((c) =>
+        c
+          ? {
+              id: c.id,
+              atk: c.currentAtk ?? c.atk,
+              hp: c.currentHp ?? c.hp,
+              attacked: c.hasAttacked,
+              frozen: c.frozen,
+              summonTurn: c.summonedTurn,
+            }
+          : null
+      ),
+      carrionSize: player.carrion?.length || 0,
     };
   }
 
@@ -472,8 +476,10 @@ export class GameTreeSearch {
     const pruneRate = s.nodes > 0 ? ((s.pruned / s.nodes) * 100).toFixed(1) : 0;
     const hitRate = s.nodes > 0 ? ((s.cacheHits / s.nodes) * 100).toFixed(1) : 0;
 
-    return `Nodes: ${s.nodes}, Pruned: ${s.pruned} (${pruneRate}%), ` +
-           `Cache hits: ${s.cacheHits} (${hitRate}%), Max depth: ${s.maxDepthReached}`;
+    return (
+      `Nodes: ${s.nodes}, Pruned: ${s.pruned} (${pruneRate}%), ` +
+      `Cache hits: ${s.cacheHits} (${hitRate}%), Max depth: ${s.maxDepthReached}`
+    );
   }
 }
 

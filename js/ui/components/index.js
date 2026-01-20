@@ -41,20 +41,13 @@ export {
 // FIELD RENDERING
 // ============================================================================
 
-export {
-  renderField,
-  clearField,
-} from './Field.js';
+export { renderField, clearField } from './Field.js';
 
 // ============================================================================
 // HAND RENDERING
 // ============================================================================
 
-export {
-  renderHand,
-  clearHand,
-  updateHandOverlap,
-} from './Hand.js';
+export { renderHand, clearHand, updateHandOverlap } from './Hand.js';
 
 // ============================================================================
 // SELECTION PANEL
@@ -80,11 +73,7 @@ export {
   isEmotePanelVisible,
 } from './EmotePanel.js';
 
-export {
-  showEmoteBubble,
-  clearEmoteBubble,
-  clearAllEmoteBubbles,
-} from './EmoteBubble.js';
+export { showEmoteBubble, clearEmoteBubble, clearAllEmoteBubbles } from './EmoteBubble.js';
 
 // ============================================================================
 // OPPONENT HAND STRIP

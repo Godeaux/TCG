@@ -21,21 +21,21 @@ export const DIFFICULTY_LEVELS = {
     description: 'Relaxed opponent that makes mistakes',
 
     // Mistake injection
-    mistakeChance: 0.35,        // 35% chance to pick suboptimal play
-    mistakeDepth: 3,            // Can pick up to 3rd best option
+    mistakeChance: 0.35, // 35% chance to pick suboptimal play
+    mistakeDepth: 3, // Can pick up to 3rd best option
 
     // Feature toggles
-    threatDetectionEnabled: false,  // Doesn't see incoming threats
-    lethalDetectionEnabled: true,   // Always takes obvious lethal
-    advancedTradeAnalysis: false,   // Simpler trade evaluation
-    trapAwareness: false,           // Doesn't predict opponent traps
+    threatDetectionEnabled: false, // Doesn't see incoming threats
+    lethalDetectionEnabled: true, // Always takes obvious lethal
+    advancedTradeAnalysis: false, // Simpler trade evaluation
+    trapAwareness: false, // Doesn't predict opponent traps
 
     // Timing (feels less "thoughtful")
     thinkingDelay: { min: 300, max: 600 },
     betweenActionsDelay: { min: 300, max: 600 },
 
     // Logging
-    showDetailedThinking: false,    // Less verbose thoughts
+    showDetailedThinking: false, // Less verbose thoughts
   },
 
   medium: {
@@ -43,8 +43,8 @@ export const DIFFICULTY_LEVELS = {
     description: 'Balanced opponent with occasional errors',
 
     // Mistake injection
-    mistakeChance: 0.15,        // 15% chance to make a mistake
-    mistakeDepth: 2,            // Can pick 2nd best option at most
+    mistakeChance: 0.15, // 15% chance to make a mistake
+    mistakeDepth: 2, // Can pick 2nd best option at most
 
     // Feature toggles
     threatDetectionEnabled: true,
@@ -65,15 +65,15 @@ export const DIFFICULTY_LEVELS = {
     description: 'Skilled opponent that plays optimally',
 
     // Mistake injection
-    mistakeChance: 0,           // No mistakes
-    mistakeDepth: 1,            // Always picks best option
+    mistakeChance: 0, // No mistakes
+    mistakeDepth: 1, // Always picks best option
 
     // Feature toggles
     threatDetectionEnabled: true,
     lethalDetectionEnabled: true,
     advancedTradeAnalysis: true,
-    trapAwareness: true,        // Considers opponent might have traps
-    useDeepSearch: false,       // Uses heuristics, not deep search
+    trapAwareness: true, // Considers opponent might have traps
+    useDeepSearch: false, // Uses heuristics, not deep search
 
     // Timing (longer thinking = feels smarter)
     thinkingDelay: { min: 800, max: 1500 },
@@ -96,19 +96,19 @@ export const DIFFICULTY_LEVELS = {
     lethalDetectionEnabled: true,
     advancedTradeAnalysis: true,
     trapAwareness: true,
-    useDeepSearch: true,        // Uses game tree search for decisions
+    useDeepSearch: true, // Uses game tree search for decisions
 
     // Deep search parameters
-    searchTimeMs: 2000,         // 2 seconds per decision
-    searchDepth: 6,             // Max depth for alpha-beta
+    searchTimeMs: 2000, // 2 seconds per decision
+    searchDepth: 6, // Max depth for alpha-beta
 
     // Timing (includes search time, so base delay is lower)
-    thinkingDelay: { min: 100, max: 300 },  // Search handles the "thinking"
+    thinkingDelay: { min: 100, max: 300 }, // Search handles the "thinking"
     betweenActionsDelay: { min: 200, max: 500 },
 
     // Logging
     showDetailedThinking: true,
-    showSearchStats: true,      // Show search statistics
+    showSearchStats: true, // Show search statistics
   },
 };
 
@@ -311,7 +311,7 @@ export class DifficultyManager {
 
     // Easy: 10% base chance, reduced by obviousness
     // Medium: 5% base chance, heavily reduced by obviousness
-    const baseChance = this.level === 'easy' ? 0.10 : 0.05;
+    const baseChance = this.level === 'easy' ? 0.1 : 0.05;
     const reductionFactor = obviousnessScore / 100;
     const blunderChance = baseChance * (1 - reductionFactor * 0.8);
 

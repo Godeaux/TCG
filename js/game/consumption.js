@@ -1,10 +1,15 @@
-import { logMessage, queueVisualEffect, logGameAction, LOG_CATEGORIES } from "../state/gameState.js";
-import { isEdible } from "../keywords.js";
+import {
+  logMessage,
+  queueVisualEffect,
+  logGameAction,
+  LOG_CATEGORIES,
+} from '../state/gameState.js';
+import { isEdible } from '../keywords.js';
 
 const { BUFF } = LOG_CATEGORIES;
 
 const getNutritionValue = (card) => {
-  if (card.type === "Predator" && isEdible(card)) {
+  if (card.type === 'Predator' && isEdible(card)) {
     return card.currentAtk ?? card.atk ?? 0;
   }
   return card.nutrition ?? 0;
@@ -35,13 +40,15 @@ export const consumePrey = ({
     if (slotIndex >= 0) {
       // Queue consumption visual effect before removing prey
       queueVisualEffect(state, {
-        type: "consumption",
+        type: 'consumption',
         preyId: prey.instanceId,
         preyOwnerIndex: playerIndex,
         preySlotIndex: slotIndex,
         predatorId: predator.instanceId,
         predatorOwnerIndex: playerIndex,
-        predatorSlotIndex: player.field.findIndex((slot) => slot?.instanceId === predator.instanceId),
+        predatorSlotIndex: player.field.findIndex(
+          (slot) => slot?.instanceId === predator.instanceId
+        ),
         nutritionGained: getNutritionValue(prey),
       });
       player.field[slotIndex] = null;
@@ -58,7 +65,7 @@ export const consumePrey = ({
     }
   });
 
-  const preyNames = [...preyList, ...carrionList].map(p => p.name).join(', ');
+  const preyNames = [...preyList, ...carrionList].map((p) => p.name).join(', ');
   logGameAction(
     state,
     BUFF,

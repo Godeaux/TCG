@@ -16,10 +16,7 @@
  */
 
 import { KEYWORD_DESCRIPTIONS, areAbilitiesActive, getEffectiveAttack } from '../../keywords.js';
-import {
-  hasCardImage,
-  getCardImagePath,
-} from '../../cardImages.js';
+import { hasCardImage, getCardImagePath } from '../../cardImages.js';
 import { getCardDefinitionById } from '../../cards/index.js';
 
 // ============================================================================
@@ -41,17 +38,17 @@ window._markCardImageFailed = (cardId) => {
 /**
  * Get CSS class for card type
  */
-export const cardTypeClass = (card) => `type-${card.type.toLowerCase().replace(" ", "-")}`;
+export const cardTypeClass = (card) => `type-${card.type.toLowerCase().replace(' ', '-')}`;
 
 /**
  * Check if value looks like a card object
  */
 export const isCardLike = (value) =>
   value &&
-  typeof value === "object" &&
-  typeof value.name === "string" &&
-  typeof value.type === "string" &&
-  typeof value.id === "string";
+  typeof value === 'object' &&
+  typeof value.name === 'string' &&
+  typeof value.type === 'string' &&
+  typeof value.id === 'string';
 
 // ============================================================================
 // SVG EFFECT TEXT RENDERING
@@ -133,16 +130,18 @@ const renderEffectSvg = (effectText) => {
   }
 
   // Create text elements for each line, centered
-  const textElements = lines.map((line, i) => {
-    // Escape HTML entities
-    const escapedLine = line
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+  const textElements = lines
+    .map((line, i) => {
+      // Escape HTML entities
+      const escapedLine = line
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
 
-    return `<text x="50%" y="${startY + i * lineHeight}" text-anchor="middle" font-size="${fontSize}" fill="#a0aec0">${escapedLine}</text>`;
-  }).join('');
+      return `<text x="50%" y="${startY + i * lineHeight}" text-anchor="middle" font-size="${fontSize}" fill="#a0aec0">${escapedLine}</text>`;
+    })
+    .join('');
 
   // xMidYMid meet: center content, scale uniformly to fit
   return `
@@ -166,7 +165,6 @@ const renderNameSvg = (name, rarityClass = '') => {
 
   const viewBoxWidth = 200;
   const viewBoxHeight = 26;
-
 
   // Escape HTML entities
   const escapedName = name
@@ -216,16 +214,18 @@ const renderStatsSvg = (stats, hasNut) => {
   const statCount = stats.length;
   const spacing = viewBoxWidth / (statCount + 1);
 
-  const statElements = stats.map((stat, i) => {
-    const x = spacing * (i + 1);
-    // Color based on stat type
-    let fillColor = '#a0aec0';
-    if (stat.className === 'atk') fillColor = '#f97316'; // orange
-    if (stat.className === 'hp') fillColor = '#ef4444'; // red
-    if (stat.className === 'nut') fillColor = '#3dfe1fff'; // purple
+  const statElements = stats
+    .map((stat, i) => {
+      const x = spacing * (i + 1);
+      // Color based on stat type
+      let fillColor = '#a0aec0';
+      if (stat.className === 'atk') fillColor = '#f97316'; // orange
+      if (stat.className === 'hp') fillColor = '#ef4444'; // red
+      if (stat.className === 'nut') fillColor = '#3dfe1fff'; // purple
 
-    return `<text x="${x}" y="16" text-anchor="middle" font-size="${fontSize}" fill="${fillColor}">${stat.emoji} ${stat.value}</text>`;
-  }).join('');
+      return `<text x="${x}" y="16" text-anchor="middle" font-size="${fontSize}" fill="${fillColor}">${stat.emoji} ${stat.value}</text>`;
+    })
+    .join('');
 
   return `
     <svg class="card-stats-svg" viewBox="0 0 ${viewBoxWidth} ${viewBoxHeight}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
@@ -252,7 +252,7 @@ const renderKeywordsSvg = (card) => {
 
   // Add regular keywords
   if (Array.isArray(card.keywords) && card.keywords.length) {
-    tags.push(...card.keywords.map(keyword => ({ text: keyword })));
+    tags.push(...card.keywords.map((keyword) => ({ text: keyword })));
   }
 
   // Add Neurotoxined status
@@ -274,32 +274,37 @@ const renderKeywordsSvg = (card) => {
   // If content is too wide, reduce font size
   let adjustedFontSize = fontSize;
   if (totalTextWidth > viewBoxWidth - 20) {
-    adjustedFontSize = Math.max(8, fontSize * (viewBoxWidth - 20) / totalTextWidth);
+    adjustedFontSize = Math.max(8, (fontSize * (viewBoxWidth - 20)) / totalTextWidth);
   }
 
   // Calculate x positions for each tag (centered layout)
   let currentX = viewBoxWidth / 2;
-  const tagWidths = tags.map(tag => tag.text.length * avgCharWidth * (adjustedFontSize / fontSize));
+  const tagWidths = tags.map(
+    (tag) => tag.text.length * avgCharWidth * (adjustedFontSize / fontSize)
+  );
   const totalWidth = tagWidths.reduce((sum, w) => sum + w, 0) + (tags.length - 1) * 8;
   let startX = (viewBoxWidth - totalWidth) / 2;
 
-  const tagElements = tags.map((tag, i) => {
-    const x = startX + tagWidths.slice(0, i).reduce((sum, w) => sum + w + 8, 0) + tagWidths[i] / 2;
+  const tagElements = tags
+    .map((tag, i) => {
+      const x =
+        startX + tagWidths.slice(0, i).reduce((sum, w) => sum + w + 8, 0) + tagWidths[i] / 2;
 
-    // Escape HTML entities
-    const escapedText = tag.text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+      // Escape HTML entities
+      const escapedText = tag.text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
 
-    // Color based on tag type - white for keywords to pop
-    let fillColor = '#ffffff'; // white for regular keywords
-    if (tag.isFieldSpell) fillColor = '#22c55e'; // green
-    if (tag.isDeadly) fillColor = '#ef4444'; // red
+      // Color based on tag type - white for keywords to pop
+      let fillColor = '#ffffff'; // white for regular keywords
+      if (tag.isFieldSpell) fillColor = '#22c55e'; // green
+      if (tag.isDeadly) fillColor = '#ef4444'; // red
 
-    return `<text x="${x}" y="14" text-anchor="middle" font-size="${adjustedFontSize}" font-weight="600" fill="${fillColor}">${escapedText}</text>`;
-  }).join('');
+      return `<text x="${x}" y="14" text-anchor="middle" font-size="${adjustedFontSize}" font-weight="600" fill="${fillColor}">${escapedText}</text>`;
+    })
+    .join('');
 
   return `
     <svg class="card-keywords-svg" viewBox="0 0 ${viewBoxWidth} ${viewBoxHeight}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
@@ -324,7 +329,7 @@ const renderKeywordsSvg = (card) => {
 export const renderCardStats = (card, options = {}) => {
   const { useBaseStats = false, state = null, ownerIndex = null } = options;
   const stats = [];
-  if (card.type === "Predator" || card.type === "Prey") {
+  if (card.type === 'Predator' || card.type === 'Prey') {
     // Use getEffectiveAttack to include Pack bonus when state is available
     let atk;
     if (useBaseStats) {
@@ -336,11 +341,11 @@ export const renderCardStats = (card, options = {}) => {
       atk = card.currentAtk ?? card.atk;
     }
     const hp = useBaseStats ? card.hp : (card.currentHp ?? card.hp);
-    stats.push({ emoji: "⚔", value: atk, className: "atk" });
-    stats.push({ emoji: "❤", value: hp, className: "hp" });
+    stats.push({ emoji: '⚔', value: atk, className: 'atk' });
+    stats.push({ emoji: '❤', value: hp, className: 'hp' });
   }
-  if (card.type === "Prey") {
-    stats.push({ emoji: "🍖", value: card.nutrition, className: "nut" });
+  if (card.type === 'Prey') {
+    stats.push({ emoji: '🍖', value: card.nutrition, className: 'nut' });
   }
   return stats;
 };
@@ -348,7 +353,7 @@ export const renderCardStats = (card, options = {}) => {
 /**
  * Check if card has nutrition stat
  */
-export const hasNutrition = (card) => card.type === "Prey";
+export const hasNutrition = (card) => card.type === 'Prey';
 
 // ============================================================================
 // KEYWORD RENDERING
@@ -378,7 +383,7 @@ export const renderKeywordTags = (card) => {
     tags.push(`<span class="keyword-status-deadly">💀 Neurotoxined</span>`);
   }
 
-  return tags.join("");
+  return tags.join('');
 };
 
 // ============================================================================
@@ -391,10 +396,15 @@ const repeatingEffectPattern = /(start of turn|end of turn|before combat)/i;
  * Add repeating indicator (🔂) to effect summary
  */
 const applyRepeatingIndicator = (summary, card) => {
-  if (!summary || summary.includes("🔂")) {
+  if (!summary || summary.includes('🔂')) {
     return summary;
   }
-  if (card?.onStart || card?.onEnd || card?.onBeforeCombat || repeatingEffectPattern.test(summary)) {
+  if (
+    card?.onStart ||
+    card?.onEnd ||
+    card?.onBeforeCombat ||
+    repeatingEffectPattern.test(summary)
+  ) {
     return `🔂 ${summary}`;
   }
   return summary;
@@ -403,7 +413,7 @@ const applyRepeatingIndicator = (summary, card) => {
 /**
  * Escape special regex characters
  */
-const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**
  * Append keyword details to effect summary
@@ -422,36 +432,37 @@ const appendKeywordDetails = (summary, card) => {
       if (cardKeywords.has(normalizedKeyword)) {
         return false;
       }
-      const pattern = new RegExp(`\\b${escapeRegExp(normalizedKeyword).replace(/\\s+/g, "\\\\s+")}\\b`, "i");
+      const pattern = new RegExp(
+        `\\b${escapeRegExp(normalizedKeyword).replace(/\\s+/g, '\\\\s+')}\\b`,
+        'i'
+      );
       return pattern.test(lowerSentence);
     });
     if (!matches.length) {
       return sentence;
     }
-    const details = matches
-      .map(([keyword, description]) => `${keyword}: ${description}`)
-      .join(" ");
+    const details = matches.map(([keyword, description]) => `${keyword}: ${description}`).join(' ');
     const trimmed = sentence.trim();
-    if (trimmed.endsWith(".")) {
+    if (trimmed.endsWith('.')) {
       return `${trimmed.slice(0, -1)} (${details}).`;
     }
     return `${trimmed} (${details})`;
   });
-  return updatedSentences.join(" ");
+  return updatedSentences.join(' ');
 };
 
 /**
  * Format token stats for summary
  */
 const formatTokenStats = (card) => {
-  if (card.type === "Predator" || card.type === "Prey") {
+  if (card.type === 'Predator' || card.type === 'Prey') {
     const base = `${card.atk}/${card.hp}`;
-    if (card.type === "Prey") {
+    if (card.type === 'Prey') {
       return `${base} (NUT ${card.nutrition})`;
     }
     return base;
   }
-  return "";
+  return '';
 };
 
 /**
@@ -459,14 +470,14 @@ const formatTokenStats = (card) => {
  */
 const formatTokenSummary = (token) => {
   const stats = formatTokenStats(token);
-  const keywords = token.keywords?.length ? `Keywords: ${token.keywords.join(", ")}` : "";
+  const keywords = token.keywords?.length ? `Keywords: ${token.keywords.join(', ')}` : '';
   const effect = getCardEffectSummary(token, { includeKeywordDetails: true });
   const parts = [
-    `${token.name} — ${token.type}${stats ? ` ${stats}` : ""}`,
+    `${token.name} — ${token.type}${stats ? ` ${stats}` : ''}`,
     keywords,
-    effect ? `Effect: ${effect}` : "",
+    effect ? `Effect: ${effect}` : '',
   ].filter(Boolean);
-  return parts.join(" — ");
+  return parts.join(' — ');
 };
 
 /**
@@ -483,7 +494,7 @@ const appendTokenDetails = (summary, card) => {
   if (!tokenSummaries.length) {
     return summary;
   }
-  return `${summary}<br>***<br>${tokenSummaries.join("<br>")}`;
+  return `${summary}<br>***<br>${tokenSummaries.join('<br>')}`;
 };
 
 /**
@@ -505,17 +516,17 @@ const formatStatBuffs = (text) => {
  */
 export const getCardEffectSummary = (card, options = {}) => {
   const { includeKeywordDetails = false, includeTokenDetails = false } = options;
-  let summary = "";
+  let summary = '';
   if (card.effectText) {
     summary = formatStatBuffs(card.effectText);
   } else {
     const effectFn = card.effect ?? card.onPlay ?? card.onConsume ?? card.onEnd ?? card.onStart;
     if (!effectFn) {
-      return "";
+      return '';
     }
     const log = (message) => {
       if (!summary) {
-        summary = message.replace(/^.*?\b(?:effect|triggers|summons|takes the field)\b:\s*/i, "");
+        summary = message.replace(/^.*?\b(?:effect|triggers|summons|takes the field)\b:\s*/i, '');
       }
     };
     try {
@@ -526,7 +537,7 @@ export const getCardEffectSummary = (card, options = {}) => {
         attacker: {},
       });
     } catch {
-      summary = "";
+      summary = '';
     }
   }
   summary = applyRepeatingIndicator(summary, card);
@@ -551,21 +562,21 @@ export const getCardEffectSummary = (card, options = {}) => {
 export const getStatusIndicators = (card) => {
   const indicators = [];
   if (card.dryDropped) {
-    indicators.push("🍂");
+    indicators.push('🍂');
   }
   if (card.abilitiesCancelled) {
-    indicators.push("🚫");
+    indicators.push('🚫');
   }
   if (card.hasBarrier && areAbilitiesActive(card)) {
-    indicators.push("🛡️");
+    indicators.push('🛡️');
   }
   if (card.frozen) {
-    indicators.push("❄️");
+    indicators.push('❄️');
   }
   if (card.isToken) {
-    indicators.push("⚪");
+    indicators.push('⚪');
   }
-  return indicators.join(" ");
+  return indicators.join(' ');
 };
 
 // ============================================================================
@@ -578,15 +589,18 @@ export const getStatusIndicators = (card) => {
  * @param {Object} options - { showEffectSummary, useBaseStats, state, ownerIndex }
  * @returns {string} Inner HTML for card
  */
-export const renderCardInnerHtml = (card, { showEffectSummary, useBaseStats, state, ownerIndex } = {}) => {
+export const renderCardInnerHtml = (
+  card,
+  { showEffectSummary, useBaseStats, state, ownerIndex } = {}
+) => {
   const stats = renderCardStats(card, { useBaseStats, state, ownerIndex });
   const hasNut = hasNutrition(card);
 
-  const effectSummary = showEffectSummary ? getCardEffectSummary(card) : "";
+  const effectSummary = showEffectSummary ? getCardEffectSummary(card) : '';
   // Use SVG for effect text - scales perfectly with card size
   const effectRow = effectSummary
     ? `<div class="card-effect">${renderEffectSvg(effectSummary)}</div>`
-    : "";
+    : '';
 
   // Check if card has an image (and hasn't failed to load before)
   const hasImage = hasCardImage(card.id) && !failedImageIds.has(card.id);
@@ -667,11 +681,11 @@ export const renderCard = (card, options = {}) => {
     draggable = false,
   } = options;
 
-  const cardElement = document.createElement("div");
+  const cardElement = document.createElement('div');
 
   if (showBack) {
-    cardElement.className = "card back";
-    cardElement.textContent = "Card Back";
+    cardElement.className = 'card back';
+    cardElement.textContent = 'Card Back';
     return cardElement;
   }
 
@@ -685,45 +699,50 @@ export const renderCard = (card, options = {}) => {
     cardElement.dataset.rarity = card.rarity;
   }
 
-  const inner = document.createElement("div");
-  inner.className = "card-inner";
+  const inner = document.createElement('div');
+  inner.className = 'card-inner';
 
-  inner.innerHTML = renderCardInnerHtml(card, { showEffectSummary, useBaseStats, state, ownerIndex });
+  inner.innerHTML = renderCardInnerHtml(card, {
+    showEffectSummary,
+    useBaseStats,
+    state,
+    ownerIndex,
+  });
 
   // Add action buttons if needed
   if (showPlay || showAttack || showDiscard || showReturnToHand || showSacrifice) {
-    const actions = document.createElement("div");
-    actions.className = "card-actions";
+    const actions = document.createElement('div');
+    actions.className = 'card-actions';
 
     if (showPlay) {
-      const playButton = document.createElement("button");
-      playButton.textContent = "Play";
+      const playButton = document.createElement('button');
+      playButton.textContent = 'Play';
       playButton.onclick = () => onPlay?.(card);
       actions.appendChild(playButton);
     }
     if (showAttack) {
-      const attackButton = document.createElement("button");
-      attackButton.textContent = "Attack";
+      const attackButton = document.createElement('button');
+      attackButton.textContent = 'Attack';
       attackButton.onclick = () => onAttack?.(card);
       actions.appendChild(attackButton);
     }
     if (showSacrifice) {
-      const sacrificeButton = document.createElement("button");
-      sacrificeButton.textContent = "Sacrifice";
-      sacrificeButton.className = "sacrifice-btn";
+      const sacrificeButton = document.createElement('button');
+      sacrificeButton.textContent = 'Sacrifice';
+      sacrificeButton.className = 'sacrifice-btn';
       sacrificeButton.onclick = () => onSacrifice?.(card);
       actions.appendChild(sacrificeButton);
     }
     if (showDiscard) {
-      const discardButton = document.createElement("button");
-      discardButton.textContent = "Discard";
+      const discardButton = document.createElement('button');
+      discardButton.textContent = 'Discard';
       discardButton.onclick = () => onDiscard?.(card);
       actions.appendChild(discardButton);
     }
     if (showReturnToHand) {
-      const returnButton = document.createElement("button");
-      returnButton.textContent = "↩ Hand";
-      returnButton.title = "Return to Hand";
+      const returnButton = document.createElement('button');
+      returnButton.textContent = '↩ Hand';
+      returnButton.title = 'Return to Hand';
       returnButton.onclick = () => onReturnToHand?.(card);
       actions.appendChild(returnButton);
     }
@@ -734,8 +753,8 @@ export const renderCard = (card, options = {}) => {
   // Add status indicators
   const status = getStatusIndicators(card);
   if (status) {
-    const indicator = document.createElement("div");
-    indicator.className = "card-status";
+    const indicator = document.createElement('div');
+    indicator.className = 'card-status';
     indicator.textContent = status;
     cardElement.appendChild(indicator);
   }
@@ -747,19 +766,19 @@ export const renderCard = (card, options = {}) => {
     cardElement.draggable = true;
     cardElement.classList.add('draggable-card');
 
-    cardElement.addEventListener("dragstart", (event) => {
-      event.dataTransfer.setData("text", card.instanceId);
-      event.dataTransfer.effectAllowed = "move";
+    cardElement.addEventListener('dragstart', (event) => {
+      event.dataTransfer.setData('text', card.instanceId);
+      event.dataTransfer.effectAllowed = 'move';
     });
 
-    cardElement.addEventListener("dragend", (event) => {
+    cardElement.addEventListener('dragend', (event) => {
       event.preventDefault();
     });
   }
 
   // Add click handler
-  cardElement.addEventListener("click", (event) => {
-    if (event.target.closest("button")) {
+  cardElement.addEventListener('click', (event) => {
+    if (event.target.closest('button')) {
       return;
     }
     // Call inspect callback if provided
@@ -775,8 +794,8 @@ export const renderCard = (card, options = {}) => {
   // Add double-click handler if provided
   const { onDoubleClick } = options;
   if (onDoubleClick) {
-    cardElement.addEventListener("dblclick", (event) => {
-      if (event.target.closest("button")) {
+    cardElement.addEventListener('dblclick', (event) => {
+      if (event.target.closest('button')) {
         return;
       }
       event.preventDefault();

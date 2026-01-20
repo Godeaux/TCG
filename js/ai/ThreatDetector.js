@@ -29,7 +29,7 @@ export class ThreatDetector {
    */
   assessIncomingDamage(state, aiPlayerIndex) {
     const opponent = state.players[1 - aiPlayerIndex];
-    const oppField = opponent.field.filter(c => c);
+    const oppField = opponent.field.filter((c) => c);
 
     let damage = 0;
 
@@ -84,7 +84,7 @@ export class ThreatDetector {
    */
   assessOutgoingDamage(state, aiPlayerIndex) {
     const ai = state.players[aiPlayerIndex];
-    const aiField = ai.field.filter(c => c);
+    const aiField = ai.field.filter((c) => c);
 
     let damage = 0;
 
@@ -141,7 +141,7 @@ export class ThreatDetector {
     const opponent = state.players[1 - aiPlayerIndex];
     const threats = [];
 
-    for (const creature of opponent.field.filter(c => c)) {
+    for (const creature of opponent.field.filter((c) => c)) {
       const { score, reasons } = this.evaluateCreatureThreat(creature, state);
       threats.push({ creature, score, reasons });
     }
@@ -353,7 +353,7 @@ export class ThreatDetector {
     // Get available attackers (can attack this turn)
     // NOTE: Summoning sickness only prevents attacking the PLAYER, not creatures
     // So we include all creatures that can attack when evaluating kill options
-    const attackers = ai.field.filter(creature => {
+    const attackers = ai.field.filter((creature) => {
       if (!creature) return false;
       if (creature.currentHp <= 0) return false;
       if (creature.hasAttacked) return false;
@@ -426,7 +426,7 @@ export class ThreatDetector {
     const threatHp = threat.currentHp ?? threat.hp ?? 0;
 
     // NOTE: Summoning sickness only prevents attacking the PLAYER, not creatures
-    const attackers = ai.field.filter(creature => {
+    const attackers = ai.field.filter((creature) => {
       if (!creature) return false;
       if (creature.currentHp <= 0) return false;
       if (creature.hasAttacked) return false;
@@ -464,12 +464,12 @@ export class ThreatDetector {
   analyzeDefensivePosition(state, aiPlayerIndex) {
     const ai = state.players[aiPlayerIndex];
 
-    const lureCreatures = ai.field.filter(c =>
-      c && hasKeyword(c, KEYWORDS.LURE) && c.currentHp > 0
+    const lureCreatures = ai.field.filter(
+      (c) => c && hasKeyword(c, KEYWORDS.LURE) && c.currentHp > 0
     );
 
     // Blockers are creatures that could absorb damage
-    const blockers = ai.field.filter(c => {
+    const blockers = ai.field.filter((c) => {
       if (!c) return false;
       if (c.currentHp <= 0) return false;
       // A good blocker has decent HP
@@ -505,7 +505,7 @@ export class ThreatDetector {
 
     const options = [];
     const mustKills = this.findMustKillTargets(state, aiPlayerIndex);
-    const criticalThreats = mustKills.filter(mk => mk.priority === 'critical');
+    const criticalThreats = mustKills.filter((mk) => mk.priority === 'critical');
 
     // Analyze each critical threat
     for (const { creature: threat } of criticalThreats) {
@@ -551,8 +551,8 @@ export class ThreatDetector {
       inDanger: true,
       aiHp: ai.hp,
       incomingDamage: lethalCheck.damage,
-      survivalPossible: options.some(o =>
-        o.effectiveness === 'removes_threat' || o.effectiveness === 'kills_threat'
+      survivalPossible: options.some(
+        (o) => o.effectiveness === 'removes_threat' || o.effectiveness === 'kills_threat'
       ),
       options,
       criticalThreats,
@@ -584,14 +584,12 @@ export class ThreatDetector {
       // Predator consumption bonus
       if (card.type === 'Predator') {
         const ai = state.players[aiPlayerIndex];
-        const prey = ai.field.filter(c =>
-          c && (c.type === 'Prey' || hasKeyword(c, KEYWORDS.EDIBLE))
+        const prey = ai.field.filter(
+          (c) => c && (c.type === 'Prey' || hasKeyword(c, KEYWORDS.EDIBLE))
         );
         if (prey.length > 0 && hasKeyword(card, KEYWORDS.HASTE)) {
           // Estimate nutrition bonus
-          const totalNutrition = prey.slice(0, 3).reduce((sum, p) =>
-            sum + (p.nutrition ?? 1), 0
-          );
+          const totalNutrition = prey.slice(0, 3).reduce((sum, p) => sum + (p.nutrition ?? 1), 0);
           baseDamage += totalNutrition; // +1 ATK per nutrition
         }
       }

@@ -23,12 +23,12 @@ import {
 // ============================================================================
 
 const AI_VISUAL_TIMING = {
-  HOVER: { min: 600, max: 1000 },     // How long to show hover before dragging
-  LIFT: 150,                           // Time to lift card from hand
-  FLY: 400,                            // Flight animation duration
-  REVEAL: 200,                         // Card flip reveal duration
-  COMBAT_SELECT_ATTACKER: { min: 400, max: 800 },   // Attacker selection glow
-  COMBAT_CONSIDER_TARGET: { min: 600, max: 1200 },  // Target consideration
+  HOVER: { min: 600, max: 1000 }, // How long to show hover before dragging
+  LIFT: 150, // Time to lift card from hand
+  FLY: 400, // Flight animation duration
+  REVEAL: 200, // Card flip reveal duration
+  COMBAT_SELECT_ATTACKER: { min: 400, max: 800 }, // Attacker selection glow
+  COMBAT_CONSIDER_TARGET: { min: 600, max: 1200 }, // Target consideration
 };
 
 // ============================================================================
@@ -53,7 +53,7 @@ const getRandomDelay = (range) => {
  */
 const delay = (msOrRange) => {
   const ms = typeof msOrRange === 'object' ? getRandomDelay(msOrRange) : msOrRange;
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
 // ============================================================================
@@ -79,7 +79,9 @@ const getHandCardPosition = (cardIndex, playerIndex = 1) => {
   const cardSelector = playerIndex === 0 ? '.card' : '.card-back';
   const cards = container.querySelectorAll(cardSelector);
   if (cardIndex < 0 || cardIndex >= cards.length) {
-    console.log(`[AI Visual] Card not found in hand: ${cardIndex} of ${cards.length} (player ${playerIndex})`);
+    console.log(
+      `[AI Visual] Card not found in hand: ${cardIndex} of ${cards.length} (player ${playerIndex})`
+    );
     return null;
   }
 
@@ -111,7 +113,9 @@ const getTargetSlotPosition = (slotIndex, playerIndex = 1) => {
 
   const slots = field.querySelectorAll('.field-slot');
   if (slotIndex < 0 || slotIndex >= slots.length) {
-    console.log(`[AI Visual] Slot not found: ${slotIndex} of ${slots.length} (player ${playerIndex})`);
+    console.log(
+      `[AI Visual] Slot not found: ${slotIndex} of ${slots.length} (player ${playerIndex})`
+    );
     return null;
   }
 
@@ -178,7 +182,11 @@ const removeFlyingCard = () => {
  * @returns {Promise} Resolves when animation sequence is complete
  */
 export const simulateAICardDrag = async (cardIndex, targetSlotIndex, state, playerIndex = 1) => {
-  console.log(`[AI Visual] simulateAICardDrag called:`, { cardIndex, targetSlotIndex, playerIndex });
+  console.log(`[AI Visual] simulateAICardDrag called:`, {
+    cardIndex,
+    targetSlotIndex,
+    playerIndex,
+  });
 
   // Get positions based on which player is acting
   const startPos = getHandCardPosition(cardIndex, playerIndex);
@@ -263,7 +271,7 @@ export const simulateAICardDrag = async (cardIndex, targetSlotIndex, state, play
     // Clear player 0's visual states
     const handContainer = document.getElementById('active-hand');
     const cards = handContainer?.querySelectorAll('.card');
-    cards?.forEach(card => {
+    cards?.forEach((card) => {
       card.classList.remove('ai-selecting', 'ai-dragging');
     });
   }
@@ -389,8 +397,8 @@ const createAttackArrow = (from, to) => {
   // Control point is perpendicular to the midpoint
   const midX = (from.x + to.x) / 2;
   const midY = (from.y + to.y) / 2;
-  const perpX = -dy / distance * arcIntensity * arcDirection;
-  const perpY = dx / distance * arcIntensity * arcDirection;
+  const perpX = (-dy / distance) * arcIntensity * arcDirection;
+  const perpY = (dx / distance) * arcIntensity * arcDirection;
 
   const controlX = midX + perpX;
   const controlY = midY + perpY;
@@ -548,12 +556,12 @@ export const highlightAITarget = (instanceId, isPlayer = false) => {
  */
 export const clearAICombatHighlights = () => {
   // Clear attacker highlights
-  document.querySelectorAll('.ai-attacker-selected').forEach(el => {
+  document.querySelectorAll('.ai-attacker-selected').forEach((el) => {
     el.classList.remove('ai-attacker-selected');
   });
 
   // Clear target highlights
-  document.querySelectorAll('.ai-target-considering').forEach(el => {
+  document.querySelectorAll('.ai-target-considering').forEach((el) => {
     el.classList.remove('ai-target-considering');
   });
 
@@ -613,7 +621,7 @@ export const clearAIVisuals = () => {
   // Clear player 0's visual states from the active hand
   const handContainer = document.getElementById('active-hand');
   const cards = handContainer?.querySelectorAll('.card');
-  cards?.forEach(card => {
+  cards?.forEach((card) => {
     card.classList.remove('ai-selecting', 'ai-dragging');
   });
 };

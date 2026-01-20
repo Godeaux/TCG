@@ -5,7 +5,11 @@
  */
 
 import { createGameState } from '../../js/state/gameState.js';
-import { initializeCardRegistry, getCardDefinitionById, getAllCards } from '../../js/cards/index.js';
+import {
+  initializeCardRegistry,
+  getCardDefinitionById,
+  getAllCards,
+} from '../../js/cards/index.js';
 import { createCardInstance } from '../../js/cardTypes.js';
 import { KEYWORDS } from '../../js/keywords.js';
 
@@ -118,13 +122,7 @@ export const getValidTriggerTypes = () => [
 /**
  * Get all valid card types
  */
-export const getValidCardTypes = () => [
-  'Prey',
-  'Predator',
-  'Spell',
-  'Free Spell',
-  'Trap',
-];
+export const getValidCardTypes = () => ['Prey', 'Predator', 'Spell', 'Free Spell', 'Trap'];
 
 /**
  * Add a card to a player's carrion pile
@@ -183,12 +181,12 @@ export const cardHasKeyword = (cardId, keyword) => {
  * Get cards by category (prefix)
  */
 export const getCardsByCategory = (category) => {
-  return getAllCards().filter(c => c.id.startsWith(category));
+  return getAllCards().filter((c) => c.id.startsWith(category));
 };
 
 /**
  * Get cards with effects
  */
 export const getCardsWithEffects = () => {
-  return getAllCards().filter(c => c.effects && Object.keys(c.effects).length > 0);
+  return getAllCards().filter((c) => c.effects && Object.keys(c.effects).length > 0);
 };

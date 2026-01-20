@@ -27,7 +27,7 @@ export const validateSummonTokens = (before, after, effectData) => {
 
   // Count tokens on field before and after
   const countTokens = (state, pIndex) => {
-    return state.players[pIndex].field.filter(c => c !== null && c.isToken).length;
+    return state.players[pIndex].field.filter((c) => c !== null && c.isToken).length;
   };
 
   const tokensBefore = countTokens(before, playerIndex);
@@ -257,8 +257,8 @@ export const validateKeywordGrant = (before, after, effectData) => {
     return bugs;
   }
 
-  const hasKeyword = creatureAfter.keywords?.includes(keyword) ||
-                     creatureAfter.grantedKeywords?.includes(keyword);
+  const hasKeyword =
+    creatureAfter.keywords?.includes(keyword) || creatureAfter.grantedKeywords?.includes(keyword);
 
   if (!hasKeyword) {
     bugs.push({
@@ -370,7 +370,7 @@ const validateEffectByType = (effect, before, after, context) => {
           expectedTokens,
           tokenNames: effect.params?.tokenIds,
         });
-        tokenBugs.forEach(bug => {
+        tokenBugs.forEach((bug) => {
           bug.type = `${triggerName}_${bug.type}`;
           bug.message = `${triggerName}: ${bug.message}`;
         });
@@ -385,7 +385,7 @@ const validateEffectByType = (effect, before, after, context) => {
         playerIndex,
         expectedCards,
       });
-      drawBugs.forEach(bug => {
+      drawBugs.forEach((bug) => {
         bug.type = `${triggerName}_${bug.type}`;
         bug.message = `${triggerName}: ${bug.message}`;
       });
@@ -403,7 +403,7 @@ const validateEffectByType = (effect, before, after, context) => {
           playerIndex: opponentIndex,
           expectedDamage,
         });
-        damageBugs.forEach(bug => {
+        damageBugs.forEach((bug) => {
           bug.type = `${triggerName}_${bug.type}`;
           bug.message = `${triggerName}: ${bug.message}`;
         });
@@ -420,20 +420,24 @@ const validateEffectByType = (effect, before, after, context) => {
       const expectedHpChange = effect.params?.hp || effect.params?.health || 0;
       if (expectedAtkChange !== 0 || expectedHpChange !== 0) {
         // Check if at least one creature got the expected buff
-        const friendlyCreaturesBefore = before.players[playerIndex].field.filter(c => c !== null);
-        const friendlyCreaturesAfter = after.players[playerIndex].field.filter(c => c !== null);
+        const friendlyCreaturesBefore = before.players[playerIndex].field.filter((c) => c !== null);
+        const friendlyCreaturesAfter = after.players[playerIndex].field.filter((c) => c !== null);
 
         let anyBuffApplied = false;
         for (const creatureAfter of friendlyCreaturesAfter) {
-          const creatureBefore = friendlyCreaturesBefore.find(c => c?.instanceId === creatureAfter?.instanceId);
+          const creatureBefore = friendlyCreaturesBefore.find(
+            (c) => c?.instanceId === creatureAfter?.instanceId
+          );
           if (creatureBefore) {
             const atkBefore = creatureBefore.currentAtk ?? creatureBefore.atk ?? 0;
             const atkAfter = creatureAfter.currentAtk ?? creatureAfter.atk ?? 0;
             const hpBefore = creatureBefore.currentHp ?? creatureBefore.hp ?? 0;
             const hpAfter = creatureAfter.currentHp ?? creatureAfter.hp ?? 0;
 
-            if ((expectedAtkChange !== 0 && atkAfter !== atkBefore) ||
-                (expectedHpChange !== 0 && hpAfter !== hpBefore)) {
+            if (
+              (expectedAtkChange !== 0 && atkAfter !== atkBefore) ||
+              (expectedHpChange !== 0 && hpAfter !== hpBefore)
+            ) {
               anyBuffApplied = true;
               break;
             }
@@ -460,9 +464,9 @@ const validateEffectByType = (effect, before, after, context) => {
       const keyword = effect.params?.keyword;
       if (keyword) {
         // Check if any friendly creature gained the keyword
-        const friendlyCreaturesAfter = after.players[playerIndex].field.filter(c => c !== null);
-        const anyHasKeyword = friendlyCreaturesAfter.some(c =>
-          c.keywords?.includes(keyword) || c.grantedKeywords?.includes(keyword)
+        const friendlyCreaturesAfter = after.players[playerIndex].field.filter((c) => c !== null);
+        const anyHasKeyword = friendlyCreaturesAfter.some(
+          (c) => c.keywords?.includes(keyword) || c.grantedKeywords?.includes(keyword)
         );
 
         if (!anyHasKeyword) {
@@ -483,10 +487,13 @@ const validateEffectByType = (effect, before, after, context) => {
     case 'destroyCreature':
     case 'destroy': {
       // Check if any enemy creature was destroyed
-      const enemyCreaturesBefore = before.players[opponentIndex].field.filter(c => c !== null);
-      const enemyCreaturesAfter = after.players[opponentIndex].field.filter(c => c !== null);
+      const enemyCreaturesBefore = before.players[opponentIndex].field.filter((c) => c !== null);
+      const enemyCreaturesAfter = after.players[opponentIndex].field.filter((c) => c !== null);
 
-      if (enemyCreaturesBefore.length > 0 && enemyCreaturesAfter.length >= enemyCreaturesBefore.length) {
+      if (
+        enemyCreaturesBefore.length > 0 &&
+        enemyCreaturesAfter.length >= enemyCreaturesBefore.length
+      ) {
         // No creature was destroyed (unless field was empty)
         bugs.push({
           type: `${triggerName}_destroy_failed`,
@@ -567,8 +574,8 @@ export const validateDryDropNoConsume = (before, after, actionData) => {
   // check that those changes did NOT happen
 
   if (predator.effects?.onConsume?.type === 'summonTokens') {
-    const tokensBefore = before.players[playerIndex].field.filter(c => c?.isToken).length;
-    const tokensAfter = after.players[playerIndex].field.filter(c => c?.isToken).length;
+    const tokensBefore = before.players[playerIndex].field.filter((c) => c?.isToken).length;
+    const tokensAfter = after.players[playerIndex].field.filter((c) => c?.isToken).length;
 
     if (tokensAfter > tokensBefore) {
       bugs.push({
@@ -709,9 +716,9 @@ export const validateCombatDamage = (before, after, actionData) => {
       }
     }
   } else if (target.type === 'player') {
-    const playerIndex = target.player ?
-      before.players.findIndex(p => p === target.player) :
-      (actionData.defenderOwnerIndex ?? 1);
+    const playerIndex = target.player
+      ? before.players.findIndex((p) => p === target.player)
+      : (actionData.defenderOwnerIndex ?? 1);
 
     if (playerIndex >= 0) {
       const hpBefore = before.players[playerIndex]?.hp ?? 0;

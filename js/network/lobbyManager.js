@@ -17,11 +17,7 @@ import { deckCatalogs } from '../cards/index.js';
 import { resetDecksLoaded } from '../ui/overlays/DeckBuilderOverlay.js';
 import { resetProfileState } from '../ui/overlays/ProfileOverlay.js';
 import { resetPresenceState } from './presenceManager.js';
-import {
-  setLobbyChannel,
-  sendLobbyBroadcast,
-  saveGameStateToDatabase,
-} from './sync.js';
+import { setLobbyChannel, sendLobbyBroadcast, saveGameStateToDatabase } from './sync.js';
 import { buildLobbySyncPayload } from './serialization.js';
 import { getSupabaseApi } from './index.js';
 
@@ -53,14 +49,14 @@ let visibilityChangeHandler = null;
 // ============================================================================
 
 let callbacks = {
-  onUpdate: null,           // Called when UI should re-render
-  onDeckComplete: null,     // Called when both players have completed decks
-  onApplySync: null,        // Called to apply sync payload to state
-  onError: null,            // Called when an error occurs
-  onEmoteReceived: null,    // Called when an emote is received from opponent
+  onUpdate: null, // Called when UI should re-render
+  onDeckComplete: null, // Called when both players have completed decks
+  onApplySync: null, // Called to apply sync payload to state
+  onError: null, // Called when an error occurs
+  onEmoteReceived: null, // Called when an emote is received from opponent
   // Opponent hand tracking callbacks
-  onOpponentHandHover: null,  // Called when opponent hovers a card in hand
-  onOpponentHandDrag: null,   // Called when opponent drags a card from hand
+  onOpponentHandHover: null, // Called when opponent hovers a card in hand
+  onOpponentHandDrag: null, // Called when opponent drags a card from hand
   onOpponentCursorMove: null, // Called when opponent cursor moves
 };
 
@@ -200,9 +196,14 @@ export const isLobbyReady = (lobby) => Boolean(lobby?.guest_id && lobby?.status 
  */
 export const mapDeckIdsToCards = (deckId, deckIds = []) => {
   const catalog = deckCatalogs[deckId] ?? [];
-  console.log(`[mapDeckIdsToCards] deckId=${deckId}, catalogSize=${catalog.length}, deckIdsCount=${deckIds.length}`);
+  console.log(
+    `[mapDeckIdsToCards] deckId=${deckId}, catalogSize=${catalog.length}, deckIdsCount=${deckIds.length}`
+  );
   if (catalog.length === 0) {
-    console.warn(`[mapDeckIdsToCards] WARNING: No catalog found for deckId="${deckId}". Available catalogs:`, Object.keys(deckCatalogs));
+    console.warn(
+      `[mapDeckIdsToCards] WARNING: No catalog found for deckId="${deckId}". Available catalogs:`,
+      Object.keys(deckCatalogs)
+    );
   }
   const catalogMap = new Map(catalog.map((card) => [card.id, card]));
   const result = deckIds
@@ -374,7 +375,10 @@ export const savePlayerCardsToDatabase = async (state, cards) => {
   const cardMap = new Map();
   cardsToSave.forEach((card) => {
     const existing = cardMap.get(card.id);
-    if (!existing || rarityOrder.indexOf(card.packRarity) > rarityOrder.indexOf(existing.packRarity)) {
+    if (
+      !existing ||
+      rarityOrder.indexOf(card.packRarity) > rarityOrder.indexOf(existing.packRarity)
+    ) {
       cardMap.set(card.id, card);
     }
   });
@@ -680,7 +684,8 @@ export const validateAndAutoLogout = async (state) => {
       state.menu.decks = [];
       state.menu.lobby = null;
       state.menu.existingLobby = null;
-      state.menu.error = 'You were logged out because your account was accessed from another location.';
+      state.menu.error =
+        'You were logged out because your account was accessed from another location.';
 
       // Reset loaded flags
       profileLoaded = false;
@@ -1141,7 +1146,7 @@ export const updateLobbySubscription = (state, { force = false } = {}) => {
       senderId: payload?.senderId,
       hasDeckBuilder: !!payload?.deckBuilder,
       deckBuilderStage: payload?.deckBuilder?.stage,
-      deckIdsLengths: payload?.deckBuilder?.deckIds?.map(d => d?.length ?? 'null'),
+      deckIdsLengths: payload?.deckBuilder?.deckIds?.map((d) => d?.length ?? 'null'),
       readyStatus: payload?.deckSelection?.readyStatus,
     });
     callbacks.onApplySync?.(state, payload);
@@ -1182,7 +1187,7 @@ export const updateLobbySubscription = (state, { force = false } = {}) => {
     }
     // Determine which player sent the emote (opponent is the other player)
     const isHost = state.menu?.lobby?.host_id === state.menu?.profile?.id;
-    const senderPlayerIndex = isHost ? 1 : 0;  // If I'm host (P1), sender is guest (P2)
+    const senderPlayerIndex = isHost ? 1 : 0; // If I'm host (P1), sender is guest (P2)
     callbacks.onEmoteReceived?.(payload.emoteId, senderPlayerIndex);
   });
 
@@ -1296,7 +1301,7 @@ export const loadGameStateFromDatabase = async (state) => {
     isOnline: isOnlineMode(state),
     lobbyId: state.menu?.lobby?.id,
     setupStage: state.setup?.stage,
-    handSizes: state.players?.map(p => p?.hand?.length),
+    handSizes: state.players?.map((p) => p?.hand?.length),
   });
 
   if (!isOnlineMode(state) || !state.menu?.lobby?.id) {
@@ -1306,7 +1311,8 @@ export const loadGameStateFromDatabase = async (state) => {
 
   // Skip database load if local game is already actively in progress
   // This prevents overwriting fresh local state (like newly drawn cards) with stale DB data
-  const localGameInProgress = state.setup?.stage === 'complete' && state.players?.some(p => p?.hand?.length > 0);
+  const localGameInProgress =
+    state.setup?.stage === 'complete' && state.players?.some((p) => p?.hand?.length > 0);
   if (localGameInProgress) {
     console.log('[DB-LOAD-DEBUG] Skipping - local game already in progress with active state');
     return false;

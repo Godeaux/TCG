@@ -92,7 +92,7 @@ export const checkDuplicateIds = (state) => {
     return locations;
   };
 
-  allIds.forEach(id => {
+  allIds.forEach((id) => {
     if (seen.has(id)) {
       if (!duplicates.has(id)) {
         duplicates.set(id, findCardLocations(id));
@@ -314,7 +314,8 @@ export const checkSummoningSickness = (state, before, action) => {
               currentTurn: state.turn,
               hasHaste: creatureHasHaste,
               targetType: 'player',
-              expected: 'Creature should be blocked from direct attack without Haste on summon turn',
+              expected:
+                'Creature should be blocked from direct attack without Haste on summon turn',
               actual: 'Direct attack on player was executed',
             },
           });
@@ -347,9 +348,7 @@ export const checkDryDropKeywords = (state) => {
           { name: 'Haste', isActive: hasHaste(creature) },
           { name: 'Free Play', isActive: isFreePlay(creature) },
         ];
-        const problematicKeywords = keywordChecks
-          .filter(kw => kw.isActive)
-          .map(kw => kw.name);
+        const problematicKeywords = keywordChecks.filter((kw) => kw.isActive).map((kw) => kw.name);
 
         if (problematicKeywords.length > 0) {
           bugs.push({
@@ -636,13 +635,13 @@ export const checkLureBypass = (state, before, action) => {
 
   // Check if defender has any creature with active Lure
   // Use hasLure() which properly checks areAbilitiesActive() (dry-dropped predators have no abilities)
-  const lureCreatures = defenderField.filter(c => c && hasLure(c));
+  const lureCreatures = defenderField.filter((c) => c && hasLure(c));
 
   if (lureCreatures.length === 0) return bugs;
 
   // If attacking a creature, check if target has Lure
   if (target.type === 'creature' && target.card) {
-    const targetHasLure = lureCreatures.some(c => c.instanceId === target.card.instanceId);
+    const targetHasLure = lureCreatures.some((c) => c.instanceId === target.card.instanceId);
 
     if (!targetHasLure) {
       bugs.push({
@@ -690,9 +689,9 @@ export const checkConflictingKeywords = (state) => {
 
   // Define conflicting keyword pairs
   const conflicts = [
-    ['Passive', 'Aggressive'],      // Can't be both passive and aggressive
-    ['Hidden', 'Lure'],             // Hidden can't have Lure (taunt)
-    ['Invisible', 'Lure'],          // Invisible can't have Lure
+    ['Passive', 'Aggressive'], // Can't be both passive and aggressive
+    ['Hidden', 'Lure'], // Hidden can't have Lure (taunt)
+    ['Invisible', 'Lure'], // Invisible can't have Lure
   ];
 
   state.players.forEach((player, playerIndex) => {

@@ -35,12 +35,14 @@ export const initBugButton = (callbacks = {}) => {
   containerElement.style.zIndex = '100000';
 
   // Include simulation stats option if callback is provided (AI vs AI mode)
-  const simStatsOption = callbacks.onSimulationStats ? `
+  const simStatsOption = callbacks.onSimulationStats
+    ? `
       <button class="bug-menu-item" id="bug-menu-sim-stats">
         <span class="bug-menu-icon">📊</span>
         <span>Simulation Stats</span>
       </button>
-  ` : '';
+  `
+    : '';
 
   containerElement.innerHTML = `
     <div class="bug-menu" id="bug-menu">

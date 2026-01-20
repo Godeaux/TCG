@@ -56,9 +56,7 @@ describe('Bird Cards', () => {
       it('onPlay reveals hand and tutors', () => {
         const card = getCardDefinitionById(cardId);
         expect(Array.isArray(card.effects.onPlay)).toBe(true);
-        expect(card.effects.onPlay).toContainEqual(
-          expect.objectContaining({ type: 'revealHand' })
-        );
+        expect(card.effects.onPlay).toContainEqual(expect.objectContaining({ type: 'revealHand' }));
         expect(card.effects.onPlay).toContainEqual(
           expect.objectContaining({ type: 'tutorFromDeck' })
         );
@@ -134,7 +132,7 @@ describe('Bird Cards', () => {
         const selectFn = effectLibrary.selectFromGroup({
           targetGroup: 'carrion',
           title: 'Choose a carrion to copy abilities from',
-          effect: { copyAbilities: true }
+          effect: { copyAbilities: true },
         });
         const result = selectFn(context);
 
@@ -211,7 +209,7 @@ describe('Bird Cards', () => {
         expect(card.effects.onPlay).toContainEqual(
           expect.objectContaining({
             type: 'selectFromGroup',
-            params: expect.objectContaining({ effect: { regen: true } })
+            params: expect.objectContaining({ effect: { regen: true } }),
           })
         );
       });
@@ -270,7 +268,7 @@ describe('Bird Cards', () => {
   // ============================================
   describe('Bird Trap Cards', () => {
     describe('Bird trap cards exist', () => {
-      const traps = birdCards.filter(c => c.type === 'Trap');
+      const traps = birdCards.filter((c) => c.type === 'Trap');
 
       it('should have trap cards', () => {
         expect(traps.length).toBeGreaterThanOrEqual(0);

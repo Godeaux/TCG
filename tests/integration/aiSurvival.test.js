@@ -89,7 +89,12 @@ describe('AI Survival Logic', () => {
     it('finds two-creature combo kill option', () => {
       state.players[0].hp = 3;
       // Two weak creatures that together can kill
-      const { creature: creature1 } = createTestCreature('fish-prey-atlantic-flying-fish', 0, 0, state);
+      const { creature: creature1 } = createTestCreature(
+        'fish-prey-atlantic-flying-fish',
+        0,
+        0,
+        state
+      );
       creature1.summonedTurn = 1;
       creature1.currentAtk = 2;
       creature1.currentHp = 1;
@@ -223,7 +228,12 @@ describe('AI Survival Logic', () => {
       ourCreature.currentHp = 3;
 
       // Weak opponent creature (not a lethal threat)
-      const { creature: oppCreature } = createTestCreature('fish-prey-atlantic-flying-fish', 1, 0, state);
+      const { creature: oppCreature } = createTestCreature(
+        'fish-prey-atlantic-flying-fish',
+        1,
+        0,
+        state
+      );
       oppCreature.summonedTurn = 1;
       oppCreature.currentAtk = 1;
       oppCreature.currentHp = 1;
@@ -246,7 +256,12 @@ describe('AI Survival Logic', () => {
       state.players[1].hp = 10;
 
       // Two creatures that together can kill
-      const { creature: creature1 } = createTestCreature('fish-prey-atlantic-flying-fish', 0, 0, state);
+      const { creature: creature1 } = createTestCreature(
+        'fish-prey-atlantic-flying-fish',
+        0,
+        0,
+        state
+      );
       creature1.summonedTurn = 1;
       creature1.currentAtk = 2;
       creature1.currentHp = 1;

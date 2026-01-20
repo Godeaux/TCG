@@ -21,8 +21,8 @@
  * Get the selection panel and action bar elements
  */
 const getSelectionElements = () => {
-  const selectionPanel = document.getElementById("selection-panel");
-  const actionBar = document.getElementById("action-bar");
+  const selectionPanel = document.getElementById('selection-panel');
+  const actionBar = document.getElementById('action-bar');
   return { selectionPanel, actionBar };
 };
 
@@ -31,7 +31,7 @@ const getSelectionElements = () => {
  */
 const clearPanel = (panel) => {
   if (!panel) return;
-  panel.innerHTML = "";
+  panel.innerHTML = '';
 };
 
 /**
@@ -43,7 +43,7 @@ const clearPanel = (panel) => {
  * @param {Function} options.onConfirm - Confirm callback
  * @param {string} options.confirmLabel - Confirm button label (default: "Confirm")
  */
-export const renderSelectionPanel = ({ title, items, onConfirm, confirmLabel = "Confirm" }) => {
+export const renderSelectionPanel = ({ title, items, onConfirm, confirmLabel = 'Confirm' }) => {
   const { selectionPanel, actionBar } = getSelectionElements();
 
   clearPanel(selectionPanel);
@@ -53,37 +53,37 @@ export const renderSelectionPanel = ({ title, items, onConfirm, confirmLabel = "
   }
 
   // Add header with title and hide button
-  const header = document.createElement("div");
-  header.className = "selection-header";
+  const header = document.createElement('div');
+  header.className = 'selection-header';
 
-  const titleElement = document.createElement("strong");
+  const titleElement = document.createElement('strong');
   titleElement.textContent = title;
   header.appendChild(titleElement);
 
-  const hideButton = document.createElement("button");
-  hideButton.className = "hide-panel-btn";
-  hideButton.textContent = "Hide";
+  const hideButton = document.createElement('button');
+  hideButton.className = 'hide-panel-btn';
+  hideButton.textContent = 'Hide';
   hideButton.onclick = () => {
-    selectionPanel.classList.toggle("minimized");
-    hideButton.textContent = selectionPanel.classList.contains("minimized") ? "Show" : "Hide";
+    selectionPanel.classList.toggle('minimized');
+    hideButton.textContent = selectionPanel.classList.contains('minimized') ? 'Show' : 'Hide';
   };
   header.appendChild(hideButton);
 
   selectionPanel.appendChild(header);
 
   // Add items in a collapsible content wrapper
-  const content = document.createElement("div");
-  content.className = "selection-content";
+  const content = document.createElement('div');
+  content.className = 'selection-content';
 
-  const list = document.createElement("div");
-  list.className = "selection-list";
+  const list = document.createElement('div');
+  list.className = 'selection-list';
   items.forEach((item) => list.appendChild(item));
   content.appendChild(list);
 
   // Add confirm button if needed
   if (confirmLabel) {
-    const confirmButton = document.createElement("button");
-    confirmButton.className = "secondary";
+    const confirmButton = document.createElement('button');
+    confirmButton.className = 'secondary';
     confirmButton.textContent = confirmLabel;
     confirmButton.onclick = onConfirm;
     content.appendChild(confirmButton);
@@ -92,7 +92,7 @@ export const renderSelectionPanel = ({ title, items, onConfirm, confirmLabel = "
   selectionPanel.appendChild(content);
 
   // Mark action bar as having selection
-  actionBar?.classList.add("has-selection");
+  actionBar?.classList.add('has-selection');
 };
 
 /**
@@ -102,7 +102,7 @@ export const clearSelectionPanel = () => {
   const { selectionPanel, actionBar } = getSelectionElements();
 
   clearPanel(selectionPanel);
-  actionBar?.classList.remove("has-selection");
+  actionBar?.classList.remove('has-selection');
 };
 
 /**
@@ -125,11 +125,11 @@ export const isSelectionActive = () => {
  * @returns {HTMLElement} Selection item element
  */
 export const createSelectionItem = (label, onClick) => {
-  const item = document.createElement("label");
-  item.className = "selection-item";
+  const item = document.createElement('label');
+  item.className = 'selection-item';
 
-  const button = document.createElement("button");
-  button.className = "secondary";
+  const button = document.createElement('button');
+  button.className = 'secondary';
   button.textContent = label;
   button.onclick = onClick;
 
@@ -146,11 +146,11 @@ export const createSelectionItem = (label, onClick) => {
  * @returns {HTMLElement} Card selection item
  */
 export const createCardSelectionItem = (card, onClick, renderCardFn) => {
-  const item = document.createElement("label");
-  item.className = "selection-item card-selection-item";
+  const item = document.createElement('label');
+  item.className = 'selection-item card-selection-item';
 
-  const button = document.createElement("button");
-  button.className = "secondary";
+  const button = document.createElement('button');
+  button.className = 'secondary';
   button.textContent = `Select ${card.name}`;
   button.onclick = onClick;
 

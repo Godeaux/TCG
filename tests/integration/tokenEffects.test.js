@@ -5,7 +5,12 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createTestState, createTestCreature, addCardToHand, getCardDefinitionById } from '../setup/testHelpers.js';
+import {
+  createTestState,
+  createTestCreature,
+  addCardToHand,
+  getCardDefinitionById,
+} from '../setup/testHelpers.js';
 import { createEffectContext } from '../setup/mockFactory.js';
 import { resolveEffectResult } from '../../js/game/effects.js';
 import { resolveCardEffect, getTokenById } from '../../js/cards/index.js';
@@ -37,15 +42,19 @@ describe('Token onPlay Effects', () => {
     it('summoning single lava lizard token triggers onPlay damage', () => {
       const initialHp = state.players[1].hp;
 
-      resolveEffectResult(state, {
-        summonTokens: {
-          playerIndex: 0,
-          tokens: ['token-lava-lizard']
-        }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          summonTokens: {
+            playerIndex: 0,
+            tokens: ['token-lava-lizard'],
+          },
+        },
+        context
+      );
 
       // Token should be on field
-      const tokens = state.players[0].field.filter(c => c?.id === 'token-lava-lizard');
+      const tokens = state.players[0].field.filter((c) => c?.id === 'token-lava-lizard');
       expect(tokens.length).toBe(1);
 
       // Opponent should take 1 damage from onPlay
@@ -55,15 +64,19 @@ describe('Token onPlay Effects', () => {
     it('summoning two lava lizard tokens triggers both onPlay effects', () => {
       const initialHp = state.players[1].hp;
 
-      resolveEffectResult(state, {
-        summonTokens: {
-          playerIndex: 0,
-          tokens: ['token-lava-lizard', 'token-lava-lizard']
-        }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          summonTokens: {
+            playerIndex: 0,
+            tokens: ['token-lava-lizard', 'token-lava-lizard'],
+          },
+        },
+        context
+      );
 
       // Both tokens should be on field
-      const tokens = state.players[0].field.filter(c => c?.id === 'token-lava-lizard');
+      const tokens = state.players[0].field.filter((c) => c?.id === 'token-lava-lizard');
       expect(tokens.length).toBe(2);
 
       // Opponent should take 2 damage (1 per token)
@@ -78,7 +91,10 @@ describe('Token onPlay Effects', () => {
 
       expect(Array.isArray(card.effects.onPlay)).toBe(true);
       expect(card.effects.onPlay).toContainEqual(
-        expect.objectContaining({ type: 'summonTokens', params: { tokenIds: ['token-lava-lizard', 'token-lava-lizard'] } })
+        expect.objectContaining({
+          type: 'summonTokens',
+          params: { tokenIds: ['token-lava-lizard', 'token-lava-lizard'] },
+        })
       );
       expect(card.effects.onPlay).toContainEqual(
         expect.objectContaining({ type: 'damageRival', params: { amount: 1 } })
@@ -99,7 +115,7 @@ describe('Token onPlay Effects', () => {
       resolveEffectResult(state, result, context);
 
       // Both tokens should be on field
-      const tokens = state.players[0].field.filter(c => c?.id === 'token-lava-lizard');
+      const tokens = state.players[0].field.filter((c) => c?.id === 'token-lava-lizard');
       expect(tokens.length).toBe(2);
 
       // Each token onPlay deals 1 damage
@@ -130,7 +146,7 @@ describe('Token onPlay Effects', () => {
       });
 
       // Two tokens should be summoned
-      const tokens = state.players[0].field.filter(c => c?.id === 'token-lava-lizard');
+      const tokens = state.players[0].field.filter((c) => c?.id === 'token-lava-lizard');
       expect(tokens.length).toBe(2);
 
       // Total damage: 1 (summonAndDamageOpponent) + 1 (token 1) + 1 (token 2) = 3
@@ -145,15 +161,19 @@ describe('Token onPlay Effects', () => {
       // Add cards to deck so draw doesn't fail
       state.players[0].deck.push({ id: 'test', name: 'Test Card' });
 
-      resolveEffectResult(state, {
-        summonTokens: {
-          playerIndex: 0,
-          tokens: ['token-carolina-anole']
-        }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          summonTokens: {
+            playerIndex: 0,
+            tokens: ['token-carolina-anole'],
+          },
+        },
+        context
+      );
 
       // Token should be on field
-      const tokens = state.players[0].field.filter(c => c?.id === 'token-carolina-anole');
+      const tokens = state.players[0].field.filter((c) => c?.id === 'token-carolina-anole');
       expect(tokens.length).toBe(1);
 
       // Player should draw 1 card
@@ -170,15 +190,19 @@ describe('Token onPlay Effects', () => {
 
       const initialHp = state.players[1].hp;
 
-      resolveEffectResult(state, {
-        summonTokens: {
-          playerIndex: 0,
-          tokens: ['token-lava-lizard', 'token-lava-lizard']
-        }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          summonTokens: {
+            playerIndex: 0,
+            tokens: ['token-lava-lizard', 'token-lava-lizard'],
+          },
+        },
+        context
+      );
 
       // No new tokens should be on field (was already full)
-      const tokens = state.players[0].field.filter(c => c?.id === 'token-lava-lizard');
+      const tokens = state.players[0].field.filter((c) => c?.id === 'token-lava-lizard');
       expect(tokens.length).toBe(0);
 
       // No damage should have been dealt (tokens weren't summoned)
@@ -192,15 +216,19 @@ describe('Token onPlay Effects', () => {
 
       const initialHp = state.players[1].hp;
 
-      resolveEffectResult(state, {
-        summonTokens: {
-          playerIndex: 0,
-          tokens: ['token-lava-lizard', 'token-lava-lizard']
-        }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          summonTokens: {
+            playerIndex: 0,
+            tokens: ['token-lava-lizard', 'token-lava-lizard'],
+          },
+        },
+        context
+      );
 
       // Only 1 token should be summoned
-      const tokens = state.players[0].field.filter(c => c?.id === 'token-lava-lizard');
+      const tokens = state.players[0].field.filter((c) => c?.id === 'token-lava-lizard');
       expect(tokens.length).toBe(1);
 
       // Only 1 damage from the 1 token that was summoned

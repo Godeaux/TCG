@@ -60,7 +60,7 @@ describe('onSlain → Token onPlay Chains', () => {
       resolveEffectResult(state, onSlainResult, context);
 
       // Verify: Sardine token summoned
-      const sardines = state.players[0].field.filter(c => c?.id === 'token-sardine');
+      const sardines = state.players[0].field.filter((c) => c?.id === 'token-sardine');
       expect(sardines.length).toBe(1);
     });
 
@@ -135,7 +135,7 @@ describe('onSlain → Token onPlay Chains', () => {
       resolveEffectResult(state, onSlainResult, context);
 
       // Verify: Tailless token summoned
-      const tailless = state.players[0].field.filter(c => c?.id === 'token-tailless');
+      const tailless = state.players[0].field.filter((c) => c?.id === 'token-tailless');
       expect(tailless.length).toBe(1);
     });
   });
@@ -173,7 +173,7 @@ describe('onPlay → Token onPlay Chains', () => {
       resolveEffectResult(state, onPlayResult, context);
 
       // Verify: 2 Lava Lizard tokens summoned
-      const lavaLizards = state.players[0].field.filter(c => c?.id === 'token-lava-lizard');
+      const lavaLizards = state.players[0].field.filter((c) => c?.id === 'token-lava-lizard');
       expect(lavaLizards.length).toBe(2);
 
       // Verify: total damage = 1 (card effect) + 1 (token 1) + 1 (token 2) = 3
@@ -202,7 +202,7 @@ describe('onPlay → Token onPlay Chains', () => {
       resolveEffectResult(state, onPlayResult, context);
 
       // Verify: 2 Sardine tokens summoned
-      const sardines = state.players[0].field.filter(c => c?.id === 'token-sardine');
+      const sardines = state.players[0].field.filter((c) => c?.id === 'token-sardine');
       expect(sardines.length).toBe(2);
 
       // Verify: heal 1 (card) + heal 1 (token 1) + heal 1 (token 2) = 3
@@ -230,7 +230,7 @@ describe('onPlay → Token onPlay Chains', () => {
       resolveEffectResult(state, onPlayResult, context);
 
       // Verify: 2 Flying Fish tokens summoned
-      const flyingFish = state.players[0].field.filter(c => c?.id === 'token-flying-fish');
+      const flyingFish = state.players[0].field.filter((c) => c?.id === 'token-flying-fish');
       expect(flyingFish.length).toBe(2);
 
       // Flying Fish tokens have Haste keyword
@@ -239,8 +239,8 @@ describe('onPlay → Token onPlay Chains', () => {
     });
   });
 
-  describe('Portuguese Man O\' War Legion Chain', () => {
-    it('Legion onPlay summons 2 Man O\' War tokens with onDefend', () => {
+  describe("Portuguese Man O' War Legion Chain", () => {
+    it("Legion onPlay summons 2 Man O' War tokens with onDefend", () => {
       const { creature } = createTestCreature('fish-prey-portuguese-man-o-war-legion', 0, 0, state);
       const context = createEffectContext(state, 0, { creature });
 
@@ -259,7 +259,7 @@ describe('onPlay → Token onPlay Chains', () => {
       resolveEffectResult(state, onPlayResult, context);
 
       // Verify: 2 Man O' War tokens summoned
-      const manOWars = state.players[0].field.filter(c => c?.id === 'token-man-o-war');
+      const manOWars = state.players[0].field.filter((c) => c?.id === 'token-man-o-war');
       expect(manOWars.length).toBe(2);
 
       // Tokens have onDefend effect
@@ -287,19 +287,25 @@ describe('playFromHand/Deck → onPlay Chains', () => {
       const context = createEffectContext(state, 0);
 
       // Resolve playFromHand effect
-      resolveEffectResult(state, {
-        playFromHand: {
-          playerIndex: 0,
-          card: cardInHand,
-        }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          playFromHand: {
+            playerIndex: 0,
+            card: cardInHand,
+          },
+        },
+        context
+      );
 
       // Verify: creature on field
-      const fishOnField = state.players[0].field.filter(c => c?.id === 'fish-prey-atlantic-flying-fish');
+      const fishOnField = state.players[0].field.filter(
+        (c) => c?.id === 'fish-prey-atlantic-flying-fish'
+      );
       expect(fishOnField.length).toBe(1);
 
       // Verify: onPlay triggered, summoning 2 Flying Fish tokens
-      const tokens = state.players[0].field.filter(c => c?.id === 'token-flying-fish');
+      const tokens = state.players[0].field.filter((c) => c?.id === 'token-flying-fish');
       expect(tokens.length).toBe(2);
     });
 
@@ -308,7 +314,7 @@ describe('playFromHand/Deck → onPlay Chains', () => {
       const cardDef = getCardDefinitionById('fish-prey-atlantic-flying-fish');
       const cardInHand = createCardInstance(cardDef, state.turn);
       cardInHand.effects = {
-        onPlay: { type: 'damageRival', params: { amount: 2 } }
+        onPlay: { type: 'damageRival', params: { amount: 2 } },
       };
       state.players[0].hand.push(cardInHand);
 
@@ -316,12 +322,16 @@ describe('playFromHand/Deck → onPlay Chains', () => {
       const context = createEffectContext(state, 0);
 
       // Resolve playFromHand effect
-      resolveEffectResult(state, {
-        playFromHand: {
-          playerIndex: 0,
-          card: cardInHand,
-        }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          playFromHand: {
+            playerIndex: 0,
+            card: cardInHand,
+          },
+        },
+        context
+      );
 
       // Verify: damage dealt
       expect(state.players[1].hp).toBe(initialHp - 2);
@@ -334,23 +344,29 @@ describe('playFromHand/Deck → onPlay Chains', () => {
       addCardToDeck(state, 'fish-prey-rainbow-sardines', 0);
       state.players[0].hp = 5;
 
-      const cardInDeck = state.players[0].deck.find(c => c.id === 'fish-prey-rainbow-sardines');
+      const cardInDeck = state.players[0].deck.find((c) => c.id === 'fish-prey-rainbow-sardines');
       const context = createEffectContext(state, 0);
 
       // Resolve playFromDeck effect
-      resolveEffectResult(state, {
-        playFromDeck: {
-          playerIndex: 0,
-          card: cardInDeck,
-        }
-      }, context);
+      resolveEffectResult(
+        state,
+        {
+          playFromDeck: {
+            playerIndex: 0,
+            card: cardInDeck,
+          },
+        },
+        context
+      );
 
       // Verify: creature on field
-      const sardinesOnField = state.players[0].field.filter(c => c?.id === 'fish-prey-rainbow-sardines');
+      const sardinesOnField = state.players[0].field.filter(
+        (c) => c?.id === 'fish-prey-rainbow-sardines'
+      );
       expect(sardinesOnField.length).toBe(1);
 
       // Verify: onPlay triggered (2 Sardine tokens + heal chain)
-      const tokens = state.players[0].field.filter(c => c?.id === 'token-sardine');
+      const tokens = state.players[0].field.filter((c) => c?.id === 'token-sardine');
       expect(tokens.length).toBe(2);
 
       // HP healed: 1 (card) + 1 (token 1) + 1 (token 2) = 3
@@ -461,12 +477,16 @@ describe('Field Full Edge Cases', () => {
     const context = createEffectContext(state, 0);
 
     // Try to summon Lava Lizard tokens (they have damageOpponent onPlay)
-    resolveEffectResult(state, {
-      summonTokens: {
-        playerIndex: 0,
-        tokens: ['token-lava-lizard', 'token-lava-lizard']
-      }
-    }, context);
+    resolveEffectResult(
+      state,
+      {
+        summonTokens: {
+          playerIndex: 0,
+          tokens: ['token-lava-lizard', 'token-lava-lizard'],
+        },
+      },
+      context
+    );
 
     // Verify: no damage dealt because tokens couldn't be summoned
     expect(state.players[1].hp).toBe(initialHp);
@@ -481,18 +501,22 @@ describe('Field Full Edge Cases', () => {
     const context = createEffectContext(state, 0);
 
     // Try to summon 2 Lava Lizard tokens (only 1 slot available)
-    resolveEffectResult(state, {
-      summonTokens: {
-        playerIndex: 0,
-        tokens: ['token-lava-lizard', 'token-lava-lizard']
-      }
-    }, context);
+    resolveEffectResult(
+      state,
+      {
+        summonTokens: {
+          playerIndex: 0,
+          tokens: ['token-lava-lizard', 'token-lava-lizard'],
+        },
+      },
+      context
+    );
 
     // Verify: only 1 damage (1 token summoned, 1 failed)
     expect(state.players[1].hp).toBe(initialHp - 1);
 
     // Verify: only 1 token on field
-    const tokens = state.players[0].field.filter(c => c?.id === 'token-lava-lizard');
+    const tokens = state.players[0].field.filter((c) => c?.id === 'token-lava-lizard');
     expect(tokens.length).toBe(1);
   });
 });
@@ -530,12 +554,16 @@ describe('Cancelled Abilities Do Not Chain', () => {
     const initialHp = state.players[1].hp;
 
     // Manually summon a token and cancel its abilities immediately
-    const tokenResult = resolveEffectResult(state, {
-      summonTokens: {
-        playerIndex: 0,
-        tokens: ['token-lava-lizard']
-      }
-    }, context);
+    const tokenResult = resolveEffectResult(
+      state,
+      {
+        summonTokens: {
+          playerIndex: 0,
+          tokens: ['token-lava-lizard'],
+        },
+      },
+      context
+    );
 
     // The token should have been summoned and triggered damage
     // This test verifies the normal flow first
@@ -609,7 +637,7 @@ describe('Nested Selection Effects', () => {
 
     // Find the enemy candidate in the selection
     const enemyCandidate = onPlayResult.selectTarget.candidates.find(
-      c => c.value.creature === enemy
+      (c) => c.value.creature === enemy
     );
 
     // Simulate selection
@@ -644,20 +672,26 @@ describe('Complex Effect Chains', () => {
     const context = createEffectContext(state, 0);
 
     // Play the card from hand (simulates controller flow)
-    resolveEffectResult(state, {
-      playFromHand: {
-        playerIndex: 0,
-        card: cardInHand
-      }
-    }, context);
+    resolveEffectResult(
+      state,
+      {
+        playFromHand: {
+          playerIndex: 0,
+          card: cardInHand,
+        },
+      },
+      context
+    );
 
     // Verify entire chain executed:
     // 1. Card placed on field
-    const cardsOnField = state.players[0].field.filter(c => c?.id === 'reptile-prey-galapagos-lava-lizards');
+    const cardsOnField = state.players[0].field.filter(
+      (c) => c?.id === 'reptile-prey-galapagos-lava-lizards'
+    );
     expect(cardsOnField.length).toBe(1);
 
     // 2. Tokens summoned
-    const tokens = state.players[0].field.filter(c => c?.id === 'token-lava-lizard');
+    const tokens = state.players[0].field.filter((c) => c?.id === 'token-lava-lizard');
     expect(tokens.length).toBe(2);
 
     // 3. Total damage: 1 (summonAndDamageOpponent) + 1 (token 1) + 1 (token 2) = 3
@@ -673,20 +707,26 @@ describe('Complex Effect Chains', () => {
     const context = createEffectContext(state, 0);
 
     // Play from hand
-    resolveEffectResult(state, {
-      playFromHand: {
-        playerIndex: 0,
-        card: cardInHand
-      }
-    }, context);
+    resolveEffectResult(
+      state,
+      {
+        playFromHand: {
+          playerIndex: 0,
+          card: cardInHand,
+        },
+      },
+      context
+    );
 
     // Verify chain:
     // 1. Card placed
-    const cardsOnField = state.players[0].field.filter(c => c?.id === 'fish-prey-rainbow-sardines');
+    const cardsOnField = state.players[0].field.filter(
+      (c) => c?.id === 'fish-prey-rainbow-sardines'
+    );
     expect(cardsOnField.length).toBe(1);
 
     // 2. Sardine tokens summoned
-    const tokens = state.players[0].field.filter(c => c?.id === 'token-sardine');
+    const tokens = state.players[0].field.filter((c) => c?.id === 'token-sardine');
     expect(tokens.length).toBe(2);
 
     // 3. HP healed: 1 (card onPlay) + 1 (token 1 onPlay) + 1 (token 2 onPlay) = 3

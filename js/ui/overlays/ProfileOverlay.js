@@ -167,7 +167,7 @@ const renderCollectionGrid = (elements, ownedCards, filter, onCardClick) => {
   const allCards = getAllCards();
 
   // Filter cards
-  let filteredCards = allCards.filter(card => {
+  let filteredCards = allCards.filter((card) => {
     // Skip tokens
     if (card.isToken) return false;
 
@@ -222,7 +222,7 @@ const renderCollectionGrid = (elements, ownedCards, filter, onCardClick) => {
   }
 
   // Render cards
-  filteredCards.forEach(card => {
+  filteredCards.forEach((card) => {
     const ownedRarity = ownedCards.get(card.id) || null;
     const cardWrapper = renderCollectionCard(card, ownedRarity, onCardClick);
     collectionGrid.appendChild(cardWrapper);
@@ -232,9 +232,10 @@ const renderCollectionGrid = (elements, ownedCards, filter, onCardClick) => {
   if (filteredCards.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'collection-empty';
-    empty.textContent = filter === 'owned'
-      ? 'No cards owned yet. Open packs to get started!'
-      : 'No cards found in this category.';
+    empty.textContent =
+      filter === 'owned'
+        ? 'No cards owned yet. Open packs to get started!'
+        : 'No cards found in this category.';
     collectionGrid.appendChild(empty);
   }
 };
@@ -299,7 +300,7 @@ const updateMatchHistory = (elements, matches) => {
   }
 
   // Show all matches (container is scrollable)
-  matches.forEach(match => {
+  matches.forEach((match) => {
     const item = document.createElement('div');
     item.className = `profile-match-item ${match.won ? 'win' : 'loss'}`;
 
@@ -310,7 +311,9 @@ const updateMatchHistory = (elements, matches) => {
     const hpDisplay = `<span class="${playerHpClass}">${playerHp}</span> - ${opponentHp}`;
 
     // Format opponent with deck
-    const deckDisplay = match.opponentDeck ? ` <span class="match-deck">(${match.opponentDeck})</span>` : '';
+    const deckDisplay = match.opponentDeck
+      ? ` <span class="match-deck">(${match.opponentDeck})</span>`
+      : '';
 
     item.innerHTML = `
       <span class="profile-match-result">${match.won ? 'W' : 'L'}</span>
@@ -605,7 +608,7 @@ const renderFriendsList = (container, friends, type, callbacks) => {
     });
   }
 
-  sortedFriends.forEach(friendship => {
+  sortedFriends.forEach((friendship) => {
     const item = renderFriendItem(friendship, type, callbacks);
     container.appendChild(item);
   });
@@ -877,7 +880,7 @@ export const renderProfileOverlay = (state, callbacks = {}) => {
   if (profileData.ownedCards instanceof Map) {
     ownedCardsMap = profileData.ownedCards;
   } else if (Array.isArray(profileData.ownedCards)) {
-    ownedCardsMap = new Map(profileData.ownedCards.map(c => [c.cardId, c.rarity]));
+    ownedCardsMap = new Map(profileData.ownedCards.map((c) => [c.cardId, c.rarity]));
   } else {
     ownedCardsMap = new Map();
   }
@@ -1142,7 +1145,10 @@ export const setupDuelInviteListener = (profileId, callbacks = {}) => {
   );
 
   duelInvitesProfileId = profileId;
-  console.log('[DUEL-INVITE] Subscription set up, channel:', duelInvitesChannel ? 'exists' : 'null');
+  console.log(
+    '[DUEL-INVITE] Subscription set up, channel:',
+    duelInvitesChannel ? 'exists' : 'null'
+  );
 };
 
 // ============================================================================
@@ -1171,7 +1177,8 @@ export const showFriendProfile = async (profileId, username) => {
   if (gamesPlayedEl) gamesPlayedEl.textContent = '...';
   if (gamesWonEl) gamesWonEl.textContent = '...';
   if (winRateEl) winRateEl.textContent = '...';
-  if (collectionGrid) collectionGrid.innerHTML = '<div class="friend-profile-collection-empty">Loading...</div>';
+  if (collectionGrid)
+    collectionGrid.innerHTML = '<div class="friend-profile-collection-empty">Loading...</div>';
 
   modal.classList.add('active');
   modal.setAttribute('aria-hidden', 'false');
@@ -1206,14 +1213,17 @@ export const showFriendProfile = async (profileId, username) => {
 
       const ownedCards = profile.ownedCards || [];
       if (ownedCards.length === 0) {
-        collectionGrid.innerHTML = '<div class="friend-profile-collection-empty">No cards collected yet</div>';
+        collectionGrid.innerHTML =
+          '<div class="friend-profile-collection-empty">No cards collected yet</div>';
       } else {
         // Convert to Map for renderCollectionCard
-        const ownedCardsMap = new Map(ownedCards.map(c => [c.card_id, c.rarity]));
+        const ownedCardsMap = new Map(ownedCards.map((c) => [c.card_id, c.rarity]));
         const allCards = getAllCards();
 
         // Get owned cards and sort by rarity
-        const ownedCardObjects = allCards.filter(card => ownedCardsMap.has(card.id) && !card.isToken);
+        const ownedCardObjects = allCards.filter(
+          (card) => ownedCardsMap.has(card.id) && !card.isToken
+        );
         ownedCardObjects.sort((a, b) => {
           const aRarity = ownedCardsMap.get(a.id) || 'common';
           const bRarity = ownedCardsMap.get(b.id) || 'common';
@@ -1222,7 +1232,7 @@ export const showFriendProfile = async (profileId, username) => {
           return a.name.localeCompare(b.name);
         });
 
-        ownedCardObjects.forEach(card => {
+        ownedCardObjects.forEach((card) => {
           const rarity = ownedCardsMap.get(card.id);
           const cardWrapper = renderCollectionCard(card, rarity, () => {});
           collectionGrid.appendChild(cardWrapper);
@@ -1232,7 +1242,8 @@ export const showFriendProfile = async (profileId, username) => {
   } catch (e) {
     console.error('Failed to load friend profile:', e);
     if (collectionGrid) {
-      collectionGrid.innerHTML = '<div class="friend-profile-collection-empty">Failed to load profile</div>';
+      collectionGrid.innerHTML =
+        '<div class="friend-profile-collection-empty">Failed to load profile</div>';
     }
   }
 };

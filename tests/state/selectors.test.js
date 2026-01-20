@@ -74,7 +74,12 @@ describe('canConsumeAnyPrey', () => {
     it('returns true when one prey is frozen but another is not', () => {
       createTestCreature('fish-predator-sailfish', 0, 0, state);
 
-      const { creature: frozenPrey } = createTestCreature('fish-prey-atlantic-flying-fish', 0, 1, state);
+      const { creature: frozenPrey } = createTestCreature(
+        'fish-prey-atlantic-flying-fish',
+        0,
+        1,
+        state
+      );
       frozenPrey.frozen = true;
 
       createTestCreature('fish-prey-golden-dorado', 0, 2, state);
@@ -96,7 +101,12 @@ describe('canConsumeAnyPrey', () => {
     it('returns true when one prey is inedible but another is not', () => {
       createTestCreature('fish-predator-sailfish', 0, 0, state);
 
-      const { creature: inediblePrey } = createTestCreature('fish-prey-atlantic-flying-fish', 0, 1, state);
+      const { creature: inediblePrey } = createTestCreature(
+        'fish-prey-atlantic-flying-fish',
+        0,
+        1,
+        state
+      );
       inediblePrey.keywords = ['Inedible'];
 
       createTestCreature('fish-prey-golden-dorado', 0, 2, state);
@@ -192,13 +202,15 @@ describe('canPlayerMakeAnyMove', () => {
       state.cardPlayedThisTurn = false;
 
       // Add a card to hand
-      state.players[0].hand = [{
-        id: 'fish-prey-atlantic-flying-fish',
-        name: 'Atlantic Flying Fish',
-        type: 'Prey',
-        cost: 1,
-        instanceId: 'test-card-1',
-      }];
+      state.players[0].hand = [
+        {
+          id: 'fish-prey-atlantic-flying-fish',
+          name: 'Atlantic Flying Fish',
+          type: 'Prey',
+          cost: 1,
+          instanceId: 'test-card-1',
+        },
+      ];
 
       // Give player enough resources
       state.players[0].resources = 5;
@@ -222,13 +234,15 @@ describe('canPlayerMakeAnyMove', () => {
 
     it('returns false when card limit reached and no consumption possible', () => {
       state.phase = 'Main 1';
-      state.players[0].hand = [{
-        id: 'fish-prey-atlantic-flying-fish',
-        name: 'Atlantic Flying Fish',
-        type: 'Prey',
-        cost: 1,
-        instanceId: 'test-card-1',
-      }];
+      state.players[0].hand = [
+        {
+          id: 'fish-prey-atlantic-flying-fish',
+          name: 'Atlantic Flying Fish',
+          type: 'Prey',
+          cost: 1,
+          instanceId: 'test-card-1',
+        },
+      ];
       state.cardPlayedThisTurn = true; // Already played a card
 
       // Only prey on field (no predator to consume with)

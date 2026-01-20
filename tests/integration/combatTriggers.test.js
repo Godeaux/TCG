@@ -15,7 +15,11 @@ import {
 import { createEffectContext } from '../setup/mockFactory.js';
 import { resolveCardEffect } from '../../js/cards/index.js';
 import { resolveEffectResult } from '../../js/game/effects.js';
-import { resolveCreatureCombat, initiateCombat, hasBeforeCombatEffect } from '../../js/game/combat.js';
+import {
+  resolveCreatureCombat,
+  initiateCombat,
+  hasBeforeCombatEffect,
+} from '../../js/game/combat.js';
 import { consumePrey } from '../../js/game/consumption.js';
 import { createCardInstance } from '../../js/cardTypes.js';
 
@@ -33,7 +37,12 @@ describe('onBeforeCombat Trigger', () => {
   describe('Basic onBeforeCombat Execution', () => {
     it('Central American Snapping Turtle deals damage before combat', () => {
       // Attacker with onBeforeCombat
-      const { creature: attacker } = createTestCreature('reptile-prey-central-american-snapping-turtle', 0, 0, state);
+      const { creature: attacker } = createTestCreature(
+        'reptile-prey-central-american-snapping-turtle',
+        0,
+        0,
+        state
+      );
       // Defender - use Golden Dorado (no Immune keyword) instead of Blobfish
       const { creature: defender } = createTestCreature('fish-prey-golden-dorado', 1, 0, state);
 
@@ -58,7 +67,10 @@ describe('onBeforeCombat Trigger', () => {
       expect(beforeCombatResult.selectTarget).toBeDefined();
 
       // Simulate selecting the defender - selectTargetForDamage expects { type: 'creature', creature: c } format
-      const selectionResult = beforeCombatResult.selectTarget.onSelect({ type: 'creature', creature: defender });
+      const selectionResult = beforeCombatResult.selectTarget.onSelect({
+        type: 'creature',
+        creature: defender,
+      });
       resolveEffectResult(state, selectionResult, { playerIndex: 0, opponentIndex: 1 });
 
       // Verify: defender took 2 damage from onBeforeCombat
@@ -66,7 +78,12 @@ describe('onBeforeCombat Trigger', () => {
     });
 
     it('Cougar deals 3 damage to target before combat', () => {
-      const { creature: attacker } = createTestCreature('mammal-predator-north-american-cougar', 0, 0, state);
+      const { creature: attacker } = createTestCreature(
+        'mammal-predator-north-american-cougar',
+        0,
+        0,
+        state
+      );
       // Use Golden Dorado (2 HP, no Immune keyword) instead of Blobfish which is Immune
       const { creature: defender } = createTestCreature('fish-prey-golden-dorado', 1, 0, state);
 
@@ -95,7 +112,12 @@ describe('onBeforeCombat Trigger', () => {
     });
 
     it('onBeforeCombat killing defender prevents counter-damage to attacker', () => {
-      const { creature: attacker } = createTestCreature('mammal-predator-north-american-cougar', 0, 0, state);
+      const { creature: attacker } = createTestCreature(
+        'mammal-predator-north-american-cougar',
+        0,
+        0,
+        state
+      );
       // Create a weak defender (2 HP Golden Dorado) that will die to 3 damage from Cougar's onBeforeCombat
       const { creature: defender } = createTestCreature('fish-prey-golden-dorado', 1, 0, state);
       // Golden Dorado has 2 HP, which will result in -1 HP after 3 damage
@@ -131,7 +153,12 @@ describe('onBeforeCombat Trigger', () => {
     });
 
     it('initiateCombat returns needsBeforeCombat flag when attacker has effect', () => {
-      const { creature: attacker } = createTestCreature('reptile-prey-central-american-snapping-turtle', 0, 0, state);
+      const { creature: attacker } = createTestCreature(
+        'reptile-prey-central-american-snapping-turtle',
+        0,
+        0,
+        state
+      );
       const { creature: defender } = createTestCreature('fish-prey-blobfish', 1, 0, state);
 
       const result = initiateCombat(state, attacker, defender, 0, 1);
@@ -142,7 +169,12 @@ describe('onBeforeCombat Trigger', () => {
     });
 
     it('onBeforeCombat only fires once per attack (flag prevents re-trigger)', () => {
-      const { creature: attacker } = createTestCreature('reptile-prey-central-american-snapping-turtle', 0, 0, state);
+      const { creature: attacker } = createTestCreature(
+        'reptile-prey-central-american-snapping-turtle',
+        0,
+        0,
+        state
+      );
       const { creature: defender } = createTestCreature('fish-prey-blobfish', 1, 0, state);
 
       // First call - should need beforeCombat
@@ -176,7 +208,12 @@ describe('onDefend Trigger', () => {
       const { creature: attacker } = createTestCreature('fish-prey-kingfish', 0, 0, state);
       attacker.currentHp = 5; // Give it some HP to survive
       // Defender with onDefend
-      const { creature: defender } = createTestCreature('reptile-prey-south-american-snapping-turtle', 1, 0, state);
+      const { creature: defender } = createTestCreature(
+        'reptile-prey-south-american-snapping-turtle',
+        1,
+        0,
+        state
+      );
 
       const initialAttackerHp = attacker.currentHp;
 
@@ -235,7 +272,12 @@ describe('onDefend Trigger', () => {
       // Use Kingfish (no Immune keyword) instead of Blobfish
       const { creature: attacker } = createTestCreature('fish-prey-kingfish', 0, 0, state);
       attacker.currentHp = 3;
-      const { creature: defender } = createTestCreature('fish-prey-portuguese-man-o-war-legion', 1, 0, state);
+      const { creature: defender } = createTestCreature(
+        'fish-prey-portuguese-man-o-war-legion',
+        1,
+        0,
+        state
+      );
 
       const initialAttackerHp = attacker.currentHp;
 
@@ -271,7 +313,12 @@ describe('onDefend Trigger', () => {
       const { creature: attacker } = createTestCreature('fish-prey-kingfish', 0, 0, state);
       attacker.currentHp = 5;
       attacker.currentAtk = 2;
-      const { creature: defender } = createTestCreature('reptile-prey-south-american-snapping-turtle', 1, 0, state);
+      const { creature: defender } = createTestCreature(
+        'reptile-prey-south-american-snapping-turtle',
+        1,
+        0,
+        state
+      );
 
       // Step 1: onDefend deals 2 damage to attacker
       const onDefendResult = resolveCardEffect(defender, 'onDefend', {
@@ -310,7 +357,12 @@ describe('onDefend Trigger', () => {
       attacker.keywords = ['Ambush'];
       attacker.currentHp = 3;
 
-      const { creature: defender } = createTestCreature('reptile-prey-south-american-snapping-turtle', 1, 0, state);
+      const { creature: defender } = createTestCreature(
+        'reptile-prey-south-american-snapping-turtle',
+        1,
+        0,
+        state
+      );
 
       const initialAttackerHp = attacker.currentHp;
 
@@ -340,7 +392,12 @@ describe('onConsume Trigger', () => {
 
   describe('Basic onConsume Execution', () => {
     it('American Bullfrogs onConsume summons American Bullfrog token', () => {
-      const { creature: predator } = createTestCreature('amphibian-predator-american-bullfrogs', 0, 0, state);
+      const { creature: predator } = createTestCreature(
+        'amphibian-predator-american-bullfrogs',
+        0,
+        0,
+        state
+      );
       const { creature: prey } = createTestCreature('fish-prey-blobfish', 0, 1, state);
 
       // Perform consumption
@@ -366,7 +423,9 @@ describe('onConsume Trigger', () => {
       resolveEffectResult(state, onConsumeResult, { playerIndex: 0, opponentIndex: 1 });
 
       // Verify: American Bullfrog token was summoned
-      const bullfrogTokens = state.players[0].field.filter(c => c?.id === 'token-american-bullfrog');
+      const bullfrogTokens = state.players[0].field.filter(
+        (c) => c?.id === 'token-american-bullfrog'
+      );
       expect(bullfrogTokens.length).toBe(1);
     });
 
@@ -409,7 +468,12 @@ describe('onConsume Trigger', () => {
     });
 
     it('Papuan Monitor onConsume deals 2 damage to opponent', () => {
-      const { creature: predator } = createTestCreature('reptile-predator-papuan-monitor', 0, 0, state);
+      const { creature: predator } = createTestCreature(
+        'reptile-predator-papuan-monitor',
+        0,
+        0,
+        state
+      );
       const { creature: prey } = createTestCreature('fish-prey-blobfish', 0, 1, state);
 
       const initialOpponentHp = state.players[1].hp;
@@ -443,27 +507,41 @@ describe('onConsume Trigger', () => {
 
   describe('onConsume Does NOT Fire on Dry-Drop', () => {
     it('onConsume does NOT trigger when predator is dry-dropped', () => {
-      const { creature: predator } = createTestCreature('amphibian-predator-indian-bullfrog', 0, 0, state);
+      const { creature: predator } = createTestCreature(
+        'amphibian-predator-indian-bullfrog',
+        0,
+        0,
+        state
+      );
 
       // Mark as dry-dropped (no prey consumed)
       predator.dryDropped = true;
 
       const initialOpponentHp = state.players[1].hp;
-      const initialTokenCount = state.players[0].field.filter(c => c?.id === 'token-tiger-frog').length;
+      const initialTokenCount = state.players[0].field.filter(
+        (c) => c?.id === 'token-tiger-frog'
+      ).length;
 
       // onConsume should NOT be called for dry-dropped predators
       // The game controller should skip this - we verify by checking no effect occurs
       // In actual game flow, the controller checks dryDropped before calling onConsume
 
       // Verify: no tokens summoned, no damage dealt
-      expect(state.players[0].field.filter(c => c?.id === 'token-tiger-frog').length).toBe(initialTokenCount);
+      expect(state.players[0].field.filter((c) => c?.id === 'token-tiger-frog').length).toBe(
+        initialTokenCount
+      );
       expect(state.players[1].hp).toBe(initialOpponentHp);
     });
   });
 
   describe('onConsume Fires After onPlay', () => {
     it('onConsume fires after creature is placed (correct order)', () => {
-      const { creature: predator } = createTestCreature('amphibian-predator-indian-bullfrog', 0, 0, state);
+      const { creature: predator } = createTestCreature(
+        'amphibian-predator-indian-bullfrog',
+        0,
+        0,
+        state
+      );
       const { creature: prey } = createTestCreature('fish-prey-blobfish', 0, 1, state);
 
       // Verify predator is on field before onConsume
@@ -498,12 +576,19 @@ describe('onConsume Trigger', () => {
 
   describe('Consumption Does NOT Trigger onSlain', () => {
     it('consumed prey does NOT trigger onSlain effects', () => {
-      const { creature: predator } = createTestCreature('amphibian-predator-indian-bullfrog', 0, 0, state);
+      const { creature: predator } = createTestCreature(
+        'amphibian-predator-indian-bullfrog',
+        0,
+        0,
+        state
+      );
 
       // Create prey with onSlain effect (Rainbow Sardines summons token on death)
       const { creature: prey } = createTestCreature('fish-prey-rainbow-sardines', 0, 1, state);
 
-      const initialTokenCount = state.players[0].field.filter(c => c?.id === 'token-sardine').length;
+      const initialTokenCount = state.players[0].field.filter(
+        (c) => c?.id === 'token-sardine'
+      ).length;
 
       // Consume the prey
       consumePrey({
@@ -518,7 +603,7 @@ describe('onConsume Trigger', () => {
 
       // Verify: onSlain did NOT trigger (no sardine tokens from Rainbow Sardines' onSlain)
       // Note: Rainbow Sardines' onSlain summons sardine tokens
-      const sardineTokens = state.players[0].field.filter(c => c?.id === 'token-sardine');
+      const sardineTokens = state.players[0].field.filter((c) => c?.id === 'token-sardine');
       expect(sardineTokens.length).toBe(initialTokenCount);
     });
   });
@@ -537,7 +622,12 @@ describe('Consumption Mechanics', () => {
 
   describe('Nutrition Calculation', () => {
     it('predator gains +nutrition/+nutrition from consumed prey', () => {
-      const { creature: predator } = createTestCreature('amphibian-predator-indian-bullfrog', 0, 0, state);
+      const { creature: predator } = createTestCreature(
+        'amphibian-predator-indian-bullfrog',
+        0,
+        0,
+        state
+      );
       const { creature: prey } = createTestCreature('fish-prey-blobfish', 0, 1, state);
 
       const initialAtk = predator.currentAtk;
@@ -557,7 +647,12 @@ describe('Consumption Mechanics', () => {
     });
 
     it('multiple prey consumed sums nutrition correctly', () => {
-      const { creature: predator } = createTestCreature('amphibian-predator-indian-bullfrog', 0, 0, state);
+      const { creature: predator } = createTestCreature(
+        'amphibian-predator-indian-bullfrog',
+        0,
+        0,
+        state
+      );
       const { creature: prey1 } = createTestCreature('fish-prey-blobfish', 0, 1, state);
       const { creature: prey2 } = createTestCreature('fish-prey-blobfish', 0, 2, state);
 
@@ -577,7 +672,12 @@ describe('Consumption Mechanics', () => {
     });
 
     it('consumed prey goes to carrion pile', () => {
-      const { creature: predator } = createTestCreature('amphibian-predator-indian-bullfrog', 0, 0, state);
+      const { creature: predator } = createTestCreature(
+        'amphibian-predator-indian-bullfrog',
+        0,
+        0,
+        state
+      );
       const { creature: prey } = createTestCreature('fish-prey-blobfish', 0, 1, state);
 
       const initialCarrionCount = state.players[0].carrion.length;
@@ -600,7 +700,12 @@ describe('Consumption Mechanics', () => {
 
   describe('Dry-Drop Mechanics', () => {
     it('dry-dropped predator has dryDropped flag set', () => {
-      const { creature: predator } = createTestCreature('amphibian-predator-indian-bullfrog', 0, 0, state);
+      const { creature: predator } = createTestCreature(
+        'amphibian-predator-indian-bullfrog',
+        0,
+        0,
+        state
+      );
 
       // Simulate dry-drop (no consumption)
       predator.dryDropped = true;
@@ -609,7 +714,12 @@ describe('Consumption Mechanics', () => {
     });
 
     it('dry-dropped predator abilities are suppressed', () => {
-      const { creature: predator } = createTestCreature('amphibian-predator-indian-bullfrog', 0, 0, state);
+      const { creature: predator } = createTestCreature(
+        'amphibian-predator-indian-bullfrog',
+        0,
+        0,
+        state
+      );
       predator.dryDropped = true;
 
       // Import areAbilitiesActive to verify

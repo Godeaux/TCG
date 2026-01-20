@@ -11,7 +11,15 @@
  * - Synergy detection
  */
 
-import { KEYWORDS, hasKeyword, hasHaste, hasLure, isEdible, isInedible, isFreePlay } from '../keywords.js';
+import {
+  KEYWORDS,
+  hasKeyword,
+  hasHaste,
+  hasLure,
+  isEdible,
+  isInedible,
+  isFreePlay,
+} from '../keywords.js';
 import { isCreatureCard } from '../cardTypes.js';
 import { ThreatDetector } from './ThreatDetector.js';
 import { CardKnowledgeBase } from './CardKnowledgeBase.js';
@@ -48,7 +56,12 @@ export class PlayEvaluator {
     // Add effect value - MUST pass full context (state, aiPlayerIndex, card)
     // This enables context-aware evaluation (e.g., "return enemies" = 0 if no enemies)
     if (card.effects) {
-      const effectResult = this.cardKnowledge.getEffectValue(card.effects, state, aiPlayerIndex, card);
+      const effectResult = this.cardKnowledge.getEffectValue(
+        card.effects,
+        state,
+        aiPlayerIndex,
+        card
+      );
       const effectValue = effectResult.value;
       score += effectValue;
 
@@ -235,10 +248,12 @@ export class PlayEvaluator {
     // onConsume ability value - this is the KEY differentiator
     if (predator.effects?.onConsume) {
       // Use CardKnowledgeBase to evaluate the effect IN CONTEXT
-      const effectResult = this.cardKnowledge.evaluateSingleEffect(
-        predator.effects.onConsume,
-        { state, aiPlayerIndex, card: predator, trigger: 'onConsume' }
-      );
+      const effectResult = this.cardKnowledge.evaluateSingleEffect(predator.effects.onConsume, {
+        state,
+        aiPlayerIndex,
+        card: predator,
+        trigger: 'onConsume',
+      });
       value += effectResult.value;
     }
 
@@ -262,8 +277,8 @@ export class PlayEvaluator {
     const consumeValue = this.simulateConsumeValue(card, state, aiPlayerIndex);
 
     // Find available prey on field (not frozen and not inedible)
-    const availablePrey = ai.field.filter(c =>
-      c && !c.frozen && !isInedible(c) && (c.type === 'Prey' || isEdible(c))
+    const availablePrey = ai.field.filter(
+      (c) => c && !c.frozen && !isInedible(c) && (c.type === 'Prey' || isEdible(c))
     );
 
     if (availablePrey.length > 0) {
@@ -272,8 +287,8 @@ export class PlayEvaluator {
 
       // Also consider sacrifice cost
       const bestPrey = availablePrey[0];
-      const sacrificeValue = (bestPrey.currentAtk ?? bestPrey.atk ?? 0) +
-                            (bestPrey.currentHp ?? bestPrey.hp ?? 0);
+      const sacrificeValue =
+        (bestPrey.currentAtk ?? bestPrey.atk ?? 0) + (bestPrey.currentHp ?? bestPrey.hp ?? 0);
       if (sacrificeValue >= 5) {
         reasons.push(`Sacrifice cost: -3`);
         return consumeValue - 3;
@@ -283,9 +298,7 @@ export class PlayEvaluator {
     }
 
     // No prey on field - check if we have prey in hand (setup opportunity)
-    const preyInHand = ai.hand.filter(c =>
-      c && c.type === 'Prey' && c.uid !== card.uid
-    );
+    const preyInHand = ai.hand.filter((c) => c && c.type === 'Prey' && c.uid !== card.uid);
 
     if (preyInHand.length > 0 && consumeValue > 0) {
       // We COULD get this value if we played prey first
@@ -324,7 +337,7 @@ export class PlayEvaluator {
     if (card.type !== 'Prey') return 0;
 
     const ai = state.players[aiPlayerIndex];
-    const predatorsInHand = ai.hand.filter(c => c && c.type === 'Predator');
+    const predatorsInHand = ai.hand.filter((c) => c && c.type === 'Predator');
 
     if (predatorsInHand.length === 0) return 0;
 
@@ -342,7 +355,9 @@ export class PlayEvaluator {
     if (bestConsumeValue > 0) {
       // Discount for delayed payoff (next turn)
       const setupBonus = Math.round(bestConsumeValue * 0.5);
-      reasons.push(`Setup: enables ${bestConsumeValue.toFixed(0)} consume value next turn → +${setupBonus}`);
+      reasons.push(
+        `Setup: enables ${bestConsumeValue.toFixed(0)} consume value next turn → +${setupBonus}`
+      );
       return setupBonus;
     }
 
@@ -409,7 +424,7 @@ export class PlayEvaluator {
     }
 
     // Sort by value: prioritize high nutrition, low stats (sacrifice efficiency)
-    const scored = availablePrey.map(prey => {
+    const scored = availablePrey.map((prey) => {
       const nutrition = prey.nutrition ?? 1;
       const stats = (prey.currentAtk ?? prey.atk ?? 0) + (prey.currentHp ?? prey.hp ?? 0);
       // Higher nutrition = better to consume

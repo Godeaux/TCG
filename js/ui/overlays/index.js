@@ -23,20 +23,13 @@
 // MENU OVERLAYS
 // ============================================================================
 
-export {
-  renderMenuOverlays,
-  hideAllMenuOverlays,
-} from './MenuOverlay.js';
+export { renderMenuOverlays, hideAllMenuOverlays } from './MenuOverlay.js';
 
 // ============================================================================
 // SETUP OVERLAY
 // ============================================================================
 
-export {
-  renderSetupOverlay,
-  hideSetupOverlay,
-  resetSetupAIState,
-} from './SetupOverlay.js';
+export { renderSetupOverlay, hideSetupOverlay, resetSetupAIState } from './SetupOverlay.js';
 
 // ============================================================================
 // DECK BUILDER OVERLAYS
@@ -54,10 +47,7 @@ export {
 // PASS OVERLAY
 // ============================================================================
 
-export {
-  renderPassOverlay,
-  hidePassOverlay,
-} from './PassOverlay.js';
+export { renderPassOverlay, hidePassOverlay } from './PassOverlay.js';
 
 // ============================================================================
 // VICTORY OVERLAY

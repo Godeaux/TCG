@@ -46,7 +46,4 @@ export {
 } from './registry.js';
 
 // Re-export effect library utilities
-export {
-  makeTargetedSelection,
-  handleTargetedResponse,
-} from './effectLibrary.js';
+export { makeTargetedSelection, handleTargetedResponse } from './effectLibrary.js';

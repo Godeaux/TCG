@@ -63,7 +63,12 @@ export const hydrateCardSnapshot = (snapshot, fallbackTurn) => {
   }
   const definition = getCardDefinitionById(snapshot.id);
   if (!definition) {
-    console.error("❌ Failed to find card definition for ID:", snapshot.id, "Full snapshot:", snapshot);
+    console.error(
+      '❌ Failed to find card definition for ID:',
+      snapshot.id,
+      'Full snapshot:',
+      snapshot
+    );
     return null;
   }
   const instance = createCardInstance(
@@ -106,13 +111,20 @@ export const hydrateCardSnapshot = (snapshot, fallbackTurn) => {
  */
 export const hydrateZoneSnapshots = (snapshots, size, fallbackTurn) => {
   if (!Array.isArray(snapshots)) {
-    console.warn("⚠️ hydrateZoneSnapshots: snapshots is not an array:", snapshots);
+    console.warn('⚠️ hydrateZoneSnapshots: snapshots is not an array:', snapshots);
     return size ? Array.from({ length: size }, () => null) : [];
   }
-  console.log("🔄 Hydrating zone with", snapshots.length, "snapshots, size:", size, "fallbackTurn:", fallbackTurn);
-  console.log("  Input snapshots:", snapshots);
+  console.log(
+    '🔄 Hydrating zone with',
+    snapshots.length,
+    'snapshots, size:',
+    size,
+    'fallbackTurn:',
+    fallbackTurn
+  );
+  console.log('  Input snapshots:', snapshots);
   const hydrated = snapshots.map((card) => hydrateCardSnapshot(card, fallbackTurn));
-  console.log("  Hydrated result:", hydrated);
+  console.log('  Hydrated result:', hydrated);
   if (size) {
     const padded = hydrated.slice(0, size);
     while (padded.length < size) {
@@ -158,9 +170,7 @@ export const buildLobbySyncPayload = (state) => ({
   playerProfile: {
     index: getLocalPlayerIndex(state),
     name:
-      state.menu?.profile?.username ??
-      state.players?.[getLocalPlayerIndex(state)]?.name ??
-      null,
+      state.menu?.profile?.username ?? state.players?.[getLocalPlayerIndex(state)]?.name ?? null,
     nameStyle:
       state.menu?.profile?.name_style ??
       state.players?.[getLocalPlayerIndex(state)]?.nameStyle ??
@@ -175,12 +185,8 @@ export const buildLobbySyncPayload = (state) => ({
     extendedConsumption: state.extendedConsumption ? { ...state.extendedConsumption } : null,
     log: Array.isArray(state.log) ? [...state.log] : [],
     visualEffects: Array.isArray(state.visualEffects) ? [...state.visualEffects] : [],
-    pendingTrapDecision: state.pendingTrapDecision
-      ? { ...state.pendingTrapDecision }
-      : null,
-    pendingReaction: state.pendingReaction
-      ? { ...state.pendingReaction }
-      : null,
+    pendingTrapDecision: state.pendingTrapDecision ? { ...state.pendingTrapDecision } : null,
+    pendingReaction: state.pendingReaction ? { ...state.pendingReaction } : null,
     fieldSpell: state.fieldSpell
       ? {
           ownerIndex: state.fieldSpell.ownerIndex,
@@ -238,7 +244,12 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
     console.log('[applySync] SKIPPING - this is our own broadcast (senderId matches profile.id)');
     return;
   }
-  console.log('[applySync] Processing sync from senderId:', senderId, '| our profile.id:', state.menu?.profile?.id);
+  console.log(
+    '[applySync] Processing sync from senderId:',
+    senderId,
+    '| our profile.id:',
+    state.menu?.profile?.id
+  );
 
   const timestamp = payload.timestamp ?? 0;
   if (!state.menu.lastLobbySyncBySender) {
@@ -260,10 +271,10 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
     payloadSelections: payload.deckSelection?.selections,
     currentSelections: state.deckSelection?.selections,
     payloadReadyStatus: payload.deckSelection?.readyStatus,
-    currentReadyStatus: state.deckSelection?.readyStatus
+    currentReadyStatus: state.deckSelection?.readyStatus,
   });
-  const deckSelectionOrder = ["p1", "p1-selected", "p2", "complete"];
-  const deckBuilderOrder = ["p1", "p2", "complete"];
+  const deckSelectionOrder = ['p1', 'p1-selected', 'p2', 'complete'];
+  const deckBuilderOrder = ['p1', 'p2', 'complete'];
   const getStageRank = (order, stage) => {
     const index = order.indexOf(stage);
     return index === -1 ? -1 : index;
@@ -286,8 +297,9 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
       const trapsHasCards = Array.isArray(p.traps) && p.traps.length > 0;
       return handHasCards || fieldHasCards || carrionHasCards || exileHasCards || trapsHasCards;
     }) ?? false;
-  const gameHasStarted = (payload?.game?.turn ?? 1) > 1 || payload?.setup?.stage === "complete";
-  const shouldSkipDeckComplete = skipDeckComplete || forceApply || hasRuntimeState || gameHasStarted;
+  const gameHasStarted = (payload?.game?.turn ?? 1) > 1 || payload?.setup?.stage === 'complete';
+  const shouldSkipDeckComplete =
+    skipDeckComplete || forceApply || hasRuntimeState || gameHasStarted;
 
   if (payload.game) {
     if (payload.game.activePlayerIndex !== undefined && payload.game.activePlayerIndex !== null) {
@@ -334,7 +346,9 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
         }
 
         const isProtectedLocalSnapshot = !forceApply && index === localIndex;
-        console.log(`[SYNC-DEBUG] Player ${index}: protected=${isProtectedLocalSnapshot}, forceApply=${forceApply}, localIndex=${localIndex}, currentHand=${player.hand.length}, payloadHand=${playerSnapshot.hand?.length ?? 'null'}`);
+        console.log(
+          `[SYNC-DEBUG] Player ${index}: protected=${isProtectedLocalSnapshot}, forceApply=${forceApply}, localIndex=${localIndex}, currentHand=${player.hand.length}, payloadHand=${playerSnapshot.hand?.length ?? 'null'}`
+        );
 
         if (playerSnapshot.name) {
           player.name = playerSnapshot.name;
@@ -342,7 +356,7 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
         if (playerSnapshot.nameStyle) {
           player.nameStyle = playerSnapshot.nameStyle;
         }
-        if (typeof playerSnapshot.hp === "number") {
+        if (typeof playerSnapshot.hp === 'number') {
           player.hp = playerSnapshot.hp;
         }
 
@@ -350,19 +364,26 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
         // EXCEPTION: If it's our turn and the incoming hand is larger, accept it
         // This handles draws processed by the opponent during turn transitions
         const isOurTurn = state.activePlayerIndex === localIndex;
-        const incomingHandLarger = Array.isArray(playerSnapshot.hand) && playerSnapshot.hand.length > player.hand.length;
+        const incomingHandLarger =
+          Array.isArray(playerSnapshot.hand) && playerSnapshot.hand.length > player.hand.length;
         const shouldAcceptDraw = isProtectedLocalSnapshot && isOurTurn && incomingHandLarger;
 
         if (shouldAcceptDraw) {
-          console.log(`[SYNC-DEBUG] Player ${index}: ACCEPTING DRAW - our turn and incoming hand larger (${player.hand.length} -> ${playerSnapshot.hand.length})`);
+          console.log(
+            `[SYNC-DEBUG] Player ${index}: ACCEPTING DRAW - our turn and incoming hand larger (${player.hand.length} -> ${playerSnapshot.hand.length})`
+          );
         }
 
         if ((!isProtectedLocalSnapshot || shouldAcceptDraw) && Array.isArray(playerSnapshot.deck)) {
-          console.log(`[SYNC-DEBUG] Player ${index}: MODIFYING deck from ${player.deck.length} to ${playerSnapshot.deck.length}`);
+          console.log(
+            `[SYNC-DEBUG] Player ${index}: MODIFYING deck from ${player.deck.length} to ${playerSnapshot.deck.length}`
+          );
           player.deck = hydrateDeckSnapshots(playerSnapshot.deck);
         }
         if ((!isProtectedLocalSnapshot || shouldAcceptDraw) && Array.isArray(playerSnapshot.hand)) {
-          console.log(`[SYNC-DEBUG] Player ${index}: MODIFYING hand from ${player.hand.length} to ${playerSnapshot.hand.length}`);
+          console.log(
+            `[SYNC-DEBUG] Player ${index}: MODIFYING hand from ${player.hand.length} to ${playerSnapshot.hand.length}`
+          );
           player.hand = hydrateZoneSnapshots(playerSnapshot.hand, null, state.turn);
         }
 
@@ -417,7 +438,7 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
           localSelection,
           incomingSelection: selection,
           shouldProtect,
-          localIndex
+          localIndex,
         });
         if (shouldProtect) {
           console.log(`[applyLobbySyncPayload] PROTECTING local selection at index ${index}`);
@@ -474,7 +495,7 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
 
   // Sync setup state (rolls, winner selection)
   if (payload.setup && state.setup) {
-    const setupOrder = ["rolling", "choice", "complete"];
+    const setupOrder = ['rolling', 'choice', 'complete'];
     if (payload.setup.stage) {
       const incomingRank = getStageRank(setupOrder, payload.setup.stage);
       const currentRank = getStageRank(setupOrder, state.setup.stage);
@@ -483,13 +504,15 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
       }
     }
     if (Array.isArray(payload.setup.rolls)) {
-      console.log("Processing roll sync:", payload.setup.rolls);
+      console.log('Processing roll sync:', payload.setup.rolls);
       payload.setup.rolls.forEach((roll, index) => {
         // If incoming roll is null, do NOT clear existing local rolls.
         // A null in the payload just means the sender didn't know about that roll yet.
         // This prevents race conditions where out-of-order syncs clear valid rolls.
         if (roll === null || roll === undefined) {
-          console.log(`Received null/undefined roll for Player ${index + 1}, preserving local state`);
+          console.log(
+            `Received null/undefined roll for Player ${index + 1}, preserving local state`
+          );
           return;
         }
 
@@ -507,7 +530,9 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
         } else if (existingRoll !== roll) {
           // Both have different values - keep the existing one to prevent overwrites
           // The authoritative state will come from the database or be reconciled via tie logic
-          console.warn(`Roll conflict for Player ${index + 1}: keeping local ${existingRoll}, ignoring remote ${roll}`);
+          console.warn(
+            `Roll conflict for Player ${index + 1}: keeping local ${existingRoll}, ignoring remote ${roll}`
+          );
         }
       });
     }
@@ -532,33 +557,39 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
 export const checkAndRecoverSetupState = (state, options = {}) => {
   const { broadcastFn, saveFn } = options;
 
-  if (!state.setup || state.setup.stage !== "rolling") {
+  if (!state.setup || state.setup.stage !== 'rolling') {
     return false;
   }
 
   // Check if both players have valid rolls but stage is still "rolling"
-  const hasValidRolls = state.setup.rolls.every(roll =>
-    roll !== null && typeof roll === 'number' && roll >= 1 && roll <= 10
+  const hasValidRolls = state.setup.rolls.every(
+    (roll) => roll !== null && typeof roll === 'number' && roll >= 1 && roll <= 10
   );
 
   if (hasValidRolls) {
-    console.warn("Recovery: Both players have rolls but stage is still 'rolling'", state.setup.rolls);
+    console.warn(
+      "Recovery: Both players have rolls but stage is still 'rolling'",
+      state.setup.rolls
+    );
 
     const [p1Roll, p2Roll] = state.setup.rolls;
     if (p1Roll === p2Roll) {
       // Handle tie case
-      logMessage(state, "Tie detected during recovery! Reroll the dice.");
+      logMessage(state, 'Tie detected during recovery! Reroll the dice.');
       state.setup.rolls = [null, null];
     } else {
       // Advance to choice stage
       state.setup.winnerIndex = p1Roll > p2Roll ? 0 : 1;
-      state.setup.stage = "choice";
-      logMessage(state, `Recovery: ${state.players[state.setup.winnerIndex].name} wins the roll and chooses who goes first.`);
+      state.setup.stage = 'choice';
+      logMessage(
+        state,
+        `Recovery: ${state.players[state.setup.winnerIndex].name} wins the roll and chooses who goes first.`
+      );
     }
 
     // Broadcast the recovery if online
-    if (state.menu?.mode === "online" && broadcastFn) {
-      broadcastFn("sync_state", buildLobbySyncPayload(state));
+    if (state.menu?.mode === 'online' && broadcastFn) {
+      broadcastFn('sync_state', buildLobbySyncPayload(state));
       saveFn?.();
     }
 
@@ -566,17 +597,17 @@ export const checkAndRecoverSetupState = (state, options = {}) => {
   }
 
   // Check if rolls have been invalid for too long (stuck state)
-  const hasInvalidRolls = state.setup.rolls.some(roll =>
-    roll !== null && (typeof roll !== 'number' || roll < 1 || roll > 10)
+  const hasInvalidRolls = state.setup.rolls.some(
+    (roll) => roll !== null && (typeof roll !== 'number' || roll < 1 || roll > 10)
   );
 
   if (hasInvalidRolls) {
-    console.warn("Recovery: Invalid rolls detected, resetting", state.setup.rolls);
+    console.warn('Recovery: Invalid rolls detected, resetting', state.setup.rolls);
     state.setup.rolls = [null, null];
 
     // Broadcast the recovery if online
-    if (state.menu?.mode === "online" && broadcastFn) {
-      broadcastFn("sync_state", buildLobbySyncPayload(state));
+    if (state.menu?.mode === 'online' && broadcastFn) {
+      broadcastFn('sync_state', buildLobbySyncPayload(state));
       saveFn?.();
     }
 

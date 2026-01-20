@@ -41,7 +41,10 @@ describe('Amphibian Prey Cards', () => {
     it('onPlay summons 2 Radiated Tree Frog tokens', () => {
       const card = getCardDefinitionById(cardId);
       expect(card.effects.onPlay.type).toBe('summonTokens');
-      expect(card.effects.onPlay.params.tokenIds).toEqual(['token-radiated-tree-frog', 'token-radiated-tree-frog']);
+      expect(card.effects.onPlay.params.tokenIds).toEqual([
+        'token-radiated-tree-frog',
+        'token-radiated-tree-frog',
+      ]);
     });
   });
 
@@ -77,14 +80,10 @@ describe('Amphibian Prey Cards', () => {
       expect(Array.isArray(effects)).toBe(true);
 
       // Should have tutorFromDeck primitive
-      expect(effects).toContainEqual(
-        expect.objectContaining({ type: 'tutorFromDeck' })
-      );
+      expect(effects).toContainEqual(expect.objectContaining({ type: 'tutorFromDeck' }));
 
       // Should have playSpellFromHand primitive
-      expect(effects).toContainEqual(
-        expect.objectContaining({ type: 'playSpellFromHand' })
-      );
+      expect(effects).toContainEqual(expect.objectContaining({ type: 'playSpellFromHand' }));
     });
   });
 
@@ -102,7 +101,10 @@ describe('Amphibian Prey Cards', () => {
     it('onEnd summons 2 Empress Newt tokens', () => {
       const card = getCardDefinitionById(cardId);
       expect(card.effects.onEnd.type).toBe('summonTokens');
-      expect(card.effects.onEnd.params.tokenIds).toEqual(['token-empress-newt', 'token-empress-newt']);
+      expect(card.effects.onEnd.params.tokenIds).toEqual([
+        'token-empress-newt',
+        'token-empress-newt',
+      ]);
     });
   });
 
@@ -128,7 +130,7 @@ describe('Amphibian Prey Cards', () => {
   // ============================================
   // Frost's Toad
   // ============================================
-  describe('Frost\'s Toad', () => {
+  describe("Frost's Toad", () => {
     const cardId = 'amphibian-prey-frosts-toad';
 
     it('onPlay freezes all enemies', () => {
@@ -175,9 +177,7 @@ describe('Amphibian Prey Cards', () => {
       );
 
       // Should have revealHand primitive
-      expect(effects).toContainEqual(
-        expect.objectContaining({ type: 'revealHand' })
-      );
+      expect(effects).toContainEqual(expect.objectContaining({ type: 'revealHand' }));
     });
   });
 
@@ -303,7 +303,7 @@ describe('Amphibian Prey Cards', () => {
   describe('Purple Frog', () => {
     const cardId = 'amphibian-prey-purple-frog';
 
-    it('onPlay deals 2 damage to Rival and Rival\'s creatures', () => {
+    it("onPlay deals 2 damage to Rival and Rival's creatures", () => {
       const card = getCardDefinitionById(cardId);
       const effects = card.effects.onPlay;
 
@@ -364,9 +364,7 @@ describe('Amphibian Prey Cards', () => {
       );
 
       // Should have freezeAllCreatures primitive
-      expect(effects).toContainEqual(
-        expect.objectContaining({ type: 'freezeAllCreatures' })
-      );
+      expect(effects).toContainEqual(expect.objectContaining({ type: 'freezeAllCreatures' }));
     });
   });
 

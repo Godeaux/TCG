@@ -6,7 +6,11 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import { ensureRegistryInitialized, getAllCards, getCardDefinitionById } from '../setup/testHelpers.js';
+import {
+  ensureRegistryInitialized,
+  getAllCards,
+  getCardDefinitionById,
+} from '../setup/testHelpers.js';
 
 beforeAll(() => {
   ensureRegistryInitialized();
@@ -86,47 +90,35 @@ describe('Effect Timing Validation', () => {
   );
 
   describe('Cards mentioning "Slain" have onSlain trigger', () => {
-    it.each(cardsWithSlainText.map((c) => [c.name, c.id]))(
-      '%s (%s)',
-      (name, cardId) => {
-        const card = getCardDefinitionById(cardId);
-        const triggers = getTriggerTypes(card.effects);
-        expect(triggers).toContain('onSlain');
-      }
-    );
+    it.each(cardsWithSlainText.map((c) => [c.name, c.id]))('%s (%s)', (name, cardId) => {
+      const card = getCardDefinitionById(cardId);
+      const triggers = getTriggerTypes(card.effects);
+      expect(triggers).toContain('onSlain');
+    });
   });
 
   describe('Cards mentioning "End of turn" have onEnd trigger', () => {
-    it.each(cardsWithEndOfTurnText.map((c) => [c.name, c.id]))(
-      '%s (%s)',
-      (name, cardId) => {
-        const card = getCardDefinitionById(cardId);
-        const triggers = getTriggerTypes(card.effects);
-        expect(triggers).toContain('onEnd');
-      }
-    );
+    it.each(cardsWithEndOfTurnText.map((c) => [c.name, c.id]))('%s (%s)', (name, cardId) => {
+      const card = getCardDefinitionById(cardId);
+      const triggers = getTriggerTypes(card.effects);
+      expect(triggers).toContain('onEnd');
+    });
   });
 
   describe('Cards mentioning "Start of turn" have onStart trigger', () => {
-    it.each(cardsWithStartOfTurnText.map((c) => [c.name, c.id]))(
-      '%s (%s)',
-      (name, cardId) => {
-        const card = getCardDefinitionById(cardId);
-        const triggers = getTriggerTypes(card.effects);
-        expect(triggers).toContain('onStart');
-      }
-    );
+    it.each(cardsWithStartOfTurnText.map((c) => [c.name, c.id]))('%s (%s)', (name, cardId) => {
+      const card = getCardDefinitionById(cardId);
+      const triggers = getTriggerTypes(card.effects);
+      expect(triggers).toContain('onStart');
+    });
   });
 
   describe('Cards mentioning "Discard:" have discardEffect trigger', () => {
-    it.each(cardsWithDiscardText.map((c) => [c.name, c.id]))(
-      '%s (%s)',
-      (name, cardId) => {
-        const card = getCardDefinitionById(cardId);
-        const triggers = getTriggerTypes(card.effects);
-        expect(triggers).toContain('discardEffect');
-      }
-    );
+    it.each(cardsWithDiscardText.map((c) => [c.name, c.id]))('%s (%s)', (name, cardId) => {
+      const card = getCardDefinitionById(cardId);
+      const triggers = getTriggerTypes(card.effects);
+      expect(triggers).toContain('discardEffect');
+    });
   });
 });
 
@@ -250,10 +242,7 @@ describe('Token Count Validation', () => {
       } else {
         // Check for combined effects that summon
         const combinedSummon = flat.find(
-          (e) =>
-            e.type?.includes('summon') ||
-            e.type?.includes('Summon') ||
-            e.params?.tokenIds
+          (e) => e.type?.includes('summon') || e.type?.includes('Summon') || e.params?.tokenIds
         );
         if (combinedSummon?.params?.tokenIds) {
           expect(combinedSummon.params.tokenIds.length).toBe(expectedCount);
@@ -308,14 +297,11 @@ describe('Specific Effect Validation', () => {
       (c) => c.effectText && /\bnegate (the )?(direct )?attack/i.test(c.effectText)
     );
 
-    it.each(cardsWithNegate.map((c) => [c.name, c.id]))(
-      '%s (%s)',
-      (name, cardId) => {
-        const card = getCardDefinitionById(cardId);
-        const hasNegate = hasEffectTypeMatching(card.effects, /negate/i);
-        expect(hasNegate).toBe(true);
-      }
-    );
+    it.each(cardsWithNegate.map((c) => [c.name, c.id]))('%s (%s)', (name, cardId) => {
+      const card = getCardDefinitionById(cardId);
+      const hasNegate = hasEffectTypeMatching(card.effects, /negate/i);
+      expect(hasNegate).toBe(true);
+    });
   });
 
   describe('Kill target text has kill effect', () => {
@@ -323,23 +309,17 @@ describe('Specific Effect Validation', () => {
       (c) => c.effectText && /\bKill target/i.test(c.effectText)
     );
 
-    it.each(cardsWithKill.map((c) => [c.name, c.id]))(
-      '%s (%s)',
-      (name, cardId) => {
-        const card = getCardDefinitionById(cardId);
-        const flat = flattenEffects(card.effects);
-        const hasKill =
-          hasEffectTypeMatching(card.effects, /kill/i) ||
-          hasEffectTypeMatching(card.effects, /Kill/i) ||
-          hasEffectTypeMatching(card.effects, /destroy/i) ||
-          // Check for selectFromGroup with kill effect
-          flat.some(
-            (e) =>
-              e.type === 'selectFromGroup' && e.params?.effect?.kill === true
-          );
-        expect(hasKill).toBe(true);
-      }
-    );
+    it.each(cardsWithKill.map((c) => [c.name, c.id]))('%s (%s)', (name, cardId) => {
+      const card = getCardDefinitionById(cardId);
+      const flat = flattenEffects(card.effects);
+      const hasKill =
+        hasEffectTypeMatching(card.effects, /kill/i) ||
+        hasEffectTypeMatching(card.effects, /Kill/i) ||
+        hasEffectTypeMatching(card.effects, /destroy/i) ||
+        // Check for selectFromGroup with kill effect
+        flat.some((e) => e.type === 'selectFromGroup' && e.params?.effect?.kill === true);
+      expect(hasKill).toBe(true);
+    });
   });
 
   describe('Freeze text has freeze effect', () => {
@@ -347,24 +327,17 @@ describe('Specific Effect Validation', () => {
       (c) => c.effectText && /\bgains? Frozen/i.test(c.effectText)
     );
 
-    it.each(cardsWithFreeze.map((c) => [c.name, c.id]))(
-      '%s (%s)',
-      (name, cardId) => {
-        const card = getCardDefinitionById(cardId);
-        const flat = flattenEffects(card.effects);
-        const hasFreeze =
-          hasEffectTypeMatching(card.effects, /freeze/i) ||
-          hasEffectTypeMatching(card.effects, /Freeze/i) ||
-          flat.some((e) => e.params?.keyword === 'Frozen') ||
-          // Check for selectFromGroup with keyword effect
-          flat.some(
-            (e) =>
-              e.type === 'selectFromGroup' &&
-              e.params?.effect?.keyword === 'Frozen'
-          );
-        expect(hasFreeze).toBe(true);
-      }
-    );
+    it.each(cardsWithFreeze.map((c) => [c.name, c.id]))('%s (%s)', (name, cardId) => {
+      const card = getCardDefinitionById(cardId);
+      const flat = flattenEffects(card.effects);
+      const hasFreeze =
+        hasEffectTypeMatching(card.effects, /freeze/i) ||
+        hasEffectTypeMatching(card.effects, /Freeze/i) ||
+        flat.some((e) => e.params?.keyword === 'Frozen') ||
+        // Check for selectFromGroup with keyword effect
+        flat.some((e) => e.type === 'selectFromGroup' && e.params?.effect?.keyword === 'Frozen');
+      expect(hasFreeze).toBe(true);
+    });
   });
 
   describe('Revive text has revive effect', () => {
@@ -372,16 +345,13 @@ describe('Specific Effect Validation', () => {
       (c) => c.effectText && /\brevive/i.test(c.effectText)
     );
 
-    it.each(cardsWithRevive.map((c) => [c.name, c.id]))(
-      '%s (%s)',
-      (name, cardId) => {
-        const card = getCardDefinitionById(cardId);
-        const hasRevive =
-          hasEffectTypeMatching(card.effects, /revive/i) ||
-          hasEffectTypeMatching(card.effects, /regen/i);
-        expect(hasRevive).toBe(true);
-      }
-    );
+    it.each(cardsWithRevive.map((c) => [c.name, c.id]))('%s (%s)', (name, cardId) => {
+      const card = getCardDefinitionById(cardId);
+      const hasRevive =
+        hasEffectTypeMatching(card.effects, /revive/i) ||
+        hasEffectTypeMatching(card.effects, /regen/i);
+      expect(hasRevive).toBe(true);
+    });
   });
 });
 
@@ -409,31 +379,24 @@ describe('Regen Effect Validation', () => {
   });
 
   describe('Targeted regen has selectFromGroup effect', () => {
-    it.each(cardsWithTargetedRegen.map((c) => [c.name, c.id]))(
-      '%s (%s)',
-      (name, cardId) => {
-        const card = getCardDefinitionById(cardId);
-        const flat = flattenEffects(card.effects);
+    it.each(cardsWithTargetedRegen.map((c) => [c.name, c.id]))('%s (%s)', (name, cardId) => {
+      const card = getCardDefinitionById(cardId);
+      const flat = flattenEffects(card.effects);
 
-        // Should have selectFromGroup with regen effect
-        const hasTargetedRegen = flat.some(
-          (e) =>
-            e.type === 'selectFromGroup' && e.params?.effect?.regen === true
-        );
-        expect(hasTargetedRegen).toBe(true);
-      }
-    );
+      // Should have selectFromGroup with regen effect
+      const hasTargetedRegen = flat.some(
+        (e) => e.type === 'selectFromGroup' && e.params?.effect?.regen === true
+      );
+      expect(hasTargetedRegen).toBe(true);
+    });
   });
 
   describe('Self regen has regenSelf effect', () => {
-    it.each(cardsWithSelfRegen.map((c) => [c.name, c.id]))(
-      '%s (%s)',
-      (name, cardId) => {
-        const card = getCardDefinitionById(cardId);
-        const hasSelfRegen = hasEffectType(card.effects, 'regenSelf');
-        expect(hasSelfRegen).toBe(true);
-      }
-    );
+    it.each(cardsWithSelfRegen.map((c) => [c.name, c.id]))('%s (%s)', (name, cardId) => {
+      const card = getCardDefinitionById(cardId);
+      const hasSelfRegen = hasEffectType(card.effects, 'regenSelf');
+      expect(hasSelfRegen).toBe(true);
+    });
   });
 });
 
@@ -442,19 +405,14 @@ describe('Regen Effect Validation', () => {
 // ============================================
 
 describe('Canine Howl Validation', () => {
-  const cardsWithHowl = getAllCards().filter(
-    (c) => c.effectText && /\bHowl:/i.test(c.effectText)
-  );
+  const cardsWithHowl = getAllCards().filter((c) => c.effectText && /\bHowl:/i.test(c.effectText));
 
   describe('Cards with Howl text have howl effect', () => {
-    it.each(cardsWithHowl.map((c) => [c.name, c.id]))(
-      '%s (%s)',
-      (name, cardId) => {
-        const card = getCardDefinitionById(cardId);
-        const hasHowl = hasEffectType(card.effects, 'howl');
-        expect(hasHowl).toBe(true);
-      }
-    );
+    it.each(cardsWithHowl.map((c) => [c.name, c.id]))('%s (%s)', (name, cardId) => {
+      const card = getCardDefinitionById(cardId);
+      const hasHowl = hasEffectType(card.effects, 'howl');
+      expect(hasHowl).toBe(true);
+    });
   });
 });
 
@@ -498,9 +456,7 @@ describe('Damage Effect Validation', () => {
 
       // Also check for compound effects that include damage
       const hasDamageInType = flat.some(
-        (e) =>
-          e.type?.toLowerCase().includes('damage') ||
-          e.type?.toLowerCase().includes('attack')
+        (e) => e.type?.toLowerCase().includes('damage') || e.type?.toLowerCase().includes('attack')
       );
 
       // Verify we have damage effects
@@ -510,10 +466,7 @@ describe('Damage Effect Validation', () => {
       // For each expected amount, verify it exists somewhere
       for (const expectedAmount of expectedAmounts) {
         const hasMatchingAmount = damageEffects.some((e) => {
-          const amount =
-            e.params?.amount ||
-            e.params?.damage ||
-            e.params?.effect?.damage;
+          const amount = e.params?.amount || e.params?.damage || e.params?.effect?.damage;
           // Allow dynamic amounts or exact matches
           return typeof amount !== 'number' || amount === expectedAmount;
         });
@@ -595,11 +548,7 @@ describe('Stat Buff Validation', () => {
         const hp = buff.health ?? buff.hp ?? buff.hpBuff;
 
         // Allow if values match or if using dynamic/compound effects
-        return (
-          (atk === expectedAtk && hp === expectedHp) ||
-          atk === undefined ||
-          hp === undefined
-        );
+        return (atk === expectedAtk && hp === expectedHp) || atk === undefined || hp === undefined;
       });
 
       // Pass if we found a matching buff or have compound/dynamic effects
@@ -629,10 +578,7 @@ describe('Combat Timing Validation (Non-Trap Cards)', () => {
   );
 
   const cardsWithAfterCombat = getAllCards().filter(
-    (c) =>
-      c.effectText &&
-      /\bAfter combat[,:;]/i.test(c.effectText) &&
-      c.type !== 'Trap'
+    (c) => c.effectText && /\bAfter combat[,:;]/i.test(c.effectText) && c.type !== 'Trap'
   );
 
   const cardsWithDefending = getAllCards().filter(
@@ -644,61 +590,46 @@ describe('Combat Timing Validation (Non-Trap Cards)', () => {
   );
 
   const cardsWithWhenAttacked = getAllCards().filter(
-    (c) =>
-      c.effectText &&
-      /\bWhen attacked[,:;]/i.test(c.effectText) &&
-      c.type !== 'Trap'
+    (c) => c.effectText && /\bWhen attacked[,:;]/i.test(c.effectText) && c.type !== 'Trap'
   );
 
   describe('Cards mentioning "Before combat" have onBeforeCombat trigger', () => {
-    it.each(cardsWithBeforeCombat.map((c) => [c.name, c.id]))(
-      '%s (%s)',
-      (name, cardId) => {
-        const card = getCardDefinitionById(cardId);
-        const triggers = getTriggerTypes(card.effects);
-        // Could be onBeforeCombat, onDefend, or onAttack depending on context
-        const hasValidTrigger =
-          triggers.includes('onBeforeCombat') ||
-          triggers.includes('onDefend') ||
-          triggers.includes('onAttack');
-        expect(hasValidTrigger).toBe(true);
-      }
-    );
+    it.each(cardsWithBeforeCombat.map((c) => [c.name, c.id]))('%s (%s)', (name, cardId) => {
+      const card = getCardDefinitionById(cardId);
+      const triggers = getTriggerTypes(card.effects);
+      // Could be onBeforeCombat, onDefend, or onAttack depending on context
+      const hasValidTrigger =
+        triggers.includes('onBeforeCombat') ||
+        triggers.includes('onDefend') ||
+        triggers.includes('onAttack');
+      expect(hasValidTrigger).toBe(true);
+    });
   });
 
   describe('Cards mentioning "After combat" have onAfterCombat trigger', () => {
-    it.each(cardsWithAfterCombat.map((c) => [c.name, c.id]))(
-      '%s (%s)',
-      (name, cardId) => {
-        const card = getCardDefinitionById(cardId);
-        const triggers = getTriggerTypes(card.effects);
-        expect(triggers).toContain('onAfterCombat');
-      }
-    );
+    it.each(cardsWithAfterCombat.map((c) => [c.name, c.id]))('%s (%s)', (name, cardId) => {
+      const card = getCardDefinitionById(cardId);
+      const triggers = getTriggerTypes(card.effects);
+      expect(triggers).toContain('onAfterCombat');
+    });
   });
 
   describe('Cards mentioning "Defending" have onDefend trigger', () => {
-    it.each(cardsWithDefending.map((c) => [c.name, c.id]))(
-      '%s (%s)',
-      (name, cardId) => {
-        const card = getCardDefinitionById(cardId);
-        const triggers = getTriggerTypes(card.effects);
-        expect(triggers).toContain('onDefend');
-      }
-    );
+    it.each(cardsWithDefending.map((c) => [c.name, c.id]))('%s (%s)', (name, cardId) => {
+      const card = getCardDefinitionById(cardId);
+      const triggers = getTriggerTypes(card.effects);
+      expect(triggers).toContain('onDefend');
+    });
   });
 
   // Only run if there are matching non-trap cards
   if (cardsWithWhenAttacked.length > 0) {
     describe('Cards mentioning "When attacked" have onAttacked trigger', () => {
-      it.each(cardsWithWhenAttacked.map((c) => [c.name, c.id]))(
-        '%s (%s)',
-        (name, cardId) => {
-          const card = getCardDefinitionById(cardId);
-          const triggers = getTriggerTypes(card.effects);
-          expect(triggers).toContain('onAttacked');
-        }
-      );
+      it.each(cardsWithWhenAttacked.map((c) => [c.name, c.id]))('%s (%s)', (name, cardId) => {
+        const card = getCardDefinitionById(cardId);
+        const triggers = getTriggerTypes(card.effects);
+        expect(triggers).toContain('onAttacked');
+      });
     });
   }
 });
@@ -725,9 +656,7 @@ describe('Keyword Grant Validation', () => {
   const cardsWithKeywordGrant = getAllCards().filter(
     (c) =>
       c.effectText &&
-      grantableKeywords.some((kw) =>
-        new RegExp(`\\bgains? ${kw}\\b`, 'i').test(c.effectText)
-      ) &&
+      grantableKeywords.some((kw) => new RegExp(`\\bgains? ${kw}\\b`, 'i').test(c.effectText)) &&
       c.effects &&
       c.type !== 'Trap' &&
       !c.isToken &&
@@ -751,30 +680,14 @@ describe('Keyword Grant Validation', () => {
         // Check for keyword grant effect
         const hasKeywordGrant =
           // Direct keyword grant effects
-          flat.some(
-            (e) =>
-              e.type === 'grantKeyword' && e.params?.keyword === keyword
-          ) ||
-          flat.some(
-            (e) =>
-              e.type === 'addKeyword' && e.params?.keyword === keyword
-          ) ||
+          flat.some((e) => e.type === 'grantKeyword' && e.params?.keyword === keyword) ||
+          flat.some((e) => e.type === 'addKeyword' && e.params?.keyword === keyword) ||
           // selectFromGroup with keyword effect
-          flat.some(
-            (e) =>
-              e.type === 'selectFromGroup' &&
-              e.params?.effect?.keyword === keyword
-          ) ||
+          flat.some((e) => e.type === 'selectFromGroup' && e.params?.effect?.keyword === keyword) ||
           // selectPredatorForKeyword, selectCreatureForKeyword, etc.
-          flat.some(
-            (e) =>
-              e.type?.includes('ForKeyword') && e.params?.keyword === keyword
-          ) ||
+          flat.some((e) => e.type?.includes('ForKeyword') && e.params?.keyword === keyword) ||
           // grantAllFriendlyCaninesKeyword, grantAllCreaturesKeyword, etc.
-          flat.some(
-            (e) =>
-              e.type?.includes('Keyword') && e.params?.keyword === keyword
-          ) ||
+          flat.some((e) => e.type?.includes('Keyword') && e.params?.keyword === keyword) ||
           // Compound effects that include the keyword in the type name
           flat.some((e) => e.type?.includes(keyword)) ||
           // Effect type that mentions the keyword
@@ -793,26 +706,21 @@ describe('Keyword Grant Validation', () => {
 describe('Consume Trigger Validation', () => {
   // Since effectText is now generated from effects, Predator cards don't have "When consumed:" prefix
   // (it's implicit for predators). We validate that cards with onConsume have proper effects.
-  const cardsWithOnConsume = getAllCards().filter(
-    (c) => c.effects && c.effects.onConsume
-  );
+  const cardsWithOnConsume = getAllCards().filter((c) => c.effects && c.effects.onConsume);
 
   describe('Cards with onConsume trigger have valid effects', () => {
-    it.each(cardsWithOnConsume.map((c) => [c.name, c.id]))(
-      '%s (%s)',
-      (name, cardId) => {
-        const card = getCardDefinitionById(cardId);
-        expect(card.effects.onConsume).toBeDefined();
-        // Verify the effect has a type
-        const effect = card.effects.onConsume;
-        if (Array.isArray(effect)) {
-          expect(effect.length).toBeGreaterThan(0);
-          expect(effect[0].type).toBeDefined();
-        } else {
-          expect(effect.type).toBeDefined();
-        }
+    it.each(cardsWithOnConsume.map((c) => [c.name, c.id]))('%s (%s)', (name, cardId) => {
+      const card = getCardDefinitionById(cardId);
+      expect(card.effects.onConsume).toBeDefined();
+      // Verify the effect has a type
+      const effect = card.effects.onConsume;
+      if (Array.isArray(effect)) {
+        expect(effect.length).toBeGreaterThan(0);
+        expect(effect[0].type).toBeDefined();
+      } else {
+        expect(effect.type).toBeDefined();
       }
-    );
+    });
   });
 });
 
@@ -853,21 +761,16 @@ describe('Trap Card Validation', () => {
   });
 
   describe('All traps have effects object with effect key', () => {
-    it.each(allTraps.map((c) => [c.name, c.id]))(
-      '%s (%s)',
-      (name, cardId) => {
-        const card = getCardDefinitionById(cardId);
-        expect(card.effects).toBeDefined();
-        expect(card.effects.effect).toBeDefined();
-      }
-    );
+    it.each(allTraps.map((c) => [c.name, c.id]))('%s (%s)', (name, cardId) => {
+      const card = getCardDefinitionById(cardId);
+      expect(card.effects).toBeDefined();
+      expect(card.effects.effect).toBeDefined();
+    });
   });
 
   // Trap trigger validation - filter by trigger property directly
   // Since effectText is now generated from effects, we validate trigger-based behavior
-  const trapsWithDefending = allTraps.filter(
-    (c) => c.trigger === 'defending'
-  );
+  const trapsWithDefending = allTraps.filter((c) => c.trigger === 'defending');
 
   const trapsWithSlain = allTraps.filter(
     (c) => c.trigger === 'slain' || c.trigger === 'creatureSlain'
@@ -880,15 +783,13 @@ describe('Trap Card Validation', () => {
   const trapsWithDirectAttack = allTraps.filter(
     (c) =>
       c.effectText &&
-      (/\bdirect attack\b/i.test(c.effectText) ||
-        /\battacks directly\b/i.test(c.effectText))
+      (/\bdirect attack\b/i.test(c.effectText) || /\battacks directly\b/i.test(c.effectText))
   );
 
   const trapsWithLifeZero = allTraps.filter(
     (c) =>
       c.effectText &&
-      (/\bwhen life is 0\b/i.test(c.effectText) ||
-        /\blife.*reaches? 0\b/i.test(c.effectText))
+      (/\bwhen life is 0\b/i.test(c.effectText) || /\blife.*reaches? 0\b/i.test(c.effectText))
   );
 
   describe('Traps mentioning "defending" have defending trigger', () => {

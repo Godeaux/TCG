@@ -72,22 +72,30 @@ export const getLocalPlayerIndex = (state) => {
   const lobby = state.menu?.lobby;
   if (lobby) {
     if (lobby.host_id === profileId) {
-      console.log('[getLocalPlayerIndex] Matched as HOST (index 0)', { profileId, host_id: lobby.host_id });
+      console.log('[getLocalPlayerIndex] Matched as HOST (index 0)', {
+        profileId,
+        host_id: lobby.host_id,
+      });
       return 0;
     }
     if (lobby.guest_id === profileId) {
-      console.log('[getLocalPlayerIndex] Matched as GUEST (index 1)', { profileId, guest_id: lobby.guest_id });
+      console.log('[getLocalPlayerIndex] Matched as GUEST (index 1)', {
+        profileId,
+        guest_id: lobby.guest_id,
+      });
       return 1;
     }
-    console.log('[getLocalPlayerIndex] No lobby match!', { profileId, host_id: lobby.host_id, guest_id: lobby.guest_id });
+    console.log('[getLocalPlayerIndex] No lobby match!', {
+      profileId,
+      host_id: lobby.host_id,
+      guest_id: lobby.guest_id,
+    });
   } else {
     console.log('[getLocalPlayerIndex] No lobby object in state');
   }
 
   // Fallback: Match by player profileId (if set)
-  const matchingIndex = state.players.findIndex(
-    (player) => player.profileId === profileId
-  );
+  const matchingIndex = state.players.findIndex((player) => player.profileId === profileId);
   console.log('[getLocalPlayerIndex] Fallback result:', matchingIndex);
   return matchingIndex >= 0 ? matchingIndex : 0;
 };
@@ -138,7 +146,7 @@ export const isLocalPlayersTurn = (state) => {
     return state.activePlayerIndex === 0;
   }
   // Online mode: check if it's the local player's turn
-  if (state.menu?.mode === "online") {
+  if (state.menu?.mode === 'online') {
     return state.activePlayerIndex === getLocalPlayerIndex(state);
   }
   // Local mode (hot-seat): always the local player's turn
@@ -160,21 +168,21 @@ export const isPhase = (state, phaseName) => {
  * Check if game is in setup phase
  */
 export const isSetupPhase = (state) => {
-  return state.phase === "Setup";
+  return state.phase === 'Setup';
 };
 
 /**
  * Check if setup is complete
  */
 export const isSetupComplete = (state) => {
-  return state.setup?.stage === "complete";
+  return state.setup?.stage === 'complete';
 };
 
 /**
  * Check if game is in a main phase (where cards can be played)
  */
 export const isMainPhase = (state) => {
-  return state.phase === "Main 1" || state.phase === "Main 2";
+  return state.phase === 'Main 1' || state.phase === 'Main 2';
 };
 
 /**
@@ -188,14 +196,14 @@ export const canPlayCards = (state) => {
  * Check if game is in combat phase
  */
 export const isCombatPhase = (state) => {
-  return state.phase === "Combat";
+  return state.phase === 'Combat';
 };
 
 /**
  * Check if game is in before combat phase
  */
 export const isBeforeCombatPhase = (state) => {
-  return state.phase === "Before Combat";
+  return state.phase === 'Before Combat';
 };
 
 /**
@@ -222,7 +230,7 @@ export const wasCardPlayedThisTurn = (state) => {
  */
 export const canPlayAnotherCard = (state, card) => {
   // Free Play cards don't count toward limit
-  if (card?.keywords?.includes("Free Play")) {
+  if (card?.keywords?.includes('Free Play')) {
     return true;
   }
 
@@ -238,7 +246,7 @@ export const canPlayAnotherCard = (state, card) => {
  * Get all creatures on a player's field
  */
 export const getPlayerCreatures = (state, playerIndex) => {
-  return state.players[playerIndex].field.filter(card => card !== null);
+  return state.players[playerIndex].field.filter((card) => card !== null);
 };
 
 /**
@@ -277,7 +285,7 @@ export const getAvailableFieldSlots = (state, playerIndex) => {
   const field = state.players[playerIndex].field;
   return field
     .map((card, index) => (card === null ? index : null))
-    .filter(index => index !== null);
+    .filter((index) => index !== null);
 };
 
 // ============================================================================
@@ -441,35 +449,35 @@ export const hasPendingSelection = (uiState) => {
  * Check if deck builder is open
  */
 export const isDeckBuilderOpen = (state) => {
-  return state.menu?.stage === "catalog" || state.catalogBuilder?.stage !== null;
+  return state.menu?.stage === 'catalog' || state.catalogBuilder?.stage !== null;
 };
 
 /**
  * Check if in online multiplayer mode
  */
 export const isOnlineMode = (state) => {
-  return state.menu?.mode === "online";
+  return state.menu?.mode === 'online';
 };
 
 /**
  * Check if in local multiplayer mode
  */
 export const isLocalMode = (state) => {
-  return state.menu?.mode === "local";
+  return state.menu?.mode === 'local';
 };
 
 /**
  * Check if in AI (singleplayer) mode
  */
 export const isAIMode = (state) => {
-  return state.menu?.mode === "ai";
+  return state.menu?.mode === 'ai';
 };
 
 /**
  * Check if in AI vs AI (spectator) mode
  */
 export const isAIvsAIMode = (state) => {
-  return state.menu?.mode === "aiVsAi";
+  return state.menu?.mode === 'aiVsAi';
 };
 
 /**
@@ -484,9 +492,7 @@ export const isAnyAIMode = (state) => {
  */
 export const isGameReady = (state) => {
   return (
-    isSetupComplete(state) &&
-    state.players[0].deck.length > 0 &&
-    state.players[1].deck.length > 0
+    isSetupComplete(state) && state.players[0].deck.length > 0 && state.players[1].deck.length > 0
   );
 };
 
@@ -519,12 +525,12 @@ export const hasCreatureAttacked = (creature) => {
  * Get all creatures that can attack for a player
  */
 export const getAttackableCreatures = (state, playerIndex) => {
-  return getPlayerCreatures(state, playerIndex).filter(creature => {
+  return getPlayerCreatures(state, playerIndex).filter((creature) => {
     // Must not have attacked already
     if (hasCreatureAttacked(creature)) return false;
 
     // Check for Haste keyword or summoning exhaustion
-    const hasHaste = creature.keywords?.includes("Haste");
+    const hasHaste = creature.keywords?.includes('Haste');
     const summonedThisTurn = creature.summonedTurn === state.turn;
 
     // Can attack if has Haste OR wasn't summoned this turn
@@ -549,17 +555,20 @@ export const canCardBePlayed = (state, card, playerIndex) => {
   // - Free Spell and Trap types completely bypass the limit
   // - Free Play keyword cards require the limit to be available,
   //   UNLESS it's a predator with prey to consume
-  const isTrulyFree = card.type === "Free Spell" || card.type === "Trap";
+  const isTrulyFree = card.type === 'Free Spell' || card.type === 'Trap';
   const hasFreePlayKeyword = isFreePlay(card);
 
   if (!isTrulyFree && wasCardPlayedThisTurn(state)) {
     // Card limit already used - check if Free Play predator can consume prey
-    if (hasFreePlayKeyword && card.type === "Predator") {
+    if (hasFreePlayKeyword && card.type === 'Predator') {
       // Check if there's prey to consume (which allows bypassing the limit)
       const player = state.players[playerIndex];
-      const hasConsumablePrey = player?.field.some(c =>
-        c && !c.frozen && !isInedible(c) &&
-        (c.type === 'Prey' || (c.type === 'Predator' && isEdible(c)))
+      const hasConsumablePrey = player?.field.some(
+        (c) =>
+          c &&
+          !c.frozen &&
+          !isInedible(c) &&
+          (c.type === 'Prey' || (c.type === 'Predator' && isEdible(c)))
       );
       if (!hasConsumablePrey) {
         return false; // No prey to consume, can't play
@@ -571,7 +580,7 @@ export const canCardBePlayed = (state, card, playerIndex) => {
   }
 
   // Creatures need field space
-  if (card.type === "Predator" || card.type === "Prey") {
+  if (card.type === 'Predator' || card.type === 'Prey') {
     if (isFieldFull(state, playerIndex)) {
       return false;
     }
@@ -602,13 +611,12 @@ export const getCreaturesThatCanAttack = (state, playerIndex) => {
     if (creature.paralyzed) return false;
 
     // Check keywords that prevent attacking
-    const isPassive = creature.keywords?.includes("Passive");
-    const isHarmless =
-      creature.keywords?.includes("Harmless") || creature.attack === 0;
+    const isPassive = creature.keywords?.includes('Passive');
+    const isHarmless = creature.keywords?.includes('Harmless') || creature.attack === 0;
     if (isPassive || isHarmless) return false;
 
     // Check summoning sickness (unless Haste)
-    const hasHaste = creature.keywords?.includes("Haste");
+    const hasHaste = creature.keywords?.includes('Haste');
     const summonedThisTurn = creature.summonedTurn === state.turn;
     if (!hasHaste && summonedThisTurn) return false;
 
@@ -640,14 +648,15 @@ export const canConsumeAnyPrey = (state, playerIndex) => {
   if (!player) return false;
 
   // Get all predators on field that aren't frozen
-  const predators = player.field.filter(
-    (c) => c && c.type === 'Predator' && !c.frozen
-  );
+  const predators = player.field.filter((c) => c && c.type === 'Predator' && !c.frozen);
   if (predators.length === 0) return false;
 
   // Get all consumable creatures on field (Prey or Edible Predators, not frozen, not inedible)
   const consumableCreatures = player.field.filter(
-    (c) => c && !c.frozen && !isInedible(c) &&
+    (c) =>
+      c &&
+      !c.frozen &&
+      !isInedible(c) &&
       (c.type === 'Prey' || (c.type === 'Predator' && isEdible(c)))
   );
   if (consumableCreatures.length === 0) return false;

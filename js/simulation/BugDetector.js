@@ -14,7 +14,12 @@
  * - Rich bug reports with context and fix suggestions
  */
 
-import { createSnapshot, diffSnapshots, getAllInstanceIds, getTotalCardCount } from './stateSnapshot.js';
+import {
+  createSnapshot,
+  diffSnapshots,
+  getAllInstanceIds,
+  getTotalCardCount,
+} from './stateSnapshot.js';
 import { runAllInvariantChecks, checkDryDropKeywords } from './invariantChecks.js';
 import * as BugRegistry from './BugRegistry.js';
 // Effect validators removed - they re-implemented game logic which violated
@@ -29,13 +34,13 @@ import * as BugRegistry from './BugRegistry.js';
  * Bug categories for classification
  */
 export const BUG_CATEGORIES = {
-  STATE_CORRUPTION: 'state_corruption',     // Invalid game state (zombies, duplicates)
-  EFFECT_FAILURE: 'effect_failure',         // Effect didn't produce expected result
-  RULE_VIOLATION: 'rule_violation',         // Game rules were broken (summoning sickness)
-  KEYWORD_VIOLATION: 'keyword_violation',   // Keyword not respected (Lure, Barrier)
-  CARD_CONSERVATION: 'card_conservation',   // Cards appeared/disappeared unexpectedly
-  COMBAT_ERROR: 'combat_error',             // Combat didn't resolve correctly
-  TRAP_ERROR: 'trap_error',                 // Trap didn't work correctly
+  STATE_CORRUPTION: 'state_corruption', // Invalid game state (zombies, duplicates)
+  EFFECT_FAILURE: 'effect_failure', // Effect didn't produce expected result
+  RULE_VIOLATION: 'rule_violation', // Game rules were broken (summoning sickness)
+  KEYWORD_VIOLATION: 'keyword_violation', // Keyword not respected (Lure, Barrier)
+  CARD_CONSERVATION: 'card_conservation', // Cards appeared/disappeared unexpectedly
+  COMBAT_ERROR: 'combat_error', // Combat didn't resolve correctly
+  TRAP_ERROR: 'trap_error', // Trap didn't work correctly
 };
 
 /**
@@ -160,16 +165,32 @@ export const createBugReport = (bug, context = {}) => {
 const categorizeBug = (type) => {
   if (!type) return BUG_CATEGORIES.STATE_CORRUPTION;
 
-  if (type.includes('zombie') || type.includes('duplicate') || type.includes('bounds') || type.includes('slot')) {
+  if (
+    type.includes('zombie') ||
+    type.includes('duplicate') ||
+    type.includes('bounds') ||
+    type.includes('slot')
+  ) {
     return BUG_CATEGORIES.STATE_CORRUPTION;
   }
-  if (type.includes('onPlay') || type.includes('onConsume') || type.includes('draw') || type.includes('buff')) {
+  if (
+    type.includes('onPlay') ||
+    type.includes('onConsume') ||
+    type.includes('draw') ||
+    type.includes('buff')
+  ) {
     return BUG_CATEGORIES.EFFECT_FAILURE;
   }
   if (type.includes('summoning') || type.includes('dry_drop')) {
     return BUG_CATEGORIES.RULE_VIOLATION;
   }
-  if (type.includes('barrier') || type.includes('lure') || type.includes('frozen') || type.includes('hidden') || type.includes('passive')) {
+  if (
+    type.includes('barrier') ||
+    type.includes('lure') ||
+    type.includes('frozen') ||
+    type.includes('hidden') ||
+    type.includes('passive')
+  ) {
     return BUG_CATEGORIES.KEYWORD_VIOLATION;
   }
   if (type.includes('card_count') || type.includes('conservation')) {
@@ -209,13 +230,17 @@ const createStateDiff = (before, after) => {
       summary.push(`${playerName} deck: ${pDiff.deckSize.before} -> ${pDiff.deckSize.after} cards`);
     }
     if (pDiff.fieldCount) {
-      summary.push(`${playerName} field: ${pDiff.fieldCount.before} -> ${pDiff.fieldCount.after} creatures`);
+      summary.push(
+        `${playerName} field: ${pDiff.fieldCount.before} -> ${pDiff.fieldCount.after} creatures`
+      );
     }
     if (pDiff.carrionSize) {
-      summary.push(`${playerName} carrion: ${pDiff.carrionSize.before} -> ${pDiff.carrionSize.after} cards`);
+      summary.push(
+        `${playerName} carrion: ${pDiff.carrionSize.before} -> ${pDiff.carrionSize.after} cards`
+      );
     }
     if (pDiff.creatureChanges) {
-      pDiff.creatureChanges.forEach(c => {
+      pDiff.creatureChanges.forEach((c) => {
         const changes = [];
         if (c.hp) changes.push(`HP ${c.hp.before}->${c.hp.after}`);
         if (c.atk) changes.push(`ATK ${c.atk.before}->${c.atk.after}`);
@@ -280,7 +305,7 @@ const summarizeContext = (context) => {
   if (context.card) summary.card = context.card.name;
   if (context.predator) summary.predator = context.predator.name;
   if (context.consumedPrey) {
-    summary.consumedPrey = context.consumedPrey.map(p => p.name);
+    summary.consumedPrey = context.consumedPrey.map((p) => p.name);
   }
   if (context.playerIndex !== undefined) summary.playerIndex = context.playerIndex;
   if (context.attacker) summary.attacker = context.attacker.name;
@@ -322,7 +347,7 @@ export const formatBugReport = (report) => {
   // State diff
   if (report.stateDiff?.changes?.length > 0) {
     lines.push(`-- State Changes --`);
-    report.stateDiff.changes.forEach(change => {
+    report.stateDiff.changes.forEach((change) => {
       lines.push(`  *${change}`);
     });
     lines.push(``);
@@ -343,7 +368,7 @@ export const formatBugReport = (report) => {
     lines.push(`Hint: ${report.fixSuggestion.hint}`);
     if (report.fixSuggestion.files?.length > 0) {
       lines.push(`Check files:`);
-      report.fixSuggestion.files.forEach(file => {
+      report.fixSuggestion.files.forEach((file) => {
         lines.push(`  -> ${file}`);
       });
     }
@@ -432,7 +457,7 @@ export class BugDetector {
    */
   enableSimulationMode() {
     this.simulationMode = true;
-    console.log('[BugDetector] Simulation mode enabled - bugs recorded but won\'t pause');
+    console.log("[BugDetector] Simulation mode enabled - bugs recorded but won't pause");
   }
 
   /**
@@ -560,9 +585,10 @@ export class BugDetector {
       case 'PLAY_CREATURE':
         return `Play creature ${context?.card?.name || payload?.card?.name || ''}`;
       case 'PLAY_PREDATOR':
-        return `Play predator ${context?.predator?.name || payload?.card?.name || ''} (${context?.consumedPrey?.length ? 'consuming ' + context.consumedPrey.map(p => p.name).join(', ') : 'dry drop'})`;
+        return `Play predator ${context?.predator?.name || payload?.card?.name || ''} (${context?.consumedPrey?.length ? 'consuming ' + context.consumedPrey.map((p) => p.name).join(', ') : 'dry drop'})`;
       case 'DECLARE_ATTACK':
-        const targetName = payload?.target?.type === 'player' ? 'player' : payload?.target?.card?.name;
+        const targetName =
+          payload?.target?.type === 'player' ? 'player' : payload?.target?.card?.name;
         return `${payload?.attacker?.name || 'creature'} attacks ${targetName || 'target'}`;
       case 'ACTIVATE_TRAP':
         return `Activate trap ${payload?.trap?.name || ''}`;
@@ -669,16 +695,18 @@ export class BugDetector {
     // logged directly in resolveCardEffect() for debugging.
 
     // Create rich bug reports
-    const bugReports = bugs.map(bug => createBugReport(bug, {
-      before,
-      after,
-      action,
-      actionContext: this.actionContext,
-      actionHistory: this.actionHistory,
-      turn: after?.turn,
-      phase: after?.phase,
-      activePlayer: after?.activePlayerIndex,
-    }));
+    const bugReports = bugs.map((bug) =>
+      createBugReport(bug, {
+        before,
+        after,
+        action,
+        actionContext: this.actionContext,
+        actionHistory: this.actionHistory,
+        turn: after?.turn,
+        phase: after?.phase,
+        activePlayer: after?.activePlayerIndex,
+      })
+    );
 
     // Clear snapshot and context
     this.beforeSnapshot = null;
@@ -722,13 +750,13 @@ export class BugDetector {
     }
 
     // Token summoning adds cards
-    if (this.expectedEffects.some(e =>
-      e.effect?.type === 'summonTokens' ||
-      e.effect?.type === 'createToken'
-    )) {
-      const tokenEffect = this.expectedEffects.find(e =>
-        e.effect?.type === 'summonTokens' ||
-        e.effect?.type === 'createToken'
+    if (
+      this.expectedEffects.some(
+        (e) => e.effect?.type === 'summonTokens' || e.effect?.type === 'createToken'
+      )
+    ) {
+      const tokenEffect = this.expectedEffects.find(
+        (e) => e.effect?.type === 'summonTokens' || e.effect?.type === 'createToken'
       );
       if (tokenEffect?.effect?.params?.tokenIds) {
         expectedChange += tokenEffect.effect.params.tokenIds.length;
@@ -768,7 +796,7 @@ export class BugDetector {
 
     // Update statistics
     this.stats.bugsFound += bugReports.length;
-    bugReports.forEach(report => {
+    bugReports.forEach((report) => {
       // By category
       this.stats.bugsByCategory[report.category] =
         (this.stats.bugsByCategory[report.category] || 0) + 1;
@@ -791,16 +819,21 @@ export class BugDetector {
           activePlayer: report.gameContext?.activePlayer,
         };
 
-        const record = await BugRegistry.recordBug({
-          type: report.type,
-          severity: report.severity,
-          message: report.message,
-          details: report.details,
-          category: report.category,
-        }, context);
+        const record = await BugRegistry.recordBug(
+          {
+            type: report.type,
+            severity: report.severity,
+            message: report.message,
+            details: report.details,
+            category: report.category,
+          },
+          context
+        );
 
         // Log occurrence count
-        console.log(`[BugDetector] Bug "${report.type}" recorded (occurrence #${record.occurrenceCount})`);
+        console.log(
+          `[BugDetector] Bug "${report.type}" recorded (occurrence #${record.occurrenceCount})`
+        );
 
         // Add occurrence count to report for display
         report.occurrenceCount = record.occurrenceCount;
@@ -811,7 +844,7 @@ export class BugDetector {
     });
 
     // Log each bug to game chat with rich info
-    bugReports.forEach(report => {
+    bugReports.forEach((report) => {
       // Log main message with occurrence count if available
       const countSuffix = report.occurrenceCount ? ` (x${report.occurrenceCount})` : '';
       this.logBug(state, report.message + countSuffix);
@@ -891,9 +924,10 @@ export class BugDetector {
     return {
       ...this.stats,
       runtime: this.stats.startTime ? Date.now() - this.stats.startTime : 0,
-      bugsPerAction: this.stats.actionsChecked > 0
-        ? (this.stats.bugsFound / this.stats.actionsChecked).toFixed(4)
-        : 0,
+      bugsPerAction:
+        this.stats.actionsChecked > 0
+          ? (this.stats.bugsFound / this.stats.actionsChecked).toFixed(4)
+          : 0,
     };
   }
 
@@ -937,9 +971,9 @@ export class BugDetector {
     if (this.bugsDetected.length > 0) {
       lines.push(``);
       lines.push(`UNIQUE BUG TYPES:`);
-      const uniqueTypes = [...new Set(this.bugsDetected.map(b => b.type))];
-      uniqueTypes.forEach(type => {
-        const count = this.bugsDetected.filter(b => b.type === type).length;
+      const uniqueTypes = [...new Set(this.bugsDetected.map((b) => b.type))];
+      uniqueTypes.forEach((type) => {
+        const count = this.bugsDetected.filter((b) => b.type === type).length;
         lines.push(`  *${type}: ${count}x`);
       });
     }
@@ -951,12 +985,16 @@ export class BugDetector {
    * Export bugs as JSON for external analysis
    */
   exportBugsAsJSON() {
-    return JSON.stringify({
-      stats: this.getStats(),
-      bugs: this.bugsDetected,
-      actionHistory: this.actionHistory,
-      exportedAt: new Date().toISOString(),
-    }, null, 2);
+    return JSON.stringify(
+      {
+        stats: this.getStats(),
+        bugs: this.bugsDetected,
+        actionHistory: this.actionHistory,
+        exportedAt: new Date().toISOString(),
+      },
+      null,
+      2
+    );
   }
 }
 

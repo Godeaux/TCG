@@ -1,59 +1,61 @@
 export const KEYWORDS = {
-  HASTE: "Haste",
-  FREE_PLAY: "Free Play",
-  HIDDEN: "Hidden",
-  LURE: "Lure",
-  INVISIBLE: "Invisible",
-  PASSIVE: "Passive",
-  BARRIER: "Barrier",
-  ACUITY: "Acuity",
-  IMMUNE: "Immune",
-  EDIBLE: "Edible",
-  INEDIBLE: "Inedible",
-  SCAVENGE: "Scavenge",
-  NEUROTOXIC: "Neurotoxic",
-  NEUROTOXINED: "Neurotoxined",  // Status: affected by neurotoxin, will die
-  AMBUSH: "Ambush",
-  TOXIC: "Toxic",
-  POISONOUS: "Poisonous",
-  HARMLESS: "Harmless",
-  FROZEN: "Frozen",
+  HASTE: 'Haste',
+  FREE_PLAY: 'Free Play',
+  HIDDEN: 'Hidden',
+  LURE: 'Lure',
+  INVISIBLE: 'Invisible',
+  PASSIVE: 'Passive',
+  BARRIER: 'Barrier',
+  ACUITY: 'Acuity',
+  IMMUNE: 'Immune',
+  EDIBLE: 'Edible',
+  INEDIBLE: 'Inedible',
+  SCAVENGE: 'Scavenge',
+  NEUROTOXIC: 'Neurotoxic',
+  NEUROTOXINED: 'Neurotoxined', // Status: affected by neurotoxin, will die
+  AMBUSH: 'Ambush',
+  TOXIC: 'Toxic',
+  POISONOUS: 'Poisonous',
+  HARMLESS: 'Harmless',
+  FROZEN: 'Frozen',
   // Canine keywords (Experimental)
-  PACK: "Pack",
-  HOWL: "Howl",
+  PACK: 'Pack',
+  HOWL: 'Howl',
   // Arachnid keywords (Experimental)
-  WEB: "Web",
-  WEBBED: "Webbed",
-  VENOM: "Venom",
+  WEB: 'Web',
+  WEBBED: 'Webbed',
+  VENOM: 'Venom',
 };
 
 export const KEYWORD_DESCRIPTIONS = {
-  [KEYWORDS.HASTE]: "Can attack the Rival directly on the turn it is played.",
-  [KEYWORDS.FREE_PLAY]: "Does not count toward the one-card-per-turn limit.",
-  [KEYWORDS.HIDDEN]: "Cannot be targeted by attacks, but can be targeted by spells.",
+  [KEYWORDS.HASTE]: 'Can attack the Rival directly on the turn it is played.',
+  [KEYWORDS.FREE_PLAY]: 'Does not count toward the one-card-per-turn limit.',
+  [KEYWORDS.HIDDEN]: 'Cannot be targeted by attacks, but can be targeted by spells.',
   [KEYWORDS.LURE]: "Rival's creatures must attack this creature if able.",
-  [KEYWORDS.INVISIBLE]: "Cannot be targeted by attacks or spells.",
-  [KEYWORDS.PASSIVE]: "Cannot attack but can still defend and be consumed.",
-  [KEYWORDS.BARRIER]: "Negates the first instance of damage taken.",
-  [KEYWORDS.ACUITY]: "Can target Hidden and Invisible creatures.",
-  [KEYWORDS.IMMUNE]: "Only takes damage from direct creature attacks.",
-  [KEYWORDS.EDIBLE]: "Can be consumed as prey; nutrition equals its ATK.",
-  [KEYWORDS.INEDIBLE]: "Cannot be consumed.",
-  [KEYWORDS.SCAVENGE]: "May consume from the carrion pile when played.",
-  [KEYWORDS.NEUROTOXIC]: "Combat damage freezes the target until it dies next turn.",
-  [KEYWORDS.NEUROTOXINED]: "This creature has been poisoned and will die at the end of its owner's turn.",
-  [KEYWORDS.AMBUSH]: "When attacking, cannot be dealt combat damage.",
-  [KEYWORDS.TOXIC]: "Kills any creature it damages in combat regardless of HP.",
-  [KEYWORDS.POISONOUS]: "When defending, kills the attacker after combat.",
-  [KEYWORDS.HARMLESS]: "Cannot attack (0 attack permanently).",
-  [KEYWORDS.FROZEN]: "Cannot attack or be consumed. Thaws at the end of the creature-owning player's turn.",
+  [KEYWORDS.INVISIBLE]: 'Cannot be targeted by attacks or spells.',
+  [KEYWORDS.PASSIVE]: 'Cannot attack but can still defend and be consumed.',
+  [KEYWORDS.BARRIER]: 'Negates the first instance of damage taken.',
+  [KEYWORDS.ACUITY]: 'Can target Hidden and Invisible creatures.',
+  [KEYWORDS.IMMUNE]: 'Only takes damage from direct creature attacks.',
+  [KEYWORDS.EDIBLE]: 'Can be consumed as prey; nutrition equals its ATK.',
+  [KEYWORDS.INEDIBLE]: 'Cannot be consumed.',
+  [KEYWORDS.SCAVENGE]: 'May consume from the carrion pile when played.',
+  [KEYWORDS.NEUROTOXIC]: 'Combat damage freezes the target until it dies next turn.',
+  [KEYWORDS.NEUROTOXINED]:
+    "This creature has been poisoned and will die at the end of its owner's turn.",
+  [KEYWORDS.AMBUSH]: 'When attacking, cannot be dealt combat damage.',
+  [KEYWORDS.TOXIC]: 'Kills any creature it damages in combat regardless of HP.',
+  [KEYWORDS.POISONOUS]: 'When defending, kills the attacker after combat.',
+  [KEYWORDS.HARMLESS]: 'Cannot attack (0 attack permanently).',
+  [KEYWORDS.FROZEN]:
+    "Cannot attack or be consumed. Thaws at the end of the creature-owning player's turn.",
   // Canine keywords (Experimental)
-  [KEYWORDS.PACK]: "Gains +1 ATK for each other Canine you control.",
-  [KEYWORDS.HOWL]: "On play, triggers a Howl effect that buffs all Canines until end of turn.",
+  [KEYWORDS.PACK]: 'Gains +1 ATK for each other Canine you control.',
+  [KEYWORDS.HOWL]: 'On play, triggers a Howl effect that buffs all Canines until end of turn.',
   // Arachnid keywords (Experimental)
-  [KEYWORDS.WEB]: "Can apply Webbed status to enemy creatures.",
-  [KEYWORDS.WEBBED]: "Cannot attack. Status persists until the creature takes damage.",
-  [KEYWORDS.VENOM]: "At end of turn, deals damage to each Webbed enemy creature.",
+  [KEYWORDS.WEB]: 'Can apply Webbed status to enemy creatures.',
+  [KEYWORDS.WEBBED]: 'Cannot attack. Status persists until the creature takes damage.',
+  [KEYWORDS.VENOM]: 'At end of turn, deals damage to each Webbed enemy creature.',
 };
 
 /**
@@ -63,7 +65,7 @@ export const KEYWORD_DESCRIPTIONS = {
 export const areAbilitiesActive = (card) => {
   if (!card) return false;
   // Dry-dropped predators lose all keyword abilities
-  if (card.type === "Predator" && card.dryDropped === true) {
+  if (card.type === 'Predator' && card.dryDropped === true) {
     return false;
   }
   return true;
@@ -133,7 +135,7 @@ export const calculatePackBonus = (creature, state, ownerIndex) => {
   for (const card of field) {
     if (!card || card.instanceId === creature.instanceId) continue;
     // Count cards with tribe "Canine" that have active abilities
-    if (card.tribe === "Canine" && areAbilitiesActive(card)) {
+    if (card.tribe === 'Canine' && areAbilitiesActive(card)) {
       otherCanines++;
     }
   }
@@ -169,8 +171,8 @@ export const hasWebbed = (card) => hasKeyword(card, KEYWORDS.WEBBED);
 export const getVenomValue = (card) => {
   if (!areAbilitiesActive(card) || !card.keywords) return 0;
   for (const kw of card.keywords) {
-    if (typeof kw === "string" && kw.startsWith("Venom")) {
-      const parts = kw.split(" ");
+    if (typeof kw === 'string' && kw.startsWith('Venom')) {
+      const parts = kw.split(' ');
       return parts.length > 1 ? parseInt(parts[1], 10) : 1;
     }
   }

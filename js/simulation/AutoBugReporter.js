@@ -55,7 +55,9 @@ const submitAutomatedBugReport = async (bugRecord) => {
 
       if (error) throw error;
 
-      console.log(`[AutoBugReporter] Updated bug ${existing.id} (${bugRecord.occurrenceCount} occurrences)`);
+      console.log(
+        `[AutoBugReporter] Updated bug ${existing.id} (${bugRecord.occurrenceCount} occurrences)`
+      );
       return data;
     } else {
       // Create new bug report
@@ -76,7 +78,9 @@ const submitAutomatedBugReport = async (bugRecord) => {
       if (error) {
         // If insert fails due to null profile_id, try alternative approach
         if (error.message?.includes('profile_id') || error.code === '23502') {
-          console.warn('[AutoBugReporter] Cannot create bug without profile. Storing locally only.');
+          console.warn(
+            '[AutoBugReporter] Cannot create bug without profile. Storing locally only.'
+          );
           return null;
         }
         throw error;
@@ -124,9 +128,7 @@ const findBugByFingerprint = async (fingerprint) => {
  */
 const formatBugTitle = (bugRecord) => {
   // Format: "[AUTO:fingerprint] Human-readable type"
-  const readableType = bugRecord.type
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, c => c.toUpperCase());
+  const readableType = bugRecord.type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
   return `[AUTO:${bugRecord.fingerprint}] ${readableType}`;
 };
@@ -220,7 +222,7 @@ export const syncBugsToCloud = async () => {
 
     // Filter to significant bugs only
     const significantBugs = unsyncedBugs.filter(
-      bug => bug.occurrenceCount >= MIN_OCCURRENCES_TO_SYNC
+      (bug) => bug.occurrenceCount >= MIN_OCCURRENCES_TO_SYNC
     );
 
     console.log(`[AutoBugReporter] Syncing ${significantBugs.length} bugs to cloud`);
@@ -236,7 +238,7 @@ export const syncBugsToCloud = async () => {
       }
 
       // Small delay between submissions to avoid rate limits
-      await new Promise(r => setTimeout(r, 100));
+      await new Promise((r) => setTimeout(r, 100));
     }
 
     console.log(`[AutoBugReporter] Sync complete: ${synced} synced, ${failed} failed`);
@@ -318,14 +320,14 @@ export const reportBugImmediately = async (bugRecord) => {
  */
 export const getSyncStatus = async () => {
   const allBugs = await BugRegistry.getAllBugs();
-  const unsynced = allBugs.filter(b => !b.syncedToCloud);
-  const synced = allBugs.filter(b => b.syncedToCloud);
+  const unsynced = allBugs.filter((b) => !b.syncedToCloud);
+  const synced = allBugs.filter((b) => b.syncedToCloud);
 
   return {
     totalBugs: allBugs.length,
     syncedCount: synced.length,
     unsyncedCount: unsynced.length,
-    pendingSync: unsynced.filter(b => b.occurrenceCount >= MIN_OCCURRENCES_TO_SYNC).length,
+    pendingSync: unsynced.filter((b) => b.occurrenceCount >= MIN_OCCURRENCES_TO_SYNC).length,
     autoSyncRunning: isAutoSyncRunning(),
     isSyncing,
   };

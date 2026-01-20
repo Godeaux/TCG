@@ -68,7 +68,12 @@ describe('Mammal Cards', () => {
 
         // When token is instantiated, frozen property should be set
         const state = createTestState();
-        const { creature: tokenInstance } = createTestCreature('token-arctic-ground-squirrel', 0, 0, state);
+        const { creature: tokenInstance } = createTestCreature(
+          'token-arctic-ground-squirrel',
+          0,
+          0,
+          state
+        );
         expect(tokenInstance.frozen).toBe(true);
         expect(tokenInstance.keywords).toContain('Frozen');
       });
@@ -77,7 +82,12 @@ describe('Mammal Cards', () => {
         const { getCreaturesThatCanAttack } = await import('../../../js/state/selectors.js');
 
         const state = createTestState();
-        const { creature: tokenInstance } = createTestCreature('token-arctic-ground-squirrel', 0, 0, state);
+        const { creature: tokenInstance } = createTestCreature(
+          'token-arctic-ground-squirrel',
+          0,
+          0,
+          state
+        );
 
         // Frozen tokens should not be able to attack
         const attackers = getCreaturesThatCanAttack(state, 0);
@@ -262,13 +272,13 @@ describe('Mammal Cards', () => {
   // Mammal Predator Cards
   // ============================================
   describe('Mammal Predator Cards', () => {
-    const predators = mammalCards.filter(c => c.type === 'Predator');
+    const predators = mammalCards.filter((c) => c.type === 'Predator');
 
     it('should have predator cards', () => {
       expect(predators.length).toBeGreaterThan(0);
     });
 
-    predators.forEach(pred => {
+    predators.forEach((pred) => {
       it(`${pred.name} is a valid Predator`, () => {
         expect(pred.type).toBe('Predator');
         expect(pred.atk).toBeGreaterThan(0);
@@ -281,7 +291,7 @@ describe('Mammal Cards', () => {
   // Mammal Spell Cards
   // ============================================
   describe('Mammal Spell Cards', () => {
-    const spells = mammalCards.filter(c => c.type === 'Spell' || c.type === 'Free Spell');
+    const spells = mammalCards.filter((c) => c.type === 'Spell' || c.type === 'Free Spell');
 
     it('should have spell cards', () => {
       expect(spells.length).toBeGreaterThanOrEqual(0);
@@ -292,13 +302,13 @@ describe('Mammal Cards', () => {
   // Mammal Trap Cards
   // ============================================
   describe('Mammal Trap Cards', () => {
-    const traps = mammalCards.filter(c => c.type === 'Trap');
+    const traps = mammalCards.filter((c) => c.type === 'Trap');
 
     it('should have trap cards', () => {
       expect(traps.length).toBeGreaterThanOrEqual(0);
     });
 
-    traps.forEach(trap => {
+    traps.forEach((trap) => {
       it(`${trap.name} has a valid trigger`, () => {
         expect(trap.trigger).toBeDefined();
       });

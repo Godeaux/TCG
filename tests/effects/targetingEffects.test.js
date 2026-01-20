@@ -151,9 +151,7 @@ describe('Select Target For Damage Effect', () => {
     const result = damageFn(context);
 
     // Find the rival target
-    const rivalCandidate = result.selectTarget.candidates.find(
-      (c) => c.value.type === 'player'
-    );
+    const rivalCandidate = result.selectTarget.candidates.find((c) => c.value.type === 'player');
     const selectionResult = result.selectTarget.onSelect(rivalCandidate.value);
 
     expect(selectionResult.damageOpponent).toBe(3);

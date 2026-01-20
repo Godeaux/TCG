@@ -5,7 +5,11 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createTestState, createTestCreature, getCardDefinitionById } from '../setup/testHelpers.js';
+import {
+  createTestState,
+  createTestCreature,
+  getCardDefinitionById,
+} from '../setup/testHelpers.js';
 import { createEffectContext } from '../setup/mockFactory.js';
 import { createCardInstance } from '../../js/cardTypes.js';
 
@@ -96,7 +100,7 @@ describe('Bird Feeder Field Spell', () => {
       }
 
       // Bird Feeder should be in the queue
-      expect(queue.some(item => item.name === 'Bird Feeder')).toBe(true);
+      expect(queue.some((item) => item.name === 'Bird Feeder')).toBe(true);
     });
 
     it('field spell is NOT in queue when opponent is active', () => {
@@ -123,7 +127,7 @@ describe('Bird Feeder Field Spell', () => {
       }
 
       // Bird Feeder should NOT be in the queue (wrong owner)
-      expect(queue.some(item => item.name === 'Bird Feeder')).toBe(false);
+      expect(queue.some((item) => item.name === 'Bird Feeder')).toBe(false);
     });
   });
 });
@@ -163,16 +167,14 @@ describe('Snake Nest Field Spell - No Duplicate Triggers', () => {
     // BUT only if it's not already in the queue
     const fieldSpell = state.fieldSpell;
     if (fieldSpell?.card?.effects?.onEnd && fieldSpell.ownerIndex === state.activePlayerIndex) {
-      const alreadyInQueue = queue.some(
-        (c) => c?.instanceId === fieldSpell.card.instanceId
-      );
+      const alreadyInQueue = queue.some((c) => c?.instanceId === fieldSpell.card.instanceId);
       if (!alreadyInQueue) {
         queue.push(fieldSpell.card);
       }
     }
 
     // Snake Nest should appear EXACTLY ONCE in the queue (not twice)
-    const snakeNestCount = queue.filter(item => item.name === 'Snake Nest').length;
+    const snakeNestCount = queue.filter((item) => item.name === 'Snake Nest').length;
     expect(snakeNestCount).toBe(1);
   });
 
@@ -198,16 +200,14 @@ describe('Snake Nest Field Spell - No Duplicate Triggers', () => {
     // Include field spell if it has onEnd effect and is owned by active player
     const fieldSpell = state.fieldSpell;
     if (fieldSpell?.card?.effects?.onEnd && fieldSpell.ownerIndex === state.activePlayerIndex) {
-      const alreadyInQueue = queue.some(
-        (c) => c?.instanceId === fieldSpell.card.instanceId
-      );
+      const alreadyInQueue = queue.some((c) => c?.instanceId === fieldSpell.card.instanceId);
       if (!alreadyInQueue) {
         queue.push(fieldSpell.card);
       }
     }
 
     // Snake Nest should appear EXACTLY ONCE in the queue
-    const snakeNestCount = queue.filter(item => item.name === 'Snake Nest').length;
+    const snakeNestCount = queue.filter((item) => item.name === 'Snake Nest').length;
     expect(snakeNestCount).toBe(1);
   });
 });
@@ -331,8 +331,18 @@ describe('selectCreatureForBuff Effect', () => {
   });
 
   it('excludes Invisible creatures from candidates', async () => {
-    const { creature: visibleCreature } = createTestCreature('fish-prey-atlantic-flying-fish', 0, 0, state);
-    const { creature: invisibleCreature } = createTestCreature('fish-prey-golden-dorado', 0, 1, state);
+    const { creature: visibleCreature } = createTestCreature(
+      'fish-prey-atlantic-flying-fish',
+      0,
+      0,
+      state
+    );
+    const { creature: invisibleCreature } = createTestCreature(
+      'fish-prey-golden-dorado',
+      0,
+      1,
+      state
+    );
     invisibleCreature.keywords = ['Invisible'];
 
     const { selectCreatureForBuff } = await import('../../js/cards/effectLibrary.js');

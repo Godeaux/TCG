@@ -362,9 +362,7 @@ describe('Force Opponent Discard Effect', () => {
 
   beforeEach(() => {
     state = createTestState();
-    state.players[1].hand = [
-      { id: 'card-1', instanceId: 'inst-1', name: 'Card 1' },
-    ];
+    state.players[1].hand = [{ id: 'card-1', instanceId: 'inst-1', name: 'Card 1' }];
     context = createEffectContext(state, 0);
   });
 

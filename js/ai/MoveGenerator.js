@@ -133,7 +133,11 @@ export class MoveGenerator {
     for (const slot of emptySlots) {
       // Normal play (with consumption)
       const normalPaths = this.selectionEnumerator.enumerateCardPlaySelections(
-        state, card, slot, playerIndex, { dryDrop: false }
+        state,
+        card,
+        slot,
+        playerIndex,
+        { dryDrop: false }
       );
 
       for (const path of normalPaths) {
@@ -145,14 +149,18 @@ export class MoveGenerator {
             dryDrop: false,
             isFree,
             selections: path.selections,
-            resultingState: path.resultingState
+            resultingState: path.resultingState,
           });
         }
       }
 
       // Dry drop option (without consumption)
       const dryDropPaths = this.selectionEnumerator.enumerateCardPlaySelections(
-        state, card, slot, playerIndex, { dryDrop: true }
+        state,
+        card,
+        slot,
+        playerIndex,
+        { dryDrop: true }
       );
 
       for (const path of dryDropPaths) {
@@ -164,7 +172,7 @@ export class MoveGenerator {
             dryDrop: true,
             isFree,
             selections: path.selections,
-            resultingState: path.resultingState
+            resultingState: path.resultingState,
           });
         }
       }
@@ -187,7 +195,11 @@ export class MoveGenerator {
 
     // Spells don't need a slot (pass null)
     const paths = this.selectionEnumerator.enumerateCardPlaySelections(
-      state, card, null, playerIndex, { dryDrop: false }
+      state,
+      card,
+      null,
+      playerIndex,
+      { dryDrop: false }
     );
 
     for (const path of paths) {
@@ -199,7 +211,7 @@ export class MoveGenerator {
           dryDrop: false,
           isFree,
           selections: path.selections,
-          resultingState: path.resultingState
+          resultingState: path.resultingState,
         });
       }
     }
@@ -220,15 +232,15 @@ export class MoveGenerator {
     const opponent = state.players[1 - playerIndex];
 
     // Find creatures that can attack
-    const attackers = player.field.filter(c => this.canAttack(c, state));
+    const attackers = player.field.filter((c) => this.canAttack(c, state));
 
     if (attackers.length === 0) {
       return moves;
     }
 
     // Find Lure creatures (must be attacked first)
-    const lureCreatures = opponent.field.filter(c =>
-      c && hasKeyword(c, KEYWORDS.LURE) && !c.hidden
+    const lureCreatures = opponent.field.filter(
+      (c) => c && hasKeyword(c, KEYWORDS.LURE) && !c.hidden
     );
 
     for (const attacker of attackers) {
@@ -240,9 +252,7 @@ export class MoveGenerator {
         validCreatureTargets = lureCreatures;
       } else {
         // Can attack any non-hidden creature
-        validCreatureTargets = opponent.field.filter(c =>
-          c && !c.hidden && c.currentHp > 0
-        );
+        validCreatureTargets = opponent.field.filter((c) => c && !c.hidden && c.currentHp > 0);
       }
 
       // Generate attack moves against creatures
@@ -254,8 +264,8 @@ export class MoveGenerator {
           target: {
             type: 'creature',
             instanceId: defender.instanceId,
-            card: defender
-          }
+            card: defender,
+          },
         });
       }
 
@@ -265,7 +275,7 @@ export class MoveGenerator {
           type: 'ATTACK',
           attackerInstanceId: attacker.instanceId,
           attacker,
-          target: { type: 'player' }
+          target: { type: 'player' },
         });
       }
     }
@@ -401,9 +411,10 @@ export class MoveGenerator {
       const cardName = move.card?.name || 'Unknown';
       const slotInfo = move.slot !== null ? ` in slot ${move.slot}` : '';
       const dryDrop = move.dryDrop ? ' (dry drop)' : '';
-      const selections = move.selections?.length > 0
-        ? ` [${this.selectionEnumerator.describeSelectionPath(move.selections)}]`
-        : '';
+      const selections =
+        move.selections?.length > 0
+          ? ` [${this.selectionEnumerator.describeSelectionPath(move.selections)}]`
+          : '';
       return `Play ${cardName}${slotInfo}${dryDrop}${selections}`;
     }
 

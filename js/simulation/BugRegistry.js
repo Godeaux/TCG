@@ -71,7 +71,7 @@ const isStructuralBug = (bugType) => {
 const hashString = (str) => {
   let hash = 5381;
   for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) + hash) + str.charCodeAt(i);
+    hash = (hash << 5) + hash + str.charCodeAt(i);
     hash = hash & hash; // Convert to 32-bit integer
   }
   // Convert to positive hex string
@@ -88,10 +88,10 @@ const extractCardIdentifier = (bugDetails) => {
 
   // Try various fields where card info might be
   const possibleFields = [
-    bugDetails.creature,      // Most common - creature name
-    bugDetails.card,          // Generic card reference
-    bugDetails.attacker,      // Combat bugs
-    bugDetails.target,        // Target of action
+    bugDetails.creature, // Most common - creature name
+    bugDetails.card, // Generic card reference
+    bugDetails.attacker, // Combat bugs
+    bugDetails.target, // Target of action
     bugDetails.cardName,
   ];
 
@@ -166,11 +166,9 @@ export const describeFingerprintComponents = (bug, context = {}) => {
 
   // For structural bugs, only type + card matter
   if (isStructuralBug(bugType)) {
-    return [
-      `Type: ${bugType}`,
-      `Card: ${cardId}`,
-      `(structural - action/phase ignored)`,
-    ].join(', ');
+    return [`Type: ${bugType}`, `Card: ${cardId}`, `(structural - action/phase ignored)`].join(
+      ', '
+    );
   }
 
   // For behavioral bugs, include action context
@@ -333,7 +331,7 @@ export const getBugStats = async () => {
 
   // Group by category
   const byCategory = {};
-  all.forEach(bug => {
+  all.forEach((bug) => {
     const cat = bug.category || 'other';
     if (!byCategory[cat]) {
       byCategory[cat] = { count: 0, occurrences: 0 };
@@ -344,7 +342,7 @@ export const getBugStats = async () => {
 
   // Group by severity
   const bySeverity = { critical: 0, high: 0, medium: 0, low: 0 };
-  all.forEach(bug => {
+  all.forEach((bug) => {
     const sev = bug.severity || 'medium';
     bySeverity[sev] = (bySeverity[sev] || 0) + bug.occurrenceCount;
   });

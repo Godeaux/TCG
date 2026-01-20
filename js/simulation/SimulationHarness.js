@@ -227,7 +227,9 @@ export const onGameEnded = async (state) => {
 
   simulationState.onStatsUpdate?.(getSessionSummary());
 
-  console.log(`[SimHarness] Game ${simulationState.gamesCompleted} ended: winner=${winner}, turns=${turns}`);
+  console.log(
+    `[SimHarness] Game ${simulationState.gamesCompleted} ended: winner=${winner}, turns=${turns}`
+  );
 
   // Check if we should continue
   if (shouldContinue()) {
@@ -340,9 +342,7 @@ export const getStatus = () => ({
   sessionId: simulationState.sessionId,
   gamesCompleted: simulationState.gamesCompleted,
   gamesTarget: simulationState.gamesTarget,
-  runtime: simulationState.startTime
-    ? Date.now() - simulationState.startTime
-    : 0,
+  runtime: simulationState.startTime ? Date.now() - simulationState.startTime : 0,
 });
 
 /**
@@ -350,17 +350,15 @@ export const getStatus = () => ({
  * @returns {Object}
  */
 export const getSessionSummary = () => {
-  const runtime = simulationState.startTime
-    ? Date.now() - simulationState.startTime
-    : 0;
+  const runtime = simulationState.startTime ? Date.now() - simulationState.startTime : 0;
 
-  const avgTurns = simulationState.gamesCompleted > 0
-    ? Math.round(simulationState.sessionStats.totalTurns / simulationState.gamesCompleted)
-    : 0;
+  const avgTurns =
+    simulationState.gamesCompleted > 0
+      ? Math.round(simulationState.sessionStats.totalTurns / simulationState.gamesCompleted)
+      : 0;
 
-  const gamesPerHour = runtime > 0
-    ? Math.round((simulationState.gamesCompleted / runtime) * 3600000)
-    : 0;
+  const gamesPerHour =
+    runtime > 0 ? Math.round((simulationState.gamesCompleted / runtime) * 3600000) : 0;
 
   return {
     sessionId: simulationState.sessionId,
@@ -378,16 +376,20 @@ export const getSessionSummary = () => {
     wins: {
       player0: simulationState.sessionStats.wins[0],
       player1: simulationState.sessionStats.wins[1],
-      winRate0: simulationState.gamesCompleted > 0
-        ? Math.round((simulationState.sessionStats.wins[0] / simulationState.gamesCompleted) * 100)
-        : 0,
+      winRate0:
+        simulationState.gamesCompleted > 0
+          ? Math.round(
+              (simulationState.sessionStats.wins[0] / simulationState.gamesCompleted) * 100
+            )
+          : 0,
     },
 
     // Game length stats
     averageTurns: avgTurns,
-    fastestGame: simulationState.sessionStats.fastestGame === Infinity
-      ? 0
-      : simulationState.sessionStats.fastestGame,
+    fastestGame:
+      simulationState.sessionStats.fastestGame === Infinity
+        ? 0
+        : simulationState.sessionStats.fastestGame,
     longestGame: simulationState.sessionStats.longestGame,
 
     // Bug stats
@@ -460,7 +462,7 @@ export const connectToBugDetector = () => {
       originalHandleBugs(bugs, state);
 
       // Also record in simulation system
-      bugs.forEach(bug => {
+      bugs.forEach((bug) => {
         onBugDetected(bug, {
           phase: state.phase,
           turn: state.turn,

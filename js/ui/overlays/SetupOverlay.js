@@ -10,7 +10,11 @@
  * - Handles choice phase (winner picks who goes first)
  */
 
-import { buildLobbySyncPayload, sendLobbyBroadcast, saveGameStateToDatabase } from '../../network/index.js';
+import {
+  buildLobbySyncPayload,
+  sendLobbyBroadcast,
+  saveGameStateToDatabase,
+} from '../../network/index.js';
 import { getLocalPlayerIndex, isAIMode, isAIvsAIMode, isAnyAIMode } from '../../state/selectors.js';
 
 // Track if AI auto-actions are pending (to prevent double-triggering)
@@ -21,7 +25,7 @@ let aiChoicePending = false;
  * Reset AI pending flags (call when restarting a game)
  */
 export const resetSetupAIState = () => {
-  console.log("[SetupOverlay] Resetting AI pending flags");
+  console.log('[SetupOverlay] Resetting AI pending flags');
   aiRollPending = false;
   aiChoicePending = false;
 };
@@ -31,11 +35,11 @@ export const resetSetupAIState = () => {
 // ============================================================================
 
 const getSetupElements = () => ({
-  overlay: document.getElementById("setup-overlay"),
-  title: document.getElementById("setup-title"),
-  subtitle: document.getElementById("setup-subtitle"),
-  rolls: document.getElementById("setup-rolls"),
-  actions: document.getElementById("setup-actions"),
+  overlay: document.getElementById('setup-overlay'),
+  title: document.getElementById('setup-title'),
+  subtitle: document.getElementById('setup-subtitle'),
+  rolls: document.getElementById('setup-rolls'),
+  actions: document.getElementById('setup-actions'),
 });
 
 // ============================================================================
@@ -47,14 +51,14 @@ const getSetupElements = () => ({
  */
 const clearPanel = (panel) => {
   if (!panel) return;
-  panel.innerHTML = "";
+  panel.innerHTML = '';
 };
 
 /**
  * Check if deck selection is complete
  */
 const isDeckSelectionComplete = (state) => {
-  return state.deckSelection?.stage === "complete";
+  return state.deckSelection?.stage === 'complete';
 };
 
 // ============================================================================
@@ -69,21 +73,21 @@ const renderRollingPhase = (state, elements, callbacks) => {
 
   // Display current rolls
   clearPanel(rolls);
-  const rollSummary = document.createElement("div");
-  rollSummary.className = "setup-roll-summary";
+  const rollSummary = document.createElement('div');
+  rollSummary.className = 'setup-roll-summary';
   const p1Roll = state.setup.rolls[0];
   const p2Roll = state.setup.rolls[1];
-  const p1Name = state.players[0]?.name || "Player 1";
-  const p2Name = state.players[1]?.name || "Player 2";
+  const p1Name = state.players[0]?.name || 'Player 1';
+  const p2Name = state.players[1]?.name || 'Player 2';
   rollSummary.innerHTML = `
-    <div>${p1Name} roll: <strong>${p1Roll ?? "-"}</strong></div>
-    <div>${p2Name} roll: <strong>${p2Roll ?? "-"}</strong></div>
+    <div>${p1Name} roll: <strong>${p1Roll ?? '-'}</strong></div>
+    <div>${p2Name} roll: <strong>${p2Roll ?? '-'}</strong></div>
   `;
   rolls.appendChild(rollSummary);
 
   // Reset aiRollPending if we need to re-roll (tie was detected and rolls were reset)
   if (isAIvsAIMode(state) && p1Roll === null && p2Roll === null && aiRollPending) {
-    console.log("[AI vs AI] Tie detected, resetting aiRollPending for reroll");
+    console.log('[AI vs AI] Tie detected, resetting aiRollPending for reroll');
     aiRollPending = false;
   }
 
@@ -95,8 +99,8 @@ const renderRollingPhase = (state, elements, callbacks) => {
     // Roll for player 0 if needed
     if (state.setup.rolls[0] === null) {
       setTimeout(() => {
-        if (state.setup?.stage === "rolling" && state.setup.rolls[0] === null) {
-          console.log("[AI vs AI] Auto-rolling for AI player 0");
+        if (state.setup?.stage === 'rolling' && state.setup.rolls[0] === null) {
+          console.log('[AI vs AI] Auto-rolling for AI player 0');
           callbacks.onSetupRoll?.(0);
         }
       }, rollDelay);
@@ -104,8 +108,8 @@ const renderRollingPhase = (state, elements, callbacks) => {
     // Roll for player 1 if needed (with slight delay after p0)
     if (state.setup.rolls[1] === null) {
       setTimeout(() => {
-        if (state.setup?.stage === "rolling" && state.setup.rolls[1] === null) {
-          console.log("[AI vs AI] Auto-rolling for AI player 1");
+        if (state.setup?.stage === 'rolling' && state.setup.rolls[1] === null) {
+          console.log('[AI vs AI] Auto-rolling for AI player 1');
           callbacks.onSetupRoll?.(1);
         }
         aiRollPending = false;
@@ -120,8 +124,8 @@ const renderRollingPhase = (state, elements, callbacks) => {
   if (isAIMode(state) && state.setup.rolls[1] === null && !aiRollPending) {
     aiRollPending = true;
     setTimeout(() => {
-      if (state.setup?.stage === "rolling" && state.setup.rolls[1] === null) {
-        console.log("[AI] Auto-rolling for AI player");
+      if (state.setup?.stage === 'rolling' && state.setup.rolls[1] === null) {
+        console.log('[AI] Auto-rolling for AI player');
         callbacks.onSetupRoll?.(1);
       }
       aiRollPending = false;
@@ -130,23 +134,23 @@ const renderRollingPhase = (state, elements, callbacks) => {
 
   // Create roll buttons
   clearPanel(actions);
-  const rollButtons = document.createElement("div");
-  rollButtons.className = "setup-button-row";
+  const rollButtons = document.createElement('div');
+  rollButtons.className = 'setup-button-row';
 
   const localIndex = getLocalPlayerIndex(state);
-  const isOnline = state.menu?.mode === "online";
+  const isOnline = state.menu?.mode === 'online';
   const canRollP1 = !isOnline || localIndex === 0;
   const canRollP2 = !isOnline || localIndex === 1;
 
   // Player 1 roll button
-  const rollP1 = document.createElement("button");
+  const rollP1 = document.createElement('button');
   rollP1.textContent = `Roll for ${p1Name}`;
   rollP1.onclick = async () => {
     if (!canRollP1) return;
 
     // Validate state before rolling
-    if (!state.setup || state.setup.stage !== "rolling") {
-      console.error("Invalid setup state for rolling");
+    if (!state.setup || state.setup.stage !== 'rolling') {
+      console.error('Invalid setup state for rolling');
       return;
     }
 
@@ -156,19 +160,19 @@ const renderRollingPhase = (state, elements, callbacks) => {
       try {
         // Enhanced broadcasting with error handling
         const payload = buildLobbySyncPayload(state);
-        console.log("Broadcasting P1 roll:", payload.setup?.rolls);
+        console.log('Broadcasting P1 roll:', payload.setup?.rolls);
 
-        sendLobbyBroadcast("sync_state", payload);
+        sendLobbyBroadcast('sync_state', payload);
 
         // Also save to database as backup
         await saveGameStateToDatabase(state);
 
-        console.log("P1 roll broadcast successful");
+        console.log('P1 roll broadcast successful');
       } catch (error) {
-        console.error("Failed to broadcast P1 roll:", error);
+        console.error('Failed to broadcast P1 roll:', error);
         // Attempt recovery by requesting sync
         setTimeout(() => {
-          sendLobbyBroadcast("sync_request", { senderId: state.menu?.profile?.id ?? null });
+          sendLobbyBroadcast('sync_request', { senderId: state.menu?.profile?.id ?? null });
         }, 1000);
       }
     }
@@ -178,14 +182,14 @@ const renderRollingPhase = (state, elements, callbacks) => {
 
   // Player 2 roll button (hide in AI mode since AI auto-rolls)
   if (!isAIMode(state)) {
-    const rollP2 = document.createElement("button");
+    const rollP2 = document.createElement('button');
     rollP2.textContent = `Roll for ${p2Name}`;
     rollP2.onclick = async () => {
       if (!canRollP2) return;
 
       // Validate state before rolling
-      if (!state.setup || state.setup.stage !== "rolling") {
-        console.error("Invalid setup state for rolling");
+      if (!state.setup || state.setup.stage !== 'rolling') {
+        console.error('Invalid setup state for rolling');
         return;
       }
 
@@ -195,19 +199,19 @@ const renderRollingPhase = (state, elements, callbacks) => {
         try {
           // Enhanced broadcasting with error handling
           const payload = buildLobbySyncPayload(state);
-          console.log("Broadcasting P2 roll:", payload.setup?.rolls);
+          console.log('Broadcasting P2 roll:', payload.setup?.rolls);
 
-          sendLobbyBroadcast("sync_state", payload);
+          sendLobbyBroadcast('sync_state', payload);
 
           // Also save to database as backup
           await saveGameStateToDatabase(state);
 
-          console.log("P2 roll broadcast successful");
+          console.log('P2 roll broadcast successful');
         } catch (error) {
-          console.error("Failed to broadcast P2 roll:", error);
+          console.error('Failed to broadcast P2 roll:', error);
           // Attempt recovery by requesting sync
           setTimeout(() => {
-            sendLobbyBroadcast("sync_request", { senderId: state.menu?.profile?.id ?? null });
+            sendLobbyBroadcast('sync_request', { senderId: state.menu?.profile?.id ?? null });
           }, 1000);
         }
       }
@@ -231,23 +235,23 @@ const renderChoicePhase = (state, elements, callbacks) => {
 
   // Update the rolls display to show final values
   clearPanel(rolls);
-  const rollSummary = document.createElement("div");
-  rollSummary.className = "setup-roll-summary";
+  const rollSummary = document.createElement('div');
+  rollSummary.className = 'setup-roll-summary';
   const p1Roll = state.setup.rolls[0];
   const p2Roll = state.setup.rolls[1];
-  const p1Name = state.players[0]?.name || "Player 1";
-  const p2Name = state.players[1]?.name || "Player 2";
+  const p1Name = state.players[0]?.name || 'Player 1';
+  const p2Name = state.players[1]?.name || 'Player 2';
   rollSummary.innerHTML = `
-    <div>${p1Name} roll: <strong>${p1Roll ?? "-"}</strong></div>
-    <div>${p2Name} roll: <strong>${p2Roll ?? "-"}</strong></div>
+    <div>${p1Name} roll: <strong>${p1Roll ?? '-'}</strong></div>
+    <div>${p2Name} roll: <strong>${p2Roll ?? '-'}</strong></div>
   `;
   rolls.appendChild(rollSummary);
 
   clearPanel(actions);
 
   const winnerName = state.players[state.setup.winnerIndex].name;
-  const message = document.createElement("p");
-  message.className = "muted";
+  const message = document.createElement('p');
+  message.className = 'muted';
   message.textContent = `${winnerName} chooses who goes first.`;
   actions.appendChild(message);
 
@@ -256,7 +260,7 @@ const renderChoicePhase = (state, elements, callbacks) => {
     aiChoicePending = true;
     const choiceDelay = state.menu?.aiSlowMode ? 800 : 200;
     setTimeout(() => {
-      if (state.setup?.stage === "choice") {
+      if (state.setup?.stage === 'choice') {
         console.log(`[AI vs AI] Auto-choosing player ${state.setup.winnerIndex} to go first`);
         // Winner always chooses to go first
         callbacks.onSetupChoose?.(state.setup.winnerIndex);
@@ -270,8 +274,8 @@ const renderChoicePhase = (state, elements, callbacks) => {
   if (isAIMode(state) && state.setup.winnerIndex === 1 && !aiChoicePending) {
     aiChoicePending = true;
     setTimeout(() => {
-      if (state.setup?.stage === "choice" && state.setup.winnerIndex === 1) {
-        console.log("[AI] Auto-choosing to go first");
+      if (state.setup?.stage === 'choice' && state.setup.winnerIndex === 1) {
+        console.log('[AI] Auto-choosing to go first');
         // AI always chooses to go first for strategic advantage
         callbacks.onSetupChoose?.(1);
       }
@@ -280,35 +284,35 @@ const renderChoicePhase = (state, elements, callbacks) => {
     return; // Don't render choice buttons since AI is choosing
   }
 
-  const choiceButtons = document.createElement("div");
-  choiceButtons.className = "setup-button-row";
-  const isOnline = state.menu?.mode === "online";
+  const choiceButtons = document.createElement('div');
+  choiceButtons.className = 'setup-button-row';
+  const isOnline = state.menu?.mode === 'online';
   const localIndex = getLocalPlayerIndex(state);
   const canChoose = !isOnline || localIndex === state.setup.winnerIndex;
 
   // Choose self to go first
-  const chooseSelf = document.createElement("button");
+  const chooseSelf = document.createElement('button');
   chooseSelf.textContent = `${winnerName} goes first`;
   chooseSelf.onclick = () => {
     if (!canChoose) return;
 
     callbacks.onSetupChoose?.(state.setup.winnerIndex);
-    if (state.menu?.mode === "online") {
-      sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
+    if (state.menu?.mode === 'online') {
+      sendLobbyBroadcast('sync_state', buildLobbySyncPayload(state));
     }
   };
   chooseSelf.disabled = !canChoose;
   choiceButtons.appendChild(chooseSelf);
 
   // Choose opponent to go first
-  const chooseOther = document.createElement("button");
+  const chooseOther = document.createElement('button');
   chooseOther.textContent = `${state.players[(state.setup.winnerIndex + 1) % 2].name} goes first`;
   chooseOther.onclick = () => {
     if (!canChoose) return;
 
     callbacks.onSetupChoose?.((state.setup.winnerIndex + 1) % 2);
-    if (state.menu?.mode === "online") {
-      sendLobbyBroadcast("sync_state", buildLobbySyncPayload(state));
+    if (state.menu?.mode === 'online') {
+      sendLobbyBroadcast('sync_state', buildLobbySyncPayload(state));
     }
   };
   chooseOther.disabled = !canChoose;
@@ -336,40 +340,36 @@ export const renderSetupOverlay = (state, callbacks = {}) => {
   if (!overlay) return;
 
   // Hide if not in ready stage
-  if (state.menu?.stage !== "ready") {
-    overlay.classList.remove("active");
-    overlay.setAttribute("aria-hidden", "true");
+  if (state.menu?.stage !== 'ready') {
+    overlay.classList.remove('active');
+    overlay.setAttribute('aria-hidden', 'true');
     return;
   }
 
   // Hide if setup is complete
-  if (!state.setup || state.setup.stage === "complete") {
-    overlay.classList.remove("active");
-    overlay.setAttribute("aria-hidden", "true");
+  if (!state.setup || state.setup.stage === 'complete') {
+    overlay.classList.remove('active');
+    overlay.setAttribute('aria-hidden', 'true');
     return;
   }
 
   // Hide if deck selection not complete
-  if (
-    !isDeckSelectionComplete(state) ||
-    state.deckBuilder?.stage !== "complete"
-  ) {
-    overlay.classList.remove("active");
-    overlay.setAttribute("aria-hidden", "true");
+  if (!isDeckSelectionComplete(state) || state.deckBuilder?.stage !== 'complete') {
+    overlay.classList.remove('active');
+    overlay.setAttribute('aria-hidden', 'true');
     return;
   }
 
   // Show overlay
-  overlay.classList.add("active");
-  overlay.setAttribute("aria-hidden", "false");
-  title.textContent = "Opening Roll";
-  subtitle.textContent =
-    "Each player rolls a d10. The winner chooses who takes the first turn.";
+  overlay.classList.add('active');
+  overlay.setAttribute('aria-hidden', 'false');
+  title.textContent = 'Opening Roll';
+  subtitle.textContent = 'Each player rolls a d10. The winner chooses who takes the first turn.';
 
   // Render appropriate phase
-  if (state.setup.stage === "rolling") {
+  if (state.setup.stage === 'rolling') {
     renderRollingPhase(state, elements, callbacks);
-  } else if (state.setup.stage === "choice") {
+  } else if (state.setup.stage === 'choice') {
     renderChoicePhase(state, elements, callbacks);
   }
 };
@@ -380,7 +380,7 @@ export const renderSetupOverlay = (state, callbacks = {}) => {
 export const hideSetupOverlay = () => {
   const { overlay } = getSetupElements();
   if (overlay) {
-    overlay.classList.remove("active");
-    overlay.setAttribute("aria-hidden", "true");
+    overlay.classList.remove('active');
+    overlay.setAttribute('aria-hidden', 'true');
   }
 };

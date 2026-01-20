@@ -22,14 +22,14 @@ beforeAll(() => {
 
 describe('Token Cards', () => {
   const allCards = getAllCards();
-  const tokenCards = allCards.filter(c => c.isToken === true);
+  const tokenCards = allCards.filter((c) => c.isToken === true);
 
   it('should have token cards in the registry', () => {
     expect(tokenCards.length).toBeGreaterThan(0);
   });
 
   describe('Token Card Properties', () => {
-    tokenCards.forEach(token => {
+    tokenCards.forEach((token) => {
       describe(`${token.name} (${token.id})`, () => {
         it('has isToken flag set to true', () => {
           expect(token.isToken).toBe(true);
@@ -73,7 +73,7 @@ describe('Token Cards', () => {
       const context = createEffectContext(state, 0);
 
       // Use a common token that definitely exists
-      const commonToken = tokenCards.find(t => t.type === 'Prey');
+      const commonToken = tokenCards.find((t) => t.type === 'Prey');
       if (commonToken) {
         const summonFn = effectLibrary.summonTokens([commonToken.id]);
         const result = summonFn(context);
@@ -88,9 +88,9 @@ describe('Token Cards', () => {
       const state = createTestState();
       const context = createEffectContext(state, 0);
 
-      const preyTokens = tokenCards.filter(t => t.type === 'Prey').slice(0, 2);
+      const preyTokens = tokenCards.filter((t) => t.type === 'Prey').slice(0, 2);
       if (preyTokens.length >= 2) {
-        const tokenIds = preyTokens.map(t => t.id);
+        const tokenIds = preyTokens.map((t) => t.id);
         const summonFn = effectLibrary.summonTokens(tokenIds);
         const result = summonFn(context);
 
@@ -140,16 +140,18 @@ describe('Token Cards', () => {
   });
 
   describe('Token with Effects', () => {
-    const tokensWithEffects = tokenCards.filter(t => t.effects && Object.keys(t.effects).length > 0);
+    const tokensWithEffects = tokenCards.filter(
+      (t) => t.effects && Object.keys(t.effects).length > 0
+    );
 
     it('some tokens have effects', () => {
       // This is informational - not all tokens need effects
       console.log(`Found ${tokensWithEffects.length} tokens with effects`);
     });
 
-    tokensWithEffects.forEach(token => {
+    tokensWithEffects.forEach((token) => {
       describe(`${token.name} token effects`, () => {
-        Object.keys(token.effects).forEach(trigger => {
+        Object.keys(token.effects).forEach((trigger) => {
           it(`has ${trigger} effect defined`, () => {
             expect(token.effects[trigger]).toBeDefined();
           });
@@ -159,9 +161,9 @@ describe('Token Cards', () => {
   });
 
   describe('Token Stats Distribution', () => {
-    const preyTokens = tokenCards.filter(t => t.type === 'Prey');
-    const predatorTokens = tokenCards.filter(t => t.type === 'Predator');
-    const spellTokens = tokenCards.filter(t => t.type === 'Spell' || t.type === 'Free Spell');
+    const preyTokens = tokenCards.filter((t) => t.type === 'Prey');
+    const predatorTokens = tokenCards.filter((t) => t.type === 'Predator');
+    const spellTokens = tokenCards.filter((t) => t.type === 'Spell' || t.type === 'Free Spell');
 
     it('has prey tokens', () => {
       console.log(`Found ${preyTokens.length} prey tokens`);
@@ -181,7 +183,7 @@ describe('Token Cards', () => {
     });
 
     it('all prey tokens have nutrition', () => {
-      preyTokens.forEach(token => {
+      preyTokens.forEach((token) => {
         expect(token.nutrition).toBeDefined();
       });
     });

@@ -29,7 +29,19 @@ export function validateCardEffects(card) {
   }
 
   // Check each trigger type
-  const triggerTypes = ['onPlay', 'onSlain', 'onConsume', 'onDefend', 'onStart', 'onEnd', 'onBeforeCombat', 'onAfterCombat', 'effect', 'discardEffect', 'sacrificeEffect'];
+  const triggerTypes = [
+    'onPlay',
+    'onSlain',
+    'onConsume',
+    'onDefend',
+    'onStart',
+    'onEnd',
+    'onBeforeCombat',
+    'onAfterCombat',
+    'effect',
+    'discardEffect',
+    'sacrificeEffect',
+  ];
 
   for (const trigger of triggerTypes) {
     const effect = card.effects[trigger];
@@ -135,7 +147,9 @@ function validateParams(params, schemaParams, path) {
 
     // Enum validation
     if (paramSpec.values && !paramSpec.values.includes(value)) {
-      errors.push(`${path}.params.${paramName}: Invalid value "${value}". Must be one of: ${paramSpec.values.join(', ')}`);
+      errors.push(
+        `${path}.params.${paramName}: Invalid value "${value}". Must be one of: ${paramSpec.values.join(', ')}`
+      );
     }
   }
 
@@ -181,13 +195,15 @@ function validateParamType(value, expectedType, path) {
       break;
     case 'object':
       if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-        errors.push(`${path}: Expected object, got ${Array.isArray(value) ? 'array' : typeof value}`);
+        errors.push(
+          `${path}: Expected object, got ${Array.isArray(value) ? 'array' : typeof value}`
+        );
       }
       break;
     case 'selectionEffect':
       // Special type for selectFromGroup inner effects
       const selectionErrors = validateSelectionEffect(value);
-      errors.push(...selectionErrors.map(e => `${path}: ${e}`));
+      errors.push(...selectionErrors.map((e) => `${path}: ${e}`));
       break;
     case 'enum':
       // Enum validation handled separately
@@ -210,13 +226,15 @@ function validateSelectFromGroup(params, path) {
 
   // Validate targetGroup
   if (params.targetGroup && !VALID_TARGET_GROUPS.includes(params.targetGroup)) {
-    errors.push(`${path}.params.targetGroup: Invalid target group "${params.targetGroup}". Valid groups: ${VALID_TARGET_GROUPS.join(', ')}`);
+    errors.push(
+      `${path}.params.targetGroup: Invalid target group "${params.targetGroup}". Valid groups: ${VALID_TARGET_GROUPS.join(', ')}`
+    );
   }
 
   // Validate inner effect
   if (params.effect) {
     const selectionErrors = validateSelectionEffect(params.effect);
-    errors.push(...selectionErrors.map(e => `${path}.params.effect: ${e}`));
+    errors.push(...selectionErrors.map((e) => `${path}.params.effect: ${e}`));
   }
 
   return errors;
@@ -292,7 +310,7 @@ export function logValidationResults(results) {
     console.log('\n[Effect Validator] Errors:');
     for (const [cardId, errors] of Object.entries(results.errors)) {
       console.log(`\n  ${cardId}:`);
-      errors.forEach(e => console.log(`    - ${e}`));
+      errors.forEach((e) => console.log(`    - ${e}`));
     }
   }
 }

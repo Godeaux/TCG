@@ -185,13 +185,8 @@ export const resolveReaction = ({
     return;
   }
 
-  const {
-    event,
-    reactingPlayerIndex,
-    triggeringPlayerIndex,
-    reactions,
-    eventContext,
-  } = state.pendingReaction;
+  const { event, reactingPlayerIndex, triggeringPlayerIndex, reactions, eventContext } =
+    state.pendingReaction;
 
   console.log('[ReactionSystem] Processing reaction:', {
     event,
@@ -235,26 +230,28 @@ export const resolveReaction = ({
     // Bug detection: snapshot before trap activation
     const detector = getBugDetector();
     if (detector?.isEnabled()) {
-      detector.beforeAction(state, {
-        type: 'ACTIVATE_TRAP',
-        payload: {
+      detector.beforeAction(
+        state,
+        {
+          type: 'ACTIVATE_TRAP',
+          payload: {
+            trap: reaction.card,
+            event,
+            eventContext,
+          },
+        },
+        {
           trap: reaction.card,
+          reactingPlayerIndex,
+          triggeringPlayerIndex,
           event,
           eventContext,
         }
-      }, {
-        trap: reaction.card,
-        reactingPlayerIndex,
-        triggeringPlayerIndex,
-        event,
-        eventContext,
-      });
+      );
     }
 
     // Remove trap from hand and move to exile
-    reactingPlayer.hand = reactingPlayer.hand.filter(
-      (c) => c.instanceId !== reaction.instanceId
-    );
+    reactingPlayer.hand = reactingPlayer.hand.filter((c) => c.instanceId !== reaction.instanceId);
     reactingPlayer.exile.push(reaction.card);
 
     logMessage(state, `${reactingPlayer.name}'s ${reaction.card.name} trap activates!`);

@@ -5,11 +5,7 @@
  */
 
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
-import {
-  createTestState,
-  addCardToDeck,
-  ensureRegistryInitialized,
-} from '../setup/testHelpers.js';
+import { createTestState, addCardToDeck, ensureRegistryInitialized } from '../setup/testHelpers.js';
 import { createEffectContext } from '../setup/mockFactory.js';
 import * as effectLibrary from '../../js/cards/effectLibrary.js';
 
@@ -34,9 +30,10 @@ describe('Tutor From Deck Effect', () => {
 
     expect(result.selectTarget).toBeDefined();
     // candidates is a function, call it to get the array
-    const candidates = typeof result.selectTarget.candidates === 'function'
-      ? result.selectTarget.candidates()
-      : result.selectTarget.candidates;
+    const candidates =
+      typeof result.selectTarget.candidates === 'function'
+        ? result.selectTarget.candidates()
+        : result.selectTarget.candidates;
     expect(candidates.length).toBe(2);
   });
 
@@ -52,9 +49,10 @@ describe('Tutor From Deck Effect', () => {
     const tutorFn = effectLibrary.tutorFromDeck('prey');
     const result = tutorFn(context);
 
-    const candidates = typeof result.selectTarget.candidates === 'function'
-      ? result.selectTarget.candidates()
-      : result.selectTarget.candidates;
+    const candidates =
+      typeof result.selectTarget.candidates === 'function'
+        ? result.selectTarget.candidates()
+        : result.selectTarget.candidates;
     expect(candidates.length).toBe(1);
   });
 
@@ -62,9 +60,10 @@ describe('Tutor From Deck Effect', () => {
     const tutorFn = effectLibrary.tutorFromDeck('predator');
     const result = tutorFn(context);
 
-    const candidates = typeof result.selectTarget.candidates === 'function'
-      ? result.selectTarget.candidates()
-      : result.selectTarget.candidates;
+    const candidates =
+      typeof result.selectTarget.candidates === 'function'
+        ? result.selectTarget.candidates()
+        : result.selectTarget.candidates;
     expect(candidates.length).toBe(1);
   });
 
@@ -73,9 +72,10 @@ describe('Tutor From Deck Effect', () => {
     const result = tutorFn(context);
 
     // candidates is a function, so call it
-    const candidates = typeof result.selectTarget.candidates === 'function'
-      ? result.selectTarget.candidates()
-      : result.selectTarget.candidates;
+    const candidates =
+      typeof result.selectTarget.candidates === 'function'
+        ? result.selectTarget.candidates()
+        : result.selectTarget.candidates;
     const card = candidates[0].value;
     const selectionResult = result.selectTarget.onSelect(card);
 
@@ -115,9 +115,10 @@ describe('Tutor And Play Spell Effect', () => {
     const tutorFn = effectLibrary.tutorAndPlaySpell();
     const result = tutorFn(context);
 
-    const candidates = typeof result.selectTarget.candidates === 'function'
-      ? result.selectTarget.candidates()
-      : result.selectTarget.candidates;
+    const candidates =
+      typeof result.selectTarget.candidates === 'function'
+        ? result.selectTarget.candidates()
+        : result.selectTarget.candidates;
     const card = candidates[0].value;
     const selectionResult = result.selectTarget.onSelect(card);
 
@@ -130,9 +131,10 @@ describe('Tutor And Play Spell Effect', () => {
     const tutorFn = effectLibrary.tutorAndPlaySpell();
     const result = tutorFn(context);
 
-    const candidates = typeof result.selectTarget.candidates === 'function'
-      ? result.selectTarget.candidates()
-      : result.selectTarget.candidates;
+    const candidates =
+      typeof result.selectTarget.candidates === 'function'
+        ? result.selectTarget.candidates()
+        : result.selectTarget.candidates;
     const card = candidates[0].value;
     const selectionResult = result.selectTarget.onSelect(card);
 

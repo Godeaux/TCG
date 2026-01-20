@@ -240,7 +240,11 @@ describe('Howl Effect', () => {
       });
 
       if (result) {
-        resolveEffectResult(state, result, { playerIndex: 0, opponentIndex: 1, card: howlCreature });
+        resolveEffectResult(state, result, {
+          playerIndex: 0,
+          opponentIndex: 1,
+          card: howlCreature,
+        });
       }
 
       // All canines should have +1 ATK (from howl)
@@ -268,7 +272,11 @@ describe('Howl Effect', () => {
       });
 
       if (result) {
-        resolveEffectResult(state, result, { playerIndex: 0, opponentIndex: 1, card: howlCreature });
+        resolveEffectResult(state, result, {
+          playerIndex: 0,
+          opponentIndex: 1,
+          card: howlCreature,
+        });
       }
 
       // Canines should have howlBuffs tracking
@@ -301,7 +309,11 @@ describe('Howl Effect', () => {
       });
 
       if (result) {
-        resolveEffectResult(state, result, { playerIndex: 0, opponentIndex: 1, card: howlCreature });
+        resolveEffectResult(state, result, {
+          playerIndex: 0,
+          opponentIndex: 1,
+          card: howlCreature,
+        });
       }
 
       // Canines should have gained Haste
@@ -327,7 +339,11 @@ describe('Howl Effect', () => {
       });
 
       if (result) {
-        resolveEffectResult(state, result, { playerIndex: 0, opponentIndex: 1, card: howlCreature });
+        resolveEffectResult(state, result, {
+          playerIndex: 0,
+          opponentIndex: 1,
+          card: howlCreature,
+        });
       }
 
       // Canines should have howlKeywords tracking
@@ -358,7 +374,11 @@ describe('Howl Effect', () => {
       });
 
       if (result) {
-        resolveEffectResult(state, result, { playerIndex: 0, opponentIndex: 1, card: howl1Creature });
+        resolveEffectResult(state, result, {
+          playerIndex: 0,
+          opponentIndex: 1,
+          card: howl1Creature,
+        });
       }
 
       // Play second Howl creature (Dhole: +1/+0)
@@ -377,7 +397,11 @@ describe('Howl Effect', () => {
       });
 
       if (result) {
-        resolveEffectResult(state, result, { playerIndex: 0, opponentIndex: 1, card: howl2Creature });
+        resolveEffectResult(state, result, {
+          playerIndex: 0,
+          opponentIndex: 1,
+          card: howl2Creature,
+        });
       }
 
       // Canine should have +2 ATK total (+1 from each Howl)
@@ -394,7 +418,7 @@ describe('Howl Effect', () => {
 
       // Try to play howl effect manually
       const result = {
-        buffCreatures: [] // Empty because no canines
+        buffCreatures: [], // Empty because no canines
       };
 
       resolveEffectResult(state, result, { playerIndex: 0, opponentIndex: 1 });
@@ -428,7 +452,11 @@ describe('Howl Effect', () => {
       });
 
       if (result) {
-        resolveEffectResult(state, result, { playerIndex: 0, opponentIndex: 1, card: howlCreature });
+        resolveEffectResult(state, result, {
+          playerIndex: 0,
+          opponentIndex: 1,
+          card: howlCreature,
+        });
       }
 
       // Own canine should be buffed
@@ -452,7 +480,7 @@ describe('Canine Cards', () => {
       'canine-predator-wolf-hunter',
     ];
 
-    canineDeckCards.forEach(cardId => {
+    canineDeckCards.forEach((cardId) => {
       const card = getCardDefinitionById(cardId);
       if (card) {
         expect(card.tribe).toBe('Canine');

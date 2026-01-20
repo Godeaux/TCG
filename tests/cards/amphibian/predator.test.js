@@ -147,7 +147,10 @@ describe('Amphibian Predator Cards', () => {
     it('onConsume summons 2 Poisonous Eggs', () => {
       const card = getCardDefinitionById(cardId);
       expect(card.effects.onConsume.type).toBe('summonTokens');
-      expect(card.effects.onConsume.params.tokenIds).toEqual(['token-poisonous-egg', 'token-poisonous-egg']);
+      expect(card.effects.onConsume.params.tokenIds).toEqual([
+        'token-poisonous-egg',
+        'token-poisonous-egg',
+      ]);
     });
   });
 
@@ -176,9 +179,7 @@ describe('Amphibian Predator Cards', () => {
       );
 
       // Should have endTurn primitive
-      expect(effects).toContainEqual(
-        expect.objectContaining({ type: 'endTurn' })
-      );
+      expect(effects).toContainEqual(expect.objectContaining({ type: 'endTurn' }));
     });
   });
 
@@ -244,9 +245,7 @@ describe('Amphibian Predator Cards', () => {
       expect(Array.isArray(effects)).toBe(true);
 
       // Should have regenOtherCreatures primitive
-      expect(effects).toContainEqual(
-        expect.objectContaining({ type: 'regenOtherCreatures' })
-      );
+      expect(effects).toContainEqual(expect.objectContaining({ type: 'regenOtherCreatures' }));
 
       // Should have heal primitive
       expect(effects).toContainEqual(

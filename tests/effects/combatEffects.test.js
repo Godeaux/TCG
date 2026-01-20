@@ -10,7 +10,11 @@ import {
   createTestCreature,
   ensureRegistryInitialized,
 } from '../setup/testHelpers.js';
-import { createEffectContext, createCombatContext, createTrapContext } from '../setup/mockFactory.js';
+import {
+  createEffectContext,
+  createCombatContext,
+  createTrapContext,
+} from '../setup/mockFactory.js';
 import * as effectLibrary from '../../js/cards/effectLibrary.js';
 
 beforeAll(() => {

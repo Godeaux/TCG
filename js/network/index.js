@@ -92,10 +92,9 @@ export const getSupabaseApi = async (onError) => {
     return supabaseApiModule;
   } catch (error) {
     supabaseApiError = error;
-    const message =
-      error?.message?.includes("Failed to fetch")
-        ? "Supabase failed to load. Check your connection."
-        : "Supabase failed to load.";
+    const message = error?.message?.includes('Failed to fetch')
+      ? 'Supabase failed to load. Check your connection.'
+      : 'Supabase failed to load.';
     onError?.(message);
     throw error;
   }

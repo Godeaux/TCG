@@ -312,7 +312,7 @@ const extractTokenIds = (card) => {
 
     // Array of effects
     if (Array.isArray(effect)) {
-      effect.forEach(e => searchEffect(e));
+      effect.forEach((e) => searchEffect(e));
       return;
     }
 
@@ -320,7 +320,7 @@ const extractTokenIds = (card) => {
     if (typeof effect === 'object') {
       // Check for summonTokens effect type
       if (effect.type === 'summonTokens' && effect.params?.tokenIds) {
-        effect.params.tokenIds.forEach(id => tokenIds.add(id));
+        effect.params.tokenIds.forEach((id) => tokenIds.add(id));
       }
 
       // Check for addToHand effect type (for tokens added to hand)
@@ -330,12 +330,12 @@ const extractTokenIds = (card) => {
 
       // Check nested effects (like in chooseOption)
       if (effect.params?.options) {
-        effect.params.options.forEach(opt => {
+        effect.params.options.forEach((opt) => {
           if (opt.effect) searchEffect(opt.effect);
         });
       }
       if (effect.params?.choices) {
-        effect.params.choices.forEach(choice => searchEffect(choice));
+        effect.params.choices.forEach((choice) => searchEffect(choice));
       }
     }
   };
@@ -398,32 +398,44 @@ const renderInfoBoxes = (card) => {
   // Check each status property on the card
   if (card.dryDropped) {
     const info = STATUS_DESCRIPTIONS.dryDropped;
-    infoBoxesElement.appendChild(createInfoBox(`${info.emoji} ${info.name}`, info.description, 'status'));
+    infoBoxesElement.appendChild(
+      createInfoBox(`${info.emoji} ${info.name}`, info.description, 'status')
+    );
   }
 
   if (card.abilitiesCancelled) {
     const info = STATUS_DESCRIPTIONS.abilitiesCancelled;
-    infoBoxesElement.appendChild(createInfoBox(`${info.emoji} ${info.name}`, info.description, 'status'));
+    infoBoxesElement.appendChild(
+      createInfoBox(`${info.emoji} ${info.name}`, info.description, 'status')
+    );
   }
 
   if (card.hasBarrier && areAbilitiesActive(card)) {
     const info = STATUS_DESCRIPTIONS.hasBarrier;
-    infoBoxesElement.appendChild(createInfoBox(`${info.emoji} ${info.name}`, info.description, 'status'));
+    infoBoxesElement.appendChild(
+      createInfoBox(`${info.emoji} ${info.name}`, info.description, 'status')
+    );
   }
 
   if (card.frozen) {
     const info = STATUS_DESCRIPTIONS.frozen;
-    infoBoxesElement.appendChild(createInfoBox(`${info.emoji} ${info.name}`, info.description, 'status'));
+    infoBoxesElement.appendChild(
+      createInfoBox(`${info.emoji} ${info.name}`, info.description, 'status')
+    );
   }
 
   if (card.isToken) {
     const info = STATUS_DESCRIPTIONS.isToken;
-    infoBoxesElement.appendChild(createInfoBox(`${info.emoji} ${info.name}`, info.description, 'status'));
+    infoBoxesElement.appendChild(
+      createInfoBox(`${info.emoji} ${info.name}`, info.description, 'status')
+    );
   }
 
   if (card.neurotoxined) {
     const info = STATUS_DESCRIPTIONS.neurotoxined;
-    infoBoxesElement.appendChild(createInfoBox(`${info.emoji} ${info.name}`, info.description, 'status'));
+    infoBoxesElement.appendChild(
+      createInfoBox(`${info.emoji} ${info.name}`, info.description, 'status')
+    );
   }
 
   // Add token previews for cards that summon tokens
@@ -437,7 +449,7 @@ const renderInfoBoxes = (card) => {
 
     // Add unique token previews
     const seenTokens = new Set();
-    tokenIds.forEach(tokenId => {
+    tokenIds.forEach((tokenId) => {
       if (seenTokens.has(tokenId)) return;
       seenTokens.add(tokenId);
 

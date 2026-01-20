@@ -10,7 +10,7 @@ export {
   formatKeywordList,
   getKeywordEmoji,
   formatCardForLog,
-} from "../game/historyLog.js";
+} from '../game/historyLog.js';
 
 const shuffle = (array) => {
   for (let i = array.length - 1; i > 0; i -= 1) {
@@ -35,17 +35,15 @@ const createPlayer = (name) => ({
 // Helper to get traps that can trigger from a player's hand
 export const getTrapsFromHand = (player, triggerType) => {
   if (!player?.hand) return [];
-  return player.hand.filter(
-    (card) => card.type === "Trap" && card.trigger === triggerType
-  );
+  return player.hand.filter((card) => card.type === 'Trap' && card.trigger === triggerType);
 };
 
 export const createGameState = () => {
-  const players = [createPlayer("Player 1"), createPlayer("Player 2")];
+  const players = [createPlayer('Player 1'), createPlayer('Player 2')];
   return {
     players,
     activePlayerIndex: 0,
-    phase: "Setup",
+    phase: 'Setup',
     turn: 1,
     firstPlayerIndex: null,
     skipFirstDraw: true,
@@ -63,34 +61,34 @@ export const createGameState = () => {
     pendingReaction: null, // { deciderIndex, reactions, attackContext, timerStart }
     victoryProcessed: false, // Prevents multiple pack awards on re-renders
     setup: {
-      stage: "rolling",
+      stage: 'rolling',
       rolls: [null, null],
       winnerIndex: null,
     },
     deckSelection: {
-      stage: "p1",
+      stage: 'p1',
       selections: [null, null],
-      readyStatus: [false, false],  // Tracks if each player has confirmed their deck choice
+      readyStatus: [false, false], // Tracks if each player has confirmed their deck choice
     },
     deckBuilder: {
-      stage: "p1",
+      stage: 'p1',
       selections: [[], []],
       available: [[], []],
       catalogOrder: [[], []],
     },
     menu: {
-      stage: "main",
+      stage: 'main',
       mode: null,
       profile: null,
       lobby: null,
-      existingLobby: null,  // Tracks existing lobby for rejoin functionality
+      existingLobby: null, // Tracks existing lobby for rejoin functionality
       error: null,
       loading: false,
       lastLobbySyncAt: 0,
       lastLobbySyncBySender: {},
       onlineDecksReady: false,
       decks: [],
-      aiSlowMode: false,  // When true, AI moves 4x slower (turtle mode)
+      aiSlowMode: false, // When true, AI moves 4x slower (turtle mode)
     },
     catalogBuilder: {
       stage: null,
@@ -102,19 +100,21 @@ export const createGameState = () => {
       editingDeckName: null,
     },
     log: [],
-    advantageHistory: [],  // Tracks position advantage over time for graphing
+    advantageHistory: [], // Tracks position advantage over time for graphing
     combat: {
       declaredAttacks: [],
     },
     emotes: {
-      squelched: false,  // Whether opponent emotes are muted
+      squelched: false, // Whether opponent emotes are muted
     },
   };
 };
 
 export const drawCard = (state, playerIndex) => {
   const player = state.players[playerIndex];
-  console.log(`[DRAW-DEBUG] Before: hand=${player.hand.length}, deck=${player.deck.length}, playerIndex=${playerIndex}`);
+  console.log(
+    `[DRAW-DEBUG] Before: hand=${player.hand.length}, deck=${player.deck.length}, playerIndex=${playerIndex}`
+  );
   if (player.deck.length === 0) {
     console.log(`[DRAW-DEBUG] Deck empty!`);
     return null;
@@ -122,7 +122,9 @@ export const drawCard = (state, playerIndex) => {
   const card = player.deck.shift();
   const newCard = { ...card, instanceId: crypto.randomUUID() };
   player.hand.push(newCard);
-  console.log(`[DRAW-DEBUG] After: hand=${player.hand.length}, deck=${player.deck.length}, drew: ${card.name}`);
+  console.log(
+    `[DRAW-DEBUG] After: hand=${player.hand.length}, deck=${player.deck.length}, drew: ${card.name}`
+  );
   return card;
 };
 
@@ -155,14 +157,14 @@ export const setPlayerDeck = (state, playerIndex, deck, ownedCards = null) => {
   const player = state.players[playerIndex];
 
   // Attach rarity from ownedCards to each card in the deck
-  const deckWithRarity = deck.map(card => {
+  const deckWithRarity = deck.map((card) => {
     if (ownedCards && card.id) {
       // ownedCards can be a Map or an array of {cardId, rarity}
       let rarity = null;
       if (ownedCards instanceof Map) {
         rarity = ownedCards.get(card.id);
       } else if (Array.isArray(ownedCards)) {
-        const owned = ownedCards.find(c => c.cardId === card.id);
+        const owned = ownedCards.find((c) => c.cardId === card.id);
         rarity = owned?.rarity;
       }
       if (rarity) {
@@ -185,8 +187,7 @@ export const setPlayerDeck = (state, playerIndex, deck, ownedCards = null) => {
 
 export const getActivePlayer = (state) => state.players[state.activePlayerIndex];
 
-export const getOpponentPlayer = (state) =>
-  state.players[(state.activePlayerIndex + 1) % 2];
+export const getOpponentPlayer = (state) => state.players[(state.activePlayerIndex + 1) % 2];
 
 export const resetCombat = (state) => {
   state.combat.declaredAttacks = [];
@@ -201,41 +202,41 @@ export const resetCombat = (state) => {
 };
 
 export const rollSetupDie = (state, playerIndex) => {
-  if (!state.setup || state.setup.stage !== "rolling") {
+  if (!state.setup || state.setup.stage !== 'rolling') {
     console.warn(`Cannot roll - invalid setup state. Stage: ${state.setup?.stage}`);
     return null;
   }
-  
+
   if (state.setup.rolls[playerIndex] !== null) {
     console.log(`Player ${playerIndex + 1} already rolled: ${state.setup.rolls[playerIndex]}`);
     return state.setup.rolls[playerIndex];
   }
-  
+
   // Validate rolls array before proceeding
-  const rollsAreValid = state.setup.rolls.every(roll => 
-    roll === null || (typeof roll === 'number' && roll >= 1 && roll <= 10)
+  const rollsAreValid = state.setup.rolls.every(
+    (roll) => roll === null || (typeof roll === 'number' && roll >= 1 && roll <= 10)
   );
-  
+
   if (!rollsAreValid) {
-    console.error("Invalid rolls array detected, resetting:", state.setup.rolls);
+    console.error('Invalid rolls array detected, resetting:', state.setup.rolls);
     state.setup.rolls = [null, null];
   }
-  
+
   const roll = Math.floor(Math.random() * 10) + 1;
   state.setup.rolls[playerIndex] = roll;
-  
+
   console.log(`${state.players[playerIndex].name} rolls a ${roll}.`);
   logMessage(state, `${state.players[playerIndex].name} rolls a ${roll}.`);
 
   const [p1Roll, p2Roll] = state.setup.rolls;
   if (p1Roll !== null && p2Roll !== null) {
     if (p1Roll === p2Roll) {
-      console.log("Tie detected - rerolling");
-      logMessage(state, "Tie! Reroll the dice to determine who chooses first.");
+      console.log('Tie detected - rerolling');
+      logMessage(state, 'Tie! Reroll the dice to determine who chooses first.');
       state.setup.rolls = [null, null];
     } else {
       state.setup.winnerIndex = p1Roll > p2Roll ? 0 : 1;
-      state.setup.stage = "choice";
+      state.setup.stage = 'choice';
       console.log(`${state.players[state.setup.winnerIndex].name} wins the roll`);
       logMessage(
         state,
@@ -251,10 +252,10 @@ export const chooseFirstPlayer = (state, chosenIndex) => {
   state.activePlayerIndex = chosenIndex;
   state.firstPlayerIndex = chosenIndex;
   state.turn = 1;
-  state.phase = "Start";
+  state.phase = 'Start';
   state.cardPlayedThisTurn = false;
   state.passPending = false;
-  state.setup.stage = "complete";
+  state.setup.stage = 'complete';
   state.advantageHistory = []; // Reset advantage graph for new game
   logMessage(state, `${state.players[chosenIndex].name} will take the first turn.`);
 };

@@ -28,24 +28,26 @@ import { getLocalPlayerIndex, isAnyAIMode, canCardBePlayed } from '../../state/s
  * @param {HTMLElement} handGrid - Hand grid container
  */
 export const updateHandOverlap = (handGrid) => {
-  const cards = Array.from(handGrid.querySelectorAll(".card"));
+  const cards = Array.from(handGrid.querySelectorAll('.card'));
   if (cards.length === 0) {
-    handGrid.style.setProperty("--hand-overlap", "0px");
-    handGrid.style.setProperty("--mobile-card-scale", "1");
-    handGrid.style.overflow = "visible";
+    handGrid.style.setProperty('--hand-overlap', '0px');
+    handGrid.style.setProperty('--mobile-card-scale', '1');
+    handGrid.style.overflow = 'visible';
     return;
   }
 
   // Single card - no overlap needed
   if (cards.length === 1) {
-    handGrid.style.setProperty("--hand-overlap", "0px");
-    handGrid.style.setProperty("--mobile-card-scale", "1");
-    handGrid.style.overflow = "visible";
+    handGrid.style.setProperty('--hand-overlap', '0px');
+    handGrid.style.setProperty('--mobile-card-scale', '1');
+    handGrid.style.overflow = 'visible';
     return;
   }
 
   // Check if we're on mobile portrait mode
-  const isMobilePortrait = window.matchMedia("(max-width: 767px) and (orientation: portrait)").matches;
+  const isMobilePortrait = window.matchMedia(
+    '(max-width: 767px) and (orientation: portrait)'
+  ).matches;
 
   // Get available width, accounting for padding
   const computedStyle = getComputedStyle(handGrid);
@@ -91,16 +93,16 @@ export const updateHandOverlap = (handGrid) => {
         }
       } else {
         // On desktop, cap max overlap to keep cards identifiable (hover expands them)
-        const maxOverlapPercent = 0.80;
+        const maxOverlapPercent = 0.8;
         const maxOverlap = cardWidth * maxOverlapPercent;
         overlap = Math.min(overlap, maxOverlap);
       }
     }
   }
 
-  handGrid.style.setProperty("--hand-overlap", `${overlap}px`);
-  handGrid.style.setProperty("--mobile-card-scale", `${scale}`);
-  handGrid.style.overflow = "visible";
+  handGrid.style.setProperty('--hand-overlap', `${overlap}px`);
+  handGrid.style.setProperty('--mobile-card-scale', `${scale}`);
+  handGrid.style.overflow = 'visible';
 };
 
 /**
@@ -130,28 +132,28 @@ const setOverflowVisible = (handGrid) => {
  * Allows user to manually expand/collapse the hand
  */
 const setupHandExpansion = (state) => {
-  const centerColumn = document.querySelector(".battlefield-center-column");
+  const centerColumn = document.querySelector('.battlefield-center-column');
   if (!centerColumn) return;
 
   // Always show player 0's hand: online uses local index, AI modes use 0, local uses active
-  const isOnline = state.menu?.mode === "online";
+  const isOnline = state.menu?.mode === 'online';
   const isAI = isAnyAIMode(state);
-  const playerIndex = isOnline ? getLocalPlayerIndex(state) : (isAI ? 0 : state.activePlayerIndex);
+  const playerIndex = isOnline ? getLocalPlayerIndex(state) : isAI ? 0 : state.activePlayerIndex;
   const player = state.players[playerIndex];
   const cardCount = player.hand.length;
 
   // Auto-expand for 7+ cards
   if (cardCount >= 7) {
-    centerColumn.classList.add("hand-expanded");
+    centerColumn.classList.add('hand-expanded');
   } else {
-    centerColumn.classList.remove("hand-expanded");
+    centerColumn.classList.remove('hand-expanded');
   }
 
   // Setup toggle button
-  const toggleButton = document.getElementById("hand-expand-toggle");
+  const toggleButton = document.getElementById('hand-expand-toggle');
   if (toggleButton) {
     toggleButton.onclick = () => {
-      centerColumn.classList.toggle("hand-expanded");
+      centerColumn.classList.toggle('hand-expanded');
     };
   }
 };
@@ -165,7 +167,7 @@ const setupHandExpansion = (state) => {
  */
 const clearHandPanel = (handGrid) => {
   if (!handGrid) return;
-  handGrid.innerHTML = "";
+  handGrid.innerHTML = '';
 };
 
 /**
@@ -180,15 +182,9 @@ const clearHandPanel = (handGrid) => {
  * @param {string|null} options.selectedCardId - Currently selected card instanceId
  */
 export const renderHand = (state, options = {}) => {
-  const {
-    onSelect,
-    onUpdate,
-    onInspect,
-    hideCards = false,
-    selectedCardId = null,
-  } = options;
+  const { onSelect, onUpdate, onInspect, hideCards = false, selectedCardId = null } = options;
 
-  const handGrid = document.getElementById("active-hand");
+  const handGrid = document.getElementById('active-hand');
   if (!handGrid) {
     return;
   }
@@ -196,11 +192,17 @@ export const renderHand = (state, options = {}) => {
   clearHandPanel(handGrid);
 
   // Always show player 0's hand: online uses local index, AI modes use 0, local uses active
-  const isOnlineMode = state.menu?.mode === "online";
+  const isOnlineMode = state.menu?.mode === 'online';
   const isAI = isAnyAIMode(state);
-  const playerIndex = isOnlineMode ? getLocalPlayerIndex(state) : (isAI ? 0 : state.activePlayerIndex);
+  const playerIndex = isOnlineMode
+    ? getLocalPlayerIndex(state)
+    : isAI
+      ? 0
+      : state.activePlayerIndex;
   const player = state.players[playerIndex];
-  console.log(`[RENDER-HAND-DEBUG] playerIndex=${playerIndex}, hand.length=${player.hand.length}, cards=${player.hand.map(c => c?.name).join(', ')}`);
+  console.log(
+    `[RENDER-HAND-DEBUG] playerIndex=${playerIndex}, hand.length=${player.hand.length}, cards=${player.hand.map((c) => c?.name).join(', ')}`
+  );
 
   // Setup hand expansion
   setupHandExpansion(state);
@@ -234,9 +236,7 @@ export const renderHand = (state, options = {}) => {
 
     // Apply fan/arc effect using CSS custom properties
     // Calculate position from center (-1 to 1, where 0 is center)
-    const centerOffset = cardCount > 1
-      ? (index - (cardCount - 1) / 2) / ((cardCount - 1) / 2)
-      : 0;
+    const centerOffset = cardCount > 1 ? (index - (cardCount - 1) / 2) / ((cardCount - 1) / 2) : 0;
 
     // Rotation: subtle, cards at edges rotate outward (max ~4 degrees)
     const maxRotation = Math.min(4, 1.5 + cardCount * 0.25);
@@ -258,7 +258,7 @@ export const renderHand = (state, options = {}) => {
     // - Main phase check
     // - Card limit (Free Spell/Free Play bypass this)
     // - Field space for creatures
-    if (isPlayerTurn && card.type !== "Trap" && canCardBePlayed(state, card, playerIndex)) {
+    if (isPlayerTurn && card.type !== 'Trap' && canCardBePlayed(state, card, playerIndex)) {
       cardElement.classList.add('playable-pulse');
     }
 
@@ -278,7 +278,7 @@ export const renderHand = (state, options = {}) => {
  * Clear the hand (remove all cards)
  */
 export const clearHand = () => {
-  const handGrid = document.getElementById("active-hand");
+  const handGrid = document.getElementById('active-hand');
   if (handGrid) {
     clearHandPanel(handGrid);
   }

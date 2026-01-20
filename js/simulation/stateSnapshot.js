@@ -76,7 +76,7 @@ export const diffSnapshots = (before, after) => {
     if (playerBefore.hand.length !== playerAfter.hand.length) {
       playerDiff.handSize = {
         before: playerBefore.hand.length,
-        after: playerAfter.hand.length
+        after: playerAfter.hand.length,
       };
     }
 
@@ -84,13 +84,13 @@ export const diffSnapshots = (before, after) => {
     if (playerBefore.deck.length !== playerAfter.deck.length) {
       playerDiff.deckSize = {
         before: playerBefore.deck.length,
-        after: playerAfter.deck.length
+        after: playerAfter.deck.length,
       };
     }
 
     // Field creature count
-    const fieldCountBefore = playerBefore.field.filter(c => c !== null).length;
-    const fieldCountAfter = playerAfter.field.filter(c => c !== null).length;
+    const fieldCountBefore = playerBefore.field.filter((c) => c !== null).length;
+    const fieldCountAfter = playerAfter.field.filter((c) => c !== null).length;
     if (fieldCountBefore !== fieldCountAfter) {
       playerDiff.fieldCount = { before: fieldCountBefore, after: fieldCountAfter };
     }
@@ -99,7 +99,7 @@ export const diffSnapshots = (before, after) => {
     if (playerBefore.carrion.length !== playerAfter.carrion.length) {
       playerDiff.carrionSize = {
         before: playerBefore.carrion.length,
-        after: playerAfter.carrion.length
+        after: playerAfter.carrion.length,
       };
     }
 
@@ -107,7 +107,7 @@ export const diffSnapshots = (before, after) => {
     if (playerBefore.exile.length !== playerAfter.exile.length) {
       playerDiff.exileSize = {
         before: playerBefore.exile.length,
-        after: playerAfter.exile.length
+        after: playerAfter.exile.length,
       };
     }
 
@@ -117,8 +117,11 @@ export const diffSnapshots = (before, after) => {
       const creatureBefore = playerBefore.field[slot];
       const creatureAfter = playerAfter.field[slot];
 
-      if (creatureBefore && creatureAfter &&
-          creatureBefore.instanceId === creatureAfter.instanceId) {
+      if (
+        creatureBefore &&
+        creatureAfter &&
+        creatureBefore.instanceId === creatureAfter.instanceId
+      ) {
         const changes = {};
         if (creatureBefore.currentHp !== creatureAfter.currentHp) {
           changes.hp = { before: creatureBefore.currentHp, after: creatureAfter.currentHp };
@@ -130,7 +133,7 @@ export const diffSnapshots = (before, after) => {
           creatureChanges.push({
             name: creatureAfter.name,
             slot,
-            ...changes
+            ...changes,
           });
         }
       }
@@ -154,7 +157,7 @@ export const diffSnapshots = (before, after) => {
   if (before.activePlayerIndex !== after.activePlayerIndex) {
     diffs.global.activePlayerIndex = {
       before: before.activePlayerIndex,
-      after: after.activePlayerIndex
+      after: after.activePlayerIndex,
     };
   }
 
@@ -171,34 +174,34 @@ export const diffSnapshots = (before, after) => {
 export const getAllInstanceIds = (state) => {
   const ids = [];
 
-  state.players.forEach(player => {
+  state.players.forEach((player) => {
     // Hand
-    player.hand.forEach(card => {
+    player.hand.forEach((card) => {
       if (card?.instanceId) ids.push(card.instanceId);
     });
 
     // Field
-    player.field.forEach(card => {
+    player.field.forEach((card) => {
       if (card?.instanceId) ids.push(card.instanceId);
     });
 
     // Deck
-    player.deck.forEach(card => {
+    player.deck.forEach((card) => {
       if (card?.instanceId) ids.push(card.instanceId);
     });
 
     // Carrion
-    player.carrion.forEach(card => {
+    player.carrion.forEach((card) => {
       if (card?.instanceId) ids.push(card.instanceId);
     });
 
     // Exile
-    player.exile.forEach(card => {
+    player.exile.forEach((card) => {
       if (card?.instanceId) ids.push(card.instanceId);
     });
 
     // Traps
-    player.traps?.forEach(card => {
+    player.traps?.forEach((card) => {
       if (card?.instanceId) ids.push(card.instanceId);
     });
   });
@@ -215,13 +218,13 @@ export const getAllInstanceIds = (state) => {
 export const getTotalCardCount = (state) => {
   let count = 0;
 
-  state.players.forEach(player => {
+  state.players.forEach((player) => {
     count += player.hand.length;
-    count += player.field.filter(c => c !== null).length;
+    count += player.field.filter((c) => c !== null).length;
     count += player.deck.length;
     count += player.carrion.length;
     count += player.exile.length;
-    count += (player.traps?.length || 0);
+    count += player.traps?.length || 0;
   });
 
   return count;

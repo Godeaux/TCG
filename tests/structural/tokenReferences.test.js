@@ -212,15 +212,13 @@ describe('Token References Validation', () => {
       if (tokenRefs.length > 0) {
         it(`${card.id} has summons property for token display`, () => {
           const summons = card.summons || [];
-          const missingSummons = tokenRefs.filter(
-            (ref) => !summons.includes(ref)
-          );
+          const missingSummons = tokenRefs.filter((ref) => !summons.includes(ref));
 
           expect(
             missingSummons.length,
             `Card "${card.id}" references tokens [${tokenRefs.join(', ')}] but summons property is missing or incomplete. ` +
-            `Missing: [${missingSummons.join(', ')}]. ` +
-            `Add "summons": [${tokenRefs.map(t => `"${t}"`).join(', ')}] to the card definition.`
+              `Missing: [${missingSummons.join(', ')}]. ` +
+              `Add "summons": [${tokenRefs.map((t) => `"${t}"`).join(', ')}] to the card definition.`
           ).toBe(0);
         });
       }

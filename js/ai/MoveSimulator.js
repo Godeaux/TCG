@@ -66,7 +66,7 @@ export class MoveSimulator {
       return {
         success: result.success,
         state: controller.state,
-        error: result.error
+        error: result.error,
       };
     } catch (error) {
       console.warn('[MoveSimulator] Simulation error:', error);
@@ -86,58 +86,63 @@ export class MoveSimulator {
     const selectionQueue = [...preSelectedChoices];
     let selectionIndex = 0;
 
-    return new GameController(state, { localPlayerIndex: playerIndex }, {
-      onStateChange: () => {},
-      onBroadcast: () => {},
-      onSelectionNeeded: (request) => {
-        // Auto-answer from pre-selected choices
-        if (selectionIndex < selectionQueue.length) {
-          const selection = selectionQueue[selectionIndex];
-          selectionIndex++;
+    return new GameController(
+      state,
+      { localPlayerIndex: playerIndex },
+      {
+        onStateChange: () => {},
+        onBroadcast: () => {},
+        onSelectionNeeded: (request) => {
+          // Auto-answer from pre-selected choices
+          if (selectionIndex < selectionQueue.length) {
+            const selection = selectionQueue[selectionIndex];
+            selectionIndex++;
 
-          // Immediately invoke the callback with our pre-made choice
-          if (request.selectTarget && selection.type === 'target') {
-            const onSelect = request.onSelect || request.selectTarget.onSelect;
-            if (onSelect) {
-              onSelect(selection.value);
-            }
-            return;
-          } else if (request.selectOption && selection.type === 'option') {
-            const onSelect = request.onSelect || request.selectOption.onSelect;
-            if (onSelect) {
-              onSelect(selection.value);
-            }
-            return;
-          }
-        }
-
-        // No pre-made answer - this shouldn't happen if MoveGenerator worked correctly
-        // Fall back to first option to prevent hanging
-        console.warn('[MoveSimulator] Unexpected selection request - using first option');
-
-        if (request.selectTarget) {
-          const candidates = typeof request.selectTarget.candidates === 'function'
-            ? request.selectTarget.candidates()
-            : request.selectTarget.candidates;
-
-          if (candidates && candidates.length > 0) {
-            const onSelect = request.onSelect || request.selectTarget.onSelect;
-            if (onSelect) {
-              onSelect(candidates[0].value);
+            // Immediately invoke the callback with our pre-made choice
+            if (request.selectTarget && selection.type === 'target') {
+              const onSelect = request.onSelect || request.selectTarget.onSelect;
+              if (onSelect) {
+                onSelect(selection.value);
+              }
+              return;
+            } else if (request.selectOption && selection.type === 'option') {
+              const onSelect = request.onSelect || request.selectOption.onSelect;
+              if (onSelect) {
+                onSelect(selection.value);
+              }
+              return;
             }
           }
-        } else if (request.selectOption) {
-          const options = request.selectOption.options || [];
-          if (options.length > 0) {
-            const onSelect = request.onSelect || request.selectOption.onSelect;
-            if (onSelect) {
-              onSelect(options[0]);
+
+          // No pre-made answer - this shouldn't happen if MoveGenerator worked correctly
+          // Fall back to first option to prevent hanging
+          console.warn('[MoveSimulator] Unexpected selection request - using first option');
+
+          if (request.selectTarget) {
+            const candidates =
+              typeof request.selectTarget.candidates === 'function'
+                ? request.selectTarget.candidates()
+                : request.selectTarget.candidates;
+
+            if (candidates && candidates.length > 0) {
+              const onSelect = request.onSelect || request.selectTarget.onSelect;
+              if (onSelect) {
+                onSelect(candidates[0].value);
+              }
+            }
+          } else if (request.selectOption) {
+            const options = request.selectOption.options || [];
+            if (options.length > 0) {
+              const onSelect = request.onSelect || request.selectOption.onSelect;
+              if (onSelect) {
+                onSelect(options[0]);
+              }
             }
           }
-        }
-      },
-      onSelectionComplete: () => {}
-    });
+        },
+        onSelectionComplete: () => {},
+      }
+    );
   }
 
   /**
@@ -154,9 +159,9 @@ export class MoveSimulator {
         card: move.card,
         slotIndex: move.slot,
         options: {
-          dryDrop: move.dryDrop
-        }
-      }
+          dryDrop: move.dryDrop,
+        },
+      },
     });
   }
 
@@ -172,8 +177,8 @@ export class MoveSimulator {
       type: ActionTypes.DECLARE_ATTACK,
       payload: {
         attackerInstanceId: move.attackerInstanceId,
-        target: move.target
-      }
+        target: move.target,
+      },
     });
   }
 
@@ -186,7 +191,7 @@ export class MoveSimulator {
   simulateEndTurn(controller) {
     return controller.execute({
       type: ActionTypes.END_TURN,
-      payload: {}
+      payload: {},
     });
   }
 
@@ -211,7 +216,7 @@ export class MoveSimulator {
           success: false,
           state: currentState,
           error: result.error,
-          movesExecuted
+          movesExecuted,
         };
       }
 
@@ -227,7 +232,7 @@ export class MoveSimulator {
     return {
       success: true,
       state: currentState,
-      movesExecuted
+      movesExecuted,
     };
   }
 }

@@ -1,14 +1,14 @@
-import { supabase } from "./supabaseClient.js";
+import { supabase } from './supabaseClient.js';
 
 const LOBBY_CODE_LENGTH = 6;
-const LOBBY_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const LOBBY_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
 const generateLobbyCode = () => {
   const values = new Uint32Array(LOBBY_CODE_LENGTH);
   crypto.getRandomValues(values);
   return Array.from(values)
     .map((value) => LOBBY_CODE_CHARS[value % LOBBY_CODE_CHARS.length])
-    .join("");
+    .join('');
 };
 
 const ensureSession = async () => {
@@ -32,7 +32,7 @@ export const getAuthUserId = async () => {
     const session = await ensureSession();
     return session?.user?.id ?? null;
   } catch (e) {
-    console.error("Failed to get auth user ID:", e);
+    console.error('Failed to get auth user ID:', e);
     return null;
   }
 };
@@ -43,7 +43,7 @@ export const getAuthUserId = async () => {
  * @returns {Promise<Object|null>} Profile if exists, null otherwise
  */
 export const checkUsernameExists = async (username) => {
-  if (!username || typeof username !== "string") {
+  if (!username || typeof username !== 'string') {
     return null;
   }
   const trimmed = username.trim();
@@ -55,9 +55,9 @@ export const checkUsernameExists = async (username) => {
   await ensureSession();
 
   const { data, error } = await supabase
-    .from("profiles")
-    .select("id, username, current_auth_id")
-    .eq("username", trimmed)
+    .from('profiles')
+    .select('id, username, current_auth_id')
+    .eq('username', trimmed)
     .maybeSingle();
 
   if (error) {
@@ -73,21 +73,21 @@ export const checkUsernameExists = async (username) => {
  * @returns {Promise<Object>} The created profile
  */
 export const createAccountWithPin = async (username, pin) => {
-  if (!username || typeof username !== "string") {
-    throw new Error("Enter a valid username.");
+  if (!username || typeof username !== 'string') {
+    throw new Error('Enter a valid username.');
   }
   const trimmedUsername = username.trim();
   if (!trimmedUsername) {
-    throw new Error("Enter a valid username.");
+    throw new Error('Enter a valid username.');
   }
-  if (!pin || typeof pin !== "string" || !/^\d{4,6}$/.test(pin)) {
-    throw new Error("PIN must be 4-6 digits.");
+  if (!pin || typeof pin !== 'string' || !/^\d{4,6}$/.test(pin)) {
+    throw new Error('PIN must be 4-6 digits.');
   }
 
   // Check if username already exists
   const existing = await checkUsernameExists(trimmedUsername);
   if (existing) {
-    throw new Error("Username already taken. Try logging in instead.");
+    throw new Error('Username already taken. Try logging in instead.');
   }
 
   const session = await ensureSession();
@@ -97,14 +97,14 @@ export const createAccountWithPin = async (username, pin) => {
   const profileId = crypto.randomUUID();
 
   const { data, error } = await supabase
-    .from("profiles")
+    .from('profiles')
     .insert({
       id: profileId,
       username: trimmedUsername,
       pin: pin,
       current_auth_id: authUserId,
     })
-    .select("id, username")
+    .select('id, username')
     .single();
 
   if (error) {
@@ -121,15 +121,15 @@ export const createAccountWithPin = async (username, pin) => {
  * @returns {Promise<Object>} The profile
  */
 export const loginWithPin = async (username, pin) => {
-  if (!username || typeof username !== "string") {
-    throw new Error("Enter a valid username.");
+  if (!username || typeof username !== 'string') {
+    throw new Error('Enter a valid username.');
   }
   const trimmedUsername = username.trim();
   if (!trimmedUsername) {
-    throw new Error("Enter a valid username.");
+    throw new Error('Enter a valid username.');
   }
-  if (!pin || typeof pin !== "string") {
-    throw new Error("Enter your PIN.");
+  if (!pin || typeof pin !== 'string') {
+    throw new Error('Enter your PIN.');
   }
 
   // Ensure we have an authenticated session before querying
@@ -138,21 +138,21 @@ export const loginWithPin = async (username, pin) => {
 
   // Find the profile by username (include all profile fields for complete data)
   const { data: profile, error: fetchError } = await supabase
-    .from("profiles")
-    .select("id, username, pin, current_auth_id, packs, stats, matches, name_style")
-    .eq("username", trimmedUsername)
+    .from('profiles')
+    .select('id, username, pin, current_auth_id, packs, stats, matches, name_style')
+    .eq('username', trimmedUsername)
     .maybeSingle();
 
   if (fetchError) {
     throw fetchError;
   }
   if (!profile) {
-    throw new Error("Username not found. Create a new account?");
+    throw new Error('Username not found. Create a new account?');
   }
 
   // Verify PIN
   if (profile.pin !== pin) {
-    throw new Error("Incorrect PIN.");
+    throw new Error('Incorrect PIN.');
   }
 
   // Claim the profile with our auth session (force-claim, kicking any existing session)
@@ -161,9 +161,9 @@ export const loginWithPin = async (username, pin) => {
 
   // Update current_auth_id to claim this profile
   const { error: updateError } = await supabase
-    .from("profiles")
+    .from('profiles')
     .update({ current_auth_id: authUserId })
-    .eq("id", profile.id);
+    .eq('id', profile.id);
 
   if (updateError) {
     throw updateError;
@@ -193,9 +193,9 @@ export const logoutProfile = async () => {
   const authUserId = sessionData.session.user.id;
 
   const { error } = await supabase
-    .from("profiles")
+    .from('profiles')
     .update({ current_auth_id: null })
-    .eq("current_auth_id", authUserId);
+    .eq('current_auth_id', authUserId);
 
   if (error) {
     throw error;
@@ -224,9 +224,9 @@ export const validateSession = async (profileId) => {
 
   // Check if our auth ID still matches the profile's current_auth_id
   const { data: profile, error } = await supabase
-    .from("profiles")
-    .select("current_auth_id")
-    .eq("id", profileId)
+    .from('profiles')
+    .select('current_auth_id')
+    .eq('id', profileId)
     .maybeSingle();
 
   if (error || !profile) {
@@ -242,7 +242,7 @@ export const validateSession = async (profileId) => {
  * @deprecated Use createAccountWithPin or loginWithPin instead
  */
 export const signInWithUsername = async (username) => {
-  throw new Error("Use createAccountWithPin or loginWithPin instead.");
+  throw new Error('Use createAccountWithPin or loginWithPin instead.');
 };
 
 export const fetchProfile = async () => {
@@ -251,9 +251,9 @@ export const fetchProfile = async () => {
     return null;
   }
   const { data, error } = await supabase
-    .from("profiles")
-    .select("id, username, packs, stats, matches, name_style")
-    .eq("current_auth_id", sessionData.session.user.id)
+    .from('profiles')
+    .select('id, username, packs, stats, matches, name_style')
+    .eq('current_auth_id', sessionData.session.user.id)
     .maybeSingle();
 
   if (error) {
@@ -271,17 +271,17 @@ export const fetchProfile = async () => {
  */
 export const updateProfilePacks = async ({ profileId, packs }) => {
   if (!profileId) {
-    throw new Error("Missing profile id.");
+    throw new Error('Missing profile id.');
   }
   if (typeof packs !== 'number' || packs < 0) {
-    throw new Error("Invalid pack count.");
+    throw new Error('Invalid pack count.');
   }
 
   const { data, error } = await supabase
-    .from("profiles")
+    .from('profiles')
     .update({ packs })
-    .eq("id", profileId)
-    .select("id, packs")
+    .eq('id', profileId)
+    .select('id, packs')
     .single();
 
   if (error) {
@@ -300,7 +300,7 @@ export const updateProfilePacks = async ({ profileId, packs }) => {
  */
 export const updateProfileStats = async ({ profileId, stats, matches }) => {
   if (!profileId) {
-    throw new Error("Missing profile id.");
+    throw new Error('Missing profile id.');
   }
 
   const updateData = {};
@@ -316,10 +316,10 @@ export const updateProfileStats = async ({ profileId, stats, matches }) => {
   }
 
   const { data, error } = await supabase
-    .from("profiles")
+    .from('profiles')
     .update(updateData)
-    .eq("id", profileId)
-    .select("id, stats, matches")
+    .eq('id', profileId)
+    .select('id, stats, matches')
     .single();
 
   if (error) {
@@ -337,14 +337,14 @@ export const updateProfileStats = async ({ profileId, stats, matches }) => {
  */
 export const updateProfileNameStyle = async ({ profileId, nameStyle }) => {
   if (!profileId) {
-    throw new Error("Missing profile id.");
+    throw new Error('Missing profile id.');
   }
 
   const { data, error } = await supabase
-    .from("profiles")
+    .from('profiles')
     .update({ name_style: nameStyle })
-    .eq("id", profileId)
-    .select("id, name_style")
+    .eq('id', profileId)
+    .select('id, name_style')
     .single();
 
   if (error) {
@@ -359,9 +359,9 @@ export const fetchProfilesByIds = async (ids = []) => {
     return [];
   }
   const { data, error } = await supabase
-    .from("profiles")
-    .select("id, username, name_style")
-    .in("id", uniqueIds);
+    .from('profiles')
+    .select('id, username, name_style')
+    .in('id', uniqueIds);
 
   if (error) {
     throw error;
@@ -372,20 +372,20 @@ export const fetchProfilesByIds = async (ids = []) => {
 
 export const saveDeck = async ({ ownerId, name, deck }) => {
   if (!ownerId) {
-    throw new Error("Missing owner id.");
+    throw new Error('Missing owner id.');
   }
   const trimmedName = name?.trim();
   if (!trimmedName) {
-    throw new Error("Enter a deck name.");
+    throw new Error('Enter a deck name.');
   }
   const { data, error } = await supabase
-    .from("decks")
+    .from('decks')
     .insert({
       owner_id: ownerId,
       name: trimmedName,
       deck_json: deck,
     })
-    .select("id, name")
+    .select('id, name')
     .single();
 
   if (error) {
@@ -396,13 +396,13 @@ export const saveDeck = async ({ ownerId, name, deck }) => {
 
 export const fetchDecksByOwner = async ({ ownerId }) => {
   if (!ownerId) {
-    throw new Error("Missing owner id.");
+    throw new Error('Missing owner id.');
   }
   const { data, error } = await supabase
-    .from("decks")
-    .select("id, name, deck_json, created_at")
-    .eq("owner_id", ownerId)
-    .order("created_at", { ascending: true });
+    .from('decks')
+    .select('id, name, deck_json, created_at')
+    .eq('owner_id', ownerId)
+    .order('created_at', { ascending: true });
 
   if (error) {
     throw error;
@@ -412,16 +412,16 @@ export const fetchDecksByOwner = async ({ ownerId }) => {
 
 export const updateDeck = async ({ deckId, ownerId, name, deck }) => {
   if (!deckId) {
-    throw new Error("Missing deck id.");
+    throw new Error('Missing deck id.');
   }
   if (!ownerId) {
-    throw new Error("Missing owner id.");
+    throw new Error('Missing owner id.');
   }
   const updatePayload = {};
   if (name !== undefined) {
     const trimmedName = name?.trim();
     if (!trimmedName) {
-      throw new Error("Enter a deck name.");
+      throw new Error('Enter a deck name.');
     }
     updatePayload.name = trimmedName;
   }
@@ -429,27 +429,29 @@ export const updateDeck = async ({ deckId, ownerId, name, deck }) => {
     updatePayload.deck_json = deck;
   }
   const { data, error } = await supabase
-    .from("decks")
+    .from('decks')
     .update(updatePayload)
-    .eq("id", deckId)
-    .eq("owner_id", ownerId)
-    .select("id, name")
+    .eq('id', deckId)
+    .eq('owner_id', ownerId)
+    .select('id, name')
     .single();
 
   if (error) {
     // Provide more specific error messages for common issues
     if (error.code === 'PGRST116') {
-      throw new Error("Deck not found or you don't have permission to update it. Check Supabase RLS policies.");
+      throw new Error(
+        "Deck not found or you don't have permission to update it. Check Supabase RLS policies."
+      );
     }
     if (error.code === '42501') {
-      throw new Error("Permission denied. Check Supabase RLS policies for UPDATE on decks table.");
+      throw new Error('Permission denied. Check Supabase RLS policies for UPDATE on decks table.');
     }
     throw error;
   }
 
   // Verify data was returned (update succeeded)
   if (!data) {
-    throw new Error("Update failed - no data returned. Check Supabase RLS policies allow UPDATE.");
+    throw new Error('Update failed - no data returned. Check Supabase RLS policies allow UPDATE.');
   }
 
   return data;
@@ -457,16 +459,12 @@ export const updateDeck = async ({ deckId, ownerId, name, deck }) => {
 
 export const deleteDeck = async ({ deckId, ownerId }) => {
   if (!deckId) {
-    throw new Error("Missing deck id.");
+    throw new Error('Missing deck id.');
   }
   if (!ownerId) {
-    throw new Error("Missing owner id.");
+    throw new Error('Missing owner id.');
   }
-  const { error } = await supabase
-    .from("decks")
-    .delete()
-    .eq("id", deckId)
-    .eq("owner_id", ownerId);
+  const { error } = await supabase.from('decks').delete().eq('id', deckId).eq('owner_id', ownerId);
 
   if (error) {
     throw error;
@@ -476,17 +474,17 @@ export const deleteDeck = async ({ deckId, ownerId }) => {
 
 export const createLobby = async ({ hostId, forceNew = false, checkGameInProgress = null }) => {
   if (!hostId) {
-    throw new Error("Missing host id.");
+    throw new Error('Missing host id.');
   }
 
   // Check if host already has an active lobby (for reconnection)
   if (!forceNew) {
     const { data: existingLobby } = await supabase
-      .from("lobbies")
-      .select("id, code, status, host_id, guest_id")
-      .eq("host_id", hostId)
-      .neq("status", "closed")
-      .order("created_at", { ascending: false })
+      .from('lobbies')
+      .select('id, code, status, host_id, guest_id')
+      .eq('host_id', hostId)
+      .neq('status', 'closed')
+      .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
 
@@ -500,10 +498,7 @@ export const createLobby = async ({ hostId, forceNew = false, checkGameInProgres
           return existingLobby;
         }
         // No active game, close the old lobby and create a new one
-        await supabase
-          .from("lobbies")
-          .update({ status: "closed" })
-          .eq("id", existingLobby.id);
+        await supabase.from('lobbies').update({ status: 'closed' }).eq('id', existingLobby.id);
       } else {
         // No check function provided, just return existing lobby
         return existingLobby;
@@ -517,44 +512,44 @@ export const createLobby = async ({ hostId, forceNew = false, checkGameInProgres
     attempts += 1;
     const code = generateLobbyCode();
     const { data, error } = await supabase
-      .from("lobbies")
+      .from('lobbies')
       .insert({
         code,
         host_id: hostId,
-        status: "open",
+        status: 'open',
       })
-      .select("id, code, status, host_id, guest_id")
+      .select('id, code, status, host_id, guest_id')
       .single();
 
     if (!error) {
       return data;
     }
-    if (!error.message?.includes("duplicate")) {
+    if (!error.message?.includes('duplicate')) {
       throw error;
     }
   }
-  throw new Error("Unable to generate a lobby code.");
+  throw new Error('Unable to generate a lobby code.');
 };
 
 export const joinLobbyByCode = async ({ code, guestId }) => {
   if (!code) {
-    throw new Error("Enter a lobby code.");
+    throw new Error('Enter a lobby code.');
   }
   if (!guestId) {
-    throw new Error("Missing guest id.");
+    throw new Error('Missing guest id.');
   }
   const trimmed = code.trim().toUpperCase();
   const { data: lobby, error: lobbyError } = await supabase
-    .from("lobbies")
-    .select("id, code, status, host_id, guest_id")
-    .eq("code", trimmed)
+    .from('lobbies')
+    .select('id, code, status, host_id, guest_id')
+    .eq('code', trimmed)
     .maybeSingle();
 
   if (lobbyError) {
     throw lobbyError;
   }
   if (!lobby) {
-    throw new Error("Lobby not found.");
+    throw new Error('Lobby not found.');
   }
 
   // Allow rejoining if you're already the guest or host
@@ -567,25 +562,25 @@ export const joinLobbyByCode = async ({ code, guestId }) => {
   }
 
   // Check if lobby is available for new players
-  if (lobby.status !== "open" || lobby.guest_id) {
-    throw new Error("Lobby is already full.");
+  if (lobby.status !== 'open' || lobby.guest_id) {
+    throw new Error('Lobby is already full.');
   }
 
   // New player joining - update the lobby
   const { data, error } = await supabase
-    .from("lobbies")
-    .update({ guest_id: guestId, status: "full" })
-    .eq("id", lobby.id)
-    .is("guest_id", null)
-    .eq("status", "open")
-    .select("id, code, status, host_id, guest_id")
+    .from('lobbies')
+    .update({ guest_id: guestId, status: 'full' })
+    .eq('id', lobby.id)
+    .is('guest_id', null)
+    .eq('status', 'open')
+    .select('id, code, status, host_id, guest_id')
     .maybeSingle();
 
   if (error) {
     throw error;
   }
   if (!data) {
-    throw new Error("Lobby join failed. The lobby may already be full.");
+    throw new Error('Lobby join failed. The lobby may already be full.');
   }
   return data;
 };
@@ -595,9 +590,9 @@ export const fetchLobbyById = async ({ lobbyId }) => {
     return null;
   }
   const { data, error } = await supabase
-    .from("lobbies")
-    .select("id, code, status, host_id, guest_id")
-    .eq("id", lobbyId)
+    .from('lobbies')
+    .select('id, code, status, host_id, guest_id')
+    .eq('id', lobbyId)
     .maybeSingle();
 
   if (error) {
@@ -620,11 +615,11 @@ export const findExistingLobby = async ({ userId }) => {
 
   // First check if user is a host of an active lobby
   const { data: hostLobby, error: hostError } = await supabase
-    .from("lobbies")
-    .select("id, code, status, host_id, guest_id")
-    .eq("host_id", userId)
-    .neq("status", "closed")
-    .order("created_at", { ascending: false })
+    .from('lobbies')
+    .select('id, code, status, host_id, guest_id')
+    .eq('host_id', userId)
+    .neq('status', 'closed')
+    .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
 
@@ -638,11 +633,11 @@ export const findExistingLobby = async ({ userId }) => {
 
   // Check if user is a guest of an active lobby
   const { data: guestLobby, error: guestError } = await supabase
-    .from("lobbies")
-    .select("id, code, status, host_id, guest_id")
-    .eq("guest_id", userId)
-    .neq("status", "closed")
-    .order("created_at", { ascending: false })
+    .from('lobbies')
+    .select('id, code, status, host_id, guest_id')
+    .eq('guest_id', userId)
+    .neq('status', 'closed')
+    .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
 
@@ -658,9 +653,9 @@ export const closeLobby = async ({ lobbyId, userId }) => {
     return null;
   }
   const { error } = await supabase
-    .from("lobbies")
-    .update({ status: "closed" })
-    .eq("id", lobbyId)
+    .from('lobbies')
+    .update({ status: 'closed' })
+    .eq('id', lobbyId)
     .or(`host_id.eq.${userId},guest_id.eq.${userId}`);
 
   if (error) {
@@ -675,8 +670,8 @@ export const subscribeToLobby = ({ lobbyId, onUpdate }) => {
   }
   const channel = supabase.channel(`lobby-${lobbyId}`);
   channel.on(
-    "postgres_changes",
-    { event: "*", schema: "public", table: "lobbies", filter: `id=eq.${lobbyId}` },
+    'postgres_changes',
+    { event: '*', schema: 'public', table: 'lobbies', filter: `id=eq.${lobbyId}` },
     (payload) => {
       if (payload.new) {
         onUpdate?.(payload.new);
@@ -704,14 +699,14 @@ export const unsubscribeChannel = (channel) => {
  */
 export const saveGameState = async ({ lobbyId, gameState, actionSequence = 0 }) => {
   if (!lobbyId) {
-    throw new Error("Missing lobby id.");
+    throw new Error('Missing lobby id.');
   }
   if (!gameState) {
-    throw new Error("Missing game state.");
+    throw new Error('Missing game state.');
   }
 
   const { data, error } = await supabase
-    .from("game_sessions")
+    .from('game_sessions')
     .upsert(
       {
         lobby_id: lobbyId,
@@ -719,7 +714,7 @@ export const saveGameState = async ({ lobbyId, gameState, actionSequence = 0 }) 
         action_sequence: actionSequence,
         updated_at: new Date().toISOString(),
       },
-      { onConflict: "lobby_id" }
+      { onConflict: 'lobby_id' }
     )
     .select()
     .single();
@@ -738,13 +733,13 @@ export const saveGameState = async ({ lobbyId, gameState, actionSequence = 0 }) 
  */
 export const loadGameState = async ({ lobbyId }) => {
   if (!lobbyId) {
-    throw new Error("Missing lobby id.");
+    throw new Error('Missing lobby id.');
   }
 
   const { data, error } = await supabase
-    .from("game_sessions")
-    .select("game_state, action_sequence")
-    .eq("lobby_id", lobbyId)
+    .from('game_sessions')
+    .select('game_state, action_sequence')
+    .eq('lobby_id', lobbyId)
     .maybeSingle();
 
   if (error) {
@@ -765,13 +760,13 @@ export const findWaitingLobby = async ({ excludeUserId }) => {
   const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
 
   const { data, error } = await supabase
-    .from("lobbies")
-    .select("id, code, status, host_id, guest_id, created_at")
-    .eq("status", "open")
-    .is("guest_id", null)
-    .neq("host_id", excludeUserId)
-    .gte("created_at", fiveMinutesAgo)
-    .order("created_at", { ascending: true })
+    .from('lobbies')
+    .select('id, code, status, host_id, guest_id, created_at')
+    .eq('status', 'open')
+    .is('guest_id', null)
+    .neq('host_id', excludeUserId)
+    .gte('created_at', fiveMinutesAgo)
+    .order('created_at', { ascending: true })
     .limit(1)
     .maybeSingle();
 
@@ -792,21 +787,21 @@ export const findWaitingLobby = async ({ excludeUserId }) => {
  */
 export const joinLobbyById = async ({ lobbyId, guestId }) => {
   if (!lobbyId) {
-    throw new Error("Missing lobby id.");
+    throw new Error('Missing lobby id.');
   }
   if (!guestId) {
-    throw new Error("Missing guest id.");
+    throw new Error('Missing guest id.');
   }
 
   // Use conditional update to handle race conditions
   // Only succeeds if guest_id is still null
   const { data, error } = await supabase
-    .from("lobbies")
-    .update({ guest_id: guestId, status: "full" })
-    .eq("id", lobbyId)
-    .is("guest_id", null)
-    .eq("status", "open")
-    .select("id, code, status, host_id, guest_id")
+    .from('lobbies')
+    .update({ guest_id: guestId, status: 'full' })
+    .eq('id', lobbyId)
+    .is('guest_id', null)
+    .eq('status', 'open')
+    .select('id, code, status, host_id, guest_id')
     .maybeSingle();
 
   if (error) {
@@ -829,15 +824,15 @@ export const joinLobbyById = async ({ lobbyId, guestId }) => {
  */
 export const createMatchmakingLobby = async ({ hostId }) => {
   if (!hostId) {
-    throw new Error("Missing host id.");
+    throw new Error('Missing host id.');
   }
 
   // First close any existing open lobbies for this user
   await supabase
-    .from("lobbies")
-    .update({ status: "closed" })
-    .eq("host_id", hostId)
-    .eq("status", "open");
+    .from('lobbies')
+    .update({ status: 'closed' })
+    .eq('host_id', hostId)
+    .eq('status', 'open');
 
   // Create a new lobby
   let attempts = 0;
@@ -845,23 +840,23 @@ export const createMatchmakingLobby = async ({ hostId }) => {
     attempts += 1;
     const code = generateLobbyCode();
     const { data, error } = await supabase
-      .from("lobbies")
+      .from('lobbies')
       .insert({
         code,
         host_id: hostId,
-        status: "open",
+        status: 'open',
       })
-      .select("id, code, status, host_id, guest_id")
+      .select('id, code, status, host_id, guest_id')
       .single();
 
     if (!error) {
       return data;
     }
-    if (!error.message?.includes("duplicate")) {
+    if (!error.message?.includes('duplicate')) {
       throw error;
     }
   }
-  throw new Error("Unable to generate a lobby code.");
+  throw new Error('Unable to generate a lobby code.');
 };
 
 // ============================================================================
@@ -876,13 +871,13 @@ export const createMatchmakingLobby = async ({ hostId }) => {
  */
 export const fetchPlayerCards = async ({ profileId }) => {
   if (!profileId) {
-    throw new Error("Missing profile id.");
+    throw new Error('Missing profile id.');
   }
 
   const { data, error } = await supabase
-    .from("player_cards")
-    .select("card_id, rarity")
-    .eq("profile_id", profileId);
+    .from('player_cards')
+    .select('card_id, rarity')
+    .eq('profile_id', profileId);
 
   if (error) {
     throw error;
@@ -901,26 +896,26 @@ export const fetchPlayerCards = async ({ profileId }) => {
  */
 export const savePlayerCard = async ({ profileId, cardId, rarity }) => {
   if (!profileId) {
-    throw new Error("Missing profile id.");
+    throw new Error('Missing profile id.');
   }
   if (!cardId) {
-    throw new Error("Missing card id.");
+    throw new Error('Missing card id.');
   }
   if (!rarity) {
-    throw new Error("Missing rarity.");
+    throw new Error('Missing rarity.');
   }
 
   const { data, error } = await supabase
-    .from("player_cards")
+    .from('player_cards')
     .upsert(
       {
         profile_id: profileId,
         card_id: cardId,
         rarity: rarity,
       },
-      { onConflict: "profile_id,card_id" }
+      { onConflict: 'profile_id,card_id' }
     )
-    .select("card_id, rarity")
+    .select('card_id, rarity')
     .single();
 
   if (error) {
@@ -939,7 +934,7 @@ export const savePlayerCard = async ({ profileId, cardId, rarity }) => {
  */
 export const savePlayerCards = async ({ profileId, cards }) => {
   if (!profileId) {
-    throw new Error("Missing profile id.");
+    throw new Error('Missing profile id.');
   }
   if (!cards || !Array.isArray(cards) || cards.length === 0) {
     return [];
@@ -952,9 +947,9 @@ export const savePlayerCards = async ({ profileId, cards }) => {
   }));
 
   const { data, error } = await supabase
-    .from("player_cards")
-    .upsert(rows, { onConflict: "profile_id,card_id" })
-    .select("card_id, rarity");
+    .from('player_cards')
+    .upsert(rows, { onConflict: 'profile_id,card_id' })
+    .select('card_id, rarity');
 
   if (error) {
     throw error;
@@ -973,7 +968,7 @@ export const savePlayerCards = async ({ profileId, cards }) => {
  * @returns {Promise<Object|null>} Profile {id, username} or null if not found
  */
 export const searchUserByUsername = async (username) => {
-  if (!username || typeof username !== "string") {
+  if (!username || typeof username !== 'string') {
     return null;
   }
   const trimmed = username.trim();
@@ -984,9 +979,9 @@ export const searchUserByUsername = async (username) => {
   await ensureSession();
 
   const { data, error } = await supabase
-    .from("profiles")
-    .select("id, username")
-    .ilike("username", trimmed)
+    .from('profiles')
+    .select('id, username')
+    .ilike('username', trimmed)
     .maybeSingle();
 
   if (error) {
@@ -1004,54 +999,54 @@ export const searchUserByUsername = async (username) => {
  */
 export const sendFriendRequest = async ({ requesterId, addresseeId }) => {
   if (!requesterId || !addresseeId) {
-    throw new Error("Missing profile IDs.");
+    throw new Error('Missing profile IDs.');
   }
   if (requesterId === addresseeId) {
-    throw new Error("Cannot send friend request to yourself.");
+    throw new Error('Cannot send friend request to yourself.');
   }
 
   await ensureSession();
 
   // Check if friendship already exists (in either direction)
   const { data: existing } = await supabase
-    .from("friendships")
-    .select("id, status, requester_id, addressee_id")
+    .from('friendships')
+    .select('id, status, requester_id, addressee_id')
     .or(
       `and(requester_id.eq.${requesterId},addressee_id.eq.${addresseeId}),and(requester_id.eq.${addresseeId},addressee_id.eq.${requesterId})`
     )
     .maybeSingle();
 
   if (existing) {
-    if (existing.status === "accepted") {
-      throw new Error("Already friends with this user.");
+    if (existing.status === 'accepted') {
+      throw new Error('Already friends with this user.');
     }
-    if (existing.status === "pending") {
+    if (existing.status === 'pending') {
       if (existing.requester_id === requesterId) {
-        throw new Error("Friend request already sent.");
+        throw new Error('Friend request already sent.');
       } else {
         // They sent us a request, accept it instead
         const { data, error } = await supabase
-          .from("friendships")
-          .update({ status: "accepted", updated_at: new Date().toISOString() })
-          .eq("id", existing.id)
+          .from('friendships')
+          .update({ status: 'accepted', updated_at: new Date().toISOString() })
+          .eq('id', existing.id)
           .select()
           .single();
         if (error) throw error;
         return data;
       }
     }
-    if (existing.status === "rejected") {
+    if (existing.status === 'rejected') {
       // Delete old rejected request and create new one
-      await supabase.from("friendships").delete().eq("id", existing.id);
+      await supabase.from('friendships').delete().eq('id', existing.id);
     }
   }
 
   const { data, error } = await supabase
-    .from("friendships")
+    .from('friendships')
     .insert({
       requester_id: requesterId,
       addressee_id: addresseeId,
-      status: "pending",
+      status: 'pending',
     })
     .select()
     .single();
@@ -1070,26 +1065,22 @@ export const sendFriendRequest = async ({ requesterId, addresseeId }) => {
  * @param {'accepted'|'rejected'} params.response - Accept or reject
  * @returns {Promise<Object>} Updated friendship record
  */
-export const respondToFriendRequest = async ({
-  friendshipId,
-  addresseeId,
-  response,
-}) => {
+export const respondToFriendRequest = async ({ friendshipId, addresseeId, response }) => {
   if (!friendshipId || !addresseeId) {
-    throw new Error("Missing required parameters.");
+    throw new Error('Missing required parameters.');
   }
-  if (response !== "accepted" && response !== "rejected") {
+  if (response !== 'accepted' && response !== 'rejected') {
     throw new Error("Invalid response. Must be 'accepted' or 'rejected'.");
   }
 
   await ensureSession();
 
   const { data, error } = await supabase
-    .from("friendships")
+    .from('friendships')
     .update({ status: response, updated_at: new Date().toISOString() })
-    .eq("id", friendshipId)
-    .eq("addressee_id", addresseeId)
-    .eq("status", "pending")
+    .eq('id', friendshipId)
+    .eq('addressee_id', addresseeId)
+    .eq('status', 'pending')
     .select()
     .single();
 
@@ -1108,15 +1099,15 @@ export const respondToFriendRequest = async ({
  */
 export const removeFriendship = async ({ friendshipId, profileId }) => {
   if (!friendshipId || !profileId) {
-    throw new Error("Missing required parameters.");
+    throw new Error('Missing required parameters.');
   }
 
   await ensureSession();
 
   const { error } = await supabase
-    .from("friendships")
+    .from('friendships')
     .delete()
-    .eq("id", friendshipId)
+    .eq('id', friendshipId)
     .or(`requester_id.eq.${profileId},addressee_id.eq.${profileId}`);
 
   if (error) {
@@ -1133,14 +1124,14 @@ export const removeFriendship = async ({ friendshipId, profileId }) => {
  */
 export const fetchFriendships = async ({ profileId }) => {
   if (!profileId) {
-    throw new Error("Missing profile ID.");
+    throw new Error('Missing profile ID.');
   }
 
   await ensureSession();
 
   // Get all friendships involving this user
   const { data, error } = await supabase
-    .from("friendships")
+    .from('friendships')
     .select(
       `
       id,
@@ -1180,15 +1171,15 @@ export const fetchFriendships = async ({ profileId }) => {
       updatedAt: friendship.updated_at,
     };
 
-    if (friendship.status === "accepted") {
+    if (friendship.status === 'accepted') {
       result.accepted.push(item);
-    } else if (friendship.status === "pending") {
+    } else if (friendship.status === 'pending') {
       if (isRequester) {
         result.outgoing.push(item);
       } else {
         result.incoming.push(item);
       }
-    } else if (friendship.status === "rejected" && isRequester) {
+    } else if (friendship.status === 'rejected' && isRequester) {
       // Only show rejected to the requester
       result.outgoing.push(item);
     }
@@ -1205,16 +1196,16 @@ export const fetchFriendships = async ({ profileId }) => {
  */
 export const fetchPublicProfile = async ({ profileId }) => {
   if (!profileId) {
-    throw new Error("Missing profile ID.");
+    throw new Error('Missing profile ID.');
   }
 
   await ensureSession();
 
   // Fetch profile with stats
   const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("id, username, stats, matches")
-    .eq("id", profileId)
+    .from('profiles')
+    .select('id, username, stats, matches')
+    .eq('id', profileId)
     .single();
 
   if (profileError) {
@@ -1223,9 +1214,9 @@ export const fetchPublicProfile = async ({ profileId }) => {
 
   // Fetch owned cards
   const { data: cards, error: cardsError } = await supabase
-    .from("player_cards")
-    .select("card_id, rarity")
-    .eq("profile_id", profileId);
+    .from('player_cards')
+    .select('card_id, rarity')
+    .eq('profile_id', profileId);
 
   if (cardsError) {
     throw cardsError;
@@ -1255,21 +1246,21 @@ export const subscribeToFriendships = ({ profileId, onUpdate }) => {
   const channel = supabase
     .channel(`friendships:${profileId}`)
     .on(
-      "postgres_changes",
+      'postgres_changes',
       {
-        event: "*",
-        schema: "public",
-        table: "friendships",
+        event: '*',
+        schema: 'public',
+        table: 'friendships',
         filter: `requester_id=eq.${profileId}`,
       },
       () => onUpdate()
     )
     .on(
-      "postgres_changes",
+      'postgres_changes',
       {
-        event: "*",
-        schema: "public",
-        table: "friendships",
+        event: '*',
+        schema: 'public',
+        table: 'friendships',
         filter: `addressee_id=eq.${profileId}`,
       },
       () => onUpdate()
@@ -1307,19 +1298,19 @@ export const sendDuelInvite = async ({ senderId, receiverId, lobbyCode }) => {
 
   // Cancel any existing pending invites from this sender
   await supabase
-    .from("duel_invites")
-    .update({ status: "cancelled" })
-    .eq("sender_id", senderId)
-    .eq("status", "pending");
+    .from('duel_invites')
+    .update({ status: 'cancelled' })
+    .eq('sender_id', senderId)
+    .eq('status', 'pending');
 
   // Create new invite (expires in 60 seconds)
   const { data, error } = await supabase
-    .from("duel_invites")
+    .from('duel_invites')
     .insert({
       sender_id: senderId,
       receiver_id: receiverId,
       lobby_code: lobbyCode,
-      status: "pending",
+      status: 'pending',
       expires_at: new Date(Date.now() + 60000).toISOString(),
     })
     .select()
@@ -1343,9 +1334,9 @@ export const sendDuelInvite = async ({ senderId, receiverId, lobbyCode }) => {
  */
 export const respondToDuelInvite = async ({ inviteId, response }) => {
   const { data, error } = await supabase
-    .from("duel_invites")
+    .from('duel_invites')
     .update({ status: response })
-    .eq("id", inviteId)
+    .eq('id', inviteId)
     .select()
     .single();
 
@@ -1368,11 +1359,11 @@ export const subscribeToDuelInvites = (profileId, onInvite, onCancelled, onRespo
     .channel(`duel-invites:${profileId}`)
     // Listen for new invites (as receiver)
     .on(
-      "postgres_changes",
+      'postgres_changes',
       {
-        event: "INSERT",
-        schema: "public",
-        table: "duel_invites",
+        event: 'INSERT',
+        schema: 'public',
+        table: 'duel_invites',
         filter: `receiver_id=eq.${profileId}`,
       },
       (payload) => {
@@ -1383,32 +1374,32 @@ export const subscribeToDuelInvites = (profileId, onInvite, onCancelled, onRespo
     )
     // Listen for updates (cancellations, responses)
     .on(
-      "postgres_changes",
+      'postgres_changes',
       {
-        event: "UPDATE",
-        schema: "public",
-        table: "duel_invites",
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'duel_invites',
         filter: `receiver_id=eq.${profileId}`,
       },
       (payload) => {
         console.log('[DUEL-SUB] UPDATE event (receiver) received:', payload);
-        if (payload.new.status === "cancelled") {
+        if (payload.new.status === 'cancelled') {
           onCancelled?.(payload.new);
         }
       }
     )
     // Listen for responses to invites we sent (as sender)
     .on(
-      "postgres_changes",
+      'postgres_changes',
       {
-        event: "UPDATE",
-        schema: "public",
-        table: "duel_invites",
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'duel_invites',
         filter: `sender_id=eq.${profileId}`,
       },
       (payload) => {
         console.log('[DUEL-SUB] UPDATE event (sender) received:', payload);
-        if (payload.new.status === "accepted" || payload.new.status === "declined") {
+        if (payload.new.status === 'accepted' || payload.new.status === 'declined') {
           onResponse?.(payload.new);
         }
       }
@@ -1442,8 +1433,9 @@ export const fetchBugReports = async () => {
   await ensureSession();
 
   const { data, error } = await supabase
-    .from("bug_reports")
-    .select(`
+    .from('bug_reports')
+    .select(
+      `
       id,
       profile_id,
       title,
@@ -1453,8 +1445,9 @@ export const fetchBugReports = async () => {
       created_at,
       updated_at,
       profiles:profile_id (username)
-    `)
-    .order("created_at", { ascending: false });
+    `
+    )
+    .order('created_at', { ascending: false });
 
   if (error) throw error;
 
@@ -1462,13 +1455,13 @@ export const fetchBugReports = async () => {
   const reportsWithVotes = await Promise.all(
     (data ?? []).map(async (report) => {
       const { count } = await supabase
-        .from("bug_report_votes")
-        .select("*", { count: "exact", head: true })
-        .eq("bug_report_id", report.id);
+        .from('bug_report_votes')
+        .select('*', { count: 'exact', head: true })
+        .eq('bug_report_id', report.id);
 
       return {
         ...report,
-        reporter_username: report.profiles?.username ?? "Anonymous",
+        reporter_username: report.profiles?.username ?? 'Anonymous',
         vote_count: count ?? 0,
       };
     })
@@ -1487,10 +1480,10 @@ export const hasVotedOnBug = async (bugReportId, profileId) => {
   if (!bugReportId || !profileId) return false;
 
   const { data, error } = await supabase
-    .from("bug_report_votes")
-    .select("id")
-    .eq("bug_report_id", bugReportId)
-    .eq("profile_id", profileId)
+    .from('bug_report_votes')
+    .select('id')
+    .eq('bug_report_id', bugReportId)
+    .eq('profile_id', profileId)
     .maybeSingle();
 
   if (error) return false;
@@ -1506,9 +1499,9 @@ export const fetchUserBugVotes = async (profileId) => {
   if (!profileId) return new Set();
 
   const { data, error } = await supabase
-    .from("bug_report_votes")
-    .select("bug_report_id")
-    .eq("profile_id", profileId);
+    .from('bug_report_votes')
+    .select('bug_report_id')
+    .eq('profile_id', profileId);
 
   if (error) return new Set();
   return new Set((data ?? []).map((v) => v.bug_report_id));
@@ -1523,27 +1516,22 @@ export const fetchUserBugVotes = async (profileId) => {
  * @param {string} params.category - Bug category
  * @returns {Promise<Object>} Created bug report
  */
-export const submitBugReport = async ({
-  profileId,
-  title,
-  description,
-  category,
-}) => {
-  if (!profileId) throw new Error("Must be logged in to report bugs.");
-  if (!title?.trim()) throw new Error("Title is required.");
+export const submitBugReport = async ({ profileId, title, description, category }) => {
+  if (!profileId) throw new Error('Must be logged in to report bugs.');
+  if (!title?.trim()) throw new Error('Title is required.');
 
   await ensureSession();
 
   const { data, error } = await supabase
-    .from("bug_reports")
+    .from('bug_reports')
     .insert({
       profile_id: profileId,
       title: title.trim(),
       description: description?.trim() || null,
-      category: category || "other",
-      status: "open",
+      category: category || 'other',
+      status: 'open',
     })
-    .select("id, title")
+    .select('id, title')
     .single();
 
   if (error) throw error;
@@ -1560,15 +1548,9 @@ export const submitBugReport = async ({
  * @param {string} [params.category] - New category
  * @returns {Promise<Object>} Updated bug report
  */
-export const updateBugReport = async ({
-  bugReportId,
-  profileId,
-  title,
-  description,
-  category,
-}) => {
-  if (!bugReportId) throw new Error("Bug report ID is required.");
-  if (!profileId) throw new Error("Must be logged in.");
+export const updateBugReport = async ({ bugReportId, profileId, title, description, category }) => {
+  if (!bugReportId) throw new Error('Bug report ID is required.');
+  if (!profileId) throw new Error('Must be logged in.');
 
   const updates = { updated_at: new Date().toISOString() };
   if (title !== undefined) updates.title = title.trim();
@@ -1576,11 +1558,11 @@ export const updateBugReport = async ({
   if (category !== undefined) updates.category = category;
 
   const { data, error } = await supabase
-    .from("bug_reports")
+    .from('bug_reports')
     .update(updates)
-    .eq("id", bugReportId)
-    .eq("profile_id", profileId) // Only owner can edit
-    .select("id, title")
+    .eq('id', bugReportId)
+    .eq('profile_id', profileId) // Only owner can edit
+    .select('id, title')
     .single();
 
   if (error) throw error;
@@ -1594,14 +1576,14 @@ export const updateBugReport = async ({
  * @returns {Promise<void>}
  */
 export const deleteBugReport = async (bugReportId, profileId) => {
-  if (!bugReportId) throw new Error("Bug report ID is required.");
-  if (!profileId) throw new Error("Must be logged in.");
+  if (!bugReportId) throw new Error('Bug report ID is required.');
+  if (!profileId) throw new Error('Must be logged in.');
 
   const { error } = await supabase
-    .from("bug_reports")
+    .from('bug_reports')
     .delete()
-    .eq("id", bugReportId)
-    .eq("profile_id", profileId); // Only owner can delete
+    .eq('id', bugReportId)
+    .eq('profile_id', profileId); // Only owner can delete
 
   if (error) throw error;
 };
@@ -1613,28 +1595,25 @@ export const deleteBugReport = async (bugReportId, profileId) => {
  * @returns {Promise<{voted: boolean, newCount: number}>} New vote state
  */
 export const toggleBugVote = async (bugReportId, profileId) => {
-  if (!bugReportId) throw new Error("Bug report ID is required.");
-  if (!profileId) throw new Error("Must be logged in to vote.");
+  if (!bugReportId) throw new Error('Bug report ID is required.');
+  if (!profileId) throw new Error('Must be logged in to vote.');
 
   await ensureSession();
 
   // Check if already voted
   const { data: existingVote } = await supabase
-    .from("bug_report_votes")
-    .select("id")
-    .eq("bug_report_id", bugReportId)
-    .eq("profile_id", profileId)
+    .from('bug_report_votes')
+    .select('id')
+    .eq('bug_report_id', bugReportId)
+    .eq('profile_id', profileId)
     .maybeSingle();
 
   if (existingVote) {
     // Remove vote
-    await supabase
-      .from("bug_report_votes")
-      .delete()
-      .eq("id", existingVote.id);
+    await supabase.from('bug_report_votes').delete().eq('id', existingVote.id);
   } else {
     // Add vote
-    await supabase.from("bug_report_votes").insert({
+    await supabase.from('bug_report_votes').insert({
       bug_report_id: bugReportId,
       profile_id: profileId,
     });
@@ -1642,9 +1621,9 @@ export const toggleBugVote = async (bugReportId, profileId) => {
 
   // Get new count
   const { count } = await supabase
-    .from("bug_report_votes")
-    .select("*", { count: "exact", head: true })
-    .eq("bug_report_id", bugReportId);
+    .from('bug_report_votes')
+    .select('*', { count: 'exact', head: true })
+    .eq('bug_report_id', bugReportId);
 
   return { voted: !existingVote, newCount: count ?? 0 };
 };
@@ -1656,20 +1635,20 @@ export const toggleBugVote = async (bugReportId, profileId) => {
  * @returns {Promise<Object>} Updated bug report
  */
 export const updateBugStatus = async (bugReportId, status) => {
-  if (!bugReportId) throw new Error("Bug report ID is required.");
+  if (!bugReportId) throw new Error('Bug report ID is required.');
 
-  const validStatuses = ["open", "acknowledged", "fixed", "wont_fix"];
+  const validStatuses = ['open', 'acknowledged', 'fixed', 'wont_fix'];
   if (!validStatuses.includes(status)) {
-    throw new Error("Invalid status.");
+    throw new Error('Invalid status.');
   }
 
   await ensureSession();
 
   const { data, error } = await supabase
-    .from("bug_reports")
+    .from('bug_reports')
     .update({ status, updated_at: new Date().toISOString() })
-    .eq("id", bugReportId)
-    .select("id, status")
+    .eq('id', bugReportId)
+    .select('id, status')
     .single();
 
   if (error) throw error;
@@ -1685,16 +1664,12 @@ export const subscribeToBugReports = (onUpdate) => {
   if (!onUpdate) return null;
 
   const channel = supabase
-    .channel("bug_reports_changes")
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "bug_reports" },
-      () => onUpdate()
+    .channel('bug_reports_changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'bug_reports' }, () =>
+      onUpdate()
     )
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "bug_report_votes" },
-      () => onUpdate()
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'bug_report_votes' }, () =>
+      onUpdate()
     )
     .subscribe();
 

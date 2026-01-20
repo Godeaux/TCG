@@ -12,7 +12,11 @@ import {
   ensureRegistryInitialized,
   getCardDefinitionById,
 } from '../../setup/testHelpers.js';
-import { createEffectContext, createCombatContext, createTrapContext } from '../../setup/mockFactory.js';
+import {
+  createEffectContext,
+  createCombatContext,
+  createTrapContext,
+} from '../../setup/mockFactory.js';
 import * as effectLibrary from '../../../js/cards/effectLibrary.js';
 
 beforeAll(() => {
@@ -106,7 +110,11 @@ describe('Amphibian Spell Cards', () => {
       expect(effects).toContainEqual(
         expect.objectContaining({
           type: 'selectTarget',
-          params: expect.objectContaining({ group: 'enemy-creatures', effect: 'damage', amount: 3 })
+          params: expect.objectContaining({
+            group: 'enemy-creatures',
+            effect: 'damage',
+            amount: 3,
+          }),
         })
       );
     });
@@ -167,7 +175,7 @@ describe('Amphibian Spell Cards', () => {
       expect(effects.length).toBe(2);
 
       // Both should be damageAllEnemyCreatures with amount 2
-      effects.forEach(effect => {
+      effects.forEach((effect) => {
         expect(effect.type).toBe('damageAllEnemyCreatures');
         expect(effect.params.amount).toBe(2);
       });
@@ -213,14 +221,10 @@ describe('Amphibian Spell Cards', () => {
       expect(Array.isArray(effects)).toBe(true);
 
       // Should have destroyFieldSpells primitive
-      expect(effects).toContainEqual(
-        expect.objectContaining({ type: 'destroyFieldSpells' })
-      );
+      expect(effects).toContainEqual(expect.objectContaining({ type: 'destroyFieldSpells' }));
 
       // Should have killEnemyTokens primitive
-      expect(effects).toContainEqual(
-        expect.objectContaining({ type: 'killEnemyTokens' })
-      );
+      expect(effects).toContainEqual(expect.objectContaining({ type: 'killEnemyTokens' }));
     });
   });
 
@@ -246,7 +250,7 @@ describe('Amphibian Spell Cards', () => {
       expect(effects).toContainEqual(
         expect.objectContaining({
           type: 'selectTarget',
-          params: expect.objectContaining({ group: 'any', effect: 'damage', amount: 3 })
+          params: expect.objectContaining({ group: 'any', effect: 'damage', amount: 3 }),
         })
       );
 
@@ -405,14 +409,10 @@ describe('Amphibian Trap Cards', () => {
       expect(Array.isArray(effects)).toBe(true);
 
       // Should have negateAttack primitive
-      expect(effects).toContainEqual(
-        expect.objectContaining({ type: 'negateAttack' })
-      );
+      expect(effects).toContainEqual(expect.objectContaining({ type: 'negateAttack' }));
 
       // Should have killAttacker primitive
-      expect(effects).toContainEqual(
-        expect.objectContaining({ type: 'killAttacker' })
-      );
+      expect(effects).toContainEqual(expect.objectContaining({ type: 'killAttacker' }));
     });
 
     it('negateAndKillAttacker returns negateAttack and killTargets', () => {
@@ -497,15 +497,13 @@ describe('Amphibian Trap Cards', () => {
       expect(Array.isArray(effects)).toBe(true);
 
       // Should have negatePlay primitive
-      expect(effects).toContainEqual(
-        expect.objectContaining({ type: 'negatePlay' })
-      );
+      expect(effects).toContainEqual(expect.objectContaining({ type: 'negatePlay' }));
 
       // Should have allowReplay primitive with excludeNegated flag
       expect(effects).toContainEqual(
         expect.objectContaining({
           type: 'allowReplay',
-          params: expect.objectContaining({ excludeNegated: true })
+          params: expect.objectContaining({ excludeNegated: true }),
         })
       );
     });
@@ -535,7 +533,12 @@ describe('Amphibian Trap Cards', () => {
     it('negateCombat returns correct result', () => {
       const state = createTestState();
       const { creature: attacker } = createTestCreature('fish-predator-sailfish', 1, 0, state);
-      const { creature: defender } = createTestCreature('fish-prey-atlantic-flying-fish', 0, 0, state);
+      const { creature: defender } = createTestCreature(
+        'fish-prey-atlantic-flying-fish',
+        0,
+        0,
+        state
+      );
       const context = createCombatContext(state, attacker, defender);
 
       const negateFn = effectLibrary.negateCombat();

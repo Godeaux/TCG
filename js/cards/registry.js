@@ -107,70 +107,82 @@ export const initializeCardRegistry = () => {
   tokenRegistry.clear();
 
   // Load tokens
-  tokensData.tokens.forEach(token => {
+  tokensData.tokens.forEach((token) => {
     tokenRegistry.set(token.id, token);
     cardRegistry.set(token.id, token);
   });
 
   // Load fish cards
-  fishData.cards.forEach(card => {
+  fishData.cards.forEach((card) => {
     cardRegistry.set(card.id, card);
   });
-  deckCatalogs.fish = sortCardsByType(fishData.cards.filter(card => !card.id.includes('token')));
+  deckCatalogs.fish = sortCardsByType(fishData.cards.filter((card) => !card.id.includes('token')));
 
   // Load reptile cards
-  reptileData.cards.forEach(card => {
+  reptileData.cards.forEach((card) => {
     cardRegistry.set(card.id, card);
   });
-  deckCatalogs.reptile = sortCardsByType(reptileData.cards.filter(card => !card.id.includes('token')));
+  deckCatalogs.reptile = sortCardsByType(
+    reptileData.cards.filter((card) => !card.id.includes('token'))
+  );
 
   // Load amphibian cards
-  amphibianData.cards.forEach(card => {
+  amphibianData.cards.forEach((card) => {
     cardRegistry.set(card.id, card);
   });
-  deckCatalogs.amphibian = sortCardsByType(amphibianData.cards.filter(card => !card.id.includes('token')));
+  deckCatalogs.amphibian = sortCardsByType(
+    amphibianData.cards.filter((card) => !card.id.includes('token'))
+  );
 
   // Load bird cards
-  birdData.cards.forEach(card => {
+  birdData.cards.forEach((card) => {
     cardRegistry.set(card.id, card);
   });
-  deckCatalogs.bird = sortCardsByType(birdData.cards.filter(card => !card.id.includes('token')));
+  deckCatalogs.bird = sortCardsByType(birdData.cards.filter((card) => !card.id.includes('token')));
 
   // Load mammal cards
-  mammalData.cards.forEach(card => {
+  mammalData.cards.forEach((card) => {
     cardRegistry.set(card.id, card);
   });
-  deckCatalogs.mammal = sortCardsByType(mammalData.cards.filter(card => !card.id.includes('token')));
+  deckCatalogs.mammal = sortCardsByType(
+    mammalData.cards.filter((card) => !card.id.includes('token'))
+  );
 
   // Load canine tokens (if present in the JSON)
   if (canineData.tokens) {
-    canineData.tokens.forEach(token => {
+    canineData.tokens.forEach((token) => {
       tokenRegistry.set(token.id, token);
       cardRegistry.set(token.id, token);
     });
   }
 
   // Load canine cards
-  canineData.cards.forEach(card => {
+  canineData.cards.forEach((card) => {
     cardRegistry.set(card.id, card);
   });
-  deckCatalogs.canine = sortCardsByType(canineData.cards.filter(card => !card.id.includes('token')));
+  deckCatalogs.canine = sortCardsByType(
+    canineData.cards.filter((card) => !card.id.includes('token'))
+  );
 
   // Load arachnid tokens (if present in the JSON)
   if (arachnidData.tokens) {
-    arachnidData.tokens.forEach(token => {
+    arachnidData.tokens.forEach((token) => {
       tokenRegistry.set(token.id, token);
       cardRegistry.set(token.id, token);
     });
   }
 
   // Load arachnid cards
-  arachnidData.cards.forEach(card => {
+  arachnidData.cards.forEach((card) => {
     cardRegistry.set(card.id, card);
   });
-  deckCatalogs.arachnid = sortCardsByType(arachnidData.cards.filter(card => !card.id.includes('token')));
+  deckCatalogs.arachnid = sortCardsByType(
+    arachnidData.cards.filter((card) => !card.id.includes('token'))
+  );
 
-  console.log(`[Card Registry] Initialized with ${cardRegistry.size} cards (${tokenRegistry.size} tokens)`);
+  console.log(
+    `[Card Registry] Initialized with ${cardRegistry.size} cards (${tokenRegistry.size} tokens)`
+  );
 
   // Generate effectText for all cards from their effects (single source of truth)
   generateAllEffectText();
@@ -210,7 +222,7 @@ const validateAllCardEffects = () => {
     console.warn(`[Card Registry] ⚠️ ${invalidCount} cards have invalid effects:`);
     for (const { id, errors: cardErrors } of errors.slice(0, 10)) {
       console.warn(`  ${id}:`);
-      cardErrors.forEach(e => console.warn(`    - ${e}`));
+      cardErrors.forEach((e) => console.warn(`    - ${e}`));
     }
     if (errors.length > 10) {
       console.warn(`  ... and ${errors.length - 10} more cards with errors`);
@@ -299,7 +311,7 @@ export const getDeckCatalog = (category) => {
  * @param {string} deckId - Deck ID (e.g., "fish")
  * @returns {Array} Array of card definitions
  */
-export const getStarterDeck = (deckId = "fish") => {
+export const getStarterDeck = (deckId = 'fish') => {
   return [...(deckCatalogs[deckId] || deckCatalogs.fish)];
 };
 
@@ -351,8 +363,7 @@ export const resolveCardEffect = (card, effectType, context) => {
     // Object-based effect definition with type and params
     else if (typeof effectDef === 'object' && effectDef.type) {
       result = resolveEffect(effectDef, context);
-    }
-    else {
+    } else {
       console.warn(`[Effect] ${card.name} → ${effectType} INVALID definition:`, effectDef);
       return null;
     }
@@ -361,7 +372,6 @@ export const resolveCardEffect = (card, effectType, context) => {
       console.warn(`[Effect] ${card.name} → ${effectType} returned no result`);
     }
     return result;
-
   } catch (error) {
     console.error(`[Effect] ${card.name} → ${effectType} ERROR:`, error);
     return null;
@@ -400,8 +410,8 @@ export const getCardSummons = (card) => {
   }
 
   return card.summons
-    .map(tokenId => getCardDefinitionById(tokenId))
-    .filter(token => token !== null);
+    .map((tokenId) => getCardDefinitionById(tokenId))
+    .filter((token) => token !== null);
 };
 
 // ============================================================================

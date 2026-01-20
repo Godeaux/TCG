@@ -35,5 +35,15 @@ export {
 export { ThreatDetector, threatDetector } from './ThreatDetector.js';
 export { PlayEvaluator, playEvaluator } from './PlayEvaluator.js';
 export { CombatEvaluator, combatEvaluator, TRADE_OUTCOMES } from './CombatEvaluator.js';
-export { CardKnowledgeBase, cardKnowledge, KEYWORD_VALUES, EFFECT_VALUES } from './CardKnowledgeBase.js';
-export { DifficultyManager, DIFFICULTY_LEVELS, createDifficultyManager, difficultyManager } from './DifficultyManager.js';
+export {
+  CardKnowledgeBase,
+  cardKnowledge,
+  KEYWORD_VALUES,
+  EFFECT_VALUES,
+} from './CardKnowledgeBase.js';
+export {
+  DifficultyManager,
+  DIFFICULTY_LEVELS,
+  createDifficultyManager,
+  difficultyManager,
+} from './DifficultyManager.js';

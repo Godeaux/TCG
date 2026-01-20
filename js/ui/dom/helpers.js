@@ -35,7 +35,7 @@ export const getFieldSlotElement = (state, ownerIndex, slotIndex, getLocalPlayer
   }
   const localIndex = getLocalPlayerIndex?.(state) ?? 0;
   const isOpponent = ownerIndex !== localIndex;
-  const row = document.querySelector(isOpponent ? ".opponent-field" : ".player-field");
+  const row = document.querySelector(isOpponent ? '.opponent-field' : '.player-field');
   if (!row) {
     return null;
   }
@@ -53,9 +53,7 @@ export const getFieldSlotElement = (state, ownerIndex, slotIndex, getLocalPlayer
  * @returns {number} Player index (-1 if not found)
  */
 export const findCardOwnerIndex = (state, instanceId) =>
-  state.players.findIndex((player) =>
-    player.field.some((card) => card?.instanceId === instanceId)
-  );
+  state.players.findIndex((player) => player.field.some((card) => card?.instanceId === instanceId));
 
 /**
  * Find both owner and slot index for a card

@@ -11,7 +11,11 @@ import {
   createTestTrap,
   ensureRegistryInitialized,
 } from '../setup/testHelpers.js';
-import { createEffectContext, createCombatContext, createTrapContext } from '../setup/mockFactory.js';
+import {
+  createEffectContext,
+  createCombatContext,
+  createTrapContext,
+} from '../setup/mockFactory.js';
 import * as effectLibrary from '../../js/cards/effectLibrary.js';
 
 beforeAll(() => {
@@ -32,7 +36,12 @@ describe('Combat Edge Cases', () => {
     describe('negateAttack', () => {
       it('negateAttack returns true when attacker exists', () => {
         const { creature: attacker } = createTestCreature('fish-predator-sailfish', 1, 0, state);
-        const { creature: defender } = createTestCreature('fish-prey-atlantic-flying-fish', 0, 0, state);
+        const { creature: defender } = createTestCreature(
+          'fish-prey-atlantic-flying-fish',
+          0,
+          0,
+          state
+        );
         const context = createCombatContext(state, attacker, defender);
 
         const negateFn = effectLibrary.negateAttack();
@@ -55,7 +64,12 @@ describe('Combat Edge Cases', () => {
     describe('negateCombat', () => {
       it('negateCombat returns true when attacker exists', () => {
         const { creature: attacker } = createTestCreature('fish-predator-sailfish', 1, 0, state);
-        const { creature: defender } = createTestCreature('fish-prey-atlantic-flying-fish', 0, 0, state);
+        const { creature: defender } = createTestCreature(
+          'fish-prey-atlantic-flying-fish',
+          0,
+          0,
+          state
+        );
         const context = createCombatContext(state, attacker, defender);
 
         const negateFn = effectLibrary.negateCombat();
@@ -154,7 +168,12 @@ describe('Combat Edge Cases', () => {
     describe('dealDamageToAttacker', () => {
       it('deals specified damage to attacker', () => {
         const { creature: attacker } = createTestCreature('fish-predator-sailfish', 1, 0, state);
-        const { creature: defender } = createTestCreature('fish-prey-atlantic-flying-fish', 0, 0, state);
+        const { creature: defender } = createTestCreature(
+          'fish-prey-atlantic-flying-fish',
+          0,
+          0,
+          state
+        );
         const context = createCombatContext(state, attacker, defender);
 
         const damageFn = effectLibrary.dealDamageToAttacker(3);
@@ -178,7 +197,12 @@ describe('Combat Edge Cases', () => {
     describe('freezeAttacker', () => {
       it('adds Frozen keyword to attacker', () => {
         const { creature: attacker } = createTestCreature('fish-predator-sailfish', 1, 0, state);
-        const { creature: defender } = createTestCreature('fish-prey-atlantic-flying-fish', 0, 0, state);
+        const { creature: defender } = createTestCreature(
+          'fish-prey-atlantic-flying-fish',
+          0,
+          0,
+          state
+        );
         const context = createCombatContext(state, attacker, defender);
 
         const freezeFn = effectLibrary.freezeAttacker();

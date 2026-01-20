@@ -43,8 +43,8 @@ let touchStartPos = { x: 0, y: 0 };
 let currentTouchPos = { x: 0, y: 0 };
 let isDragging = false;
 let dragPreview = null;
-let touchedCardHandIndex = -1;  // Track hand index for drag broadcasting
-let touchedFromField = false;   // Track if touch started from field (combat drag)
+let touchedCardHandIndex = -1; // Track hand index for drag broadcasting
+let touchedFromField = false; // Track if touch started from field (combat drag)
 
 // Drag broadcast throttling
 let lastTouchDragBroadcast = 0;
@@ -58,7 +58,7 @@ export const isTouchDragging = () => isDragging;
 
 // Configuration
 const VERTICAL_DRAG_THRESHOLD = 30; // pixels to move upward before dragging to play
-const FIELD_DRAG_THRESHOLD = 15;    // Lower threshold for field cards (combat)
+const FIELD_DRAG_THRESHOLD = 15; // Lower threshold for field cards (combat)
 
 // External callback for card focus (set via init)
 let onCardFocus = null;
@@ -130,14 +130,16 @@ const canCreatureAttack = (card, state) => {
   if (!card || !state) return false;
   const isCreature = card.type === 'Predator' || card.type === 'Prey';
   const isCombatPhase = state.phase === 'Combat';
-  return isCreature &&
+  return (
+    isCreature &&
     isCombatPhase &&
     isLocalPlayersTurn(state) &&
     !card.hasAttacked &&
     !isPassive(card) &&
     !isHarmless(card) &&
     !card.frozen &&
-    !card.paralyzed;
+    !card.paralyzed
+  );
 };
 
 /**
@@ -151,7 +153,7 @@ const getCardAtPosition = (x, y) => {
   let closestCard = null;
   let closestDistance = Infinity;
 
-  cards.forEach(card => {
+  cards.forEach((card) => {
     const rect = card.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
@@ -192,7 +194,7 @@ export const focusCardElement = (cardElement) => {
   if (!cardElement) return;
 
   // Remove focus from all other cards
-  document.querySelectorAll('.card.touch-focused').forEach(el => {
+  document.querySelectorAll('.card.touch-focused').forEach((el) => {
     el.classList.remove('touch-focused');
   });
 
@@ -264,7 +266,7 @@ const handleTouchStart = (e) => {
 
   touchStartPos = {
     x: touch.clientX,
-    y: touch.clientY
+    y: touch.clientY,
   };
   currentTouchPos = { ...touchStartPos };
   isDragging = false;
@@ -293,7 +295,7 @@ const handleTouchMove = (e) => {
   const touch = e.touches[0];
   currentTouchPos = {
     x: touch.clientX,
-    y: touch.clientY
+    y: touch.clientY,
   };
 
   const dx = currentTouchPos.x - touchStartPos.x;
@@ -309,7 +311,7 @@ const handleTouchMove = (e) => {
     const state = getLatestState();
     const activePlayer = getActivePlayer(state);
     const instanceId = touchedCardElement.dataset.instanceId;
-    touchedCardHandIndex = activePlayer?.hand?.findIndex(c => c?.instanceId === instanceId) ?? -1;
+    touchedCardHandIndex = activePlayer?.hand?.findIndex((c) => c?.instanceId === instanceId) ?? -1;
 
     // Create drag preview
     dragPreview = createDragPreview(touchedCardElement, touch.clientX, touch.clientY);
@@ -333,7 +335,7 @@ const handleTouchMove = (e) => {
     const dragStartEvent = new DragEvent('dragstart', {
       bubbles: true,
       cancelable: true,
-      dataTransfer: new DataTransfer()
+      dataTransfer: new DataTransfer(),
     });
     touchedCardElement.dispatchEvent(dragStartEvent);
   } else if (!isDragging) {
@@ -421,7 +423,10 @@ const handleTouchEnd = (e) => {
             const isTargetInPlayerField = dropTarget.closest('.player-field') !== null;
 
             // If spell requires a target and this is a valid target, cast with target
-            if (targetingInfo?.requiresTarget && isValidSpellTarget(touchedCard, targetCard, state)) {
+            if (
+              targetingInfo?.requiresTarget &&
+              isValidSpellTarget(touchedCard, targetCard, state)
+            ) {
               const callbacks = getLatestCallbacks();
               handlePlayCard(state, touchedCard, callbacks?.onUpdate, targetCard);
             }

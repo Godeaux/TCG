@@ -50,9 +50,7 @@ describe('Card Schema Validation', () => {
   });
 
   describe('Creature Stats', () => {
-    const creatures = allCards.filter(
-      (c) => c.type === 'Prey' || c.type === 'Predator'
-    );
+    const creatures = allCards.filter((c) => c.type === 'Prey' || c.type === 'Predator');
 
     creatures.forEach((card) => {
       describe(`${card.id}`, () => {
@@ -83,9 +81,7 @@ describe('Card Schema Validation', () => {
   });
 
   describe('Keyword Validity', () => {
-    const cardsWithKeywords = allCards.filter(
-      (c) => c.keywords && c.keywords.length > 0
-    );
+    const cardsWithKeywords = allCards.filter((c) => c.keywords && c.keywords.length > 0);
 
     // Keywords that can have numeric values (e.g., "Venom 2", "Pack 3")
     const numericKeywordBases = ['Venom', 'Pack'];
@@ -106,10 +102,9 @@ describe('Card Schema Validation', () => {
       describe(`${card.id}`, () => {
         it('has only valid keywords', () => {
           card.keywords.forEach((keyword) => {
-            expect(
-              isValidKeyword(keyword),
-              `Invalid keyword "${keyword}" on card ${card.id}`
-            ).toBe(true);
+            expect(isValidKeyword(keyword), `Invalid keyword "${keyword}" on card ${card.id}`).toBe(
+              true
+            );
           });
         });
       });
@@ -133,9 +128,7 @@ describe('Card Schema Validation', () => {
   });
 
   describe('Spell Cards', () => {
-    const spells = allCards.filter(
-      (c) => c.type === 'Spell' || c.type === 'Free Spell'
-    );
+    const spells = allCards.filter((c) => c.type === 'Spell' || c.type === 'Free Spell');
 
     spells.forEach((card) => {
       describe(`${card.id}`, () => {
@@ -155,10 +148,7 @@ describe('Card Schema Validation', () => {
     traps.forEach((card) => {
       describe(`${card.id}`, () => {
         it('has a trigger type', () => {
-          expect(
-            card.trigger,
-            `Trap ${card.id} has no trigger`
-          ).toBeDefined();
+          expect(card.trigger, `Trap ${card.id} has no trigger`).toBeDefined();
         });
 
         it('has an effect defined', () => {

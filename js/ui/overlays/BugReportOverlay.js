@@ -264,10 +264,14 @@ const renderBugList = (profileId, callbacks) => {
               <option value="fixed" ${bug.status === 'fixed' ? 'selected' : ''}>Fixed</option>
               <option value="wont_fix" ${bug.status === 'wont_fix' ? 'selected' : ''}>Won't Fix</option>
             </select>
-            ${isOwner ? `
+            ${
+              isOwner
+                ? `
               <button class="bug-edit-btn" data-bug-id="${bug.id}" title="Edit">Edit</button>
               <button class="bug-delete-btn" data-bug-id="${bug.id}" title="Delete">Delete</button>
-            ` : ''}
+            `
+                : ''
+            }
           </div>
         </div>
       `;
@@ -541,7 +545,9 @@ export const showBugReportOverlay = async ({ profileId, tab = 'report', callback
       renderBugList(currentProfileId, currentCallbacks);
     });
 
-    elements.submitBtn?.addEventListener('click', () => handleSubmit(currentProfileId, currentCallbacks));
+    elements.submitBtn?.addEventListener('click', () =>
+      handleSubmit(currentProfileId, currentCallbacks)
+    );
     elements.cancelBtn?.addEventListener('click', () => {
       stopEditing();
     });

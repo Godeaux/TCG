@@ -23,13 +23,13 @@ import { onGameEnded as simOnGameEnded, getSimulationStatus } from '../../simula
 // ============================================================================
 
 const getVictoryElements = () => ({
-  overlay: document.getElementById("victory-overlay"),
-  winnerName: document.getElementById("victory-winner-name"),
-  turns: document.getElementById("victory-turns"),
-  cards: document.getElementById("victory-cards"),
-  kills: document.getElementById("victory-kills"),
-  menu: document.getElementById("victory-menu"),
-  reward: document.getElementById("victory-reward"),
+  overlay: document.getElementById('victory-overlay'),
+  winnerName: document.getElementById('victory-winner-name'),
+  turns: document.getElementById('victory-turns'),
+  cards: document.getElementById('victory-cards'),
+  kills: document.getElementById('victory-kills'),
+  menu: document.getElementById('victory-menu'),
+  reward: document.getElementById('victory-reward'),
 });
 
 // ============================================================================
@@ -53,7 +53,7 @@ const createVictoryParticles = () => {
     particle.className = 'victory-particle';
     particle.style.left = Math.random() * 100 + '%';
     particle.style.animationDelay = Math.random() * 3 + 's';
-    particle.style.animationDuration = (3 + Math.random() * 2) + 's';
+    particle.style.animationDuration = 3 + Math.random() * 2 + 's';
     particlesContainer.appendChild(particle);
   }
 };
@@ -64,15 +64,15 @@ const createVictoryParticles = () => {
 const calculateCardsPlayed = (state) => {
   let cardsPlayed = 0;
 
-  state.players.forEach(player => {
+  state.players.forEach((player) => {
     // Count cards in exile (played spells, free spells, used traps)
     cardsPlayed += player.exile?.length || 0;
 
     // Count creatures currently on field (they were played from hand)
-    cardsPlayed += player.field?.filter(card => card && !card.isToken).length || 0;
+    cardsPlayed += player.field?.filter((card) => card && !card.isToken).length || 0;
 
     // Count creatures that were destroyed and sent to carrion
-    cardsPlayed += player.carrion?.filter(card => card && !card.isToken).length || 0;
+    cardsPlayed += player.carrion?.filter((card) => card && !card.isToken).length || 0;
   });
 
   return cardsPlayed;
@@ -84,11 +84,11 @@ const calculateCardsPlayed = (state) => {
 const calculateCreaturesDefeated = (state) => {
   let creaturesDefeated = 0;
 
-  state.players.forEach(player => {
+  state.players.forEach((player) => {
     // Count all creatures in carrion (includes tokens and consumed creatures)
-    creaturesDefeated += player.carrion?.filter(card =>
-      card && (card.type === 'Predator' || card.type === 'Prey')
-    ).length || 0;
+    creaturesDefeated +=
+      player.carrion?.filter((card) => card && (card.type === 'Predator' || card.type === 'Prey'))
+        .length || 0;
   });
 
   return creaturesDefeated;
@@ -331,8 +331,8 @@ const shouldAwardPack = (state, winner, loser) => {
  */
 export const checkForVictory = (state) => {
   // Check if any player has 0 or less HP
-  const winner = state.players.find(player => player.hp > 0);
-  const loser = state.players.find(player => player.hp <= 0);
+  const winner = state.players.find((player) => player.hp > 0);
+  const loser = state.players.find((player) => player.hp <= 0);
 
   if (winner && loser) {
     // Check if victory was already processed (prevents multiple pack awards on re-renders)
@@ -347,7 +347,7 @@ export const checkForVictory = (state) => {
     const stats = {
       turns: state.turn || 1,
       cardsPlayed: calculateCardsPlayed(state),
-      creaturesDefeated: calculateCreaturesDefeated(state)
+      creaturesDefeated: calculateCreaturesDefeated(state),
     };
 
     // Determine if pack should be awarded
@@ -363,7 +363,7 @@ export const checkForVictory = (state) => {
     if (isAIvsAI) {
       const winnerIndex = state.players.indexOf(winner);
       state.winner = winnerIndex;
-      simOnGameEnded(state).catch(err => {
+      simOnGameEnded(state).catch((err) => {
         console.error('[VictoryOverlay] Failed to notify simulation harness:', err);
       });
     }
@@ -413,11 +413,13 @@ const updateProfileStatsOnVictory = (state, winner, loser) => {
     }
 
     // Get deck info (capitalize first letter)
-    const opponentDeckId = state.deckSelection?.selections?.[(localPlayerIndex + 1) % 2] || 'unknown';
+    const opponentDeckId =
+      state.deckSelection?.selections?.[(localPlayerIndex + 1) % 2] || 'unknown';
     const opponentDeck = opponentDeckId.charAt(0).toUpperCase() + opponentDeckId.slice(1);
 
     // Get player's deck cards (names only, to track favorite card)
-    const playerDeckCards = state.deckBuilder?.selections?.[localPlayerIndex]?.map(card => card.name) || [];
+    const playerDeckCards =
+      state.deckBuilder?.selections?.[localPlayerIndex]?.map((card) => card.name) || [];
 
     // Add match to history (most recent first)
     const matchEntry = {
@@ -440,9 +442,9 @@ const updateProfileStatsOnVictory = (state, winner, loser) => {
 
     // Calculate favorite card (most frequently used across all matches)
     const cardCounts = {};
-    profile.matches.forEach(match => {
+    profile.matches.forEach((match) => {
       if (match.deckCards && Array.isArray(match.deckCards)) {
-        match.deckCards.forEach(cardName => {
+        match.deckCards.forEach((cardName) => {
           cardCounts[cardName] = (cardCounts[cardName] || 0) + 1;
         });
       }
@@ -462,6 +464,8 @@ const updateProfileStatsOnVictory = (state, winner, loser) => {
     // Sync to database (async, don't wait)
     updateProfileStats(state, profile.stats, profile.matches);
 
-    console.log(`Profile stats updated: ${profile.stats.gamesPlayed} played, ${profile.stats.gamesWon} won, favorite: ${favoriteCard}`);
+    console.log(
+      `Profile stats updated: ${profile.stats.gamesPlayed} played, ${profile.stats.gamesWon} won, favorite: ${favoriteCard}`
+    );
   }
 };

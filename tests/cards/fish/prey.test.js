@@ -43,7 +43,10 @@ describe('Fish Prey Cards', () => {
     it('onPlay summons 2 Flying Fish tokens', () => {
       const card = getCardDefinitionById(cardId);
       expect(card.effects.onPlay.type).toBe('summonTokens');
-      expect(card.effects.onPlay.params.tokenIds).toEqual(['token-flying-fish', 'token-flying-fish']);
+      expect(card.effects.onPlay.params.tokenIds).toEqual([
+        'token-flying-fish',
+        'token-flying-fish',
+      ]);
     });
 
     it('effect executes and returns summonTokens result', () => {
@@ -119,7 +122,7 @@ describe('Fish Prey Cards', () => {
       const selectFn = effectLibrary.selectFromGroup({
         targetGroup: 'enemy-prey',
         title: 'Choose a prey to consume',
-        effect: { consume: true }
+        effect: { consume: true },
       });
       const result = selectFn(context);
 
@@ -135,7 +138,7 @@ describe('Fish Prey Cards', () => {
       const selectFn = effectLibrary.selectFromGroup({
         targetGroup: 'enemy-prey',
         title: 'Choose a prey to consume',
-        effect: { consume: true }
+        effect: { consume: true },
       });
       const result = selectFn(context);
 
@@ -276,7 +279,7 @@ describe('Fish Prey Cards', () => {
   // ============================================
   // Portuguese Man O' War Legion
   // ============================================
-  describe('Portuguese Man O\' War Legion (fish-prey-portuguese-man-o-war-legion)', () => {
+  describe("Portuguese Man O' War Legion (fish-prey-portuguese-man-o-war-legion)", () => {
     const cardId = 'fish-prey-portuguese-man-o-war-legion';
 
     it('has correct base stats', () => {
@@ -291,7 +294,7 @@ describe('Fish Prey Cards', () => {
       expect(card.keywords).toContain('Passive');
     });
 
-    it('onPlay summons 2 Man O\' War tokens', () => {
+    it("onPlay summons 2 Man O' War tokens", () => {
       const card = getCardDefinitionById(cardId);
       expect(card.effects.onPlay.type).toBe('summonTokens');
       expect(card.effects.onPlay.params.tokenIds).toEqual(['token-man-o-war', 'token-man-o-war']);
@@ -453,7 +456,6 @@ describe('Fish Prey Cards', () => {
       expect(card.effects.discardEffect.params.targetGroup).toBe('friendly-predators');
       expect(card.effects.discardEffect.params.effect.keyword).toBe('Ambush');
     });
-
   });
 
   // ============================================

@@ -56,7 +56,9 @@ describe('Fish Spell Cards', () => {
 
       // Should only show prey, not predators
       expect(result.selectTarget.candidates.length).toBe(2);
-      expect(result.selectTarget.candidates.every(c => c.value.creature.type === 'Prey')).toBe(true);
+      expect(result.selectTarget.candidates.every((c) => c.value.creature.type === 'Prey')).toBe(
+        true
+      );
     });
   });
 
@@ -229,7 +231,7 @@ describe('Fish Spell Cards', () => {
       const selectFn = effectLibrary.selectFromGroup({
         targetGroup: 'enemy-creatures',
         title: 'Choose a creature',
-        effect: { damage: 4, steal: true }
+        effect: { damage: 4, steal: true },
       });
       const result = selectFn(context);
 
@@ -255,9 +257,7 @@ describe('Fish Spell Cards', () => {
       expect(card.effects.effect).toContainEqual(
         expect.objectContaining({ type: 'tutorFromDeck' })
       );
-      expect(card.effects.effect).toContainEqual(
-        expect.objectContaining({ type: 'endTurn' })
-      );
+      expect(card.effects.effect).toContainEqual(expect.objectContaining({ type: 'endTurn' }));
     });
   });
 
@@ -289,7 +289,7 @@ describe('Fish Spell Cards', () => {
       const selectFn = effectLibrary.selectFromGroup({
         targetGroup: 'friendly-predators',
         title: 'Choose a predator',
-        effect: { keyword: 'Edible' }
+        effect: { keyword: 'Edible' },
       });
       const result = selectFn(context);
 
@@ -345,7 +345,7 @@ describe('Fish Spell Cards', () => {
       const selectFn = effectLibrary.selectFromGroup({
         targetGroup: 'enemy-creatures',
         title: 'Choose a creature',
-        effect: { removeAbilities: true }
+        effect: { removeAbilities: true },
       });
       const result = selectFn(context);
 

@@ -1,18 +1,18 @@
 /**
  * Card Image Mapping System
- * 
+ *
  * This file manages the association between cards and their image files.
- * 
+ *
  * Image Naming Convention:
  * - Use the card ID (e.g., "f_py1") as the filename
  * - Supported formats: .jpg, .jpeg, .png, .webp
  * - Example: f_py1.jpg, b_m1.png, r_a1.webp
- * 
+ *
  * Folder Structure:
  * images/
  * ├── cards/
  * │   ├── f_py1.jpg     # Fish cards
- * │   ├── b_m1.jpg      # Bird cards  
+ * │   ├── b_m1.jpg      # Bird cards
  * │   ├── m_r1.jpg      # Mammal cards
  * │   ├── r_s1.jpg      # Reptile cards
  * │   └── a_f1.jpg      # Amphibian cards
@@ -23,7 +23,6 @@ const CARD_IMAGE_MAP = {
   // Example custom mappings (optional):
   // "f_py1": "great_white_shark.jpg",  // Custom filename
   // "b_m1": "eagle.jpg",               // Custom filename
-  
   // By default, we'll use card ID + .jpg extension
 };
 
@@ -36,12 +35,12 @@ const IMAGE_CACHE = new Map();
  * @param {string} preferredFormat - Preferred image format (default: "jpg")
  * @returns {string|null} - Image path or null if no image
  */
-export function getCardImagePath(cardId, preferredFormat = "jpg") {
+export function getCardImagePath(cardId, preferredFormat = 'jpg') {
   // Check for custom mapping first
   if (CARD_IMAGE_MAP[cardId]) {
     return `images/cards/${CARD_IMAGE_MAP[cardId]}`;
   }
-  
+
   // Default to card ID + format
   return `images/cards/${cardId}.${preferredFormat}`;
 }
@@ -64,8 +63,8 @@ export function hasCardImage(cardId) {
  * @returns {string[]} - Array of available formats
  */
 export function getCardImageFormats(cardId) {
-  const formats = ["jpg", "jpeg", "png", "webp"];
-  return formats.filter(format => {
+  const formats = ['jpg', 'jpeg', 'png', 'webp'];
+  return formats.filter((format) => {
     const path = `images/cards/${cardId}.${format}`;
     // In a real implementation, you'd check if the file exists
     // For now, return all possible formats
@@ -76,27 +75,27 @@ export function getCardImageFormats(cardId) {
 /**
  * Fallback image for cards without custom art
  */
-export const FALLBACK_CARD_IMAGE = "images/cards/fallback.jpg";
+export const FALLBACK_CARD_IMAGE = 'images/cards/fallback.jpg';
 
 /**
  * Preload card images for better performance
  * @param {string[]} cardIds - Array of card IDs to preload
  */
 export function preloadCardImages(cardIds) {
-  cardIds.forEach(cardId => {
+  cardIds.forEach((cardId) => {
     if (!IMAGE_CACHE.has(cardId)) {
       const img = new Image();
       const path = getCardImagePath(cardId);
-      
+
       img.onload = () => {
         IMAGE_CACHE.set(cardId, img);
       };
-      
+
       img.onerror = () => {
         // Mark as failed to prevent repeated attempts
         IMAGE_CACHE.set(cardId, null);
       };
-      
+
       img.src = path;
     }
   });

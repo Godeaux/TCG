@@ -70,4 +70,3 @@ describe('Summon Tokens Effect', () => {
 
 // Note: summonAndSelectEnemyToKill and summonAndSelectEnemyToFreeze compound effects have been replaced
 // with primitive arrays in card JSON (e.g., [{ type: 'summonTokens', params: {...} }, { type: 'selectFromGroup', params: {...} }])
-

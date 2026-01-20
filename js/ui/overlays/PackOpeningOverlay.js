@@ -61,7 +61,7 @@ const activeTilts = new Map(); // cardElement -> { rafId, bounds }
  * Generate pack contents with guaranteed minimum rarity
  */
 const generatePackContents = () => {
-  const allCards = getAllCards().filter(card => !card.isToken);
+  const allCards = getAllCards().filter((card) => !card.isToken);
   const packCards = [];
 
   // Generate cards with random rarities
@@ -76,7 +76,7 @@ const generatePackContents = () => {
   }
 
   // Guarantee at least one uncommon or better
-  const hasUncommonOrBetter = packCards.some(card => {
+  const hasUncommonOrBetter = packCards.some((card) => {
     const rarityOrder = ['common', 'uncommon', 'rare', 'legendary', 'pristine'];
     const cardIndex = rarityOrder.indexOf(card.packRarity);
     const minIndex = rarityOrder.indexOf(PACK_CONFIG.guaranteedMinRarity);
@@ -221,12 +221,12 @@ const burstOpen = () => {
 // ============================================================================
 
 const TILT_CONFIG = {
-  maxAngle: 15,           // Maximum tilt angle in degrees
-  perspective: 800,       // CSS perspective value
-  scale: 1.02,            // Scale on hover
-  transitionIn: '150ms',  // Transition when entering
+  maxAngle: 15, // Maximum tilt angle in degrees
+  perspective: 800, // CSS perspective value
+  scale: 1.02, // Scale on hover
+  transitionIn: '150ms', // Transition when entering
   transitionOut: '300ms', // Transition when leaving (slower for smooth reset)
-  glowShift: 20,          // How much the glow shifts with tilt (px)
+  glowShift: 20, // How much the glow shifts with tilt (px)
 };
 
 /**
@@ -247,7 +247,7 @@ const calculateTilt = (element, clientX, clientY) => {
 
   // Calculate tilt angles (inverted for natural feel)
   const tiltX = -clampedY * TILT_CONFIG.maxAngle; // Vertical mouse = X rotation
-  const tiltY = clampedX * TILT_CONFIG.maxAngle;  // Horizontal mouse = Y rotation
+  const tiltY = clampedX * TILT_CONFIG.maxAngle; // Horizontal mouse = Y rotation
 
   return { tiltX, tiltY, relativeX: clampedX, relativeY: clampedY };
 };
@@ -364,16 +364,24 @@ const setupTiltListeners = (wrapper, cardInner, front) => {
   wrapper.addEventListener('mouseleave', handleLeave);
 
   // Touch events
-  wrapper.addEventListener('touchstart', (e) => {
-    // Don't prevent default - allow click through for reveal
-    handleEnter(e);
-  }, { passive: true });
+  wrapper.addEventListener(
+    'touchstart',
+    (e) => {
+      // Don't prevent default - allow click through for reveal
+      handleEnter(e);
+    },
+    { passive: true }
+  );
 
-  wrapper.addEventListener('touchmove', (e) => {
-    if (e.touches.length > 0) {
-      handleMove(e.touches[0].clientX, e.touches[0].clientY);
-    }
-  }, { passive: true });
+  wrapper.addEventListener(
+    'touchmove',
+    (e) => {
+      if (e.touches.length > 0) {
+        handleMove(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    },
+    { passive: true }
+  );
 
   wrapper.addEventListener('touchend', handleLeave);
   wrapper.addEventListener('touchcancel', handleLeave);
@@ -433,7 +441,10 @@ const createHaloEffect = (rarity, cardElement) => {
     ring.className = 'pack-halo-ring';
     ring.style.setProperty('--ring-index', i);
     ring.style.setProperty('--ring-delay', `${i * 80}ms`);
-    ring.style.setProperty('--ring-color', i === 0 ? config.color : (config.secondaryColor || config.color));
+    ring.style.setProperty(
+      '--ring-color',
+      i === 0 ? config.color : config.secondaryColor || config.color
+    );
     ring.style.setProperty('--ring-size', `${config.size}px`);
     ring.style.setProperty('--ring-duration', `${config.duration}ms`);
     container.appendChild(ring);
@@ -448,7 +459,8 @@ const createHaloEffect = (rarity, cardElement) => {
       particle.style.setProperty('--particle-angle', `${(360 / particleCount) * i}deg`);
       particle.style.setProperty('--particle-delay', `${Math.random() * 200}ms`);
       particle.style.setProperty('--particle-distance', `${80 + Math.random() * 60}px`);
-      particle.style.setProperty('--particle-color',
+      particle.style.setProperty(
+        '--particle-color',
         rarity === 'pristine'
           ? [config.color, config.secondaryColor, config.tertiaryColor][i % 3]
           : config.color

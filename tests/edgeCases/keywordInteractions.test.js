@@ -186,7 +186,12 @@ describe('Keyword Interaction Edge Cases', () => {
 
     it('applyNeurotoxicToAttacker returns applyNeurotoxic result', () => {
       const { creature: attacker } = createTestCreature('fish-predator-sailfish', 1, 0, state);
-      const { creature: defender } = createTestCreature('amphibian-prey-red-tailed-knobby-newts', 0, 0, state);
+      const { creature: defender } = createTestCreature(
+        'amphibian-prey-red-tailed-knobby-newts',
+        0,
+        0,
+        state
+      );
       const context = createCombatContext(state, attacker, defender);
 
       const neurotoxicFn = effectLibrary.applyNeurotoxicToAttacker();

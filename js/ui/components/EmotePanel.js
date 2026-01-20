@@ -29,17 +29,21 @@ export const renderEmotePanel = ({ onEmoteClick, squelched, onToggleSquelch }) =
       </button>
     </div>
     <div class="emote-buttons">
-      ${emotes.map(emote => `
+      ${emotes
+        .map(
+          (emote) => `
         <button class="emote-btn" data-emote="${emote.id}" title="${emote.label}">
           <span class="emote-btn-emoji">${emote.emoji}</span>
           <span class="emote-btn-label">${emote.label}</span>
         </button>
-      `).join('')}
+      `
+        )
+        .join('')}
     </div>
   `;
 
   // Bind emote button clicks
-  container.querySelectorAll('.emote-btn').forEach(btn => {
+  container.querySelectorAll('.emote-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       const emoteId = btn.dataset.emote;
       onEmoteClick?.(emoteId);

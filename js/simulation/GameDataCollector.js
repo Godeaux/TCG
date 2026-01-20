@@ -68,12 +68,12 @@ export const startGame = (state) => {
     const deckIds = [];
 
     // From deck
-    player.deck?.forEach(card => {
+    player.deck?.forEach((card) => {
       if (card?.id) deckIds.push(card.id);
     });
 
     // From hand (cards already drawn)
-    player.hand?.forEach(card => {
+    player.hand?.forEach((card) => {
       if (card?.id) deckIds.push(card.id);
     });
 
@@ -118,7 +118,9 @@ export const endGame = async (state) => {
 
   // Save game record
   const gameId = await SimDB.saveGame(gameRecord);
-  console.log(`[GameDataCollector] Game saved (ID: ${gameId}, ${currentGame.turns} turns, winner: ${currentGame.winner})`);
+  console.log(
+    `[GameDataCollector] Game saved (ID: ${gameId}, ${currentGame.turns} turns, winner: ${currentGame.winner})`
+  );
 
   // Update card statistics
   await updateCardStatistics(currentGame);
@@ -145,7 +147,7 @@ const updateCardStatistics = async (game) => {
     const playedCards = new Set(player.cardsPlayed);
 
     // Track each unique card in deck
-    deckCards.forEach(cardId => {
+    deckCards.forEach((cardId) => {
       const wasPlayed = playedCards.has(cardId);
       const cardData = game.cardActions[cardId] || {};
 
@@ -154,16 +156,16 @@ const updateCardStatistics = async (game) => {
         wasPlayed,
         wasInWinningDeck: isWinner,
         wasInLosingDeck: !isWinner && winner !== null,
-        kills: wasPlayed ? (cardData.kills || 0) : 0,
-        deaths: wasPlayed ? (cardData.deaths || 0) : 0,
-        damageDealt: wasPlayed ? (cardData.damage || 0) : 0,
+        kills: wasPlayed ? cardData.kills || 0 : 0,
+        deaths: wasPlayed ? cardData.deaths || 0 : 0,
+        damageDealt: wasPlayed ? cardData.damage || 0 : 0,
       });
     });
   });
 
   // Deduplicate (same card in both decks)
   const seen = new Set();
-  const uniqueStats = cardStats.filter(stat => {
+  const uniqueStats = cardStats.filter((stat) => {
     if (seen.has(stat.cardId)) return false;
     seen.add(stat.cardId);
     return true;
@@ -343,7 +345,7 @@ export const analyzeCardSynergies = async (minGames = 5) => {
   const recentGames = await SimDB.getRecentGames(200);
   const pairStats = {};
 
-  recentGames.forEach(game => {
+  recentGames.forEach((game) => {
     const winnerIndex = game.winner;
     if (winnerIndex === null) return; // Skip draws
 

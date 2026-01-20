@@ -45,7 +45,7 @@ let getLocalPlayerIndex = null;
  * @param {Function} options.getLocalPlayerIndex - Function to get local player index
  */
 export const initBattleEffects = (options = {}) => {
-  battleEffectsLayer = document.getElementById("battle-effects");
+  battleEffectsLayer = document.getElementById('battle-effects');
   getLocalPlayerIndex = options.getLocalPlayerIndex;
 };
 
@@ -66,11 +66,11 @@ const createDamagePop = (target, amount) => {
   if (!target || amount <= 0) {
     return;
   }
-  const pop = document.createElement("div");
-  pop.className = "damage-pop";
+  const pop = document.createElement('div');
+  pop.className = 'damage-pop';
   pop.textContent = `-${amount}`;
   target.appendChild(pop);
-  pop.addEventListener("animationend", () => pop.remove());
+  pop.addEventListener('animationend', () => pop.remove());
 };
 
 /**
@@ -80,12 +80,12 @@ const createImpactRing = (targetRect, layerRect) => {
   if (!battleEffectsLayer || !targetRect || !layerRect) {
     return;
   }
-  const ring = document.createElement("div");
-  ring.className = "impact-ring";
+  const ring = document.createElement('div');
+  ring.className = 'impact-ring';
   ring.style.left = `${targetRect.left - layerRect.left + targetRect.width / 2}px`;
   ring.style.top = `${targetRect.top - layerRect.top + targetRect.height / 2}px`;
   battleEffectsLayer.appendChild(ring);
-  ring.addEventListener("animationend", () => ring.remove());
+  ring.addEventListener('animationend', () => ring.remove());
 };
 
 // ============================================================================
@@ -139,13 +139,13 @@ export const playAttackEffect = (effect, state) => {
     effect.attackerSlotIndex ?? -1
   );
   const targetElement =
-    effect.targetType === "player"
+    effect.targetType === 'player'
       ? getPlayerBadgeByIndex(effect.targetPlayerIndex)
       : effect.defenderId
-      ? document.querySelector(`.card[data-instance-id="${effect.defenderId}"]`)
-      : null;
+        ? document.querySelector(`.card[data-instance-id="${effect.defenderId}"]`)
+        : null;
   const defenderSlotElement =
-    effect.targetType === "creature"
+    effect.targetType === 'creature'
       ? getFieldSlotElement(state, effect.defenderOwnerIndex ?? -1, effect.defenderSlotIndex ?? -1)
       : null;
   if (!attackerElement || !targetElement) {
@@ -163,10 +163,10 @@ export const playAttackEffect = (effect, state) => {
     return;
   }
 
-  const ghost = attackerElement ? attackerElement.cloneNode(true) : document.createElement("div");
-  ghost.classList.add("attack-ghost");
-  ghost.classList.toggle("attack-ghost--slot", !attackerElement);
-  ghost.querySelectorAll?.(".card-actions").forEach((node) => node.remove());
+  const ghost = attackerElement ? attackerElement.cloneNode(true) : document.createElement('div');
+  ghost.classList.add('attack-ghost');
+  ghost.classList.toggle('attack-ghost--slot', !attackerElement);
+  ghost.querySelectorAll?.('.card-actions').forEach((node) => node.remove());
   ghost.style.width = `${attackerRect.width}px`;
   ghost.style.height = `${attackerRect.height}px`;
   ghost.style.left = `${attackerRect.left - layerRect.left + attackerRect.width / 2}px`;
@@ -177,8 +177,8 @@ export const playAttackEffect = (effect, state) => {
   const deltaY = targetRect.top - attackerRect.top + (targetRect.height - attackerRect.height) / 2;
   const animation = ghost.animate(
     [
-      { transform: "translate(-50%, -50%) scale(1)", opacity: 0.95 },
-      { transform: "translate(-50%, -50%) scale(1.08)", opacity: 1, offset: 0.7 },
+      { transform: 'translate(-50%, -50%) scale(1)', opacity: 0.95 },
+      { transform: 'translate(-50%, -50%) scale(1.08)', opacity: 1, offset: 0.7 },
       {
         transform: `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(0.95)`,
         opacity: 0.2,
@@ -186,15 +186,15 @@ export const playAttackEffect = (effect, state) => {
     ],
     {
       duration: 420,
-      easing: "cubic-bezier(0.2, 0.85, 0.35, 1)",
+      easing: 'cubic-bezier(0.2, 0.85, 0.35, 1)',
     }
   );
 
   const finishImpact = () => {
     ghost.remove();
     if (targetElement) {
-      targetElement.classList.add("card-hit");
-      setTimeout(() => targetElement.classList.remove("card-hit"), 380);
+      targetElement.classList.add('card-hit');
+      setTimeout(() => targetElement.classList.remove('card-hit'), 380);
     }
     createImpactRing(targetRect, layerRect);
     if (effect.damageToTarget) {
@@ -205,7 +205,7 @@ export const playAttackEffect = (effect, state) => {
     }
   };
 
-  animation.addEventListener("finish", finishImpact);
+  animation.addEventListener('finish', finishImpact);
 };
 
 // ============================================================================
@@ -254,10 +254,10 @@ export const playConsumptionEffect = (effect, state) => {
   }
 
   // Create ghost of prey card
-  const ghost = preyElement ? preyElement.cloneNode(true) : document.createElement("div");
-  ghost.classList.add("consumption-ghost");
-  ghost.classList.toggle("consumption-ghost--slot", !preyElement);
-  ghost.querySelectorAll?.(".card-actions").forEach((node) => node.remove());
+  const ghost = preyElement ? preyElement.cloneNode(true) : document.createElement('div');
+  ghost.classList.add('consumption-ghost');
+  ghost.classList.toggle('consumption-ghost--slot', !preyElement);
+  ghost.querySelectorAll?.('.card-actions').forEach((node) => node.remove());
   ghost.style.width = `${preyRect.width}px`;
   ghost.style.height = `${preyRect.height}px`;
   ghost.style.left = `${preyRect.left - layerRect.left + preyRect.width / 2}px`;
@@ -270,26 +270,40 @@ export const playConsumptionEffect = (effect, state) => {
 
   const animation = ghost.animate(
     [
-      { transform: "translate(-50%, -50%) scale(1)", opacity: 0.9, filter: "brightness(1)" },
-      { transform: "translate(-50%, -50%) scale(1.1)", opacity: 1, filter: "brightness(1.2)", offset: 0.15 },
-      { transform: `translate(calc(-50% + ${deltaX * 0.5}px), calc(-50% + ${deltaY * 0.5}px)) scale(0.7)`, opacity: 0.7, filter: "brightness(0.9)", offset: 0.5 },
-      { transform: `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(0.1)`, opacity: 0, filter: "brightness(0.5)" },
+      { transform: 'translate(-50%, -50%) scale(1)', opacity: 0.9, filter: 'brightness(1)' },
+      {
+        transform: 'translate(-50%, -50%) scale(1.1)',
+        opacity: 1,
+        filter: 'brightness(1.2)',
+        offset: 0.15,
+      },
+      {
+        transform: `translate(calc(-50% + ${deltaX * 0.5}px), calc(-50% + ${deltaY * 0.5}px)) scale(0.7)`,
+        opacity: 0.7,
+        filter: 'brightness(0.9)',
+        offset: 0.5,
+      },
+      {
+        transform: `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(0.1)`,
+        opacity: 0,
+        filter: 'brightness(0.5)',
+      },
     ],
     {
       duration: 600,
-      easing: "cubic-bezier(0.4, 0, 0.2, 1)",
+      easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
     }
   );
 
-  animation.addEventListener("finish", () => {
+  animation.addEventListener('finish', () => {
     ghost.remove();
     // Add nutrition pop on predator
     if (effect.nutritionGained && predatorTarget) {
       createNutritionPop(predatorTarget, effect.nutritionGained);
     }
     // Flash predator to show power gain
-    predatorTarget?.classList.add("consumption-complete");
-    setTimeout(() => predatorTarget?.classList.remove("consumption-complete"), 400);
+    predatorTarget?.classList.add('consumption-complete');
+    setTimeout(() => predatorTarget?.classList.remove('consumption-complete'), 400);
   });
 };
 
@@ -300,11 +314,11 @@ const createNutritionPop = (target, amount) => {
   if (!target || amount <= 0) {
     return;
   }
-  const pop = document.createElement("div");
-  pop.className = "nutrition-pop";
+  const pop = document.createElement('div');
+  pop.className = 'nutrition-pop';
   pop.textContent = `+${amount}/+${amount}`;
   target.appendChild(pop);
-  pop.addEventListener("animationend", () => pop.remove());
+  pop.addEventListener('animationend', () => pop.remove());
 };
 
 // ============================================================================
@@ -317,45 +331,45 @@ const createNutritionPop = (target, amount) => {
  */
 const KEYWORD_EFFECTS = {
   Barrier: {
-    className: "keyword-barrier",
-    emoji: "🛡️",
-    color: "#4fc3f7",
+    className: 'keyword-barrier',
+    emoji: '🛡️',
+    color: '#4fc3f7',
     duration: 600,
   },
   Ambush: {
-    className: "keyword-ambush",
-    emoji: "🎯",
-    color: "#ff7043",
+    className: 'keyword-ambush',
+    emoji: '🎯',
+    color: '#ff7043',
     duration: 500,
   },
   Toxic: {
-    className: "keyword-toxic",
-    emoji: "☠️",
-    color: "#76ff03",
+    className: 'keyword-toxic',
+    emoji: '☠️',
+    color: '#76ff03',
     duration: 600,
   },
   Neurotoxic: {
-    className: "keyword-neurotoxic",
-    emoji: "❄️",
-    color: "#80deea",
+    className: 'keyword-neurotoxic',
+    emoji: '❄️',
+    color: '#80deea',
     duration: 700,
   },
   Scavenge: {
-    className: "keyword-scavenge",
-    emoji: "🦴",
-    color: "#a1887f",
+    className: 'keyword-scavenge',
+    emoji: '🦴',
+    color: '#a1887f',
     duration: 500,
   },
   Haste: {
-    className: "keyword-haste",
-    emoji: "⚡",
-    color: "#ffeb3b",
+    className: 'keyword-haste',
+    emoji: '⚡',
+    color: '#ffeb3b',
     duration: 400,
   },
   Lure: {
-    className: "keyword-lure",
-    emoji: "🎣",
-    color: "#f06292",
+    className: 'keyword-lure',
+    emoji: '🎣',
+    color: '#f06292',
     duration: 500,
   },
 };
@@ -372,11 +386,7 @@ export const playKeywordEffect = (effect, state) => {
   const cardElement = effect.cardId
     ? document.querySelector(`.card[data-instance-id="${effect.cardId}"]`)
     : null;
-  const slotElement = getFieldSlotElement(
-    state,
-    effect.ownerIndex ?? -1,
-    effect.slotIndex ?? -1
-  );
+  const slotElement = getFieldSlotElement(state, effect.ownerIndex ?? -1, effect.slotIndex ?? -1);
 
   const target = cardElement ?? slotElement;
   if (!target) {
@@ -386,8 +396,8 @@ export const playKeywordEffect = (effect, state) => {
   const keywordConfig = KEYWORD_EFFECTS[effect.keyword];
   if (!keywordConfig) {
     // Fallback for unknown keywords
-    target.classList.add("keyword-trigger-generic");
-    setTimeout(() => target.classList.remove("keyword-trigger-generic"), 500);
+    target.classList.add('keyword-trigger-generic');
+    setTimeout(() => target.classList.remove('keyword-trigger-generic'), 500);
     return;
   }
 
@@ -399,8 +409,8 @@ export const playKeywordEffect = (effect, state) => {
   setTimeout(() => target.classList.remove(keywordConfig.className), keywordConfig.duration);
 
   // Create floating emoji indicator
-  const indicator = document.createElement("div");
-  indicator.className = "keyword-indicator";
+  const indicator = document.createElement('div');
+  indicator.className = 'keyword-indicator';
   indicator.textContent = keywordConfig.emoji;
   indicator.style.left = `${targetRect.left - layerRect.left + targetRect.width / 2}px`;
   indicator.style.top = `${targetRect.top - layerRect.top + targetRect.height / 2}px`;
@@ -408,7 +418,7 @@ export const playKeywordEffect = (effect, state) => {
   indicator.style.textShadow = `0 0 10px ${keywordConfig.color}, 0 0 20px ${keywordConfig.color}`;
   battleEffectsLayer.appendChild(indicator);
 
-  indicator.addEventListener("animationend", () => indicator.remove());
+  indicator.addEventListener('animationend', () => indicator.remove());
 };
 
 // ============================================================================
@@ -423,11 +433,7 @@ export const playDamageEffect = (effect, state) => {
   const cardElement = effect.cardId
     ? document.querySelector(`.card[data-instance-id="${effect.cardId}"]`)
     : null;
-  const slotElement = getFieldSlotElement(
-    state,
-    effect.ownerIndex ?? -1,
-    effect.slotIndex ?? -1
-  );
+  const slotElement = getFieldSlotElement(state, effect.ownerIndex ?? -1, effect.slotIndex ?? -1);
 
   const target = cardElement ?? slotElement;
   if (!target) {
@@ -435,8 +441,8 @@ export const playDamageEffect = (effect, state) => {
   }
 
   // Add shake and damage flash class
-  target.classList.add("damage-shake");
-  setTimeout(() => target.classList.remove("damage-shake"), 500);
+  target.classList.add('damage-shake');
+  setTimeout(() => target.classList.remove('damage-shake'), 500);
 
   // Show damage pop
   if (effect.amount && effect.amount > 0) {
@@ -463,21 +469,21 @@ export const playPlayerDamageEffect = (effect, state) => {
   }
 
   // Add shake class to player badge
-  playerBadge.classList.add("player-damage-shake");
-  setTimeout(() => playerBadge.classList.remove("player-damage-shake"), 600);
+  playerBadge.classList.add('player-damage-shake');
+  setTimeout(() => playerBadge.classList.remove('player-damage-shake'), 600);
 
   // Show damage pop on player badge
   if (effect.amount && effect.amount > 0) {
     const layerRect = battleEffectsLayer.getBoundingClientRect();
     const badgeRect = playerBadge.getBoundingClientRect();
 
-    const pop = document.createElement("div");
-    pop.className = "player-damage-pop";
+    const pop = document.createElement('div');
+    pop.className = 'player-damage-pop';
     pop.textContent = `-${effect.amount}`;
     pop.style.left = `${badgeRect.left - layerRect.left + badgeRect.width / 2}px`;
     pop.style.top = `${badgeRect.top - layerRect.top + badgeRect.height / 2}px`;
     battleEffectsLayer.appendChild(pop);
-    pop.addEventListener("animationend", () => pop.remove());
+    pop.addEventListener('animationend', () => pop.remove());
   }
 };
 
@@ -497,11 +503,7 @@ export const playHealEffect = (effect, state) => {
   const cardElement = effect.cardId
     ? document.querySelector(`.card[data-instance-id="${effect.cardId}"]`)
     : null;
-  const slotElement = getFieldSlotElement(
-    state,
-    effect.ownerIndex ?? -1,
-    effect.slotIndex ?? -1
-  );
+  const slotElement = getFieldSlotElement(state, effect.ownerIndex ?? -1, effect.slotIndex ?? -1);
 
   const target = cardElement ?? slotElement;
   if (!target) {
@@ -512,18 +514,18 @@ export const playHealEffect = (effect, state) => {
   const targetRect = target.getBoundingClientRect();
 
   // Add heal glow class
-  target.classList.add("heal-glow");
-  setTimeout(() => target.classList.remove("heal-glow"), 600);
+  target.classList.add('heal-glow');
+  setTimeout(() => target.classList.remove('heal-glow'), 600);
 
   // Show heal pop
   if (effect.amount && effect.amount > 0) {
-    const pop = document.createElement("div");
-    pop.className = "heal-pop";
+    const pop = document.createElement('div');
+    pop.className = 'heal-pop';
     pop.textContent = `+${effect.amount}`;
     pop.style.left = `${targetRect.left - layerRect.left + targetRect.width / 2}px`;
     pop.style.top = `${targetRect.top - layerRect.top + targetRect.height / 2}px`;
     battleEffectsLayer.appendChild(pop);
-    pop.addEventListener("animationend", () => pop.remove());
+    pop.addEventListener('animationend', () => pop.remove());
   }
 };
 
@@ -543,11 +545,7 @@ export const playAbilityCancelEffect = (effect, state) => {
   const cardElement = effect.cardId
     ? document.querySelector(`.card[data-instance-id="${effect.cardId}"]`)
     : null;
-  const slotElement = getFieldSlotElement(
-    state,
-    effect.ownerIndex ?? -1,
-    effect.slotIndex ?? -1
-  );
+  const slotElement = getFieldSlotElement(state, effect.ownerIndex ?? -1, effect.slotIndex ?? -1);
 
   const target = cardElement ?? slotElement;
   if (!target) {
@@ -558,18 +556,18 @@ export const playAbilityCancelEffect = (effect, state) => {
   const targetRect = target.getBoundingClientRect();
 
   // Add flash class to card
-  target.classList.add("ability-cancel");
-  setTimeout(() => target.classList.remove("ability-cancel"), 600);
+  target.classList.add('ability-cancel');
+  setTimeout(() => target.classList.remove('ability-cancel'), 600);
 
   // Create floating cancel emoji indicator
-  const indicator = document.createElement("div");
-  indicator.className = "ability-cancel-indicator";
-  indicator.textContent = "🚫";
+  const indicator = document.createElement('div');
+  indicator.className = 'ability-cancel-indicator';
+  indicator.textContent = '🚫';
   indicator.style.left = `${targetRect.left - layerRect.left + targetRect.width / 2}px`;
   indicator.style.top = `${targetRect.top - layerRect.top + targetRect.height / 2}px`;
   battleEffectsLayer.appendChild(indicator);
 
-  indicator.addEventListener("animationend", () => indicator.remove());
+  indicator.addEventListener('animationend', () => indicator.remove());
 };
 
 // ============================================================================
@@ -601,25 +599,25 @@ export const processVisualEffects = (state) => {
     }
     markEffectProcessed(effect.id, createdAt);
     switch (effect.type) {
-      case "attack":
+      case 'attack':
         requestAnimationFrame(() => playAttackEffect(effect, state));
         break;
-      case "consumption":
+      case 'consumption':
         requestAnimationFrame(() => playConsumptionEffect(effect, state));
         break;
-      case "keyword":
+      case 'keyword':
         requestAnimationFrame(() => playKeywordEffect(effect, state));
         break;
-      case "ability-cancel":
+      case 'ability-cancel':
         requestAnimationFrame(() => playAbilityCancelEffect(effect, state));
         break;
-      case "damage":
+      case 'damage':
         requestAnimationFrame(() => playDamageEffect(effect, state));
         break;
-      case "playerDamage":
+      case 'playerDamage':
         requestAnimationFrame(() => playPlayerDamageEffect(effect, state));
         break;
-      case "heal":
+      case 'heal':
         requestAnimationFrame(() => playHealEffect(effect, state));
         break;
     }

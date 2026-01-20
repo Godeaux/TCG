@@ -41,7 +41,10 @@ const deduplicateCards = (cards) => {
   const cardMap = new Map();
   cards.forEach((card) => {
     const existing = cardMap.get(card.id);
-    if (!existing || rarityOrder.indexOf(card.packRarity) > rarityOrder.indexOf(existing.packRarity)) {
+    if (
+      !existing ||
+      rarityOrder.indexOf(card.packRarity) > rarityOrder.indexOf(existing.packRarity)
+    ) {
       cardMap.set(card.id, card);
     }
   });
@@ -73,7 +76,7 @@ describe('filterCardsToSave', () => {
 
     const cards = [
       { id: 'card-1', packRarity: 'common' }, // Already own at common
-      { id: 'card-2', packRarity: 'rare' },   // New card
+      { id: 'card-2', packRarity: 'rare' }, // New card
     ];
 
     const result = filterCardsToSave(cards, ownedCards);
@@ -112,14 +115,14 @@ describe('filterCardsToSave', () => {
 
     const cards = [
       { id: 'card-1', packRarity: 'legendary' }, // common -> legendary (upgrade)
-      { id: 'card-2', packRarity: 'rare' },      // uncommon -> rare (upgrade)
-      { id: 'card-3', packRarity: 'common' },    // rare -> common (downgrade)
+      { id: 'card-2', packRarity: 'rare' }, // uncommon -> rare (upgrade)
+      { id: 'card-3', packRarity: 'common' }, // rare -> common (downgrade)
       { id: 'card-4', packRarity: 'legendary' }, // epic -> legendary (upgrade)
     ];
 
     const result = filterCardsToSave(cards, ownedCards);
     expect(result.length).toBe(3);
-    expect(result.map(c => c.id).sort()).toEqual(['card-1', 'card-2', 'card-4']);
+    expect(result.map((c) => c.id).sort()).toEqual(['card-1', 'card-2', 'card-4']);
   });
 });
 
@@ -166,16 +169,16 @@ describe('deduplicateCards', () => {
     const cards = [
       { id: 'card-1', packRarity: 'common' },
       { id: 'card-2', packRarity: 'uncommon' },
-      { id: 'card-1', packRarity: 'epic' },     // Duplicate, higher rarity
-      { id: 'card-2', packRarity: 'rare' },     // Duplicate, higher rarity
-      { id: 'card-1', packRarity: 'rare' },     // Duplicate, lower than epic
+      { id: 'card-1', packRarity: 'epic' }, // Duplicate, higher rarity
+      { id: 'card-2', packRarity: 'rare' }, // Duplicate, higher rarity
+      { id: 'card-1', packRarity: 'rare' }, // Duplicate, lower than epic
     ];
 
     const result = deduplicateCards(cards);
     expect(result.length).toBe(2);
 
-    const card1 = result.find(c => c.id === 'card-1');
-    const card2 = result.find(c => c.id === 'card-2');
+    const card1 = result.find((c) => c.id === 'card-1');
+    const card2 = result.find((c) => c.id === 'card-2');
 
     expect(card1.packRarity).toBe('epic');
     expect(card2.packRarity).toBe('rare');
@@ -242,12 +245,12 @@ describe('Full Pack Opening Flow', () => {
 
     // Pack contains mix of new, upgrades, downgrades, and duplicates
     const packCards = [
-      { id: 'fish-prey-atlantic-flying-fish', packRarity: 'rare' },     // Upgrade
-      { id: 'fish-prey-atlantic-flying-fish', packRarity: 'epic' },     // Duplicate, even better
-      { id: 'bird-prey-indian-peacock', packRarity: 'common' },          // Downgrade (filter out)
-      { id: 'mammal-predator-lion', packRarity: 'rare' },               // New
-      { id: 'mammal-predator-lion', packRarity: 'legendary' },          // Duplicate, better
-      { id: 'reptile-prey-gecko', packRarity: 'common' },               // New
+      { id: 'fish-prey-atlantic-flying-fish', packRarity: 'rare' }, // Upgrade
+      { id: 'fish-prey-atlantic-flying-fish', packRarity: 'epic' }, // Duplicate, even better
+      { id: 'bird-prey-indian-peacock', packRarity: 'common' }, // Downgrade (filter out)
+      { id: 'mammal-predator-lion', packRarity: 'rare' }, // New
+      { id: 'mammal-predator-lion', packRarity: 'legendary' }, // Duplicate, better
+      { id: 'reptile-prey-gecko', packRarity: 'common' }, // New
     ];
 
     const toSave = filterCardsToSave(packCards, ownedCards);
@@ -259,9 +262,9 @@ describe('Full Pack Opening Flow', () => {
     // Should have: flying fish (epic), lion (legendary), gecko (common)
     expect(deduplicated.length).toBe(3);
 
-    const flyingFish = deduplicated.find(c => c.id === 'fish-prey-atlantic-flying-fish');
-    const lion = deduplicated.find(c => c.id === 'mammal-predator-lion');
-    const gecko = deduplicated.find(c => c.id === 'reptile-prey-gecko');
+    const flyingFish = deduplicated.find((c) => c.id === 'fish-prey-atlantic-flying-fish');
+    const lion = deduplicated.find((c) => c.id === 'mammal-predator-lion');
+    const gecko = deduplicated.find((c) => c.id === 'reptile-prey-gecko');
 
     expect(flyingFish.packRarity).toBe('epic');
     expect(lion.packRarity).toBe('legendary');

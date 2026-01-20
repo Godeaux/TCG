@@ -33,7 +33,7 @@ describe('selectFromGroup with friendly-carrion addToHand Effect', () => {
     const selectFn = effectLibrary.selectFromGroup({
       targetGroup: 'friendly-carrion',
       title: 'Choose a carrion to add to hand',
-      effect: { addToHand: true }
+      effect: { addToHand: true },
     });
     const result = selectFn(context);
 
@@ -46,7 +46,7 @@ describe('selectFromGroup with friendly-carrion addToHand Effect', () => {
     const selectFn = effectLibrary.selectFromGroup({
       targetGroup: 'friendly-carrion',
       title: 'Choose a carrion to add to hand',
-      effect: { addToHand: true }
+      effect: { addToHand: true },
     });
     const result = selectFn(context);
 
@@ -57,7 +57,7 @@ describe('selectFromGroup with friendly-carrion addToHand Effect', () => {
     const selectFn = effectLibrary.selectFromGroup({
       targetGroup: 'friendly-carrion',
       title: 'Choose a carrion to add to hand',
-      effect: { addToHand: true }
+      effect: { addToHand: true },
     });
     const result = selectFn(context);
 
@@ -87,7 +87,7 @@ describe('selectFromGroup with carrion copyAbilities Effect', () => {
     const selectFn = effectLibrary.selectFromGroup({
       targetGroup: 'carrion',
       title: 'Choose a carrion to copy abilities from',
-      effect: { copyAbilities: true }
+      effect: { copyAbilities: true },
     });
     const result = selectFn(context);
 
@@ -101,7 +101,7 @@ describe('selectFromGroup with carrion copyAbilities Effect', () => {
     const selectFn = effectLibrary.selectFromGroup({
       targetGroup: 'carrion',
       title: 'Choose a carrion to copy abilities from',
-      effect: { copyAbilities: true }
+      effect: { copyAbilities: true },
     });
     const result = selectFn(context);
 
@@ -112,7 +112,7 @@ describe('selectFromGroup with carrion copyAbilities Effect', () => {
     const selectFn = effectLibrary.selectFromGroup({
       targetGroup: 'carrion',
       title: 'Choose a carrion to copy abilities from',
-      effect: { copyAbilities: true }
+      effect: { copyAbilities: true },
     });
     const result = selectFn(context);
 
@@ -143,7 +143,7 @@ describe('selectFromGroup with carrion-predators copyAbilities Effect', () => {
     const selectFn = effectLibrary.selectFromGroup({
       targetGroup: 'carrion-predators',
       title: 'Choose a predator to copy abilities from',
-      effect: { copyAbilities: true }
+      effect: { copyAbilities: true },
     });
     const result = selectFn(context);
 
@@ -157,7 +157,7 @@ describe('selectFromGroup with carrion-predators copyAbilities Effect', () => {
     const selectFn = effectLibrary.selectFromGroup({
       targetGroup: 'carrion-predators',
       title: 'Choose a predator to copy abilities from',
-      effect: { copyAbilities: true }
+      effect: { copyAbilities: true },
     });
     const result = selectFn(context);
 
@@ -183,7 +183,7 @@ describe('selectFromGroup with carrion copyStats Effect', () => {
     const selectFn = effectLibrary.selectFromGroup({
       targetGroup: 'carrion',
       title: 'Choose a carrion to copy stats from',
-      effect: { copyStats: true }
+      effect: { copyStats: true },
     });
     const result = selectFn(context);
 
@@ -197,7 +197,7 @@ describe('selectFromGroup with carrion copyStats Effect', () => {
     const selectFn = effectLibrary.selectFromGroup({
       targetGroup: 'carrion',
       title: 'Choose a carrion to copy stats from',
-      effect: { copyStats: true }
+      effect: { copyStats: true },
     });
     const result = selectFn(context);
 
@@ -208,7 +208,7 @@ describe('selectFromGroup with carrion copyStats Effect', () => {
     const selectFn = effectLibrary.selectFromGroup({
       targetGroup: 'carrion',
       title: 'Choose a carrion to copy stats from',
-      effect: { copyStats: true }
+      effect: { copyStats: true },
     });
     const result = selectFn(context);
 
@@ -236,7 +236,7 @@ describe('selectFromGroup with friendly-carrion play + keyword Effect', () => {
     const selectFn = effectLibrary.selectFromGroup({
       targetGroup: 'friendly-carrion',
       title: 'Choose a carrion to play',
-      effect: { play: true, keyword: 'Frozen' }
+      effect: { play: true, keyword: 'Frozen' },
     });
     const result = selectFn(context);
 
@@ -249,7 +249,7 @@ describe('selectFromGroup with friendly-carrion play + keyword Effect', () => {
     const selectFn = effectLibrary.selectFromGroup({
       targetGroup: 'friendly-carrion',
       title: 'Choose a carrion to play',
-      effect: { play: true, keyword: 'Haste' }
+      effect: { play: true, keyword: 'Haste' },
     });
     const result = selectFn(context);
 
@@ -260,7 +260,7 @@ describe('selectFromGroup with friendly-carrion play + keyword Effect', () => {
     const selectFn = effectLibrary.selectFromGroup({
       targetGroup: 'friendly-carrion',
       title: 'Choose a carrion to play',
-      effect: { play: true, keyword: 'Immune' }
+      effect: { play: true, keyword: 'Immune' },
     });
     const result = selectFn(context);
 
@@ -401,7 +401,7 @@ describe('selectFromGroup with creature copyStats Effect', () => {
     const selectFn = effectLibrary.selectFromGroup({
       targetGroup: 'other-creatures',
       title: 'Choose a creature to copy stats from',
-      effect: { copyStats: true }
+      effect: { copyStats: true },
     });
     const result = selectFn(context);
 
@@ -415,7 +415,7 @@ describe('selectFromGroup with creature copyStats Effect', () => {
     const selectFn = effectLibrary.selectFromGroup({
       targetGroup: 'other-creatures',
       title: 'Choose a creature to copy stats from',
-      effect: { copyStats: true }
+      effect: { copyStats: true },
     });
     const result = selectFn(context);
 
@@ -426,7 +426,7 @@ describe('selectFromGroup with creature copyStats Effect', () => {
     const selectFn = effectLibrary.selectFromGroup({
       targetGroup: 'other-creatures',
       title: 'Choose a creature to copy stats from',
-      effect: { copyStats: true }
+      effect: { copyStats: true },
     });
     const result = selectFn(context);
 
@@ -457,7 +457,7 @@ describe('selectFromGroup with copyAbilitiesFrom Effect', () => {
     const selectFn = effectLibrary.selectFromGroup({
       targetGroup: 'other-creatures',
       title: 'Choose a creature to copy abilities from',
-      effect: { copyAbilitiesFrom: true }
+      effect: { copyAbilitiesFrom: true },
     });
     const result = selectFn(context);
 
@@ -470,7 +470,7 @@ describe('selectFromGroup with copyAbilitiesFrom Effect', () => {
     const selectFn = effectLibrary.selectFromGroup({
       targetGroup: 'other-creatures',
       title: 'Choose a creature to copy abilities from',
-      effect: { copyAbilitiesFrom: true }
+      effect: { copyAbilitiesFrom: true },
     });
     const result = selectFn(context);
 
@@ -481,7 +481,7 @@ describe('selectFromGroup with copyAbilitiesFrom Effect', () => {
     const selectFn = effectLibrary.selectFromGroup({
       targetGroup: 'other-creatures',
       title: 'Choose a creature to copy abilities from',
-      effect: { copyAbilitiesFrom: true }
+      effect: { copyAbilitiesFrom: true },
     });
     const result = selectFn(context);
 
@@ -523,4 +523,3 @@ describe('Revive Creature Effect', () => {
     expect(result).toEqual({});
   });
 });
-

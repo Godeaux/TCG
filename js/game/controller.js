@@ -208,13 +208,13 @@ export class GameController {
   handlePlayCard({ card, slotIndex, options = {} }) {
     // Validation
     if (!isLocalPlayersTurn(this.state, this.uiState)) {
-      logMessage(this.state, "Wait for your turn to play cards.");
+      logMessage(this.state, 'Wait for your turn to play cards.');
       this.notifyStateChange();
       return { success: false, error: 'Not your turn' };
     }
 
     if (!canPlayCards(this.state)) {
-      logMessage(this.state, "Cards may only be played during a main phase.");
+      logMessage(this.state, 'Cards may only be played during a main phase.');
       this.notifyStateChange();
       return { success: false, error: 'Wrong phase' };
     }
@@ -225,23 +225,23 @@ export class GameController {
     const opponentIndex = (this.state.activePlayerIndex + 1) % 2;
 
     // Check card limit
-    const isFree = card.type === "Free Spell" || card.type === "Trap" || isFreePlay(card);
+    const isFree = card.type === 'Free Spell' || card.type === 'Trap' || isFreePlay(card);
     if (!isFree && this.state.cardPlayedThisTurn) {
-      logMessage(this.state, "You have already played a card this turn.");
+      logMessage(this.state, 'You have already played a card this turn.');
       this.notifyStateChange();
       return { success: false, error: 'Card limit reached' };
     }
 
     // Route by card type
-    if (card.type === "Spell" || card.type === "Free Spell") {
+    if (card.type === 'Spell' || card.type === 'Free Spell') {
       return this.handlePlaySpell(card, isFree);
     }
 
-    if (card.type === "Trap") {
+    if (card.type === 'Trap') {
       return this.handlePlayTrap(card);
     }
 
-    if (card.type === "Predator" || card.type === "Prey") {
+    if (card.type === 'Predator' || card.type === 'Prey') {
       return this.handlePlayCreature(card, slotIndex, isFree);
     }
 
@@ -288,11 +288,7 @@ export class GameController {
     };
 
     // Resolve effect chain
-    this.resolveEffectChain(
-      result,
-      { playerIndex, opponentIndex },
-      finalizePlay
-    );
+    this.resolveEffectChain(result, { playerIndex, opponentIndex }, finalizePlay);
 
     return { success: true };
   }
@@ -312,20 +308,21 @@ export class GameController {
     const playerIndex = this.state.activePlayerIndex;
 
     // Check for available slot
-    const emptySlot = slotIndex !== null && slotIndex !== undefined
-      ? slotIndex
-      : player.field.findIndex((slot) => slot === null);
+    const emptySlot =
+      slotIndex !== null && slotIndex !== undefined
+        ? slotIndex
+        : player.field.findIndex((slot) => slot === null);
 
     if (emptySlot === -1) {
-      logMessage(this.state, "No room on the field.");
+      logMessage(this.state, 'No room on the field.');
       this.notifyStateChange();
       return { success: false, error: 'Field full' };
     }
 
     // Handle predator consumption
-    if (card.type === "Predator") {
+    if (card.type === 'Predator') {
       const availablePrey = player.field.filter(
-        (slot) => slot && (slot.type === "Prey" || (slot.type === "Predator" && isEdible(slot)))
+        (slot) => slot && (slot.type === 'Prey' || (slot.type === 'Predator' && isEdible(slot)))
       );
 
       if (availablePrey.length > 0) {
@@ -376,8 +373,10 @@ export class GameController {
     });
 
     if (totalNutrition > 0) {
-      creatureInstance.currentAtk = (creatureInstance.currentAtk || creatureInstance.atk) + totalNutrition;
-      creatureInstance.currentHp = (creatureInstance.currentHp || creatureInstance.hp) + totalNutrition;
+      creatureInstance.currentAtk =
+        (creatureInstance.currentAtk || creatureInstance.atk) + totalNutrition;
+      creatureInstance.currentHp =
+        (creatureInstance.currentHp || creatureInstance.hp) + totalNutrition;
       logMessage(
         this.state,
         `${creatureInstance.name} gains +${totalNutrition}/+${totalNutrition} from consumption.`
@@ -410,7 +409,11 @@ export class GameController {
     });
 
     if (playResult) {
-      this.resolveEffectChain(playResult, { playerIndex, opponentIndex, creature: creatureInstance });
+      this.resolveEffectChain(playResult, {
+        playerIndex,
+        opponentIndex,
+        creature: creatureInstance,
+      });
     }
 
     // Trigger traps
@@ -431,7 +434,11 @@ export class GameController {
       });
 
       if (consumeResult) {
-        this.resolveEffectChain(consumeResult, { playerIndex, opponentIndex, creature: creatureInstance });
+        this.resolveEffectChain(consumeResult, {
+          playerIndex,
+          opponentIndex,
+          creature: creatureInstance,
+        });
       }
     }
 
@@ -581,7 +588,9 @@ export class GameController {
     if (uiResult && uiResult.pendingOnPlay) {
       const { creature, playerIndex, opponentIndex } = uiResult.pendingOnPlay;
       const pendingQueue = uiResult.pendingOnPlayQueue || [];
-      console.log(`[applyEffectResult] Processing pendingOnPlay for ${creature.name}, queue length: ${pendingQueue.length}`);
+      console.log(
+        `[applyEffectResult] Processing pendingOnPlay for ${creature.name}, queue length: ${pendingQueue.length}`
+      );
 
       // Resolve the creature's onPlay effect through the normal chain
       const onPlayResult = resolveCardEffect(creature, 'onPlay', {
@@ -597,7 +606,9 @@ export class GameController {
       // Create a callback that processes the next pending onPlay in the queue
       const processNextInQueue = () => {
         if (pendingQueue.length > 0) {
-          console.log(`[applyEffectResult] Processing next in queue, ${pendingQueue.length} remaining`);
+          console.log(
+            `[applyEffectResult] Processing next in queue, ${pendingQueue.length} remaining`
+          );
           const next = pendingQueue.shift();
           this.applyEffectResult(
             { pendingOnPlay: next, pendingOnPlayQueue: pendingQueue },
@@ -612,7 +623,11 @@ export class GameController {
       if (onPlayResult) {
         // Chain the onPlay result - this handles any UI requirements
         // After this chain completes, process the next pending onPlay
-        this.resolveEffectChain(onPlayResult, { ...context, playerIndex, opponentIndex }, processNextInQueue);
+        this.resolveEffectChain(
+          onPlayResult,
+          { ...context, playerIndex, opponentIndex },
+          processNextInQueue
+        );
         return onPlayResult;
       } else {
         // No result from onPlay, process next in queue

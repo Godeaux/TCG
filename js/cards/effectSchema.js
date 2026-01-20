@@ -20,7 +20,10 @@ const TOKEN_NAMES = {
   'token-sardine': { singular: 'Sardine', plural: 'Sardines' },
   'token-leafy': { singular: 'Leafy', plural: 'Leafys' },
   'token-man-o-war': { singular: "Man O' War", plural: "Man O' War" },
-  'token-portuguese-man-o-war': { singular: "Portuguese Man O' War", plural: "Portuguese Man O' War" },
+  'token-portuguese-man-o-war': {
+    singular: "Portuguese Man O' War",
+    plural: "Portuguese Man O' War",
+  },
   'token-angler-egg': { singular: 'Angler Egg', plural: 'Angler Eggs' },
   'token-tuna-egg': { singular: 'Tuna Egg', plural: 'Tuna Eggs' },
   'token-lancetfish': { singular: 'Lancetfish', plural: 'Lancetfish' },
@@ -116,7 +119,11 @@ function formatTokenList(tokenIds) {
       name = count > 1 ? tokenInfo.plural : tokenInfo.singular;
     } else {
       // Fallback: extract from ID and handle basic pluralization
-      const baseName = id.replace('token-', '').split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      const baseName = id
+        .replace('token-', '')
+        .split('-')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
       name = baseName; // Don't auto-pluralize unknown tokens
     }
     // Show count only when > 1 (e.g., "Leafy" not "1 Leafy")
@@ -138,7 +145,7 @@ function groupToText(group) {
     'all-creatures': 'creature',
     'all-prey': 'prey',
     'all-entities': '', // Empty - "target" is implied when selecting any entity
-    'carrion': 'carrion',
+    carrion: 'carrion',
     'carrion-predators': 'predator from carrion',
     'other-creatures': 'creature',
     'friendly-predators': 'predator',
@@ -171,7 +178,8 @@ function generateSelectionText(params) {
   if (effect.copyAbilities) return `Copy abilities from ${targetText}`;
   if (effect.copyAbilitiesFrom) return `Copy abilities from ${targetText}`;
   if (effect.copyStats) return `Copy stats from ${targetText}`;
-  if (effect.buff) return `${group ? `Target ${group}` : 'Target'} gains +${effect.buff.attack}/+${effect.buff.health}`;
+  if (effect.buff)
+    return `${group ? `Target ${group}` : 'Target'} gains +${effect.buff.attack}/+${effect.buff.health}`;
   if (effect.regen) return `Regen ${targetText}`;
   if (effect.consume) return `Consume ${targetText}`;
   if (effect.return) return `Return ${targetText} to hand`;
@@ -226,15 +234,17 @@ export const SELECTION_EFFECT_SCHEMA = {
   },
   play: {
     params: { keyword: { type: 'string', required: false } },
-    text: (effect, group) => effect.keyword
-      ? `Play target ${groupToText(group)}; it gains ${effect.keyword}`
-      : `Play target ${groupToText(group)}`,
+    text: (effect, group) =>
+      effect.keyword
+        ? `Play target ${groupToText(group)}; it gains ${effect.keyword}`
+        : `Play target ${groupToText(group)}`,
   },
   sacrifice: {
     params: { draw: { type: 'number', required: false } },
-    text: (effect, group) => effect.draw
-      ? `Sacrifice target ${groupToText(group)}, draw ${effect.draw}`
-      : `Sacrifice target ${groupToText(group)}`,
+    text: (effect, group) =>
+      effect.draw
+        ? `Sacrifice target ${groupToText(group)}, draw ${effect.draw}`
+        : `Sacrifice target ${groupToText(group)}`,
   },
   copyAbilities: {
     params: {},
@@ -250,7 +260,8 @@ export const SELECTION_EFFECT_SCHEMA = {
   },
   buff: {
     params: { buff: { type: 'object', required: true } },
-    text: (effect, group) => `Target ${groupToText(group)} gains +${effect.buff.attack}/+${effect.buff.health}`,
+    text: (effect, group) =>
+      `Target ${groupToText(group)} gains +${effect.buff.attack}/+${effect.buff.health}`,
   },
   regen: {
     params: {},
@@ -343,9 +354,10 @@ export const EFFECT_SCHEMA = {
       amount: { type: 'number|string', required: true },
       label: { type: 'string', required: false },
     },
-    text: (p) => typeof p.amount === 'string'
-      ? `Deal damage to target creature`
-      : `Deal ${p.amount} damage to target creature`,
+    text: (p) =>
+      typeof p.amount === 'string'
+        ? `Deal damage to target creature`
+        : `Deal ${p.amount} damage to target creature`,
   },
 
   // ==========================================
@@ -378,20 +390,25 @@ export const EFFECT_SCHEMA = {
 
   draw: {
     params: { count: { type: 'number|string', required: true } },
-    text: (p) => typeof p.count === 'number' ? `Draw ${p.count}` : `Draw cards`,
+    text: (p) => (typeof p.count === 'number' ? `Draw ${p.count}` : `Draw cards`),
   },
 
   addToHand: {
     params: { cardId: { type: 'string', required: true } },
     text: (p) => {
-      const name = p.cardId.replace('token-', '').split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      const name = p.cardId
+        .replace('token-', '')
+        .split('-')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
       return `Add ${name} to hand`;
     },
   },
 
   tutorFromDeck: {
     params: { cardType: { type: 'string', required: false } },
-    text: (p) => p.cardType ? `Add a ${p.cardType} from deck to hand` : `Add a card from deck to hand`,
+    text: (p) =>
+      p.cardType ? `Add a ${p.cardType} from deck to hand` : `Add a card from deck to hand`,
   },
 
   forceOpponentDiscard: {
@@ -429,7 +446,11 @@ export const EFFECT_SCHEMA = {
       newCardId: { type: 'string', required: true },
     },
     text: (p) => {
-      const name = p.newCardId.split('-').slice(-2).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      const name = p.newCardId
+        .split('-')
+        .slice(-2)
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
       return `Become ${name}`;
     },
   },
@@ -446,8 +467,12 @@ export const EFFECT_SCHEMA = {
     text: (p) => {
       const atk = p.stats.attack || p.stats.atk || 0;
       const hp = p.stats.health || p.stats.hp || 0;
-      const target = p.targetType === 'all-friendly' ? 'Creatures' :
-        p.targetType === 'friendlyCanines' ? 'Canines' : 'Target';
+      const target =
+        p.targetType === 'all-friendly'
+          ? 'Creatures'
+          : p.targetType === 'friendlyCanines'
+            ? 'Canines'
+            : 'Target';
       return `${target} gain +${atk}/+${hp}`;
     },
   },
@@ -459,8 +484,12 @@ export const EFFECT_SCHEMA = {
       target: { type: 'string', required: true },
     },
     text: (p) => {
-      const target = p.target === 'friendlyCreatures' ? 'Creatures' :
-        p.target === 'targetCreature' ? 'Target creature' : 'Target';
+      const target =
+        p.target === 'friendlyCreatures'
+          ? 'Creatures'
+          : p.target === 'targetCreature'
+            ? 'Target creature'
+            : 'Target';
       return `${target} gain +${p.attack}/+${p.health}`;
     },
   },
@@ -671,20 +700,24 @@ export const EFFECT_SCHEMA = {
     },
     text: (p) => {
       // Generate text from actual effect params, not labels (prevents drift)
-      const options = p.options.map(o => {
-        const effect = o.effect;
-        if (!effect) return o.label || o.description;
+      const options = p.options
+        .map((o) => {
+          const effect = o.effect;
+          if (!effect) return o.label || o.description;
 
-        // Handle array of effects
-        if (Array.isArray(effect)) {
-          const parts = effect.map(e => generateEffectTextFromParams(e.type, e.params)).filter(Boolean);
-          if (parts.length > 0) return parts.join(' and ');
-          return o.label || o.description;
-        }
+          // Handle array of effects
+          if (Array.isArray(effect)) {
+            const parts = effect
+              .map((e) => generateEffectTextFromParams(e.type, e.params))
+              .filter(Boolean);
+            if (parts.length > 0) return parts.join(' and ');
+            return o.label || o.description;
+          }
 
-        const generated = generateEffectTextFromParams(effect.type, effect.params);
-        return generated || o.label || o.description; // Fallback to label only if generation fails
-      }).join(' or ');
+          const generated = generateEffectTextFromParams(effect.type, effect.params);
+          return generated || o.label || o.description; // Fallback to label only if generation fails
+        })
+        .join(' or ');
       return `Choose: ${options}`;
     },
   },
@@ -693,10 +726,12 @@ export const EFFECT_SCHEMA = {
     params: { choices: { type: 'array', required: true } },
     text: (p) => {
       // Generate text from actual effect params, not labels (prevents drift)
-      const options = p.choices.map(c => {
-        const generated = generateEffectTextFromParams(c.type, c.params);
-        return generated || c.label; // Fallback to label only if generation fails
-      }).join(' or ');
+      const options = p.choices
+        .map((c) => {
+          const generated = generateEffectTextFromParams(c.type, c.params);
+          return generated || c.label; // Fallback to label only if generation fails
+        })
+        .join(' or ');
       return `Choose: ${options}`;
     },
   },
@@ -708,7 +743,11 @@ export const EFFECT_SCHEMA = {
   setFieldSpell: {
     params: { cardId: { type: 'string', required: true } },
     text: (p) => {
-      const name = p.cardId.split('-').slice(-2).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      const name = p.cardId
+        .split('-')
+        .slice(-2)
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
       return `Set ${name} as field spell`;
     },
   },
@@ -740,7 +779,11 @@ export const EFFECT_SCHEMA = {
   selectCreatureToTransform: {
     params: { newCardId: { type: 'string', required: true } },
     text: (p) => {
-      const name = p.newCardId.split('-').slice(-2).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      const name = p.newCardId
+        .split('-')
+        .slice(-2)
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
       return `Transform target creature into ${name}`;
     },
   },
@@ -799,9 +842,10 @@ export const EFFECT_SCHEMA = {
       amount: { type: 'number|string', required: true },
       targetType: { type: 'string', required: false },
     },
-    text: (p) => typeof p.amount === 'number'
-      ? `Deal ${p.amount} damage to target ${p.targetType || 'target'}`
-      : `Deal damage to target ${p.targetType || 'target'}`,
+    text: (p) =>
+      typeof p.amount === 'number'
+        ? `Deal ${p.amount} damage to target ${p.targetType || 'target'}`
+        : `Deal damage to target ${p.targetType || 'target'}`,
   },
 
   // Selection and targeting effects (uses string for effect type, e.g., "damage", "kill")
@@ -887,13 +931,26 @@ export function validateSelectionEffect(effect) {
 
   // All valid selection effect keys
   const validSelectionKeys = [
-    'kill', 'damage', 'keyword', 'addToHand', 'play', 'sacrifice',
-    'copyAbilities', 'copyAbilitiesFrom', 'copyStats', 'buff',
-    'regen', 'consume', 'return', 'freeze', 'removeAbilities', 'paralyze',
+    'kill',
+    'damage',
+    'keyword',
+    'addToHand',
+    'play',
+    'sacrifice',
+    'copyAbilities',
+    'copyAbilitiesFrom',
+    'copyStats',
+    'buff',
+    'regen',
+    'consume',
+    'return',
+    'freeze',
+    'removeAbilities',
+    'paralyze',
   ];
 
   // Check which selection effect type is being used
-  const effectKeys = Object.keys(effect).filter(k => validSelectionKeys.includes(k));
+  const effectKeys = Object.keys(effect).filter((k) => validSelectionKeys.includes(k));
 
   if (effectKeys.length === 0) {
     errors.push('No recognized selection effect type found');

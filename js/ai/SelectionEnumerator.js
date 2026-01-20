@@ -67,7 +67,12 @@ export class SelectionEnumerator {
 
     // Probe to find what selection is needed (if any)
     const probeResult = this.probeForSelection(
-      state, card, slotIndex, playerIndex, previousSelections, dryDrop
+      state,
+      card,
+      slotIndex,
+      playerIndex,
+      previousSelections,
+      dryDrop
     );
 
     if (probeResult.pendingSelection) {
@@ -87,15 +92,23 @@ export class SelectionEnumerator {
         const isConsumption = request.selectTarget._isConsumption === true;
 
         for (const candidate of candidates) {
-          const newSelections = [...previousSelections, {
-            type: isConsumption ? 'consumption' : 'target',
-            value: candidate.value,
-            label: candidate.label || candidate.value?.name || 'target'
-          }];
+          const newSelections = [
+            ...previousSelections,
+            {
+              type: isConsumption ? 'consumption' : 'target',
+              value: candidate.value,
+              label: candidate.label || candidate.value?.name || 'target',
+            },
+          ];
 
           // Recursively explore with this selection added
           const subPaths = this.exploreSelectionTree(
-            state, card, slotIndex, playerIndex, newSelections, dryDrop
+            state,
+            card,
+            slotIndex,
+            playerIndex,
+            newSelections,
+            dryDrop
           );
           paths.push(...subPaths);
         }
@@ -109,15 +122,23 @@ export class SelectionEnumerator {
         }
 
         for (const option of options) {
-          const newSelections = [...previousSelections, {
-            type: 'option',
-            value: option,
-            label: option.label || `option_${option.id}`
-          }];
+          const newSelections = [
+            ...previousSelections,
+            {
+              type: 'option',
+              value: option,
+              label: option.label || `option_${option.id}`,
+            },
+          ];
 
           // Recursively explore with this selection added
           const subPaths = this.exploreSelectionTree(
-            state, card, slotIndex, playerIndex, newSelections, dryDrop
+            state,
+            card,
+            slotIndex,
+            playerIndex,
+            newSelections,
+            dryDrop
           );
           paths.push(...subPaths);
         }
@@ -127,7 +148,7 @@ export class SelectionEnumerator {
       paths.push({
         selections: previousSelections,
         resultingState: probeResult.state,
-        success: true
+        success: true,
       });
     }
     // If probeResult.error, don't add any paths (invalid play)
@@ -163,60 +184,64 @@ export class SelectionEnumerator {
 
     // Check if we have a consumption selection to handle
     // Consumption selections are marked with type: 'consumption'
-    const consumptionSelection = selections.find(s => s.type === 'consumption');
+    const consumptionSelection = selections.find((s) => s.type === 'consumption');
 
     // Create controller with selection-handling callbacks
-    const controller = new GameController(clonedState, { localPlayerIndex: playerIndex }, {
-      onStateChange: () => {},
-      onBroadcast: () => {},
-      onSelectionNeeded: (request) => {
-        // Check if we have a pre-determined answer for this selection
-        if (selectionIndex < selections.length) {
-          const answer = selections[selectionIndex];
+    const controller = new GameController(
+      clonedState,
+      { localPlayerIndex: playerIndex },
+      {
+        onStateChange: () => {},
+        onBroadcast: () => {},
+        onSelectionNeeded: (request) => {
+          // Check if we have a pre-determined answer for this selection
+          if (selectionIndex < selections.length) {
+            const answer = selections[selectionIndex];
 
-          // Skip consumption selections - they're handled separately
-          if (answer.type === 'consumption') {
-            selectionIndex++;
-            // Continue checking for more selections
-            if (selectionIndex < selections.length) {
-              const nextAnswer = selections[selectionIndex];
-              if (request.selectTarget && nextAnswer.type === 'target') {
-                selectionIndex++;
-                const onSelect = request.onSelect || request.selectTarget.onSelect;
-                if (onSelect) onSelect(nextAnswer.value);
-                return;
+            // Skip consumption selections - they're handled separately
+            if (answer.type === 'consumption') {
+              selectionIndex++;
+              // Continue checking for more selections
+              if (selectionIndex < selections.length) {
+                const nextAnswer = selections[selectionIndex];
+                if (request.selectTarget && nextAnswer.type === 'target') {
+                  selectionIndex++;
+                  const onSelect = request.onSelect || request.selectTarget.onSelect;
+                  if (onSelect) onSelect(nextAnswer.value);
+                  return;
+                }
               }
+              // Fall through to capture pending selection
             }
-            // Fall through to capture pending selection
+
+            selectionIndex++;
+
+            // Immediately invoke the appropriate callback with our pre-made choice
+            if (request.selectTarget && answer.type === 'target') {
+              // Call onSelect synchronously to continue the effect chain
+              const onSelect = request.onSelect || request.selectTarget.onSelect;
+              if (onSelect) {
+                onSelect(answer.value);
+              }
+              return;
+            } else if (request.selectOption && answer.type === 'option') {
+              const onSelect = request.onSelect || request.selectOption.onSelect;
+              if (onSelect) {
+                onSelect(answer.value);
+              }
+              return;
+            }
           }
 
-          selectionIndex++;
-
-          // Immediately invoke the appropriate callback with our pre-made choice
-          if (request.selectTarget && answer.type === 'target') {
-            // Call onSelect synchronously to continue the effect chain
-            const onSelect = request.onSelect || request.selectTarget.onSelect;
-            if (onSelect) {
-              onSelect(answer.value);
-            }
-            return;
-          } else if (request.selectOption && answer.type === 'option') {
-            const onSelect = request.onSelect || request.selectOption.onSelect;
-            if (onSelect) {
-              onSelect(answer.value);
-            }
-            return;
-          }
-        }
-
-        // No pre-determined answer - capture this as a pending selection
-        // We need to discover the available options
-        pendingSelection = request;
-      },
-      onSelectionComplete: () => {
-        completed = true;
-      },
-    });
+          // No pre-determined answer - capture this as a pending selection
+          // We need to discover the available options
+          pendingSelection = request;
+        },
+        onSelectionComplete: () => {
+          completed = true;
+        },
+      }
+    );
 
     // Set active player
     controller.state.activePlayerIndex = playerIndex;
@@ -228,8 +253,8 @@ export class SelectionEnumerator {
         payload: {
           card,
           slotIndex,
-          dryDrop
-        }
+          dryDrop,
+        },
       });
 
       // If we hit a pending selection, return it for enumeration
@@ -237,14 +262,15 @@ export class SelectionEnumerator {
         return {
           success: false,
           state: controller.state,
-          pendingSelection
+          pendingSelection,
         };
       }
 
       // Handle predator consumption - controller uses pendingConsumption instead of onSelectionNeeded
       // This is a special case where we need to enumerate prey selection
       if (result.needsSelection && controller.uiState?.pendingConsumption) {
-        const { availablePrey, predator, emptySlot, isFree } = controller.uiState.pendingConsumption;
+        const { availablePrey, predator, emptySlot, isFree } =
+          controller.uiState.pendingConsumption;
 
         // Check if we have a consumption selection already made
         if (consumptionSelection) {
@@ -257,8 +283,8 @@ export class SelectionEnumerator {
             type: ActionTypes.SELECT_CONSUMPTION_TARGETS,
             payload: {
               predator,
-              prey: selectedPrey
-            }
+              prey: selectedPrey,
+            },
           });
 
           // After consumption, check for more selections (e.g., onPlay effects)
@@ -266,21 +292,21 @@ export class SelectionEnumerator {
             return {
               success: false,
               state: controller.state,
-              pendingSelection
+              pendingSelection,
             };
           }
 
           return {
             success: consumeResult.success,
             state: controller.state,
-            error: consumeResult.success ? null : consumeResult.error
+            error: consumeResult.success ? null : consumeResult.error,
           };
         }
 
         // No consumption selection yet - return available prey as candidates
-        const candidates = availablePrey.map(prey => ({
+        const candidates = availablePrey.map((prey) => ({
           label: prey.name,
-          value: prey
+          value: prey,
         }));
 
         return {
@@ -291,9 +317,9 @@ export class SelectionEnumerator {
               candidates,
               title: `Choose prey for ${predator.name} to consume`,
               // Mark this as a consumption selection
-              _isConsumption: true
-            }
-          }
+              _isConsumption: true,
+            },
+          },
         };
       }
 
@@ -301,12 +327,12 @@ export class SelectionEnumerator {
       return {
         success: result.success,
         state: controller.state,
-        error: result.success ? null : result.error
+        error: result.success ? null : result.error,
       };
     } catch (error) {
       return {
         success: false,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -340,14 +366,16 @@ export class SelectionEnumerator {
       return '(no selections)';
     }
 
-    return selections.map(s => {
-      if (s.type === 'option') {
-        return `[${s.label}]`;
-      } else if (s.type === 'target') {
-        return `→${s.label}`;
-      }
-      return '?';
-    }).join(' ');
+    return selections
+      .map((s) => {
+        if (s.type === 'option') {
+          return `[${s.label}]`;
+        } else if (s.type === 'target') {
+          return `→${s.label}`;
+        }
+        return '?';
+      })
+      .join(' ');
   }
 }
 

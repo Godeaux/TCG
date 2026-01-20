@@ -233,7 +233,9 @@ const renderBugsTab = (stats) => {
       <div class="sim-section">
         <h3>Most Frequent Bugs</h3>
         <div class="sim-bug-list">
-          ${topBugs.map(bug => `
+          ${topBugs
+            .map(
+              (bug) => `
             <div class="sim-bug-item sev-${bug.severity || 'medium'}">
               <div class="sim-bug-header">
                 <span class="sim-bug-type">${escapeHtml(formatBugType(bug.type))}</span>
@@ -245,7 +247,9 @@ const renderBugsTab = (stats) => {
                 <span class="sim-bug-date">Last: ${formatTimeAgo(bug.lastSeen)}</span>
               </div>
             </div>
-          `).join('')}
+          `
+            )
+            .join('')}
         </div>
       </div>
     </div>
@@ -261,7 +265,7 @@ const renderCardsTab = async () => {
 
   // Get cards with most bug involvements
   const buggyCards = allStats
-    .filter(c => c.bugInvolvements > 0)
+    .filter((c) => c.bugInvolvements > 0)
     .sort((a, b) => b.bugInvolvements - a.bugInvolvements)
     .slice(0, 5);
 
@@ -280,14 +284,18 @@ const renderCardsTab = async () => {
         <h3>Top Performing Cards</h3>
         ${topCards.length === 0 ? '<p class="sim-note">Need more games for reliable data</p>' : ''}
         <div class="sim-card-list">
-          ${topCards.map((card, i) => `
+          ${topCards
+            .map(
+              (card, i) => `
             <div class="sim-card-item">
               <span class="sim-card-rank">#${i + 1}</span>
               <span class="sim-card-name">${escapeHtml(card.cardId)}</span>
               <span class="sim-card-winrate win-high">${card.winRate}%</span>
               <span class="sim-card-games">${card.gamesInDeck} games</span>
             </div>
-          `).join('')}
+          `
+            )
+            .join('')}
         </div>
       </div>
 
@@ -295,30 +303,42 @@ const renderCardsTab = async () => {
         <h3>Worst Performing Cards</h3>
         ${worstCards.length === 0 ? '<p class="sim-note">Need more games for reliable data</p>' : ''}
         <div class="sim-card-list">
-          ${worstCards.map((card, i) => `
+          ${worstCards
+            .map(
+              (card, i) => `
             <div class="sim-card-item">
               <span class="sim-card-rank">#${i + 1}</span>
               <span class="sim-card-name">${escapeHtml(card.cardId)}</span>
               <span class="sim-card-winrate win-low">${card.winRate}%</span>
               <span class="sim-card-games">${card.gamesInDeck} games</span>
             </div>
-          `).join('')}
+          `
+            )
+            .join('')}
         </div>
       </div>
 
-      ${buggyCards.length > 0 ? `
+      ${
+        buggyCards.length > 0
+          ? `
         <div class="sim-section">
           <h3>Cards with Bug Involvement</h3>
           <div class="sim-card-list">
-            ${buggyCards.map(card => `
+            ${buggyCards
+              .map(
+                (card) => `
               <div class="sim-card-item bug-involved">
                 <span class="sim-card-name">${escapeHtml(card.cardId)}</span>
                 <span class="sim-card-bugs">${card.bugInvolvements} bugs</span>
               </div>
-            `).join('')}
+            `
+              )
+              .join('')}
           </div>
         </div>
-      ` : ''}
+      `
+          : ''
+      }
     </div>
   `;
 };
@@ -344,13 +364,17 @@ const renderSynergiesTab = async () => {
         <h3>Best Synergies</h3>
         <p class="sim-note">Card pairs that win more often together</p>
         <div class="sim-synergy-list">
-          ${topSynergies.map(syn => `
+          ${topSynergies
+            .map(
+              (syn) => `
             <div class="sim-synergy-item ${syn.synergyScore > 10 ? 'synergy-good' : ''}">
               <span class="sim-synergy-cards">${escapeHtml(syn.cards[0])} + ${escapeHtml(syn.cards[1])}</span>
               <span class="sim-synergy-score">+${syn.synergyScore}%</span>
               <span class="sim-synergy-record">${syn.wins}W / ${syn.losses}L</span>
             </div>
-          `).join('')}
+          `
+            )
+            .join('')}
         </div>
       </div>
 
@@ -358,13 +382,17 @@ const renderSynergiesTab = async () => {
         <h3>Anti-Synergies</h3>
         <p class="sim-note">Card pairs that lose more often together</p>
         <div class="sim-synergy-list">
-          ${worstSynergies.map(syn => `
+          ${worstSynergies
+            .map(
+              (syn) => `
             <div class="sim-synergy-item synergy-bad">
               <span class="sim-synergy-cards">${escapeHtml(syn.cards[0])} + ${escapeHtml(syn.cards[1])}</span>
               <span class="sim-synergy-score">${syn.synergyScore}%</span>
               <span class="sim-synergy-record">${syn.wins}W / ${syn.losses}L</span>
             </div>
-          `).join('')}
+          `
+            )
+            .join('')}
         </div>
       </div>
     </div>
@@ -376,9 +404,7 @@ const renderSynergiesTab = async () => {
 // ============================================================================
 
 const formatBugType = (type) => {
-  return (type || 'unknown')
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, c => c.toUpperCase());
+  return (type || 'unknown').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 };
 
 const formatTimeAgo = (timestamp) => {
@@ -465,7 +491,7 @@ const switchTab = async (tab) => {
   currentTab = tab;
 
   // Update tab buttons
-  elements.tabs.forEach(btn => {
+  elements.tabs.forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.tab === tab);
   });
 
@@ -484,7 +510,7 @@ const bindEvents = () => {
   elements.closeBtn?.addEventListener('click', hideSimulationDashboard);
 
   // Tab buttons
-  elements.tabs.forEach(tab => {
+  elements.tabs.forEach((tab) => {
     tab.addEventListener('click', () => switchTab(tab.dataset.tab));
   });
 

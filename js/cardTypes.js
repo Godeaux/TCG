@@ -1,7 +1,6 @@
-import { hasBarrier, hasFrozen } from "./keywords.js";
+import { hasBarrier, hasFrozen } from './keywords.js';
 
-export const isCreatureCard = (card) =>
-  card && (card.type === "Predator" || card.type === "Prey");
+export const isCreatureCard = (card) => card && (card.type === 'Predator' || card.type === 'Prey');
 
 export const createCardInstance = (cardData, turn) => {
   const base = {

@@ -11,17 +11,13 @@ import {
   isMainPhase,
   isSetupComplete,
   canPlayerMakeAnyMove,
-} from "./state/index.js";
-import { advancePhase, endTurn, startTurn } from "./game/index.js";
-import { renderGame, setupInitialDraw } from "./ui.js";
-import { initializeCardRegistry } from "./cards/index.js";
-import {
-  initializeAI,
-  cleanupAI,
-  checkAndTriggerAITurn,
-} from "./ai/index.js";
-import { generateAIvsAIDecks } from "./ui/overlays/DeckBuilderOverlay.js";
-import { isSelectionActive } from "./ui/components/index.js";
+} from './state/index.js';
+import { advancePhase, endTurn, startTurn } from './game/index.js';
+import { renderGame, setupInitialDraw } from './ui.js';
+import { initializeCardRegistry } from './cards/index.js';
+import { initializeAI, cleanupAI, checkAndTriggerAITurn } from './ai/index.js';
+import { generateAIvsAIDecks } from './ui/overlays/DeckBuilderOverlay.js';
+import { isSelectionActive } from './ui/components/index.js';
 
 // Initialize the card registry (loads JSON card data)
 initializeCardRegistry();
@@ -54,7 +50,9 @@ const aiCallbacks = {
     refresh();
   },
   onAIAdvancePhase: () => {
-    console.log(`[Main] onAIAdvancePhase called, current phase: ${state.phase}, activePlayer: ${state.activePlayerIndex}`);
+    console.log(
+      `[Main] onAIAdvancePhase called, current phase: ${state.phase}, activePlayer: ${state.activePlayerIndex}`
+    );
     const phaseBefore = state.phase;
     advancePhase(state);
     console.log(`[Main] onAIAdvancePhase: phase changed from ${phaseBefore} to ${state.phase}`);
@@ -120,7 +118,7 @@ const refresh = () => {
   checkWinCondition();
   renderGame(state, {
     onNextPhase: () => {
-      if (state.phase === "End") {
+      if (state.phase === 'End') {
         endTurn(state);
       } else {
         advancePhase(state);
@@ -170,14 +168,24 @@ const refresh = () => {
         // In AI mode, player 0 is the human - attach their card rarities
         // In AI vs AI mode, no players get rarities
         // In local mode, only player 0 gets rarities
-        const playerOwnedCards = (index === 0 && !isAIvsAIMode(state)) ? ownedCards : null;
+        const playerOwnedCards = index === 0 && !isAIvsAIMode(state) ? ownedCards : null;
         setPlayerDeck(state, index, deck.slice(0, 20), playerOwnedCards);
       });
       setupInitialDraw(state, 5);
-      logMessage(state, "Each player draws 5 cards to start.");
+      logMessage(state, 'Each player draws 5 cards to start.');
 
-      console.log('[DeckComplete] After draw - P1 hand:', state.players[0].hand.length, 'deck:', state.players[0].deck.length);
-      console.log('[DeckComplete] After draw - P2 hand:', state.players[1].hand.length, 'deck:', state.players[1].deck.length);
+      console.log(
+        '[DeckComplete] After draw - P1 hand:',
+        state.players[0].hand.length,
+        'deck:',
+        state.players[0].deck.length
+      );
+      console.log(
+        '[DeckComplete] After draw - P2 hand:',
+        state.players[1].hand.length,
+        'deck:',
+        state.players[1].deck.length
+      );
 
       // Initialize AI if in any AI mode
       if (isAnyAIMode(state)) {

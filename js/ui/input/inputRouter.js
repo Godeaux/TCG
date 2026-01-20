@@ -65,13 +65,13 @@ let aiVsAiSelectedDecks = { left: null, right: null };
 
 // Deck options for AI vs AI
 const AI_VS_AI_DECK_OPTIONS = [
-  { id: "fish", name: "Fish", emoji: "🐟" },
-  { id: "bird", name: "Bird", emoji: "🐦" },
-  { id: "mammal", name: "Mammal", emoji: "🐻" },
-  { id: "reptile", name: "Reptile", emoji: "🦎" },
-  { id: "amphibian", name: "Amphibian", emoji: "🐸" },
-  { id: "canine", name: "Canine", emoji: "🐺", experimental: true },
-  { id: "arachnid", name: "Arachnid", emoji: "🕷️", experimental: true },
+  { id: 'fish', name: 'Fish', emoji: '🐟' },
+  { id: 'bird', name: 'Bird', emoji: '🐦' },
+  { id: 'mammal', name: 'Mammal', emoji: '🐻' },
+  { id: 'reptile', name: 'Reptile', emoji: '🦎' },
+  { id: 'amphibian', name: 'Amphibian', emoji: '🐸' },
+  { id: 'canine', name: 'Canine', emoji: '🐺', experimental: true },
+  { id: 'arachnid', name: 'Arachnid', emoji: '🕷️', experimental: true },
 ];
 
 // ============================================================================
@@ -91,9 +91,9 @@ const populateAIDeckSelect = (state, selectElement) => {
   const savedDecks = state.menu?.decks || [];
 
   if (savedDecks.length === 0) {
-    const option = document.createElement("option");
-    option.value = "";
-    option.textContent = "No saved decks available";
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = 'No saved decks available';
     option.disabled = true;
     selectElement.appendChild(option);
     return;
@@ -101,7 +101,7 @@ const populateAIDeckSelect = (state, selectElement) => {
 
   // Add deck options
   savedDecks.forEach((deck) => {
-    const option = document.createElement("option");
+    const option = document.createElement('option');
     option.value = deck.id;
     option.textContent = deck.name || `Deck ${deck.id}`;
     selectElement.appendChild(option);
@@ -113,14 +113,14 @@ const populateAIDeckSelect = (state, selectElement) => {
  */
 const startAIGame = (state, callbacks) => {
   const aiSettings = state.menu.aiSettings || {
-    deckType: "random",
+    deckType: 'random',
     selectedDeckId: null,
   };
 
-  console.log("[AI] Starting game with settings:", aiSettings);
+  console.log('[AI] Starting game with settings:', aiSettings);
 
   // Set the game mode to AI
-  state.menu.mode = "ai";
+  state.menu.mode = 'ai';
   state.menu.aiDeckType = aiSettings.deckType;
   state.menu.aiSelectedDeckId = aiSettings.selectedDeckId;
 
@@ -130,7 +130,7 @@ const startAIGame = (state, callbacks) => {
   }
 
   // Transition to deck selection for the player
-  setMenuStage(state, "ready");
+  setMenuStage(state, 'ready');
   callbacks.onUpdate?.();
 };
 
@@ -143,20 +143,22 @@ const populateAIvsAIDeckPicker = (elements) => {
   if (!aiVsAiDecksLeft || !aiVsAiDecksRight) return;
 
   // Clear existing buttons
-  aiVsAiDecksLeft.innerHTML = "";
-  aiVsAiDecksRight.innerHTML = "";
+  aiVsAiDecksLeft.innerHTML = '';
+  aiVsAiDecksRight.innerHTML = '';
 
   // Reset selections
   aiVsAiSelectedDecks = { left: null, right: null };
 
   // Create deck buttons for both sides
   AI_VS_AI_DECK_OPTIONS.forEach((option) => {
-    const experimentalBadge = option.experimental ? '<span class="deck-experimental-badge">Beta</span>' : '';
+    const experimentalBadge = option.experimental
+      ? '<span class="deck-experimental-badge">Beta</span>'
+      : '';
     const experimentalClass = option.experimental ? ' experimental' : '';
 
     // Left side button
-    const leftBtn = document.createElement("button");
-    leftBtn.type = "button";
+    const leftBtn = document.createElement('button');
+    leftBtn.type = 'button';
     leftBtn.className = `ai-vs-ai-deck-btn${experimentalClass}`;
     leftBtn.dataset.deckId = option.id;
     leftBtn.innerHTML = `
@@ -164,12 +166,12 @@ const populateAIvsAIDeckPicker = (elements) => {
       <span class="deck-name">${option.name}</span>
       ${experimentalBadge}
     `;
-    leftBtn.onclick = () => handleAIvsAIDeckSelect("left", option.id, elements);
+    leftBtn.onclick = () => handleAIvsAIDeckSelect('left', option.id, elements);
     aiVsAiDecksLeft.appendChild(leftBtn);
 
     // Right side button
-    const rightBtn = document.createElement("button");
-    rightBtn.type = "button";
+    const rightBtn = document.createElement('button');
+    rightBtn.type = 'button';
     rightBtn.className = `ai-vs-ai-deck-btn${experimentalClass}`;
     rightBtn.dataset.deckId = option.id;
     rightBtn.innerHTML = `
@@ -177,7 +179,7 @@ const populateAIvsAIDeckPicker = (elements) => {
       <span class="deck-name">${option.name}</span>
       ${experimentalBadge}
     `;
-    rightBtn.onclick = () => handleAIvsAIDeckSelect("right", option.id, elements);
+    rightBtn.onclick = () => handleAIvsAIDeckSelect('right', option.id, elements);
     aiVsAiDecksRight.appendChild(rightBtn);
   });
 };
@@ -192,14 +194,16 @@ const handleAIvsAIDeckSelect = (side, deckId, elements) => {
   aiVsAiSelectedDecks[side] = deckId;
 
   // Update button states
-  const container = side === "left" ? aiVsAiDecksLeft : aiVsAiDecksRight;
-  container.querySelectorAll(".ai-vs-ai-deck-btn").forEach((btn) => {
-    btn.classList.toggle("selected", btn.dataset.deckId === deckId);
+  const container = side === 'left' ? aiVsAiDecksLeft : aiVsAiDecksRight;
+  container.querySelectorAll('.ai-vs-ai-deck-btn').forEach((btn) => {
+    btn.classList.toggle('selected', btn.dataset.deckId === deckId);
   });
 
   // Update status
-  const leftName = AI_VS_AI_DECK_OPTIONS.find(d => d.id === aiVsAiSelectedDecks.left)?.name || "...";
-  const rightName = AI_VS_AI_DECK_OPTIONS.find(d => d.id === aiVsAiSelectedDecks.right)?.name || "...";
+  const leftName =
+    AI_VS_AI_DECK_OPTIONS.find((d) => d.id === aiVsAiSelectedDecks.left)?.name || '...';
+  const rightName =
+    AI_VS_AI_DECK_OPTIONS.find((d) => d.id === aiVsAiSelectedDecks.right)?.name || '...';
 
   if (aiVsAiStatus) {
     if (aiVsAiSelectedDecks.left && aiVsAiSelectedDecks.right) {
@@ -207,7 +211,7 @@ const handleAIvsAIDeckSelect = (side, deckId, elements) => {
     } else if (aiVsAiSelectedDecks.left || aiVsAiSelectedDecks.right) {
       aiVsAiStatus.textContent = `${leftName} vs ${rightName} - Select second deck`;
     } else {
-      aiVsAiStatus.textContent = "Select decks for both AI players.";
+      aiVsAiStatus.textContent = 'Select decks for both AI players.';
     }
   }
 
@@ -228,7 +232,7 @@ const startAIvsAIGame = (deck1Id, deck2Id, elements) => {
   console.log(`[AI vs AI] Starting game: ${deck1Id} vs ${deck2Id}`);
 
   // Set game mode to AI vs AI
-  latestState.menu.mode = "aiVsAi";
+  latestState.menu.mode = 'aiVsAi';
   latestState.menu.aiVsAiDecks = {
     player1: deck1Id,
     player2: deck2Id,
@@ -246,13 +250,13 @@ const startAIvsAIGame = (deck1Id, deck2Id, elements) => {
   enableSimulationMode();
 
   // Hide the deck picker overlay
-  elements.aiVsAiDeckOverlay?.classList.remove("active");
-  elements.aiVsAiDeckOverlay?.setAttribute("aria-hidden", "true");
+  elements.aiVsAiDeckOverlay?.classList.remove('active');
+  elements.aiVsAiDeckOverlay?.setAttribute('aria-hidden', 'true');
 
   // Hide the AI setup overlay
-  const aiSetupOverlay = document.getElementById("ai-setup-overlay");
-  aiSetupOverlay?.classList.remove("active");
-  aiSetupOverlay?.setAttribute("aria-hidden", "true");
+  const aiSetupOverlay = document.getElementById('ai-setup-overlay');
+  aiSetupOverlay?.classList.remove('active');
+  aiSetupOverlay?.setAttribute('aria-hidden', 'true');
 
   // Reset deck selection state for fresh game
   if (latestState.deckSelection) {
@@ -260,7 +264,7 @@ const startAIvsAIGame = (deck1Id, deck2Id, elements) => {
   }
 
   // Transition to ready stage - this will trigger deck building
-  setMenuStage(latestState, "ready");
+  setMenuStage(latestState, 'ready');
   latestCallbacks.onUpdate?.();
 };
 
@@ -269,61 +273,61 @@ const startAIvsAIGame = (deck1Id, deck2Id, elements) => {
 // ============================================================================
 
 const getNavigationElements = () => ({
-  navLeft: document.getElementById("nav-left"),
-  navRight: document.getElementById("nav-right"),
-  pageDots: document.getElementById("page-dots"),
-  infoToggle: document.getElementById("info-toggle"),
-  infoBack: document.getElementById("info-back"),
+  navLeft: document.getElementById('nav-left'),
+  navRight: document.getElementById('nav-right'),
+  pageDots: document.getElementById('page-dots'),
+  infoToggle: document.getElementById('info-toggle'),
+  infoBack: document.getElementById('info-back'),
 
   // Menu buttons
-  menuPlay: document.getElementById("menu-play"),
-  menuAI: document.getElementById("menu-ai"),
-  menuLogin: document.getElementById("menu-login"),
-  menuLogout: document.getElementById("menu-logout"),
-  menuCatalog: document.getElementById("menu-catalog"),
-  menuProfile: document.getElementById("menu-profile"),
-  menuTutorial: document.getElementById("menu-tutorial"),
+  menuPlay: document.getElementById('menu-play'),
+  menuAI: document.getElementById('menu-ai'),
+  menuLogin: document.getElementById('menu-login'),
+  menuLogout: document.getElementById('menu-logout'),
+  menuCatalog: document.getElementById('menu-catalog'),
+  menuProfile: document.getElementById('menu-profile'),
+  menuTutorial: document.getElementById('menu-tutorial'),
 
   // AI Setup
-  aiDeckRandom: document.getElementById("ai-deck-random"),
-  aiDeckSaved: document.getElementById("ai-deck-saved"),
-  aiSavedDecks: document.getElementById("ai-saved-decks"),
-  aiDeckSelect: document.getElementById("ai-deck-select"),
-  aiStartGame: document.getElementById("ai-start-game"),
-  aiSetupBack: document.getElementById("ai-setup-back"),
+  aiDeckRandom: document.getElementById('ai-deck-random'),
+  aiDeckSaved: document.getElementById('ai-deck-saved'),
+  aiSavedDecks: document.getElementById('ai-saved-decks'),
+  aiDeckSelect: document.getElementById('ai-deck-select'),
+  aiStartGame: document.getElementById('ai-start-game'),
+  aiSetupBack: document.getElementById('ai-setup-back'),
 
   // AI vs AI Setup
-  aiVsAiButton: document.getElementById("ai-vs-ai"),
-  aiVsAiDeckOverlay: document.getElementById("ai-vs-ai-deck-overlay"),
-  aiVsAiDecksLeft: document.getElementById("ai-vs-ai-decks-left"),
-  aiVsAiDecksRight: document.getElementById("ai-vs-ai-decks-right"),
-  aiVsAiStatus: document.getElementById("ai-vs-ai-status"),
-  aiVsAiBack: document.getElementById("ai-vs-ai-back"),
+  aiVsAiButton: document.getElementById('ai-vs-ai'),
+  aiVsAiDeckOverlay: document.getElementById('ai-vs-ai-deck-overlay'),
+  aiVsAiDecksLeft: document.getElementById('ai-vs-ai-decks-left'),
+  aiVsAiDecksRight: document.getElementById('ai-vs-ai-decks-right'),
+  aiVsAiStatus: document.getElementById('ai-vs-ai-status'),
+  aiVsAiBack: document.getElementById('ai-vs-ai-back'),
 
   // Login form
-  loginForm: document.getElementById("login-form"),
-  loginCreate: document.getElementById("login-create"),
-  loginCancel: document.getElementById("login-cancel"),
+  loginForm: document.getElementById('login-form'),
+  loginCreate: document.getElementById('login-create'),
+  loginCancel: document.getElementById('login-cancel'),
 
   // Tutorial
-  tutorialClose: document.getElementById("tutorial-close"),
+  tutorialClose: document.getElementById('tutorial-close'),
 
   // Multiplayer (unified lobby screen)
-  lobbyFindMatch: document.getElementById("lobby-find-match"),
-  lobbyFindCancel: document.getElementById("lobby-find-cancel"),
-  lobbyCreate: document.getElementById("lobby-create"),
-  lobbyRejoin: document.getElementById("lobby-rejoin"),
-  lobbyJoin: document.getElementById("lobby-join"),
-  lobbyJoinForm: document.getElementById("lobby-join-form"),
-  lobbyJoinCancel: document.getElementById("lobby-join-cancel"),
-  lobbyCodeInput: document.getElementById("lobby-code"),
-  lobbyError: document.getElementById("lobby-error"),
-  multiplayerBack: document.getElementById("multiplayer-back"),
-  lobbyContinue: document.getElementById("lobby-continue"),
-  lobbyLeave: document.getElementById("lobby-leave"),
+  lobbyFindMatch: document.getElementById('lobby-find-match'),
+  lobbyFindCancel: document.getElementById('lobby-find-cancel'),
+  lobbyCreate: document.getElementById('lobby-create'),
+  lobbyRejoin: document.getElementById('lobby-rejoin'),
+  lobbyJoin: document.getElementById('lobby-join'),
+  lobbyJoinForm: document.getElementById('lobby-join-form'),
+  lobbyJoinCancel: document.getElementById('lobby-join-cancel'),
+  lobbyCodeInput: document.getElementById('lobby-code'),
+  lobbyError: document.getElementById('lobby-error'),
+  multiplayerBack: document.getElementById('multiplayer-back'),
+  lobbyContinue: document.getElementById('lobby-continue'),
+  lobbyLeave: document.getElementById('lobby-leave'),
 
   // Deck builder
-  deckExit: document.getElementById("deck-exit"),
+  deckExit: document.getElementById('deck-exit'),
 });
 
 // ============================================================================
@@ -342,24 +346,24 @@ const initNavigation = () => {
   const elements = getNavigationElements();
 
   // Tutorial/info page navigation
-  elements.navLeft?.addEventListener("click", () => navigateToPage(currentPage - 1));
-  elements.navRight?.addEventListener("click", () => navigateToPage(currentPage + 1));
+  elements.navLeft?.addEventListener('click', () => navigateToPage(currentPage - 1));
+  elements.navRight?.addEventListener('click', () => navigateToPage(currentPage + 1));
 
-  elements.pageDots?.querySelectorAll(".page-dot").forEach((dot) => {
-    dot.addEventListener("click", () => navigateToPage(Number(dot.dataset.page)));
+  elements.pageDots?.querySelectorAll('.page-dot').forEach((dot) => {
+    dot.addEventListener('click', () => navigateToPage(Number(dot.dataset.page)));
   });
 
-  elements.infoToggle?.addEventListener("click", () => navigateToPage(1));
-  elements.infoBack?.addEventListener("click", () => navigateToPage(0));
+  elements.infoToggle?.addEventListener('click', () => navigateToPage(1));
+  elements.infoBack?.addEventListener('click', () => navigateToPage(0));
 
   // Deck builder tabs
-  document.querySelectorAll(".deck-tab").forEach((tab) => {
-    tab.addEventListener("click", () => {
+  document.querySelectorAll('.deck-tab').forEach((tab) => {
+    tab.addEventListener('click', () => {
       const newTab = tab.dataset.tab;
 
       // In catalog mode, "manage" tab should go back to home screen
-      if (newTab === "manage" && latestState?.menu?.stage === "catalog") {
-        latestState.catalogBuilder.stage = "home";
+      if (newTab === 'manage' && latestState?.menu?.stage === 'catalog') {
+        latestState.catalogBuilder.stage = 'home';
         latestState.catalogBuilder.deckId = null;
         latestState.catalogBuilder.selections = [];
         latestState.catalogBuilder.available = [];
@@ -382,30 +386,30 @@ const initNavigation = () => {
   });
 
   // Main menu: Play (local mode)
-  elements.menuPlay?.addEventListener("click", () => {
+  elements.menuPlay?.addEventListener('click', () => {
     if (!latestState) {
       return;
     }
-    latestState.menu.mode = "local";
-    setMenuStage(latestState, "ready");
+    latestState.menu.mode = 'local';
+    setMenuStage(latestState, 'ready');
     latestCallbacks.onUpdate?.();
   });
 
   // Main menu: Login/Multiplayer
-  elements.menuLogin?.addEventListener("click", () => {
+  elements.menuLogin?.addEventListener('click', () => {
     if (!latestState) {
       return;
     }
     if (latestState.menu.profile) {
-      setMenuStage(latestState, "multiplayer");
+      setMenuStage(latestState, 'multiplayer');
     } else {
-      setMenuStage(latestState, "login");
+      setMenuStage(latestState, 'login');
     }
     latestCallbacks.onUpdate?.();
   });
 
   // Main menu: Log Out
-  elements.menuLogout?.addEventListener("click", () => {
+  elements.menuLogout?.addEventListener('click', () => {
     if (!latestState) {
       return;
     }
@@ -413,61 +417,61 @@ const initNavigation = () => {
   });
 
   // Main menu: Deck Catalog
-  elements.menuCatalog?.addEventListener("click", () => {
+  elements.menuCatalog?.addEventListener('click', () => {
     if (!latestState) {
       return;
     }
     latestState.menu.mode = null;
-    setMenuStage(latestState, "catalog");
+    setMenuStage(latestState, 'catalog');
     latestState.catalogBuilder = {
-      stage: "home",  // Show deck management home screen first
+      stage: 'home', // Show deck management home screen first
       deckId: null,
       selections: [],
       available: [],
       catalogOrder: [],
       editingDeckId: null,
       editingDeckName: null,
-      activeTab: "catalog",  // Store activeTab in state for sync across modules
+      activeTab: 'catalog', // Store activeTab in state for sync across modules
     };
-    deckActiveTab = "catalog";
+    deckActiveTab = 'catalog';
     deckHighlighted = null;
     ensureDecksLoaded(latestState, { force: true });
     latestCallbacks.onUpdate?.();
   });
 
   // Main menu: Tutorial
-  elements.menuTutorial?.addEventListener("click", () => {
+  elements.menuTutorial?.addEventListener('click', () => {
     if (!latestState) {
       return;
     }
-    setMenuStage(latestState, "tutorial");
+    setMenuStage(latestState, 'tutorial');
     latestCallbacks.onUpdate?.();
   });
 
   // Main menu: Profile
-  elements.menuProfile?.addEventListener("click", () => {
+  elements.menuProfile?.addEventListener('click', () => {
     if (!latestState) {
       return;
     }
     // Create profile if it doesn't exist
     if (!latestState.menu.profile) {
       latestState.menu.profile = {
-        username: "Guest Player",
+        username: 'Guest Player',
       };
     }
     // Ensure profile has all required properties
     const profile = latestState.menu.profile;
-    const isLoggedIn = !!profile.id;  // Logged-in users have an ID from Supabase
+    const isLoggedIn = !!profile.id; // Logged-in users have an ID from Supabase
 
     // Packs: Only set default for guest players (logged-in users load from DB)
     if (profile.packs === undefined || profile.packs === null) {
-      profile.packs = isLoggedIn ? 0 : 5;  // Guests get 5 test packs
+      profile.packs = isLoggedIn ? 0 : 5; // Guests get 5 test packs
     }
     if (!profile.stats) {
       profile.stats = {
         gamesPlayed: 0,
         gamesWon: 0,
-        favoriteCard: "-",
+        favoriteCard: '-',
       };
     }
     if (!profile.matches) {
@@ -493,68 +497,68 @@ const initNavigation = () => {
         ]);
       }
     }
-    setMenuStage(latestState, "profile");
+    setMenuStage(latestState, 'profile');
     latestCallbacks.onUpdate?.();
   });
 
   // Main menu: Play vs. AI
-  elements.menuAI?.addEventListener("click", () => {
+  elements.menuAI?.addEventListener('click', () => {
     if (!latestState) {
       return;
     }
     // Initialize AI settings if not present
     if (!latestState.menu.aiSettings) {
       latestState.menu.aiSettings = {
-        deckType: "random",
+        deckType: 'random',
         selectedDeckId: null,
       };
     }
     // Reset UI state when entering AI setup
-    elements.aiSavedDecks.style.display = "none";
-    setMenuStage(latestState, "ai-setup");
+    elements.aiSavedDecks.style.display = 'none';
+    setMenuStage(latestState, 'ai-setup');
     latestCallbacks.onUpdate?.();
   });
 
   // AI Setup: Random Deck button - starts game immediately with random deck
-  elements.aiDeckRandom?.addEventListener("click", () => {
+  elements.aiDeckRandom?.addEventListener('click', () => {
     if (!latestState) return;
     latestState.menu.aiSettings = latestState.menu.aiSettings || {};
-    latestState.menu.aiSettings.deckType = "random";
+    latestState.menu.aiSettings.deckType = 'random';
     latestState.menu.aiSettings.selectedDeckId = null;
     startAIGame(latestState, latestCallbacks);
   });
 
   // AI Setup: Choose Deck button - shows dropdown for deck selection
-  elements.aiDeckSaved?.addEventListener("click", () => {
+  elements.aiDeckSaved?.addEventListener('click', () => {
     if (!latestState) return;
     latestState.menu.aiSettings = latestState.menu.aiSettings || {};
-    latestState.menu.aiSettings.deckType = "saved";
-    elements.aiSavedDecks.style.display = "block";
+    latestState.menu.aiSettings.deckType = 'saved';
+    elements.aiSavedDecks.style.display = 'block';
     // Populate saved decks dropdown with player's decks
     populateAIDeckSelect(latestState, elements.aiDeckSelect);
   });
 
   // AI Setup: Deck selection from dropdown
-  elements.aiDeckSelect?.addEventListener("change", (e) => {
+  elements.aiDeckSelect?.addEventListener('change', (e) => {
     if (!latestState) return;
     latestState.menu.aiSettings = latestState.menu.aiSettings || {};
     latestState.menu.aiSettings.selectedDeckId = e.target.value || null;
   });
 
   // AI Setup: Difficulty selection
-  const difficultyOptions = document.getElementById("ai-difficulty-options");
-  difficultyOptions?.addEventListener("click", (e) => {
-    const btn = e.target.closest(".btn-difficulty");
+  const difficultyOptions = document.getElementById('ai-difficulty-options');
+  difficultyOptions?.addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-difficulty');
     if (!btn) return;
 
     const difficulty = btn.dataset.difficulty;
     if (!difficulty) return;
 
     // Update UI - remove active from all, add to clicked
-    difficultyOptions.querySelectorAll(".btn-difficulty").forEach(b => {
-      b.classList.remove("active");
+    difficultyOptions.querySelectorAll('.btn-difficulty').forEach((b) => {
+      b.classList.remove('active');
     });
-    btn.classList.add("active");
+    btn.classList.add('active');
 
     // Store in state
     if (latestState) {
@@ -565,49 +569,49 @@ const initNavigation = () => {
   });
 
   // AI Setup: Start game (when using saved deck)
-  elements.aiStartGame?.addEventListener("click", () => {
+  elements.aiStartGame?.addEventListener('click', () => {
     if (!latestState) return;
     startAIGame(latestState, latestCallbacks);
   });
 
   // AI Setup: Back button
-  elements.aiSetupBack?.addEventListener("click", () => {
+  elements.aiSetupBack?.addEventListener('click', () => {
     if (!latestState) return;
-    setMenuStage(latestState, "main");
+    setMenuStage(latestState, 'main');
     latestCallbacks.onUpdate?.();
   });
 
   // AI vs AI: Open deck picker
-  elements.aiVsAiButton?.addEventListener("click", () => {
+  elements.aiVsAiButton?.addEventListener('click', () => {
     if (!latestState) return;
 
     // Show AI vs AI deck picker overlay
-    elements.aiVsAiDeckOverlay?.classList.add("active");
-    elements.aiVsAiDeckOverlay?.setAttribute("aria-hidden", "false");
+    elements.aiVsAiDeckOverlay?.classList.add('active');
+    elements.aiVsAiDeckOverlay?.setAttribute('aria-hidden', 'false');
 
     // Populate deck options
     populateAIvsAIDeckPicker(elements);
 
     // Reset status
     if (elements.aiVsAiStatus) {
-      elements.aiVsAiStatus.textContent = "Select decks for both AI players.";
+      elements.aiVsAiStatus.textContent = 'Select decks for both AI players.';
     }
   });
 
   // AI vs AI: Back button
-  elements.aiVsAiBack?.addEventListener("click", () => {
+  elements.aiVsAiBack?.addEventListener('click', () => {
     if (!latestState) return;
 
     // Hide AI vs AI deck picker
-    elements.aiVsAiDeckOverlay?.classList.remove("active");
-    elements.aiVsAiDeckOverlay?.setAttribute("aria-hidden", "true");
+    elements.aiVsAiDeckOverlay?.classList.remove('active');
+    elements.aiVsAiDeckOverlay?.setAttribute('aria-hidden', 'true');
 
     // Reset selections
     aiVsAiSelectedDecks = { left: null, right: null };
   });
 
   // Login form submission (login to existing account)
-  elements.loginForm?.addEventListener("submit", (event) => {
+  elements.loginForm?.addEventListener('submit', (event) => {
     event.preventDefault();
     if (!latestState) {
       return;
@@ -616,7 +620,7 @@ const initNavigation = () => {
   });
 
   // Create account button
-  elements.loginCreate?.addEventListener("click", () => {
+  elements.loginCreate?.addEventListener('click', () => {
     if (!latestState) {
       return;
     }
@@ -624,25 +628,25 @@ const initNavigation = () => {
   });
 
   // Login cancel
-  elements.loginCancel?.addEventListener("click", () => {
+  elements.loginCancel?.addEventListener('click', () => {
     if (!latestState) {
       return;
     }
-    setMenuStage(latestState, "main");
+    setMenuStage(latestState, 'main');
     latestCallbacks.onUpdate?.();
   });
 
   // Tutorial close
-  elements.tutorialClose?.addEventListener("click", () => {
+  elements.tutorialClose?.addEventListener('click', () => {
     if (!latestState) {
       return;
     }
-    setMenuStage(latestState, "main");
+    setMenuStage(latestState, 'main');
     latestCallbacks.onUpdate?.();
   });
 
   // Multiplayer: Find Match (matchmaking)
-  elements.lobbyFindMatch?.addEventListener("click", () => {
+  elements.lobbyFindMatch?.addEventListener('click', () => {
     if (!latestState) {
       return;
     }
@@ -650,7 +654,7 @@ const initNavigation = () => {
   });
 
   // Multiplayer: Cancel matchmaking
-  elements.lobbyFindCancel?.addEventListener("click", () => {
+  elements.lobbyFindCancel?.addEventListener('click', () => {
     if (!latestState) {
       return;
     }
@@ -658,7 +662,7 @@ const initNavigation = () => {
   });
 
   // Multiplayer: Create lobby
-  elements.lobbyCreate?.addEventListener("click", () => {
+  elements.lobbyCreate?.addEventListener('click', () => {
     if (!latestState) {
       return;
     }
@@ -666,7 +670,7 @@ const initNavigation = () => {
   });
 
   // Multiplayer: Rejoin existing lobby (same as create - handleCreateLobby handles both)
-  elements.lobbyRejoin?.addEventListener("click", () => {
+  elements.lobbyRejoin?.addEventListener('click', () => {
     if (!latestState) {
       return;
     }
@@ -674,24 +678,24 @@ const initNavigation = () => {
   });
 
   // Multiplayer: Join as guest (show form)
-  elements.lobbyJoin?.addEventListener("click", () => {
+  elements.lobbyJoin?.addEventListener('click', () => {
     if (!latestState) {
       return;
     }
-    elements.lobbyJoinForm?.classList.add("active");
+    elements.lobbyJoinForm?.classList.add('active');
     elements.lobbyCodeInput?.focus();
   });
 
   // Lobby join form cancel
-  elements.lobbyJoinCancel?.addEventListener("click", () => {
-    elements.lobbyJoinForm?.classList.remove("active");
+  elements.lobbyJoinCancel?.addEventListener('click', () => {
+    elements.lobbyJoinForm?.classList.remove('active');
     if (elements.lobbyError) {
-      elements.lobbyError.textContent = "";
+      elements.lobbyError.textContent = '';
     }
   });
 
   // Lobby join form submission
-  elements.lobbyJoinForm?.addEventListener("submit", (event) => {
+  elements.lobbyJoinForm?.addEventListener('submit', (event) => {
     event.preventDefault();
     if (!latestState) {
       return;
@@ -700,7 +704,7 @@ const initNavigation = () => {
   });
 
   // Multiplayer back button (also cleans up lobby if in one)
-  elements.multiplayerBack?.addEventListener("click", () => {
+  elements.multiplayerBack?.addEventListener('click', () => {
     if (!latestState) {
       return;
     }
@@ -708,13 +712,13 @@ const initNavigation = () => {
     if (latestState.menu.lobby) {
       handleBackFromLobby(latestState);
     } else {
-      setMenuStage(latestState, "main");
+      setMenuStage(latestState, 'main');
       latestCallbacks.onUpdate?.();
     }
   });
 
   // Lobby continue (start game)
-  elements.lobbyContinue?.addEventListener("click", async () => {
+  elements.lobbyContinue?.addEventListener('click', async () => {
     if (!latestState) {
       return;
     }
@@ -728,7 +732,7 @@ const initNavigation = () => {
     }
 
     // Set online mode BEFORE trying to load state
-    latestState.menu.mode = "online";
+    latestState.menu.mode = 'online';
 
     // Reset skipSavedDecks flag for fresh deck selection
     if (latestState.deckSelection) {
@@ -740,14 +744,14 @@ const initNavigation = () => {
 
     // If no game was restored, proceed with normal game start
     if (!latestState.menu.gameInProgress) {
-      setMenuStage(latestState, "ready");
+      setMenuStage(latestState, 'ready');
     }
 
     latestCallbacks.onUpdate?.();
   });
 
   // Lobby leave (reset to new code)
-  elements.lobbyLeave?.addEventListener("click", () => {
+  elements.lobbyLeave?.addEventListener('click', () => {
     if (!latestState) {
       return;
     }
@@ -755,13 +759,13 @@ const initNavigation = () => {
   });
 
   // Deck catalog exit - go back to home screen instead of main menu
-  elements.deckExit?.addEventListener("click", () => {
+  elements.deckExit?.addEventListener('click', () => {
     if (!latestState) {
       return;
     }
-    if (latestState.menu?.stage === "catalog") {
+    if (latestState.menu?.stage === 'catalog') {
       // Return to deck catalog home screen instead of main menu
-      latestState.catalogBuilder.stage = "home";
+      latestState.catalogBuilder.stage = 'home';
       latestState.catalogBuilder.deckId = null;
       latestState.catalogBuilder.selections = [];
       latestState.catalogBuilder.available = [];
@@ -772,14 +776,14 @@ const initNavigation = () => {
   });
 
   // Visibility change handler (for multiplayer reconnection)
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState !== "visible" || !latestState) {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible' || !latestState) {
       return;
     }
     if (latestState.menu?.lobby?.id) {
       updateLobbySubscription(latestState, { force: true });
       refreshLobbyState(latestState, { silent: false });
-      sendLobbyBroadcast("sync_request", {
+      sendLobbyBroadcast('sync_request', {
         senderId: latestState.menu?.profile?.id ?? null,
       });
     }
@@ -802,12 +806,7 @@ const initNavigation = () => {
  * @param {Object} options.uiState - UI state references
  */
 export const initializeInput = (options = {}) => {
-  const {
-    state,
-    callbacks = {},
-    helpers = {},
-    uiState = {},
-  } = options;
+  const { state, callbacks = {}, helpers = {}, uiState = {} } = options;
 
   // Store references
   latestState = state;

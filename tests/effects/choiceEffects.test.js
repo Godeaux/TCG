@@ -320,4 +320,3 @@ describe('Select Creature For Buff Effect', () => {
     expect(selectionResult.buffCreature.health).toBe(2);
   });
 });
-

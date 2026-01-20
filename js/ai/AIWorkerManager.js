@@ -134,9 +134,9 @@ export class AIWorkerManager {
       try {
         this.worker.postMessage({
           type: 'SEARCH',
-          state,  // postMessage will structuredClone internally
+          state, // postMessage will structuredClone internally
           playerIndex,
-          options
+          options,
         });
       } catch (error) {
         // DataCloneError = circular refs or functions, fall back to JSON
@@ -146,7 +146,7 @@ export class AIWorkerManager {
           type: 'SEARCH',
           state: cleanState,
           playerIndex,
-          options
+          options,
         });
       }
 
@@ -170,7 +170,7 @@ export class AIWorkerManager {
     console.log('[AIWorkerManager] Fallback: yielding to UI before search');
 
     // Yield to UI before starting
-    await new Promise(resolve => {
+    await new Promise((resolve) => {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => resolve());
       });
@@ -185,7 +185,7 @@ export class AIWorkerManager {
       depth: result.depth,
       stats: result.stats,
       timeMs: result.timeMs,
-      moveDescription: result.move ? this.fallbackMoveGenerator.describeMove(result.move) : null
+      moveDescription: result.move ? this.fallbackMoveGenerator.describeMove(result.move) : null,
     };
   }
 
