@@ -15,6 +15,8 @@ import {
   hasWebbed,
   isStalking,
   incrementStalkBonus,
+  hasShell,
+  regenerateShell,
   KEYWORDS,
 } from '../keywords.js';
 
@@ -323,6 +325,24 @@ const handleStalkBonusIncrement = (state) => {
   });
 };
 
+// Handle Shell regeneration - creatures with Shell regenerate to full at end of their owner's turn
+const handleShellRegeneration = (state) => {
+  const activePlayer = state.players[state.activePlayerIndex];
+  activePlayer.field.forEach((creature) => {
+    if (creature && hasShell(creature)) {
+      const previousShell = creature.currentShell || 0;
+      const didRegen = regenerateShell(creature);
+      if (didRegen && creature.currentShell > previousShell) {
+        logGameAction(
+          state,
+          BUFF,
+          `🦀 ${creature.name}'s shell regenerates! (${previousShell} → ${creature.currentShell})`
+        );
+      }
+    }
+  });
+};
+
 export const startTurn = (state) => {
   state.cardPlayedThisTurn = false;
   state.extendedConsumption = null; // Clear extended consumption window on turn start
@@ -590,6 +610,7 @@ export const finalizeEndPhase = (state) => {
 
   logGameAction(state, PHASE, `Processing end-of-turn effects...`);
   handleRegen(state);
+  handleShellRegeneration(state); // Regenerate Shell for Crustacean creatures
   handleHowlCleanup(state); // Remove temporary Howl buffs from Canines
   handleVenomDamage(state); // Deal venom damage to Webbed enemies (before thaw/cleanup)
   handleFrozenThaw(state); // Thaw regular frozen creatures first

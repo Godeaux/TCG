@@ -21,6 +21,8 @@ export const createCardInstance = (cardData, turn) => {
       hasBarrier: hasBarrier(cardData),
       // Set frozen property if creature has Frozen keyword (e.g., Arctic Ground Squirrel tokens)
       frozen: hasFrozen(cardData),
+      // Initialize Shell for Crustacean creatures (currentShell starts at shellLevel)
+      currentShell: cardData.shellLevel || 0,
     };
   }
 

@@ -20,6 +20,7 @@ import mammalData from './data/mammal.json' with { type: 'json' };
 import canineData from './data/canine.json' with { type: 'json' };
 import arachnidData from './data/arachnid.json' with { type: 'json' };
 import felineData from './data/feline.json' with { type: 'json' };
+import crustaceanData from './data/crustacean.json' with { type: 'json' };
 import { resolveEffect } from './effectLibrary.js';
 import { validateCardEffects } from './effectValidator.js';
 import { generateCardEffectText } from './effectTextGenerator.js';
@@ -50,6 +51,7 @@ const deckCatalogs = {
   canine: [],
   arachnid: [],
   feline: [],
+  crustacean: [],
 };
 
 // ============================================================================
@@ -196,6 +198,22 @@ export const initializeCardRegistry = () => {
   });
   deckCatalogs.feline = sortCardsByType(
     felineData.cards.filter((card) => !card.id.includes('token'))
+  );
+
+  // Load crustacean tokens (if present in the JSON)
+  if (crustaceanData.tokens) {
+    crustaceanData.tokens.forEach((token) => {
+      tokenRegistry.set(token.id, token);
+      cardRegistry.set(token.id, token);
+    });
+  }
+
+  // Load crustacean cards
+  crustaceanData.cards.forEach((card) => {
+    cardRegistry.set(card.id, card);
+  });
+  deckCatalogs.crustacean = sortCardsByType(
+    crustaceanData.cards.filter((card) => !card.id.includes('token'))
   );
 
   console.log(

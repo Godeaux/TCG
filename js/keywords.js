@@ -29,6 +29,9 @@ export const KEYWORDS = {
   STALK: 'Stalk',
   STALKING: 'Stalking', // Status: creature is currently stalking
   PRIDE: 'Pride',
+  // Crustacean keywords (Experimental)
+  SHELL: 'Shell', // Has Shell with shellLevel property (1/2/3)
+  MOLT: 'Molt', // Revives once at 1 HP, loses all keywords
 };
 
 export const KEYWORD_DESCRIPTIONS = {
@@ -67,6 +70,11 @@ export const KEYWORD_DESCRIPTIONS = {
     'Currently stalking prey. Has Hidden. Gains +1 ATK at start of turn. Attacking ends the stalk.',
   [KEYWORDS.PRIDE]:
     'Coordinated Hunt: When this attacks, another Pride creature may join (deals damage, skips its attack). Only primary takes counter-damage.',
+  // Crustacean keywords (Experimental)
+  [KEYWORDS.SHELL]:
+    'Absorbs damage up to Shell level before HP is affected. Depletes on damage, regenerates fully at end of your turn.',
+  [KEYWORDS.MOLT]:
+    'When this would die, instead: revive at 1 HP and lose ALL keywords (including Shell). One-time use.',
 };
 
 /**
@@ -310,4 +318,139 @@ export const getAvailablePrideAllies = (state, ownerIndex, attacker) => {
     if (card.hasAttackedThisTurn || card.joinedPrideAttack) return false;
     return true;
   });
+};
+
+// Crustacean keyword helpers
+
+/**
+ * Check if a creature has Shell keyword.
+ * @param {Object} card - The creature card
+ * @returns {boolean} True if creature has Shell
+ */
+export const hasShell = (card) => {
+  if (!areAbilitiesActive(card)) return false;
+  return card.shellLevel > 0;
+};
+
+/**
+ * Check if a creature has Molt keyword.
+ * @param {Object} card - The creature card
+ * @returns {boolean} True if creature has Molt
+ */
+export const hasMolt = (card) => hasKeyword(card, KEYWORDS.MOLT);
+
+/**
+ * Get the shell level (max capacity) for a creature.
+ * @param {Object} card - The creature card
+ * @returns {number} Shell level (1, 2, or 3), or 0 if no Shell
+ */
+export const getShellLevel = (card) => {
+  if (!hasShell(card)) return 0;
+  return card.shellLevel || 0;
+};
+
+/**
+ * Get the current active shell (damage that can be absorbed).
+ * @param {Object} card - The creature card
+ * @returns {number} Current shell value, or 0 if depleted/no Shell
+ */
+export const getCurrentShell = (card) => {
+  if (!hasShell(card)) return 0;
+  return card.currentShell ?? card.shellLevel ?? 0;
+};
+
+/**
+ * Initialize Shell on a creature when it enters play.
+ * Sets currentShell to match shellLevel.
+ * @param {Object} creature - The creature to initialize Shell for
+ */
+export const initializeShell = (creature) => {
+  if (!creature || !creature.shellLevel) return;
+  creature.currentShell = creature.shellLevel;
+};
+
+/**
+ * Apply damage to a creature with Shell.
+ * Shell absorbs damage first (all-or-nothing), remainder goes to HP.
+ * Returns the damage dealt to HP and damage absorbed by Shell.
+ * @param {Object} creature - The creature taking damage
+ * @param {number} damage - Amount of damage to deal
+ * @returns {Object} { hpDamage, shellAbsorbed, shellDepleted }
+ */
+export const applyDamageWithShell = (creature, damage) => {
+  if (!creature || damage <= 0) {
+    return { hpDamage: 0, shellAbsorbed: 0, shellDepleted: false };
+  }
+
+  const currentShell = getCurrentShell(creature);
+
+  if (currentShell <= 0) {
+    // No shell, all damage goes to HP
+    return { hpDamage: damage, shellAbsorbed: 0, shellDepleted: false };
+  }
+
+  // Shell absorbs up to its current value
+  const shellAbsorbed = Math.min(damage, currentShell);
+  const hpDamage = damage - shellAbsorbed;
+
+  // Deplete shell
+  creature.currentShell = currentShell - shellAbsorbed;
+  const shellDepleted = creature.currentShell <= 0;
+
+  return { hpDamage, shellAbsorbed, shellDepleted };
+};
+
+/**
+ * Regenerate Shell to full capacity at end of turn.
+ * @param {Object} creature - The creature to regenerate Shell for
+ * @returns {boolean} True if Shell was regenerated
+ */
+export const regenerateShell = (creature) => {
+  if (!creature || !creature.shellLevel) return false;
+  if (!areAbilitiesActive(creature)) return false;
+
+  const previousShell = creature.currentShell || 0;
+  creature.currentShell = creature.shellLevel;
+  return creature.currentShell > previousShell;
+};
+
+/**
+ * Trigger Molt when a creature would die.
+ * Revives at 1 HP, removes ALL keywords (naked state).
+ * @param {Object} creature - The creature that would die
+ * @returns {boolean} True if Molt triggered, false if no Molt available
+ */
+export const triggerMolt = (creature) => {
+  if (!creature || !hasMolt(creature)) return false;
+
+  // Revive at 1 HP
+  creature.currentHp = 1;
+
+  // Remove ALL keywords (naked state after molting)
+  creature.keywords = [];
+
+  // Clear Shell entirely
+  creature.shellLevel = 0;
+  creature.currentShell = 0;
+
+  // Clear any status effects
+  creature.stalkBonus = 0;
+  creature.stalkingFromHidden = false;
+  creature.hasBarrier = false;
+  creature.frozen = false;
+  creature.webbed = false;
+
+  // Mark that molt has been used (creature no longer has Molt keyword since keywords cleared)
+  creature.hasMolted = true;
+
+  return true;
+};
+
+/**
+ * Check if a creature has already molted (used its Molt ability).
+ * @param {Object} card - The creature card
+ * @returns {boolean} True if creature has already molted
+ */
+export const hasMolted = (card) => {
+  return card?.hasMolted === true;
 };

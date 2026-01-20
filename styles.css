@@ -4326,6 +4326,10 @@ button {
   background: linear-gradient(135deg, rgba(193, 154, 107, 0.85), rgba(139, 90, 43, 0.95));
 }
 
+.deck-select-panel--crustacean {
+  background: linear-gradient(135deg, rgba(220, 100, 50, 0.85), rgba(180, 60, 30, 0.95));
+}
+
 /* Experimental deck badge */
 .deck-experimental-badge {
   position: absolute;

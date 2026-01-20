@@ -35,6 +35,9 @@ import {
   enterStalking as enterStalkingHelper,
   isStalking,
   hasPride,
+  hasShell,
+  hasMolt,
+  regenerateShell,
 } from '../keywords.js';
 import { isCreatureCard } from '../cardTypes.js';
 
@@ -3491,6 +3494,261 @@ export const chasePrey =
     });
   };
 
+// ============================================================================
+// CRUSTACEAN SHELL/MOLT EFFECTS (Experimental)
+// ============================================================================
+
+/**
+ * Count friendly creatures with Shell keyword.
+ */
+const countShellCreatures = (player) => {
+  if (!player?.field) return 0;
+  return player.field.filter((c) => c && isCreatureCard(c) && hasShell(c)).length;
+};
+
+/**
+ * Count friendly creatures with Molt keyword.
+ */
+const countMoltCreatures = (player) => {
+  if (!player?.field) return 0;
+  return player.field.filter((c) => c && isCreatureCard(c) && hasMolt(c)).length;
+};
+
+/**
+ * Draw cards based on number of Shell creatures (max 3).
+ */
+export const drawPerShell =
+  () =>
+  ({ log, player }) => {
+    const shellCount = countShellCreatures(player);
+    if (shellCount === 0) {
+      log(`No Shell creatures - no cards drawn.`);
+      return {};
+    }
+    const drawCount = Math.min(shellCount, 3);
+    log(`🦀 Drawing ${drawCount} card(s) for Shell creatures.`);
+    return { draw: drawCount };
+  };
+
+/**
+ * Buff all Shell creatures with +ATK.
+ */
+export const buffAllShell =
+  (bonus = 1) =>
+  ({ log, player }) => {
+    const shellCreatures = player.field.filter((c) => c && isCreatureCard(c) && hasShell(c));
+    if (shellCreatures.length === 0) {
+      log(`No Shell creatures to buff.`);
+      return {};
+    }
+    log(`🦀 All Shell creatures gain +${bonus} ATK!`);
+    return {
+      buffCreatures: {
+        creatures: shellCreatures,
+        atk: bonus,
+      },
+    };
+  };
+
+/**
+ * Heal player based on number of Shell creatures.
+ */
+export const healPerShell =
+  (healPer = 1) =>
+  ({ log, player }) => {
+    const shellCount = countShellCreatures(player);
+    if (shellCount === 0) {
+      log(`No Shell creatures - no healing.`);
+      return {};
+    }
+    const totalHeal = shellCount * healPer;
+    log(`🦀 Heals ${totalHeal} HP for ${shellCount} Shell creature(s)!`);
+    return { heal: totalHeal };
+  };
+
+/**
+ * Regenerate all friendly Shell creatures to full shell capacity.
+ */
+export const regenerateAllShells =
+  () =>
+  ({ log, player }) => {
+    const shellCreatures = player.field.filter((c) => c && isCreatureCard(c) && hasShell(c));
+    if (shellCreatures.length === 0) {
+      log(`No Shell creatures to regenerate.`);
+      return {};
+    }
+    let regenerated = 0;
+    shellCreatures.forEach((creature) => {
+      if (regenerateShell(creature)) {
+        regenerated++;
+      }
+    });
+    log(`🦀 Regenerated shell on ${regenerated} creature(s)!`);
+    return {};
+  };
+
+/**
+ * Grant Shell to a friendly creature that doesn't have it.
+ */
+export const grantShell =
+  (shellLevel = 1) =>
+  (context) => {
+    const { log, player, state } = context;
+    const eligibleCreatures = player.field.filter(
+      (c) => c && isCreatureCard(c) && !hasShell(c) && !isInvisible(c, state)
+    );
+
+    if (eligibleCreatures.length === 0) {
+      log(`No creatures available to grant Shell.`);
+      return {};
+    }
+
+    return makeTargetedSelection({
+      title: 'Choose a creature to grant Shell',
+      candidates: eligibleCreatures.map((c) => ({ label: c.name, value: c })),
+      onSelect: (target) => {
+        target.shellLevel = shellLevel;
+        target.currentShell = shellLevel;
+        if (!target.keywords.includes(KEYWORDS.SHELL)) {
+          target.keywords.push(KEYWORDS.SHELL);
+        }
+        log(`🦀 ${target.name} grows a protective shell! (Shell ${shellLevel})`);
+        return {};
+      },
+    });
+  };
+
+/**
+ * Grant Molt to a friendly creature that doesn't have it.
+ */
+export const grantMolt = () => (context) => {
+  const { log, player, state } = context;
+  const eligibleCreatures = player.field.filter(
+    (c) => c && isCreatureCard(c) && !hasMolt(c) && !isInvisible(c, state)
+  );
+
+  if (eligibleCreatures.length === 0) {
+    log(`No creatures available to grant Molt.`);
+    return {};
+  }
+
+  return makeTargetedSelection({
+    title: 'Choose a creature to grant Molt',
+    candidates: eligibleCreatures.map((c) => ({ label: c.name, value: c })),
+    onSelect: (target) => {
+      if (!target.keywords.includes(KEYWORDS.MOLT)) {
+        target.keywords.push(KEYWORDS.MOLT);
+      }
+      log(`🐚 ${target.name} can now molt to survive death!`);
+      return {};
+    },
+  });
+};
+
+/**
+ * Draw cards based on number of Molt creatures (max 3).
+ */
+export const drawPerMolt =
+  () =>
+  ({ log, player }) => {
+    const moltCount = countMoltCreatures(player);
+    if (moltCount === 0) {
+      log(`No Molt creatures - no cards drawn.`);
+      return {};
+    }
+    const drawCount = Math.min(moltCount, 3);
+    log(`🐚 Drawing ${drawCount} card(s) for Molt creatures.`);
+    return { draw: drawCount };
+  };
+
+/**
+ * Buff all Molt creatures with +ATK.
+ */
+export const buffAllMolt =
+  (bonus = 1) =>
+  ({ log, player }) => {
+    const moltCreatures = player.field.filter((c) => c && isCreatureCard(c) && hasMolt(c));
+    if (moltCreatures.length === 0) {
+      log(`No Molt creatures to buff.`);
+      return {};
+    }
+    log(`🐚 All Molt creatures gain +${bonus} ATK!`);
+    return {
+      buffCreatures: {
+        creatures: moltCreatures,
+        atk: bonus,
+      },
+    };
+  };
+
+/**
+ * Summon tokens based on number of Shell creatures.
+ */
+export const summonTokensPerShell =
+  (tokenId) =>
+  ({ log, player, playerIndex }) => {
+    const shellCount = countShellCreatures(player);
+    if (shellCount === 0) {
+      log(`No Shell creatures - no tokens summoned.`);
+      return {};
+    }
+    const tokens = Array(shellCount).fill(tokenId);
+    log(`🦀 Summons ${shellCount} token(s) for ${shellCount} Shell creature(s)!`);
+    return { summonTokens: { playerIndex, tokens } };
+  };
+
+/**
+ * Deal damage to target enemy based on total shell level of all Shell creatures.
+ */
+export const damageEqualToTotalShell = () => (context) => {
+  const { log, player, opponent, state } = context;
+
+  // Calculate total shell level
+  const shellCreatures = player.field.filter((c) => c && isCreatureCard(c) && hasShell(c));
+  const totalShell = shellCreatures.reduce((sum, c) => sum + (c.shellLevel || 0), 0);
+
+  if (totalShell === 0) {
+    log(`No shell level accumulated - no damage dealt.`);
+    return {};
+  }
+
+  const enemies = opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
+  if (enemies.length === 0) {
+    log(`No enemy creatures to damage.`);
+    return {};
+  }
+
+  return makeTargetedSelection({
+    title: `Deal ${totalShell} damage (total Shell) to an enemy`,
+    candidates: enemies.map((e) => ({ label: `${e.name} (${e.currentHp} HP)`, value: e })),
+    onSelect: (target) => {
+      log(`🦀 Deals ${totalShell} damage (total Shell level) to ${target.name}!`);
+      return { damageTarget: { target, damage: totalShell } };
+    },
+  });
+};
+
+/**
+ * Give all friendly creatures +1 HP per Shell creature.
+ */
+export const buffHpPerShell =
+  () =>
+  ({ log, player }) => {
+    const shellCount = countShellCreatures(player);
+    if (shellCount === 0) {
+      log(`No Shell creatures - no HP buff.`);
+      return {};
+    }
+    const friendlies = player.field.filter((c) => c && isCreatureCard(c));
+    log(`🦀 All creatures gain +${shellCount} HP!`);
+    return {
+      buffCreatures: {
+        creatures: friendlies,
+        hp: shellCount,
+      },
+    };
+  };
+
 /**
  * Discard a card, draw a card, then kill target enemy (Silver Bullet)
  */
@@ -3848,6 +4106,19 @@ export const effectRegistry = {
   grantPride,
   damageEqualToStalkBonus,
   chasePrey,
+
+  // Crustacean shell/molt effects (Experimental)
+  drawPerShell,
+  buffAllShell,
+  healPerShell,
+  regenerateAllShells,
+  grantShell,
+  grantMolt,
+  drawPerMolt,
+  buffAllMolt,
+  summonTokensPerShell,
+  damageEqualToTotalShell,
+  buffHpPerShell,
 
   // Mammal freeze effects
   selectEnemyToFreeze,
@@ -4333,6 +4604,40 @@ export const resolveEffect = (effectDef, context) => {
       specificEffect = effectFn(params.damage);
       break;
     case 'eatPreyInsteadOfAttacking':
+      specificEffect = effectFn();
+      break;
+    // Crustacean shell/molt effects (Experimental)
+    case 'drawPerShell':
+      specificEffect = effectFn();
+      break;
+    case 'buffAllShell':
+      specificEffect = effectFn(params.bonus || 1);
+      break;
+    case 'healPerShell':
+      specificEffect = effectFn(params.healPer || 1);
+      break;
+    case 'regenerateAllShells':
+      specificEffect = effectFn();
+      break;
+    case 'grantShell':
+      specificEffect = effectFn(params.shellLevel || 1);
+      break;
+    case 'grantMolt':
+      specificEffect = effectFn();
+      break;
+    case 'drawPerMolt':
+      specificEffect = effectFn();
+      break;
+    case 'buffAllMolt':
+      specificEffect = effectFn(params.bonus || 1);
+      break;
+    case 'summonTokensPerShell':
+      specificEffect = effectFn(params.tokenId);
+      break;
+    case 'damageEqualToTotalShell':
+      specificEffect = effectFn();
+      break;
+    case 'buffHpPerShell':
       specificEffect = effectFn();
       break;
     default:

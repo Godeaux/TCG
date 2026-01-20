@@ -91,6 +91,14 @@ const DECK_OPTIONS = [
     available: true,
     experimental: true,
   },
+  {
+    id: 'crustacean',
+    name: 'Crustacean',
+    emoji: '🦀',
+    panelClass: 'deck-select-panel--crustacean',
+    available: true,
+    experimental: true,
+  },
 ];
 
 // Deck builder UI state

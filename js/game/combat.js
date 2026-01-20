@@ -16,6 +16,10 @@ import {
   endStalking,
   hasPride,
   getAvailablePrideAllies,
+  hasShell,
+  applyDamageWithShell,
+  hasMolt,
+  triggerMolt,
   KEYWORDS,
 } from '../keywords.js';
 import {
@@ -81,20 +85,39 @@ export const getValidTargets = (state, attacker, opponent) => {
 
 const applyDamage = (creature, amount, state, ownerIndex) => {
   if (amount <= 0) {
-    return { damage: 0, barrierBlocked: false, webbedCleared: false };
+    return { damage: 0, barrierBlocked: false, webbedCleared: false, shellAbsorbed: 0 };
   }
   if (creature.hasBarrier && areAbilitiesActive(creature)) {
     creature.hasBarrier = false;
     if (state && ownerIndex !== undefined) {
       queueKeywordEffect(state, creature, 'Barrier', ownerIndex);
     }
-    return { damage: 0, barrierBlocked: true, webbedCleared: false };
+    return { damage: 0, barrierBlocked: true, webbedCleared: false, shellAbsorbed: 0 };
   }
-  creature.currentHp -= amount;
 
-  // Clear Webbed status when creature takes damage
+  // Shell absorbs damage before HP (Crustacean mechanic)
+  let shellAbsorbed = 0;
+  let actualDamage = amount;
+  if (hasShell(creature)) {
+    const shellResult = applyDamageWithShell(creature, amount);
+    shellAbsorbed = shellResult.shellAbsorbed;
+    actualDamage = shellResult.hpDamage;
+
+    if (shellAbsorbed > 0 && state) {
+      logGameAction(
+        state,
+        BUFF,
+        `🦀 ${formatCardForLog(creature)}'s shell absorbs ${shellAbsorbed} damage! (Shell: ${creature.currentShell}/${creature.shellLevel})`
+      );
+    }
+  }
+
+  // Apply remaining damage to HP
+  creature.currentHp -= actualDamage;
+
+  // Clear Webbed status when creature takes damage (any damage, including shell-absorbed)
   let webbedCleared = false;
-  if (creature.webbed) {
+  if (creature.webbed && amount > 0) {
     creature.webbed = false;
     if (creature.keywords) {
       const webbedIndex = creature.keywords.indexOf(KEYWORDS.WEBBED);
@@ -105,7 +128,7 @@ const applyDamage = (creature, amount, state, ownerIndex) => {
     webbedCleared = true;
   }
 
-  return { damage: amount, barrierBlocked: false, webbedCleared };
+  return { damage: actualDamage, barrierBlocked: false, webbedCleared, shellAbsorbed };
 };
 
 export const resolveCreatureCombat = (
@@ -172,6 +195,7 @@ export const resolveCreatureCombat = (
   if (hasToxic(attacker) && defenderDamage > 0 && defender.currentHp > 0) {
     queueKeywordEffect(state, attacker, 'Toxic', attackerOwnerIndex);
     defender.currentHp = 0;
+    defender.killedByToxic = true; // Prevents Molt from triggering (Toxic counters Molt)
     logGameAction(
       state,
       DEATH,
@@ -181,6 +205,7 @@ export const resolveCreatureCombat = (
   if (defenderDealsDamage && hasToxic(defender) && attackerDamage > 0 && attacker.currentHp > 0) {
     queueKeywordEffect(state, defender, 'Toxic', defenderOwnerIndex);
     attacker.currentHp = 0;
+    attacker.killedByToxic = true; // Prevents Molt from triggering (Toxic counters Molt)
     logGameAction(
       state,
       DEATH,
@@ -373,6 +398,26 @@ export const cleanupDestroyed = (state, { silent = false } = {}) => {
   state.players.forEach((player) => {
     player.field = player.field.map((card) => {
       if (card && card.currentHp <= 0) {
+        // Check for Molt - creature revives at 1 HP but loses all keywords (Crustacean mechanic)
+        // Molt does NOT trigger if killed by Toxic (Toxic counters Molt)
+        if (hasMolt(card) && !card.killedByToxic) {
+          const didMolt = triggerMolt(card);
+          if (didMolt) {
+            if (!silent) {
+              logGameAction(
+                state,
+                BUFF,
+                `🐚 MOLT: ${formatCardForLog(card)} sheds its shell and survives! (1 HP, all keywords lost)`
+              );
+            }
+            // Clear combat flags so the creature can be processed normally
+            card.diedInCombat = false;
+            card.slainBy = null;
+            card.killedByToxic = false;
+            return card; // Creature survives, stays on field
+          }
+        }
+
         destroyedCreatures.push({ card, player: player.name });
 
         // Check for onSlain effect (either function or object-based)
@@ -542,7 +587,7 @@ export const resolvePrideCoordinatedDamage = (
  */
 const applyDamageForPride = (creature, amount, state, ownerIndex) => {
   if (amount <= 0) {
-    return { damage: 0, barrierBlocked: false };
+    return { damage: 0, barrierBlocked: false, shellAbsorbed: 0 };
   }
   if (creature.hasBarrier && areAbilitiesActive(creature)) {
     creature.hasBarrier = false;
@@ -552,12 +597,30 @@ const applyDamageForPride = (creature, amount, state, ownerIndex) => {
       BUFF,
       `${formatCardForLog(creature)}'s ${getKeywordEmoji('Barrier')} Barrier blocks the coordinated attack!`
     );
-    return { damage: 0, barrierBlocked: true };
+    return { damage: 0, barrierBlocked: true, shellAbsorbed: 0 };
   }
-  creature.currentHp -= amount;
+
+  // Shell absorbs damage before HP (Crustacean mechanic)
+  let shellAbsorbed = 0;
+  let actualDamage = amount;
+  if (hasShell(creature)) {
+    const shellResult = applyDamageWithShell(creature, amount);
+    shellAbsorbed = shellResult.shellAbsorbed;
+    actualDamage = shellResult.hpDamage;
+
+    if (shellAbsorbed > 0) {
+      logGameAction(
+        state,
+        BUFF,
+        `🦀 ${formatCardForLog(creature)}'s shell absorbs ${shellAbsorbed} damage from coordinated attack! (Shell: ${creature.currentShell}/${creature.shellLevel})`
+      );
+    }
+  }
+
+  creature.currentHp -= actualDamage;
 
   // Clear Webbed status when creature takes damage
-  if (creature.webbed) {
+  if (creature.webbed && amount > 0) {
     creature.webbed = false;
     if (creature.keywords) {
       const webbedIndex = creature.keywords.indexOf(KEYWORDS.WEBBED);
@@ -567,7 +630,7 @@ const applyDamageForPride = (creature, amount, state, ownerIndex) => {
     }
   }
 
-  return { damage: amount, barrierBlocked: false };
+  return { damage: actualDamage, barrierBlocked: false, shellAbsorbed };
 };
 
 /**

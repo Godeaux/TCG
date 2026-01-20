@@ -1,0 +1,782 @@
+{
+  "cards": [
+    {
+      "id": "crustacean-prey-hermit-crab",
+      "name": "Hermit Crab",
+      "type": "Prey",
+      "tribe": "Crustacean",
+      "cost": 1,
+      "atk": 1,
+      "hp": 2,
+      "shellLevel": 1,
+      "keywords": ["Shell"],
+      "flavorText": "Home is where the shell is."
+    },
+    {
+      "id": "crustacean-prey-pea-crab",
+      "name": "Pea Crab",
+      "type": "Prey",
+      "tribe": "Crustacean",
+      "cost": 1,
+      "atk": 1,
+      "hp": 1,
+      "shellLevel": 1,
+      "keywords": ["Shell"],
+      "effects": {
+        "onPlay": {
+          "type": "draw",
+          "params": { "count": 1 }
+        }
+      },
+      "flavorText": "Tiny but resourceful."
+    },
+    {
+      "id": "crustacean-prey-sand-crab",
+      "name": "Sand Crab",
+      "type": "Prey",
+      "tribe": "Crustacean",
+      "cost": 2,
+      "atk": 1,
+      "hp": 3,
+      "shellLevel": 2,
+      "keywords": ["Shell"],
+      "flavorText": "Burrows deep when danger approaches."
+    },
+    {
+      "id": "crustacean-prey-fiddler-crab",
+      "name": "Fiddler Crab",
+      "type": "Prey",
+      "tribe": "Crustacean",
+      "cost": 2,
+      "atk": 2,
+      "hp": 2,
+      "shellLevel": 1,
+      "keywords": ["Shell"],
+      "effects": {
+        "onPlay": {
+          "type": "buffAllShell",
+          "params": { "bonus": 1 }
+        }
+      },
+      "flavorText": "Waves its oversized claw in challenge."
+    },
+    {
+      "id": "crustacean-prey-porcelain-crab",
+      "name": "Porcelain Crab",
+      "type": "Prey",
+      "tribe": "Crustacean",
+      "cost": 2,
+      "atk": 1,
+      "hp": 2,
+      "shellLevel": 2,
+      "keywords": ["Shell", "Barrier"],
+      "flavorText": "Fragile-looking but deceptively tough."
+    },
+    {
+      "id": "crustacean-prey-cleaner-shrimp",
+      "name": "Cleaner Shrimp",
+      "type": "Prey",
+      "tribe": "Crustacean",
+      "cost": 2,
+      "atk": 1,
+      "hp": 2,
+      "shellLevel": 1,
+      "keywords": ["Shell"],
+      "effects": {
+        "onPlay": {
+          "type": "heal",
+          "params": { "amount": 2 }
+        }
+      },
+      "flavorText": "Services even the most dangerous clients."
+    },
+    {
+      "id": "crustacean-prey-rock-crab",
+      "name": "Rock Crab",
+      "type": "Prey",
+      "tribe": "Crustacean",
+      "cost": 3,
+      "atk": 2,
+      "hp": 4,
+      "shellLevel": 2,
+      "keywords": ["Shell"],
+      "flavorText": "Blends perfectly with the seafloor."
+    },
+    {
+      "id": "crustacean-prey-decorator-crab",
+      "name": "Decorator Crab",
+      "type": "Prey",
+      "tribe": "Crustacean",
+      "cost": 3,
+      "atk": 1,
+      "hp": 3,
+      "shellLevel": 3,
+      "keywords": ["Shell", "Hidden"],
+      "flavorText": "Adorns itself with camouflage."
+    },
+    {
+      "id": "crustacean-predator-blue-crab",
+      "name": "Blue Crab",
+      "type": "Predator",
+      "tribe": "Crustacean",
+      "cost": 3,
+      "atk": 3,
+      "hp": 3,
+      "shellLevel": 1,
+      "keywords": ["Shell"],
+      "flavorText": "Aggressive defender of its territory."
+    },
+    {
+      "id": "crustacean-predator-stone-crab",
+      "name": "Stone Crab",
+      "type": "Predator",
+      "tribe": "Crustacean",
+      "cost": 4,
+      "atk": 3,
+      "hp": 4,
+      "shellLevel": 2,
+      "keywords": ["Shell"],
+      "effects": {
+        "onPlay": {
+          "type": "drawPerShell"
+        }
+      },
+      "flavorText": "Its crushing claws can break through anything."
+    },
+    {
+      "id": "crustacean-predator-dungeness-crab",
+      "name": "Dungeness Crab",
+      "type": "Predator",
+      "tribe": "Crustacean",
+      "cost": 5,
+      "atk": 4,
+      "hp": 5,
+      "shellLevel": 2,
+      "keywords": ["Shell"],
+      "effects": {
+        "onPlay": {
+          "type": "healPerShell",
+          "params": { "healPer": 1 }
+        }
+      },
+      "flavorText": "A prized catch for any predator."
+    },
+    {
+      "id": "crustacean-predator-king-crab",
+      "name": "King Crab",
+      "type": "Predator",
+      "tribe": "Crustacean",
+      "cost": 6,
+      "atk": 5,
+      "hp": 6,
+      "shellLevel": 3,
+      "keywords": ["Shell"],
+      "effects": {
+        "onPlay": {
+          "type": "regenerateAllShells"
+        }
+      },
+      "flavorText": "Ruler of the deep sea floor."
+    },
+    {
+      "id": "crustacean-prey-ghost-shrimp",
+      "name": "Ghost Shrimp",
+      "type": "Prey",
+      "tribe": "Crustacean",
+      "cost": 1,
+      "atk": 1,
+      "hp": 1,
+      "keywords": ["Molt"],
+      "flavorText": "Transparent and nearly invisible."
+    },
+    {
+      "id": "crustacean-prey-krill",
+      "name": "Krill",
+      "type": "Prey",
+      "tribe": "Crustacean",
+      "cost": 1,
+      "atk": 0,
+      "hp": 2,
+      "keywords": ["Molt", "Edible"],
+      "flavorText": "The foundation of the ocean food chain."
+    },
+    {
+      "id": "crustacean-prey-cherry-shrimp",
+      "name": "Cherry Shrimp",
+      "type": "Prey",
+      "tribe": "Crustacean",
+      "cost": 2,
+      "atk": 1,
+      "hp": 2,
+      "keywords": ["Molt"],
+      "effects": {
+        "onPlay": {
+          "type": "drawPerMolt"
+        }
+      },
+      "flavorText": "Bright coloration warns of hidden resilience."
+    },
+    {
+      "id": "crustacean-prey-glass-shrimp",
+      "name": "Glass Shrimp",
+      "type": "Prey",
+      "tribe": "Crustacean",
+      "cost": 2,
+      "atk": 1,
+      "hp": 3,
+      "keywords": ["Molt", "Hidden"],
+      "flavorText": "So clear you can see right through it."
+    },
+    {
+      "id": "crustacean-prey-amphipod",
+      "name": "Amphipod",
+      "type": "Prey",
+      "tribe": "Crustacean",
+      "cost": 2,
+      "atk": 2,
+      "hp": 2,
+      "keywords": ["Molt", "Haste"],
+      "flavorText": "Scuttles with surprising speed."
+    },
+    {
+      "id": "crustacean-prey-crawfish",
+      "name": "Crawfish",
+      "type": "Prey",
+      "tribe": "Crustacean",
+      "cost": 3,
+      "atk": 2,
+      "hp": 3,
+      "keywords": ["Molt"],
+      "effects": {
+        "onPlay": {
+          "type": "grantMolt"
+        }
+      },
+      "flavorText": "Freshwater cousin of the lobster."
+    },
+    {
+      "id": "crustacean-prey-bamboo-shrimp",
+      "name": "Bamboo Shrimp",
+      "type": "Prey",
+      "tribe": "Crustacean",
+      "cost": 3,
+      "atk": 2,
+      "hp": 4,
+      "keywords": ["Molt"],
+      "effects": {
+        "onPlay": {
+          "type": "buffAllMolt",
+          "params": { "bonus": 1 }
+        }
+      },
+      "flavorText": "Filters nutrients from the current."
+    },
+    {
+      "id": "crustacean-prey-skeleton-shrimp",
+      "name": "Skeleton Shrimp",
+      "type": "Prey",
+      "tribe": "Crustacean",
+      "cost": 3,
+      "atk": 1,
+      "hp": 3,
+      "keywords": ["Molt", "Molt"],
+      "flavorText": "Can molt twice before truly dying."
+    },
+    {
+      "id": "crustacean-predator-pistol-shrimp",
+      "name": "Pistol Shrimp",
+      "type": "Predator",
+      "tribe": "Crustacean",
+      "cost": 3,
+      "atk": 3,
+      "hp": 2,
+      "keywords": ["Molt"],
+      "effects": {
+        "onPlay": {
+          "type": "damageCreature",
+          "params": { "targetType": "enemy", "amount": 2, "sourceLabel": "sonic snap" }
+        }
+      },
+      "flavorText": "Its snap creates a shockwave louder than a gunshot."
+    },
+    {
+      "id": "crustacean-predator-spiny-lobster",
+      "name": "Spiny Lobster",
+      "type": "Predator",
+      "tribe": "Crustacean",
+      "cost": 4,
+      "atk": 3,
+      "hp": 4,
+      "keywords": ["Molt"],
+      "effects": {
+        "onPlay": {
+          "type": "heal",
+          "params": { "amount": 2 }
+        }
+      },
+      "flavorText": "Covered in protective spines."
+    },
+    {
+      "id": "crustacean-predator-giant-isopod",
+      "name": "Giant Isopod",
+      "type": "Predator",
+      "tribe": "Crustacean",
+      "cost": 5,
+      "atk": 4,
+      "hp": 5,
+      "keywords": ["Molt", "Scavenge"],
+      "flavorText": "A living fossil from the deep."
+    },
+    {
+      "id": "crustacean-predator-american-lobster",
+      "name": "American Lobster",
+      "type": "Predator",
+      "tribe": "Crustacean",
+      "cost": 6,
+      "atk": 5,
+      "hp": 5,
+      "keywords": ["Molt"],
+      "effects": {
+        "onPlay": {
+          "type": "composite",
+          "effects": [
+            { "type": "grantMolt" },
+            { "type": "draw", "params": { "count": 1 } }
+          ]
+        }
+      },
+      "flavorText": "The largest crustacean in the Atlantic."
+    },
+    {
+      "id": "crustacean-prey-boxer-crab",
+      "name": "Boxer Crab",
+      "type": "Prey",
+      "tribe": "Crustacean",
+      "cost": 2,
+      "atk": 2,
+      "hp": 2,
+      "shellLevel": 1,
+      "keywords": ["Shell", "Molt"],
+      "flavorText": "Carries anemones like boxing gloves."
+    },
+    {
+      "id": "crustacean-prey-mud-crab",
+      "name": "Mud Crab",
+      "type": "Prey",
+      "tribe": "Crustacean",
+      "cost": 2,
+      "atk": 1,
+      "hp": 3,
+      "shellLevel": 1,
+      "keywords": ["Shell", "Molt"],
+      "flavorText": "Thrives in the murky shallows."
+    },
+    {
+      "id": "crustacean-prey-horseshoe-crab",
+      "name": "Horseshoe Crab",
+      "type": "Prey",
+      "tribe": "Crustacean",
+      "cost": 3,
+      "atk": 1,
+      "hp": 4,
+      "shellLevel": 2,
+      "keywords": ["Shell", "Molt"],
+      "flavorText": "Ancient survivor of countless extinctions."
+    },
+    {
+      "id": "crustacean-prey-velvet-crab",
+      "name": "Velvet Crab",
+      "type": "Prey",
+      "tribe": "Crustacean",
+      "cost": 3,
+      "atk": 2,
+      "hp": 3,
+      "shellLevel": 1,
+      "keywords": ["Shell", "Molt", "Haste"],
+      "flavorText": "Soft shell hides a fierce spirit."
+    },
+    {
+      "id": "crustacean-prey-snow-crab",
+      "name": "Snow Crab",
+      "type": "Prey",
+      "tribe": "Crustacean",
+      "cost": 3,
+      "atk": 2,
+      "hp": 4,
+      "shellLevel": 2,
+      "keywords": ["Shell", "Molt"],
+      "effects": {
+        "onPlay": {
+          "type": "heal",
+          "params": { "amount": 1 }
+        }
+      },
+      "flavorText": "Thrives in the coldest waters."
+    },
+    {
+      "id": "crustacean-prey-sally-lightfoot",
+      "name": "Sally Lightfoot Crab",
+      "type": "Prey",
+      "tribe": "Crustacean",
+      "cost": 2,
+      "atk": 2,
+      "hp": 2,
+      "keywords": ["Haste"],
+      "effects": {
+        "onPlay": {
+          "type": "grantShell",
+          "params": { "shellLevel": 1 }
+        }
+      },
+      "flavorText": "Dances across the rocks with grace."
+    },
+    {
+      "id": "crustacean-prey-slipper-lobster",
+      "name": "Slipper Lobster",
+      "type": "Prey",
+      "tribe": "Crustacean",
+      "cost": 3,
+      "atk": 2,
+      "hp": 3,
+      "keywords": [],
+      "effects": {
+        "onPlay": {
+          "type": "buffHpPerShell"
+        }
+      },
+      "flavorText": "Flat antenna serve as shields."
+    },
+    {
+      "id": "crustacean-prey-squat-lobster",
+      "name": "Squat Lobster",
+      "type": "Prey",
+      "tribe": "Crustacean",
+      "cost": 2,
+      "atk": 1,
+      "hp": 2,
+      "keywords": [],
+      "effects": {
+        "onPlay": {
+          "type": "draw",
+          "params": { "count": 1 }
+        }
+      },
+      "flavorText": "Not a true lobster, but just as scrappy."
+    },
+    {
+      "id": "crustacean-predator-coconut-crab",
+      "name": "Coconut Crab",
+      "type": "Predator",
+      "tribe": "Crustacean",
+      "cost": 4,
+      "atk": 4,
+      "hp": 4,
+      "shellLevel": 1,
+      "keywords": ["Shell", "Molt"],
+      "flavorText": "Strong enough to crack coconuts."
+    },
+    {
+      "id": "crustacean-predator-japanese-spider-crab",
+      "name": "Japanese Spider Crab",
+      "type": "Predator",
+      "tribe": "Crustacean",
+      "cost": 5,
+      "atk": 4,
+      "hp": 6,
+      "shellLevel": 2,
+      "keywords": ["Shell", "Molt"],
+      "effects": {
+        "onPlay": {
+          "type": "buffAllShell",
+          "params": { "bonus": 1 }
+        }
+      },
+      "flavorText": "The largest arthropod on Earth."
+    },
+    {
+      "id": "crustacean-predator-mantis-shrimp",
+      "name": "Mantis Shrimp",
+      "type": "Predator",
+      "tribe": "Crustacean",
+      "cost": 5,
+      "atk": 5,
+      "hp": 4,
+      "keywords": ["Molt", "Ambush"],
+      "effects": {
+        "onPlay": {
+          "type": "damageCreature",
+          "params": { "targetType": "enemy", "amount": 3, "sourceLabel": "devastating punch" }
+        }
+      },
+      "flavorText": "Strikes faster than a bullet."
+    },
+    {
+      "id": "crustacean-predator-robber-crab",
+      "name": "Robber Crab",
+      "type": "Predator",
+      "tribe": "Crustacean",
+      "cost": 6,
+      "atk": 5,
+      "hp": 6,
+      "shellLevel": 2,
+      "keywords": ["Shell", "Molt"],
+      "effects": {
+        "onPlay": {
+          "type": "composite",
+          "effects": [
+            { "type": "regenerateAllShells" },
+            { "type": "draw", "params": { "count": 1 } }
+          ]
+        }
+      },
+      "flavorText": "Steals anything it can carry."
+    },
+    {
+      "id": "crustacean-spell-shell-shock",
+      "name": "Shell Shock",
+      "type": "Spell",
+      "tribe": "Crustacean",
+      "cost": 2,
+      "keywords": [],
+      "effects": {
+        "effect": {
+          "type": "damageEqualToTotalShell"
+        }
+      },
+      "flavorText": "The combined strength of every shell."
+    },
+    {
+      "id": "crustacean-spell-exoskeleton",
+      "name": "Exoskeleton",
+      "type": "Spell",
+      "tribe": "Crustacean",
+      "cost": 3,
+      "keywords": [],
+      "effects": {
+        "effect": {
+          "type": "grantShell",
+          "params": { "shellLevel": 2 }
+        }
+      },
+      "flavorText": "Armor forged by nature itself."
+    },
+    {
+      "id": "crustacean-spell-tidal-pool",
+      "name": "Tidal Pool",
+      "type": "Spell",
+      "tribe": "Crustacean",
+      "cost": 3,
+      "keywords": [],
+      "effects": {
+        "effect": {
+          "type": "composite",
+          "effects": [
+            { "type": "regenerateAllShells" },
+            { "type": "heal", "params": { "amount": 3 } }
+          ]
+        }
+      },
+      "flavorText": "A sanctuary for the shelled."
+    },
+    {
+      "id": "crustacean-spell-pincer-assault",
+      "name": "Pincer Assault",
+      "type": "Spell",
+      "tribe": "Crustacean",
+      "cost": 4,
+      "keywords": [],
+      "effects": {
+        "effect": {
+          "type": "composite",
+          "effects": [
+            { "type": "buffAllShell", "params": { "bonus": 2 } },
+            { "type": "buffAllMolt", "params": { "bonus": 2 } }
+          ]
+        }
+      },
+      "flavorText": "Attack from all angles."
+    },
+    {
+      "id": "crustacean-spell-deep-sea-refuge",
+      "name": "Deep Sea Refuge",
+      "type": "Spell",
+      "tribe": "Crustacean",
+      "cost": 4,
+      "keywords": [],
+      "effects": {
+        "effect": {
+          "type": "composite",
+          "effects": [
+            { "type": "grantMolt" },
+            { "type": "grantShell", "params": { "shellLevel": 1 } }
+          ]
+        }
+      },
+      "flavorText": "The abyss protects its own."
+    },
+    {
+      "id": "crustacean-spell-crustacean-swarm",
+      "name": "Crustacean Swarm",
+      "type": "Spell",
+      "tribe": "Crustacean",
+      "cost": 5,
+      "keywords": [],
+      "effects": {
+        "effect": {
+          "type": "summonTokensPerShell",
+          "params": { "tokenId": "token-hermit-crab" }
+        }
+      },
+      "flavorText": "They come from everywhere at once."
+    },
+    {
+      "id": "crustacean-free-shell-fragment",
+      "name": "Shell Fragment",
+      "type": "Spell",
+      "tribe": "Crustacean",
+      "cost": 0,
+      "keywords": ["Free Play"],
+      "effects": {
+        "effect": {
+          "type": "heal",
+          "params": { "amount": 1 }
+        }
+      },
+      "flavorText": "A piece of discarded armor."
+    },
+    {
+      "id": "crustacean-free-shed-skin",
+      "name": "Shed Skin",
+      "type": "Spell",
+      "tribe": "Crustacean",
+      "cost": 0,
+      "keywords": ["Free Play"],
+      "effects": {
+        "effect": {
+          "type": "draw",
+          "params": { "count": 1 }
+        }
+      },
+      "flavorText": "Old growth gives way to new."
+    },
+    {
+      "id": "crustacean-free-barnacle-grip",
+      "name": "Barnacle Grip",
+      "type": "Spell",
+      "tribe": "Crustacean",
+      "cost": 0,
+      "keywords": ["Free Play"],
+      "effects": {
+        "effect": {
+          "type": "buffAllShell",
+          "params": { "bonus": 1 }
+        }
+      },
+      "flavorText": "Clings tight and won't let go."
+    },
+    {
+      "id": "crustacean-free-quick-molt",
+      "name": "Quick Molt",
+      "type": "Spell",
+      "tribe": "Crustacean",
+      "cost": 0,
+      "keywords": ["Free Play"],
+      "effects": {
+        "effect": {
+          "type": "regenerateAllShells"
+        }
+      },
+      "flavorText": "Shed and regrow in an instant."
+    },
+    {
+      "id": "crustacean-trap-chitinous-defense",
+      "name": "Chitinous Defense",
+      "type": "Trap",
+      "tribe": "Crustacean",
+      "cost": 2,
+      "keywords": [],
+      "triggerCondition": "onEnemyAttack",
+      "effects": {
+        "effect": {
+          "type": "negateDamage"
+        }
+      },
+      "flavorText": "Hard shell, soft interior."
+    },
+    {
+      "id": "crustacean-trap-snap-trap",
+      "name": "Snap Trap",
+      "type": "Trap",
+      "tribe": "Crustacean",
+      "cost": 2,
+      "keywords": [],
+      "triggerCondition": "onEnemyAttack",
+      "effects": {
+        "effect": {
+          "type": "dealDamageToAttacker",
+          "params": { "damage": 3 }
+        }
+      },
+      "flavorText": "Caught in the claw."
+    },
+    {
+      "id": "crustacean-trap-reef-ambush",
+      "name": "Reef Ambush",
+      "type": "Trap",
+      "tribe": "Crustacean",
+      "cost": 3,
+      "keywords": [],
+      "triggerCondition": "onEnemyPlay",
+      "effects": {
+        "effect": {
+          "type": "negatePlay"
+        }
+      },
+      "flavorText": "Hidden dangers lurk in the coral."
+    },
+    {
+      "id": "crustacean-trap-claw-lock",
+      "name": "Claw Lock",
+      "type": "Trap",
+      "tribe": "Crustacean",
+      "cost": 3,
+      "keywords": [],
+      "triggerCondition": "onEnemyAttack",
+      "effects": {
+        "effect": {
+          "type": "composite",
+          "effects": [
+            { "type": "negateDamage" },
+            { "type": "dealDamageToAttacker", "params": { "damage": 2 } }
+          ]
+        }
+      },
+      "flavorText": "Once grabbed, never released."
+    },
+    {
+      "id": "token-hermit-crab",
+      "name": "Hermit Crab",
+      "type": "Prey",
+      "tribe": "Crustacean",
+      "cost": 0,
+      "atk": 1,
+      "hp": 1,
+      "shellLevel": 1,
+      "keywords": ["Shell"],
+      "isToken": true,
+      "flavorText": "A tiny shell-dweller."
+    },
+    {
+      "id": "token-molted-shell",
+      "name": "Molted Shell",
+      "type": "Prey",
+      "tribe": "Crustacean",
+      "cost": 0,
+      "atk": 0,
+      "hp": 1,
+      "keywords": ["Passive"],
+      "isToken": true,
+      "flavorText": "An empty husk of what was."
+    }
+  ]
+}
