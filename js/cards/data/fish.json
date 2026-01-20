@@ -397,12 +397,12 @@
       "effects": {
         "onPlay": [
           {
-            "type": "selectCardToDiscard",
-            "params": { "count": 1 }
-          },
-          {
             "type": "draw",
             "params": { "count": 3 }
+          },
+          {
+            "type": "selectCardToDiscard",
+            "params": { "count": 1 }
           }
         ],
         "discardEffect": { "type": "draw", "params": { "count": 1 } }

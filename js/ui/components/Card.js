@@ -165,7 +165,8 @@ const renderNameSvg = (name, rarityClass = '') => {
   if (!name) return '';
 
   const viewBoxWidth = 200;
-  const viewBoxHeight = 24;
+  const viewBoxHeight = 26;
+
 
   // Escape HTML entities
   const escapedName = name
@@ -175,10 +176,11 @@ const renderNameSvg = (name, rarityClass = '') => {
     .replace(/"/g, '&quot;');
 
   // Adjust font size based on name length for better fit
-  let fontSize = 18;
-  if (name.length > 15) fontSize = 16;
-  if (name.length > 20) fontSize = 14;
-  if (name.length > 25) fontSize = 12;
+  let fontSize = 24;
+
+  if (name.length > 15) fontSize = 24;
+  if (name.length > 20) fontSize = 20;
+  if (name.length > 25) fontSize = 18;
 
   // Map rarity to fill colors (matching existing CSS)
   let fillColor = '#e2e8f0'; // default
@@ -192,7 +194,7 @@ const renderNameSvg = (name, rarityClass = '') => {
       <style>
         text { font-family: system-ui, -apple-system, sans-serif; font-weight: 600; }
       </style>
-      <text x="50%" y="18" text-anchor="middle" font-size="${fontSize}" fill="${fillColor}">${escapedName}</text>
+      <text x="50%" y="20" text-anchor="middle" font-size="${fontSize}" fill="${fillColor}">${escapedName}</text>
     </svg>
   `;
 };
@@ -207,7 +209,7 @@ const renderStatsSvg = (stats, hasNut) => {
   if (!stats || stats.length === 0) return '';
 
   const viewBoxWidth = 200;
-  const viewBoxHeight = 22;
+  const viewBoxHeight = 20;
   const fontSize = 14;
 
   // Calculate spacing based on number of stats
@@ -220,7 +222,7 @@ const renderStatsSvg = (stats, hasNut) => {
     let fillColor = '#a0aec0';
     if (stat.className === 'atk') fillColor = '#f97316'; // orange
     if (stat.className === 'hp') fillColor = '#ef4444'; // red
-    if (stat.className === 'nut') fillColor = '#a855f7'; // purple
+    if (stat.className === 'nut') fillColor = '#3dfe1fff'; // purple
 
     return `<text x="${x}" y="16" text-anchor="middle" font-size="${fontSize}" fill="${fillColor}">${stat.emoji} ${stat.value}</text>`;
   }).join('');
