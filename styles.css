@@ -4706,7 +4706,7 @@ button {
 }
 
 /* Mobile deck builder - 2 column grid with properly sized cards */
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .deck-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 8px;
@@ -9079,6 +9079,7 @@ button {
   flex-direction: column;
   align-items: flex-end;
   gap: 8px;
+  pointer-events: none; /* Allow clicks to pass through to elements below */
 }
 
 /* Bug FAB Button */
@@ -9094,6 +9095,7 @@ button {
   justify-content: center;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  pointer-events: auto; /* Re-enable clicks on the button itself */
 }
 
 .bug-fab:hover {
