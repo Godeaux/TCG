@@ -320,36 +320,22 @@ const createDeckListRow = (card, options = {}) => {
   row.dataset.type = card.type;
   row.draggable = true;
 
-  // Mini art thumbnail
-  const art = document.createElement('div');
-  art.className = 'deck-list-row-art';
+  // Set card art as background on the row itself (Hearthstone-style)
   if (card.image) {
-    art.style.backgroundImage = `url(${card.image})`;
-  } else {
-    art.textContent = card.emoji || '🃏';
-    art.style.display = 'flex';
-    art.style.alignItems = 'center';
-    art.style.justifyContent = 'center';
-    art.style.fontSize = '16px';
+    row.style.backgroundImage = `url(${card.image})`;
   }
 
-  // Info section
-  const info = document.createElement('div');
-  info.className = 'deck-list-row-info';
+  // Color banner at top (color set via CSS based on data-type)
+  const banner = document.createElement('div');
+  banner.className = 'deck-list-row-banner';
 
+  // Card name overlay
   const name = document.createElement('div');
   name.className = 'deck-list-row-name';
   name.textContent = card.name;
 
-  const type = document.createElement('div');
-  type.className = 'deck-list-row-type';
-  type.textContent = card.type;
-
-  info.appendChild(name);
-  info.appendChild(type);
-
-  row.appendChild(art);
-  row.appendChild(info);
+  row.appendChild(banner);
+  row.appendChild(name);
 
   // Hover to show expanded tooltip
   row.addEventListener('mouseenter', () => {
@@ -399,6 +385,12 @@ const renderDeckListSidebar = (selectedCards, options = {}) => {
     deckListCount.classList.toggle('complete', selectedCards.length === 20);
   }
 
+  // Update mobile drawer toggle count
+  const drawerCount = document.getElementById('deck-drawer-count');
+  if (drawerCount) {
+    drawerCount.textContent = `${selectedCards.length}/20`;
+  }
+
   // Clear and render
   deckListCards.innerHTML = '';
 
@@ -428,6 +420,37 @@ const renderDeckListSidebar = (selectedCards, options = {}) => {
     });
     deckListCards.appendChild(row);
   });
+};
+
+// Track drawer toggle setup
+let drawerToggleSetup = false;
+
+/**
+ * Setup mobile drawer toggle functionality
+ * Only sets up once per session to avoid duplicate listeners
+ */
+const setupMobileDrawerToggle = () => {
+  if (drawerToggleSetup) return;
+
+  const toggle = document.getElementById('deck-drawer-toggle');
+  const sidebar = document.getElementById('deck-builder-sidebar');
+  const backdrop = document.getElementById('deck-drawer-backdrop');
+
+  if (!toggle || !sidebar || !backdrop) return;
+
+  // Toggle drawer on button click
+  toggle.addEventListener('click', () => {
+    sidebar.classList.toggle('drawer-open');
+    backdrop.classList.toggle('visible', sidebar.classList.contains('drawer-open'));
+  });
+
+  // Close drawer when clicking backdrop
+  backdrop.addEventListener('click', () => {
+    sidebar.classList.remove('drawer-open');
+    backdrop.classList.remove('visible');
+  });
+
+  drawerToggleSetup = true;
 };
 
 // Track drop zone setup to avoid duplicate listeners
@@ -2170,6 +2193,9 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
       removeCardFromDeck(card);
     },
   });
+
+  // Setup mobile drawer toggle (only on first render)
+  setupMobileDrawerToggle();
 
   renderDeckManagePanel(state, callbacks);
 

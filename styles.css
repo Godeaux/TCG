@@ -4399,77 +4399,81 @@ button {
   padding: 8px 0;
 }
 
-/* Individual deck list card row */
+/* Individual deck list card row - Hearthstone-style with art background */
 .deck-list-row {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
+  height: 36px;
+  padding: 0 10px;
   cursor: pointer;
-  transition: background 0.15s ease;
-  border-left: 3px solid transparent;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  background-size: cover;
+  background-position: center 30%;
+  border-radius: 4px;
+  margin: 2px 6px;
+  overflow: hidden;
+}
+
+/* Dark gradient overlay for text readability */
+.deck-list-row::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.4) 50%, rgba(0, 0, 0, 0.2) 100%);
+  z-index: 1;
 }
 
 .deck-list-row:hover {
-  background: rgba(255, 255, 255, 0.06);
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .deck-list-row.drag-over {
-  background: rgba(212, 168, 83, 0.2);
-  border-left-color: var(--gold);
+  box-shadow: 0 0 8px var(--gold);
 }
 
-.deck-list-row-art {
-  width: 32px;
-  height: 32px;
-  border-radius: 4px;
-  background-size: cover;
-  background-position: center;
-  border: 1px solid var(--border-subtle);
-  flex-shrink: 0;
-}
-
-.deck-list-row-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+/* Color banner at top of row */
+.deck-list-row-banner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  z-index: 2;
 }
 
 .deck-list-row-name {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-primary);
+  position: relative;
+  z-index: 2;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.deck-list-row-type {
-  font-size: 10px;
-  color: var(--text-secondary);
+/* Color-coded top banner by card type */
+.deck-list-row[data-type="Prey"] .deck-list-row-banner {
+  background: var(--type-prey);
 }
 
-/* Color-coded left border by card type */
-.deck-list-row[data-type="Prey"] {
-  border-left-color: var(--type-prey);
+.deck-list-row[data-type="Predator"] .deck-list-row-banner {
+  background: var(--type-predator);
 }
 
-.deck-list-row[data-type="Predator"] {
-  border-left-color: var(--type-predator);
+.deck-list-row[data-type="Spell"] .deck-list-row-banner {
+  background: var(--type-spell);
 }
 
-.deck-list-row[data-type="Spell"] {
-  border-left-color: var(--type-spell);
+.deck-list-row[data-type="Free Spell"] .deck-list-row-banner {
+  background: var(--type-free-spell);
 }
 
-.deck-list-row[data-type="Free Spell"] {
-  border-left-color: var(--type-free-spell);
-}
-
-.deck-list-row[data-type="Trap"] {
-  border-left-color: var(--type-trap);
+.deck-list-row[data-type="Trap"] .deck-list-row-banner {
+  background: var(--type-trap);
 }
 
 /* Drop zone indicator when dragging */
@@ -4503,7 +4507,7 @@ button {
 
 .deck-list-row.dragging {
   opacity: 0.5;
-  background: rgba(255, 255, 255, 0.1);
+  transform: scale(0.98);
 }
 
 /* Cursor hint for deck cards */
@@ -4702,7 +4706,7 @@ button {
 }
 
 /* Mobile deck builder - 2 column grid with properly sized cards */
-@media (max-width: 500px) {
+@media (max-width: 600px) {
   .deck-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 8px;
@@ -4716,6 +4720,89 @@ button {
     min-height: 200px;
     aspect-ratio: 5 / 7;
   }
+
+  /* Mobile drawer sidebar */
+  .deck-builder-layout {
+    position: relative;
+  }
+
+  .deck-builder-main {
+    flex: 1;
+    width: 100%;
+  }
+
+  .deck-builder-sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 260px;
+    max-width: 80vw;
+    min-width: unset;
+    flex: none;
+    z-index: 1000;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    border-radius: 12px 0 0 12px;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.5);
+  }
+
+  .deck-builder-sidebar.drawer-open {
+    transform: translateX(0);
+  }
+
+  /* Drawer backdrop */
+  .deck-drawer-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+  }
+
+  .deck-drawer-backdrop.visible {
+    display: block;
+  }
+
+  /* Floating toggle button for mobile drawer */
+  .deck-drawer-toggle {
+    display: flex;
+    position: fixed;
+    bottom: 100px;
+    right: 12px;
+    z-index: 998;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+    border: 2px solid var(--gold-light);
+    color: var(--bg-primary);
+    font-size: 14px;
+    font-weight: 700;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .deck-drawer-toggle:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+  }
+
+  .deck-drawer-toggle:active {
+    transform: scale(0.95);
+  }
+}
+
+/* Hide drawer toggle on desktop */
+.deck-drawer-toggle {
+  display: none;
+}
+
+.deck-drawer-backdrop {
+  display: none;
 }
 
 .deck-card {
