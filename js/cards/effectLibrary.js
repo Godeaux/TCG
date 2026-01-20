@@ -3231,6 +3231,242 @@ export const summonTokensPerWebbed =
     return { summonTokens: { playerIndex, tokens } };
   };
 
+// ============================================================================
+// FELINE EFFECTS (Experimental)
+// ============================================================================
+
+/**
+ * Apply Stalked status to a creature.
+ * Stalked creatures take bonus damage from Pounce abilities.
+ */
+const applyStalked = (creature, log) => {
+  if (!creature || !creature.keywords) return;
+  if (!creature.keywords.includes(KEYWORDS.STALKED)) {
+    creature.keywords.push(KEYWORDS.STALKED);
+    creature.stalked = true;
+    log(`🐆 ${creature.name} is being stalked!`);
+  }
+  return {};
+};
+
+/**
+ * Stalk all enemy creatures
+ */
+export const stalkAllEnemies =
+  () =>
+  ({ log, opponent }) => {
+    const enemies = opponent.field.filter((c) => c && isCreatureCard(c));
+    if (enemies.length === 0) {
+      log(`No Rival's creatures to stalk.`);
+      return {};
+    }
+    enemies.forEach((creature) => {
+      applyStalked(creature, log);
+    });
+    return {};
+  };
+
+/**
+ * Defend trigger: stalk the attacking enemy
+ */
+export const stalkAttacker =
+  () =>
+  ({ log, attacker }) => {
+    if (!attacker) return {};
+    applyStalked(attacker, log);
+    return {};
+  };
+
+/**
+ * Select an enemy creature to stalk
+ */
+export const stalkTarget = () => (context) => {
+  const { log, opponent, state } = context;
+  const enemies = opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
+
+  if (enemies.length === 0) {
+    log(`No Rival's creatures to stalk.`);
+    return {};
+  }
+
+  return makeTargetedSelection({
+    title: 'Choose a creature to stalk',
+    candidates: enemies.map((c) => ({ label: c.name, value: c })),
+    onSelect: (target) => {
+      applyStalked(target, log);
+      return {};
+    },
+  });
+};
+
+/**
+ * Stalk a random enemy creature
+ */
+export const stalkRandomEnemy =
+  () =>
+  ({ log, opponent }) => {
+    const enemies = opponent.field.filter((c) => c && isCreatureCard(c));
+    if (enemies.length === 0) {
+      log(`No Rival's creatures to stalk.`);
+      return {};
+    }
+    const target = enemies[Math.floor(Math.random() * enemies.length)];
+    applyStalked(target, log);
+    return {};
+  };
+
+/**
+ * Deal damage to all Stalked enemy creatures
+ * @param {number} damage - Damage amount
+ */
+export const damageStalked =
+  (damage) =>
+  ({ log, opponent }) => {
+    const stalkedCreatures = opponent.field.filter(
+      (c) => c && isCreatureCard(c) && c.keywords?.includes(KEYWORDS.STALKED)
+    );
+
+    if (stalkedCreatures.length === 0) {
+      log(`No Stalked creatures to damage.`);
+      return {};
+    }
+
+    log(`🐆 Pounces for ${damage} damage to all Stalked creatures!`);
+    return { damageCreatures: { creatures: stalkedCreatures, amount: damage } };
+  };
+
+/**
+ * Draw cards equal to number of Stalked enemies (max 3)
+ */
+export const drawPerStalked =
+  () =>
+  ({ log, opponent }) => {
+    const stalkedCount = opponent.field.filter(
+      (c) => c && isCreatureCard(c) && c.keywords?.includes(KEYWORDS.STALKED)
+    ).length;
+
+    if (stalkedCount === 0) {
+      log(`No Stalked creatures - no cards drawn.`);
+      return {};
+    }
+
+    const drawCount = Math.min(stalkedCount, 3);
+    log(`🐆 Drawing ${drawCount} card(s) for Stalked enemies.`);
+    return { draw: drawCount };
+  };
+
+/**
+ * Draw a card if any enemy creature is Stalked
+ */
+export const drawIfEnemyStalked = () => ({ log, opponent }) => {
+  const hasStalked = opponent.field.some(
+    (c) => c && isCreatureCard(c) && c.keywords?.includes(KEYWORDS.STALKED)
+  );
+
+  if (!hasStalked) {
+    log(`No Stalked enemies - no card drawn.`);
+    return {};
+  }
+
+  log(`🐆 Enemy creature is Stalked - drawing a card!`);
+  return { draw: 1 };
+};
+
+/**
+ * Buff creature's ATK based on number of Stalked enemy creatures
+ * @param {number} bonus - ATK bonus per Stalked creature
+ */
+export const buffAtkPerStalked =
+  (bonus = 1) =>
+  ({ log, opponent, creature }) => {
+    const stalkedCount = opponent.field.filter(
+      (c) => c && isCreatureCard(c) && c.keywords?.includes(KEYWORDS.STALKED)
+    ).length;
+
+    if (stalkedCount === 0) {
+      log(`No Stalked enemies - no ATK bonus.`);
+      return {};
+    }
+
+    const totalBonus = stalkedCount * bonus;
+    log(`🐆 Gains +${totalBonus} ATK from ${stalkedCount} Stalked enemy creature(s)!`);
+    return { buffCreature: { creature, atk: totalBonus } };
+  };
+
+/**
+ * Summon tokens based on number of Stalked enemy creatures
+ * @param {string} tokenId - Token ID to summon
+ */
+export const summonTokensPerStalked =
+  (tokenId) =>
+  ({ log, opponent, playerIndex }) => {
+    const stalkedCount = opponent.field.filter(
+      (c) => c && isCreatureCard(c) && c.keywords?.includes(KEYWORDS.STALKED)
+    ).length;
+
+    if (stalkedCount === 0) {
+      log(`No Stalked enemies - no tokens summoned.`);
+      return {};
+    }
+
+    const tokens = Array(stalkedCount).fill(tokenId);
+    log(`🐆 Summons ${stalkedCount} cub(s) from ${stalkedCount} Stalked enemy creature(s)!`);
+    return { summonTokens: { playerIndex, tokens } };
+  };
+
+/**
+ * Coordinated attack - buff all friendly Pride creatures
+ * @param {number} atkBonus - ATK bonus to give
+ */
+export const coordinatedStrike =
+  (atkBonus = 2) =>
+  ({ log, player }) => {
+    const prideCreatures = player.field.filter(
+      (c) => c && isCreatureCard(c) && c.keywords?.includes('Pride')
+    );
+
+    if (prideCreatures.length === 0) {
+      log(`No Pride creatures to coordinate.`);
+      return {};
+    }
+
+    log(`🦁 Pride coordinates attack! All Pride creatures gain +${atkBonus} ATK!`);
+    return {
+      buffCreatures: {
+        creatures: prideCreatures,
+        atk: atkBonus,
+      },
+    };
+  };
+
+/**
+ * Grant Haste and bonus ATK to target creature (for pursuit hunters)
+ * @param {number} atkBonus - ATK bonus to give
+ */
+export const chasePrey =
+  (atkBonus = 2) =>
+  (context) => {
+    const { log, player, state } = context;
+    const friendlies = player.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
+
+    if (friendlies.length === 0) {
+      log(`No friendly creatures to empower.`);
+      return {};
+    }
+
+    return makeTargetedSelection({
+      title: 'Choose a creature to give the chase',
+      candidates: friendlies.map((c) => ({ label: c.name, value: c })),
+      onSelect: (target) => {
+        log(`🐆 ${target.name} gives chase! Gains +${atkBonus} ATK and Haste!`);
+        if (!target.keywords.includes('Haste')) {
+          target.keywords.push('Haste');
+        }
+        return { buffCreature: { creature: target, atk: atkBonus } };
+      },
+    });
+  };
+
 /**
  * Discard a card, draw a card, then kill target enemy (Silver Bullet)
  */
@@ -3575,6 +3811,19 @@ export const effectRegistry = {
   drawIfEnemyWebbed,
   buffAtkPerWebbed,
   summonTokensPerWebbed,
+
+  // Feline stalk/pounce effects (Experimental)
+  stalkAllEnemies,
+  stalkAttacker,
+  stalkTarget,
+  stalkRandomEnemy,
+  damageStalked,
+  drawPerStalked,
+  drawIfEnemyStalked,
+  buffAtkPerStalked,
+  summonTokensPerStalked,
+  coordinatedStrike,
+  chasePrey,
 
   // Mammal freeze effects
   selectEnemyToFreeze,

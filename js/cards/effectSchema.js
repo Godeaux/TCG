@@ -36,6 +36,10 @@ const TOKEN_NAMES = {
   // Arachnid tokens
   'token-spiderling': { singular: 'Spiderling', plural: 'Spiderlings' },
   'token-egg-sac': { singular: 'Egg Sac', plural: 'Egg Sacs' },
+  // Feline tokens
+  'token-cub': { singular: 'Cub', plural: 'Cubs' },
+  'token-pride-cub': { singular: 'Pride Cub', plural: 'Pride Cubs' },
+  'token-wounded-prey': { singular: 'Wounded Prey', plural: 'Wounded Prey' },
 };
 
 /**
@@ -594,6 +598,92 @@ export const EFFECT_SCHEMA = {
     text: () => `Apply Neurotoxic to attacker`,
   },
 
+  buffAtkPerWebbed: {
+    params: { bonus: { type: 'number', required: false } },
+    text: (p) => `Gain +${p.bonus || 1} ATK per Webbed Rival's creature`,
+  },
+
+  drawIfEnemyWebbed: {
+    params: {},
+    text: () => `Draw 1 if Rival has a Webbed creature`,
+  },
+
+  summonTokensPerWebbed: {
+    params: { tokenId: { type: 'string', required: true } },
+    text: (p) => `Play 1 token per Webbed Rival's creature`,
+  },
+
+  transformInto: {
+    params: { cardId: { type: 'string', required: true } },
+    text: (p) => {
+      const name = p.cardId
+        .replace('token-', '')
+        .split('-')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
+      return `Become ${name}`;
+    },
+  },
+
+  // ==========================================
+  // FELINE STALK/POUNCE EFFECTS (Experimental)
+  // ==========================================
+
+  stalkAllEnemies: {
+    params: {},
+    text: () => `Rival's creatures gain Stalked`,
+  },
+
+  stalkAttacker: {
+    params: {},
+    text: () => `Attacker gains Stalked`,
+  },
+
+  stalkTarget: {
+    params: {},
+    text: () => `Target creature gains Stalked`,
+  },
+
+  stalkRandomEnemy: {
+    params: {},
+    text: () => `A random Rival's creature gains Stalked`,
+  },
+
+  damageStalked: {
+    params: { damage: { type: 'number', required: true } },
+    text: (p) => `Deal ${p.damage} damage to all Stalked creatures`,
+  },
+
+  drawPerStalked: {
+    params: {},
+    text: () => `Draw 1 for each Stalked Rival's creature (max 3)`,
+  },
+
+  drawIfEnemyStalked: {
+    params: {},
+    text: () => `Draw 1 if Rival has a Stalked creature`,
+  },
+
+  buffAtkPerStalked: {
+    params: { bonus: { type: 'number', required: false } },
+    text: (p) => `Gain +${p.bonus || 1} ATK per Stalked Rival's creature`,
+  },
+
+  summonTokensPerStalked: {
+    params: { tokenId: { type: 'string', required: true } },
+    text: (p) => `Play 1 token per Stalked Rival's creature`,
+  },
+
+  coordinatedStrike: {
+    params: { atkBonus: { type: 'number', required: false } },
+    text: (p) => `Pride creatures gain +${p.atkBonus || 2} ATK`,
+  },
+
+  chasePrey: {
+    params: { atkBonus: { type: 'number', required: false } },
+    text: (p) => `Target creature gains +${p.atkBonus || 2} ATK and Haste`,
+  },
+
   // ==========================================
   // CREATURE REMOVAL EFFECTS
   // ==========================================
@@ -809,6 +899,11 @@ export const EFFECT_SCHEMA = {
   },
 
   selectEnemyToReturnToOpponentHand: {
+    params: {},
+    text: () => `Return target Rival's creature to hand`,
+  },
+
+  selectEnemyToReturn: {
     params: {},
     text: () => `Return target Rival's creature to hand`,
   },

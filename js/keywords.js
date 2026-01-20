@@ -25,6 +25,10 @@ export const KEYWORDS = {
   WEB: 'Web',
   WEBBED: 'Webbed',
   VENOM: 'Venom',
+  // Feline keywords (Experimental)
+  PRIDE: 'Pride',
+  STALKED: 'Stalked',
+  POUNCE: 'Pounce',
 };
 
 export const KEYWORD_DESCRIPTIONS = {
@@ -56,6 +60,10 @@ export const KEYWORD_DESCRIPTIONS = {
   [KEYWORDS.WEB]: 'On attack, applies Webbed to the defender (if it survives).',
   [KEYWORDS.WEBBED]: 'Cannot attack. Status persists until the creature takes damage.',
   [KEYWORDS.VENOM]: 'At end of turn, deals damage to each Webbed enemy creature.',
+  // Feline keywords (Experimental)
+  [KEYWORDS.PRIDE]: 'Gains +1 ATK for each other Feline with Pride you control.',
+  [KEYWORDS.STALKED]: 'Marked by a predator. Pounce attacks deal bonus damage to this creature.',
+  [KEYWORDS.POUNCE]: 'At end of turn, deals damage to each Stalked enemy creature.',
 };
 
 /**
@@ -144,18 +152,19 @@ export const calculatePackBonus = (creature, state, ownerIndex) => {
 };
 
 /**
- * Get effective attack value for a creature, including Pack bonus.
+ * Get effective attack value for a creature, including Pack and Pride bonuses.
  * This should be used for combat damage calculations and display.
  * @param {Object} creature - The creature
- * @param {Object} state - Game state (optional, needed for Pack)
- * @param {number} ownerIndex - Index of the creature's owner (optional, needed for Pack)
+ * @param {Object} state - Game state (optional, needed for Pack/Pride)
+ * @param {number} ownerIndex - Index of the creature's owner (optional, needed for Pack/Pride)
  * @returns {number} The effective attack value
  */
 export const getEffectiveAttack = (creature, state, ownerIndex) => {
   if (!creature) return 0;
   const baseAtk = creature.currentAtk ?? creature.atk ?? 0;
   const packBonus = calculatePackBonus(creature, state, ownerIndex);
-  return baseAtk + packBonus;
+  const prideBonus = calculatePrideBonus(creature, state, ownerIndex);
+  return baseAtk + packBonus + prideBonus;
 };
 
 // Arachnid keyword helpers
@@ -204,4 +213,78 @@ export const calculateTotalVenom = (state, playerIndex) => {
   }
 
   return totalVenom;
+};
+
+// Feline keyword helpers
+export const hasPride = (card) => hasKeyword(card, KEYWORDS.PRIDE);
+export const hasStalked = (card) => hasKeyword(card, KEYWORDS.STALKED);
+
+/**
+ * Calculate Pride bonus for a creature.
+ * Pride gives +1 ATK for each OTHER Feline with Pride on the field.
+ * @param {Object} creature - The creature to calculate bonus for
+ * @param {Object} state - Game state
+ * @param {number} ownerIndex - Index of the creature's owner
+ * @returns {number} The Pride attack bonus
+ */
+export const calculatePrideBonus = (creature, state, ownerIndex) => {
+  if (!creature || !hasPride(creature)) return 0;
+  if (!state?.players?.[ownerIndex]?.field) return 0;
+
+  const field = state.players[ownerIndex].field;
+  let otherPrideFelines = 0;
+
+  for (const card of field) {
+    if (!card || card.instanceId === creature.instanceId) continue;
+    // Count Feline cards with Pride keyword that have active abilities
+    if (card.tribe === 'Feline' && hasPride(card) && areAbilitiesActive(card)) {
+      otherPrideFelines++;
+    }
+  }
+
+  return otherPrideFelines;
+};
+
+/**
+ * Get Pounce value for a creature.
+ * Pounce is a numeric keyword (e.g., "Pounce 2" = 2 damage per Stalked enemy).
+ * @param {Object} card - The creature card
+ * @returns {number} The Pounce damage value (0 if no Pounce)
+ */
+export const getPounceValue = (card) => {
+  if (!areAbilitiesActive(card) || !card.keywords) return 0;
+  for (const kw of card.keywords) {
+    if (typeof kw === 'string' && kw.startsWith('Pounce')) {
+      const parts = kw.split(' ');
+      return parts.length > 1 ? parseInt(parts[1], 10) : 1;
+    }
+  }
+  return 0;
+};
+
+/**
+ * Check if a creature has any Pounce keyword.
+ * @param {Object} card - The creature card
+ * @returns {boolean} True if creature has Pounce
+ */
+export const hasPounce = (card) => getPounceValue(card) > 0;
+
+/**
+ * Calculate total Pounce damage from all friendly creatures.
+ * @param {Object} state - Game state
+ * @param {number} playerIndex - Index of the player with Pounce creatures
+ * @returns {number} Total Pounce damage to apply to each Stalked enemy
+ */
+export const calculateTotalPounce = (state, playerIndex) => {
+  if (!state?.players?.[playerIndex]?.field) return 0;
+
+  const field = state.players[playerIndex].field;
+  let totalPounce = 0;
+
+  for (const card of field) {
+    if (!card) continue;
+    totalPounce += getPounceValue(card);
+  }
+
+  return totalPounce;
 };

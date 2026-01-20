@@ -19,6 +19,7 @@ import birdData from './data/bird.json' with { type: 'json' };
 import mammalData from './data/mammal.json' with { type: 'json' };
 import canineData from './data/canine.json' with { type: 'json' };
 import arachnidData from './data/arachnid.json' with { type: 'json' };
+import felineData from './data/feline.json' with { type: 'json' };
 import { resolveEffect } from './effectLibrary.js';
 import { validateCardEffects } from './effectValidator.js';
 import { generateCardEffectText } from './effectTextGenerator.js';
@@ -48,6 +49,7 @@ const deckCatalogs = {
   mammal: [],
   canine: [],
   arachnid: [],
+  feline: [],
 };
 
 // ============================================================================
@@ -178,6 +180,22 @@ export const initializeCardRegistry = () => {
   });
   deckCatalogs.arachnid = sortCardsByType(
     arachnidData.cards.filter((card) => !card.id.includes('token'))
+  );
+
+  // Load feline tokens (if present in the JSON)
+  if (felineData.tokens) {
+    felineData.tokens.forEach((token) => {
+      tokenRegistry.set(token.id, token);
+      cardRegistry.set(token.id, token);
+    });
+  }
+
+  // Load feline cards
+  felineData.cards.forEach((card) => {
+    cardRegistry.set(card.id, card);
+  });
+  deckCatalogs.feline = sortCardsByType(
+    felineData.cards.filter((card) => !card.id.includes('token'))
   );
 
   console.log(

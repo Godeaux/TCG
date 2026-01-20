@@ -1,0 +1,654 @@
+{
+  "meta": {
+    "deckName": "Feline",
+    "deckEmoji": "🐆",
+    "deckColor": "#C19A6B",
+    "status": "experimental",
+    "description": "Choose your hunting style: Ambush Predators stalk and pounce for burst damage, Pursuit Hunters use speed to overwhelm, or Pride Hunters coordinate attacks with pack tactics."
+  },
+  "tokens": [
+    {
+      "id": "token-cub",
+      "name": "Cub",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 0,
+      "keywords": [],
+      "tribe": "Feline",
+      "isToken": true
+    },
+    {
+      "id": "token-pride-cub",
+      "name": "Pride Cub",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 0,
+      "keywords": ["Pride"],
+      "tribe": "Feline",
+      "isToken": true
+    },
+    {
+      "id": "token-wounded-prey",
+      "name": "Wounded Prey",
+      "type": "Prey",
+      "atk": 0,
+      "hp": 1,
+      "nutrition": 2,
+      "keywords": ["Passive"],
+      "tribe": "Feline",
+      "isToken": true
+    }
+  ],
+  "cards": [
+    {
+      "_comment": "=== AMBUSH SPECIALISTS (Stalk/Pounce archetype) - Patient solo hunters ===",
+      "id": "feline-prey-sand-cat",
+      "name": "Sand Cat",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": ["Hidden"],
+      "tribe": "Feline",
+      "effects": {
+        "onPlay": { "type": "stalkRandomEnemy" }
+      }
+    },
+    {
+      "id": "feline-prey-black-footed-cat",
+      "name": "Black-Footed Cat",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Ambush"],
+      "tribe": "Feline"
+    },
+    {
+      "id": "feline-prey-pallas-cat",
+      "name": "Pallas's Cat",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": ["Barrier"],
+      "tribe": "Feline",
+      "effects": {
+        "onSlain": { "type": "stalkRandomEnemy" }
+      }
+    },
+    {
+      "id": "feline-prey-jungle-cat",
+      "name": "Jungle Cat",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": ["Hidden"],
+      "tribe": "Feline"
+    },
+    {
+      "id": "feline-prey-african-wildcat",
+      "name": "African Wildcat",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Feline",
+      "effects": {
+        "onPlay": { "type": "stalkTarget" }
+      }
+    },
+    {
+      "id": "feline-prey-european-wildcat",
+      "name": "European Wildcat",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": [],
+      "tribe": "Feline",
+      "effects": {
+        "onDefend": { "type": "damageCreature", "params": { "targetType": "attacker", "amount": 1 } }
+      }
+    },
+    {
+      "id": "feline-prey-rusty-spotted-cat",
+      "name": "Rusty-Spotted Cat",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 0,
+      "keywords": ["Free Play"],
+      "tribe": "Feline",
+      "effects": {
+        "onPlay": { "type": "stalkRandomEnemy" }
+      }
+    },
+    {
+      "id": "feline-prey-flat-headed-cat",
+      "name": "Flat-Headed Cat",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Feline",
+      "effects": {
+        "onPlay": { "type": "drawIfEnemyStalked" }
+      }
+    },
+    {
+      "_comment": "=== PURSUIT SPECIALISTS (Speed archetype) - Fast aggro hunters ===",
+      "id": "feline-prey-serval",
+      "name": "Serval",
+      "type": "Prey",
+      "atk": 3,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Haste"],
+      "tribe": "Feline"
+    },
+    {
+      "id": "feline-prey-caracal",
+      "name": "Caracal",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": ["Haste", "Acuity"],
+      "tribe": "Feline"
+    },
+    {
+      "id": "feline-prey-african-golden-cat",
+      "name": "African Golden Cat",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": ["Haste"],
+      "tribe": "Feline"
+    },
+    {
+      "id": "feline-prey-asian-golden-cat",
+      "name": "Asian Golden Cat",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": ["Haste"],
+      "tribe": "Feline"
+    },
+    {
+      "id": "feline-prey-jaguarundi",
+      "name": "Jaguarundi",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Haste"],
+      "tribe": "Feline"
+    },
+    {
+      "id": "feline-prey-geoffroys-cat",
+      "name": "Geoffroy's Cat",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Haste"],
+      "tribe": "Feline"
+    },
+    {
+      "id": "feline-prey-pampas-cat",
+      "name": "Pampas Cat",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Feline",
+      "effects": {
+        "onPlay": { "type": "chasePrey", "params": { "atkBonus": 1 } }
+      }
+    },
+    {
+      "id": "feline-prey-bay-cat",
+      "name": "Bay Cat",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Haste"],
+      "tribe": "Feline",
+      "effects": {
+        "onPlay": { "type": "draw", "params": { "count": 1 } }
+      }
+    },
+    {
+      "_comment": "=== PRIDE HUNTERS (Pack tactics archetype) - Coordinated lion attacks ===",
+      "id": "feline-prey-lioness",
+      "name": "Lioness",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": ["Pride"],
+      "tribe": "Feline"
+    },
+    {
+      "id": "feline-prey-young-lion",
+      "name": "Young Lion",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": ["Pride"],
+      "tribe": "Feline"
+    },
+    {
+      "id": "feline-prey-lion-cub",
+      "name": "Lion Cub",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 0,
+      "keywords": ["Pride"],
+      "tribe": "Feline",
+      "summons": ["token-pride-cub"],
+      "effects": {
+        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-pride-cub"] } }
+      }
+    },
+    {
+      "id": "feline-prey-asiatic-lioness",
+      "name": "Asiatic Lioness",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": ["Pride", "Barrier"],
+      "tribe": "Feline"
+    },
+    {
+      "id": "feline-prey-white-lion",
+      "name": "White Lion",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 3,
+      "nutrition": 1,
+      "keywords": ["Pride"],
+      "tribe": "Feline",
+      "effects": {
+        "onPlay": { "type": "coordinatedStrike", "params": { "atkBonus": 1 } }
+      }
+    },
+    {
+      "id": "feline-prey-barbary-lioness",
+      "name": "Barbary Lioness",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 3,
+      "nutrition": 2,
+      "keywords": ["Pride"],
+      "tribe": "Feline"
+    },
+    {
+      "id": "feline-prey-cave-lioness",
+      "name": "Cave Lioness",
+      "type": "Prey",
+      "atk": 3,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": ["Pride"],
+      "tribe": "Feline"
+    },
+    {
+      "id": "feline-prey-tsavo-lioness",
+      "name": "Tsavo Lioness",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": ["Pride"],
+      "tribe": "Feline",
+      "effects": {
+        "onSlain": { "type": "coordinatedStrike", "params": { "atkBonus": 1 } }
+      }
+    },
+    {
+      "_comment": "=== PREDATORS - AMBUSH MASTERS ===",
+      "id": "feline-predator-bengal-tiger",
+      "name": "Bengal Tiger",
+      "type": "Predator",
+      "atk": 4,
+      "hp": 4,
+      "keywords": ["Pounce 2"],
+      "tribe": "Feline",
+      "consumesType": "Prey",
+      "effects": {
+        "onPlay": { "type": "stalkTarget" },
+        "onConsume": { "type": "damageStalked", "params": { "damage": 2 } }
+      }
+    },
+    {
+      "id": "feline-predator-jaguar",
+      "name": "Jaguar",
+      "type": "Predator",
+      "atk": 4,
+      "hp": 3,
+      "keywords": ["Pounce 2", "Acuity"],
+      "tribe": "Feline",
+      "consumesType": "Prey",
+      "effects": {
+        "onConsume": { "type": "stalkAllEnemies" }
+      }
+    },
+    {
+      "id": "feline-predator-snow-leopard",
+      "name": "Snow Leopard",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 3,
+      "keywords": ["Hidden", "Pounce 2"],
+      "tribe": "Feline",
+      "consumesType": "Prey"
+    },
+    {
+      "id": "feline-predator-clouded-leopard",
+      "name": "Clouded Leopard",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 2,
+      "keywords": ["Acuity", "Pounce 1"],
+      "tribe": "Feline",
+      "consumesType": "Prey",
+      "effects": {
+        "onPlay": { "type": "stalkRandomEnemy" }
+      }
+    },
+    {
+      "_comment": "=== PREDATORS - PURSUIT APEX ===",
+      "id": "feline-predator-cheetah",
+      "name": "Cheetah",
+      "type": "Predator",
+      "atk": 4,
+      "hp": 2,
+      "keywords": ["Haste"],
+      "tribe": "Feline",
+      "consumesType": "Prey",
+      "effects": {
+        "onConsume": { "type": "grantKeyword", "params": { "targetType": "self", "keyword": "Ambush" } }
+      }
+    },
+    {
+      "id": "feline-predator-cougar",
+      "name": "Cougar",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 3,
+      "keywords": ["Haste", "Ambush"],
+      "tribe": "Feline",
+      "consumesType": "Prey"
+    },
+    {
+      "id": "feline-predator-eurasian-lynx",
+      "name": "Eurasian Lynx",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 3,
+      "keywords": ["Haste"],
+      "tribe": "Feline",
+      "consumesType": "Prey",
+      "effects": {
+        "onConsume": { "type": "draw", "params": { "count": 1 } }
+      }
+    },
+    {
+      "id": "feline-predator-iberian-lynx",
+      "name": "Iberian Lynx",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 2,
+      "keywords": ["Haste"],
+      "tribe": "Feline",
+      "consumesType": "Prey",
+      "effects": {
+        "onPlay": { "type": "draw", "params": { "count": 1 } }
+      }
+    },
+    {
+      "_comment": "=== PREDATORS - PRIDE LEADERS ===",
+      "id": "feline-predator-african-lion",
+      "name": "African Lion",
+      "type": "Predator",
+      "atk": 4,
+      "hp": 4,
+      "keywords": ["Pride"],
+      "tribe": "Feline",
+      "consumesType": "Prey",
+      "effects": {
+        "onPlay": { "type": "coordinatedStrike", "params": { "atkBonus": 1 } },
+        "onConsume": { "type": "coordinatedStrike", "params": { "atkBonus": 1 } }
+      }
+    },
+    {
+      "id": "feline-predator-barbary-lion",
+      "name": "Barbary Lion",
+      "type": "Predator",
+      "atk": 5,
+      "hp": 4,
+      "keywords": ["Pride"],
+      "tribe": "Feline",
+      "consumesType": "Prey"
+    },
+    {
+      "id": "feline-predator-pride-matriarch",
+      "name": "Pride Matriarch",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 4,
+      "keywords": ["Pride"],
+      "tribe": "Feline",
+      "consumesType": "Prey",
+      "summons": ["token-pride-cub"],
+      "effects": {
+        "onStart": { "type": "summonTokens", "params": { "tokenIds": ["token-pride-cub"] } }
+      }
+    },
+    {
+      "id": "feline-predator-king-of-beasts",
+      "name": "King of Beasts",
+      "type": "Predator",
+      "atk": 5,
+      "hp": 5,
+      "keywords": ["Pride"],
+      "tribe": "Feline",
+      "consumesType": "Prey",
+      "effects": {
+        "onConsume": { "type": "coordinatedStrike", "params": { "atkBonus": 2 } }
+      }
+    },
+    {
+      "_comment": "=== SPELLS ===",
+      "id": "feline-spell-ambush-strike",
+      "name": "Ambush Strike",
+      "type": "Spell",
+      "tribe": "Feline",
+      "effects": {
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "friendly-creatures",
+            "title": "Choose a creature to empower",
+            "effect": { "buffAtk": 2, "keyword": "Haste" }
+          }
+        }
+      }
+    },
+    {
+      "id": "feline-spell-swift-chase",
+      "name": "Swift Chase",
+      "type": "Spell",
+      "tribe": "Feline",
+      "effects": {
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "friendly-creatures",
+            "title": "Choose a creature to give the chase",
+            "effect": { "buffAtk": 2, "buffHp": 1, "keyword": "Haste" }
+          }
+        }
+      }
+    },
+    {
+      "id": "feline-spell-pride-tactics",
+      "name": "Pride Tactics",
+      "type": "Spell",
+      "tribe": "Feline",
+      "effects": {
+        "effect": { "type": "coordinatedStrike", "params": { "atkBonus": 2 } }
+      }
+    },
+    {
+      "id": "feline-spell-territorial-roar",
+      "name": "Territorial Roar",
+      "type": "Spell",
+      "tribe": "Feline",
+      "effects": {
+        "effect": { "type": "selectEnemyToReturn" }
+      }
+    },
+    {
+      "id": "feline-spell-apex-strike",
+      "name": "Apex Strike",
+      "type": "Spell",
+      "tribe": "Feline",
+      "effects": {
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "enemy-creatures",
+            "title": "Choose a creature to strike",
+            "effect": { "damage": 4 }
+          }
+        }
+      }
+    },
+    {
+      "id": "feline-spell-patient-stalker",
+      "name": "Patient Stalker",
+      "type": "Spell",
+      "tribe": "Feline",
+      "effects": {
+        "effect": [
+          { "type": "stalkAllEnemies" },
+          { "type": "draw", "params": { "count": 1 } }
+        ]
+      }
+    },
+    {
+      "_comment": "=== FREE SPELLS ===",
+      "id": "feline-freespell-quick-pounce",
+      "name": "Quick Pounce",
+      "type": "Free Spell",
+      "tribe": "Feline",
+      "effects": {
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "friendly-creatures",
+            "title": "Choose a creature to grant Haste",
+            "effect": { "keyword": "Haste" }
+          }
+        }
+      }
+    },
+    {
+      "id": "feline-freespell-feline-grace",
+      "name": "Feline Grace",
+      "type": "Free Spell",
+      "tribe": "Feline",
+      "effects": {
+        "effect": { "type": "grantBarrier" }
+      }
+    },
+    {
+      "id": "feline-freespell-night-eyes",
+      "name": "Night Eyes",
+      "type": "Free Spell",
+      "tribe": "Feline",
+      "effects": {
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "friendly-creatures",
+            "title": "Choose a creature to grant Acuity",
+            "effect": { "keyword": "Acuity" }
+          }
+        }
+      }
+    },
+    {
+      "id": "feline-freespell-primal-instinct",
+      "name": "Primal Instinct",
+      "type": "Free Spell",
+      "tribe": "Feline",
+      "effects": {
+        "effect": { "type": "draw", "params": { "count": 1 } }
+      }
+    },
+    {
+      "_comment": "=== TRAPS ===",
+      "id": "feline-trap-hidden-in-grass",
+      "name": "Hidden in the Grass",
+      "type": "Trap",
+      "trigger": "directAttack",
+      "tribe": "Feline",
+      "effects": {
+        "effect": [
+          { "type": "damageCreature", "params": { "targetType": "attacker", "amount": 3 } },
+          { "type": "negateAttack" }
+        ]
+      }
+    },
+    {
+      "id": "feline-trap-from-the-trees",
+      "name": "From the Trees",
+      "type": "Trap",
+      "trigger": "creatureAttacks",
+      "tribe": "Feline",
+      "effects": {
+        "effect": { "type": "damageCreature", "params": { "targetType": "attacker", "amount": 2 } }
+      }
+    },
+    {
+      "id": "feline-trap-coordinated-ambush",
+      "name": "Coordinated Ambush",
+      "type": "Trap",
+      "trigger": "directAttack",
+      "tribe": "Feline",
+      "summons": ["token-cub"],
+      "effects": {
+        "effect": [
+          { "type": "damageCreature", "params": { "targetType": "attacker", "amount": 2 } },
+          { "type": "summonTokens", "params": { "tokenIds": ["token-cub", "token-cub"] } }
+        ]
+      }
+    },
+    {
+      "id": "feline-trap-patient-hunter",
+      "name": "Patient Hunter",
+      "type": "Trap",
+      "trigger": "creatureAttacks",
+      "tribe": "Feline",
+      "effects": {
+        "effect": { "type": "stalkAttacker" }
+      }
+    }
+  ]
+}
