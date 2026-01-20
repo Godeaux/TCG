@@ -240,7 +240,7 @@
       "type": "Spell",
       "tribe": "Arachnid",
       "effects": {
-        "onPlay": { "type": "webAllEnemies" }
+        "effect": { "type": "webAllEnemies" }
       }
     },
     {
@@ -249,7 +249,7 @@
       "type": "Spell",
       "tribe": "Arachnid",
       "effects": {
-        "onPlay": {
+        "effect": {
           "type": "selectFromGroup",
           "params": {
             "targetGroup": "enemy-creatures",
@@ -266,7 +266,7 @@
       "type": "Free Spell",
       "tribe": "Arachnid",
       "effects": {
-        "onPlay": { "type": "webTarget" }
+        "effect": { "type": "webTarget" }
       }
     },
     {
@@ -276,7 +276,7 @@
       "trigger": "directAttack",
       "tribe": "Arachnid",
       "effects": {
-        "onTrigger": [
+        "effect": [
           { "type": "webAttacker" },
           { "type": "negateAttack" }
         ]

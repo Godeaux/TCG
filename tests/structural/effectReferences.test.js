@@ -133,6 +133,15 @@ const KNOWN_EFFECT_TYPES = [
   'howl',
   'howlBuff',
   'howlKeyword',
+
+  // Arachnid web effects
+  'webAllEnemies',
+  'webAttacker',
+  'webTarget',
+  'webRandomEnemy',
+  'damageWebbed',
+  'drawPerWebbed',
+  'healPerWebbed',
 ];
 
 /**

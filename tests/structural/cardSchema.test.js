@@ -87,14 +87,29 @@ describe('Card Schema Validation', () => {
       (c) => c.keywords && c.keywords.length > 0
     );
 
+    // Keywords that can have numeric values (e.g., "Venom 2", "Pack 3")
+    const numericKeywordBases = ['Venom', 'Pack'];
+
+    const isValidKeyword = (keyword) => {
+      // Direct match
+      if (validKeywords.includes(keyword)) return true;
+      // Check numeric keyword pattern (e.g., "Venom 2")
+      for (const base of numericKeywordBases) {
+        if (keyword.startsWith(base + ' ') && /^\d+$/.test(keyword.slice(base.length + 1))) {
+          return true;
+        }
+      }
+      return false;
+    };
+
     cardsWithKeywords.forEach((card) => {
       describe(`${card.id}`, () => {
         it('has only valid keywords', () => {
           card.keywords.forEach((keyword) => {
             expect(
-              validKeywords,
+              isValidKeyword(keyword),
               `Invalid keyword "${keyword}" on card ${card.id}`
-            ).toContain(keyword);
+            ).toBe(true);
           });
         });
       });
