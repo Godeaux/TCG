@@ -4185,59 +4185,6 @@ button {
   border-left-color: #22c55e;
 }
 
-/* Bug pause indicator */
-.bug-pause-indicator {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  animation: bug-pause-fade-in 0.3s ease-out;
-}
-
-@keyframes bug-pause-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.bug-pause-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  padding: 32px 48px;
-  background: linear-gradient(135deg, rgba(255, 50, 50, 0.2), rgba(100, 0, 0, 0.3));
-  border: 2px solid #ff4444;
-  border-radius: 16px;
-  box-shadow: 0 0 30px rgba(255, 0, 0, 0.4), inset 0 0 20px rgba(255, 0, 0, 0.1);
-}
-
-.bug-pause-icon {
-  font-size: 48px;
-  font-weight: bold;
-  color: #ff4444;
-  text-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
-  animation: bug-icon-pulse 1s ease-in-out infinite;
-}
-
-@keyframes bug-icon-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-}
-
-.bug-pause-text {
-  font-size: 18px;
-  color: #ffaaaa;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-}
-
 .deck-select-card {
   display: flex;
   flex-direction: column;

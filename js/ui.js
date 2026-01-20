@@ -3830,51 +3830,6 @@ const setupClickAwayHandler = () => {
 };
 
 /**
- * Set up click-to-continue handler for bug detector pause
- * When a bug is detected in AI vs AI mode, clicking anywhere resumes execution
- */
-const setupBugDetectorResumeHandler = () => {
-  const gameContainer = document.querySelector('.game-container');
-  if (!gameContainer) return;
-
-  // Add a visible pause indicator element
-  let pauseIndicator = document.getElementById('bug-pause-indicator');
-  if (!pauseIndicator) {
-    pauseIndicator = document.createElement('div');
-    pauseIndicator.id = 'bug-pause-indicator';
-    pauseIndicator.className = 'bug-pause-indicator';
-    pauseIndicator.innerHTML = `
-      <div class="bug-pause-content">
-        <span class="bug-pause-icon">BUG</span>
-        <span class="bug-pause-text">Click anywhere to continue</span>
-      </div>
-    `;
-    pauseIndicator.style.display = 'none';
-    document.body.appendChild(pauseIndicator);
-  }
-
-  // Click handler to resume bug detector
-  document.body.addEventListener('click', (e) => {
-    const detector = getBugDetector();
-    if (detector?.isPaused()) {
-      console.log('[UI] Resuming bug detector from click');
-      pauseIndicator.style.display = 'none';
-      detector.resume();
-    }
-  });
-
-  // Show/hide pause indicator based on detector state
-  setInterval(() => {
-    const detector = getBugDetector();
-    if (detector?.isPaused() && pauseIndicator.style.display === 'none') {
-      pauseIndicator.style.display = 'flex';
-    } else if (!detector?.isPaused() && pauseIndicator.style.display === 'flex') {
-      pauseIndicator.style.display = 'none';
-    }
-  }, 100);
-};
-
-/**
  * Set up the bug reporting button
  * Uses latestState to get current profile ID for submissions
  * @param {boolean} includeSimStats - Whether to include the simulation stats option
@@ -3898,10 +3853,17 @@ const setupBugReportButton = (includeSimStats = false) => {
 
 /**
  * Re-initialize bug button to show simulation stats option (for AI vs AI mode)
+ * Also enables simulation mode on the bug detector (no pause on bugs)
  * Called when entering AI vs AI mode
  */
 export const enableSimulationMode = () => {
   setupBugReportButton(true);
+
+  // Enable simulation mode on the bug detector so it doesn't pause on bugs
+  const detector = getBugDetector();
+  if (detector) {
+    detector.enableSimulationMode();
+  }
 };
 
 // Initialize mobile features and log card links when DOM is ready
@@ -3913,7 +3875,6 @@ if (typeof window !== 'undefined') {
       setupSurrenderButton();
       setupResyncButton();
       setupClickAwayHandler();
-      setupBugDetectorResumeHandler();
       initCardTooltip();
       setupBugReportButton();
     });
@@ -3923,7 +3884,6 @@ if (typeof window !== 'undefined') {
     setupSurrenderButton();
     setupResyncButton();
     setupClickAwayHandler();
-    setupBugDetectorResumeHandler();
     initCardTooltip();
     setupBugReportButton();
   }

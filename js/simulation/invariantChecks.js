@@ -82,6 +82,12 @@ export const checkDuplicateIds = (state) => {
       player.deck?.forEach((card, idx) => {
         if (card?.instanceId === id) locations.push(`P${pIdx + 1} deck[${idx}]`);
       });
+      player.exile?.forEach((card, idx) => {
+        if (card?.instanceId === id) locations.push(`P${pIdx + 1} exile[${idx}]`);
+      });
+      player.traps?.forEach((card, idx) => {
+        if (card?.instanceId === id) locations.push(`P${pIdx + 1} traps[${idx}]`);
+      });
     });
     return locations;
   };

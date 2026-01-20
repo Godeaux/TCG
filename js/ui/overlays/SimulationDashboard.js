@@ -239,7 +239,7 @@ const renderBugsTab = (stats) => {
                 <span class="sim-bug-type">${escapeHtml(formatBugType(bug.type))}</span>
                 <span class="sim-bug-count">x${bug.occurrenceCount}</span>
               </div>
-              <div class="sim-bug-message">${escapeHtml(truncate(bug.message || bug.sampleReports?.[0]?.message, 100))}</div>
+              <div class="sim-bug-message">${escapeHtml(bug.message || bug.sampleReports?.[0]?.message || 'No message')}</div>
               <div class="sim-bug-meta">
                 <span class="sim-bug-severity">${bug.severity}</span>
                 <span class="sim-bug-date">Last: ${formatTimeAgo(bug.lastSeen)}</span>
@@ -379,12 +379,6 @@ const formatBugType = (type) => {
   return (type || 'unknown')
     .replace(/_/g, ' ')
     .replace(/\b\w/g, c => c.toUpperCase());
-};
-
-const truncate = (str, maxLen) => {
-  if (!str) return '';
-  if (str.length <= maxLen) return str;
-  return str.substring(0, maxLen - 3) + '...';
 };
 
 const formatTimeAgo = (timestamp) => {

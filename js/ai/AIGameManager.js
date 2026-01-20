@@ -118,8 +118,8 @@ export const initializeAI = (state, options = {}) => {
         console.log('[AIManager] Bug detector resumed');
       },
     });
-    getBugDetector().enable();
-    logMessage(state, `Bug detector enabled.`);
+    getBugDetector().enable({ simulationMode: true });
+    logMessage(state, `Bug detector enabled (simulation mode - bugs won't pause game).`);
 
     // Connect simulation harness to bug detector for analytics
     connectToBugDetector();
