@@ -387,9 +387,10 @@ export const recordBug = async (fingerprint, bugData) => {
 
       let record;
       if (existing) {
-        // Update existing bug
+        // Update existing bug - always use latest message for display
         record = {
           ...existing,
+          message: bugData.message, // Update to latest message
           occurrenceCount: existing.occurrenceCount + 1,
           lastSeen: now,
           // Keep last 5 sample reports
