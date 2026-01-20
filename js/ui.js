@@ -999,7 +999,7 @@ const updatePlayerStats = (state, index, role, onUpdate = null) => {
       carrionEl.innerHTML = `<span style="color: var(--prey);">${player.carrion.length}</span> / <span style="color: var(--hp-red);">${opponent.carrion.length}</span>`;
     }
     if (exileEl) {
-      exileEl.textContent = player.exile.length;
+      exileEl.innerHTML = `<span style="color: var(--prey);">${player.exile.length}</span> / <span style="color: var(--hp-red);">${opponent.exile.length}</span>`;
     }
 
     // Update advantage display
