@@ -15,7 +15,7 @@
  * - getCardEffectSummary: Effect text generation
  */
 
-import { KEYWORD_DESCRIPTIONS, areAbilitiesActive, getEffectiveAttack } from '../../keywords.js';
+import { KEYWORD_DESCRIPTIONS, areAbilitiesActive, getEffectiveAttack, hasShell, hasMolt } from '../../keywords.js';
 import { hasCardImage, getCardImagePath } from '../../cardImages.js';
 import { getCardDefinitionById } from '../../cards/index.js';
 
@@ -575,6 +575,14 @@ export const getStatusIndicators = (card) => {
   }
   if (card.isToken) {
     indicators.push('⚪');
+  }
+  // Crustacean Shell indicator - show 🦀 + current shell amount
+  if (hasShell(card) && card.currentShell > 0) {
+    indicators.push(`🦀${card.currentShell}`);
+  }
+  // Crustacean Molt indicator - show 🐚 only if hasn't molted yet
+  if (hasMolt(card) && !card.hasMolted) {
+    indicators.push('🐚');
   }
   return indicators.join(' ');
 };

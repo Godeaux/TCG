@@ -272,17 +272,6 @@
       "flavorText": "Filters nutrients from the current."
     },
     {
-      "id": "crustacean-prey-skeleton-shrimp",
-      "name": "Skeleton Shrimp",
-      "type": "Prey",
-      "tribe": "Crustacean",
-      "cost": 3,
-      "atk": 1,
-      "hp": 3,
-      "keywords": ["Molt", "Molt"],
-      "flavorText": "Can molt twice before truly dying."
-    },
-    {
       "id": "crustacean-predator-pistol-shrimp",
       "name": "Pistol Shrimp",
       "type": "Predator",
@@ -445,23 +434,6 @@
         }
       },
       "flavorText": "Flat antenna serve as shields."
-    },
-    {
-      "id": "crustacean-prey-squat-lobster",
-      "name": "Squat Lobster",
-      "type": "Prey",
-      "tribe": "Crustacean",
-      "cost": 2,
-      "atk": 1,
-      "hp": 2,
-      "keywords": [],
-      "effects": {
-        "onPlay": {
-          "type": "draw",
-          "params": { "count": 1 }
-        }
-      },
-      "flavorText": "Not a true lobster, but just as scrappy."
     },
     {
       "id": "crustacean-predator-coconut-crab",

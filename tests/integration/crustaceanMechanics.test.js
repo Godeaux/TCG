@@ -481,25 +481,6 @@ describe('Molt Keyword', () => {
   // MOLT EDGE CASES
   // ==========================================
   describe('Molt Edge Cases', () => {
-    it('Skeleton Shrimp with double Molt can survive twice', () => {
-      const cardDef = getCardDefinitionById('crustacean-prey-skeleton-shrimp');
-      // Skeleton Shrimp has ["Molt", "Molt"]
-      expect(cardDef.keywords.filter((k) => k === 'Molt').length).toBe(2);
-
-      const creature = createCardInstance(cardDef, state.turn);
-      state.players[0].field[0] = creature;
-
-      // First molt
-      creature.currentHp = 0;
-      const firstMolt = triggerMolt(creature);
-      expect(firstMolt).toBe(true);
-      expect(creature.currentHp).toBe(1);
-
-      // Keywords are cleared, so second Molt is also removed
-      // This is intentional: Molt removes ALL keywords, including extra Molts
-      expect(creature.keywords.length).toBe(0);
-    });
-
     it('Molt creature attacked from behind Barrier still has Molt', () => {
       const { creature } = createTestCreature('crustacean-prey-glass-shrimp', 0, 0, state);
       creature.hasBarrier = true;
