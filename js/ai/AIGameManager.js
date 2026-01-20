@@ -12,7 +12,14 @@
 import { createAIController } from './AIController.js';
 import { isAIMode, isAIvsAIMode, isAnyAIMode } from '../state/selectors.js';
 import { logMessage } from '../state/gameState.js';
-import { initBugDetector, getBugDetector, logBugMessage } from '../simulation/index.js';
+import {
+  initBugDetector,
+  getBugDetector,
+  logBugMessage,
+  onGameStarted as simOnGameStarted,
+  onGameEnded as simOnGameEnded,
+  connectToBugDetector,
+} from '../simulation/index.js';
 
 // ============================================================================
 // MODULE STATE
@@ -113,6 +120,13 @@ export const initializeAI = (state, options = {}) => {
     });
     getBugDetector().enable();
     logMessage(state, `Bug detector enabled.`);
+
+    // Connect simulation harness to bug detector for analytics
+    connectToBugDetector();
+
+    // Notify simulation harness that a game has started
+    simOnGameStarted(state);
+
     return;
   }
 

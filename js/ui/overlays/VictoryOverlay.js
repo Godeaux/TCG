@@ -16,6 +16,7 @@
 
 import { updatePackCount, updateProfileStats } from '../../network/lobbyManager.js';
 import { getLocalPlayerIndex } from '../../state/selectors.js';
+import { onGameEnded as simOnGameEnded, getSimulationStatus } from '../../simulation/index.js';
 
 // ============================================================================
 // DOM ELEMENTS
@@ -357,6 +358,15 @@ export const checkForVictory = (state) => {
 
     // Update profile stats and match history
     updateProfileStatsOnVictory(state, winner, loser);
+
+    // Notify simulation harness of game end (for AI vs AI analytics)
+    if (isAIvsAI) {
+      const winnerIndex = state.players.indexOf(winner);
+      state.winner = winnerIndex;
+      simOnGameEnded(state).catch(err => {
+        console.error('[VictoryOverlay] Failed to notify simulation harness:', err);
+      });
+    }
 
     // Show victory screen with pack reward if applicable
     showVictoryScreen(winner, stats, { awardPack, state, isAIvsAI });

@@ -16,6 +16,7 @@
 
 import { createSnapshot, diffSnapshots, getAllInstanceIds, getTotalCardCount } from './stateSnapshot.js';
 import { runAllInvariantChecks, checkDryDropKeywords } from './invariantChecks.js';
+import * as BugRegistry from './BugRegistry.js';
 // Effect validators removed - they re-implemented game logic which violated
 // the principle of organic bug detection. Keeping import commented for reference.
 // import { validateOnPlayTriggered, validateOnConsumeTriggered, ... } from './effectValidators.js';
@@ -753,10 +754,40 @@ export class BugDetector {
     // Add to detected bugs list
     this.bugsDetected.push(...bugReports);
 
+    // Record bugs in persistent registry (with fingerprinting)
+    bugReports.forEach(async (report) => {
+      try {
+        const context = {
+          action: report.gameContext?.action ? { type: report.gameContext.action } : null,
+          phase: report.gameContext?.phase,
+          turn: report.gameContext?.turn,
+          activePlayer: report.gameContext?.activePlayer,
+        };
+
+        const record = await BugRegistry.recordBug({
+          type: report.type,
+          severity: report.severity,
+          message: report.message,
+          details: report.details,
+          category: report.category,
+        }, context);
+
+        // Log occurrence count
+        console.log(`[BugDetector] Bug "${report.type}" recorded (occurrence #${record.occurrenceCount})`);
+
+        // Add occurrence count to report for display
+        report.occurrenceCount = record.occurrenceCount;
+        report.fingerprint = record.fingerprint;
+      } catch (error) {
+        console.error('[BugDetector] Failed to record bug in registry:', error);
+      }
+    });
+
     // Log each bug to game chat with rich info
     bugReports.forEach(report => {
-      // Log main message
-      this.logBug(state, report.message);
+      // Log main message with occurrence count if available
+      const countSuffix = report.occurrenceCount ? ` (x${report.occurrenceCount})` : '';
+      this.logBug(state, report.message + countSuffix);
 
       // Log additional context
       if (report.gameContext) {

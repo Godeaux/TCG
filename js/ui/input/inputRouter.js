@@ -16,6 +16,7 @@
  */
 
 import { initDragAndDrop, updateDragState, updateDragCallbacks } from './dragAndDrop.js';
+import { enableSimulationMode } from '../../ui.js';
 
 // ============================================================================
 // MODULE-LEVEL STATE
@@ -240,6 +241,9 @@ const startAIvsAIGame = (deck1Id, deck2Id, elements) => {
     bugsDetected: [],
     gameCount: 0,
   };
+
+  // Enable simulation mode UI (adds stats button to bug menu)
+  enableSimulationMode();
 
   // Hide the deck picker overlay
   elements.aiVsAiDeckOverlay?.classList.remove("active");

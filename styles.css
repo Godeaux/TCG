@@ -9489,3 +9489,501 @@ button {
     justify-content: center;
   }
 }
+
+/* ============================================================================
+   SIMULATION DASHBOARD
+   ============================================================================ */
+
+.simulation-dashboard-overlay {
+  z-index: 60;
+}
+
+.simulation-dashboard-overlay .overlay-content {
+  max-width: 700px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.simulation-dashboard {
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  border-radius: 18px;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+}
+
+/* Dashboard Header */
+.sim-dash-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: rgba(52, 152, 219, 0.1);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.sim-dash-header h2 {
+  margin: 0;
+  font-size: 20px;
+  color: var(--mana-blue);
+}
+
+.sim-dash-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.sim-dash-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+/* Status Bar */
+.sim-status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 13px;
+}
+
+.sim-status-indicator {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+}
+
+.sim-status-indicator.stopped {
+  background: rgba(148, 163, 184, 0.2);
+  color: var(--text-secondary);
+}
+
+.sim-status-indicator.running {
+  background: rgba(74, 222, 128, 0.2);
+  color: #4ade80;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.sim-status-indicator.paused {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.sim-game-count,
+.sim-runtime {
+  color: var(--text-secondary);
+}
+
+/* Tabs */
+.sim-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.sim-tab {
+  flex: 1;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+.sim-tab:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.sim-tab.active {
+  color: var(--mana-blue);
+}
+
+.sim-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--mana-blue);
+}
+
+/* Tab Content */
+.sim-tab-content {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.sim-section {
+  margin-bottom: 24px;
+}
+
+.sim-section:last-child {
+  margin-bottom: 0;
+}
+
+.sim-section h3 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+/* Stats Grid */
+.sim-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.sim-stat {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+}
+
+.sim-stat-value {
+  display: block;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+}
+
+.sim-stat-label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+/* Stats Row */
+.sim-stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.sim-stats-row strong {
+  color: var(--text-primary);
+}
+
+/* Win Bar */
+.sim-win-bar {
+  display: flex;
+  height: 32px;
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sim-win-p0 {
+  background: rgba(74, 222, 128, 0.3);
+  color: #4ade80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px;
+}
+
+.sim-win-p1 {
+  background: rgba(248, 113, 113, 0.3);
+  color: #f87171;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px;
+}
+
+/* Bug List in Dashboard */
+.sim-bug-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sim-bug-item {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  padding: 12px;
+  border-left: 3px solid var(--text-secondary);
+}
+
+.sim-bug-item.sev-critical {
+  border-left-color: #ef4444;
+}
+
+.sim-bug-item.sev-high {
+  border-left-color: #f97316;
+}
+
+.sim-bug-item.sev-medium {
+  border-left-color: #fbbf24;
+}
+
+.sim-bug-item.sev-low {
+  border-left-color: #94a3b8;
+}
+
+.sim-bug-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.sim-bug-type {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.sim-bug-count {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold);
+}
+
+.sim-bug-message {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.sim-bug-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.sim-bug-severity {
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* Severity Bar */
+.sim-severity-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sim-severity-bar span {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sev-critical {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.sev-high {
+  background: rgba(249, 115, 22, 0.2);
+  color: #f97316;
+}
+
+.sev-medium {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+}
+
+.sev-low {
+  background: rgba(148, 163, 184, 0.2);
+  color: #94a3b8;
+}
+
+/* Card List */
+.sim-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sim-card-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.sim-card-rank {
+  color: var(--text-muted);
+  font-weight: 600;
+  min-width: 24px;
+}
+
+.sim-card-name {
+  flex: 1;
+  color: var(--text-primary);
+}
+
+.sim-card-winrate {
+  font-weight: 700;
+  min-width: 50px;
+  text-align: right;
+}
+
+.sim-card-winrate.win-high {
+  color: #4ade80;
+}
+
+.sim-card-winrate.win-low {
+  color: #f87171;
+}
+
+.sim-card-games {
+  color: var(--text-muted);
+  font-size: 12px;
+  min-width: 70px;
+  text-align: right;
+}
+
+.sim-card-bugs {
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+.sim-card-item.bug-involved {
+  border-left: 2px solid #fbbf24;
+}
+
+/* Synergy List */
+.sim-synergy-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sim-synergy-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.sim-synergy-item.synergy-good {
+  border-left: 2px solid #4ade80;
+}
+
+.sim-synergy-item.synergy-bad {
+  border-left: 2px solid #f87171;
+}
+
+.sim-synergy-cards {
+  flex: 1;
+  color: var(--text-primary);
+}
+
+.sim-synergy-score {
+  font-weight: 700;
+  min-width: 50px;
+  text-align: right;
+  color: #4ade80;
+}
+
+.sim-synergy-item.synergy-bad .sim-synergy-score {
+  color: #f87171;
+}
+
+.sim-synergy-record {
+  color: var(--text-muted);
+  font-size: 12px;
+  min-width: 70px;
+  text-align: right;
+}
+
+/* Empty State */
+.sim-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+}
+
+.sim-empty-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+.sim-note {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+/* Actions */
+.sim-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .sim-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .sim-status-bar {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+
+  .sim-card-item,
+  .sim-synergy-item {
+    flex-wrap: wrap;
+  }
+}

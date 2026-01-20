@@ -111,6 +111,11 @@ import {
   hideBugReportOverlay,
 } from "./ui/overlays/BugReportOverlay.js";
 
+// Simulation dashboard overlay
+import {
+  showSimulationDashboard,
+} from "./ui/overlays/SimulationDashboard.js";
+
 // Bug button component
 import {
   initBugButton,
@@ -3872,8 +3877,9 @@ const setupBugDetectorResumeHandler = () => {
 /**
  * Set up the bug reporting button
  * Uses latestState to get current profile ID for submissions
+ * @param {boolean} includeSimStats - Whether to include the simulation stats option
  */
-const setupBugReportButton = () => {
+const setupBugReportButton = (includeSimStats = false) => {
   initBugButton({
     onReportBug: () => {
       const profileId = latestState?.menu?.profile?.id;
@@ -3883,7 +3889,19 @@ const setupBugReportButton = () => {
       const profileId = latestState?.menu?.profile?.id;
       showBugReportOverlay({ profileId, tab: 'list' });
     },
+    // Only include simulation stats callback if requested (AI vs AI mode)
+    onSimulationStats: includeSimStats ? () => {
+      showSimulationDashboard();
+    } : null,
   });
+};
+
+/**
+ * Re-initialize bug button to show simulation stats option (for AI vs AI mode)
+ * Called when entering AI vs AI mode
+ */
+export const enableSimulationMode = () => {
+  setupBugReportButton(true);
 };
 
 // Initialize mobile features and log card links when DOM is ready

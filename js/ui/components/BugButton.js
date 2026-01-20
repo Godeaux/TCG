@@ -15,6 +15,7 @@ let containerElement = null;
  * @param {Object} callbacks
  * @param {Function} callbacks.onReportBug - Called when "Report Bug" is clicked
  * @param {Function} callbacks.onViewBugs - Called when "View Known Bugs" is clicked
+ * @param {Function} callbacks.onSimulationStats - Called when "Simulation Stats" is clicked (AI vs AI mode)
  */
 export const initBugButton = (callbacks = {}) => {
   // Remove existing container if re-initializing
@@ -33,6 +34,14 @@ export const initBugButton = (callbacks = {}) => {
   // Set extremely high z-index via JS to ensure it's above everything
   containerElement.style.zIndex = '100000';
 
+  // Include simulation stats option if callback is provided (AI vs AI mode)
+  const simStatsOption = callbacks.onSimulationStats ? `
+      <button class="bug-menu-item" id="bug-menu-sim-stats">
+        <span class="bug-menu-icon">📊</span>
+        <span>Simulation Stats</span>
+      </button>
+  ` : '';
+
   containerElement.innerHTML = `
     <div class="bug-menu" id="bug-menu">
       <button class="bug-menu-item" id="bug-menu-report">
@@ -43,6 +52,7 @@ export const initBugButton = (callbacks = {}) => {
         <span class="bug-menu-icon">📋</span>
         <span>Known Bugs</span>
       </button>
+      ${simStatsOption}
     </div>
     <button class="bug-fab" id="bug-fab" title="Bug Reporter">
       <span class="bug-fab-icon">🐛</span>
@@ -52,6 +62,7 @@ export const initBugButton = (callbacks = {}) => {
   const fab = containerElement.querySelector('#bug-fab');
   const reportBtn = containerElement.querySelector('#bug-menu-report');
   const viewBtn = containerElement.querySelector('#bug-menu-view');
+  const simStatsBtn = containerElement.querySelector('#bug-menu-sim-stats');
 
   // Toggle menu on FAB click
   fab?.addEventListener('click', (e) => {
@@ -69,6 +80,12 @@ export const initBugButton = (callbacks = {}) => {
   viewBtn?.addEventListener('click', () => {
     hideBugMenu();
     callbacks.onViewBugs?.();
+  });
+
+  // Simulation stats action (AI vs AI only)
+  simStatsBtn?.addEventListener('click', () => {
+    hideBugMenu();
+    callbacks.onSimulationStats?.();
   });
 
   // Close menu when clicking outside
