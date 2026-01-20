@@ -524,9 +524,12 @@ export const getCardEffectSummary = (card, options = {}) => {
     if (!effectFn) {
       return '';
     }
+    // Collect all log messages for composite effects
+    const logMessages = [];
     const log = (message) => {
-      if (!summary) {
-        summary = message.replace(/^.*?\b(?:effect|triggers|summons|takes the field)\b:\s*/i, '');
+      const cleaned = message.replace(/^.*?\b(?:effect|triggers|summons|takes the field)\b:\s*/i, '');
+      if (cleaned) {
+        logMessages.push(cleaned);
       }
     };
     try {
@@ -536,6 +539,8 @@ export const getCardEffectSummary = (card, options = {}) => {
         opponent: {},
         attacker: {},
       });
+      // Join all messages with space
+      summary = logMessages.join(' ');
     } catch {
       summary = '';
     }

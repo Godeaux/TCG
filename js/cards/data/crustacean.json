@@ -349,7 +349,6 @@
           ]
         }
       },
-      "effectText": "Grant Molt to a friendly creature. Draw a card.",
       "flavorText": "The largest crustacean in the Atlantic."
     },
     {
@@ -524,7 +523,6 @@
           ]
         }
       },
-      "effectText": "Regenerate all friendly Shells to full. Draw a card.",
       "flavorText": "Steals anything it can carry."
     },
     {
@@ -572,7 +570,6 @@
           ]
         }
       },
-      "effectText": "Regenerate all friendly Shells. Heal 3 to your Rival.",
       "flavorText": "A sanctuary for the shelled."
     },
     {
@@ -591,7 +588,6 @@
           ]
         }
       },
-      "effectText": "Give all Shell creatures +2/+2. Give all Molt creatures +2/+2.",
       "flavorText": "Attack from all angles."
     },
     {
@@ -610,7 +606,6 @@
           ]
         }
       },
-      "effectText": "Grant Molt and Shell (1) to a friendly creature.",
       "flavorText": "The abyss protects its own."
     },
     {
@@ -750,7 +745,6 @@
           ]
         }
       },
-      "effectText": "Negate the attack. Deal 2 damage to the attacker.",
       "flavorText": "Once grabbed, never released."
     },
     {
