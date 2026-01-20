@@ -128,32 +128,6 @@
       }
     },
     {
-      "id": "arachnid-prey-net-casting-spider",
-      "name": "Net-casting Spider",
-      "type": "Prey",
-      "atk": 2,
-      "hp": 2,
-      "nutrition": 2,
-      "keywords": [],
-      "tribe": "Arachnid",
-      "effects": {
-        "onPlay": { "type": "webTarget" }
-      }
-    },
-    {
-      "id": "arachnid-prey-silk-spinner",
-      "name": "Silk Spinner",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 2,
-      "nutrition": 1,
-      "keywords": [],
-      "tribe": "Arachnid",
-      "effects": {
-        "onPlay": { "type": "drawPerWebbed" }
-      }
-    },
-    {
       "id": "arachnid-prey-black-widow",
       "name": "Black Widow",
       "type": "Prey",
@@ -307,19 +281,6 @@
       "nutrition": 1,
       "keywords": ["Venom 1"],
       "tribe": "Arachnid"
-    },
-    {
-      "id": "arachnid-prey-pseudoscorpion",
-      "name": "Pseudoscorpion",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": [],
-      "tribe": "Arachnid",
-      "effects": {
-        "onSlain": { "type": "damageCreature", "params": { "targetType": "attacker", "amount": 1 } }
-      }
     },
     {
       "id": "arachnid-prey-brown-recluse",
@@ -477,6 +438,39 @@
       "consumesType": "Prey",
       "effects": {
         "onPlay": { "type": "damageWebbed", "params": { "damage": 2 } }
+      }
+    },
+    {
+      "id": "arachnid-predator-ogre-faced-spider",
+      "name": "Ogre-faced Spider",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 2,
+      "keywords": ["Acuity", "Ambush"],
+      "tribe": "Arachnid",
+      "consumesType": "Prey"
+    },
+    {
+      "id": "arachnid-predator-desert-hairy-scorpion",
+      "name": "Desert Hairy Scorpion",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 3,
+      "keywords": ["Venom 1"],
+      "tribe": "Arachnid",
+      "consumesType": "Prey"
+    },
+    {
+      "id": "arachnid-predator-hobo-spider",
+      "name": "Hobo Spider",
+      "type": "Predator",
+      "atk": 2,
+      "hp": 3,
+      "keywords": [],
+      "tribe": "Arachnid",
+      "consumesType": "Prey",
+      "effects": {
+        "onDefend": { "type": "webAttacker" }
       }
     },
     {
