@@ -30,9 +30,111 @@ import { KEYWORD_DESCRIPTIONS } from '../../keywords.js';
 // MODULE-LEVEL STATE
 // ============================================================================
 
-// Tap detection for mobile (to distinguish tap from scroll)
+// Mobile touch detection
 const TAP_MAX_MOVEMENT_PX = 15; // Max pixels moved to count as tap
+const LONG_PRESS_DURATION_MS = 400; // How long to hold for preview
+const DOUBLE_TAP_MAX_DELAY_MS = 300; // Max time between taps for double-tap
+
 let touchStartPos = { x: 0, y: 0 };
+let longPressTimer = null;
+let lastTapTime = 0;
+let lastTapCardId = null;
+
+// Check if device supports touch (mobile)
+const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+/**
+ * Setup Hearthstone-style touch handlers for deck cards on mobile
+ * - Long-press (hold ~400ms) → shows expanded card preview
+ * - Double-tap → adds card to deck
+ * - No drag-and-drop on mobile
+ *
+ * @param {HTMLElement} cardElement - The card DOM element
+ * @param {Object} card - The card data object
+ * @param {Function} addCardToDeck - Callback to add the card to deck
+ */
+const setupMobileTouchHandlers = (cardElement, card, addCardToDeck) => {
+  let cardTouchStartPos = { x: 0, y: 0 };
+  let cardLongPressTimer = null;
+  let cardLastTapTime = 0;
+  let longPressTriggered = false;
+
+  // Clear any existing long press timer
+  const clearLongPress = () => {
+    if (cardLongPressTimer) {
+      clearTimeout(cardLongPressTimer);
+      cardLongPressTimer = null;
+    }
+  };
+
+  cardElement.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return;
+
+    const touch = e.touches[0];
+    cardTouchStartPos = { x: touch.clientX, y: touch.clientY };
+    longPressTriggered = false;
+
+    // Start long-press timer
+    clearLongPress();
+    cardLongPressTimer = setTimeout(() => {
+      longPressTriggered = true;
+      // Show expanded card WITHOUT tap-to-add callback (null)
+      showExpandedCard(card, cardElement, null);
+    }, LONG_PRESS_DURATION_MS);
+  }, { passive: true });
+
+  cardElement.addEventListener('touchmove', (e) => {
+    if (e.touches.length !== 1) return;
+
+    const touch = e.touches[0];
+    const dx = touch.clientX - cardTouchStartPos.x;
+    const dy = touch.clientY - cardTouchStartPos.y;
+    const movement = Math.sqrt(dx * dx + dy * dy);
+
+    // Cancel long-press if finger moved too much (user is scrolling)
+    if (movement > TAP_MAX_MOVEMENT_PX) {
+      clearLongPress();
+    }
+  }, { passive: true });
+
+  cardElement.addEventListener('touchend', (e) => {
+    clearLongPress();
+
+    // If long press was triggered, don't process as tap
+    if (longPressTriggered) {
+      longPressTriggered = false;
+      return;
+    }
+
+    if (e.changedTouches.length !== 1) return;
+
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - cardTouchStartPos.x;
+    const dy = touch.clientY - cardTouchStartPos.y;
+    const movement = Math.sqrt(dx * dx + dy * dy);
+
+    // Only process as tap if finger didn't move much
+    if (movement < TAP_MAX_MOVEMENT_PX) {
+      const now = Date.now();
+
+      // Check for double-tap on same card
+      if (now - cardLastTapTime < DOUBLE_TAP_MAX_DELAY_MS) {
+        // Double-tap: add card to deck
+        e.preventDefault();
+        addCardToDeck(card);
+        cardLastTapTime = 0; // Reset to prevent triple-tap
+      } else {
+        // Single tap: just record time for potential double-tap
+        cardLastTapTime = now;
+      }
+    }
+  });
+
+  cardElement.addEventListener('touchcancel', () => {
+    clearLongPress();
+    longPressTriggered = false;
+  });
+};
 
 // Deck options available for selection
 const DECK_OPTIONS = [
@@ -2257,40 +2359,25 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
       hideExpandedCard();
     });
 
-    // Touch to show expanded card (mobile) - tap shows card, tap again on expanded to add
-    cardElement.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 1) {
-        touchStartPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      }
-    }, { passive: true });
-
-    cardElement.addEventListener('touchend', (e) => {
-      // Only handle if this looks like a tap (not scroll)
-      if (e.changedTouches.length === 1) {
-        const touch = e.changedTouches[0];
-        const dx = touch.clientX - touchStartPos.x;
-        const dy = touch.clientY - touchStartPos.y;
-        const movement = Math.sqrt(dx * dx + dy * dy);
-
-        // Only show tooltip if finger didn't move much (tap, not scroll)
-        if (movement < TAP_MAX_MOVEMENT_PX) {
-          e.preventDefault();
-          showExpandedCard(card, cardElement, addCardToDeck);
-        }
-      }
-    });
-
-    // Make card draggable
-    cardElement.draggable = true;
-    cardElement.addEventListener('dragstart', (e) => {
-      e.dataTransfer.setData('text/plain', JSON.stringify({ cardId: card.id, source: 'catalog' }));
-      e.dataTransfer.effectAllowed = 'copy';
-      cardElement.classList.add('dragging');
-      hideExpandedCard(); // Hide tooltip when dragging starts
-    });
-    cardElement.addEventListener('dragend', () => {
-      cardElement.classList.remove('dragging');
-    });
+    // Mobile: Hearthstone-style (long-press for preview, double-tap to add, no drag)
+    // Desktop: drag-and-drop enabled
+    if (isTouchDevice()) {
+      setupMobileTouchHandlers(cardElement, card, addCardToDeck);
+      // Disable drag on mobile for deck building
+      cardElement.draggable = false;
+    } else {
+      // Desktop: Make card draggable
+      cardElement.draggable = true;
+      cardElement.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', JSON.stringify({ cardId: card.id, source: 'catalog' }));
+        e.dataTransfer.effectAllowed = 'copy';
+        cardElement.classList.add('dragging');
+        hideExpandedCard(); // Hide tooltip when dragging starts
+      });
+      cardElement.addEventListener('dragend', () => {
+        cardElement.classList.remove('dragging');
+      });
+    }
 
     deckFullRow.appendChild(cardElement);
   });
@@ -2587,40 +2674,25 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
       hideExpandedCard();
     });
 
-    // Touch to show expanded card (mobile) - tap shows card, tap again on expanded to add
-    cardElement.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 1) {
-        touchStartPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      }
-    }, { passive: true });
-
-    cardElement.addEventListener('touchend', (e) => {
-      // Only handle if this looks like a tap (not scroll)
-      if (e.changedTouches.length === 1) {
-        const touch = e.changedTouches[0];
-        const dx = touch.clientX - touchStartPos.x;
-        const dy = touch.clientY - touchStartPos.y;
-        const movement = Math.sqrt(dx * dx + dy * dy);
-
-        // Only show tooltip if finger didn't move much (tap, not scroll)
-        if (movement < TAP_MAX_MOVEMENT_PX) {
-          e.preventDefault();
-          showExpandedCard(card, cardElement, addCardToDeck);
-        }
-      }
-    });
-
-    // Make card draggable
-    cardElement.draggable = true;
-    cardElement.addEventListener('dragstart', (e) => {
-      e.dataTransfer.setData('text/plain', JSON.stringify({ cardId: card.id, source: 'catalog' }));
-      e.dataTransfer.effectAllowed = 'copy';
-      cardElement.classList.add('dragging');
-      hideExpandedCard(); // Hide tooltip when dragging starts
-    });
-    cardElement.addEventListener('dragend', () => {
-      cardElement.classList.remove('dragging');
-    });
+    // Mobile: Hearthstone-style (long-press for preview, double-tap to add, no drag)
+    // Desktop: drag-and-drop enabled
+    if (isTouchDevice()) {
+      setupMobileTouchHandlers(cardElement, card, addCardToDeck);
+      // Disable drag on mobile for deck building
+      cardElement.draggable = false;
+    } else {
+      // Desktop: Make card draggable
+      cardElement.draggable = true;
+      cardElement.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', JSON.stringify({ cardId: card.id, source: 'catalog' }));
+        e.dataTransfer.effectAllowed = 'copy';
+        cardElement.classList.add('dragging');
+        hideExpandedCard(); // Hide tooltip when dragging starts
+      });
+      cardElement.addEventListener('dragend', () => {
+        cardElement.classList.remove('dragging');
+      });
+    }
 
     deckFullRow.appendChild(cardElement);
   });
