@@ -124,92 +124,117 @@ Replace current card internal sizing with container-relative units:
 }
 ```
 
-### Phase 4: Hand-Specific Sizing for Legibility
+### Phase 4: Hand Cards Fill Their Container
+
+**Current problem:**
+```css
+.hand-panel    → height: 28vh (good - container sets available space)
+  .hand-grid   → flex: 1 (good - fills available space)
+    .card      → height: 22vh  ← BAD: ignores parent, hardcoded!
+```
 
 **File: `styles.css`**
 
-Ensure hand cards are large and legible:
+Cards should simply fill the hand-grid container:
 
 ```css
-/* Hand cards - generous sizing for readability */
+/* Hand grid is the size authority */
+.hand-grid {
+  /* Already has flex: 1, which fills .hand-container */
+  /* Add container type so we could query it if needed */
+  container-type: size;
+  container-name: hand-grid;
+}
+
+/* Hand cards fill available height, width from aspect ratio */
 .hand-grid .card {
-  /* Base height responsive to viewport, with good minimums */
-  height: clamp(180px, 25vh, 320px);
-  width: auto;
-  aspect-ratio: 5 / 7;
+  height: 100%;        /* Fill parent height */
+  width: auto;         /* Determined by aspect ratio */
+  aspect-ratio: 5 / 7; /* Standard card proportions */
+  flex: 0 0 auto;      /* Don't grow/shrink */
 }
+```
 
-/* Hand card text overrides - prioritize legibility */
-@container card (min-height: 150px) {
-  .card-name {
-    font-size: 5.5cqi;
-  }
-  .card-effect {
-    font-size: 4cqi;
-  }
-}
+**Result:**
+- `.hand-panel` controls overall hand area size (28vh or whatever)
+- Cards automatically fill that space
+- At any resolution, cards fill the same proportion of the hand area
+- Text inside cards scales via container queries (cqi/cqb)
 
-@container card (min-height: 200px) {
-  .card-name {
-    font-size: 6cqi;
-  }
-  .card-effect {
-    font-size: 4.2cqi;
-  }
-}
+**No hardcoded px values anywhere in the chain:**
+```
+viewport
+  → .hand-panel (28vh)
+    → .hand-grid (flex: 1)
+      → .card (height: 100%, aspect-ratio: 5/7)
+        → text (5cqi, 4cqi, etc.)
 ```
 
 ### Phase 5: Field Card Sizing
 
 **File: `styles.css`**
 
-Field cards can be smaller since tooltip provides detail:
+Field cards already fill their slot - just ensure consistency:
 
 ```css
 .field-slot .card {
-  height: 100%;
+  height: 100%;        /* Fill slot */
   width: auto;
   aspect-ratio: 5 / 7;
 }
-
-/* Field cards - smaller text is acceptable */
-@container card (max-height: 120px) {
-  .card-name {
-    font-size: 4cqi;
-  }
-  .card-effect {
-    font-size: 3cqi;
-  }
-  .card-stats-row {
-    font-size: 4cqi;
-  }
-}
 ```
+
+Text automatically scales smaller because the card is smaller - no special overrides needed. Container query units (cqi) handle this automatically.
 
 ### Phase 6: Tooltip/Inspector Sizing
 
 **File: `styles.css`**
 
-Tooltips should have the most readable text:
+Same principle - card fills its container:
 
 ```css
 .tooltip-card-preview .card {
   width: 100%;
   aspect-ratio: 5 / 7;
 }
-
-/* Tooltip gets largest, most readable text */
-@container card (min-width: 200px) {
-  .card-name {
-    font-size: 6cqi;
-  }
-  .card-effect {
-    font-size: 4.5cqi;
-  }
-}
 ```
 
-### Phase 7: Cleanup
+Text automatically scales larger because the tooltip card is larger. No special overrides needed.
+
+### Phase 7: Remove All Hardcoded Hand Card Overrides
+
+**File: `styles.css`**
+
+Delete all these vh-based overrides (lines ~934-971) - container queries replace them:
+
+```css
+/* DELETE ALL OF THIS: */
+.hand-grid .card .card-name { font-size: 1.4vh; }
+.hand-grid .card .card-header { padding: 0.5vh 0.6vh; }
+.hand-grid .card .card-footer { padding: 0.5vh 0.6vh; gap: 0.4vh; }
+.hand-grid .card .card-stat-box { padding: 0.3vh 0.5vh; gap: 0.3vh; }
+.hand-grid .card .card-stat-box .stat-emoji { font-size: 1.3vh; }
+.hand-grid .card .card-stat-box .stat-value { font-size: 1.4vh; }
+.hand-grid .card .card-text-area { font-size: 1.2vh; }
+.hand-grid .card .card-actions { gap: 0.4vh; }
+.hand-grid .card .card-actions button { font-size: 1.1vh; padding: 0.4vh 0.6vh; }
+```
+
+These are replaced by the base card styles using `cqi` units - no context-specific overrides needed.
+
+### Phase 8: Remove Mobile px Overrides
+
+**File: `styles.css`**
+
+Delete mobile-specific hand card overrides (lines ~5543-5606) - container queries handle all sizes:
+
+```css
+/* DELETE: mobile overrides with !important and px values */
+.hand-grid .card .card-name { font-size: 9px !important; }
+/* ... etc ... */
+```
+
+### Phase 9: JS Cleanup
 
 **Files to modify:**
 - `js/ui/components/Hand.js` - Remove `context: 'hand'` parameter
