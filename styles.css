@@ -2091,7 +2091,6 @@ button {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: 900px;
   padding-right: 6px;
 }
 
@@ -2983,6 +2982,7 @@ button {
   top: 6px;
   right: 6px;
   font-size: 12px;
+  z-index: 10;
 }
 
 .card-hit {
@@ -5705,7 +5705,7 @@ button {
   .game-log-panel {
     flex: 1;
     min-height: 0;
-    overflow: hidden;
+    overflow: auto;
     display: flex;
     flex-direction: column;
   }

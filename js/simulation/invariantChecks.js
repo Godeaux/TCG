@@ -16,6 +16,8 @@ import {
   isHarmless,
   hasKeyword,
   isFreePlay,
+  cantAttack,
+  getActivePrimitives,
 } from '../keywords.js';
 
 /**
@@ -448,37 +450,15 @@ export const checkBarrierBypass = (state, before, action) => {
 };
 
 /**
- * Check for frozen/paralyzed creature attacking
- *
- * NOTE: Per rulebook, Frozen does NOT prevent attacking - it just marks
- * the creature to die at end of controller's next turn.
- * Paralyzed is not a mechanic in this game.
- *
- * This check is disabled/returns empty - kept for potential future mechanics.
+ * Check for creature with cantAttack primitive attacking
+ * Uses the cantAttack primitive which covers: Frozen, Webbed, Passive, Harmless
  *
  * @param {Object} state - Game state after action
  * @param {Object} before - State before action
  * @param {Object} action - The action that was executed
  * @returns {Object[]} Array of bug objects
  */
-export const checkFrozenParalyzedAttack = (state, before, action) => {
-  // Frozen doesn't prevent attacking per rulebook
-  // Paralyzed doesn't exist in this game
-  return [];
-};
-
-/**
- * Check for passive creature attacking
- * Per rulebook: "Creatures with Passive cannot attack but can still be attacked."
- *
- * Note: "Harmless" keyword does not exist in this game's rulebook.
- *
- * @param {Object} state - Game state after action
- * @param {Object} before - State before action
- * @param {Object} action - The action that was executed
- * @returns {Object[]} Array of bug objects
- */
-export const checkPassiveHarmlessAttack = (state, before, action) => {
+export const checkCantAttackViolation = (state, before, action) => {
   const bugs = [];
 
   if (!action || action.type !== 'DECLARE_ATTACK') {
@@ -501,16 +481,32 @@ export const checkPassiveHarmlessAttack = (state, before, action) => {
 
   if (!attackerBefore) return bugs;
 
-  // Use isPassive() which checks areAbilitiesActive() (dry-dropped = no keywords)
-  if (isPassive(attackerBefore)) {
+  // Use cantAttack primitive - covers Frozen, Webbed, Passive, Harmless
+  if (cantAttack(attackerBefore)) {
+    const activePrimitives = getActivePrimitives(attackerBefore);
+    const reason = attackerBefore.frozen
+      ? 'Frozen'
+      : attackerBefore.webbed
+        ? 'Webbed'
+        : isPassive(attackerBefore)
+          ? 'Passive'
+          : isHarmless(attackerBefore)
+            ? 'Harmless'
+            : 'unknown status';
+
     bugs.push({
-      type: 'passive_attack',
+      type: 'cant_attack_violation',
       severity: 'high',
-      message: `RULE VIOLATED: Passive keyword. "${attackerBefore.name}" attacked despite having Passive keyword. Expected: Creatures with Passive cannot attack (can still be attacked). Actual: Attack action was executed.`,
+      message: `RULE VIOLATED: cantAttack primitive. "${attackerBefore.name}" attacked despite having ${reason} status. Expected: Creatures with cantAttack primitive cannot attack. Actual: Attack action was executed.`,
       details: {
         creature: attackerBefore.name,
         instanceId: attacker.instanceId,
-        expected: 'Passive creatures cannot attack',
+        reason,
+        activePrimitives,
+        frozen: attackerBefore.frozen,
+        webbed: attackerBefore.webbed,
+        keywords: attackerBefore.keywords,
+        expected: 'Creature with cantAttack primitive cannot attack',
         actual: 'Attack was allowed to execute',
       },
     });
@@ -518,6 +514,10 @@ export const checkPassiveHarmlessAttack = (state, before, action) => {
 
   return bugs;
 };
+
+// Legacy alias for backwards compatibility
+export const checkFrozenParalyzedAttack = checkCantAttackViolation;
+export const checkPassiveHarmlessAttack = checkCantAttackViolation;
 
 /**
  * Check for hidden/invisible creature being targeted

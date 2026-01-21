@@ -29,6 +29,9 @@ import {
   isInedible,
   hasScavenge,
   hasHaste,
+  cantAttack,
+  cantBeConsumed,
+  cantConsume,
 } from '../keywords.js';
 import { isCreatureCard, createCardInstance } from '../cardTypes.js';
 import { logMessage, queueVisualEffect } from '../state/gameState.js';
@@ -624,11 +627,11 @@ export class AIController {
     }
 
     // Find available prey for consumption (needed to check if Free Play predators can be played)
+    // Use cantBeConsumed primitive - covers Frozen, Inedible
     const availablePrey = player.field.filter(
       (c) =>
         c &&
-        !c.frozen &&
-        !isInedible(c) &&
+        !cantBeConsumed(c) &&
         (c.type === 'Prey' || (c.type === 'Predator' && isEdible(c)))
     );
     const hasConsumablePrey = availablePrey.length > 0;
@@ -928,12 +931,11 @@ export class AIController {
     const player = this.getAIPlayer(state);
     const isFree = isFreePlay(card);
 
-    // Find available prey to consume (not frozen and not inedible)
+    // Find available prey to consume - use cantBeConsumed primitive
     const availablePrey = player.field.filter(
       (c) =>
         c &&
-        !c.frozen &&
-        !isInedible(c) &&
+        !cantBeConsumed(c) &&
         (c.type === 'Prey' || (c.type === 'Predator' && isEdible(c)))
     );
 
@@ -1525,9 +1527,8 @@ export class AIController {
       if (!card || !isCreatureCard(card)) return false;
       if (card.currentHp <= 0) return false; // Dead creatures can't attack
       if (card.hasAttacked) return false;
-      if (isPassive(card)) return false;
-      if (isHarmless(card)) return false;
-      if (card.frozen || card.paralyzed) return false;
+      // Use cantAttack primitive - covers Frozen, Webbed, Passive, Harmless
+      if (cantAttack(card)) return false;
       return true;
     });
 

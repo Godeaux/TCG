@@ -33,6 +33,7 @@ import {
   isHidden,
   isInvisible,
   hasAcuity,
+  cantBeConsumed,
 } from './keywords.js';
 import { resolveEffectResult, stripAbilities } from './game/effects.js';
 import {
@@ -2850,7 +2851,7 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) 
             (slot) => slot && (slot.type === 'Prey' || (slot.type === 'Predator' && isEdible(slot)))
           )
         : [];
-    const ediblePrey = availablePrey.filter((slot) => !slot.frozen);
+    const ediblePrey = availablePrey.filter((slot) => !cantBeConsumed(slot));
     if (card.type === 'Predator' && emptySlot === -1 && ediblePrey.length === 0) {
       logMessage(state, 'No empty field slots available.');
       onUpdate?.();
@@ -2940,8 +2941,42 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) 
             player.field[placementSlot] = creature;
             clearSelectionPanel();
             triggerPlayTraps(state, creature, onUpdate, () => {
-              if (totalSelected > 0 && (creature.onConsume || creature.effects?.onConsume)) {
-                const result = resolveCardEffect(creature, 'onConsume', {
+              // Helper to trigger onConsume after onPlay completes
+              const triggerOnConsume = () => {
+                if (totalSelected > 0 && (creature.onConsume || creature.effects?.onConsume)) {
+                  const result = resolveCardEffect(creature, 'onConsume', {
+                    log: (message) => logMessage(state, message),
+                    player,
+                    opponent,
+                    creature,
+                    state,
+                    playerIndex,
+                    opponentIndex,
+                  });
+                  resolveEffectChain(
+                    state,
+                    result,
+                    {
+                      playerIndex: state.activePlayerIndex,
+                      opponentIndex: (state.activePlayerIndex + 1) % 2,
+                      card: creature,
+                    },
+                    onUpdate,
+                    () => cleanupDestroyed(state)
+                  );
+                }
+                if (consumesLimit) {
+                  state.cardPlayedThisTurn = true;
+                }
+                pendingConsumption = null;
+                onUpdate?.();
+                broadcastSyncState(state);
+              };
+
+              // Trigger onPlay first (if present), then chain to onConsume
+              if (creature.onPlay || creature.effects?.onPlay) {
+                console.log('[handlePlayCard] Triggering onPlay effect for consumed predator:', creature.name);
+                const playResult = resolveCardEffect(creature, 'onPlay', {
                   log: (message) => logMessage(state, message),
                   player,
                   opponent,
@@ -2950,24 +2985,23 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) 
                   playerIndex,
                   opponentIndex,
                 });
-                resolveEffectChain(
-                  state,
-                  result,
-                  {
-                    playerIndex: state.activePlayerIndex,
-                    opponentIndex: (state.activePlayerIndex + 1) % 2,
-                    card: creature,
-                  },
-                  onUpdate,
-                  () => cleanupDestroyed(state)
-                );
+                if (playResult) {
+                  resolveEffectChain(
+                    state,
+                    playResult,
+                    {
+                      playerIndex: state.activePlayerIndex,
+                      opponentIndex: (state.activePlayerIndex + 1) % 2,
+                      card: creature,
+                    },
+                    onUpdate,
+                    triggerOnConsume
+                  );
+                  return;
+                }
               }
-              if (consumesLimit) {
-                state.cardPlayedThisTurn = true;
-              }
-              pendingConsumption = null;
-              onUpdate?.();
-              broadcastSyncState(state);
+              // No onPlay effect, go directly to onConsume
+              triggerOnConsume();
             });
             onUpdate?.();
           },
@@ -3068,7 +3102,7 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) 
         'creature.effects?.onPlay:',
         creature.effects?.onPlay
       );
-      if (card.type === 'Prey' && (creature.onPlay || creature.effects?.onPlay)) {
+      if ((card.type === 'Prey' || card.type === 'Predator') && (creature.onPlay || creature.effects?.onPlay)) {
         console.log('[handlePlayCard] Triggering onPlay effect for:', creature.name);
         const result = resolveCardEffect(creature, 'onPlay', {
           log: (message) => logMessage(state, message),

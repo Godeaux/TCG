@@ -498,8 +498,8 @@
       "keywords": ["Molt", "Ambush"],
       "effects": {
         "onPlay": {
-          "type": "damageCreature",
-          "params": { "targetType": "enemy", "amount": 3, "sourceLabel": "devastating punch" }
+          "type": "selectEnemyCreatureForDamage",
+          "params": { "amount": 3, "label": "devastating punch" }
         }
       },
       "flavorText": "Strikes faster than a bullet."

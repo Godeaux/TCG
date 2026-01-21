@@ -845,6 +845,7 @@ const setDeckInspectorContent = (card) => {
     card.abilitiesCancelled ? '🚫 Abilities canceled' : null,
     card.hasBarrier ? '🛡️ Barrier' : null,
     card.frozen ? '❄️ Frozen' : null,
+    card.webbed ? '🕸️ Webbed' : null,
     card.isToken ? '⚪ Token' : null,
   ].filter(Boolean);
   const keywordLabel = keywords ? `Keywords: ${keywords}` : '';

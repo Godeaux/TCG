@@ -329,7 +329,7 @@ export const EFFECT_SCHEMA = {
 
   damageCreature: {
     params: {
-      targetType: { type: 'string', required: true },
+      targetType: { type: 'string', required: true, values: ['attacker', 'target', 'self'] },
       amount: { type: 'number', required: true },
       sourceLabel: { type: 'string', required: false },
     },
@@ -876,6 +876,29 @@ export const EFFECT_SCHEMA = {
       effect: { type: 'selectionEffect', required: true },
     },
     text: (p) => generateSelectionText(p),
+  },
+
+  selectEnemyCreatureForDamage: {
+    params: {
+      amount: { type: 'number', required: true },
+      label: { type: 'string', required: false },
+    },
+    text: (p) => `Deal ${p.amount} damage to target Rival's creature`,
+  },
+
+  selectEnemyToKill: {
+    params: {},
+    text: () => `Kill target Rival's creature`,
+  },
+
+  selectEnemyToFreeze: {
+    params: {},
+    text: () => `Freeze target Rival's creature`,
+  },
+
+  selectEnemyToReturn: {
+    params: {},
+    text: () => `Return target Rival's creature to their hand`,
   },
 
   // ==========================================

@@ -18,6 +18,7 @@ import {
   hasShell,
   regenerateShell,
   KEYWORDS,
+  cantAttack,
 } from '../keywords.js';
 
 // Lazy-loaded to avoid circular dependency during module initialization
@@ -471,9 +472,7 @@ export const advancePhase = (state) => {
         c &&
         (c.type === 'Predator' || c.type === 'Prey') &&
         !c.hasAttacked &&
-        !c.frozen &&
-        !c.paralyzed &&
-        !c.webbed
+        !cantAttack(c) // Use primitive - covers Frozen, Webbed, Passive, Harmless
     );
     logGameAction(
       state,

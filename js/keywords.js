@@ -34,6 +34,161 @@ export const KEYWORDS = {
   MOLT: 'Molt', // Revives once at 1 HP, loses all keywords
 };
 
+/**
+ * Primitives are the underlying behavioral traits that keywords grant.
+ * Multiple keywords can share the same primitive (e.g., Frozen and Webbed both grant cantAttack).
+ * This allows centralized checking without hardcoding keyword combinations everywhere.
+ */
+export const PRIMITIVES = {
+  CANT_ATTACK: 'cantAttack',
+  CANT_BE_CONSUMED: 'cantBeConsumed',
+  CANT_CONSUME: 'cantConsume',
+  LOSES_ON_DAMAGE: 'losesOnDamage',
+  CANT_BE_TARGETED_BY_ATTACKS: 'cantBeTargetedByAttacks',
+  CANT_BE_TARGETED_BY_SPELLS: 'cantBeTargetedBySpells',
+  DIES_END_OF_TURN: 'diesEndOfTurn',
+};
+
+/**
+ * Mapping of keywords to their primitive behaviors.
+ * This is the single source of truth for what each keyword does mechanically.
+ */
+export const KEYWORD_PRIMITIVES = {
+  [KEYWORDS.FROZEN]: [
+    PRIMITIVES.CANT_ATTACK,
+    PRIMITIVES.CANT_BE_CONSUMED,
+    PRIMITIVES.CANT_CONSUME,
+  ],
+  [KEYWORDS.WEBBED]: [PRIMITIVES.CANT_ATTACK, PRIMITIVES.LOSES_ON_DAMAGE],
+  [KEYWORDS.PASSIVE]: [PRIMITIVES.CANT_ATTACK],
+  [KEYWORDS.HARMLESS]: [PRIMITIVES.CANT_ATTACK],
+  [KEYWORDS.INEDIBLE]: [PRIMITIVES.CANT_BE_CONSUMED],
+  [KEYWORDS.HIDDEN]: [PRIMITIVES.CANT_BE_TARGETED_BY_ATTACKS],
+  [KEYWORDS.INVISIBLE]: [
+    PRIMITIVES.CANT_BE_TARGETED_BY_ATTACKS,
+    PRIMITIVES.CANT_BE_TARGETED_BY_SPELLS,
+  ],
+  [KEYWORDS.NEUROTOXINED]: [PRIMITIVES.DIES_END_OF_TURN],
+};
+
+/**
+ * Human-readable descriptions for primitives (for UI display).
+ */
+export const PRIMITIVE_DESCRIPTIONS = {
+  [PRIMITIVES.CANT_ATTACK]: 'Cannot attack',
+  [PRIMITIVES.CANT_BE_CONSUMED]: 'Cannot be consumed',
+  [PRIMITIVES.CANT_CONSUME]: 'Cannot consume prey',
+  [PRIMITIVES.LOSES_ON_DAMAGE]: 'Removed when damaged',
+  [PRIMITIVES.CANT_BE_TARGETED_BY_ATTACKS]: 'Cannot be targeted by attacks',
+  [PRIMITIVES.CANT_BE_TARGETED_BY_SPELLS]: 'Cannot be targeted by spells',
+  [PRIMITIVES.DIES_END_OF_TURN]: 'Dies at end of turn',
+};
+
+/**
+ * Check if a creature has a specific primitive behavior.
+ * Derives the answer from the creature's active keywords and boolean status flags.
+ *
+ * @param {Object} card - The creature card
+ * @param {string} primitive - The primitive to check (from PRIMITIVES)
+ * @returns {boolean} True if any active keyword grants this primitive
+ */
+export const hasPrimitive = (card, primitive) => {
+  if (!card) return false;
+
+  // Check boolean status flags first (backwards compatibility)
+  // These exist alongside keywords due to legacy code
+  if (primitive === PRIMITIVES.CANT_ATTACK) {
+    if (card.frozen || card.webbed) return true;
+  }
+  if (primitive === PRIMITIVES.CANT_BE_CONSUMED || primitive === PRIMITIVES.CANT_CONSUME) {
+    if (card.frozen) return true;
+  }
+  if (primitive === PRIMITIVES.LOSES_ON_DAMAGE) {
+    if (card.webbed) return true;
+  }
+
+  // Then check keywords
+  if (!card.keywords || !Array.isArray(card.keywords)) return false;
+  if (!areAbilitiesActive(card)) return false;
+
+  for (const keyword of card.keywords) {
+    // Handle numeric keywords like "Venom 2" - extract base keyword
+    const baseKeyword = typeof keyword === 'string' ? keyword.split(' ')[0] : keyword;
+    const primitives = KEYWORD_PRIMITIVES[baseKeyword];
+    if (primitives?.includes(primitive)) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
+/**
+ * Get all active primitives for a creature.
+ * Useful for UI display and debugging.
+ *
+ * @param {Object} card - The creature card
+ * @returns {string[]} Array of primitive names the creature currently has
+ */
+export const getActivePrimitives = (card) => {
+  if (!card) return [];
+
+  const activePrimitives = new Set();
+
+  // Check boolean status flags first (backwards compatibility)
+  // These exist even on cards without keywords arrays
+  if (card.frozen) {
+    activePrimitives.add(PRIMITIVES.CANT_ATTACK);
+    activePrimitives.add(PRIMITIVES.CANT_BE_CONSUMED);
+    activePrimitives.add(PRIMITIVES.CANT_CONSUME);
+  }
+  if (card.webbed) {
+    activePrimitives.add(PRIMITIVES.CANT_ATTACK);
+    activePrimitives.add(PRIMITIVES.LOSES_ON_DAMAGE);
+  }
+
+  // Then check keywords if they exist and abilities are active
+  if (card.keywords && Array.isArray(card.keywords) && areAbilitiesActive(card)) {
+    for (const keyword of card.keywords) {
+      const baseKeyword = typeof keyword === 'string' ? keyword.split(' ')[0] : keyword;
+      const primitives = KEYWORD_PRIMITIVES[baseKeyword];
+      if (primitives) {
+        primitives.forEach((p) => activePrimitives.add(p));
+      }
+    }
+  }
+
+  return Array.from(activePrimitives);
+};
+
+/**
+ * Convenience function: Check if creature cannot attack.
+ * @param {Object} card - The creature card
+ * @returns {boolean} True if creature cannot attack
+ */
+export const cantAttack = (card) => hasPrimitive(card, PRIMITIVES.CANT_ATTACK);
+
+/**
+ * Convenience function: Check if creature cannot be consumed.
+ * @param {Object} card - The creature card
+ * @returns {boolean} True if creature cannot be consumed
+ */
+export const cantBeConsumed = (card) => hasPrimitive(card, PRIMITIVES.CANT_BE_CONSUMED);
+
+/**
+ * Convenience function: Check if creature cannot consume prey.
+ * @param {Object} card - The creature card
+ * @returns {boolean} True if creature cannot consume
+ */
+export const cantConsume = (card) => hasPrimitive(card, PRIMITIVES.CANT_CONSUME);
+
+/**
+ * Convenience function: Check if status should be removed when damaged.
+ * @param {Object} card - The creature card
+ * @returns {boolean} True if creature has a status that clears on damage
+ */
+export const losesStatusOnDamage = (card) => hasPrimitive(card, PRIMITIVES.LOSES_ON_DAMAGE);
+
 export const KEYWORD_DESCRIPTIONS = {
   [KEYWORDS.HASTE]: 'Can attack the Rival directly on the turn it is played.',
   [KEYWORDS.FREE_PLAY]: 'Does not count toward the one-card-per-turn limit.',
@@ -55,7 +210,7 @@ export const KEYWORD_DESCRIPTIONS = {
   [KEYWORDS.POISONOUS]: 'When defending, kills the attacker after combat.',
   [KEYWORDS.HARMLESS]: 'Cannot attack (0 attack permanently).',
   [KEYWORDS.FROZEN]:
-    "Cannot attack or be consumed. Thaws at the end of the creature-owning player's turn.",
+    "Cannot attack, be consumed, or consume prey. Thaws at the end of the creature-owning player's turn.",
   // Canine keywords (Experimental)
   [KEYWORDS.PACK]: 'Gains +1 ATK for each other Canine you control.',
   [KEYWORDS.HOWL]: 'On play, triggers a Howl effect that buffs all Canines until end of turn.',

@@ -11,7 +11,7 @@
  * - Prevent scattered state access logic
  */
 
-import { isEdible, isInedible, isFreePlay } from '../keywords.js';
+import { isEdible, isInedible, isFreePlay, cantAttack, cantBeConsumed, cantConsume } from '../keywords.js';
 
 // ============================================================================
 // PLAYER SELECTORS
@@ -566,8 +566,7 @@ export const canCardBePlayed = (state, card, playerIndex) => {
       const hasConsumablePrey = player?.field.some(
         (c) =>
           c &&
-          !c.frozen &&
-          !isInedible(c) &&
+          !cantBeConsumed(c) && // Use primitive - covers Frozen, Inedible
           (c.type === 'Prey' || (c.type === 'Predator' && isEdible(c)))
       );
       if (!hasConsumablePrey) {
@@ -599,21 +598,15 @@ export const canPlayAnyCardFromHand = (state, playerIndex) => {
 
 /**
  * Get creatures that can actually attack (includes status effect checks)
- * More comprehensive than getAttackableCreatures - includes frozen/paralyzed/passive/harmless
+ * Uses cantAttack primitive - covers Frozen, Webbed, Passive, Harmless
  */
 export const getCreaturesThatCanAttack = (state, playerIndex) => {
   return getPlayerCreatures(state, playerIndex).filter((creature) => {
     // Must not have attacked already
     if (hasCreatureAttacked(creature)) return false;
 
-    // Check status effects
-    if (creature.frozen) return false;
-    if (creature.paralyzed) return false;
-
-    // Check keywords that prevent attacking
-    const isPassive = creature.keywords?.includes('Passive');
-    const isHarmless = creature.keywords?.includes('Harmless') || creature.attack === 0;
-    if (isPassive || isHarmless) return false;
+    // Use cantAttack primitive - covers Frozen, Webbed, Passive, Harmless
+    if (cantAttack(creature)) return false;
 
     // Check summoning sickness (unless Haste)
     const hasHaste = creature.keywords?.includes('Haste');
@@ -647,16 +640,15 @@ export const canConsumeAnyPrey = (state, playerIndex) => {
   const player = state.players[playerIndex];
   if (!player) return false;
 
-  // Get all predators on field that aren't frozen
-  const predators = player.field.filter((c) => c && c.type === 'Predator' && !c.frozen);
+  // Get all predators on field that can consume (not frozen)
+  const predators = player.field.filter((c) => c && c.type === 'Predator' && !cantConsume(c));
   if (predators.length === 0) return false;
 
-  // Get all consumable creatures on field (Prey or Edible Predators, not frozen, not inedible)
+  // Get all consumable creatures on field (Prey or Edible Predators, using cantBeConsumed primitive)
   const consumableCreatures = player.field.filter(
     (c) =>
       c &&
-      !c.frozen &&
-      !isInedible(c) &&
+      !cantBeConsumed(c) && // Use primitive - covers Frozen, Inedible
       (c.type === 'Prey' || (c.type === 'Predator' && isEdible(c)))
   );
   if (consumableCreatures.length === 0) return false;

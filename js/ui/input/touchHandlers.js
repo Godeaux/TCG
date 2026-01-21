@@ -28,7 +28,7 @@ import {
 import { broadcastHandDrag } from '../../network/sync.js';
 import { getActivePlayer } from '../../state/gameState.js';
 import { handlePlayCard } from '../../ui.js';
-import { isPassive, isHarmless } from '../../keywords.js';
+import { cantAttack } from '../../keywords.js';
 import { isLocalPlayersTurn } from '../../state/selectors.js';
 import { hideCardTooltipImmediate } from '../components/CardTooltip.js';
 
@@ -135,10 +135,7 @@ const canCreatureAttack = (card, state) => {
     isCombatPhase &&
     isLocalPlayersTurn(state) &&
     !card.hasAttacked &&
-    !isPassive(card) &&
-    !isHarmless(card) &&
-    !card.frozen &&
-    !card.paralyzed
+    !cantAttack(card) // Use primitive - covers Frozen, Webbed, Passive, Harmless
   );
 };
 

@@ -578,6 +578,9 @@ export const getStatusIndicators = (card) => {
   if (card.frozen) {
     indicators.push('❄️');
   }
+  if (card.webbed) {
+    indicators.push('🕸️');
+  }
   if (card.isToken) {
     indicators.push('⚪');
   }

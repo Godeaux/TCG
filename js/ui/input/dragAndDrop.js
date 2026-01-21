@@ -29,6 +29,9 @@ import {
   hasAcuity,
   hasHaste,
   hasLure,
+  cantAttack,
+  cantBeConsumed,
+  cantConsume,
 } from '../../keywords.js';
 import { hideCardTooltipImmediate } from '../components/CardTooltip.js';
 import { createCardInstance } from '../../cardTypes.js';
@@ -335,9 +338,9 @@ const canConsumePreyDirectly = (predator, prey, state) => {
   if (predator.instanceId === prey.instanceId) return false; // Can't consume itself
   if (predator.type !== 'Predator') return false;
   if (prey.type !== 'Prey' && !(prey.type === 'Predator' && isEdible(prey))) return false;
-  if (predator.frozen) return false; // Frozen predator cannot consume
-  if (prey.frozen) return false; // Frozen prey cannot be consumed
-  if (isInedible(prey)) return false; // Inedible creatures cannot be consumed
+  // Use primitives for consumption checks
+  if (cantConsume(predator)) return false; // Frozen predator cannot consume
+  if (cantBeConsumed(prey)) return false; // Frozen/Inedible prey cannot be consumed
 
   const activePlayer = getActivePlayer(state);
   if (!activePlayer.field.includes(predator) && !activePlayer.hand.includes(predator)) return false;
@@ -353,8 +356,8 @@ const canConsumePreyDirectly = (predator, prey, state) => {
  * Get all consumable prey for a predator
  */
 const getConsumablePrey = (predator, state) => {
-  // Frozen predator cannot consume any prey
-  if (predator.frozen) return [];
+  // Use primitive: predator cannot consume if frozen
+  if (cantConsume(predator)) return [];
 
   const activePlayer = getActivePlayer(state);
   const availablePrey = activePlayer.field.filter(
@@ -362,7 +365,7 @@ const getConsumablePrey = (predator, state) => {
       slot &&
       slot.instanceId !== predator.instanceId && // Can't consume itself
       (slot.type === 'Prey' || (slot.type === 'Predator' && isEdible(slot))) &&
-      !slot.frozen
+      !cantBeConsumed(slot) // Use primitive - covers Frozen, Inedible
   );
 
   const predatorAtk = predator.currentAtk ?? predator.atk ?? 0;
@@ -649,7 +652,7 @@ const placeCreatureInSpecificSlot = (card, slotIndex) => {
     const availablePrey = player.field.filter(
       (slot) => slot && (slot.type === 'Prey' || (slot.type === 'Predator' && isEdible(slot)))
     );
-    const ediblePrey = availablePrey.filter((slot) => !slot.frozen && !isInedible(slot));
+    const ediblePrey = availablePrey.filter((slot) => !cantBeConsumed(slot));
 
     // Free Play predators need either: available prey to consume, OR card limit available
     // Non-Free Play predators always need card limit available
@@ -709,7 +712,7 @@ const placeCreatureInSpecificSlot = (card, slotIndex) => {
       'creature.effects?.onPlay:',
       creature.effects?.onPlay
     );
-    if (card.type === 'Prey' && (creature.onPlay || creature.effects?.onPlay)) {
+    if ((card.type === 'Prey' || card.type === 'Predator') && (creature.onPlay || creature.effects?.onPlay)) {
       console.log('[placeCreatureInSpecificSlot] Triggering onPlay effect for:', creature.name);
       const player = getActivePlayer(state);
       const playerIndex = state.activePlayerIndex;
@@ -952,22 +955,18 @@ const handlePlayerDrop = (card, playerBadge) => {
   const lureCreatures = targetableCreatures.filter((c) => hasLure(c));
   const lureBlocksDirectAttack = lureCreatures.length > 0;
 
-  const canAttack =
+  const canAttackCheck =
     isCardOnOurField &&
     isTargetOpponent &&
     isLocalPlayersTurn(latestState) &&
     latestState.phase === 'Combat' &&
     !card.hasAttacked &&
-    !isPassive(card) &&
-    !isHarmless(card) &&
-    !card.frozen &&
-    !card.paralyzed &&
-    !card.webbed &&
+    !cantAttack(card) && // Use primitive - covers Frozen, Webbed, Passive, Harmless
     isCreature &&
     canAttackPlayerDirectly &&
     !lureBlocksDirectAttack;
 
-  if (!canAttack) {
+  if (!canAttackCheck) {
     // Provide specific error messages for each failure condition
     if (!isCreature) {
       logMessage(latestState, 'Only creatures can attack.');
@@ -983,8 +982,6 @@ const handlePlayerDrop = (card, playerBadge) => {
       logMessage(latestState, `${card.name} has already attacked this turn.`);
     } else if (card.frozen) {
       logMessage(latestState, `${card.name} is frozen and cannot attack.`);
-    } else if (card.paralyzed) {
-      logMessage(latestState, `${card.name} is paralyzed and cannot attack.`);
     } else if (card.webbed) {
       logMessage(latestState, `${card.name} is trapped in a web and cannot attack.`);
     } else if (isPassive(card)) {
@@ -1054,18 +1051,14 @@ const handleCreatureDrop = (attacker, target) => {
   }
 
   const isCreature = attacker.type === 'Predator' || attacker.type === 'Prey';
-  const canAttack =
+  const canAttackCheck =
     isLocalPlayersTurn(latestState) &&
     latestState.phase === 'Combat' &&
     !attacker.hasAttacked &&
-    !isPassive(attacker) &&
-    !isHarmless(attacker) &&
-    !attacker.frozen &&
-    !attacker.paralyzed &&
-    !attacker.webbed &&
+    !cantAttack(attacker) && // Use primitive - covers Frozen, Webbed, Passive, Harmless
     isCreature;
 
-  if (!canAttack) {
+  if (!canAttackCheck) {
     // Provide specific error messages for each failure condition
     if (!isCreature) {
       logMessage(latestState, 'Only creatures can attack.');
@@ -1077,8 +1070,6 @@ const handleCreatureDrop = (attacker, target) => {
       logMessage(latestState, `${attacker.name} has already attacked this turn.`);
     } else if (attacker.frozen) {
       logMessage(latestState, `${attacker.name} is frozen and cannot attack.`);
-    } else if (attacker.paralyzed) {
-      logMessage(latestState, `${attacker.name} is paralyzed and cannot attack.`);
     } else if (attacker.webbed) {
       logMessage(latestState, `${attacker.name} is trapped in a web and cannot attack.`);
     } else if (isPassive(attacker)) {
@@ -1145,11 +1136,7 @@ const handleDragStart = (event) => {
     isCombatPhase &&
     isLocalPlayersTurn?.(state) &&
     !card.hasAttacked &&
-    !isPassive(card) &&
-    !isHarmless(card) &&
-    !card.frozen &&
-    !card.paralyzed &&
-    !card.webbed;
+    !cantAttack(card); // Use primitive - covers Frozen, Webbed, Passive, Harmless
   const isCombatDrag = isOnField && canCreatureAttack;
 
   // For field cards, allow drag if in extended consumption mode OR valid combat attack

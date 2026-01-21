@@ -19,6 +19,7 @@ import {
   isEdible,
   isInedible,
   isFreePlay,
+  cantBeConsumed,
 } from '../keywords.js';
 import { isCreatureCard } from '../cardTypes.js';
 import { ThreatDetector } from './ThreatDetector.js';
@@ -276,9 +277,9 @@ export class PlayEvaluator {
     // Calculate value IF we could consume (simulated)
     const consumeValue = this.simulateConsumeValue(card, state, aiPlayerIndex);
 
-    // Find available prey on field (not frozen and not inedible)
+    // Find available prey on field - use cantBeConsumed primitive
     const availablePrey = ai.field.filter(
-      (c) => c && !c.frozen && !isInedible(c) && (c.type === 'Prey' || isEdible(c))
+      (c) => c && !cantBeConsumed(c) && (c.type === 'Prey' || isEdible(c))
     );
 
     if (availablePrey.length > 0) {

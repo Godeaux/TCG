@@ -18,6 +18,7 @@ import {
   hasToxic,
   hasNeurotoxic,
   isPassive,
+  cantAttack,
 } from '../keywords.js';
 import { ThreatDetector } from './ThreatDetector.js';
 
@@ -149,7 +150,7 @@ export class CombatEvaluator {
       let faceScore = atkPower * 10;
 
       // Bonus if opponent has few/no blockers
-      const oppCreatures = opponent.field.filter((c) => c && !c.frozen && !isPassive(c)).length;
+      const oppCreatures = opponent.field.filter((c) => c && !cantAttack(c)).length;
       if (oppCreatures === 0) {
         faceScore += 15; // Clear path
       }
@@ -361,9 +362,8 @@ export class CombatEvaluator {
       if (!creature) return false;
       if (creature.currentHp <= 0) return false;
       if (creature.hasAttacked) return false;
-      if (isPassive(creature)) return false;
-      if (hasKeyword(creature, KEYWORDS.HARMLESS)) return false;
-      if (creature.frozen || creature.paralyzed) return false;
+      // Use cantAttack primitive - covers Frozen, Webbed, Passive, Harmless
+      if (cantAttack(creature)) return false;
       return true;
     });
 
@@ -501,7 +501,7 @@ export class CombatEvaluator {
 
     // Generally, attack if we have creatures and any reasonable targets
     const hasAttackers = ai.field.some(
-      (c) => c && !c.hasAttacked && !isPassive(c) && !c.frozen && !c.webbed
+      (c) => c && !c.hasAttacked && !cantAttack(c)
     );
 
     return hasAttackers;

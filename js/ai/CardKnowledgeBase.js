@@ -12,7 +12,7 @@
  * This module evaluates effects based on the current board state, not potential.
  */
 
-import { KEYWORDS, hasKeyword, isPassive, hasHaste } from '../keywords.js';
+import { KEYWORDS, hasKeyword, isPassive, hasHaste, cantAttack } from '../keywords.js';
 import { isCreatureCard } from '../cardTypes.js';
 
 // ============================================================================
@@ -238,8 +238,8 @@ const getPotentialDamage = (ctx) => {
   if (!ai || !state) return 0;
 
   return ai.field
-    .filter((c) => c && c.currentHp > 0 && !c.hasAttacked && !c.frozen && !c.paralyzed && !c.webbed)
-    .filter((c) => !isPassive(c) && !hasKeyword(c, KEYWORDS.HARMLESS))
+    .filter((c) => c && c.currentHp > 0 && !c.hasAttacked)
+    .filter((c) => !cantAttack(c)) // Use primitive - covers Frozen, Webbed, Passive, Harmless
     .filter((c) => c.summonedTurn !== state.turn || hasHaste(c))
     .reduce((sum, c) => sum + (c.currentAtk ?? c.atk ?? 0), 0);
 };
@@ -1358,8 +1358,8 @@ export class CardKnowledgeBase {
       threat -= 20;
     }
 
-    // Frozen creatures are less threatening
-    if (card.frozen) {
+    // Frozen/Webbed creatures are less threatening
+    if (card.frozen || card.webbed) {
       threat -= 20;
     }
 

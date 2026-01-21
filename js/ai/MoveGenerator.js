@@ -14,7 +14,7 @@
  */
 
 import { SelectionEnumerator } from './SelectionEnumerator.js';
-import { hasKeyword, KEYWORDS, isPassive, isFreePlay } from '../keywords.js';
+import { hasKeyword, KEYWORDS, isPassive, isFreePlay, cantAttack } from '../keywords.js';
 import { canPlayCard } from '../game/turnManager.js';
 
 // ============================================================================
@@ -294,9 +294,8 @@ export class MoveGenerator {
     if (!creature) return false;
     if (creature.currentHp <= 0) return false;
     if (creature.hasAttacked) return false;
-    if (creature.frozen || creature.paralyzed || creature.webbed) return false;
-    if (isPassive(creature)) return false;
-    if (hasKeyword(creature, KEYWORDS.HARMLESS)) return false;
+    // Use cantAttack primitive - covers Frozen, Webbed, Passive, Harmless
+    if (cantAttack(creature)) return false;
 
     // NOTE: Summoning sickness only prevents attacking the PLAYER, not creatures
     // So we don't check it here - we check it when generating face attacks

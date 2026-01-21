@@ -64,8 +64,16 @@ const FIX_SUGGESTIONS = {
     hint: 'Check hasBarrier check in resolveCreatureCombat()',
   },
   frozen_attack: {
-    files: ['js/game/combat.js', 'js/ai/AIController.js'],
-    hint: 'Check frozen status in selectAttacker() or canAttack()',
+    files: ['js/game/combat.js', 'js/ai/AIController.js', 'js/keywords.js'],
+    hint: 'Check cantAttack() primitive in selectAttacker() or canAttack()',
+  },
+  webbed_attack: {
+    files: ['js/game/combat.js', 'js/ai/AIController.js', 'js/keywords.js'],
+    hint: 'Check cantAttack() primitive - Webbed creatures cannot attack',
+  },
+  cant_attack_violation: {
+    files: ['js/keywords.js', 'js/ai/MoveGenerator.js', 'js/ai/AIController.js'],
+    hint: 'Check cantAttack() primitive - covers Frozen, Webbed, Passive, Harmless',
   },
   lure_bypass: {
     files: ['js/game/combat.js'],

@@ -13,7 +13,7 @@
  */
 
 import { renderCard } from './Card.js';
-import { isPassive, isHarmless } from '../../keywords.js';
+import { cantAttack as cantAttackPrimitive } from '../../keywords.js';
 import { isLocalPlayersTurn } from '../../state/selectors.js';
 import { showCardTooltip, hideCardTooltip, hideCardTooltipImmediate } from './CardTooltip.js';
 
@@ -67,11 +67,7 @@ export const renderField = (state, playerIndex, isOpponent, options = {}) => {
       isLocalPlayersTurn(state) &&
       state.phase === 'Combat' &&
       !card.hasAttacked &&
-      !isPassive(card) &&
-      !isHarmless(card) &&
-      !card.frozen &&
-      !card.paralyzed &&
-      !card.webbed &&
+      !cantAttackPrimitive(card) && // Use primitive - covers Frozen, Webbed, Passive, Harmless
       isCreature;
 
     // Determine if creature can be returned to hand (played via effect, not from hand)

@@ -36,7 +36,12 @@ const STATUS_DESCRIPTIONS = {
   frozen: {
     emoji: '❄️',
     name: 'Frozen',
-    description: "Cannot attack or be consumed. Thaws at end of owner's turn.",
+    description: "Cannot attack, be consumed, or consume prey. Thaws at end of owner's turn.",
+  },
+  webbed: {
+    emoji: '🕸️',
+    name: 'Webbed',
+    description: 'Cannot attack. Cleared when this creature takes damage.',
   },
   isToken: {
     emoji: '⚪',
@@ -419,6 +424,13 @@ const renderInfoBoxes = (card) => {
 
   if (card.frozen) {
     const info = STATUS_DESCRIPTIONS.frozen;
+    infoBoxesElement.appendChild(
+      createInfoBox(`${info.emoji} ${info.name}`, info.description, 'status')
+    );
+  }
+
+  if (card.webbed) {
+    const info = STATUS_DESCRIPTIONS.webbed;
     infoBoxesElement.appendChild(
       createInfoBox(`${info.emoji} ${info.name}`, info.description, 'status')
     );

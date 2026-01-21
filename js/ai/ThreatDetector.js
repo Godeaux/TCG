@@ -11,7 +11,7 @@
  * - Assess board state danger level
  */
 
-import { KEYWORDS, hasHaste, isPassive, hasKeyword } from '../keywords.js';
+import { KEYWORDS, hasHaste, isPassive, hasKeyword, cantAttack } from '../keywords.js';
 import { isCreatureCard } from '../cardTypes.js';
 
 // ============================================================================
@@ -35,9 +35,7 @@ export class ThreatDetector {
 
     for (const creature of oppField) {
       // Skip creatures that can't attack
-      if (isPassive(creature)) continue;
-      if (hasKeyword(creature, KEYWORDS.HARMLESS)) continue;
-      if (creature.frozen || creature.paralyzed) continue;
+      if (cantAttack(creature)) continue;
       if (creature.currentHp <= 0) continue;
 
       // Check if creature can attack directly next turn
@@ -90,9 +88,7 @@ export class ThreatDetector {
 
     for (const creature of aiField) {
       // Skip creatures that can't attack
-      if (isPassive(creature)) continue;
-      if (hasKeyword(creature, KEYWORDS.HARMLESS)) continue;
-      if (creature.frozen || creature.paralyzed) continue;
+      if (cantAttack(creature)) continue;
       if (creature.currentHp <= 0) continue;
       if (creature.hasAttacked) continue; // Already attacked this turn
 
@@ -177,7 +173,7 @@ export class ThreatDetector {
 
     // Can it attack directly this turn?
     const canAttackNow = creature.summonedTurn < state.turn || hasHaste(creature);
-    if (canAttackNow && !creature.frozen && !isPassive(creature)) {
+    if (canAttackNow && !cantAttack(creature)) {
       score += 10;
       reasons.push('Can attack now');
     }
@@ -238,9 +234,9 @@ export class ThreatDetector {
       score -= 25;
       reasons.push('Harmless');
     }
-    if (creature.frozen) {
+    if (creature.frozen || creature.webbed) {
       score -= 15;
-      reasons.push('Frozen');
+      reasons.push(creature.frozen ? 'Frozen' : 'Webbed');
     }
 
     return { score: Math.max(0, score), reasons };
@@ -357,9 +353,8 @@ export class ThreatDetector {
       if (!creature) return false;
       if (creature.currentHp <= 0) return false;
       if (creature.hasAttacked) return false;
-      if (isPassive(creature)) return false;
-      if (hasKeyword(creature, KEYWORDS.HARMLESS)) return false;
-      if (creature.frozen || creature.paralyzed) return false;
+      // Use cantAttack primitive - covers Frozen, Webbed, Passive, Harmless
+      if (cantAttack(creature)) return false;
       return true;
     });
 
@@ -430,9 +425,8 @@ export class ThreatDetector {
       if (!creature) return false;
       if (creature.currentHp <= 0) return false;
       if (creature.hasAttacked) return false;
-      if (isPassive(creature)) return false;
-      if (hasKeyword(creature, KEYWORDS.HARMLESS)) return false;
-      if (creature.frozen || creature.paralyzed) return false;
+      // Use cantAttack primitive - covers Frozen, Webbed, Passive, Harmless
+      if (cantAttack(creature)) return false;
       return true;
     });
 
