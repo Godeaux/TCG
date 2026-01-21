@@ -30,6 +30,10 @@ import { KEYWORD_DESCRIPTIONS } from '../../keywords.js';
 // MODULE-LEVEL STATE
 // ============================================================================
 
+// Tap detection for mobile (to distinguish tap from scroll)
+const TAP_MAX_MOVEMENT_PX = 15; // Max pixels moved to count as tap
+let touchStartPos = { x: 0, y: 0 };
+
 // Deck options available for selection
 const DECK_OPTIONS = [
   {
@@ -2254,11 +2258,25 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
     });
 
     // Touch to show expanded card (mobile) - tap shows card, tap again on expanded to add
+    cardElement.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        touchStartPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }
+    }, { passive: true });
+
     cardElement.addEventListener('touchend', (e) => {
-      // Only handle if this looks like a tap (not drag)
+      // Only handle if this looks like a tap (not scroll)
       if (e.changedTouches.length === 1) {
-        e.preventDefault();
-        showExpandedCard(card, cardElement, addCardToDeck);
+        const touch = e.changedTouches[0];
+        const dx = touch.clientX - touchStartPos.x;
+        const dy = touch.clientY - touchStartPos.y;
+        const movement = Math.sqrt(dx * dx + dy * dy);
+
+        // Only show tooltip if finger didn't move much (tap, not scroll)
+        if (movement < TAP_MAX_MOVEMENT_PX) {
+          e.preventDefault();
+          showExpandedCard(card, cardElement, addCardToDeck);
+        }
       }
     });
 
@@ -2570,11 +2588,25 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
     });
 
     // Touch to show expanded card (mobile) - tap shows card, tap again on expanded to add
+    cardElement.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        touchStartPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }
+    }, { passive: true });
+
     cardElement.addEventListener('touchend', (e) => {
-      // Only handle if this looks like a tap (not drag)
+      // Only handle if this looks like a tap (not scroll)
       if (e.changedTouches.length === 1) {
-        e.preventDefault();
-        showExpandedCard(card, cardElement, addCardToDeck);
+        const touch = e.changedTouches[0];
+        const dx = touch.clientX - touchStartPos.x;
+        const dy = touch.clientY - touchStartPos.y;
+        const movement = Math.sqrt(dx * dx + dy * dy);
+
+        // Only show tooltip if finger didn't move much (tap, not scroll)
+        if (movement < TAP_MAX_MOVEMENT_PX) {
+          e.preventDefault();
+          showExpandedCard(card, cardElement, addCardToDeck);
+        }
       }
     });
 

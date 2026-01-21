@@ -222,19 +222,19 @@ export const initCardTooltip = () => {
     return;
   }
 
-  // Add click handler on tooltip itself to dismiss (mobile tap-to-close)
-  tooltipElement.addEventListener('click', (e) => {
-    // Tapping the tooltip dismisses it without clicking through
-    e.stopPropagation();
-    hideCardTooltipImmediate();
-  });
+  // Note: We don't add a click handler directly on the tooltip here
+  // because it would interfere with DeckBuilder's tap-to-add functionality.
+  // Dismissal is handled by the global dismiss handler instead.
 
   isInitialized = true;
 };
 
 /**
  * Set up global tap-to-dismiss handler (for mobile).
- * Dismisses tooltip when tapping anywhere outside it.
+ * Dismisses tooltip when tapping anywhere (inside or outside).
+ *
+ * Note: DeckBuilder has its own capture-phase handler that uses stopPropagation
+ * after tap-to-add, so this bubble-phase handler won't interfere with it.
  */
 const setupGlobalDismissHandler = () => {
   // Remove existing handler if any
@@ -243,11 +243,14 @@ const setupGlobalDismissHandler = () => {
   // Add handler after a short delay to avoid the tap that opened the tooltip
   setTimeout(() => {
     globalDismissHandler = (e) => {
-      // If tap is outside the tooltip, dismiss it
-      if (tooltipElement && !tooltipElement.contains(e.target)) {
+      // Dismiss tooltip on any tap
+      // If DeckBuilder handled a tap-to-add, it uses stopPropagation
+      // so this won't run in that case
+      if (tooltipElement) {
         hideCardTooltipImmediate();
       }
     };
+    // Use bubble phase (default) so DeckBuilder's capture-phase handler runs first
     document.addEventListener('touchstart', globalDismissHandler, { passive: true });
     document.addEventListener('click', globalDismissHandler);
   }, 50);
