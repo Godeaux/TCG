@@ -599,8 +599,13 @@ export const canPlayAnyCardFromHand = (state, playerIndex) => {
 /**
  * Get creatures that can actually attack (includes status effect checks)
  * Uses cantAttack primitive - covers Frozen, Webbed, Passive, Harmless
+ * Note: Summoning sickness only prevents direct player attacks, not creature attacks
  */
 export const getCreaturesThatCanAttack = (state, playerIndex) => {
+  const opponentIndex = 1 - playerIndex;
+  const opponentCreatures = getPlayerCreatures(state, opponentIndex);
+  const hasTargetableCreatures = opponentCreatures.length > 0;
+
   return getPlayerCreatures(state, playerIndex).filter((creature) => {
     // Must not have attacked already
     if (hasCreatureAttacked(creature)) return false;
@@ -608,10 +613,11 @@ export const getCreaturesThatCanAttack = (state, playerIndex) => {
     // Use cantAttack primitive - covers Frozen, Webbed, Passive, Harmless
     if (cantAttack(creature)) return false;
 
-    // Check summoning sickness (unless Haste)
+    // Check summoning sickness (unless Haste) - only matters for direct player attacks
+    // Creatures can always attack other creatures regardless of summoning sickness
     const hasHaste = creature.keywords?.includes('Haste');
     const summonedThisTurn = creature.summonedTurn === state.turn;
-    if (!hasHaste && summonedThisTurn) return false;
+    if (!hasHaste && summonedThisTurn && !hasTargetableCreatures) return false;
 
     return true;
   });

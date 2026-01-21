@@ -57,7 +57,14 @@ initPositionEvaluator(positionEvaluator);
 // State selectors (centralized state queries)
 // Note: ui.js keeps local versions of getLocalPlayerIndex and isLocalPlayersTurn
 // to avoid circular dependencies and for performance (no module lookups)
-import { isOnlineMode, isAIMode, isAnyAIMode, isAIvsAIMode } from './state/selectors.js';
+import {
+  isOnlineMode,
+  isAIMode,
+  isAnyAIMode,
+  isAIvsAIMode,
+  isCombatPhase,
+  canPlayerMakeAnyMove,
+} from './state/selectors.js';
 
 // AI module (for cleanup when returning to menu)
 import { cleanupAI } from './ai/index.js';
@@ -343,6 +350,7 @@ let emoteInitialized = false;
 let selectedHandCardId = null;
 let battleEffectsInitialized = false;
 let touchInitialized = false;
+let skipCombatConfirmationActive = false;
 
 // Note: Lobby subscription state has been moved to ./network/lobbyManager.js
 // All lobby management is now centralized there
@@ -3193,7 +3201,7 @@ const triggerPlayTraps = (state, creature, onUpdate, onResolved) => {
   // Otherwise, the reaction overlay will handle the decision
 };
 
-const updateActionBar = (onNextPhase) => {
+const updateActionBar = (onNextPhase, state) => {
   // Handler for advancing phase
   const handleNextPhase = () => {
     // Check if there's an active selection that needs to be resolved first
@@ -3209,6 +3217,69 @@ const updateActionBar = (onNextPhase) => {
       }
       return; // Block phase advancement
     }
+
+    // Skip combat confirmation: if in Combat with valid moves, require confirmation
+    const localIndex = getLocalPlayerIndex(state);
+    if (isCombatPhase(state) && canPlayerMakeAnyMove(state, localIndex) && !skipCombatConfirmationActive) {
+      const fieldTurnBtn = document.getElementById('field-turn-btn');
+      const turnNumber = document.getElementById('field-turn-number');
+      const phaseLabel = document.getElementById('field-phase-label');
+      if (fieldTurnBtn) {
+        // Activate confirmation mode
+        skipCombatConfirmationActive = true;
+
+        // Hide normal content, show skip text
+        if (turnNumber) turnNumber.style.display = 'none';
+        if (phaseLabel) phaseLabel.style.display = 'none';
+        let skipText = fieldTurnBtn.querySelector('.skip-combat-text');
+        if (!skipText) {
+          skipText = document.createElement('span');
+          skipText.className = 'skip-combat-text';
+          skipText.textContent = 'Skip combat?';
+          fieldTurnBtn.appendChild(skipText);
+        }
+        skipText.style.display = '';
+
+        fieldTurnBtn.classList.add('skip-combat-confirm');
+        fieldTurnBtn.disabled = true;
+
+        // Re-enable after 1.5s
+        setTimeout(() => {
+          fieldTurnBtn.disabled = false;
+
+          // After another 1.5s, revert to normal if still in confirmation mode
+          setTimeout(() => {
+            if (skipCombatConfirmationActive) {
+              skipCombatConfirmationActive = false;
+              fieldTurnBtn.classList.remove('skip-combat-confirm');
+              // Restore normal content
+              if (turnNumber) turnNumber.style.display = '';
+              if (phaseLabel) phaseLabel.style.display = '';
+              const skipTextEl = fieldTurnBtn.querySelector('.skip-combat-text');
+              if (skipTextEl) skipTextEl.style.display = 'none';
+            }
+          }, 1500);
+        }, 1500);
+      }
+      return;
+    }
+
+    // If confirmation was active and we clicked again, reset and proceed
+    if (skipCombatConfirmationActive) {
+      skipCombatConfirmationActive = false;
+      const fieldTurnBtn = document.getElementById('field-turn-btn');
+      const turnNumber = document.getElementById('field-turn-number');
+      const phaseLabel = document.getElementById('field-phase-label');
+      if (fieldTurnBtn) {
+        fieldTurnBtn.classList.remove('skip-combat-confirm');
+        // Restore normal content
+        if (turnNumber) turnNumber.style.display = '';
+        if (phaseLabel) phaseLabel.style.display = '';
+        const skipText = fieldTurnBtn.querySelector('.skip-combat-text');
+        if (skipText) skipText.style.display = 'none';
+      }
+    }
+
     onNextPhase();
   };
 
@@ -4422,7 +4493,7 @@ export const renderGame = (state, callbacks = {}) => {
       sendLobbyBroadcast('sync_state', buildLobbySyncPayload(state));
     }
   };
-  updateActionBar(handleNextPhase);
+  updateActionBar(handleNextPhase, state);
   appendLog(state);
   if (shouldProcessQueues) {
     processBeforeCombatQueue(state, callbacks.onUpdate);
