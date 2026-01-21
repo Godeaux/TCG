@@ -91,6 +91,7 @@ export const renderField = (state, playerIndex, isOpponent, options = {}) => {
       draggable: true,
       state,
       ownerIndex: playerIndex,
+      context: 'field',
       onAttack,
       onReturnToHand,
       onSacrifice,

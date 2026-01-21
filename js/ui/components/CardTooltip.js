@@ -10,6 +10,44 @@ import { KEYWORD_DESCRIPTIONS, areAbilitiesActive } from '../../keywords.js';
 import { getTokenById } from '../../cards/registry.js';
 
 // ============================================================================
+// CSS VARIABLE HELPERS
+// ============================================================================
+
+/**
+ * Get a CSS custom property value from :root
+ * @param {string} varName - Variable name (with or without --)
+ * @returns {string} The computed value
+ */
+const getCssVar = (varName) => {
+  const name = varName.startsWith('--') ? varName : `--${varName}`;
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+};
+
+/**
+ * Get a CSS custom property as a number (parses px, vw, etc.)
+ * @param {string} varName - Variable name
+ * @param {number} fallback - Fallback value if parsing fails
+ * @returns {number} The numeric value in pixels
+ */
+const getCssVarPx = (varName, fallback) => {
+  const value = getCssVar(varName);
+  if (!value) return fallback;
+
+  // Handle clamp() by getting computed style from a temp element
+  if (value.includes('clamp') || value.includes('vw') || value.includes('vh')) {
+    const temp = document.createElement('div');
+    temp.style.cssText = `position: absolute; visibility: hidden; width: var(${varName.startsWith('--') ? varName : '--' + varName});`;
+    document.body.appendChild(temp);
+    const computed = temp.offsetWidth;
+    document.body.removeChild(temp);
+    return computed || fallback;
+  }
+
+  const parsed = parseFloat(value);
+  return isNaN(parsed) ? fallback : parsed;
+};
+
+// ============================================================================
 // STATUS EFFECT DESCRIPTIONS
 // ============================================================================
 
@@ -276,6 +314,7 @@ const renderCardPreview = (card) => {
   const cardElement = renderCard(card, {
     showEffectSummary: true,
     draggable: false,
+    context: 'tooltip',
   });
 
   // Add tooltip-specific class
@@ -366,6 +405,7 @@ const createTokenPreview = (token) => {
   const cardElement = renderCard(token, {
     showEffectSummary: true,
     draggable: false,
+    context: 'tooltip',
   });
   cardElement.classList.add('tooltip-token-card');
 
@@ -510,9 +550,9 @@ const positionTooltip = (targetElement, options = {}) => {
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
 
-  // Calculate dimensions
-  const infoBoxWidth = 260;
-  const gap = 16;
+  // Calculate dimensions from CSS variables (responsive to viewport)
+  const infoBoxWidth = getCssVarPx('--tooltip-info-width', 260);
+  const gap = getCssVarPx('--tooltip-gap', 16);
 
   // For full mode, card preview scales with viewport
   // Use ~25% of viewport width for the card, clamped between 280-400px

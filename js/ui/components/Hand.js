@@ -227,6 +227,7 @@ export const renderHand = (state, options = {}) => {
       showEffectSummary: true,
       isSelected: selectedCardId === card.instanceId,
       draggable: true,
+      context: 'hand',
       onInspect,
       onClick: (selectedCard) => {
         onSelect?.(selectedCard);
