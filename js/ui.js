@@ -3776,9 +3776,12 @@ const showExilePilePopup = (player, opponent, onUpdate) => {
 const setupMobileNavigation = () => {
   const navLeft = document.getElementById('mobile-nav-left');
   const navRight = document.getElementById('mobile-nav-right');
+  const historyBtn = document.getElementById('field-history-btn');
   const closeInspector = document.getElementById('close-inspector');
   const closeHistory = document.getElementById('close-history');
-  const battlefieldLayout = document.querySelector('.battlefield-layout-three-column');
+  // Support both two-column and three-column layouts
+  const battlefieldLayout = document.querySelector('.battlefield-layout-three-column') ||
+                            document.querySelector('.battlefield-layout-two-column');
 
   if (!battlefieldLayout) return;
 
@@ -3791,6 +3794,14 @@ const setupMobileNavigation = () => {
 
   if (navRight) {
     navRight.addEventListener('click', () => {
+      battlefieldLayout.classList.toggle('show-history');
+      battlefieldLayout.classList.remove('show-inspector');
+    });
+  }
+
+  // History button in field controls (mobile)
+  if (historyBtn) {
+    historyBtn.addEventListener('click', () => {
       battlefieldLayout.classList.toggle('show-history');
       battlefieldLayout.classList.remove('show-inspector');
     });

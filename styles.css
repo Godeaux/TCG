@@ -820,6 +820,29 @@ button {
   display: inline-block;
 }
 
+/* History button - hidden on desktop, shown on mobile */
+.field-history-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  padding: 6px;
+  font-size: var(--font-lg);
+  cursor: pointer;
+  opacity: 0.7;
+  transition: all 0.15s;
+}
+
+.field-history-btn:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+@media (max-width: 767px) {
+  .field-history-btn {
+    display: inline-block;
+  }
+}
+
 .info-toggle {
   position: absolute;
   right: 0;
@@ -5476,7 +5499,8 @@ button {
     font-size: 0.9rem;
   }
 
-  .battlefield-layout-three-column {
+  .battlefield-layout-three-column,
+  .battlefield-layout-two-column {
     grid-template-columns: 1fr;
     overflow: hidden;
     position: relative;
@@ -5496,12 +5520,14 @@ button {
     padding: 12px;
   }
 
-  .battlefield-layout-three-column.show-inspector .battlefield-left-column {
+  .battlefield-layout-three-column.show-inspector .battlefield-left-column,
+  .battlefield-layout-two-column.show-inspector .battlefield-left-column {
     display: flex;
     flex-direction: column;
   }
 
-  .battlefield-layout-three-column.show-history .battlefield-right-column {
+  .battlefield-layout-three-column.show-history .battlefield-right-column,
+  .battlefield-layout-two-column.show-history .battlefield-right-column {
     display: flex;
     flex-direction: column;
   }
@@ -5516,9 +5542,10 @@ button {
     min-height: 0;
   }
 
+  /* Hide old nav arrows on mobile - use history button in field controls instead */
   .mobile-nav-left,
   .mobile-nav-right {
-    display: flex;
+    display: none;
   }
 
   .pages-container {
