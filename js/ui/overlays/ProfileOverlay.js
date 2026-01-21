@@ -836,6 +836,7 @@ const setupAddFriend = (elements, profileId, callbacks) => {
 // Store current callbacks for cleanup
 let currentCallbacks = null;
 let currentFilter = 'rarity';
+let subscriptionsProfileId = null; // Track which profile subscriptions are set up for
 
 /**
  * Render the profile overlay
@@ -897,75 +898,81 @@ export const renderProfileOverlay = (state, callbacks = {}) => {
   // Get profile ID for friends functionality
   const profileId = state.menu?.profile?.id;
 
-  // Setup event handlers (only once)
-  if (currentCallbacks !== callbacks) {
-    currentCallbacks = callbacks;
+  // Always update button handlers (they reference callbacks which may change)
+  currentCallbacks = callbacks;
 
-    // Back button
-    if (elements.profileBackBtn) {
-      elements.profileBackBtn.onclick = () => callbacks.onBack?.();
-    }
+  // Back button
+  if (elements.profileBackBtn) {
+    elements.profileBackBtn.onclick = () => callbacks.onBack?.();
+  }
 
-    // Packs button
-    if (elements.profilePacksBtn) {
-      elements.profilePacksBtn.onclick = () => {
-        if (profileData.packs > 0) {
-          callbacks.onOpenPack?.();
-        }
-      };
+  // Packs button
+  if (elements.profilePacksBtn) {
+    elements.profilePacksBtn.onclick = () => {
+      if (profileData.packs > 0) {
+        callbacks.onOpenPack?.();
+      }
+    };
 
-      // Update packs button state (use 'disabled' class when no packs)
-      elements.profilePacksBtn.classList.toggle('disabled', profileData.packs === 0);
-    }
+    // Update packs button state (use 'disabled' class when no packs)
+    elements.profilePacksBtn.classList.toggle('disabled', profileData.packs === 0);
+  }
 
-    // Filter dropdown
-    if (elements.collectionFilter) {
-      elements.collectionFilter.value = currentFilter;
-      elements.collectionFilter.onchange = (e) => {
-        currentFilter = e.target.value;
-        renderCollectionGrid(elements, ownedCardsMap, currentFilter, (card, rarity) => {
-          callbacks.onCardClick?.(card, rarity);
-        });
-      };
-    }
+  // Filter dropdown
+  if (elements.collectionFilter) {
+    elements.collectionFilter.value = currentFilter;
+    elements.collectionFilter.onchange = (e) => {
+      currentFilter = e.target.value;
+      renderCollectionGrid(elements, ownedCardsMap, currentFilter, (card, rarity) => {
+        callbacks.onCardClick?.(card, rarity);
+      });
+    };
+  }
 
-    // Setup tabs (only if logged in)
-    if (profileId) {
-      setupTabs(elements, profileId, profileData, callbacks);
-      setupAddFriend(elements, profileId, callbacks);
-
-      // Initialize presence tracking
-      initializePresence(profileId);
-
-      // Subscribe to online status changes
+  // Setup subscriptions only once per profile (not on every render)
+  if (profileId && subscriptionsProfileId !== profileId) {
+    // Cleanup old subscriptions if switching profiles
+    if (subscriptionsProfileId !== null) {
       if (onlineUnsubscribe) {
         onlineUnsubscribe();
+        onlineUnsubscribe = null;
       }
-      onlineUnsubscribe = subscribeToOnlineStatus((users) => {
-        onlineUsers = users;
-        // Re-render friends list if on friends tab
-        if (currentTab === 'friends') {
-          renderFriendsTab(elements, profileId, callbacks);
-        }
-      });
-
-      // Subscribe to friendship changes
       if (friendsChannel) {
         unsubscribeFromFriendships(friendsChannel);
+        friendsChannel = null;
       }
-      friendsChannel = subscribeToFriendships({
-        profileId,
-        onUpdate: async () => {
-          await loadFriends(profileId);
-          if (currentTab === 'friends') {
-            renderFriendsTab(elements, profileId, callbacks);
-          }
-        },
-      });
-
-      // Note: Duel invite subscription is managed by setupDuelInviteListener()
-      // which is called from ui.js - do NOT create a duplicate subscription here
     }
+
+    subscriptionsProfileId = profileId;
+
+    setupTabs(elements, profileId, profileData, callbacks);
+    setupAddFriend(elements, profileId, callbacks);
+
+    // Initialize presence tracking
+    initializePresence(profileId);
+
+    // Subscribe to online status changes (only once per profile)
+    onlineUnsubscribe = subscribeToOnlineStatus((users) => {
+      onlineUsers = users;
+      // Re-render friends list if on friends tab
+      if (currentTab === 'friends') {
+        renderFriendsTab(elements, profileId, currentCallbacks);
+      }
+    });
+
+    // Subscribe to friendship changes (only once per profile)
+    friendsChannel = subscribeToFriendships({
+      profileId,
+      onUpdate: async () => {
+        await loadFriends(profileId);
+        if (currentTab === 'friends') {
+          renderFriendsTab(elements, profileId, currentCallbacks);
+        }
+      },
+    });
+
+    // Note: Duel invite subscription is managed by setupDuelInviteListener()
+    // which is called from ui.js - do NOT create a duplicate subscription here
   }
 };
 
@@ -1018,6 +1025,9 @@ export const resetProfileState = () => {
 
   // Reset filter
   currentFilter = 'rarity';
+
+  // Reset subscriptions profile tracking
+  subscriptionsProfileId = null;
 
   // Cleanup duel invites subscription
   if (duelInvitesChannel) {
