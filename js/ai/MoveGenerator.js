@@ -15,6 +15,7 @@
 
 import { SelectionEnumerator } from './SelectionEnumerator.js';
 import { hasKeyword, KEYWORDS, isPassive, isFreePlay, cantAttack } from '../keywords.js';
+import { hasCreatureAttacked } from '../state/selectors.js';
 import { canPlayCard } from '../game/turnManager.js';
 
 // ============================================================================
@@ -293,7 +294,7 @@ export class MoveGenerator {
   canAttack(creature, state) {
     if (!creature) return false;
     if (creature.currentHp <= 0) return false;
-    if (creature.hasAttacked) return false;
+    if (hasCreatureAttacked(creature)) return false; // Multi-Strike aware
     // Use cantAttack primitive - covers Frozen, Webbed, Passive, Harmless
     if (cantAttack(creature)) return false;
 

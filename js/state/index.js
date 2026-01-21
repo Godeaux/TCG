@@ -130,6 +130,7 @@ export {
   getDeclaredAttacks,
   hasAnyAttacks,
   hasCreatureAttacked,
+  markCreatureAttacked,
   getAttackableCreatures,
 
   // Move availability selectors

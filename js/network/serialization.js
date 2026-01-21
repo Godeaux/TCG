@@ -41,6 +41,7 @@ export const serializeCardSnapshot = (card) => {
     currentHp: card.currentHp ?? null,
     summonedTurn: card.summonedTurn ?? null,
     hasAttacked: card.hasAttacked ?? false,
+    attacksMadeThisTurn: card.attacksMadeThisTurn ?? 0,
     hasBarrier: card.hasBarrier ?? false,
     frozen: card.frozen ?? false,
     frozenDiesTurn: card.frozenDiesTurn ?? null,
@@ -88,6 +89,7 @@ export const hydrateCardSnapshot = (snapshot, fallbackTurn) => {
     instance.summonedTurn = snapshot.summonedTurn;
   }
   instance.hasAttacked = snapshot.hasAttacked ?? instance.hasAttacked;
+  instance.attacksMadeThisTurn = snapshot.attacksMadeThisTurn ?? 0;
   instance.hasBarrier = snapshot.hasBarrier ?? instance.hasBarrier;
   instance.frozen = snapshot.frozen ?? instance.frozen;
   instance.frozenDiesTurn = snapshot.frozenDiesTurn ?? instance.frozenDiesTurn;

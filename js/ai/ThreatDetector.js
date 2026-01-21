@@ -12,6 +12,7 @@
  */
 
 import { KEYWORDS, hasHaste, isPassive, hasKeyword, cantAttack } from '../keywords.js';
+import { hasCreatureAttacked } from '../state/selectors.js';
 import { isCreatureCard } from '../cardTypes.js';
 
 // ============================================================================
@@ -90,7 +91,7 @@ export class ThreatDetector {
       // Skip creatures that can't attack
       if (cantAttack(creature)) continue;
       if (creature.currentHp <= 0) continue;
-      if (creature.hasAttacked) continue; // Already attacked this turn
+      if (hasCreatureAttacked(creature)) continue; // Multi-Strike aware - all attacks used
 
       // Check if creature can attack directly
       const hasHasteKeyword = hasHaste(creature);
@@ -352,7 +353,7 @@ export class ThreatDetector {
     const attackers = ai.field.filter((creature) => {
       if (!creature) return false;
       if (creature.currentHp <= 0) return false;
-      if (creature.hasAttacked) return false;
+      if (hasCreatureAttacked(creature)) return false; // Multi-Strike aware
       // Use cantAttack primitive - covers Frozen, Webbed, Passive, Harmless
       if (cantAttack(creature)) return false;
       return true;
@@ -424,7 +425,7 @@ export class ThreatDetector {
     const attackers = ai.field.filter((creature) => {
       if (!creature) return false;
       if (creature.currentHp <= 0) return false;
-      if (creature.hasAttacked) return false;
+      if (hasCreatureAttacked(creature)) return false; // Multi-Strike aware
       // Use cantAttack primitive - covers Frozen, Webbed, Passive, Harmless
       if (cantAttack(creature)) return false;
       return true;

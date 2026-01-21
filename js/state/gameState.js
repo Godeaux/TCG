@@ -195,6 +195,7 @@ export const resetCombat = (state) => {
     player.field.forEach((card) => {
       if (card) {
         card.hasAttacked = false;
+        card.attacksMadeThisTurn = 0; // Reset Multi-Strike counter
         card.beforeCombatFiredThisAttack = false; // Reset per-attack beforeCombat flag
       }
     });

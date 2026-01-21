@@ -20,6 +20,7 @@ import { ThreatDetector } from './ThreatDetector.js';
 import { GameController } from '../game/controller.js';
 import { createSnapshot, diffSnapshots } from '../simulation/stateSnapshot.js';
 import { hasKeyword, KEYWORDS, isPassive } from '../keywords.js';
+import { hasCreatureAttacked } from '../state/selectors.js';
 import { ActionTypes } from '../state/actions.js';
 
 // ============================================================================
@@ -320,12 +321,12 @@ export class PositionEvaluator {
       bonus += 4 + highHpTargets * 3;
     }
 
-    // HASTE: Worth more if can attack THIS turn (hasn't used it yet)
+    // HASTE: Worth more if can attack THIS turn (has attacks remaining)
     if (hasKeyword(creature, KEYWORDS.HASTE)) {
-      if (creature.summonedTurn === state.turn && !creature.hasAttacked) {
-        bonus += 8; // Can attack immediately - high value
+      if (creature.summonedTurn === state.turn && !hasCreatureAttacked(creature)) {
+        bonus += 8; // Can attack immediately - high value (Multi-Strike aware)
       } else {
-        bonus += 2; // Already used haste this turn
+        bonus += 2; // Already exhausted attacks this turn
       }
     }
 

@@ -13,6 +13,7 @@
  */
 
 import { KEYWORDS, hasKeyword, isPassive, hasHaste, cantAttack } from '../keywords.js';
+import { hasCreatureAttacked } from '../state/selectors.js';
 import { isCreatureCard } from '../cardTypes.js';
 
 // ============================================================================
@@ -238,7 +239,7 @@ const getPotentialDamage = (ctx) => {
   if (!ai || !state) return 0;
 
   return ai.field
-    .filter((c) => c && c.currentHp > 0 && !c.hasAttacked)
+    .filter((c) => c && c.currentHp > 0 && !hasCreatureAttacked(c)) // Multi-Strike aware
     .filter((c) => !cantAttack(c)) // Use primitive - covers Frozen, Webbed, Passive, Harmless
     .filter((c) => c.summonedTurn !== state.turn || hasHaste(c))
     .reduce((sum, c) => sum + (c.currentAtk ?? c.atk ?? 0), 0);

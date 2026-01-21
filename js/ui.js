@@ -64,6 +64,7 @@ import {
   isAIvsAIMode,
   isCombatPhase,
   canPlayerMakeAnyMove,
+  markCreatureAttacked,
 } from './state/selectors.js';
 
 // AI module (for cleanup when returning to menu)
@@ -2238,7 +2239,7 @@ const resolveAttack = (state, attacker, target, negateAttack = false, negatedBy 
     const targetName = target.type === 'creature' ? target.card.name : 'the player';
     const sourceText = negatedBy ? ` by ${negatedBy}` : '';
     logMessage(state, `${attacker.name}'s attack on ${targetName} was negated${sourceText}.`);
-    attacker.hasAttacked = true;
+    markCreatureAttacked(attacker);
     state.broadcast?.(state);
     cleanupDestroyed(state);
     return;
@@ -2277,7 +2278,7 @@ const resolveAttack = (state, attacker, target, negateAttack = false, negatedBy 
           // Check if attacker was destroyed by their own beforeCombat effect
           if (attacker.currentHp <= 0) {
             logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
-            attacker.hasAttacked = true;
+            markCreatureAttacked(attacker);
             state.broadcast?.(state);
             return;
           }
@@ -2291,7 +2292,7 @@ const resolveAttack = (state, attacker, target, negateAttack = false, negatedBy 
     cleanupDestroyed(state);
     if (attacker.currentHp <= 0) {
       logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
-      attacker.hasAttacked = true;
+      markCreatureAttacked(attacker);
       state.broadcast?.(state);
       return;
     }
@@ -2330,12 +2331,12 @@ const continueResolveAttack = (state, attacker, target) => {
     cleanupDestroyed(state);
     if (attacker.currentHp <= 0) {
       logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
-      attacker.hasAttacked = true;
+      markCreatureAttacked(attacker);
       state.broadcast?.(state);
       return;
     }
     if (result?.returnToHand) {
-      attacker.hasAttacked = true;
+      markCreatureAttacked(attacker);
       cleanupDestroyed(state);
       state.broadcast?.(state);
       return;
@@ -2388,7 +2389,7 @@ const continueResolveAttack = (state, attacker, target) => {
     markEffectProcessed(effect.id, effect.createdAt);
     playAttackEffect(effect, state);
   }
-  attacker.hasAttacked = true;
+  markCreatureAttacked(attacker);
 
   // Trigger onAfterCombat effects for surviving creatures
   if (attacker.currentHp > 0 && (attacker.effects?.onAfterCombat || attacker.onAfterCombat)) {
@@ -2495,7 +2496,7 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
 
         if (!targetStillOnField) {
           logMessage(state, `${attacker.name}'s attack fizzles - target no longer on field.`);
-          attacker.hasAttacked = true;
+          markCreatureAttacked(attacker);
           onUpdate?.();
           broadcastSyncState(state);
           return;
@@ -2709,7 +2710,7 @@ const handleEatPreyAttack = (state, attacker, onUpdate) => {
         );
 
         // Mark attacker as having attacked
-        attacker.hasAttacked = true;
+        markCreatureAttacked(attacker);
 
         cleanupDestroyed(state);
         onUpdate?.();

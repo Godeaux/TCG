@@ -20,6 +20,7 @@ import {
   isPassive,
   cantAttack,
 } from '../keywords.js';
+import { hasCreatureAttacked } from '../state/selectors.js';
 import { ThreatDetector } from './ThreatDetector.js';
 
 // ============================================================================
@@ -361,7 +362,7 @@ export class CombatEvaluator {
     let availableAttackers = ai.field.filter((creature) => {
       if (!creature) return false;
       if (creature.currentHp <= 0) return false;
-      if (creature.hasAttacked) return false;
+      if (hasCreatureAttacked(creature)) return false; // Multi-Strike aware
       // Use cantAttack primitive - covers Frozen, Webbed, Passive, Harmless
       if (cantAttack(creature)) return false;
       return true;
@@ -501,7 +502,7 @@ export class CombatEvaluator {
 
     // Generally, attack if we have creatures and any reasonable targets
     const hasAttackers = ai.field.some(
-      (c) => c && !c.hasAttacked && !cantAttack(c)
+      (c) => c && !hasCreatureAttacked(c) && !cantAttack(c) // Multi-Strike aware
     );
 
     return hasAttackers;

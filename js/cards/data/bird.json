@@ -267,9 +267,7 @@
       "atk": 3,
       "hp": 1,
       "nutrition": 1,
-      "effects": {
-        "multiAttack": "pileated-woodpecker-triple-attack"
-      }
+      "keywords": ["Multi-Strike 3"]
     },
     {
       "id": "bird-prey-black-swan",

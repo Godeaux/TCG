@@ -45,7 +45,7 @@ import {
 import { resolveCardEffect } from '../cards/index.js';
 import { resolveEffectResult } from '../game/effects.js';
 import { createReactionWindow, TRIGGER_EVENTS } from '../game/triggers/index.js';
-import { isAIvsAIMode } from '../state/selectors.js';
+import { isAIvsAIMode, markCreatureAttacked, hasCreatureAttacked } from '../state/selectors.js';
 import { getBugDetector } from '../simulation/index.js';
 
 // New AI evaluation modules
@@ -1355,7 +1355,8 @@ export class AIController {
       await simulateAICombatSequence(attacker, target);
 
       // Mark attacker as having attacked BEFORE executing (prevents double attacks during reaction windows)
-      attacker.hasAttacked = true;
+      // Uses Multi-Strike aware helper - creature may have attacks remaining
+      markCreatureAttacked(attacker);
 
       // Execute the attack (with reaction window for opponent's traps)
       await this.executeAttack(state, attacker, target, callbacks);
@@ -1526,7 +1527,7 @@ export class AIController {
     const availableAttackers = player.field.filter((card) => {
       if (!card || !isCreatureCard(card)) return false;
       if (card.currentHp <= 0) return false; // Dead creatures can't attack
-      if (card.hasAttacked) return false;
+      if (hasCreatureAttacked(card)) return false; // Multi-Strike aware
       // Use cantAttack primitive - covers Frozen, Webbed, Passive, Harmless
       if (cantAttack(card)) return false;
       return true;

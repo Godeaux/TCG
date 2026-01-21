@@ -32,6 +32,8 @@ export const KEYWORDS = {
   // Crustacean keywords (Experimental)
   SHELL: 'Shell', // Has Shell with shellLevel property (1/2/3)
   MOLT: 'Molt', // Revives once at 1 HP, loses all keywords
+  // Bird keywords
+  MULTI_STRIKE: 'Multi-Strike', // Attacks X times in combat (e.g., "Multi-Strike 3")
 };
 
 /**
@@ -230,6 +232,8 @@ export const KEYWORD_DESCRIPTIONS = {
     'Absorbs damage up to Shell level before HP is affected. Depletes on damage, regenerates fully at end of your turn.',
   [KEYWORDS.MOLT]:
     'When this would die, instead: revive at 1 HP and lose ALL keywords (including Shell). One-time use.',
+  // Bird keywords
+  [KEYWORDS.MULTI_STRIKE]: 'Can attack X times per turn (where X is the number after Multi-Strike).',
 };
 
 /**
@@ -608,4 +612,56 @@ export const triggerMolt = (creature) => {
  */
 export const hasMolted = (card) => {
   return card?.hasMolted === true;
+};
+
+// Bird keyword helpers
+
+/**
+ * Get Multi-Strike value for a creature.
+ * Multi-Strike is a numeric keyword (e.g., "Multi-Strike 3" = 3 attacks per turn).
+ * @param {Object} card - The creature card
+ * @returns {number} The number of attacks allowed (1 if no Multi-Strike)
+ */
+export const getMultiStrikeValue = (card) => {
+  if (!areAbilitiesActive(card) || !card.keywords) return 1;
+  for (const kw of card.keywords) {
+    if (typeof kw === 'string' && kw.startsWith('Multi-Strike')) {
+      const parts = kw.split(' ');
+      return parts.length > 1 ? parseInt(parts[1], 10) : 2;
+    }
+  }
+  return 1;
+};
+
+/**
+ * Check if a creature has Multi-Strike keyword.
+ * @param {Object} card - The creature card
+ * @returns {boolean} True if creature has Multi-Strike
+ */
+export const hasMultiStrike = (card) => getMultiStrikeValue(card) > 1;
+
+/**
+ * Get remaining attacks for a creature this turn.
+ * Considers Multi-Strike value and attacks already made.
+ * @param {Object} card - The creature card
+ * @returns {number} Number of attacks remaining
+ */
+export const getRemainingAttacks = (card) => {
+  if (!card) return 0;
+  const maxAttacks = getMultiStrikeValue(card);
+  const attacksMade = card.attacksMadeThisTurn || 0;
+  return Math.max(0, maxAttacks - attacksMade);
+};
+
+/**
+ * Check if a creature can still attack this turn.
+ * @param {Object} card - The creature card
+ * @returns {boolean} True if creature has attacks remaining
+ */
+export const canStillAttack = (card) => {
+  if (!card) return false;
+  // Standard check - has it attacked at all?
+  if (!card.hasAttackedThisTurn) return true;
+  // Multi-Strike check - does it have attacks remaining?
+  return getRemainingAttacks(card) > 0;
 };

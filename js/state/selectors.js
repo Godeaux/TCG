@@ -11,7 +11,7 @@
  * - Prevent scattered state access logic
  */
 
-import { isEdible, isInedible, isFreePlay, cantAttack, cantBeConsumed, cantConsume } from '../keywords.js';
+import { isEdible, isInedible, isFreePlay, cantAttack, cantBeConsumed, cantConsume, getMultiStrikeValue } from '../keywords.js';
 
 // ============================================================================
 // PLAYER SELECTORS
@@ -515,10 +515,30 @@ export const hasAnyAttacks = (state) => {
 };
 
 /**
- * Check if a specific creature has attacked
+ * Check if a specific creature has used all its attacks this turn.
+ * Multi-Strike creatures can attack multiple times before being considered "attacked".
  */
 export const hasCreatureAttacked = (creature) => {
-  return creature.hasAttacked === true;
+  if (!creature) return true;
+  // Check if all attacks have been used (Multi-Strike aware)
+  const maxAttacks = getMultiStrikeValue(creature);
+  const attacksMade = creature.attacksMadeThisTurn || 0;
+  return attacksMade >= maxAttacks;
+};
+
+/**
+ * Mark a creature as having made an attack. Multi-Strike aware.
+ * Returns true if the creature has exhausted all attacks.
+ * @param {Object} creature - The creature that attacked
+ * @returns {boolean} True if all attacks are now exhausted
+ */
+export const markCreatureAttacked = (creature) => {
+  if (!creature) return true;
+  creature.attacksMadeThisTurn = (creature.attacksMadeThisTurn || 0) + 1;
+  const maxAttacks = getMultiStrikeValue(creature);
+  const exhausted = creature.attacksMadeThisTurn >= maxAttacks;
+  creature.hasAttacked = exhausted;
+  return exhausted;
 };
 
 /**
