@@ -657,12 +657,12 @@ describe('Fish Prey Cards', () => {
       expect(card.nutrition).toBe(3);
     });
 
-    it('onPlay is array with selectCardToDiscard and draw 3', () => {
+    it('onPlay is array with draw 3 and selectCardToDiscard', () => {
       const card = getCardDefinitionById(cardId);
       expect(Array.isArray(card.effects.onPlay)).toBe(true);
-      expect(card.effects.onPlay[0].type).toBe('selectCardToDiscard');
-      expect(card.effects.onPlay[1].type).toBe('draw');
-      expect(card.effects.onPlay[1].params.count).toBe(3);
+      expect(card.effects.onPlay[0].type).toBe('draw');
+      expect(card.effects.onPlay[0].params.count).toBe(3);
+      expect(card.effects.onPlay[1].type).toBe('selectCardToDiscard');
     });
 
     it('discardEffect draws 1 card', () => {
