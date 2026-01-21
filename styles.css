@@ -9232,12 +9232,17 @@ button {
     align-items: center;
     max-width: 90vw;
     max-height: 85vh;
-    /* Enable pointer events so user can tap to add card */
+    /* Keep pointer-events: none when not visible (inherited from base) */
+  }
+
+  /* Only enable pointer events when tooltip is VISIBLE on mobile */
+  .card-hover-tooltip.visible {
     pointer-events: auto;
   }
 
+  /* Smaller card preview on mobile */
   .tooltip-card-preview {
-    width: min(280px, 70vw);
+    width: min(200px, 50vw);
   }
 
   .tooltip-card-preview .card.tooltip-card {

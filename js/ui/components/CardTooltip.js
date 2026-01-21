@@ -200,6 +200,7 @@ let cardPreviewElement = null;
 let infoBoxesElement = null;
 let hideTimeout = null;
 let isInitialized = false;
+let globalDismissHandler = null; // Track global tap-to-dismiss handler
 
 // ============================================================================
 // INITIALIZATION
@@ -221,7 +222,46 @@ export const initCardTooltip = () => {
     return;
   }
 
+  // Add click handler on tooltip itself to dismiss (mobile tap-to-close)
+  tooltipElement.addEventListener('click', (e) => {
+    // Tapping the tooltip dismisses it without clicking through
+    e.stopPropagation();
+    hideCardTooltipImmediate();
+  });
+
   isInitialized = true;
+};
+
+/**
+ * Set up global tap-to-dismiss handler (for mobile).
+ * Dismisses tooltip when tapping anywhere outside it.
+ */
+const setupGlobalDismissHandler = () => {
+  // Remove existing handler if any
+  removeGlobalDismissHandler();
+
+  // Add handler after a short delay to avoid the tap that opened the tooltip
+  setTimeout(() => {
+    globalDismissHandler = (e) => {
+      // If tap is outside the tooltip, dismiss it
+      if (tooltipElement && !tooltipElement.contains(e.target)) {
+        hideCardTooltipImmediate();
+      }
+    };
+    document.addEventListener('touchstart', globalDismissHandler, { passive: true });
+    document.addEventListener('click', globalDismissHandler);
+  }, 50);
+};
+
+/**
+ * Remove global tap-to-dismiss handler.
+ */
+const removeGlobalDismissHandler = () => {
+  if (globalDismissHandler) {
+    document.removeEventListener('touchstart', globalDismissHandler);
+    document.removeEventListener('click', globalDismissHandler);
+    globalDismissHandler = null;
+  }
 };
 
 // ============================================================================
@@ -270,6 +310,9 @@ export const showCardTooltip = (card, targetElement, options = {}) => {
   tooltipElement.style.zIndex = '100000'; // Ensure tooltip is above overlays
   tooltipElement.classList.add('visible');
   tooltipElement.setAttribute('aria-hidden', 'false');
+
+  // Set up tap-to-dismiss (for mobile)
+  setupGlobalDismissHandler();
 };
 
 /**
@@ -277,6 +320,7 @@ export const showCardTooltip = (card, targetElement, options = {}) => {
  */
 export const hideCardTooltip = () => {
   clearTimeout(hideTimeout);
+  removeGlobalDismissHandler();
   hideTimeout = setTimeout(() => {
     if (tooltipElement) {
       tooltipElement.classList.remove('visible');
@@ -290,6 +334,7 @@ export const hideCardTooltip = () => {
  */
 export const hideCardTooltipImmediate = () => {
   clearTimeout(hideTimeout);
+  removeGlobalDismissHandler();
   if (tooltipElement) {
     tooltipElement.classList.remove('visible');
     tooltipElement.setAttribute('aria-hidden', 'true');
