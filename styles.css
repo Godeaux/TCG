@@ -5428,17 +5428,19 @@ button {
     display: none;
   }
 
-  /* Mobile field divider layout - prevent overlap with nav buttons */
- .field-divider { /* mobile */
-    padding-left: 48px; /* Space for left nav button */
-    padding-right: 48px; /* Space for right nav button */
-    justify-content: flex-start; /* Left-align content */
+  /* Mobile field divider layout */
+  .field-divider {
+    padding-left: 8px;
+    padding-right: 8px;
+    justify-content: space-between;
   }
 
   .field-divider-text {
     text-align: left;
     flex-shrink: 1;
-    margin-right: auto; /* Push controls to the right */
+    min-width: 0; /* Allow text to shrink */
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .field-controls {
@@ -5457,14 +5459,23 @@ button {
 
   /* Mobile scoreboard: prevent opponent hand from pushing player names off-screen */
   .scoreboard-row {
-    overflow: visible; /* Allow cards to overflow visually */
+    overflow: hidden; /* Prevent horizontal overflow */
+    padding: 6px 8px; /* Reduce padding on mobile */
   }
 
   .scoreboard-left,
   .scoreboard-right {
-    flex-shrink: 0; /* Don't shrink player info */
+    flex-shrink: 1; /* Allow shrinking on mobile */
+    min-width: 0; /* Remove min-width constraint */
     z-index: 10; /* Above opponent hand cards */
     position: relative; /* Enable z-index */
+  }
+
+  .scoreboard-player .player-name {
+    font-size: var(--font-sm); /* Smaller name on mobile */
+    max-width: 60px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .scoreboard-center {
@@ -5504,6 +5515,8 @@ button {
     grid-template-columns: 1fr;
     overflow: hidden;
     position: relative;
+    width: 100%;
+    max-width: 100%;
   }
 
   .battlefield-left-column,
@@ -5555,10 +5568,15 @@ button {
 
   .hand-panel {
     padding-bottom: calc(var(--safe-bottom) + 6px);
+    padding-left: 8px;
+    padding-right: 8px;
+    overflow-x: hidden;
   }
 
   .hand-grid {
-    padding: 0 8px;
+    padding: 0;
+    overflow-x: hidden;
+    max-width: 100%;
   }
 
   .hand-grid.is-dragging,
