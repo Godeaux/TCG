@@ -963,43 +963,8 @@ export const renderProfileOverlay = (state, callbacks = {}) => {
         },
       });
 
-      // Subscribe to duel invites
-      if (duelInvitesChannel) {
-        unsubscribeFromDuelInvites(duelInvitesChannel);
-      }
-      duelInvitesChannel = subscribeToDuelInvites(
-        profileId,
-        // onInvite - received a new challenge
-        async (invite) => {
-          // Fetch sender's username
-          try {
-            const sender = await fetchPublicProfile({ profileId: invite.sender_id });
-            showDuelInvitePopup(invite, sender?.username || 'Unknown', {
-              onAccept: async (inv) => {
-                await respondToDuelInvite({ inviteId: inv.id, response: 'accepted' });
-                callbacks.onAcceptChallenge?.(inv.lobby_code);
-              },
-              onDecline: async (inv) => {
-                await respondToDuelInvite({ inviteId: inv.id, response: 'declined' });
-              },
-            });
-          } catch (e) {
-            console.error('Failed to show duel invite:', e);
-          }
-        },
-        // onCancelled - sender cancelled the invite
-        (invite) => {
-          showInviteCancelled(invite.id);
-        },
-        // onResponse - response to invite we sent
-        (invite) => {
-          if (invite.status === 'accepted') {
-            callbacks.onChallengeAccepted?.(invite.lobby_code);
-          } else if (invite.status === 'declined') {
-            callbacks.onChallengeDeclined?.();
-          }
-        }
-      );
+      // Note: Duel invite subscription is managed by setupDuelInviteListener()
+      // which is called from ui.js - do NOT create a duplicate subscription here
     }
   }
 };
