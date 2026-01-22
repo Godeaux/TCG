@@ -4518,19 +4518,28 @@ button {
   padding: 0 10px;
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
-  background-size: cover;
-  background-position: center 30%;
+  background-color: rgba(30, 30, 40, 0.95);
+  background-size: auto 100%;
+  background-position: right center;
+  background-repeat: no-repeat;
   border-radius: 4px;
   margin: 2px 6px;
   overflow: hidden;
 }
 
-/* Dark gradient overlay for text readability */
+/* Gradient overlay - solid dark on left, fading to reveal art on right */
 .deck-list-row::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.4) 50%, rgba(0, 0, 0, 0.2) 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(30, 30, 40, 1) 0%,
+    rgba(30, 30, 40, 1) 50%,
+    rgba(30, 30, 40, 0.7) 65%,
+    rgba(30, 30, 40, 0.3) 80%,
+    rgba(30, 30, 40, 0) 100%
+  );
   z-index: 1;
 }
 
