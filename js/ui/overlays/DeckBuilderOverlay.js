@@ -25,6 +25,7 @@ import { getLocalPlayerIndex, isAIMode, isAIvsAIMode } from '../../state/selecto
 import { renderDeckCard, renderCardStats, getCardEffectSummary } from '../components/Card.js';
 import { showCardTooltip, hideCardTooltip } from '../components/CardTooltip.js';
 import { KEYWORD_DESCRIPTIONS } from '../../keywords.js';
+import { getCardImagePath } from '../../cardImages.js';
 
 // ============================================================================
 // MODULE-LEVEL STATE
@@ -430,8 +431,9 @@ const createDeckListRow = (card, options = {}) => {
   row.draggable = true;
 
   // Set card art as background on the row itself (Hearthstone-style)
-  if (card.image) {
-    row.style.backgroundImage = `url(${card.image})`;
+  const imagePath = getCardImagePath(card.id);
+  if (imagePath) {
+    row.style.backgroundImage = `url(${imagePath})`;
   }
 
   // Color banner at top (color set via CSS based on data-type)
