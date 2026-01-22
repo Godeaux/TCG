@@ -32,38 +32,30 @@ import { KEYWORD_DESCRIPTIONS } from '../../keywords.js';
 
 // Mobile touch detection
 const TAP_MAX_MOVEMENT_PX = 15; // Max pixels moved to count as tap
-const LONG_PRESS_DURATION_MS = 400; // How long to hold for preview
-const DOUBLE_TAP_MAX_DELAY_MS = 300; // Max time between taps for double-tap
-
-let touchStartPos = { x: 0, y: 0 };
-let longPressTimer = null;
-let lastTapTime = 0;
-let lastTapCardId = null;
+const HOLD_PREVIEW_DURATION_MS = 200; // How long to hold for preview
 
 // Check if device supports touch (mobile)
 const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
 /**
- * Setup Hearthstone-style touch handlers for deck cards on mobile
- * - Long-press (hold ~400ms) → shows expanded card preview
- * - Double-tap → adds card to deck
- * - No drag-and-drop on mobile
+ * Setup mobile touch handlers for deck cards
+ * - Tap (quick release < 200ms) → adds card to deck
+ * - Hold (200ms+) → shows expanded card preview
+ * - Tap anywhere dismisses preview (handled by CardTooltip global handler)
  *
  * @param {HTMLElement} cardElement - The card DOM element
  * @param {Object} card - The card data object
  * @param {Function} addCardToDeck - Callback to add the card to deck
  */
 const setupMobileTouchHandlers = (cardElement, card, addCardToDeck) => {
-  let cardTouchStartPos = { x: 0, y: 0 };
-  let cardLongPressTimer = null;
-  let cardLastTapTime = 0;
-  let longPressTriggered = false;
+  let touchStartPos = { x: 0, y: 0 };
+  let holdTimer = null;
+  let previewShown = false;
 
-  // Clear any existing long press timer
-  const clearLongPress = () => {
-    if (cardLongPressTimer) {
-      clearTimeout(cardLongPressTimer);
-      cardLongPressTimer = null;
+  const clearHoldTimer = () => {
+    if (holdTimer) {
+      clearTimeout(holdTimer);
+      holdTimer = null;
     }
   };
 
@@ -71,68 +63,57 @@ const setupMobileTouchHandlers = (cardElement, card, addCardToDeck) => {
     if (e.touches.length !== 1) return;
 
     const touch = e.touches[0];
-    cardTouchStartPos = { x: touch.clientX, y: touch.clientY };
-    longPressTriggered = false;
+    touchStartPos = { x: touch.clientX, y: touch.clientY };
+    previewShown = false;
 
-    // Start long-press timer
-    clearLongPress();
-    cardLongPressTimer = setTimeout(() => {
-      longPressTriggered = true;
-      // Show expanded card WITHOUT tap-to-add callback (null)
-      showExpandedCard(card, cardElement, null);
-    }, LONG_PRESS_DURATION_MS);
+    // Start hold timer for preview
+    clearHoldTimer();
+    holdTimer = setTimeout(() => {
+      previewShown = true;
+      showExpandedCard(card, cardElement);
+    }, HOLD_PREVIEW_DURATION_MS);
   }, { passive: true });
 
   cardElement.addEventListener('touchmove', (e) => {
     if (e.touches.length !== 1) return;
 
     const touch = e.touches[0];
-    const dx = touch.clientX - cardTouchStartPos.x;
-    const dy = touch.clientY - cardTouchStartPos.y;
+    const dx = touch.clientX - touchStartPos.x;
+    const dy = touch.clientY - touchStartPos.y;
     const movement = Math.sqrt(dx * dx + dy * dy);
 
-    // Cancel long-press if finger moved too much (user is scrolling)
+    // Cancel hold if finger moved (scrolling)
     if (movement > TAP_MAX_MOVEMENT_PX) {
-      clearLongPress();
+      clearHoldTimer();
     }
   }, { passive: true });
 
   cardElement.addEventListener('touchend', (e) => {
-    clearLongPress();
+    clearHoldTimer();
 
-    // If long press was triggered, don't process as tap
-    if (longPressTriggered) {
-      longPressTriggered = false;
+    // If preview was shown, don't add card - just let global handler dismiss
+    if (previewShown) {
+      previewShown = false;
       return;
     }
 
     if (e.changedTouches.length !== 1) return;
 
     const touch = e.changedTouches[0];
-    const dx = touch.clientX - cardTouchStartPos.x;
-    const dy = touch.clientY - cardTouchStartPos.y;
+    const dx = touch.clientX - touchStartPos.x;
+    const dy = touch.clientY - touchStartPos.y;
     const movement = Math.sqrt(dx * dx + dy * dy);
 
-    // Only process as tap if finger didn't move much
+    // Quick tap with no movement = add card to deck
     if (movement < TAP_MAX_MOVEMENT_PX) {
-      const now = Date.now();
-
-      // Check for double-tap on same card
-      if (now - cardLastTapTime < DOUBLE_TAP_MAX_DELAY_MS) {
-        // Double-tap: add card to deck
-        e.preventDefault();
-        addCardToDeck(card);
-        cardLastTapTime = 0; // Reset to prevent triple-tap
-      } else {
-        // Single tap: just record time for potential double-tap
-        cardLastTapTime = now;
-      }
+      e.preventDefault();
+      addCardToDeck(card);
     }
   });
 
   cardElement.addEventListener('touchcancel', () => {
-    clearLongPress();
-    longPressTriggered = false;
+    clearHoldTimer();
+    previewShown = false;
   });
 };
 
@@ -640,62 +621,37 @@ const setupDeckListDropZone = (onDrop) => {
   });
 };
 
-// Track expanded card state for click-to-expand
+// Track expanded card state for dismiss handler
 let expandedCardElement = null;
-let expandedCardOverlay = null;
-let expandedCardData = null;
-let expandedCardAddCallback = null;
 
 /**
- * Show expanded card overlay (1.5x with tooltips)
+ * Show expanded card preview using the tooltip system
  * @param {Object} card - Card data
- * @param {HTMLElement} sourceElement - Element that was clicked
- * @param {Function} onAdd - Callback to add card to deck (for mobile tap-to-add)
+ * @param {HTMLElement} sourceElement - Element that triggered the preview
  */
-const showExpandedCard = (card, sourceElement, onAdd = null) => {
-  // Use the existing tooltip system
+const showExpandedCard = (card, sourceElement) => {
   showCardTooltip(card, sourceElement, { showPreview: true });
   expandedCardElement = sourceElement;
-  expandedCardData = card;
-  expandedCardAddCallback = onAdd;
 };
 
 /**
- * Hide expanded card overlay
+ * Hide expanded card preview
  */
 const hideExpandedCard = () => {
   hideCardTooltip();
   expandedCardElement = null;
-  expandedCardData = null;
-  expandedCardAddCallback = null;
 };
 
 /**
- * Setup click-outside handler for expanded card
- * Also handles tap-to-add on mobile
+ * Setup click handler to dismiss expanded card on any tap
+ * Uses capture phase to ensure it runs before other handlers
  */
 const setupExpandedCardDismiss = () => {
   document.addEventListener(
     'click',
-    (e) => {
+    () => {
       if (expandedCardElement) {
-        // Check if user tapped on the tooltip card itself (mobile tap-to-add)
-        const clickedTooltip = e.target.closest('.card-hover-tooltip');
-        const clickedTooltipCard = e.target.closest('.tooltip-card-preview');
-
-        if (clickedTooltipCard && expandedCardAddCallback) {
-          // Tap on expanded card - add to deck
-          e.preventDefault();
-          e.stopPropagation();
-          expandedCardAddCallback(expandedCardData);
-          hideExpandedCard();
-          return;
-        }
-
-        // Click outside tooltip and deck card - dismiss
-        if (!clickedTooltip && !e.target.closest('.deck-card')) {
-          hideExpandedCard();
-        }
+        hideExpandedCard();
       }
     },
     true
@@ -2353,7 +2309,7 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
 
     // Hover to show expanded tooltip (desktop)
     cardElement.addEventListener('mouseenter', () => {
-      showExpandedCard(card, cardElement, addCardToDeck);
+      showExpandedCard(card, cardElement);
     });
     cardElement.addEventListener('mouseleave', () => {
       hideExpandedCard();
@@ -2668,7 +2624,7 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
 
     // Hover to show expanded tooltip (desktop)
     cardElement.addEventListener('mouseenter', () => {
-      showExpandedCard(card, cardElement, addCardToDeck);
+      showExpandedCard(card, cardElement);
     });
     cardElement.addEventListener('mouseleave', () => {
       hideExpandedCard();

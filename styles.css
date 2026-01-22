@@ -4619,6 +4619,11 @@ button {
 /* Cursor hint for deck cards */
 .deck-grid .deck-card {
   cursor: pointer;
+  /* Prevent browser highlight/selection on mobile touch-hold */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
 }
 
 .deck-grid .deck-card:hover {
