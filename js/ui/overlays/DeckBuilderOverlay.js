@@ -2669,6 +2669,9 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
     },
   });
 
+  // Setup mobile drawer toggle
+  setupMobileDrawerToggle();
+
   renderDeckLoadPanel(state, playerIndex, callbacks);
 
   deckConfirm.disabled = !(hasValidCount && preyRuleValid);
