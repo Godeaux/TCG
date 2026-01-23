@@ -10,6 +10,44 @@ import { KEYWORD_DESCRIPTIONS, areAbilitiesActive } from '../../keywords.js';
 import { getTokenById } from '../../cards/registry.js';
 
 // ============================================================================
+// CSS VARIABLE HELPERS
+// ============================================================================
+
+/**
+ * Get a CSS custom property value from :root
+ * @param {string} varName - Variable name (with or without --)
+ * @returns {string} The computed value
+ */
+const getCssVar = (varName) => {
+  const name = varName.startsWith('--') ? varName : `--${varName}`;
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+};
+
+/**
+ * Get a CSS custom property as a number (parses px, vw, etc.)
+ * @param {string} varName - Variable name
+ * @param {number} fallback - Fallback value if parsing fails
+ * @returns {number} The numeric value in pixels
+ */
+const getCssVarPx = (varName, fallback) => {
+  const value = getCssVar(varName);
+  if (!value) return fallback;
+
+  // Handle clamp() by getting computed style from a temp element
+  if (value.includes('clamp') || value.includes('vw') || value.includes('vh')) {
+    const temp = document.createElement('div');
+    temp.style.cssText = `position: absolute; visibility: hidden; width: var(${varName.startsWith('--') ? varName : '--' + varName});`;
+    document.body.appendChild(temp);
+    const computed = temp.offsetWidth;
+    document.body.removeChild(temp);
+    return computed || fallback;
+  }
+
+  const parsed = parseFloat(value);
+  return isNaN(parsed) ? fallback : parsed;
+};
+
+// ============================================================================
 // STATUS EFFECT DESCRIPTIONS
 // ============================================================================
 
@@ -162,6 +200,7 @@ let cardPreviewElement = null;
 let infoBoxesElement = null;
 let hideTimeout = null;
 let isInitialized = false;
+let globalDismissHandler = null; // Track global tap-to-dismiss handler
 
 // ============================================================================
 // INITIALIZATION
@@ -183,7 +222,49 @@ export const initCardTooltip = () => {
     return;
   }
 
+  // Note: We don't add a click handler directly on the tooltip here
+  // because it would interfere with DeckBuilder's tap-to-add functionality.
+  // Dismissal is handled by the global dismiss handler instead.
+
   isInitialized = true;
+};
+
+/**
+ * Set up global tap-to-dismiss handler (for mobile).
+ * Dismisses tooltip when tapping anywhere (inside or outside).
+ *
+ * Note: DeckBuilder has its own capture-phase handler that uses stopPropagation
+ * after tap-to-add, so this bubble-phase handler won't interfere with it.
+ */
+const setupGlobalDismissHandler = () => {
+  // Remove existing handler if any
+  removeGlobalDismissHandler();
+
+  // Add handler after a short delay to avoid the tap that opened the tooltip
+  setTimeout(() => {
+    globalDismissHandler = (e) => {
+      // Dismiss tooltip on any tap
+      // If DeckBuilder handled a tap-to-add, it uses stopPropagation
+      // so this won't run in that case
+      if (tooltipElement) {
+        hideCardTooltipImmediate();
+      }
+    };
+    // Use bubble phase (default) so DeckBuilder's capture-phase handler runs first
+    document.addEventListener('touchstart', globalDismissHandler, { passive: true });
+    document.addEventListener('click', globalDismissHandler);
+  }, 50);
+};
+
+/**
+ * Remove global tap-to-dismiss handler.
+ */
+const removeGlobalDismissHandler = () => {
+  if (globalDismissHandler) {
+    document.removeEventListener('touchstart', globalDismissHandler);
+    document.removeEventListener('click', globalDismissHandler);
+    globalDismissHandler = null;
+  }
 };
 
 // ============================================================================
@@ -232,6 +313,9 @@ export const showCardTooltip = (card, targetElement, options = {}) => {
   tooltipElement.style.zIndex = '100000'; // Ensure tooltip is above overlays
   tooltipElement.classList.add('visible');
   tooltipElement.setAttribute('aria-hidden', 'false');
+
+  // Set up tap-to-dismiss (for mobile)
+  setupGlobalDismissHandler();
 };
 
 /**
@@ -239,6 +323,7 @@ export const showCardTooltip = (card, targetElement, options = {}) => {
  */
 export const hideCardTooltip = () => {
   clearTimeout(hideTimeout);
+  removeGlobalDismissHandler();
   hideTimeout = setTimeout(() => {
     if (tooltipElement) {
       tooltipElement.classList.remove('visible');
@@ -252,6 +337,7 @@ export const hideCardTooltip = () => {
  */
 export const hideCardTooltipImmediate = () => {
   clearTimeout(hideTimeout);
+  removeGlobalDismissHandler();
   if (tooltipElement) {
     tooltipElement.classList.remove('visible');
     tooltipElement.setAttribute('aria-hidden', 'true');
@@ -276,6 +362,7 @@ const renderCardPreview = (card) => {
   const cardElement = renderCard(card, {
     showEffectSummary: true,
     draggable: false,
+    context: 'tooltip',
   });
 
   // Add tooltip-specific class
@@ -366,6 +453,7 @@ const createTokenPreview = (token) => {
   const cardElement = renderCard(token, {
     showEffectSummary: true,
     draggable: false,
+    context: 'tooltip',
   });
   cardElement.classList.add('tooltip-token-card');
 
@@ -510,9 +598,9 @@ const positionTooltip = (targetElement, options = {}) => {
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
 
-  // Calculate dimensions
-  const infoBoxWidth = 260;
-  const gap = 16;
+  // Calculate dimensions from CSS variables (responsive to viewport)
+  const infoBoxWidth = getCssVarPx('--tooltip-info-width', 260);
+  const gap = getCssVarPx('--tooltip-gap', 16);
 
   // For full mode, card preview scales with viewport
   // Use ~25% of viewport width for the card, clamped between 280-400px

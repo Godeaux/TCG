@@ -45,6 +45,11 @@ let isDragging = false;
 let dragPreview = null;
 let touchedCardHandIndex = -1; // Track hand index for drag broadcasting
 let touchedFromField = false; // Track if touch started from field (combat drag)
+let touchStartTime = 0; // Track when touch started for tap detection
+
+// Tap detection config
+const TAP_MAX_DURATION_MS = 200; // Max ms for a touch to count as "tap" vs "hold"
+const TAP_MAX_MOVEMENT_PX = 10; // Max px movement for a touch to count as "tap"
 
 // Drag broadcast throttling
 let lastTouchDragBroadcast = 0;
@@ -267,13 +272,14 @@ const handleTouchStart = (e) => {
   };
   currentTouchPos = { ...touchStartPos };
   isDragging = false;
+  touchStartTime = Date.now(); // Record when touch started
 
-  // Find closest card and focus it
+  // Find closest card (but don't focus/show tooltip yet - wait for tap vs drag)
   const card = getCardAtPosition(touch.clientX, touch.clientY);
   if (card && !card.classList.contains('back')) {
     touchedCardElement = card;
     touchedCard = getCardFromInstanceId(card.dataset.instanceId, getLatestState());
-    focusCardElement(card);
+    // Don't call focusCardElement here - wait until touchend to determine if it's a tap
   }
 
   // Prevent default to avoid scrolling while touching card area
@@ -378,8 +384,13 @@ const handleTouchMove = (e) => {
 const handleTouchEnd = (e) => {
   if (!touchedCardElement) return;
 
+  const touch = e.changedTouches[0];
+  const touchDuration = Date.now() - touchStartTime;
+  const dx = touch.clientX - touchStartPos.x;
+  const dy = touch.clientY - touchStartPos.y;
+  const touchMovement = Math.sqrt(dx * dx + dy * dy);
+
   if (isDragging) {
-    const touch = e.changedTouches[0];
     const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
     const state = getLatestState();
 
@@ -456,6 +467,14 @@ const handleTouchEnd = (e) => {
 
     // Remove is-dragging class from containers
     removeDraggingClasses();
+  } else {
+    // Not dragging - check if this was a quick tap to show tooltip
+    const wasQuickTap = touchDuration < TAP_MAX_DURATION_MS && touchMovement < TAP_MAX_MOVEMENT_PX;
+
+    if (wasQuickTap && touchedCard && touchedCardElement) {
+      // Quick tap on card - show tooltip/focus the card
+      focusCardElement(touchedCardElement);
+    }
   }
 
   // Reset state
@@ -463,6 +482,7 @@ const handleTouchEnd = (e) => {
   touchedCardElement = null;
   isDragging = false;
   touchedCardHandIndex = -1;
+  touchStartTime = 0;
 };
 
 /**
@@ -498,6 +518,7 @@ const handleTouchCancel = (e) => {
     touchedCardHandIndex = -1;
     touchedFromField = false;
     isDragging = false;
+    touchStartTime = 0;
   }
 };
 

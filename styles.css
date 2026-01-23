@@ -49,6 +49,10 @@
   --field-gap: clamp(8px, 1.5vw, 16px);
   --hand-overlap: clamp(24px, 3vw, 48px);
 
+  /* Tooltip dimensions - responsive to viewport */
+  --tooltip-info-width: clamp(180px, 20vw, 280px);
+  --tooltip-gap: clamp(12px, 1.5vw, 20px);
+
   /* Minimum heights for zoom stability */
   --min-container-height: 600px;
   --min-pages-height: 500px;
@@ -94,6 +98,10 @@ body {
   line-height: 1.45;
   width: 100vw;
   max-width: 100vw;
+  /* Disable all touch-hold browser behaviors (highlight, context menu, etc.) */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 body::before {
@@ -290,7 +298,7 @@ button {
   background: transparent;
   border: none;
   padding: 4px 8px;
-  font-size: 18px;
+  font-size: var(--font-lg);
   cursor: pointer;
   transition: transform 0.15s, filter 0.15s;
   opacity: 0.7;
@@ -346,13 +354,13 @@ button {
 
 .surrender-title {
   font-family: var(--font-display);
-  font-size: 24px;
+  font-size: var(--font-xl);
   margin-bottom: 12px;
   color: var(--gold);
 }
 
 .surrender-message {
-  font-size: 16px;
+  font-size: var(--font-base);
   color: var(--text-secondary);
   margin-bottom: 24px;
 }
@@ -367,7 +375,7 @@ button {
 .surrender-btn-no {
   padding: 10px 28px;
   border-radius: 8px;
-  font-size: 16px;
+  font-size: var(--font-base);
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.15s, box-shadow 0.15s;
@@ -542,6 +550,9 @@ button {
   min-height: 0;
   padding: 4px;
   box-sizing: border-box;
+  /* Enable container queries for card-intrinsic sizing */
+  container-type: size;
+  container-name: field-slot;
 }
 
 /* Cards in field slots maintain standard playing card dimensions */
@@ -590,6 +601,42 @@ button {
 
 .field-slot .card .card-effect {
   font-size: var(--font-xs);
+}
+
+/* Container query sizing for field cards - scales with slot width */
+@container field-slot (min-width: 60px) {
+  .card .card-name {
+    /* Scale font with container width, clamped for readability */
+    font-size: clamp(6px, 10cqi, 12px);
+  }
+  .card .card-stat {
+    font-size: clamp(5px, 9cqi, 11px);
+  }
+  .card .card-keywords {
+    font-size: clamp(5px, 8cqi, 10px);
+  }
+  .card .card-effect {
+    font-size: clamp(5px, 8cqi, 10px);
+  }
+}
+
+@container field-slot (min-width: 100px) {
+  .card .card-name {
+    font-size: clamp(8px, 11cqi, 14px);
+  }
+  .card .card-stat {
+    font-size: clamp(7px, 10cqi, 12px);
+  }
+}
+
+/* Fallback for browsers without container query support (~8%) */
+@supports not (container-type: size) {
+  .field-slot .card .card-name {
+    font-size: var(--font-xs);
+  }
+  .field-slot .card .card-stat {
+    font-size: var(--font-xs);
+  }
 }
 
 .field-divider {
@@ -685,7 +732,7 @@ button {
   background: rgba(212, 168, 83, 0.1);
   color: var(--gold-light);
   font-family: var(--font-display);
-  font-size: 16px;
+  font-size: var(--font-base);
   letter-spacing: 0.05em;
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -746,7 +793,7 @@ button {
   background: transparent;
   border: none;
   padding: 6px;
-  font-size: 20px;
+  font-size: var(--font-lg);
   cursor: pointer;
   opacity: 0.7;
   transition: all 0.15s;
@@ -761,7 +808,7 @@ button {
   background: transparent;
   border: none;
   padding: 6px;
-  font-size: 20px;
+  font-size: var(--font-lg);
   cursor: pointer;
   opacity: 0.7;
   transition: all 0.15s;
@@ -777,10 +824,33 @@ button {
   display: inline-block;
 }
 
+/* History button - hidden on desktop, shown on mobile */
+.field-history-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  padding: 6px;
+  font-size: var(--font-lg);
+  cursor: pointer;
+  opacity: 0.7;
+  transition: all 0.15s;
+}
+
+.field-history-btn:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+@media (max-width: 767px) {
+  .field-history-btn {
+    display: inline-block;
+  }
+}
+
 .info-toggle {
   position: absolute;
   right: 0;
-  font-size: 10px;
+  font-size: var(--font-xs);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   padding: 4px 8px;
@@ -799,7 +869,7 @@ button {
 .info-toggle--back {
   position: static;
   padding: 4px 10px;
-  font-size: 11px;
+  font-size: var(--font-sm);
 }
 
 .hand-panel {
@@ -1077,7 +1147,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: var(--font-base);
   margin-left: -12px;
   transition: transform 0.15s ease, margin 0.15s ease, box-shadow 0.15s ease;
   position: relative;
@@ -1139,7 +1209,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  font-size: var(--font-xl);
   box-shadow:
     0 4px 12px rgba(0, 0, 0, 0.4),
     0 0 20px rgba(212, 168, 83, 0.3);
@@ -1414,7 +1484,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  font-size: var(--font-xl);
   box-shadow:
     0 8px 24px rgba(0, 0, 0, 0.5),
     0 0 20px rgba(212, 168, 83, 0.3);
@@ -1479,7 +1549,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32px;
+  font-size: var(--font-2xl);
 }
 
 .game-log-panel {
@@ -1554,7 +1624,7 @@ button {
   height: 100%;
   color: var(--text-muted);
   font-style: italic;
-  font-size: 13px;
+  font-size: var(--font-sm);
 }
 
 .inspector-card-layout {
@@ -1591,7 +1661,7 @@ button {
 }
 
 .inspector-image-placeholder {
-  font-size: 48px;
+  font-size: var(--font-3xl);
   opacity: 0.7;
   color: var(--text-muted);
   display: flex;
@@ -1612,7 +1682,7 @@ button {
 .inspector-card-content h4 {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: var(--font-lg);
   color: var(--text-primary);
   letter-spacing: 0.04em;
 }
@@ -1662,13 +1732,13 @@ button {
 }
 
 .inspector-card-content .meta {
-  font-size: 14px;
+  font-size: var(--font-base);
   color: var(--text-secondary);
   line-height: 1.5;
 }
 
 .inspector-card-content .effect {
-  font-size: 14px;
+  font-size: var(--font-base);
   color: var(--text-secondary);
   line-height: 1.5;
   margin-top: 4px;
@@ -1681,7 +1751,7 @@ button {
 }
 
 .inspector-card-content .keyword-glossary strong {
-  font-size: 15px;
+  font-size: var(--font-base);
   color: var(--text-primary);
   display: block;
   margin-bottom: 6px;
@@ -1694,7 +1764,7 @@ button {
 }
 
 .inspector-card-content .keyword-glossary li {
-  font-size: 13px;
+  font-size: var(--font-sm);
   color: var(--text-secondary);
   margin-bottom: 4px;
   line-height: 1.4;
@@ -1714,17 +1784,17 @@ button {
 
 .inspector-deck-mode h4 {
   margin-top: 0;
-  font-size: 20px;
+  font-size: var(--font-lg);
 }
 
 .inspector-deck-mode .meta {
-  font-size: 14px;
+  font-size: var(--font-base);
   line-height: 1.5;
   margin-bottom: 8px;
 }
 
 .inspector-deck-mode .effect {
-  font-size: 14px;
+  font-size: var(--font-base);
   line-height: 1.5;
   margin: 12px 0;
 }
@@ -1736,12 +1806,12 @@ button {
 }
 
 .inspector-deck-mode .keyword-glossary strong {
-  font-size: 15px;
+  font-size: var(--font-base);
   margin-bottom: 8px;
 }
 
 .inspector-deck-mode .keyword-glossary li {
-  font-size: 13px;
+  font-size: var(--font-sm);
   line-height: 1.4;
   margin-bottom: 6px;
 }
@@ -2036,7 +2106,7 @@ button {
   position: absolute;
   top: 4px;
   right: 4px;
-  font-size: 20px;
+  font-size: var(--font-lg);
   z-index: 101;
   animation: death-pulse 1s ease-in-out infinite;
   filter: drop-shadow(0 0 4px rgba(255, 0, 0, 0.8));
@@ -2092,10 +2162,9 @@ button {
 }
 
 .inspector-content {
-  font-size: 13px;
+  font-size: var(--font-sm);
   color: var(--text-secondary);
   max-height: 900px;
-  font-size: 40px;
   overflow-y: auto; /* Allow scrolling if content is too tall */
 }
 
@@ -2117,7 +2186,7 @@ button {
   border-radius: 10px;
   padding: 10px;
   text-align: center;
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--text-secondary);
   cursor: pointer;
   transition: background 0.15s ease;
@@ -2129,7 +2198,7 @@ button {
 
 .pile-item strong {
   display: inline;
-  font-size: 16px;
+  font-size: var(--font-base);
   color: var(--text-primary);
   margin-top: 4px;
   white-space: nowrap;
@@ -2304,7 +2373,7 @@ button {
 
 .hide-panel-btn {
   padding: 4px 8px;
-  font-size: 11px;
+  font-size: var(--font-sm);
   background: var(--bg-card-hover);
   border: 1px solid var(--border-subtle);
   border-radius: 4px;
@@ -2374,7 +2443,7 @@ button {
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   padding: 4px 8px;
-  font-size: 12px;
+  font-size: var(--font-sm);
 }
 
 /* Recently drawn card indicator for discard selection */
@@ -2389,7 +2458,7 @@ button {
   right: 8px;
   background: var(--prey);
   color: var(--bg-main);
-  font-size: 10px;
+  font-size: var(--font-xs);
   font-weight: bold;
   padding: 2px 6px;
   border-radius: 4px;
@@ -2433,14 +2502,14 @@ button {
 }
 
 .option-bubble-btn .option-label {
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--gold-light);
   text-align: center;
 }
 
 .option-bubble-btn .option-description {
-  font-size: 11px;
+  font-size: var(--font-sm);
   color: var(--text-muted);
   text-align: center;
   line-height: 1.3;
@@ -2530,7 +2599,7 @@ button {
 /* Title above card selection grid */
 .selection-panel:has(.selection-card) > strong {
   text-align: center;
-  font-size: 16px;
+  font-size: var(--font-base);
   margin-bottom: 8px;
   color: var(--gold-light);
 }
@@ -2549,7 +2618,7 @@ button {
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   padding: 6px 10px;
-  font-size: 12px;
+  font-size: var(--font-sm);
 }
 
 .page-nav {
@@ -2672,7 +2741,7 @@ button {
 /* Card name: ~8% of card height */
 .card-name {
   font-weight: 600;
-  font-size: 12px;
+  font-size: var(--font-sm);
   text-align: center;
   overflow: hidden;
   white-space: nowrap;
@@ -2712,7 +2781,7 @@ button {
 }
 
 .card-stat {
-  font-size: 12px;
+  font-size: var(--font-sm);
   padding: 2px 8px;
   white-space: nowrap;
   display: flex;
@@ -2737,7 +2806,7 @@ button {
   display: flex;
   flex-wrap: wrap;
   gap: 2px;
-  font-size: 15px;
+  font-size: var(--font-base);
   color: var(--text-primary);
   justify-content: center;
   text-align: center;
@@ -2756,7 +2825,7 @@ button {
   padding: 1px 4px;
   border-radius: 3px;
   text-decoration: none;
-  font-size: 9px;
+  font-size: var(--font-xs);
 }
 
 .card-keywords .keyword-status-deadly {
@@ -2765,7 +2834,7 @@ button {
   padding: 1px 4px;
   border-radius: 3px;
   text-decoration: none;
-  font-size: 9px;
+  font-size: var(--font-xs);
   animation: pulse-deadly 1.5s ease-in-out infinite;
 }
 
@@ -2775,7 +2844,7 @@ button {
 }
 
 .card-effect {
-  font-size: 11px;
+  font-size: var(--font-sm);
   color: var(--text-secondary);
   line-height: 1.25;
   text-align: center;
@@ -2834,7 +2903,7 @@ button {
 }
 
 .card-image-placeholder {
-  font-size: 24px;
+  font-size: var(--font-xl);
   opacity: 0.6;
   color: var(--text-muted);
   display: flex;
@@ -2871,12 +2940,12 @@ button {
 }
 
 .card-stat-box .stat-emoji {
-  font-size: 14px;
+  font-size: var(--font-base);
   line-height: 1;
 }
 
 .card-stat-box .stat-value {
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 700;
   line-height: 1;
   color: #fff;
@@ -2892,7 +2961,7 @@ button {
 }
 
 .card-text-area {
-  font-size: 12px;
+  font-size: var(--font-sm);
   line-height: 1.3;
   color: var(--text-secondary);
   text-align: center;
@@ -2960,7 +3029,7 @@ button {
   flex: 1;
   padding: 5px 6px;
   border-radius: 6px;
-  font-size: 11px;
+  font-size: var(--font-sm);
   background: var(--bg-card-hover);
   border: 1px solid var(--border-subtle);
 }
@@ -2985,7 +3054,7 @@ button {
 .card.back {
   display: grid;
   place-items: center;
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--text-muted);
 }
 
@@ -2993,7 +3062,7 @@ button {
   position: absolute;
   top: 6px;
   right: 6px;
-  font-size: 12px;
+  font-size: var(--font-sm);
   z-index: 10;
 }
 
@@ -3007,7 +3076,7 @@ button {
   left: 50%;
   transform: translate(-50%, -50%);
   font-family: var(--font-display);
-  font-size: 26px;
+  font-size: var(--font-xl);
   color: #ff3b3b;
   text-shadow: 0 0 10px rgba(255, 59, 59, 0.75);
   animation: damage-pop 0.9s ease-out forwards;
@@ -3128,7 +3197,7 @@ button {
   position: absolute;
   transform: translate(-50%, -50%);
   font-family: var(--font-display);
-  font-size: 32px;
+  font-size: var(--font-2xl);
   font-weight: bold;
   color: #ff3b3b;
   text-shadow: 0 0 15px rgba(255, 59, 59, 0.9), 2px 2px 4px rgba(0, 0, 0, 0.5);
@@ -3181,7 +3250,7 @@ button {
   position: absolute;
   transform: translate(-50%, -50%);
   font-family: var(--font-display);
-  font-size: 26px;
+  font-size: var(--font-xl);
   color: #4cd964;
   text-shadow: 0 0 10px rgba(76, 217, 100, 0.75);
   animation: heal-pop 0.9s ease-out forwards;
@@ -3249,7 +3318,7 @@ button {
   left: 50%;
   transform: translate(-50%, -50%);
   font-family: var(--font-display);
-  font-size: 22px;
+  font-size: var(--font-xl);
   color: #27ae60;
   text-shadow: 0 0 10px rgba(39, 174, 96, 0.8), 0 0 20px rgba(39, 174, 96, 0.5);
   animation: nutrition-pop 1s ease-out forwards;
@@ -3583,7 +3652,7 @@ button {
 }
 
 .menu-icon {
-  font-size: 32px;
+  font-size: var(--font-2xl);
   background: rgba(255, 255, 255, 0.08);
   border-radius: 14px;
   padding: 10px 14px;
@@ -3591,7 +3660,7 @@ button {
 }
 
 .menu-status {
-  font-size: 14px;
+  font-size: var(--font-base);
   color: var(--text-secondary);
   background: rgba(255, 255, 255, 0.04);
   border-radius: 12px;
@@ -3640,7 +3709,7 @@ button {
 
 .tutorial-eyebrow {
   text-transform: uppercase;
-  font-size: 12px;
+  font-size: var(--font-sm);
   letter-spacing: 0.2em;
   color: var(--text-muted);
   margin: 0;
@@ -3664,7 +3733,7 @@ button {
 
 .tutorial-section h3 {
   margin-top: 0;
-  font-size: 20px;
+  font-size: var(--font-lg);
 }
 
 .tutorial-diagram {
@@ -3685,25 +3754,25 @@ button {
 }
 
 .focus-card-title {
-  font-size: 12px;
+  font-size: var(--font-sm);
   text-transform: uppercase;
   letter-spacing: 0.2em;
   color: var(--text-muted);
 }
 
 .focus-card-value {
-  font-size: 22px;
+  font-size: var(--font-xl);
   font-weight: 600;
   margin: 8px 0;
 }
 
 .focus-card-caption {
-  font-size: 13px;
+  font-size: var(--font-sm);
   color: var(--text-secondary);
 }
 
 .focus-arrow {
-  font-size: 20px;
+  font-size: var(--font-lg);
   color: var(--text-muted);
 }
 
@@ -3719,7 +3788,7 @@ button {
   display: flex;
   justify-content: space-between;
   padding: 6px 0;
-  font-size: 14px;
+  font-size: var(--font-base);
 }
 
 .stat-label {
@@ -3733,14 +3802,14 @@ button {
 
 .stat-footer {
   margin-top: 8px;
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--text-secondary);
 }
 
 .stat-explain {
   flex: 1;
   min-width: 200px;
-  font-size: 14px;
+  font-size: var(--font-base);
   color: var(--text-secondary);
 }
 
@@ -3792,17 +3861,17 @@ button {
   padding: 10px 14px;
   border: 1px solid var(--border-subtle);
   white-space: nowrap;
-  font-size: 13px;
+  font-size: var(--font-sm);
 }
 
 .flow-arrow {
   color: var(--text-muted);
-  font-size: 18px;
+  font-size: var(--font-lg);
 }
 
 .tutorial-note {
   margin-top: 10px;
-  font-size: 13px;
+  font-size: var(--font-sm);
   color: var(--text-secondary);
 }
 
@@ -3820,11 +3889,11 @@ button {
 
 .combat-connector {
   text-align: center;
-  font-size: 22px;
+  font-size: var(--font-xl);
 }
 
 .combat-result {
-  font-size: 13px;
+  font-size: var(--font-sm);
   color: var(--text-secondary);
 }
 
@@ -3855,7 +3924,7 @@ button {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
-  font-size: 13px;
+  font-size: var(--font-sm);
   color: var(--text-secondary);
 }
 
@@ -3889,7 +3958,7 @@ button {
 }
 
 .menu-label {
-  font-size: 13px;
+  font-size: var(--font-sm);
   color: var(--text-secondary);
 }
 
@@ -3908,13 +3977,13 @@ button {
 
 .menu-error {
   min-height: 20px;
-  font-size: 13px;
+  font-size: var(--font-sm);
   color: #f87171;
 }
 
 .lobby-code {
   font-family: var(--font-display);
-  font-size: 28px;
+  font-size: var(--font-xl);
   letter-spacing: 0.2em;
   text-align: center;
   padding: 12px;
@@ -3942,7 +4011,7 @@ button {
 
 .ai-difficulty-label {
   display: block;
-  font-size: 12px;
+  font-size: var(--font-sm);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-secondary);
@@ -3983,7 +4052,7 @@ button {
 }
 
 .difficulty-name {
-  font-size: 13px;
+  font-size: var(--font-sm);
   font-weight: 500;
 }
 
@@ -3991,7 +4060,7 @@ button {
   position: absolute;
   top: -6px;
   right: -6px;
-  font-size: 8px;
+  font-size: var(--font-xs);
   font-weight: 700;
   padding: 2px 4px;
   border-radius: 4px;
@@ -4026,11 +4095,11 @@ button {
 }
 
 .deck-option-icon {
-  font-size: 22px;
+  font-size: var(--font-xl);
 }
 
 .deck-option-name {
-  font-size: 14px;
+  font-size: var(--font-base);
 }
 
 .ai-saved-decks {
@@ -4045,7 +4114,7 @@ button {
   background: rgba(255, 255, 255, 0.06);
   color: var(--text-primary);
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: var(--font-base);
   cursor: pointer;
 }
 
@@ -4083,7 +4152,7 @@ button {
 
 .ai-vs-ai-side h3 {
   font-family: var(--font-display);
-  font-size: 14px;
+  font-size: var(--font-base);
   letter-spacing: 0.05em;
   text-align: center;
   margin: 0 0 12px;
@@ -4092,7 +4161,7 @@ button {
 
 .ai-vs-ai-divider {
   font-family: var(--font-display);
-  font-size: 24px;
+  font-size: var(--font-xl);
   color: var(--gold);
   padding: 60px 10px;
   letter-spacing: 0.1em;
@@ -4135,16 +4204,16 @@ button {
   position: absolute;
   right: 12px;
   color: #4ade80;
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: bold;
 }
 
 .ai-vs-ai-deck-btn .deck-emoji {
-  font-size: 20px;
+  font-size: var(--font-lg);
 }
 
 .ai-vs-ai-deck-btn .deck-name {
-  font-size: 14px;
+  font-size: var(--font-base);
   flex: 1;
 }
 
@@ -4154,7 +4223,7 @@ button {
 
 .ai-vs-ai-deck-btn .deck-experimental-badge {
   position: static;
-  font-size: 9px;
+  font-size: var(--font-xs);
   padding: 2px 6px;
   margin-left: auto;
 }
@@ -4232,7 +4301,7 @@ button {
 }
 
 .deck-select-icon {
-  font-size: 32px;
+  font-size: var(--font-2xl);
   background: rgba(255, 255, 255, 0.06);
   border-radius: 14px;
   padding: 10px 14px;
@@ -4273,22 +4342,22 @@ button {
 }
 
 .deck-select-panel .deck-emoji {
-  font-size: 28px;
+  font-size: var(--font-xl);
 }
 
 .deck-select-panel .deck-name {
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 600;
 }
 
 .deck-select-panel .deck-status {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: rgba(255, 255, 255, 0.85);
 }
 
 .deck-select-panel .deck-meta {
   margin-top: auto;
-  font-size: 11px;
+  font-size: var(--font-sm);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -4349,7 +4418,7 @@ button {
   right: 8px;
   background: linear-gradient(135deg, #ff6b35, #f7931e);
   color: #fff;
-  font-size: 10px;
+  font-size: var(--font-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -4417,14 +4486,14 @@ button {
 
 .deck-list-title {
   font-family: var(--font-display);
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--gold-light);
   letter-spacing: 0.05em;
 }
 
 .deck-list-count {
-  font-size: 13px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--text-secondary);
 }
@@ -4440,7 +4509,7 @@ button {
   padding: 8px 0;
 }
 
-/* Individual deck list card row - Hearthstone-style with art background */
+/* Individual deck list card row - Hearthstone-style with art strip */
 .deck-list-row {
   position: relative;
   display: flex;
@@ -4449,19 +4518,39 @@ button {
   padding: 0 10px;
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
-  background-size: cover;
-  background-position: center 30%;
+  background-color: rgba(30, 30, 40, 0.95);
   border-radius: 4px;
   margin: 2px 6px;
   overflow: hidden;
 }
 
-/* Dark gradient overlay for text readability */
+/* Art strip on right side - fixed width, crops to fill */
+.deck-list-row::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 35%;
+  background-image: var(--card-image);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 0;
+}
+
+/* Gradient overlay - solid dark on left, fading to reveal art on right */
 .deck-list-row::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.4) 50%, rgba(0, 0, 0, 0.2) 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(30, 30, 40, 1) 0%,
+    rgba(30, 30, 40, 1) 55%,
+    rgba(30, 30, 40, 0.6) 70%,
+    rgba(30, 30, 40, 0) 85%
+  );
   z-index: 1;
 }
 
@@ -4487,7 +4576,7 @@ button {
 .deck-list-row-name {
   position: relative;
   z-index: 2;
-  font-size: 13px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: #fff;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
@@ -4531,11 +4620,11 @@ button {
   padding: 24px;
   color: var(--text-secondary);
   text-align: center;
-  font-size: 13px;
+  font-size: var(--font-sm);
 }
 
 .deck-list-empty-icon {
-  font-size: 32px;
+  font-size: var(--font-2xl);
   margin-bottom: 8px;
   opacity: 0.5;
 }
@@ -4578,7 +4667,7 @@ button {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--text-secondary);
 }
 
@@ -4619,7 +4708,7 @@ button {
 .deck-name-input {
   flex: 1;
   padding: 4px 8px;
-  font-size: 14px;
+  font-size: var(--font-base);
   font-family: inherit;
   border: 1px solid var(--border-subtle);
   border-radius: 4px;
@@ -4645,7 +4734,7 @@ button {
 .deck-filter-input {
   flex: 1;
   padding: 8px 12px;
-  font-size: 14px;
+  font-size: var(--font-base);
   font-family: inherit;
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
@@ -4672,7 +4761,7 @@ button {
   border-radius: 8px;
   background: var(--bg-card);
   color: var(--text-secondary);
-  font-size: 18px;
+  font-size: var(--font-lg);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -4827,7 +4916,7 @@ button {
     background: linear-gradient(135deg, var(--gold), var(--gold-dark));
     border: 2px solid var(--gold-light);
     color: var(--bg-primary);
-    font-size: 14px;
+    font-size: var(--font-base);
     font-weight: 700;
     align-items: center;
     justify-content: center;
@@ -4862,7 +4951,7 @@ button {
   right: 6px;
   background: rgba(0, 0, 0, 0.5);
   padding: 2px 6px;
-  font-size: 10px;
+  font-size: var(--font-xs);
   border-radius: 6px;
 }
 
@@ -4947,7 +5036,7 @@ button {
 }
 
 .deck-slot-meta {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--text-secondary);
 }
 
@@ -4962,7 +5051,7 @@ button {
   border-radius: 8px;
   border: 1px solid var(--border-subtle);
   background: var(--bg-card-hover);
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--text-secondary);
 }
 
@@ -5046,13 +5135,13 @@ button {
 }
 
 .deck-catalog-card__title {
-  font-size: 16px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--text-primary);
 }
 
 .deck-catalog-card__subtitle {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--text-secondary);
 }
 
@@ -5064,7 +5153,7 @@ button {
 
 .deck-catalog-card__btn {
   padding: 8px 12px;
-  font-size: 18px;
+  font-size: var(--font-lg);
   background: var(--bg-card-hover);
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
@@ -5095,7 +5184,7 @@ button {
 
 .deck-catalog-back-btn {
   padding: 12px 32px;
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 600;
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
@@ -5113,7 +5202,7 @@ button {
 
 .deck-select-back-btn {
   padding: 10px 20px;
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 500;
   background: transparent;
   border: 1px solid var(--border-subtle);
@@ -5171,14 +5260,14 @@ button {
 
 .setup-icon,
 .pass-icon {
-  font-size: 32px;
+  font-size: var(--font-2xl);
 }
 
 .setup-rolls {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  font-size: 14px;
+  font-size: var(--font-base);
 }
 
 .setup-actions {
@@ -5212,14 +5301,14 @@ button {
 }
 
 .reaction-icon {
-  font-size: 32px;
+  font-size: var(--font-2xl);
 }
 
 .reaction-timer {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 24px;
+  font-size: var(--font-xl);
   font-weight: bold;
   color: var(--text-muted);
 }
@@ -5246,7 +5335,7 @@ button {
   border: 1px solid var(--border-subtle);
   border-radius: 10px;
   padding: 12px 16px;
-  font-size: 14px;
+  font-size: var(--font-base);
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
 }
@@ -5333,15 +5422,15 @@ button {
     left: -20px;
     top: 0;
     margin: 0;
-    font-size: 14px;
+    font-size: var(--font-base);
   }
 
   .player-name {
-    font-size: 12px;
+    font-size: var(--font-sm);
   }
 
   .player-stats {
-    font-size: 11px;
+    font-size: var(--font-sm);
     gap: 4px;
   }
 
@@ -5351,11 +5440,11 @@ button {
   }
 
   .turn-number {
-    font-size: 12px;
+    font-size: var(--font-sm);
   }
 
   .phase-label {
-    font-size: 10px;
+    font-size: var(--font-xs);
   }
 
   /* Hide surrender button on mobile - tap player name instead */
@@ -5363,17 +5452,19 @@ button {
     display: none;
   }
 
-  /* Mobile field divider layout - prevent overlap with nav buttons */
- .field-divider { /* mobile */
-    padding-left: 48px; /* Space for left nav button */
-    padding-right: 48px; /* Space for right nav button */
-    justify-content: flex-start; /* Left-align content */
+  /* Mobile field divider layout */
+  .field-divider {
+    padding-left: 8px;
+    padding-right: 8px;
+    justify-content: space-between;
   }
 
   .field-divider-text {
     text-align: left;
     flex-shrink: 1;
-    margin-right: auto; /* Push controls to the right */
+    min-width: 0; /* Allow text to shrink */
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .field-controls {
@@ -5392,14 +5483,23 @@ button {
 
   /* Mobile scoreboard: prevent opponent hand from pushing player names off-screen */
   .scoreboard-row {
-    overflow: visible; /* Allow cards to overflow visually */
+    overflow: hidden; /* Prevent horizontal overflow */
+    padding: 6px 8px; /* Reduce padding on mobile */
   }
 
   .scoreboard-left,
   .scoreboard-right {
-    flex-shrink: 0; /* Don't shrink player info */
+    flex-shrink: 1; /* Allow shrinking on mobile */
+    min-width: 0; /* Remove min-width constraint */
     z-index: 10; /* Above opponent hand cards */
     position: relative; /* Enable z-index */
+  }
+
+  .scoreboard-player .player-name {
+    font-size: var(--font-sm); /* Smaller name on mobile */
+    max-width: 60px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .scoreboard-center {
@@ -5434,10 +5534,13 @@ button {
     font-size: 0.9rem;
   }
 
-  .battlefield-layout-three-column {
+  .battlefield-layout-three-column,
+  .battlefield-layout-two-column {
     grid-template-columns: 1fr;
     overflow: hidden;
     position: relative;
+    width: 100%;
+    max-width: 100%;
   }
 
   .battlefield-left-column,
@@ -5454,12 +5557,14 @@ button {
     padding: 12px;
   }
 
-  .battlefield-layout-three-column.show-inspector .battlefield-left-column {
+  .battlefield-layout-three-column.show-inspector .battlefield-left-column,
+  .battlefield-layout-two-column.show-inspector .battlefield-left-column {
     display: flex;
     flex-direction: column;
   }
 
-  .battlefield-layout-three-column.show-history .battlefield-right-column {
+  .battlefield-layout-three-column.show-history .battlefield-right-column,
+  .battlefield-layout-two-column.show-history .battlefield-right-column {
     display: flex;
     flex-direction: column;
   }
@@ -5474,9 +5579,10 @@ button {
     min-height: 0;
   }
 
+  /* Hide old nav arrows on mobile - use history button in field controls instead */
   .mobile-nav-left,
   .mobile-nav-right {
-    display: flex;
+    display: none;
   }
 
   .pages-container {
@@ -5486,10 +5592,15 @@ button {
 
   .hand-panel {
     padding-bottom: calc(var(--safe-bottom) + 6px);
+    padding-left: 8px;
+    padding-right: 8px;
+    overflow-x: hidden;
   }
 
   .hand-grid {
-    padding: 0 8px;
+    padding: 0;
+    overflow-x: hidden;
+    max-width: 100%;
   }
 
   .hand-grid.is-dragging,
@@ -5580,7 +5691,7 @@ button {
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid var(--border-gold);
     color: var(--gold-light);
-    font-size: 18px;
+    font-size: var(--font-lg);
     cursor: pointer;
     transition: all var(--transition-fast);
   }
@@ -7252,7 +7363,7 @@ button {
   margin: 0 0 16px 0;
   color: var(--gold);
   font-family: var(--font-display);
-  font-size: 24px;
+  font-size: var(--font-xl);
   letter-spacing: 1px;
 }
 
@@ -7263,11 +7374,11 @@ button {
 .duel-invite-content p {
   margin: 0 0 16px 0;
   color: var(--text-primary);
-  font-size: 16px;
+  font-size: var(--font-base);
 }
 
 .duel-invite-timer {
-  font-size: 32px;
+  font-size: var(--font-2xl);
   font-weight: bold;
   color: var(--hp-red);
   font-family: var(--font-display);
@@ -7284,7 +7395,7 @@ button {
 .duel-invite-dismiss {
   padding: 10px 24px;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: bold;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -7324,7 +7435,7 @@ button {
 .duel-invite-cancel {
   padding: 10px 24px;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: bold;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -8240,7 +8351,7 @@ button {
 /* Pack save status */
 .pack-save-status {
   text-align: center;
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 600;
   min-height: 20px;
   margin: 8px 0;
@@ -8981,7 +9092,7 @@ button {
   z-index: 100000 !important;
   pointer-events: none;
   display: flex;
-  gap: 12px;
+  gap: var(--tooltip-gap);
   opacity: 0;
   transition: opacity 0.15s ease-in-out;
 }
@@ -9002,6 +9113,9 @@ button {
 .tooltip-card-preview {
   width: var(--tooltip-card-width, 320px);
   flex-shrink: 0;
+  /* Enable container queries for card-intrinsic sizing */
+  container-type: inline-size;
+  container-name: tooltip-preview;
 }
 
 .tooltip-card-preview .card {
@@ -9019,6 +9133,25 @@ button {
   pointer-events: none;
 }
 
+/* Container query sizing for tooltip cards - scales with preview width */
+@container tooltip-preview (min-width: 200px) {
+  .card .card-name {
+    font-size: clamp(12px, 6cqi, 18px);
+  }
+  .card .card-stat {
+    font-size: clamp(10px, 5cqi, 14px);
+  }
+}
+
+@container tooltip-preview (min-width: 300px) {
+  .card .card-name {
+    font-size: clamp(14px, 5cqi, 20px);
+  }
+  .card .card-stat {
+    font-size: clamp(12px, 4cqi, 16px);
+  }
+}
+
 /* Info-only mode (hand cards) - no card preview, just info boxes */
 .card-hover-tooltip.info-only .tooltip-card-preview {
   display: none;
@@ -9029,7 +9162,7 @@ button {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-width: 260px;
+  max-width: var(--tooltip-info-width);
   overflow-y: visible;
 }
 
@@ -9053,14 +9186,14 @@ button {
 
 .tooltip-info-box-title {
   font-family: var(--font-display);
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--gold-light);
   margin-bottom: 6px;
 }
 
 .tooltip-info-box-description {
-  font-size: 13px;
+  font-size: var(--font-sm);
   color: var(--text-secondary);
   line-height: 1.5;
 }
@@ -9073,7 +9206,7 @@ button {
 /* Token section header */
 .tooltip-token-header {
   font-family: var(--font-display);
-  font-size: 13px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--text-secondary);
   text-transform: uppercase;
@@ -9108,6 +9241,11 @@ button {
 
 /* Mobile tooltip - smaller, centered, tappable */
 @media (max-width: 768px) {
+  :root {
+    --tooltip-info-width: clamp(140px, 40vw, 200px);
+    --tooltip-gap: 8px;
+  }
+
   .card-hover-tooltip {
     /* Center on screen */
     left: 50% !important;
@@ -9118,12 +9256,17 @@ button {
     align-items: center;
     max-width: 90vw;
     max-height: 85vh;
-    /* Enable pointer events so user can tap to add card */
+    /* Keep pointer-events: none when not visible (inherited from base) */
+  }
+
+  /* Only enable pointer events when tooltip is VISIBLE on mobile */
+  .card-hover-tooltip.visible {
     pointer-events: auto;
   }
 
+  /* Smaller card preview on mobile */
   .tooltip-card-preview {
-    width: min(280px, 70vw);
+    width: min(200px, 50vw);
   }
 
   .tooltip-card-preview .card.tooltip-card {
@@ -9145,16 +9288,16 @@ button {
   .tooltip-info-box {
     min-width: 140px;
     max-width: 45%;
-    font-size: 11px;
+    font-size: var(--font-sm);
     padding: 8px 10px;
   }
 
   .tooltip-info-box-title {
-    font-size: 11px;
+    font-size: var(--font-sm);
   }
 
   .tooltip-info-box-description {
-    font-size: 10px;
+    font-size: var(--font-xs);
   }
 }
 
@@ -9201,7 +9344,7 @@ button {
 }
 
 .bug-fab-icon {
-  font-size: 24px;
+  font-size: var(--font-xl);
   line-height: 1;
 }
 
@@ -9231,7 +9374,7 @@ button {
   border: 1px solid var(--border-gold);
   border-radius: 10px;
   color: var(--text-primary);
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
@@ -9244,7 +9387,7 @@ button {
 }
 
 .bug-menu-icon {
-  font-size: 16px;
+  font-size: var(--font-base);
 }
 
 /* Bug Report Overlay */
@@ -9279,7 +9422,7 @@ button {
 
 .bug-report-header h2 {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--font-lg);
   color: var(--gold-light);
 }
 
@@ -9290,7 +9433,7 @@ button {
   background: transparent;
   border: 1px solid var(--border-subtle);
   color: var(--text-secondary);
-  font-size: 16px;
+  font-size: var(--font-base);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -9315,7 +9458,7 @@ button {
   background: transparent;
   border: none;
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -9351,7 +9494,7 @@ button {
 
 .bug-form-title {
   margin: 0 0 16px;
-  font-size: 16px;
+  font-size: var(--font-base);
   color: var(--text-primary);
 }
 
@@ -9362,7 +9505,7 @@ button {
 }
 
 .bug-label {
-  font-size: 13px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--text-secondary);
   text-transform: uppercase;
@@ -9377,7 +9520,7 @@ button {
 
 .bug-form-error {
   min-height: 20px;
-  font-size: 13px;
+  font-size: var(--font-sm);
   color: #f87171;
 }
 
@@ -9449,7 +9592,7 @@ button {
 }
 
 .bug-category {
-  font-size: 11px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -9460,7 +9603,7 @@ button {
 }
 
 .bug-status {
-  font-size: 11px;
+  font-size: var(--font-sm);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -9473,14 +9616,14 @@ button {
 
 .bug-title {
   margin: 0 0 6px;
-  font-size: 15px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--text-primary);
 }
 
 .bug-description {
   margin: 0 0 10px;
-  font-size: 13px;
+  font-size: var(--font-sm);
   color: var(--text-secondary);
   line-height: 1.4;
   /* Clamp to 3 lines */
@@ -9493,7 +9636,7 @@ button {
 .bug-item-footer {
   display: flex;
   justify-content: space-between;
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--text-muted);
   margin-bottom: 10px;
 }
@@ -9515,7 +9658,7 @@ button {
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: var(--font-sm);
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -9549,7 +9692,7 @@ button {
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
   color: var(--text-primary);
-  font-size: 12px;
+  font-size: var(--font-sm);
   cursor: pointer;
 }
 
@@ -9566,7 +9709,7 @@ button {
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 500;
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -9597,7 +9740,7 @@ button {
   }
 
   .bug-fab-icon {
-    font-size: 20px;
+    font-size: var(--font-lg);
   }
 
   .bug-report-overlay .overlay-content {
@@ -9657,7 +9800,7 @@ button {
 
 .sim-dash-header h2 {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--font-lg);
   color: var(--mana-blue);
 }
 
@@ -9668,7 +9811,7 @@ button {
   background: transparent;
   border: 1px solid var(--border-subtle);
   color: var(--text-secondary);
-  font-size: 16px;
+  font-size: var(--font-base);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -9689,7 +9832,7 @@ button {
   padding: 10px 20px;
   background: rgba(0, 0, 0, 0.2);
   border-bottom: 1px solid var(--border-subtle);
-  font-size: 13px;
+  font-size: var(--font-sm);
 }
 
 .sim-status-indicator {
@@ -9697,7 +9840,7 @@ button {
   border-radius: 12px;
   font-weight: 600;
   text-transform: uppercase;
-  font-size: 11px;
+  font-size: var(--font-sm);
   letter-spacing: 0.05em;
 }
 
@@ -9739,7 +9882,7 @@ button {
   background: transparent;
   border: none;
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: var(--font-sm);
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -9782,7 +9925,7 @@ button {
 
 .sim-section h3 {
   margin: 0 0 12px;
-  font-size: 14px;
+  font-size: var(--font-base);
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -9805,7 +9948,7 @@ button {
 
 .sim-stat-value {
   display: block;
-  font-size: 24px;
+  font-size: var(--font-xl);
   font-weight: 700;
   color: var(--text-primary);
   font-family: var(--font-display);
@@ -9813,7 +9956,7 @@ button {
 
 .sim-stat-label {
   display: block;
-  font-size: 11px;
+  font-size: var(--font-sm);
   color: var(--text-secondary);
   text-transform: uppercase;
   margin-top: 4px;
@@ -9824,7 +9967,7 @@ button {
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
-  font-size: 14px;
+  font-size: var(--font-base);
   color: var(--text-secondary);
 }
 
@@ -9838,7 +9981,7 @@ button {
   height: 32px;
   border-radius: 6px;
   overflow: hidden;
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 600;
 }
 
@@ -9900,20 +10043,20 @@ button {
 .sim-bug-type {
   font-weight: 600;
   color: var(--text-primary);
-  font-size: 13px;
+  font-size: var(--font-sm);
 }
 
 .sim-bug-count {
   background: rgba(255, 255, 255, 0.1);
   padding: 2px 8px;
   border-radius: 10px;
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--gold);
 }
 
 .sim-bug-message {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--text-secondary);
   margin-bottom: 6px;
   line-height: 1.4;
@@ -9922,7 +10065,7 @@ button {
 .sim-bug-meta {
   display: flex;
   gap: 12px;
-  font-size: 11px;
+  font-size: var(--font-sm);
   color: var(--text-muted);
 }
 
@@ -9941,7 +10084,7 @@ button {
 .sim-severity-bar span {
   padding: 4px 12px;
   border-radius: 12px;
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 600;
 }
 
@@ -9979,7 +10122,7 @@ button {
   padding: 8px 12px;
   background: rgba(255, 255, 255, 0.03);
   border-radius: 6px;
-  font-size: 13px;
+  font-size: var(--font-sm);
 }
 
 .sim-card-rank {
@@ -10009,7 +10152,7 @@ button {
 
 .sim-card-games {
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: var(--font-sm);
   min-width: 70px;
   text-align: right;
 }
@@ -10037,7 +10180,7 @@ button {
   padding: 8px 12px;
   background: rgba(255, 255, 255, 0.03);
   border-radius: 6px;
-  font-size: 13px;
+  font-size: var(--font-sm);
 }
 
 .sim-synergy-item.synergy-good {
@@ -10066,7 +10209,7 @@ button {
 
 .sim-synergy-record {
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: var(--font-sm);
   min-width: 70px;
   text-align: right;
 }
@@ -10079,13 +10222,13 @@ button {
 }
 
 .sim-empty-hint {
-  font-size: 13px;
+  font-size: var(--font-sm);
   color: var(--text-muted);
   margin-top: 8px;
 }
 
 .sim-note {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--text-muted);
   margin-bottom: 12px;
 }
