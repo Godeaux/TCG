@@ -4509,7 +4509,7 @@ button {
   padding: 8px 0;
 }
 
-/* Individual deck list card row - Hearthstone-style with art background */
+/* Individual deck list card row - Hearthstone-style with art strip */
 .deck-list-row {
   position: relative;
   display: flex;
@@ -4519,12 +4519,24 @@ button {
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   background-color: rgba(30, 30, 40, 0.95);
-  background-size: auto 100%;
-  background-position: right center;
-  background-repeat: no-repeat;
   border-radius: 4px;
   margin: 2px 6px;
   overflow: hidden;
+}
+
+/* Art strip on right side - fixed width, crops to fill */
+.deck-list-row::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 35%;
+  background-image: var(--card-image);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 0;
 }
 
 /* Gradient overlay - solid dark on left, fading to reveal art on right */
@@ -4535,10 +4547,9 @@ button {
   background: linear-gradient(
     90deg,
     rgba(30, 30, 40, 1) 0%,
-    rgba(30, 30, 40, 1) 50%,
-    rgba(30, 30, 40, 0.7) 65%,
-    rgba(30, 30, 40, 0.3) 80%,
-    rgba(30, 30, 40, 0) 100%
+    rgba(30, 30, 40, 1) 55%,
+    rgba(30, 30, 40, 0.6) 70%,
+    rgba(30, 30, 40, 0) 85%
   );
   z-index: 1;
 }

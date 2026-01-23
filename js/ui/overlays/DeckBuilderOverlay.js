@@ -430,10 +430,10 @@ const createDeckListRow = (card, options = {}) => {
   row.dataset.type = card.type;
   row.draggable = true;
 
-  // Set card art as background on the row itself (Hearthstone-style)
+  // Set card art as CSS custom property for the art strip (Hearthstone-style)
   const imagePath = getCardImagePath(card.id);
   if (imagePath) {
-    row.style.backgroundImage = `url(${imagePath})`;
+    row.style.setProperty('--card-image', `url(${imagePath})`);
   }
 
   // Color banner at top (color set via CSS based on data-type)
