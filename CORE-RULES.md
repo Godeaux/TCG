@@ -30,19 +30,16 @@
    → May play unlimited Free Spells
    → Predator eating happens HERE during play
 
-4. BEFORE_COMBAT_PHASE
-   → "Before combat" abilities trigger (e.g., Electric Eel damage)
-   → Player chooses order if multiple
-
-5. COMBAT_PHASE
+4. COMBAT_PHASE
    → Declare attackers and targets
    → Resolve attacks (see §5)
+   → "Before combat" abilities trigger before EACH attack instance
 
-6. MAIN_PHASE_2
+5. MAIN_PHASE_2
    → May play 1 card ONLY IF nothing played in Main 1
    → Free Spells still unlimited
 
-7. END_PHASE
+6. END_PHASE
    → Resolve "end of turn" effects
    → Frozen creatures: lose Frozen
    → Paralyzed creatures: die
@@ -123,15 +120,16 @@
 
 ```
 1. Attacker declares target
-2. Check Ambush (attacker has it?)
-3. Damage dealt SIMULTANEOUSLY:
+2. "Before combat" abilities trigger (e.g., Electric Eel deals damage)
+3. Check Ambush (attacker has it?)
+4. Damage dealt SIMULTANEOUSLY:
    - Attacker deals ATK to defender's HP (0 if Harmless)
    - Defender deals ATK to attacker's HP (0 if Harmless)
-4. If Barrier present → absorbs first damage instance, then removed
-5. If Ambush AND attacker kills defender → attacker takes 0 damage
-6. HP ≤ 0 → creature dies → carrion pile
-7. Trigger "onSlain" if died in combat
-8. After combat: Neurotoxic applies Paralysis to enemy (even if Neurotoxic creature died)
+5. If Barrier present → absorbs first damage instance, then removed
+6. If Ambush AND attacker kills defender → attacker takes 0 damage
+7. HP ≤ 0 → creature dies → carrion pile
+8. Trigger "onSlain" if died in combat
+9. After combat: Neurotoxic applies Paralysis to enemy (even if Neurotoxic creature died)
 ```
 
 **Ambush timing:** Determined AFTER damage calculated. If defender would die, attacker damage is negated.
@@ -324,8 +322,9 @@ Triggers when creature dies from any source.
 - [ ] Trap vs predator play: Trap resolves BEFORE eating
 - [ ] Multiple "start of turn" effects: Controller chooses order
 - [ ] Multiple "end of turn" effects: Controller chooses order
-- [ ] Death during "before combat": Combat proceeds with remaining creatures
-- [ ] Creature dies from "before combat" ability: Does NOT trigger onSlain
+- [ ] "Before combat" ability kills target: Attack does not proceed (no combat damage)
+- [ ] "Before combat" ability kills attacker: Attack does not proceed
+- [ ] Death from "before combat" ability: Does NOT trigger onSlain (not combat damage)
 - [ ] Frozen at end of turn: Loses Frozen, survives
 - [ ] Paralyzed at end of turn: Dies
 
