@@ -311,7 +311,7 @@ You may play **only 1 card** per turn across both Main Phases combined, with the
 
 ### **Special Combat Interactions**
 
-**Neurotoxic:** When a creature with Neurotoxic deals combat damage, the damaged creature becomes **Frozen** and will die at the end of its controller's next turn.
+**Neurotoxic:** When a creature with Neurotoxic deals combat damage, the damaged creature becomes **Paralyzed** (loses all abilities, gains Harmless, and dies at the end of its controller's next turn).
 
 **Passive:** Creatures with Passive cannot attack but can still be attacked.
 
@@ -413,7 +413,7 @@ When played, this predator may consume creatures from the carrion pile in additi
 Playing this card doesn't count toward the one-card-per-turn limit.
 
 #### **Neurotoxic**
-When this creature deals combat damage, the damaged creature becomes Frozen and dies at the end of its controller's next turn.
+When this creature deals combat damage, the damaged creature becomes Paralyzed (loses all abilities, gains Harmless, and dies at the end of its controller's next turn).
 
 #### **Poisonous**
 Deals 1 damage to the opponent at the end of their turn. (Note: Some cards may deal damage immediately when played or when they enter combat.)
@@ -428,8 +428,8 @@ A stronger version of poisonous—typically kills any creature it damages in com
 ### **Frozen ❄️**
 - Cannot attack
 - Cannot be consumed
-- Dies at the end of the controller's next turn
-- Applied by Neurotoxic combat damage or certain abilities
+- Thaws (removed) at end of controller's turn - creature survives
+- Applied by freeze effects (NOT Neurotoxic - see Paralysis)
 
 ### **Summoning Exhaustion 💤**
 - Cannot attack the opponent directly
@@ -437,10 +437,11 @@ A stronger version of poisonous—typically kills any creature it damages in com
 - Removed at the end of your turn (End Phase)
 - Ignored by creatures with Haste
 
-### **Paralysis**
-- Cannot attack or use activated abilities
-- Can still defend and be targeted
-- Duration varies by source
+### **Paralysis ⚡**
+- Loses ALL other abilities permanently (even if Paralysis is removed)
+- Gains Harmless (cannot attack, deals 0 combat damage)
+- Dies at the end of controller's next turn
+- Applied by Neurotoxic combat damage
 
 ---
 

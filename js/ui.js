@@ -2209,6 +2209,13 @@ const resolveAttack = (state, attacker, target, negateAttack = false, negatedBy 
             state.broadcast?.(state);
             return;
           }
+          // Check if defender was destroyed by beforeCombat effect
+          if (target.type === 'creature' && target.card.currentHp <= 0) {
+            logMessage(state, `${target.card.name} is already destroyed.`);
+            markCreatureAttacked(attacker);
+            state.broadcast?.(state);
+            return;
+          }
           // Continue with the rest of resolveAttack logic
           continueResolveAttack(state, attacker, target);
         }
@@ -2219,6 +2226,13 @@ const resolveAttack = (state, attacker, target, negateAttack = false, negatedBy 
     cleanupDestroyed(state);
     if (attacker.currentHp <= 0) {
       logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
+      markCreatureAttacked(attacker);
+      state.broadcast?.(state);
+      return;
+    }
+    // Check if defender was destroyed by beforeCombat effect
+    if (target.type === 'creature' && target.card.currentHp <= 0) {
+      logMessage(state, `${target.card.name} is already destroyed.`);
       markCreatureAttacked(attacker);
       state.broadcast?.(state);
       return;
