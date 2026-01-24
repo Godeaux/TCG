@@ -27,7 +27,7 @@
 
 3. MAIN_PHASE_1
    → May play 1 card (prey/predator/spell)
-   → May play unlimited Free Spells
+   → Free Play cards: don't consume limit, but ONLY playable before limit used
    → Predator eating happens HERE during play
    → Traps stay in hand (activated on opponent's turn)
 
@@ -47,7 +47,7 @@
    → Pass turn
 ```
 
-**Card play rule:** 1 non-free card per turn total across BOTH main phases.
+**Card play rule:** 1 card per turn total across BOTH main phases. Free Play cards don't consume this limit but can only be played while limit is available.
 
 ---
 
@@ -188,7 +188,7 @@
 
 | Keyword | Behavior |
 |---------|----------|
-| **Free Play** | Playing this card doesn't count toward 1-card limit. |
+| **Free Play** | Doesn't consume 1-card limit, BUT can only be played while limit is still available. |
 
 ---
 
@@ -285,7 +285,7 @@ Triggers when animal dies from ALMOST any source.
 | Type | Counts toward limit? | When playable? | After use? |
 |------|---------------------|----------------|------------|
 | Spell | ✅ YES | Main Phase 1 or 2 | Exile |
-| Free Spell | ❌ NO | Main Phase 1 or 2 | Exile |
+| Free Spell | ❌ NO (but only while limit available) | Main Phase 1 or 2 | Exile |
 | Trap | ❌ NO (activated from hand) | Opponent's turn (on trigger) | Exile |
 | Field Spell | ✅ YES | Main Phase 1 or 2 | Stays on field |
 
