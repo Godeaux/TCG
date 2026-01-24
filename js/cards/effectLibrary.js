@@ -2497,7 +2497,10 @@ export const negateCombat =
  */
 export const damageRivalAndSelectEnemy = (rivalDamage, creatureDamage) => (context) => {
   const { log, opponent, player, state, creature: caster } = context;
-  const enemies = opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state));
+  // Per CORE-RULES.md §6: Lure creatures must be targeted by abilities
+  const enemies = filterForLure(
+    opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state))
+  );
 
   if (enemies.length === 0) {
     log(`Deals ${rivalDamage} damage to rival, but no Rival's creatures to target.`);
@@ -2651,7 +2654,10 @@ export const playSpellsFromHand = (count) => (context) => {
  */
 export const selectEnemyToFreeze = () => (context) => {
   const { log, opponent, player, state, creature: caster } = context;
-  const targets = opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state));
+  // Per CORE-RULES.md §6: Lure creatures must be targeted by abilities
+  const targets = filterForLure(
+    opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state))
+  );
 
   if (targets.length === 0) {
     log(`No Rival's creatures to freeze.`);
@@ -2799,7 +2805,10 @@ export const regenSelf = () => (context) => {
  */
 export const selectEnemyToReturn = () => (context) => {
   const { log, opponent, player, state, opponentIndex, creature: caster } = context;
-  const targets = opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state));
+  // Per CORE-RULES.md §6: Lure creatures must be targeted by abilities
+  const targets = filterForLure(
+    opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state))
+  );
 
   if (targets.length === 0) {
     log(`No Rival's creatures to return.`);
@@ -2950,7 +2959,10 @@ export const playSpellFromHand = () => (context) => {
  */
 export const selectEnemyToReturnToOpponentHand = () => (context) => {
   const { log, opponent, player, state, opponentIndex, creature: caster } = context;
-  const targets = opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state));
+  // Per CORE-RULES.md §6: Lure creatures must be targeted by abilities
+  const targets = filterForLure(
+    opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state))
+  );
 
   if (targets.length === 0) {
     log(`No Rival's creatures to return.`);
@@ -3149,7 +3161,10 @@ export const webAttacker =
  */
 export const webTarget = () => (context) => {
   const { log, opponent, state, creature: caster } = context;
-  const enemies = opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state));
+  // Per CORE-RULES.md §6: Lure creatures must be targeted by abilities
+  const enemies = filterForLure(
+    opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state))
+  );
 
   if (enemies.length === 0) {
     log(`No Rival's creatures to web.`);
@@ -3512,7 +3527,10 @@ export const damageEqualToStalkBonus = () => (context) => {
     return {};
   }
 
-  const enemies = opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, creature, state));
+  // Per CORE-RULES.md §6: Lure creatures must be targeted by abilities
+  const enemies = filterForLure(
+    opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, creature, state))
+  );
   if (enemies.length === 0) {
     log(`No enemy creatures to strike.`);
     return {};
@@ -3774,7 +3792,10 @@ export const damageEqualToTotalShell = () => (context) => {
     return {};
   }
 
-  const enemies = opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state));
+  // Per CORE-RULES.md §6: Lure creatures must be targeted by abilities
+  const enemies = filterForLure(
+    opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state))
+  );
   if (enemies.length === 0) {
     log(`No enemy creatures to damage.`);
     return {};
@@ -3827,8 +3848,11 @@ export const discardDrawAndKillEnemy = () => (context) => {
     candidates: player.hand.map((c) => ({ label: c.name, value: c, card: c })),
     renderCards: true,
     onSelect: (discardCard) => {
-      const enemies = opponent.field.filter(
-        (c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)
+      // Per CORE-RULES.md §6: Lure creatures must be targeted by abilities
+      const enemies = filterForLure(
+        opponent.field.filter(
+          (c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)
+        )
       );
 
       return {

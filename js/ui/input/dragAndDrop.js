@@ -741,7 +741,10 @@ const handleDirectConsumption = (predator, prey, slotIndex) => {
   const player = getActivePlayer(state);
 
   const isFree = isFreePlay(predator);
-  if (!isFree && !cardLimitAvailable(state)) {
+  // Per CORE-RULES.md §6: Free Play can only be played while limit is still available
+  // (Free Spell and Trap types are the only true exceptions)
+  const isTrulyFree = predator.type === 'Free Spell' || predator.type === 'Trap';
+  if (!isTrulyFree && !cardLimitAvailable(state)) {
     logMessage(state, 'You have already played a card this turn.');
     revertCardToOriginalPosition();
     latestCallbacks.onUpdate?.();
