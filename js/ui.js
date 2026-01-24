@@ -666,38 +666,27 @@ const updateActionPanel = (state, callbacks = {}) => {
     return;
   }
 
-  const actions = document.createElement('div');
-  actions.className = 'action-buttons';
-
-  // Free Spell and Trap bypass limit entirely
-  // Free Play keyword requires limit available but doesn't consume it
-  const isTrulyFree = selectedCard.type === 'Free Spell' || selectedCard.type === 'Trap';
-  const playDisabled =
-    !isLocalTurn || !canPlayCard(state) || (!isTrulyFree && !cardLimitAvailable(state));
-
-  const playButton = document.createElement('button');
-  playButton.className = 'action-btn primary';
-  playButton.textContent = 'Play';
-  playButton.disabled = playDisabled;
-  playButton.onclick = () => {
-    selectedHandCardId = null;
-    handlePlayCard(state, selectedCard, callbacks.onUpdate);
-  };
-  actions.appendChild(playButton);
-
+  // Only show action bar for cards with discard effects (Play is handled by drag-and-drop)
   const discardInfo = getDiscardEffectInfo(selectedCard);
   const canDiscard =
     isLocalTurn && discardInfo.hasEffect && discardInfo.timing === 'main' && canPlayCard(state);
-  if (canDiscard) {
-    const discardButton = document.createElement('button');
-    discardButton.className = 'action-btn';
-    discardButton.textContent = 'Discard';
-    discardButton.onclick = () => {
-      selectedHandCardId = null;
-      handleDiscardEffect(state, selectedCard, callbacks.onUpdate);
-    };
-    actions.appendChild(discardButton);
+
+  if (!canDiscard) {
+    actionBar.classList.remove('has-actions');
+    return;
   }
+
+  const actions = document.createElement('div');
+  actions.className = 'action-buttons';
+
+  const discardButton = document.createElement('button');
+  discardButton.className = 'action-btn';
+  discardButton.textContent = 'Discard';
+  discardButton.onclick = () => {
+    selectedHandCardId = null;
+    handleDiscardEffect(state, selectedCard, callbacks.onUpdate);
+  };
+  actions.appendChild(discardButton);
 
   actionPanel.appendChild(actions);
   actionBar.classList.add('has-actions');

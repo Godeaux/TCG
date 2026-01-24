@@ -225,11 +225,13 @@ export const renderHand = (state, options = {}) => {
   player.hand.forEach((card, index) => {
     const cardElement = renderCard(card, {
       showEffectSummary: true,
-      isSelected: selectedCardId === card.instanceId,
+      // No selection glow - drag-and-drop is primary interaction (Hearthstone-style)
+      isSelected: false,
       draggable: true,
       context: 'hand',
       onInspect,
       onClick: (selectedCard) => {
+        // Click still triggers selection for cards with discard effects
         onSelect?.(selectedCard);
         onUpdate?.();
       },
