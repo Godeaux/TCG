@@ -69,6 +69,10 @@ export const getValidTargets = (state, attacker, opponent) => {
     if (card.isFieldSpell) {
       return false;
     }
+    // Per CORE-RULES.md §12: Lure overrides Hidden/Invisible (must target Lure creatures)
+    if (hasLure(card)) {
+      return true;
+    }
     if (hasPrecision) {
       return true;
     }
@@ -218,8 +222,9 @@ export const resolveCreatureCombat = (
   }
 
   // Per CORE-RULES.md §6: Neurotoxic applies Paralysis after combat (even if Neurotoxic creature dies)
+  // Per CORE-RULES.md §12: Neurotoxic vs Barrier - Barrier absorbs, no Paralysis (damage must land)
   // Paralysis: strips all abilities, grants Harmless, dies at end of controller's turn
-  if (hasNeurotoxic(attacker) && attackerEffectiveAtk > 0) {
+  if (hasNeurotoxic(attacker) && defenderDamage > 0) {
     queueKeywordEffect(state, attacker, 'Neurotoxic', attackerOwnerIndex);
     stripAbilities(defender);
     defender.keywords = ['Harmless'];
@@ -231,7 +236,7 @@ export const resolveCreatureCombat = (
       `${getKeywordEmoji('Neurotoxic')} ${formatCardForLog(defender)} is paralyzed by neurotoxin! (loses abilities, dies end of turn)`
     );
   }
-  if (defenderDealsDamage && hasNeurotoxic(defender) && defenderEffectiveAtk > 0) {
+  if (defenderDealsDamage && hasNeurotoxic(defender) && attackerDamage > 0) {
     queueKeywordEffect(state, defender, 'Neurotoxic', defenderOwnerIndex);
     stripAbilities(attacker);
     attacker.keywords = ['Harmless'];

@@ -106,9 +106,10 @@ const filterForLure = (targets) => {
 };
 
 /**
- * Check if a creature can be targeted by abilities - per CORE-RULES.md §5.5
+ * Check if a creature can be targeted by abilities - per CORE-RULES.md §5.5, §12
  * Invisible blocks ability targeting UNLESS caster has Acuity
  * Hidden does NOT block ability targeting
+ * Lure OVERRIDES Invisible (must target Lure creatures even if Invisible)
  * @param {Object} target - Target creature to check
  * @param {Object} caster - Creature using the ability (may be null)
  * @param {Object} state - Game state
@@ -116,6 +117,8 @@ const filterForLure = (targets) => {
  */
 const canTargetWithAbility = (target, caster, state) => {
   if (!target) return false;
+  // Per CORE-RULES.md §12: Lure overrides Invisible (must target Lure creatures)
+  if (hasLure(target)) return true;
   // Invisible blocks unless caster has Acuity
   if (isInvisible(target, state)) {
     return caster && hasAcuity(caster);
