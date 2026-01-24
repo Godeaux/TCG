@@ -274,7 +274,7 @@ Triggers when animal dies from ALMOST any source.
 - Marked with ⚪ and dashed border
 - **onPlay DOES trigger** for tokens (summoned = played for game purposes)
 - Function normally otherwise (attack, defend, be eaten, die)
-- Go to carrion when destroyed
+- Do NOT go to carrion when destroyed (removed from game)
 
 ---
 
