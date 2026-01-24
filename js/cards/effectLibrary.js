@@ -974,9 +974,10 @@ export const copyAbilities = (source) => (context) => {
  * @param {string} targetType - 'target' | 'random'
  */
 export const stealCreature = (targetType) => (context) => {
-  const { log, opponent, playerIndex, state } = context;
+  const { log, opponent, playerIndex, state, creature: caster } = context;
 
-  const enemyCreatures = opponent.field.filter((c) => c && !isInvisible(c, state));
+  // Per CORE-RULES.md §5.5: Acuity allows targeting Invisible
+  const enemyCreatures = opponent.field.filter((c) => c && canTargetWithAbility(c, caster, state));
 
   if (enemyCreatures.length === 0) {
     log(`No creatures to steal.`);
@@ -2218,8 +2219,9 @@ export const killAllEnemyCreatures =
  * @param {string} keyword - Keyword to grant
  */
 export const selectEnemyForKeyword = (keyword) => (context) => {
-  const { log, opponent, player, state } = context;
-  const targets = opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
+  const { log, opponent, player, state, creature: caster } = context;
+  // Per CORE-RULES.md §5.5: Acuity allows targeting Invisible
+  const targets = opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state));
 
   if (targets.length === 0) {
     log(`No Rival's creatures to target.`);
@@ -2248,8 +2250,11 @@ export const selectEnemyForKeyword = (keyword) => (context) => {
 export const selectEnemyCreatureForDamage =
   (amount, label = 'damage') =>
   (context) => {
-    const { log, opponent, player, state } = context;
-    const targets = opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
+    const { log, opponent, player, state, creature: caster } = context;
+    // Per CORE-RULES.md §5.5: Acuity allows targeting Invisible
+    const targets = opponent.field.filter(
+      (c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)
+    );
 
     if (targets.length === 0) {
       log(`No Rival's creatures to target.`);
@@ -2274,10 +2279,11 @@ export const selectEnemyCreatureForDamage =
  * Select creature to copy (summon a copy)
  */
 export const selectCreatureToCopy = () => (context) => {
-  const { log, player, opponent, state, playerIndex } = context;
+  const { log, player, opponent, state, playerIndex, creature: caster } = context;
+  // Per CORE-RULES.md §5.5: Acuity allows targeting Invisible (only matters for enemies)
   const candidates = [
-    ...player.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state)),
-    ...opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state)),
+    ...player.field.filter((c) => c && isCreatureCard(c)),
+    ...opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)),
   ];
 
   if (candidates.length === 0) {
@@ -2341,11 +2347,11 @@ export const selectPreyForBuff = (stats) => (context) => {
  * @param {Object} stats - { attack, health }
  */
 export const selectCreatureForBuff = (stats) => (context) => {
-  const { log, player, opponent, state } = context;
+  const { log, player, opponent, state, creature: caster } = context;
   const { attack = 0, health = 0 } = stats;
   const creatures = [
-    ...player.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state)),
-    ...opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state)),
+    ...player.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)),
+    ...opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)),
   ];
 
   if (creatures.length === 0) {
@@ -2372,10 +2378,10 @@ export const selectCreatureForBuff = (stats) => (context) => {
  * @param {string} newCardId - The card ID to transform into
  */
 export const selectCreatureToTransform = (newCardId) => (context) => {
-  const { log, player, opponent, state } = context;
+  const { log, player, opponent, state, creature: caster } = context;
   const candidates = [
-    ...player.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state)),
-    ...opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state)),
+    ...player.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)),
+    ...opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)),
   ];
 
   if (candidates.length === 0) {
@@ -2490,8 +2496,8 @@ export const negateCombat =
  * @param {number} creatureDamage - Damage to deal to selected enemy creature
  */
 export const damageRivalAndSelectEnemy = (rivalDamage, creatureDamage) => (context) => {
-  const { log, opponent, player, state } = context;
-  const enemies = opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
+  const { log, opponent, player, state, creature: caster } = context;
+  const enemies = opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state));
 
   if (enemies.length === 0) {
     log(`Deals ${rivalDamage} damage to rival, but no Rival's creatures to target.`);
@@ -2544,10 +2550,10 @@ export const destroyFieldSpellsAndKillTokens = () => (context) => {
  * @param {number} damageAmount - Damage to deal to selected target
  */
 export const healAndSelectTargetForDamage = (healAmount, damageAmount) => (context) => {
-  const { log, player, opponent, state } = context;
+  const { log, player, opponent, state, creature: caster } = context;
   const creatures = [
-    ...player.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state)),
-    ...opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state)),
+    ...player.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)),
+    ...opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)),
   ];
   const candidates = [
     ...creatures.map((c) => ({ label: c.name, value: { type: 'creature', creature: c } })),
@@ -2644,8 +2650,8 @@ export const playSpellsFromHand = (count) => (context) => {
  * Select an enemy creature to freeze
  */
 export const selectEnemyToFreeze = () => (context) => {
-  const { log, opponent, player, state } = context;
-  const targets = opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
+  const { log, opponent, player, state, creature: caster } = context;
+  const targets = opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state));
 
   if (targets.length === 0) {
     log(`No Rival's creatures to freeze.`);
@@ -2792,8 +2798,8 @@ export const regenSelf = () => (context) => {
  * Select an enemy creature to return to hand
  */
 export const selectEnemyToReturn = () => (context) => {
-  const { log, opponent, player, state, opponentIndex } = context;
-  const targets = opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
+  const { log, opponent, player, state, opponentIndex, creature: caster } = context;
+  const targets = opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state));
 
   if (targets.length === 0) {
     log(`No Rival's creatures to return.`);
@@ -2943,8 +2949,8 @@ export const playSpellFromHand = () => (context) => {
  * Return target enemy to opponent's hand
  */
 export const selectEnemyToReturnToOpponentHand = () => (context) => {
-  const { log, opponent, player, state, opponentIndex } = context;
-  const targets = opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
+  const { log, opponent, player, state, opponentIndex, creature: caster } = context;
+  const targets = opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state));
 
   if (targets.length === 0) {
     log(`No Rival's creatures to return.`);
@@ -3142,8 +3148,8 @@ export const webAttacker =
  * Select an enemy creature to web
  */
 export const webTarget = () => (context) => {
-  const { log, opponent, state } = context;
-  const enemies = opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
+  const { log, opponent, state, creature: caster } = context;
+  const enemies = opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state));
 
   if (enemies.length === 0) {
     log(`No Rival's creatures to web.`);
@@ -3506,7 +3512,7 @@ export const damageEqualToStalkBonus = () => (context) => {
     return {};
   }
 
-  const enemies = opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
+  const enemies = opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, creature, state));
   if (enemies.length === 0) {
     log(`No enemy creatures to strike.`);
     return {};
@@ -3757,7 +3763,7 @@ export const summonTokensPerShell =
  * Deal damage to target enemy based on total shell level of all Shell creatures.
  */
 export const damageEqualToTotalShell = () => (context) => {
-  const { log, player, opponent, state } = context;
+  const { log, player, opponent, state, creature: caster } = context;
 
   // Calculate total shell level
   const shellCreatures = player.field.filter((c) => c && isCreatureCard(c) && hasShell(c));
@@ -3768,7 +3774,7 @@ export const damageEqualToTotalShell = () => (context) => {
     return {};
   }
 
-  const enemies = opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
+  const enemies = opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state));
   if (enemies.length === 0) {
     log(`No enemy creatures to damage.`);
     return {};
@@ -3809,7 +3815,7 @@ export const buffHpPerShell =
  * Discard a card, draw a card, then kill target enemy (Silver Bullet)
  */
 export const discardDrawAndKillEnemy = () => (context) => {
-  const { log, player, playerIndex, opponent, state } = context;
+  const { log, player, playerIndex, opponent, state, creature: caster } = context;
 
   if (player.hand.length === 0) {
     log(`No cards to discard.`);
@@ -3822,7 +3828,7 @@ export const discardDrawAndKillEnemy = () => (context) => {
     renderCards: true,
     onSelect: (discardCard) => {
       const enemies = opponent.field.filter(
-        (c) => c && isCreatureCard(c) && !isInvisible(c, state)
+        (c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)
       );
 
       return {
