@@ -903,6 +903,18 @@ export const renderCard = (card, options = {}) => {
     cardElement.appendChild(indicator);
   }
 
+  // Add status effect overlays (visual tint over card)
+  if (card.paralyzed) {
+    const overlay = document.createElement('div');
+    overlay.className = 'status-overlay paralysis-overlay';
+    cardElement.appendChild(overlay);
+  }
+  if (card.frozen) {
+    const overlay = document.createElement('div');
+    overlay.className = 'status-overlay frozen-overlay';
+    cardElement.appendChild(overlay);
+  }
+
   cardElement.appendChild(inner);
 
   // Add drag and drop functionality if requested
