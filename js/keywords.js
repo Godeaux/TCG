@@ -97,7 +97,8 @@ export const hasPrimitive = (card, primitive) => {
   // Check boolean status flags first (backwards compatibility)
   // These exist alongside keywords due to legacy code
   if (primitive === PRIMITIVES.CANT_ATTACK) {
-    if (card.frozen || card.webbed) return true;
+    // Per CORE-RULES.md §7: Paralysis grants Harmless (can't attack)
+    if (card.frozen || card.webbed || card.paralyzed) return true;
   }
   // Per CORE-RULES.md §7: Frozen grants Inedible (can't BE consumed) but NOT cant-consume
   if (primitive === PRIMITIVES.CANT_BE_CONSUMED) {
