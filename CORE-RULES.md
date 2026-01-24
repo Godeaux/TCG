@@ -151,26 +151,23 @@
 
 | Keyword | Behavior |
 |---------|----------|
-| **Haste** | Ignores summoning exhaustion. Can attack opponent immediately. |
-| **Ambush** | When attacking: take no counter-damage from defender (regardless of kill). Does NOT apply when defending. |
+| **Haste** | Ignores summoning exhaustion. Can attack rival directly on turn played. |
+| **Ambush** | When attacking: take no counter-damage from defender. Does NOT apply when defending. |
 | **Passive** | Cannot declare attacks. Can still be attacked. Can be eaten. |
 | **Harmless** | Cannot attack. Deals 0 combat damage (when defending). |
+| **Lure** | Rival's animals MUST target this animal (attacks AND abilities). |
+| **Acuity** | Can target Hidden and Invisible animals. |
+| **Multi-Strike [N]** | Can attack N times per combat phase (e.g., "Multi-Strike 3"). |
 
 ### Protection Keywords
 
-| Keyword | Blocks attacks? | Blocks spells? | Blocks AoE? |
-|---------|----------------|----------------|-------------|
-| **Barrier** | First damage only | First damage only | First damage only |
-| **Immune** | ❌ Takes attack damage | ✅ Ignores spell damage | ✅ Ignores ability damage |
-| **Hidden** | ✅ Cannot be targeted | ❌ CAN be targeted | ❌ Takes AoE |
-| **Invisible** | ✅ Cannot be targeted | ✅ Cannot be targeted | ❌ Takes AoE |
-| **Inedible** | N/A | N/A | N/A |
-
-**Barrier consumed:** After absorbing ANY damage (attack, spell, ability, AoE).
-
-**Immune specifics:** Only takes damage from direct creature attacks. All other damage sources (spells, abilities, effects) deal 0.
-
-**Inedible:** Cannot be eaten by predators.
+| Keyword | Behavior |
+|---------|----------|
+| **Barrier** | Negates the first instance of damage taken. Then removed. |
+| **Immune** | Only takes damage from direct animal attacks. Ignores spell/ability damage. |
+| **Hidden** | Cannot be targeted by attacks. CAN be targeted by spells/abilities. |
+| **Invisible** | Cannot be targeted by attacks OR spells/abilities. |
+| **Inedible** | Cannot be eaten by predators. |
 
 ### Eating Keywords
 
@@ -179,13 +176,18 @@
 | **Edible** | This predator can be eaten. Nutrition = current ATK. |
 | **Scavenge** | When played, can eat from carrion pile (in addition to field). |
 
-### Effect Keywords
+### Damage Keywords
 
 | Keyword | Behavior |
 |---------|----------|
-| **Neurotoxic** | After combat (attacking or defending), enemy gains Paralysis. Triggers even if this creature dies. |
-| **Toxic** | Kills any creature it damages in combat (regardless of HP). |
-| **Poisonous** | Deals 1 damage to opponent at end of THEIR turn. |
+| **Neurotoxic** | After combat (attacking or defending), enemy gains Paralysis. Triggers even if this animal dies. |
+| **Toxic** | Kills any animal it damages in combat (regardless of HP). |
+| **Poisonous** | When defending: kills the attacker after combat. |
+
+### Other Keywords
+
+| Keyword | Behavior |
+|---------|----------|
 | **Free Play** | Playing this card doesn't count toward 1-card limit. |
 
 ---
@@ -338,19 +340,19 @@ Triggers when animal dies from ALMOST any source.
 
 ---
 
-## 13. DAMAGE TYPES
+## 13. DAMAGE/DEATH SOURCES
 
 | Source | Blocked by Immune? | Triggers onSlain? |
 |--------|-------------------|-------------------|
-| Direct creature attack | ❌ NO | ✅ YES |
+| Direct animal attack | ❌ NO | ✅ YES |
 | Spell damage | ✅ YES | ✅ YES |
 | Ability damage | ✅ YES | ✅ YES |
 | Trap damage | ✅ YES | ✅ YES |
-| AoE damage | ✅ YES | ✅ YES |
-| Poison/DoT | ✅ YES | ✅ YES |
-| Paralysis death | N/A (not damage) | ✅ YES |
+| Toxic (combat kill) | N/A (instant kill) | ✅ YES |
+| Poisonous (defender kills attacker) | N/A (instant kill) | ✅ YES |
+| Paralysis death (end of turn) | N/A (not damage) | ✅ YES |
 | Eaten by predator | N/A | ❌ NO |
-| "Destroy" keyword | N/A | ❌ NO |
+| "Destroy" keyword effect | N/A | ❌ NO |
 
 ---
 
