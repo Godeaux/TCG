@@ -26,9 +26,10 @@
    → Draw 1 card (skip if first player turn 1, or deck empty)
 
 3. MAIN_PHASE_1
-   → May play 1 card (prey/predator/spell/trap)
+   → May play 1 card (prey/predator/spell)
    → May play unlimited Free Spells
    → Predator eating happens HERE during play
+   → Traps stay in hand (activated on opponent's turn)
 
 4. COMBAT_PHASE
    → Declare attackers and targets
@@ -121,18 +122,16 @@
 ```
 1. Attacker declares target
 2. "Before combat" abilities trigger (e.g., Electric Eel deals damage)
-3. Check Ambush (attacker has it?)
-4. Damage dealt SIMULTANEOUSLY:
+3. Damage dealt:
    - Attacker deals ATK to defender's HP (0 if Harmless)
-   - Defender deals ATK to attacker's HP (0 if Harmless)
-5. If Barrier present → absorbs first damage instance, then removed
-6. If Ambush AND attacker kills defender → attacker takes 0 damage
-7. HP ≤ 0 → creature dies → carrion pile
-8. Trigger "onSlain" if died in combat
-9. After combat: Neurotoxic applies Paralysis to enemy (even if Neurotoxic creature died)
+   - Defender deals ATK to attacker's HP (0 if Harmless OR attacker has Ambush)
+4. If Barrier present → absorbs first damage instance, then removed
+5. HP ≤ 0 → creature dies → carrion pile
+6. Trigger "onSlain" (see §9 for exceptions)
+7. After combat: Neurotoxic applies Paralysis to enemy (even if Neurotoxic creature died)
 ```
 
-**Ambush timing:** Determined AFTER damage calculated. If defender would die, attacker damage is negated.
+**Ambush:** Attacker takes NO counter-damage from defender (regardless of whether defender dies).
 
 **Harmless:** Creature deals 0 combat damage (both when attacking and defending).
 
@@ -153,7 +152,7 @@
 | Keyword | Behavior |
 |---------|----------|
 | **Haste** | Ignores summoning exhaustion. Can attack opponent immediately. |
-| **Ambush** | When attacking: if this kills defender, take no combat damage. Does NOT apply when defending. |
+| **Ambush** | When attacking: take no counter-damage from defender (regardless of kill). Does NOT apply when defending. |
 | **Passive** | Cannot declare attacks. Can still be attacked. Can be eaten. |
 | **Harmless** | Cannot attack. Deals 0 combat damage (when defending). |
 
@@ -222,10 +221,17 @@
 
 ## 8. TRAPS
 
+### How Traps Work
+
+- Traps stay in HAND (not set on field)
+- Activated FROM HAND when trigger condition occurs during opponent's turn
+- Does NOT count toward 1-card-per-turn limit (activated, not played)
+- Goes to Exile after resolution
+
 ### Timing
 
 ```
-Trigger occurs → Trap activates → Trap resolves → Original action continues/completes
+Trigger occurs → Trap activates from hand → Trap resolves → Original action continues/completes
 ```
 
 Traps resolve BEFORE the triggering action completes.
@@ -240,39 +246,33 @@ Traps resolve BEFORE the triggering action completes.
 | "When target creature is defending" | After attack target chosen, before damage |
 | "When damaged indirectly" | After non-combat damage source declared, before damage |
 
-### Trap State
-
-- Set during your main phase (counts as card play)
-- Hidden from opponent
-- Activates automatically on opponent's turn
-- Goes to Exile after resolution
-
 ---
 
 ## 9. DEATH TRIGGERS
 
-### onSlain (combat death only)
+### onSlain
 
-Triggers when creature dies from combat damage.
+Triggers when animal dies from ALMOST any source.
 
 **Does NOT trigger if:**
 - Eaten by predator
-- Killed by spell
-- Killed by ability damage
-- Killed by Paralysis (end of turn death)
-- Killed by any non-combat means
+- Killed by "destroy" keyword effect
 
-### onDeath (any death)
-
-Triggers when creature dies from any source.
+**DOES trigger if:**
+- Combat damage
+- Spell damage
+- Ability damage
+- Paralysis (end of turn death)
+- Trap damage
+- Any other death source
 
 ---
 
 ## 10. TOKENS
 
-- Created by effects (not played from hand)
+- Created by effects (summoned, not played from hand)
 - Marked with ⚪ and dashed border
-- **onPlay does NOT trigger** for tokens
+- **onPlay DOES trigger** for tokens (summoned = played for game purposes)
 - Function normally otherwise (attack, defend, be eaten, die)
 - Go to carrion when destroyed
 
@@ -284,7 +284,7 @@ Triggers when creature dies from any source.
 |------|---------------------|----------------|------------|
 | Spell | ✅ YES | Main Phase 1 or 2 | Exile |
 | Free Spell | ❌ NO | Main Phase 1 or 2 | Exile |
-| Trap | ✅ YES (when set) | Main Phase (set) | Exile |
+| Trap | ❌ NO (activated from hand) | Opponent's turn (on trigger) | Exile |
 | Field Spell | ✅ YES | Main Phase 1 or 2 | Stays on field |
 
 **Field Spell rule:** Max 1 active. New replaces old → old goes to carrion.
@@ -295,7 +295,7 @@ Triggers when creature dies from any source.
 
 ### Combat Edge Cases
 
-- [ ] Ambush vs Barrier: Ambush checks if defender dies AFTER barrier absorbs
+- [ ] Ambush: Attacker takes 0 counter-damage regardless of whether defender dies
 - [ ] Ambush when defending: Does NOT apply (Ambush is attack-only)
 - [ ] Lure + Hidden: Lure overrides Hidden (must target the Lure creature)
 - [ ] Lure + Invisible: Lure overrides (must target)
@@ -324,7 +324,7 @@ Triggers when creature dies from any source.
 - [ ] Multiple "end of turn" effects: Controller chooses order
 - [ ] "Before combat" ability kills target: Attack does not proceed (no combat damage)
 - [ ] "Before combat" ability kills attacker: Attack does not proceed
-- [ ] Death from "before combat" ability: Does NOT trigger onSlain (not combat damage)
+- [ ] Death from "before combat" ability: DOES trigger onSlain (ability damage)
 - [ ] Frozen at end of turn: Loses Frozen, survives
 - [ ] Paralyzed at end of turn: Dies
 
@@ -343,12 +343,14 @@ Triggers when creature dies from any source.
 | Source | Blocked by Immune? | Triggers onSlain? |
 |--------|-------------------|-------------------|
 | Direct creature attack | ❌ NO | ✅ YES |
-| Spell damage | ✅ YES | ❌ NO |
-| Ability damage | ✅ YES | ❌ NO |
-| Trap damage | ✅ YES | ❌ NO |
-| AoE damage | ✅ YES | ❌ NO |
-| Poison/DoT | ✅ YES | ❌ NO |
-| Paralysis death | N/A (not damage) | ❌ NO |
+| Spell damage | ✅ YES | ✅ YES |
+| Ability damage | ✅ YES | ✅ YES |
+| Trap damage | ✅ YES | ✅ YES |
+| AoE damage | ✅ YES | ✅ YES |
+| Poison/DoT | ✅ YES | ✅ YES |
+| Paralysis death | N/A (not damage) | ✅ YES |
+| Eaten by predator | N/A | ❌ NO |
+| "Destroy" keyword | N/A | ❌ NO |
 
 ---
 
@@ -367,7 +369,7 @@ These actions MUST prompt player selection:
 
 ### Selection Cancellation
 
-- Player can cancel predator before confirming consumption
+- Player can cancel predator before confirming eating
 - Player can cancel spell before confirming target
 - Player CANNOT cancel after confirmation
 
