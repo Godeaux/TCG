@@ -13,12 +13,13 @@
 | Turn Phases | 2 | HIGH |
 | Status Effects | 4 | CRITICAL |
 | Combat/Keywords | 3 | HIGH |
-| Card Play Rules | 2 | MEDIUM |
+| Card Play Rules | 1 | MEDIUM |
 | Tokens | 1 | MEDIUM |
+| Eating | 0 | ✅ CORRECT |
 | Traps | 0 | ✅ CORRECT |
 | onSlain | 0 | ✅ CORRECT |
 
-**Total Issues: 12**
+**Total Issues: 11**
 
 ---
 
@@ -256,24 +257,13 @@ if (hasFreePlayKeyword && card.type === 'Predator') {
 
 ---
 
-### 10. Eating Only Works from Field
-
-**Rule (CORE-RULES.md §3):** "When playing a predator from ANY source (hand, deck, or carrion)"
-
-**Current Behavior:** Predators only eat from field (Scavenge adds carrion option)
-
-**Note:** This may be intentional design vs rules discrepancy. Clarify with game master whether:
-- Eating from hand/deck is intended
-- Or rule should say "eat from field (+ carrion with Scavenge)"
-
-**Files if change needed:**
-- `js/game/controller.js` lines 323-326
-- `js/ui.js` lines 2857-2862
-- `js/ui/input/dragAndDrop.js` lines 652-655
-
----
-
 ## VERIFIED CORRECT (No Changes Needed)
+
+### Eating Mechanics ✅
+- Predators from ANY source (hand, deck, carrion) can eat
+- Eating targets: Field only (+ carrion with Scavenge)
+- Never eat from hand or deck
+- Code correctly implements this
 
 ### Traps ✅
 - Stay in hand (not set on field)
@@ -320,7 +310,6 @@ if (hasFreePlayKeyword && card.type === 'Predator') {
 ### Phase 3: Card Play & Token Fixes
 8. Fix tokens to not go to carrion
 9. Fix Free Play to require available limit
-10. (Clarify) Eating source rules
 
 ---
 
@@ -360,6 +349,8 @@ After each fix:
 | `js/ui/input/dragAndDrop.js` | Free Play rule |
 | `js/ai/AIController.js` | Free Play rule |
 | `js/state/gameState.js` | beforeCombat flag reset timing |
+
+**No changes needed:** `js/game/consumption.js` (eating mechanics correct)
 
 ---
 
