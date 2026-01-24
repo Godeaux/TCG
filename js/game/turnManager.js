@@ -35,7 +35,9 @@ const getPositionEvaluator = () => _positionEvaluator;
 
 const { PHASE, BUFF, DEBUFF, DAMAGE, DEATH, HEAL } = LOG_CATEGORIES;
 
-const PHASES = ['Start', 'Draw', 'Main 1', 'Before Combat', 'Combat', 'Main 2', 'End'];
+// Per CORE-RULES.md §2: 6 phases (no separate "Before Combat" phase)
+// "Before combat" abilities trigger per-attack, not as a phase
+const PHASES = ['Start', 'Draw', 'Main 1', 'Combat', 'Main 2', 'End'];
 
 const runStartOfTurnEffects = (state) => {
   const player = state.players[state.activePlayerIndex];
@@ -134,24 +136,7 @@ const queueEndOfTurnEffects = (state) => {
   state.endOfTurnFinalized = false;
 };
 
-// Handle Neurotoxic deaths - creatures frozen by Neurotoxic (with frozenDiesTurn set) die
-const handleNeurotoxicDeaths = (state) => {
-  const player = state.players[state.activePlayerIndex];
-  player.field.forEach((creature) => {
-    // Only kill creatures with frozenDiesTurn set (from Neurotoxic)
-    // Regular Frozen doesn't set frozenDiesTurn
-    if (creature?.frozen && creature.frozenDiesTurn && creature.frozenDiesTurn <= state.turn) {
-      creature.currentHp = 0;
-      logGameAction(
-        state,
-        DEATH,
-        `${creature.name} succumbs to ${getKeywordEmoji('Neurotoxic')} neurotoxin.`
-      );
-    }
-  });
-};
-
-// Handle regular Frozen thawing - creatures frozen (without frozenDiesTurn) thaw at end of owner's turn
+// Handle Frozen thawing - creatures lose Frozen at end of owner's turn (they survive) - creatures frozen (without frozenDiesTurn) thaw at end of owner's turn
 const handleFrozenThaw = (state) => {
   const player = state.players[state.activePlayerIndex];
   console.log(
@@ -183,14 +168,14 @@ const handleFrozenThaw = (state) => {
   });
 };
 
-const clearParalysis = (state) => {
-  state.players.forEach((player) => {
-    player.field.forEach((creature) => {
-      if (creature?.paralyzed && creature.paralyzedUntilTurn <= state.turn) {
-        creature.paralyzed = false;
-        logGameAction(state, BUFF, `${creature.name} recovers from paralysis.`);
-      }
-    });
+// Paralysis kills at end of controller's turn (per CORE-RULES.md §7)
+const handleParalysisDeath = (state) => {
+  const player = state.players[state.activePlayerIndex];
+  player.field.forEach((creature) => {
+    if (creature?.paralyzed && creature.paralyzedUntilTurn <= state.turn) {
+      creature.currentHp = 0;
+      logGameAction(state, DEATH, `${creature.name} dies from paralysis.`);
+    }
   });
 };
 
@@ -393,15 +378,6 @@ export const advancePhase = (state) => {
   // Clear extended consumption window when leaving Main phases
   if (previousPhase === 'Main 1' || previousPhase === 'Main 2') {
     state.extendedConsumption = null;
-  }
-
-  // Before Combat phase is now skipped - beforeCombat effects fire per-attack
-  // Each creature's beforeCombat effect triggers right before that creature attacks
-  if (state.phase === 'Before Combat') {
-    state.phase = 'Combat';
-    // Clear any legacy queue state
-    state.beforeCombatQueue = [];
-    state.beforeCombatProcessing = false;
   }
 
   // Log phase transition using plain message for separator bars
@@ -612,9 +588,8 @@ export const finalizeEndPhase = (state) => {
   handleShellRegeneration(state); // Regenerate Shell for Crustacean creatures
   handleHowlCleanup(state); // Remove temporary Howl buffs from Canines
   handleVenomDamage(state); // Deal venom damage to Webbed enemies (before thaw/cleanup)
-  handleFrozenThaw(state); // Thaw regular frozen creatures first
-  handleNeurotoxicDeaths(state); // Then kill Neurotoxic-frozen creatures
-  clearParalysis(state);
+  handleFrozenThaw(state); // Thaw frozen creatures (they survive)
+  handleParalysisDeath(state); // Kill paralyzed creatures (per CORE-RULES.md §7)
   resetPrideFlags(state); // Reset Pride joinedPrideAttack flags (Feline mechanic)
   cleanupDestroyed(state);
 

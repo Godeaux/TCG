@@ -329,7 +329,7 @@ export class AIController {
       await this.delay(delays.THINKING, state);
 
       // Advance through early phases to get to Main 1
-      // Phase order: Start → Draw → Main 1 → Before Combat → Combat → Main 2 → End
+      // Phase order: Start → Draw → Main 1 → Combat → Main 2 → End
       console.log(
         `[${this.playerLabel}] About to advance through early phases. Current phase: ${state.phase}`
       );
@@ -357,8 +357,8 @@ export class AIController {
         await this.executePlayPhase(state, callbacks);
       }
 
-      // Advance through Before Combat to Combat
-      while (state.phase === 'Main 1' || state.phase === 'Before Combat') {
+      // Advance from Main 1 to Combat
+      while (state.phase === 'Main 1') {
         callbacks.onAdvancePhase?.();
         await this.delay(delays.PHASE_ADVANCE, state);
       }
@@ -636,33 +636,30 @@ export class AIController {
     );
     const hasConsumablePrey = availablePrey.length > 0;
 
-    // Filter to playable cards (respect card limit unless free play)
-    // IMPORTANT: Traps CANNOT be played - they trigger automatically from hand
+    // Filter to playable cards (respect card limit)
+    // Per CORE-RULES.md §2:
+    // - Traps trigger automatically from hand, not "played"
+    // - Free Spell completely bypasses the limit
+    // - Free Play keyword requires limit to be available (can only play while limit unused)
     const playableCards = hand.filter((card) => {
       // Traps are never "playable" - they trigger automatically when conditions are met
       if (card.type === 'Trap') {
         return false;
       }
 
-      const isFree = card.type === 'Free Spell' || isFreePlay(card);
+      // Free Spells completely bypass the limit
+      if (card.type === 'Free Spell') {
+        return true;
+      }
 
       // If card limit not used, any non-trap card is playable
       if (!state.cardPlayedThisTurn) {
         return true;
       }
 
-      // Card limit already used - only free cards can be played
-      if (!isFree) {
-        return false;
-      }
-
-      // Free Play predators require prey to consume when card limit is used
-      // (dry-dropped predators lose Free Play, so they'd violate the card limit)
-      if (card.type === 'Predator' && isFreePlay(card) && !hasConsumablePrey) {
-        return false;
-      }
-
-      return true;
+      // Card limit already used - only Free Spells can be played
+      // (Free Play keyword requires limit to be available)
+      return false;
     });
 
     console.log(
@@ -1385,6 +1382,10 @@ export class AIController {
 
     // Clear any stale negation flag from previous attacks to prevent false negations
     state._lastReactionNegatedAttack = undefined;
+
+    // Per CORE-RULES.md §5.3: "Before combat" abilities trigger before EACH attack instance
+    // Reset flag so Multi-Strike animals get beforeCombat on every attack
+    attacker.beforeCombatFiredThisAttack = false;
 
     const attackerOwnerIndex = this.playerIndex;
     const defenderOwnerIndex = 1 - this.playerIndex;

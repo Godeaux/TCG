@@ -20,6 +20,7 @@ import {
   applyDamageWithShell,
   hasMolt,
   triggerMolt,
+  isHarmless,
   KEYWORDS,
 } from '../keywords.js';
 import {
@@ -30,7 +31,7 @@ import {
   getKeywordEmoji,
   formatCardForLog,
 } from '../state/gameState.js';
-import { resolveEffectResult } from './effects.js';
+import { resolveEffectResult, stripAbilities } from './effects.js';
 import { isCreatureCard } from '../cardTypes.js';
 import { resolveCardEffect } from '../cards/index.js';
 
@@ -151,12 +152,15 @@ export const resolveCreatureCombat = (
   const ambushAttack = hasAmbush(attacker);
   const attackerPreHp = attacker.currentHp;
   const defenderPreHp = defender.currentHp;
+  // Per CORE-RULES.md §6: Harmless deals 0 combat damage when defending
+  const harmlessDefender = isHarmless(defender);
 
   const defenderResult = applyDamage(defender, attackerEffectiveAtk, state, defenderOwnerIndex);
   const defenderDamage = defenderResult.damage;
   const defenderSurvived = defender.currentHp > 0;
-  // Ambush: attacker NEVER takes combat damage when attacking (per developer glossary)
-  const defenderDealsDamage = !ambushAttack;
+  // Ambush: attacker NEVER takes combat damage when attacking (per CORE-RULES.md §6)
+  // Harmless: defender deals 0 combat damage (per CORE-RULES.md §6)
+  const defenderDealsDamage = !ambushAttack && !harmlessDefender;
   let attackerDamage = 0;
 
   if (defenderResult.barrierBlocked) {
@@ -213,24 +217,30 @@ export const resolveCreatureCombat = (
     );
   }
 
+  // Per CORE-RULES.md §6: Neurotoxic applies Paralysis after combat (even if Neurotoxic creature dies)
+  // Paralysis: strips all abilities, grants Harmless, dies at end of controller's turn
   if (hasNeurotoxic(attacker) && attackerEffectiveAtk > 0) {
     queueKeywordEffect(state, attacker, 'Neurotoxic', attackerOwnerIndex);
-    defender.frozen = true;
-    defender.frozenDiesTurn = state.turn + 1;
+    stripAbilities(defender);
+    defender.keywords = ['Harmless'];
+    defender.paralyzed = true;
+    defender.paralyzedUntilTurn = state.turn + 1;
     logGameAction(
       state,
       DEBUFF,
-      `${getKeywordEmoji('Neurotoxic')} ${formatCardForLog(defender)} is frozen by neurotoxin (dies turn ${state.turn + 1}).`
+      `${getKeywordEmoji('Neurotoxic')} ${formatCardForLog(defender)} is paralyzed by neurotoxin! (loses abilities, dies end of turn)`
     );
   }
   if (defenderDealsDamage && hasNeurotoxic(defender) && defenderEffectiveAtk > 0) {
     queueKeywordEffect(state, defender, 'Neurotoxic', defenderOwnerIndex);
-    attacker.frozen = true;
-    attacker.frozenDiesTurn = state.turn + 1;
+    stripAbilities(attacker);
+    attacker.keywords = ['Harmless'];
+    attacker.paralyzed = true;
+    attacker.paralyzedUntilTurn = state.turn + 1;
     logGameAction(
       state,
       DEBUFF,
-      `${getKeywordEmoji('Neurotoxic')} ${formatCardForLog(attacker)} is frozen by neurotoxin (dies turn ${state.turn + 1}).`
+      `${getKeywordEmoji('Neurotoxic')} ${formatCardForLog(attacker)} is paralyzed by neurotoxin! (loses abilities, dies end of turn)`
     );
   }
 
@@ -461,13 +471,18 @@ export const cleanupDestroyed = (state, { silent = false } = {}) => {
             });
           }
         }
-        player.carrion.push(card);
-        if (!silent) {
-          logGameAction(
-            state,
-            DEATH,
-            `${formatCardForLog(card)} → ${player.name}'s Carrion (${player.carrion.length} cards)`
-          );
+        // Per CORE-RULES.md §8: Tokens do NOT go to carrion
+        if (!card.isToken && !card.id?.startsWith('token-')) {
+          player.carrion.push(card);
+          if (!silent) {
+            logGameAction(
+              state,
+              DEATH,
+              `${formatCardForLog(card)} → ${player.name}'s Carrion (${player.carrion.length} cards)`
+            );
+          }
+        } else if (!silent) {
+          logGameAction(state, DEATH, `${formatCardForLog(card)} (token) destroyed.`);
         }
         if (state.fieldSpell?.card?.instanceId === card.instanceId) {
           state.fieldSpell = null;

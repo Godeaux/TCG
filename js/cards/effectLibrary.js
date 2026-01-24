@@ -38,6 +38,7 @@ import {
   hasShell,
   hasMolt,
   regenerateShell,
+  hasLure,
 } from '../keywords.js';
 import { isCreatureCard } from '../cardTypes.js';
 
@@ -90,6 +91,18 @@ const sortCardsForSelection = (cards) => {
 export const makeTargetedSelection = ({ title, candidates, onSelect, renderCards = false }) => ({
   selectTarget: { title, candidates, onSelect, renderCards },
 });
+
+/**
+ * Filter targets for Lure rule - per CORE-RULES.md §5.5
+ * If any enemy creature has Lure, only Lure creatures can be targeted
+ * @param {Array} targets - Array of potential targets
+ * @returns {Array} - Filtered targets (only Lure if any have Lure)
+ */
+const filterForLure = (targets) => {
+  const lureTargets = targets.filter((c) => hasLure(c));
+  // If any have Lure, only Lure creatures are valid targets
+  return lureTargets.length > 0 ? lureTargets : targets;
+};
 
 /**
  * Helper to handle targeted responses (for cards with onTargeted triggers)
@@ -380,7 +393,9 @@ export const destroy = (params) => (context) => {
 
   // Target selection: destroy a single enemy creature
   if (targetType === 'targetEnemy') {
-    const targets = opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
+    let targets = opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
+    // Per CORE-RULES.md §5.5: Lure creatures must be targeted by abilities
+    targets = filterForLure(targets);
     if (targets.length === 0) {
       log(`No Rival's creatures to target.`);
       return {};
@@ -455,10 +470,16 @@ export const addKeyword = (params) => (context) => {
   }
 
   if (target === 'targetCreature') {
-    const targets = [
-      ...player.field.filter((c) => c && isCreatureCard(c)),
-      ...opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state)),
-    ];
+    // Per CORE-RULES.md §5.5: If enemy has Lure, MUST target that creature
+    const enemyTargets = opponent.field.filter(
+      (c) => c && isCreatureCard(c) && !isInvisible(c, state)
+    );
+    const enemyLureCreatures = enemyTargets.filter((c) => hasLure(c));
+    // If Lure present, only Lure creatures are valid targets; otherwise include friendly too
+    const targets =
+      enemyLureCreatures.length > 0
+        ? enemyLureCreatures
+        : [...player.field.filter((c) => c && isCreatureCard(c)), ...enemyTargets];
     if (targets.length === 0) {
       log(`No creatures to grant ${formattedKeyword}.`);
       return {};
@@ -555,6 +576,8 @@ export const buff = (params) => (context) => {
     title = 'Choose a creature to buff';
   } else if (target === 'targetEnemy') {
     validTargets = opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
+    // Per CORE-RULES.md §5.5: Lure creatures must be targeted by abilities
+    validTargets = filterForLure(validTargets);
     title = "Choose a Rival's creature to buff";
   }
 
@@ -591,11 +614,16 @@ export const selectTarget = (selectionType, effectCallback) => (context) => {
     validTargets = player.field.filter((c) => c);
   } else if (selectionType === 'enemy') {
     validTargets = opponent.field.filter((c) => c && !isInvisible(c, state));
+    // Per CORE-RULES.md §5.5: Lure creatures must be targeted by abilities
+    validTargets = filterForLure(validTargets);
   } else if (selectionType === 'any') {
-    validTargets = [
-      ...player.field.filter((c) => c),
-      ...opponent.field.filter((c) => c && !isInvisible(c, state)),
-    ];
+    // Per CORE-RULES.md §5.5: If enemy has Lure, must target that creature
+    const enemies = opponent.field.filter((c) => c && !isInvisible(c, state));
+    const enemyLures = enemies.filter((c) => hasLure(c));
+    validTargets =
+      enemyLures.length > 0
+        ? enemyLures
+        : [...player.field.filter((c) => c), ...enemies];
   }
 
   if (validTargets.length === 0) {

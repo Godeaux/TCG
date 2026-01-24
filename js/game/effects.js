@@ -1163,9 +1163,12 @@ export const resolveEffectResult = (state, result, context) => {
 
   if (result.paralyzeCreature) {
     const { creature } = result.paralyzeCreature;
+    // Per CORE-RULES.md §7: Paralysis strips all abilities (permanent) and grants Harmless
+    stripAbilities(creature);
+    creature.keywords = ['Harmless']; // Grant Harmless (can't attack, deals 0 combat damage)
     creature.paralyzed = true;
     creature.paralyzedUntilTurn = state.turn + 1;
-    logGameAction(state, DEBUFF, `${formatCardForLog(creature)} is paralyzed.`);
+    logGameAction(state, DEBUFF, `${formatCardForLog(creature)} is paralyzed! (loses all abilities, gains Harmless)`);
   }
 
   // Freeze multiple creatures

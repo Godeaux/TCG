@@ -2603,7 +2603,10 @@ const handleSacrifice = (state, card, onUpdate) => {
   resolveEffectChain(state, result, { player, opponent, card }, onUpdate, () => {
     // After effect resolves, move card to carrion
     player.field[slotIndex] = null;
-    player.carrion.push(card);
+    // Per CORE-RULES.md §8: Tokens do NOT go to carrion
+    if (!card.isToken && !card.id?.startsWith('token-')) {
+      player.carrion.push(card);
+    }
     cleanupDestroyed(state);
     onUpdate?.();
     broadcastSyncState(state);
@@ -2619,6 +2622,10 @@ const handleAttackSelection = (state, attacker, onUpdate) => {
     logMessage(state, 'Resolve the current combat choice before declaring another attack.');
     return;
   }
+
+  // Per CORE-RULES.md §5.3: "Before combat" abilities trigger before EACH attack instance
+  // Reset flag so Multi-Strike animals get beforeCombat on every attack
+  attacker.beforeCombatFiredThisAttack = false;
 
   // Check for attack replacement effect (e.g., Hippo Frog's "eat prey instead of attacking")
   const attackReplacement = attacker.attackReplacement || attacker.effects?.attackReplacement;
@@ -2701,7 +2708,10 @@ const handleEatPreyAttack = (state, attacker, onUpdate) => {
       const slotIndex = opponent.field.findIndex((slot) => slot?.instanceId === prey.instanceId);
       if (slotIndex !== -1) {
         opponent.field[slotIndex] = null;
-        opponent.carrion.push(prey);
+        // Per CORE-RULES.md §8: Tokens do NOT go to carrion
+        if (!prey.isToken && !prey.id?.startsWith('token-')) {
+          opponent.carrion.push(prey);
+        }
 
         logGameAction(
           state,
@@ -3029,13 +3039,10 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) 
             onUpdate?.();
             return;
           }
-          // Free Play predators can only bypass card limit by consuming prey
-          // If card was already played this turn, dry-dropping a Free Play predator is not allowed
-          if (isFreePlay(card) && state.cardPlayedThisTurn) {
-            logMessage(
-              state,
-              `${card.name} must consume prey to play for free (you've already played a card this turn).`
-            );
+          // Per CORE-RULES.md §2: Free Play cards can only be played while limit is available
+          // This is a safety check - the main limit check should have already blocked this
+          if (state.cardPlayedThisTurn) {
+            logMessage(state, 'You have already played a card this turn.');
             clearSelectionPanel();
             onUpdate?.();
             return;
@@ -3079,13 +3086,10 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) 
     }
 
     if (card.type === 'Predator') {
-      // Free Play predators can only bypass the card limit by consuming prey
-      // If card limit already used and this is a Free Play predator, block the play
-      if (isFreePlay(card) && state.cardPlayedThisTurn) {
-        logMessage(
-          state,
-          `${card.name} requires consuming prey to play for free (you've already played a card this turn).`
-        );
+      // Per CORE-RULES.md §2: Cards can only be played while limit is available
+      // This is a safety check - the main limit check should have already blocked this
+      if (state.cardPlayedThisTurn) {
+        logMessage(state, 'You have already played a card this turn.');
         player.hand.push(card); // Return card to hand
         onUpdate?.();
         return;
@@ -3162,7 +3166,10 @@ const handleDiscardEffect = (state, card, onUpdate) => {
   const player = state.players[playerIndex];
   const opponent = state.players[opponentIndex];
   player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
-  if (card.type === 'Predator' || card.type === 'Prey') {
+  // Per CORE-RULES.md §8: Tokens do NOT go to carrion
+  if (card.isToken || card.id?.startsWith('token-')) {
+    // Tokens are just removed, not added anywhere
+  } else if (card.type === 'Predator' || card.type === 'Prey') {
     player.carrion.push(card);
   } else {
     player.exile.push(card);
@@ -3443,12 +3450,11 @@ const navigateToPage = (pageIndex) => {
 
 // DEPRECATED: This queue-based system is no longer used.
 // beforeCombat effects now trigger per-attack in resolveAttack(), not per-phase.
-// This function remains for backwards compatibility but will always return early
-// since the Before Combat phase auto-skips and the queue is never populated.
+// The 'Before Combat' phase no longer exists (per CORE-RULES.md §2).
+// This function remains for backwards compatibility but will always return early.
 const processBeforeCombatQueue = (state, onUpdate) => {
-  if (state.phase !== 'Before Combat') {
-    return;
-  }
+  // Before Combat phase removed - beforeCombat effects fire per-attack
+  return;
   if (state.beforeCombatProcessing || state.beforeCombatQueue.length === 0) {
     return;
   }
@@ -4430,9 +4436,8 @@ export const renderGame = (state, callbacks = {}) => {
   document.documentElement.classList.toggle('deck-building', deckBuilding);
   document.body.classList.toggle('online-mode', isOnline);
   const selectionActive = isSelectionActive();
-  const beforeCombatPending =
-    state.phase === 'Before Combat' &&
-    (state.beforeCombatProcessing || state.beforeCombatQueue.length > 0);
+  // Before Combat phase no longer exists (per CORE-RULES.md §2)
+  const beforeCombatPending = false;
   const endOfTurnPending =
     state.phase === 'End' &&
     !state.endOfTurnFinalized &&
