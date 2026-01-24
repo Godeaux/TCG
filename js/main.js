@@ -25,12 +25,25 @@ initializeCardRegistry();
 const state = createGameState();
 
 const checkWinCondition = () => {
+  if (state.winner) return; // Already have a winner
+
+  // Per CORE-RULES.md §12: Both at 0 HP simultaneously = DRAW
+  const deadPlayers = state.players.filter((p) => p.hp <= 0);
+  if (deadPlayers.length === 2) {
+    state.winner = 'draw';
+    logMessage(state, 'Both players fall! The game ends in a draw!');
+    if (isAnyAIMode(state)) {
+      cleanupAI();
+    }
+    return;
+  }
+
+  // Single player at 0 HP - other player wins
   state.players.forEach((player, index) => {
     if (player.hp <= 0 && !state.winner) {
       const winner = state.players[(index + 1) % 2];
       state.winner = winner;
       logMessage(state, `${winner.name} wins the game!`);
-      // Clean up AI when game ends
       if (isAnyAIMode(state)) {
         cleanupAI();
       }

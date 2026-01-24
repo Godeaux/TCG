@@ -296,13 +296,12 @@ export const resolveCreatureCombat = (
     );
   }
 
-  // Poisonous: when DEFENDING, kill the attacking enemy after combat
-  // Only triggers if defender has Poisonous, is defending (not attacking), and dealt counter-damage
+  // Per CORE-RULES.md §6: Poisonous kills attacker when defending (after combat)
+  // Ambush blocks Poisonous (attacker avoids the poison by avoiding contact)
   if (
     hasPoisonous(defender) &&
     areAbilitiesActive(defender) &&
     !ambushAttack &&
-    defenderEffectiveAtk > 0 &&
     attacker.currentHp > 0
   ) {
     queueKeywordEffect(state, defender, 'Poisonous', defenderOwnerIndex);
