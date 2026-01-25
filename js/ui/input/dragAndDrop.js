@@ -576,6 +576,14 @@ const startConsumptionForSpecificSlot = (predator, slotIndex, ediblePrey, origin
       player.field[slotIndex] = predator;
       clearSelectionPanel();
 
+      // Set cardPlayedThisTurn BEFORE triggering traps (fixes bug where trap resolution
+      // would allow another card play before the callback sets the flag)
+      const isFree =
+        predator.type === 'Free Spell' || predator.type === 'Trap' || isFreePlay(predator);
+      if (!isFree) {
+        state.cardPlayedThisTurn = true;
+      }
+
       triggerPlayTraps(state, predator, latestCallbacks.onUpdate, () => {
         if (totalSelected > 0 && (predator.onConsume || predator.effects?.onConsume)) {
           const result = resolveCardEffect(predator, 'onConsume', {
@@ -598,12 +606,6 @@ const startConsumptionForSpecificSlot = (predator, slotIndex, ediblePrey, origin
             latestCallbacks.onUpdate,
             () => cleanupDestroyed(state)
           );
-        }
-
-        const isFree =
-          predator.type === 'Free Spell' || predator.type === 'Trap' || isFreePlay(predator);
-        if (!isFree) {
-          state.cardPlayedThisTurn = true;
         }
 
         // Activate extended consumption window if more prey available and didn't consume max
@@ -669,11 +671,15 @@ const placeCreatureInSpecificSlot = (card, slotIndex) => {
     logMessage(state, `${creature.name} enters play with no consumption.`);
 
     player.field[slotIndex] = creature;
+
+    // Set cardPlayedThisTurn BEFORE triggering traps (fixes bug where trap resolution
+    // would allow another card play before the callback sets the flag)
+    // Dry-dropped predators always consume limit (abilities suppressed = no Free Play)
+    if (!isTrulyFree) {
+      state.cardPlayedThisTurn = true;
+    }
+
     triggerPlayTraps(state, creature, latestCallbacks.onUpdate, () => {
-      // Dry-dropped predators always consume limit (abilities suppressed = no Free Play)
-      if (!isTrulyFree) {
-        state.cardPlayedThisTurn = true;
-      }
       latestCallbacks.onUpdate?.();
       broadcastSyncState(state);
     });
@@ -691,6 +697,12 @@ const placeCreatureInSpecificSlot = (card, slotIndex) => {
   const creature = createCardInstance(card, state.turn);
 
   player.field[slotIndex] = creature;
+
+  // Set cardPlayedThisTurn BEFORE triggering traps (fixes bug where trap resolution
+  // would allow another card play before the callback sets the flag)
+  if (!isTrulyFree) {
+    state.cardPlayedThisTurn = true;
+  }
 
   triggerPlayTraps(state, creature, latestCallbacks.onUpdate, () => {
     // Trigger onPlay effect for Prey cards (like Celestial Eye Goldfish)
@@ -724,9 +736,6 @@ const placeCreatureInSpecificSlot = (card, slotIndex) => {
       if (result) {
         applyEffectResult(result, state, latestCallbacks.onUpdate);
       }
-    }
-    if (!isTrulyFree) {
-      state.cardPlayedThisTurn = true;
     }
     latestCallbacks.onUpdate?.();
     broadcastSyncState(state);
@@ -765,6 +774,12 @@ const handleDirectConsumption = (predator, prey, slotIndex) => {
 
   player.field[slotIndex] = predatorInstance;
 
+  // Set cardPlayedThisTurn BEFORE triggering traps (fixes bug where trap resolution
+  // would allow another card play before the callback sets the flag)
+  if (!isFree) {
+    state.cardPlayedThisTurn = true;
+  }
+
   triggerPlayTraps(state, predatorInstance, latestCallbacks.onUpdate, () => {
     if (predatorInstance.onConsume || predatorInstance.effects?.onConsume) {
       const result = resolveCardEffect(predatorInstance, 'onConsume', {
@@ -778,10 +793,6 @@ const handleDirectConsumption = (predator, prey, slotIndex) => {
       });
 
       applyEffectResult(result, state, latestCallbacks.onUpdate);
-    }
-
-    if (!isFree) {
-      state.cardPlayedThisTurn = true;
     }
 
     // Activate extended consumption window if more prey available

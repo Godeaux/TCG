@@ -2903,6 +2903,13 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) 
             }
             player.field[placementSlot] = creature;
             clearSelectionPanel();
+
+            // Set cardPlayedThisTurn BEFORE triggering traps (fixes bug where trap resolution
+            // would allow another card play before the callback sets the flag)
+            if (consumesLimit) {
+              state.cardPlayedThisTurn = true;
+            }
+
             triggerPlayTraps(state, creature, onUpdate, () => {
               // Helper to trigger onConsume after onPlay completes
               const triggerOnConsume = () => {
@@ -2927,9 +2934,6 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) 
                     onUpdate,
                     () => cleanupDestroyed(state)
                   );
-                }
-                if (consumesLimit) {
-                  state.cardPlayedThisTurn = true;
                 }
                 pendingConsumption = null;
                 onUpdate?.();
@@ -2998,12 +3002,16 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) 
             `${player.name} plays ${formatCardForLog(creature)} (dry-dropped).`
           );
           clearSelectionPanel();
+
+          // Set cardPlayedThisTurn BEFORE triggering traps (fixes bug where trap resolution
+          // would allow another card play before the callback sets the flag)
+          // Dry-dropped predators lose Free Play, so recalculate isFree
+          const isFreeAfterDryDrop = isFreePlay(creature);
+          if (!isFreeAfterDryDrop) {
+            state.cardPlayedThisTurn = true;
+          }
+
           triggerPlayTraps(state, creature, onUpdate, () => {
-            // Dry-dropped predators lose Free Play, so recalculate isFree
-            const isFreeAfterDryDrop = isFreePlay(creature);
-            if (!isFreeAfterDryDrop) {
-              state.cardPlayedThisTurn = true;
-            }
             onUpdate?.();
             broadcastSyncState(state);
           });
@@ -3045,6 +3053,16 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) 
       );
     }
     player.field[emptySlot] = creature;
+
+    // Set cardPlayedThisTurn BEFORE triggering traps (fixes bug where trap resolution
+    // would allow another card play before the callback sets the flag)
+    // Dry-dropped predators always consume the limit (abilities suppressed)
+    const consumesLimitAfterPlay =
+      card.type === 'Predator' && creature.dryDropped ? true : consumesLimit;
+    if (consumesLimitAfterPlay) {
+      state.cardPlayedThisTurn = true;
+    }
+
     triggerPlayTraps(state, creature, onUpdate, () => {
       if ((card.type === 'Prey' || card.type === 'Predator') && (creature.onPlay || creature.effects?.onPlay)) {
         const result = resolveCardEffect(creature, 'onPlay', {
@@ -3067,13 +3085,6 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) 
           onUpdate,
           () => cleanupDestroyed(state)
         );
-      }
-      // Dry-dropped predators always consume the limit (abilities suppressed)
-      // Others use the predetermined consumesLimit
-      const consumesLimitAfterPlay =
-        card.type === 'Predator' && creature.dryDropped ? true : consumesLimit;
-      if (consumesLimitAfterPlay) {
-        state.cardPlayedThisTurn = true;
       }
       onUpdate?.();
       broadcastSyncState(state);
