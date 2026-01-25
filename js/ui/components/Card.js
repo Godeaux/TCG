@@ -947,6 +947,41 @@ export const renderCard = (card, options = {}) => {
     cardElement.appendChild(overlay);
   }
 
+  // Barrier - golden oval protective glow (Hearthstone-style Divine Shield)
+  if (card.hasBarrier && areAbilitiesActive(card)) {
+    const overlay = document.createElement('div');
+    overlay.className = 'status-overlay barrier-overlay';
+    cardElement.appendChild(overlay);
+  }
+
+  // Webbed - spider web strands across corners
+  if (card.webbed) {
+    const overlay = document.createElement('div');
+    overlay.className = 'status-overlay webbed-overlay';
+    // Add web strand elements
+    const webPositions = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+    webPositions.forEach(pos => {
+      const strand = document.createElement('div');
+      strand.className = `web-strand web-${pos}`;
+      overlay.appendChild(strand);
+    });
+    cardElement.appendChild(overlay);
+  }
+
+  // Stalking - grass ferns in corners with darkened "hiding" effect
+  if (card.keywords?.includes('Stalking')) {
+    const overlay = document.createElement('div');
+    overlay.className = 'status-overlay stalking-overlay';
+    // Add grass fern elements in corners
+    const fern1 = document.createElement('div');
+    fern1.className = 'grass-fern fern-left';
+    overlay.appendChild(fern1);
+    const fern2 = document.createElement('div');
+    fern2.className = 'grass-fern fern-right';
+    overlay.appendChild(fern2);
+    cardElement.appendChild(overlay);
+  }
+
   cardElement.appendChild(inner);
 
   // Add drag and drop functionality if requested
