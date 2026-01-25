@@ -51,10 +51,6 @@ let touchStartTime = 0; // Track when touch started for tap detection
 const TAP_MAX_DURATION_MS = 200; // Max ms for a touch to count as "tap" vs "hold"
 const TAP_MAX_MOVEMENT_PX = 10; // Max px movement for a touch to count as "tap"
 
-// Hysteresis config - prevents jitter when finger is on card boundary
-// New card must be this many pixels closer to steal selection from current card
-const HYSTERESIS_MARGIN = 25;
-
 // Drag broadcast throttling
 let lastTouchDragBroadcast = 0;
 const TOUCH_DRAG_BROADCAST_THROTTLE_MS = 50;
@@ -146,20 +142,6 @@ const canCreatureAttack = (card, state) => {
     !card.hasAttacked &&
     !cantAttack(card) // Use primitive - covers Frozen, Webbed, Passive, Harmless
   );
-};
-
-/**
- * Calculate distance from a point to a card element's center.
- * Accounts for CSS transforms by using getBoundingClientRect().
- */
-const getDistanceToCardCenter = (x, y, cardElement) => {
-  if (!cardElement) return Infinity;
-  const rect = cardElement.getBoundingClientRect();
-  const centerX = rect.left + rect.width / 2;
-  const centerY = rect.top + rect.height / 2;
-  const dx = x - centerX;
-  const dy = y - centerY;
-  return Math.sqrt(dx * dx + dy * dy);
 };
 
 /**
@@ -269,14 +251,13 @@ const removeDraggingClasses = () => {
 // ============================================================================
 
 /**
- * Handle touch start - detect card touch and begin interaction
- * Uses unified getTouchedCard() which handles z-index, transforms, and overlapping cards
+ * Handle touch start - detect card touch, elevate it, and begin interaction
  */
 const handleTouchStart = (e) => {
   const touch = e.touches[0];
   const state = getLatestState();
 
-  // Use unified card detection - handles hand and field cards, respects z-index/transforms
+  // Use unified card detection - handles z-index, transforms, overlapping cards
   const touched = getTouchedCard(touch.clientX, touch.clientY, state);
 
   // If we didn't touch a card, ignore this touch
@@ -297,12 +278,20 @@ const handleTouchStart = (e) => {
   touchedCardElement = touched.element;
   touchedCard = touched.card;
 
+  // Immediately elevate (focus) the touched card - this is the card that will be dragged
+  // The hand-focus class makes it visually elevated and is used to determine what to drag
+  focusCardElement(touched.element);
+
   // Prevent default to avoid scrolling while touching card area
   e.preventDefault();
 };
 
 /**
  * Handle touch move - either browse cards horizontally or drag to play
+ *
+ * Key behavior: When dragging starts, we ALWAYS drag the elevated (hand-focus) card,
+ * not whatever is under the finger. This prevents accidental card switches when
+ * the finger drifts slightly during the upward drag motion.
  */
 const handleTouchMove = (e) => {
   if (!touchedCardElement) return;
@@ -316,17 +305,31 @@ const handleTouchMove = (e) => {
     y: touch.clientY,
   };
 
-  const dx = currentTouchPos.x - touchStartPos.x;
   const dy = currentTouchPos.y - touchStartPos.y;
 
   // Check if moving vertically upward past threshold - start drag to play
   if (!isDragging && dy < -VERTICAL_DRAG_THRESHOLD) {
+    // CRITICAL: Find the elevated (focused) card and drag THAT, not whatever is under finger
+    // This ensures the visually elevated card is always what gets dragged
+    const handGrid = document.getElementById('active-hand');
+    const focusedElement = handGrid?.querySelector('.card.hand-focus');
+
+    if (!focusedElement) return; // No focused card, can't drag
+
+    const state = getLatestState();
+    const focusedCard = getCardFromInstanceId(focusedElement.dataset.instanceId, state);
+
+    if (!focusedCard) return;
+
+    // Update touchedCardElement to the focused card (in case it drifted)
+    touchedCardElement = focusedElement;
+    touchedCard = focusedCard;
+
     isDragging = true;
     touchedCardElement.classList.add('dragging');
     hideCardTooltipImmediate();
 
     // Track hand index for drag broadcasting
-    const state = getLatestState();
     const activePlayer = getActivePlayer(state);
     const instanceId = touchedCardElement.dataset.instanceId;
     touchedCardHandIndex = activePlayer?.hand?.findIndex((c) => c?.instanceId === instanceId) ?? -1;
@@ -357,31 +360,15 @@ const handleTouchMove = (e) => {
     });
     touchedCardElement.dispatchEvent(dragStartEvent);
   } else if (!isDragging) {
-    // Horizontal browsing with hysteresis - prevents jitter at card boundaries
-    // Only switch to new card if it's significantly closer than current card
+    // Horizontal browsing - update focus to card under finger
+    // The focused card is elevated and will be what gets dragged
     const state = getLatestState();
     const touched = getTouchedCard(currentTouchPos.x, currentTouchPos.y, state);
 
     if (touched && touched.source === 'hand' && touched.element !== touchedCardElement) {
-      // Calculate distances to current and potential new card
-      const currentDistance = getDistanceToCardCenter(
-        currentTouchPos.x,
-        currentTouchPos.y,
-        touchedCardElement
-      );
-      const newDistance = getDistanceToCardCenter(
-        currentTouchPos.x,
-        currentTouchPos.y,
-        touched.element
-      );
-
-      // Only switch if new card is significantly closer (hysteresis)
-      // This prevents jitter when finger is on the boundary between cards
-      if (newDistance < currentDistance - HYSTERESIS_MARGIN) {
-        touchedCardElement = touched.element;
-        touchedCard = touched.card;
-        focusCardElement(touched.element);
-      }
+      touchedCardElement = touched.element;
+      touchedCard = touched.card;
+      focusCardElement(touched.element);
     }
   }
 
