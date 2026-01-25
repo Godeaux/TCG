@@ -52,7 +52,10 @@ export const consumePrey = ({
         nutritionGained: getNutritionValue(prey),
       });
       player.field[slotIndex] = null;
-      player.carrion.push(prey);
+      // Per CORE-RULES.md §8: Tokens do NOT go to carrion
+      if (!prey.isToken && !prey.id?.startsWith('token-')) {
+        player.carrion.push(prey);
+      }
       // Note: Consumption does NOT trigger onSlain - only combat/damage deaths do
     }
   });

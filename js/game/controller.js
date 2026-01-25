@@ -691,7 +691,10 @@ export class GameController {
         if (creature && isCreatureCard(creature)) {
           const currentHp = creature.currentHp ?? creature.hp;
           if (currentHp <= 0) {
-            player.carrion.push(creature);
+            // Per CORE-RULES.md §8: Tokens do NOT go to carrion
+            if (!creature.isToken && !creature.id?.startsWith('token-')) {
+              player.carrion.push(creature);
+            }
             player.field[index] = null;
 
             // Trigger onSlain effect

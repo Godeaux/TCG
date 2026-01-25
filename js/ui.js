@@ -35,7 +35,7 @@ import {
   hasAcuity,
   cantBeConsumed,
 } from './keywords.js';
-import { resolveEffectResult, stripAbilities } from './game/effects.js';
+import { resolveEffectResult } from './game/effects.js';
 import {
   deckCatalogs,
   resolveCardEffect,
@@ -475,45 +475,22 @@ const handleSyncPostProcessing = (state, payload, options = {}) => {
   // Clear opponent drag preview when receiving sync_state (action completed)
   clearOpponentDragPreview();
 
-  console.log('[handleSyncPostProcessing] Called:', {
-    hasPayloadDeckBuilder: !!payload.deckBuilder,
-    hasStateDeckBuilder: !!state.deckBuilder,
-    payloadDeckBuilderStage: payload.deckBuilder?.stage,
-    payloadDeckIdsLengths: payload.deckBuilder?.deckIds?.map((d) => d?.length ?? 'null'),
-  });
-
   // Rehydrate deck builder if needed (UI-specific operation)
   if (payload.deckBuilder && state.deckBuilder) {
-    console.log('[handleSyncPostProcessing] Deck hydration:', {
-      payloadDeckIds: payload.deckBuilder.deckIds?.map((d) => d?.length ?? 'null'),
-      localIndex,
-      deckSelectionSelections: state.deckSelection?.selections,
-    });
     if (Array.isArray(payload.deckBuilder.deckIds)) {
       payload.deckBuilder.deckIds.forEach((deckIds, index) => {
         if (!Array.isArray(deckIds) || deckIds.length === 0) {
-          console.log(`[handleSyncPostProcessing] Skipping index ${index}: empty deckIds`);
           return;
         }
         const localSelection = state.deckBuilder.selections[index];
         if (index === localIndex && localSelection?.length) {
-          console.log(`[handleSyncPostProcessing] Skipping index ${index}: local slot protected`);
           return;
         }
         const deckId = state.deckSelection?.selections?.[index];
         if (!deckId) {
-          console.log(
-            `[handleSyncPostProcessing] Skipping index ${index}: no deckId in deckSelection.selections`
-          );
           return;
         }
-        console.log(
-          `[handleSyncPostProcessing] Hydrating index ${index}: deckId=${deckId}, deckIds.length=${deckIds.length}`
-        );
         state.deckBuilder.selections[index] = mapDeckIdsToCards(deckId, deckIds);
-        console.log(
-          `[handleSyncPostProcessing] After hydration: selections[${index}].length=${state.deckBuilder.selections[index]?.length}`
-        );
       });
     }
     state.deckBuilder.selections.forEach((_, index) => {
@@ -543,23 +520,8 @@ const handleSyncPostProcessing = (state, payload, options = {}) => {
     state.deckBuilder?.stage === 'complete' &&
     state.deckBuilder.selections?.every((selection) => selection.length === 20)
   ) {
-    console.log('✅ Decks complete signal applied (online) – triggering onDeckComplete');
     state.menu.onlineDecksReady = true;
     latestCallbacks.onDeckComplete?.(state.deckBuilder.selections);
-  } else if (
-    state.menu?.mode === 'online' &&
-    !state.menu.onlineDecksReady &&
-    shouldSkipDeckComplete
-  ) {
-    console.log(
-      '⏭️ Skipping deck completion hook during hydration (force/gameStarted/runtimeState).',
-      {
-        forceApply,
-        skipDeckComplete,
-        hasRuntimeState,
-        gameHasStarted,
-      }
-    );
   }
 
   // Check for recovery opportunities after sync
@@ -601,8 +563,6 @@ const handleSyncPostProcessing = (state, payload, options = {}) => {
 
       // AI vs AI mode: auto-select a card to discard (pick lowest value card)
       if (isAIvsAIMode(state) && candidates.length > 0) {
-        console.log(`[AI] Auto-selecting discard for player ${forPlayer}`);
-
         // Sort by card value (lowest first) - discard the weakest card
         const sortedCandidates = [...candidates].sort((a, b) => {
           const aCard = a.value;
@@ -613,7 +573,6 @@ const handleSyncPostProcessing = (state, payload, options = {}) => {
         });
 
         const selectedCard = sortedCandidates[0].value;
-        console.log(`[AI] Discarding: ${selectedCard.name}`);
 
         const aiDelay = state.menu?.aiSlowMode ? 500 : 100;
         setTimeout(() => {
@@ -666,38 +625,27 @@ const updateActionPanel = (state, callbacks = {}) => {
     return;
   }
 
-  const actions = document.createElement('div');
-  actions.className = 'action-buttons';
-
-  // Free Spell and Trap bypass limit entirely
-  // Free Play keyword requires limit available but doesn't consume it
-  const isTrulyFree = selectedCard.type === 'Free Spell' || selectedCard.type === 'Trap';
-  const playDisabled =
-    !isLocalTurn || !canPlayCard(state) || (!isTrulyFree && !cardLimitAvailable(state));
-
-  const playButton = document.createElement('button');
-  playButton.className = 'action-btn primary';
-  playButton.textContent = 'Play';
-  playButton.disabled = playDisabled;
-  playButton.onclick = () => {
-    selectedHandCardId = null;
-    handlePlayCard(state, selectedCard, callbacks.onUpdate);
-  };
-  actions.appendChild(playButton);
-
+  // Only show action bar for cards with discard effects (Play is handled by drag-and-drop)
   const discardInfo = getDiscardEffectInfo(selectedCard);
   const canDiscard =
     isLocalTurn && discardInfo.hasEffect && discardInfo.timing === 'main' && canPlayCard(state);
-  if (canDiscard) {
-    const discardButton = document.createElement('button');
-    discardButton.className = 'action-btn';
-    discardButton.textContent = 'Discard';
-    discardButton.onclick = () => {
-      selectedHandCardId = null;
-      handleDiscardEffect(state, selectedCard, callbacks.onUpdate);
-    };
-    actions.appendChild(discardButton);
+
+  if (!canDiscard) {
+    actionBar.classList.remove('has-actions');
+    return;
   }
+
+  const actions = document.createElement('div');
+  actions.className = 'action-buttons';
+
+  const discardButton = document.createElement('button');
+  discardButton.className = 'action-btn';
+  discardButton.textContent = 'Discard';
+  discardButton.onclick = () => {
+    selectedHandCardId = null;
+    handleDiscardEffect(state, selectedCard, callbacks.onUpdate);
+  };
+  actions.appendChild(discardButton);
 
   actionPanel.appendChild(actions);
   actionBar.classList.add('has-actions');
@@ -1953,12 +1901,6 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
 
     // AI vs AI mode: auto-select the best target
     if (isAIvsAIMode(state) && candidates.length > 0) {
-      console.log(`[AI] Auto-selecting target for: ${title}`);
-      console.log(
-        `[AI] Candidates:`,
-        candidates.map((c) => c.label || c.value?.name || 'unknown')
-      );
-
       // AI target selection heuristic:
       // For damage effects, prefer opponent creatures over own creatures, prefer higher HP targets
       // For other effects, just pick the first valid candidate
@@ -1993,9 +1935,6 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
       });
 
       const selectedCandidate = sortedCandidates[0];
-      console.log(
-        `[AI] Selected: ${selectedCandidate.label || selectedCandidate.value?.name || 'target'}`
-      );
 
       // Add a small delay to make it visible, then auto-select
       const aiDelay = state.menu?.aiSlowMode ? 500 : 100;
@@ -2092,15 +2031,8 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
 
     // AI vs AI mode: auto-select the first option
     if (isAIvsAIMode(state) && options.length > 0) {
-      console.log(`[AI] Auto-selecting option for: ${title}`);
-      console.log(
-        `[AI] Options:`,
-        options.map((o) => o.label)
-      );
-
       // For now, just pick the first option (could be smarter based on option descriptions)
       const selectedOption = options[0];
-      console.log(`[AI] Selected: ${selectedOption.label}`);
 
       const aiDelay = state.menu?.aiSlowMode ? 500 : 100;
       setTimeout(() => {
@@ -2162,13 +2094,11 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
     return;
   }
 
-  console.log('[resolveEffectChain] No selection needed, processing result:', nextResult);
   const uiResult = resolveEffectResult(state, nextResult, context);
 
   // If resolveEffectResult returned a UI result (from nested effects like playFromHand),
   // recursively handle it before completing the chain
   if (uiResult && (uiResult.selectOption || uiResult.selectTarget)) {
-    console.log('[resolveEffectChain] Nested UI result detected, recursing:', uiResult);
     resolveEffectChain(state, uiResult, context, onUpdate, onComplete, onCancel);
     return;
   }
@@ -2176,7 +2106,6 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
   // Handle pendingOnPlay - resolve the copied onPlay effect
   if (uiResult && uiResult.pendingOnPlay) {
     const { creature, playerIndex, opponentIndex } = uiResult.pendingOnPlay;
-    console.log(`[resolveEffectChain] Processing pendingOnPlay for ${creature.name}`);
 
     // Resolve the creature's onPlay effect
     const onPlayResult = resolveCardEffect(creature, 'onPlay', {
@@ -2204,9 +2133,7 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
 
   onUpdate?.();
   broadcastSyncState(state);
-  console.log('[resolveEffectChain] About to call onComplete');
   onComplete?.();
-  console.log('[resolveEffectChain] onComplete finished');
 };
 
 // ============================================================================
@@ -2282,6 +2209,13 @@ const resolveAttack = (state, attacker, target, negateAttack = false, negatedBy 
             state.broadcast?.(state);
             return;
           }
+          // Check if defender was destroyed by beforeCombat effect
+          if (target.type === 'creature' && target.card.currentHp <= 0) {
+            logMessage(state, `${target.card.name} is already destroyed.`);
+            markCreatureAttacked(attacker);
+            state.broadcast?.(state);
+            return;
+          }
           // Continue with the rest of resolveAttack logic
           continueResolveAttack(state, attacker, target);
         }
@@ -2292,6 +2226,13 @@ const resolveAttack = (state, attacker, target, negateAttack = false, negatedBy 
     cleanupDestroyed(state);
     if (attacker.currentHp <= 0) {
       logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
+      markCreatureAttacked(attacker);
+      state.broadcast?.(state);
+      return;
+    }
+    // Check if defender was destroyed by beforeCombat effect
+    if (target.type === 'creature' && target.card.currentHp <= 0) {
+      logMessage(state, `${target.card.name} is already destroyed.`);
       markCreatureAttacked(attacker);
       state.broadcast?.(state);
       return;
@@ -2603,7 +2544,10 @@ const handleSacrifice = (state, card, onUpdate) => {
   resolveEffectChain(state, result, { player, opponent, card }, onUpdate, () => {
     // After effect resolves, move card to carrion
     player.field[slotIndex] = null;
-    player.carrion.push(card);
+    // Per CORE-RULES.md §8: Tokens do NOT go to carrion
+    if (!card.isToken && !card.id?.startsWith('token-')) {
+      player.carrion.push(card);
+    }
     cleanupDestroyed(state);
     onUpdate?.();
     broadcastSyncState(state);
@@ -2619,6 +2563,10 @@ const handleAttackSelection = (state, attacker, onUpdate) => {
     logMessage(state, 'Resolve the current combat choice before declaring another attack.');
     return;
   }
+
+  // Per CORE-RULES.md §5.3: "Before combat" abilities trigger before EACH attack instance
+  // Reset flag so Multi-Strike animals get beforeCombat on every attack
+  attacker.beforeCombatFiredThisAttack = false;
 
   // Check for attack replacement effect (e.g., Hippo Frog's "eat prey instead of attacking")
   const attackReplacement = attacker.attackReplacement || attacker.effects?.attackReplacement;
@@ -2701,7 +2649,10 @@ const handleEatPreyAttack = (state, attacker, onUpdate) => {
       const slotIndex = opponent.field.findIndex((slot) => slot?.instanceId === prey.instanceId);
       if (slotIndex !== -1) {
         opponent.field[slotIndex] = null;
-        opponent.carrion.push(prey);
+        // Per CORE-RULES.md §8: Tokens do NOT go to carrion
+        if (!prey.isToken && !prey.id?.startsWith('token-')) {
+          opponent.carrion.push(prey);
+        }
 
         logGameAction(
           state,
@@ -2984,7 +2935,6 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) 
 
               // Trigger onPlay first (if present), then chain to onConsume
               if (creature.onPlay || creature.effects?.onPlay) {
-                console.log('[handlePlayCard] Triggering onPlay effect for consumed predator:', creature.name);
                 const playResult = resolveCardEffect(creature, 'onPlay', {
                   log: (message) => logMessage(state, message),
                   player,
@@ -3029,13 +2979,10 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) 
             onUpdate?.();
             return;
           }
-          // Free Play predators can only bypass card limit by consuming prey
-          // If card was already played this turn, dry-dropping a Free Play predator is not allowed
-          if (isFreePlay(card) && state.cardPlayedThisTurn) {
-            logMessage(
-              state,
-              `${card.name} must consume prey to play for free (you've already played a card this turn).`
-            );
+          // Per CORE-RULES.md §2: Free Play cards can only be played while limit is available
+          // This is a safety check - the main limit check should have already blocked this
+          if (state.cardPlayedThisTurn) {
+            logMessage(state, 'You have already played a card this turn.');
             clearSelectionPanel();
             onUpdate?.();
             return;
@@ -3079,13 +3026,10 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) 
     }
 
     if (card.type === 'Predator') {
-      // Free Play predators can only bypass the card limit by consuming prey
-      // If card limit already used and this is a Free Play predator, block the play
-      if (isFreePlay(card) && state.cardPlayedThisTurn) {
-        logMessage(
-          state,
-          `${card.name} requires consuming prey to play for free (you've already played a card this turn).`
-        );
+      // Per CORE-RULES.md §2: Cards can only be played while limit is available
+      // This is a safety check - the main limit check should have already blocked this
+      if (state.cardPlayedThisTurn) {
+        logMessage(state, 'You have already played a card this turn.');
         player.hand.push(card); // Return card to hand
         onUpdate?.();
         return;
@@ -3099,20 +3043,7 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) 
     }
     player.field[emptySlot] = creature;
     triggerPlayTraps(state, creature, onUpdate, () => {
-      console.log(
-        '[handlePlayCard] triggerPlayTraps callback executed for:',
-        creature.name,
-        'type:',
-        card.type
-      );
-      console.log(
-        '[handlePlayCard] creature.onPlay:',
-        creature.onPlay,
-        'creature.effects?.onPlay:',
-        creature.effects?.onPlay
-      );
       if ((card.type === 'Prey' || card.type === 'Predator') && (creature.onPlay || creature.effects?.onPlay)) {
-        console.log('[handlePlayCard] Triggering onPlay effect for:', creature.name);
         const result = resolveCardEffect(creature, 'onPlay', {
           log: (message) => logMessage(state, message),
           player,
@@ -3122,7 +3053,6 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) 
           playerIndex,
           opponentIndex,
         });
-        console.log('[handlePlayCard] onPlay result:', result);
         resolveEffectChain(
           state,
           result,
@@ -3162,7 +3092,10 @@ const handleDiscardEffect = (state, card, onUpdate) => {
   const player = state.players[playerIndex];
   const opponent = state.players[opponentIndex];
   player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
-  if (card.type === 'Predator' || card.type === 'Prey') {
+  // Per CORE-RULES.md §8: Tokens do NOT go to carrion
+  if (card.isToken || card.id?.startsWith('token-')) {
+    // Tokens are just removed, not added anywhere
+  } else if (card.type === 'Predator' || card.type === 'Prey') {
     player.carrion.push(card);
   } else {
     player.exile.push(card);
@@ -3441,85 +3374,18 @@ const navigateToPage = (pageIndex) => {
 // initNavigation moved to ./ui/input/inputRouter.js
 // Now initialized via initializeInput() from ./ui/input/index.js
 
-// DEPRECATED: This queue-based system is no longer used.
-// beforeCombat effects now trigger per-attack in resolveAttack(), not per-phase.
-// This function remains for backwards compatibility but will always return early
-// since the Before Combat phase auto-skips and the queue is never populated.
-const processBeforeCombatQueue = (state, onUpdate) => {
-  if (state.phase !== 'Before Combat') {
-    return;
-  }
-  if (state.beforeCombatProcessing || state.beforeCombatQueue.length === 0) {
-    return;
-  }
-  const creature = state.beforeCombatQueue.shift();
-  // Check for both legacy function and new JSON-based effects
-  if (!creature?.onBeforeCombat && !creature?.effects?.onBeforeCombat) {
-    // No effect to process, try next creature in queue
-    processBeforeCombatQueue(state, onUpdate);
-    return;
-  }
-  state.beforeCombatProcessing = true;
-  const playerIndex = state.activePlayerIndex;
-  const opponentIndex = (playerIndex + 1) % 2;
-  const player = state.players[playerIndex];
-  const opponent = state.players[opponentIndex];
-
-  // Use resolveCardEffect for both legacy and new systems
-  const result = resolveCardEffect(creature, 'onBeforeCombat', {
-    log: (message) => logMessage(state, message),
-    player,
-    opponent,
-    creature,
-    state,
-    playerIndex,
-    opponentIndex,
-  });
-  resolveEffectChain(
-    state,
-    result,
-    { playerIndex, opponentIndex, card: creature },
-    onUpdate,
-    () => {
-      cleanupDestroyed(state);
-      state.beforeCombatProcessing = false;
-      onUpdate?.();
-      broadcastSyncState(state);
-      processBeforeCombatQueue(state, onUpdate);
-    },
-    () => {
-      cleanupDestroyed(state);
-      state.beforeCombatProcessing = false;
-      onUpdate?.();
-      broadcastSyncState(state);
-      processBeforeCombatQueue(state, onUpdate);
-    }
-  );
-};
-
 const processEndOfTurnQueue = (state, onUpdate) => {
-  console.log('[EOT] processEndOfTurnQueue called', {
-    phase: state.phase,
-    processing: state.endOfTurnProcessing,
-    queueLength: state.endOfTurnQueue.length,
-    finalized: state.endOfTurnFinalized,
-    selectionActive: isSelectionActive(),
-  });
-
   if (state.phase !== 'End') {
-    console.log('[EOT] Early return: phase is not End');
     return;
   }
 
   // Already finalized - nothing more to do
   if (state.endOfTurnFinalized) {
-    console.log('[EOT] Early return: already finalized');
     return;
   }
 
   // If there's an active selection, don't process but also don't get stuck
   if (isSelectionActive()) {
-    console.log('[EOT] Early return: selection is active');
     // Reset processing flag if we're waiting for selection but it's not our turn
     if (state.endOfTurnProcessing && !isLocalPlayersTurn(state)) {
       state.endOfTurnProcessing = false;
@@ -3529,17 +3395,14 @@ const processEndOfTurnQueue = (state, onUpdate) => {
 
   // Reset processing flag if it was stuck waiting for a selection
   if (state.endOfTurnProcessing && !isSelectionActive()) {
-    console.log('[EOT] Resetting stuck endOfTurnProcessing flag');
     state.endOfTurnProcessing = false;
   }
 
   if (state.endOfTurnProcessing) {
-    console.log('[EOT] Early return: already processing');
     return;
   }
 
   if (state.endOfTurnQueue.length === 0) {
-    console.log('[EOT] Queue empty, calling finalizeEndPhase');
     finalizeEndPhase(state);
     broadcastSyncState(state);
     onUpdate?.(); // Re-render UI to reflect endOfTurnFinalized = true
@@ -3561,10 +3424,6 @@ const processEndOfTurnQueue = (state, onUpdate) => {
   const opponent = state.players[opponentIndex];
 
   const finishCreature = () => {
-    console.log('[EOT] finishCreature called for:', creature.name, {
-      hasEndOfTurnSummon: !!creature.endOfTurnSummon,
-      queueLengthBefore: state.endOfTurnQueue.length,
-    });
     if (creature.endOfTurnSummon) {
       resolveEffectResult(
         state,
@@ -3581,9 +3440,6 @@ const processEndOfTurnQueue = (state, onUpdate) => {
     }
     cleanupDestroyed(state);
     state.endOfTurnProcessing = false;
-    console.log(
-      '[EOT] finishCreature: set endOfTurnProcessing to false, calling processEndOfTurnQueue'
-    );
     broadcastSyncState(state);
     processEndOfTurnQueue(state, onUpdate);
   };
@@ -3602,20 +3458,13 @@ const processEndOfTurnQueue = (state, onUpdate) => {
     playerIndex,
     opponentIndex,
   });
-  console.log('[EOT] Calling resolveEffectChain with result:', result);
   resolveEffectChain(
     state,
     result,
     { playerIndex, opponentIndex, card: creature },
     onUpdate,
-    () => {
-      console.log('[EOT] resolveEffectChain onComplete callback called');
-      finishCreature();
-    },
-    () => {
-      console.log('[EOT] resolveEffectChain onCancel callback called');
-      finishCreature();
-    }
+    () => finishCreature(),
+    () => finishCreature()
   );
 };
 
@@ -4430,9 +4279,8 @@ export const renderGame = (state, callbacks = {}) => {
   document.documentElement.classList.toggle('deck-building', deckBuilding);
   document.body.classList.toggle('online-mode', isOnline);
   const selectionActive = isSelectionActive();
-  const beforeCombatPending =
-    state.phase === 'Before Combat' &&
-    (state.beforeCombatProcessing || state.beforeCombatQueue.length > 0);
+  // Before Combat phase no longer exists (per CORE-RULES.md §2)
+  const beforeCombatPending = false;
   const endOfTurnPending =
     state.phase === 'End' &&
     !state.endOfTurnFinalized &&
@@ -4508,7 +4356,6 @@ export const renderGame = (state, callbacks = {}) => {
   updateActionBar(handleNextPhase, state);
   appendLog(state);
   if (shouldProcessQueues) {
-    processBeforeCombatQueue(state, callbacks.onUpdate);
     processEndOfTurnQueue(state, callbacks.onUpdate);
   }
 

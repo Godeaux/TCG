@@ -145,47 +145,43 @@ const canCreatureAttack = (card, state) => {
 };
 
 /**
- * Find the closest card at a given position in hand
+ * Find the card element at a given touch position.
+ * Uses browser's native hit testing (elementsFromPoint) which correctly handles:
+ * - Z-index stacking order
+ * - CSS transforms (enlarged/lifted cards)
+ * - Overlapping elements
+ *
+ * @returns {{ element: HTMLElement, card: Object, source: 'hand'|'field' } | null}
  */
-const getCardAtPosition = (x, y) => {
+const getTouchedCard = (x, y, state) => {
+  const elements = document.elementsFromPoint(x, y);
   const handGrid = document.getElementById('active-hand');
-  if (!handGrid) return null;
-
-  const cards = Array.from(handGrid.querySelectorAll('.card'));
-  let closestCard = null;
-  let closestDistance = Infinity;
-
-  cards.forEach((card) => {
-    const rect = card.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const dx = x - centerX;
-    const dy = y - centerY;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-
-    if (distance < closestDistance) {
-      closestDistance = distance;
-      closestCard = card;
-    }
-  });
-
-  return closestCard;
-};
-
-/**
- * Find field card element at a given position
- */
-const getFieldCardAtPosition = (x, y) => {
   const playerField = document.querySelector('.player-field');
-  if (!playerField) return null;
 
-  const cards = Array.from(playerField.querySelectorAll('.card'));
-  for (const card of cards) {
-    const rect = card.getBoundingClientRect();
-    if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-      return card;
+  for (const element of elements) {
+    // Check if this element is a card or inside a card
+    const cardElement = element.classList.contains('card')
+      ? element
+      : element.closest('.card');
+
+    if (!cardElement || cardElement.classList.contains('back')) continue;
+
+    // Determine source (hand or field)
+    const isInHand = handGrid && handGrid.contains(cardElement);
+    const isInField = playerField && playerField.contains(cardElement);
+
+    if (isInHand || isInField) {
+      const card = getCardFromInstanceId(cardElement.dataset.instanceId, state);
+      if (card) {
+        return {
+          element: cardElement,
+          card,
+          source: isInHand ? 'hand' : 'field',
+        };
+      }
     }
   }
+
   return null;
 };
 
@@ -255,16 +251,20 @@ const removeDraggingClasses = () => {
 // ============================================================================
 
 /**
- * Handle touch start - detect card touch and begin interaction
+ * Handle touch start - detect card touch, elevate it, and begin interaction
  */
 const handleTouchStart = (e) => {
-  const handGrid = document.getElementById('active-hand');
-  if (!handGrid) return;
-
-  // Check if touch is within hand area
   const touch = e.touches[0];
-  const handRect = handGrid.getBoundingClientRect();
-  if (touch.clientY < handRect.top || touch.clientY > handRect.bottom) return;
+  const state = getLatestState();
+
+  // Use unified card detection - handles z-index, transforms, overlapping cards
+  const touched = getTouchedCard(touch.clientX, touch.clientY, state);
+
+  // If we didn't touch a card, ignore this touch
+  if (!touched) return;
+
+  // Only handle hand cards in this handler (field cards handled by handleFieldTouchStart)
+  if (touched.source !== 'hand') return;
 
   touchStartPos = {
     x: touch.clientX,
@@ -272,15 +272,15 @@ const handleTouchStart = (e) => {
   };
   currentTouchPos = { ...touchStartPos };
   isDragging = false;
-  touchStartTime = Date.now(); // Record when touch started
+  touchStartTime = Date.now();
+  touchedFromField = false;
 
-  // Find closest card (but don't focus/show tooltip yet - wait for tap vs drag)
-  const card = getCardAtPosition(touch.clientX, touch.clientY);
-  if (card && !card.classList.contains('back')) {
-    touchedCardElement = card;
-    touchedCard = getCardFromInstanceId(card.dataset.instanceId, getLatestState());
-    // Don't call focusCardElement here - wait until touchend to determine if it's a tap
-  }
+  touchedCardElement = touched.element;
+  touchedCard = touched.card;
+
+  // Immediately elevate (focus) the touched card - this is the card that will be dragged
+  // The hand-focus class makes it visually elevated and is used to determine what to drag
+  focusCardElement(touched.element);
 
   // Prevent default to avoid scrolling while touching card area
   e.preventDefault();
@@ -288,6 +288,10 @@ const handleTouchStart = (e) => {
 
 /**
  * Handle touch move - either browse cards horizontally or drag to play
+ *
+ * Key behavior: When dragging starts, we ALWAYS drag the elevated (hand-focus) card,
+ * not whatever is under the finger. This prevents accidental card switches when
+ * the finger drifts slightly during the upward drag motion.
  */
 const handleTouchMove = (e) => {
   if (!touchedCardElement) return;
@@ -301,17 +305,31 @@ const handleTouchMove = (e) => {
     y: touch.clientY,
   };
 
-  const dx = currentTouchPos.x - touchStartPos.x;
   const dy = currentTouchPos.y - touchStartPos.y;
 
   // Check if moving vertically upward past threshold - start drag to play
   if (!isDragging && dy < -VERTICAL_DRAG_THRESHOLD) {
+    // CRITICAL: Find the elevated (focused) card and drag THAT, not whatever is under finger
+    // This ensures the visually elevated card is always what gets dragged
+    const handGrid = document.getElementById('active-hand');
+    const focusedElement = handGrid?.querySelector('.card.hand-focus');
+
+    if (!focusedElement) return; // No focused card, can't drag
+
+    const state = getLatestState();
+    const focusedCard = getCardFromInstanceId(focusedElement.dataset.instanceId, state);
+
+    if (!focusedCard) return;
+
+    // Update touchedCardElement to the focused card (in case it drifted)
+    touchedCardElement = focusedElement;
+    touchedCard = focusedCard;
+
     isDragging = true;
     touchedCardElement.classList.add('dragging');
     hideCardTooltipImmediate();
 
     // Track hand index for drag broadcasting
-    const state = getLatestState();
     const activePlayer = getActivePlayer(state);
     const instanceId = touchedCardElement.dataset.instanceId;
     touchedCardHandIndex = activePlayer?.hand?.findIndex((c) => c?.instanceId === instanceId) ?? -1;
@@ -342,12 +360,15 @@ const handleTouchMove = (e) => {
     });
     touchedCardElement.dispatchEvent(dragStartEvent);
   } else if (!isDragging) {
-    // Horizontal browsing - update focused card based on position
-    const newCard = getCardAtPosition(currentTouchPos.x, currentTouchPos.y);
-    if (newCard && newCard !== touchedCardElement && !newCard.classList.contains('back')) {
-      touchedCardElement = newCard;
-      touchedCard = getCardFromInstanceId(newCard.dataset.instanceId, getLatestState());
-      focusCardElement(newCard);
+    // Horizontal browsing - update focus to card under finger
+    // The focused card is elevated and will be what gets dragged
+    const state = getLatestState();
+    const touched = getTouchedCard(currentTouchPos.x, currentTouchPos.y, state);
+
+    if (touched && touched.source === 'hand' && touched.element !== touchedCardElement) {
+      touchedCardElement = touched.element;
+      touchedCard = touched.card;
+      focusCardElement(touched.element);
     }
   }
 
@@ -528,32 +549,32 @@ const handleTouchCancel = (e) => {
 
 /**
  * Handle touch start on player field - for combat attacks
+ * Uses unified getTouchedCard() for consistent card detection
  */
 const handleFieldTouchStart = (e) => {
   const touch = e.touches[0];
   const state = getLatestState();
 
-  // Check if we touched a field card
-  const cardElement = getFieldCardAtPosition(touch.clientX, touch.clientY);
-  if (!cardElement) return;
+  // Use unified card detection
+  const touched = getTouchedCard(touch.clientX, touch.clientY, state);
 
-  const card = getCardFromInstanceId(cardElement.dataset.instanceId, state);
-  if (!card) return;
+  // Only handle field cards in this handler
+  if (!touched || touched.source !== 'field') return;
 
   // Only allow drag if creature can attack
-  if (!canCreatureAttack(card, state)) return;
+  if (!canCreatureAttack(touched.card, state)) return;
 
   // Initialize touch state
   touchStartPos = { x: touch.clientX, y: touch.clientY };
   currentTouchPos = { ...touchStartPos };
   isDragging = false;
-  touchedCard = card;
-  touchedCardElement = cardElement;
+  touchedCard = touched.card;
+  touchedCardElement = touched.element;
   touchedFromField = true;
   touchedCardHandIndex = -1; // Not from hand
 
   // Focus the card
-  focusCardElement(cardElement);
+  focusCardElement(touched.element);
 
   e.preventDefault();
 };

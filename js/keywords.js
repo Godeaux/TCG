@@ -56,11 +56,8 @@ export const PRIMITIVES = {
  * This is the single source of truth for what each keyword does mechanically.
  */
 export const KEYWORD_PRIMITIVES = {
-  [KEYWORDS.FROZEN]: [
-    PRIMITIVES.CANT_ATTACK,
-    PRIMITIVES.CANT_BE_CONSUMED,
-    PRIMITIVES.CANT_CONSUME,
-  ],
+  // Per CORE-RULES.md §7: Frozen grants Passive + Inedible only (NOT cant-consume)
+  [KEYWORDS.FROZEN]: [PRIMITIVES.CANT_ATTACK, PRIMITIVES.CANT_BE_CONSUMED],
   [KEYWORDS.WEBBED]: [PRIMITIVES.CANT_ATTACK, PRIMITIVES.LOSES_ON_DAMAGE],
   [KEYWORDS.PASSIVE]: [PRIMITIVES.CANT_ATTACK],
   [KEYWORDS.HARMLESS]: [PRIMITIVES.CANT_ATTACK],
@@ -100,9 +97,11 @@ export const hasPrimitive = (card, primitive) => {
   // Check boolean status flags first (backwards compatibility)
   // These exist alongside keywords due to legacy code
   if (primitive === PRIMITIVES.CANT_ATTACK) {
-    if (card.frozen || card.webbed) return true;
+    // Per CORE-RULES.md §7: Paralysis grants Harmless (can't attack)
+    if (card.frozen || card.webbed || card.paralyzed) return true;
   }
-  if (primitive === PRIMITIVES.CANT_BE_CONSUMED || primitive === PRIMITIVES.CANT_CONSUME) {
+  // Per CORE-RULES.md §7: Frozen grants Inedible (can't BE consumed) but NOT cant-consume
+  if (primitive === PRIMITIVES.CANT_BE_CONSUMED) {
     if (card.frozen) return true;
   }
   if (primitive === PRIMITIVES.LOSES_ON_DAMAGE) {

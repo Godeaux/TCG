@@ -53,11 +53,21 @@ export const updateHandOverlap = (handGrid) => {
   const computedStyle = getComputedStyle(handGrid);
   const paddingLeft = parseFloat(computedStyle.paddingLeft) || 0;
   const paddingRight = parseFloat(computedStyle.paddingRight) || 0;
-  const handWidth = handGrid.clientWidth - paddingLeft - paddingRight;
-  const cardWidth = cards[0].getBoundingClientRect().width;
+  let handWidth = handGrid.clientWidth - paddingLeft - paddingRight;
 
-  if (!handWidth || !cardWidth || handWidth <= 0) {
-    return;
+  // Fallback: if handWidth isn't available yet, estimate from viewport
+  // This ensures we calculate overlap even before layout settles
+  if (!handWidth || handWidth <= 0) {
+    handWidth = window.innerWidth * 0.95; // Estimate ~95% of viewport width
+  }
+
+  // Get card width - use getBoundingClientRect, but fallback to calculated value
+  // Cards have aspect-ratio: 5/7 and height: 22vh, so width = 22vh * (5/7)
+  // This fallback ensures we get a reasonable overlap even before layout completes
+  let cardWidth = cards[0].getBoundingClientRect().width;
+  if (!cardWidth || cardWidth <= 0) {
+    // Fallback: calculate from viewport height (cards are 22vh tall with 5:7 aspect ratio)
+    cardWidth = window.innerHeight * 0.22 * (5 / 7);
   }
 
   const minVisibleWidth = isMobilePortrait ? 35 : 25; // Minimum visible per card
@@ -200,9 +210,6 @@ export const renderHand = (state, options = {}) => {
       ? 0
       : state.activePlayerIndex;
   const player = state.players[playerIndex];
-  console.log(
-    `[RENDER-HAND-DEBUG] playerIndex=${playerIndex}, hand.length=${player.hand.length}, cards=${player.hand.map((c) => c?.name).join(', ')}`
-  );
 
   // Setup hand expansion
   setupHandExpansion(state);
@@ -225,11 +232,13 @@ export const renderHand = (state, options = {}) => {
   player.hand.forEach((card, index) => {
     const cardElement = renderCard(card, {
       showEffectSummary: true,
-      isSelected: selectedCardId === card.instanceId,
+      // No selection glow - drag-and-drop is primary interaction (Hearthstone-style)
+      isSelected: false,
       draggable: true,
       context: 'hand',
       onInspect,
       onClick: (selectedCard) => {
+        // Click still triggers selection for cards with discard effects
         onSelect?.(selectedCard);
         onUpdate?.();
       },
@@ -266,8 +275,14 @@ export const renderHand = (state, options = {}) => {
     handGrid.appendChild(cardElement);
   });
 
-  // Apply hand overlap
-  requestAnimationFrame(() => updateHandOverlap(handGrid));
+  // Apply hand overlap - call synchronously first, then again after layout settles
+  // The synchronous call may get incorrect measurements, but the RAF calls ensure correction
+  updateHandOverlap(handGrid);
+  requestAnimationFrame(() => {
+    updateHandOverlap(handGrid);
+    // Double RAF to ensure layout has fully settled
+    requestAnimationFrame(() => updateHandOverlap(handGrid));
+  });
 
   // Force overflow to visible (multiple times to ensure it sticks)
   setOverflowVisible(handGrid);

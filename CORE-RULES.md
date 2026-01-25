@@ -19,50 +19,49 @@
 
 ```
 1. START_PHASE
+   → Remove summoning exhaustion from all friendly creatures
    → Resolve "start of turn" effects
-   → Frozen creatures die if timer expired (see §9)
 
 2. DRAW_PHASE
    → Draw 1 card (skip if first player turn 1, or deck empty)
 
 3. MAIN_PHASE_1
-   → May play 1 card (prey/predator/spell/trap)
-   → May play unlimited Free Spells
-   → Predator consumption happens HERE during play
+   → May play 1 card (prey/predator/spell)
+   → Free Play cards: don't consume limit, but ONLY playable before limit used
+   → Predator eating happens HERE during play
+   → Traps stay in hand (activated on opponent's turn)
 
-4. BEFORE_COMBAT_PHASE
-   → "Before combat" abilities trigger (e.g., Electric Eel damage)
-   → Player chooses order if multiple
-
-5. COMBAT_PHASE
+4. COMBAT_PHASE
    → Declare attackers and targets
    → Resolve attacks (see §5)
+   → "Before combat" abilities trigger before EACH attack instance
 
-6. MAIN_PHASE_2
+5. MAIN_PHASE_2
    → May play 1 card ONLY IF nothing played in Main 1
    → Free Spells still unlimited
 
-7. END_PHASE
+6. END_PHASE
    → Resolve "end of turn" effects
-   → Remove summoning exhaustion from all friendly creatures
-   → Frozen creatures die (if this is their 2nd end phase frozen)
+   → Frozen creatures: lose Frozen
+   → Paralyzed creatures: die
    → Pass turn
 ```
 
-**Card play rule:** 1 non-free card per turn total across BOTH main phases.
+**Card play rule:** 1 card per turn total across BOTH main phases. Free Play cards don't consume this limit but can only be played while limit is available.
 
 ---
 
-## 3. CONSUMPTION (predator play)
+## 3. EATING (predator play)
 
-**When:** Only when playing a predator from hand.
+**When:** When playing a predator from ANY source (hand, deck, or carrion).
 
 **Valid targets:**
 - Friendly prey on field
 - Friendly predators with **Edible** on field
 - Carrion pile creatures (only if predator has **Scavenge**)
+- NOT Frozen creatures (Frozen grants Inedible)
 
-**Limit:** 0–3 creatures total consumed.
+**Limit:** 0–3 creatures total eaten.
 
 **Resolution order:**
 1. Select targets (0–3)
@@ -70,11 +69,11 @@
    - Prey → use printed Nutrition value
    - Edible predator → use current ATK
 3. Predator gains +1 ATK and +1 HP per nutrition point
-4. If ≥1 consumed → ability activates
-5. Consumed creatures → carrion pile
+4. If ≥1 eaten → ability activates
+5. Eaten creatures → carrion pile
 6. Predator enters field with new stats
 
-**Dry drop (0 consumed):**
+**Dry drop (0 eaten):**
 - Predator enters with base stats
 - Ability does NOT activate
 - **Loses all keywords**
@@ -87,7 +86,7 @@
 - Applied to: all creatures when they enter field
 - Effect: cannot attack opponent directly
 - CAN: attack enemy creatures
-- Removed: at END_PHASE of controller's turn
+- Removed: at START_PHASE of controller's turn
 - Bypassed by: **Haste**
 
 ---
@@ -102,35 +101,39 @@
 | Just played (has Haste) | ✅ YES | ✅ YES |
 | Survived 1+ full turns | ✅ YES | ✅ YES |
 | Has Passive | ❌ NO | ❌ NO |
-| Is Frozen | ❌ NO | ❌ NO |
+| Has Harmless | ❌ NO | ❌ NO |
+| Is Frozen (grants Passive) | ❌ NO | ❌ NO |
+| Is Paralyzed (grants Harmless) | ❌ NO | ❌ NO |
 
 ### 5.2 Target Restrictions
 
-| Target has... | Can be attacked? | Can be spell-targeted? |
-|---------------|-----------------|------------------------|
-| Hidden | ❌ NO (unless attacker has Acuity) | ✅ YES |
-| Invisible | ❌ NO (unless attacker has Acuity) | ❌ NO |
-| Lure | ✅ MUST attack if able | ✅ YES |
+| Target has... | Can be attacked? | Can be ability-targeted? |
+|---------------|-----------------|--------------------------|
+| Hidden | ❌ NO (unless Acuity) | ✅ YES |
+| Invisible | ❌ NO (unless Acuity) | ❌ NO |
+| Lure | ✅ MUST target | ✅ MUST target |
 
-**Lure rule:** If ANY enemy has Lure, attacker MUST target a Lure creature (attacker chooses which if multiple).
+**Lure rule:** If ANY enemy has Lure, that creature is the ONLY valid target for attacks AND abilities. If multiple Lure, choose among them.
 
-**Acuity:** Can target Hidden and Invisible creatures.
+**Acuity:** Can target Hidden and Invisible creatures with attacks and abilities.
 
 ### 5.3 Creature vs Creature
 
 ```
 1. Attacker declares target
-2. Check Ambush (attacker has it?)
-3. Damage dealt SIMULTANEOUSLY:
-   - Attacker deals ATK to defender's HP
-   - Defender deals ATK to attacker's HP
+2. "Before combat" abilities trigger (e.g., Electric Eel deals damage)
+3. Damage dealt:
+   - Attacker deals ATK to defender's HP (0 if Harmless)
+   - Defender deals ATK to attacker's HP (0 if Harmless OR attacker has Ambush)
 4. If Barrier present → absorbs first damage instance, then removed
-5. If Ambush AND attacker kills defender → attacker takes 0 damage
-6. HP ≤ 0 → creature dies → carrion pile
-7. Trigger "onSlain" if died in combat
+5. HP ≤ 0 → creature dies → carrion pile
+6. Trigger "onSlain" (see §9 for exceptions)
+7. After combat: Neurotoxic applies Paralysis to enemy (even if Neurotoxic creature died)
 ```
 
-**Ambush timing:** Determined AFTER damage calculated. If defender would die, attacker damage is negated.
+**Ambush:** Attacker takes NO counter-damage from defender (regardless of whether defender dies).
+
+**Harmless:** Creature deals 0 combat damage (both when attacking and defending).
 
 ### 5.4 Direct Attack
 
@@ -148,38 +151,44 @@
 
 | Keyword | Behavior |
 |---------|----------|
-| **Haste** | Ignores summoning exhaustion. Can attack opponent immediately. |
-| **Ambush** | When attacking: if this kills defender, take no combat damage. Does NOT apply when defending. |
-| **Passive** | Cannot declare attacks. Can still be attacked. Can be consumed. |
+| **Haste** | Ignores summoning exhaustion. Can attack rival directly on turn played. |
+| **Ambush** | When attacking: take no counter-damage from defender. Does NOT apply when defending. |
+| **Passive** | Cannot declare attacks. Can still be attacked. Can be eaten. |
+| **Harmless** | Cannot attack. Deals 0 combat damage (when defending). |
+| **Lure** | Rival's animals MUST target this animal (attacks AND abilities). |
+| **Acuity** | Can target Hidden and Invisible animals. |
+| **Multi-Strike [N]** | Can attack N times per combat phase (e.g., "Multi-Strike 3"). |
 
 ### Protection Keywords
 
-| Keyword | Blocks attacks? | Blocks spells? | Blocks AoE? |
-|---------|----------------|----------------|-------------|
-| **Barrier** | First damage only | First damage only | First damage only |
-| **Immune** | ❌ Takes attack damage | ✅ Ignores spell damage | ✅ Ignores ability damage |
-| **Hidden** | ✅ Cannot be targeted | ❌ CAN be targeted | ❌ Takes AoE |
-| **Invisible** | ✅ Cannot be targeted | ✅ Cannot be targeted | ❌ Takes AoE |
+| Keyword | Behavior |
+|---------|----------|
+| **Barrier** | Negates the first instance of damage taken. Then removed. |
+| **Immune** | Only takes damage from direct animal attacks. Ignores spell/ability damage. |
+| **Hidden** | Cannot be targeted by attacks. CAN be targeted by spells/abilities. |
+| **Invisible** | Cannot be targeted by attacks OR spells/abilities. |
+| **Inedible** | Cannot be eaten by predators. |
 
-**Barrier consumed:** After absorbing ANY damage (attack, spell, ability, AoE).
-
-**Immune specifics:** Only takes damage from direct creature attacks. All other damage sources (spells, abilities, effects) deal 0.
-
-### Consumption Keywords
+### Eating Keywords
 
 | Keyword | Behavior |
 |---------|----------|
-| **Edible** | This predator can be consumed. Nutrition = current ATK. |
-| **Scavenge** | When played, can consume from carrion pile (in addition to field). |
+| **Edible** | This predator can be eaten. Nutrition = current ATK. |
+| **Scavenge** | When played, can eat from carrion pile (in addition to field). |
 
-### Effect Keywords
+### Damage Keywords
 
 | Keyword | Behavior |
 |---------|----------|
-| **Neurotoxic** | Combat damage inflicts Frozen on target. |
-| **Toxic** | Kills any creature it damages in combat (regardless of HP). |
-| **Poisonous** | Deals 1 damage to opponent at end of THEIR turn. |
-| **Free Play** | Playing this card doesn't count toward 1-card limit. |
+| **Neurotoxic** | After combat (attacking or defending), enemy gains Paralysis. Triggers even if this animal dies. |
+| **Toxic** | Kills any animal it damages in combat (regardless of HP). |
+| **Poisonous** | When defending: kills the attacker after combat. |
+
+### Other Keywords
+
+| Keyword | Behavior |
+|---------|----------|
+| **Free Play** | Doesn't consume 1-card limit, BUT can only be played while limit is still available. |
 
 ---
 
@@ -187,36 +196,44 @@
 
 ### Frozen ❄️
 
-- **Applied by:** Neurotoxic combat damage, certain abilities
+- **Applied by:** Certain abilities (NOT Neurotoxic)
+- **Grants:**
+  - Passive (can't attack)
+  - Inedible (can't be eaten)
+- **Duration:** Until end of controller's turn
+- **End of turn:** Loses Frozen (creature survives)
+
+### Paralysis ⚡
+
+- **Applied by:** Neurotoxic (after combat)
 - **Effects:**
-  - Cannot attack
-  - Cannot be consumed
-- **Duration:** Dies at end of controller's NEXT turn
-- **Death timing:** END_PHASE, after "end of turn" effects resolve
+  - Loses ALL other abilities (permanent, even if Paralysis removed)
+  - Grants Harmless (can't attack, deals 0 combat damage)
+- **Duration:** Until end of controller's turn
+- **End of turn:** Creature DIES
 
 ### Summoning Exhaustion 💤
 
 - **Applied:** Automatically when creature enters field
 - **Effect:** Cannot attack opponent directly
-- **Duration:** Until END_PHASE of controller's turn
+- **Removed:** START_PHASE of controller's turn
 - **Bypassed by:** Haste
-
-### Paralysis
-
-- **Effects:**
-  - Cannot attack
-  - Cannot use activated abilities
-- **Can still:** Defend, be targeted, be consumed
-- **Duration:** Varies by source
 
 ---
 
 ## 8. TRAPS
 
+### How Traps Work
+
+- Traps stay in HAND (not set on field)
+- Activated FROM HAND when trigger condition occurs during opponent's turn
+- Does NOT count toward 1-card-per-turn limit (activated, not played)
+- Goes to Exile after resolution
+
 ### Timing
 
 ```
-Trigger occurs → Trap activates → Trap resolves → Original action continues/completes
+Trigger occurs → Trap activates from hand → Trap resolves → Original action continues/completes
 ```
 
 Traps resolve BEFORE the triggering action completes.
@@ -225,47 +242,41 @@ Traps resolve BEFORE the triggering action completes.
 
 | Trigger | When it fires |
 |---------|---------------|
-| "When rival plays a pred" | After predator declared, before consumption |
+| "When rival plays a pred" | After predator declared, before eating |
 | "When rival plays a prey" | After prey declared, before onPlay effect |
 | "When attacked directly" | After direct attack declared, before damage |
 | "When target creature is defending" | After attack target chosen, before damage |
 | "When damaged indirectly" | After non-combat damage source declared, before damage |
 
-### Trap State
-
-- Set during your main phase (counts as card play)
-- Hidden from opponent
-- Activates automatically on opponent's turn
-- Goes to Exile after resolution
-
 ---
 
 ## 9. DEATH TRIGGERS
 
-### onSlain (combat death only)
+### onSlain
 
-Triggers when creature dies from combat damage.
+Triggers when animal dies from ALMOST any source.
 
 **Does NOT trigger if:**
-- Consumed by predator
-- Killed by spell
-- Killed by ability damage
-- Killed by Frozen status
-- Killed by any non-combat means
+- Eaten by predator
+- Killed by "destroy" keyword effect
 
-### onDeath (any death)
-
-Triggers when creature dies from any source.
+**DOES trigger if:**
+- Combat damage
+- Spell damage
+- Ability damage
+- Paralysis (end of turn death)
+- Trap damage
+- Any other death source
 
 ---
 
 ## 10. TOKENS
 
-- Created by effects (not played from hand)
+- Created by effects (summoned, not played from hand)
 - Marked with ⚪ and dashed border
-- **onPlay does NOT trigger** for tokens
-- Function normally otherwise (attack, defend, consume, die)
-- Go to carrion when destroyed
+- **onPlay DOES trigger** for tokens (summoned = played for game purposes)
+- Function normally otherwise (attack, defend, be eaten, die)
+- Do NOT go to carrion when destroyed (removed from game)
 
 ---
 
@@ -274,8 +285,8 @@ Triggers when creature dies from any source.
 | Type | Counts toward limit? | When playable? | After use? |
 |------|---------------------|----------------|------------|
 | Spell | ✅ YES | Main Phase 1 or 2 | Exile |
-| Free Spell | ❌ NO | Main Phase 1 or 2 | Exile |
-| Trap | ✅ YES (when set) | Main Phase (set) | Exile |
+| Free Spell | ❌ NO (but only while limit available) | Main Phase 1 or 2 | Exile |
+| Trap | ❌ NO (activated from hand) | Opponent's turn (on trigger) | Exile |
 | Field Spell | ✅ YES | Main Phase 1 or 2 | Stays on field |
 
 **Field Spell rule:** Max 1 active. New replaces old → old goes to carrion.
@@ -286,31 +297,38 @@ Triggers when creature dies from any source.
 
 ### Combat Edge Cases
 
-- [ ] Ambush vs Barrier: Ambush checks if defender dies AFTER barrier absorbs
+- [ ] Ambush: Attacker takes 0 counter-damage regardless of whether defender dies
 - [ ] Ambush when defending: Does NOT apply (Ambush is attack-only)
-- [ ] Lure + Hidden: Lure overrides Hidden (must attack the Lure creature)
-- [ ] Lure + Invisible: Lure overrides (must attack)
-- [ ] Multiple Lure: Attacker chooses which Lure to attack
+- [ ] Lure + Hidden: Lure overrides Hidden (must target the Lure creature)
+- [ ] Lure + Invisible: Lure overrides (must target)
+- [ ] Lure + abilities: Abilities MUST also target Lure creature (not just attacks)
+- [ ] Multiple Lure: Attacker/caster chooses which Lure to target
 - [ ] Toxic vs Barrier: Barrier absorbs, creature survives (Toxic needs damage to land)
 - [ ] Toxic vs Immune: Immune takes combat damage, Toxic kills
-- [ ] Neurotoxic vs Barrier: Barrier absorbs, no Frozen applied
-- [ ] Neurotoxic vs Immune: Immune takes damage, Frozen applied
+- [ ] Neurotoxic vs Barrier: Barrier absorbs, no Paralysis applied (no combat damage dealt)
+- [ ] Neurotoxic vs Immune: Immune takes damage, Paralysis applied
+- [ ] Neurotoxic creature dies: Still applies Paralysis to enemy (after combat)
+- [ ] Harmless defending: Deals 0 damage to attacker
 
-### Consumption Edge Cases
+### Eating Edge Cases
 
-- [ ] Consuming Edible predator: Nutrition = current ATK (not base)
+- [ ] Eating Edible predator: Nutrition = current ATK (not base)
 - [ ] Scavenge + field: Can mix (e.g., 1 from field + 2 from carrion)
-- [ ] Consuming Frozen creature: NOT allowed
+- [ ] Eating Frozen creature: NOT allowed (Frozen grants Inedible)
 - [ ] Dry drop: Loses ALL keywords (not just some)
-- [ ] Consuming 0-nutrition prey: Still counts as "consumed" for ability trigger
+- [ ] Eating 0-nutrition prey: Still counts as "eaten" for ability trigger
+- [ ] Predator played from deck/carrion: Can still eat (not just from hand)
 
 ### Timing Edge Cases
 
-- [ ] Trap vs predator play: Trap resolves BEFORE consumption
+- [ ] Trap vs predator play: Trap resolves BEFORE eating
 - [ ] Multiple "start of turn" effects: Controller chooses order
 - [ ] Multiple "end of turn" effects: Controller chooses order
-- [ ] Death during "before combat": Combat proceeds with remaining creatures
-- [ ] Creature dies from "before combat" ability: Does NOT trigger onSlain
+- [ ] "Before combat" ability kills target: Attack does not proceed (no combat damage)
+- [ ] "Before combat" ability kills attacker: Attack does not proceed
+- [ ] Death from "before combat" ability: DOES trigger onSlain (ability damage)
+- [ ] Frozen at end of turn: Loses Frozen, survives
+- [ ] Paralyzed at end of turn: Dies
 
 ### State Edge Cases
 
@@ -322,17 +340,19 @@ Triggers when creature dies from any source.
 
 ---
 
-## 13. DAMAGE TYPES
+## 13. DAMAGE/DEATH SOURCES
 
 | Source | Blocked by Immune? | Triggers onSlain? |
 |--------|-------------------|-------------------|
-| Direct creature attack | ❌ NO | ✅ YES |
-| Spell damage | ✅ YES | ❌ NO |
-| Ability damage | ✅ YES | ❌ NO |
-| Trap damage | ✅ YES | ❌ NO |
-| AoE damage | ✅ YES | ❌ NO |
-| Poison/DoT | ✅ YES | ❌ NO |
-| Frozen death | N/A (not damage) | ❌ NO |
+| Direct animal attack | ❌ NO | ✅ YES |
+| Spell damage | ✅ YES | ✅ YES |
+| Ability damage | ✅ YES | ✅ YES |
+| Trap damage | ✅ YES | ✅ YES |
+| Toxic (combat kill) | N/A (instant kill) | ✅ YES |
+| Poisonous (defender kills attacker) | N/A (instant kill) | ✅ YES |
+| Paralysis death (end of turn) | N/A (not damage) | ✅ YES |
+| Eaten by predator | N/A | ❌ NO |
+| "Destroy" keyword effect | N/A | ❌ NO |
 
 ---
 
@@ -342,7 +362,7 @@ These actions MUST prompt player selection:
 
 | Action | Selection Required |
 |--------|-------------------|
-| Play predator | Choose 0–3 targets to consume |
+| Play predator | Choose 0–3 targets to eat |
 | Play targeted spell | Choose target(s) |
 | Attack | Choose attacker, then choose target |
 | Effect "choose" | Modal appears with options |
@@ -351,7 +371,7 @@ These actions MUST prompt player selection:
 
 ### Selection Cancellation
 
-- Player can cancel predator before confirming consumption
+- Player can cancel predator before confirming eating
 - Player can cancel spell before confirming target
 - Player CANNOT cancel after confirmation
 

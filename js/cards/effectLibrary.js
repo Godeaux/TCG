@@ -38,6 +38,8 @@ import {
   hasShell,
   hasMolt,
   regenerateShell,
+  hasLure,
+  hasAcuity,
 } from '../keywords.js';
 import { isCreatureCard } from '../cardTypes.js';
 
@@ -90,6 +92,40 @@ const sortCardsForSelection = (cards) => {
 export const makeTargetedSelection = ({ title, candidates, onSelect, renderCards = false }) => ({
   selectTarget: { title, candidates, onSelect, renderCards },
 });
+
+/**
+ * Filter targets for Lure rule - per CORE-RULES.md §5.5
+ * If any enemy creature has Lure, only Lure creatures can be targeted
+ * @param {Array} targets - Array of potential targets
+ * @returns {Array} - Filtered targets (only Lure if any have Lure)
+ */
+const filterForLure = (targets) => {
+  const lureTargets = targets.filter((c) => hasLure(c));
+  // If any have Lure, only Lure creatures are valid targets
+  return lureTargets.length > 0 ? lureTargets : targets;
+};
+
+/**
+ * Check if a creature can be targeted by abilities - per CORE-RULES.md §5.5, §12
+ * Invisible blocks ability targeting UNLESS caster has Acuity
+ * Hidden does NOT block ability targeting
+ * Lure OVERRIDES Invisible (must target Lure creatures even if Invisible)
+ * @param {Object} target - Target creature to check
+ * @param {Object} caster - Creature using the ability (may be null)
+ * @param {Object} state - Game state
+ * @returns {boolean} - True if target can be targeted
+ */
+const canTargetWithAbility = (target, caster, state) => {
+  if (!target) return false;
+  // Per CORE-RULES.md §12: Lure overrides Invisible (must target Lure creatures)
+  if (hasLure(target)) return true;
+  // Invisible blocks unless caster has Acuity
+  if (isInvisible(target, state)) {
+    return caster && hasAcuity(caster);
+  }
+  // Hidden does NOT block ability targeting (only attacks)
+  return true;
+};
 
 /**
  * Helper to handle targeted responses (for cards with onTargeted triggers)
@@ -348,7 +384,7 @@ export const killCreature = (targetType) => (context) => {
  * @param {Object} params - { target: 'targetEnemy' | 'enemyCreatures' | 'allCreatures' }
  */
 export const destroy = (params) => (context) => {
-  const { log, opponent, player, state, opponentIndex, playerIndex } = context;
+  const { log, opponent, player, state, opponentIndex, playerIndex, creature: caster } = context;
   const targetType = params?.target || 'targetEnemy';
 
   // Destroy all enemy creatures
@@ -379,8 +415,13 @@ export const destroy = (params) => (context) => {
   }
 
   // Target selection: destroy a single enemy creature
+  // Per CORE-RULES.md §5.5: Acuity allows targeting Invisible creatures
   if (targetType === 'targetEnemy') {
-    const targets = opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
+    let targets = opponent.field.filter(
+      (c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)
+    );
+    // Per CORE-RULES.md §5.5: Lure creatures must be targeted by abilities
+    targets = filterForLure(targets);
     if (targets.length === 0) {
       log(`No Rival's creatures to target.`);
       return {};
@@ -455,10 +496,17 @@ export const addKeyword = (params) => (context) => {
   }
 
   if (target === 'targetCreature') {
-    const targets = [
-      ...player.field.filter((c) => c && isCreatureCard(c)),
-      ...opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state)),
-    ];
+    // Per CORE-RULES.md §5.5: If enemy has Lure, MUST target that creature
+    // Acuity allows targeting Invisible creatures
+    const enemyTargets = opponent.field.filter(
+      (c) => c && isCreatureCard(c) && canTargetWithAbility(c, creature, state)
+    );
+    const enemyLureCreatures = enemyTargets.filter((c) => hasLure(c));
+    // If Lure present, only Lure creatures are valid targets; otherwise include friendly too
+    const targets =
+      enemyLureCreatures.length > 0
+        ? enemyLureCreatures
+        : [...player.field.filter((c) => c && isCreatureCard(c)), ...enemyTargets];
     if (targets.length === 0) {
       log(`No creatures to grant ${formattedKeyword}.`);
       return {};
@@ -519,7 +567,7 @@ export const buffStats = (targetType, stats) => (context) => {
  * target can be: 'targetCreature', 'targetPredator', 'friendlyCreatures', 'self'
  */
 export const buff = (params) => (context) => {
-  const { log, player, opponent, state } = context;
+  const { log, player, opponent, state, creature: caster } = context;
   const { attack = 0, health = 0, target } = params;
 
   // Handle "friendlyCreatures" - buff all friendly creatures
@@ -554,7 +602,12 @@ export const buff = (params) => (context) => {
     validTargets = player.field.filter((c) => c && isCreatureCard(c));
     title = 'Choose a creature to buff';
   } else if (target === 'targetEnemy') {
-    validTargets = opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
+    // Per CORE-RULES.md §5.5: Acuity allows targeting Invisible
+    validTargets = opponent.field.filter(
+      (c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)
+    );
+    // Per CORE-RULES.md §5.5: Lure creatures must be targeted by abilities
+    validTargets = filterForLure(validTargets);
     title = "Choose a Rival's creature to buff";
   }
 
@@ -583,19 +636,25 @@ export const buff = (params) => (context) => {
  * @param {Function} effectCallback - Effect to apply to selected target
  */
 export const selectTarget = (selectionType, effectCallback) => (context) => {
-  const { log, player, opponent, state } = context;
+  const { log, player, opponent, state, creature: caster } = context;
 
   let validTargets = [];
 
   if (selectionType === 'friendly') {
     validTargets = player.field.filter((c) => c);
   } else if (selectionType === 'enemy') {
-    validTargets = opponent.field.filter((c) => c && !isInvisible(c, state));
+    // Per CORE-RULES.md §5.5: Acuity allows targeting Invisible
+    validTargets = opponent.field.filter((c) => c && canTargetWithAbility(c, caster, state));
+    // Per CORE-RULES.md §5.5: Lure creatures must be targeted by abilities
+    validTargets = filterForLure(validTargets);
   } else if (selectionType === 'any') {
-    validTargets = [
-      ...player.field.filter((c) => c),
-      ...opponent.field.filter((c) => c && !isInvisible(c, state)),
-    ];
+    // Per CORE-RULES.md §5.5: Acuity allows targeting Invisible, Lure must be targeted
+    const enemies = opponent.field.filter((c) => c && canTargetWithAbility(c, caster, state));
+    const enemyLures = enemies.filter((c) => hasLure(c));
+    validTargets =
+      enemyLures.length > 0
+        ? enemyLures
+        : [...player.field.filter((c) => c), ...enemies];
   }
 
   if (validTargets.length === 0) {
@@ -918,9 +977,10 @@ export const copyAbilities = (source) => (context) => {
  * @param {string} targetType - 'target' | 'random'
  */
 export const stealCreature = (targetType) => (context) => {
-  const { log, opponent, playerIndex, state } = context;
+  const { log, opponent, playerIndex, state, creature: caster } = context;
 
-  const enemyCreatures = opponent.field.filter((c) => c && !isInvisible(c, state));
+  // Per CORE-RULES.md §5.5: Acuity allows targeting Invisible
+  const enemyCreatures = opponent.field.filter((c) => c && canTargetWithAbility(c, caster, state));
 
   if (enemyCreatures.length === 0) {
     log(`No creatures to steal.`);
@@ -2162,8 +2222,9 @@ export const killAllEnemyCreatures =
  * @param {string} keyword - Keyword to grant
  */
 export const selectEnemyForKeyword = (keyword) => (context) => {
-  const { log, opponent, player, state } = context;
-  const targets = opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
+  const { log, opponent, player, state, creature: caster } = context;
+  // Per CORE-RULES.md §5.5: Acuity allows targeting Invisible
+  const targets = opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state));
 
   if (targets.length === 0) {
     log(`No Rival's creatures to target.`);
@@ -2192,8 +2253,11 @@ export const selectEnemyForKeyword = (keyword) => (context) => {
 export const selectEnemyCreatureForDamage =
   (amount, label = 'damage') =>
   (context) => {
-    const { log, opponent, player, state } = context;
-    const targets = opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
+    const { log, opponent, player, state, creature: caster } = context;
+    // Per CORE-RULES.md §5.5: Acuity allows targeting Invisible
+    const targets = opponent.field.filter(
+      (c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)
+    );
 
     if (targets.length === 0) {
       log(`No Rival's creatures to target.`);
@@ -2218,10 +2282,11 @@ export const selectEnemyCreatureForDamage =
  * Select creature to copy (summon a copy)
  */
 export const selectCreatureToCopy = () => (context) => {
-  const { log, player, opponent, state, playerIndex } = context;
+  const { log, player, opponent, state, playerIndex, creature: caster } = context;
+  // Per CORE-RULES.md §5.5: Acuity allows targeting Invisible (only matters for enemies)
   const candidates = [
-    ...player.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state)),
-    ...opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state)),
+    ...player.field.filter((c) => c && isCreatureCard(c)),
+    ...opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)),
   ];
 
   if (candidates.length === 0) {
@@ -2285,11 +2350,11 @@ export const selectPreyForBuff = (stats) => (context) => {
  * @param {Object} stats - { attack, health }
  */
 export const selectCreatureForBuff = (stats) => (context) => {
-  const { log, player, opponent, state } = context;
+  const { log, player, opponent, state, creature: caster } = context;
   const { attack = 0, health = 0 } = stats;
   const creatures = [
-    ...player.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state)),
-    ...opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state)),
+    ...player.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)),
+    ...opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)),
   ];
 
   if (creatures.length === 0) {
@@ -2316,10 +2381,10 @@ export const selectCreatureForBuff = (stats) => (context) => {
  * @param {string} newCardId - The card ID to transform into
  */
 export const selectCreatureToTransform = (newCardId) => (context) => {
-  const { log, player, opponent, state } = context;
+  const { log, player, opponent, state, creature: caster } = context;
   const candidates = [
-    ...player.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state)),
-    ...opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state)),
+    ...player.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)),
+    ...opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)),
   ];
 
   if (candidates.length === 0) {
@@ -2434,8 +2499,11 @@ export const negateCombat =
  * @param {number} creatureDamage - Damage to deal to selected enemy creature
  */
 export const damageRivalAndSelectEnemy = (rivalDamage, creatureDamage) => (context) => {
-  const { log, opponent, player, state } = context;
-  const enemies = opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
+  const { log, opponent, player, state, creature: caster } = context;
+  // Per CORE-RULES.md §6: Lure creatures must be targeted by abilities
+  const enemies = filterForLure(
+    opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state))
+  );
 
   if (enemies.length === 0) {
     log(`Deals ${rivalDamage} damage to rival, but no Rival's creatures to target.`);
@@ -2488,10 +2556,10 @@ export const destroyFieldSpellsAndKillTokens = () => (context) => {
  * @param {number} damageAmount - Damage to deal to selected target
  */
 export const healAndSelectTargetForDamage = (healAmount, damageAmount) => (context) => {
-  const { log, player, opponent, state } = context;
+  const { log, player, opponent, state, creature: caster } = context;
   const creatures = [
-    ...player.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state)),
-    ...opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state)),
+    ...player.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)),
+    ...opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)),
   ];
   const candidates = [
     ...creatures.map((c) => ({ label: c.name, value: { type: 'creature', creature: c } })),
@@ -2588,8 +2656,11 @@ export const playSpellsFromHand = (count) => (context) => {
  * Select an enemy creature to freeze
  */
 export const selectEnemyToFreeze = () => (context) => {
-  const { log, opponent, player, state } = context;
-  const targets = opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
+  const { log, opponent, player, state, creature: caster } = context;
+  // Per CORE-RULES.md §6: Lure creatures must be targeted by abilities
+  const targets = filterForLure(
+    opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state))
+  );
 
   if (targets.length === 0) {
     log(`No Rival's creatures to freeze.`);
@@ -2736,8 +2807,11 @@ export const regenSelf = () => (context) => {
  * Select an enemy creature to return to hand
  */
 export const selectEnemyToReturn = () => (context) => {
-  const { log, opponent, player, state, opponentIndex } = context;
-  const targets = opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
+  const { log, opponent, player, state, opponentIndex, creature: caster } = context;
+  // Per CORE-RULES.md §6: Lure creatures must be targeted by abilities
+  const targets = filterForLure(
+    opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state))
+  );
 
   if (targets.length === 0) {
     log(`No Rival's creatures to return.`);
@@ -2887,8 +2961,11 @@ export const playSpellFromHand = () => (context) => {
  * Return target enemy to opponent's hand
  */
 export const selectEnemyToReturnToOpponentHand = () => (context) => {
-  const { log, opponent, player, state, opponentIndex } = context;
-  const targets = opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
+  const { log, opponent, player, state, opponentIndex, creature: caster } = context;
+  // Per CORE-RULES.md §6: Lure creatures must be targeted by abilities
+  const targets = filterForLure(
+    opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state))
+  );
 
   if (targets.length === 0) {
     log(`No Rival's creatures to return.`);
@@ -3086,8 +3163,11 @@ export const webAttacker =
  * Select an enemy creature to web
  */
 export const webTarget = () => (context) => {
-  const { log, opponent, state } = context;
-  const enemies = opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
+  const { log, opponent, state, creature: caster } = context;
+  // Per CORE-RULES.md §6: Lure creatures must be targeted by abilities
+  const enemies = filterForLure(
+    opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state))
+  );
 
   if (enemies.length === 0) {
     log(`No Rival's creatures to web.`);
@@ -3450,7 +3530,10 @@ export const damageEqualToStalkBonus = () => (context) => {
     return {};
   }
 
-  const enemies = opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
+  // Per CORE-RULES.md §6: Lure creatures must be targeted by abilities
+  const enemies = filterForLure(
+    opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, creature, state))
+  );
   if (enemies.length === 0) {
     log(`No enemy creatures to strike.`);
     return {};
@@ -3701,7 +3784,7 @@ export const summonTokensPerShell =
  * Deal damage to target enemy based on total shell level of all Shell creatures.
  */
 export const damageEqualToTotalShell = () => (context) => {
-  const { log, player, opponent, state } = context;
+  const { log, player, opponent, state, creature: caster } = context;
 
   // Calculate total shell level
   const shellCreatures = player.field.filter((c) => c && isCreatureCard(c) && hasShell(c));
@@ -3712,7 +3795,10 @@ export const damageEqualToTotalShell = () => (context) => {
     return {};
   }
 
-  const enemies = opponent.field.filter((c) => c && isCreatureCard(c) && !isInvisible(c, state));
+  // Per CORE-RULES.md §6: Lure creatures must be targeted by abilities
+  const enemies = filterForLure(
+    opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state))
+  );
   if (enemies.length === 0) {
     log(`No enemy creatures to damage.`);
     return {};
@@ -3753,7 +3839,7 @@ export const buffHpPerShell =
  * Discard a card, draw a card, then kill target enemy (Silver Bullet)
  */
 export const discardDrawAndKillEnemy = () => (context) => {
-  const { log, player, playerIndex, opponent, state } = context;
+  const { log, player, playerIndex, opponent, state, creature: caster } = context;
 
   if (player.hand.length === 0) {
     log(`No cards to discard.`);
@@ -3765,8 +3851,11 @@ export const discardDrawAndKillEnemy = () => (context) => {
     candidates: player.hand.map((c) => ({ label: c.name, value: c, card: c })),
     renderCards: true,
     onSelect: (discardCard) => {
-      const enemies = opponent.field.filter(
-        (c) => c && isCreatureCard(c) && !isInvisible(c, state)
+      // Per CORE-RULES.md §6: Lure creatures must be targeted by abilities
+      const enemies = filterForLure(
+        opponent.field.filter(
+          (c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)
+        )
       );
 
       return {

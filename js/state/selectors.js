@@ -572,30 +572,17 @@ export const canCardBePlayed = (state, card, playerIndex) => {
   if (!isMainPhase(state)) return false;
 
   // Check card limit
+  // Per CORE-RULES.md §2:
   // - Free Spell and Trap types completely bypass the limit
-  // - Free Play keyword cards require the limit to be available,
-  //   UNLESS it's a predator with prey to consume
+  // - Free Play keyword cards require the limit to be available (can only play while limit unused)
   const isTrulyFree = card.type === 'Free Spell' || card.type === 'Trap';
   const hasFreePlayKeyword = isFreePlay(card);
 
   if (!isTrulyFree && wasCardPlayedThisTurn(state)) {
-    // Card limit already used - check if Free Play predator can consume prey
-    if (hasFreePlayKeyword && card.type === 'Predator') {
-      // Check if there's prey to consume (which allows bypassing the limit)
-      const player = state.players[playerIndex];
-      const hasConsumablePrey = player?.field.some(
-        (c) =>
-          c &&
-          !cantBeConsumed(c) && // Use primitive - covers Frozen, Inedible
-          (c.type === 'Prey' || (c.type === 'Predator' && isEdible(c)))
-      );
-      if (!hasConsumablePrey) {
-        return false; // No prey to consume, can't play
-      }
-      // Has prey - can still play by consuming
-    } else {
-      return false; // Not a Free Play predator with prey
-    }
+    // Card limit already used
+    // Per CORE-RULES.md: Free Play can only be played while limit is still available
+    // So if limit is used, Free Play cards cannot be played (even with prey)
+    return false;
   }
 
   // Creatures need field space
