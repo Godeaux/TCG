@@ -156,14 +156,6 @@ const DECK_OPTIONS = [
     available: true,
   },
   {
-    id: 'canine',
-    name: 'Canine',
-    emoji: '🐺',
-    panelClass: 'deck-select-panel--canine',
-    available: true,
-    experimental: true,
-  },
-  {
     id: 'arachnid',
     name: 'Arachnid',
     emoji: '🕷️',

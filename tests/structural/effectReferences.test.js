@@ -129,11 +129,6 @@ const KNOWN_EFFECT_TYPES = [
   // Play from hand
   'playSpellFromHand',
 
-  // Canine effects (Experimental)
-  'howl',
-  'howlBuff',
-  'howlKeyword',
-
   // Arachnid web effects
   'webAllEnemies',
   'webAttacker',

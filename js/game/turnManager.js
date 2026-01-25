@@ -203,51 +203,6 @@ const handleRegen = (state) => {
   });
 };
 
-// Handle Howl buff cleanup - remove temporary stat and keyword buffs from Canines
-const handleHowlCleanup = (state) => {
-  const activePlayer = state.players[state.activePlayerIndex];
-  let cleanedUp = false;
-
-  activePlayer.field.forEach((creature) => {
-    if (!creature) return;
-
-    // Remove stat buffs from howlBuffs
-    if (creature.howlBuffs && creature.howlBuffs.length > 0) {
-      creature.howlBuffs.forEach((buff) => {
-        // Reverse the stat buffs
-        creature.currentAtk = (creature.currentAtk ?? creature.atk ?? 0) - (buff.atk || 0);
-        creature.currentHp = (creature.currentHp ?? creature.hp ?? 0) - (buff.hp || 0);
-        // Ensure stats don't go below base values due to rounding or other effects
-        creature.currentAtk = Math.max(creature.atk ?? 0, creature.currentAtk);
-        // HP can go below base if damaged, but not below 1 (unless already dead)
-        if (creature.currentHp > 0) {
-          creature.currentHp = Math.max(1, creature.currentHp);
-        }
-      });
-      cleanedUp = true;
-      creature.howlBuffs = [];
-    }
-
-    // Remove keywords from howlKeywords
-    if (creature.howlKeywords && creature.howlKeywords.length > 0) {
-      creature.howlKeywords.forEach(({ keyword }) => {
-        if (creature.keywords) {
-          const idx = creature.keywords.indexOf(keyword);
-          if (idx >= 0) {
-            creature.keywords.splice(idx, 1);
-          }
-        }
-      });
-      cleanedUp = true;
-      creature.howlKeywords = [];
-    }
-  });
-
-  if (cleanedUp) {
-    logGameAction(state, DEBUFF, `🐺 Howl effects fade at end of turn.`);
-  }
-};
-
 // Handle Venom damage - deal damage to all Webbed enemy creatures at end of turn
 const handleVenomDamage = (state) => {
   const activePlayerIndex = state.activePlayerIndex;
@@ -591,7 +546,6 @@ export const finalizeEndPhase = (state) => {
   logGameAction(state, PHASE, `Processing end-of-turn effects...`);
   handleRegen(state);
   handleShellRegeneration(state); // Regenerate Shell for Crustacean creatures
-  handleHowlCleanup(state); // Remove temporary Howl buffs from Canines
   handleVenomDamage(state); // Deal venom damage to Webbed enemies (before thaw/cleanup)
   handleFrozenThaw(state); // Thaw frozen creatures (they survive)
   handleParalysisDeath(state); // Kill paralyzed creatures (per CORE-RULES.md §7)

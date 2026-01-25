@@ -735,13 +735,14 @@ const appendLog = (state) => {
   // Build card name lookup on first use
   buildCardNameLookup();
 
-  // Check if user has scrolled up (not at the bottom)
-  // If they have, preserve their scroll position after update
-  const scrollThreshold = 50; // pixels from bottom to consider "at bottom"
-  const wasAtBottom =
-    gameHistoryLog.scrollHeight - gameHistoryLog.scrollTop - gameHistoryLog.clientHeight <
-    scrollThreshold;
-  const previousScrollTop = gameHistoryLog.scrollTop;
+  // Check if user is near the top (viewing newest entries)
+  // New entries are added at the TOP, so scrollTop=0 means viewing newest
+  // If user scrolls down past threshold, they want to read history and we preserve position
+  const scrollThreshold = 30; // pixels from top to consider "following" newest entries
+  const wasAtTop = gameHistoryLog.scrollTop < scrollThreshold;
+
+  // Store distance from bottom - this is stable when new content is added at top
+  const previousScrollBottom = gameHistoryLog.scrollHeight - gameHistoryLog.scrollTop;
 
   gameHistoryLog.innerHTML = state.log
     .map((entry) => {
@@ -781,14 +782,15 @@ const appendLog = (state) => {
     })
     .join('');
 
-  // Restore scroll position: if user was scrolled up, keep them there
-  // If they were at the bottom, stay at bottom (new entries appear at top, so scroll stays at top)
-  if (!wasAtBottom && previousScrollTop > 0) {
-    // User was scrolled down viewing older entries - preserve their position
-    gameHistoryLog.scrollTop = previousScrollTop;
+  // Restore scroll position based on where user was reading
+  if (wasAtTop) {
+    // User was following newest entries - keep them at top
+    gameHistoryLog.scrollTop = 0;
+  } else {
+    // User scrolled down to read history - preserve their position relative to content
+    // Since new content is added at top, we restore based on distance from bottom
+    gameHistoryLog.scrollTop = gameHistoryLog.scrollHeight - previousScrollBottom;
   }
-  // Note: New entries are added at the TOP of the log (state.log.unshift),
-  // so "at bottom" means viewing older entries, and scroll position 0 is newest
 };
 
 /**
@@ -3177,11 +3179,11 @@ const updateActionBar = (onNextPhase, state) => {
         fieldTurnBtn.classList.add('skip-combat-confirm');
         fieldTurnBtn.disabled = true;
 
-        // Re-enable after 1.5s
+        // Re-enable after brief delay to prevent accidental double-clicks
         setTimeout(() => {
           fieldTurnBtn.disabled = false;
 
-          // After another 1.5s, revert to normal if still in confirmation mode
+          // After 1.5s, revert to normal if still in confirmation mode
           setTimeout(() => {
             if (skipCombatConfirmationActive) {
               skipCombatConfirmationActive = false;
@@ -3193,7 +3195,7 @@ const updateActionBar = (onNextPhase, state) => {
               if (skipTextEl) skipTextEl.style.display = 'none';
             }
           }, 1500);
-        }, 1500);
+        }, 300);
       }
       return;
     }

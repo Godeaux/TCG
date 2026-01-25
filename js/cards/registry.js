@@ -17,7 +17,6 @@ import reptileData from './data/reptile.json' with { type: 'json' };
 import amphibianData from './data/amphibian.json' with { type: 'json' };
 import birdData from './data/bird.json' with { type: 'json' };
 import mammalData from './data/mammal.json' with { type: 'json' };
-import canineData from './data/canine.json' with { type: 'json' };
 import arachnidData from './data/arachnid.json' with { type: 'json' };
 import felineData from './data/feline.json' with { type: 'json' };
 import crustaceanData from './data/crustacean.json' with { type: 'json' };
@@ -48,7 +47,6 @@ const deckCatalogs = {
   amphibian: [],
   bird: [],
   mammal: [],
-  canine: [],
   arachnid: [],
   feline: [],
   crustacean: [],
@@ -150,22 +148,6 @@ export const initializeCardRegistry = () => {
   });
   deckCatalogs.mammal = sortCardsByType(
     mammalData.cards.filter((card) => !card.id.includes('token'))
-  );
-
-  // Load canine tokens (if present in the JSON)
-  if (canineData.tokens) {
-    canineData.tokens.forEach((token) => {
-      tokenRegistry.set(token.id, token);
-      cardRegistry.set(token.id, token);
-    });
-  }
-
-  // Load canine cards
-  canineData.cards.forEach((card) => {
-    cardRegistry.set(card.id, card);
-  });
-  deckCatalogs.canine = sortCardsByType(
-    canineData.cards.filter((card) => !card.id.includes('token'))
   );
 
   // Load arachnid tokens (if present in the JSON)

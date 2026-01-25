@@ -4578,6 +4578,11 @@ button {
   outline-offset: 2px;
 }
 
+select.menu-input option {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
 .menu-error {
   min-height: 20px;
   font-size: var(--font-sm);
@@ -4996,10 +5001,6 @@ button {
 
 .deck-select-panel--amphibian {
   background: linear-gradient(135deg, rgba(92, 180, 116, 0.85), rgba(26, 92, 54, 0.95));
-}
-
-.deck-select-panel--canine {
-  background: linear-gradient(135deg, rgba(139, 69, 19, 0.85), rgba(70, 40, 10, 0.95));
 }
 
 .deck-select-panel--arachnid {
@@ -10305,6 +10306,11 @@ button {
 .bug-status-select:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.bug-status-select option {
+  background: var(--bg-card);
+  color: var(--text-primary);
 }
 
 /* Edit/Delete Buttons */

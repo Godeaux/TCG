@@ -20,7 +20,6 @@ const CARD_FILES = [
   'reptile.json',
   'amphibian.json',
   'mammal.json',
-  'canine.json',
   'tokens.json'
 ];
 
@@ -216,17 +215,6 @@ const EFFECT_PATTERNS = [
              hasEffectType(effects, 'returnTriggeredToHand');
     },
     describe: () => 'Return to hand'
-  },
-
-  // Howl (Canine specific)
-  {
-    pattern: /\bHowl:/i,
-    check: (match, effects) => {
-      return hasEffectType(effects, 'howl') ||
-             hasEffectType(effects, 'howlBuff') ||
-             hasEffectType(effects, 'howlKeyword');
-    },
-    describe: () => 'Howl'
   },
 ];
 

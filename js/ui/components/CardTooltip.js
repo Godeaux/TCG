@@ -136,10 +136,6 @@ const TRIGGER_DESCRIPTIONS = {
     name: 'Discard',
     description: 'Triggers when this card is discarded from hand.',
   },
-  'Howl:': {
-    name: 'Howl',
-    description: 'When played, this effect buffs all friendly Canines until end of turn.',
-  },
   // Trap triggers
   'When Rival plays a Predator,': {
     name: 'Trap: Rival Plays Predator',

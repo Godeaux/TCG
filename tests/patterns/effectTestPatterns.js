@@ -423,41 +423,6 @@ export const testNoUnexpectedSideEffects = (cardId, trigger, setupFn, expectedCh
 };
 
 // ============================================
-// Canine Howl Tests
-// ============================================
-
-/**
- * Test a howl effect (Canine-specific)
- */
-export const testHowlEffect = (cardId, trigger, expectedBuff = null, expectedKeyword = null) => {
-  describe(`${trigger} howl effect`, () => {
-    it('has howl type', () => {
-      const card = getCardDefinitionById(cardId);
-      const effect = card.effects?.[trigger];
-      expect(effect).toBeDefined();
-      expect(effect.type).toBe('howl');
-    });
-
-    if (expectedBuff) {
-      it(`howl grants +${expectedBuff.atk}/+${expectedBuff.hp}`, () => {
-        const card = getCardDefinitionById(cardId);
-        const effect = card.effects?.[trigger];
-        expect(effect.params?.atk).toBe(expectedBuff.atk);
-        expect(effect.params?.hp).toBe(expectedBuff.hp);
-      });
-    }
-
-    if (expectedKeyword) {
-      it(`howl grants ${expectedKeyword}`, () => {
-        const card = getCardDefinitionById(cardId);
-        const effect = card.effects?.[trigger];
-        expect(effect.params?.keyword).toBe(expectedKeyword);
-      });
-    }
-  });
-};
-
-// ============================================
 // Comprehensive Card Test Suite
 // ============================================
 
@@ -519,9 +484,6 @@ export const runCardTestSuite = (config) => {
           break;
         case 'chooseOption':
           testChooseOptionEffect(cardId, trigger, params.optionCount);
-          break;
-        case 'howl':
-          testHowlEffect(cardId, trigger, params.buff, params.keyword);
           break;
         default:
           testEffectExists(cardId, trigger, effectType);

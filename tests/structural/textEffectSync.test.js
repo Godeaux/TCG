@@ -155,7 +155,7 @@ describe('Numeric Value Validation', () => {
         for (const expectedCount of expectedCounts) {
           const hasMatchingDraw = drawEffects.some((e) => {
             const count = e.params?.count;
-            // Handle dynamic counts like "canineCountMax3"
+            // Handle dynamic counts
             return typeof count !== 'number' || count === expectedCount;
           });
           expect(hasMatchingDraw).toBe(true);
@@ -401,22 +401,6 @@ describe('Regen Effect Validation', () => {
 });
 
 // ============================================
-// Howl Effect Validation (Canine)
-// ============================================
-
-describe('Canine Howl Validation', () => {
-  const cardsWithHowl = getAllCards().filter((c) => c.effectText && /\bHowl:/i.test(c.effectText));
-
-  describe('Cards with Howl text have howl effect', () => {
-    it.each(cardsWithHowl.map((c) => [c.name, c.id]))('%s (%s)', (name, cardId) => {
-      const card = getCardDefinitionById(cardId);
-      const hasHowl = hasEffectType(card.effects, 'howl');
-      expect(hasHowl).toBe(true);
-    });
-  });
-});
-
-// ============================================
 // Damage Effect Validation
 // ============================================
 
@@ -494,10 +478,6 @@ describe('Stat Buff Validation', () => {
       c.effectText &&
       /[+-]\d+\/[+-]?\d+/i.test(c.effectText) &&
       c.effects &&
-      // Exclude Howl cards (they use special howl effect)
-      !/\bHowl:/i.test(c.effectText) &&
-      // Exclude "All Canines gain" (uses howl effect)
-      !/\bAll Canines gain\b/i.test(c.effectText) &&
       // Exclude tokens (may use choice effects with nested buffs)
       !c.isToken
   );
@@ -651,17 +631,14 @@ describe('Keyword Grant Validation', () => {
     'Hidden',
   ];
 
-  // Exclude Traps (they use trigger field), tokens (may inherit from parent),
-  // Howl cards (they use special howl effect), and "All Canines gain" (uses howl effect)
+  // Exclude Traps (they use trigger field), tokens (may inherit from parent)
   const cardsWithKeywordGrant = getAllCards().filter(
     (c) =>
       c.effectText &&
       grantableKeywords.some((kw) => new RegExp(`\\bgains? ${kw}\\b`, 'i').test(c.effectText)) &&
       c.effects &&
       c.type !== 'Trap' &&
-      !c.isToken &&
-      !/\bHowl:/i.test(c.effectText) &&
-      !/\bAll Canines gain\b/i.test(c.effectText)
+      !c.isToken
   );
 
   describe('Cards granting keywords have matching effects', () => {
@@ -686,7 +663,7 @@ describe('Keyword Grant Validation', () => {
           flat.some((e) => e.type === 'selectFromGroup' && e.params?.effect?.keyword === keyword) ||
           // selectPredatorForKeyword, selectCreatureForKeyword, etc.
           flat.some((e) => e.type?.includes('ForKeyword') && e.params?.keyword === keyword) ||
-          // grantAllFriendlyCaninesKeyword, grantAllCreaturesKeyword, etc.
+          // grantAllCreaturesKeyword, etc.
           flat.some((e) => e.type?.includes('Keyword') && e.params?.keyword === keyword) ||
           // Compound effects that include the keyword in the type name
           flat.some((e) => e.type?.includes(keyword)) ||

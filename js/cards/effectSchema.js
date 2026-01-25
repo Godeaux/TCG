@@ -471,12 +471,7 @@ export const EFFECT_SCHEMA = {
     text: (p) => {
       const atk = p.stats.attack || p.stats.atk || 0;
       const hp = p.stats.health || p.stats.hp || 0;
-      const target =
-        p.targetType === 'all-friendly'
-          ? 'Creatures'
-          : p.targetType === 'friendlyCanines'
-            ? 'Canines'
-            : 'Target';
+      const target = p.targetType === 'all-friendly' ? 'Creatures' : 'Target';
       return `${target} gain +${atk}/+${hp}`;
     },
   },
@@ -495,24 +490,6 @@ export const EFFECT_SCHEMA = {
             ? 'Target creature'
             : 'Target';
       return `${target} gain +${p.attack}/+${p.health}`;
-    },
-  },
-
-  howl: {
-    params: {
-      atk: { type: 'number', required: false },
-      hp: { type: 'number', required: false },
-      keyword: { type: 'string', required: false },
-    },
-    text: (p) => {
-      const parts = [];
-      if (p.atk !== undefined || p.hp !== undefined) {
-        parts.push(`+${p.atk || 0}/+${p.hp || 0}`);
-      }
-      if (p.keyword) {
-        parts.push(p.keyword);
-      }
-      return `Howl: All Canines gain ${parts.join(' and ')}`;
     },
   },
 
