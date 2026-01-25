@@ -145,69 +145,43 @@ const canCreatureAttack = (card, state) => {
 };
 
 /**
- * Find the topmost card at a given position in hand
- * Uses elementsFromPoint to respect visual stacking order (z-index)
+ * Find the card element at a given touch position.
+ * Uses browser's native hit testing (elementsFromPoint) which correctly handles:
+ * - Z-index stacking order
+ * - CSS transforms (enlarged/lifted cards)
+ * - Overlapping elements
+ *
+ * @returns {{ element: HTMLElement, card: Object, source: 'hand'|'field' } | null}
  */
-const getCardAtPosition = (x, y) => {
-  // Get all elements at this point, sorted by z-index (topmost first)
-  const elementsAtPoint = document.elementsFromPoint(x, y);
-
-  // Find the first .card element that's in the active hand
+const getTouchedCard = (x, y, state) => {
+  const elements = document.elementsFromPoint(x, y);
   const handGrid = document.getElementById('active-hand');
-  if (!handGrid) return null;
+  const playerField = document.querySelector('.player-field');
 
-  for (const element of elementsAtPoint) {
-    // Check if this element is a card
-    if (element.classList.contains('card') && !element.classList.contains('back')) {
-      // Verify it's in the hand (not a tooltip, preview, etc.)
-      if (handGrid.contains(element)) {
-        return element;
+  for (const element of elements) {
+    // Check if this element is a card or inside a card
+    const cardElement = element.classList.contains('card')
+      ? element
+      : element.closest('.card');
+
+    if (!cardElement || cardElement.classList.contains('back')) continue;
+
+    // Determine source (hand or field)
+    const isInHand = handGrid && handGrid.contains(cardElement);
+    const isInField = playerField && playerField.contains(cardElement);
+
+    if (isInHand || isInField) {
+      const card = getCardFromInstanceId(cardElement.dataset.instanceId, state);
+      if (card) {
+        return {
+          element: cardElement,
+          card,
+          source: isInHand ? 'hand' : 'field',
+        };
       }
     }
-    // Also check if we clicked inside a card (on a child element)
-    const cardParent = element.closest('.card');
-    if (cardParent && !cardParent.classList.contains('back') && handGrid.contains(cardParent)) {
-      return cardParent;
-    }
   }
 
-  // Fallback: if no card directly under touch, find closest card in hand
-  // (for touches slightly outside card bounds)
-  const cards = Array.from(handGrid.querySelectorAll('.card:not(.back)'));
-  let closestCard = null;
-  let closestDistance = 50; // Max 50px away to count as "close enough"
-
-  cards.forEach((card) => {
-    const rect = card.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const dx = x - centerX;
-    const dy = y - centerY;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-
-    if (distance < closestDistance) {
-      closestDistance = distance;
-      closestCard = card;
-    }
-  });
-
-  return closestCard;
-};
-
-/**
- * Find field card element at a given position
- */
-const getFieldCardAtPosition = (x, y) => {
-  const playerField = document.querySelector('.player-field');
-  if (!playerField) return null;
-
-  const cards = Array.from(playerField.querySelectorAll('.card'));
-  for (const card of cards) {
-    const rect = card.getBoundingClientRect();
-    if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-      return card;
-    }
-  }
   return null;
 };
 
@@ -278,31 +252,20 @@ const removeDraggingClasses = () => {
 
 /**
  * Handle touch start - detect card touch and begin interaction
+ * Uses unified getTouchedCard() which handles z-index, transforms, and overlapping cards
  */
 const handleTouchStart = (e) => {
-  const handGrid = document.getElementById('active-hand');
-  if (!handGrid) return;
-
   const touch = e.touches[0];
+  const state = getLatestState();
 
-  // First, check if we're touching a focused/enlarged hand card (which may be outside hand bounds)
-  // The focused card has transform that moves it above the hand area
-  const focusedCard = handGrid.querySelector('.card.hand-focus');
-  let touchedFocusedCard = false;
+  // Use unified card detection - handles hand and field cards, respects z-index/transforms
+  const touched = getTouchedCard(touch.clientX, touch.clientY, state);
 
-  if (focusedCard) {
-    const focusedRect = focusedCard.getBoundingClientRect();
-    if (touch.clientX >= focusedRect.left && touch.clientX <= focusedRect.right &&
-        touch.clientY >= focusedRect.top && touch.clientY <= focusedRect.bottom) {
-      touchedFocusedCard = true;
-    }
-  }
+  // If we didn't touch a card, ignore this touch
+  if (!touched) return;
 
-  // If not touching focused card, check if touch is within hand area
-  if (!touchedFocusedCard) {
-    const handRect = handGrid.getBoundingClientRect();
-    if (touch.clientY < handRect.top || touch.clientY > handRect.bottom) return;
-  }
+  // Only handle hand cards in this handler (field cards handled by handleFieldTouchStart)
+  if (touched.source !== 'hand') return;
 
   touchStartPos = {
     x: touch.clientX,
@@ -310,21 +273,11 @@ const handleTouchStart = (e) => {
   };
   currentTouchPos = { ...touchStartPos };
   isDragging = false;
-  touchStartTime = Date.now(); // Record when touch started
+  touchStartTime = Date.now();
+  touchedFromField = false;
 
-  // If we touched the focused card directly, use it; otherwise find card at position
-  let card;
-  if (touchedFocusedCard && focusedCard) {
-    card = focusedCard;
-  } else {
-    card = getCardAtPosition(touch.clientX, touch.clientY);
-  }
-
-  if (card && !card.classList.contains('back')) {
-    touchedCardElement = card;
-    touchedCard = getCardFromInstanceId(card.dataset.instanceId, getLatestState());
-    // Don't call focusCardElement here - wait until touchend to determine if it's a tap
-  }
+  touchedCardElement = touched.element;
+  touchedCard = touched.card;
 
   // Prevent default to avoid scrolling while touching card area
   e.preventDefault();
@@ -387,11 +340,12 @@ const handleTouchMove = (e) => {
     touchedCardElement.dispatchEvent(dragStartEvent);
   } else if (!isDragging) {
     // Horizontal browsing - update focused card based on position
-    const newCard = getCardAtPosition(currentTouchPos.x, currentTouchPos.y);
-    if (newCard && newCard !== touchedCardElement && !newCard.classList.contains('back')) {
-      touchedCardElement = newCard;
-      touchedCard = getCardFromInstanceId(newCard.dataset.instanceId, getLatestState());
-      focusCardElement(newCard);
+    const state = getLatestState();
+    const touched = getTouchedCard(currentTouchPos.x, currentTouchPos.y, state);
+    if (touched && touched.source === 'hand' && touched.element !== touchedCardElement) {
+      touchedCardElement = touched.element;
+      touchedCard = touched.card;
+      focusCardElement(touched.element);
     }
   }
 
@@ -572,32 +526,32 @@ const handleTouchCancel = (e) => {
 
 /**
  * Handle touch start on player field - for combat attacks
+ * Uses unified getTouchedCard() for consistent card detection
  */
 const handleFieldTouchStart = (e) => {
   const touch = e.touches[0];
   const state = getLatestState();
 
-  // Check if we touched a field card
-  const cardElement = getFieldCardAtPosition(touch.clientX, touch.clientY);
-  if (!cardElement) return;
+  // Use unified card detection
+  const touched = getTouchedCard(touch.clientX, touch.clientY, state);
 
-  const card = getCardFromInstanceId(cardElement.dataset.instanceId, state);
-  if (!card) return;
+  // Only handle field cards in this handler
+  if (!touched || touched.source !== 'field') return;
 
   // Only allow drag if creature can attack
-  if (!canCreatureAttack(card, state)) return;
+  if (!canCreatureAttack(touched.card, state)) return;
 
   // Initialize touch state
   touchStartPos = { x: touch.clientX, y: touch.clientY };
   currentTouchPos = { ...touchStartPos };
   isDragging = false;
-  touchedCard = card;
-  touchedCardElement = cardElement;
+  touchedCard = touched.card;
+  touchedCardElement = touched.element;
   touchedFromField = true;
   touchedCardHandIndex = -1; // Not from hand
 
   // Focus the card
-  focusCardElement(cardElement);
+  focusCardElement(touched.element);
 
   e.preventDefault();
 };
