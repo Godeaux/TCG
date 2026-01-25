@@ -65,10 +65,6 @@ export const getValidTargets = (state, attacker, opponent) => {
     if (!isCreatureCard(card)) {
       return false;
     }
-    // Field spells cannot be attacked
-    if (card.isFieldSpell) {
-      return false;
-    }
     // Per CORE-RULES.md §12: Lure overrides Hidden/Invisible (must target Lure creatures)
     if (hasLure(card)) {
       return true;
@@ -487,12 +483,6 @@ export const cleanupDestroyed = (state, { silent = false } = {}) => {
           }
         } else if (!silent) {
           logGameAction(state, DEATH, `${formatCardForLog(card)} (token) destroyed.`);
-        }
-        if (state.fieldSpell?.card?.instanceId === card.instanceId) {
-          state.fieldSpell = null;
-          if (!silent) {
-            logGameAction(state, DEATH, `Field spell removed.`);
-          }
         }
         return null;
       }

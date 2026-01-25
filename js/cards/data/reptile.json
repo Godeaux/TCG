@@ -447,10 +447,7 @@
       "name": "Meteor",
       "type": "Spell",
       "effects": {
-        "effect": [
-          { "type": "destroyFieldSpells", "params": {} },
-          { "type": "killAll", "params": { "targetType": "all" } }
-        ]
+        "effect": { "type": "killAll", "params": { "targetType": "all" } }
       }
     },
     {
@@ -528,27 +525,6 @@
       "type": "Free Spell",
       "effects": {
         "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature for damage", "effect": { "damage": 2, "label": "surprise" } } }
-      }
-    },
-    {
-      "id": "reptile-spell-snake-nest",
-      "name": "Snake Nest",
-      "type": "Spell",
-      "isFieldSpell": true,
-      "summons": ["token-poisonous-snake"],
-      "effects": {
-        "effect": {
-          "type": "setFieldSpell",
-          "params": {
-            "cardId": "reptile-spell-snake-nest"
-          }
-        },
-        "onEnd": {
-          "type": "summonTokens",
-          "params": {
-            "tokenIds": ["token-poisonous-snake"]
-          }
-        }
       }
     },
     {

@@ -273,9 +273,7 @@ export class GameController {
     const finalizePlay = () => {
       this.cleanupDestroyed();
 
-      if (!card.isFieldSpell) {
-        player.exile.push(card);
-      }
+      player.exile.push(card);
 
       player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
 

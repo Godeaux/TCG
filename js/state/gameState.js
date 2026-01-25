@@ -50,7 +50,6 @@ export const createGameState = () => {
     cardPlayedThisTurn: false,
     passPending: false,
     extendedConsumption: null, // { predatorInstanceId, predatorSlotIndex, consumedCount, maxConsumption: 3 }
-    fieldSpell: null,
     beforeCombatQueue: [],
     beforeCombatProcessing: false,
     endOfTurnQueue: [],
@@ -180,9 +179,6 @@ export const setPlayerDeck = (state, playerIndex, deck, ownedCards = null) => {
   player.carrion = [];
   player.exile = [];
   player.traps = [];
-  if (state.fieldSpell?.ownerIndex === playerIndex) {
-    state.fieldSpell = null;
-  }
 };
 
 export const getActivePlayer = (state) => state.players[state.activePlayerIndex];

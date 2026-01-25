@@ -357,31 +357,6 @@ export const getPlayerTraps = (state, playerIndex) => {
 };
 
 // ============================================================================
-// FIELD SPELL SELECTORS
-// ============================================================================
-
-/**
- * Get current field spell
- */
-export const getFieldSpell = (state) => {
-  return state.fieldSpell;
-};
-
-/**
- * Check if there is an active field spell
- */
-export const hasFieldSpell = (state) => {
-  return state.fieldSpell !== null;
-};
-
-/**
- * Check if field spell is owned by specific player
- */
-export const isFieldSpellOwnedBy = (state, playerIndex) => {
-  return state.fieldSpell?.ownerIndex === playerIndex;
-};
-
-// ============================================================================
 // VICTORY CONDITION SELECTORS
 // ============================================================================
 

@@ -626,27 +626,6 @@
       }
     },
     {
-      "id": "fish-field-spell-rocky-reef",
-      "name": "Rocky Reef",
-      "type": "Spell",
-      "isFieldSpell": true,
-      "summons": ["token-clouded-moray"],
-      "effects": {
-        "effect": {
-          "type": "setFieldSpell",
-          "params": {
-            "cardId": "fish-field-spell-rocky-reef"
-          }
-        },
-        "onEnd": {
-          "type": "summonTokens",
-          "params": {
-            "tokenIds": ["token-clouded-moray"]
-          }
-        }
-      }
-    },
-    {
       "id": "fish-spell-harpoon",
       "name": "Harpoon",
       "type": "Spell",

@@ -368,11 +368,6 @@ const renderStatsSvg = (stats, hasNut, context) => {
 const renderKeywordsSvg = (card, context) => {
   const tags = [];
 
-  // Add Field Spell tag
-  if (card.isFieldSpell) {
-    tags.push({ text: 'Field Spell', isFieldSpell: true });
-  }
-
   // Add regular keywords
   if (Array.isArray(card.keywords) && card.keywords.length) {
     tags.push(...card.keywords.map((keyword) => ({ text: keyword })));
@@ -423,7 +418,6 @@ const renderKeywordsSvg = (card, context) => {
 
       // Color based on tag type - white for keywords to pop
       let fillColor = '#ffffff'; // white for regular keywords
-      if (tag.isFieldSpell) fillColor = '#22c55e'; // green
       if (tag.isDeadly) fillColor = '#ef4444'; // red
 
       return `<text x="${x}" y="14" text-anchor="middle" font-size="${adjustedFontSize}" font-weight="600" fill="${fillColor}">${escapedText}</text>`;
@@ -490,11 +484,6 @@ export const hasNutrition = (card) => card.type === 'Prey';
  */
 export const renderKeywordTags = (card) => {
   const tags = [];
-
-  // Add Field Spell tag for field spell cards
-  if (card.isFieldSpell) {
-    tags.push(`<span class="keyword-field-spell">Field Spell</span>`);
-  }
 
   // Add regular keywords (ensure array to avoid string iteration)
   if (Array.isArray(card.keywords) && card.keywords.length) {

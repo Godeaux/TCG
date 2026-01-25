@@ -2738,9 +2738,7 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) 
 
     const finalizePlay = () => {
       cleanupDestroyed(state);
-      if (!card.isFieldSpell) {
-        player.exile.push(card);
-      }
+      player.exile.push(card);
       player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
       if (consumesLimit) {
         state.cardPlayedThisTurn = true;
@@ -3379,7 +3377,7 @@ const navigateToPage = (pageIndex) => {
 // initNavigation moved to ./ui/input/inputRouter.js
 // Now initialized via initializeInput() from ./ui/input/index.js
 
-const processEndOfTurnQueue = (state, onUpdate) => {
+const processEndOfTurnQueue = (state, onUpdate, onEndTurn) => {
   if (state.phase !== 'End') {
     return;
   }
@@ -3410,7 +3408,7 @@ const processEndOfTurnQueue = (state, onUpdate) => {
   if (state.endOfTurnQueue.length === 0) {
     finalizeEndPhase(state);
     broadcastSyncState(state);
-    onUpdate?.(); // Re-render UI to reflect endOfTurnFinalized = true
+    onEndTurn?.(); // Auto-end turn after finalization
     return;
   }
 
@@ -3418,7 +3416,7 @@ const processEndOfTurnQueue = (state, onUpdate) => {
   if (!creature) {
     finalizeEndPhase(state);
     broadcastSyncState(state);
-    onUpdate?.(); // Re-render UI to reflect endOfTurnFinalized = true
+    onEndTurn?.(); // Auto-end turn after finalization
     return;
   }
   state.endOfTurnProcessing = true;
@@ -3446,7 +3444,7 @@ const processEndOfTurnQueue = (state, onUpdate) => {
     cleanupDestroyed(state);
     state.endOfTurnProcessing = false;
     broadcastSyncState(state);
-    processEndOfTurnQueue(state, onUpdate);
+    processEndOfTurnQueue(state, onUpdate, onEndTurn);
   };
 
   if (!creature.onEnd && !creature.effects?.onEnd) {
@@ -4005,7 +4003,6 @@ export const renderGame = (state, callbacks = {}) => {
     state.skipFirstDraw = true;
     state.cardPlayedThisTurn = false;
     state.passPending = false;
-    state.fieldSpell = null;
     state.beforeCombatQueue = [];
     state.beforeCombatProcessing = false;
     state.endOfTurnQueue = [];
@@ -4088,7 +4085,6 @@ export const renderGame = (state, callbacks = {}) => {
     state.skipFirstDraw = true;
     state.cardPlayedThisTurn = false;
     state.passPending = false;
-    state.fieldSpell = null;
     state.beforeCombatQueue = [];
     state.beforeCombatProcessing = false;
     state.endOfTurnQueue = [];
@@ -4183,7 +4179,6 @@ export const renderGame = (state, callbacks = {}) => {
     state.skipFirstDraw = true;
     state.cardPlayedThisTurn = false;
     state.passPending = false;
-    state.fieldSpell = null;
     state.beforeCombatQueue = [];
     state.beforeCombatProcessing = false;
     state.endOfTurnQueue = [];
@@ -4270,7 +4265,6 @@ export const renderGame = (state, callbacks = {}) => {
     state.skipFirstDraw = true;
     state.cardPlayedThisTurn = false;
     state.passPending = false;
-    state.fieldSpell = null;
     state.beforeCombatQueue = [];
     state.beforeCombatProcessing = false;
     state.endOfTurnQueue = [];
@@ -4539,7 +4533,7 @@ export const renderGame = (state, callbacks = {}) => {
   updateActionBar(handleNextPhase, state);
   appendLog(state);
   if (shouldProcessQueues) {
-    processEndOfTurnQueue(state, callbacks.onUpdate);
+    processEndOfTurnQueue(state, callbacks.onUpdate, callbacks.onEndTurn);
   }
 
   // Pass overlay (uses extracted PassOverlay module)

@@ -2032,27 +2032,6 @@ const resolveOptionEffect = (effectDef, context) => {
 // ============================================================================
 
 /**
- * Set a field spell
- * @param {string} cardId - Field spell card ID
- */
-export const setFieldSpell =
-  (cardId) =>
-  ({ playerIndex }) => {
-    // Log is handled in effects.js resolveEffectResult with full card name
-    return { setFieldSpell: { ownerIndex: playerIndex, cardData: cardId } };
-  };
-
-/**
- * Destroy all field spells
- */
-export const destroyFieldSpells =
-  () =>
-  ({ log }) => {
-    log(`All field spells are destroyed.`);
-    return { removeFieldSpell: true };
-  };
-
-/**
  * Deal damage to all creatures
  * @param {number} amount - Damage amount
  */
@@ -2525,15 +2504,14 @@ export const damageAllEnemiesMultiple =
   };
 
 /**
- * Destroy all field spells and kill all enemy tokens
+ * Kill all enemy tokens
  */
-export const destroyFieldSpellsAndKillTokens = () => (context) => {
-  const { log, opponent, state } = context;
+export const killEnemyTokensEffect = () => (context) => {
+  const { log, opponent } = context;
   const tokens = opponent.field.filter((c) => c?.isToken || c?.id?.startsWith('token-'));
 
-  log(`Destroying field spells and Rival's tokens.`);
+  log(`Destroying Rival's tokens.`);
   return {
-    removeFieldSpell: true,
     killTargets: tokens,
   };
 };
@@ -3173,7 +3151,7 @@ export const webTarget = () => (context) => {
 };
 
 /**
- * Web a random enemy creature (for field spells)
+ * Web a random enemy creature
  */
 export const webRandomEnemy =
   () =>
@@ -3977,8 +3955,6 @@ export const effectRegistry = {
   choice,
 
   // Field & Global effects
-  setFieldSpell,
-  destroyFieldSpells,
   damageAllCreatures,
   damageAllEnemyCreatures,
   damageBothPlayers,
@@ -4003,7 +3979,7 @@ export const effectRegistry = {
   // Amphibian special effects
   damageRivalAndSelectEnemy,
   damageAllEnemiesMultiple,
-  destroyFieldSpellsAndKillTokens,
+  killEnemyTokensEffect,
   healAndSelectTargetForDamage,
   negateAndAllowReplay,
   playSpellsFromHand,
@@ -4334,12 +4310,6 @@ export const resolveEffect = (effectDef, context) => {
       specificEffect = effectFn(params);
       break;
     // Field & Global effects
-    case 'setFieldSpell':
-      specificEffect = effectFn(params.cardId);
-      break;
-    case 'destroyFieldSpells':
-      specificEffect = effectFn();
-      break;
     case 'damageAllCreatures':
       specificEffect = effectFn(params.amount);
       break;
@@ -4402,7 +4372,7 @@ export const resolveEffect = (effectDef, context) => {
     case 'damageAllEnemiesMultiple':
       specificEffect = effectFn(params.amount, params.applications);
       break;
-    case 'destroyFieldSpellsAndKillTokens':
+    case 'killEnemyTokensEffect':
       specificEffect = effectFn();
       break;
     case 'healAndSelectTargetForDamage':

@@ -2819,15 +2819,6 @@ button {
   padding: 0 2px;
 }
 
-.card-keywords .keyword-field-spell {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: white;
-  padding: 1px 4px;
-  border-radius: 3px;
-  text-decoration: none;
-  font-size: var(--font-xs);
-}
-
 .card-keywords .keyword-status-deadly {
   background: linear-gradient(135deg, #7c2d2d, #991b1b);
   color: #fca5a5;

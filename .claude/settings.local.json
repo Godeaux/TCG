@@ -32,7 +32,8 @@
       "Bash(timeout:*)",
       "Bash(sort:*)",
       "Bash(npx eslint:*)",
-      "Bash(npx stylelint:*)"
+      "Bash(npx stylelint:*)",
+      "Bash(del \"x:\\\\Food Chain\\\\TCG\\\\tests\\\\integration\\\\fieldSpellOnEnd.test.js\" \"x:\\\\Food Chain\\\\TCG\\\\tests\\\\effects\\\\fieldEffects.test.js\")"
     ]
   }
 }

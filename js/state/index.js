@@ -101,11 +101,6 @@ export {
   getPlayerExile,
   getPlayerTraps,
 
-  // Field spell selectors
-  getFieldSpell,
-  hasFieldSpell,
-  isFieldSpellOwnedBy,
-
   // Victory selectors
   hasPlayerWon,
   getWinningPlayerIndex,
@@ -161,8 +156,6 @@ export {
   discardCard,
   setTrap,
   triggerTrap,
-  playFieldSpell,
-  destroyFieldSpell,
 
   // Creature actions
   placeCreature,

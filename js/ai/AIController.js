@@ -836,9 +836,7 @@ export class AIController {
 
       // Remove from hand and exile
       player.hand = player.hand.filter((c) => c.instanceId !== card.instanceId);
-      if (!card.isFieldSpell) {
-        player.exile.push(card);
-      }
+      player.exile.push(card);
 
       if (!isFree) {
         state.cardPlayedThisTurn = true;

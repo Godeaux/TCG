@@ -1,7 +1,7 @@
 /**
  * Fish Spell Card Tests
  *
- * Tests for all fish spell, free spell, field spell, and trap cards.
+ * Tests for all fish spell, free spell, and trap cards.
  */
 
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
@@ -163,43 +163,6 @@ describe('Fish Spell Cards', () => {
       expect(option3.effect.type).toBe('selectFromGroup');
       expect(option3.effect.params.effect.buff.attack).toBe(3);
       expect(option3.effect.params.effect.buff.health).toBe(3);
-    });
-  });
-
-  // ============================================
-  // Rocky Reef (Field Spell)
-  // ============================================
-  describe('Rocky Reef (fish-field-spell-rocky-reef)', () => {
-    const cardId = 'fish-field-spell-rocky-reef';
-
-    it('is a Spell type with isFieldSpell flag', () => {
-      const card = getCardDefinitionById(cardId);
-      expect(card.type).toBe('Spell');
-      expect(card.isFieldSpell).toBe(true);
-    });
-
-    it('effect sets field spell', () => {
-      const card = getCardDefinitionById(cardId);
-      expect(card.effects.effect.type).toBe('setFieldSpell');
-      expect(card.effects.effect.params.cardId).toBe(cardId);
-    });
-
-    it('onEnd summons Clouded Moray token', () => {
-      const card = getCardDefinitionById(cardId);
-      expect(card.effects.onEnd.type).toBe('summonTokens');
-      expect(card.effects.onEnd.params.tokenIds).toContain('token-clouded-moray');
-    });
-
-    it('setFieldSpell returns correct result', () => {
-      const state = createTestState();
-      const context = createEffectContext(state, 0);
-
-      const setFn = effectLibrary.setFieldSpell(cardId);
-      const result = setFn(context);
-
-      expect(result.setFieldSpell).toBeDefined();
-      expect(result.setFieldSpell.cardData).toBe(cardId);
-      expect(result.setFieldSpell.ownerIndex).toBe(0);
     });
   });
 

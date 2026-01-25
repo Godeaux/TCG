@@ -58,7 +58,7 @@ const deckCatalogs = {
 
 /**
  * Get sort priority for a card type
- * Order: Prey → Predator → Spell → Field Spell → Free Spell → Trap
+ * Order: Prey → Predator → Spell → Free Spell → Trap
  */
 const getCardTypePriority = (card) => {
   const type = card.type;
@@ -67,13 +67,10 @@ const getCardTypePriority = (card) => {
   if (type === 'Prey') return 0;
   if (type === 'Predator') return 1;
 
-  // Spells in order: Spell → Field Spell → Free Spell → Trap
-  if (type === 'Spell') {
-    // Field Spells come after regular Spells
-    return card.isFieldSpell ? 3 : 2;
-  }
-  if (type === 'Free Spell') return 4;
-  if (type === 'Trap') return 5;
+  // Spells in order: Spell → Free Spell → Trap
+  if (type === 'Spell') return 2;
+  if (type === 'Free Spell') return 3;
+  if (type === 'Trap') return 4;
 
   // Unknown types at the end
   return 99;
@@ -81,7 +78,7 @@ const getCardTypePriority = (card) => {
 
 /**
  * Sort cards by type priority (for display in selection UIs)
- * Order: Prey → Predator → Spell → Field Spell → Free Spell → Trap
+ * Order: Prey → Predator → Spell → Free Spell → Trap
  * Maintains original order within each type category
  *
  * @param {Array} cards - Cards to sort

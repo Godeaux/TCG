@@ -497,10 +497,7 @@
       "name": "Terrain Shift",
       "type": "Spell",
       "effects": {
-        "effect": [
-          { "type": "destroyFieldSpells", "params": {} },
-          { "type": "killEnemyTokens", "params": {} }
-        ]
+        "effect": { "type": "killEnemyTokens", "params": {} }
       }
     },
     {
@@ -564,28 +561,6 @@
               { "label": "Heal 1", "description": "Restore 1 HP", "effect": { "type": "heal", "params": { "amount": 1 } } },
               { "label": "Deal 1 damage to rival", "description": "Deal 1 damage to Rival", "effect": { "type": "damageRival", "params": { "amount": 1 } } }
             ]
-          }
-        }
-      }
-    },
-    {
-      "id": "amphibian-field-spell-wishing-well",
-      "name": "Wishing Well",
-      "type": "Spell",
-      "isFieldSpell": true,
-      "effects": {
-        "effect": {
-          "type": "setFieldSpell",
-          "params": {
-            "cardId": "amphibian-field-spell-wishing-well"
-          }
-        },
-        "onEnd": {
-          "type": "selectFromGroup",
-          "params": {
-            "targetGroup": "all-creatures",
-            "title": "Choose a creature to regen",
-            "effect": { "regen": true }
           }
         }
       }

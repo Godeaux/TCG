@@ -512,22 +512,6 @@
       }
     },
     {
-      "id": "mammal-field-spell-wolves-den",
-      "name": "Wolves Den",
-      "type": "Spell",
-      "isFieldSpell": true,
-      "summons": ["token-wolf"],
-      "effects": {
-        "effect": { "type": "setFieldSpell", "params": { "cardId": "mammal-field-spell-wolves-den" } },
-        "onEnd": {
-          "type": "summonTokens",
-          "params": {
-            "tokenIds": ["token-wolf"]
-          }
-        }
-      }
-    },
-    {
       "id": "mammal-trap-human-intervention",
       "name": "Human Intervention",
       "type": "Trap",

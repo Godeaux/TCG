@@ -91,11 +91,9 @@ const KNOWN_EFFECT_TYPES = [
   'tutorFromDeck',
   'tutorAndPlaySpell',
 
-  // Field spells
-  'setFieldSpell',
-  'destroyFieldSpells',
-  'destroyFieldSpellsAndKillTokens',
+  // Token removal
   'killEnemyTokens',
+  'killEnemyTokensEffect',
 
   // Combat tracking
   'trackAttackForRegenHeal',

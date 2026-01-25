@@ -193,12 +193,6 @@ export const buildLobbySyncPayload = (state) => ({
     visualEffects: Array.isArray(state.visualEffects) ? [...state.visualEffects] : [],
     pendingTrapDecision: state.pendingTrapDecision ? { ...state.pendingTrapDecision } : null,
     pendingReaction: state.pendingReaction ? { ...state.pendingReaction } : null,
-    fieldSpell: state.fieldSpell
-      ? {
-          ownerIndex: state.fieldSpell.ownerIndex,
-          instanceId: state.fieldSpell.card?.instanceId ?? null,
-        }
-      : null,
     players: state.players.map((player) => ({
       name: player.name,
       nameStyle: player.nameStyle || {},
@@ -412,18 +406,6 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
         }
       });
       cleanupDestroyed(state, { silent: true });
-    }
-
-    // Restore field spell reference
-    if (payload.game.fieldSpell && payload.game.fieldSpell.instanceId) {
-      const ownerIndex = payload.game.fieldSpell.ownerIndex;
-      const owner = state.players[ownerIndex];
-      const fieldCard = owner?.field?.find(
-        (card) => card?.instanceId === payload.game.fieldSpell.instanceId
-      );
-      state.fieldSpell = fieldCard ? { ownerIndex, card: fieldCard } : null;
-    } else if (payload.game.fieldSpell === null) {
-      state.fieldSpell = null;
     }
   }
 

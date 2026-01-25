@@ -853,9 +853,7 @@ export const resolveEffectResult = (state, result, context) => {
 
       // Remove from hand and exile
       player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
-      if (!card.isFieldSpell) {
-        player.exile.push(card);
-      }
+      player.exile.push(card);
 
       // Process spell effect result
       if (spellResult && Object.keys(spellResult).length > 0) {
@@ -1097,45 +1095,6 @@ export const resolveEffectResult = (state, result, context) => {
       SUMMON,
       `${formatCardForLog(card)} transforms into ${formatCardForLog(replacement)}.`
     );
-  }
-
-  if (result.setFieldSpell) {
-    const { ownerIndex, cardData } = result.setFieldSpell;
-    // Resolve card ID string to card definition if needed
-    const resolvedCardData =
-      typeof cardData === 'string' ? getCardDefinitionById(cardData) : cardData;
-    if (!resolvedCardData) {
-      console.error(`[setFieldSpell] Card not found: ${cardData}`);
-      return;
-    }
-    if (state.fieldSpell) {
-      const previousOwner = state.players[state.fieldSpell.ownerIndex];
-      removeCardFromField(state, state.fieldSpell.card);
-      previousOwner.exile.push(state.fieldSpell.card);
-      logGameAction(state, DEATH, `${formatCardForLog(state.fieldSpell.card)} is replaced.`);
-    }
-    const owner = state.players[ownerIndex];
-    const emptySlot = owner.field.findIndex((slot) => slot === null);
-    if (emptySlot === -1) {
-      logMessage(state, 'No empty field slot for the field spell.');
-      return;
-    }
-    const instance = createCardInstance(resolvedCardData, state.turn);
-    owner.field[emptySlot] = instance;
-    state.fieldSpell = { ownerIndex, card: instance };
-    logGameAction(
-      state,
-      SUMMON,
-      `${owner.name} plays the field spell ${formatCardForLog(resolvedCardData)}.`
-    );
-  }
-
-  if (result.removeFieldSpell && state.fieldSpell) {
-    const previousOwner = state.players[state.fieldSpell.ownerIndex];
-    removeCardFromField(state, state.fieldSpell.card);
-    previousOwner.exile.push(state.fieldSpell.card);
-    logGameAction(state, DEATH, `${formatCardForLog(state.fieldSpell.card)} is destroyed.`);
-    state.fieldSpell = null;
   }
 
   if (result.freezeCreature) {

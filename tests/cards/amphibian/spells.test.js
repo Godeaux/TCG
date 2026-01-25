@@ -1,7 +1,7 @@
 /**
  * Amphibian Spell Card Tests
  *
- * Tests for all amphibian spell, free spell, field spell, and trap cards.
+ * Tests for all amphibian spell, free spell, and trap cards.
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
@@ -213,18 +213,12 @@ describe('Amphibian Spell Cards', () => {
       expect(card.type).toBe('Spell');
     });
 
-    it('effect destroys field spells and kills tokens', () => {
+    it('effect kills enemy tokens', () => {
       const card = getCardDefinitionById(cardId);
-      const effects = card.effects.effect;
+      const effect = card.effects.effect;
 
-      // Should be an array of primitives
-      expect(Array.isArray(effects)).toBe(true);
-
-      // Should have destroyFieldSpells primitive
-      expect(effects).toContainEqual(expect.objectContaining({ type: 'destroyFieldSpells' }));
-
-      // Should have killEnemyTokens primitive
-      expect(effects).toContainEqual(expect.objectContaining({ type: 'killEnemyTokens' }));
+      // Should be killEnemyTokens primitive
+      expect(effect.type).toBe('killEnemyTokens');
     });
   });
 
@@ -342,44 +336,6 @@ describe('Amphibian Free Spell Cards', () => {
       expect(options[0].effect.params.count).toBe(1);
       expect(options[1].effect.params.amount).toBe(1);
       expect(options[2].effect.params.amount).toBe(1);
-    });
-  });
-});
-
-describe('Amphibian Field Spell Cards', () => {
-  // ============================================
-  // Wishing Well
-  // ============================================
-  describe('Wishing Well', () => {
-    const cardId = 'amphibian-field-spell-wishing-well';
-
-    it('is a Spell with isFieldSpell flag', () => {
-      const card = getCardDefinitionById(cardId);
-      expect(card.type).toBe('Spell');
-      expect(card.isFieldSpell).toBe(true);
-    });
-
-    it('effect sets field spell', () => {
-      const card = getCardDefinitionById(cardId);
-      expect(card.effects.effect.type).toBe('setFieldSpell');
-      expect(card.effects.effect.params.cardId).toBe(cardId);
-    });
-
-    it('has onEnd effect for regen via selectFromGroup', () => {
-      const card = getCardDefinitionById(cardId);
-      expect(card.effects.onEnd).toBeDefined();
-      expect(card.effects.onEnd.type).toBe('selectFromGroup');
-      expect(card.effects.onEnd.params.effect.regen).toBe(true);
-    });
-
-    it('effectText is generated from effects (field spell + end of turn regen)', () => {
-      const card = getCardDefinitionById(cardId);
-      // effectText is now generated from effects - verify it contains expected parts
-      expect(card.effectText).toContain('End of turn');
-      expect(card.effectText).toContain('Regen');
-      // Verify both effects exist
-      expect(card.effects.effect).toBeDefined(); // setFieldSpell
-      expect(card.effects.onEnd).toBeDefined(); // regen
     });
   });
 });

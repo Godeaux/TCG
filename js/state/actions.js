@@ -54,12 +54,6 @@ export const ActionTypes = {
   /** Trigger a trap */
   TRIGGER_TRAP: 'TRIGGER_TRAP',
 
-  /** Play field spell */
-  PLAY_FIELD_SPELL: 'PLAY_FIELD_SPELL',
-
-  /** Destroy field spell */
-  DESTROY_FIELD_SPELL: 'DESTROY_FIELD_SPELL',
-
   // ==========================================================================
   // CREATURE ACTIONS
   // ==========================================================================
@@ -247,16 +241,6 @@ export const setTrap = (playerIndex, trap) => ({
 export const triggerTrap = (trap, context) => ({
   type: ActionTypes.TRIGGER_TRAP,
   payload: { trap, context },
-});
-
-export const playFieldSpell = (playerIndex, spell) => ({
-  type: ActionTypes.PLAY_FIELD_SPELL,
-  payload: { playerIndex, spell },
-});
-
-export const destroyFieldSpell = () => ({
-  type: ActionTypes.DESTROY_FIELD_SPELL,
-  payload: {},
 });
 
 // ============================================================================

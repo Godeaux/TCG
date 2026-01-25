@@ -301,11 +301,6 @@ describe('Game Flow Integration Tests', () => {
       const card = getCardDefinitionById('bird-prey-robin');
       expect(card.effects.onEnd.type).toBe('summonTokens');
     });
-
-    it('Rocky Reef field spell has onEnd effect', () => {
-      const card = getCardDefinitionById('fish-field-spell-rocky-reef');
-      expect(card.effects.onEnd.type).toBe('summonTokens');
-    });
   });
 
   // ============================================

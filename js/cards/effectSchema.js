@@ -925,27 +925,6 @@ export const EFFECT_SCHEMA = {
     },
   },
 
-  // ==========================================
-  // FIELD SPELL EFFECTS
-  // ==========================================
-
-  setFieldSpell: {
-    params: { cardId: { type: 'string', required: true } },
-    text: (p) => {
-      const name = p.cardId
-        .split('-')
-        .slice(-2)
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(' ');
-      return `Set ${name} as field spell`;
-    },
-  },
-
-  destroyFieldSpells: {
-    params: {},
-    text: () => `Destroy all field spells`,
-  },
-
   removeAbilitiesAll: {
     params: {},
     text: () => `Remove all creature abilities`,

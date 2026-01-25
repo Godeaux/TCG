@@ -70,15 +70,14 @@
 * Rainbow: free play spell \- regen creatures  
 39. Pounce Plummet: spell \- deal 2 damage to enemies | deal 2 damage to enemies  
 40. Shower: spell \- creatures gain \+2/+2  
-41. **Terrain Shift: spell \- destroy target field spell | kill enemy tokens**  
+41. **Terrain Shift: spell \- kill enemy tokens**  
 42. Whitewater: spell \- deal 3 damage to any target | heal 3  
 43. Metamorphosis: free play spell \- target prey creature gains \+2/+2  
 44. Newt: free play spell \- target animal becomes Newt  
 * Newt: 1/1 (1) \- inedible  
 45. Sleight of Hand: free play spell \- draw 2  
-46. Slime: free play spell: either draw 1, heal 1, or deal 1 damage to rival  
-47. Wishing Well: field spell \- end of turn, regen target creature  
-48. Blowdart: trap \- when target enemy attacks directly, negate attack & kill it  
+46. Slime: free play spell: either draw 1, heal 1, or deal 1 damage to rival
+47. Blowdart: trap \- when target enemy attacks directly, negate attack & kill it  
 49. Rebound: trap \- when rival plays a card, negate play | rival may play a different card   
 50. Slip: trap \- when target creature is defending, negate combat
 
@@ -125,7 +124,7 @@
 
 26. 25\.  
 27. Black-and-white Hawk-eagle: 2/2 \- ambush | after combat, heal 2  
-28. **Firehawk: 2/2 \- kill enemy prey | destroy target field spell**  
+28. **Firehawk: 2/2 \- kill enemy prey**  
 29. Great Gray Owl: 2/2 \- add a carrion to hand | add a card from deck to hand  
 30. Short-toed Snake Eagle: 2/2 \- play 2 Toxic Snakes  
 * Toxic Snake: 1/1 (1) \- toxic   
@@ -149,9 +148,8 @@
 43. **Swan Song: spell \- heal 3 | gain barrier**  
 44. Bird's Eye View: free play spell \- rival reveals hand  
 45. White Feathers: free play spell \- heal 2  
-46. White Missile: free play spell \- deal 1 damage to any target  
-47. Bird Feeder: field spell \- end of turn, target creature gains \+1/+1  
-48. Alleyway Mobbing: trap \- when target enemy attacks directly, negate attack | play 3 Bushtits  
+46. White Missile: free play spell \- deal 1 damage to any target
+47. Alleyway Mobbing: trap \- when target enemy attacks directly, negate attack | play 3 Bushtits  
 * Bushtit: 0/1 (0)  
 49. Fly Off: trap \- when target creature is defending, return it to hand  
 50. **Icarus: trap \- when life is 0, heal 1** 
@@ -221,10 +219,8 @@
 43. Washout: spell \- enemies lose abilities | deal 2 damage to enemies  
 44. Angler: free play spell \- add a card from deck to hand | end turn  
 45. Edible: free play spell \- target pred creature gain edible  
-46. Undertow: free play spell \- target enemy loses abilities  
-47. Rocky Reef: field spell \- end of turn, play Clouded Moray  
-* Clouded Moray: 1/1 (1) \- hidden  
-48. Cramp: trap \- when rival plays a pred, it loses abilities   
+46. Undertow: free play spell \- target enemy loses abilities
+47. Cramp: trap \- when rival plays a pred, it loses abilities   
 49. Riptide: trap \- when rival plays a prey, it loses abilities   
 50. **Maelstrom: trap \- when target enemy attacks directly, negate attack | deal 2 damage players & animals**
 
@@ -296,10 +292,8 @@
 43. White Hart: spell \- play a carrion it gains frozen  
 44. **Curiosity: free play spell \- sacrifice target creature, draw 3**  
 45. Tranquilizer: free play spell \- target enemy gains frozen  
-46. Warm Blood: free play spell \- creatures lose frozen  
-47. Wolves Den: field spell \- end of turn, play Wolf  
-* Wolf: 2/2  
-48. Human Intervention: trap \- when target creature is targeted, return it to hand   
+46. Warm Blood: free play spell \- creatures lose frozen
+47. Human Intervention: trap \- when target creature is targeted, return it to hand   
 49. Pitfall: trap \- when target enemy attacks directly, negate attack | enemies gain frozen  
 50. Snow Squall: trap \- when damaged indirectly, negate damage | enemies gain frozen  
 51. Burial Ground: trap \- when target defending creature is slain, play a carrion it gains frozen
@@ -362,7 +356,7 @@
 **Support**  
  
 
-38. Meteor: spell \- destroy field spells | kill animals  
+38. Meteor: spell \- kill animals  
 39. Scythian Arrows: spell \- discard 1 | kill enemies  
 40. **Snake Wine: spell \- heal 7**  
 41. Paralyze: spell \- target enemy gains paralysis   
@@ -370,10 +364,8 @@
 43. Cold-blooded: free play spell \- target creature gains \+1/+1  
 44. Ecdysis: free play spell \- regen target creature  
 45. Surprise: free play spell \- deal 2 damage to target enemy  
-46. Vengeful: free play spell \- target creature gains poisonous  
-47. Snake Nest: field spell \- end of turn, play Poisonous Snake  
-* Poisonous Snake: 1/1 (1) \- poisonous   
-48. ***Scales: trap \- when damaged indirectly, negate damage | heal 3***  
+46. Vengeful: free play spell \- target creature gains poisonous
+47. ***Scales: trap \- when damaged indirectly, negate damage | heal 3***  
 49. Snake Oil: trap \- when rival draws, rival discards 1 | draw 1  
 50. Snake Pit: trap \- when target enemy attacks directly, negate attack | play Snakes  
 * Snakes: 2/2 

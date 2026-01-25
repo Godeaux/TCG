@@ -1125,13 +1125,6 @@ export const EFFECT_VALUES = {
   },
 
   // ========================
-  // FIELD SPELLS
-  // ========================
-
-  setFieldSpell: () => ({ value: 8, reason: `set field spell → 8` }),
-  destroyFieldSpells: () => ({ value: 6, reason: `destroy field spells → 6` }),
-
-  // ========================
   // DEFAULT FALLBACK
   // ========================
 

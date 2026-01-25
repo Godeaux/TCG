@@ -153,12 +153,6 @@ If both players reach 0 HP simultaneously, the game is a **draw**.
 - Resolve **before** the triggering action completes
 - Goes to **Exile** after triggering
 
-#### **Field Spell**
-- Ongoing effects that remain active on the field
-- Takes up **one of your three field slots**
-- Only **one field spell** can be active at a time (new ones replace old ones)
-- Provides continuous or end-of-turn effects
-
 ---
 
 ## Game Zones
@@ -173,8 +167,8 @@ If both players reach 0 HP simultaneously, the game is a **draw**.
 - When empty, you simply stop drawing (the game continues)
 
 ### **Field**
-- The active play area where creatures and field spells exist
-- **Maximum 3 cards** (creatures and field spells combined)
+- The active play area where creatures exist
+- **Maximum 3 creatures**
 - Creatures on the field can attack, defend, and be consumed
 
 ### **Carrion Pile**
@@ -514,11 +508,6 @@ Traps resolve **before** the triggering action completes. For example:
 - When an effect reveals your opponent's hand, you can see all their cards for a few seconds
 - The opponent cannot change or play cards while their hand is revealed
 
-### **Multiple Field Spells**
-- Only **one field spell** can be active at a time
-- Playing a new field spell **replaces** the existing one
-- The old field spell goes to the carrion pile
-
 ---
 
 ## Glossary of Terms
@@ -549,7 +538,7 @@ Traps resolve **before** the triggering action completes. For example:
 
 **Regen** — Restore a creature to full HP.
 
-**Field Slot** — One of the three positions on your field where creatures or field spells can exist.
+**Field Slot** — One of the three positions on your field where creatures can exist.
 
 ---
 
@@ -574,7 +563,7 @@ Traps resolve **before** the triggering action completes. For example:
 - **Unlimited Free Spells** (don't count toward limit)
 
 ### **Field Limits**
-- **Maximum 3 cards** on your field (creatures + field spells combined)
+- **Maximum 3 creatures** on your field
 
 ### **Combat Basics**
 - Creatures can attack **enemy creatures** immediately

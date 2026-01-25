@@ -898,7 +898,6 @@ export const checkCreatureIntegrity = (state) => {
  * Check that carrion only contains valid cards
  * Per rulebook:
  * - Destroyed creatures go to carrion
- * - Replaced Field Spells go to carrion
  *
  * @param {Object} state - Game state after action
  * @returns {Object[]} Array of bug objects
@@ -906,8 +905,8 @@ export const checkCreatureIntegrity = (state) => {
 export const checkCarrionIntegrity = (state) => {
   const bugs = [];
 
-  // Valid card types for carrion: creatures (Prey, Predator), tokens, and Field Spells
-  const validCarrionTypes = ['Prey', 'Predator', 'Field Spell'];
+  // Valid card types for carrion: creatures (Prey, Predator) and tokens
+  const validCarrionTypes = ['Prey', 'Predator'];
 
   state.players.forEach((player, playerIndex) => {
     player.carrion?.forEach((card, index) => {

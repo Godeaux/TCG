@@ -120,12 +120,6 @@ describe('Reptile Cards', () => {
           expect(['Spell', 'Free Spell']).toContain(spell.type);
           expect(spell.effects?.effect).toBeDefined();
         });
-
-        if (spell.isFieldSpell) {
-          it('is marked as field spell', () => {
-            expect(spell.isFieldSpell).toBe(true);
-          });
-        }
       });
     });
   });

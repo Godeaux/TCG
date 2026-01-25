@@ -108,8 +108,6 @@ const runStartOfTurnEffects = (state) => {
 
   // Handle Stalk bonus increment for stalking creatures (Feline mechanic)
   handleStalkBonusIncrement(state);
-
-  // Field spells live on the field and are handled in the loop above.
 };
 
 const queueEndOfTurnEffects = (state) => {
@@ -117,20 +115,6 @@ const queueEndOfTurnEffects = (state) => {
   state.endOfTurnQueue = player.field.filter(
     (creature) => creature?.onEnd || creature?.effects?.onEnd || creature?.endOfTurnSummon
   );
-
-  // Include field spell if it has onEnd effect and is owned by active player
-  // BUT only if it's not already in the queue (field spells are placed on the field,
-  // so they would already be picked up by the filter above)
-  const fieldSpell = state.fieldSpell;
-  if (fieldSpell?.card?.effects?.onEnd && fieldSpell.ownerIndex === state.activePlayerIndex) {
-    // Check if field spell is already in the queue (by instanceId)
-    const alreadyInQueue = state.endOfTurnQueue.some(
-      (c) => c?.instanceId === fieldSpell.card.instanceId
-    );
-    if (!alreadyInQueue) {
-      state.endOfTurnQueue.push(fieldSpell.card);
-    }
-  }
 
   state.endOfTurnProcessing = false;
   state.endOfTurnFinalized = false;

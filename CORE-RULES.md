@@ -9,7 +9,7 @@
 - Starting HP: **10** each
 - Starting hand: **5** cards
 - Deck size: **20** cards (singleton)
-- Field limit: **3** cards (creatures + field spells combined)
+- Field limit: **3** creatures
 - Hand limit: **none**
 - First player: **skips draw** on turn 1
 
@@ -287,9 +287,6 @@ Triggers when animal dies from ALMOST any source.
 | Spell | ✅ YES | Main Phase 1 or 2 | Exile |
 | Free Spell | ❌ NO (but only while limit available) | Main Phase 1 or 2 | Exile |
 | Trap | ❌ NO (activated from hand) | Opponent's turn (on trigger) | Exile |
-| Field Spell | ✅ YES | Main Phase 1 or 2 | Stays on field |
-
-**Field Spell rule:** Max 1 active. New replaces old → old goes to carrion.
 
 ---
 

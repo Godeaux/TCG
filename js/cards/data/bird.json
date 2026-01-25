@@ -311,10 +311,7 @@
       "atk": 2,
       "hp": 2,
       "effects": {
-        "onConsume": [
-          { "type": "selectFromGroup", "params": { "targetGroup": "enemy-prey", "title": "Choose a prey to kill", "effect": { "kill": true } } },
-          { "type": "destroyFieldSpells", "params": {} }
-        ]
+        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-prey", "title": "Choose a prey to kill", "effect": { "kill": true } } }
       }
     },
     {
@@ -507,24 +504,6 @@
       "type": "Free Spell",
       "effects": {
         "effect": { "type": "selectFromGroup", "params": { "targetGroup": "all-entities", "title": "Choose a target for damage", "effect": { "damage": 1, "label": "white missile" } } }
-      }
-    },
-    {
-      "id": "bird-field-spell-bird-feeder",
-      "name": "Bird Feeder",
-      "type": "Spell",
-      "isFieldSpell": true,
-      "effects": {
-        "effect": {
-          "type": "setFieldSpell",
-          "params": {
-            "cardId": "bird-field-spell-bird-feeder"
-          }
-        },
-        "onEnd": {
-          "type": "selectFromGroup",
-          "params": { "targetGroup": "all-creatures", "title": "Choose a creature to buff", "effect": { "buff": { "attack": 1, "health": 1 } } }
-        }
       }
     },
     {
