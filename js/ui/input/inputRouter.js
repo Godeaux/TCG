@@ -40,6 +40,7 @@ let handleJoinLobby = null;
 let handleLeaveLobby = null;
 let handleBackFromLobby = null;
 let handleFindMatch = null;
+let handleMenuRejoin = null;
 let handleCancelMatchmaking = null;
 let ensureDecksLoaded = null;
 let getOpponentDisplayName = null;
@@ -282,6 +283,8 @@ const getNavigationElements = () => ({
 
   // Main menu buttons (new layout)
   menuFindMatch: document.getElementById('menu-find-match'),
+  menuRejoin: document.getElementById('menu-rejoin'),
+  menuFindMatchContainer: document.querySelector('.menu-find-match-container'),
   menuDecks: document.getElementById('menu-decks'),
   menuProfile: document.getElementById('menu-profile'),
   menuOther: document.getElementById('menu-other'),
@@ -405,6 +408,20 @@ const initNavigation = () => {
       return;
     }
     handleFindMatch(latestState);
+  });
+
+  // Main menu: Rejoin Game (rejoins previous lobby)
+  elements.menuRejoin?.addEventListener('click', () => {
+    if (!latestState) {
+      return;
+    }
+    // Require login for Rejoin
+    if (!latestState.menu.profile) {
+      setMenuStage(latestState, 'login');
+      latestCallbacks.onUpdate?.();
+      return;
+    }
+    handleMenuRejoin(latestState);
   });
 
   // Main menu: Decks (opens deck builder/catalog)
@@ -860,6 +877,7 @@ export const initializeInput = (options = {}) => {
   handleLeaveLobby = helpers.handleLeaveLobby;
   handleBackFromLobby = helpers.handleBackFromLobby;
   handleFindMatch = helpers.handleFindMatch;
+  handleMenuRejoin = helpers.handleMenuRejoin;
   handleCancelMatchmaking = helpers.handleCancelMatchmaking;
   ensureDecksLoaded = helpers.ensureDecksLoaded;
   getOpponentDisplayName = helpers.getOpponentDisplayName;

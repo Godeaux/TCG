@@ -18,6 +18,7 @@ import {
   isPresenceInitialized,
   getOnlineCount,
 } from '../../network/presenceManager.js';
+import { checkRejoinAvailable } from '../../network/lobbyManager.js';
 
 // ============================================================================
 // ONLINE PRESENCE STATE
@@ -26,6 +27,13 @@ import {
 let onlineCount = 0;
 let presenceUnsubscribe = null;
 let onUpdateCallback = null;
+
+// ============================================================================
+// REJOIN STATE
+// ============================================================================
+
+let rejoinAvailable = false;
+let rejoinCheckPending = false;
 
 /**
  * Initialize presence tracking for main menu
@@ -49,6 +57,8 @@ const ensurePresenceInitialized = (profileId, onUpdate) => {
       const newCount = users.size;
       if (newCount !== onlineCount) {
         onlineCount = newCount;
+        // Re-check rejoin availability when presence changes
+        rejoinCheckPending = false;
         // Trigger UI update when count changes
         onUpdateCallback?.();
       }
@@ -71,6 +81,8 @@ const getMenuElements = () => ({
 
   // Main menu buttons (new layout)
   menuFindMatch: document.getElementById('menu-find-match'),
+  menuRejoin: document.getElementById('menu-rejoin'),
+  menuFindMatchContainer: document.querySelector('.menu-find-match-container'),
   menuOnlineCount: document.getElementById('menu-online-count'),
   menuDecks: document.getElementById('menu-decks'),
   menuProfile: document.getElementById('menu-profile'),
@@ -219,6 +231,30 @@ export const renderMenuOverlays = (state, callbacks) => {
       elements.menuOnlineCount.textContent = 'Online';
     } else {
       elements.menuOnlineCount.textContent = 'Click to log in';
+    }
+  }
+
+  // Update rejoin button visibility on main menu
+  if (elements.menuRejoin && elements.menuFindMatchContainer) {
+    // Show/hide rejoin based on current state
+    elements.menuRejoin.style.display = rejoinAvailable ? '' : 'none';
+    elements.menuFindMatchContainer.classList.toggle('has-rejoin', rejoinAvailable);
+
+    // Check rejoin availability asynchronously (only when logged in)
+    if (isLoggedIn && !rejoinCheckPending) {
+      rejoinCheckPending = true;
+      checkRejoinAvailable(state).then((info) => {
+        const wasAvailable = rejoinAvailable;
+        rejoinAvailable = Boolean(info);
+        rejoinCheckPending = false;
+
+        // Re-render if state changed
+        if (wasAvailable !== rejoinAvailable) {
+          callbacks?.onUpdate?.();
+        }
+      });
+    } else if (!isLoggedIn) {
+      rejoinAvailable = false;
     }
   }
 

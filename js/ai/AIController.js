@@ -82,6 +82,16 @@ const AI_DELAYS_INSTANT = {
   TRAP_CONSIDERATION: 30,
 };
 
+// Lightning mode delays - absolute minimum for fastest AI vs AI simulations
+// Uses 1ms delays (instead of 0) to avoid potential race conditions with synchronous execution
+const AI_DELAYS_LIGHTNING = {
+  THINKING: { min: 1, max: 1 },
+  BETWEEN_ACTIONS: { min: 1, max: 1 },
+  END_TURN: { min: 1, max: 1 },
+  PHASE_ADVANCE: 1,
+  TRAP_CONSIDERATION: 1,
+};
+
 // Slow mode multiplier (4x slower for debugging)
 const SLOW_MODE_MULTIPLIER = 4;
 
@@ -276,11 +286,18 @@ export class AIController {
   }
 
   /**
-   * Get appropriate delays based on mode (instant/normal/slow) and difficulty
+   * Get appropriate delays based on mode (instant/normal/slow/lightning) and difficulty
    */
   getDelays(state) {
+    const speed = state.menu?.aiSpeed;
+
+    // Lightning mode - absolute minimum delays for fastest AI vs AI
+    if (speed === 'lightning') {
+      return AI_DELAYS_LIGHTNING;
+    }
+
     // In AI vs AI mode with bunny (fast) mode, use instant delays
-    if (isAIvsAIMode(state) && !state.menu?.aiSlowMode) {
+    if (isAIvsAIMode(state) && speed !== 'slow') {
       return AI_DELAYS_INSTANT;
     }
 
@@ -468,7 +485,7 @@ export class AIController {
         if (isCreatureCard(cardToPlay) && emptySlot >= 0) {
           await simulateAICardDrag(cardIndex, emptySlot, state, this.playerIndex);
         } else {
-          await simulateAICardPlay(cardIndex, { playerIndex: this.playerIndex });
+          await simulateAICardPlay(cardIndex, { playerIndex: this.playerIndex, state });
         }
       }
 
@@ -589,7 +606,7 @@ export class AIController {
           if (isCreatureCard(card) && slot !== null && slot >= 0) {
             await simulateAICardDrag(cardIndex, slot, state, this.playerIndex);
           } else {
-            await simulateAICardPlay(cardIndex, { playerIndex: this.playerIndex });
+            await simulateAICardPlay(cardIndex, { playerIndex: this.playerIndex, state });
           }
         }
 
@@ -1347,7 +1364,7 @@ export class AIController {
       this.logThought(state, `${attacker.name} attacks ${targetName}`, true);
 
       // Show combat visuals: attacker selection and target consideration
-      await simulateAICombatSequence(attacker, target);
+      await simulateAICombatSequence(attacker, target, state);
 
       // Mark attacker as having attacked BEFORE executing (prevents double attacks during reaction windows)
       // Uses Multi-Strike aware helper - creature may have attacks remaining
@@ -1624,10 +1641,17 @@ export class AIController {
   /**
    * Utility delay function with randomization support
    * @param {number|Object} msOrRange - Fixed ms or { min, max } range
-   * @param {Object} state - Game state to check for slow mode
+   * @param {Object} state - Game state to check for slow/lightning mode
    */
   delay(msOrRange, state = null) {
-    const multiplier = state?.menu?.aiSlowMode ? SLOW_MODE_MULTIPLIER : 1;
+    const speed = state?.menu?.aiSpeed;
+
+    // Lightning mode - minimal delays, no multiplier
+    if (speed === 'lightning') {
+      return new Promise((resolve) => setTimeout(resolve, 1));
+    }
+
+    const multiplier = speed === 'slow' || state?.menu?.aiSlowMode ? SLOW_MODE_MULTIPLIER : 1;
 
     // Support both fixed delays and randomized ranges
     let ms;

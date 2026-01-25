@@ -229,6 +229,17 @@ button {
   50% { opacity: 0.6; transform: scale(1.1); }
 }
 
+.ai-speed-toggle.ai-lightning {
+  animation: lightning-flash 0.8s ease-in-out infinite;
+  color: #ffeb3b;
+  text-shadow: 0 0 8px #ffeb3b, 0 0 12px #ff9800;
+}
+
+@keyframes lightning-flash {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.05); }
+}
+
 .player-stats {
   display: flex;
   gap: 6px;
@@ -3660,6 +3671,702 @@ button {
   }
 }
 
+/* ===== SHELL - Hexagonal Scale Armor ===== */
+.shell-overlay {
+  background: linear-gradient(
+    135deg,
+    rgba(139, 90, 43, 0.1) 0%,
+    rgba(160, 120, 60, 0.05) 50%,
+    rgba(139, 90, 43, 0.1) 100%
+  );
+  box-shadow:
+    inset 0 0 15px rgba(180, 140, 80, 0.3),
+    0 0 8px rgba(139, 90, 43, 0.4);
+}
+
+.shell-scale {
+  position: absolute;
+  width: 18px;
+  height: 20px;
+  background: linear-gradient(
+    145deg,
+    rgba(200, 160, 100, 0.9) 0%,
+    rgba(160, 120, 70, 0.85) 30%,
+    rgba(120, 85, 50, 0.9) 70%,
+    rgba(90, 60, 35, 0.95) 100%
+  );
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  box-shadow:
+    inset 2px 2px 4px rgba(255, 220, 150, 0.4),
+    inset -1px -1px 3px rgba(60, 40, 20, 0.5);
+  animation: shell-breathe 2.5s ease-in-out infinite;
+}
+
+/* Scale positioning - top edge */
+.scale-top-1 { top: 2px; left: 15%; }
+.scale-top-2 { top: 0px; left: 45%; transform: translateX(-50%); }
+.scale-top-3 { top: 2px; right: 15%; }
+
+/* Scale positioning - right edge */
+.scale-right-1 { top: 25%; right: 2px; }
+.scale-right-2 { top: 55%; right: 2px; }
+
+/* Scale positioning - bottom edge */
+.scale-bottom-1 { bottom: 2px; left: 15%; }
+.scale-bottom-2 { bottom: 0px; left: 45%; transform: translateX(-50%); }
+.scale-bottom-3 { bottom: 2px; right: 15%; }
+
+/* Scale positioning - left edge */
+.scale-left-1 { top: 25%; left: 2px; }
+.scale-left-2 { top: 55%; left: 2px; }
+
+.shell-shimmer {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 220, 150, 0.15) 50%,
+    transparent 100%
+  );
+  animation: shell-shimmer-sweep 4s ease-in-out infinite;
+}
+
+@keyframes shell-breathe {
+  0%, 100% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes shell-shimmer-sweep {
+  0%, 100% {
+    left: -50%;
+    opacity: 0;
+  }
+  50% {
+    left: 100%;
+    opacity: 1;
+  }
+}
+
+/* Shell depleted state - cracked and faded */
+.shell-depleted .shell-scale {
+  opacity: 0.3;
+  filter: grayscale(60%);
+  animation: shell-cracked 0.5s ease-out forwards;
+}
+
+.shell-depleted .shell-shimmer {
+  display: none;
+}
+
+.shell-depleted {
+  box-shadow:
+    inset 0 0 10px rgba(100, 80, 50, 0.2);
+}
+
+@keyframes shell-cracked {
+  0% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0.3;
+  }
+}
+
+/* ===== LURE - Red Pulsing Beacon ===== */
+.lure-overlay {
+  background: radial-gradient(
+    circle at center,
+    rgba(220, 50, 50, 0.15) 0%,
+    rgba(180, 30, 30, 0.1) 40%,
+    transparent 70%
+  );
+}
+
+.lure-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 30px;
+  height: 30px;
+  border: 2px solid rgba(255, 80, 80, 0.8);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: lure-pulse 2s ease-out infinite;
+}
+
+.ring-1 { animation-delay: 0s; }
+.ring-2 { animation-delay: 0.4s; }
+.ring-3 { animation-delay: 0.8s; }
+
+@keyframes lure-pulse {
+  0% {
+    width: 20px;
+    height: 20px;
+    opacity: 0.9;
+    border-color: rgba(255, 100, 100, 0.9);
+  }
+  100% {
+    width: 120px;
+    height: 120px;
+    opacity: 0;
+    border-color: rgba(255, 50, 50, 0);
+  }
+}
+
+/* Lure arrows pointing inward */
+.lure-arrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  opacity: 0.8;
+  animation: lure-arrow-pulse 1.5s ease-in-out infinite;
+}
+
+.arrow-top {
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 8px 5px 0 5px;
+  border-color: rgba(255, 80, 80, 0.9) transparent transparent transparent;
+}
+
+.arrow-bottom {
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 0 5px 8px 5px;
+  border-color: transparent transparent rgba(255, 80, 80, 0.9) transparent;
+}
+
+.arrow-left {
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 5px 8px 5px 0;
+  border-color: transparent rgba(255, 80, 80, 0.9) transparent transparent;
+}
+
+.arrow-right {
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 5px 0 5px 8px;
+  border-color: transparent transparent transparent rgba(255, 80, 80, 0.9);
+}
+
+.arrow-top, .arrow-bottom { animation-delay: 0s; }
+.arrow-left, .arrow-right { animation-delay: 0.75s; }
+
+@keyframes lure-arrow-pulse {
+  0%, 100% {
+    opacity: 0.5;
+    transform: translateX(-50%) scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.1);
+  }
+}
+
+.arrow-left, .arrow-right {
+  animation-name: lure-arrow-pulse-y;
+}
+
+@keyframes lure-arrow-pulse-y {
+  0%, 100% {
+    opacity: 0.5;
+    transform: translateY(-50%) scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.1);
+  }
+}
+
+/* ===== HIDDEN - Semi-Transparent Shimmer ===== */
+.hidden-overlay {
+  background: rgba(100, 120, 150, 0.1);
+  backdrop-filter: blur(0.5px);
+}
+
+.hidden-wave {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(150, 180, 220, 0.08) 25%,
+    rgba(180, 200, 230, 0.12) 50%,
+    rgba(150, 180, 220, 0.08) 75%,
+    transparent 100%
+  );
+  animation: hidden-wave-drift 3s ease-in-out infinite;
+}
+
+.wave-1 { animation-delay: 0s; opacity: 0.7; }
+.wave-2 { animation-delay: 1s; opacity: 0.5; }
+.wave-3 { animation-delay: 2s; opacity: 0.6; }
+
+@keyframes hidden-wave-drift {
+  0%, 100% {
+    transform: translateY(-10px);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translateY(10px);
+    opacity: 0.7;
+  }
+}
+
+/* Overall card transparency effect for Hidden */
+.hidden-overlay::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    transparent 2px,
+    rgba(200, 220, 255, 0.03) 2px,
+    rgba(200, 220, 255, 0.03) 4px
+  );
+  animation: hidden-scanlines 0.1s linear infinite;
+}
+
+@keyframes hidden-scanlines {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(4px); }
+}
+
+/* ===== INVISIBLE - Prismatic Edge Refraction ===== */
+.invisible-overlay {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(200, 200, 255, 0.03) 50%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  backdrop-filter: blur(1px);
+  opacity: 0.9;
+}
+
+.prism-edge {
+  position: absolute;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 0, 0, 0.3) 0%,
+    rgba(255, 165, 0, 0.3) 17%,
+    rgba(255, 255, 0, 0.3) 33%,
+    rgba(0, 255, 0, 0.3) 50%,
+    rgba(0, 150, 255, 0.3) 67%,
+    rgba(75, 0, 130, 0.3) 83%,
+    rgba(148, 0, 211, 0.3) 100%
+  );
+  animation: prism-shift 2s linear infinite;
+}
+
+.prism-top {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg,
+    rgba(255, 0, 0, 0.4) 0%,
+    rgba(255, 165, 0, 0.4) 17%,
+    rgba(255, 255, 0, 0.4) 33%,
+    rgba(0, 255, 0, 0.4) 50%,
+    rgba(0, 150, 255, 0.4) 67%,
+    rgba(75, 0, 130, 0.4) 83%,
+    rgba(148, 0, 211, 0.4) 100%
+  );
+}
+
+.prism-bottom {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(270deg,
+    rgba(255, 0, 0, 0.4) 0%,
+    rgba(255, 165, 0, 0.4) 17%,
+    rgba(255, 255, 0, 0.4) 33%,
+    rgba(0, 255, 0, 0.4) 50%,
+    rgba(0, 150, 255, 0.4) 67%,
+    rgba(75, 0, 130, 0.4) 83%,
+    rgba(148, 0, 211, 0.4) 100%
+  );
+  animation-direction: reverse;
+}
+
+.prism-left {
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg,
+    rgba(255, 0, 0, 0.4) 0%,
+    rgba(255, 165, 0, 0.4) 17%,
+    rgba(255, 255, 0, 0.4) 33%,
+    rgba(0, 255, 0, 0.4) 50%,
+    rgba(0, 150, 255, 0.4) 67%,
+    rgba(75, 0, 130, 0.4) 83%,
+    rgba(148, 0, 211, 0.4) 100%
+  );
+  animation-delay: 0.5s;
+}
+
+.prism-right {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(0deg,
+    rgba(255, 0, 0, 0.4) 0%,
+    rgba(255, 165, 0, 0.4) 17%,
+    rgba(255, 255, 0, 0.4) 33%,
+    rgba(0, 255, 0, 0.4) 50%,
+    rgba(0, 150, 255, 0.4) 67%,
+    rgba(75, 0, 130, 0.4) 83%,
+    rgba(148, 0, 211, 0.4) 100%
+  );
+  animation-delay: 0.5s;
+  animation-direction: reverse;
+}
+
+@keyframes prism-shift {
+  0% {
+    filter: hue-rotate(0deg);
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.9;
+  }
+  100% {
+    filter: hue-rotate(360deg);
+    opacity: 0.6;
+  }
+}
+
+/* Inner refraction effect */
+.invisible-overlay::before {
+  content: '';
+  position: absolute;
+  top: 10%;
+  left: 10%;
+  right: 10%;
+  bottom: 10%;
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    rgba(255, 0, 0, 0.05) 0deg,
+    rgba(255, 165, 0, 0.05) 60deg,
+    rgba(255, 255, 0, 0.05) 120deg,
+    rgba(0, 255, 0, 0.05) 180deg,
+    rgba(0, 150, 255, 0.05) 240deg,
+    rgba(148, 0, 211, 0.05) 300deg,
+    rgba(255, 0, 0, 0.05) 360deg
+  );
+  animation: prism-rotate 6s linear infinite;
+  border-radius: inherit;
+}
+
+@keyframes prism-rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ===== VENOM - Dripping Green Liquid ===== */
+.venom-overlay {
+  background: linear-gradient(
+    180deg,
+    rgba(50, 180, 50, 0.1) 0%,
+    transparent 30%,
+    transparent 70%,
+    rgba(50, 180, 50, 0.15) 100%
+  );
+}
+
+.venom-drip {
+  position: absolute;
+  top: -5px;
+  width: 8px;
+  height: 25px;
+  background: linear-gradient(
+    180deg,
+    rgba(80, 200, 80, 0.9) 0%,
+    rgba(50, 180, 50, 0.95) 40%,
+    rgba(30, 150, 30, 0.9) 70%,
+    rgba(20, 120, 20, 0.85) 100%
+  );
+  border-radius: 4px 4px 50% 50%;
+  animation: venom-drip-fall 2.5s ease-in infinite;
+  filter: drop-shadow(0 2px 4px rgba(50, 180, 50, 0.5));
+}
+
+/* Drip positioning */
+.drip-left-1 { left: 12%; }
+.drip-left-2 { left: 28%; animation-delay: 0.8s; }
+.drip-right-1 { right: 12%; animation-delay: 0.4s; }
+.drip-right-2 { right: 28%; animation-delay: 1.2s; }
+
+@keyframes venom-drip-fall {
+  0% {
+    top: -5px;
+    height: 20px;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+    height: 25px;
+  }
+  60% {
+    top: 30%;
+    height: 30px;
+    opacity: 0.9;
+  }
+  80% {
+    top: 70%;
+    height: 20px;
+    opacity: 0.7;
+  }
+  95% {
+    top: calc(100% - 15px);
+    height: 15px;
+    opacity: 0.5;
+  }
+  100% {
+    top: calc(100% - 10px);
+    height: 10px;
+    opacity: 0;
+  }
+}
+
+.venom-pool {
+  position: absolute;
+  bottom: 3px;
+  left: 10%;
+  right: 10%;
+  height: 8px;
+  background: radial-gradient(
+    ellipse 100% 100% at 50% 100%,
+    rgba(50, 180, 50, 0.6) 0%,
+    rgba(40, 150, 40, 0.4) 50%,
+    transparent 100%
+  );
+  border-radius: 50%;
+  animation: venom-pool-pulse 2s ease-in-out infinite;
+}
+
+@keyframes venom-pool-pulse {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scaleX(0.9);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scaleX(1.1);
+  }
+}
+
+/* ===== TOXIC - Green Aura Smoke Wisps ===== */
+.toxic-overlay {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(80, 200, 80, 0.08) 0%,
+    transparent 60%
+  );
+  box-shadow: 0 0 15px rgba(80, 200, 80, 0.2);
+}
+
+.toxic-wisp {
+  position: absolute;
+  width: 20px;
+  height: 30px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(100, 220, 100, 0.6) 0%,
+    rgba(80, 200, 80, 0.3) 40%,
+    transparent 70%
+  );
+  border-radius: 50% 50% 30% 30%;
+  filter: blur(3px);
+  animation: toxic-rise 3s ease-out infinite;
+}
+
+/* Wisp positioning - along top edge */
+.wisp-1 { left: 10%; bottom: 70%; animation-delay: 0s; }
+.wisp-2 { left: 30%; bottom: 65%; animation-delay: 0.6s; }
+.wisp-3 { left: 50%; bottom: 70%; animation-delay: 1.2s; transform: translateX(-50%); }
+.wisp-4 { right: 30%; bottom: 65%; animation-delay: 1.8s; }
+.wisp-5 { right: 10%; bottom: 70%; animation-delay: 2.4s; }
+
+@keyframes toxic-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.5);
+  }
+  20% {
+    opacity: 0.7;
+  }
+  80% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-40px) scale(1.2);
+  }
+}
+
+/* Subtle toxic glow on border */
+.toxic-overlay::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: inherit;
+  border: 1px solid rgba(100, 220, 100, 0.3);
+  animation: toxic-border-pulse 2s ease-in-out infinite;
+}
+
+@keyframes toxic-border-pulse {
+  0%, 100% {
+    border-color: rgba(100, 220, 100, 0.2);
+    box-shadow: 0 0 5px rgba(100, 220, 100, 0.1);
+  }
+  50% {
+    border-color: rgba(100, 220, 100, 0.5);
+    box-shadow: 0 0 12px rgba(100, 220, 100, 0.3);
+  }
+}
+
+/* ===== ACUITY - Targeting Scanner Effect ===== */
+.acuity-overlay {
+  background: rgba(0, 150, 255, 0.03);
+}
+
+.acuity-scanner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 200, 255, 0.3) 20%,
+    rgba(0, 220, 255, 0.8) 50%,
+    rgba(0, 200, 255, 0.3) 80%,
+    transparent 100%
+  );
+  box-shadow:
+    0 0 10px rgba(0, 200, 255, 0.5),
+    0 0 20px rgba(0, 200, 255, 0.3);
+  animation: acuity-scan 2.5s ease-in-out infinite;
+}
+
+@keyframes acuity-scan {
+  0%, 100% {
+    top: 5%;
+    opacity: 0.6;
+  }
+  50% {
+    top: 90%;
+    opacity: 1;
+  }
+}
+
+/* Targeting brackets in corners */
+.acuity-bracket {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  border-color: rgba(0, 200, 255, 0.7);
+  border-style: solid;
+  border-width: 0;
+  animation: acuity-bracket-pulse 1.5s ease-in-out infinite;
+}
+
+.bracket-top-left {
+  top: 6px;
+  left: 6px;
+  border-top-width: 2px;
+  border-left-width: 2px;
+}
+
+.bracket-top-right {
+  top: 6px;
+  right: 6px;
+  border-top-width: 2px;
+  border-right-width: 2px;
+}
+
+.bracket-bottom-left {
+  bottom: 6px;
+  left: 6px;
+  border-bottom-width: 2px;
+  border-left-width: 2px;
+}
+
+.bracket-bottom-right {
+  bottom: 6px;
+  right: 6px;
+  border-bottom-width: 2px;
+  border-right-width: 2px;
+}
+
+@keyframes acuity-bracket-pulse {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+/* Scanner readout effect */
+.acuity-overlay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0px,
+      transparent 3px,
+      rgba(0, 200, 255, 0.02) 3px,
+      rgba(0, 200, 255, 0.02) 4px
+    );
+  pointer-events: none;
+}
+
 .card-hit {
   animation: card-hit 0.4s ease-out;
 }
@@ -4246,8 +4953,15 @@ button {
   align-items: stretch;
 }
 
-/* Large Find Match button */
-.menu-find-match {
+/* Split Find/Rejoin button container */
+.menu-find-match-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 140px;
+}
+
+/* Find Game button (top half) */
+.menu-find-game {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -4258,26 +4972,63 @@ button {
   padding: 24px;
   font-weight: 700;
   font-size: var(--font-xl);
-  min-height: 140px;
+  flex: 1;
   cursor: pointer;
   border: none;
   transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-.menu-find-match:hover:not(:disabled) {
+/* When rejoin is visible, adjust border radius */
+.menu-find-match-container.has-rejoin .menu-find-game {
+  border-radius: 16px 16px 0 0;
+  padding-bottom: 16px;
+}
+
+.menu-find-game:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 12px 24px rgba(212, 168, 83, 0.3);
 }
 
-.menu-find-match:disabled {
+/* Disable hover transform when rejoin is visible */
+.menu-find-match-container.has-rejoin .menu-find-game:hover:not(:disabled) {
+  transform: none;
+}
+
+.menu-find-game:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.menu-find-match .online-count {
+.menu-find-game .online-count {
   font-size: var(--font-sm);
   font-weight: 400;
   margin-top: 8px;
+}
+
+/* Rejoin Game button (bottom half) */
+.menu-rejoin-game {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, var(--gold-dark), #9a7632);
+  color: #2e2211;
+  border-radius: 0 0 16px 16px;
+  padding: 12px 24px;
+  font-weight: 700;
+  font-size: var(--font-base);
+  cursor: pointer;
+  border: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.15);
+  transition: background var(--transition-fast);
+}
+
+.menu-rejoin-game:hover:not(:disabled) {
+  background: linear-gradient(135deg, #c4983f, #8a6828);
+}
+
+.menu-rejoin-game:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Right column stacked buttons */
@@ -10888,6 +11639,7 @@ select.menu-input option {
 
 .simulation-dashboard-overlay {
   z-index: 60;
+  background: rgba(5, 8, 12, 0.3); /* Semi-transparent to see game behind */
 }
 
 .simulation-dashboard-overlay .overlay-content {
@@ -11121,6 +11873,13 @@ select.menu-input option {
   align-items: center;
   justify-content: center;
   min-width: 60px;
+}
+
+.sim-draws {
+  text-align: center;
+  margin-top: 8px;
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
 }
 
 /* Bug List in Dashboard */

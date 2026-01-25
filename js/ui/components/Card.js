@@ -15,7 +15,7 @@
  * - getCardEffectSummary: Effect text generation
  */
 
-import { KEYWORD_DESCRIPTIONS, areAbilitiesActive, getEffectiveAttack, hasShell, hasMolt } from '../../keywords.js';
+import { KEYWORD_DESCRIPTIONS, areAbilitiesActive, getEffectiveAttack, hasShell, hasMolt, hasLure, isHidden, isInvisible, hasToxic, hasAcuity, hasVenom, getCurrentShell, getShellLevel } from '../../keywords.js';
 import { hasCardImage, getCardImagePath } from '../../cardImages.js';
 import { getCardDefinitionById } from '../../cards/index.js';
 
@@ -968,6 +968,128 @@ export const renderCard = (card, options = {}) => {
     const fern2 = document.createElement('div');
     fern2.className = 'grass-fern fern-right';
     overlay.appendChild(fern2);
+    cardElement.appendChild(overlay);
+  }
+
+  // Shell - hexagonal scale armor along edges
+  if (hasShell(card)) {
+    const overlay = document.createElement('div');
+    const currentShell = getCurrentShell(card);
+    const shellLevel = getShellLevel(card);
+    const isDepleted = currentShell <= 0;
+    overlay.className = `status-overlay shell-overlay${isDepleted ? ' shell-depleted' : ''}`;
+    overlay.dataset.shellCurrent = currentShell;
+    overlay.dataset.shellMax = shellLevel;
+    // Add hexagonal scale elements along the border
+    const scalePositions = ['top-1', 'top-2', 'top-3', 'right-1', 'right-2', 'bottom-1', 'bottom-2', 'bottom-3', 'left-1', 'left-2'];
+    scalePositions.forEach((pos, index) => {
+      const scale = document.createElement('div');
+      scale.className = `shell-scale scale-${pos}`;
+      // Stagger animation for organic feel
+      scale.style.animationDelay = `${index * 0.1}s`;
+      overlay.appendChild(scale);
+    });
+    // Add shimmer layer
+    const shimmer = document.createElement('div');
+    shimmer.className = 'shell-shimmer';
+    overlay.appendChild(shimmer);
+    cardElement.appendChild(overlay);
+  }
+
+  // Lure - red pulsing beacon effect
+  if (hasLure(card) && areAbilitiesActive(card)) {
+    const overlay = document.createElement('div');
+    overlay.className = 'status-overlay lure-overlay';
+    // Add pulsing rings
+    for (let i = 0; i < 3; i++) {
+      const ring = document.createElement('div');
+      ring.className = `lure-ring ring-${i + 1}`;
+      overlay.appendChild(ring);
+    }
+    // Add target reticle arrows pointing inward
+    const arrowPositions = ['top', 'right', 'bottom', 'left'];
+    arrowPositions.forEach(pos => {
+      const arrow = document.createElement('div');
+      arrow.className = `lure-arrow arrow-${pos}`;
+      overlay.appendChild(arrow);
+    });
+    cardElement.appendChild(overlay);
+  }
+
+  // Hidden - semi-transparent ghosted shimmer effect
+  if (isHidden(card) && areAbilitiesActive(card) && !card.keywords?.includes('Stalking')) {
+    const overlay = document.createElement('div');
+    overlay.className = 'status-overlay hidden-overlay';
+    // Add heat wave distortion layers
+    for (let i = 0; i < 3; i++) {
+      const wave = document.createElement('div');
+      wave.className = `hidden-wave wave-${i + 1}`;
+      overlay.appendChild(wave);
+    }
+    cardElement.appendChild(overlay);
+  }
+
+  // Invisible - prismatic edge refraction (more intense than Hidden)
+  if (isInvisible(card) && areAbilitiesActive(card)) {
+    const overlay = document.createElement('div');
+    overlay.className = 'status-overlay invisible-overlay';
+    // Add prismatic refraction elements
+    const prismPositions = ['top', 'right', 'bottom', 'left'];
+    prismPositions.forEach(pos => {
+      const prism = document.createElement('div');
+      prism.className = `prism-edge prism-${pos}`;
+      overlay.appendChild(prism);
+    });
+    cardElement.appendChild(overlay);
+  }
+
+  // Venom - dripping green liquid from corners
+  if (hasVenom(card) && areAbilitiesActive(card)) {
+    const overlay = document.createElement('div');
+    overlay.className = 'status-overlay venom-overlay';
+    // Add drip elements
+    const dripPositions = ['left-1', 'left-2', 'right-1', 'right-2'];
+    dripPositions.forEach((pos, index) => {
+      const drip = document.createElement('div');
+      drip.className = `venom-drip drip-${pos}`;
+      drip.style.animationDelay = `${index * 0.4}s`;
+      overlay.appendChild(drip);
+    });
+    // Add pooling effect at bottom
+    const pool = document.createElement('div');
+    pool.className = 'venom-pool';
+    overlay.appendChild(pool);
+    cardElement.appendChild(overlay);
+  }
+
+  // Toxic - green aura wisping off edges
+  if (hasToxic(card) && areAbilitiesActive(card)) {
+    const overlay = document.createElement('div');
+    overlay.className = 'status-overlay toxic-overlay';
+    // Add smoke wisp elements
+    for (let i = 0; i < 5; i++) {
+      const wisp = document.createElement('div');
+      wisp.className = `toxic-wisp wisp-${i + 1}`;
+      overlay.appendChild(wisp);
+    }
+    cardElement.appendChild(overlay);
+  }
+
+  // Acuity - targeting scanner sweep effect
+  if (hasAcuity(card) && areAbilitiesActive(card)) {
+    const overlay = document.createElement('div');
+    overlay.className = 'status-overlay acuity-overlay';
+    // Add scanner line
+    const scanner = document.createElement('div');
+    scanner.className = 'acuity-scanner';
+    overlay.appendChild(scanner);
+    // Add corner brackets (targeting reticle)
+    const bracketPositions = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+    bracketPositions.forEach(pos => {
+      const bracket = document.createElement('div');
+      bracket.className = `acuity-bracket bracket-${pos}`;
+      overlay.appendChild(bracket);
+    });
     cardElement.appendChild(overlay);
   }
 

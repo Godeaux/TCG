@@ -120,6 +120,9 @@ let onRematchUpdateCallback = null;
 let autoRestartTimer = null;
 let countdownInterval = null;
 
+// Track if we're in lightning mode (for skipping animations)
+let isLightningMode = false;
+
 // Store current game state reference for rematch UI updates
 let currentRematchState = null;
 
@@ -353,9 +356,15 @@ export const showVictoryScreen = (winner, stats = {}, options = {}) => {
   // Cancel any existing auto-restart timer
   cancelAutoRestart();
 
-  // Set winner name
+  // Set winner name (or "Draw" if no winner)
   if (winnerName) {
-    winnerName.textContent = winner.name || 'Unknown Champion';
+    if (options.isDraw) {
+      winnerName.textContent = 'Draw!';
+    } else if (options.stalemateWin) {
+      winnerName.textContent = `${winner?.name || 'Unknown'} wins by HP!`;
+    } else {
+      winnerName.textContent = winner?.name || 'Unknown Champion';
+    }
   }
 
   // Set stats
@@ -432,6 +441,22 @@ export const showVictoryScreen = (winner, stats = {}, options = {}) => {
 
   // AI vs AI mode: Add auto-restart countdown
   if (options.isAIvsAI && onAIvsAIRestartCallback) {
+    // Track lightning mode at module level for hideVictoryScreen
+    isLightningMode = options.state?.menu?.aiSpeed === 'lightning';
+
+    // Lightning mode: restart immediately with no countdown UI
+    if (isLightningMode) {
+      autoRestartTimer = setTimeout(() => {
+        cancelAutoRestart();
+        hideVictoryScreen(() => {
+          if (onAIvsAIRestartCallback) {
+            onAIvsAIRestartCallback();
+          }
+        });
+      }, 1);
+      return;
+    }
+
     const COUNTDOWN_SECONDS = 5;
     let secondsRemaining = COUNTDOWN_SECONDS;
 
@@ -509,9 +534,11 @@ export const hideVictoryScreen = (callback) => {
   overlay.classList.remove('show');
   overlay.setAttribute('aria-hidden', 'true');
 
+  // Lightning mode: skip fade animation delay
+  const delay = isLightningMode ? 1 : 1000;
   setTimeout(() => {
     if (callback) callback();
-  }, 1000); // Wait for fade out animation
+  }, delay);
 };
 
 /**
@@ -556,6 +583,84 @@ const shouldAwardPack = (state, winner, loser) => {
  * @returns {boolean} True if game is over, false otherwise
  */
 export const checkForVictory = (state) => {
+  // Don't check for victory if game hasn't properly started
+  if (!state.players || state.players.length < 2) {
+    return false;
+  }
+  if (state.setup?.stage !== 'complete') {
+    return false;
+  }
+  // Need at least turn 1 to have started
+  if (!state.turn || state.turn < 1) {
+    return false;
+  }
+
+  // Check for stalemate: both players have no cards anywhere and can't do anything
+  const isStalemate = state.players.every(
+    (player) =>
+      player.hand.length === 0 &&
+      player.deck.length === 0 &&
+      player.field.every((slot) => slot === null)
+  );
+
+  if (isStalemate) {
+    // Prevent re-processing
+    if (state.victoryProcessed) {
+      return true;
+    }
+    state.victoryProcessed = true;
+
+    const [player0, player1] = state.players;
+    const stats = {
+      turns: state.turn || 1,
+      cardsPlayed: calculateCardsPlayed(state),
+      creaturesDefeated: calculateCreaturesDefeated(state),
+    };
+
+    const isAIvsAI = state.menu?.mode === 'aiVsAi';
+    const isOnline = state.menu?.mode === 'online';
+
+    // Determine winner by HP, or draw if equal
+    let winner = null;
+    let loser = null;
+    let isDraw = false;
+
+    if (player0.hp > player1.hp) {
+      winner = player0;
+      loser = player1;
+    } else if (player1.hp > player0.hp) {
+      winner = player1;
+      loser = player0;
+    } else {
+      // Equal HP = draw
+      isDraw = true;
+    }
+
+    if (isDraw) {
+      // Handle draw
+      state.winner = 'draw';
+      if (isAIvsAI) {
+        simOnGameEnded(state).catch((err) => {
+          console.error('[VictoryOverlay] Failed to notify simulation harness:', err);
+        });
+      }
+      showVictoryScreen(null, stats, { awardPack: false, state, isAIvsAI, isOnline, isDraw: true });
+    } else {
+      // Winner determined by HP
+      const awardPack = shouldAwardPack(state, winner, loser);
+      updateProfileStatsOnVictory(state, winner, loser);
+      if (isAIvsAI) {
+        state.winner = state.players.indexOf(winner);
+        simOnGameEnded(state).catch((err) => {
+          console.error('[VictoryOverlay] Failed to notify simulation harness:', err);
+        });
+      }
+      showVictoryScreen(winner, stats, { awardPack, state, isAIvsAI, isOnline, stalemateWin: true });
+    }
+
+    return true;
+  }
+
   // Check if any player has 0 or less HP
   const winner = state.players.find((player) => player.hp > 0);
   const loser = state.players.find((player) => player.hp <= 0);

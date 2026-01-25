@@ -174,6 +174,7 @@ const renderOverviewTab = (stats) => {
             P2: ${session.wins?.player1 || 0}
           </div>
         </div>
+        ${session.wins?.draws > 0 ? `<div class="sim-draws">Draws: ${session.wins.draws}</div>` : ''}
       </div>
 
       <div class="sim-section">

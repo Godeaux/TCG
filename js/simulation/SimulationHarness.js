@@ -31,6 +31,7 @@ const simulationState = {
   // Stats for current session
   sessionStats: {
     wins: [0, 0],
+    draws: 0,
     totalTurns: 0,
     totalBugs: 0,
     fastestGame: Infinity,
@@ -79,6 +80,7 @@ export const startSimulation = async (options = {}) => {
   simulationState.sessionId = generateSessionId();
   simulationState.sessionStats = {
     wins: [0, 0],
+    draws: 0,
     totalTurns: 0,
     totalBugs: 0,
     fastestGame: Infinity,
@@ -203,6 +205,8 @@ export const onGameEnded = async (state) => {
 
   if (winner === 0 || winner === 1) {
     simulationState.sessionStats.wins[winner]++;
+  } else if (winner === 'draw') {
+    simulationState.sessionStats.draws++;
   }
 
   if (turns > 0) {
@@ -376,6 +380,7 @@ export const getSessionSummary = () => {
     wins: {
       player0: simulationState.sessionStats.wins[0],
       player1: simulationState.sessionStats.wins[1],
+      draws: simulationState.sessionStats.draws,
       winRate0:
         simulationState.gamesCompleted > 0
           ? Math.round(

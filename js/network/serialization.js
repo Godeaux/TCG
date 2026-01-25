@@ -49,6 +49,8 @@ export const serializeCardSnapshot = (card) => {
     hasBarrier: card.hasBarrier ?? false,
     frozen: card.frozen ?? false,
     frozenDiesTurn: card.frozenDiesTurn ?? null,
+    paralyzed: card.paralyzed ?? false,
+    paralyzedUntilTurn: card.paralyzedUntilTurn ?? null,
     dryDropped: card.dryDropped ?? false,
     isToken: card.isToken ?? false,
     abilitiesCancelled: card.abilitiesCancelled ?? false,
@@ -97,6 +99,8 @@ export const hydrateCardSnapshot = (snapshot, fallbackTurn) => {
   instance.hasBarrier = snapshot.hasBarrier ?? instance.hasBarrier;
   instance.frozen = snapshot.frozen ?? instance.frozen;
   instance.frozenDiesTurn = snapshot.frozenDiesTurn ?? instance.frozenDiesTurn;
+  instance.paralyzed = snapshot.paralyzed ?? instance.paralyzed;
+  instance.paralyzedUntilTurn = snapshot.paralyzedUntilTurn ?? instance.paralyzedUntilTurn;
   instance.dryDropped = snapshot.dryDropped ?? false;
   instance.isToken = snapshot.isToken ?? instance.isToken;
   if (Array.isArray(snapshot.keywords)) {

@@ -565,7 +565,18 @@ export const resolveEffectResult = (state, result, context) => {
   }
 
   if (result.copyAbilities) {
-    const { target, source } = result.copyAbilities;
+    const { target: staleTarget, source } = result.copyAbilities;
+
+    // Refresh target reference to avoid stale object from multiplayer sync.
+    // When user selection is pending, sync can replace field objects, leaving
+    // context.creature pointing to an orphaned object instead of the actual card.
+    const targetOwnerIndex = findCardOwnerIndex(state, staleTarget);
+    const target =
+      targetOwnerIndex >= 0
+        ? state.players[targetOwnerIndex].field.find(
+            (c) => c?.instanceId === staleTarget.instanceId
+          ) ?? staleTarget
+        : staleTarget;
 
     // Check if source has onPlay effect that should be triggered (before we clear target)
     const sourceHasOnPlay = source.effects?.onPlay || source.onPlay;
@@ -656,7 +667,18 @@ export const resolveEffectResult = (state, result, context) => {
   }
 
   if (result.copyStats) {
-    const { target, source } = result.copyStats;
+    const { target: staleTarget, source } = result.copyStats;
+
+    // Refresh target reference to avoid stale object from multiplayer sync.
+    // When user selection is pending, sync can replace field objects, leaving
+    // context.creature pointing to an orphaned object instead of the actual card.
+    const targetOwnerIndex = findCardOwnerIndex(state, staleTarget);
+    const target =
+      targetOwnerIndex >= 0
+        ? state.players[targetOwnerIndex].field.find(
+            (c) => c?.instanceId === staleTarget.instanceId
+          ) ?? staleTarget
+        : staleTarget;
 
     // Copy ATK (use current if available, otherwise base)
     const sourceAtk = source.currentAtk ?? source.atk ?? 0;

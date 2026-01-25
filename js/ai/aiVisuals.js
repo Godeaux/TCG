@@ -31,6 +31,15 @@ const AI_VISUAL_TIMING = {
   COMBAT_CONSIDER_TARGET: { min: 600, max: 1200 }, // Target consideration
 };
 
+/**
+ * Check if visuals should be skipped (lightning mode for fastest AI vs AI)
+ * @param {Object} state - Game state
+ * @returns {boolean} True if visuals should be skipped
+ */
+const shouldSkipVisuals = (state) => {
+  return state?.menu?.aiSpeed === 'lightning';
+};
+
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
@@ -182,6 +191,11 @@ const removeFlyingCard = () => {
  * @returns {Promise} Resolves when animation sequence is complete
  */
 export const simulateAICardDrag = async (cardIndex, targetSlotIndex, state, playerIndex = 1) => {
+  // Skip visuals entirely in lightning mode for fastest AI vs AI
+  if (shouldSkipVisuals(state)) {
+    return;
+  }
+
   console.log(`[AI Visual] simulateAICardDrag called:`, {
     cardIndex,
     targetSlotIndex,
@@ -315,6 +329,11 @@ export const simulateAIHover = (cardIndex, playerIndex = 1) => {
  * @param {number} options.playerIndex - Which AI player (0 or 1)
  */
 export const simulateAICardPlay = async (cardIndex, options = {}) => {
+  // Skip visuals entirely in lightning mode for fastest AI vs AI
+  if (shouldSkipVisuals(options.state)) {
+    return;
+  }
+
   const playerIndex = options.playerIndex ?? 1;
   // Use new drag animation if we have slot info, otherwise fallback to hover
   await simulateAIHover(cardIndex, playerIndex);
@@ -577,7 +596,12 @@ export const clearAICombatHighlights = () => {
  * @param {Object} target - Target object { type: 'player'|'creature', card?, player? }
  * @returns {Promise} Resolves when visual sequence is complete
  */
-export const simulateAICombatSequence = async (attacker, target) => {
+export const simulateAICombatSequence = async (attacker, target, state = null) => {
+  // Skip visuals entirely in lightning mode for fastest AI vs AI
+  if (shouldSkipVisuals(state)) {
+    return;
+  }
+
   console.log('[AI Visual] Combat sequence:', { attacker: attacker?.name, target: target?.type });
 
   // Phase 1: Highlight attacker with orange glow

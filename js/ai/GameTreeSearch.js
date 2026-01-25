@@ -241,7 +241,13 @@ export class GameTreeSearch {
   }
 
   /**
-   * Alpha-beta search
+   * Alpha-beta search with Principal Variation Search (PVS) and Late Move Reductions (LMR)
+   *
+   * PVS: After searching the first (best) move with full window, use null window
+   * for remaining moves. Only re-search with full window if null window finds improvement.
+   *
+   * LMR: After the first few moves, search later moves at reduced depth.
+   * Re-search at full depth only if reduced search beats alpha.
    *
    * @param {Object} state - Game state
    * @param {number} depth - Remaining search depth
@@ -249,15 +255,16 @@ export class GameTreeSearch {
    * @param {number} beta - Beta bound (best score for minimizer)
    * @param {number} playerIndex - Original player (for evaluation perspective)
    * @param {boolean} maximizing - True if maximizing player's turn
+   * @param {boolean} isPVNode - True if this is a Principal Variation node (full window search)
    * @returns {{score: number, move: Object|null}}
    */
-  alphaBeta(state, depth, alpha, beta, playerIndex, maximizing) {
+  alphaBeta(state, depth, alpha, beta, playerIndex, maximizing, isPVNode = true) {
     this.stats.nodes++;
 
-    // Terminal conditions
+    // Terminal conditions - use quiescence search at depth 0
     if (depth === 0) {
       return {
-        score: this.evaluator.evaluatePosition(state, playerIndex),
+        score: this.quiescenceSearch(state, alpha, beta, playerIndex, maximizing, 0),
         move: null,
       };
     }
@@ -304,6 +311,14 @@ export class GameTreeSearch {
     let bestScore = maximizing ? -Infinity : Infinity;
     let flag = 'UPPER';
 
+    // LMR configuration
+    const LMR_FULL_DEPTH_MOVES = 4; // Search first 4 moves at full depth
+    const LMR_MIN_DEPTH = 3; // Only apply LMR at depth 3+
+    const LMR_REDUCTION = 1; // Reduce by 1 ply
+
+    let moveIndex = 0;
+    let searchedFirstMove = false;
+
     for (const move of moves) {
       // Skip END_TURN if we have other options and haven't done anything
       // (This is a heuristic to avoid early passes)
@@ -321,18 +336,107 @@ export class GameTreeSearch {
       // Recurse - only flip player perspective on END_TURN
       // PLAY_CARD and ATTACK don't end the turn, so same player continues
       const nextMaximizing = move.type === 'END_TURN' ? !maximizing : maximizing;
-      const childResult = this.alphaBeta(
-        simResult.state,
-        depth - 1,
-        alpha,
-        beta,
-        playerIndex,
-        nextMaximizing
-      );
+
+      let childScore;
+
+      // ========== PVS + LMR Implementation ==========
+
+      // Calculate LMR reduction for this move
+      let reduction = 0;
+      if (
+        moveIndex >= LMR_FULL_DEPTH_MOVES &&
+        depth >= LMR_MIN_DEPTH &&
+        !isPVNode &&
+        move.type !== 'ATTACK' // Don't reduce tactical moves
+      ) {
+        reduction = LMR_REDUCTION;
+      }
+
+      if (!searchedFirstMove) {
+        // First move: full window search (PV node)
+        const childResult = this.alphaBeta(
+          simResult.state,
+          depth - 1,
+          alpha,
+          beta,
+          playerIndex,
+          nextMaximizing,
+          true // isPVNode
+        );
+        childScore = childResult.score;
+        searchedFirstMove = true;
+      } else {
+        // Subsequent moves: null window search (PVS) with potential LMR
+
+        // Step 1: Reduced depth null window search (if LMR applies)
+        const searchDepth = depth - 1 - reduction;
+        let childResult = this.alphaBeta(
+          simResult.state,
+          searchDepth,
+          maximizing ? alpha : beta - 1,
+          maximizing ? alpha + 1 : beta,
+          playerIndex,
+          nextMaximizing,
+          false // Not a PV node
+        );
+        childScore = childResult.score;
+
+        // Step 2: If LMR was applied and score beats alpha, re-search at full depth
+        if (reduction > 0 && maximizing && childScore > alpha) {
+          childResult = this.alphaBeta(
+            simResult.state,
+            depth - 1, // Full depth
+            alpha,
+            alpha + 1, // Still null window
+            playerIndex,
+            nextMaximizing,
+            false
+          );
+          childScore = childResult.score;
+        } else if (reduction > 0 && !maximizing && childScore < beta) {
+          childResult = this.alphaBeta(
+            simResult.state,
+            depth - 1,
+            beta - 1,
+            beta,
+            playerIndex,
+            nextMaximizing,
+            false
+          );
+          childScore = childResult.score;
+        }
+
+        // Step 3: If null window search found a better move, re-search with full window
+        if (maximizing && childScore > alpha && childScore < beta) {
+          childResult = this.alphaBeta(
+            simResult.state,
+            depth - 1,
+            alpha,
+            beta,
+            playerIndex,
+            nextMaximizing,
+            true // Now it's a PV node
+          );
+          childScore = childResult.score;
+        } else if (!maximizing && childScore < beta && childScore > alpha) {
+          childResult = this.alphaBeta(
+            simResult.state,
+            depth - 1,
+            alpha,
+            beta,
+            playerIndex,
+            nextMaximizing,
+            true
+          );
+          childScore = childResult.score;
+        }
+      }
+
+      // ========== Standard alpha-beta update ==========
 
       if (maximizing) {
-        if (childResult.score > bestScore) {
-          bestScore = childResult.score;
+        if (childScore > bestScore) {
+          bestScore = childScore;
           bestMove = move;
         }
 
@@ -349,8 +453,8 @@ export class GameTreeSearch {
           flag = 'EXACT';
         }
       } else {
-        if (childResult.score < bestScore) {
-          bestScore = childResult.score;
+        if (childScore < bestScore) {
+          bestScore = childScore;
           bestMove = move;
         }
 
@@ -367,6 +471,8 @@ export class GameTreeSearch {
           flag = 'EXACT';
         }
       }
+
+      moveIndex++;
     }
 
     // Store in transposition table

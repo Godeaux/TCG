@@ -18,6 +18,7 @@ import { initializeCardRegistry } from './cards/index.js';
 import { initializeAI, cleanupAI, checkAndTriggerAITurn } from './ai/index.js';
 import { generateAIvsAIDecks } from './ui/overlays/DeckBuilderOverlay.js';
 import { isSelectionActive } from './ui/components/index.js';
+import { onActionExecuted as simOnActionExecuted } from './simulation/index.js';
 
 // Initialize the card registry (loads JSON card data)
 initializeCardRegistry();
@@ -55,10 +56,18 @@ const checkWinCondition = () => {
 // The AI controller now directly modifies game state, so these just refresh UI
 const aiCallbacks = {
   onAIPlayCard: (card, slotIndex, options) => {
+    // Track the action for simulation stats (cards/synergies)
+    if (isAIvsAIMode(state)) {
+      simOnActionExecuted({ type: 'PLAY_CARD', payload: { card } }, state);
+    }
     // AI has already modified game state, just refresh UI
     refresh();
   },
   onAIAttack: (attacker, target) => {
+    // Track combat actions for simulation stats
+    if (isAIvsAIMode(state)) {
+      simOnActionExecuted({ type: 'DECLARE_ATTACK', payload: { attacker, target } }, state);
+    }
     // AI has already resolved combat, just refresh UI
     refresh();
   },

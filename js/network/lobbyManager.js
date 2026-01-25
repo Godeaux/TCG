@@ -779,6 +779,130 @@ export const checkExistingLobby = async (state) => {
   }
 };
 
+// ============================================================================
+// REJOIN DETECTION
+// ============================================================================
+
+const REJOIN_TIMEOUT_MS = 60000; // 60 seconds
+
+/**
+ * Save rejoin info when both players are in a lobby
+ * Called when lobby becomes full (has both host and guest)
+ */
+export const saveRejoinInfo = (lobbyCode, otherPlayerId) => {
+  if (!lobbyCode || !otherPlayerId) return;
+
+  const rejoinInfo = {
+    lobbyCode,
+    otherPlayerId,
+    timestamp: Date.now(),
+  };
+  localStorage.setItem('rejoinLobbyInfo', JSON.stringify(rejoinInfo));
+};
+
+/**
+ * Get rejoin info if still valid (within timeout)
+ * Returns null if expired or not found
+ */
+export const getRejoinInfo = () => {
+  try {
+    const stored = localStorage.getItem('rejoinLobbyInfo');
+    if (!stored) return null;
+
+    const info = JSON.parse(stored);
+    const elapsed = Date.now() - info.timestamp;
+
+    if (elapsed > REJOIN_TIMEOUT_MS) {
+      localStorage.removeItem('rejoinLobbyInfo');
+      return null;
+    }
+
+    return info;
+  } catch {
+    localStorage.removeItem('rejoinLobbyInfo');
+    return null;
+  }
+};
+
+/**
+ * Clear rejoin info (called on intentional lobby leave)
+ */
+export const clearRejoinInfo = () => {
+  localStorage.removeItem('rejoinLobbyInfo');
+};
+
+/**
+ * Check if rejoin is available
+ * Returns rejoin info if: within timeout + other player is online
+ */
+export const checkRejoinAvailable = async (state) => {
+  const { isUserOnline } = await import('./presenceManager.js');
+
+  const info = getRejoinInfo();
+  if (!info) return null;
+
+  // Check if other player is still online
+  if (!isUserOnline(info.otherPlayerId)) {
+    return null;
+  }
+
+  return info;
+};
+
+/**
+ * Handle rejoin from main menu
+ * Looks up lobby by code and joins it
+ */
+export const handleMenuRejoin = async (state) => {
+  const rejoinInfo = getRejoinInfo();
+  if (!rejoinInfo) {
+    setMenuError(state, 'No lobby to rejoin.');
+    return { success: false };
+  }
+
+  if (!state.menu.profile) {
+    setMenuStage(state, 'login');
+    callbacks.onUpdate?.();
+    return { success: false };
+  }
+
+  applyMenuLoading(state, true);
+  setMenuError(state, null);
+  callbacks.onUpdate?.();
+
+  try {
+    const api = await loadSupabaseApi(state);
+
+    // Find the lobby by code
+    const lobby = await api.findLobbyByCode({ code: rejoinInfo.lobbyCode });
+    if (!lobby) {
+      clearRejoinInfo();
+      setMenuError(state, 'Lobby no longer exists.');
+      applyMenuLoading(state, false);
+      callbacks.onUpdate?.();
+      return { success: false };
+    }
+
+    // Set as existing lobby and use standard rejoin flow
+    state.menu.existingLobby = lobby;
+    state.menu.lobby = lobby;
+    state.menu.gameInProgress = false;
+    setMenuStage(state, 'lobby');
+    updateLobbySubscription(state);
+    updateLobbyPlayerNames(state, lobby);
+
+    return { success: true, lobby };
+  } catch (error) {
+    const message = error.message || 'Failed to rejoin lobby.';
+    setMenuError(state, message);
+    clearRejoinInfo();
+    return { success: false, error: message };
+  } finally {
+    applyMenuLoading(state, false);
+    callbacks.onUpdate?.();
+  }
+};
+
 /**
  * Create a fresh lobby for duel invites (always new, no rejoin logic)
  * Does NOT navigate to lobby screen - caller handles UI
@@ -1016,11 +1140,13 @@ export const handleBackFromLobby = async (state) => {
     setMenuStage(state, 'main');
     state.menu.lobby = null;
     updateLobbySubscription(state);
+    clearRejoinInfo();
     return { success: true };
   }
 
   applyMenuLoading(state, true);
   setMenuError(state, null);
+  clearRejoinInfo();
   callbacks.onUpdate?.();
 
   try {
@@ -1048,11 +1174,13 @@ export const handleLeaveLobby = async (state) => {
     setMenuStage(state, 'multiplayer');
     state.menu.lobby = null;
     updateLobbySubscription(state);
+    clearRejoinInfo();
     return { success: true };
   }
 
   applyMenuLoading(state, true);
   setMenuError(state, null);
+  clearRejoinInfo();
   callbacks.onUpdate?.();
 
   try {
@@ -1130,6 +1258,13 @@ export const updateLobbySubscription = (state, { force = false } = {}) => {
     }
     if (lobby) {
       updateLobbyPlayerNames(state, lobby);
+
+      // Save rejoin info when both players are present
+      if (lobby.host_id && lobby.guest_id && state.menu.profile?.id) {
+        const myId = state.menu.profile.id;
+        const otherId = lobby.host_id === myId ? lobby.guest_id : lobby.host_id;
+        saveRejoinInfo(lobby.code, otherId);
+      }
     }
     callbacks.onUpdate?.();
   };

@@ -246,6 +246,7 @@ import {
   handleBackFromLobby as lobbyHandleBackFromLobby,
   handleLeaveLobby as lobbyHandleLeaveLobby,
   handleFindMatch as lobbyHandleFindMatch,
+  handleMenuRejoin as lobbyHandleMenuRejoin,
   handleCancelMatchmaking as lobbyHandleCancelMatchmaking,
   updateLobbyPlayerNames,
   updateLobbySubscription,
@@ -460,6 +461,11 @@ const handleLeaveLobby = async (state) => {
 // UI wrapper for find match (matchmaking)
 const handleFindMatch = async (state) => {
   await lobbyHandleFindMatch(state);
+};
+
+// UI wrapper for menu rejoin (main menu rejoin button)
+const handleMenuRejoin = async (state) => {
+  await lobbyHandleMenuRejoin(state);
 };
 
 // UI wrapper for cancel matchmaking
@@ -933,25 +939,36 @@ const updatePlayerStats = (state, index, role, onUpdate = null) => {
       // Update display based on speed
       if (currentSpeed === 'paused') {
         speedBtn.textContent = '\u{23F8}'; // Pause symbol
-        speedBtn.title = 'AI Paused - Click to resume (fast)';
+        speedBtn.title = 'AI Paused - Click for lightning mode';
         speedBtn.classList.add('ai-paused');
+        speedBtn.classList.remove('ai-lightning');
       } else if (currentSpeed === 'slow') {
         speedBtn.textContent = '\u{1F422}'; // Turtle
         speedBtn.title = 'Slow mode - Click to pause';
         speedBtn.classList.remove('ai-paused');
+        speedBtn.classList.remove('ai-lightning');
+      } else if (currentSpeed === 'lightning') {
+        speedBtn.textContent = '\u{26A1}'; // Lightning bolt
+        speedBtn.title = 'Lightning mode (fastest) - Click for fast mode';
+        speedBtn.classList.remove('ai-paused');
+        speedBtn.classList.add('ai-lightning');
       } else {
         speedBtn.textContent = '\u{1F407}'; // Rabbit
         speedBtn.title = 'Fast mode - Click for slow mode';
         speedBtn.classList.remove('ai-paused');
+        speedBtn.classList.remove('ai-lightning');
       }
       speedBtn.onclick = (e) => {
         e.stopPropagation();
-        // Cycle: fast -> slow -> paused -> fast
+        // Cycle: fast -> slow -> paused -> lightning -> fast
         if (currentSpeed === 'fast') {
           state.menu.aiSpeed = 'slow';
           state.menu.aiSlowMode = true; // Keep backwards compat
         } else if (currentSpeed === 'slow') {
           state.menu.aiSpeed = 'paused';
+        } else if (currentSpeed === 'paused') {
+          state.menu.aiSpeed = 'lightning';
+          state.menu.aiSlowMode = false;
         } else {
           state.menu.aiSpeed = 'fast';
           state.menu.aiSlowMode = false; // Keep backwards compat
@@ -4387,6 +4404,7 @@ export const renderGame = (state, callbacks = {}) => {
         handleLeaveLobby,
         handleBackFromLobby,
         handleFindMatch,
+        handleMenuRejoin,
         handleCancelMatchmaking,
         ensureDecksLoaded,
         getOpponentDisplayName,

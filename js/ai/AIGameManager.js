@@ -19,6 +19,8 @@ import {
   onGameStarted as simOnGameStarted,
   onGameEnded as simOnGameEnded,
   connectToBugDetector,
+  startSimulation,
+  getSimulationStatus,
 } from '../simulation/index.js';
 
 // ============================================================================
@@ -53,6 +55,9 @@ const MAX_RECOVERY_ATTEMPTS = 3;
  */
 const getAIDelay = (state, fastDelay = 100) => {
   const speed = state.menu?.aiSpeed || (state.menu?.aiSlowMode ? 'slow' : 'fast');
+  if (speed === 'lightning') {
+    return 1; // Absolute minimum for lightning mode
+  }
   if (speed === 'slow') {
     return fastDelay * 4; // 4x slower in slow mode
   }
@@ -120,6 +125,22 @@ export const initializeAI = (state, options = {}) => {
     });
     getBugDetector().enable({ simulationMode: true });
     logMessage(state, `Bug detector enabled (simulation mode - bugs won't pause game).`);
+
+    // Start simulation harness for analytics tracking (only if not already running)
+    // The VictoryOverlay will call onGameEnded, and onAIvsAIRestart callback handles new games
+    const simStatus = getSimulationStatus();
+    if (!simStatus.isRunning) {
+      startSimulation({
+        // Provide startNewGame callback to prevent simulation from stopping
+        // The actual game restart is handled by VictoryOverlay's 5-second countdown
+        startNewGame: () => {
+          console.log('[AIManager] Simulation harness requested new game - VictoryOverlay handles this');
+        },
+        onGameStart: (gameNum, gameState) => console.log(`[SimHarness] Game ${gameNum} started`),
+        onGameEnd: (result) => console.log(`[SimHarness] Game ${result.gameNumber} ended, winner: ${result.winner}`),
+        onStatsUpdate: () => {}, // Dashboard pulls stats via getFullStatistics()
+      });
+    }
 
     // Connect simulation harness to bug detector for analytics
     connectToBugDetector();
@@ -400,7 +421,14 @@ export const checkAndTriggerAITurn = (state, callbacks) => {
     );
     // Use setTimeout to allow UI to update first
     // Shorter delay for AI vs AI mode for faster gameplay
-    const delay = isAIvsAIMode(state) ? 200 : 500;
+    // Lightning mode uses minimum delay
+    const speed = state.menu?.aiSpeed;
+    let delay = 500;
+    if (speed === 'lightning') {
+      delay = 1;
+    } else if (isAIvsAIMode(state)) {
+      delay = 200;
+    }
     console.log(
       `[AIManager] checkAndTriggerAITurn: scheduling executeAITurn with ${delay}ms delay`
     );

@@ -531,6 +531,30 @@ export const createLobby = async ({ hostId, forceNew = false, checkGameInProgres
   throw new Error('Unable to generate a lobby code.');
 };
 
+/**
+ * Find a lobby by code (does not modify the lobby)
+ * @param {Object} params
+ * @param {string} params.code - The lobby code to search for
+ * @returns {Promise<Object|null>} The lobby or null if not found/closed
+ */
+export const findLobbyByCode = async ({ code }) => {
+  if (!code) {
+    return null;
+  }
+  const trimmed = code.trim().toUpperCase();
+  const { data: lobby, error } = await supabase
+    .from('lobbies')
+    .select('id, code, status, host_id, guest_id')
+    .eq('code', trimmed)
+    .neq('status', 'closed')
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+  return lobby ?? null;
+};
+
 export const joinLobbyByCode = async ({ code, guestId }) => {
   if (!code) {
     throw new Error('Enter a lobby code.');
