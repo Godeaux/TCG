@@ -725,7 +725,7 @@ const placeCreatureInSpecificSlot = (card, slotIndex) => {
         applyEffectResult(result, state, latestCallbacks.onUpdate);
       }
     }
-    if (!isFree) {
+    if (!isTrulyFree) {
       state.cardPlayedThisTurn = true;
     }
     latestCallbacks.onUpdate?.();

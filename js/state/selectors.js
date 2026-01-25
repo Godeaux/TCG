@@ -648,14 +648,14 @@ const getNutritionValue = (creature) => {
 /**
  * Check if a player can consume any prey with their predators
  * Used for auto-end turn detection during Main phases
+ *
+ * Checks two scenarios:
+ * 1. Predators on field can consume prey/edible predators on field
+ * 2. Predators in hand can be played directly onto prey on field (play-and-consume)
  */
 export const canConsumeAnyPrey = (state, playerIndex) => {
   const player = state.players[playerIndex];
   if (!player) return false;
-
-  // Get all predators on field that can consume (not frozen)
-  const predators = player.field.filter((c) => c && c.type === 'Predator' && !cantConsume(c));
-  if (predators.length === 0) return false;
 
   // Get all consumable creatures on field (Prey or Edible Predators, using cantBeConsumed primitive)
   const consumableCreatures = player.field.filter(
@@ -666,14 +666,30 @@ export const canConsumeAnyPrey = (state, playerIndex) => {
   );
   if (consumableCreatures.length === 0) return false;
 
-  // Check if any predator can consume any prey
-  for (const predator of predators) {
+  // Check if any predator on field can consume any prey
+  const predatorsOnField = player.field.filter((c) => c && c.type === 'Predator' && !cantConsume(c));
+  for (const predator of predatorsOnField) {
     const predatorAtk = predator.currentAtk ?? predator.atk ?? 0;
     for (const prey of consumableCreatures) {
       if (predator.instanceId === prey.instanceId) continue; // Can't consume itself
       const preyNut = getNutritionValue(prey);
       if (preyNut <= predatorAtk) {
-        return true; // Found a valid consumption
+        return true; // Found a valid consumption on field
+      }
+    }
+  }
+
+  // Check if any predator in hand could be played directly onto prey on field
+  // This requires the card limit to be available (predators always consume the limit)
+  if (!wasCardPlayedThisTurn(state)) {
+    const predatorsInHand = player.hand.filter((c) => c && c.type === 'Predator');
+    for (const predator of predatorsInHand) {
+      const predatorAtk = predator.currentAtk ?? predator.atk ?? 0;
+      for (const prey of consumableCreatures) {
+        const preyNut = getNutritionValue(prey);
+        if (preyNut <= predatorAtk) {
+          return true; // Found a valid play-and-consume from hand
+        }
       }
     }
   }

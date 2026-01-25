@@ -21,6 +21,10 @@ import { stripAbilities } from '../game/effects.js';
 import { cleanupDestroyed } from '../game/combat.js';
 import { logMessage } from '../state/gameState.js';
 
+// Monotonic sequence counter to ensure unique broadcast ordering
+// This prevents timestamp collisions when multiple broadcasts occur in the same millisecond
+let broadcastSequence = 0;
+
 // ============================================================================
 // CARD SERIALIZATION
 // ============================================================================
@@ -217,7 +221,9 @@ export const buildLobbySyncPayload = (state) => ({
     winnerIndex: state.setup?.winnerIndex ?? null,
   },
   senderId: state.menu?.profile?.id ?? null,
-  timestamp: Date.now(),
+  // Combine Date.now() with monotonic sequence to guarantee unique ordering
+  // even when multiple broadcasts occur in the same millisecond
+  timestamp: Date.now() + (++broadcastSequence) / 10000,
 });
 
 // ============================================================================
