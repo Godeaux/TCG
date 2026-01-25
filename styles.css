@@ -6461,18 +6461,23 @@ select.menu-input option {
   }
 
   /* My Decks screen - fill full height on mobile */
-  .deck-select-overlay .overlay-content.deck-select-card {
-    height: calc(100dvh - 40px);
-    max-height: calc(100dvh - 40px);
+  .deck-select-overlay.overlay {
+    padding: 12px;
   }
 
-  /* My Decks horizontal layout - stack vertically on mobile */
+  .deck-select-overlay .overlay-content.deck-select-card {
+    height: calc(100dvh - 24px);
+    max-height: calc(100dvh - 24px);
+    min-height: calc(100dvh - 24px);
+  }
+
+  /* My Decks horizontal layout - stack vertically on mobile, fill available space */
   .deck-catalog-home--horizontal {
     flex-direction: column;
     flex-wrap: nowrap;
     overflow-x: hidden;
     overflow-y: auto;
-    flex: 1;
+    flex: 1 1 0;
     min-height: 0;
     padding: 12px;
     gap: 12px;
@@ -6482,16 +6487,16 @@ select.menu-input option {
     width: 100%;
     max-width: 100%;
     min-width: 100%;
-    max-height: 250px;
+    flex-shrink: 0;
   }
 
   .deck-column-cards {
-    max-height: 150px;
+    max-height: none;
+    flex: 1;
   }
 
   .deck-column--view-all,
   .deck-column--create {
-    max-height: 120px;
     min-height: 100px;
   }
 
