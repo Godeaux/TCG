@@ -225,12 +225,18 @@ export class GameController {
     const opponentIndex = (this.state.activePlayerIndex + 1) % 2;
 
     // Check card limit
-    const isFree = card.type === 'Free Spell' || card.type === 'Trap' || isFreePlay(card);
-    if (!isFree && this.state.cardPlayedThisTurn) {
+    // Per CORE-RULES.md: Free Play keyword and Free Spell both require limit to be available
+    // They don't consume the limit, but can only be played while it's unused
+    // Traps are activated from hand on opponent's turn, not "played" during your turn
+    if (card.type !== 'Trap' && this.state.cardPlayedThisTurn) {
       logMessage(this.state, 'You have already played a card this turn.');
       this.notifyStateChange();
       return { success: false, error: 'Card limit reached' };
     }
+
+    // Determine if this card consumes the limit when played
+    // Free Spell and Free Play keyword cards don't consume the limit
+    const isFree = card.type === 'Free Spell' || card.type === 'Trap' || isFreePlay(card);
 
     // Route by card type
     if (card.type === 'Spell' || card.type === 'Free Spell') {

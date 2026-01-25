@@ -883,9 +883,9 @@ export const handleMenuRejoin = async (state) => {
       return { success: false };
     }
 
-    // Set as existing lobby and use standard rejoin flow
-    state.menu.existingLobby = lobby;
+    // Go directly to lobby (don't set existingLobby to avoid showing rejoin button)
     state.menu.lobby = lobby;
+    state.menu.existingLobby = null; // Clear to prevent "Rejoin Lobby" button from showing
     state.menu.gameInProgress = false;
     setMenuStage(state, 'lobby');
     updateLobbySubscription(state);

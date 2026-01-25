@@ -132,6 +132,8 @@ export class PlayEvaluator {
    */
   evaluateDefensiveValue(card, state, aiPlayerIndex, reasons) {
     let bonus = 0;
+    const ai = state.players[aiPlayerIndex];
+    const opponent = state.players[1 - aiPlayerIndex];
 
     if (!isCreatureCard(card)) {
       // Check for defensive spells
@@ -148,6 +150,68 @@ export class PlayEvaluator {
         bonus += 25;
         reasons.push('Freeze when threatened: +25');
       }
+
+      // Handle selectFromGroup damage/kill effects (like Harpoon)
+      if (effect?.type === 'selectFromGroup') {
+        const targetGroup = effect.params?.targetGroup;
+        const nestedEffect = effect.params?.effect;
+
+        if (targetGroup?.includes('enemy') && nestedEffect) {
+          const damageAmount = nestedEffect.damage ?? 0;
+          const stealsTarget = nestedEffect.steal === true;
+          const isKillEffect = nestedEffect.type === 'kill';
+
+          // Check if this can kill OR STEAL a lethal threat
+          const lethalThreats = opponent.field.filter((c) => {
+            if (!c || c.currentHp <= 0) return false;
+            const atk = c.currentAtk ?? c.atk ?? 0;
+            return atk >= ai.hp;
+          });
+
+          for (const threat of lethalThreats) {
+            const hp = threat.currentHp ?? threat.hp ?? 0;
+            const atk = threat.currentAtk ?? threat.atk ?? 0;
+
+            if (isKillEffect || damageAmount >= hp) {
+              // This spell can KILL a lethal threat - massive bonus!
+              bonus += 80;
+              reasons.push(`KILLS LETHAL THREAT (${threat.name}): +80`);
+              return bonus;
+            }
+
+            // STEAL is even better than kill - we GAIN the threat!
+            if (stealsTarget && damageAmount < hp) {
+              // We steal the creature instead of killing it
+              // This is HUGE: remove their threat + gain it ourselves
+              bonus += 120; // Even bigger than kill bonus
+              reasons.push(`STEALS LETHAL THREAT (${threat.name} ${atk}/${hp - damageAmount}): +120`);
+              return bonus;
+            }
+          }
+
+          // Even partial damage to lethal threats is valuable
+          if (lethalThreats.length > 0 && damageAmount > 0) {
+            bonus += 30;
+            reasons.push(`Damages lethal threat: +30`);
+          }
+
+          // Stealing non-lethal creatures is still good
+          if (stealsTarget && lethalThreats.length === 0) {
+            const stealTargets = opponent.field.filter((c) => c && c.currentHp > damageAmount);
+            if (stealTargets.length > 0) {
+              bonus += 25;
+              reasons.push(`Can steal creature: +25`);
+            }
+          }
+        }
+      }
+
+      // Handle damageAllEnemyCreatures
+      if (effect?.type === 'damageAllEnemyCreatures') {
+        bonus += 15;
+        reasons.push('AoE damage when threatened: +15');
+      }
+
       return bonus;
     }
 

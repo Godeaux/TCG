@@ -14,7 +14,7 @@
  */
 
 import { SelectionEnumerator } from './SelectionEnumerator.js';
-import { hasKeyword, KEYWORDS, isPassive, isFreePlay, cantAttack } from '../keywords.js';
+import { hasKeyword, KEYWORDS, isPassive, isFreePlay, cantAttack, hasHaste } from '../keywords.js';
 import { hasCreatureAttacked } from '../state/selectors.js';
 import { canPlayCard } from '../game/turnManager.js';
 
@@ -81,15 +81,19 @@ export class MoveGenerator {
     const player = state.players[playerIndex];
 
     // Check if card limit reached (1 non-free card per turn)
+    // Per CORE-RULES.md: Free Play keyword and Free Spell both require limit to be available
+    // They don't consume the limit, but can only be played while it's unused
     const cardLimitReached = state.cardPlayedThisTurn;
 
     for (const card of player.hand) {
-      // Check if this card can be played
-      const isFree = card.type === 'Free Spell' || card.type === 'Trap' || isFreePlay(card);
-
-      if (!isFree && cardLimitReached) {
-        continue; // Can't play non-free cards if limit reached
+      // If limit is reached, no cards can be played (Traps aren't "played" - they trigger from hand)
+      if (cardLimitReached && card.type !== 'Trap') {
+        continue;
       }
+
+      // Determine if this card consumes the limit when played
+      // Free Spell and Free Play keyword cards don't consume the limit
+      const isFree = card.type === 'Free Spell' || card.type === 'Trap' || isFreePlay(card);
 
       if (card.type === 'Creature' || card.type === 'Predator' || card.type === 'Prey') {
         // Creatures need a slot
@@ -107,6 +111,9 @@ export class MoveGenerator {
 
   /**
    * Generate all creature play variations
+   *
+   * OPTIMIZATION: Selection paths are slot-independent, so we enumerate ONCE
+   * per card and reuse for all empty slots. This reduces enumeration by ~3x.
    *
    * @param {Object} state - Game state
    * @param {Object} card - Creature card
@@ -130,17 +137,31 @@ export class MoveGenerator {
       return moves; // No slots available
     }
 
-    // For each slot, enumerate selection paths
-    for (const slot of emptySlots) {
-      // Normal play (with consumption)
-      const normalPaths = this.selectionEnumerator.enumerateCardPlaySelections(
-        state,
-        card,
-        slot,
-        playerIndex,
-        { dryDrop: false }
-      );
+    // OPTIMIZATION: Enumerate selection paths ONCE using first slot
+    // Selection choices (consumption targets, effect targets) don't depend on slot
+    const referenceSlot = emptySlots[0];
 
+    // Normal play (with consumption) - enumerate once
+    const normalPaths = this.selectionEnumerator.enumerateCardPlaySelections(
+      state,
+      card,
+      referenceSlot,
+      playerIndex,
+      { dryDrop: false }
+    );
+
+    // Dry drop (without consumption) - enumerate once
+    const dryDropPaths = this.selectionEnumerator.enumerateCardPlaySelections(
+      state,
+      card,
+      referenceSlot,
+      playerIndex,
+      { dryDrop: true }
+    );
+
+    // Generate moves for ALL empty slots using the cached selection paths
+    for (const slot of emptySlots) {
+      // Normal plays
       for (const path of normalPaths) {
         if (path.success) {
           moves.push({
@@ -150,20 +171,13 @@ export class MoveGenerator {
             dryDrop: false,
             isFree,
             selections: path.selections,
-            resultingState: path.resultingState,
+            // Note: resultingState is from referenceSlot but MoveSimulator
+            // re-simulates anyway, so this is fine
           });
         }
       }
 
-      // Dry drop option (without consumption)
-      const dryDropPaths = this.selectionEnumerator.enumerateCardPlaySelections(
-        state,
-        card,
-        slot,
-        playerIndex,
-        { dryDrop: true }
-      );
-
+      // Dry drop plays
       for (const path of dryDropPaths) {
         if (path.success) {
           moves.push({
@@ -173,7 +187,6 @@ export class MoveGenerator {
             dryDrop: true,
             isFree,
             selections: path.selections,
-            resultingState: path.resultingState,
           });
         }
       }
@@ -193,6 +206,12 @@ export class MoveGenerator {
    */
   generateSpellPlays(state, card, playerIndex, isFree) {
     const moves = [];
+
+    // Check if spell requires targets that don't exist
+    // This prevents generating moves for spells like "Edible" or "Undertow" with no valid targets
+    if (!this.spellHasValidTargets(state, card, playerIndex)) {
+      return moves;
+    }
 
     // Spells don't need a slot (pass null)
     const paths = this.selectionEnumerator.enumerateCardPlaySelections(
@@ -218,6 +237,131 @@ export class MoveGenerator {
     }
 
     return moves;
+  }
+
+  /**
+   * Check if a spell has valid targets for its effects
+   * Returns false if the spell requires targets that don't exist
+   *
+   * @param {Object} state - Game state
+   * @param {Object} card - Spell card
+   * @param {number} playerIndex - Player index
+   * @returns {boolean}
+   */
+  spellHasValidTargets(state, card, playerIndex) {
+    const effects = card.effects;
+    if (!effects) return true; // No effects = always playable
+
+    // Check the main effect (can be "effect" or "onPlay")
+    const mainEffect = effects.effect || effects.onPlay;
+    if (!mainEffect) return true;
+
+    // Handle array of effects - check each one
+    const effectsToCheck = Array.isArray(mainEffect) ? mainEffect : [mainEffect];
+
+    for (const effect of effectsToCheck) {
+      if (!this.effectHasValidTargets(state, effect, playerIndex)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Check if a single effect has valid targets
+   *
+   * @param {Object} state - Game state
+   * @param {Object} effect - Effect definition
+   * @param {number} playerIndex - Player index
+   * @returns {boolean}
+   */
+  effectHasValidTargets(state, effect, playerIndex) {
+    if (!effect || !effect.type) return true;
+
+    const player = state.players[playerIndex];
+    const opponent = state.players[1 - playerIndex];
+
+    // selectFromGroup requires the target group to have valid targets
+    if (effect.type === 'selectFromGroup') {
+      const targetGroup = effect.params?.targetGroup;
+      if (!targetGroup) return true;
+
+      return this.getTargetGroupCount(state, targetGroup, playerIndex) > 0;
+    }
+
+    // selectTarget effects also require targets
+    if (effect.type === 'selectTarget') {
+      const targetType = effect.params?.targetType;
+      if (!targetType) return true;
+
+      return this.getTargetGroupCount(state, targetType, playerIndex) > 0;
+    }
+
+    // damage/kill effects targeting specific groups
+    if (effect.type === 'damage' || effect.type === 'kill' || effect.type === 'destroyCreature') {
+      const target = effect.params?.target;
+      if (target === 'enemy-creature' || target === 'any-creature') {
+        return opponent.field.some((c) => c !== null);
+      }
+      if (target === 'friendly-creature') {
+        return player.field.some((c) => c !== null);
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Get the count of valid targets for a target group
+   *
+   * @param {Object} state - Game state
+   * @param {string} targetGroup - Target group identifier
+   * @param {number} playerIndex - Player index
+   * @returns {number}
+   */
+  getTargetGroupCount(state, targetGroup, playerIndex) {
+    const player = state.players[playerIndex];
+    const opponent = state.players[1 - playerIndex];
+
+    switch (targetGroup) {
+      case 'friendly-creatures':
+      case 'friendly-creature':
+        return player.field.filter((c) => c !== null).length;
+
+      case 'friendly-predators':
+      case 'friendly-predator':
+        return player.field.filter((c) => c !== null && (c.type === 'Predator' || c.type === 'predator')).length;
+
+      case 'friendly-prey':
+        return player.field.filter((c) => c !== null && (c.type === 'Prey' || c.type === 'prey')).length;
+
+      case 'enemy-creatures':
+      case 'enemy-creature':
+        return opponent.field.filter((c) => c !== null).length;
+
+      case 'enemy-predators':
+      case 'enemy-predator':
+        return opponent.field.filter((c) => c !== null && (c.type === 'Predator' || c.type === 'predator')).length;
+
+      case 'enemy-prey':
+        return opponent.field.filter((c) => c !== null && (c.type === 'Prey' || c.type === 'prey')).length;
+
+      case 'all-creatures':
+      case 'any-creature':
+        return player.field.filter((c) => c !== null).length + opponent.field.filter((c) => c !== null).length;
+
+      case 'carrion':
+      case 'friendly-carrion':
+        return player.carrion?.length || 0;
+
+      case 'enemy-carrion':
+        return opponent.carrion?.length || 0;
+
+      default:
+        // Unknown target group - assume it has targets
+        return 1;
+    }
   }
 
   /**
@@ -338,13 +482,25 @@ export class MoveGenerator {
    * Quick heuristic score for move ordering
    * Not full evaluation - just for ordering
    *
+   * IMPORTANT: This affects alpha-beta pruning efficiency.
+   * Better move ordering = more pruning = deeper search.
+   * Removal/damage spells should be prioritized when facing threats.
+   *
    * @param {Object} move - Move to score
    * @param {Object} state - Game state
    * @param {number} playerIndex - Player index
    * @returns {number}
    */
   getMoveHeuristic(move, state, playerIndex) {
+    const player = state.players[playerIndex];
     const opponent = state.players[1 - playerIndex];
+
+    // Calculate if we're facing lethal (for prioritizing removal)
+    const incomingDamage = opponent.field
+      .filter((c) => c && !cantAttack(c) && c.currentHp > 0)
+      .filter((c) => hasKeyword(c, KEYWORDS.HASTE) || c.summonedTurn < state.turn)
+      .reduce((sum, c) => sum + (c.currentAtk ?? c.atk ?? 0), 0);
+    const facingLethal = incomingDamage >= player.hp;
 
     // Attacks
     if (move.type === 'ATTACK') {
@@ -354,13 +510,22 @@ export class MoveGenerator {
         // Lethal is top priority
         if (atk >= opponent.hp) return 10000;
 
-        // Face damage is generally good
+        // Face damage is deprioritized when facing lethal (need to deal with threats first)
+        if (facingLethal) return 50 + atk * 5;
+
+        // Normal face damage
         return 100 + atk * 10;
       }
 
       if (move.target.type === 'creature') {
         const defender = move.target.card;
         const defAtk = defender?.currentAtk ?? defender?.atk ?? 0;
+        const defHp = defender?.currentHp ?? defender?.hp ?? 0;
+
+        // Prioritize attacking creatures that threaten lethal
+        if (defAtk >= player.hp) {
+          return 200 + defAtk * 10; // Very high priority
+        }
 
         // Killing high-attack creatures is valuable
         return 80 + defAtk * 5;
@@ -371,19 +536,29 @@ export class MoveGenerator {
     if (move.type === 'PLAY_CARD') {
       const card = move.card;
 
+      // Evaluate spells BEFORE creatures when facing lethal
+      if (card.type === 'Spell' || card.type === 'Free Spell') {
+        const spellScore = this.getSpellHeuristic(card, state, playerIndex, facingLethal);
+        return spellScore;
+      }
+
       // Haste creatures can attack immediately
-      if (hasKeyword(card, KEYWORDS.HASTE)) return 90;
+      if (hasKeyword(card, KEYWORDS.HASTE)) {
+        const atk = card.atk ?? 0;
+        // Haste lethal check
+        const currentDamage = player.field
+          .filter((c) => c && !cantAttack(c) && !hasCreatureAttacked(c))
+          .filter((c) => hasKeyword(c, KEYWORDS.HASTE) || c.summonedTurn < state.turn)
+          .reduce((sum, c) => sum + (c.currentAtk ?? c.atk ?? 0), 0);
+        if (currentDamage + atk >= opponent.hp) return 9000; // Haste enables lethal
+        return 90 + atk * 5;
+      }
 
       // Creatures are generally good
       if (card.type === 'Creature' || card.type === 'Predator' || card.type === 'Prey') {
         const atk = card.atk ?? 0;
         const hp = card.hp ?? 0;
         return 70 + atk + hp;
-      }
-
-      // Spells
-      if (card.type === 'Spell' || card.type === 'Free Spell') {
-        return 60;
       }
 
       // Traps
@@ -398,6 +573,131 @@ export class MoveGenerator {
     }
 
     return 0;
+  }
+
+  /**
+   * Heuristic scoring specifically for spells
+   * Removal and damage spells are prioritized when facing threats
+   *
+   * @param {Object} card - Spell card
+   * @param {Object} state - Game state
+   * @param {number} playerIndex - Player index
+   * @param {boolean} facingLethal - Whether we're facing lethal damage
+   * @returns {number}
+   */
+  getSpellHeuristic(card, state, playerIndex, facingLethal) {
+    const effects = card.effects;
+    if (!effects) return 60; // Default spell score
+
+    const effect = effects.effect || effects.onPlay;
+    if (!effect) return 60;
+
+    // Check for removal/damage effects
+    const effectType = effect.type;
+    const opponent = state.players[1 - playerIndex];
+
+    // Board wipes are extremely valuable when behind or facing lethal
+    if (effectType === 'killAll' || effectType === 'killAllEnemyCreatures') {
+      const enemyCount = opponent.field.filter((c) => c && c.currentHp > 0).length;
+      if (enemyCount >= 2 || facingLethal) {
+        return 250; // Very high priority
+      }
+      return 150;
+    }
+
+    // Targeted removal/damage (selectFromGroup with damage)
+    if (effectType === 'selectFromGroup') {
+      const targetGroup = effect.params?.targetGroup;
+      const nestedEffect = effect.params?.effect;
+
+      if (targetGroup?.includes('enemy') && nestedEffect) {
+        // Check if this is damage or kill effect
+        if (nestedEffect.damage !== undefined || nestedEffect.type === 'kill') {
+          const damageAmount = nestedEffect.damage ?? 999;
+          const stealsTarget = nestedEffect.steal === true;
+
+          // Check if this can kill OR STEAL a lethal threat
+          if (facingLethal) {
+            const player = state.players[playerIndex];
+            const lethalThreats = opponent.field.filter((c) => {
+              if (!c || c.currentHp <= 0) return false;
+              const atk = c.currentAtk ?? c.atk ?? 0;
+              return atk >= player.hp;
+            });
+
+            for (const threat of lethalThreats) {
+              const hp = threat.currentHp ?? threat.hp ?? 0;
+              if (damageAmount >= hp) {
+                // This spell can kill a lethal threat!
+                return 300; // Highest priority for removal
+              }
+              // STEAL is even better - we gain their creature!
+              if (stealsTarget && damageAmount < hp) {
+                // Stealing a lethal threat = remove their threat + gain it ourselves
+                return 350; // Higher than kill because we gain the creature
+              }
+            }
+
+            // Even if can't kill outright, softening lethal threats is valuable
+            if (lethalThreats.length > 0) {
+              return 180;
+            }
+          }
+
+          // Stealing creatures is very valuable even when not facing lethal
+          if (stealsTarget) {
+            const stealableTargets = opponent.field.filter(
+              (c) => c && c.currentHp > damageAmount
+            );
+            if (stealableTargets.length > 0) {
+              // Can steal something - prioritize this
+              const bestSteal = stealableTargets.reduce((best, c) => {
+                const val = (c.currentAtk ?? c.atk ?? 0) + (c.currentHp ?? c.hp ?? 0);
+                return val > best ? val : best;
+              }, 0);
+              return 150 + bestSteal * 5; // Scale with creature quality
+            }
+          }
+
+          // Normal targeted removal
+          return 120;
+        }
+      }
+    }
+
+    // Direct damage to creatures
+    if (effectType === 'damageCreature' || effectType === 'killCreature') {
+      if (facingLethal) return 200;
+      return 100;
+    }
+
+    // Damage all enemies
+    if (effectType === 'damageAllEnemyCreatures') {
+      const enemyCount = opponent.field.filter((c) => c && c.currentHp > 0).length;
+      if (enemyCount >= 2 || facingLethal) return 180;
+      return 100;
+    }
+
+    // Freeze effects are good when facing threats
+    if (effectType === 'freezeAllEnemies' || effectType === 'freezeAllCreatures') {
+      if (facingLethal) return 180;
+      return 90;
+    }
+
+    // Direct damage to opponent
+    if (effectType === 'damageOpponent') {
+      const amount = effect.params?.amount ?? 0;
+      if (amount >= opponent.hp) return 8000; // Lethal burn spell
+      return 70 + amount * 5;
+    }
+
+    // Draw/heal spells are lower priority when facing lethal
+    if (effectType === 'draw' || effectType === 'heal') {
+      if (facingLethal) return 40;
+      return 65;
+    }
+
+    return 60; // Default spell score
   }
 
   /**

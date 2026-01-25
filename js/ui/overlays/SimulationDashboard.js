@@ -13,13 +13,14 @@ import * as SimulationHarness from '../../simulation/SimulationHarness.js';
 import * as SimDB from '../../simulation/SimulationDatabase.js';
 import * as BugRegistry from '../../simulation/BugRegistry.js';
 import * as GameDataCollector from '../../simulation/GameDataCollector.js';
+import { selfPlayTrainer } from '../../ai/SelfPlayTrainer.js';
 
 // ============================================================================
 // STATE
 // ============================================================================
 
 let overlayElement = null;
-let currentTab = 'overview'; // 'overview', 'bugs', 'cards', 'synergies'
+let currentTab = 'overview'; // 'overview', 'bugs', 'cards', 'synergies', 'balance'
 let refreshInterval = null;
 let cachedStats = null;
 
@@ -47,6 +48,7 @@ const createOverlayHTML = () => `
       <button class="sim-tab" data-tab="bugs">Bugs</button>
       <button class="sim-tab" data-tab="cards">Cards</button>
       <button class="sim-tab" data-tab="synergies">Synergies</button>
+      <button class="sim-tab" data-tab="balance">Balance</button>
     </div>
 
     <!-- Tab Content -->
@@ -350,50 +352,204 @@ const renderSynergiesTab = async () => {
     GameDataCollector.getWorstSynergies(10),
   ]);
 
+  // Check if we have interaction-based data
+  const hasInteractionData = topSynergies.length > 0 && topSynergies[0].type && topSynergies[0].type !== 'co_occurrence';
+
   if (topSynergies.length === 0) {
     return `
       <div class="sim-empty">
         <p>No synergy data yet.</p>
-        <p class="sim-empty-hint">Need more games to identify card synergies.</p>
+        <p class="sim-empty-hint">Run AI vs AI games to detect card synergies.</p>
       </div>
     `;
   }
 
+  // Render synergy item based on data type
+  const renderSynergyItem = (syn, isGood = true) => {
+    const typeClass = getSynergyTypeClass(syn.type);
+    const typeName = syn.typeName || 'Combo';
+
+    // Handle both interaction-based and legacy co-occurrence data
+    if (hasInteractionData && syn.winRateWhenExecuted !== undefined) {
+      // New interaction-based format
+      const swingDisplay = syn.avgSwing >= 0 ? `+${syn.avgSwing}` : syn.avgSwing;
+      const liftClass = syn.comboLift >= 20 ? 'lift-high' : syn.comboLift >= 0 ? 'lift-ok' : 'lift-low';
+
+      return `
+        <div class="sim-synergy-item ${isGood ? 'synergy-good' : 'synergy-bad'}">
+          <div class="sim-synergy-header">
+            <span class="sim-synergy-type ${typeClass}">${typeName}</span>
+            <span class="sim-synergy-cards">${escapeHtml(syn.cards[0])} + ${escapeHtml(syn.cards[1])}</span>
+          </div>
+          <div class="sim-synergy-stats">
+            <span class="sim-synergy-stat" title="Win rate when combo executed">
+              <strong>${syn.winRateWhenExecuted}%</strong> win
+            </span>
+            <span class="sim-synergy-stat" title="How often combo fires in games">
+              ${syn.executionRate}% exec
+            </span>
+            <span class="sim-synergy-stat" title="Average value swing when combo fires">
+              ${swingDisplay} swing
+            </span>
+            <span class="sim-synergy-stat ${liftClass}" title="Win rate improvement from combo">
+              ${syn.comboLift >= 0 ? '+' : ''}${syn.comboLift}% lift
+            </span>
+          </div>
+          <div class="sim-synergy-record">${syn.wins}W / ${syn.losses}L (${syn.executions} times)</div>
+        </div>
+      `;
+    } else {
+      // Legacy co-occurrence format
+      const score = syn.synergyScore || syn.comboLift || 0;
+      return `
+        <div class="sim-synergy-item ${isGood && score > 10 ? 'synergy-good' : !isGood ? 'synergy-bad' : ''}">
+          <span class="sim-synergy-type type-legacy">Deck</span>
+          <span class="sim-synergy-cards">${escapeHtml(syn.cards[0])} + ${escapeHtml(syn.cards[1])}</span>
+          <span class="sim-synergy-score">${score >= 0 ? '+' : ''}${score}%</span>
+          <span class="sim-synergy-record">${syn.wins}W / ${syn.losses}L</span>
+        </div>
+      `;
+    }
+  };
+
   return `
     <div class="sim-synergies">
+      ${hasInteractionData ? `
+        <div class="sim-synergy-legend">
+          <span class="legend-item"><span class="sim-synergy-type type-consume">Consume</span> Predator ate prey</span>
+          <span class="legend-item"><span class="sim-synergy-type type-free_play">Free Play</span> Free prey + predator</span>
+          <span class="legend-item"><span class="sim-synergy-type type-same_turn">Same Turn</span> Played together</span>
+        </div>
+      ` : `
+        <div class="sim-synergy-note">
+          <p>Showing co-occurrence data (cards in same deck).</p>
+          <p class="sim-note">Run more AI vs AI games to detect actual combos.</p>
+        </div>
+      `}
+
       <div class="sim-section">
         <h3>Best Synergies</h3>
-        <p class="sim-note">Card pairs that win more often together</p>
+        <p class="sim-note">${hasInteractionData ? 'Card combos that create the most value' : 'Card pairs that win more often together'}</p>
         <div class="sim-synergy-list">
-          ${topSynergies
-            .map(
-              (syn) => `
-            <div class="sim-synergy-item ${syn.synergyScore > 10 ? 'synergy-good' : ''}">
-              <span class="sim-synergy-cards">${escapeHtml(syn.cards[0])} + ${escapeHtml(syn.cards[1])}</span>
-              <span class="sim-synergy-score">+${syn.synergyScore}%</span>
-              <span class="sim-synergy-record">${syn.wins}W / ${syn.losses}L</span>
-            </div>
-          `
-            )
-            .join('')}
+          ${topSynergies.map((syn) => renderSynergyItem(syn, true)).join('')}
         </div>
       </div>
 
+      ${worstSynergies.length > 0 ? `
       <div class="sim-section">
         <h3>Anti-Synergies</h3>
-        <p class="sim-note">Card pairs that lose more often together</p>
+        <p class="sim-note">${hasInteractionData ? 'Combos that underperform expectations' : 'Card pairs that lose more often together'}</p>
         <div class="sim-synergy-list">
-          ${worstSynergies
-            .map(
-              (syn) => `
-            <div class="sim-synergy-item synergy-bad">
-              <span class="sim-synergy-cards">${escapeHtml(syn.cards[0])} + ${escapeHtml(syn.cards[1])}</span>
-              <span class="sim-synergy-score">${syn.synergyScore}%</span>
-              <span class="sim-synergy-record">${syn.wins}W / ${syn.losses}L</span>
+          ${worstSynergies.map((syn) => renderSynergyItem(syn, false)).join('')}
+        </div>
+      </div>
+      ` : ''}
+    </div>
+  `;
+};
+
+/**
+ * Get CSS class for synergy type
+ */
+const getSynergyTypeClass = (type) => {
+  const classes = {
+    consume_combo: 'type-consume',
+    free_play_exploit: 'type-free_play',
+    same_turn_combo: 'type-same_turn',
+    buff_chain: 'type-buff',
+    token_synergy: 'type-token',
+    death_trigger: 'type-death',
+    trap_combo: 'type-trap',
+    co_occurrence: 'type-legacy',
+  };
+  return classes[type] || 'type-other';
+};
+
+const renderBalanceTab = () => {
+  const analysis = selfPlayTrainer.getBalanceAnalysis({ minGames: 3 });
+  const data = selfPlayTrainer.getPerformanceData();
+
+  if (data.totalGames === 0) {
+    return `
+      <div class="sim-empty">
+        <p>No balance data yet.</p>
+        <p class="sim-empty-hint">Run AI vs AI simulations to collect card performance data.</p>
+        <button class="btn-primary" id="run-balance-sim">Run 20 Games</button>
+      </div>
+    `;
+  }
+
+  const overCards = analysis.overperforming.slice(0, 8);
+  const underCards = analysis.underperforming.slice(0, 8);
+
+  return `
+    <div class="sim-balance">
+      <div class="sim-section">
+        <h3>Balance Analysis</h3>
+        <div class="sim-stats-row">
+          <span>Games Analyzed: <strong>${data.totalGames}</strong></span>
+          <span>Avg Game Length: <strong>${data.avgGameLength.toFixed(1)}</strong> turns</span>
+          <span>Cards Tracked: <strong>${data.cards.length}</strong></span>
+        </div>
+        <button class="btn-secondary" id="run-more-balance-sim" style="margin-top: 8px;">Run 10 More Games</button>
+      </div>
+
+      ${overCards.length > 0 ? `
+      <div class="sim-section">
+        <h3 style="color: #f66;">Overperforming Cards (Win Rate > 60%)</h3>
+        <div class="sim-card-list">
+          ${overCards.map((card, i) => `
+            <div class="sim-card-item">
+              <span class="sim-card-rank" style="color: #f66;">#${i + 1}</span>
+              <span class="sim-card-name">${escapeHtml(card.cardName)}</span>
+              <span class="sim-card-winrate win-high">${(card.playWinRate * 100).toFixed(0)}%</span>
+              <span class="sim-card-impact" title="Avg Impact">+${card.avgImpact.toFixed(1)}</span>
+              <span class="sim-card-games">${card.gamesPlayed} games</span>
             </div>
-          `
-            )
-            .join('')}
+          `).join('')}
+        </div>
+      </div>
+      ` : ''}
+
+      ${underCards.length > 0 ? `
+      <div class="sim-section">
+        <h3 style="color: #6af;">Underperforming Cards (Win Rate < 40%)</h3>
+        <div class="sim-card-list">
+          ${underCards.map((card, i) => `
+            <div class="sim-card-item">
+              <span class="sim-card-rank" style="color: #6af;">#${i + 1}</span>
+              <span class="sim-card-name">${escapeHtml(card.cardName)}</span>
+              <span class="sim-card-winrate win-low">${(card.playWinRate * 100).toFixed(0)}%</span>
+              <span class="sim-card-impact" title="Avg Impact">${card.avgImpact.toFixed(1)}</span>
+              <span class="sim-card-games">${card.gamesPlayed} games</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      ` : ''}
+
+      ${overCards.length === 0 && underCards.length === 0 ? `
+      <div class="sim-section">
+        <p style="color: #8f8;">All cards are within balanced range (40-60% win rate).</p>
+        <p class="sim-note">Run more games to get more accurate data.</p>
+      </div>
+      ` : ''}
+
+      <div class="sim-section">
+        <h3>All Cards by Win Rate</h3>
+        <div class="sim-card-list" style="max-height: 200px; overflow-y: auto;">
+          ${data.cards
+            .filter(c => c.gamesPlayed >= 1)
+            .slice(0, 30)
+            .map((card) => {
+              const winClass = card.playWinRate > 0.6 ? 'win-high' : card.playWinRate < 0.4 ? 'win-low' : '';
+              return `
+              <div class="sim-card-item">
+                <span class="sim-card-name">${escapeHtml(card.cardName)}</span>
+                <span class="sim-card-winrate ${winClass}">${(card.playWinRate * 100).toFixed(0)}%</span>
+                <span class="sim-card-games">${card.gamesPlayed}g</span>
+              </div>
+            `;}).join('')}
         </div>
       </div>
     </div>
@@ -444,11 +600,61 @@ const renderTabContent = async (tab, stats) => {
     case 'synergies':
       html = await renderSynergiesTab();
       break;
+    case 'balance':
+      html = renderBalanceTab();
+      break;
     default:
       html = '<p>Unknown tab</p>';
   }
 
   elements.tabContent.innerHTML = html;
+
+  // Bind balance tab buttons if on balance tab
+  if (tab === 'balance') {
+    bindBalanceButtons();
+  }
+};
+
+const bindBalanceButtons = () => {
+  const runBtn = document.getElementById('run-balance-sim');
+  const runMoreBtn = document.getElementById('run-more-balance-sim');
+
+  if (runBtn) {
+    runBtn.addEventListener('click', () => runBalanceSimulation(20));
+  }
+  if (runMoreBtn) {
+    runMoreBtn.addEventListener('click', () => runBalanceSimulation(10));
+  }
+};
+
+const runBalanceSimulation = async (numGames) => {
+  const elements = getElements();
+  const btn = document.getElementById('run-balance-sim') || document.getElementById('run-more-balance-sim');
+
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = `Running... 0/${numGames}`;
+  }
+
+  try {
+    await selfPlayTrainer.runSimulation(numGames, {
+      searchDepth: 3, // Faster for quick results
+      onProgress: (p) => {
+        if (btn) {
+          btn.textContent = `Running... ${p.gamesCompleted}/${numGames}`;
+        }
+      },
+    });
+
+    // Refresh the balance tab
+    await renderTabContent('balance', cachedStats);
+  } catch (error) {
+    console.error('[SimDash] Balance simulation error:', error);
+    if (btn) {
+      btn.textContent = 'Error - Try Again';
+      btn.disabled = false;
+    }
+  }
 };
 
 const updateStatusBar = (stats) => {

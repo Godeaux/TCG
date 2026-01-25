@@ -641,12 +641,13 @@ const placeCreatureInSpecificSlot = (card, slotIndex) => {
   const player = getActivePlayer(state);
 
   // Per CORE-RULES.md §2:
-  // - Free Spell and Trap types completely bypass the limit
-  // - Free Play keyword cards require the limit to be available (can only play while limit unused)
-  const isTrulyFree = card.type === 'Free Spell' || card.type === 'Trap';
+  // Free Play keyword and Free Spell both require limit to be available
+  // They don't consume the limit, but can only be played while it's unused
+  // Traps are activated from hand on opponent's turn, not "played" during your turn
+  const isTrap = card.type === 'Trap';
 
-  // Check card limit availability (Free Spells/Traps bypass, others need limit available)
-  if (!isTrulyFree && !cardLimitAvailable(state)) {
+  // Only Traps bypass the limit check (they're not really "played")
+  if (!isTrap && !cardLimitAvailable(state)) {
     logMessage(state, 'You have already played a card this turn.');
     latestCallbacks.onUpdate?.();
     return;
@@ -675,7 +676,7 @@ const placeCreatureInSpecificSlot = (card, slotIndex) => {
     // Set cardPlayedThisTurn BEFORE triggering traps (fixes bug where trap resolution
     // would allow another card play before the callback sets the flag)
     // Dry-dropped predators always consume limit (abilities suppressed = no Free Play)
-    if (!isTrulyFree) {
+    if (!isTrap) {
       state.cardPlayedThisTurn = true;
     }
 
@@ -687,7 +688,8 @@ const placeCreatureInSpecificSlot = (card, slotIndex) => {
   }
 
   // Non-predators (Prey, Spells): check card limit
-  if (!isTrulyFree && !cardLimitAvailable(state)) {
+  // Only Traps bypass the limit check
+  if (!isTrap && !cardLimitAvailable(state)) {
     logMessage(state, 'You have already played a card this turn.');
     latestCallbacks.onUpdate?.();
     return;
@@ -749,16 +751,19 @@ const handleDirectConsumption = (predator, prey, slotIndex) => {
   const state = latestState;
   const player = getActivePlayer(state);
 
-  const isFree = isFreePlay(predator);
-  // Per CORE-RULES.md §6: Free Play can only be played while limit is still available
-  // (Free Spell and Trap types are the only true exceptions)
-  const isTrulyFree = predator.type === 'Free Spell' || predator.type === 'Trap';
-  if (!isTrulyFree && !cardLimitAvailable(state)) {
+  // Per CORE-RULES.md: Free Play keyword and Free Spell both require limit to be available
+  // They don't consume the limit, but can only be played while it's unused
+  // Traps are activated from hand on opponent's turn, not "played"
+  const isTrap = predator.type === 'Trap';
+  if (!isTrap && !cardLimitAvailable(state)) {
     logMessage(state, 'You have already played a card this turn.');
     revertCardToOriginalPosition();
     latestCallbacks.onUpdate?.();
     return;
   }
+
+  // Free Play keyword and Free Spell don't consume the limit
+  const isFree = isFreePlay(predator) || predator.type === 'Free Spell' || isTrap;
 
   player.hand = player.hand.filter((item) => item.instanceId !== predator.instanceId);
   const predatorInstance = createCardInstance(predator, state.turn);

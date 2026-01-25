@@ -27,9 +27,45 @@ import { ActionTypes } from '../state/actions.js';
 // POSITION EVALUATOR CLASS
 // ============================================================================
 
+// Default evaluation weights (can be overridden with learned weights)
+const DEFAULT_WEIGHTS = {
+  // Material weights
+  creatureATK: 2.0,
+  creatureHP: 1.0,
+  hpDifference: 10,
+  cardAdvantage: 8,
+  deckAdvantage: 0.5,
+
+  // Keyword weights (context-adjusted at runtime)
+  TOXIC_BASE: 4,
+  TOXIC_PER_TARGET: 3,
+  HASTE_IMMEDIATE: 8,
+  HASTE_EXHAUSTED: 2,
+  BARRIER_BASE: 0,
+  BARRIER_SCALING: 1, // Per point of incoming damage
+  AMBUSH_BASE: 2,
+  AMBUSH_PER_KILL: 2,
+  LURE_BASE: 2,
+  LURE_PER_PROTECTED: 3,
+  REGENERATION_BASE: 2,
+  HIDDEN: 4,
+  HARMLESS: -5,
+  PASSIVE: -3,
+
+  // Positional weights
+  emptySlotValue: 2,
+  vulnerableCreaturePenalty: 3,
+
+  // Threat weights
+  lethalThreatPenalty: 100,
+  ourLethalBonus: 100,
+  mustKillPenalty: 15,
+};
+
 export class PositionEvaluator {
   constructor(threatDetector = null) {
     this.threatDetector = threatDetector || new ThreatDetector();
+    this.weights = { ...DEFAULT_WEIGHTS };
   }
 
   // ==========================================================================
@@ -235,7 +271,7 @@ export class PositionEvaluator {
     let score = 0;
 
     // HP differential - heavily weighted (game-ending resource)
-    score += (player.hp - opponent.hp) * 10;
+    score += (player.hp - opponent.hp) * this.weights.hpDifference;
 
     // Board presence - creature value (context-aware)
     const playerBoardValue = this.evaluateBoardValue(player.field, state, playerIndex);
@@ -243,10 +279,10 @@ export class PositionEvaluator {
     score += playerBoardValue - opponentBoardValue;
 
     // Hand advantage - cards are valuable resources
-    score += (player.hand.length - opponent.hand.length) * 8;
+    score += (player.hand.length - opponent.hand.length) * this.weights.cardAdvantage;
 
     // Deck advantage (less immediate impact)
-    score += (player.deck.length - opponent.deck.length) * 0.5;
+    score += (player.deck.length - opponent.deck.length) * this.weights.deckAdvantage;
 
     return score;
   }
@@ -283,8 +319,8 @@ export class PositionEvaluator {
     const atk = creature.currentAtk ?? creature.atk ?? 0;
     const hp = creature.currentHp ?? creature.hp ?? 0;
 
-    // Base value: ATK * 2 + HP
-    let value = atk * 2 + hp;
+    // Base value using weights
+    let value = atk * this.weights.creatureATK + hp * this.weights.creatureHP;
 
     // Keyword bonuses (context-aware if state provided)
     value += this.getKeywordValue(creature, state, playerIndex);
@@ -317,16 +353,15 @@ export class PositionEvaluator {
       const highHpTargets = opponent.field.filter(
         (c) => c && (c.currentHp ?? c.hp ?? 0) >= 4
       ).length;
-      // Base 4 + 3 per high-HP target (max ~16)
-      bonus += 4 + highHpTargets * 3;
+      bonus += this.weights.TOXIC_BASE + highHpTargets * this.weights.TOXIC_PER_TARGET;
     }
 
     // HASTE: Worth more if can attack THIS turn (has attacks remaining)
     if (hasKeyword(creature, KEYWORDS.HASTE)) {
       if (creature.summonedTurn === state.turn && !hasCreatureAttacked(creature)) {
-        bonus += 8; // Can attack immediately - high value (Multi-Strike aware)
+        bonus += this.weights.HASTE_IMMEDIATE; // Can attack immediately
       } else {
-        bonus += 2; // Already exhausted attacks this turn
+        bonus += this.weights.HASTE_EXHAUSTED; // Already exhausted
       }
     }
 
@@ -336,8 +371,7 @@ export class PositionEvaluator {
         if (!c || isPassive(c) || hasKeyword(c, KEYWORDS.HARMLESS)) return sum;
         return sum + (c.currentAtk ?? c.atk ?? 0);
       }, 0);
-      // Scale with threat, cap at 10
-      bonus += Math.min(incomingDamage, 10);
+      bonus += this.weights.BARRIER_BASE + Math.min(incomingDamage * this.weights.BARRIER_SCALING, 10);
     }
 
     // AMBUSH: Worth more when there are creatures we can cleanly kill
@@ -346,8 +380,7 @@ export class PositionEvaluator {
       const killableTargets = opponent.field.filter(
         (c) => c && (c.currentHp ?? c.hp ?? 0) <= atkPower
       ).length;
-      // Base 2 + 2 per killable target
-      bonus += 2 + killableTargets * 2;
+      bonus += this.weights.AMBUSH_BASE + killableTargets * this.weights.AMBUSH_PER_KILL;
     }
 
     // LURE: Worth more when protecting valuable creatures
@@ -360,8 +393,7 @@ export class PositionEvaluator {
             hasKeyword(c, KEYWORDS.TOXIC) ||
             hasKeyword(c, KEYWORDS.AMBUSH))
       ).length;
-      // Base 2 + 3 per valuable creature protected
-      bonus += 2 + valuableCreatures * 3;
+      bonus += this.weights.LURE_BASE + valuableCreatures * this.weights.LURE_PER_PROTECTED;
     }
 
     // REGENERATION: Worth more when creature is damaged
@@ -369,40 +401,58 @@ export class PositionEvaluator {
       const maxHp = creature.hp ?? 1;
       const currentHp = creature.currentHp ?? maxHp;
       const missingHp = maxHp - currentHp;
-      // Base 2 + 1 per missing HP (potential to heal)
-      bonus += 2 + missingHp;
+      bonus += this.weights.REGENERATION_BASE + missingHp;
     }
 
     // HIDDEN: Worth more when opponent has targeted removal
     if (hasKeyword(creature, KEYWORDS.HIDDEN) || creature.hidden) {
-      // Hiding protects from targeted effects
-      bonus += 4;
+      bonus += this.weights.HIDDEN;
     }
 
-    // Negative keywords - context doesn't change these much
-    if (hasKeyword(creature, KEYWORDS.HARMLESS)) bonus -= 5;
-    if (isPassive(creature)) bonus -= 3;
+    // Negative keywords
+    if (hasKeyword(creature, KEYWORDS.HARMLESS)) bonus += this.weights.HARMLESS;
+    if (isPassive(creature)) bonus += this.weights.PASSIVE;
 
     return bonus;
   }
 
   /**
    * Static keyword evaluation (fallback when no state context)
+   * Uses average expected values from weights
    * @param {Object} creature - Creature to check
    * @returns {number} - Static keyword bonus
    */
   getStaticKeywordValue(creature) {
     let bonus = 0;
 
-    if (hasKeyword(creature, KEYWORDS.TOXIC)) bonus += 8;
-    if (hasKeyword(creature, KEYWORDS.HASTE)) bonus += 4;
-    if (hasKeyword(creature, KEYWORDS.BARRIER) || creature.hasBarrier) bonus += 3;
-    if (hasKeyword(creature, KEYWORDS.AMBUSH)) bonus += 3;
-    if (hasKeyword(creature, KEYWORDS.LURE)) bonus += 2;
-    if (hasKeyword(creature, KEYWORDS.REGENERATION)) bonus += 2;
-    if (hasKeyword(creature, KEYWORDS.HIDDEN) || creature.hidden) bonus += 4;
-    if (hasKeyword(creature, KEYWORDS.HARMLESS)) bonus -= 5;
-    if (isPassive(creature)) bonus -= 3;
+    // Use base values + estimated average context bonus
+    if (hasKeyword(creature, KEYWORDS.TOXIC)) {
+      bonus += this.weights.TOXIC_BASE + this.weights.TOXIC_PER_TARGET; // Assume ~1 target
+    }
+    if (hasKeyword(creature, KEYWORDS.HASTE)) {
+      bonus += (this.weights.HASTE_IMMEDIATE + this.weights.HASTE_EXHAUSTED) / 2; // Average
+    }
+    if (hasKeyword(creature, KEYWORDS.BARRIER) || creature.hasBarrier) {
+      bonus += this.weights.BARRIER_BASE + 3; // Assume ~3 damage incoming
+    }
+    if (hasKeyword(creature, KEYWORDS.AMBUSH)) {
+      bonus += this.weights.AMBUSH_BASE + this.weights.AMBUSH_PER_KILL; // Assume ~1 target
+    }
+    if (hasKeyword(creature, KEYWORDS.LURE)) {
+      bonus += this.weights.LURE_BASE; // No context, just base
+    }
+    if (hasKeyword(creature, KEYWORDS.REGENERATION)) {
+      bonus += this.weights.REGENERATION_BASE;
+    }
+    if (hasKeyword(creature, KEYWORDS.HIDDEN) || creature.hidden) {
+      bonus += this.weights.HIDDEN;
+    }
+    if (hasKeyword(creature, KEYWORDS.HARMLESS)) {
+      bonus += this.weights.HARMLESS;
+    }
+    if (isPassive(creature)) {
+      bonus += this.weights.PASSIVE;
+    }
 
     return bonus;
   }
@@ -416,22 +466,40 @@ export class PositionEvaluator {
    */
   evaluateThreats(state, playerIndex) {
     let score = 0;
+    const player = state.players[playerIndex];
+    const opponent = state.players[1 - playerIndex];
 
     // Check if opponent has lethal
     const theirLethal = this.threatDetector.detectLethal(state, playerIndex);
     if (theirLethal.isLethal) {
-      score -= 100; // Massive penalty - we're about to lose
+      score -= this.weights.lethalThreatPenalty; // Massive penalty - we're about to lose
+    }
+
+    // ADDITIONAL CHECK: Even if not technically lethal (summoning sickness),
+    // creatures with ATK >= our HP are extremely dangerous
+    const dangerousCreatures = opponent.field.filter((c) => {
+      if (!c || c.currentHp <= 0) return false;
+      const atk = c.currentAtk ?? c.atk ?? 0;
+      return atk >= player.hp;
+    });
+
+    // Heavy penalty for each creature that can kill us in one hit
+    // This helps the AI prioritize removal even when the creature just came down
+    for (const dangerous of dangerousCreatures) {
+      const atk = dangerous.currentAtk ?? dangerous.atk ?? 0;
+      const excess = atk - player.hp + 1; // How much overkill
+      score -= 50 + excess * 10; // 50 base + 10 per overkill damage
     }
 
     // Check if we have lethal
     const ourLethal = this.threatDetector.detectOurLethal(state, playerIndex);
     if (ourLethal.hasLethal) {
-      score += 100; // Massive bonus - we can win
+      score += this.weights.ourLethalBonus; // Massive bonus - we can win
     }
 
     // Must-kill creatures create pressure on us
     const mustKills = this.threatDetector.findMustKillTargets(state, playerIndex);
-    score -= mustKills.length * 15;
+    score -= mustKills.length * this.weights.mustKillPenalty;
 
     return score;
   }
@@ -449,11 +517,11 @@ export class PositionEvaluator {
 
     // Field slot availability (flexibility)
     const emptySlots = player.field.filter((s) => s === null).length;
-    score += emptySlots * 2;
+    score += emptySlots * this.weights.emptySlotValue;
 
     // Vulnerable creatures (1 HP) are risky
     const vulnerableCreatures = player.field.filter((c) => c && c.currentHp === 1).length;
-    score -= vulnerableCreatures * 3;
+    score -= vulnerableCreatures * this.weights.vulnerableCreaturePenalty;
 
     return score;
   }

@@ -6451,7 +6451,6 @@ select.menu-input option {
     overflow-x: hidden;
     overflow-y: auto;
     height: auto;
-
     padding: 12px;
     gap: 12px;
   }
@@ -6793,12 +6792,12 @@ select.menu-input option {
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
+  justify-content: flex-start;
   gap: 16px;
   padding: 20px;
   overflow-x: auto;
   overflow-y: hidden;
   max-width: 100%;
-  height: calc(80vh - 140px);
   align-items: stretch;
 }
 
@@ -12036,6 +12035,17 @@ select.menu-input option {
   text-align: right;
 }
 
+.sim-card-impact {
+  color: #8f8;
+  font-size: var(--font-sm);
+  min-width: 50px;
+  text-align: right;
+}
+
+.sim-balance .sim-section h3 {
+  margin-bottom: 8px;
+}
+
 .sim-card-bugs {
   color: #fbbf24;
   font-weight: 600;
@@ -12091,6 +12101,134 @@ select.menu-input option {
   font-size: var(--font-sm);
   min-width: 70px;
   text-align: right;
+}
+
+/* Enhanced Synergy Display */
+.sim-synergy-item {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.sim-synergy-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.sim-synergy-type {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.sim-synergy-type.type-consume {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+
+.sim-synergy-type.type-free_play {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+}
+
+.sim-synergy-type.type-same_turn {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+}
+
+.sim-synergy-type.type-buff {
+  background: rgba(168, 85, 247, 0.2);
+  color: #c4b5fd;
+}
+
+.sim-synergy-type.type-token {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fcd34d;
+}
+
+.sim-synergy-type.type-death {
+  background: rgba(107, 114, 128, 0.2);
+  color: #9ca3af;
+}
+
+.sim-synergy-type.type-trap {
+  background: rgba(236, 72, 153, 0.2);
+  color: #f9a8d4;
+}
+
+.sim-synergy-type.type-legacy {
+  background: rgba(107, 114, 128, 0.15);
+  color: #9ca3af;
+}
+
+.sim-synergy-type.type-other {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+}
+
+.sim-synergy-stats {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.sim-synergy-stat {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.sim-synergy-stat strong {
+  color: var(--text-primary);
+}
+
+.sim-synergy-stat.lift-high {
+  color: #4ade80;
+}
+
+.sim-synergy-stat.lift-ok {
+  color: #fbbf24;
+}
+
+.sim-synergy-stat.lift-low {
+  color: #f87171;
+}
+
+.sim-synergy-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 11px;
+}
+
+.sim-synergy-legend .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+}
+
+.sim-synergy-note {
+  padding: 12px;
+  background: rgba(251, 191, 36, 0.1);
+  border-radius: 6px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.sim-synergy-note p {
+  margin: 0;
+  color: var(--text-secondary);
 }
 
 /* Empty State */

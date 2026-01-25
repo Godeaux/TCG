@@ -957,8 +957,8 @@ export const renderCard = (card, options = {}) => {
     cardElement.appendChild(overlay);
   }
 
-  // Stalking - grass ferns in corners with darkened "hiding" effect
-  if (card.keywords?.includes('Stalking')) {
+  // Stalking - grass ferns in corners with darkened "hiding" effect (field only)
+  if (context === 'field' && card.keywords?.includes('Stalking')) {
     const overlay = document.createElement('div');
     overlay.className = 'status-overlay stalking-overlay';
     // Add grass fern elements in corners
@@ -971,8 +971,8 @@ export const renderCard = (card, options = {}) => {
     cardElement.appendChild(overlay);
   }
 
-  // Shell - hexagonal scale armor along edges
-  if (hasShell(card)) {
+  // Shell - hexagonal scale armor along edges (field only)
+  if (context === 'field' && hasShell(card)) {
     const overlay = document.createElement('div');
     const currentShell = getCurrentShell(card);
     const shellLevel = getShellLevel(card);
@@ -996,8 +996,8 @@ export const renderCard = (card, options = {}) => {
     cardElement.appendChild(overlay);
   }
 
-  // Lure - red pulsing beacon effect
-  if (hasLure(card) && areAbilitiesActive(card)) {
+  // Lure - red pulsing beacon effect (field only)
+  if (context === 'field' && hasLure(card) && areAbilitiesActive(card)) {
     const overlay = document.createElement('div');
     overlay.className = 'status-overlay lure-overlay';
     // Add pulsing rings
@@ -1016,8 +1016,8 @@ export const renderCard = (card, options = {}) => {
     cardElement.appendChild(overlay);
   }
 
-  // Hidden - semi-transparent ghosted shimmer effect
-  if (isHidden(card) && areAbilitiesActive(card) && !card.keywords?.includes('Stalking')) {
+  // Hidden - semi-transparent ghosted shimmer effect (field only)
+  if (context === 'field' && isHidden(card) && areAbilitiesActive(card) && !card.keywords?.includes('Stalking')) {
     const overlay = document.createElement('div');
     overlay.className = 'status-overlay hidden-overlay';
     // Add heat wave distortion layers
@@ -1029,8 +1029,8 @@ export const renderCard = (card, options = {}) => {
     cardElement.appendChild(overlay);
   }
 
-  // Invisible - prismatic edge refraction (more intense than Hidden)
-  if (isInvisible(card) && areAbilitiesActive(card)) {
+  // Invisible - prismatic edge refraction (more intense than Hidden, field only)
+  if (context === 'field' && isInvisible(card) && areAbilitiesActive(card)) {
     const overlay = document.createElement('div');
     overlay.className = 'status-overlay invisible-overlay';
     // Add prismatic refraction elements
@@ -1043,8 +1043,8 @@ export const renderCard = (card, options = {}) => {
     cardElement.appendChild(overlay);
   }
 
-  // Venom - dripping green liquid from corners
-  if (hasVenom(card) && areAbilitiesActive(card)) {
+  // Venom - dripping green liquid from corners (field only)
+  if (context === 'field' && hasVenom(card) && areAbilitiesActive(card)) {
     const overlay = document.createElement('div');
     overlay.className = 'status-overlay venom-overlay';
     // Add drip elements
@@ -1062,8 +1062,8 @@ export const renderCard = (card, options = {}) => {
     cardElement.appendChild(overlay);
   }
 
-  // Toxic - green aura wisping off edges
-  if (hasToxic(card) && areAbilitiesActive(card)) {
+  // Toxic - green aura wisping off edges (field only)
+  if (context === 'field' && hasToxic(card) && areAbilitiesActive(card)) {
     const overlay = document.createElement('div');
     overlay.className = 'status-overlay toxic-overlay';
     // Add smoke wisp elements
@@ -1075,8 +1075,8 @@ export const renderCard = (card, options = {}) => {
     cardElement.appendChild(overlay);
   }
 
-  // Acuity - targeting scanner sweep effect
-  if (hasAcuity(card) && areAbilitiesActive(card)) {
+  // Acuity - targeting scanner sweep effect (field only)
+  if (context === 'field' && hasAcuity(card) && areAbilitiesActive(card)) {
     const overlay = document.createElement('div');
     overlay.className = 'status-overlay acuity-overlay';
     // Add scanner line

@@ -21,6 +21,7 @@ export class AIWorkerManager {
     this.fallbackSearch = new GameTreeSearch();
     this.fallbackMoveGenerator = new MoveGenerator();
     this.useWorker = true; // Can be disabled to force synchronous
+    this.onProgress = null; // Callback for progress updates
   }
 
   /**
@@ -88,7 +89,15 @@ export class AIWorkerManager {
    * Handle messages from the worker
    */
   handleWorkerMessage(event) {
-    const { type, result, error } = event.data;
+    const { type, result, error, stats } = event.data;
+
+    if (type === 'PROGRESS') {
+      // Forward progress updates to callback (if set)
+      if (this.onProgress) {
+        this.onProgress(stats);
+      }
+      return;
+    }
 
     if (this.pendingSearch) {
       if (type === 'RESULT') {
@@ -97,6 +106,7 @@ export class AIWorkerManager {
         this.pendingSearch.reject(new Error(error));
       }
       this.pendingSearch = null;
+      this.onProgress = null; // Clear progress callback after search completes
     }
   }
 
@@ -106,10 +116,13 @@ export class AIWorkerManager {
    *
    * @param {Object} state - Game state
    * @param {number} playerIndex - Player to find move for
-   * @param {Object} options - { maxTimeMs, maxDepth, verbose }
+   * @param {Object} options - { maxTimeMs, maxDepth, verbose, onProgress }
    * @returns {Promise<{move: Object, score: number, depth: number, stats: Object}>}
    */
   async search(state, playerIndex, options = {}) {
+    // Store progress callback
+    this.onProgress = options.onProgress || null;
+
     // If worker is available and ready, use it
     if (this.useWorker && this.worker && this.isReady) {
       console.log('[AIWorkerManager] Using Web Worker for search');
@@ -129,6 +142,14 @@ export class AIWorkerManager {
       // Store the pending search handlers
       this.pendingSearch = { resolve, reject };
 
+      // Strip non-serializable properties (functions) before sending to worker
+      // onProgress is stored in this.onProgress and handled via PROGRESS messages
+      const workerOptions = {
+        maxTimeMs: options.maxTimeMs,
+        maxDepth: options.maxDepth,
+        verbose: options.verbose,
+      };
+
       // Let postMessage handle cloning - don't block main thread with structuredClone
       // Only fall back to manual JSON cleaning if postMessage fails (circular refs)
       try {
@@ -136,7 +157,7 @@ export class AIWorkerManager {
           type: 'SEARCH',
           state, // postMessage will structuredClone internally
           playerIndex,
-          options,
+          options: workerOptions,
         });
       } catch (error) {
         // DataCloneError = circular refs or functions, fall back to JSON
@@ -146,7 +167,7 @@ export class AIWorkerManager {
           type: 'SEARCH',
           state: cleanState,
           playerIndex,
-          options,
+          options: workerOptions,
         });
       }
 

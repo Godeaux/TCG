@@ -196,17 +196,22 @@ export class AIController {
    * @returns {Promise<{move: Object, score: number, stats: Object}|null>}
    */
   async findBestMoveWithSearchAsync(state, options = {}) {
-    const { maxTimeMs = this.difficulty.getSearchTime?.() ?? 2000, verbose = this.verboseLogging } =
-      options;
+    const {
+      maxTimeMs = this.difficulty.getSearchTime?.() ?? 2000,
+      verbose = this.verboseLogging,
+      onProgress = null,
+    } = options;
 
     try {
       // Ensure worker is initialized
       await this.initWorker();
 
       // Use worker manager for non-blocking search
+      // Progress updates come from Worker via onProgress callback
       const result = await this.workerManager.search(state, this.playerIndex, {
         maxTimeMs,
         verbose,
+        onProgress,
       });
 
       if (verbose && result.move) {
@@ -539,6 +544,7 @@ export class AIController {
       state._aiIsSearching = true;
       state._aiSearchStartTime = Date.now();
       state._aiStillThinking = false;
+      state._aiSearchStats = { nodes: 0, depth: 0 };
       callbacks.onUpdate?.();
 
       // Start a timer to show "Still thinking..." after 2 seconds
@@ -550,10 +556,18 @@ export class AIController {
       }, 500);
 
       // Run deep search via Web Worker (completely non-blocking)
-      // UI remains fully responsive during the search
+      // Progress updates come from Worker via onProgress callback
       const searchResult = await this.findBestMoveWithSearchAsync(state, {
         maxTimeMs: this.difficulty.getSearchTime(),
         verbose: this.verboseLogging,
+        onProgress: (stats) => {
+          // Update state with progress from Worker
+          state._aiSearchStats = {
+            nodes: stats.nodes,
+            depth: stats.depth,
+          };
+          callbacks.onUpdate?.();
+        },
       });
 
       // Clear the timer and searching state
@@ -562,6 +576,7 @@ export class AIController {
       state._aiIsSearching = false;
       state._aiStillThinking = false;
       delete state._aiSearchStartTime;
+      delete state._aiSearchStats;
       callbacks.onUpdate?.();
 
       if (!searchResult || !searchResult.move) {
@@ -656,17 +671,11 @@ export class AIController {
     // Filter to playable cards (respect card limit)
     // Per CORE-RULES.md §2:
     // - Traps trigger automatically from hand, not "played"
-    // - Free Spell completely bypasses the limit
-    // - Free Play keyword requires limit to be available (can only play while limit unused)
+    // - Free Spell and Free Play keyword require limit to be available (don't consume it)
     const playableCards = hand.filter((card) => {
       // Traps are never "playable" - they trigger automatically when conditions are met
       if (card.type === 'Trap') {
         return false;
-      }
-
-      // Free Spells completely bypass the limit
-      if (card.type === 'Free Spell') {
-        return true;
       }
 
       // If card limit not used, any non-trap card is playable
@@ -674,8 +683,8 @@ export class AIController {
         return true;
       }
 
-      // Card limit already used - only Free Spells can be played
-      // (Free Play keyword requires limit to be available)
+      // Card limit already used - no cards can be played
+      // (Free Spell and Free Play keyword both require limit to be available)
       return false;
     });
 

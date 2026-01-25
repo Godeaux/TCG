@@ -5,11 +5,13 @@
  * Tracks:
  * - Cards played and their outcomes
  * - Combat results (kills, deaths, damage)
- * - Card synergies (which cards appear together in wins)
+ * - Card synergies (actual interactions, not just co-occurrence)
  * - Game flow (turns, phases, actions)
  */
 
 import * as SimDB from './SimulationDatabase.js';
+import { selfPlayTrainer } from '../ai/SelfPlayTrainer.js';
+import { SYNERGY_TYPES } from '../ai/InteractionTracker.js';
 
 // ============================================================================
 // COLLECTOR STATE
@@ -333,15 +335,102 @@ export const getCurrentGameSummary = () => {
 };
 
 // ============================================================================
-// SYNERGY ANALYSIS
+// SYNERGY ANALYSIS (Interaction-Based)
 // ============================================================================
 
 /**
- * Analyze card synergies from historical data
+ * Get synergies based on ACTUAL card interactions (not just co-occurrence).
+ * Uses the InteractionTracker to identify real combos like:
+ * - Consume combos (predator + prey)
+ * - Free-play exploitation
+ * - Same-turn combos
+ * - Buff chains
+ *
+ * @param {Object} options - { minExecutions, sortBy, type }
+ * @returns {Array} - Synergy data with interaction details
+ */
+export const getInteractionSynergies = (options = {}) => {
+  const tracker = selfPlayTrainer.tracker;
+  if (!tracker?.getSynergyReport) {
+    return [];
+  }
+  return tracker.getSynergyReport(options);
+};
+
+/**
+ * Get top synergies based on actual interactions
+ * Falls back to co-occurrence if no interaction data available
+ * @param {number} limit
+ * @returns {Promise<Array>}
+ */
+export const getTopSynergies = async (limit = 10) => {
+  // Try interaction-based synergies first
+  const interactionSynergies = getInteractionSynergies({
+    minExecutions: 2,
+    sortBy: 'comboLift',
+  });
+
+  if (interactionSynergies.length > 0) {
+    return interactionSynergies.slice(0, limit);
+  }
+
+  // Fall back to co-occurrence based synergies
+  const coOccurrence = await analyzeCardSynergiesLegacy(3);
+  return coOccurrence.slice(0, limit);
+};
+
+/**
+ * Get anti-synergies (worst performing pairs)
+ * @param {number} limit
+ * @returns {Promise<Array>}
+ */
+export const getWorstSynergies = async (limit = 10) => {
+  // Try interaction-based
+  const interactionSynergies = getInteractionSynergies({
+    minExecutions: 2,
+    sortBy: 'comboLift',
+  });
+
+  if (interactionSynergies.length > 0) {
+    // Get the ones with negative or lowest combo lift
+    return interactionSynergies
+      .filter((s) => s.comboLift < 0)
+      .sort((a, b) => a.comboLift - b.comboLift)
+      .slice(0, limit);
+  }
+
+  // Fall back to co-occurrence
+  const coOccurrence = await analyzeCardSynergiesLegacy(3);
+  return coOccurrence.slice(-limit).reverse();
+};
+
+/**
+ * Get synergies filtered by type
+ * @param {string} type - Synergy type from SYNERGY_TYPES
+ * @param {number} limit
+ * @returns {Array}
+ */
+export const getSynergiesByType = (type, limit = 10) => {
+  const tracker = selfPlayTrainer.tracker;
+  if (!tracker?.getSynergiesByType) {
+    return [];
+  }
+  return tracker.getSynergiesByType(type, limit);
+};
+
+/**
+ * Get all available synergy types
+ * @returns {Object}
+ */
+export const getSynergyTypes = () => SYNERGY_TYPES;
+
+/**
+ * LEGACY: Analyze card synergies from historical data (co-occurrence only)
+ * Kept for backward compatibility
  * @param {number} minGames - Minimum games a pair must appear in
  * @returns {Promise<Array>} - Sorted by synergy score
  */
-export const analyzeCardSynergies = async (minGames = 5) => {
+export const analyzeCardSynergiesLegacy = async (minGames = 5) => {
   const recentGames = await SimDB.getRecentGames(200);
   const pairStats = {};
 
@@ -394,6 +483,9 @@ export const analyzeCardSynergies = async (minGames = 5) => {
         total: stats.total,
         winRate: Math.round(winRate * 100),
         synergyScore, // Positive = good synergy, negative = anti-synergy
+        // Mark as legacy for display purposes
+        type: 'co_occurrence',
+        typeName: 'Co-occurrence',
       };
     })
     .sort((a, b) => b.synergyScore - a.synergyScore);
@@ -401,25 +493,8 @@ export const analyzeCardSynergies = async (minGames = 5) => {
   return synergies;
 };
 
-/**
- * Get top synergies (best performing pairs)
- * @param {number} limit
- * @returns {Promise<Array>}
- */
-export const getTopSynergies = async (limit = 10) => {
-  const all = await analyzeCardSynergies(3);
-  return all.slice(0, limit);
-};
-
-/**
- * Get anti-synergies (worst performing pairs)
- * @param {number} limit
- * @returns {Promise<Array>}
- */
-export const getWorstSynergies = async (limit = 10) => {
-  const all = await analyzeCardSynergies(3);
-  return all.slice(-limit).reverse();
-};
+// Alias for backward compatibility
+export const analyzeCardSynergies = analyzeCardSynergiesLegacy;
 
 // ============================================================================
 // EXPORTS
@@ -437,6 +512,10 @@ export default {
   isCollecting,
   getCurrentGameSummary,
   analyzeCardSynergies,
+  analyzeCardSynergiesLegacy,
+  getInteractionSynergies,
   getTopSynergies,
   getWorstSynergies,
+  getSynergiesByType,
+  getSynergyTypes,
 };

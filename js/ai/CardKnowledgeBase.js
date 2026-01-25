@@ -1125,11 +1125,229 @@ export const EFFECT_VALUES = {
   },
 
   // ========================
+  // META EFFECTS (wrappers that contain other effects)
+  // ========================
+
+  /**
+   * selectFromGroup - A targeting wrapper that lets player choose a target
+   * The actual effect is nested inside params.effect
+   * Examples: Harpoon (deal 4 damage to chosen enemy creature)
+   */
+  selectFromGroup: (ctx) => {
+    const targetGroup = ctx.params?.targetGroup;
+    const nestedEffect = ctx.params?.effect;
+
+    if (!nestedEffect) {
+      return { value: 5, reason: `selectFromGroup: no nested effect → 5` };
+    }
+
+    // Check if there are valid targets for this group
+    const targetCount = getTargetGroupCount(ctx, targetGroup);
+    if (targetCount === 0) {
+      return { value: 0, reason: `selectFromGroup(${targetGroup}): 0 targets → 0` };
+    }
+
+    // Evaluate the nested effect - this could be damage, kill, buff, etc.
+    const nestedValue = evaluateNestedEffect(nestedEffect, ctx, targetGroup);
+
+    return {
+      value: nestedValue.value,
+      reason: `selectFromGroup(${targetGroup}): ${nestedValue.reason}`,
+    };
+  },
+
+  /**
+   * selectTarget - Similar to selectFromGroup, another targeting wrapper
+   */
+  selectTarget: (ctx) => {
+    const targetType = ctx.params?.targetType;
+    const nestedEffect = ctx.params?.effect;
+
+    if (!nestedEffect) {
+      return { value: 8, reason: `selectTarget: no nested effect → 8` };
+    }
+
+    const targetCount = getTargetGroupCount(ctx, targetType);
+    if (targetCount === 0) {
+      return { value: 0, reason: `selectTarget(${targetType}): 0 targets → 0` };
+    }
+
+    const nestedValue = evaluateNestedEffect(nestedEffect, ctx, targetType);
+
+    return {
+      value: nestedValue.value,
+      reason: `selectTarget(${targetType}): ${nestedValue.reason}`,
+    };
+  },
+
+  // ========================
   // DEFAULT FALLBACK
   // ========================
 
   default: (ctx) => ({ value: 5, reason: `${ctx?.effectDef?.type || 'unknown'} (default) → 5` }),
 };
+
+// ============================================================================
+// HELPER: Get target count for a target group
+// ============================================================================
+
+function getTargetGroupCount(ctx, targetGroup) {
+  if (!ctx?.state || ctx.aiPlayerIndex === undefined) return 1; // Assume targets exist without context
+
+  const player = ctx.state.players[ctx.aiPlayerIndex];
+  const opponent = ctx.state.players[1 - ctx.aiPlayerIndex];
+
+  switch (targetGroup) {
+    case 'friendly-creatures':
+    case 'friendly-creature':
+      return player.field.filter((c) => c !== null && c.currentHp > 0).length;
+
+    case 'friendly-predators':
+    case 'friendly-predator':
+      return player.field.filter((c) => c !== null && c.currentHp > 0 && c.type === 'Predator').length;
+
+    case 'friendly-prey':
+      return player.field.filter((c) => c !== null && c.currentHp > 0 && c.type === 'Prey').length;
+
+    case 'enemy-creatures':
+    case 'enemy-creature':
+      return opponent.field.filter((c) => c !== null && c.currentHp > 0).length;
+
+    case 'enemy-predators':
+    case 'enemy-predator':
+      return opponent.field.filter((c) => c !== null && c.currentHp > 0 && c.type === 'Predator').length;
+
+    case 'enemy-prey':
+      return opponent.field.filter((c) => c !== null && c.currentHp > 0 && c.type === 'Prey').length;
+
+    case 'all-creatures':
+    case 'any-creature':
+      return (
+        player.field.filter((c) => c !== null && c.currentHp > 0).length +
+        opponent.field.filter((c) => c !== null && c.currentHp > 0).length
+      );
+
+    default:
+      return 1; // Unknown group - assume it has targets
+  }
+}
+
+// ============================================================================
+// HELPER: Evaluate nested effect inside selectFromGroup/selectTarget
+// ============================================================================
+
+function evaluateNestedEffect(effect, ctx, targetGroup) {
+  if (!effect) return { value: 0, reason: 'no effect' };
+
+  // Handle direct damage property (e.g., { damage: 4, steal: true })
+  if (effect.damage !== undefined) {
+    const amount = effect.damage;
+    const steals = effect.steal === true; // IMPORTANT: Check if this steals surviving creatures!
+    const isEnemyTarget = targetGroup?.includes('enemy');
+
+    if (isEnemyTarget) {
+      // Evaluate as targeted creature damage
+      const enemies = getEnemyCreatures(ctx);
+      if (enemies.length === 0) {
+        return { value: 0, reason: `${amount} dmg: 0 enemies → 0` };
+      }
+
+      const ai = getAI(ctx);
+
+      // Find the best target value (creature we could kill, weaken, or STEAL)
+      let bestValue = 0;
+      let bestTarget = null;
+      let bestAction = 'damage';
+
+      for (const enemy of enemies) {
+        const hp = enemy.currentHp ?? enemy.hp ?? 0;
+        const atk = enemy.currentAtk ?? enemy.atk ?? 0;
+        let targetValue;
+        let action;
+
+        if (amount >= hp) {
+          // Can kill - value is the creature's full value
+          targetValue = getCreatureValue(enemy);
+          action = 'kill';
+          // Bonus for killing high-threat creatures
+          if (atk >= 4) targetValue += 10;
+        } else if (steals) {
+          // STEAL: Damage doesn't kill, but we STEAL the creature!
+          // This is HUGE - we remove their threat AND gain it ourselves
+          // Value = removing their creature + gaining it for ourselves
+          const creatureValue = getCreatureValue(enemy);
+          const remainingHp = hp - amount;
+
+          // Stealing value: enemy loses the creature (full value) + we gain it (with reduced HP)
+          // The stolen creature keeps its ATK but has reduced HP
+          const stolenValue = atk * 3 + remainingHp * 1.5; // Similar to getCreatureValue but with new HP
+          targetValue = creatureValue + stolenValue; // Double value swing!
+          action = 'steal';
+
+          // MASSIVE bonus for stealing creatures that threaten lethal
+          if (ai && atk >= ai.hp) {
+            // Stealing a lethal threat is incredibly valuable:
+            // 1. Removes the threat (they can't kill us)
+            // 2. We gain a powerful creature
+            // 3. That creature can now attack THEM or block for us
+            targetValue += 100;
+            action = 'steal-lethal';
+          }
+        } else {
+          // Just damage - value based on damage dealt
+          targetValue = amount * 2.5;
+          action = 'damage';
+        }
+
+        if (targetValue > bestValue) {
+          bestValue = targetValue;
+          bestTarget = enemy;
+          bestAction = action;
+        }
+      }
+
+      // Add survival bonus if this KILLS a lethal threat (non-steal case)
+      if (ai && bestTarget && bestAction === 'kill') {
+        const targetAtk = bestTarget.currentAtk ?? bestTarget.atk ?? 0;
+        if (targetAtk >= ai.hp) {
+          bestValue += 50;
+          return {
+            value: bestValue,
+            reason: `${amount} dmg kills ${bestTarget.name} (REMOVES LETHAL THREAT) → ${bestValue.toFixed(0)}`,
+          };
+        }
+      }
+
+      // Build reason string
+      let reasonSuffix = '';
+      if (bestAction === 'steal-lethal') {
+        reasonSuffix = ` (STEALS LETHAL THREAT!)`;
+      } else if (bestAction === 'steal') {
+        const remainingHp = (bestTarget?.currentHp ?? bestTarget?.hp ?? 0) - amount;
+        reasonSuffix = ` (steals at ${remainingHp} HP)`;
+      } else if (bestAction === 'kill') {
+        reasonSuffix = ` (kills)`;
+      }
+
+      return {
+        value: bestValue,
+        reason: `${amount} dmg${steals ? '+steal' : ''}: best=${bestTarget?.name || '?'}${reasonSuffix} → ${bestValue.toFixed(0)}`,
+      };
+    } else {
+      // Friendly target damage (rare, usually bad)
+      return { value: -amount * 2, reason: `${amount} dmg to friendly → ${-amount * 2}` };
+    }
+  }
+
+  // Handle typed effects (e.g., { type: 'kill', params: {...} })
+  if (effect.type) {
+    const evaluator = EFFECT_VALUES[effect.type] || EFFECT_VALUES['default'];
+    const subCtx = { ...ctx, params: effect.params || {} };
+    return evaluator(subCtx);
+  }
+
+  return { value: 5, reason: 'unknown nested effect → 5' };
+}
 
 // ============================================================================
 // CARD KNOWLEDGE BASE CLASS

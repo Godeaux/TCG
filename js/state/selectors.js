@@ -548,15 +548,13 @@ export const canCardBePlayed = (state, card, playerIndex) => {
 
   // Check card limit
   // Per CORE-RULES.md §2:
-  // - Free Spell and Trap types completely bypass the limit
-  // - Free Play keyword cards require the limit to be available (can only play while limit unused)
-  const isTrulyFree = card.type === 'Free Spell' || card.type === 'Trap';
-  const hasFreePlayKeyword = isFreePlay(card);
+  // Free Play keyword and Free Spell both require limit to be available
+  // They don't consume the limit, but can only be played while it's unused
+  // Traps are activated from hand on opponent's turn, not "played"
+  const isTrap = card.type === 'Trap';
 
-  if (!isTrulyFree && wasCardPlayedThisTurn(state)) {
-    // Card limit already used
-    // Per CORE-RULES.md: Free Play can only be played while limit is still available
-    // So if limit is used, Free Play cards cannot be played (even with prey)
+  if (!isTrap && wasCardPlayedThisTurn(state)) {
+    // Card limit already used - only Traps can be "played" (activated from hand)
     return false;
   }
 

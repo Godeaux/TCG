@@ -880,13 +880,14 @@ const updateIndicators = (state, controlsLocked) => {
     // Show AI thinking indicator when deep search is running
     if (state._aiIsSearching) {
       fieldPhaseLabel.classList.add('ai-thinking');
+      stopAIThinkingEllipsisAnimation();
 
-      if (state._aiStillThinking) {
-        // Show "Still thinking" with animated ellipsis after 2 seconds
-        startAIThinkingEllipsisAnimation(fieldPhaseLabel);
+      const nodes = state._aiSearchStats?.nodes || 0;
+      if (nodes > 0) {
+        // Show live node count for visual feedback
+        fieldPhaseLabel.textContent = `Considering: ${nodes.toLocaleString()} possibilities...`;
       } else {
-        // Show initial "AI is thinking..."
-        stopAIThinkingEllipsisAnimation();
+        // Show initial message before search starts
         fieldPhaseLabel.textContent = 'AI is thinking...';
       }
     } else {
@@ -2191,6 +2192,7 @@ const resolveAttack = (state, attacker, target, negateAttack = false, negatedBy 
     markCreatureAttacked(attacker);
     state.broadcast?.(state);
     cleanupDestroyed(state);
+    clearSelectionPanel(); // Clear any stale selection panels to prevent softlock
     return;
   }
 
@@ -2228,6 +2230,7 @@ const resolveAttack = (state, attacker, target, negateAttack = false, negatedBy 
           if (attacker.currentHp <= 0) {
             logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
             markCreatureAttacked(attacker);
+            clearSelectionPanel(); // Clear any stale selection panels to prevent softlock
             state.broadcast?.(state);
             return;
           }
@@ -2235,6 +2238,7 @@ const resolveAttack = (state, attacker, target, negateAttack = false, negatedBy 
           if (target.type === 'creature' && target.card.currentHp <= 0) {
             logMessage(state, `${target.card.name} is already destroyed.`);
             markCreatureAttacked(attacker);
+            clearSelectionPanel(); // Clear any stale selection panels to prevent softlock
             state.broadcast?.(state);
             return;
           }
@@ -2249,6 +2253,7 @@ const resolveAttack = (state, attacker, target, negateAttack = false, negatedBy 
     if (attacker.currentHp <= 0) {
       logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
       markCreatureAttacked(attacker);
+      clearSelectionPanel(); // Clear any stale selection panels to prevent softlock
       state.broadcast?.(state);
       return;
     }
@@ -2256,6 +2261,7 @@ const resolveAttack = (state, attacker, target, negateAttack = false, negatedBy 
     if (target.type === 'creature' && target.card.currentHp <= 0) {
       logMessage(state, `${target.card.name} is already destroyed.`);
       markCreatureAttacked(attacker);
+      clearSelectionPanel(); // Clear any stale selection panels to prevent softlock
       state.broadcast?.(state);
       return;
     }
@@ -2295,12 +2301,14 @@ const continueResolveAttack = (state, attacker, target) => {
     if (attacker.currentHp <= 0) {
       logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
       markCreatureAttacked(attacker);
+      clearSelectionPanel(); // Clear any stale selection panels to prevent softlock
       state.broadcast?.(state);
       return;
     }
     if (result?.returnToHand) {
       markCreatureAttacked(attacker);
       cleanupDestroyed(state);
+      clearSelectionPanel(); // Clear any stale selection panels to prevent softlock
       state.broadcast?.(state);
       return;
     }
@@ -2402,6 +2410,9 @@ const continueResolveAttack = (state, attacker, target) => {
   }
 
   cleanupDestroyed(state);
+  // Clear any stale selection panels after combat resolution to prevent softlock
+  // This handles edge cases where creature death might leave a selection panel open
+  clearSelectionPanel();
   state.broadcast?.(state);
   return effect;
 };
@@ -2719,21 +2730,24 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) 
   const playerIndex = state.activePlayerIndex;
   const opponentIndex = (state.activePlayerIndex + 1) % 2;
 
-  // Free Spell and Trap types bypass limit entirely
-  // Free Play keyword requires limit available but doesn't consume it
-  const isTrulyFree = card.type === 'Free Spell' || card.type === 'Trap';
+  // Per CORE-RULES.md: Free Play keyword and Free Spell both require limit to be available
+  // They don't consume the limit, but can only be played while it's unused
+  // Traps are activated from hand on opponent's turn, not "played" during your turn
+  const isTrap = card.type === 'Trap';
   const hasFreePlayKeyword = isFreePlay(card);
+  const isFreeSpell = card.type === 'Free Spell';
 
-  // Only truly free cards bypass the limit check entirely
-  // Free Play keyword cards still require the limit to be available
-  if (!isTrulyFree && !cardLimitAvailable(state)) {
+  // Only Traps bypass the limit check (they're not really "played")
+  // All other cards require the limit to be available
+  if (!isTrap && !cardLimitAvailable(state)) {
     logMessage(state, 'You have already played a card this turn.');
     onUpdate?.();
     return;
   }
 
   // Determine if playing this card consumes the card limit
-  const consumesLimit = !isTrulyFree && !hasFreePlayKeyword;
+  // Free Spell and Free Play keyword cards don't consume the limit
+  const consumesLimit = !isTrap && !isFreeSpell && !hasFreePlayKeyword;
 
   // Clear extended consumption window when a card is being played
   state.extendedConsumption = null;

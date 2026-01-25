@@ -253,16 +253,40 @@ export class CombatEvaluator {
    * @returns {Object} - { target, score, reason }
    */
   findBestTarget(state, attacker, validTargets, aiPlayerIndex) {
+    const ai = state.players[aiPlayerIndex];
     const opponent = state.players[1 - aiPlayerIndex];
 
     // SURVIVAL ANALYSIS: Comprehensive check for lethal threats
     const survivalAnalysis = this.threatDetector.analyzeSurvivalOptions(state, aiPlayerIndex);
 
-    if (survivalAnalysis.inDanger) {
-      // We're facing lethal! Survival is the #1 priority
-      const criticalThreats = survivalAnalysis.criticalThreats || [];
+    // Also do a simpler danger check - are there creatures that can kill us?
+    // This catches cases where analyzeSurvivalOptions might miss something
+    const dangerCreatures = (validTargets.creatures || []).filter((c) => {
+      const atk = c.currentAtk ?? c.atk ?? 0;
+      return atk >= ai.hp;
+    });
+    const facingDangerousCreature = dangerCreatures.length > 0;
 
-      for (const { creature: threat } of criticalThreats) {
+    if (survivalAnalysis.inDanger || facingDangerousCreature) {
+      // We're facing lethal! Survival is the #1 priority
+      // Combine critical threats from analysis with our own danger check
+      const criticalThreats = survivalAnalysis.criticalThreats || [];
+      const allThreats = [...criticalThreats];
+
+      // Add any dangerous creatures we found that aren't already in criticalThreats
+      for (const dc of dangerCreatures) {
+        const alreadyIncluded = allThreats.some(
+          (t) => t.creature?.instanceId === dc.instanceId
+        );
+        if (!alreadyIncluded) {
+          allThreats.push({ creature: dc, priority: 'critical' });
+        }
+      }
+
+      for (const threatEntry of allThreats) {
+        const threat = threatEntry.creature || threatEntry;
+        if (!threat || !threat.instanceId) continue;
+
         // Check if THIS attacker can target this threat
         const isValidTarget = (validTargets.creatures || []).some(
           (c) => c.instanceId === threat.instanceId
@@ -273,13 +297,14 @@ export class CombatEvaluator {
         const trade = this.analyzeTradeOutcome(attacker, threat);
         const atkPower = attacker.currentAtk ?? attacker.atk ?? 0;
         const threatHp = threat.currentHp ?? threat.hp ?? 0;
+        const threatAtk = threat.currentAtk ?? threat.atk ?? 0;
 
         // CASE 1: We can kill the threat - do it!
         if (trade.weKill) {
           return {
             target: creatureTarget,
             score: 500,
-            reason: `SURVIVAL: Kill ${threat.name} (${atkPower} dmg kills ${threatHp} HP) or we die!`,
+            reason: `SURVIVAL: Kill ${threat.name} (${atkPower} dmg kills ${threatHp} HP) - it has ${threatAtk} ATK vs our ${ai.hp} HP!`,
           };
         }
 
@@ -320,7 +345,15 @@ export class CombatEvaluator {
     // Evaluate player target
     if (validTargets.player) {
       const playerTarget = { type: 'player', player: opponent, playerIndex: 1 - aiPlayerIndex };
-      const { score, reason } = this.evaluateAttack(state, attacker, playerTarget, aiPlayerIndex);
+      let { score, reason } = this.evaluateAttack(state, attacker, playerTarget, aiPlayerIndex);
+
+      // PENALTY: If facing dangerous creatures, face attacks are much less appealing
+      // Even if not technically "lethal", we should be defensive
+      if (facingDangerousCreature) {
+        score -= 50;
+        reason += ' [RISKY: dangerous creature on board]';
+      }
+
       if (score > bestScore) {
         bestScore = score;
         bestTarget = playerTarget;
@@ -331,7 +364,15 @@ export class CombatEvaluator {
     // Evaluate creature targets
     for (const creature of validTargets.creatures || []) {
       const creatureTarget = { type: 'creature', card: creature };
-      const { score, reason } = this.evaluateAttack(state, attacker, creatureTarget, aiPlayerIndex);
+      let { score, reason } = this.evaluateAttack(state, attacker, creatureTarget, aiPlayerIndex);
+
+      // BONUS: Attacking high-ATK creatures is better when we're low on HP
+      const creatureAtk = creature.currentAtk ?? creature.atk ?? 0;
+      if (creatureAtk >= ai.hp * 0.5) {
+        score += 20;
+        reason += ' [HIGH THREAT]';
+      }
+
       if (score > bestScore) {
         bestScore = score;
         bestTarget = creatureTarget;
