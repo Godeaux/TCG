@@ -702,6 +702,8 @@ const placeCreatureInSpecificSlot = (card, slotIndex) => {
 
   // Set cardPlayedThisTurn BEFORE triggering traps (fixes bug where trap resolution
   // would allow another card play before the callback sets the flag)
+  // Free Play keyword and Free Spell don't consume the limit
+  const isTrulyFree = isFreePlay(card) || card.type === 'Free Spell' || isTrap;
   if (!isTrulyFree) {
     state.cardPlayedThisTurn = true;
   }

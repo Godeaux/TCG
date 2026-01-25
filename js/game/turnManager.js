@@ -277,6 +277,7 @@ export const startTurn = (state) => {
   state.cardPlayedThisTurn = false;
   state.extendedConsumption = null; // Clear extended consumption window on turn start
   state.recentlyDrawnCards = []; // Clear recently drawn tracking for new turn
+  state.endOfTurnFinalized = false; // Reset so this turn's end-of-turn effects will trigger
   resetCombat(state);
   logGameAction(
     state,
