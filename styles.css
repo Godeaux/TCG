@@ -6204,6 +6204,9 @@ button {
     padding: 0;
     overflow-x: hidden;
     max-width: 100%;
+    /* Mobile needs larger initial overlap before JS calculates exact value */
+    /* Cards are ~22vh*5/7 wide, need significant overlap to fit in viewport */
+    --hand-overlap: calc(22vh * 5 / 7 * 0.6);
   }
 
   .hand-grid.is-dragging,
