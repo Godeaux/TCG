@@ -124,14 +124,37 @@
           </div>
         </div>
         <div class="menu-status" id="menu-status"></div>
+
+        <div class="menu-actions-grid">
+          <button class="menu-find-match" id="menu-find-match">
+            <span>Find Match</span>
+            <span class="online-count" id="menu-online-count">Click to log in</span>
+          </button>
+
+          <div class="menu-right-stack">
+            <button class="btn-secondary" id="menu-decks">Decks</button>
+            <button class="btn-secondary" id="menu-profile">Profile</button>
+            <button class="btn-secondary" id="menu-other">Other</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay other-menu-overlay" id="other-menu-overlay" aria-hidden="true">
+      <div class="overlay-content menu-card">
+        <div class="menu-header">
+          <div class="menu-icon">⚙️</div>
+          <div>
+            <h2>Other Options</h2>
+            <p class="muted">Additional game modes and settings.</p>
+          </div>
+        </div>
         <div class="menu-actions">
-          <button class="btn-primary" id="menu-play">Play (one device)</button>
-          <button class="btn-primary" id="menu-ai">Play vs. AI</button>
-          <button class="btn-secondary" id="menu-login">Login</button>
-          <button class="btn-secondary" id="menu-logout" style="display: none;">Log Out</button>
-          <button class="btn-secondary" id="menu-catalog" disabled>Catalog</button>
-          <button class="btn-secondary" id="menu-profile">Profile</button>
-          <button class="btn-secondary" id="menu-tutorial">Tutorial</button>
+          <button class="btn-primary" id="other-ai">Play vs. AI</button>
+          <button class="btn-secondary" id="other-multiplayer">Multiplayer</button>
+          <button class="btn-secondary" id="other-tutorial">Tutorial</button>
+          <button class="btn-secondary" id="other-options" disabled>Options</button>
+          <button class="btn-secondary" id="other-back">Back</button>
         </div>
       </div>
     </div>
@@ -636,6 +659,7 @@
           <button class="btn-secondary" id="lobby-join">Join as Guest</button>
           <button class="btn-secondary" id="lobby-leave" style="display: none;">New Code</button>
           <button class="btn-secondary" id="multiplayer-back">Back</button>
+          <button class="btn-secondary" id="multiplayer-auth">Log In</button>
         </div>
         <form class="menu-form" id="lobby-join-form">
           <label class="menu-label" for="lobby-code">Enter Lobby Code</label>

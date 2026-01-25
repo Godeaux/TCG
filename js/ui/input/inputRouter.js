@@ -280,14 +280,21 @@ const getNavigationElements = () => ({
   infoToggle: document.getElementById('info-toggle'),
   infoBack: document.getElementById('info-back'),
 
-  // Menu buttons
-  menuPlay: document.getElementById('menu-play'),
-  menuAI: document.getElementById('menu-ai'),
-  menuLogin: document.getElementById('menu-login'),
-  menuLogout: document.getElementById('menu-logout'),
-  menuCatalog: document.getElementById('menu-catalog'),
+  // Main menu buttons (new layout)
+  menuFindMatch: document.getElementById('menu-find-match'),
+  menuDecks: document.getElementById('menu-decks'),
   menuProfile: document.getElementById('menu-profile'),
-  menuTutorial: document.getElementById('menu-tutorial'),
+  menuOther: document.getElementById('menu-other'),
+
+  // Other submenu buttons
+  otherAI: document.getElementById('other-ai'),
+  otherMultiplayer: document.getElementById('other-multiplayer'),
+  otherTutorial: document.getElementById('other-tutorial'),
+  otherOptions: document.getElementById('other-options'),
+  otherBack: document.getElementById('other-back'),
+
+  // Multiplayer auth button (Log In / Log Out inside multiplayer overlay)
+  multiplayerAuth: document.getElementById('multiplayer-auth'),
 
   // AI Setup
   aiDeckRandom: document.getElementById('ai-deck-random'),
@@ -386,53 +393,36 @@ const initNavigation = () => {
     });
   });
 
-  // Main menu: Play (local mode)
-  elements.menuPlay?.addEventListener('click', () => {
+  // Main menu: Find Match (calls handleFindMatch directly)
+  elements.menuFindMatch?.addEventListener('click', () => {
     if (!latestState) {
       return;
     }
-    latestState.menu.mode = 'local';
-    setMenuStage(latestState, 'ready');
-    latestCallbacks.onUpdate?.();
-  });
-
-  // Main menu: Login/Multiplayer
-  elements.menuLogin?.addEventListener('click', () => {
-    if (!latestState) {
-      return;
-    }
-    if (latestState.menu.profile) {
-      setMenuStage(latestState, 'multiplayer');
-    } else {
+    // Require login for Find Match
+    if (!latestState.menu.profile) {
       setMenuStage(latestState, 'login');
-    }
-    latestCallbacks.onUpdate?.();
-  });
-
-  // Main menu: Log Out
-  elements.menuLogout?.addEventListener('click', () => {
-    if (!latestState) {
+      latestCallbacks.onUpdate?.();
       return;
     }
-    handleLogout(latestState);
+    handleFindMatch(latestState);
   });
 
-  // Main menu: Deck Catalog
-  elements.menuCatalog?.addEventListener('click', () => {
+  // Main menu: Decks (opens deck builder/catalog)
+  elements.menuDecks?.addEventListener('click', () => {
     if (!latestState) {
       return;
     }
     latestState.menu.mode = null;
     setMenuStage(latestState, 'catalog');
     latestState.catalogBuilder = {
-      stage: 'home', // Show deck management home screen first
+      stage: 'home',
       deckId: null,
       selections: [],
       available: [],
       catalogOrder: [],
       editingDeckId: null,
       editingDeckName: null,
-      activeTab: 'catalog', // Store activeTab in state for sync across modules
+      activeTab: 'catalog',
     };
     deckActiveTab = 'catalog';
     deckHighlighted = null;
@@ -440,13 +430,75 @@ const initNavigation = () => {
     latestCallbacks.onUpdate?.();
   });
 
-  // Main menu: Tutorial
-  elements.menuTutorial?.addEventListener('click', () => {
+  // Main menu: Other (opens Other submenu)
+  elements.menuOther?.addEventListener('click', () => {
+    if (!latestState) {
+      return;
+    }
+    setMenuStage(latestState, 'other');
+    latestCallbacks.onUpdate?.();
+  });
+
+  // Other submenu: Play vs. AI
+  elements.otherAI?.addEventListener('click', () => {
+    if (!latestState) {
+      return;
+    }
+    // Initialize AI settings if not present
+    if (!latestState.menu.aiSettings) {
+      latestState.menu.aiSettings = {
+        deckType: 'random',
+        selectedDeckId: null,
+      };
+    }
+    elements.aiSavedDecks.style.display = 'none';
+    setMenuStage(latestState, 'ai-setup');
+    latestCallbacks.onUpdate?.();
+  });
+
+  // Other submenu: Multiplayer (without Find Match)
+  elements.otherMultiplayer?.addEventListener('click', () => {
+    if (!latestState) {
+      return;
+    }
+    // Set flag to hide Find Match in multiplayer overlay
+    latestState.menu.hideMultiplayerFindMatch = true;
+    setMenuStage(latestState, 'multiplayer');
+    latestCallbacks.onUpdate?.();
+  });
+
+  // Other submenu: Tutorial
+  elements.otherTutorial?.addEventListener('click', () => {
     if (!latestState) {
       return;
     }
     setMenuStage(latestState, 'tutorial');
     latestCallbacks.onUpdate?.();
+  });
+
+  // Other submenu: Back
+  elements.otherBack?.addEventListener('click', () => {
+    if (!latestState) {
+      return;
+    }
+    setMenuStage(latestState, 'main');
+    latestCallbacks.onUpdate?.();
+  });
+
+  // Multiplayer overlay: Log Out
+  // Multiplayer overlay: Log In / Log Out (dynamic based on login state)
+  elements.multiplayerAuth?.addEventListener('click', () => {
+    if (!latestState) {
+      return;
+    }
+    if (latestState.menu.profile) {
+      // Logged in - log out
+      handleLogout(latestState);
+    } else {
+      // Not logged in - go to login
+      setMenuStage(latestState, 'login');
+      latestCallbacks.onUpdate?.();
+    }
   });
 
   // Main menu: Profile
@@ -499,24 +551,6 @@ const initNavigation = () => {
       }
     }
     setMenuStage(latestState, 'profile');
-    latestCallbacks.onUpdate?.();
-  });
-
-  // Main menu: Play vs. AI
-  elements.menuAI?.addEventListener('click', () => {
-    if (!latestState) {
-      return;
-    }
-    // Initialize AI settings if not present
-    if (!latestState.menu.aiSettings) {
-      latestState.menu.aiSettings = {
-        deckType: 'random',
-        selectedDeckId: null,
-      };
-    }
-    // Reset UI state when entering AI setup
-    elements.aiSavedDecks.style.display = 'none';
-    setMenuStage(latestState, 'ai-setup');
     latestCallbacks.onUpdate?.();
   });
 
@@ -709,6 +743,8 @@ const initNavigation = () => {
     if (!latestState) {
       return;
     }
+    // Clear the flag for hiding Find Match button
+    latestState.menu.hideMultiplayerFindMatch = false;
     // If we're in a lobby, clean it up first
     if (latestState.menu.lobby) {
       handleBackFromLobby(latestState);

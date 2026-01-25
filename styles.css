@@ -6,7 +6,7 @@
   --bg-card: #1a1f2e;
   --bg-card-hover: #252b3d;
   --bg-field: #12161f;
-  --bg-overlay: rgba(5, 8, 12, 0.7);
+  --bg-overlay: rgba(5, 8, 12, 1.0);
 
   --gold: #d4a853;
   --gold-light: #f0d078;
@@ -4233,10 +4233,68 @@ button {
 }
 
 .menu-card {
-  width: min(520px, 100%);
+  width: min(680px, 100%);
   display: flex;
   flex-direction: column;
   gap: 18px;
+}
+
+/* Two-column menu layout */
+.menu-actions-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 16px;
+  align-items: stretch;
+}
+
+/* Large Find Match button */
+.menu-find-match {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+  color: #2e2211;
+  border-radius: 16px;
+  padding: 24px;
+  font-weight: 700;
+  font-size: var(--font-xl);
+  min-height: 140px;
+  cursor: pointer;
+  border: none;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.menu-find-match:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(212, 168, 83, 0.3);
+}
+
+.menu-find-match:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.menu-find-match .online-count {
+  font-size: var(--font-sm);
+  font-weight: 400;
+  margin-top: 8px;
+}
+
+/* Right column stacked buttons */
+.menu-right-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.menu-right-stack .btn-secondary {
+  flex: 1;
+}
+
+/* Other submenu overlay - narrower width */
+.other-menu-overlay .menu-card {
+  width: min(420px, 100%);
 }
 
 .menu-header {

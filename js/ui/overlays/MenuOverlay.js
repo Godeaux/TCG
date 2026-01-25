@@ -63,17 +63,18 @@ const ensurePresenceInitialized = (profileId, onUpdate) => {
 const getMenuElements = () => ({
   // Overlays
   menuOverlay: document.getElementById('menu-overlay'),
+  otherMenuOverlay: document.getElementById('other-menu-overlay'),
   loginOverlay: document.getElementById('login-overlay'),
   multiplayerOverlay: document.getElementById('multiplayer-overlay'),
   tutorialOverlay: document.getElementById('tutorial-overlay'),
   aiSetupOverlay: document.getElementById('ai-setup-overlay'),
 
-  // Main menu buttons
-  menuPlay: document.getElementById('menu-play'),
-  menuAI: document.getElementById('menu-ai'),
-  menuLogin: document.getElementById('menu-login'),
-  menuLogout: document.getElementById('menu-logout'),
-  menuCatalog: document.getElementById('menu-catalog'),
+  // Main menu buttons (new layout)
+  menuFindMatch: document.getElementById('menu-find-match'),
+  menuOnlineCount: document.getElementById('menu-online-count'),
+  menuDecks: document.getElementById('menu-decks'),
+  menuProfile: document.getElementById('menu-profile'),
+  menuOther: document.getElementById('menu-other'),
   menuStatus: document.getElementById('menu-status'),
 
   // Login elements
@@ -94,6 +95,7 @@ const getMenuElements = () => ({
   lobbyJoin: document.getElementById('lobby-join'),
   lobbyLeave: document.getElementById('lobby-leave'),
   multiplayerBack: document.getElementById('multiplayer-back'),
+  multiplayerAuth: document.getElementById('multiplayer-auth'),
   lobbyJoinForm: document.getElementById('lobby-join-form'),
   lobbyJoinCancel: document.getElementById('lobby-join-cancel'),
   lobbyError: document.getElementById('lobby-error'),
@@ -160,6 +162,7 @@ export const renderMenuOverlays = (state, callbacks) => {
   // 'multiplayer' and 'lobby' stages both show the unified multiplayer overlay
   const stage = state.menu.stage;
   const showMain = stage === 'main';
+  const showOther = stage === 'other';
   const showLogin = stage === 'login';
   const showMultiplayer = stage === 'multiplayer' || stage === 'lobby';
   const showTutorial = stage === 'tutorial';
@@ -168,6 +171,9 @@ export const renderMenuOverlays = (state, callbacks) => {
   // Toggle overlay visibility
   elements.menuOverlay?.classList.toggle('active', showMain);
   elements.menuOverlay?.setAttribute('aria-hidden', showMain ? 'false' : 'true');
+
+  elements.otherMenuOverlay?.classList.toggle('active', showOther);
+  elements.otherMenuOverlay?.setAttribute('aria-hidden', showOther ? 'false' : 'true');
 
   elements.loginOverlay?.classList.toggle('active', showLogin);
   elements.loginOverlay?.setAttribute('aria-hidden', showLogin ? 'false' : 'true');
@@ -199,24 +205,32 @@ export const renderMenuOverlays = (state, callbacks) => {
     ensurePresenceInitialized(state.menu.profile.id, callbacks?.onUpdate);
   }
 
-  if (elements.menuLogin) {
-    // Show online count on multiplayer button when logged in
+  // Update Find Match button on main menu
+  // Button is always enabled (redirects to login if not logged in)
+  if (elements.menuFindMatch) {
+    elements.menuFindMatch.disabled = state.menu.loading;
+  }
+
+  // Update online count display on main menu
+  if (elements.menuOnlineCount) {
     if (isLoggedIn && onlineCount > 0) {
-      elements.menuLogin.textContent = `Multiplayer (${onlineCount})`;
+      elements.menuOnlineCount.textContent = `(${onlineCount}) online`;
+    } else if (isLoggedIn) {
+      elements.menuOnlineCount.textContent = 'Online';
     } else {
-      elements.menuLogin.textContent = isLoggedIn ? 'Multiplayer' : 'Login';
+      elements.menuOnlineCount.textContent = 'Click to log in';
     }
-    elements.menuLogin.disabled = state.menu.loading;
   }
-  if (elements.menuLogout) {
-    elements.menuLogout.style.display = isLoggedIn ? '' : 'none';
-    elements.menuLogout.disabled = state.menu.loading;
+
+  // Update other main menu button states
+  if (elements.menuDecks) {
+    elements.menuDecks.disabled = state.menu.loading;
   }
-  if (elements.menuPlay) {
-    elements.menuPlay.disabled = state.menu.loading;
+  if (elements.menuProfile) {
+    elements.menuProfile.disabled = state.menu.loading;
   }
-  if (elements.menuCatalog) {
-    elements.menuCatalog.disabled = state.menu.loading;
+  if (elements.menuOther) {
+    elements.menuOther.disabled = state.menu.loading;
   }
 
   // Update login states
@@ -244,6 +258,7 @@ const renderMultiplayerScreen = (state, elements) => {
   const loading = state.menu.loading;
   const matchmaking = state.menu.matchmaking;
   const localProfileId = state.menu.profile?.id ?? null;
+  const hideMainFindMatch = state.menu.hideMultiplayerFindMatch === true;
 
   // Determine lobby state
   const hasLobby = Boolean(lobby);
@@ -276,6 +291,8 @@ const renderMultiplayerScreen = (state, elements) => {
         : `Joined ${hostName}'s lobby. Waiting...`;
     } else if (hasExistingLobby) {
       elements.multiplayerStatus.textContent = 'You have an existing lobby. Rejoin or create new.';
+    } else if (hideMainFindMatch) {
+      elements.multiplayerStatus.textContent = 'Create or join a private lobby.';
     } else {
       elements.multiplayerStatus.textContent = 'Find a match or create a private lobby.';
     }
@@ -293,9 +310,10 @@ const renderMultiplayerScreen = (state, elements) => {
 
   // Show/hide buttons based on state
   // Find Match: show when not currently in a lobby and not matchmaking
-  // (show even if there's an existing lobby - user can choose to find new match instead)
+  // Hide when accessed from "Other" menu (hideMainFindMatch) since Find Match is on main menu
   if (elements.lobbyFindMatch) {
-    elements.lobbyFindMatch.style.display = !hasLobby && !matchmaking ? '' : 'none';
+    elements.lobbyFindMatch.style.display =
+      !hasLobby && !matchmaking && !hideMainFindMatch ? '' : 'none';
     elements.lobbyFindMatch.disabled = loading;
   }
 
@@ -343,6 +361,13 @@ const renderMultiplayerScreen = (state, elements) => {
     elements.multiplayerBack.disabled = loading;
   }
 
+  // Auth button: show "Log In" or "Log Out" based on login state
+  const isLoggedIn = Boolean(state.menu.profile);
+  if (elements.multiplayerAuth) {
+    elements.multiplayerAuth.textContent = isLoggedIn ? 'Log Out' : 'Log In';
+    elements.multiplayerAuth.disabled = loading;
+  }
+
   // Cancel button in join form
   if (elements.lobbyJoinCancel) {
     elements.lobbyJoinCancel.disabled = loading;
@@ -370,12 +395,14 @@ export const hideAllMenuOverlays = () => {
   const elements = getMenuElements();
 
   elements.menuOverlay?.classList.remove('active');
+  elements.otherMenuOverlay?.classList.remove('active');
   elements.loginOverlay?.classList.remove('active');
   elements.multiplayerOverlay?.classList.remove('active');
   elements.tutorialOverlay?.classList.remove('active');
   elements.aiSetupOverlay?.classList.remove('active');
 
   elements.menuOverlay?.setAttribute('aria-hidden', 'true');
+  elements.otherMenuOverlay?.setAttribute('aria-hidden', 'true');
   elements.loginOverlay?.setAttribute('aria-hidden', 'true');
   elements.multiplayerOverlay?.setAttribute('aria-hidden', 'true');
   elements.tutorialOverlay?.setAttribute('aria-hidden', 'true');
