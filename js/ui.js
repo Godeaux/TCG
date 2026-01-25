@@ -4332,6 +4332,16 @@ export const renderGame = (state, callbacks = {}) => {
       // Apply UI-specific post-processing (deck rehydration, callbacks, recovery)
       handleSyncPostProcessing(s, payload, options);
 
+      // Snapshot advantage after receiving sync (only if value changed)
+      if (positionEvaluator && s.players) {
+        const currentAdvantage = positionEvaluator.calculateAdvantage(s, 0);
+        const history = s.advantageHistory || [];
+        const lastAdvantage = history.length > 0 ? history[history.length - 1].advantage : null;
+        if (lastAdvantage === null || currentAdvantage !== lastAdvantage) {
+          positionEvaluator.snapshotAdvantage(s, 'sync');
+        }
+      }
+
       // If pendingReaction was cleared by remote player and we have a local callback,
       // invoke it to continue the attack flow (fixes multiplayer trap decline bug)
       if (hadPendingReaction && hadLocalCallback && s.pendingReaction === null) {

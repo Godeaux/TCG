@@ -4221,7 +4221,6 @@ button {
   border: 1px solid var(--border-gold);
   border-radius: 18px;
   padding: 20px;
-  width: min(1200px, 100%);
   max-height: 90vh;
   overflow: hidden;
   transform: scale(0.96);
@@ -5291,6 +5290,115 @@ select.menu-input option {
   transform: scale(0.98);
 }
 
+/* ============================================================================
+   BORDERED DECK LIST ROW (My Decks screen variant)
+   Shows type-colored border + rarity strip + rarity-colored name
+   ============================================================================ */
+
+.deck-list-row--bordered {
+  border: 2px solid transparent;
+  border-radius: 6px;
+  margin: 4px 6px;
+  position: relative;
+  padding-left: 14px; /* Extra padding for rarity strip */
+}
+
+/* Type-colored outside border */
+.deck-list-row--bordered[data-type="Prey"] {
+  border-color: var(--prey);
+}
+
+.deck-list-row--bordered[data-type="Predator"] {
+  border-color: var(--predator);
+}
+
+.deck-list-row--bordered[data-type="Spell"] {
+  border-color: var(--spell);
+}
+
+.deck-list-row--bordered[data-type="Free Spell"] {
+  border-color: var(--freespell);
+}
+
+.deck-list-row--bordered[data-type="Trap"] {
+  border-color: var(--trap);
+}
+
+/* Hide top banner in bordered mode (border replaces it) */
+.deck-list-row--bordered .deck-list-row-banner {
+  display: none;
+}
+
+/* Rarity vertical strip on left edge (inside border) */
+.deck-list-row-rarity-strip {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  z-index: 3;
+  border-radius: 2px 0 0 2px;
+}
+
+/* Rarity colors for strip */
+.deck-list-row-rarity-strip.rarity-common {
+  background: #4ade80;
+}
+
+.deck-list-row-rarity-strip.rarity-uncommon {
+  background: #60a5fa;
+}
+
+.deck-list-row-rarity-strip.rarity-rare {
+  background: #c084fc;
+}
+
+.deck-list-row-rarity-strip.rarity-legendary {
+  background: #fb923c;
+  box-shadow: 0 0 6px rgba(251, 146, 60, 0.5);
+}
+
+.deck-list-row-rarity-strip.rarity-pristine {
+  background: linear-gradient(180deg, #fff, #ffd4e5, #d4f1ff, #e8d4ff);
+  animation: pristine-strip-glow 2s linear infinite;
+}
+
+@keyframes pristine-strip-glow {
+  0%, 100% { box-shadow: 0 0 6px rgba(255, 255, 255, 0.6); }
+  50% { box-shadow: 0 0 12px rgba(255, 212, 229, 0.8); }
+}
+
+/* Rarity colors for card name text */
+.deck-list-row--bordered .deck-list-row-name.rarity-common {
+  color: #4ade80;
+}
+
+.deck-list-row--bordered .deck-list-row-name.rarity-uncommon {
+  color: #60a5fa;
+}
+
+.deck-list-row--bordered .deck-list-row-name.rarity-rare {
+  color: #c084fc;
+}
+
+.deck-list-row--bordered .deck-list-row-name.rarity-legendary {
+  color: #fb923c;
+  text-shadow: 0 0 8px rgba(251, 146, 60, 0.4);
+}
+
+.deck-list-row--bordered .deck-list-row-name.rarity-pristine {
+  background: linear-gradient(90deg, #fff, #ffd4e5, #d4f1ff, #e8d4ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: pristine-name-shift 3s ease-in-out infinite;
+}
+
+@keyframes pristine-name-shift {
+  0%, 100% { filter: hue-rotate(0deg); }
+  50% { filter: hue-rotate(30deg); }
+}
+
 /* Cursor hint for deck cards */
 .deck-grid .deck-card {
   cursor: pointer;
@@ -5584,6 +5692,53 @@ select.menu-input option {
   .deck-drawer-toggle:active {
     transform: scale(0.95);
   }
+
+  /* My Decks horizontal layout - stack vertically on mobile */
+  .deck-catalog-home--horizontal {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    overflow-x: hidden;
+    overflow-y: auto;
+    height: auto;
+
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .deck-column {
+    width: 100%;
+    max-width: 100%;
+    min-width: 100%;
+    max-height: 250px;
+  }
+
+  .deck-column-cards {
+    max-height: 150px;
+  }
+
+  .deck-column--view-all,
+  .deck-column--create {
+    max-height: 120px;
+    min-height: 100px;
+  }
+
+  .deck-column-body {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .deck-column-create-btn {
+    width: 48px;
+    height: 48px;
+    font-size: 24px;
+  }
+
+  /* Back button in mobile vertical layout */
+  .deck-catalog-home--horizontal .deck-catalog-back-container {
+    width: 100%;
+    min-width: 100%;
+    padding: 12px;
+  }
 }
 
 .deck-card {
@@ -5833,6 +5988,15 @@ select.menu-input option {
   padding-top: 16px;
 }
 
+/* In horizontal layout, back button is fixed at the end as a column */
+.deck-catalog-home--horizontal .deck-catalog-back-container {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 120px;
+  align-items: center;
+  padding: 20px;
+}
+
 .deck-catalog-back-btn {
   padding: 12px 32px;
   font-size: var(--font-base);
@@ -5867,6 +6031,198 @@ select.menu-input option {
 .deck-select-back-btn:hover {
   color: var(--text-primary);
   border-color: var(--border-gold);
+}
+
+/* ============================================================================
+   MY DECKS HORIZONTAL LAYOUT
+   Displays saved decks as columns with scrollable card lists
+   ============================================================================ */
+
+.deck-catalog-home--horizontal {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 16px;
+  padding: 20px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  height: calc(80vh - 140px);
+  align-items: stretch;
+}
+
+/* Horizontal scrollbar styling */
+.deck-catalog-home--horizontal::-webkit-scrollbar {
+  height: 10px;
+}
+
+.deck-catalog-home--horizontal::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 5px;
+}
+
+.deck-catalog-home--horizontal::-webkit-scrollbar-thumb {
+  background: var(--gold-dark);
+  border-radius: 5px;
+}
+
+.deck-catalog-home--horizontal::-webkit-scrollbar-thumb:hover {
+  background: var(--gold);
+}
+
+/* Individual deck column */
+.deck-column {
+  display: flex;
+  flex-direction: column;
+  width: 240px;
+  min-width: 240px;
+  max-width: 240px;
+  background: rgba(20, 25, 35, 0.95);
+  border: 2px solid var(--border-subtle);
+  border-radius: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.deck-column--filled {
+  border-color: var(--border-gold);
+}
+
+.deck-column--filled:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.deck-column--view-all {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(147, 51, 234, 0.15));
+  border-color: rgba(59, 130, 246, 0.5);
+  cursor: pointer;
+}
+
+.deck-column--view-all:hover {
+  transform: translateY(-4px);
+  border-color: rgba(59, 130, 246, 0.8);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.2);
+}
+
+.deck-column--create {
+  border-style: dashed;
+  border-color: rgba(39, 174, 96, 0.5);
+  cursor: pointer;
+}
+
+.deck-column--create:hover {
+  transform: translateY(-4px);
+  border-color: var(--prey);
+  box-shadow: 0 8px 24px rgba(39, 174, 96, 0.2);
+}
+
+/* Column header */
+.deck-column-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.deck-column-title {
+  font-size: var(--font-base);
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.deck-column-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.deck-column-btn {
+  padding: 6px 10px;
+  font-size: var(--font-sm);
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.deck-column-btn:hover {
+  transform: scale(1.05);
+}
+
+.deck-column-btn--edit:hover {
+  border-color: var(--border-gold);
+  background: rgba(255, 215, 0, 0.1);
+}
+
+.deck-column-btn--delete:hover {
+  border-color: var(--hp-red);
+  background: rgba(255, 89, 89, 0.1);
+}
+
+/* Scrollable card list container */
+.deck-column-cards {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 4px;
+}
+
+.deck-column-cards::-webkit-scrollbar {
+  width: 6px;
+}
+
+.deck-column-cards::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.deck-column-cards::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 3px;
+}
+
+/* For View All and Create columns - centered content */
+.deck-column-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  text-align: center;
+  gap: 16px;
+}
+
+.deck-column-description {
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  margin: 0;
+}
+
+.deck-column-create-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--prey), #1e8449);
+  border: none;
+  font-size: 32px;
+  color: white;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.deck-column-create-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 16px rgba(39, 174, 96, 0.4);
 }
 
 .deck-actions .btn-primary {
@@ -7791,7 +8147,6 @@ select.menu-input option {
 }
 
 .profile-overlay .overlay-content {
-  max-width: 1200px;
   width: 95%;
   max-height: 90vh;
   padding: 0;
@@ -8369,7 +8724,7 @@ select.menu-input option {
 .friend-profile-collection-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-  gap: 8px;
+  gap: 12px;
   max-height: 250px;
   overflow-y: auto;
 }
@@ -8643,7 +8998,7 @@ select.menu-input option {
   padding: 16px;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 12px;
+  gap: 48px;
   align-content: start;
 }
 
@@ -8775,7 +9130,6 @@ select.menu-input option {
 }
 
 .pack-opening-overlay .overlay-content {
-  max-width: 900px;
   width: 95%;
   padding: 32px;
   text-align: center;

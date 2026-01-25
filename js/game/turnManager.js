@@ -31,7 +31,7 @@ export const initPositionEvaluator = (evaluator) => {
   _positionEvaluator = evaluator;
 };
 
-const getPositionEvaluator = () => _positionEvaluator;
+export const getPositionEvaluator = () => _positionEvaluator;
 
 const { PHASE, BUFF, DEBUFF, DAMAGE, DEATH, HEAL } = LOG_CATEGORIES;
 

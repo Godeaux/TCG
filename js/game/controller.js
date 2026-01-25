@@ -48,7 +48,7 @@ import { resolveCardEffect, getCardDefinitionById } from '../cards/index.js';
 import { isCreatureCard, createCardInstance } from '../cardTypes.js';
 import { resolveEffectResult as applyEffect } from './effects.js';
 import { isFreePlay, isEdible } from '../keywords.js';
-import { advancePhase, endTurn } from './turnManager.js';
+import { advancePhase, endTurn, getPositionEvaluator } from './turnManager.js';
 
 // ============================================================================
 // GAME CONTROLLER CLASS
@@ -721,6 +721,16 @@ export class GameController {
   }
 
   broadcast() {
+    // Snapshot advantage on every state change (only if value changed)
+    const evaluator = getPositionEvaluator();
+    if (evaluator) {
+      const currentAdvantage = evaluator.calculateAdvantage(this.state, 0);
+      const history = this.state.advantageHistory || [];
+      const lastAdvantage = history.length > 0 ? history[history.length - 1].advantage : null;
+      if (lastAdvantage === null || currentAdvantage !== lastAdvantage) {
+        evaluator.snapshotAdvantage(this.state, 'action');
+      }
+    }
     this.onBroadcast(this.state);
   }
 
