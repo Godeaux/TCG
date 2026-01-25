@@ -51,6 +51,10 @@ let touchStartTime = 0; // Track when touch started for tap detection
 const TAP_MAX_DURATION_MS = 200; // Max ms for a touch to count as "tap" vs "hold"
 const TAP_MAX_MOVEMENT_PX = 10; // Max px movement for a touch to count as "tap"
 
+// Hysteresis config - prevents jitter when finger is on card boundary
+// New card must be this many pixels closer to steal selection from current card
+const HYSTERESIS_MARGIN = 25;
+
 // Drag broadcast throttling
 let lastTouchDragBroadcast = 0;
 const TOUCH_DRAG_BROADCAST_THROTTLE_MS = 50;
@@ -142,6 +146,20 @@ const canCreatureAttack = (card, state) => {
     !card.hasAttacked &&
     !cantAttack(card) // Use primitive - covers Frozen, Webbed, Passive, Harmless
   );
+};
+
+/**
+ * Calculate distance from a point to a card element's center.
+ * Accounts for CSS transforms by using getBoundingClientRect().
+ */
+const getDistanceToCardCenter = (x, y, cardElement) => {
+  if (!cardElement) return Infinity;
+  const rect = cardElement.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  const dx = x - centerX;
+  const dy = y - centerY;
+  return Math.sqrt(dx * dx + dy * dy);
 };
 
 /**
@@ -339,13 +357,31 @@ const handleTouchMove = (e) => {
     });
     touchedCardElement.dispatchEvent(dragStartEvent);
   } else if (!isDragging) {
-    // Horizontal browsing - update focused card based on position
+    // Horizontal browsing with hysteresis - prevents jitter at card boundaries
+    // Only switch to new card if it's significantly closer than current card
     const state = getLatestState();
     const touched = getTouchedCard(currentTouchPos.x, currentTouchPos.y, state);
+
     if (touched && touched.source === 'hand' && touched.element !== touchedCardElement) {
-      touchedCardElement = touched.element;
-      touchedCard = touched.card;
-      focusCardElement(touched.element);
+      // Calculate distances to current and potential new card
+      const currentDistance = getDistanceToCardCenter(
+        currentTouchPos.x,
+        currentTouchPos.y,
+        touchedCardElement
+      );
+      const newDistance = getDistanceToCardCenter(
+        currentTouchPos.x,
+        currentTouchPos.y,
+        touched.element
+      );
+
+      // Only switch if new card is significantly closer (hysteresis)
+      // This prevents jitter when finger is on the boundary between cards
+      if (newDistance < currentDistance - HYSTERESIS_MARGIN) {
+        touchedCardElement = touched.element;
+        touchedCard = touched.card;
+        focusCardElement(touched.element);
+      }
     }
   }
 
