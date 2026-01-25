@@ -4653,9 +4653,7 @@ select.menu-input option {
    AI SETUP OVERLAY
    ============================================================================ */
 
-.ai-setup-overlay .menu-card {
-  max-width: 480px;
-}
+
 
 .ai-setup-section {
   margin-bottom: 20px;
