@@ -54,11 +54,7 @@ export const updateHandOverlap = (handGrid) => {
   const paddingLeft = parseFloat(computedStyle.paddingLeft) || 0;
   const paddingRight = parseFloat(computedStyle.paddingRight) || 0;
   const handWidth = handGrid.clientWidth - paddingLeft - paddingRight;
-
-  // Use offsetWidth instead of getBoundingClientRect().width
-  // getBoundingClientRect includes CSS transforms (rotation), which inflates the measured width
-  // This was causing the hand to initially overflow the viewport on mobile
-  const cardWidth = cards[0].offsetWidth;
+  const cardWidth = cards[0].getBoundingClientRect().width;
 
   if (!handWidth || !cardWidth || handWidth <= 0) {
     return;
