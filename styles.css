@@ -5697,6 +5697,20 @@ select.menu-input option {
   flex-direction: column;
   gap: 20px;
   height: 100%;
+  min-height: 0;
+}
+
+/* When deck catalog home is showing, ensure proper flex layout for fixed back button */
+.deck-select-card:has(.deck-catalog-home) {
+  height: 100%;
+}
+
+.deck-select-card > .deck-catalog-back-container {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  padding: 16px 0 0;
+  margin-top: auto;
 }
 
 .deck-select-header {
@@ -5730,6 +5744,8 @@ select.menu-input option {
   gap: 16px;
   overflow-y: auto;
   padding-right: 6px;
+  flex: 1;
+  min-height: 0;
 }
 
 .deck-select-panel {
@@ -6444,13 +6460,20 @@ select.menu-input option {
     transform: scale(0.95);
   }
 
+  /* My Decks screen - fill full height on mobile */
+  .deck-select-overlay .overlay-content.deck-select-card {
+    height: calc(100dvh - 40px);
+    max-height: calc(100dvh - 40px);
+  }
+
   /* My Decks horizontal layout - stack vertically on mobile */
   .deck-catalog-home--horizontal {
     flex-direction: column;
     flex-wrap: nowrap;
     overflow-x: hidden;
     overflow-y: auto;
-    height: auto;
+    flex: 1;
+    min-height: 0;
     padding: 12px;
     gap: 12px;
   }
@@ -6483,11 +6506,12 @@ select.menu-input option {
     font-size: 24px;
   }
 
-  /* Back button in mobile vertical layout */
-  .deck-catalog-home--horizontal .deck-catalog-back-container {
+  /* Back button fixed at bottom of deck select card on mobile */
+  .deck-select-card > .deck-catalog-back-container {
     width: 100%;
-    min-width: 100%;
     padding: 12px;
+    border-top: 1px solid var(--border-subtle);
+    background: var(--bg-card);
   }
 }
 
@@ -6731,20 +6755,12 @@ select.menu-input option {
   background: rgba(255, 89, 89, 0.1);
 }
 
+/* Back button container - now a direct child of deck-select-card, outside scroll area */
 .deck-catalog-back-container {
-  flex: 0 0 100%;
+  flex-shrink: 0;
   display: flex;
   justify-content: center;
-  padding-top: 16px;
-}
-
-/* In horizontal layout, back button is fixed at the end as a column */
-.deck-catalog-home--horizontal .deck-catalog-back-container {
-  flex: 0 0 auto;
-  width: auto;
-  min-width: 120px;
-  align-items: center;
-  padding: 20px;
+  padding: 16px 20px;
 }
 
 .deck-catalog-back-btn {

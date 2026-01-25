@@ -1442,7 +1442,12 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
         }
       }
 
-      // Back button container (outside horizontal scroll area)
+      // Back button container - fixed at bottom of the card, outside scroll area
+      const deckSelectCard = deckSelectGrid.parentElement;
+      // Remove any existing back container first (prevent duplicates)
+      const existingBack = deckSelectCard?.querySelector('.deck-catalog-back-container');
+      if (existingBack) existingBack.remove();
+
       const backContainer = document.createElement('div');
       backContainer.className = 'deck-catalog-back-container';
       const backBtn = document.createElement('button');
@@ -1455,7 +1460,8 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
         callbacks.onUpdate?.();
       };
       backContainer.appendChild(backBtn);
-      deckSelectGrid.appendChild(backContainer);
+      // Append to the parent card container (outside the scrollable grid)
+      deckSelectCard?.appendChild(backContainer);
 
       return;
     }
