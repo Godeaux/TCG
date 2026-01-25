@@ -6473,8 +6473,8 @@ select.menu-input option {
 
   /* My Decks horizontal layout - stack vertically on mobile, fill available space */
   .deck-catalog-home--horizontal {
+    display: flex;
     flex-direction: column;
-    flex-wrap: nowrap;
     overflow-x: hidden;
     overflow-y: auto;
     flex: 1 1 0;
@@ -6483,20 +6483,29 @@ select.menu-input option {
     gap: 12px;
   }
 
-  .deck-column {
+  /* Force deck columns to fill available space on mobile */
+  .deck-catalog-home--horizontal > * {
+    flex: 1 1 auto;
     width: 100%;
     max-width: 100%;
     min-width: 100%;
-    flex-shrink: 0;
+  }
+
+  .deck-column {
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
   }
 
   .deck-column-cards {
     max-height: none;
     flex: 1;
+    overflow-y: auto;
   }
 
   .deck-column--view-all,
   .deck-column--create {
+    flex: 0 0 auto;
     min-height: 100px;
   }
 
