@@ -903,15 +903,47 @@ export const renderCard = (card, options = {}) => {
     cardElement.appendChild(indicator);
   }
 
-  // Add status effect overlays (visual tint over card)
+  // Add status effect overlays (visual effects over card)
   if (card.paralyzed) {
     const overlay = document.createElement('div');
     overlay.className = 'status-overlay paralysis-overlay';
+    // Add electric spark elements
+    for (let i = 0; i < 4; i++) {
+      const spark = document.createElement('div');
+      spark.className = `electric-spark spark-${i + 1}`;
+      overlay.appendChild(spark);
+    }
     cardElement.appendChild(overlay);
   }
   if (card.frozen) {
     const overlay = document.createElement('div');
     overlay.className = 'status-overlay frozen-overlay';
+    // Add icicle elements around the border
+    const iciclePositions = ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'top-center', 'left-center', 'right-center'];
+    iciclePositions.forEach(pos => {
+      const icicle = document.createElement('div');
+      icicle.className = `icicle icicle-${pos}`;
+      overlay.appendChild(icicle);
+    });
+    // Add frost crystal layer
+    const frost = document.createElement('div');
+    frost.className = 'frost-crystals';
+    overlay.appendChild(frost);
+    cardElement.appendChild(overlay);
+  } else if (card.thawing) {
+    // Thaw dissipation animation - shows when frozen just ended
+    const overlay = document.createElement('div');
+    overlay.className = 'status-overlay thawing-overlay';
+    // Add melting icicles
+    const iciclePositions = ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'top-center', 'left-center', 'right-center'];
+    iciclePositions.forEach(pos => {
+      const icicle = document.createElement('div');
+      icicle.className = `icicle icicle-${pos} melting`;
+      overlay.appendChild(icicle);
+    });
+    const frost = document.createElement('div');
+    frost.className = 'frost-crystals melting';
+    overlay.appendChild(frost);
     cardElement.appendChild(overlay);
   }
 

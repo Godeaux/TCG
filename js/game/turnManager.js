@@ -152,6 +152,11 @@ const handleFrozenThaw = (state) => {
     if (creature?.frozen && !creature.frozenDiesTurn) {
       console.log(`[FROZEN-DEBUG] Thawing ${creature.name}`);
       creature.frozen = false;
+      creature.thawing = true; // Trigger thaw dissipation animation in UI
+      // Clear thawing flag after animation completes (2.5s)
+      setTimeout(() => {
+        if (creature) creature.thawing = false;
+      }, 2500);
       // Remove Frozen keyword if present
       if (creature.keywords) {
         const frozenIndex = creature.keywords.indexOf('Frozen');
