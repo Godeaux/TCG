@@ -772,7 +772,18 @@
             <div class="victory-reward-text">+1 Pack Earned!</div>
           </div>
           <div class="victory-actions">
+            <!-- Default menu button (AI/local modes) -->
             <button class="btn-primary victory-menu" id="victory-menu">Main Menu</button>
+
+            <!-- Multiplayer rematch options (hidden by default) -->
+            <div class="victory-rematch-options" id="victory-rematch-options" style="display: none;">
+              <button class="btn-primary victory-rematch" id="victory-rematch">Rematch</button>
+              <button class="btn-secondary victory-rematch-deck" id="victory-rematch-deck">Rematch (Deck Selection)</button>
+              <button class="btn-tertiary victory-main-menu" id="victory-main-menu">Main Menu</button>
+            </div>
+
+            <!-- Opponent status indicator -->
+            <div class="victory-opponent-status" id="victory-opponent-status" style="display: none;"></div>
           </div>
         </div>
       </div>

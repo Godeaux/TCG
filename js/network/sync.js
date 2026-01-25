@@ -55,6 +55,20 @@ export const sendLobbyBroadcast = (event, payload) => {
 };
 
 /**
+ * Broadcast rematch choice to opponent
+ * @param {Object} state - Game state
+ * @param {string} choice - 'rematch' | 'rematch-deck' | 'menu'
+ */
+export const broadcastRematchChoice = (state, choice) => {
+  if (!isOnlineMode(state)) return;
+  sendLobbyBroadcast('rematch_choice', {
+    senderId: state.menu?.profile?.id,
+    choice,
+    playerName: state.menu?.profile?.username,
+  });
+};
+
+/**
  * Broadcast game state to opponent
  * This is the main sync function called after every game action
  *

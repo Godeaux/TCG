@@ -16,6 +16,7 @@ import { isOnlineMode, isAIMode, isAIvsAIMode } from '../state/selectors.js';
 import { deckCatalogs } from '../cards/index.js';
 import { resetDecksLoaded } from '../ui/overlays/DeckBuilderOverlay.js';
 import { resetProfileState } from '../ui/overlays/ProfileOverlay.js';
+import { updateRematchStatus, evaluateRematchOutcome } from '../ui/overlays/VictoryOverlay.js';
 import { resetPresenceState } from './presenceManager.js';
 import { setLobbyChannel, sendLobbyBroadcast, saveGameStateToDatabase } from './sync.js';
 import { buildLobbySyncPayload } from './serialization.js';
@@ -1229,6 +1230,31 @@ export const updateLobbySubscription = (state, { force = false } = {}) => {
     if (state.players?.[surrenderingIndex]) {
       state.players[surrenderingIndex].hp = 0;
     }
+    callbacks.onUpdate?.();
+  });
+
+  // Handle rematch choice broadcasts
+  lobbyChannel.on('broadcast', { event: 'rematch_choice' }, ({ payload }) => {
+    // Ignore from self
+    if (payload?.senderId === state.menu?.profile?.id) {
+      return;
+    }
+
+    // Update opponent's rematch choice
+    const localIndex = getLocalPlayerIndex(state);
+    const opponentIndex = localIndex === 0 ? 1 : 0;
+
+    if (state.rematch) {
+      state.rematch.choices[opponentIndex] = payload.choice;
+      state.rematch.opponentName = payload.playerName;
+
+      // Update UI to show opponent's status
+      updateRematchStatus(state);
+
+      // Check if both players have made choices
+      evaluateRematchOutcome(state);
+    }
+
     callbacks.onUpdate?.();
   });
 

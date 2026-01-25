@@ -80,6 +80,9 @@ import {
   checkForVictory,
   setVictoryMenuCallback,
   setAIvsAIRestartCallback,
+  setRematchCallback,
+  setRematchDeckCallback,
+  setRematchUpdateCallback,
 } from './ui/overlays/VictoryOverlay.js';
 
 // Pass overlay (extracted module)
@@ -4130,6 +4133,184 @@ export const renderGame = (state, callbacks = {}) => {
     } else {
       console.warn('[AI vs AI] No deck configuration found, cannot restart');
     }
+  });
+
+  // Set up rematch callback (same decks) for multiplayer
+  setRematchCallback(() => {
+    console.log('[Rematch] Starting rematch with same decks');
+
+    // Preserve lobby, profile, decks, and deck selections
+    const lobby = state.menu?.lobby;
+    const profile = state.menu?.profile;
+    const decks = state.menu?.decks;
+    const deckSelections = state.deckSelection?.selections;
+    const deckBuilderSelections = state.deckBuilder?.selections;
+    const player0Name = state.players[0]?.name;
+    const player1Name = state.players[1]?.name;
+    const player0NameStyle = state.players[0]?.nameStyle;
+    const player1NameStyle = state.players[1]?.nameStyle;
+
+    // Reset game state
+    state.players = [
+      {
+        name: player0Name || 'Player 1',
+        nameStyle: player0NameStyle || {},
+        hp: 10,
+        deck: [],
+        hand: [],
+        field: [null, null, null],
+        carrion: [],
+        exile: [],
+        traps: [],
+      },
+      {
+        name: player1Name || 'Player 2',
+        nameStyle: player1NameStyle || {},
+        hp: 10,
+        deck: [],
+        hand: [],
+        field: [null, null, null],
+        carrion: [],
+        exile: [],
+        traps: [],
+      },
+    ];
+    state.activePlayerIndex = 0;
+    state.phase = 'Setup';
+    state.turn = 1;
+    state.winner = null;
+    state.firstPlayerIndex = null;
+    state.skipFirstDraw = true;
+    state.cardPlayedThisTurn = false;
+    state.passPending = false;
+    state.fieldSpell = null;
+    state.beforeCombatQueue = [];
+    state.beforeCombatProcessing = false;
+    state.endOfTurnQueue = [];
+    state.endOfTurnProcessing = false;
+    state.endOfTurnFinalized = false;
+    state.visualEffects = [];
+    state.pendingTrapDecision = null;
+    state.pendingReaction = null;
+    state.setup = { stage: 'rolling', rolls: [null, null], winnerIndex: null };
+    state.deckSelection = {
+      stage: 'complete',
+      selections: deckSelections || [null, null],
+      readyStatus: [true, true],
+    };
+    state.deckBuilder = {
+      stage: 'complete',
+      selections: deckBuilderSelections || [[], []],
+      available: [[], []],
+      catalogOrder: [[], []],
+    };
+    state.log = [];
+    state.combat = { declaredAttacks: [] };
+    state.victoryProcessed = false;
+    state.rematch = null;
+
+    // Restore lobby, profile, decks
+    state.menu.lobby = lobby;
+    state.menu.profile = profile;
+    state.menu.decks = decks;
+    state.menu.stage = 'ready';
+    state.menu.mode = 'online';
+    state.menu.error = null;
+    state.menu.loading = false;
+
+    // Re-trigger deck complete to set up the game with same decks
+    if (deckBuilderSelections && deckBuilderSelections[0]?.length && deckBuilderSelections[1]?.length) {
+      callbacks.onDeckComplete?.(deckBuilderSelections);
+    }
+  });
+
+  // Set up rematch callback (deck selection) for multiplayer
+  setRematchDeckCallback(() => {
+    console.log('[Rematch] Starting rematch with deck selection');
+
+    // Preserve lobby, profile, decks
+    const lobby = state.menu?.lobby;
+    const profile = state.menu?.profile;
+    const decks = state.menu?.decks;
+    const player0Name = state.players[0]?.name;
+    const player1Name = state.players[1]?.name;
+    const player0NameStyle = state.players[0]?.nameStyle;
+    const player1NameStyle = state.players[1]?.nameStyle;
+
+    // Reset game state
+    state.players = [
+      {
+        name: player0Name || 'Player 1',
+        nameStyle: player0NameStyle || {},
+        hp: 10,
+        deck: [],
+        hand: [],
+        field: [null, null, null],
+        carrion: [],
+        exile: [],
+        traps: [],
+      },
+      {
+        name: player1Name || 'Player 2',
+        nameStyle: player1NameStyle || {},
+        hp: 10,
+        deck: [],
+        hand: [],
+        field: [null, null, null],
+        carrion: [],
+        exile: [],
+        traps: [],
+      },
+    ];
+    state.activePlayerIndex = 0;
+    state.phase = 'Setup';
+    state.turn = 1;
+    state.winner = null;
+    state.firstPlayerIndex = null;
+    state.skipFirstDraw = true;
+    state.cardPlayedThisTurn = false;
+    state.passPending = false;
+    state.fieldSpell = null;
+    state.beforeCombatQueue = [];
+    state.beforeCombatProcessing = false;
+    state.endOfTurnQueue = [];
+    state.endOfTurnProcessing = false;
+    state.endOfTurnFinalized = false;
+    state.visualEffects = [];
+    state.pendingTrapDecision = null;
+    state.pendingReaction = null;
+    state.setup = { stage: 'rolling', rolls: [null, null], winnerIndex: null };
+    state.deckSelection = {
+      stage: 'p1',
+      selections: [null, null],
+      readyStatus: [false, false],
+    };
+    state.deckBuilder = {
+      stage: 'p1',
+      selections: [[], []],
+      available: [[], []],
+      catalogOrder: [[], []],
+    };
+    state.log = [];
+    state.combat = { declaredAttacks: [] };
+    state.victoryProcessed = false;
+    state.rematch = null;
+
+    // Restore lobby, profile, decks - go to deck selection
+    state.menu.lobby = lobby;
+    state.menu.profile = profile;
+    state.menu.decks = decks;
+    state.menu.stage = 'ready'; // Show deck selection overlay
+    state.menu.mode = 'online';
+    state.menu.error = null;
+    state.menu.loading = false;
+
+    callbacks.onUpdate?.();
+  });
+
+  // Set up rematch update callback for UI refresh after broadcasts
+  setRematchUpdateCallback(() => {
+    callbacks.onUpdate?.();
   });
 
   // Register callbacks with lobbyManager so it can notify UI of changes

@@ -17,6 +17,7 @@
 import { updatePackCount, updateProfileStats } from '../../network/lobbyManager.js';
 import { getLocalPlayerIndex } from '../../state/selectors.js';
 import { onGameEnded as simOnGameEnded, getSimulationStatus } from '../../simulation/index.js';
+import { broadcastRematchChoice } from '../../network/sync.js';
 
 // ============================================================================
 // DOM ELEMENTS
@@ -30,6 +31,12 @@ const getVictoryElements = () => ({
   kills: document.getElementById('victory-kills'),
   menu: document.getElementById('victory-menu'),
   reward: document.getElementById('victory-reward'),
+  // Rematch elements (multiplayer)
+  rematchOptions: document.getElementById('victory-rematch-options'),
+  rematchBtn: document.getElementById('victory-rematch'),
+  rematchDeckBtn: document.getElementById('victory-rematch-deck'),
+  mainMenuBtn: document.getElementById('victory-main-menu'),
+  opponentStatus: document.getElementById('victory-opponent-status'),
 });
 
 // ============================================================================
@@ -104,9 +111,17 @@ let onReturnToMenuCallback = null;
 // Store callback for AI vs AI restart
 let onAIvsAIRestartCallback = null;
 
+// Store callbacks for rematch options (multiplayer)
+let onRematchCallback = null;
+let onRematchDeckCallback = null;
+let onRematchUpdateCallback = null;
+
 // Auto-restart timer for AI vs AI mode
 let autoRestartTimer = null;
 let countdownInterval = null;
+
+// Store current game state reference for rematch UI updates
+let currentRematchState = null;
 
 /**
  * Set the callback for returning to menu from victory screen
@@ -122,6 +137,178 @@ export const setVictoryMenuCallback = (callback) => {
  */
 export const setAIvsAIRestartCallback = (callback) => {
   onAIvsAIRestartCallback = callback;
+};
+
+/**
+ * Set the callback for rematch with same decks (multiplayer)
+ */
+export const setRematchCallback = (callback) => {
+  onRematchCallback = callback;
+};
+
+/**
+ * Set the callback for rematch with deck selection (multiplayer)
+ */
+export const setRematchDeckCallback = (callback) => {
+  onRematchDeckCallback = callback;
+};
+
+/**
+ * Set the callback for UI update after rematch state changes (multiplayer)
+ */
+export const setRematchUpdateCallback = (callback) => {
+  onRematchUpdateCallback = callback;
+};
+
+/**
+ * Update rematch status UI based on opponent's choice
+ * @param {Object} state - Game state with rematch info
+ */
+export const updateRematchStatus = (state) => {
+  const elements = getVictoryElements();
+  const { opponentStatus, rematchBtn, rematchDeckBtn, mainMenuBtn } = elements;
+
+  if (!state?.rematch || !opponentStatus) return;
+
+  const localIndex = getLocalPlayerIndex(state);
+  const opponentIndex = localIndex === 0 ? 1 : 0;
+  const opponentChoice = state.rematch.choices?.[opponentIndex];
+  const opponentName = state.rematch.opponentName || state.players[opponentIndex]?.name || 'Opponent';
+
+  // Show opponent status if they've made a choice
+  if (opponentChoice) {
+    opponentStatus.style.display = 'block';
+
+    if (opponentChoice === 'menu') {
+      // Red X for rejection/leaving
+      opponentStatus.innerHTML = `<span class="status-rejected">&#x274C; ${opponentName} left</span>`;
+    } else {
+      // Green checkmark for rematch options
+      opponentStatus.innerHTML = `<span class="status-accepted">&#x2705; ${opponentName} wants to play again</span>`;
+    }
+  }
+};
+
+/**
+ * Evaluate rematch outcome based on both players' choices
+ * Priority:
+ * - Any 'menu' = rejected (show red X to waiting player)
+ * - Both 'rematch' = rematch with same decks
+ * - Any 'rematch-deck' = go to deck selection
+ */
+export const evaluateRematchOutcome = (state) => {
+  if (!state?.rematch) return;
+
+  const { choices } = state.rematch;
+
+  // Wait for both players to choose
+  if (choices[0] === null || choices[1] === null) {
+    return;
+  }
+
+  state.rematch.stage = 'resolved';
+
+  // If either player chose menu, show rejection to the other
+  if (choices.includes('menu')) {
+    state.rematch.outcome = 'rejected';
+    // Update UI to show rejection, but don't navigate away
+    // The player who chose menu already left, the other player sees the red X
+    updateRematchStatus(state);
+    return;
+  }
+
+  // Both chose rematch with same decks
+  if (choices[0] === 'rematch' && choices[1] === 'rematch') {
+    state.rematch.outcome = 'rematch';
+    hideVictoryScreen(() => {
+      if (onRematchCallback) {
+        onRematchCallback();
+      }
+      onRematchUpdateCallback?.();
+    });
+    return;
+  }
+
+  // Any combination with deck selection goes to deck selection
+  state.rematch.outcome = 'deck-selection';
+  hideVictoryScreen(() => {
+    if (onRematchDeckCallback) {
+      onRematchDeckCallback();
+    }
+    onRematchUpdateCallback?.();
+  });
+};
+
+/**
+ * Set up rematch button handlers for multiplayer mode
+ * @param {Object} elements - Victory screen elements
+ * @param {Object} state - Game state
+ */
+const setupRematchHandlers = (elements, state) => {
+  const { rematchBtn, rematchDeckBtn, mainMenuBtn } = elements;
+  const localIndex = getLocalPlayerIndex(state);
+
+  // Initialize rematch state
+  state.rematch = {
+    choices: [null, null],
+    stage: 'pending',
+    outcome: null,
+    opponentName: null,
+  };
+
+  // Store state reference for external updates (from broadcast handler)
+  currentRematchState = state;
+
+  // Helper to disable all buttons and highlight selected
+  const disableButtonsAndHighlight = (selectedBtn) => {
+    rematchBtn.disabled = true;
+    rematchDeckBtn.disabled = true;
+    mainMenuBtn.disabled = true;
+    selectedBtn?.classList.add('selected');
+
+    // After 3 seconds, unlock Main Menu button to prevent softlock
+    // (in case opponent disconnects or doesn't respond)
+    setTimeout(() => {
+      // Only unlock if rematch is still pending (opponent hasn't responded)
+      if (state.rematch?.stage === 'pending' && mainMenuBtn) {
+        mainMenuBtn.disabled = false;
+      }
+    }, 3000);
+  };
+
+  // Rematch (same decks)
+  if (rematchBtn) {
+    rematchBtn.onclick = () => {
+      state.rematch.choices[localIndex] = 'rematch';
+      broadcastRematchChoice(state, 'rematch');
+      disableButtonsAndHighlight(rematchBtn);
+      evaluateRematchOutcome(state);
+    };
+  }
+
+  // Rematch with deck selection
+  if (rematchDeckBtn) {
+    rematchDeckBtn.onclick = () => {
+      state.rematch.choices[localIndex] = 'rematch-deck';
+      broadcastRematchChoice(state, 'rematch-deck');
+      disableButtonsAndHighlight(rematchDeckBtn);
+      evaluateRematchOutcome(state);
+    };
+  }
+
+  // Main menu (leave)
+  if (mainMenuBtn) {
+    mainMenuBtn.onclick = () => {
+      state.rematch.choices[localIndex] = 'menu';
+      broadcastRematchChoice(state, 'menu');
+      // Local player goes to menu immediately
+      hideVictoryScreen(() => {
+        if (onReturnToMenuCallback) {
+          onReturnToMenuCallback();
+        }
+      });
+    };
+  }
 };
 
 /**
@@ -155,10 +342,11 @@ const cancelAutoRestart = () => {
  * @param {boolean} options.awardPack - Whether to award a pack
  * @param {Object} options.state - Game state (for updating pack count)
  * @param {boolean} options.isAIvsAI - Whether this is AI vs AI mode
+ * @param {boolean} options.isOnline - Whether this is online multiplayer mode
  */
 export const showVictoryScreen = (winner, stats = {}, options = {}) => {
   const elements = getVictoryElements();
-  const { overlay, winnerName, turns, cards, kills, menu, reward } = elements;
+  const { overlay, winnerName, turns, cards, kills, menu, reward, rematchOptions, opponentStatus } = elements;
 
   if (!overlay) return;
 
@@ -203,6 +391,44 @@ export const showVictoryScreen = (winner, stats = {}, options = {}) => {
   // Show overlay
   overlay.classList.add('show');
   overlay.setAttribute('aria-hidden', 'false');
+
+  // Reset rematch UI elements
+  if (rematchOptions) {
+    rematchOptions.style.display = 'none';
+  }
+  if (opponentStatus) {
+    opponentStatus.style.display = 'none';
+    opponentStatus.innerHTML = '';
+  }
+
+  // Online multiplayer mode: Show rematch options
+  if (options.isOnline && options.state) {
+    // Hide single menu button, show rematch options
+    if (menu) menu.style.display = 'none';
+    if (rematchOptions) rematchOptions.style.display = 'flex';
+
+    // Reset button states
+    const { rematchBtn, rematchDeckBtn, mainMenuBtn } = elements;
+    if (rematchBtn) {
+      rematchBtn.disabled = false;
+      rematchBtn.classList.remove('selected');
+    }
+    if (rematchDeckBtn) {
+      rematchDeckBtn.disabled = false;
+      rematchDeckBtn.classList.remove('selected');
+    }
+    if (mainMenuBtn) {
+      mainMenuBtn.disabled = false;
+      mainMenuBtn.classList.remove('selected');
+    }
+
+    // Set up rematch handlers
+    setupRematchHandlers(elements, options.state);
+  } else {
+    // Non-online modes: Show single menu button
+    if (menu) menu.style.display = '';
+    if (rematchOptions) rematchOptions.style.display = 'none';
+  }
 
   // AI vs AI mode: Add auto-restart countdown
   if (options.isAIvsAI && onAIvsAIRestartCallback) {
@@ -353,8 +579,9 @@ export const checkForVictory = (state) => {
     // Determine if pack should be awarded
     const awardPack = shouldAwardPack(state, winner, loser);
 
-    // Check if AI vs AI mode
+    // Check game modes
     const isAIvsAI = state.menu?.mode === 'aiVsAi';
+    const isOnline = state.menu?.mode === 'online';
 
     // Update profile stats and match history
     updateProfileStatsOnVictory(state, winner, loser);
@@ -369,7 +596,7 @@ export const checkForVictory = (state) => {
     }
 
     // Show victory screen with pack reward if applicable
-    showVictoryScreen(winner, stats, { awardPack, state, isAIvsAI });
+    showVictoryScreen(winner, stats, { awardPack, state, isAIvsAI, isOnline });
 
     return true; // Game over
   }
