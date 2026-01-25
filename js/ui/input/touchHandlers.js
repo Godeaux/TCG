@@ -145,15 +145,37 @@ const canCreatureAttack = (card, state) => {
 };
 
 /**
- * Find the closest card at a given position in hand
+ * Find the topmost card at a given position in hand
+ * Uses elementsFromPoint to respect visual stacking order (z-index)
  */
 const getCardAtPosition = (x, y) => {
+  // Get all elements at this point, sorted by z-index (topmost first)
+  const elementsAtPoint = document.elementsFromPoint(x, y);
+
+  // Find the first .card element that's in the active hand
   const handGrid = document.getElementById('active-hand');
   if (!handGrid) return null;
 
-  const cards = Array.from(handGrid.querySelectorAll('.card'));
+  for (const element of elementsAtPoint) {
+    // Check if this element is a card
+    if (element.classList.contains('card') && !element.classList.contains('back')) {
+      // Verify it's in the hand (not a tooltip, preview, etc.)
+      if (handGrid.contains(element)) {
+        return element;
+      }
+    }
+    // Also check if we clicked inside a card (on a child element)
+    const cardParent = element.closest('.card');
+    if (cardParent && !cardParent.classList.contains('back') && handGrid.contains(cardParent)) {
+      return cardParent;
+    }
+  }
+
+  // Fallback: if no card directly under touch, find closest card in hand
+  // (for touches slightly outside card bounds)
+  const cards = Array.from(handGrid.querySelectorAll('.card:not(.back)'));
   let closestCard = null;
-  let closestDistance = Infinity;
+  let closestDistance = 50; // Max 50px away to count as "close enough"
 
   cards.forEach((card) => {
     const rect = card.getBoundingClientRect();
@@ -261,10 +283,26 @@ const handleTouchStart = (e) => {
   const handGrid = document.getElementById('active-hand');
   if (!handGrid) return;
 
-  // Check if touch is within hand area
   const touch = e.touches[0];
-  const handRect = handGrid.getBoundingClientRect();
-  if (touch.clientY < handRect.top || touch.clientY > handRect.bottom) return;
+
+  // First, check if we're touching a focused/enlarged hand card (which may be outside hand bounds)
+  // The focused card has transform that moves it above the hand area
+  const focusedCard = handGrid.querySelector('.card.hand-focus');
+  let touchedFocusedCard = false;
+
+  if (focusedCard) {
+    const focusedRect = focusedCard.getBoundingClientRect();
+    if (touch.clientX >= focusedRect.left && touch.clientX <= focusedRect.right &&
+        touch.clientY >= focusedRect.top && touch.clientY <= focusedRect.bottom) {
+      touchedFocusedCard = true;
+    }
+  }
+
+  // If not touching focused card, check if touch is within hand area
+  if (!touchedFocusedCard) {
+    const handRect = handGrid.getBoundingClientRect();
+    if (touch.clientY < handRect.top || touch.clientY > handRect.bottom) return;
+  }
 
   touchStartPos = {
     x: touch.clientX,
@@ -274,8 +312,14 @@ const handleTouchStart = (e) => {
   isDragging = false;
   touchStartTime = Date.now(); // Record when touch started
 
-  // Find closest card (but don't focus/show tooltip yet - wait for tap vs drag)
-  const card = getCardAtPosition(touch.clientX, touch.clientY);
+  // If we touched the focused card directly, use it; otherwise find card at position
+  let card;
+  if (touchedFocusedCard && focusedCard) {
+    card = focusedCard;
+  } else {
+    card = getCardAtPosition(touch.clientX, touch.clientY);
+  }
+
   if (card && !card.classList.contains('back')) {
     touchedCardElement = card;
     touchedCard = getCardFromInstanceId(card.dataset.instanceId, getLatestState());
