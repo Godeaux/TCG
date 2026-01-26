@@ -134,6 +134,7 @@ Card abilities use a trigger/reaction system:
 2. Test affected cards work correctly
 3. If you modified effects, verify both single-player and multiplayer
 4. If you modified AI, run AI vs AI simulation to check for bugs
+5. **Update the version** in `index.html` (line ~123, `#game-version`) — bump version and add a brief description (e.g., `v0.11 Add deck builder`)
 
 ## Agent Roles
 
