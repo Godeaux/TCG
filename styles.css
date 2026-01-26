@@ -11278,7 +11278,10 @@ select.menu-input option {
   /* Enable scrolling when content exceeds viewport */
   max-height: 70vh;
   overflow-y: auto;
-  /* Enable pointer events for scroll wheel on desktop (tooltip has pointer-events: none) */
+}
+
+/* Only enable pointer events on info boxes when tooltip is visible (for scroll wheel) */
+.card-hover-tooltip.visible .tooltip-info-boxes {
   pointer-events: auto;
 }
 
