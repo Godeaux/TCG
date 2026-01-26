@@ -240,12 +240,25 @@ export const initCardTooltip = () => {
   // because it would interfere with DeckBuilder's tap-to-add functionality.
   // Dismissal is handled by the global dismiss handler instead.
 
+  // Add mouse handlers on info boxes for desktop scroll support
+  // When mouse enters info boxes, keep tooltip visible (cancel pending hide)
+  // When mouse leaves info boxes, hide the tooltip
+  if (infoBoxesElement) {
+    infoBoxesElement.addEventListener('mouseenter', () => {
+      clearTimeout(hideTimeout);
+    });
+    infoBoxesElement.addEventListener('mouseleave', () => {
+      hideCardTooltip();
+    });
+  }
+
   isInitialized = true;
 };
 
 /**
  * Set up global tap-to-dismiss handler (for mobile).
- * Dismisses tooltip when tapping anywhere (inside or outside).
+ * Dismisses tooltip when tapping outside the scrollable info boxes.
+ * Taps inside info boxes are allowed (for scrolling).
  *
  * Note: DeckBuilder has its own capture-phase handler that uses stopPropagation
  * after tap-to-add, so this bubble-phase handler won't interfere with it.
@@ -257,12 +270,21 @@ const setupGlobalDismissHandler = () => {
   // Add handler after a short delay to avoid the tap that opened the tooltip
   setTimeout(() => {
     globalDismissHandler = (e) => {
-      // Dismiss tooltip on any tap
       // If DeckBuilder handled a tap-to-add, it uses stopPropagation
       // so this won't run in that case
-      if (tooltipElement) {
-        hideCardTooltipImmediate();
+      if (!tooltipElement) return;
+
+      // Check if touch/click is inside the scrollable info boxes area
+      // If so, allow the interaction (for scrolling) - don't dismiss
+      if (infoBoxesElement && e.target) {
+        const isInsideInfoBoxes = infoBoxesElement.contains(e.target);
+        if (isInsideInfoBoxes) {
+          // Allow scrolling - don't dismiss
+          return;
+        }
       }
+
+      hideCardTooltipImmediate();
     };
     // Use bubble phase (default) so DeckBuilder's capture-phase handler runs first
     document.addEventListener('touchstart', globalDismissHandler, { passive: true });
@@ -334,6 +356,8 @@ export const showCardTooltip = (card, targetElement, options = {}) => {
 
 /**
  * Hide the tooltip with a slight delay for smoother UX.
+ * The delay allows users to move their mouse from the card to the tooltip
+ * info boxes (for scrolling) without the tooltip disappearing.
  */
 export const hideCardTooltip = () => {
   clearTimeout(hideTimeout);
@@ -343,7 +367,7 @@ export const hideCardTooltip = () => {
       tooltipElement.classList.remove('visible');
       tooltipElement.setAttribute('aria-hidden', 'true');
     }
-  }, 50);
+  }, 150);
 };
 
 /**

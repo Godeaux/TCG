@@ -11275,7 +11275,11 @@ select.menu-input option {
   flex-direction: column;
   gap: 8px;
   max-width: var(--tooltip-info-width);
-  overflow-y: visible;
+  /* Enable scrolling when content exceeds viewport */
+  max-height: 70vh;
+  overflow-y: auto;
+  /* Enable pointer events for scroll wheel on desktop (tooltip has pointer-events: none) */
+  pointer-events: auto;
 }
 
 /* Individual info box */
