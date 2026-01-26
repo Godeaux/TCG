@@ -5226,7 +5226,7 @@ button {
 
 /* Changelog overlay */
 .changelog-overlay .changelog-card {
-  width: min(500px, 100%);
+  width: min(800px, 100%);
   max-height: 80vh;
   display: flex;
   flex-direction: column;
