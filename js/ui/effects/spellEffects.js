@@ -166,6 +166,12 @@ export const TRIBE_THEMES = {
     tertiary: '#d7ccc8',
     glow: 'rgba(141, 110, 99, 0.6)',
   },
+  insect: {
+    primary: '#7cb342',
+    secondary: '#558b2f',
+    tertiary: '#c5e1a5',
+    glow: 'rgba(124, 179, 66, 0.6)',
+  },
 };
 
 // ============================================================================
@@ -568,6 +574,53 @@ export const SPELL_VISUAL_EFFECTS = {
     description: 'Instinct pulse, card to hand',
   },
 
+  // ==================== INSECT TRIBE ====================
+  'insect-spell-swarm': {
+    type: 'summon',
+    effect: 'swarm',
+    description: 'Buzzing cloud of insects materializes',
+  },
+  'insect-spell-infestation': {
+    type: 'aoe',
+    effect: 'infestation',
+    description: 'Crawling insects swarm over enemy creatures',
+  },
+  'insect-spell-plague-of-locusts': {
+    type: 'aoe',
+    effect: 'locusts',
+    description: 'Locusts descend in a devouring cloud',
+  },
+  'insect-spell-pheromone-trail': {
+    type: 'buff',
+    effect: 'pheromone',
+    description: 'Glowing trail connects all friendly creatures',
+  },
+  'insect-spell-hivemind': {
+    type: 'utility',
+    effect: 'hivemind',
+    description: 'Neural network pulses between creatures',
+  },
+  'insect-spell-metamorphosis': {
+    type: 'utility',
+    effect: 'metamorphosis',
+    description: 'Chrysalis glow envelops all larvae',
+  },
+  'insect-free-spell-pollinate': {
+    type: 'buff',
+    effect: 'pollen',
+    description: 'Golden pollen sparkles on target',
+  },
+  'insect-free-spell-shed-exoskeleton': {
+    type: 'heal',
+    effect: 'molt',
+    description: 'Old shell cracks away, revealing renewed form',
+  },
+  'insect-free-spell-camouflage': {
+    type: 'status',
+    effect: 'camouflage',
+    description: 'Creature blends into surroundings',
+  },
+
   // ==================== TRAPS (all tribes) ====================
   // Traps use simpler trigger effects
   'fish-trap-cramp': { type: 'trap', effect: 'disable' },
@@ -598,6 +651,10 @@ export const SPELL_VISUAL_EFFECTS = {
   'feline-trap-from-the-trees': { type: 'trap', effect: 'ambush-counter' },
   'feline-trap-coordinated-ambush': { type: 'trap', effect: 'summon-ambush' },
   'feline-trap-patient-hunter': { type: 'trap', effect: 'stalk-trigger' },
+  'insect-trap-pitfall': { type: 'trap', effect: 'pitfall-counter' },
+  'insect-trap-ambush-predator': { type: 'trap', effect: 'swarm-ambush' },
+  'insect-trap-defensive-swarm': { type: 'trap', effect: 'swarm-counter' },
+  'insect-trap-venomous-sting': { type: 'trap', effect: 'venom-counter' },
 };
 
 // ============================================================================
