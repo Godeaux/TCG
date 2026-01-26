@@ -135,6 +135,26 @@ Card abilities use a trigger/reaction system:
 3. If you modified effects, verify both single-player and multiplayer
 4. If you modified AI, run AI vs AI simulation to check for bugs
 
+## Agent Roles
+
+**If the user types `[roles]`, immediately list all available roles with one-line descriptions:**
+- **[cards]** Card Designer — Creates cards, balances stats, designs effects
+- **[ai]** AI Tuner — Improves AI decision-making and difficulty
+- **[system]** Systems Architect — Plans features, enforces boundaries, designs systems
+- **[bug]** Bug Hunter — Traces bugs, finds root causes, minimal fixes
+- **[ui]** UI Specialist — Visual polish, animations, responsiveness
+- **[multi]** Multiplayer Engineer — Sync, networking, desync issues
+
+When the user prefixes a message with a role tag like `[cards]`, `[ai]`, `[system]`, `[bug]`, `[ui]`, or `[multi]`, you MUST:
+
+1. Read `ROLES.md` to understand the role's identity, domain, approach, and boundaries
+2. Adopt that role's mindset fully for the duration of the task
+3. Stay within the role's defined boundaries — do not touch code outside your domain
+4. Use the role's prescribed output style
+
+This role system ensures focused, expert-level work on specific areas of the codebase.
+
 ## Reference Docs
 
+- **ROLES.md** — Agent role definitions (read when role is invoked)
 - **RULEBOOK.md** — Game rules (don't duplicate here)

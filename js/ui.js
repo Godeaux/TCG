@@ -899,10 +899,12 @@ const updateIndicators = (state, controlsLocked) => {
     // Play turn end sound and animation for remote turn change
     SoundManager.play('turnEnd');
     fieldTurnBtn.classList.add('turn-flip');
+    // Play draw sound partway through animation (slight overlap is fine)
+    setTimeout(() => {
+      SoundManager.play('cardDraw');
+    }, 900);
     setTimeout(() => {
       fieldTurnBtn.classList.remove('turn-flip');
-      // Play draw sound after animation - a card was drawn at start of new turn
-      SoundManager.play('cardDraw');
     }, 1500);
   }
   lastKnownTurn = state.turn;
@@ -1083,8 +1085,14 @@ const renderAdvantageDisplay = (state, playerIndex) => {
         const isExpanded = container.style.display !== 'none';
         container.style.display = isExpanded ? 'none' : 'block';
         graphToggle.classList.toggle('active', !isExpanded);
-        if (!isExpanded) {
-          renderAdvantageGraph(state, playerIndex);
+        if (!isExpanded && latestState) {
+          // Use current local player index at click time (not captured value from initialization)
+          const currentLocalIndex = isOnlineMode(latestState)
+            ? getLocalPlayerIndex(latestState)
+            : isAnyAIMode(latestState)
+              ? 0
+              : latestState.activePlayerIndex;
+          renderAdvantageGraph(latestState, currentLocalIndex);
         }
       }
     };
@@ -2286,6 +2294,7 @@ const resolveAttack = (state, attacker, target, negateAttack = false, negatedBy 
           logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
           markCreatureAttacked(attacker);
           clearSelectionPanel();
+          renderGame(state);
           state.broadcast?.(state);
           return;
         }
@@ -2294,6 +2303,7 @@ const resolveAttack = (state, attacker, target, negateAttack = false, negatedBy 
           logMessage(state, `${target.card.name} is already destroyed.`);
           markCreatureAttacked(attacker);
           clearSelectionPanel();
+          renderGame(state);
           state.broadcast?.(state);
           return;
         }
@@ -2325,6 +2335,7 @@ const resolveAttack = (state, attacker, target, negateAttack = false, negatedBy 
       logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
       markCreatureAttacked(attacker);
       clearSelectionPanel(); // Clear any stale selection panels to prevent softlock
+      renderGame(state);
       state.broadcast?.(state);
       return;
     }
@@ -2333,6 +2344,7 @@ const resolveAttack = (state, attacker, target, negateAttack = false, negatedBy 
       logMessage(state, `${target.card.name} is already destroyed.`);
       markCreatureAttacked(attacker);
       clearSelectionPanel(); // Clear any stale selection panels to prevent softlock
+      renderGame(state);
       state.broadcast?.(state);
       return;
     }
@@ -2373,6 +2385,7 @@ const continueResolveAttack = (state, attacker, target) => {
       logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
       markCreatureAttacked(attacker);
       clearSelectionPanel(); // Clear any stale selection panels to prevent softlock
+      renderGame(state);
       state.broadcast?.(state);
       return;
     }
@@ -2380,6 +2393,7 @@ const continueResolveAttack = (state, attacker, target) => {
       markCreatureAttacked(attacker);
       cleanupDestroyed(state);
       clearSelectionPanel(); // Clear any stale selection panels to prevent softlock
+      renderGame(state);
       state.broadcast?.(state);
       return;
     }
