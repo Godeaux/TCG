@@ -981,11 +981,6 @@ export const EFFECT_SCHEMA = {
     text: () => `Return target Rival's creature to hand`,
   },
 
-  selectEnemyToReturn: {
-    params: {},
-    text: () => `Return target Rival's creature to hand`,
-  },
-
   // ==========================================
   // ADDITIONAL EFFECTS (from validation errors)
   // ==========================================

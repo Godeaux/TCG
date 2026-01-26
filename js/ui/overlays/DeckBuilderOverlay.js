@@ -36,7 +36,7 @@ const TAP_MAX_MOVEMENT_PX = 15; // Max pixels moved to count as tap
 const HOLD_PREVIEW_DURATION_MS = 200; // How long to hold for preview
 
 // Check if device supports touch (mobile)
-const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+const isTouchDevice = () => 'ontouchstart' in window || window.navigator.maxTouchPoints > 0;
 
 /**
  * Setup mobile touch handlers for deck cards

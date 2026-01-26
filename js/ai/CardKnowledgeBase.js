@@ -984,14 +984,6 @@ export const EFFECT_VALUES = {
   // SELECTION EFFECTS (user picks target)
   // ========================
 
-  selectTarget: (ctx) => {
-    const enemies = getTargetableEnemyCreatures(ctx);
-    if (enemies.length === 0) {
-      return { value: 0, reason: `select target: 0 enemies → 0` };
-    }
-    return { value: 8, reason: `select target: ${enemies.length} enemies → 8` };
-  },
-
   selectConsume: (ctx) => {
     const prey = getFriendlyPrey(ctx);
     if (prey.length === 0) {
