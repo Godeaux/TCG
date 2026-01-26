@@ -130,6 +130,7 @@ const AI_VS_AI_DECK_OPTIONS = [
   { id: 'arachnid', name: 'Arachnid', emoji: '🕷️', experimental: true },
   { id: 'feline', name: 'Feline', emoji: '🐆', experimental: true },
   { id: 'crustacean', name: 'Crustacean', emoji: '🦀', experimental: true },
+  { id: 'insect', name: 'Insect', emoji: '🦋', experimental: true },
 ];
 
 // ============================================================================
