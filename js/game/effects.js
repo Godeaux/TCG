@@ -33,6 +33,35 @@ const findCardSlotIndex = (state, card) => {
   return { ownerIndex, slotIndex };
 };
 
+/**
+ * Refresh a potentially stale card reference to its current version in state.
+ * During multiplayer sync, card objects can be replaced while UI selections are pending,
+ * leaving effect handlers with orphaned object references.
+ *
+ * @param {Object} state - Current game state
+ * @param {Object} staleCard - Potentially stale card reference
+ * @returns {{ card: Object|null, valid: boolean }} - Fresh card reference and validity flag
+ */
+export const refreshCardReference = (state, staleCard) => {
+  if (!staleCard || !staleCard.instanceId) {
+    return { card: null, valid: false };
+  }
+
+  // Search all player fields for the card by instanceId
+  for (const player of state.players) {
+    const freshCard = player.field.find((c) => c?.instanceId === staleCard.instanceId);
+    if (freshCard) {
+      return { card: freshCard, valid: true };
+    }
+  }
+
+  // Card no longer on any field - it was destroyed or moved
+  console.warn(
+    `[StaleTarget] Card ${staleCard.name} (${staleCard.instanceId}) no longer on field - target invalid`
+  );
+  return { card: null, valid: false };
+};
+
 const removeCardFromField = (state, card) => {
   const ownerIndex = findCardOwnerIndex(state, card);
   if (ownerIndex === -1) {
@@ -568,18 +597,17 @@ export const resolveEffectResult = (state, result, context) => {
     const { target: staleTarget, source } = result.copyAbilities;
 
     // Refresh target reference to avoid stale object from multiplayer sync.
-    // When user selection is pending, sync can replace field objects, leaving
-    // context.creature pointing to an orphaned object instead of the actual card.
-    const targetOwnerIndex = findCardOwnerIndex(state, staleTarget);
-    const target =
-      targetOwnerIndex >= 0
-        ? state.players[targetOwnerIndex].field.find(
-            (c) => c?.instanceId === staleTarget.instanceId
-          ) ?? staleTarget
-        : staleTarget;
-
-    // Check if source has onPlay effect that should be triggered (before we clear target)
-    const sourceHasOnPlay = source.effects?.onPlay || source.onPlay;
+    const { card: target, valid } = refreshCardReference(state, staleTarget);
+    if (!valid || !target) {
+      logGameAction(
+        state,
+        DEBUFF,
+        `Copy abilities failed: target no longer exists.`
+      );
+      // Continue processing other results
+    } else {
+      // Check if source has onPlay effect that should be triggered (before we clear target)
+      const sourceHasOnPlay = source.effects?.onPlay || source.onPlay;
 
     // REPLACEMENT MODE: Clear target's existing abilities first
     // This ensures the copy is a true replacement, not a merge
@@ -666,7 +694,8 @@ export const resolveEffectResult = (state, result, context) => {
           opponentIndex,
         },
       };
-    }
+      }
+    } // end else (valid target)
   }
 
   if (result.copyStats) {

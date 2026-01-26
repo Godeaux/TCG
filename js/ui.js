@@ -2261,9 +2261,10 @@ const resolveAttack = (state, attacker, target, negateAttack = false, negatedBy 
     const sourceText = negatedBy ? ` by ${negatedBy}` : '';
     logMessage(state, `${attacker.name}'s attack on ${targetName} was negated${sourceText}.`);
     markCreatureAttacked(attacker);
-    state.broadcast?.(state);
     cleanupDestroyed(state);
-    clearSelectionPanel(); // Clear any stale selection panels to prevent softlock
+    clearSelectionPanel();
+    renderGame(state);
+    state.broadcast?.(state);
     return;
   }
 
@@ -2498,6 +2499,7 @@ const continueResolveAttack = (state, attacker, target) => {
   // Clear any stale selection panels after combat resolution to prevent softlock
   // This handles edge cases where creature death might leave a selection panel open
   clearSelectionPanel();
+  renderGame(state);
   state.broadcast?.(state);
   return effect;
 };

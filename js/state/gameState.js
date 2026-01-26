@@ -12,9 +12,78 @@ export {
   formatCardForLog,
 } from '../game/historyLog.js';
 
+// ============================================================================
+// SEEDED PRNG - Mulberry32 algorithm for deterministic random numbers
+// Both clients use the same seed to get identical random sequences
+// ============================================================================
+
+/**
+ * Creates a seeded random number generator using mulberry32 algorithm.
+ * @param {number} seed - The seed value
+ * @returns {function} A function that returns random numbers [0, 1)
+ */
+const createSeededRandom = (seed) => {
+  let state = seed >>> 0; // Ensure unsigned 32-bit integer
+  return () => {
+    state = (state + 0x6d2b79f5) >>> 0;
+    let t = state;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+};
+
+// Global PRNG instance - initialized when game starts
+let gameRandom = null;
+let currentSeed = null;
+
+/**
+ * Initialize the game's random number generator with a seed.
+ * Call this when starting a new game - host generates seed, shares via sync.
+ * @param {number} seed - The seed value (use Date.now() for host)
+ */
+export const initializeGameRandom = (seed) => {
+  currentSeed = seed;
+  gameRandom = createSeededRandom(seed);
+  console.log(`[PRNG] Initialized with seed: ${seed}`);
+};
+
+/**
+ * Get the current seed (for syncing to opponent).
+ * @returns {number|null} The current seed
+ */
+export const getGameSeed = () => currentSeed;
+
+/**
+ * Get a random number [0, 1) using the seeded PRNG.
+ * Falls back to Math.random() if PRNG not initialized (offline/AI games).
+ * @returns {number} Random number between 0 and 1
+ */
+export const seededRandom = () => {
+  if (gameRandom) {
+    return gameRandom();
+  }
+  // Fallback for non-multiplayer games
+  return Math.random();
+};
+
+/**
+ * Get a random integer in range [0, max) using seeded PRNG.
+ * @param {number} max - Exclusive upper bound
+ * @returns {number} Random integer
+ */
+export const seededRandomInt = (max) => {
+  return Math.floor(seededRandom() * max);
+};
+
+/**
+ * Shuffle array using seeded PRNG (Fisher-Yates algorithm).
+ * @param {Array} array - Array to shuffle (mutated in place)
+ * @returns {Array} The shuffled array
+ */
 const shuffle = (array) => {
   for (let i = array.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(seededRandom() * (i + 1));
     [array[i], array[j]] = [array[j], array[i]];
   }
   return array;
@@ -45,6 +114,7 @@ export const createGameState = () => {
     activePlayerIndex: 0,
     phase: 'Setup',
     turn: 1,
+    randomSeed: null, // Shared seed for deterministic PRNG - set by host, synced to opponent
     firstPlayerIndex: null,
     skipFirstDraw: true,
     cardPlayedThisTurn: false,
@@ -219,7 +289,7 @@ export const rollSetupDie = (state, playerIndex) => {
     state.setup.rolls = [null, null];
   }
 
-  const roll = Math.floor(Math.random() * 10) + 1;
+  const roll = Math.floor(seededRandom() * 10) + 1;
   state.setup.rolls[playerIndex] = roll;
 
   console.log(`${state.players[playerIndex].name} rolls a ${roll}.`);
@@ -254,5 +324,14 @@ export const chooseFirstPlayer = (state, chosenIndex) => {
   state.passPending = false;
   state.setup.stage = 'complete';
   state.advantageHistory = []; // Reset advantage graph for new game
+
+  // Initialize PRNG seed if not already set (host generates, opponent receives via sync)
+  if (!state.randomSeed) {
+    const seed = Date.now() ^ (Math.random() * 0xffffffff);
+    state.randomSeed = seed;
+    initializeGameRandom(seed);
+    console.log('[PRNG] Host generated seed:', seed);
+  }
+
   logMessage(state, `${state.players[chosenIndex].name} will take the first turn.`);
 };

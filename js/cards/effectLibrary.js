@@ -42,6 +42,7 @@ import {
   hasAcuity,
 } from '../keywords.js';
 import { isCreatureCard } from '../cardTypes.js';
+import { seededRandomInt } from '../state/gameState.js';
 
 // ============================================================================
 // CARD SORTING FOR SELECTION UIs
@@ -976,7 +977,7 @@ export const stealCreature = (targetType) => (context) => {
   }
 
   if (targetType === 'random') {
-    const randomCreature = enemyCreatures[Math.floor(Math.random() * enemyCreatures.length)];
+    const randomCreature = enemyCreatures[seededRandomInt(enemyCreatures.length)];
     log(`Steals ${randomCreature.name}.`);
     return { stealCreature: { creature: randomCreature, newOwnerIndex: playerIndex } };
   }
@@ -3161,7 +3162,7 @@ export const webRandomEnemy =
       log(`No Rival's creatures to web.`);
       return {};
     }
-    const target = enemies[Math.floor(Math.random() * enemies.length)];
+    const target = enemies[seededRandomInt(enemies.length)];
     applyWebbed(target, log);
     return {};
   };

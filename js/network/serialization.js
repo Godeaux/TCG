@@ -19,7 +19,7 @@ import { createCardInstance } from '../cardTypes.js';
 import { getLocalPlayerIndex } from '../state/selectors.js';
 import { stripAbilities } from '../game/effects.js';
 import { cleanupDestroyed } from '../game/combat.js';
-import { logMessage } from '../state/gameState.js';
+import { logMessage, initializeGameRandom, getGameSeed } from '../state/gameState.js';
 
 // Monotonic sequence counter to ensure unique broadcast ordering
 // This prevents timestamp collisions when multiple broadcasts occur in the same millisecond
@@ -57,6 +57,10 @@ export const serializeCardSnapshot = (card) => {
     keywords: Array.isArray(card.keywords) ? [...card.keywords] : null,
     // Track if abilities were copied from another card (for re-applying after hydration)
     copiedFromId: card.copiedFromId ?? null,
+    // Mechanic-specific state that must sync
+    stalkBonus: card.stalkBonus ?? 0, // Feline ATK bonus from stalking
+    currentShell: card.currentShell ?? null, // Crustacean shell absorption
+    webbed: card.webbed ?? false, // Spider web status (takes venom damage)
   };
 };
 
@@ -139,6 +143,13 @@ export const hydrateCardSnapshot = (snapshot, fallbackTurn) => {
     }
   }
 
+  // Restore mechanic-specific state
+  instance.stalkBonus = snapshot.stalkBonus ?? 0;
+  if (snapshot.currentShell !== null && snapshot.currentShell !== undefined) {
+    instance.currentShell = snapshot.currentShell;
+  }
+  instance.webbed = snapshot.webbed ?? false;
+
   return instance;
 };
 
@@ -220,6 +231,7 @@ export const buildLobbySyncPayload = (state) => ({
     activePlayerIndex: state.activePlayerIndex,
     phase: state.phase,
     turn: state.turn,
+    randomSeed: state.randomSeed ?? getGameSeed(), // Sync PRNG seed for deterministic random
     cardPlayedThisTurn: state.cardPlayedThisTurn,
     passPending: state.passPending,
     extendedConsumption: state.extendedConsumption ? { ...state.extendedConsumption } : null,
@@ -241,6 +253,8 @@ export const buildLobbySyncPayload = (state) => ({
       exile: player.exile.map((card) => serializeCardSnapshot(card)),
       traps: player.traps.map((card) => serializeCardSnapshot(card)),
     })),
+    // Sync advantage history for consistent graph display (raw values from P0 perspective)
+    advantageHistory: Array.isArray(state.advantageHistory) ? state.advantageHistory : [],
   },
   deckBuilder: {
     stage: state.deckBuilder?.stage ?? null,
@@ -350,6 +364,12 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
     if (payload.game.turn !== undefined && payload.game.turn !== null) {
       state.turn = payload.game.turn;
     }
+    // Initialize PRNG with synced seed (only if we don't have one yet)
+    if (payload.game.randomSeed && !state.randomSeed) {
+      state.randomSeed = payload.game.randomSeed;
+      initializeGameRandom(payload.game.randomSeed);
+      console.log('[applySync] Initialized PRNG with synced seed:', payload.game.randomSeed);
+    }
     if (payload.game.cardPlayedThisTurn !== undefined) {
       state.cardPlayedThisTurn = payload.game.cardPlayedThisTurn;
     }
@@ -383,6 +403,16 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
     }
     if (payload.game._lastReactionNegatedBy !== undefined) {
       state._lastReactionNegatedBy = payload.game._lastReactionNegatedBy;
+    }
+    // Sync advantage history (raw values from P0 perspective - UI applies local perspective)
+    if (Array.isArray(payload.game.advantageHistory)) {
+      // Only accept if incoming history is longer (more recent data)
+      const currentLen = state.advantageHistory?.length ?? 0;
+      const incomingLen = payload.game.advantageHistory.length;
+      if (incomingLen > currentLen) {
+        state.advantageHistory = [...payload.game.advantageHistory];
+        console.log(`[Sync] Updated advantageHistory: ${currentLen} -> ${incomingLen} entries`);
+      }
     }
     if (Array.isArray(payload.game.players)) {
       payload.game.players.forEach((playerSnapshot, index) => {
@@ -538,7 +568,7 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
       }
     }
     if (Array.isArray(payload.setup.rolls)) {
-      console.log('Processing roll sync:', payload.setup.rolls);
+      console.log('Processing roll sync:', payload.setup.rolls, { forceApply, localIndex });
       payload.setup.rolls.forEach((roll, index) => {
         // If incoming roll is null, do NOT clear existing local rolls.
         // A null in the payload just means the sender didn't know about that roll yet.
@@ -556,17 +586,32 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
           return;
         }
 
-        // Apply roll only if we don't already have one for this player
+        // DB restore is authoritative - always accept
+        if (forceApply) {
+          console.log(`[DB Authority] Applying roll ${roll} for Player ${index + 1}`);
+          state.setup.rolls[index] = roll;
+          return;
+        }
+
+        // For real-time sync: each player is authoritative for their OWN roll
+        // Only accept opponent's roll, protect our own local roll
+        const isOurRoll = index === localIndex;
         const existingRoll = state.setup.rolls[index];
-        if (existingRoll === null || existingRoll === undefined) {
+
+        if (isOurRoll && existingRoll !== null && existingRoll !== undefined) {
+          // Protect our own roll - we are authoritative for it
+          if (existingRoll !== roll) {
+            console.log(
+              `Protecting local roll for Player ${index + 1}: keeping ${existingRoll}, ignoring remote ${roll}`
+            );
+          }
+          return;
+        }
+
+        // Accept opponent's roll or fill in missing roll
+        if (existingRoll === null || existingRoll === undefined || !isOurRoll) {
           console.log(`Applying roll ${roll} for Player ${index + 1}`);
           state.setup.rolls[index] = roll;
-        } else if (existingRoll !== roll) {
-          // Both have different values - keep the existing one to prevent overwrites
-          // The authoritative state will come from the database or be reconciled via tie logic
-          console.warn(
-            `Roll conflict for Player ${index + 1}: keeping local ${existingRoll}, ignoring remote ${roll}`
-          );
         }
       });
     }
