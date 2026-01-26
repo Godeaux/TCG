@@ -20,6 +20,61 @@ import { enableSimulationMode } from '../../ui.js';
 import { SoundManager } from '../../audio/soundManager.js';
 
 // ============================================================================
+// UTILITIES
+// ============================================================================
+
+/**
+ * Parse changelog markdown into HTML
+ * Handles ## headings and - bullet points
+ */
+const parseChangelogMarkdown = (markdown) => {
+  const lines = markdown.split('\n');
+  let html = '';
+  let inList = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // Skip title and empty lines at start
+    if (trimmed.startsWith('# ') || trimmed === '---') {
+      continue;
+    }
+
+    // Version headings
+    if (trimmed.startsWith('## ')) {
+      if (inList) {
+        html += '</ul>';
+        inList = false;
+      }
+      html += `<h2>${trimmed.slice(3)}</h2>`;
+      continue;
+    }
+
+    // Bullet points
+    if (trimmed.startsWith('- ')) {
+      if (!inList) {
+        html += '<ul>';
+        inList = true;
+      }
+      html += `<li>${trimmed.slice(2)}</li>`;
+      continue;
+    }
+
+    // Empty line closes list
+    if (trimmed === '' && inList) {
+      html += '</ul>';
+      inList = false;
+    }
+  }
+
+  if (inList) {
+    html += '</ul>';
+  }
+
+  return html;
+};
+
+// ============================================================================
 // MODULE-LEVEL STATE
 // ============================================================================
 
@@ -301,6 +356,11 @@ const getNavigationElements = () => ({
   // Credits overlay elements
   creditsBack: document.getElementById('credits-back'),
 
+  // Changelog overlay elements
+  gameVersion: document.getElementById('game-version'),
+  changelogContent: document.getElementById('changelog-content'),
+  changelogBack: document.getElementById('changelog-back'),
+
   // Options overlay elements
   optionsSoundVolume: document.getElementById('options-sound-volume'),
   optionsSoundValue: document.getElementById('options-sound-value'),
@@ -545,6 +605,36 @@ const initNavigation = () => {
       return;
     }
     setMenuStage(latestState, 'other');
+    latestCallbacks.onUpdate?.();
+  });
+
+  // Version text: Open changelog
+  elements.gameVersion?.addEventListener('click', async () => {
+    if (!latestState) {
+      return;
+    }
+    // Load and render changelog
+    try {
+      const response = await fetch('CHANGELOG.md');
+      const markdown = await response.text();
+      if (elements.changelogContent) {
+        elements.changelogContent.innerHTML = parseChangelogMarkdown(markdown);
+      }
+    } catch (err) {
+      if (elements.changelogContent) {
+        elements.changelogContent.innerHTML = '<p>Failed to load changelog.</p>';
+      }
+    }
+    setMenuStage(latestState, 'changelog');
+    latestCallbacks.onUpdate?.();
+  });
+
+  // Changelog: Back button
+  elements.changelogBack?.addEventListener('click', () => {
+    if (!latestState) {
+      return;
+    }
+    setMenuStage(latestState, 'main');
     latestCallbacks.onUpdate?.();
   });
 

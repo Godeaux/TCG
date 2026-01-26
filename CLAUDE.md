@@ -128,13 +128,35 @@ Card abilities use a trigger/reaction system:
 - **triggerRegistry.js** — Defines trigger conditions (onPlay, onDeath, etc.)
 - **reactionSystem.js** — Handles card reactions with timing
 
+## Versioning & Changelog
+
+**When the user types `[changelog]`**, immediately:
+
+1. Run `git diff` to see ALL changes since the last commit
+2. Increment the version in `index.html` (`#game-version`, line ~123)
+3. Add a new section to `CHANGELOG.md` summarizing the changes
+
+**Changelog format:**
+```markdown
+## v0.12 — Short description
+
+- One-line bullet per discrete change
+- Keep each bullet under ~80 characters
+- Group related changes if needed
+```
+
+**Version numbering:** Start at v0.1, increment by 0.01 for each release (v0.11, v0.12, etc.)
+
 ## Before Committing
 
-1. Test the game runs without console errors
-2. Test affected cards work correctly
-3. If you modified effects, verify both single-player and multiplayer
-4. If you modified AI, run AI vs AI simulation to check for bugs
-5. **Update the version** in `index.html` (line ~123, `#game-version`) — bump version and add a brief description (e.g., `v0.11 Add deck builder`)
+When the user asks you to commit (they may have worked across multiple conversations):
+
+1. Run `git diff` to see ALL changes since the last commit — don't rely on conversation memory
+2. Test the game runs without console errors
+3. Test affected cards work correctly
+4. If you modified effects, verify both single-player and multiplayer
+5. If you modified AI, run AI vs AI simulation to check for bugs
+6. Ensure version and changelog are updated (use `[changelog]` if not done)
 
 ## Agent Roles
 
