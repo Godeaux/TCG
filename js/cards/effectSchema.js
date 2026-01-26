@@ -40,6 +40,19 @@ const TOKEN_NAMES = {
   'token-cub': { singular: 'Cub', plural: 'Cubs' },
   'token-pride-cub': { singular: 'Pride Cub', plural: 'Pride Cubs' },
   'token-wounded-prey': { singular: 'Wounded Prey', plural: 'Wounded Prey' },
+  // Insect tokens
+  'token-monarch-butterfly': { singular: 'Monarch Butterfly', plural: 'Monarch Butterflies' },
+  'token-hercules-beetle': { singular: 'Hercules Beetle', plural: 'Hercules Beetles' },
+  'token-dragonfly': { singular: 'Dragonfly', plural: 'Dragonflies' },
+  'token-cicada-swarm': { singular: 'Cicada Swarm', plural: 'Cicada Swarms' },
+  'token-luna-moth': { singular: 'Luna Moth', plural: 'Luna Moths' },
+  'token-atlas-moth': { singular: 'Atlas Moth', plural: 'Atlas Moths' },
+  'token-worker-ant': { singular: 'Worker Ant', plural: 'Worker Ants' },
+  'token-soldier-ant': { singular: 'Soldier Ant', plural: 'Soldier Ants' },
+  'token-wasp-larva': { singular: 'Wasp Larva', plural: 'Wasp Larvae' },
+  'token-leaf-fragment': { singular: 'Leaf Fragment', plural: 'Leaf Fragments' },
+  'token-firefly-light': { singular: 'Firefly Light', plural: 'Firefly Lights' },
+  'token-insect-swarm': { singular: 'Insect Swarm', plural: 'Insect Swarms' },
 };
 
 /**
@@ -1063,6 +1076,135 @@ export const EFFECT_SCHEMA = {
   discardDraw: {
     params: { count: { type: 'number', required: true } },
     text: (p) => `Draw ${p.count}`,
+  },
+
+  // ==========================================
+  // INSECT / METAMORPHOSIS EFFECTS
+  // ==========================================
+
+  incrementEmergeCounter: {
+    params: {
+      turnsRequired: { type: 'number', required: true },
+      transformInto: { type: 'string', required: true },
+    },
+    text: (p) => {
+      const tokenName = p.transformInto
+        ?.replace('token-', '')
+        .split('-')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
+      return `Emerge: After ${p.turnsRequired} turns, transform into ${tokenName}`;
+    },
+  },
+
+  transformIfSurvives: {
+    params: { transformInto: { type: 'string', required: true } },
+    text: (p) => {
+      const tokenName = p.transformInto
+        ?.replace('token-', '')
+        .split('-')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
+      return `Emerge: If this survives damage, transform into ${tokenName}`;
+    },
+  },
+
+  bonusDamagePerAttacker: {
+    params: { bonusPerAttacker: { type: 'number', required: true } },
+    text: (p) => `Deal +${p.bonusPerAttacker} damage for each other attacking creature`,
+  },
+
+  forceAllFriendlyAttack: {
+    params: {},
+    text: () => `All friendly creatures must attack this turn`,
+  },
+
+  infestEnemy: {
+    params: { spawnOnDeath: { type: 'string', required: true } },
+    text: (p) => {
+      const tokenName = p.spawnOnDeath
+        ?.replace('token-', '')
+        .split('-')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
+      return `Infest an enemy creature. When it dies, summon a ${tokenName}`;
+    },
+  },
+
+  surviveWithOneHp: {
+    params: { oncePerGame: { type: 'boolean', required: false } },
+    text: (p) =>
+      p.oncePerGame
+        ? `The first time this would die, survive with 1 HP instead`
+        : `When this would die, survive with 1 HP instead`,
+  },
+
+  destroyEnemyToken: {
+    params: {},
+    text: () => `Destroy an enemy token`,
+  },
+
+  returnCardFromDiscardToDeck: {
+    params: {},
+    text: () => `Return a card from your discard pile to your deck`,
+  },
+
+  destroyCreatureWithLowHp: {
+    params: { maxHp: { type: 'number', required: true } },
+    text: (p) => `Destroy an enemy creature with ${p.maxHp} or less HP`,
+  },
+
+  destroySelf: {
+    params: {},
+    text: () => `Destroy this creature`,
+  },
+
+  stealRandomCardFromHand: {
+    params: {},
+    text: () => `Steal a random card from Rival's hand`,
+  },
+
+  takeControlOfEnemyPrey: {
+    params: {},
+    text: () => `Take control of an enemy Prey`,
+  },
+
+  drawPerFriendlyCreature: {
+    params: { maxDraw: { type: 'number', required: false } },
+    text: (p) =>
+      p.maxDraw
+        ? `Draw 1 card for each friendly creature (max ${p.maxDraw})`
+        : `Draw 1 card for each friendly creature`,
+  },
+
+  transformAllLarvaeImmediately: {
+    params: {},
+    text: () => `Transform all larvae into their adult forms immediately`,
+  },
+
+  applyPoisonToAttacker: {
+    params: {},
+    text: () => `Apply Poison to the attacker`,
+  },
+
+  damageRandomEnemyPrey: {
+    params: { amount: { type: 'number', required: true } },
+    text: (p) => `Deal ${p.amount} damage to a random enemy Prey`,
+  },
+
+  silenceAllEnemies: {
+    params: {},
+    text: () => `Silence all enemy creatures (remove abilities this turn)`,
+  },
+
+  returnToHand: {
+    params: { target: { type: 'string', required: true } },
+    text: (p) => (p.target === 'self' ? `Return this to your hand` : `Return target to hand`),
+  },
+
+  damageAttacker: {
+    params: { amount: { type: 'number', required: true } },
+    text: (p) => `Deal ${p.amount} damage to the attacker`,
   },
 };
 
