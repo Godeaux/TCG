@@ -136,6 +136,24 @@ const TRIGGER_DESCRIPTIONS = {
     name: 'Discard',
     description: 'Triggers when this card is discarded from hand.',
   },
+  // Insect triggers
+  'On attack:': {
+    name: 'On Attack',
+    description: 'Triggers when this creature attacks an enemy creature or the rival.',
+  },
+  'When you play a spell:': {
+    name: 'Spell Synergy',
+    description: 'Triggers whenever you play a spell card.',
+  },
+  'When a friendly creature dies:': {
+    name: 'Death Watch',
+    description: 'Triggers whenever one of your creatures dies.',
+  },
+  'Emerge:': {
+    name: 'Emerge (Metamorphosis)',
+    description:
+      'This larva transforms into an adult form. The counter tracks turns survived. When the counter reaches the required turns, it transforms into a powerful adult creature.',
+  },
   // Trap triggers
   'When Rival plays a Predator,': {
     name: 'Trap: Rival Plays Predator',
@@ -414,6 +432,19 @@ const extractTokenIds = (card) => {
       // Check for addToHand effect type (for tokens added to hand)
       if (effect.type === 'addToHand' && effect.params?.cardId?.startsWith('token-')) {
         tokenIds.add(effect.params.cardId);
+      }
+
+      // Check for transformation effects (Insect metamorphosis)
+      if (effect.type === 'incrementEmergeCounter' && effect.params?.transformInto) {
+        tokenIds.add(effect.params.transformInto);
+      }
+      if (effect.type === 'transformIfSurvives' && effect.params?.transformInto) {
+        tokenIds.add(effect.params.transformInto);
+      }
+
+      // Check for infest effect (parasitic wasps)
+      if (effect.type === 'infestEnemy' && effect.params?.spawnOnDeath) {
+        tokenIds.add(effect.params.spawnOnDeath);
       }
 
       // Check nested effects (like in chooseOption)
