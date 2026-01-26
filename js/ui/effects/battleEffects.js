@@ -22,6 +22,7 @@ import {
 } from '../dom/helpers.js';
 
 import { playSpellEffect, playTrapEffect, initSpellEffects } from './spellEffects.js';
+import { SoundManager } from '../../audio/soundManager.js';
 
 // ============================================================================
 // MODULE-LEVEL STATE
@@ -177,6 +178,9 @@ export const playAttackEffect = (effect, state) => {
   ghost.style.top = `${attackerRect.top - layerRect.top + attackerRect.height / 2}px`;
   battleEffectsLayer.appendChild(ghost);
 
+  // Sound: attack launch
+  SoundManager.play('attackWhoosh');
+
   const deltaX = targetRect.left - attackerRect.left + (targetRect.width - attackerRect.width) / 2;
   const deltaY = targetRect.top - attackerRect.top + (targetRect.height - attackerRect.height) / 2;
   const animation = ghost.animate(
@@ -196,6 +200,15 @@ export const playAttackEffect = (effect, state) => {
 
   const finishImpact = () => {
     ghost.remove();
+
+    // Sound: impact based on damage
+    const totalDamage = (effect.damageToTarget || 0) + (effect.damageToAttacker || 0);
+    if (totalDamage >= 4) {
+      SoundManager.play('impactHeavy');
+    } else {
+      SoundManager.play('impactMedium');
+    }
+
     if (targetElement) {
       targetElement.classList.add('card-hit');
       setTimeout(() => targetElement.classList.remove('card-hit'), 380);
@@ -301,6 +314,10 @@ export const playConsumptionEffect = (effect, state) => {
 
   animation.addEventListener('finish', () => {
     ghost.remove();
+
+    // Sound: consumption crunch
+    SoundManager.play('consumptionCrunch');
+
     // Add nutrition pop on predator
     if (effect.nutritionGained && predatorTarget) {
       createNutritionPop(predatorTarget, effect.nutritionGained);
@@ -534,6 +551,37 @@ export const playHealEffect = (effect, state) => {
 };
 
 // ============================================================================
+// CARD PLAY EFFECT
+// ============================================================================
+
+/**
+ * Play card play visual effect
+ * Plays a slam sound based on the card's cost
+ */
+export const playCardPlayEffect = (effect, state) => {
+  const cost = effect.cost || 0;
+
+  // Heavy slam for 5+ cost, regular slam otherwise
+  if (cost >= 5) {
+    SoundManager.play('cardSlamHeavy');
+  } else {
+    SoundManager.play('cardSlam');
+  }
+};
+
+// ============================================================================
+// CREATURE DEATH EFFECT
+// ============================================================================
+
+/**
+ * Play creature death visual effect
+ * Plays a death sound when a creature dies
+ */
+export const playCreatureDeathEffect = (effect, state) => {
+  SoundManager.play('creatureDeath');
+};
+
+// ============================================================================
 // ABILITY CANCEL EFFECT
 // ============================================================================
 
@@ -623,6 +671,12 @@ export const processVisualEffects = (state) => {
         break;
       case 'heal':
         requestAnimationFrame(() => playHealEffect(effect, state));
+        break;
+      case 'cardPlay':
+        requestAnimationFrame(() => playCardPlayEffect(effect, state));
+        break;
+      case 'creatureDeath':
+        requestAnimationFrame(() => playCreatureDeathEffect(effect, state));
         break;
       case 'spell':
         requestAnimationFrame(() => playSpellEffect(effect, state));

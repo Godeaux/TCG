@@ -390,6 +390,15 @@ export class GameController {
     // Place on field
     player.field[slotIndex] = creatureInstance;
 
+    // Queue card play visual effect for slam sound
+    queueVisualEffect(this.state, {
+      type: 'cardPlay',
+      cardId: creatureInstance.instanceId,
+      cost: creatureInstance.cost || 0,
+      ownerIndex: playerIndex,
+      slotIndex,
+    });
+
     // Update card play limit
     // Dry-dropped predators lose Free Play, so recalculate isFree based on the instance
     const isFreeAfterPlacement = creatureInstance.dryDropped

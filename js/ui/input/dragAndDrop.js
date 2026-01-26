@@ -394,6 +394,9 @@ const clearDragVisuals = () => {
         'extended-consumption-active'
       );
     });
+  // Also clean up drag-in-progress and any lingering dragging class
+  document.body.classList.remove('drag-in-progress');
+  document.querySelectorAll('.dragging').forEach((el) => el.classList.remove('dragging'));
   currentDragTargetId = null;
 };
 
@@ -1175,6 +1178,12 @@ const handleDragStart = (event) => {
     : -1;
 
   cardElement.classList.add('dragging');
+  // Chrome: remove hand-focus to shrink card back - prevents enlarged card from blocking drop zones
+  // Firefox: uses CSS pointer-events: none instead (removing hand-focus breaks drag in Firefox)
+  if (window.chrome) {
+    cardElement.classList.remove('hand-focus');
+  }
+  document.body.classList.add('drag-in-progress');
   event.dataTransfer.effectAllowed = 'move';
   event.dataTransfer.setData('text/plain', instanceId);
 
@@ -1207,6 +1216,7 @@ const handleDragEnd = (event) => {
   if (draggedCardElement) {
     draggedCardElement.classList.remove('dragging');
   }
+  document.body.classList.remove('drag-in-progress');
   clearDragVisuals();
   draggedCard = null;
   draggedCardElement = null;

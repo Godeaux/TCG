@@ -7805,6 +7805,11 @@ select.menu-input option {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
+/* When drag is in progress, the enlarged hand-focus card should not intercept pointer events */
+.drag-in-progress .hand-grid .card.hand-focus {
+  pointer-events: none;
+}
+
 /* Valid target highlighting */
 .valid-target {
   box-shadow: 0 0 20px rgba(231, 76, 60, 0.8), inset 0 0 20px rgba(231, 76, 60, 0.3);

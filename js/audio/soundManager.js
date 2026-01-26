@@ -1,12 +1,23 @@
-// Sound manager for multiplayer games
-// Only plays sounds when in online mode
-
-import { isOnlineMode } from '../state/selectors.js';
+// Sound manager for game audio
 
 // Sound registry - maps sound names to file paths
 const SOUNDS = {
+  // UI
   turnEnd: 'audio/turn-end.wav',
   cardDraw: 'audio/card-draw.wav',
+
+  // Combat
+  attackWhoosh: 'audio/attack-whoosh.wav',
+  impactMedium: 'audio/impact-medium.wav',
+  impactHeavy: 'audio/impact-heavy.wav',
+  creatureDeath: 'audio/creature-death.wav',
+
+  // Card play
+  cardSlam: 'audio/card-slam.wav',
+  cardSlamHeavy: 'audio/card-slam-heavy.wav',
+
+  // Consumption
+  consumptionCrunch: 'audio/consumption-crunch.wav',
 };
 
 // LocalStorage key for volume
@@ -14,9 +25,6 @@ const VOLUME_KEY = 'foodchain_sound_volume';
 
 // Cached Audio objects
 const audioCache = {};
-
-// State getter function (set by init)
-let getState = null;
 
 // Volume level (0-1)
 let volume = loadVolume();
@@ -56,17 +64,11 @@ const preloadSounds = () => {
 };
 
 export const SoundManager = {
-  init(stateGetter) {
-    getState = stateGetter;
+  init() {
     preloadSounds();
   },
 
   play(soundName) {
-    // Only play sounds in online multiplayer mode
-    if (!getState || !isOnlineMode(getState())) {
-      return;
-    }
-
     // Skip if volume is 0
     if (volume === 0) {
       return;

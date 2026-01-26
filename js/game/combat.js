@@ -408,7 +408,7 @@ export const cleanupDestroyed = (state, { silent = false } = {}) => {
   // PHASE 1: Identify destroyed creatures, handle molt, clear slots immediately
   // This ensures field slots are freed BEFORE onSlain effects resolve (e.g., Meerkat Matriarch summons)
   state.players.forEach((player, playerIndex) => {
-    player.field = player.field.map((card) => {
+    player.field = player.field.map((card, slotIndex) => {
       if (card && card.currentHp <= 0) {
         // Check for Molt - creature revives at 1 HP but loses all keywords (Crustacean mechanic)
         // Molt does NOT trigger if killed by Toxic (Toxic counters Molt)
@@ -429,6 +429,14 @@ export const cleanupDestroyed = (state, { silent = false } = {}) => {
             return card; // Creature survives, stays on field
           }
         }
+
+        // Queue death visual effect
+        queueVisualEffect(state, {
+          type: 'creatureDeath',
+          cardId: card.instanceId,
+          ownerIndex: playerIndex,
+          slotIndex,
+        });
 
         // Collect for phase 2 processing, storing player object and index
         destroyedCreatures.push({ card, player, playerIndex });
