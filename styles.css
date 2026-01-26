@@ -12306,3 +12306,2986 @@ select.menu-input option {
     flex-wrap: wrap;
   }
 }
+
+/* ============================================================================
+   SPELL VISUAL EFFECTS
+   ============================================================================ */
+
+/* Screen shake for meteor/quake effects */
+.screen-shake {
+  animation: screen-shake 0.3s ease-out;
+}
+
+@keyframes screen-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px) translateY(4px); }
+  40% { transform: translateX(8px) translateY(-4px); }
+  60% { transform: translateX(-6px) translateY(2px); }
+  80% { transform: translateX(6px) translateY(-2px); }
+}
+
+/* ============================================================================
+   SPELL PROJECTILES
+   ============================================================================ */
+
+.spell-projectile {
+  position: absolute;
+  pointer-events: none;
+  z-index: 15;
+  transform: translate(-50%, -50%);
+}
+
+/* Net projectile - blue mesh */
+.spell-projectile--net {
+  width: 50px;
+  height: 50px;
+  border: 3px solid var(--spell-color, #4fc3f7);
+  border-radius: 50%;
+  background: radial-gradient(circle, transparent 30%, var(--spell-glow, rgba(79, 195, 247, 0.4)) 70%);
+  box-shadow: 0 0 20px var(--spell-glow, rgba(79, 195, 247, 0.6));
+}
+
+.spell-projectile--net::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 2px dashed var(--spell-color, #4fc3f7);
+  border-radius: 50%;
+  opacity: 0.8;
+}
+
+/* Rifle projectile - bullet trail */
+.spell-projectile--rifle {
+  width: 8px;
+  height: 30px;
+  background: linear-gradient(to bottom, #ff6b6b, #feca57);
+  border-radius: 4px;
+  box-shadow: 0 0 15px rgba(255, 107, 107, 0.8), 0 0 30px rgba(254, 202, 87, 0.5);
+}
+
+/* Harpoon projectile */
+.spell-projectile--harpoon {
+  width: 12px;
+  height: 60px;
+  background: linear-gradient(to bottom, #5f6368, #9e9e9e);
+  border-radius: 2px;
+  clip-path: polygon(50% 0%, 0% 20%, 0% 100%, 100% 100%, 100% 20%);
+}
+
+.spell-projectile--harpoon::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 2px;
+  height: 100px;
+  background: linear-gradient(to bottom, #8b7355, transparent);
+  transform: translateX(-50%);
+}
+
+/* Dart projectile */
+.spell-projectile--dart {
+  width: 8px;
+  height: 35px;
+  background: linear-gradient(to bottom, #e74c3c, #c0392b);
+  border-radius: 2px 2px 4px 4px;
+  clip-path: polygon(50% 0%, 0% 30%, 0% 100%, 100% 100%, 100% 30%);
+}
+
+/* Arrow projectile */
+.spell-projectile--arrow {
+  width: 6px;
+  height: 40px;
+  background: linear-gradient(to bottom, #5d4e37, #8b7355);
+  border-radius: 1px;
+}
+
+.spell-projectile--arrow::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 12px solid #5f6368;
+}
+
+/* Venom bolt */
+.spell-projectile--venom,
+.spell-projectile--venom-bolt,
+.spell-projectile--venom-small {
+  width: 16px;
+  height: 16px;
+  background: radial-gradient(circle, #76ff03, #558b2f);
+  border-radius: 50%;
+  box-shadow: 0 0 15px rgba(118, 255, 3, 0.8), 0 0 30px rgba(85, 139, 47, 0.5);
+}
+
+/* Feather bolt */
+.spell-projectile--feather-bolt {
+  width: 20px;
+  height: 8px;
+  background: linear-gradient(90deg, #fff9c4, #ffd54f);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(255, 213, 79, 0.6);
+}
+
+/* Web strand */
+.spell-projectile--web-strand,
+.spell-projectile--web-quick {
+  width: 4px;
+  height: 80px;
+  background: linear-gradient(to bottom, rgba(158, 158, 158, 0.8), rgba(158, 158, 158, 0.2));
+}
+
+/* Claw strike */
+.spell-projectile--claw {
+  width: 60px;
+  height: 60px;
+  background: transparent;
+}
+
+.spell-projectile--claw::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(135deg, transparent 40%, var(--spell-color, #c19a6b) 40%, var(--spell-color, #c19a6b) 45%, transparent 45%),
+    linear-gradient(135deg, transparent 50%, var(--spell-color, #c19a6b) 50%, var(--spell-color, #c19a6b) 55%, transparent 55%),
+    linear-gradient(135deg, transparent 60%, var(--spell-color, #c19a6b) 60%, var(--spell-color, #c19a6b) 65%, transparent 65%),
+    linear-gradient(135deg, transparent 70%, var(--spell-color, #c19a6b) 70%, var(--spell-color, #c19a6b) 75%, transparent 75%);
+  box-shadow: 0 0 20px var(--spell-glow, rgba(141, 110, 99, 0.6));
+}
+
+/* Water bolt */
+.spell-projectile--water-bolt,
+.spell-projectile--leap {
+  width: 24px;
+  height: 24px;
+  background: radial-gradient(circle, #81c784, #4caf50);
+  border-radius: 50%;
+  box-shadow: 0 0 15px rgba(129, 199, 132, 0.8);
+}
+
+/* Fangs */
+.spell-projectile--fangs {
+  width: 30px;
+  height: 20px;
+  background: transparent;
+}
+
+.spell-projectile--fangs::before,
+.spell-projectile--fangs::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 16px;
+  background: linear-gradient(to bottom, #e0e0e0, #9e9e9e);
+  border-radius: 0 0 4px 4px;
+  clip-path: polygon(50% 100%, 0% 0%, 100% 0%);
+}
+
+.spell-projectile--fangs::before {
+  left: 5px;
+  transform: rotate(-15deg);
+}
+
+.spell-projectile--fangs::after {
+  right: 5px;
+  transform: rotate(15deg);
+}
+
+/* Shotgun spread */
+.spell-projectile--shotgun {
+  width: 40px;
+  height: 40px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9), transparent 60%);
+  box-shadow: 0 0 30px rgba(255, 193, 7, 0.8);
+}
+
+/* Projectile flight animation */
+@keyframes spell-projectile-fly {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  80% {
+    opacity: 1;
+    transform: translate(calc(-50% + var(--target-x)), calc(-50% + var(--target-y))) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--target-x)), calc(-50% + var(--target-y))) scale(1.2);
+  }
+}
+
+/* Arrow fall animation */
+@keyframes spell-arrow-fall {
+  0% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(var(--target-y));
+  }
+}
+
+/* ============================================================================
+   SPELL IMPACT EFFECTS
+   ============================================================================ */
+
+.spell-impact {
+  position: absolute;
+  pointer-events: none;
+  z-index: 16;
+  transform: translate(-50%, -50%);
+  width: 60px;
+  height: 60px;
+  border: 3px solid var(--spell-color, #4fc3f7);
+  border-radius: 50%;
+  box-shadow: 0 0 20px var(--spell-glow, rgba(79, 195, 247, 0.6));
+}
+
+@keyframes spell-impact-ring {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0;
+  }
+}
+
+/* Card hit effect */
+.spell-hit {
+  animation: spell-card-hit 0.5s ease-out;
+}
+
+@keyframes spell-card-hit {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  20% { transform: scale(0.95); filter: brightness(1.5); }
+  40% { transform: scale(1.05); filter: brightness(0.8); }
+}
+
+/* Flood hit */
+.spell-hit-flood {
+  animation: spell-hit-flood 0.6s ease-out;
+}
+
+@keyframes spell-hit-flood {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  50% { transform: translateY(-10px) scale(0.9); opacity: 0.8; }
+  100% { transform: translateY(20px) scale(0.7); opacity: 0; }
+}
+
+/* Meteor hit */
+.spell-hit-meteor {
+  animation: spell-hit-meteor 0.5s ease-out;
+}
+
+@keyframes spell-hit-meteor {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  30% { transform: scale(1.1); filter: brightness(2) sepia(0.5); }
+  60% { transform: scale(0.9); filter: brightness(0.6); }
+}
+
+/* Arrow hit */
+.spell-hit-arrow {
+  animation: spell-hit-arrow 0.4s ease-out;
+}
+
+@keyframes spell-hit-arrow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(3px); }
+}
+
+/* Wave hit */
+.spell-hit-wave {
+  animation: spell-hit-wave 0.4s ease-out;
+}
+
+@keyframes spell-hit-wave {
+  0%, 100% { transform: translateX(0); opacity: 1; }
+  50% { transform: translateX(10px); opacity: 0.8; }
+}
+
+/* ============================================================================
+   SPELL AOE EFFECTS
+   ============================================================================ */
+
+.spell-aoe {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Flood - Water rising and crashing */
+.spell-aoe--flood {
+  background: linear-gradient(to top,
+    rgba(33, 150, 243, 0.8) 0%,
+    rgba(33, 150, 243, 0.4) 30%,
+    transparent 60%);
+  animation: spell-flood 1s ease-out forwards;
+}
+
+@keyframes spell-flood {
+  0% {
+    transform: translateY(100%);
+    opacity: 0.6;
+  }
+  40% {
+    transform: translateY(0);
+    opacity: 0.9;
+  }
+  60% {
+    transform: translateY(-10%);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-30%);
+    opacity: 0;
+  }
+}
+
+/* Darken overlay for meteor */
+.spell-aoe--darken {
+  background: rgba(0, 0, 0, 0.6);
+  animation: spell-darken 1.2s ease-out forwards;
+}
+
+@keyframes spell-darken {
+  0% { opacity: 0; }
+  30% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Meteor falling */
+.spell-aoe--meteor {
+  width: 80px;
+  height: 80px;
+  position: absolute;
+  left: 50%;
+  top: -100px;
+  transform: translateX(-50%);
+  background: radial-gradient(circle, #ff6b6b, #f4511e, #bf360c);
+  border-radius: 50%;
+  box-shadow:
+    0 0 40px rgba(255, 107, 107, 0.8),
+    0 0 80px rgba(244, 81, 30, 0.6),
+    0 20px 60px rgba(191, 54, 12, 0.4);
+  animation: spell-meteor-fall 0.8s ease-in forwards;
+}
+
+.spell-aoe--meteor::after {
+  content: '';
+  position: absolute;
+  top: -50px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 100px;
+  background: linear-gradient(to top, rgba(255, 107, 107, 0.8), transparent);
+  border-radius: 20px;
+}
+
+@keyframes spell-meteor-fall {
+  0% {
+    top: -100px;
+    transform: translateX(-50%) scale(0.5);
+    opacity: 1;
+  }
+  70% {
+    top: 40%;
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+  85% {
+    top: 45%;
+    transform: translateX(-50%) scale(1.5);
+    opacity: 0.9;
+  }
+  100% {
+    top: 50%;
+    transform: translateX(-50%) scale(3);
+    opacity: 0;
+  }
+}
+
+/* Blizzard tint */
+.spell-aoe--blizzard-tint {
+  background: rgba(129, 212, 250, 0.3);
+  animation: spell-blizzard-tint 1.2s ease-out forwards;
+}
+
+@keyframes spell-blizzard-tint {
+  0% { opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Blizzard storm */
+.spell-aoe--blizzard {
+  background:
+    radial-gradient(2px 2px at 10% 20%, white, transparent),
+    radial-gradient(3px 3px at 30% 40%, white, transparent),
+    radial-gradient(2px 2px at 50% 15%, white, transparent),
+    radial-gradient(3px 3px at 70% 35%, white, transparent),
+    radial-gradient(2px 2px at 90% 25%, white, transparent),
+    radial-gradient(3px 3px at 20% 60%, white, transparent),
+    radial-gradient(2px 2px at 40% 80%, white, transparent),
+    radial-gradient(3px 3px at 60% 70%, white, transparent),
+    radial-gradient(2px 2px at 80% 55%, white, transparent);
+  animation: spell-blizzard 1.2s linear forwards;
+}
+
+@keyframes spell-blizzard {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+}
+
+/* Wave sweep */
+.spell-aoe--wave {
+  background: linear-gradient(
+    calc(90deg * var(--wave-direction, 1)),
+    transparent 0%,
+    rgba(79, 195, 247, 0.6) 40%,
+    rgba(79, 195, 247, 0.8) 50%,
+    rgba(79, 195, 247, 0.6) 60%,
+    transparent 100%
+  );
+  animation: spell-wave-sweep 0.8s ease-out forwards;
+}
+
+@keyframes spell-wave-sweep {
+  0% {
+    transform: translateX(calc(-100% * var(--wave-direction, 1)));
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateX(calc(100% * var(--wave-direction, 1)));
+    opacity: 0;
+  }
+}
+
+/* Web explosion center */
+.spell-aoe--web-center {
+  width: 40px;
+  height: 40px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(158, 158, 158, 0.8), transparent);
+  border-radius: 50%;
+}
+
+@keyframes spell-web-explode {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(4);
+    opacity: 0;
+  }
+}
+
+/* Web spread */
+.spell-aoe--web-spread {
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 20px,
+      rgba(158, 158, 158, 0.3) 20px,
+      rgba(158, 158, 158, 0.3) 22px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 20px,
+      rgba(158, 158, 158, 0.3) 20px,
+      rgba(158, 158, 158, 0.3) 22px
+    );
+  animation: spell-web-spread 0.8s ease-out forwards;
+}
+
+@keyframes spell-web-spread {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.2);
+  }
+}
+
+/* Monsoon rain */
+.spell-aoe--monsoon {
+  background:
+    linear-gradient(to bottom, rgba(33, 150, 243, 0.1), rgba(33, 150, 243, 0.4)),
+    repeating-linear-gradient(
+      100deg,
+      transparent,
+      transparent 10px,
+      rgba(255, 255, 255, 0.1) 10px,
+      rgba(255, 255, 255, 0.1) 12px
+    );
+  animation: spell-monsoon 1s ease-out forwards;
+}
+
+@keyframes spell-monsoon {
+  0% { opacity: 0; background-position: 0 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; background-position: 0 100px; }
+  100% { opacity: 0; }
+}
+
+/* Lightning flash */
+.spell-aoe--lightning {
+  background: rgba(255, 255, 255, 0.8);
+  animation: spell-lightning 0.1s ease-out;
+}
+
+@keyframes spell-lightning {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+
+/* Shell shatter */
+.spell-aoe--shatter {
+  background: radial-gradient(circle at center, transparent 20%, rgba(255, 152, 0, 0.3) 40%, transparent 60%);
+  animation: spell-shatter 0.6s ease-out forwards;
+}
+
+@keyframes spell-shatter {
+  0% {
+    transform: scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* Strike wave */
+.spell-aoe--strike {
+  background: linear-gradient(
+    calc(90deg * var(--wave-direction, 1)),
+    transparent 0%,
+    rgba(129, 199, 132, 0.5) 45%,
+    rgba(129, 199, 132, 0.8) 50%,
+    rgba(129, 199, 132, 0.5) 55%,
+    transparent 100%
+  );
+  animation: spell-strike-wave 0.4s ease-out forwards;
+}
+
+@keyframes spell-strike-wave {
+  0% {
+    transform: translateX(calc(-100% * var(--wave-direction, 1)));
+  }
+  100% {
+    transform: translateX(calc(100% * var(--wave-direction, 1)));
+  }
+}
+
+/* Quake effect */
+.spell-aoe--quake {
+  background: linear-gradient(to top, rgba(139, 69, 19, 0.4), transparent 50%);
+  animation: spell-quake 0.6s ease-out forwards;
+}
+
+@keyframes spell-quake {
+  0% { opacity: 0; }
+  30% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Generic pulse */
+.spell-aoe--pulse {
+  background: radial-gradient(circle at center, var(--spell-glow, rgba(79, 195, 247, 0.6)), transparent 70%);
+  animation: spell-aoe-pulse 0.8s ease-out forwards;
+}
+
+@keyframes spell-aoe-pulse {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* Sunshine rays */
+.spell-aoe--sunshine {
+  background:
+    radial-gradient(circle at 50% -20%, rgba(255, 193, 7, 0.6) 0%, transparent 50%),
+    repeating-conic-gradient(from 0deg at 50% -20%, transparent 0deg, rgba(255, 213, 79, 0.3) 5deg, transparent 10deg);
+  animation: spell-sunshine 1s ease-out forwards;
+}
+
+@keyframes spell-sunshine {
+  0% { opacity: 0; }
+  30% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Roar waves */
+.spell-aoe--roar {
+  background: radial-gradient(circle at center, transparent 30%, rgba(193, 154, 107, 0.4) 50%, transparent 70%);
+  animation: spell-roar 0.8s ease-out forwards;
+}
+
+@keyframes spell-roar {
+  0% {
+    transform: scale(0.3);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* Pincers snap */
+.spell-aoe--pincers {
+  position: absolute;
+  width: 100px;
+  height: 60px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: transparent;
+  animation: spell-pincers 0.5s ease-out forwards;
+}
+
+@keyframes spell-pincers {
+  0%, 40% { transform: translate(-50%, -50%) scaleX(1.2); }
+  50% { transform: translate(-50%, -50%) scaleX(0.8); }
+  100% { transform: translate(-50%, -50%) scaleX(1); opacity: 0; }
+}
+
+/* Sand churn */
+.spell-aoe--sand {
+  background: linear-gradient(to top, rgba(194, 178, 128, 0.6), transparent 40%);
+  animation: spell-sand 0.8s ease-out forwards;
+}
+
+@keyframes spell-sand {
+  0% { opacity: 0; transform: translateY(20px); }
+  30% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; }
+}
+
+/* Splash for bounce */
+.spell-aoe--splash {
+  background: radial-gradient(circle at center, rgba(129, 199, 132, 0.6), transparent 60%);
+  animation: spell-splash 0.6s ease-out forwards;
+}
+
+@keyframes spell-splash {
+  0% { transform: scale(0.5); opacity: 1; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+/* Copy shimmer */
+.spell-aoe--copy {
+  background: radial-gradient(circle at center, rgba(255, 249, 196, 0.5), transparent 50%);
+  animation: spell-copy 0.8s ease-out forwards;
+}
+
+@keyframes spell-copy {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+
+/* Utility pulse */
+.spell-aoe--utility {
+  background: radial-gradient(circle at center, var(--spell-glow, rgba(129, 199, 132, 0.5)), transparent 60%);
+  animation: spell-utility 0.6s ease-out forwards;
+}
+
+@keyframes spell-utility {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: scale(1.2); opacity: 0; }
+}
+
+/* ============================================================================
+   SPELL BUFF EFFECTS
+   ============================================================================ */
+
+/* Buff glow on card */
+.spell-buff-glow {
+  animation: spell-buff-glow 0.8s ease-out;
+}
+
+@keyframes spell-buff-glow {
+  0% {
+    box-shadow: 0 0 0 rgba(255, 215, 0, 0);
+    filter: brightness(1);
+  }
+  40% {
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.8), 0 0 50px rgba(255, 215, 0, 0.4);
+    filter: brightness(1.3);
+  }
+  100% {
+    box-shadow: 0 0 0 rgba(255, 215, 0, 0);
+    filter: brightness(1);
+  }
+}
+
+/* Pride buff - golden aura */
+.spell-buff-pride {
+  animation: spell-buff-pride 1s ease-out;
+}
+
+@keyframes spell-buff-pride {
+  0% {
+    box-shadow: 0 0 0 rgba(193, 154, 107, 0);
+  }
+  30% {
+    box-shadow: 0 0 40px rgba(193, 154, 107, 0.9), 0 0 60px rgba(193, 154, 107, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 0 rgba(193, 154, 107, 0);
+  }
+}
+
+/* Buff pop text */
+.spell-buff-pop {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #4caf50;
+  text-shadow: 0 0 10px rgba(76, 175, 80, 0.8), 0 2px 4px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  z-index: 20;
+  animation: spell-buff-pop 0.8s ease-out forwards;
+}
+
+@keyframes spell-buff-pop {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 0;
+  }
+  30% {
+    transform: translate(-50%, -70%) scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -120%) scale(1);
+    opacity: 0;
+  }
+}
+
+/* Splash effect */
+.spell-effect--splash {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--spell-color, white), transparent 70%);
+  animation: spell-splash-circle 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-splash-circle {
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+}
+
+/* ============================================================================
+   SPELL PARTICLES
+   ============================================================================ */
+
+.spell-particle {
+  position: absolute;
+  pointer-events: none;
+  z-index: 15;
+}
+
+/* Bubble particle */
+.spell-particle--bubble {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), var(--spell-color, #4fc3f7));
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  animation: spell-bubble-rise 1s ease-out forwards;
+}
+
+@keyframes spell-bubble-rise {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-80px) scale(0.5);
+    opacity: 0;
+  }
+}
+
+/* Feather particle */
+.spell-particle--feather {
+  width: 16px;
+  height: 8px;
+  background: linear-gradient(90deg, var(--spell-color, #fff9c4), #ffd54f);
+  border-radius: 50%;
+  animation: spell-feather-fall 1.2s ease-out forwards;
+}
+
+@keyframes spell-feather-fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(100px) rotate(180deg) translateX(20px);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(200px) rotate(360deg) translateX(-10px);
+    opacity: 0;
+  }
+}
+
+/* Feather heal - spiraling up */
+.spell-particle--feather-heal {
+  width: 12px;
+  height: 6px;
+  background: linear-gradient(90deg, white, #e0e0e0);
+  border-radius: 50%;
+  animation: spell-feather-spiral 0.8s ease-out forwards;
+}
+
+@keyframes spell-feather-spiral {
+  0% {
+    transform: translateY(0) rotate(0deg) translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-60px) rotate(360deg) translateX(20px);
+    opacity: 0;
+  }
+}
+
+/* Raindrop particle */
+.spell-particle--raindrop {
+  width: 4px;
+  height: 12px;
+  background: linear-gradient(to bottom, transparent, var(--spell-color, #81c784));
+  border-radius: 0 0 4px 4px;
+  animation: spell-rain-fall 0.6s linear forwards;
+}
+
+@keyframes spell-rain-fall {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(150px);
+    opacity: 0;
+  }
+}
+
+/* Heal particle - green glow rising */
+.spell-particle--heal {
+  width: 8px;
+  height: 8px;
+  background: radial-gradient(circle, #4caf50, transparent);
+  border-radius: 50%;
+  animation: spell-heal-rise 0.8s ease-out forwards;
+}
+
+@keyframes spell-heal-rise {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-50px) scale(0.5);
+    opacity: 0;
+  }
+}
+
+/* Sparkle particle */
+.spell-particle--sparkle {
+  width: 6px;
+  height: 6px;
+  background: var(--spell-color, #ffd54f);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--spell-color, #ffd54f);
+  animation: spell-sparkle-burst 0.6s ease-out forwards;
+}
+
+@keyframes spell-sparkle-burst {
+  0% {
+    transform: translate(-50%, -50%) rotate(var(--angle, 0deg)) translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(var(--angle, 0deg)) translateX(60px);
+    opacity: 0;
+  }
+}
+
+/* ============================================================================
+   SPELL STATUS EFFECTS ON CARDS
+   ============================================================================ */
+
+/* Freeze effect */
+.spell-freeze {
+  animation: spell-freeze 1s ease-out;
+}
+
+@keyframes spell-freeze {
+  0% {
+    filter: brightness(1) hue-rotate(0deg);
+  }
+  30% {
+    filter: brightness(1.2) hue-rotate(-30deg);
+    box-shadow: 0 0 30px rgba(129, 212, 250, 0.8), inset 0 0 20px rgba(129, 212, 250, 0.4);
+  }
+  100% {
+    filter: brightness(1) hue-rotate(0deg);
+  }
+}
+
+/* Web effect */
+.spell-webbed {
+  animation: spell-webbed 1s ease-out;
+}
+
+@keyframes spell-webbed {
+  0% {
+    filter: brightness(1);
+  }
+  30% {
+    filter: brightness(0.9) grayscale(0.3);
+    box-shadow: 0 0 20px rgba(158, 158, 158, 0.6);
+  }
+  100% {
+    filter: brightness(1);
+  }
+}
+
+/* Paralyze effect */
+.spell-paralyze {
+  animation: spell-paralyze 1s ease-out;
+}
+
+@keyframes spell-paralyze {
+  0%, 100% {
+    filter: brightness(1);
+    transform: scale(1);
+  }
+  20%, 60% {
+    filter: brightness(0.8) saturate(1.5);
+    transform: scale(0.98);
+    box-shadow: 0 0 25px rgba(156, 39, 176, 0.7);
+  }
+}
+
+/* Bounce effect */
+.spell-bounce {
+  animation: spell-bounce 0.6s ease-out;
+}
+
+@keyframes spell-bounce {
+  0% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+  30% {
+    transform: scale(0.8) translateY(10px);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.5) translateY(-100px);
+    opacity: 0;
+  }
+}
+
+/* Stalk fade */
+.spell-stalk {
+  animation: spell-stalk 0.8s ease-out;
+}
+
+@keyframes spell-stalk {
+  0% { filter: brightness(1); opacity: 1; }
+  50% { filter: brightness(0.7) sepia(0.3); opacity: 0.7; }
+  100% { filter: brightness(1); opacity: 1; }
+}
+
+/* Barrier shimmer */
+.spell-barrier {
+  animation: spell-barrier 0.8s ease-out;
+}
+
+@keyframes spell-barrier {
+  0% { box-shadow: 0 0 0 rgba(79, 195, 247, 0); }
+  50% { box-shadow: 0 0 30px rgba(79, 195, 247, 0.8), inset 0 0 15px rgba(79, 195, 247, 0.3); }
+  100% { box-shadow: 0 0 0 rgba(79, 195, 247, 0); }
+}
+
+/* Acuity glow */
+.spell-acuity {
+  animation: spell-acuity 0.8s ease-out;
+}
+
+@keyframes spell-acuity {
+  0% { box-shadow: 0 0 0 rgba(255, 235, 59, 0); }
+  50% { box-shadow: 0 0 25px rgba(255, 235, 59, 0.8); }
+  100% { box-shadow: 0 0 0 rgba(255, 235, 59, 0); }
+}
+
+/* Status apply generic */
+.spell-status-apply {
+  animation: spell-status-apply 0.8s ease-out;
+}
+
+@keyframes spell-status-apply {
+  0% { box-shadow: 0 0 0 var(--spell-glow, rgba(158, 158, 158, 0)); }
+  50% { box-shadow: 0 0 25px var(--spell-glow, rgba(158, 158, 158, 0.6)); }
+  100% { box-shadow: 0 0 0 var(--spell-glow, rgba(158, 158, 158, 0)); }
+}
+
+/* Shell glow (before shatter) */
+.spell-shell-glow {
+  animation: spell-shell-glow 0.4s ease-out;
+}
+
+@keyframes spell-shell-glow {
+  0% { box-shadow: 0 0 0 rgba(255, 152, 0, 0); }
+  100% { box-shadow: 0 0 30px rgba(255, 152, 0, 0.9); }
+}
+
+/* Shell shatter on card */
+.spell-shell-shatter {
+  animation: spell-card-shatter 0.5s ease-out;
+}
+
+@keyframes spell-card-shatter {
+  0% { transform: scale(1); filter: brightness(1.5); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+/* Shell form */
+.spell-shell-form {
+  animation: spell-shell-form 0.8s ease-out;
+}
+
+@keyframes spell-shell-form {
+  0% { box-shadow: 0 0 0 rgba(255, 204, 128, 0); }
+  50% { box-shadow: 0 0 30px rgba(255, 204, 128, 0.8), inset 0 0 10px rgba(255, 204, 128, 0.3); }
+  100% { box-shadow: 0 0 0 rgba(255, 204, 128, 0); }
+}
+
+/* Barnacle attach */
+.spell-barnacle {
+  animation: spell-barnacle 0.6s ease-out;
+}
+
+@keyframes spell-barnacle {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(255, 204, 128, 0.6); }
+}
+
+/* Summon glow on slot */
+.spell-summon-glow {
+  animation: spell-summon-glow 0.6s ease-out;
+}
+
+@keyframes spell-summon-glow {
+  0% { box-shadow: inset 0 0 0 rgba(255, 255, 255, 0); }
+  50% { box-shadow: inset 0 0 30px rgba(255, 255, 255, 0.6); }
+  100% { box-shadow: inset 0 0 0 rgba(255, 255, 255, 0); }
+}
+
+/* Tidal pool on card */
+.spell-tidal-pool {
+  animation: spell-tidal-pool 1s ease-out;
+}
+
+@keyframes spell-tidal-pool {
+  0% { box-shadow: 0 0 0 rgba(79, 195, 247, 0); }
+  50% { box-shadow: 0 0 25px rgba(79, 195, 247, 0.7), 0 5px 20px rgba(79, 195, 247, 0.5); }
+  100% { box-shadow: 0 0 0 rgba(79, 195, 247, 0); }
+}
+
+/* Transform shrink */
+.spell-transform {
+  animation: spell-transform-shrink 0.5s ease-in forwards;
+}
+
+@keyframes spell-transform-shrink {
+  0% { transform: scale(1) rotate(0deg); opacity: 1; }
+  100% { transform: scale(0.3) rotate(180deg); opacity: 0.5; }
+}
+
+/* Sacrifice glow */
+.spell-sacrifice {
+  animation: spell-sacrifice 0.8s ease-out;
+}
+
+@keyframes spell-sacrifice {
+  0% { filter: brightness(1); opacity: 1; }
+  50% { filter: brightness(2) saturate(0); opacity: 0.8; }
+  100% { filter: brightness(1); opacity: 0; transform: scale(0.5); }
+}
+
+/* Heal glow on player */
+.spell-heal-glow {
+  animation: spell-heal-glow 1s ease-out;
+}
+
+@keyframes spell-heal-glow {
+  0% { box-shadow: 0 0 0 rgba(76, 175, 80, 0); }
+  50% { box-shadow: 0 0 30px rgba(76, 175, 80, 0.8), 0 0 50px rgba(76, 175, 80, 0.4); }
+  100% { box-shadow: 0 0 0 rgba(76, 175, 80, 0); }
+}
+
+/* Revealed hand */
+.spell-revealed {
+  animation: spell-revealed 1s ease-out;
+}
+
+@keyframes spell-revealed {
+  0% { filter: brightness(1); }
+  30% { filter: brightness(1.5); box-shadow: 0 0 30px rgba(255, 213, 79, 0.6); }
+  100% { filter: brightness(1); }
+}
+
+/* ============================================================================
+   SPELL SPECIAL EFFECTS
+   ============================================================================ */
+
+/* Venom swirl */
+.spell-effect--venom-swirl {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  transform: translate(-50%, -50%);
+  border: 3px solid var(--spell-color, #76ff03);
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spell-venom-swirl 0.8s linear forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-venom-swirl {
+  0% { transform: translate(-50%, -50%) rotate(0deg) scale(0.5); opacity: 1; }
+  100% { transform: translate(-50%, -50%) rotate(360deg) scale(1.5); opacity: 0; }
+}
+
+/* Coil effect */
+.spell-effect--coil {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  transform: translate(-50%, -50%);
+  border: 4px solid var(--spell-color, #9c27b0);
+  border-radius: 50%;
+  animation: spell-coil 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-coil {
+  0% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+  50% { transform: translate(-50%, -50%) scale(0.8); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+
+/* Grass effect for stalk */
+.spell-effect--grass {
+  position: absolute;
+  width: 80px;
+  height: 40px;
+  transform: translate(-50%, 0);
+  background:
+    linear-gradient(85deg, transparent 45%, #558b2f 45%, #558b2f 50%, transparent 50%),
+    linear-gradient(95deg, transparent 45%, #689f38 45%, #689f38 50%, transparent 50%),
+    linear-gradient(80deg, transparent 40%, #7cb342 40%, #7cb342 45%, transparent 45%);
+  animation: spell-grass 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-grass {
+  0% { transform: translate(-50%, 20px) scaleY(0); opacity: 1; }
+  50% { transform: translate(-50%, 0) scaleY(1); opacity: 1; }
+  100% { transform: translate(-50%, -10px) scaleY(0.5); opacity: 0; }
+}
+
+/* Roar ring */
+.spell-effect--roar-ring {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  transform: translate(-50%, -50%);
+  border: 4px solid var(--spell-color, #c19a6b);
+  border-radius: 50%;
+  animation: spell-roar-ring 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-roar-ring {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+}
+
+/* Magic swirl for transmogrify */
+.spell-effect--swirl {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  transform: translate(-50%, -50%);
+  border: 3px dashed var(--spell-color, #81c784);
+  border-radius: 50%;
+  animation: spell-swirl 0.5s linear forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-swirl {
+  0% { transform: translate(-50%, -50%) rotate(0deg) scale(0.5); opacity: 1; }
+  100% { transform: translate(-50%, -50%) rotate(360deg) scale(1.2); opacity: 1; }
+}
+
+/* Poof effect */
+.spell-effect--poof {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, var(--spell-color, #81c784), transparent 70%);
+  border-radius: 50%;
+  animation: spell-poof 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-poof {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+}
+
+/* Draw card effect */
+.spell-effect--draw-card {
+  position: absolute;
+  width: 40px;
+  height: 56px;
+  left: 50%;
+  bottom: 100px;
+  background: linear-gradient(135deg, #fff, #e0e0e0);
+  border: 2px solid var(--spell-color, #81c784);
+  border-radius: 4px;
+  box-shadow: 0 0 15px var(--spell-glow, rgba(129, 199, 132, 0.6));
+  animation: spell-draw-card 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-draw-card {
+  0% {
+    transform: translateX(-50%) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) translateX(var(--target-x, 0)) translateY(calc(var(--target-y, 0) - 100px)) rotate(10deg);
+    opacity: 0;
+  }
+}
+
+/* Eye effect for reveal */
+.spell-effect--eye {
+  position: absolute;
+  width: 100px;
+  height: 50px;
+  left: 50%;
+  top: 20%;
+  transform: translateX(-50%);
+  border: 4px solid var(--spell-color, #ffd54f);
+  border-radius: 50%;
+  animation: spell-eye 1s ease-out forwards;
+  pointer-events: none;
+}
+
+.spell-effect--eye::before {
+  content: '';
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, #1a237e, #3f51b5);
+  border-radius: 50%;
+}
+
+@keyframes spell-eye {
+  0% { transform: translateX(-50%) scaleY(0); opacity: 0; }
+  30% { transform: translateX(-50%) scaleY(1); opacity: 1; }
+  70% { transform: translateX(-50%) scaleY(1); opacity: 1; }
+  100% { transform: translateX(-50%) scaleY(0); opacity: 0; }
+}
+
+/* Search glow */
+.spell-effect--search {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, var(--spell-color, #81c784), transparent 70%);
+  border-radius: 50%;
+  animation: spell-search 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-search {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  50% { transform: translate(-50%, 50%) scale(0.8); opacity: 0.8; }
+  100% { transform: translate(-50%, 100%) scale(0.5); opacity: 0; }
+}
+
+/* Treasure chest */
+.spell-effect--treasure {
+  position: absolute;
+  width: 60px;
+  height: 40px;
+  left: 50%;
+  top: 60%;
+  transform: translateX(-50%);
+  background: linear-gradient(to bottom, #8d6e63, #5d4037);
+  border: 3px solid #ffd54f;
+  border-radius: 4px 4px 8px 8px;
+  animation: spell-treasure 1s ease-out forwards;
+  pointer-events: none;
+}
+
+.spell-effect--treasure::before {
+  content: '';
+  position: absolute;
+  top: -15px;
+  left: -3px;
+  right: -3px;
+  height: 20px;
+  background: linear-gradient(to bottom, #a1887f, #8d6e63);
+  border: 3px solid #ffd54f;
+  border-radius: 8px 8px 0 0;
+  transform-origin: bottom;
+  animation: spell-treasure-lid 1s ease-out forwards;
+}
+
+@keyframes spell-treasure {
+  0% { transform: translateX(-50%) translateY(50px); opacity: 0; }
+  30% { transform: translateX(-50%) translateY(0); opacity: 1; }
+  70% { transform: translateX(-50%) translateY(0); opacity: 1; }
+  100% { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+}
+
+@keyframes spell-treasure-lid {
+  0%, 30% { transform: rotateX(0deg); }
+  50% { transform: rotateX(-120deg); }
+  70% { transform: rotateX(-120deg); }
+  100% { transform: rotateX(0deg); }
+}
+
+/* Trap activation */
+.spell-effect--trap {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, var(--spell-glow, rgba(231, 76, 60, 0.4)), transparent 50%);
+  animation: spell-trap 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-trap {
+  0% { opacity: 0; }
+  30% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Spider skitter */
+.spell-effect--spider {
+  position: absolute;
+  width: 20px;
+  height: 15px;
+  background: #424242;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+@keyframes spell-spider-skitter {
+  0% {
+    transform: translate(0, 100%);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--target-x, 0), var(--target-y, 0));
+    opacity: 0;
+  }
+}
+
+/* ============================================================================
+   ENHANCED SPELL EFFECTS - Hearthstone-quality animations
+   ============================================================================ */
+
+/* Screen Effects */
+.screen-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  animation: screen-flash-fade 0.15s ease-out forwards;
+}
+
+@keyframes screen-flash-fade {
+  0% { opacity: 0.8; }
+  100% { opacity: 0; }
+}
+
+.screen-tint {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 99;
+}
+
+@keyframes screen-tint-fade {
+  0% { opacity: var(--opacity, 0.3); }
+  100% { opacity: 0; }
+}
+
+.screen-darken {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.7) 100%);
+  pointer-events: none;
+  z-index: 98;
+}
+
+@keyframes screen-darken-pulse {
+  0% { opacity: 0; }
+  30% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.screen-shake--light {
+  animation: screen-shake-light 0.1s ease-out;
+}
+
+.screen-shake--medium {
+  animation: screen-shake-medium 0.15s ease-out;
+}
+
+.screen-shake--heavy {
+  animation: screen-shake-heavy 0.3s ease-out;
+}
+
+@keyframes screen-shake-light {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px) translateY(2px); }
+  75% { transform: translateX(3px) translateY(-2px); }
+}
+
+@keyframes screen-shake-medium {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-5px) translateY(3px); }
+  40% { transform: translateX(5px) translateY(-3px); }
+  60% { transform: translateX(-4px) translateY(2px); }
+  80% { transform: translateX(4px) translateY(-2px); }
+}
+
+@keyframes screen-shake-heavy {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-10px) translateY(6px) rotate(-1deg); }
+  20% { transform: translateX(10px) translateY(-6px) rotate(1deg); }
+  30% { transform: translateX(-8px) translateY(5px) rotate(-0.5deg); }
+  40% { transform: translateX(8px) translateY(-5px) rotate(0.5deg); }
+  50% { transform: translateX(-6px) translateY(4px); }
+  60% { transform: translateX(6px) translateY(-4px); }
+  70% { transform: translateX(-4px) translateY(2px); }
+  80% { transform: translateX(4px) translateY(-2px); }
+  90% { transform: translateX(-2px) translateY(1px); }
+}
+
+/* ============================================================================
+   NET SPELL - Enhanced
+   ============================================================================ */
+
+@keyframes spell-net-anticipate {
+  0% { transform: translate(-50%, -50%) scale(1); }
+  100% { transform: translate(-50%, calc(-50% + 10px)) scale(0.9); }
+}
+
+@keyframes spell-net-arc {
+  0% {
+    transform: translate(-50%, -50%) scale(0.9);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(calc(-50% + var(--target-x) * 0.5), calc(-50% + var(--target-y) * 0.5 - 60px)) scale(1.1) rotate(180deg);
+  }
+  100% {
+    transform: translate(calc(-50% + var(--target-x)), calc(-50% + var(--target-y))) scale(1) rotate(360deg);
+    opacity: 1;
+  }
+}
+
+.spell-effect--net-wrap {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  transform: translate(-50%, -50%);
+  border: 4px solid var(--spell-color, #4fc3f7);
+  border-radius: 50%;
+  background: radial-gradient(circle, transparent 20%, var(--spell-color, rgba(79, 195, 247, 0.3)) 80%);
+  animation: spell-net-wrap 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-net-wrap {
+  0% { transform: translate(-50%, -50%) scale(1.5); opacity: 0.5; }
+  30% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  60% { transform: translate(-50%, -50%) scale(0.8); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(0.3) translateY(20px); opacity: 0; }
+}
+
+.spell-net-caught {
+  animation: spell-net-caught 0.8s ease-out forwards !important;
+}
+
+@keyframes spell-net-caught {
+  0% { transform: scale(1); }
+  20% { transform: scale(1.1) rotate(-5deg); }
+  50% { transform: scale(0.8) rotate(5deg); }
+  70% { transform: scale(0.5) translateY(10px); }
+  100% { transform: scale(0.3) translateY(30px); opacity: 0.5; }
+}
+
+.spell-effect--water-ring {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--spell-color, #4fc3f7);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: spell-water-ring 0.6s ease-out forwards;
+  animation-delay: var(--ring-delay, 0s);
+  pointer-events: none;
+}
+
+@keyframes spell-water-ring {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+}
+
+.spell-particle--water-droplet {
+  position: absolute;
+  width: 8px;
+  height: 12px;
+  background: var(--spell-color, #4fc3f7);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  transform: translate(-50%, -50%);
+  animation: spell-water-droplet 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-water-droplet {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% {
+    transform: translate(
+      calc(-50% + var(--spread, 40px) * cos(var(--angle, 0deg))),
+      calc(-50% + var(--spread, 40px) * sin(var(--angle, 0deg)) + 20px)
+    ) scale(0.5);
+    opacity: 0;
+  }
+}
+
+.spell-particle--splash {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--spell-color, #4fc3f7);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: spell-splash-particle 0.4s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-splash-particle {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% {
+    transform: translate(
+      calc(-50% + var(--spread, 40px) * cos(var(--angle, 0deg))),
+      calc(-50% + var(--spread, 40px) * sin(var(--angle, 0deg)))
+    ) scale(0);
+    opacity: 0;
+  }
+}
+
+/* ============================================================================
+   RIFLE SPELL - Enhanced
+   ============================================================================ */
+
+.spell-effect--crosshair {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  transform: translate(-50%, -50%);
+  border: 3px solid #ff4444;
+  border-radius: 50%;
+  animation: spell-crosshair-lock 0.4s ease-out forwards;
+  pointer-events: none;
+}
+
+.spell-effect--crosshair::before,
+.spell-effect--crosshair::after {
+  content: '';
+  position: absolute;
+  background: #ff4444;
+}
+
+.spell-effect--crosshair::before {
+  top: 50%;
+  left: -10px;
+  right: -10px;
+  height: 2px;
+  transform: translateY(-50%);
+}
+
+.spell-effect--crosshair::after {
+  left: 50%;
+  top: -10px;
+  bottom: -10px;
+  width: 2px;
+  transform: translateX(-50%);
+}
+
+@keyframes spell-crosshair-lock {
+  0% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+  70% { transform: translate(-50%, -50%) scale(0.95); }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+.spell-particle--smoke {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  background: radial-gradient(circle, rgba(100, 100, 100, 0.6), transparent);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: spell-smoke-drift 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-smoke-drift {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.8; }
+  100% { transform: translate(calc(-50% + 10px), calc(-50% - 20px)) scale(1.5); opacity: 0; }
+}
+
+.spell-effect--impact-flash {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9), rgba(255, 200, 100, 0.5), transparent);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: spell-impact-flash 0.15s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-impact-flash {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+}
+
+.spell-particle--shatter {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--spell-color, #9e9e9e);
+  transform: translate(-50%, -50%);
+  animation: spell-shatter-fly 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-shatter-fly {
+  0% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+  100% {
+    transform: translate(
+      calc(-50% + var(--spread, 80px) * cos(var(--angle, 0deg))),
+      calc(-50% + var(--spread, 80px) * sin(var(--angle, 0deg)) + 30px)
+    ) scale(0.3) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.spell-rifle-hit {
+  animation: spell-rifle-hit 0.6s ease-out forwards !important;
+}
+
+@keyframes spell-rifle-hit {
+  0% { transform: scale(1); filter: brightness(1); }
+  10% { transform: scale(1.1) translateX(-5px); filter: brightness(2); }
+  30% { transform: scale(0.9) translateX(5px); filter: brightness(1.5); }
+  50% { transform: scale(1) translateX(-3px); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+/* ============================================================================
+   FLOOD SPELL - Enhanced Cinematic
+   ============================================================================ */
+
+.spell-aoe--flood-rise {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top,
+    var(--spell-color, rgba(33, 150, 243, 0.8)) 0%,
+    var(--spell-secondary, rgba(33, 150, 243, 0.4)) 20%,
+    transparent 40%);
+  animation: spell-flood-rise 0.4s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-flood-rise {
+  0% { transform: translateY(100%); opacity: 0.5; }
+  100% { transform: translateY(60%); opacity: 0.8; }
+}
+
+.spell-aoe--flood-wave {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top,
+    var(--spell-color, rgba(33, 150, 243, 0.9)) 0%,
+    var(--spell-secondary, rgba(33, 150, 243, 0.6)) 40%,
+    transparent 70%);
+  animation: spell-flood-wave 0.7s ease-in-out forwards;
+  pointer-events: none;
+}
+
+.spell-aoe--flood-wave::before {
+  content: '';
+  position: absolute;
+  top: 25%;
+  left: 0;
+  right: 0;
+  height: 30px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.6), transparent);
+  border-radius: 50%;
+  animation: spell-wave-crest 0.7s ease-in-out forwards;
+}
+
+@keyframes spell-flood-wave {
+  0% { transform: translateY(100%); }
+  40% { transform: translateY(0%); }
+  60% { transform: translateY(-15%); }
+  100% { transform: translateY(-40%); opacity: 0; }
+}
+
+@keyframes spell-wave-crest {
+  0% { transform: scaleY(1); opacity: 0.8; }
+  40% { transform: scaleY(1.5); opacity: 1; }
+  100% { transform: scaleY(0.5); opacity: 0; }
+}
+
+.spell-particle--flood-bubble {
+  position: absolute;
+  width: var(--bubble-size, 10px);
+  height: var(--bubble-size, 10px);
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8), var(--spell-color, rgba(33, 150, 243, 0.5)));
+  border-radius: 50%;
+  animation: spell-flood-bubble-rise 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-flood-bubble-rise {
+  0% { transform: translateY(0) scale(1); opacity: 0.8; }
+  100% { transform: translateY(-150px) translateX(var(--sway, 0)) scale(0.5); opacity: 0; }
+}
+
+.spell-particle--water-spray {
+  position: absolute;
+  width: 4px;
+  height: 8px;
+  background: var(--spell-color, rgba(255, 255, 255, 0.8));
+  border-radius: 50%;
+  animation: spell-water-spray 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-water-spray {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-40px) translateX(calc((random() - 0.5) * 40px)) scale(0.3); opacity: 0; }
+}
+
+.spell-flood-hit {
+  animation: spell-flood-hit 0.7s ease-out forwards !important;
+}
+
+@keyframes spell-flood-hit {
+  0% { transform: scale(1) translateY(0); }
+  30% { transform: scale(0.9) translateY(5px) rotate(-3deg); }
+  50% { transform: scale(1.05) translateY(-10px) rotate(2deg); }
+  70% { transform: scale(0.95) translateY(3px); }
+  100% { transform: scale(1) translateY(0); }
+}
+
+.spell-effect--creature-splash {
+  position: absolute;
+  width: 60px;
+  height: 30px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(ellipse, var(--spell-color, rgba(33, 150, 243, 0.6)), transparent);
+  animation: spell-creature-splash 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-creature-splash {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(2) translateY(-10px); opacity: 0; }
+}
+
+.spell-aoe--flood-recede {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top,
+    var(--spell-color, rgba(33, 150, 243, 0.4)) 0%,
+    transparent 30%);
+  animation: spell-flood-recede 0.5s ease-in forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-flood-recede {
+  0% { transform: translateY(-30%); opacity: 0.6; }
+  100% { transform: translateY(100%); opacity: 0; }
+}
+
+/* ============================================================================
+   METEOR SPELL - Epic Cinematic
+   ============================================================================ */
+
+.spell-particle--ember-rise {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: radial-gradient(circle, #ff6b6b, #f4511e);
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(255, 107, 107, 0.8);
+  animation: spell-ember-rise 1s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-ember-rise {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-100px) translateX(calc((random() - 0.5) * 30px)) scale(0); opacity: 0; }
+}
+
+.spell-effect--meteor-glow {
+  position: absolute;
+  top: 5%;
+  left: 45%;
+  width: 60px;
+  height: 60px;
+  background: radial-gradient(circle, rgba(255, 150, 50, 0.8), rgba(255, 100, 50, 0.4), transparent);
+  border-radius: 50%;
+  animation: spell-meteor-glow 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-meteor-glow {
+  0% { transform: scale(0.5); opacity: 0; }
+  50% { transform: scale(1.5); opacity: 1; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+.spell-effect--meteor-trail {
+  position: absolute;
+  top: 0;
+  left: 45%;
+  width: 40px;
+  height: 200px;
+  background: linear-gradient(to bottom,
+    transparent 0%,
+    var(--spell-color, rgba(255, 100, 50, 0.8)) 20%,
+    var(--spell-secondary, rgba(255, 200, 50, 0.4)) 60%,
+    transparent 100%);
+  transform-origin: top center;
+  animation: spell-meteor-trail 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-meteor-trail {
+  0% { transform: scaleY(0.3) translateY(0); opacity: 0.8; }
+  50% { transform: scaleY(1) translateY(100px); opacity: 1; }
+  100% { transform: scaleY(0.5) translateY(250px); opacity: 0; }
+}
+
+.spell-particle--meteor-smoke {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: radial-gradient(circle, rgba(80, 80, 80, 0.6), transparent);
+  border-radius: 50%;
+  animation: spell-meteor-smoke 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-meteor-smoke {
+  0% { transform: scale(0.5); opacity: 0.8; }
+  100% { transform: scale(2) translateX(20px); opacity: 0; }
+}
+
+.spell-effect--meteor-shockwave {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 50px;
+  height: 50px;
+  border: 4px solid var(--spell-color, rgba(255, 100, 50, 0.8));
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: spell-meteor-shockwave 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-meteor-shockwave {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(4); opacity: 0; }
+}
+
+.spell-effect--meteor-crater {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100px;
+  height: 50px;
+  background: radial-gradient(ellipse, rgba(50, 30, 20, 0.8), rgba(80, 50, 30, 0.4), transparent);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: spell-meteor-crater 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-meteor-crater {
+  0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+
+.spell-particle--debris {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--spell-color, #8d6e63);
+  transform: translate(-50%, -50%);
+  animation: spell-debris-fly 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-debris-fly {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% {
+    transform: translate(
+      calc(-50% + var(--speed, 60px) * cos(var(--angle, 0deg))),
+      calc(-50% + var(--speed, 60px) * sin(var(--angle, 0deg)) + 40px)
+    ) scale(0.3) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.spell-particle--fire-burst {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  background: radial-gradient(circle, #ff6b6b, #f4511e, transparent);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: spell-fire-burst 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-fire-burst {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+}
+
+.spell-meteor-hit {
+  animation: spell-meteor-hit 0.7s ease-out forwards !important;
+}
+
+@keyframes spell-meteor-hit {
+  0% { transform: scale(1); filter: brightness(1); }
+  20% { transform: scale(1.2) translateY(-10px); filter: brightness(2) saturate(1.5); }
+  40% { transform: scale(0.8) translateY(5px); filter: brightness(1.5); }
+  60% { transform: scale(1.1); filter: brightness(1.2); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+.spell-particle--ember-linger {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: radial-gradient(circle, #ff6b6b, #f4511e);
+  border-radius: 50%;
+  animation: spell-ember-linger 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-ember-linger {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: translateY(-30px) scale(0); opacity: 0; }
+}
+
+/* ============================================================================
+   BLIZZARD SPELL - Freezing Storm
+   ============================================================================ */
+
+.spell-aoe--frost-creep {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(129, 212, 250, 0.4), transparent 30%),
+    radial-gradient(ellipse at 100% 0%, rgba(129, 212, 250, 0.4), transparent 30%),
+    radial-gradient(ellipse at 0% 100%, rgba(129, 212, 250, 0.4), transparent 30%),
+    radial-gradient(ellipse at 100% 100%, rgba(129, 212, 250, 0.4), transparent 30%);
+  animation: spell-frost-creep 1.2s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-frost-creep {
+  0% { opacity: 0; }
+  30% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.spell-aoe--blizzard-wind {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.1) 75%,
+    transparent 100%);
+  background-size: 200% 200%;
+  animation: spell-blizzard-wind 0.8s linear forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-blizzard-wind {
+  0% { background-position: 200% 0%; opacity: 0.8; }
+  100% { background-position: -200% 0%; opacity: 0; }
+}
+
+.spell-particle--snowflake {
+  position: absolute;
+  width: var(--size, 6px);
+  height: var(--size, 6px);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9), rgba(200, 230, 255, 0.6));
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+  animation: spell-snowflake-fall 1s linear forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-snowflake-fall {
+  0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(120vh) translateX(var(--sway, 20px)) rotate(360deg); opacity: 0.3; }
+}
+
+.spell-particle--ice-crystal-form {
+  position: absolute;
+  width: 12px;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, rgba(200, 230, 255, 0.9), transparent);
+  transform: translate(-50%, -50%) rotate(var(--angle, 0deg));
+  transform-origin: center;
+  animation: spell-ice-crystal-form 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-ice-crystal-form {
+  0% { transform: translate(-50%, -50%) rotate(var(--angle, 0deg)) scaleX(0); opacity: 0; }
+  50% { transform: translate(-50%, -50%) rotate(var(--angle, 0deg)) scaleX(1.2); opacity: 1; }
+  100% { transform: translate(
+    calc(-50% + 25px * cos(var(--angle, 0deg))),
+    calc(-50% + 25px * sin(var(--angle, 0deg)))
+  ) rotate(var(--angle, 0deg)) scaleX(0.8); opacity: 0; }
+}
+
+.spell-effect--creature-frost {
+  position: absolute;
+  width: 70px;
+  height: 70px;
+  border: 3px solid rgba(200, 230, 255, 0.8);
+  border-radius: 10px;
+  background: radial-gradient(circle, rgba(200, 230, 255, 0.2), transparent);
+  transform: translate(-50%, -50%);
+  animation: spell-creature-frost 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-creature-frost {
+  0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+  30% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+
+.spell-blizzard-freeze {
+  animation: spell-blizzard-freeze 1s ease-out forwards !important;
+}
+
+@keyframes spell-blizzard-freeze {
+  0% { filter: brightness(1) saturate(1); }
+  30% { filter: brightness(1.3) saturate(0.5) hue-rotate(180deg); }
+  60% { filter: brightness(1.1) saturate(0.7) hue-rotate(180deg); }
+  100% { filter: brightness(1) saturate(1) hue-rotate(0deg); }
+}
+
+.spell-particle--snowflake-fade {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+  animation: spell-snowflake-fade 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-snowflake-fade {
+  0% { transform: translateY(0); opacity: 0.7; }
+  100% { transform: translateY(80vh); opacity: 0; }
+}
+
+/* ============================================================================
+   BUFF EFFECTS - Enhanced Particles
+   ============================================================================ */
+
+.spell-particle--fish-bubble {
+  position: absolute;
+  width: var(--bubble-size, 10px);
+  height: var(--bubble-size, 10px);
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), var(--spell-color, rgba(79, 195, 247, 0.6)));
+  border-radius: 50%;
+  animation: spell-fish-bubble 1s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-fish-bubble {
+  0% { transform: translateY(0) translateX(0) scale(1); opacity: 0.9; }
+  100% { transform: translateY(-120px) translateX(var(--sway, 0)) scale(0.3); opacity: 0; }
+}
+
+.spell-particle--golden-sparkle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: radial-gradient(circle, #ffd54f, #ff9800);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(255, 213, 79, 0.8);
+  animation: spell-golden-sparkle 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-golden-sparkle {
+  0% { transform: scale(0); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0) translateY(-20px); opacity: 0; }
+}
+
+.spell-fish-food-glow {
+  animation: spell-fish-food-glow 0.9s ease-out forwards !important;
+}
+
+@keyframes spell-fish-food-glow {
+  0% { filter: brightness(1); box-shadow: none; }
+  30% { filter: brightness(1.3); box-shadow: 0 0 20px rgba(79, 195, 247, 0.6), 0 0 40px rgba(255, 213, 79, 0.4); }
+  70% { filter: brightness(1.2); box-shadow: 0 0 15px rgba(79, 195, 247, 0.4), 0 0 30px rgba(255, 213, 79, 0.3); }
+  100% { filter: brightness(1); box-shadow: none; }
+}
+
+.spell-particle--feather-drift {
+  position: absolute;
+  width: 20px;
+  height: 8px;
+  background: linear-gradient(90deg, transparent, var(--spell-color, #fff9c4) 30%, var(--spell-color, #fff9c4) 70%, transparent);
+  border-radius: 50%;
+  transform: rotate(var(--rotation, 0deg));
+  animation: spell-feather-drift 1.2s ease-in-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-feather-drift {
+  0% { transform: translateY(0) translateX(0) rotate(var(--rotation, 0deg)); opacity: 1; }
+  50% { transform: translateY(50vh) translateX(var(--sway, 20px)) rotate(calc(var(--rotation, 0deg) + 180deg)); opacity: 0.8; }
+  100% { transform: translateY(100vh) translateX(calc(var(--sway, 20px) * -1)) rotate(calc(var(--rotation, 0deg) + 360deg)); opacity: 0; }
+}
+
+.spell-feather-buff-glow {
+  animation: spell-feather-buff-glow 0.9s ease-out forwards !important;
+}
+
+@keyframes spell-feather-buff-glow {
+  0% { filter: brightness(1); }
+  30% { filter: brightness(1.4) drop-shadow(0 0 15px rgba(255, 213, 79, 0.8)); }
+  100% { filter: brightness(1); }
+}
+
+.spell-particle--golden-dust {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #ffd54f;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(255, 213, 79, 0.8);
+  animation: spell-golden-dust 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-golden-dust {
+  0% { transform: scale(1); opacity: 1; }
+  100% {
+    transform: translate(
+      calc(var(--spread, 25px) * cos(var(--angle, 0deg))),
+      calc(var(--spread, 25px) * sin(var(--angle, 0deg)) - 15px)
+    ) scale(0);
+    opacity: 0;
+  }
+}
+
+/* ============================================================================
+   TRANSMOGRIFY (NEWT) - Magical Transformation
+   ============================================================================ */
+
+.spell-particle--magic-converge {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--spell-color, #81c784);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--spell-color, rgba(129, 199, 132, 0.8));
+  animation: spell-magic-converge 0.3s ease-in forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-magic-converge {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--target-x, 0), var(--target-y, 0)) scale(0); opacity: 0.5; }
+}
+
+.spell-effect--magic-vortex {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  border: 3px solid var(--spell-color, #81c784);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: spell-magic-vortex 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-magic-vortex {
+  0% { transform: translate(-50%, -50%) scale(1.5) rotate(0deg); opacity: 0; }
+  30% { transform: translate(-50%, -50%) scale(1) rotate(180deg); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(0.3) rotate(720deg); opacity: 0; }
+}
+
+.spell-transmogrify-morph {
+  animation: spell-transmogrify-morph 0.4s ease-in-out forwards !important;
+}
+
+@keyframes spell-transmogrify-morph {
+  0% { transform: scale(1) rotate(0deg); filter: hue-rotate(0deg); }
+  50% { transform: scale(1.1) rotate(-5deg); filter: hue-rotate(90deg) brightness(1.2); }
+  100% { transform: scale(0.8) rotate(5deg); filter: hue-rotate(180deg) brightness(1.3); }
+}
+
+.spell-particle--magic-orbit {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--spell-color, #81c784);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--spell-color, rgba(129, 199, 132, 0.8));
+  transform: translate(-50%, -50%);
+  animation: spell-magic-orbit 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-magic-orbit {
+  0% {
+    transform: translate(-50%, -50%) rotate(calc(var(--orbit-index, 0) * 45deg)) translateX(40px);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(calc(var(--orbit-index, 0) * 45deg + 360deg)) translateX(20px);
+    opacity: 0;
+  }
+}
+
+.spell-transmogrify-poof {
+  animation: spell-transmogrify-poof 0.4s ease-out forwards !important;
+}
+
+@keyframes spell-transmogrify-poof {
+  0% { transform: scale(0.8); filter: brightness(2) hue-rotate(180deg); }
+  30% { transform: scale(1.3); filter: brightness(1.5) hue-rotate(90deg); }
+  100% { transform: scale(1); filter: brightness(1) hue-rotate(0deg); }
+}
+
+.spell-effect--poof-cloud {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(circle, var(--spell-color, rgba(129, 199, 132, 0.8)), transparent);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: spell-poof-cloud 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-poof-cloud {
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1; }
+  50% { transform: translate(-50%, -50%) scale(1.5); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+}
+
+.spell-particle--poof-sparkle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--spell-color, #81c784);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--spell-secondary, rgba(129, 199, 132, 0.8));
+  transform: translate(-50%, -50%);
+  animation: spell-poof-sparkle 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-poof-sparkle {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% {
+    transform: translate(
+      calc(-50% + var(--distance, 40px) * cos(var(--angle, 0deg))),
+      calc(-50% + var(--distance, 40px) * sin(var(--angle, 0deg)))
+    ) scale(0);
+    opacity: 0;
+  }
+}
+
+.spell-particle--magic-wisp {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  background: radial-gradient(circle, var(--spell-color, rgba(200, 230, 201, 0.8)), transparent);
+  border-radius: 50%;
+  animation: spell-magic-wisp 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-magic-wisp {
+  0% { transform: scale(0.5); opacity: 0.8; }
+  100% { transform: scale(1.5) translateY(-30px); opacity: 0; }
+}
+
+.spell-particle--magic-linger {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: var(--spell-color, #81c784);
+  border-radius: 50%;
+  animation: spell-magic-linger 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-magic-linger {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(0) translateY(-20px); opacity: 0; }
+}
+
+/* ============================================================================
+   ARROW RAIN - Enhanced
+   ============================================================================ */
+
+.spell-particle--arrow-launch {
+  position: absolute;
+  width: 4px;
+  height: 20px;
+  background: linear-gradient(to top, #5d4e37, #8b7355);
+  animation: spell-arrow-launch 0.4s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-arrow-launch {
+  0% { transform: translateY(0) rotate(-45deg); opacity: 1; }
+  100% { transform: translateY(-150px) translateX(50px) rotate(-45deg); opacity: 0; }
+}
+
+.spell-projectile--arrow-rain {
+  width: 4px;
+  height: 30px;
+  background: linear-gradient(to bottom, #5f6368, #5d4e37);
+  position: absolute;
+  transform: translate(-50%, 0);
+  pointer-events: none;
+}
+
+.spell-projectile--arrow-rain::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 10px solid #5f6368;
+}
+
+@keyframes spell-arrow-rain {
+  0% { transform: translate(-50%, 0); opacity: 1; }
+  100% { transform: translate(-50%, var(--target-y, 150px)); opacity: 1; }
+}
+
+.spell-arrow-hit {
+  animation: spell-arrow-hit 0.5s ease-out forwards !important;
+}
+
+@keyframes spell-arrow-hit {
+  0% { transform: scale(1); }
+  20% { transform: scale(0.95) translateY(3px); }
+  40% { transform: scale(1.05) translateY(-2px); }
+  100% { transform: scale(1); }
+}
+
+.spell-particle--arrow-splinter {
+  position: absolute;
+  width: 3px;
+  height: 8px;
+  background: #5d4e37;
+  transform: translate(-50%, -50%);
+  animation: spell-arrow-splinter 0.4s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-arrow-splinter {
+  0% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+  100% {
+    transform: translate(
+      calc(-50% + var(--spread, 25px) * cos(var(--angle, 0deg))),
+      calc(-50% + var(--spread, 25px) * sin(var(--angle, 0deg)) + 15px)
+    ) scale(0.5) rotate(180deg);
+    opacity: 0;
+  }
+}
+
+/* ============================================================================
+   MONSOON - Storm Effects
+   ============================================================================ */
+
+.spell-aoe--storm-clouds {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(to bottom,
+    rgba(40, 50, 60, 0.9) 0%,
+    rgba(50, 60, 70, 0.7) 50%,
+    transparent 100%);
+  animation: spell-storm-clouds 1.4s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-storm-clouds {
+  0% { opacity: 0; transform: translateY(-20%); }
+  20% { opacity: 1; transform: translateY(0); }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.spell-particle--heavy-rain {
+  position: absolute;
+  width: 2px;
+  height: 15px;
+  background: linear-gradient(to bottom, transparent, var(--spell-color, rgba(129, 199, 132, 0.8)));
+  animation: spell-heavy-rain var(--rain-speed, 0.4s) linear forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-heavy-rain {
+  0% { transform: translateY(0); opacity: 0.8; }
+  100% { transform: translateY(120vh); opacity: 0; }
+}
+
+.spell-effect--lightning-bolt {
+  position: absolute;
+  top: 0;
+  width: 4px;
+  height: 60%;
+  background: linear-gradient(to bottom,
+    rgba(255, 255, 255, 0.9),
+    var(--spell-color, rgba(200, 230, 255, 0.8)),
+    rgba(255, 255, 255, 0.9));
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 40px var(--spell-color, rgba(200, 230, 255, 0.6));
+  clip-path: polygon(0% 0%, 100% 0%, 60% 30%, 100% 30%, 40% 60%, 80% 60%, 50% 100%, 20% 60%, 60% 60%, 0% 30%, 40% 30%);
+  animation: spell-lightning-bolt 0.15s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-lightning-bolt {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 0; }
+}
+
+.spell-lightning-flash {
+  filter: brightness(2) !important;
+  transition: filter 0.05s ease-out;
+}
+
+.spell-particle--light-rain {
+  position: absolute;
+  width: 1px;
+  height: 10px;
+  background: linear-gradient(to bottom, transparent, var(--spell-color, rgba(129, 199, 132, 0.5)));
+  animation: spell-light-rain 0.6s linear forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-light-rain {
+  0% { transform: translateY(0); opacity: 0.5; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+/* ============================================================================
+   SUNSHINE - Sun Ray Effects
+   ============================================================================ */
+
+.spell-effect--clouds-part {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom,
+    rgba(200, 200, 200, 0.4) 0%,
+    transparent 40%);
+  animation: spell-clouds-part 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-clouds-part {
+  0% { opacity: 0.6; }
+  50% { opacity: 0.8; }
+  100% { opacity: 0; }
+}
+
+.spell-effect--sun-ray {
+  position: absolute;
+  top: 0;
+  width: var(--ray-width, 40px);
+  height: 100%;
+  background: linear-gradient(to bottom,
+    var(--spell-color, rgba(255, 213, 79, 0.8)) 0%,
+    var(--spell-color, rgba(255, 213, 79, 0.4)) 50%,
+    transparent 100%);
+  animation: spell-sun-ray 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-sun-ray {
+  0% { opacity: 0; transform: scaleY(0); transform-origin: top; }
+  30% { opacity: 1; transform: scaleY(1); }
+  100% { opacity: 0; transform: scaleY(1); }
+}
+
+.spell-sunshine-glow {
+  animation: spell-sunshine-glow 1s ease-out forwards !important;
+}
+
+@keyframes spell-sunshine-glow {
+  0% { filter: brightness(1); }
+  30% { filter: brightness(1.4) drop-shadow(0 0 20px rgba(255, 213, 79, 0.8)); }
+  100% { filter: brightness(1); }
+}
+
+.spell-particle--sun-mote {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--spell-color, #ffd54f);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--spell-color, rgba(255, 213, 79, 0.8));
+  animation: spell-sun-mote 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-sun-mote {
+  0% { transform: scale(0); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0) translateY(-20px); opacity: 0; }
+}
+
+/* ============================================================================
+   GENERIC PARTICLES
+   ============================================================================ */
+
+.spell-particle--generic {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--spell-color, #81c784);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--spell-glow, rgba(129, 199, 132, 0.6));
+  transform: translate(-50%, -50%);
+  animation: spell-generic-particle 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-generic-particle {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% {
+    transform: translate(
+      calc(-50% + var(--spread, 40px) * cos(var(--angle, 0deg))),
+      calc(-50% + var(--spread, 40px) * sin(var(--angle, 0deg)))
+    ) scale(0);
+    opacity: 0;
+  }
+}
+
+.spell-effect--impact-ring {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--spell-color, #81c784);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: spell-impact-ring-expand 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes spell-impact-ring-expand {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+}
+
+/* ============================================================================
+   SPELL CARD REVEAL ANIMATION
+   Hearthstone-style card presentation before spell effect
+   ============================================================================ */
+
+.spell-card-reveal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  pointer-events: none;
+  perspective: 1000px;
+  animation: spell-reveal-entrance 0.3s ease-out forwards;
+}
+
+@keyframes spell-reveal-entrance {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.spell-card-reveal.exiting {
+  animation: spell-reveal-exit 0.5s ease-in forwards;
+}
+
+@keyframes spell-reveal-exit {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    filter: brightness(2) blur(10px);
+  }
+}
+
+/* Background glow effect */
+.spell-reveal-glow {
+  position: absolute;
+  width: 500px;
+  height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    var(--spell-theme-glow, rgba(79, 195, 247, 0.4)) 0%,
+    transparent 70%
+  );
+  filter: blur(30px);
+  animation: spell-reveal-glow-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes spell-reveal-glow-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.9;
+  }
+}
+
+/* Card wrapper for flip animation - 5:7 aspect ratio */
+.spell-reveal-card-wrapper {
+  width: 250px;
+  height: 350px;
+  position: relative;
+  transform-style: preserve-3d;
+  transform: scale(0.5) translateY(100px);
+  opacity: 0;
+  animation: spell-reveal-card-entrance 0.4s ease-out forwards;
+}
+
+@keyframes spell-reveal-card-entrance {
+  0% {
+    transform: scale(0.5) translateY(100px);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+.spell-reveal-card-wrapper.flipped .spell-reveal-card-back {
+  transform: rotateY(-180deg);
+}
+
+.spell-reveal-card-wrapper.flipped .spell-reveal-card-front {
+  transform: rotateY(0deg);
+}
+
+.spell-card-reveal.exiting .spell-reveal-card-wrapper {
+  animation: spell-reveal-card-exit 0.5s ease-in forwards;
+}
+
+@keyframes spell-reveal-card-exit {
+  0% {
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    transform: scale(1.15) translateY(-20px);
+  }
+  100% {
+    transform: scale(0.3) translateY(-150px);
+  }
+}
+
+/* Card back */
+.spell-reveal-card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #2c1810 0%, #1a0f0a 100%);
+  border: 3px solid #8b4513;
+  box-shadow:
+    0 0 20px rgba(0, 0, 0, 0.5),
+    inset 0 0 30px rgba(139, 69, 19, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform: rotateY(0deg);
+  transition: transform 0.6s ease-in-out;
+}
+
+.card-back-pattern {
+  position: absolute;
+  inset: 10px;
+  border: 2px solid rgba(139, 69, 19, 0.5);
+  border-radius: 8px;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 10px,
+      rgba(139, 69, 19, 0.1) 10px,
+      rgba(139, 69, 19, 0.1) 20px
+    );
+}
+
+.card-back-logo {
+  font-size: 4rem;
+  color: #8b4513;
+  text-shadow: 0 0 10px rgba(139, 69, 19, 0.5);
+  z-index: 1;
+}
+
+/* Card front */
+.spell-reveal-card-front {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%);
+  border: 3px solid var(--spell-theme-color, #4fc3f7);
+  box-shadow:
+    0 0 30px var(--spell-theme-glow, rgba(79, 195, 247, 0.5)),
+    0 10px 40px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: rotateY(180deg);
+  transition: transform 0.6s ease-in-out;
+}
+
+/* Card header with name */
+.spell-reveal-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+}
+
+.spell-reveal-name {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  text-align: center;
+}
+
+/* Card image area */
+.spell-reveal-image-container {
+  flex: 1;
+  margin: 0 12px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #2a2a3e 0%, #1a1a2e 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+  min-height: 140px;
+  max-height: 180px;
+}
+
+.spell-reveal-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.spell-reveal-image-placeholder {
+  font-size: 5rem;
+  opacity: 0.7;
+}
+
+/* Effect text area */
+.spell-reveal-effect {
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.9);
+  text-align: center;
+  line-height: 1.3;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Footer with type and tribe */
+.spell-reveal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 12px 10px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.spell-reveal-type {
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: var(--spell-theme-color, #4fc3f7);
+  letter-spacing: 1px;
+  text-shadow: 0 0 10px var(--spell-theme-glow, rgba(79, 195, 247, 0.5));
+}
+
+.spell-reveal-tribe {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.6);
+  letter-spacing: 1px;
+}
+
+/* Shimmer effect on the revealed card */
+.spell-reveal-card-wrapper.flipped .spell-reveal-card-front::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.3) 45%,
+    rgba(255, 255, 255, 0.5) 50%,
+    rgba(255, 255, 255, 0.3) 55%,
+    transparent 60%
+  );
+  animation: spell-reveal-shimmer 0.8s ease-out 0.3s forwards;
+  opacity: 0;
+}
+
+@keyframes spell-reveal-shimmer {
+  0% {
+    transform: translateX(-100%);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}

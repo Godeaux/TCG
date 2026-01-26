@@ -21,6 +21,8 @@ import {
   getFieldSlotElement as getFieldSlotElementShared,
 } from '../dom/helpers.js';
 
+import { playSpellEffect, initSpellEffects } from './spellEffects.js';
+
 // ============================================================================
 // MODULE-LEVEL STATE
 // ============================================================================
@@ -47,6 +49,8 @@ let getLocalPlayerIndex = null;
 export const initBattleEffects = (options = {}) => {
   battleEffectsLayer = document.getElementById('battle-effects');
   getLocalPlayerIndex = options.getLocalPlayerIndex;
+  // Also initialize spell effects
+  initSpellEffects(options);
 };
 
 // ============================================================================
@@ -619,6 +623,9 @@ export const processVisualEffects = (state) => {
         break;
       case 'heal':
         requestAnimationFrame(() => playHealEffect(effect, state));
+        break;
+      case 'spell':
+        requestAnimationFrame(() => playSpellEffect(effect, state));
         break;
     }
   });

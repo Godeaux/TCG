@@ -29,3 +29,15 @@ export {
   isEffectProcessed,
   playAttackEffect,
 } from './battleEffects.js';
+
+// ============================================================================
+// SPELL EFFECTS
+// ============================================================================
+
+export {
+  playSpellEffect,
+  initSpellEffects,
+  preCacheSpellEffectTargets,
+  SPELL_VISUAL_EFFECTS,
+  TRIBE_THEMES,
+} from './spellEffects.js';

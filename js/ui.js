@@ -191,6 +191,8 @@ import {
   processVisualEffects,
   markEffectProcessed,
   playAttackEffect,
+  playSpellEffect,
+  preCacheSpellEffectTargets,
 } from './ui/effects/index.js';
 
 // DOM helpers (shared utilities)
@@ -1910,6 +1912,21 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
           LOG_CATEGORIES.SPELL,
           `${playerName} casts ${formatCardForLog(context.spellCard)} on ${selectedName}.`
         );
+
+        // Queue spell visual effect for targeted spells
+        const spellEffect = queueVisualEffect(state, {
+          type: 'spell',
+          spellId: context.spellCard.id,
+          spellName: context.spellCard.name,
+          casterIndex: context.playerIndex,
+          targetCardId: value?.instanceId,
+          targetOwnerIndex: value?.instanceId ? findCardOwnerIndex(state, value.instanceId) : undefined,
+          targetSlotIndex: value?.instanceId ? findCardSlotIndex(state, value.instanceId)?.slotIndex : undefined,
+        });
+        if (spellEffect) {
+          markEffectProcessed(spellEffect.id, spellEffect.createdAt);
+          playSpellEffect(spellEffect, state);
+        }
       } else {
         logGameAction(state, LOG_CATEGORIES.CHOICE, `${playerName} selects ${selectedName}.`);
       }
@@ -2791,6 +2808,23 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) 
           LOG_CATEGORIES.SPELL,
           `${player.name} casts ${formatCardForLog(card)}.`
         );
+
+        // Queue spell visual effect for preselected target
+        const targetValue = matchingCandidate.value;
+        const spellEffect = queueVisualEffect(state, {
+          type: 'spell',
+          spellId: card.id,
+          spellName: card.name,
+          casterIndex: playerIndex,
+          targetCardId: targetValue?.instanceId,
+          targetOwnerIndex: targetValue?.instanceId ? findCardOwnerIndex(state, targetValue.instanceId) : undefined,
+          targetSlotIndex: targetValue?.instanceId ? findCardSlotIndex(state, targetValue.instanceId)?.slotIndex : undefined,
+        });
+        if (spellEffect) {
+          markEffectProcessed(spellEffect.id, spellEffect.createdAt);
+          playSpellEffect(spellEffect, state);
+        }
+
         const followUp = onSelect(matchingCandidate.value);
         resolveEffectChain(
           state,
@@ -2810,9 +2844,21 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) 
     }
 
     // If spell requires target selection, defer the cast log until target is chosen
-    // Otherwise, log the cast immediately
+    // Otherwise, log the cast immediately and queue visual effect
     if (!result.selectTarget) {
       logGameAction(state, LOG_CATEGORIES.SPELL, `${player.name} casts ${formatCardForLog(card)}.`);
+
+      // Queue spell visual effect for non-targeted spells
+      const spellEffect = queueVisualEffect(state, {
+        type: 'spell',
+        spellId: card.id,
+        spellName: card.name,
+        casterIndex: playerIndex,
+      });
+      if (spellEffect) {
+        markEffectProcessed(spellEffect.id, spellEffect.createdAt);
+        playSpellEffect(spellEffect, state);
+      }
     }
     resolveEffectChain(
       state,
@@ -4533,6 +4579,10 @@ export const renderGame = (state, callbacks = {}) => {
   updatePlayerStats(state, 1, 'player2', callbacks.onUpdate);
   // Update pile counts from viewing player's perspective
   updatePlayerStats(state, activeIndex, 'active');
+  // Pre-cache spell effect targets BEFORE rendering (needed for multiplayer sync)
+  // Targets may be removed from DOM during render, so cache positions first
+  preCacheSpellEffectTargets(state);
+
   // Field rendering (uses extracted Field component)
   // Note: Hover tooltips are handled directly in Field.js via CardTooltip
   // Skip field rendering if hologram is active (don't overwrite historical view)
