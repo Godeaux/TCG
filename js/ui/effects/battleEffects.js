@@ -21,7 +21,7 @@ import {
   getFieldSlotElement as getFieldSlotElementShared,
 } from '../dom/helpers.js';
 
-import { playSpellEffect, initSpellEffects } from './spellEffects.js';
+import { playSpellEffect, playTrapEffect, initSpellEffects } from './spellEffects.js';
 
 // ============================================================================
 // MODULE-LEVEL STATE
@@ -626,6 +626,9 @@ export const processVisualEffects = (state) => {
         break;
       case 'spell':
         requestAnimationFrame(() => playSpellEffect(effect, state));
+        break;
+      case 'trap':
+        requestAnimationFrame(() => playTrapEffect(effect, state));
         break;
     }
   });

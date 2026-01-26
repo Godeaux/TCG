@@ -19,7 +19,7 @@
  */
 
 import { checkTrigger, TRIGGER_EVENTS, getTriggersForEvent } from './triggerRegistry.js';
-import { getTrapsFromHand, logMessage } from '../../state/gameState.js';
+import { getTrapsFromHand, logMessage, queueVisualEffect } from '../../state/gameState.js';
 import { resolveCardEffect } from '../../cards/index.js';
 import { getBugDetector } from '../../simulation/index.js';
 
@@ -255,6 +255,15 @@ export const resolveReaction = ({
     reactingPlayer.exile.push(reaction.card);
 
     logMessage(state, `${reactingPlayer.name}'s ${reaction.card.name} trap activates!`);
+
+    // Queue trap visual effect for the reveal animation
+    queueVisualEffect(state, {
+      type: 'trap',
+      trapId: reaction.card.id,
+      trapName: reaction.card.name,
+      casterIndex: reactingPlayerIndex,
+      triggerEvent: event,
+    });
 
     // Build effect context based on the event type
     const effectContext = buildEffectContext({

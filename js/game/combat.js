@@ -405,7 +405,9 @@ export const resolveDirectAttack = (state, attacker, opponent, attackerOwnerInde
 export const cleanupDestroyed = (state, { silent = false } = {}) => {
   const destroyedCreatures = [];
 
-  state.players.forEach((player) => {
+  // PHASE 1: Identify destroyed creatures, handle molt, clear slots immediately
+  // This ensures field slots are freed BEFORE onSlain effects resolve (e.g., Meerkat Matriarch summons)
+  state.players.forEach((player, playerIndex) => {
     player.field = player.field.map((card) => {
       if (card && card.currentHp <= 0) {
         // Check for Molt - creature revives at 1 HP but loses all keywords (Crustacean mechanic)
@@ -428,67 +430,74 @@ export const cleanupDestroyed = (state, { silent = false } = {}) => {
           }
         }
 
-        destroyedCreatures.push({ card, player: player.name });
+        // Collect for phase 2 processing, storing player object and index
+        destroyedCreatures.push({ card, player, playerIndex });
 
-        // Check for onSlain effect (either function or object-based)
-        // Triggers when HP <= 0 regardless of cause (combat, effect damage, etc.)
-        const hasOnSlainEffect = card.onSlain || card.effects?.onSlain;
-        if (!silent && hasOnSlainEffect && !card.abilitiesCancelled) {
-          logGameAction(state, DEATH, `${formatCardForLog(card)} onSlain effect triggers...`);
-          const playerIndex = state.players.indexOf(player);
-          const opponentIndex = (playerIndex + 1) % 2;
-
-          let result;
-          if (card.onSlain) {
-            // Function-based onSlain
-            result = card.onSlain({
-              log: (message) => logMessage(state, message),
-              player,
-              opponent: state.players[opponentIndex],
-              creature: card,
-              killer: card.slainBy,
-              state,
-            });
-          } else if (card.effects?.onSlain) {
-            // Object-based onSlain (via resolveCardEffect)
-            result = resolveCardEffect(card, 'onSlain', {
-              log: (message) => logMessage(state, message),
-              player,
-              playerIndex,
-              opponent: state.players[opponentIndex],
-              opponentIndex,
-              creature: card,
-              killer: card.slainBy,
-              state,
-            });
-          }
-
-          if (result) {
-            resolveEffectResult(state, result, {
-              playerIndex,
-              opponentIndex,
-              card,
-            });
-          }
-        }
-        // Per CORE-RULES.md §8: Tokens do NOT go to carrion
-        if (!card.isToken && !card.id?.startsWith('token-')) {
-          player.carrion.push(card);
-          if (!silent) {
-            logGameAction(
-              state,
-              DEATH,
-              `${formatCardForLog(card)} → ${player.name}'s Carrion (${player.carrion.length} cards)`
-            );
-          }
-        } else if (!silent) {
-          logGameAction(state, DEATH, `${formatCardForLog(card)} (token) destroyed.`);
-        }
+        // Clear slot IMMEDIATELY so onSlain effects have access to freed space
         return null;
       }
       return card;
     });
   });
+
+  // PHASE 2: Process onSlain effects and carrion (slots are now cleared)
+  for (const { card, player, playerIndex } of destroyedCreatures) {
+    const opponentIndex = (playerIndex + 1) % 2;
+
+    // Check for onSlain effect (either function or object-based)
+    // Triggers when HP <= 0 regardless of cause (combat, effect damage, etc.)
+    const hasOnSlainEffect = card.onSlain || card.effects?.onSlain;
+    if (!silent && hasOnSlainEffect && !card.abilitiesCancelled) {
+      logGameAction(state, DEATH, `${formatCardForLog(card)} onSlain effect triggers...`);
+
+      let result;
+      if (card.onSlain) {
+        // Function-based onSlain
+        result = card.onSlain({
+          log: (message) => logMessage(state, message),
+          player,
+          opponent: state.players[opponentIndex],
+          creature: card,
+          killer: card.slainBy,
+          state,
+        });
+      } else if (card.effects?.onSlain) {
+        // Object-based onSlain (via resolveCardEffect)
+        result = resolveCardEffect(card, 'onSlain', {
+          log: (message) => logMessage(state, message),
+          player,
+          playerIndex,
+          opponent: state.players[opponentIndex],
+          opponentIndex,
+          creature: card,
+          killer: card.slainBy,
+          state,
+        });
+      }
+
+      if (result) {
+        resolveEffectResult(state, result, {
+          playerIndex,
+          opponentIndex,
+          card,
+        });
+      }
+    }
+
+    // Per CORE-RULES.md §8: Tokens do NOT go to carrion
+    if (!card.isToken && !card.id?.startsWith('token-')) {
+      player.carrion.push(card);
+      if (!silent) {
+        logGameAction(
+          state,
+          DEATH,
+          `${formatCardForLog(card)} → ${player.name}'s Carrion (${player.carrion.length} cards)`
+        );
+      }
+    } else if (!silent) {
+      logGameAction(state, DEATH, `${formatCardForLog(card)} (token) destroyed.`);
+    }
+  }
 
   if (!silent && destroyedCreatures.length > 0) {
     logMessage(state, `[Cleanup] ${destroyedCreatures.length} creature(s) destroyed.`);

@@ -630,6 +630,9 @@ export const resolveEffectResult = (state, result, context) => {
       target.effectText = '(Copied) No effect text.';
     }
 
+    // Track the source ID for multiplayer sync re-hydration
+    target.copiedFromId = source.id;
+
     const keywordsList =
       sourceKeywords.length > 0 ? formatKeywordList(sourceKeywords) : 'no keywords';
     const effectsList = source.effects
@@ -1069,23 +1072,48 @@ export const resolveEffectResult = (state, result, context) => {
     copy.isToken = true;
     player.field[emptySlot] = copy;
     logGameAction(state, SUMMON, `${player.name} summons a copy of ${formatCardForLog(target)}.`);
-    // Trigger onPlay for the copy if it's a prey
-    if (copy.type === 'Prey' && copy.onPlay && !copy.abilitiesCancelled) {
+
+    // Trigger onPlay for the copy (both Prey and Predator)
+    const hasOnPlayEffect = copy.onPlay || copy.effects?.onPlay;
+    if (hasOnPlayEffect && !copy.abilitiesCancelled) {
       const opponentIndex = (playerIndex + 1) % 2;
-      const resultOnPlay = copy.onPlay({
-        log: (message) => logMessage(state, message),
-        player: state.players[playerIndex],
-        opponent: state.players[opponentIndex],
-        creature: copy,
-        state,
-        playerIndex,
-        opponentIndex,
-      });
-      resolveEffectResult(state, resultOnPlay, {
-        playerIndex,
-        opponentIndex,
-        card: copy,
-      });
+      let resultOnPlay;
+
+      if (copy.onPlay) {
+        // Function-based onPlay
+        resultOnPlay = copy.onPlay({
+          log: (message) => logMessage(state, message),
+          player: state.players[playerIndex],
+          opponent: state.players[opponentIndex],
+          creature: copy,
+          state,
+          playerIndex,
+          opponentIndex,
+        });
+      } else if (copy.effects?.onPlay) {
+        // Object-based onPlay (via resolveCardEffect)
+        resultOnPlay = resolveCardEffect(copy, 'onPlay', {
+          log: (message) => logMessage(state, message),
+          player: state.players[playerIndex],
+          opponent: state.players[opponentIndex],
+          creature: copy,
+          state,
+          playerIndex,
+          opponentIndex,
+        });
+      }
+
+      if (resultOnPlay && Object.keys(resultOnPlay).length > 0) {
+        // Return pendingOnPlay for UI effects that need selection
+        if (resultOnPlay.selectTarget || resultOnPlay.selectOption) {
+          return { pendingOnPlay: { creature: copy, playerIndex, opponentIndex } };
+        }
+        resolveEffectResult(state, resultOnPlay, {
+          playerIndex,
+          opponentIndex,
+          card: copy,
+        });
+      }
     }
   }
 

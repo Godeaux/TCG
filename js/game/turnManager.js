@@ -10,6 +10,8 @@ import { cleanupDestroyed, resetPrideFlags } from './combat.js';
 import { resolveEffectResult } from './effects.js';
 import { logPlainMessage } from './historyLog.js';
 import { resolveCardEffect } from '../cards/index.js';
+import { isOnlineMode } from '../state/selectors.js';
+import { SoundManager } from '../audio/soundManager.js';
 import {
   calculateTotalVenom,
   hasWebbed,
@@ -292,7 +294,7 @@ export const startTurn = (state) => {
   }
 
   runStartOfTurnEffects(state);
-  cleanupDestroyed(state);
+  cleanupDestroyed(state, { silent: true }); // Silent: endTurn broadcasts final state
 };
 
 export const advancePhase = (state) => {
@@ -375,6 +377,8 @@ export const advancePhase = (state) => {
         BUFF,
         `${player.name} draws a card. (Hand: ${handSize} → ${handSize + 1}, Deck: ${deckSize} → ${deckSize - 1})`
       );
+      // Play card draw sound (multiplayer only)
+      SoundManager.play('cardDraw');
     } else {
       logGameAction(state, PHASE, `${player.name} has no cards left in deck.`);
     }
@@ -491,7 +495,10 @@ export const endTurn = (state) => {
   state.activePlayerIndex = (state.activePlayerIndex + 1) % 2;
   state.phase = 'Start';
   state.turn += 1;
-  state.passPending = true; // Show pass overlay for local 2-player (cleared by UI for online/AI)
+  // Show pass overlay for local 2-player only (not needed for online/AI)
+  if (!isOnlineMode(state)) {
+    state.passPending = true;
+  }
   resetCombat(state);
 
   logPlainMessage(state, `~•~•~•~•~•~•~•~•`);
@@ -509,6 +516,22 @@ export const endTurn = (state) => {
   // Auto-advance through Start → Draw → Main 1 (streamlined turn flow)
   // advancePhase will handle Draw processing and auto-advance to Main 1
   advancePhase(state);
+
+  // Defensive: ensure we're at Main 1 before broadcasting (not stuck at Start or Draw)
+  // This ensures receiving players see the correct phase
+  if (state.phase === 'Start') {
+    console.warn('[endTurn] Phase stuck at Start, forcing advance');
+    state.phase = 'Draw';
+  }
+  if (state.phase === 'Draw') {
+    console.warn('[endTurn] Phase stuck at Draw, forcing advance to Main 1');
+    const player = state.players[state.activePlayerIndex];
+    const card = drawCard(state, state.activePlayerIndex);
+    if (card) {
+      logGameAction(state, PHASE, `${player.name} draws a card.`);
+    }
+    state.phase = 'Main 1';
+  }
 
   // Broadcast turn change so rejoining players get the latest state
   state.broadcast?.(state);
@@ -535,7 +558,7 @@ export const finalizeEndPhase = (state) => {
   handleFrozenThaw(state); // Thaw frozen creatures (they survive)
   handleParalysisDeath(state); // Kill paralyzed creatures (per CORE-RULES.md §7)
   resetPrideFlags(state); // Reset Pride joinedPrideAttack flags (Feline mechanic)
-  cleanupDestroyed(state);
+  cleanupDestroyed(state, { silent: true }); // Silent: endTurn broadcasts final state
 
   const player = state.players[state.activePlayerIndex];
   logGameAction(
@@ -545,7 +568,7 @@ export const finalizeEndPhase = (state) => {
   );
   state.endOfTurnFinalized = true;
   console.log('[EOT] finalizeEndPhase complete, endOfTurnFinalized set to true');
-  state.broadcast?.(state);
+  // Note: Don't broadcast here - endTurn() will broadcast the final state after all transitions
 };
 
 export const cardLimitAvailable = (state) => !state.cardPlayedThisTurn;

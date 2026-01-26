@@ -158,8 +158,30 @@
           <button class="btn-primary" id="other-ai">Play vs. AI</button>
           <button class="btn-secondary" id="other-multiplayer">Multiplayer</button>
           <button class="btn-secondary" id="other-tutorial">Tutorial</button>
-          <button class="btn-secondary" id="other-options" disabled>Options</button>
+          <button class="btn-secondary" id="other-options">Options</button>
           <button class="btn-secondary" id="other-back">Back</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay options-overlay" id="options-overlay" aria-hidden="true">
+      <div class="overlay-content menu-card options-card">
+        <div class="menu-header">
+          <div class="menu-icon">🔊</div>
+          <div>
+            <h2>Options</h2>
+            <p class="muted">Adjust your game settings.</p>
+          </div>
+        </div>
+        <div class="options-section">
+          <label class="options-label" for="options-sound-volume">Sound Volume</label>
+          <div class="options-slider-row">
+            <input type="range" id="options-sound-volume" class="options-slider" min="0" max="100" value="50">
+            <span class="options-value" id="options-sound-value">50%</span>
+          </div>
+        </div>
+        <div class="menu-actions">
+          <button class="btn-secondary" id="options-back">Back</button>
         </div>
       </div>
     </div>
@@ -888,6 +910,9 @@
                         <span id="player1-hp">❤️: 10</span>
                         <span id="player1-deck">🃏: 20</span>
                       </div>
+                      <button class="emote-toggle" id="emote-toggle-left" title="Quick Chat" aria-label="Quick Chat">
+                        <span class="emote-toggle-icon">💬</span>
+                      </button>
                     </div>
                   </div>
                 </div>

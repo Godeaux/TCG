@@ -269,7 +269,8 @@ export const hasAcuity = (card) => hasKeyword(card, KEYWORDS.ACUITY);
 
 export const isImmune = (card) => hasKeyword(card, KEYWORDS.IMMUNE);
 
-export const isEdible = (card) => hasKeyword(card, KEYWORDS.EDIBLE);
+// Edible is a vulnerability status, not an ability - it should apply even to dry-dropped predators
+export const isEdible = (card) => card?.keywords?.includes(KEYWORDS.EDIBLE);
 
 export const hasScavenge = (card) => hasKeyword(card, KEYWORDS.SCAVENGE);
 
@@ -283,7 +284,8 @@ export const hasPoisonous = (card) => hasKeyword(card, KEYWORDS.POISONOUS);
 
 export const isHarmless = (card) => hasKeyword(card, KEYWORDS.HARMLESS);
 
-export const isInedible = (card) => hasKeyword(card, KEYWORDS.INEDIBLE);
+// Inedible is a protection status, not an ability - it should apply even to dry-dropped predators
+export const isInedible = (card) => card?.keywords?.includes(KEYWORDS.INEDIBLE);
 
 /**
  * Get effective attack value for a creature, including Stalk bonuses.

@@ -5268,17 +5268,36 @@ const playGenericUtilityEffect = (casterIndex, theme) => {
 /**
  * Play a trap effect
  */
-const playTrapEffect = (effect, state) => {
-  const { spellId, casterIndex } = effect;
-  const config = SPELL_VISUAL_EFFECTS[spellId];
+/**
+ * Main entry point for playing trap visual effects
+ * Shows the trap card reveal, then plays the effect animation
+ *
+ * @param {Object} effect - The visual effect data
+ * @param {Object} state - Game state
+ */
+export const playTrapEffect = async (effect, state) => {
+  if (!battleEffectsLayer) {
+    battleEffectsLayer = document.getElementById('battle-effects');
+  }
+  if (!battleEffectsLayer) return;
+
+  const { trapId, casterIndex } = effect;
+
+  // Show the trap card reveal animation first
+  await showTrapCardReveal(trapId, casterIndex);
+
+  // Get configuration for additional effect animation
+  const config = SPELL_VISUAL_EFFECTS[trapId];
   if (!config) return;
 
-  const tribe = getTribeFromCardId(spellId);
+  const tribe = getTribeFromCardId(trapId);
   const theme = TRIBE_THEMES[tribe];
 
-  // Generic trap activation flash
-  const trap = createEffectElement('spell-effect spell-effect--trap', {
+  // Play effect based on trap type
+  // For now, a generic trap activation burst - can be expanded later
+  const trap = createEffectElement('spell-effect spell-effect--trap-burst', {
     '--spell-color': theme.primary,
+    '--spell-glow': theme.glow,
   });
   if (trap) {
     removeOnAnimationEnd(trap);
@@ -5415,6 +5434,122 @@ const getSpellEmoji = (spellId) => {
   };
 
   return typeEmojis[config.type] || '✨';
+};
+
+// ============================================================================
+// TRAP CARD REVEAL ANIMATION
+// ============================================================================
+
+/**
+ * Show the trap card dramatically when it triggers
+ * Similar to spell reveal but with trap-specific styling and a "springing" feel
+ *
+ * @param {string} trapId - The trap card ID
+ * @param {number} casterIndex - The player who owns the trap
+ * @returns {Promise} Resolves when the reveal animation is complete
+ */
+const showTrapCardReveal = (trapId, casterIndex) => {
+  return new Promise((resolve) => {
+    if (!battleEffectsLayer) {
+      resolve();
+      return;
+    }
+
+    // Get trap card data
+    const trapCard = getCardDefinitionById(trapId);
+    if (!trapCard) {
+      resolve();
+      return;
+    }
+
+    // Get tribe theme for colors
+    const tribe = getTribeFromCardId(trapId);
+    const theme = TRIBE_THEMES[tribe] || TRIBE_THEMES.fish;
+
+    // Create the reveal container (centered overlay)
+    const revealContainer = document.createElement('div');
+    revealContainer.className = 'trap-card-reveal';
+
+    // Create the card element with spring animation
+    const cardWrapper = document.createElement('div');
+    cardWrapper.className = 'trap-reveal-card-wrapper';
+
+    // Card back (face-down trap)
+    const cardBack = document.createElement('div');
+    cardBack.className = 'trap-reveal-card-back';
+    cardBack.innerHTML = `
+      <div class="trap-back-pattern"></div>
+      <div class="trap-back-icon">⚠</div>
+    `;
+
+    // Card front (the actual trap)
+    const cardFront = document.createElement('div');
+    cardFront.className = 'trap-reveal-card-front';
+    cardFront.style.setProperty('--trap-theme-color', theme.primary);
+    cardFront.style.setProperty('--trap-theme-glow', theme.glow);
+
+    // Build card front content
+    const hasImage = hasCardImage(trapId);
+    const imageHtml = hasImage
+      ? `<img src="${getCardImagePath(trapId)}" alt="${trapCard.name}" class="trap-reveal-image" draggable="false">`
+      : `<div class="trap-reveal-image-placeholder">🪤</div>`;
+
+    // Get the effect text for the trap
+    const effectText = getCardEffectSummary(trapCard) || trapCard.effectText || '';
+
+    cardFront.innerHTML = `
+      <div class="trap-reveal-header">
+        <span class="trap-reveal-name">${trapCard.name}</span>
+      </div>
+      <div class="trap-reveal-image-container">
+        ${imageHtml}
+      </div>
+      <div class="trap-reveal-effect">${effectText}</div>
+      <div class="trap-reveal-footer">
+        <span class="trap-reveal-type">TRAP</span>
+        <span class="trap-reveal-tribe">${tribe.toUpperCase()}</span>
+      </div>
+    `;
+
+    cardWrapper.appendChild(cardBack);
+    cardWrapper.appendChild(cardFront);
+    revealContainer.appendChild(cardWrapper);
+
+    // Add warning flash effect behind card
+    const flashEffect = document.createElement('div');
+    flashEffect.className = 'trap-reveal-flash';
+    flashEffect.style.setProperty('--trap-theme-color', theme.primary);
+    flashEffect.style.setProperty('--trap-theme-glow', theme.glow);
+    revealContainer.insertBefore(flashEffect, cardWrapper);
+
+    // Add "TRAP ACTIVATED!" text banner
+    const banner = document.createElement('div');
+    banner.className = 'trap-reveal-banner';
+    banner.textContent = 'TRAP ACTIVATED!';
+    banner.style.setProperty('--trap-theme-color', theme.primary);
+    revealContainer.appendChild(banner);
+
+    battleEffectsLayer.appendChild(revealContainer);
+
+    // Animate: spring up -> flip -> hold -> exit
+    // Phase 1: Card springs up (handled by CSS animation on .trap-card-reveal)
+    // Phase 2: Flip to reveal (150ms delay, then 400ms flip - faster than spell)
+    setTimeout(() => {
+      cardWrapper.classList.add('flipped');
+    }, 150);
+
+    // Phase 3: Hold for viewing (starts after flip completes at ~550ms, hold for 1000ms)
+    // Phase 4: Exit animation (at ~1550ms total)
+    setTimeout(() => {
+      revealContainer.classList.add('exiting');
+
+      // Clean up after exit animation completes
+      setTimeout(() => {
+        revealContainer.remove();
+        resolve();
+      }, 400);
+    }, 1500);
+  });
 };
 
 // ============================================================================

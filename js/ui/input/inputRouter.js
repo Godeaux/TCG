@@ -17,6 +17,7 @@
 
 import { initDragAndDrop, updateDragState, updateDragCallbacks } from './dragAndDrop.js';
 import { enableSimulationMode } from '../../ui.js';
+import { SoundManager } from '../../audio/soundManager.js';
 
 // ============================================================================
 // MODULE-LEVEL STATE
@@ -296,6 +297,11 @@ const getNavigationElements = () => ({
   otherOptions: document.getElementById('other-options'),
   otherBack: document.getElementById('other-back'),
 
+  // Options overlay elements
+  optionsSoundVolume: document.getElementById('options-sound-volume'),
+  optionsSoundValue: document.getElementById('options-sound-value'),
+  optionsBack: document.getElementById('options-back'),
+
   // Multiplayer auth button (Log In / Log Out inside multiplayer overlay)
   multiplayerAuth: document.getElementById('multiplayer-auth'),
 
@@ -490,6 +496,33 @@ const initNavigation = () => {
       return;
     }
     setMenuStage(latestState, 'tutorial');
+    latestCallbacks.onUpdate?.();
+  });
+
+  // Other submenu: Options
+  elements.otherOptions?.addEventListener('click', () => {
+    if (!latestState) {
+      return;
+    }
+    setMenuStage(latestState, 'options');
+    latestCallbacks.onUpdate?.();
+  });
+
+  // Options: Sound volume slider
+  elements.optionsSoundVolume?.addEventListener('input', (e) => {
+    const value = parseInt(e.target.value, 10);
+    SoundManager.setVolume(value / 100);
+    if (elements.optionsSoundValue) {
+      elements.optionsSoundValue.textContent = `${value}%`;
+    }
+  });
+
+  // Options: Back button
+  elements.optionsBack?.addEventListener('click', () => {
+    if (!latestState) {
+      return;
+    }
+    setMenuStage(latestState, 'other');
     latestCallbacks.onUpdate?.();
   });
 

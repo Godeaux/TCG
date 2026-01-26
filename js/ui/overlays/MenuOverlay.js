@@ -7,6 +7,7 @@
  * - Multiplayer (unified lobby screen)
  * - Tutorial overlay
  * - AI Setup overlay
+ * - Options overlay
  *
  * Key Functions:
  * - renderMenuOverlays: Main menu overlay coordinator
@@ -19,6 +20,7 @@ import {
   getOnlineCount,
 } from '../../network/presenceManager.js';
 import { checkRejoinAvailable } from '../../network/lobbyManager.js';
+import { SoundManager } from '../../audio/soundManager.js';
 
 // ============================================================================
 // ONLINE PRESENCE STATE
@@ -78,6 +80,11 @@ const getMenuElements = () => ({
   multiplayerOverlay: document.getElementById('multiplayer-overlay'),
   tutorialOverlay: document.getElementById('tutorial-overlay'),
   aiSetupOverlay: document.getElementById('ai-setup-overlay'),
+  optionsOverlay: document.getElementById('options-overlay'),
+
+  // Options elements
+  optionsSoundVolume: document.getElementById('options-sound-volume'),
+  optionsSoundValue: document.getElementById('options-sound-value'),
 
   // Main menu buttons (new layout)
   menuFindMatch: document.getElementById('menu-find-match'),
@@ -179,6 +186,7 @@ export const renderMenuOverlays = (state, callbacks) => {
   const showMultiplayer = stage === 'multiplayer' || stage === 'lobby';
   const showTutorial = stage === 'tutorial';
   const showAISetup = stage === 'ai-setup';
+  const showOptions = stage === 'options';
 
   // Toggle overlay visibility
   elements.menuOverlay?.classList.toggle('active', showMain);
@@ -198,6 +206,20 @@ export const renderMenuOverlays = (state, callbacks) => {
 
   elements.aiSetupOverlay?.classList.toggle('active', showAISetup);
   elements.aiSetupOverlay?.setAttribute('aria-hidden', showAISetup ? 'false' : 'true');
+
+  elements.optionsOverlay?.classList.toggle('active', showOptions);
+  elements.optionsOverlay?.setAttribute('aria-hidden', showOptions ? 'false' : 'true');
+
+  // Initialize options slider when shown
+  if (showOptions) {
+    const currentVolume = Math.round(SoundManager.getVolume() * 100);
+    if (elements.optionsSoundVolume) {
+      elements.optionsSoundVolume.value = currentVolume;
+    }
+    if (elements.optionsSoundValue) {
+      elements.optionsSoundValue.textContent = `${currentVolume}%`;
+    }
+  }
 
   // Hide lobby join form if not in multiplayer
   if (!showMultiplayer) {
@@ -436,6 +458,7 @@ export const hideAllMenuOverlays = () => {
   elements.multiplayerOverlay?.classList.remove('active');
   elements.tutorialOverlay?.classList.remove('active');
   elements.aiSetupOverlay?.classList.remove('active');
+  elements.optionsOverlay?.classList.remove('active');
 
   elements.menuOverlay?.setAttribute('aria-hidden', 'true');
   elements.otherMenuOverlay?.setAttribute('aria-hidden', 'true');
@@ -443,4 +466,5 @@ export const hideAllMenuOverlays = () => {
   elements.multiplayerOverlay?.setAttribute('aria-hidden', 'true');
   elements.tutorialOverlay?.setAttribute('aria-hidden', 'true');
   elements.aiSetupOverlay?.setAttribute('aria-hidden', 'true');
+  elements.optionsOverlay?.setAttribute('aria-hidden', 'true');
 };

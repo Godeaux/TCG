@@ -142,51 +142,49 @@ const renderRollingPhase = (state, elements, callbacks) => {
   const canRollP1 = !isOnline || localIndex === 0;
   const canRollP2 = !isOnline || localIndex === 1;
 
-  // Player 1 roll button
-  const rollP1 = document.createElement('button');
-  rollP1.textContent = `Roll for ${p1Name}`;
-  rollP1.onclick = async () => {
-    if (!canRollP1) return;
-
-    // Validate state before rolling
-    if (!state.setup || state.setup.stage !== 'rolling') {
-      console.error('Invalid setup state for rolling');
-      return;
-    }
-
-    callbacks.onSetupRoll?.(0);
-
-    if (isOnline) {
-      try {
-        // Enhanced broadcasting with error handling
-        const payload = buildLobbySyncPayload(state);
-        console.log('Broadcasting P1 roll:', payload.setup?.rolls);
-
-        sendLobbyBroadcast('sync_state', payload);
-
-        // Also save to database as backup
-        await saveGameStateToDatabase(state);
-
-        console.log('P1 roll broadcast successful');
-      } catch (error) {
-        console.error('Failed to broadcast P1 roll:', error);
-        // Attempt recovery by requesting sync
-        setTimeout(() => {
-          sendLobbyBroadcast('sync_request', { senderId: state.menu?.profile?.id ?? null });
-        }, 1000);
+  // Player 1 roll button - only show if this player can roll (not online, or local is P1)
+  if (canRollP1) {
+    const rollP1 = document.createElement('button');
+    rollP1.textContent = `Roll for ${p1Name}`;
+    rollP1.onclick = async () => {
+      // Validate state before rolling
+      if (!state.setup || state.setup.stage !== 'rolling') {
+        console.error('Invalid setup state for rolling');
+        return;
       }
-    }
-  };
-  rollP1.disabled = state.setup.rolls[0] !== null || !canRollP1;
-  rollButtons.appendChild(rollP1);
 
-  // Player 2 roll button (hide in AI mode since AI auto-rolls)
-  if (!isAIMode(state)) {
+      callbacks.onSetupRoll?.(0);
+
+      if (isOnline) {
+        try {
+          // Enhanced broadcasting with error handling
+          const payload = buildLobbySyncPayload(state);
+          console.log('Broadcasting P1 roll:', payload.setup?.rolls);
+
+          sendLobbyBroadcast('sync_state', payload);
+
+          // Also save to database as backup
+          await saveGameStateToDatabase(state);
+
+          console.log('P1 roll broadcast successful');
+        } catch (error) {
+          console.error('Failed to broadcast P1 roll:', error);
+          // Attempt recovery by requesting sync
+          setTimeout(() => {
+            sendLobbyBroadcast('sync_request', { senderId: state.menu?.profile?.id ?? null });
+          }, 1000);
+        }
+      }
+    };
+    rollP1.disabled = state.setup.rolls[0] !== null;
+    rollButtons.appendChild(rollP1);
+  }
+
+  // Player 2 roll button - only show if this player can roll (not AI, and not online or local is P2)
+  if (!isAIMode(state) && canRollP2) {
     const rollP2 = document.createElement('button');
     rollP2.textContent = `Roll for ${p2Name}`;
     rollP2.onclick = async () => {
-      if (!canRollP2) return;
-
       // Validate state before rolling
       if (!state.setup || state.setup.stage !== 'rolling') {
         console.error('Invalid setup state for rolling');
@@ -216,8 +214,21 @@ const renderRollingPhase = (state, elements, callbacks) => {
         }
       }
     };
-    rollP2.disabled = state.setup.rolls[1] !== null || !canRollP2;
+    rollP2.disabled = state.setup.rolls[1] !== null;
     rollButtons.appendChild(rollP2);
+  }
+
+  // Show waiting message if in online mode and waiting for opponent to roll
+  if (isOnline) {
+    const waitingForOpponent =
+      (localIndex === 0 && state.setup.rolls[0] !== null && state.setup.rolls[1] === null) ||
+      (localIndex === 1 && state.setup.rolls[1] !== null && state.setup.rolls[0] === null);
+    if (waitingForOpponent) {
+      const waitingMsg = document.createElement('p');
+      waitingMsg.className = 'muted';
+      waitingMsg.textContent = 'Waiting for opponent to roll...';
+      rollButtons.appendChild(waitingMsg);
+    }
   }
 
   actions.appendChild(rollButtons);
@@ -284,41 +295,45 @@ const renderChoicePhase = (state, elements, callbacks) => {
     return; // Don't render choice buttons since AI is choosing
   }
 
-  const choiceButtons = document.createElement('div');
-  choiceButtons.className = 'setup-button-row';
   const isOnline = state.menu?.mode === 'online';
   const localIndex = getLocalPlayerIndex(state);
   const canChoose = !isOnline || localIndex === state.setup.winnerIndex;
 
-  // Choose self to go first
-  const chooseSelf = document.createElement('button');
-  chooseSelf.textContent = `${winnerName} goes first`;
-  chooseSelf.onclick = () => {
-    if (!canChoose) return;
+  // Only show choice buttons to the player who can choose (the winner)
+  if (canChoose) {
+    const choiceButtons = document.createElement('div');
+    choiceButtons.className = 'setup-button-row';
 
-    callbacks.onSetupChoose?.(state.setup.winnerIndex);
-    if (state.menu?.mode === 'online') {
-      sendLobbyBroadcast('sync_state', buildLobbySyncPayload(state));
-    }
-  };
-  chooseSelf.disabled = !canChoose;
-  choiceButtons.appendChild(chooseSelf);
+    // Choose self to go first
+    const chooseSelf = document.createElement('button');
+    chooseSelf.textContent = `${winnerName} goes first`;
+    chooseSelf.onclick = () => {
+      callbacks.onSetupChoose?.(state.setup.winnerIndex);
+      if (state.menu?.mode === 'online') {
+        sendLobbyBroadcast('sync_state', buildLobbySyncPayload(state));
+      }
+    };
+    choiceButtons.appendChild(chooseSelf);
 
-  // Choose opponent to go first
-  const chooseOther = document.createElement('button');
-  chooseOther.textContent = `${state.players[(state.setup.winnerIndex + 1) % 2].name} goes first`;
-  chooseOther.onclick = () => {
-    if (!canChoose) return;
+    // Choose opponent to go first
+    const chooseOther = document.createElement('button');
+    chooseOther.textContent = `${state.players[(state.setup.winnerIndex + 1) % 2].name} goes first`;
+    chooseOther.onclick = () => {
+      callbacks.onSetupChoose?.((state.setup.winnerIndex + 1) % 2);
+      if (state.menu?.mode === 'online') {
+        sendLobbyBroadcast('sync_state', buildLobbySyncPayload(state));
+      }
+    };
+    choiceButtons.appendChild(chooseOther);
 
-    callbacks.onSetupChoose?.((state.setup.winnerIndex + 1) % 2);
-    if (state.menu?.mode === 'online') {
-      sendLobbyBroadcast('sync_state', buildLobbySyncPayload(state));
-    }
-  };
-  chooseOther.disabled = !canChoose;
-  choiceButtons.appendChild(chooseOther);
-
-  actions.appendChild(choiceButtons);
+    actions.appendChild(choiceButtons);
+  } else {
+    // Show waiting message to the player who lost the roll
+    const waitingMsg = document.createElement('p');
+    waitingMsg.className = 'muted';
+    waitingMsg.textContent = `Waiting for ${winnerName} to choose...`;
+    actions.appendChild(waitingMsg);
+  }
 };
 
 // ============================================================================

@@ -36,6 +36,7 @@ export {
 
 export {
   playSpellEffect,
+  playTrapEffect,
   initSpellEffects,
   preCacheSpellEffectTargets,
   SPELL_VISUAL_EFFECTS,

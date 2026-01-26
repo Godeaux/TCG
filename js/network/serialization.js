@@ -55,6 +55,8 @@ export const serializeCardSnapshot = (card) => {
     isToken: card.isToken ?? false,
     abilitiesCancelled: card.abilitiesCancelled ?? false,
     keywords: Array.isArray(card.keywords) ? [...card.keywords] : null,
+    // Track if abilities were copied from another card (for re-applying after hydration)
+    copiedFromId: card.copiedFromId ?? null,
   };
 };
 
@@ -109,6 +111,34 @@ export const hydrateCardSnapshot = (snapshot, fallbackTurn) => {
   if (snapshot.abilitiesCancelled) {
     stripAbilities(instance);
   }
+
+  // Re-apply copied abilities if this card copied from another
+  if (snapshot.copiedFromId) {
+    const sourceDefinition = getCardDefinitionById(snapshot.copiedFromId);
+    if (sourceDefinition) {
+      instance.copiedFromId = snapshot.copiedFromId;
+      // Clear existing abilities
+      instance.effects = {};
+      instance.onPlay = null;
+      instance.onConsume = null;
+      instance.onSlain = null;
+      instance.onStart = null;
+      instance.onEnd = null;
+      instance.onBeforeCombat = null;
+      instance.onDefend = null;
+      instance.onTargeted = null;
+      instance.effect = null;
+
+      // Copy from source definition
+      if (sourceDefinition.effects) {
+        instance.effects = { ...sourceDefinition.effects };
+      }
+      instance.effectText = sourceDefinition.effectText
+        ? `(Copied) ${sourceDefinition.effectText}`
+        : '(Copied) No effect text.';
+    }
+  }
+
   return instance;
 };
 
@@ -197,6 +227,9 @@ export const buildLobbySyncPayload = (state) => ({
     visualEffects: Array.isArray(state.visualEffects) ? [...state.visualEffects] : [],
     pendingTrapDecision: state.pendingTrapDecision ? { ...state.pendingTrapDecision } : null,
     pendingReaction: state.pendingReaction ? { ...state.pendingReaction } : null,
+    // Include attack negation flags for multiplayer trap sync
+    _lastReactionNegatedAttack: state._lastReactionNegatedAttack ?? undefined,
+    _lastReactionNegatedBy: state._lastReactionNegatedBy ?? undefined,
     players: state.players.map((player) => ({
       name: player.name,
       nameStyle: player.nameStyle || {},
@@ -343,6 +376,13 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
       state.pendingReaction = payload.game.pendingReaction
         ? { ...payload.game.pendingReaction }
         : null;
+    }
+    // Sync attack negation flags for multiplayer trap resolution
+    if (payload.game._lastReactionNegatedAttack !== undefined) {
+      state._lastReactionNegatedAttack = payload.game._lastReactionNegatedAttack;
+    }
+    if (payload.game._lastReactionNegatedBy !== undefined) {
+      state._lastReactionNegatedBy = payload.game._lastReactionNegatedBy;
     }
     if (Array.isArray(payload.game.players)) {
       payload.game.players.forEach((playerSnapshot, index) => {

@@ -73,6 +73,9 @@ import { cleanupAI } from './ai/index.js';
 // Bug detection (for AI vs AI mode)
 import { getBugDetector } from './simulation/index.js';
 
+// Sound manager (for turn end animation sound)
+import { SoundManager } from './audio/soundManager.js';
+
 // Victory overlay (extracted module)
 import {
   showVictoryScreen,
@@ -358,6 +361,12 @@ let selectedHandCardId = null;
 let battleEffectsInitialized = false;
 let touchInitialized = false;
 let skipCombatConfirmationActive = false;
+
+// Track turn changes for flip animation (multiplayer)
+let lastKnownTurn = null;
+let localTurnAnimating = false;
+// Track hand sizes to detect remote card draws
+let lastKnownHandSizes = [0, 0];
 
 // Note: Lobby subscription state has been moved to ./network/lobbyManager.js
 // All lobby management is now centralized there
@@ -877,6 +886,43 @@ const updateIndicators = (state, controlsLocked) => {
   // Update new field turn button
   if (fieldTurnNumber) {
     fieldTurnNumber.textContent = `Turn ${state.turn}`;
+  }
+
+  // Detect remote turn change (opponent ended their turn) and play animation
+  if (
+    lastKnownTurn !== null &&
+    state.turn !== lastKnownTurn &&
+    !localTurnAnimating &&
+    isOnlineMode(state) &&
+    fieldTurnBtn
+  ) {
+    // Play turn end sound and animation for remote turn change
+    SoundManager.play('turnEnd');
+    fieldTurnBtn.classList.add('turn-flip');
+    setTimeout(() => {
+      fieldTurnBtn.classList.remove('turn-flip');
+      // Play draw sound after animation - a card was drawn at start of new turn
+      SoundManager.play('cardDraw');
+    }, 1500);
+  }
+  lastKnownTurn = state.turn;
+
+  // Track hand sizes for detecting remote draws (draws outside of turn change)
+  if (state.players) {
+    const currentHandSizes = state.players.map((p) => p.hand?.length ?? 0);
+    // Check if active player's hand increased (they drew a card)
+    const activeIdx = state.activePlayerIndex;
+    const localIdx = getLocalPlayerIndex(state);
+    if (
+      isOnlineMode(state) &&
+      activeIdx !== localIdx &&
+      currentHandSizes[activeIdx] > lastKnownHandSizes[activeIdx] &&
+      state.turn === lastKnownTurn // Not a turn change (those play sound above)
+    ) {
+      // Opponent drew a card mid-turn (e.g., from a card effect)
+      SoundManager.play('cardDraw');
+    }
+    lastKnownHandSizes = currentHandSizes;
   }
   if (fieldPhaseLabel) {
     // Show AI thinking indicator when deep search is running
@@ -1736,7 +1782,7 @@ const initCursorTracking = () => {
  * Initialize emote system - binds toggle button and panel interactions
  */
 const initEmoteSystem = (state) => {
-  const emoteToggleLeft = document.getElementById('emote-toggle');
+  const emoteToggleLeft = document.getElementById('emote-toggle-left');
   const emoteToggleRight = document.getElementById('emote-toggle-right');
   const emotePanel = document.getElementById('emote-panel');
   const emoteToggles = [emoteToggleLeft, emoteToggleRight].filter(Boolean);
@@ -2232,6 +2278,29 @@ const resolveAttack = (state, attacker, target, negateAttack = false, negatedBy 
 
     if (result) {
       // Effect needs UI interaction - resolve it then continue with attack
+      // onCancel is called if user clicks "Cancel" on selection panel (e.g., Electric Eel)
+      const continueAfterEffect = () => {
+        cleanupDestroyed(state);
+        // Check if attacker was destroyed by their own beforeCombat effect
+        if (attacker.currentHp <= 0) {
+          logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
+          markCreatureAttacked(attacker);
+          clearSelectionPanel();
+          state.broadcast?.(state);
+          return;
+        }
+        // Check if defender was destroyed by beforeCombat effect
+        if (target.type === 'creature' && target.card.currentHp <= 0) {
+          logMessage(state, `${target.card.name} is already destroyed.`);
+          markCreatureAttacked(attacker);
+          clearSelectionPanel();
+          state.broadcast?.(state);
+          return;
+        }
+        // Continue with the rest of resolveAttack logic
+        continueResolveAttack(state, attacker, target);
+      };
+
       resolveEffectChain(
         state,
         result,
@@ -2240,26 +2309,11 @@ const resolveAttack = (state, attacker, target, negateAttack = false, negatedBy 
           renderGame(state);
           broadcastSyncState(state);
         },
+        // onComplete - effect was applied, continue attack
+        continueAfterEffect,
+        // onCancel - user cancelled selection, still continue attack (effect skipped)
         () => {
-          // After beforeCombat effect resolves, continue with the actual attack
-          cleanupDestroyed(state);
-          // Check if attacker was destroyed by their own beforeCombat effect
-          if (attacker.currentHp <= 0) {
-            logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
-            markCreatureAttacked(attacker);
-            clearSelectionPanel(); // Clear any stale selection panels to prevent softlock
-            state.broadcast?.(state);
-            return;
-          }
-          // Check if defender was destroyed by beforeCombat effect
-          if (target.type === 'creature' && target.card.currentHp <= 0) {
-            logMessage(state, `${target.card.name} is already destroyed.`);
-            markCreatureAttacked(attacker);
-            clearSelectionPanel(); // Clear any stale selection panels to prevent softlock
-            state.broadcast?.(state);
-            return;
-          }
-          // Continue with the rest of resolveAttack logic
+          logMessage(state, `${attacker.name}'s before-combat effect was cancelled.`);
           continueResolveAttack(state, attacker, target);
         }
       );
@@ -2453,6 +2507,10 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
 
   const attackerIndex = state.players.indexOf(getActivePlayer(state));
 
+  // Capture instanceIds to re-lookup cards after sync (cards may be rehydrated as new objects)
+  const attackerInstanceId = attacker.instanceId;
+  const targetInstanceId = target.type === 'creature' ? target.card.instanceId : null;
+
   const windowCreated = createReactionWindow({
     state,
     event: TRIGGER_EVENTS.ATTACK_DECLARED,
@@ -2469,32 +2527,49 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
       state._lastReactionNegatedAttack = undefined;
       state._lastReactionNegatedBy = undefined;
 
+      // Re-lookup attacker from current state (may have been rehydrated after sync)
+      const attackerPlayer = state.players[attackerIndex];
+      const currentAttacker = attackerPlayer.field.find(
+        (c) => c && c.instanceId === attackerInstanceId
+      );
+
       // Check if attacker still exists and has HP
-      if (attacker.currentHp <= 0) {
-        logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
+      if (!currentAttacker || currentAttacker.currentHp <= 0) {
+        const attackerName = currentAttacker?.name || attacker.name;
+        logMessage(state, `${attackerName} is destroyed before the attack lands.`);
+        // Mark the current attacker if it exists (prevents re-attack after sync)
+        if (currentAttacker) {
+          markCreatureAttacked(currentAttacker);
+        }
         onUpdate?.();
         broadcastSyncState(state);
         return;
       }
 
       // Check if target creature still exists on field (may have been returned to hand by trap like Fly Off)
+      const defenderIndex = (attackerIndex + 1) % 2;
+      const defender = state.players[defenderIndex];
+
       if (target.type === 'creature') {
-        const defenderIndex = (attackerIndex + 1) % 2;
-        const defender = state.players[defenderIndex];
-        const targetStillOnField = defender.field.some(
-          (c) => c && c.instanceId === target.card.instanceId
+        const currentTarget = defender.field.find(
+          (c) => c && c.instanceId === targetInstanceId
         );
 
-        if (!targetStillOnField) {
-          logMessage(state, `${attacker.name}'s attack fizzles - target no longer on field.`);
-          markCreatureAttacked(attacker);
+        if (!currentTarget) {
+          logMessage(state, `${currentAttacker.name}'s attack fizzles - target no longer on field.`);
+          markCreatureAttacked(currentAttacker);
           onUpdate?.();
           broadcastSyncState(state);
           return;
         }
+
+        // Use current references for attack resolution
+        resolveAttack(state, currentAttacker, { type: 'creature', card: currentTarget }, wasNegated, negatedBy);
+      } else {
+        // Player target - use current attacker reference
+        resolveAttack(state, currentAttacker, target, wasNegated, negatedBy);
       }
 
-      resolveAttack(state, attacker, target, wasNegated, negatedBy);
       onUpdate?.();
       broadcastSyncState(state);
     },
@@ -3302,6 +3377,27 @@ const updateActionBar = (onNextPhase, state) => {
         if (phaseLabel) phaseLabel.style.display = '';
         const skipText = fieldTurnBtn.querySelector('.skip-combat-text');
         if (skipText) skipText.style.display = 'none';
+      }
+    }
+
+    // If ending turn in multiplayer, play flip animation before proceeding
+    if (state.phase === 'End' && isOnlineMode(state)) {
+      const fieldTurnBtn = document.getElementById('field-turn-btn');
+      if (fieldTurnBtn) {
+        // Mark that we're doing a local animation (to prevent double-animation on state update)
+        localTurnAnimating = true;
+        // Play turn end sound immediately
+        SoundManager.play('turnEnd');
+        // Start flip animation
+        fieldTurnBtn.classList.add('turn-flip');
+        fieldTurnBtn.disabled = true;
+        // Wait for animation to complete, then proceed
+        setTimeout(() => {
+          fieldTurnBtn.classList.remove('turn-flip');
+          localTurnAnimating = false;
+          onNextPhase();
+        }, 1500);
+        return;
       }
     }
 

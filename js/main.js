@@ -19,11 +19,15 @@ import { initializeAI, cleanupAI, checkAndTriggerAITurn } from './ai/index.js';
 import { generateAIvsAIDecks } from './ui/overlays/DeckBuilderOverlay.js';
 import { isSelectionActive } from './ui/components/index.js';
 import { onActionExecuted as simOnActionExecuted } from './simulation/index.js';
+import { SoundManager } from './audio/soundManager.js';
 
 // Initialize the card registry (loads JSON card data)
 initializeCardRegistry();
 
 const state = createGameState();
+
+// Initialize sound manager for multiplayer audio
+SoundManager.init(() => state);
 
 const checkWinCondition = () => {
   if (state.winner) return; // Already have a winner
