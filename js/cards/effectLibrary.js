@@ -3882,6 +3882,383 @@ export const drawThenDiscard =
   };
 
 // ============================================================================
+// INSECT EFFECTS (Experimental)
+// ============================================================================
+
+/**
+ * Increment emerge counter and transform when ready
+ * Used by larvae that metamorphose over time
+ * @param {number} turnsRequired - Turns needed to transform
+ * @param {string} transformInto - Token ID to transform into
+ */
+export const incrementEmergeCounter =
+  (turnsRequired, transformInto) =>
+  ({ log, creature }) => {
+    if (!creature) return {};
+
+    // Initialize or increment counter
+    creature.emergeCounter = (creature.emergeCounter || 0) + 1;
+    log(`${creature.name} grows... (${creature.emergeCounter}/${turnsRequired})`);
+
+    if (creature.emergeCounter >= turnsRequired) {
+      log(`${creature.name} emerges!`);
+      return { transformCard: { card: creature, newCardData: transformInto } };
+    }
+
+    return {};
+  };
+
+/**
+ * Transform if creature survives combat (for defensive metamorphosis)
+ * @param {string} transformInto - Token ID to transform into
+ */
+export const transformIfSurvives =
+  (transformInto) =>
+  ({ log, creature }) => {
+    if (!creature || creature.hp <= 0) return {};
+
+    log(`${creature.name} survives and transforms!`);
+    return { transformCard: { card: creature, newCardData: transformInto } };
+  };
+
+/**
+ * Silence (remove abilities from) all enemy creatures
+ * Like cicada swarm drowning out communication
+ */
+export const silenceAllEnemies = () => (context) => {
+  const { log, opponent, opponentIndex } = context;
+  const targets = opponent.field.filter((c) => c && isCreatureCard(c));
+
+  if (targets.length === 0) {
+    log(`No enemies to silence.`);
+    return {};
+  }
+
+  log(`All enemy creatures are silenced!`);
+  return { removeAbilitiesFromAll: { creatures: targets, ownerIndex: opponentIndex } };
+};
+
+/**
+ * Infest an enemy creature - when it dies, spawn a token
+ * Used by parasitic wasps
+ * @param {string} spawnOnDeath - Token ID to spawn when infested creature dies
+ */
+export const infestEnemy =
+  (spawnOnDeath) =>
+  (context) => {
+    const { log, opponent, playerIndex, state, creature: caster, opponentIndex } = context;
+    let targets = opponent.field.filter(
+      (c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)
+    );
+    targets = filterForLure(targets);
+
+    if (targets.length === 0) {
+      log(`No enemies to infest.`);
+      return {};
+    }
+
+    return makeTargetedSelection({
+      title: 'Choose an enemy creature to infest',
+      candidates: targets.map((t) => ({ label: t.name, value: t })),
+      onSelect: (target) => {
+        log(`${target.name} is infested!`);
+        // Mark the creature as infested
+        target.infested = { byPlayer: playerIndex, spawnToken: spawnOnDeath };
+        return {};
+      },
+    });
+  };
+
+/**
+ * Destroy a random enemy token
+ * Predator hunting behavior
+ */
+export const destroyEnemyToken = () => (context) => {
+  const { log, opponent, opponentIndex, state } = context;
+  const tokens = opponent.field.filter((c) => c && c.isToken);
+
+  if (tokens.length === 0) {
+    log(`No enemy tokens to destroy.`);
+    return {};
+  }
+
+  const randomIndex = seededRandomInt(state, 0, tokens.length - 1);
+  const target = tokens[randomIndex];
+  log(`${target.name} is destroyed!`);
+  return { destroyCreatures: { creatures: [target], ownerIndex: opponentIndex } };
+};
+
+/**
+ * Destroy an enemy creature with HP at or below threshold
+ * Like antlion catching weak prey
+ * @param {number} maxHp - Maximum HP of creatures that can be destroyed
+ */
+export const destroyCreatureWithLowHp =
+  (maxHp) =>
+  (context) => {
+    const { log, opponent, opponentIndex, state, creature: caster } = context;
+    let targets = opponent.field.filter(
+      (c) => c && isCreatureCard(c) && c.hp <= maxHp && canTargetWithAbility(c, caster, state)
+    );
+    targets = filterForLure(targets);
+
+    if (targets.length === 0) {
+      log(`No valid targets with ${maxHp} HP or less.`);
+      return {};
+    }
+
+    return makeTargetedSelection({
+      title: `Choose an enemy with ${maxHp} HP or less to destroy`,
+      candidates: targets.map((t) => ({ label: `${t.name} (${t.hp} HP)`, value: t })),
+      onSelect: (target) => {
+        log(`${target.name} is destroyed!`);
+        return { destroyCreatures: { creatures: [target], ownerIndex: opponentIndex } };
+      },
+    });
+  };
+
+/**
+ * Deal bonus damage based on number of friendly creatures attacking
+ * Swarm attack behavior
+ * @param {number} bonusPerAttacker - Bonus damage per attacker
+ */
+export const bonusDamagePerAttacker =
+  (bonusPerAttacker) =>
+  ({ log, player, creature }) => {
+    if (!creature) return {};
+
+    // Count creatures that attacked this turn (excluding self)
+    const attackers = player.field.filter(
+      (c) => c && c !== creature && c.hasAttackedThisTurn
+    ).length;
+
+    if (attackers === 0) {
+      log(`No swarm bonus (attack alone).`);
+      return {};
+    }
+
+    const bonus = attackers * bonusPerAttacker;
+    log(`Swarm bonus: +${bonus} damage from ${attackers} allies!`);
+    return { bonusCombatDamage: bonus };
+  };
+
+/**
+ * Force all friendly creatures to attack
+ * Pheromone frenzy behavior
+ */
+export const forceAllFriendlyAttack = () => (context) => {
+  const { log, player, playerIndex } = context;
+  const creatures = player.field.filter(
+    (c) => c && isCreatureCard(c) && !c.hasAttackedThisTurn && !c.summoningSickness
+  );
+
+  if (creatures.length === 0) {
+    log(`No creatures ready to attack.`);
+    return {};
+  }
+
+  log(`All friendly creatures are driven to attack!`);
+  return { forceAttack: { playerIndex, creatures } };
+};
+
+/**
+ * Destroy self at end of turn
+ * Short-lived creatures like mayflies
+ */
+export const destroySelf = () => (context) => {
+  const { log, creature, playerIndex } = context;
+  if (!creature) return {};
+
+  log(`${creature.name} dies.`);
+  return { destroyCreatures: { creatures: [creature], ownerIndex: playerIndex } };
+};
+
+/**
+ * Deal damage to a random enemy prey
+ * Predatory hunting instinct
+ * @param {number} amount - Damage amount
+ */
+export const damageRandomEnemyPrey =
+  (amount) =>
+  (context) => {
+    const { log, opponent, state } = context;
+    const preys = opponent.field.filter(
+      (c) => c && (c.type === 'Prey' || c.type === 'prey')
+    );
+
+    if (preys.length === 0) {
+      log(`No enemy prey to damage.`);
+      return {};
+    }
+
+    const randomIndex = seededRandomInt(state, 0, preys.length - 1);
+    const target = preys[randomIndex];
+    log(`Deals ${amount} damage to ${target.name}!`);
+    return { damageCreature: { creature: target, amount, sourceLabel: 'sting' } };
+  };
+
+/**
+ * Survive lethal damage with 1 HP (once per game)
+ * Cockroach resilience
+ * @param {boolean} oncePerGame - If true, only triggers once
+ */
+export const surviveWithOneHp =
+  (oncePerGame = true) =>
+  ({ log, creature }) => {
+    if (!creature) return {};
+
+    // Check if already used
+    if (oncePerGame && creature.survivedOnce) {
+      return {};
+    }
+
+    if (creature.hp <= 0) {
+      creature.hp = 1;
+      if (oncePerGame) {
+        creature.survivedOnce = true;
+      }
+      log(`${creature.name} refuses to die!`);
+      return { preventDeath: creature };
+    }
+
+    return {};
+  };
+
+/**
+ * Draw cards based on friendly creature count
+ * Colony intelligence
+ * @param {number} maxDraw - Maximum cards to draw
+ */
+export const drawPerFriendlyCreature =
+  (maxDraw) =>
+  ({ log, player }) => {
+    const creatureCount = player.field.filter((c) => c && isCreatureCard(c)).length;
+    const drawCount = Math.min(creatureCount, maxDraw);
+
+    if (drawCount === 0) {
+      log(`No creatures on field.`);
+      return {};
+    }
+
+    log(`Draws ${drawCount} card${drawCount > 1 ? 's' : ''} for ${creatureCount} creature${creatureCount > 1 ? 's' : ''}.`);
+    return { draw: drawCount };
+  };
+
+/**
+ * Transform all larvae into their adult forms immediately
+ * Accelerated metamorphosis
+ */
+export const transformAllLarvaeImmediately = () => (context) => {
+  const { log, player, playerIndex } = context;
+
+  // Find all creatures with emerge counters (larvae)
+  const larvae = player.field.filter((c) => c && c.effects?.onEnd?.params?.transformInto);
+
+  if (larvae.length === 0) {
+    log(`No larvae to transform.`);
+    return {};
+  }
+
+  const transformations = [];
+  for (const larva of larvae) {
+    const transformInto = larva.effects.onEnd.params.transformInto;
+    log(`${larva.name} instantly emerges!`);
+    transformations.push({ card: larva, newCardData: transformInto });
+  }
+
+  return { transformMultiple: { transforms: transformations, playerIndex } };
+};
+
+/**
+ * Steal a random card from opponent's hand
+ * Kleptoparasitism
+ */
+export const stealRandomCardFromHand = () => (context) => {
+  const { log, opponent, playerIndex, state } = context;
+
+  if (opponent.hand.length === 0) {
+    log(`Opponent has no cards to steal.`);
+    return {};
+  }
+
+  const randomIndex = seededRandomInt(state, 0, opponent.hand.length - 1);
+  const stolen = opponent.hand[randomIndex];
+
+  log(`Steals ${stolen.name} from opponent's hand!`);
+  return { stealCard: { card: stolen, toPlayer: playerIndex } };
+};
+
+/**
+ * Take control of an enemy prey creature
+ * Mind control (jewel wasp style)
+ */
+export const takeControlOfEnemyPrey = () => (context) => {
+  const { log, opponent, playerIndex, state, creature: caster, opponentIndex } = context;
+  let targets = opponent.field.filter(
+    (c) =>
+      c &&
+      (c.type === 'Prey' || c.type === 'prey') &&
+      canTargetWithAbility(c, caster, state)
+  );
+  targets = filterForLure(targets);
+
+  if (targets.length === 0) {
+    log(`No enemy prey to control.`);
+    return {};
+  }
+
+  return makeTargetedSelection({
+    title: 'Choose an enemy prey to take control of',
+    candidates: targets.map((t) => ({ label: t.name, value: t })),
+    onSelect: (target) => {
+      log(`Takes control of ${target.name}!`);
+      return { stealCreature: { creature: target, fromPlayer: opponentIndex, toPlayer: playerIndex } };
+    },
+  });
+};
+
+/**
+ * Return a card from discard pile to deck
+ * Recycling/decomposition
+ */
+export const returnCardFromDiscardToDeck = () => (context) => {
+  const { log, player, playerIndex } = context;
+
+  if (!player.discardPile || player.discardPile.length === 0) {
+    log(`No cards in discard pile.`);
+    return {};
+  }
+
+  const cards = sortCardsForSelection([...player.discardPile]);
+
+  return makeTargetedSelection({
+    title: 'Choose a card to return to your deck',
+    candidates: cards.map((c) => ({ label: c.name, value: c, card: c })),
+    renderCards: true,
+    onSelect: (card) => {
+      log(`Returns ${card.name} to deck.`);
+      return { returnToDeck: { card, playerIndex } };
+    },
+  });
+};
+
+/**
+ * Apply poison to the attacker (trap effect)
+ * Defensive toxin
+ */
+export const applyPoisonToAttacker = () => (context) => {
+  const { log, attacker } = context;
+
+  if (!attacker) {
+    log(`No attacker to poison.`);
+    return {};
+  }
+
+  log(`${attacker.name} is poisoned!`);
+  return { applyPoison: { creature: attacker } };
+};
+
+// ============================================================================
 // EFFECT REGISTRY
 // ============================================================================
 
@@ -4052,6 +4429,25 @@ export const effectRegistry = {
   freezeAttacker,
   damageEnemiesAfterCombat,
   eatPreyInsteadOfAttacking,
+
+  // Insect effects (Experimental)
+  incrementEmergeCounter,
+  transformIfSurvives,
+  silenceAllEnemies,
+  infestEnemy,
+  destroyEnemyToken,
+  destroyCreatureWithLowHp,
+  bonusDamagePerAttacker,
+  forceAllFriendlyAttack,
+  destroySelf,
+  damageRandomEnemyPrey,
+  surviveWithOneHp,
+  drawPerFriendlyCreature,
+  transformAllLarvaeImmediately,
+  stealRandomCardFromHand,
+  takeControlOfEnemyPrey,
+  returnCardFromDiscardToDeck,
+  applyPoisonToAttacker,
 };
 
 // ============================================================================
@@ -4525,6 +4921,58 @@ export const resolveEffect = (effectDef, context) => {
       specificEffect = effectFn();
       break;
     case 'buffHpPerShell':
+      specificEffect = effectFn();
+      break;
+    // Insect effects (Experimental)
+    case 'incrementEmergeCounter':
+      specificEffect = effectFn(params.turnsRequired, params.transformInto);
+      break;
+    case 'transformIfSurvives':
+      specificEffect = effectFn(params.transformInto);
+      break;
+    case 'silenceAllEnemies':
+      specificEffect = effectFn();
+      break;
+    case 'infestEnemy':
+      specificEffect = effectFn(params.spawnOnDeath);
+      break;
+    case 'destroyEnemyToken':
+      specificEffect = effectFn();
+      break;
+    case 'destroyCreatureWithLowHp':
+      specificEffect = effectFn(params.maxHp);
+      break;
+    case 'bonusDamagePerAttacker':
+      specificEffect = effectFn(params.bonusPerAttacker);
+      break;
+    case 'forceAllFriendlyAttack':
+      specificEffect = effectFn();
+      break;
+    case 'destroySelf':
+      specificEffect = effectFn();
+      break;
+    case 'damageRandomEnemyPrey':
+      specificEffect = effectFn(params.amount);
+      break;
+    case 'surviveWithOneHp':
+      specificEffect = effectFn(params.oncePerGame);
+      break;
+    case 'drawPerFriendlyCreature':
+      specificEffect = effectFn(params.maxDraw);
+      break;
+    case 'transformAllLarvaeImmediately':
+      specificEffect = effectFn();
+      break;
+    case 'stealRandomCardFromHand':
+      specificEffect = effectFn();
+      break;
+    case 'takeControlOfEnemyPrey':
+      specificEffect = effectFn();
+      break;
+    case 'returnCardFromDiscardToDeck':
+      specificEffect = effectFn();
+      break;
+    case 'applyPoisonToAttacker':
       specificEffect = effectFn();
       break;
     default:

@@ -103,6 +103,7 @@ const getCardCategory = (cardId) => {
   if (cardId.startsWith('mammal-')) return 'mammal';
   if (cardId.startsWith('reptile-')) return 'reptile';
   if (cardId.startsWith('amphibian-')) return 'amphibian';
+  if (cardId.startsWith('insect-')) return 'insect';
   return 'other';
 };
 
@@ -152,7 +153,7 @@ const renderCollectionCard = (card, ownedRarity, onClick) => {
 const RARITY_ORDER = { pristine: 5, legendary: 4, rare: 3, uncommon: 2, common: 1 };
 
 // Class order for sorting
-const CLASS_ORDER = { fish: 1, bird: 2, mammal: 3, reptile: 4, amphibian: 5, other: 6 };
+const CLASS_ORDER = { fish: 1, bird: 2, mammal: 3, reptile: 4, amphibian: 5, insect: 6, other: 7 };
 
 /**
  * Render the card collection grid
