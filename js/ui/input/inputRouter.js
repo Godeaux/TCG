@@ -295,7 +295,11 @@ const getNavigationElements = () => ({
   otherMultiplayer: document.getElementById('other-multiplayer'),
   otherTutorial: document.getElementById('other-tutorial'),
   otherOptions: document.getElementById('other-options'),
+  otherCredits: document.getElementById('other-credits'),
   otherBack: document.getElementById('other-back'),
+
+  // Credits overlay elements
+  creditsBack: document.getElementById('credits-back'),
 
   // Options overlay elements
   optionsSoundVolume: document.getElementById('options-sound-volume'),
@@ -519,6 +523,24 @@ const initNavigation = () => {
 
   // Options: Back button
   elements.optionsBack?.addEventListener('click', () => {
+    if (!latestState) {
+      return;
+    }
+    setMenuStage(latestState, 'other');
+    latestCallbacks.onUpdate?.();
+  });
+
+  // Other submenu: Credits
+  elements.otherCredits?.addEventListener('click', () => {
+    if (!latestState) {
+      return;
+    }
+    setMenuStage(latestState, 'credits');
+    latestCallbacks.onUpdate?.();
+  });
+
+  // Credits: Back button
+  elements.creditsBack?.addEventListener('click', () => {
     if (!latestState) {
       return;
     }

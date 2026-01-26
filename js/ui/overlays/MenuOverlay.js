@@ -81,6 +81,7 @@ const getMenuElements = () => ({
   tutorialOverlay: document.getElementById('tutorial-overlay'),
   aiSetupOverlay: document.getElementById('ai-setup-overlay'),
   optionsOverlay: document.getElementById('options-overlay'),
+  creditsOverlay: document.getElementById('credits-overlay'),
 
   // Options elements
   optionsSoundVolume: document.getElementById('options-sound-volume'),
@@ -187,6 +188,7 @@ export const renderMenuOverlays = (state, callbacks) => {
   const showTutorial = stage === 'tutorial';
   const showAISetup = stage === 'ai-setup';
   const showOptions = stage === 'options';
+  const showCredits = stage === 'credits';
 
   // Toggle overlay visibility
   elements.menuOverlay?.classList.toggle('active', showMain);
@@ -209,6 +211,9 @@ export const renderMenuOverlays = (state, callbacks) => {
 
   elements.optionsOverlay?.classList.toggle('active', showOptions);
   elements.optionsOverlay?.setAttribute('aria-hidden', showOptions ? 'false' : 'true');
+
+  elements.creditsOverlay?.classList.toggle('active', showCredits);
+  elements.creditsOverlay?.setAttribute('aria-hidden', showCredits ? 'false' : 'true');
 
   // Initialize options slider when shown
   if (showOptions) {
@@ -459,6 +464,7 @@ export const hideAllMenuOverlays = () => {
   elements.tutorialOverlay?.classList.remove('active');
   elements.aiSetupOverlay?.classList.remove('active');
   elements.optionsOverlay?.classList.remove('active');
+  elements.creditsOverlay?.classList.remove('active');
 
   elements.menuOverlay?.setAttribute('aria-hidden', 'true');
   elements.otherMenuOverlay?.setAttribute('aria-hidden', 'true');
@@ -467,4 +473,5 @@ export const hideAllMenuOverlays = () => {
   elements.tutorialOverlay?.setAttribute('aria-hidden', 'true');
   elements.aiSetupOverlay?.setAttribute('aria-hidden', 'true');
   elements.optionsOverlay?.setAttribute('aria-hidden', 'true');
+  elements.creditsOverlay?.setAttribute('aria-hidden', 'true');
 };

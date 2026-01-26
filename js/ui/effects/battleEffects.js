@@ -556,13 +556,11 @@ export const playHealEffect = (effect, state) => {
 
 /**
  * Play card play visual effect
- * Plays a slam sound based on the card's cost
+ * Plays a slam sound based on whether the card is a predator or prey
  */
 export const playCardPlayEffect = (effect, state) => {
-  const cost = effect.cost || 0;
-
-  // Heavy slam for 5+ cost, regular slam otherwise
-  if (cost >= 5) {
+  // Heavy slam for predators, regular slam for prey
+  if (effect.cardType === 'Predator') {
     SoundManager.play('cardSlamHeavy');
   } else {
     SoundManager.play('cardSlam');
@@ -576,9 +574,13 @@ export const playCardPlayEffect = (effect, state) => {
 /**
  * Play creature death visual effect
  * Plays a death sound when a creature dies
+ * Delayed to sync with attack impact timing
  */
 export const playCreatureDeathEffect = (effect, state) => {
-  SoundManager.play('creatureDeath');
+  // Delay to sync with attack animation impact (~380ms into 420ms attack)
+  setTimeout(() => {
+    SoundManager.play('creatureDeath');
+  }, 380);
 };
 
 // ============================================================================

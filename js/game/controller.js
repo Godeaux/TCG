@@ -394,7 +394,7 @@ export class GameController {
     queueVisualEffect(this.state, {
       type: 'cardPlay',
       cardId: creatureInstance.instanceId,
-      cost: creatureInstance.cost || 0,
+      cardType: creatureInstance.type,
       ownerIndex: playerIndex,
       slotIndex,
     });

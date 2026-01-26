@@ -5170,6 +5170,60 @@ button {
   text-align: right;
 }
 
+/* Credits overlay */
+.credits-overlay .credits-card {
+  width: min(420px, 100%);
+}
+
+.credits-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+}
+
+.credits-role {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.credits-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.credits-title {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.credits-name {
+  font-size: var(--font-lg);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.credits-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.credits-list li {
+  font-size: var(--font-base);
+  color: var(--text-primary);
+}
+
 .tutorial-card {
   width: 100%;
   height: 100%;
