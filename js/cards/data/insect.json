@@ -1,0 +1,1038 @@
+{
+  "meta": {
+    "deckName": "Insect",
+    "deckEmoji": "🦋",
+    "deckColor": "#7CB342",
+    "status": "experimental",
+    "description": "Insects grow, transform, and overwhelm. Weak larvae become powerful adults through metamorphosis. Colonies of ants and bees work together. Each insect brings a unique ability inspired by real-world behavior."
+  },
+  "tokens": [
+    {
+      "id": "token-monarch-butterfly",
+      "name": "Monarch Butterfly",
+      "type": "Prey",
+      "atk": 3,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": ["Evasive"],
+      "tribe": "Insect",
+      "effects": {
+        "onEnd": { "type": "returnToHand", "params": { "target": "self" } }
+      },
+      "isToken": true
+    },
+    {
+      "id": "token-hercules-beetle",
+      "name": "Hercules Beetle",
+      "type": "Predator",
+      "atk": 4,
+      "hp": 3,
+      "keywords": ["Unstoppable"],
+      "tribe": "Insect",
+      "isToken": true
+    },
+    {
+      "id": "token-dragonfly",
+      "name": "Dragonfly",
+      "type": "Prey",
+      "atk": 3,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": ["Evasive", "Acuity"],
+      "tribe": "Insect",
+      "effects": {
+        "onAttack": { "type": "damageRandomEnemyPrey", "params": { "amount": 1 } }
+      },
+      "isToken": true
+    },
+    {
+      "id": "token-cicada-swarm",
+      "name": "Cicada Swarm",
+      "type": "Prey",
+      "atk": 4,
+      "hp": 4,
+      "nutrition": 2,
+      "keywords": [],
+      "tribe": "Insect",
+      "effects": {
+        "onPlay": { "type": "silenceAllEnemies", "params": {} }
+      },
+      "isToken": true
+    },
+    {
+      "id": "token-luna-moth",
+      "name": "Luna Moth",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 3,
+      "nutrition": 1,
+      "keywords": ["Evasive", "Invisible"],
+      "tribe": "Insect",
+      "isToken": true
+    },
+    {
+      "id": "token-atlas-moth",
+      "name": "Atlas Moth",
+      "type": "Prey",
+      "atk": 0,
+      "hp": 6,
+      "nutrition": 2,
+      "keywords": ["Passive", "Barrier"],
+      "tribe": "Insect",
+      "effects": {
+        "onSlain": { "type": "buffStats", "params": { "targetType": "all-friendly", "stats": { "attack": 2, "health": 0 } } }
+      },
+      "isToken": true
+    },
+    {
+      "id": "token-worker-ant",
+      "name": "Worker Ant",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 0,
+      "keywords": [],
+      "tribe": "Insect",
+      "isToken": true
+    },
+    {
+      "id": "token-soldier-ant",
+      "name": "Soldier Ant",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "isToken": true
+    },
+    {
+      "id": "token-wasp-larva",
+      "name": "Wasp Larva",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "isToken": true
+    },
+    {
+      "id": "token-honeycomb",
+      "name": "Honeycomb",
+      "type": "Free Spell",
+      "effects": {
+        "effect": { "type": "heal", "params": { "amount": 2 } }
+      },
+      "isToken": true
+    },
+    {
+      "id": "token-leaf-fragment",
+      "name": "Leaf Fragment",
+      "type": "Free Spell",
+      "effects": {
+        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-creatures", "title": "Choose a creature to buff", "effect": { "buff": { "attack": 0, "health": 1 } } } }
+      },
+      "isToken": true
+    },
+    {
+      "id": "token-silk-thread",
+      "name": "Silk Thread",
+      "type": "Free Spell",
+      "effects": {
+        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-creatures", "title": "Choose a creature to protect", "effect": { "keyword": "Barrier" } } }
+      },
+      "isToken": true
+    },
+    {
+      "id": "token-firefly-light",
+      "name": "Firefly Light",
+      "type": "Free Spell",
+      "effects": {
+        "effect": { "type": "draw", "params": { "count": 1 } }
+      },
+      "isToken": true
+    },
+    {
+      "id": "token-insect-swarm",
+      "name": "Insect Swarm",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 0,
+      "keywords": [],
+      "tribe": "Insect",
+      "effects": {
+        "onSlain": { "type": "damageRival", "params": { "amount": 1 } }
+      },
+      "isToken": true
+    },
+    {
+      "id": "token-dung-ball",
+      "name": "Dung Ball",
+      "type": "Free Spell",
+      "effects": {
+        "effect": { "type": "returnCardFromDiscardToDeck", "params": {} }
+      },
+      "isToken": true
+    }
+  ],
+  "cards": [
+    {
+      "_comment": "=== METAMORPHOSIS CARDS - Larvae that transform into powerful adults ===",
+      "id": "insect-prey-monarch-caterpillar",
+      "name": "Monarch Caterpillar",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "summons": ["token-monarch-butterfly"],
+      "effects": {
+        "onEnd": { "type": "incrementEmergeCounter", "params": { "turnsRequired": 2, "transformInto": "token-monarch-butterfly" } }
+      }
+    },
+    {
+      "id": "insect-prey-beetle-grub",
+      "name": "Beetle Grub",
+      "type": "Prey",
+      "atk": 0,
+      "hp": 3,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "summons": ["token-hercules-beetle"],
+      "effects": {
+        "onDefend": { "type": "transformIfSurvives", "params": { "transformInto": "token-hercules-beetle" } }
+      }
+    },
+    {
+      "id": "insect-prey-dragonfly-nymph",
+      "name": "Dragonfly Nymph",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "summons": ["token-dragonfly"],
+      "effects": {
+        "onFriendlySpellPlayed": { "type": "transformCard", "params": { "targetType": "self", "newCardId": "token-dragonfly" } }
+      }
+    },
+    {
+      "id": "insect-prey-periodical-cicada",
+      "name": "Periodical Cicada",
+      "type": "Prey",
+      "atk": 0,
+      "hp": 2,
+      "nutrition": 0,
+      "keywords": ["Immune"],
+      "tribe": "Insect",
+      "summons": ["token-cicada-swarm"],
+      "effects": {
+        "onEnd": { "type": "incrementEmergeCounter", "params": { "turnsRequired": 4, "transformInto": "token-cicada-swarm" } }
+      }
+    },
+    {
+      "id": "insect-prey-luna-moth-caterpillar",
+      "name": "Luna Moth Caterpillar",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "summons": ["token-luna-moth"],
+      "effects": {
+        "onPlay": { "type": "revealHand", "params": {} },
+        "onEnd": { "type": "incrementEmergeCounter", "params": { "turnsRequired": 2, "transformInto": "token-luna-moth" } }
+      }
+    },
+    {
+      "id": "insect-prey-atlas-moth-caterpillar",
+      "name": "Atlas Moth Caterpillar",
+      "type": "Prey",
+      "atk": 0,
+      "hp": 4,
+      "nutrition": 1,
+      "keywords": ["Passive"],
+      "tribe": "Insect",
+      "summons": ["token-atlas-moth"],
+      "effects": {
+        "onFriendlyCreatureDies": { "type": "transformCard", "params": { "targetType": "self", "newCardId": "token-atlas-moth" } }
+      }
+    },
+    {
+      "_comment": "=== ANT COLONY - Work together, swarm tactics ===",
+      "id": "insect-prey-queen-ant",
+      "name": "Queen Ant",
+      "type": "Prey",
+      "atk": 0,
+      "hp": 6,
+      "nutrition": 2,
+      "keywords": ["Passive"],
+      "tribe": "Insect",
+      "summons": ["token-worker-ant"],
+      "effects": {
+        "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-worker-ant"] } }
+      }
+    },
+    {
+      "id": "insect-prey-leafcutter-ant",
+      "name": "Leafcutter Ant",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "summons": ["token-leaf-fragment"],
+      "effects": {
+        "onEnd": { "type": "addToHand", "params": { "cardId": "token-leaf-fragment" } }
+      }
+    },
+    {
+      "id": "insect-prey-fire-ant",
+      "name": "Fire Ant",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 0,
+      "keywords": [],
+      "tribe": "Insect",
+      "effects": {
+        "onAttack": { "type": "bonusDamagePerAttacker", "params": { "bonusPerAttacker": 1 } }
+      }
+    },
+    {
+      "id": "insect-prey-army-ant",
+      "name": "Army Ant",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Haste"],
+      "tribe": "Insect",
+      "effects": {
+        "onPlay": { "type": "forceAllFriendlyAttack", "params": {} }
+      }
+    },
+    {
+      "id": "insect-prey-bullet-ant",
+      "name": "Bullet Ant",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "effects": {
+        "onSlain": { "type": "damageRival", "params": { "amount": 3 } }
+      }
+    },
+    {
+      "id": "insect-prey-carpenter-ant",
+      "name": "Carpenter Ant",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 3,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "summons": ["token-soldier-ant"],
+      "effects": {
+        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["token-soldier-ant"] } }
+      }
+    },
+    {
+      "id": "insect-prey-weaver-ant",
+      "name": "Weaver Ant",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Free Play"],
+      "tribe": "Insect",
+      "summons": ["token-silk-thread"],
+      "effects": {
+        "onPlay": { "type": "addToHand", "params": { "cardId": "token-silk-thread" } }
+      }
+    },
+    {
+      "_comment": "=== BEE COLONY - Buffs and healing through pollination ===",
+      "id": "insect-prey-honeybee",
+      "name": "Honeybee",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "effects": {
+        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-creatures", "title": "Choose a creature to pollinate", "effect": { "buff": { "attack": 0, "health": 1 } } } },
+        "onSlain": { "type": "damageAttacker", "params": { "amount": 1 } }
+      }
+    },
+    {
+      "id": "insect-prey-bumblebee",
+      "name": "Bumblebee",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "effects": {
+        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-creatures", "title": "Choose a creature to buff", "effect": { "buff": { "attack": 1, "health": 1 } } } }
+      }
+    },
+    {
+      "id": "insect-prey-queen-bee",
+      "name": "Queen Bee",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 4,
+      "nutrition": 2,
+      "keywords": ["Passive"],
+      "tribe": "Insect",
+      "summons": ["token-honeycomb"],
+      "effects": {
+        "onEnd": { "type": "addToHand", "params": { "cardId": "token-honeycomb" } }
+      }
+    },
+    {
+      "id": "insect-prey-killer-bee",
+      "name": "Killer Bee",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Haste"],
+      "tribe": "Insect",
+      "effects": {
+        "onSlain": { "type": "damageAllEnemyCreatures", "params": { "amount": 1 } }
+      }
+    },
+    {
+      "id": "insect-prey-orchid-bee",
+      "name": "Orchid Bee",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Free Play"],
+      "tribe": "Insect",
+      "effects": {
+        "onPlay": { "type": "heal", "params": { "amount": 2 } }
+      }
+    },
+    {
+      "_comment": "=== UNIQUE BEHAVIOR CARDS - Each insect does something special ===",
+      "id": "insect-prey-bombardier-beetle",
+      "name": "Bombardier Beetle",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "effects": {
+        "onDefend": { "type": "damageCreature", "params": { "targetType": "attacker", "amount": 2, "sourceLabel": "chemical spray" } }
+      }
+    },
+    {
+      "id": "insect-prey-dung-beetle",
+      "name": "Dung Beetle",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 3,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "summons": ["token-dung-ball"],
+      "effects": {
+        "onPlay": { "type": "addToHand", "params": { "cardId": "token-dung-ball" } }
+      }
+    },
+    {
+      "id": "insect-prey-firefly",
+      "name": "Firefly",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "summons": ["token-firefly-light"],
+      "effects": {
+        "onEnd": { "type": "addToHand", "params": { "cardId": "token-firefly-light" } }
+      }
+    },
+    {
+      "id": "insect-prey-glowworm",
+      "name": "Glowworm",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Lure"],
+      "tribe": "Insect",
+      "effects": {
+        "onSlain": { "type": "draw", "params": { "count": 1 } }
+      }
+    },
+    {
+      "id": "insect-prey-walking-stick",
+      "name": "Walking Stick",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 3,
+      "nutrition": 1,
+      "keywords": ["Hidden"],
+      "tribe": "Insect"
+    },
+    {
+      "id": "insect-prey-leaf-insect",
+      "name": "Leaf Insect",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": ["Hidden", "Invisible"],
+      "tribe": "Insect"
+    },
+    {
+      "id": "insect-prey-cockroach",
+      "name": "Cockroach",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "effects": {
+        "onSlain": { "type": "surviveWithOneHp", "params": { "oncePerGame": true } }
+      }
+    },
+    {
+      "id": "insect-prey-death-watch-beetle",
+      "name": "Death-Watch Beetle",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "effects": {
+        "onEnd": { "type": "damageRandomEnemy", "params": { "amount": 1 } }
+      }
+    },
+    {
+      "id": "insect-prey-jewel-beetle",
+      "name": "Jewel Beetle",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "effects": {
+        "onSlain": { "type": "draw", "params": { "count": 2 } }
+      }
+    },
+    {
+      "id": "insect-prey-click-beetle",
+      "name": "Click Beetle",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "effects": {
+        "onDefend": { "type": "returnToHand", "params": { "target": "self" } }
+      }
+    },
+    {
+      "id": "insect-prey-stink-bug",
+      "name": "Stink Bug",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": ["Inedible"],
+      "tribe": "Insect",
+      "effects": {
+        "onSlain": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to weaken", "effect": { "buff": { "attack": -2, "health": 0 } } } }
+      }
+    },
+    {
+      "id": "insect-prey-assassin-bug",
+      "name": "Assassin Bug",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "effects": {
+        "onPlay": { "type": "destroyCreatureWithLowHp", "params": { "maxHp": 2 } }
+      }
+    },
+    {
+      "id": "insect-prey-mosquito",
+      "name": "Mosquito",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 0,
+      "keywords": ["Evasive"],
+      "tribe": "Insect",
+      "effects": {
+        "onAfterCombat": { "type": "heal", "params": { "amount": 1 } }
+      }
+    },
+    {
+      "id": "insect-prey-horsefly",
+      "name": "Horsefly",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Haste", "Evasive"],
+      "tribe": "Insect"
+    },
+    {
+      "id": "insect-prey-ladybug",
+      "name": "Ladybug",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "effects": {
+        "onPlay": { "type": "destroyEnemyToken", "params": {} }
+      }
+    },
+    {
+      "id": "insect-prey-locust",
+      "name": "Locust",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "effects": {
+        "onAfterCombat": { "type": "forceOpponentDiscard", "params": { "count": 1 } }
+      }
+    },
+    {
+      "id": "insect-prey-grasshopper",
+      "name": "Grasshopper",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "effects": {
+        "onDefend": { "type": "returnToHand", "params": { "target": "self" } },
+        "onPlay": { "type": "damageRival", "params": { "amount": 1 } }
+      }
+    },
+    {
+      "id": "insect-prey-cricket",
+      "name": "Cricket",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Free Play"],
+      "tribe": "Insect",
+      "effects": {
+        "onPlay": { "type": "draw", "params": { "count": 1 } }
+      }
+    },
+    {
+      "id": "insect-prey-silkworm",
+      "name": "Silkworm",
+      "type": "Prey",
+      "atk": 0,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": ["Passive"],
+      "tribe": "Insect",
+      "summons": ["token-silk-thread"],
+      "effects": {
+        "onEnd": { "type": "addToHand", "params": { "cardId": "token-silk-thread" } }
+      }
+    },
+    {
+      "id": "insect-prey-moth",
+      "name": "Moth",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "effects": {
+        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to lure", "effect": { "keyword": "Lure" } } }
+      }
+    },
+    {
+      "id": "insect-prey-deaths-head-hawkmoth",
+      "name": "Death's-Head Hawkmoth",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "effects": {
+        "onSlain": { "type": "damageRival", "params": { "amount": 3 } }
+      }
+    },
+    {
+      "id": "insect-prey-parasitic-wasp",
+      "name": "Parasitic Wasp",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "summons": ["token-wasp-larva"],
+      "effects": {
+        "onPlay": { "type": "infestEnemy", "params": { "spawnOnDeath": "token-wasp-larva" } }
+      }
+    },
+    {
+      "id": "insect-prey-tarantula-hawk",
+      "name": "Tarantula Hawk",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "effects": {
+        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to paralyze", "effect": { "keyword": "Frozen" } } }
+      }
+    },
+    {
+      "id": "insect-prey-paper-wasp",
+      "name": "Paper Wasp",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "summons": ["token-insect-swarm"],
+      "effects": {
+        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["token-insect-swarm", "token-insect-swarm"] } }
+      }
+    },
+    {
+      "id": "insect-prey-japanese-hornet",
+      "name": "Japanese Giant Hornet",
+      "type": "Prey",
+      "atk": 3,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "tribe": "Insect",
+      "effects": {
+        "onAttack": { "type": "damageAllEnemyCreatures", "params": { "amount": 1 } }
+      }
+    },
+    {
+      "id": "insect-prey-water-strider",
+      "name": "Water Strider",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 0,
+      "keywords": ["Free Play", "Evasive"],
+      "tribe": "Insect"
+    },
+    {
+      "id": "insect-prey-mayfly",
+      "name": "Mayfly",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": ["Haste"],
+      "tribe": "Insect",
+      "effects": {
+        "onEnd": { "type": "destroySelf", "params": {} }
+      }
+    },
+    {
+      "_comment": "=== PREDATOR INSECTS - Larger hunting insects ===",
+      "id": "insect-predator-praying-mantis",
+      "name": "Praying Mantis",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 2,
+      "keywords": ["Ambush"],
+      "tribe": "Insect",
+      "effects": {
+        "onConsume": { "type": "buffSelf", "params": { "attack": 1, "health": 1 } }
+      }
+    },
+    {
+      "id": "insect-predator-giant-water-bug",
+      "name": "Giant Water Bug",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 3,
+      "keywords": [],
+      "tribe": "Insect",
+      "effects": {
+        "onConsume": { "type": "damageRival", "params": { "amount": 2 } }
+      }
+    },
+    {
+      "id": "insect-predator-goliath-beetle",
+      "name": "Goliath Beetle",
+      "type": "Predator",
+      "atk": 5,
+      "hp": 4,
+      "keywords": [],
+      "tribe": "Insect",
+      "summons": ["token-insect-swarm"],
+      "effects": {
+        "onConsume": { "type": "summonTokens", "params": { "tokenIds": ["token-insect-swarm", "token-insect-swarm"] } }
+      }
+    },
+    {
+      "id": "insect-predator-rhinoceros-beetle",
+      "name": "Rhinoceros Beetle",
+      "type": "Predator",
+      "atk": 4,
+      "hp": 4,
+      "keywords": ["Barrier"],
+      "tribe": "Insect"
+    },
+    {
+      "id": "insect-predator-stag-beetle",
+      "name": "Stag Beetle",
+      "type": "Predator",
+      "atk": 4,
+      "hp": 3,
+      "keywords": [],
+      "tribe": "Insect",
+      "effects": {
+        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to grapple", "effect": { "damage": 3, "label": "mandibles" } } }
+      }
+    },
+    {
+      "id": "insect-predator-titan-beetle",
+      "name": "Titan Beetle",
+      "type": "Predator",
+      "atk": 6,
+      "hp": 5,
+      "keywords": [],
+      "tribe": "Insect",
+      "effects": {
+        "onConsume": { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } }
+      }
+    },
+    {
+      "id": "insect-predator-emperor-dragonfly",
+      "name": "Emperor Dragonfly",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 3,
+      "keywords": ["Acuity", "Evasive"],
+      "tribe": "Insect",
+      "effects": {
+        "onConsume": { "type": "selectEnemyPreyToConsume" }
+      }
+    },
+    {
+      "id": "insect-predator-asian-giant-hornet",
+      "name": "Asian Giant Hornet",
+      "type": "Predator",
+      "atk": 4,
+      "hp": 2,
+      "keywords": ["Haste"],
+      "tribe": "Insect",
+      "effects": {
+        "onConsume": { "type": "damageAllEnemyCreatures", "params": { "amount": 1 } }
+      }
+    },
+    {
+      "_comment": "=== SPELLS - Insect-themed effects ===",
+      "id": "insect-spell-swarm",
+      "name": "Swarm",
+      "type": "Spell",
+      "tribe": "Insect",
+      "summons": ["token-insect-swarm"],
+      "effects": {
+        "effect": { "type": "summonTokens", "params": { "tokenIds": ["token-insect-swarm", "token-insect-swarm", "token-insect-swarm"] } }
+      }
+    },
+    {
+      "id": "insect-spell-infestation",
+      "name": "Infestation",
+      "type": "Spell",
+      "tribe": "Insect",
+      "effects": {
+        "effect": [
+          { "type": "damageAllEnemyCreatures", "params": { "amount": 1 } },
+          { "type": "damageAllEnemyCreatures", "params": { "amount": 1 } }
+        ]
+      }
+    },
+    {
+      "id": "insect-spell-plague-of-locusts",
+      "name": "Plague of Locusts",
+      "type": "Spell",
+      "tribe": "Insect",
+      "effects": {
+        "effect": [
+          { "type": "forceOpponentDiscard", "params": { "count": 2 } },
+          { "type": "damageRival", "params": { "amount": 2 } }
+        ]
+      }
+    },
+    {
+      "id": "insect-spell-pheromone-trail",
+      "name": "Pheromone Trail",
+      "type": "Spell",
+      "tribe": "Insect",
+      "effects": {
+        "effect": [
+          { "type": "buffStats", "params": { "targetType": "all-friendly", "stats": { "attack": 1, "health": 0 } } },
+          { "type": "forceAllFriendlyAttack", "params": {} }
+        ]
+      }
+    },
+    {
+      "id": "insect-spell-hivemind",
+      "name": "Hivemind",
+      "type": "Spell",
+      "tribe": "Insect",
+      "effects": {
+        "effect": { "type": "drawPerFriendlyCreature", "params": { "maxDraw": 4 } }
+      }
+    },
+    {
+      "id": "insect-spell-chemical-defense",
+      "name": "Chemical Defense",
+      "type": "Spell",
+      "tribe": "Insect",
+      "effects": {
+        "effect": [
+          { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } },
+          { "type": "grantBarrier", "params": {} }
+        ]
+      }
+    },
+    {
+      "id": "insect-spell-metamorphosis",
+      "name": "Metamorphosis",
+      "type": "Spell",
+      "tribe": "Insect",
+      "effects": {
+        "effect": { "type": "transformAllLarvaeImmediately", "params": {} }
+      }
+    },
+    {
+      "_comment": "=== FREE SPELLS - Small utility effects ===",
+      "id": "insect-free-spell-buzz",
+      "name": "Buzz",
+      "type": "Free Spell",
+      "tribe": "Insect",
+      "effects": {
+        "effect": { "type": "draw", "params": { "count": 1 } }
+      }
+    },
+    {
+      "id": "insect-free-spell-pollinate",
+      "name": "Pollinate",
+      "type": "Free Spell",
+      "tribe": "Insect",
+      "effects": {
+        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-creatures", "title": "Choose a creature to buff", "effect": { "buff": { "attack": 1, "health": 1 } } } }
+      }
+    },
+    {
+      "id": "insect-free-spell-shed-exoskeleton",
+      "name": "Shed Exoskeleton",
+      "type": "Free Spell",
+      "tribe": "Insect",
+      "effects": {
+        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-creatures", "title": "Choose a creature to regenerate", "effect": { "regen": true } } }
+      }
+    },
+    {
+      "id": "insect-free-spell-camouflage",
+      "name": "Camouflage",
+      "type": "Free Spell",
+      "tribe": "Insect",
+      "effects": {
+        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-creatures", "title": "Choose a creature to hide", "effect": { "keyword": "Hidden" } } }
+      }
+    },
+    {
+      "_comment": "=== TRAPS - Defensive reactions ===",
+      "id": "insect-trap-pitfall",
+      "name": "Pitfall",
+      "type": "Trap",
+      "trigger": "directAttack",
+      "tribe": "Insect",
+      "effects": {
+        "effect": [
+          { "type": "negateAttack", "params": {} },
+          { "type": "damageAttacker", "params": { "amount": 3 } }
+        ]
+      }
+    },
+    {
+      "id": "insect-trap-ambush-predator",
+      "name": "Ambush Predator",
+      "type": "Trap",
+      "trigger": "rivalPlaysCreature",
+      "tribe": "Insect",
+      "summons": ["token-soldier-ant"],
+      "effects": {
+        "effect": { "type": "summonTokens", "params": { "tokenIds": ["token-soldier-ant", "token-soldier-ant"] } }
+      }
+    },
+    {
+      "id": "insect-trap-defensive-swarm",
+      "name": "Defensive Swarm",
+      "type": "Trap",
+      "trigger": "defending",
+      "tribe": "Insect",
+      "effects": {
+        "effect": [
+          { "type": "negateCombat", "params": {} },
+          { "type": "damageAttacker", "params": { "amount": 2 } }
+        ]
+      }
+    },
+    {
+      "id": "insect-trap-venomous-sting",
+      "name": "Venomous Sting",
+      "type": "Trap",
+      "trigger": "directAttack",
+      "tribe": "Insect",
+      "effects": {
+        "effect": [
+          { "type": "damageRival", "params": { "amount": 2 } },
+          { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to poison", "effect": { "keyword": "Poisoned" } } }
+        ]
+      }
+    }
+  ]
+}

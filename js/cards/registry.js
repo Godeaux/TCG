@@ -20,6 +20,7 @@ import mammalData from './data/mammal.json' with { type: 'json' };
 import arachnidData from './data/arachnid.json' with { type: 'json' };
 import felineData from './data/feline.json' with { type: 'json' };
 import crustaceanData from './data/crustacean.json' with { type: 'json' };
+import insectData from './data/insect.json' with { type: 'json' };
 import { resolveEffect } from './effectLibrary.js';
 import { validateCardEffects } from './effectValidator.js';
 import { generateCardEffectText } from './effectTextGenerator.js';
@@ -50,6 +51,7 @@ const deckCatalogs = {
   arachnid: [],
   feline: [],
   crustacean: [],
+  insect: [],
 };
 
 // ============================================================================
@@ -193,6 +195,22 @@ export const initializeCardRegistry = () => {
   });
   deckCatalogs.crustacean = sortCardsByType(
     crustaceanData.cards.filter((card) => !card.id.includes('token'))
+  );
+
+  // Load insect tokens (if present in the JSON)
+  if (insectData.tokens) {
+    insectData.tokens.forEach((token) => {
+      tokenRegistry.set(token.id, token);
+      cardRegistry.set(token.id, token);
+    });
+  }
+
+  // Load insect cards
+  insectData.cards.forEach((card) => {
+    cardRegistry.set(card.id, card);
+  });
+  deckCatalogs.insect = sortCardsByType(
+    insectData.cards.filter((card) => !card.id.includes('token'))
   );
 
   console.log(
