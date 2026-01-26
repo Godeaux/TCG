@@ -11388,8 +11388,8 @@ select.menu-input option {
     width: min(200px, 50vw);
   }
 
-  .tooltip-card-preview .card.tooltip-card {
-    /* Enable tapping on the card */
+  /* Only enable tapping on card preview when tooltip is visible */
+  .card-hover-tooltip.visible .tooltip-card-preview .card.tooltip-card {
     pointer-events: auto;
     cursor: pointer;
   }
