@@ -179,6 +179,14 @@ const DECK_OPTIONS = [
     available: true,
     experimental: true,
   },
+  {
+    id: 'insect',
+    name: 'Insect',
+    emoji: '🦋',
+    panelClass: 'deck-select-panel--insect',
+    available: true,
+    experimental: true,
+  },
 ];
 
 // Deck builder UI state
