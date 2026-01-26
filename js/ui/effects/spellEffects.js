@@ -257,8 +257,8 @@ export const SPELL_VISUAL_EFFECTS = {
   },
   'bird-free-spell-white-missile': {
     type: 'projectile',
-    projectile: 'feather-bolt',
-    description: 'Sharp feather bolt strikes target',
+    projectile: 'quill',
+    description: 'Sharp quill spins and embeds in target',
   },
 
   // ==================== MAMMAL TRIBE ====================
@@ -279,8 +279,8 @@ export const SPELL_VISUAL_EFFECTS = {
   },
   'mammal-spell-six-layered-neocortex': {
     type: 'utility',
-    effect: 'search',
-    description: 'Brain waves pulse through deck',
+    effect: 'neocortex',
+    description: 'Neural network visualization searches through deck',
   },
   'mammal-spell-white-hart': {
     type: 'summon',
@@ -298,7 +298,7 @@ export const SPELL_VISUAL_EFFECTS = {
     description: 'Dart launches in arc, frost spreads',
   },
   'mammal-free-spell-warm-blood': {
-    type: 'status',
+    type: 'buff',
     effect: 'thaw',
     description: 'Warm glow melts ice from friendlies',
   },
@@ -331,8 +331,8 @@ export const SPELL_VISUAL_EFFECTS = {
   },
   'reptile-free-spell-ecdysis': {
     type: 'status',
-    effect: 'regenerate',
-    description: 'Shedding skin shimmer effect',
+    effect: 'ecdysis',
+    description: 'Snake sheds old skin, revealing fresh scales beneath',
   },
   'reptile-free-spell-vengeful': {
     type: 'status',
@@ -346,8 +346,8 @@ export const SPELL_VISUAL_EFFECTS = {
   },
   'reptile-free-spell-surprise': {
     type: 'projectile',
-    projectile: 'venom-bolt',
-    description: 'Venom bolt strikes target',
+    projectile: 'snake-strike',
+    description: 'Snake strikes from hiding with deadly speed',
   },
 
   // ==================== AMPHIBIAN TRIBE ====================
@@ -912,8 +912,16 @@ const playProjectileEffect = (effect, state) => {
       playFangsProjectile(targetEl, targetCenter, casterIndex, theme);
       break;
     case 'water-bolt':
-    case 'leap':
       playWaterBoltProjectile(targetEl, targetCenter, casterIndex, theme);
+      break;
+    case 'leap':
+      playLeapfrogProjectile(targetEl, targetCenter, casterIndex, theme);
+      break;
+    case 'snake-strike':
+      playSnakeStrikeProjectile(targetEl, targetCenter, casterIndex, theme);
+      break;
+    case 'quill':
+      playQuillProjectile(targetEl, targetCenter, casterIndex, theme);
       break;
     default:
       playGenericProjectile(targetEl, targetCenter, casterIndex, theme, config.projectile);
@@ -940,73 +948,114 @@ const getProjectileStart = (casterIndex) => {
 };
 
 /**
- * NET - Fishing net scoops up prey with satisfying wrap animation
+ * NET - Fishing net with visible mesh that opens mid-flight and cinches around prey
  */
 const playNetProjectile = (targetEl, targetCenter, casterIndex, theme) => {
   const start = getProjectileStart(casterIndex);
   if (!start) return;
 
-  // Phase 1: Net rises with anticipation wobble
-  const net = createEffectElement('spell-projectile spell-projectile--net', {
+  // Calculate angle for net rotation
+  const dx = targetCenter.x - start.x;
+  const dy = targetCenter.y - start.y;
+  const angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+
+  // Phase 1: Net bundle launches and opens mid-flight
+  const net = createEffectElement('spell-projectile spell-projectile--net-bundle', {
     left: `${start.x}px`,
     top: `${start.y}px`,
-    '--target-x': `${targetCenter.x - start.x}px`,
-    '--target-y': `${targetCenter.y - start.y}px`,
+    '--target-x': `${dx}px`,
+    '--target-y': `${dy}px`,
     '--spell-color': theme.primary,
     '--spell-glow': theme.glow,
+    '--net-angle': `${angle}deg`,
   });
 
   if (net) {
-    // Anticipation: pull back before launch
-    net.style.animation = 'spell-net-anticipate 0.15s ease-out, spell-net-arc 0.5s ease-out 0.15s forwards';
+    // Create rope trailing from net
+    const rope = createEffectElement('spell-effect spell-effect--net-rope', {
+      '--start-x': `${start.x}px`,
+      '--start-y': `${start.y}px`,
+      '--end-x': `${targetCenter.x}px`,
+      '--end-y': `${targetCenter.y}px`,
+      '--spell-color': theme.secondary || theme.primary,
+    });
+    if (rope) removeAfterDelay(rope, 1000);
 
-    // Spawn water droplets along arc
+    // Net flight animation
+    net.style.animation = 'spell-net-bundle-launch 0.55s ease-out forwards';
+
+    // Spawn water spray as net flies
     setTimeout(() => {
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < 8; i++) {
         setTimeout(() => {
-          const t = i / 5;
-          const arcHeight = -80 * Math.sin(t * Math.PI);
-          const x = start.x + (targetCenter.x - start.x) * t;
-          const y = start.y + (targetCenter.y - start.y) * t + arcHeight;
-          const droplet = createEffectElement('spell-particle spell-particle--water-droplet', {
+          const t = i / 7;
+          const arcHeight = -60 * Math.sin(t * Math.PI);
+          const x = start.x + dx * t;
+          const y = start.y + dy * t + arcHeight;
+          const spray = createEffectElement('spell-particle spell-particle--net-spray', {
             left: `${x}px`,
             top: `${y}px`,
             '--spell-color': theme.primary,
           });
-          if (droplet) removeOnAnimationEnd(droplet);
-        }, i * 40);
+          if (spray) removeOnAnimationEnd(spray);
+        }, i * 35);
       }
-    }, 150);
+    }, 100);
 
     setTimeout(() => {
       net.remove();
-      // Phase 2: Net wraps around target
-      playNetWrapEffect(targetEl, targetCenter, theme);
-    }, 650);
+      // Phase 2: Net opens and envelops target
+      playNetCaptureEffect(targetEl, targetCenter, theme);
+    }, 550);
   }
 };
 
 /**
- * Net wrap effect - net envelops and squeezes target
+ * Net capture effect - mesh net opens, drops over target, cinches tight
  */
-const playNetWrapEffect = (targetEl, targetCenter, theme) => {
-  // Create wrap overlay
-  const wrap = createEffectElement('spell-effect spell-effect--net-wrap', {
+const playNetCaptureEffect = (targetEl, targetCenter, theme) => {
+  // Create the opening mesh net
+  const meshNet = createEffectElement('spell-effect spell-effect--net-mesh', {
     left: `${targetCenter.x}px`,
     top: `${targetCenter.y}px`,
     '--spell-color': theme.primary,
   });
-  if (wrap) removeAfterDelay(wrap, 800);
 
-  // Target gets caught - squish and disappear (only if element still exists in DOM)
-  if (targetEl?.isConnected) {
-    targetEl.classList.add('spell-net-caught');
+  if (meshNet) {
+    // Add rope lines to create mesh pattern
+    for (let i = 0; i < 6; i++) {
+      const line = document.createElement('div');
+      line.className = 'net-mesh-line';
+      line.style.setProperty('--line-angle', `${i * 30}deg`);
+      meshNet.appendChild(line);
+    }
+
+    meshNet.style.animation = 'spell-net-mesh-capture 0.7s ease-out forwards';
+    removeAfterDelay(meshNet, 700);
   }
 
-  // Splash particles
-  spawnParticleBurst(targetCenter.x, targetCenter.y, 8, 'spell-particle--splash', theme, { spread: 40 });
+  // Weight/sinker at bottom of net
+  const sinker = createEffectElement('spell-effect spell-effect--net-sinker', {
+    left: `${targetCenter.x}px`,
+    top: `${targetCenter.y + 50}px`,
+    '--spell-color': theme.secondary || '#5f6368',
+  });
+  if (sinker) removeAfterDelay(sinker, 600);
 
-  // Water ripple rings
+  // Target gets caught - struggle and sink
+  if (targetEl?.isConnected) {
+    targetEl.classList.add('spell-net-captured');
+  }
+
+  // Water splash on capture
+  spawnParticleBurst(targetCenter.x, targetCenter.y, 10, 'spell-particle--splash', theme, { spread: 50 });
+
+  // Bubbles rise as prey sinks
+  setTimeout(() => {
+    spawnRisingParticles(targetCenter.x, targetCenter.y, 6, 'spell-particle--bubble', theme, { stagger: 60 });
+  }, 200);
+
+  // Ripple rings from struggle
   for (let i = 0; i < 3; i++) {
     setTimeout(() => {
       const ring = createEffectElement('spell-effect spell-effect--water-ring', {
@@ -1016,112 +1065,179 @@ const playNetWrapEffect = (targetEl, targetCenter, theme) => {
         '--ring-delay': `${i * 0.1}s`,
       });
       if (ring) removeOnAnimationEnd(ring);
-    }, i * 100);
+    }, 100 + i * 120);
   }
 
-  setTimeout(() => targetEl.classList.remove('spell-net-caught'), 800);
+  setTimeout(() => {
+    if (targetEl?.isConnected) {
+      targetEl.classList.remove('spell-net-captured');
+    }
+  }, 900);
 };
 
 /**
- * RIFLE - Crosshair locks on, dramatic shot with smoke trail
+ * RIFLE - Scope zoom, breath hold, precise kill shot
  */
 const playRifleProjectile = (targetEl, targetCenter, casterIndex, theme) => {
-  // Phase 1: Crosshair appears and locks on
-  const crosshair = createEffectElement('spell-effect spell-effect--crosshair', {
+  const start = getProjectileStart(casterIndex);
+
+  // Phase 1: Scope vignette closes in - you're looking down the scope
+  const scope = createEffectElement('spell-effect spell-effect--rifle-scope', {
+    left: `${targetCenter.x}px`,
+    top: `${targetCenter.y}px`,
+  });
+
+  // Phase 2: Crosshair appears with range-finder markings
+  const crosshair = createEffectElement('spell-effect spell-effect--rifle-crosshair', {
     left: `${targetCenter.x}px`,
     top: `${targetCenter.y}px`,
   });
 
   if (crosshair) {
-    crosshair.style.animation = 'spell-crosshair-lock 0.4s ease-out forwards';
+    // Add range-finder marks
+    for (let i = 0; i < 4; i++) {
+      const mark = document.createElement('div');
+      mark.className = 'rifle-range-mark';
+      mark.style.setProperty('--mark-offset', `${(i + 1) * 15}px`);
+      crosshair.appendChild(mark);
+    }
 
+    // Crosshair tightens as it locks on
+    crosshair.style.animation = 'spell-rifle-crosshair-lock 0.5s ease-out forwards';
+
+    // Breath hold pause - crosshair steadies
     setTimeout(() => {
-      crosshair.remove();
+      crosshair.classList.add('locked');
 
-      // Phase 2: Muzzle flash
-      screenFlash('rgba(255, 200, 100, 0.4)', 80);
-
-      // Phase 3: Bullet travels instantly with smoke trail
-      const start = getProjectileStart(casterIndex);
-      if (start) {
-        // Smoke trail
-        for (let i = 0; i < 8; i++) {
-          const t = i / 7;
-          const x = start.x + (targetCenter.x - start.x) * t;
-          const y = start.y + (targetCenter.y - start.y) * t;
-          setTimeout(() => {
-            const smoke = createEffectElement('spell-particle spell-particle--smoke', {
-              left: `${x}px`,
-              top: `${y}px`,
-            });
-            if (smoke) removeOnAnimationEnd(smoke);
-          }, i * 15);
-        }
-      }
-
-      // Phase 4: Impact
+      // Brief pause for tension
       setTimeout(() => {
-        screenShake('heavy', 200);
-        playRifleImpact(targetEl, targetCenter, theme);
-      }, 120);
-    }, 400);
+        // Phase 3: SHOT - instant and lethal
+        crosshair.remove();
+        if (scope) scope.remove();
+
+        // Massive muzzle flash
+        const muzzle = createEffectElement('spell-effect spell-effect--rifle-muzzle', {
+          left: `${start?.x || targetCenter.x}px`,
+          top: `${start?.y || targetCenter.y}px`,
+        });
+        if (muzzle) removeAfterDelay(muzzle, 150);
+
+        screenFlash('rgba(255, 220, 150, 0.6)', 60);
+
+        // Bullet trace - near-instant line from start to target
+        if (start) {
+          const trace = createEffectElement('spell-effect spell-effect--bullet-trace', {
+            '--start-x': `${start.x}px`,
+            '--start-y': `${start.y}px`,
+            '--end-x': `${targetCenter.x}px`,
+            '--end-y': `${targetCenter.y}px`,
+          });
+          if (trace) removeAfterDelay(trace, 200);
+
+          // Smoke wisps along path
+          for (let i = 0; i < 6; i++) {
+            const t = i / 5;
+            setTimeout(() => {
+              const smoke = createEffectElement('spell-particle spell-particle--rifle-smoke', {
+                left: `${start.x + (targetCenter.x - start.x) * t}px`,
+                top: `${start.y + (targetCenter.y - start.y) * t}px`,
+              });
+              if (smoke) removeOnAnimationEnd(smoke);
+            }, i * 10);
+          }
+        }
+
+        // Phase 4: IMPACT - devastating
+        setTimeout(() => {
+          screenShake('heavy', 250);
+          playRifleKillShot(targetEl, targetCenter, theme);
+        }, 50);
+      }, 150); // Breath hold pause
+    }, 450); // Lock-on time
   }
 };
 
 /**
- * Rifle impact - target shatters dramatically
+ * Rifle kill shot - target is eliminated
  */
-const playRifleImpact = (targetEl, targetCenter, theme) => {
-  // Impact flash
-  const flash = createEffectElement('spell-effect spell-effect--impact-flash', {
+const playRifleKillShot = (targetEl, targetCenter, theme) => {
+  // Impact burst
+  const impact = createEffectElement('spell-effect spell-effect--rifle-impact', {
     left: `${targetCenter.x}px`,
     top: `${targetCenter.y}px`,
   });
-  if (flash) removeAfterDelay(flash, 150);
+  if (impact) removeAfterDelay(impact, 200);
 
-  // Shatter particles flying outward
-  spawnParticleBurst(targetCenter.x, targetCenter.y, 12, 'spell-particle--shatter', theme, { spread: 80, stagger: 0 });
+  // Damage spray - lethal hit
+  spawnParticleBurst(targetCenter.x, targetCenter.y, 10, 'spell-particle--damage', theme, { spread: 60, stagger: 0 });
 
-  // Target recoils and fades
-  targetEl.classList.add('spell-rifle-hit');
-  setTimeout(() => targetEl.classList.remove('spell-rifle-hit'), 600);
+  // Shell casing eject effect
+  const shell = createEffectElement('spell-particle spell-particle--shell-casing', {
+    left: `${targetCenter.x - 100}px`,
+    top: `${targetCenter.y - 20}px`,
+  });
+  if (shell) removeOnAnimationEnd(shell);
+
+  // Target elimination animation
+  if (targetEl?.isConnected) {
+    targetEl.classList.add('spell-rifle-eliminated');
+    setTimeout(() => {
+      if (targetEl?.isConnected) {
+        targetEl.classList.remove('spell-rifle-eliminated');
+      }
+    }, 700);
+  }
 };
 
 /**
- * HARPOON - Spear launches with rope trailing, impales target
+ * HARPOON - Barbed spear impales target, rope yanks creature toward caster (steal effect)
  */
 const playHarpoonProjectile = (targetEl, targetCenter, casterIndex, theme) => {
   const start = getProjectileStart(casterIndex);
   if (!start) return;
 
-  // Harpoon projectile
-  const harpoon = createEffectElement('spell-projectile spell-projectile--harpoon', {
+  const dx = targetCenter.x - start.x;
+  const dy = targetCenter.y - start.y;
+  const angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+
+  // Phase 1: Harpoon projectile with barbed head
+  const harpoon = createEffectElement('spell-projectile spell-projectile--harpoon-barbed', {
     left: `${start.x}px`,
     top: `${start.y}px`,
-    '--target-x': `${targetCenter.x - start.x}px`,
-    '--target-y': `${targetCenter.y - start.y}px`,
+    '--target-x': `${dx}px`,
+    '--target-y': `${dy}px`,
     '--spell-color': theme.primary,
+    '--harpoon-angle': `${angle}deg`,
+  });
+
+  // Rope extends as harpoon flies
+  const rope = createEffectElement('spell-effect spell-effect--harpoon-rope', {
+    '--start-x': `${start.x}px`,
+    '--start-y': `${start.y}px`,
+    '--end-x': `${targetCenter.x}px`,
+    '--end-y': `${targetCenter.y}px`,
+    '--spell-color': '#8b7355',
   });
 
   if (harpoon) {
-    // Draw rope trailing behind
-    const rope = createEffectElement('spell-effect spell-effect--rope', {
-      '--start-x': `${start.x}px`,
-      '--start-y': `${start.y}px`,
-      '--end-x': `${targetCenter.x}px`,
-      '--end-y': `${targetCenter.y}px`,
-      '--spell-color': theme.secondary,
-    });
-    if (rope) removeAfterDelay(rope, 800);
+    harpoon.style.animation = 'spell-harpoon-thrust 0.3s ease-out forwards';
 
-    harpoon.style.animation = 'spell-harpoon-thrust 0.35s ease-out forwards';
-
+    // Phase 2: Impact - harpoon embeds
     setTimeout(() => {
       harpoon.remove();
-
-      // Impact splash
       screenShake('medium', 150);
 
+      // Embedded harpoon stays in target
+      const embedded = createEffectElement('spell-effect spell-effect--harpoon-embedded', {
+        left: `${targetCenter.x}px`,
+        top: `${targetCenter.y}px`,
+        '--harpoon-angle': `${angle}deg`,
+      });
+
+      // Blood/damage spray on impact
+      spawnParticleBurst(targetCenter.x, targetCenter.y, 8, 'spell-particle--damage', theme, { spread: 35 });
+
+      // Water splash
       const splash = createEffectElement('spell-effect spell-effect--water-splash', {
         left: `${targetCenter.x}px`,
         top: `${targetCenter.y}px`,
@@ -1129,121 +1245,293 @@ const playHarpoonProjectile = (targetEl, targetCenter, casterIndex, theme) => {
       });
       if (splash) removeOnAnimationEnd(splash);
 
-      // Target impaled
-      targetEl.classList.add('spell-harpoon-hit');
-      setTimeout(() => targetEl.classList.remove('spell-harpoon-hit'), 700);
+      // Target reacts to being impaled
+      if (targetEl?.isConnected) {
+        targetEl.classList.add('spell-harpoon-impaled');
+      }
 
-      // Water droplets spray
-      spawnParticleBurst(targetCenter.x, targetCenter.y, 10, 'spell-particle--water-droplet', theme, { spread: 50 });
-    }, 350);
+      // Phase 3: Rope goes taut and YANKS - showing steal mechanic
+      setTimeout(() => {
+        if (rope) {
+          rope.classList.add('taut');
+        }
+
+        // Yank effect - creature pulled toward caster
+        if (targetEl?.isConnected) {
+          targetEl.classList.remove('spell-harpoon-impaled');
+          targetEl.classList.add('spell-harpoon-yanked');
+          targetEl.style.setProperty('--yank-x', `${-dx * 0.3}px`);
+          targetEl.style.setProperty('--yank-y', `${-dy * 0.3}px`);
+        }
+
+        screenShake('light', 100);
+
+        // Rope tension particles
+        for (let i = 0; i < 4; i++) {
+          const t = 0.3 + (i / 3) * 0.4;
+          const rx = start.x + dx * t;
+          const ry = start.y + dy * t;
+          setTimeout(() => {
+            const tension = createEffectElement('spell-particle spell-particle--rope-tension', {
+              left: `${rx}px`,
+              top: `${ry}px`,
+            });
+            if (tension) removeOnAnimationEnd(tension);
+          }, i * 30);
+        }
+      }, 200);
+
+      // Cleanup
+      setTimeout(() => {
+        if (embedded) embedded.remove();
+        if (rope) rope.remove();
+        if (targetEl?.isConnected) {
+          targetEl.classList.remove('spell-harpoon-yanked');
+          targetEl.style.removeProperty('--yank-x');
+          targetEl.style.removeProperty('--yank-y');
+        }
+      }, 800);
+    }, 300);
   }
 };
 
 /**
- * SHOTGUN - Spread shot with multiple pellet impacts
+ * SHOTGUN - Pump-action with wide buckshot spread and devastating impact
  */
 const playShotgunProjectile = (targetEl, targetCenter, casterIndex, theme) => {
   const start = getProjectileStart(casterIndex);
   if (!start) return;
 
-  // Muzzle flash
-  const flash = createEffectElement('spell-effect spell-effect--muzzle-flash', {
+  const dx = targetCenter.x - start.x;
+  const dy = targetCenter.y - start.y;
+
+  // Phase 1: Pump-action visual (chk-chk)
+  const pump = createEffectElement('spell-effect spell-effect--shotgun-pump', {
     left: `${start.x}px`,
     top: `${start.y}px`,
-    '--spell-color': theme.primary,
   });
-  if (flash) removeAfterDelay(flash, 100);
-  screenFlash('rgba(255, 220, 150, 0.5)', 60);
+  if (pump) removeAfterDelay(pump, 200);
 
-  // Multiple pellets spread toward target
-  const pelletCount = 6;
-  for (let i = 0; i < pelletCount; i++) {
-    setTimeout(() => {
-      const spreadX = (Math.random() - 0.5) * 60;
-      const spreadY = (Math.random() - 0.5) * 60;
+  // Shell eject from pump action
+  const shellEject = createEffectElement('spell-particle spell-particle--shell-eject', {
+    left: `${start.x + 20}px`,
+    top: `${start.y - 10}px`,
+  });
+  if (shellEject) removeOnAnimationEnd(shellEject);
 
-      const pellet = createEffectElement('spell-projectile spell-projectile--pellet', {
-        left: `${start.x}px`,
-        top: `${start.y}px`,
-        '--target-x': `${targetCenter.x - start.x + spreadX}px`,
-        '--target-y': `${targetCenter.y - start.y + spreadY}px`,
-      });
-
-      if (pellet) {
-        pellet.style.animation = 'spell-pellet-fly 0.2s linear forwards';
-        setTimeout(() => pellet.remove(), 200);
-      }
-    }, i * 20);
-  }
-
-  // Impact after pellets land
+  // Phase 2: BLAST - massive muzzle flash with smoke
   setTimeout(() => {
-    screenShake('medium', 150);
+    // Large muzzle flash cone
+    const flash = createEffectElement('spell-effect spell-effect--shotgun-blast', {
+      left: `${start.x}px`,
+      top: `${start.y}px`,
+      '--blast-angle': `${Math.atan2(dy, dx)}rad`,
+    });
+    if (flash) removeAfterDelay(flash, 150);
 
-    // Multiple small impact sparks
-    for (let i = 0; i < 8; i++) {
-      const offsetX = (Math.random() - 0.5) * 50;
-      const offsetY = (Math.random() - 0.5) * 50;
-      const spark = createEffectElement('spell-particle spell-particle--spark', {
-        left: `${targetCenter.x + offsetX}px`,
-        top: `${targetCenter.y + offsetY}px`,
-        '--spell-color': theme.primary,
-      });
-      if (spark) removeOnAnimationEnd(spark);
+    // Smoke cloud from barrel
+    const smoke = createEffectElement('spell-effect spell-effect--shotgun-smoke', {
+      left: `${start.x}px`,
+      top: `${start.y}px`,
+    });
+    if (smoke) removeAfterDelay(smoke, 600);
+
+    screenFlash('rgba(255, 200, 100, 0.6)', 80);
+
+    // Phase 3: Wide buckshot spread - 9 pellets in spread pattern
+    const pelletCount = 9;
+    const spreadAngle = 25; // degrees of total spread
+
+    for (let i = 0; i < pelletCount; i++) {
+      setTimeout(() => {
+        // Calculate spread angle for this pellet
+        const angleOffset = ((i / (pelletCount - 1)) - 0.5) * spreadAngle * (Math.PI / 180);
+        const baseAngle = Math.atan2(dy, dx);
+        const pelletAngle = baseAngle + angleOffset;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        const pelletDx = Math.cos(pelletAngle) * distance;
+        const pelletDy = Math.sin(pelletAngle) * distance;
+
+        // Add some randomness
+        const randomOffset = (Math.random() - 0.5) * 20;
+
+        const pellet = createEffectElement('spell-projectile spell-projectile--buckshot', {
+          left: `${start.x}px`,
+          top: `${start.y}px`,
+          '--target-x': `${pelletDx + randomOffset}px`,
+          '--target-y': `${pelletDy + randomOffset}px`,
+        });
+
+        if (pellet) {
+          pellet.style.animation = 'spell-buckshot-fly 0.15s linear forwards';
+
+          // Pellet trail
+          setTimeout(() => {
+            const trail = createEffectElement('spell-particle spell-particle--pellet-trail', {
+              left: `${start.x + pelletDx * 0.5}px`,
+              top: `${start.y + pelletDy * 0.5}px`,
+            });
+            if (trail) removeOnAnimationEnd(trail);
+          }, 30);
+
+          setTimeout(() => pellet.remove(), 150);
+        }
+      }, i * 8); // Slight stagger for realism
     }
 
-    targetEl.classList.add('spell-shotgun-hit');
-    setTimeout(() => targetEl.classList.remove('spell-shotgun-hit'), 500);
-  }, 220);
+    // Phase 4: Impact - devastating spread of hits
+    setTimeout(() => {
+      screenShake('heavy', 200);
+
+      // Multiple impact points in spread pattern
+      for (let i = 0; i < 12; i++) {
+        const impactX = targetCenter.x + (Math.random() - 0.5) * 80;
+        const impactY = targetCenter.y + (Math.random() - 0.5) * 60;
+
+        setTimeout(() => {
+          // Impact spark
+          const spark = createEffectElement('spell-particle spell-particle--buckshot-impact', {
+            left: `${impactX}px`,
+            top: `${impactY}px`,
+            '--spell-color': theme.primary,
+          });
+          if (spark) removeOnAnimationEnd(spark);
+
+          // Small debris/feather puff at each hit
+          if (i % 3 === 0) {
+            const debris = createEffectElement('spell-particle spell-particle--debris', {
+              left: `${impactX}px`,
+              top: `${impactY}px`,
+            });
+            if (debris) removeOnAnimationEnd(debris);
+          }
+        }, i * 15);
+      }
+
+      // Target gets shredded
+      if (targetEl?.isConnected) {
+        targetEl.classList.add('spell-shotgun-blasted');
+        setTimeout(() => {
+          if (targetEl?.isConnected) {
+            targetEl.classList.remove('spell-shotgun-blasted');
+          }
+        }, 600);
+      }
+    }, 150);
+  }, 150); // After pump action
 };
 
 /**
- * DART - Tranquilizer dart arcs gracefully, frost spreads on impact
+ * TRANQUILIZER DART - Feathered dart arcs and sticks, creature falls asleep with ZZZ
  */
 const playDartProjectile = (targetEl, targetCenter, casterIndex, theme) => {
   const start = getProjectileStart(casterIndex);
   if (!start) return;
 
-  const dart = createEffectElement('spell-projectile spell-projectile--dart', {
+  const dx = targetCenter.x - start.x;
+  const dy = targetCenter.y - start.y;
+  const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+  // Phase 1: Tranq dart with feathered tail flies in arc
+  const dart = createEffectElement('spell-projectile spell-projectile--tranq-dart', {
     left: `${start.x}px`,
     top: `${start.y}px`,
-    '--target-x': `${targetCenter.x - start.x}px`,
-    '--target-y': `${targetCenter.y - start.y}px`,
+    '--target-x': `${dx}px`,
+    '--target-y': `${dy}px`,
     '--spell-color': theme.primary,
+    '--dart-angle': `${angle}deg`,
   });
 
   if (dart) {
-    dart.style.animation = 'spell-dart-arc 0.45s ease-out forwards';
+    dart.style.animation = 'spell-tranq-dart-arc 0.4s ease-out forwards';
 
+    // Feather trail particles
+    setTimeout(() => {
+      for (let i = 0; i < 4; i++) {
+        setTimeout(() => {
+          const t = i / 3;
+          const arcHeight = -50 * Math.sin(t * Math.PI);
+          const x = start.x + dx * t;
+          const y = start.y + dy * t + arcHeight;
+          const feather = createEffectElement('spell-particle spell-particle--dart-feather', {
+            left: `${x}px`,
+            top: `${y}px`,
+            '--spell-color': '#ff6b6b',
+          });
+          if (feather) removeOnAnimationEnd(feather);
+        }, i * 50);
+      }
+    }, 50);
+
+    // Phase 2: Dart sticks in target with "thunk"
     setTimeout(() => {
       dart.remove();
 
-      // Thunk sound effect visual - small impact
-      const thunk = createEffectElement('spell-effect spell-effect--dart-thunk', {
-        left: `${targetCenter.x}px`,
-        top: `${targetCenter.y}px`,
+      // Dart embedded in target
+      const embedded = createEffectElement('spell-effect spell-effect--dart-embedded', {
+        left: `${targetCenter.x + 15}px`,
+        top: `${targetCenter.y - 10}px`,
+        '--dart-angle': `${angle + 15}deg`,
       });
-      if (thunk) removeAfterDelay(thunk, 300);
+      if (embedded) removeAfterDelay(embedded, 1200);
 
-      // Frost spreads from impact point
-      targetEl.classList.add('spell-dart-hit');
-
-      // Ice crystals form
-      for (let i = 0; i < 6; i++) {
-        setTimeout(() => {
-          const angle = (i / 6) * 360;
-          const crystal = createEffectElement('spell-particle spell-particle--ice-crystal', {
-            left: `${targetCenter.x}px`,
-            top: `${targetCenter.y}px`,
-            '--angle': `${angle}deg`,
-            '--spell-color': theme.primary,
-          });
-          if (crystal) removeOnAnimationEnd(crystal);
-        }, i * 50);
+      // Small impact wobble
+      if (targetEl?.isConnected) {
+        targetEl.classList.add('spell-tranq-hit');
       }
 
-      setTimeout(() => targetEl.classList.remove('spell-dart-hit'), 1000);
-    }, 450);
+      // Phase 3: Sleep effect - target droops, ZZZ particles rise
+      setTimeout(() => {
+        // Target slumps/droops
+        if (targetEl?.isConnected) {
+          targetEl.classList.remove('spell-tranq-hit');
+          targetEl.classList.add('spell-tranq-asleep');
+        }
+
+        // ZZZ particles float upward
+        for (let i = 0; i < 3; i++) {
+          setTimeout(() => {
+            const zzz = createEffectElement('spell-particle spell-particle--zzz', {
+              left: `${targetCenter.x + 20 + i * 8}px`,
+              top: `${targetCenter.y - 30}px`,
+              '--zzz-index': i,
+            });
+            if (zzz) removeOnAnimationEnd(zzz);
+          }, i * 200);
+        }
+
+        // Frost crystals form (frozen effect)
+        for (let i = 0; i < 5; i++) {
+          setTimeout(() => {
+            const angle = (i / 5) * 360;
+            const crystal = createEffectElement('spell-particle spell-particle--frost-crystal', {
+              left: `${targetCenter.x}px`,
+              top: `${targetCenter.y}px`,
+              '--angle': `${angle}deg`,
+              '--spell-color': theme.primary,
+            });
+            if (crystal) removeOnAnimationEnd(crystal);
+          }, 100 + i * 60);
+        }
+
+        // Cold mist effect
+        const mist = createEffectElement('spell-effect spell-effect--cold-mist', {
+          left: `${targetCenter.x}px`,
+          top: `${targetCenter.y}px`,
+          '--spell-color': theme.primary,
+        });
+        if (mist) removeAfterDelay(mist, 800);
+
+      }, 200);
+
+      // Cleanup
+      setTimeout(() => {
+        if (targetEl?.isConnected) {
+          targetEl.classList.remove('spell-tranq-asleep');
+        }
+      }, 1200);
+    }, 400);
   }
 };
 
@@ -1491,6 +1779,338 @@ const playWaterBoltProjectile = (targetEl, targetCenter, casterIndex, theme) => 
 };
 
 /**
+ * LEAPFROG - Frog silhouette leaps to creature, then bounces to hit the player
+ * Deals 3 damage to creature AND 3 damage to rival player
+ */
+const playLeapfrogProjectile = (targetEl, targetCenter, casterIndex, theme) => {
+  const start = getProjectileStart(casterIndex);
+  if (!start) return;
+
+  // Get opponent's player badge/portrait for the second hit
+  const opponentIndex = casterIndex === 0 ? 1 : 0;
+  const opponentBadge = getPlayerBadgeByIndex(opponentIndex, getLocalPlayerIndex);
+  let playerTargetCenter = null;
+
+  if (opponentBadge) {
+    const badgeRect = opponentBadge.getBoundingClientRect();
+    const layerRect = battleEffectsLayer.getBoundingClientRect();
+    playerTargetCenter = {
+      x: badgeRect.left - layerRect.left + badgeRect.width / 2,
+      y: badgeRect.top - layerRect.top + badgeRect.height / 2,
+    };
+  }
+
+  // Phase 1: Frog crouches (anticipation)
+  const frog = createEffectElement('spell-projectile spell-projectile--leapfrog', {
+    left: `${start.x}px`,
+    top: `${start.y}px`,
+    '--spell-color': theme.primary,
+  });
+
+  if (frog) {
+    // Crouch anticipation
+    frog.style.animation = 'leapfrog-crouch 0.15s ease-out forwards';
+
+    // Phase 2: First leap to creature target
+    setTimeout(() => {
+      const dx1 = targetCenter.x - start.x;
+      const dy1 = targetCenter.y - start.y;
+
+      frog.style.setProperty('--target-x', `${dx1}px`);
+      frog.style.setProperty('--target-y', `${dy1}px`);
+      frog.style.animation = 'leapfrog-jump 0.35s ease-out forwards';
+
+      // Spawn splash trail during jump
+      for (let i = 0; i < 5; i++) {
+        setTimeout(() => {
+          const t = i / 4;
+          const arcHeight = -80 * Math.sin(t * Math.PI);
+          const x = start.x + dx1 * t;
+          const y = start.y + dy1 * t + arcHeight;
+          const splash = createEffectElement('spell-particle spell-particle--frog-splash', {
+            left: `${x}px`,
+            top: `${y}px`,
+            '--spell-color': theme.primary,
+          });
+          if (splash) removeOnAnimationEnd(splash);
+        }, i * 50);
+      }
+    }, 150);
+
+    // Phase 3: Land on creature - SPLAT impact
+    setTimeout(() => {
+      screenShake('light', 100);
+
+      // Impact ring on creature
+      const impact1 = createEffectElement('spell-effect spell-effect--frog-impact', {
+        left: `${targetCenter.x}px`,
+        top: `${targetCenter.y}px`,
+        '--spell-color': theme.primary,
+      });
+      if (impact1) removeAfterDelay(impact1, 400);
+
+      // Damage splatter
+      spawnParticleBurst(targetCenter.x, targetCenter.y, 6, 'spell-particle--frog-splat', theme, { spread: 40 });
+
+      // Target reacts
+      if (targetEl?.isConnected) {
+        targetEl.classList.add('spell-frog-landed');
+      }
+
+      // Phase 4: Bounce off to player (if we have a target)
+      if (playerTargetCenter) {
+        setTimeout(() => {
+          const dx2 = playerTargetCenter.x - targetCenter.x;
+          const dy2 = playerTargetCenter.y - targetCenter.y;
+
+          // Move frog to creature position and start second jump
+          frog.style.left = `${targetCenter.x}px`;
+          frog.style.top = `${targetCenter.y}px`;
+          frog.style.setProperty('--target-x', `${dx2}px`);
+          frog.style.setProperty('--target-y', `${dy2}px`);
+          frog.style.animation = 'leapfrog-jump 0.3s ease-out forwards';
+
+          // Splash trail for second jump
+          for (let i = 0; i < 4; i++) {
+            setTimeout(() => {
+              const t = i / 3;
+              const arcHeight = -60 * Math.sin(t * Math.PI);
+              const x = targetCenter.x + dx2 * t;
+              const y = targetCenter.y + dy2 * t + arcHeight;
+              const splash = createEffectElement('spell-particle spell-particle--frog-splash', {
+                left: `${x}px`,
+                top: `${y}px`,
+                '--spell-color': theme.primary,
+              });
+              if (splash) removeOnAnimationEnd(splash);
+            }, i * 40);
+          }
+
+          // Phase 5: Hit player
+          setTimeout(() => {
+            frog.remove();
+            screenShake('medium', 150);
+
+            // Impact on player
+            const impact2 = createEffectElement('spell-effect spell-effect--frog-impact', {
+              left: `${playerTargetCenter.x}px`,
+              top: `${playerTargetCenter.y}px`,
+              '--spell-color': theme.primary,
+            });
+            if (impact2) removeAfterDelay(impact2, 400);
+
+            // Player damage indicator
+            spawnParticleBurst(playerTargetCenter.x, playerTargetCenter.y, 8, 'spell-particle--frog-splat', theme, { spread: 50 });
+
+            // Flash player badge
+            if (opponentBadge) {
+              opponentBadge.classList.add('spell-frog-hit-player');
+              setTimeout(() => opponentBadge.classList.remove('spell-frog-hit-player'), 500);
+            }
+          }, 300);
+        }, 150); // Brief pause on creature before bouncing
+      } else {
+        // No player target, just remove frog
+        setTimeout(() => frog.remove(), 200);
+      }
+
+      setTimeout(() => {
+        if (targetEl?.isConnected) {
+          targetEl.classList.remove('spell-frog-landed');
+        }
+      }, 600);
+    }, 500); // After first jump completes
+  }
+};
+
+/**
+ * SURPRISE - Snake strikes from the grass with lightning speed
+ * Snake silhouette lunges from hiding, fangs extended, lightning-fast strike
+ */
+const playSnakeStrikeProjectile = (targetEl, targetCenter, casterIndex, theme) => {
+  const start = getProjectileStart(casterIndex);
+  if (!start) return;
+
+  // Calculate strike direction
+  const dx = targetCenter.x - start.x;
+  const dy = targetCenter.y - start.y;
+  const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+  // Phase 1: Grass rustles where snake hides (anticipation)
+  for (let g = 0; g < 5; g++) {
+    setTimeout(() => {
+      const grass = createEffectElement('spell-particle spell-particle--snake-grass', {
+        left: `${start.x + (Math.random() - 0.5) * 60}px`,
+        top: `${start.y + (Math.random() - 0.5) * 30}px`,
+        '--spell-color': '#4caf50',
+      });
+      if (grass) removeOnAnimationEnd(grass);
+    }, g * 30);
+  }
+
+  // Phase 2: Snake strikes (150ms) - very fast
+  setTimeout(() => {
+    // Snake silhouette
+    const snake = createEffectElement('spell-projectile spell-projectile--snake-strike', {
+      left: `${start.x}px`,
+      top: `${start.y}px`,
+      '--target-x': `${dx}px`,
+      '--target-y': `${dy}px`,
+      '--strike-angle': `${angle}deg`,
+      '--spell-color': theme.primary,
+    });
+
+    if (snake) {
+      // Create snake body segments
+      snake.innerHTML = `
+        <div class="snake-head"></div>
+        <div class="snake-fangs"></div>
+        <div class="snake-body"></div>
+      `;
+
+      // Lightning-fast strike animation
+      snake.style.animation = 'spell-snake-strike 0.2s ease-out forwards';
+
+      setTimeout(() => snake.remove(), 200);
+    }
+
+    // Motion blur trail
+    for (let t = 0; t < 4; t++) {
+      setTimeout(() => {
+        const trail = createEffectElement('spell-particle spell-particle--snake-trail', {
+          left: `${start.x + dx * (t / 4)}px`,
+          top: `${start.y + dy * (t / 4)}px`,
+          '--spell-color': theme.primary,
+        });
+        if (trail) removeOnAnimationEnd(trail);
+      }, t * 15);
+    }
+  }, 120);
+
+  // Phase 3: Strike impact (320ms)
+  setTimeout(() => {
+    screenShake('light', 150);
+
+    // Venom impact burst
+    const impact = createEffectElement('spell-effect spell-effect--snake-bite', {
+      left: `${targetCenter.x}px`,
+      top: `${targetCenter.y}px`,
+      '--spell-color': theme.primary,
+    });
+    if (impact) removeOnAnimationEnd(impact);
+
+    // Fang marks
+    const fangs = createEffectElement('spell-effect spell-effect--fang-marks', {
+      left: `${targetCenter.x}px`,
+      top: `${targetCenter.y}px`,
+      '--spell-color': theme.primary,
+    });
+    if (fangs) removeAfterDelay(fangs, 600);
+
+    // Venom drip particles
+    for (let v = 0; v < 4; v++) {
+      setTimeout(() => {
+        const venom = createEffectElement('spell-particle spell-particle--venom-drip', {
+          left: `${targetCenter.x + (Math.random() - 0.5) * 20}px`,
+          top: `${targetCenter.y}px`,
+          '--spell-color': theme.primary,
+        });
+        if (venom) removeOnAnimationEnd(venom);
+      }, v * 50);
+    }
+
+    if (targetEl?.isConnected) {
+      targetEl.classList.add('spell-snake-bitten');
+      setTimeout(() => targetEl.classList.remove('spell-snake-bitten'), 600);
+    }
+  }, 280);
+};
+
+/**
+ * WHITE MISSILE - Sharp quill spins like a throwing knife and embeds in target
+ * Elegant white feather quill with deadly precision
+ */
+const playQuillProjectile = (targetEl, targetCenter, casterIndex, theme) => {
+  const start = getProjectileStart(casterIndex);
+  if (!start) return;
+
+  const dx = targetCenter.x - start.x;
+  const dy = targetCenter.y - start.y;
+  const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+  // The spinning quill
+  const quill = createEffectElement('spell-projectile spell-projectile--quill', {
+    left: `${start.x}px`,
+    top: `${start.y}px`,
+    '--target-x': `${dx}px`,
+    '--target-y': `${dy}px`,
+    '--quill-angle': `${angle}deg`,
+    '--spell-color': '#fff',
+  });
+
+  if (quill) {
+    // Quill shape with sharp tip
+    quill.innerHTML = `
+      <div class="quill-tip"></div>
+      <div class="quill-shaft"></div>
+      <div class="quill-feathers"></div>
+    `;
+
+    quill.style.animation = 'spell-quill-spin 0.3s linear forwards';
+
+    // Feather wisps trail behind
+    for (let w = 0; w < 5; w++) {
+      setTimeout(() => {
+        const t = w / 4;
+        const wisp = createEffectElement('spell-particle spell-particle--quill-wisp', {
+          left: `${start.x + dx * t}px`,
+          top: `${start.y + dy * t}px`,
+          '--spell-color': '#fff',
+        });
+        if (wisp) removeOnAnimationEnd(wisp);
+      }, w * 40);
+    }
+
+    // Impact
+    setTimeout(() => {
+      quill.remove();
+
+      // Quill embeds with wobble
+      const embedded = createEffectElement('spell-effect spell-effect--quill-embedded', {
+        left: `${targetCenter.x}px`,
+        top: `${targetCenter.y}px`,
+        '--embed-angle': `${angle}deg`,
+        '--spell-color': '#fff',
+      });
+      if (embedded) {
+        embedded.innerHTML = `
+          <div class="embedded-quill-tip"></div>
+          <div class="embedded-quill-shaft"></div>
+          <div class="embedded-quill-feathers"></div>
+        `;
+        removeAfterDelay(embedded, 800);
+      }
+
+      // Small feather puff on impact
+      for (let f = 0; f < 4; f++) {
+        const feather = createEffectElement('spell-particle spell-particle--quill-puff', {
+          left: `${targetCenter.x}px`,
+          top: `${targetCenter.y}px`,
+          '--angle': `${f * 90 + 45}deg`,
+          '--spell-color': '#fff',
+        });
+        if (feather) removeOnAnimationEnd(feather);
+      }
+
+      if (targetEl?.isConnected) {
+        targetEl.classList.add('spell-quill-hit');
+        setTimeout(() => targetEl.classList.remove('spell-quill-hit'), 500);
+      }
+    }, 300);
+  }
+};
+
+/**
  * Generic projectile fallback
  */
 const playGenericProjectile = (targetEl, targetCenter, casterIndex, theme, projectileType) => {
@@ -1676,226 +2296,376 @@ const playFloodEffect = (state, theme) => {
 };
 
 /**
- * Meteor effect - Sky darkens, flaming meteor streaks down with devastating impact
+ * METEOR - Epic extinction-level event board wipe
+ * Full cinematic: Distant rumbling, sky tears open, massive meteor descends,
+ * cataclysmic impact with fire pillars, ash rains down on devastated field
  */
 const playMeteorEffect = (state, theme) => {
-  // Phase 1: Sky ominously darkens (anticipation)
-  const darken = screenDarken(1400);
+  // Phase 1: Ominous warning - distant rumble, sky begins to glow (0-300ms)
+  screenDarken(1600);
 
-  // Ember particles float up from heat
-  for (let i = 0; i < 8; i++) {
+  // Distant fiery glow appears in sky corner
+  const distantGlow = createEffectElement('spell-effect spell-effect--meteor-distant-glow', {
+    '--spell-color': theme.primary,
+  });
+  if (distantGlow) removeAfterDelay(distantGlow, 800);
+
+  // Ground trembles - small particles rise
+  for (let i = 0; i < 12; i++) {
     setTimeout(() => {
-      const ember = createEffectElement('spell-particle spell-particle--ember-rise', {
-        left: `${20 + Math.random() * 60}%`,
-        bottom: '20%',
-        '--spell-color': theme.primary,
+      const dust = createEffectElement('spell-particle spell-particle--meteor-warning-dust', {
+        left: `${10 + Math.random() * 80}%`,
+        bottom: '5%',
+        '--spell-color': '#8b4513',
       });
-      if (ember) removeOnAnimationEnd(ember);
-    }, 100 + i * 50);
+      if (dust) removeOnAnimationEnd(dust);
+    }, i * 25);
   }
 
-  // Phase 2: Meteor appears in sky and streaks down (350ms)
+  // Phase 2: Sky tears open with fiery rift (300-500ms)
   setTimeout(() => {
-    // Meteor glow in sky
-    const skyGlow = createEffectElement('spell-effect spell-effect--meteor-glow', {
+    // Fiery rift opens in sky
+    const rift = createEffectElement('spell-effect spell-effect--meteor-sky-rift', {
       '--spell-color': theme.primary,
+      '--spell-secondary': theme.secondary,
     });
-    if (skyGlow) removeAfterDelay(skyGlow, 500);
+    if (rift) removeAfterDelay(rift, 700);
 
-    // The meteor itself
-    const meteor = createEffectElement('spell-aoe spell-aoe--meteor', {
-      '--spell-color': theme.primary,
-    });
-
-    if (meteor) {
-      // Flame trail behind meteor
-      const trail = createEffectElement('spell-effect spell-effect--meteor-trail', {
-        '--spell-color': theme.primary,
-        '--spell-secondary': theme.secondary,
-      });
-      if (trail) removeAfterDelay(trail, 600);
-
-      removeOnAnimationEnd(meteor);
-    }
-
-    // Smoke particles in wake
-    for (let i = 0; i < 12; i++) {
+    // Embers spill from rift
+    for (let i = 0; i < 8; i++) {
       setTimeout(() => {
-        const smoke = createEffectElement('spell-particle spell-particle--meteor-smoke', {
-          left: `${45 + Math.random() * 10}%`,
-          top: `${10 + i * 5}%`,
+        const spillEmber = createEffectElement('spell-particle spell-particle--rift-ember', {
+          left: `${40 + Math.random() * 20}%`,
+          top: '5%',
+          '--spell-color': theme.primary,
         });
-        if (smoke) removeOnAnimationEnd(smoke);
+        if (spillEmber) removeOnAnimationEnd(spillEmber);
       }, i * 30);
     }
   }, 300);
 
-  // Phase 3: IMPACT - screen shake, flash, crater (800ms)
+  // Phase 3: METEOR DESCENDS - massive rock with fire corona (500-850ms)
   setTimeout(() => {
-    // Massive flash
-    screenFlash('rgba(255, 150, 50, 0.7)', 100);
-    screenShake('heavy', 500);
+    // The meteor itself - much larger and more detailed
+    const meteor = createEffectElement('spell-aoe spell-aoe--meteor-epic', {
+      '--spell-color': theme.primary,
+      '--spell-secondary': theme.secondary,
+    });
+    if (meteor) removeOnAnimationEnd(meteor);
 
-    // Impact shockwave rings
-    for (let i = 0; i < 3; i++) {
+    // Fire corona around meteor
+    const corona = createEffectElement('spell-effect spell-effect--meteor-corona', {
+      '--spell-color': theme.primary,
+    });
+    if (corona) removeAfterDelay(corona, 400);
+
+    // Trailing fire streams
+    for (let i = 0; i < 6; i++) {
       setTimeout(() => {
-        const ring = createEffectElement('spell-effect spell-effect--meteor-shockwave', {
-          '--ring-index': i,
+        const fireTrail = createEffectElement('spell-particle spell-particle--meteor-fire-trail', {
+          '--trail-offset': `${(i - 2.5) * 15}px`,
           '--spell-color': theme.primary,
         });
-        if (ring) removeOnAnimationEnd(ring);
-      }, i * 80);
+        if (fireTrail) removeOnAnimationEnd(fireTrail);
+      }, i * 20);
     }
 
-    // Crater effect
-    const crater = createEffectElement('spell-effect spell-effect--meteor-crater', {
-      '--spell-color': theme.secondary,
-    });
-    if (crater) removeAfterDelay(crater, 600);
+    // Smoke wake
+    for (let i = 0; i < 15; i++) {
+      setTimeout(() => {
+        const smoke = createEffectElement('spell-particle spell-particle--meteor-smoke-epic', {
+          left: `${45 + Math.random() * 10}%`,
+          top: `${5 + i * 4}%`,
+          '--size': `${15 + Math.random() * 20}px`,
+        });
+        if (smoke) removeOnAnimationEnd(smoke);
+      }, i * 20);
+    }
+  }, 500);
 
-    // Debris flying outward
-    for (let i = 0; i < 16; i++) {
-      const angle = (i / 16) * 360;
-      const debris = createEffectElement('spell-particle spell-particle--debris', {
+  // Phase 4: CATACLYSMIC IMPACT (850ms)
+  setTimeout(() => {
+    // Double flash - initial white, then orange
+    screenFlash('rgba(255, 255, 255, 0.9)', 80);
+    setTimeout(() => screenFlash('rgba(255, 120, 30, 0.8)', 150), 80);
+
+    // Heavy screen shake
+    screenShake('heavy', 600);
+
+    // Massive impact crater with fire
+    const crater = createEffectElement('spell-effect spell-effect--meteor-crater-epic', {
+      '--spell-color': theme.primary,
+      '--spell-secondary': theme.secondary,
+    });
+    if (crater) removeAfterDelay(crater, 800);
+
+    // Expanding shockwave rings
+    for (let i = 0; i < 4; i++) {
+      setTimeout(() => {
+        const ring = createEffectElement('spell-effect spell-effect--meteor-shockwave-epic', {
+          '--ring-index': i,
+          '--spell-color': i < 2 ? theme.primary : theme.secondary,
+        });
+        if (ring) removeOnAnimationEnd(ring);
+      }, i * 60);
+    }
+
+    // Fire pillars erupt from impact
+    for (let i = 0; i < 5; i++) {
+      setTimeout(() => {
+        const pillar = createEffectElement('spell-effect spell-effect--meteor-fire-pillar', {
+          '--pillar-x': `${20 + i * 15}%`,
+          '--pillar-delay': `${i * 0.05}s`,
+          '--spell-color': theme.primary,
+        });
+        if (pillar) removeOnAnimationEnd(pillar);
+      }, 50 + i * 40);
+    }
+
+    // Massive debris explosion
+    for (let i = 0; i < 24; i++) {
+      const angle = (i / 24) * 360;
+      const debris = createEffectElement('spell-particle spell-particle--meteor-debris-epic', {
         left: '50%',
         top: '50%',
         '--angle': `${angle}deg`,
-        '--speed': `${60 + Math.random() * 40}px`,
-        '--spell-color': theme.secondary,
+        '--speed': `${80 + Math.random() * 60}px`,
+        '--size': `${6 + Math.random() * 10}px`,
+        '--spell-color': Math.random() > 0.5 ? theme.primary : theme.secondary,
       });
       if (debris) removeOnAnimationEnd(debris);
     }
 
-    // All creatures take impact
+    // All creatures engulfed in flames
     const creatures = getAllCreatureElements(state);
-    creatures.forEach((el) => {
-      el.classList.add('spell-meteor-hit');
-
-      const center = getElementCenter(el);
-      if (center) {
-        // Fire burst on each
-        const fire = createEffectElement('spell-particle spell-particle--fire-burst', {
-          left: `${center.x}px`,
-          top: `${center.y}px`,
-          '--spell-color': theme.primary,
-        });
-        if (fire) removeOnAnimationEnd(fire);
-      }
-
-      setTimeout(() => el.classList.remove('spell-meteor-hit'), 700);
-    });
-  }, 750);
-
-  // Phase 4: Lingering embers and smoke (1100ms)
-  setTimeout(() => {
-    for (let i = 0; i < 10; i++) {
+    creatures.forEach((el, idx) => {
       setTimeout(() => {
-        const linger = createEffectElement('spell-particle spell-particle--ember-linger', {
-          left: `${30 + Math.random() * 40}%`,
-          top: `${40 + Math.random() * 30}%`,
-          '--spell-color': theme.primary,
-        });
-        if (linger) removeOnAnimationEnd(linger);
-      }, i * 60);
-    }
-  }, 1000);
-};
+        el.classList.add('spell-meteor-devastation');
 
-/**
- * Blizzard effect - Howling snowstorm freezes all enemies
- */
-const playBlizzardEffect = (state, theme, casterIndex) => {
-  // Phase 1: Temperature drops - blue tint creeps in
-  screenTint(theme.primary, 0.2, 1200);
+        const center = getElementCenter(el);
+        if (center) {
+          // Engulfing fire burst
+          const fireBurst = createEffectElement('spell-effect spell-effect--meteor-creature-burn', {
+            left: `${center.x}px`,
+            top: `${center.y}px`,
+            '--spell-color': theme.primary,
+          });
+          if (fireBurst) removeAfterDelay(fireBurst, 600);
+        }
 
-  // Frost creeps across screen edges
-  const frost = createEffectElement('spell-aoe spell-aoe--frost-creep', {
-    '--spell-color': theme.primary,
-  });
-  if (frost) removeAfterDelay(frost, 1200);
-
-  // Phase 2: Wind and snow begin (200ms)
-  setTimeout(() => {
-    // Howling wind visual
-    const wind = createEffectElement('spell-aoe spell-aoe--blizzard-wind', {
-      '--spell-color': theme.tertiary,
+        setTimeout(() => el.classList.remove('spell-meteor-devastation'), 800);
+      }, idx * 50);
     });
-    if (wind) removeOnAnimationEnd(wind);
+  }, 850);
 
-    // Heavy snowfall
-    for (let wave = 0; wave < 3; wave++) {
+  // Phase 5: Aftermath - ash and embers rain down (1200ms)
+  setTimeout(() => {
+    // Ash particles fall like snow
+    for (let wave = 0; wave < 2; wave++) {
       setTimeout(() => {
         for (let i = 0; i < 20; i++) {
           setTimeout(() => {
-            const snow = createEffectElement('spell-particle spell-particle--snowflake', {
-              left: `${Math.random() * 120 - 10}%`,
+            const ash = createEffectElement('spell-particle spell-particle--meteor-ash', {
+              left: `${Math.random() * 100}%`,
               top: '-5%',
-              '--size': `${4 + Math.random() * 6}px`,
-              '--sway': `${(Math.random() - 0.5) * 80}px`,
+              '--spell-color': '#4a4a4a',
+              '--sway': `${(Math.random() - 0.5) * 50}px`,
+            });
+            if (ash) removeOnAnimationEnd(ash);
+          }, i * 40);
+        }
+      }, wave * 300);
+    }
+
+    // Lingering embers float up from destruction
+    for (let i = 0; i < 15; i++) {
+      setTimeout(() => {
+        const linger = createEffectElement('spell-particle spell-particle--ember-aftermath', {
+          left: `${20 + Math.random() * 60}%`,
+          bottom: `${10 + Math.random() * 30}%`,
+          '--spell-color': theme.primary,
+        });
+        if (linger) removeOnAnimationEnd(linger);
+      }, i * 50);
+    }
+  }, 1200);
+};
+
+/**
+ * BLIZZARD - Devastating arctic storm freezes all enemies
+ * Full cinematic: Temperature plummets, frost spreads, howling winds with ice shards,
+ * enemies encased in ice with icicle formations
+ */
+const playBlizzardEffect = (state, theme, casterIndex) => {
+  // Phase 1: Temperature plummets - breath becomes visible, frost spreads (0-300ms)
+  screenTint(theme.primary, 0.25, 1400);
+
+  // Frost creeps from all edges
+  const frost = createEffectElement('spell-aoe spell-aoe--blizzard-frost-creep', {
+    '--spell-color': theme.primary,
+    '--spell-secondary': theme.secondary,
+  });
+  if (frost) removeAfterDelay(frost, 1400);
+
+  // Breath vapor particles near bottom (where player is)
+  for (let i = 0; i < 8; i++) {
+    setTimeout(() => {
+      const breath = createEffectElement('spell-particle spell-particle--frost-breath', {
+        left: `${30 + Math.random() * 40}%`,
+        bottom: '15%',
+        '--spell-color': theme.tertiary,
+      });
+      if (breath) removeOnAnimationEnd(breath);
+    }, i * 40);
+  }
+
+  // Phase 2: Howling wind picks up with horizontal ice shards (200-600ms)
+  setTimeout(() => {
+    // Wind streak lines across screen
+    for (let w = 0; w < 6; w++) {
+      setTimeout(() => {
+        const windStreak = createEffectElement('spell-effect spell-effect--blizzard-wind-streak', {
+          top: `${15 + w * 12}%`,
+          '--spell-color': theme.tertiary,
+        });
+        if (windStreak) removeOnAnimationEnd(windStreak);
+      }, w * 50);
+    }
+
+    // Heavy snowfall with wind angle
+    for (let wave = 0; wave < 3; wave++) {
+      setTimeout(() => {
+        for (let i = 0; i < 25; i++) {
+          setTimeout(() => {
+            const snow = createEffectElement('spell-particle spell-particle--blizzard-snow', {
+              left: `${-10 + Math.random() * 50}%`,
+              top: `${-5 + Math.random() * 20}%`,
+              '--size': `${4 + Math.random() * 8}px`,
+              '--wind-push': `${100 + Math.random() * 60}%`,
               '--spell-color': theme.tertiary,
             });
             if (snow) removeOnAnimationEnd(snow);
-          }, i * 30);
+          }, i * 25);
         }
-      }, wave * 250);
+      }, wave * 200);
+    }
+
+    // Flying ice shards
+    for (let i = 0; i < 12; i++) {
+      setTimeout(() => {
+        const shard = createEffectElement('spell-particle spell-particle--ice-shard-fly', {
+          left: '-5%',
+          top: `${20 + Math.random() * 50}%`,
+          '--shard-size': `${10 + Math.random() * 15}px`,
+          '--spell-color': theme.primary,
+        });
+        if (shard) removeOnAnimationEnd(shard);
+      }, 100 + i * 40);
     }
   }, 200);
 
-  // Phase 3: Ice crystals form on enemies (600ms)
+  // Phase 3: Enemies freeze solid with ice encasement (500-900ms)
   setTimeout(() => {
     const opponentIndex = casterIndex === 0 ? 1 : 0;
     const enemies = getFriendlyCreatureElements(state, opponentIndex);
 
     enemies.forEach((el, i) => {
       setTimeout(() => {
-        screenShake('light', 100);
+        screenShake('medium', 120);
 
-        el.classList.add('spell-blizzard-freeze');
+        el.classList.add('spell-blizzard-encase');
 
         const center = getElementCenter(el);
         if (center) {
-          // Ice crystals form around creature
-          for (let c = 0; c < 8; c++) {
+          // Ice crystals burst around creature
+          for (let c = 0; c < 10; c++) {
             setTimeout(() => {
-              const angle = (c / 8) * 360;
-              const crystal = createEffectElement('spell-particle spell-particle--ice-crystal-form', {
+              const angle = (c / 10) * 360;
+              const crystal = createEffectElement('spell-particle spell-particle--ice-crystal-burst', {
                 left: `${center.x}px`,
                 top: `${center.y}px`,
                 '--angle': `${angle}deg`,
+                '--distance': `${25 + Math.random() * 15}px`,
                 '--spell-color': theme.primary,
               });
               if (crystal) removeOnAnimationEnd(crystal);
-            }, c * 30);
+            }, c * 20);
           }
 
-          // Frost overlay on creature
-          const frostOverlay = createEffectElement('spell-effect spell-effect--creature-frost', {
+          // Ice block forms around creature
+          const iceBlock = createEffectElement('spell-effect spell-effect--ice-encase', {
             left: `${center.x}px`,
             top: `${center.y}px`,
             '--spell-color': theme.primary,
+            '--spell-secondary': theme.secondary,
           });
-          if (frostOverlay) removeAfterDelay(frostOverlay, 800);
+          if (iceBlock) removeAfterDelay(iceBlock, 900);
+
+          // Icicles form on creature
+          for (let ic = 0; ic < 5; ic++) {
+            setTimeout(() => {
+              const icicle = createEffectElement('spell-particle spell-particle--icicle-form', {
+                left: `${center.x + (ic - 2) * 12}px`,
+                top: `${center.y - 35}px`,
+                '--icicle-height': `${15 + Math.random() * 12}px`,
+                '--spell-color': theme.primary,
+              });
+              if (icicle) removeAfterDelay(icicle, 800);
+            }, 200 + ic * 40);
+          }
+
+          // Frost crack effects
+          const crack = createEffectElement('spell-effect spell-effect--frost-crack', {
+            left: `${center.x}px`,
+            top: `${center.y}px`,
+            '--spell-color': theme.secondary,
+          });
+          if (crack) removeAfterDelay(crack, 600);
         }
 
-        setTimeout(() => el.classList.remove('spell-blizzard-freeze'), 1000);
-      }, i * 150);
+        setTimeout(() => el.classList.remove('spell-blizzard-encase'), 1100);
+      }, i * 180);
     });
+
+    // Damage to enemy player
+    setTimeout(() => {
+      const opponentBadge = getPlayerBadgeByIndex(opponentIndex);
+      if (opponentBadge) {
+        const badgeCenter = getElementCenter(opponentBadge);
+        if (badgeCenter) {
+          // Ice hits player
+          const playerIce = createEffectElement('spell-effect spell-effect--blizzard-player-hit', {
+            left: `${badgeCenter.x}px`,
+            top: `${badgeCenter.y}px`,
+            '--spell-color': theme.primary,
+          });
+          if (playerIce) removeAfterDelay(playerIce, 500);
+        }
+      }
+    }, 100);
   }, 500);
 
-  // Phase 4: Storm dies down with lingering frost (1000ms)
+  // Phase 4: Storm subsides with lingering cold (1000ms)
   setTimeout(() => {
-    // Fading snow
-    for (let i = 0; i < 8; i++) {
+    // Last gentle snowflakes
+    for (let i = 0; i < 12; i++) {
       setTimeout(() => {
-        const lateSnow = createEffectElement('spell-particle spell-particle--snowflake-fade', {
+        const gentleSnow = createEffectElement('spell-particle spell-particle--snow-gentle', {
           left: `${Math.random() * 100}%`,
           top: '-5%',
+          '--size': `${3 + Math.random() * 4}px`,
           '--spell-color': theme.tertiary,
         });
-        if (lateSnow) removeOnAnimationEnd(lateSnow);
-      }, i * 80);
+        if (gentleSnow) removeOnAnimationEnd(gentleSnow);
+      }, i * 60);
     }
-  }, 900);
+
+    // Frost mist lingers
+    const mist = createEffectElement('spell-effect spell-effect--frost-mist-linger', {
+      '--spell-color': theme.primary,
+    });
+    if (mist) removeAfterDelay(mist, 600);
+  }, 1000);
 };
 
 /**
@@ -2244,6 +3014,9 @@ const playBuffEffect = (effect, state) => {
     case 'barnacles':
       playBarnaclesEffect(friendlies, theme);
       break;
+    case 'thaw':
+      playThawEffect(friendlies, theme);
+      break;
     default:
       // Generic buff glow
       playGenericBuffEffect(friendlies, theme);
@@ -2556,6 +3329,106 @@ const playBarnaclesEffect = (targets, theme) => {
 /**
  * Generic buff glow effect
  */
+/**
+ * WARM BLOOD - Heat radiates outward, melting ice from frozen friendlies
+ * Warm orange glow spreads, ice cracks and melts away, steam rises
+ */
+const playThawEffect = (targets, theme) => {
+  const arena = getBattleArena();
+  if (!arena || !battleEffectsLayer) return;
+
+  const arenaRect = arena.getBoundingClientRect();
+  const layerRect = battleEffectsLayer.getBoundingClientRect();
+  const centerX = arenaRect.left - layerRect.left + arenaRect.width / 2;
+  const centerY = arenaRect.top - layerRect.top + arenaRect.height / 2;
+
+  // Phase 1: Warm glow emanates from center
+  const warmGlow = createEffectElement('spell-effect spell-effect--warm-blood-glow', {
+    left: `${centerX}px`,
+    top: `${centerY}px`,
+    '--spell-color': theme.primary,
+  });
+  if (warmGlow) removeOnAnimationEnd(warmGlow);
+
+  // Heat waves radiate outward
+  for (let w = 0; w < 3; w++) {
+    setTimeout(() => {
+      const wave = createEffectElement('spell-effect spell-effect--warm-blood-wave', {
+        left: `${centerX}px`,
+        top: `${centerY}px`,
+        '--wave-index': w,
+        '--spell-color': theme.primary,
+      });
+      if (wave) removeOnAnimationEnd(wave);
+    }, w * 150);
+  }
+
+  // Phase 2: Ice melts from each friendly creature (300ms)
+  setTimeout(() => {
+    targets.forEach((el, i) => {
+      setTimeout(() => {
+        const center = getElementCenter(el);
+        if (!center) return;
+
+        // Add thawing animation to creature
+        el.classList.add('spell-thawing');
+
+        // Ice crack particles
+        for (let c = 0; c < 6; c++) {
+          const crackAngle = (c / 6) * 360;
+          const crack = createEffectElement('spell-particle spell-particle--ice-crack', {
+            left: `${center.x + Math.cos(crackAngle * Math.PI / 180) * 20}px`,
+            top: `${center.y + Math.sin(crackAngle * Math.PI / 180) * 20}px`,
+            '--angle': `${crackAngle}deg`,
+          });
+          if (crack) removeOnAnimationEnd(crack);
+        }
+
+        // Ice shards fall
+        for (let s = 0; s < 4; s++) {
+          setTimeout(() => {
+            const shard = createEffectElement('spell-particle spell-particle--ice-shard-fall', {
+              left: `${center.x + (Math.random() - 0.5) * 40}px`,
+              top: `${center.y - 20}px`,
+            });
+            if (shard) removeOnAnimationEnd(shard);
+          }, s * 40);
+        }
+
+        // Steam rises as ice melts
+        setTimeout(() => {
+          for (let v = 0; v < 5; v++) {
+            setTimeout(() => {
+              const steam = createEffectElement('spell-particle spell-particle--steam', {
+                left: `${center.x + (Math.random() - 0.5) * 30}px`,
+                top: `${center.y}px`,
+                '--spell-color': '#fff',
+              });
+              if (steam) removeOnAnimationEnd(steam);
+            }, v * 60);
+          }
+        }, 200);
+
+        setTimeout(() => el.classList.remove('spell-thawing'), 800);
+      }, i * 150);
+    });
+  }, 250);
+
+  // Phase 3: Warm sparkles linger (600ms)
+  setTimeout(() => {
+    for (let l = 0; l < 10; l++) {
+      setTimeout(() => {
+        const sparkle = createEffectElement('spell-particle spell-particle--warm-sparkle', {
+          left: `${centerX + (Math.random() - 0.5) * 200}px`,
+          top: `${centerY + (Math.random() - 0.5) * 100}px`,
+          '--spell-color': theme.primary,
+        });
+        if (sparkle) removeOnAnimationEnd(sparkle);
+      }, l * 40);
+    }
+  }, 550);
+};
+
 const playGenericBuffEffect = (targets, theme) => {
   targets.forEach((el, i) => {
     setTimeout(() => {
@@ -2628,40 +3501,216 @@ const playHealEffect = (effect, state) => {
 };
 
 /**
- * Venom heal effect - green-gold swirl
+ * SNAKE WINE - Exotic healing elixir with snake essence
+ * Full cinematic: Wine vessel appears, snake coils within glowing liquid,
+ * player drinks the mystical brew, healing energy radiates outward
  */
 const playVenomHealEffect = (playerBadge, theme) => {
   const center = getElementCenter(playerBadge);
   if (!center) return;
 
-  const swirl = createEffectElement('spell-effect spell-effect--venom-swirl', {
+  // Phase 1: Wine vessel materializes (0-300ms)
+  const vessel = createEffectElement('spell-effect spell-effect--snake-wine-vessel', {
     left: `${center.x}px`,
-    top: `${center.y}px`,
+    top: `${center.y - 30}px`,
     '--spell-color': theme.primary,
+    '--spell-secondary': theme.secondary,
   });
-  if (swirl) {
-    removeOnAnimationEnd(swirl);
+  if (vessel) removeAfterDelay(vessel, 1400);
+
+  // Mystical mist around vessel
+  for (let i = 0; i < 6; i++) {
+    setTimeout(() => {
+      const mist = createEffectElement('spell-particle spell-particle--wine-mist', {
+        left: `${center.x + (Math.random() - 0.5) * 40}px`,
+        top: `${center.y - 30 + Math.random() * 20}px`,
+        '--spell-color': theme.tertiary,
+      });
+      if (mist) removeOnAnimationEnd(mist);
+    }, i * 40);
   }
+
+  // Phase 2: Snake coils within the wine (250-600ms)
+  setTimeout(() => {
+    // Snake silhouette coiling
+    const snake = createEffectElement('spell-effect spell-effect--wine-snake-coil', {
+      left: `${center.x}px`,
+      top: `${center.y - 30}px`,
+      '--spell-color': '#2e7d32',
+    });
+    if (snake) removeAfterDelay(snake, 800);
+
+    // Liquid glows and swirls
+    const liquidGlow = createEffectElement('spell-effect spell-effect--wine-liquid-glow', {
+      left: `${center.x}px`,
+      top: `${center.y - 30}px`,
+      '--spell-color': theme.primary,
+      '--spell-secondary': '#4caf50',
+    });
+    if (liquidGlow) removeAfterDelay(liquidGlow, 900);
+
+    // Bubbles rise in liquid
+    for (let b = 0; b < 8; b++) {
+      setTimeout(() => {
+        const bubble = createEffectElement('spell-particle spell-particle--wine-bubble', {
+          left: `${center.x + (Math.random() - 0.5) * 20}px`,
+          top: `${center.y - 10}px`,
+          '--spell-color': theme.secondary,
+          '--bubble-size': `${3 + Math.random() * 4}px`,
+        });
+        if (bubble) removeOnAnimationEnd(bubble);
+      }, b * 50);
+    }
+  }, 250);
+
+  // Phase 3: Player drinks - healing energy absorbed (600-1000ms)
+  setTimeout(() => {
+    // Vessel tips toward player
+    const tipping = createEffectElement('spell-effect spell-effect--wine-drink', {
+      left: `${center.x}px`,
+      top: `${center.y - 30}px`,
+      '--spell-color': theme.primary,
+    });
+    if (tipping) removeAfterDelay(tipping, 500);
+
+    // Liquid stream flows to player
+    const stream = createEffectElement('spell-effect spell-effect--wine-stream', {
+      left: `${center.x}px`,
+      top: `${center.y - 30}px`,
+      '--spell-color': theme.primary,
+      '--spell-secondary': '#4caf50',
+    });
+    if (stream) removeAfterDelay(stream, 400);
+
+    // Player absorbs healing
+    setTimeout(() => {
+      playerBadge.classList.add('spell-snake-wine-absorb');
+      setTimeout(() => playerBadge.classList.remove('spell-snake-wine-absorb'), 800);
+    }, 200);
+  }, 600);
+
+  // Phase 4: Healing energy radiates outward (900-1400ms)
+  setTimeout(() => {
+    // Healing pulse rings
+    for (let r = 0; r < 3; r++) {
+      setTimeout(() => {
+        const ring = createEffectElement('spell-effect spell-effect--wine-heal-ring', {
+          left: `${center.x}px`,
+          top: `${center.y}px`,
+          '--ring-index': r,
+          '--spell-color': theme.primary,
+        });
+        if (ring) removeOnAnimationEnd(ring);
+      }, r * 100);
+    }
+
+    // Snake scale particles scatter (represent the snake's blessing)
+    for (let s = 0; s < 12; s++) {
+      setTimeout(() => {
+        const angle = (s / 12) * 360;
+        const scale = createEffectElement('spell-particle spell-particle--snake-scale-heal', {
+          left: `${center.x}px`,
+          top: `${center.y}px`,
+          '--angle': `${angle}deg`,
+          '--spell-color': '#4caf50',
+        });
+        if (scale) removeOnAnimationEnd(scale);
+      }, s * 25);
+    }
+
+    // Green-gold healing sparkles
+    for (let sp = 0; sp < 15; sp++) {
+      setTimeout(() => {
+        const sparkle = createEffectElement('spell-particle spell-particle--wine-sparkle', {
+          left: `${center.x + (Math.random() - 0.5) * 80}px`,
+          top: `${center.y + (Math.random() - 0.5) * 60}px`,
+          '--spell-color': Math.random() > 0.5 ? theme.primary : '#ffd700',
+        });
+        if (sparkle) removeOnAnimationEnd(sparkle);
+      }, sp * 30);
+    }
+  }, 900);
 };
 
 /**
- * Feather heal effect - white feathers spiral
+ * SWAN SONG - Graceful white swan feathers spiral upward with divine healing light
+ * A beautiful, serene effect befitting the swan's final gift
  */
 const playFeatherHealEffect = (playerBadge, theme) => {
   const center = getElementCenter(playerBadge);
   if (!center) return;
 
-  for (let f = 0; f < 5; f++) {
+  // Phase 1: Soft glow emanates from player
+  const softGlow = createEffectElement('spell-effect spell-effect--swan-glow', {
+    left: `${center.x}px`,
+    top: `${center.y}px`,
+    '--spell-color': '#fff',
+  });
+  if (softGlow) removeAfterDelay(softGlow, 1600);
+
+  // Phase 2: Large elegant feathers spiral upward
+  for (let wave = 0; wave < 3; wave++) {
     setTimeout(() => {
-      const feather = createEffectElement('spell-particle spell-particle--feather-heal', {
-        left: `${center.x + (Math.random() - 0.5) * 30}px`,
-        top: `${center.y + 30}px`,
-      });
-      if (feather) {
-        removeOnAnimationEnd(feather);
+      for (let f = 0; f < 4; f++) {
+        setTimeout(() => {
+          const angle = (f / 4) * 360 + wave * 30;
+          const feather = createEffectElement('spell-particle spell-particle--swan-feather', {
+            left: `${center.x + Math.cos(angle * Math.PI / 180) * 20}px`,
+            top: `${center.y + 40}px`,
+            '--spiral-angle': `${angle}deg`,
+            '--spiral-delay': `${f * 0.1}s`,
+            '--feather-size': `${18 + Math.random() * 8}px`,
+          });
+          if (feather) removeOnAnimationEnd(feather);
+        }, f * 60);
       }
-    }, f * 80);
+    }, wave * 200);
   }
+
+  // Phase 3: Divine sparkles trail behind feathers (400ms)
+  setTimeout(() => {
+    for (let s = 0; s < 15; s++) {
+      setTimeout(() => {
+        const sparkle = createEffectElement('spell-particle spell-particle--swan-sparkle', {
+          left: `${center.x + (Math.random() - 0.5) * 60}px`,
+          top: `${center.y + 40 - s * 8}px`,
+        });
+        if (sparkle) removeOnAnimationEnd(sparkle);
+      }, s * 30);
+    }
+  }, 350);
+
+  // Phase 4: Healing pulse at center (600ms)
+  setTimeout(() => {
+    const healPulse = createEffectElement('spell-effect spell-effect--swan-heal-pulse', {
+      left: `${center.x}px`,
+      top: `${center.y}px`,
+    });
+    if (healPulse) removeOnAnimationEnd(healPulse);
+
+    // Small healing numbers pop
+    spawnParticleBurst(center.x, center.y, 6, 'spell-particle--heal-mote', theme, { spread: 30 });
+  }, 550);
+
+  // Phase 5: Barrier shimmer forms (800ms)
+  setTimeout(() => {
+    const barrierShimmer = createEffectElement('spell-effect spell-effect--swan-barrier', {
+      left: `${center.x}px`,
+      top: `${center.y}px`,
+      '--spell-color': '#87ceeb',
+    });
+    if (barrierShimmer) removeOnAnimationEnd(barrierShimmer);
+
+    // Barrier rune sparkles
+    for (let r = 0; r < 6; r++) {
+      const runeAngle = (r / 6) * 360;
+      const rune = createEffectElement('spell-particle spell-particle--barrier-rune', {
+        left: `${center.x + Math.cos(runeAngle * Math.PI / 180) * 40}px`,
+        top: `${center.y + Math.sin(runeAngle * Math.PI / 180) * 40}px`,
+      });
+      if (rune) removeOnAnimationEnd(rune);
+    }
+  }, 750);
 };
 
 /**
@@ -2785,6 +3834,9 @@ const playSummonEffect = (effect, state) => {
     case 'crabs':
       playCrabSummonEffect(state, casterIndex, theme);
       break;
+    case 'frost-summon':
+      playWhiteHartSummonEffect(state, casterIndex, theme);
+      break;
     default:
       playGenericSummonEffect(state, casterIndex, theme);
   }
@@ -2843,6 +3895,182 @@ const playCrabSummonEffect = (state, casterIndex, theme) => {
   if (sand) {
     removeOnAnimationEnd(sand);
   }
+};
+
+/**
+ * WHITE HART - Majestic ethereal stag resurrects fallen creature from carrion
+ * Full cinematic: Ghostly mist rises, magnificent white stag spirit appears,
+ * touches the carrion pile, creature emerges frozen but alive
+ */
+const playWhiteHartSummonEffect = (state, casterIndex, theme) => {
+  const arena = getBattleArena();
+  if (!arena || !battleEffectsLayer) return;
+
+  const arenaRect = arena.getBoundingClientRect();
+  const layerRect = battleEffectsLayer.getBoundingClientRect();
+
+  const centerX = arenaRect.left - layerRect.left + arenaRect.width / 2;
+  const centerY = arenaRect.top - layerRect.top + arenaRect.height / 2;
+
+  // Phase 1: Ethereal mist rises from below (0-400ms)
+  screenTint('#e3f2fd', 0.15, 1600);
+
+  for (let i = 0; i < 15; i++) {
+    setTimeout(() => {
+      const mist = createEffectElement('spell-particle spell-particle--hart-mist-rise', {
+        left: `${centerX + (Math.random() - 0.5) * 200}px`,
+        bottom: '0',
+        '--spell-color': theme.tertiary,
+        '--mist-width': `${30 + Math.random() * 50}px`,
+      });
+      if (mist) removeOnAnimationEnd(mist);
+    }, i * 30);
+  }
+
+  // Ghostly wind whispers
+  for (let w = 0; w < 4; w++) {
+    setTimeout(() => {
+      const whisper = createEffectElement('spell-effect spell-effect--hart-whisper', {
+        left: `${centerX}px`,
+        top: `${centerY}px`,
+        '--whisper-index': w,
+        '--spell-color': theme.primary,
+      });
+      if (whisper) removeOnAnimationEnd(whisper);
+    }, w * 80);
+  }
+
+  // Phase 2: White Hart spirit materializes (400-800ms)
+  setTimeout(() => {
+    // Stag spirit appears with divine glow
+    const stag = createEffectElement('spell-effect spell-effect--white-hart-spirit', {
+      left: `${centerX}px`,
+      top: `${centerY - 40}px`,
+      '--spell-color': '#fff',
+      '--spell-secondary': theme.primary,
+    });
+    if (stag) removeAfterDelay(stag, 1000);
+
+    // Divine light rays behind stag
+    for (let ray = 0; ray < 8; ray++) {
+      const rayAngle = (ray / 8) * 360;
+      const lightRay = createEffectElement('spell-particle spell-particle--hart-light-ray', {
+        left: `${centerX}px`,
+        top: `${centerY - 40}px`,
+        '--ray-angle': `${rayAngle}deg`,
+        '--spell-color': theme.tertiary,
+      });
+      if (lightRay) removeAfterDelay(lightRay, 900);
+    }
+
+    // Snowflake particles swirl around stag
+    for (let s = 0; s < 12; s++) {
+      setTimeout(() => {
+        const flake = createEffectElement('spell-particle spell-particle--hart-snowflake', {
+          left: `${centerX + (Math.random() - 0.5) * 80}px`,
+          top: `${centerY - 40 + (Math.random() - 0.5) * 60}px`,
+          '--spell-color': theme.tertiary,
+        });
+        if (flake) removeOnAnimationEnd(flake);
+      }, s * 40);
+    }
+  }, 400);
+
+  // Phase 3: Hart touches carrion - resurrection spark (800-1100ms)
+  setTimeout(() => {
+    // Resurrection spark travels down
+    const spark = createEffectElement('spell-effect spell-effect--hart-resurrection-spark', {
+      left: `${centerX}px`,
+      top: `${centerY - 40}px`,
+      '--spell-color': theme.primary,
+    });
+    if (spark) removeOnAnimationEnd(spark);
+
+    // Magic circle forms at summon location
+    setTimeout(() => {
+      const circle = createEffectElement('spell-effect spell-effect--hart-magic-circle', {
+        left: `${centerX}px`,
+        top: `${centerY + 30}px`,
+        '--spell-color': theme.primary,
+        '--spell-secondary': theme.secondary,
+      });
+      if (circle) removeAfterDelay(circle, 700);
+    }, 150);
+
+    // Ice crystals form at summon point
+    for (let c = 0; c < 8; c++) {
+      setTimeout(() => {
+        const angle = (c / 8) * 360;
+        const crystal = createEffectElement('spell-particle spell-particle--hart-ice-crystal', {
+          left: `${centerX}px`,
+          top: `${centerY + 30}px`,
+          '--angle': `${angle}deg`,
+          '--spell-color': theme.primary,
+        });
+        if (crystal) removeOnAnimationEnd(crystal);
+      }, 180 + c * 25);
+    }
+  }, 800);
+
+  // Phase 4: Creature emerges frozen (1100-1500ms)
+  setTimeout(() => {
+    // Find the first slot to animate
+    const slotEl = getFieldSlotElement(state, casterIndex, 1) || getFieldSlotElement(state, casterIndex, 0);
+    if (slotEl) {
+      const slotCenter = getElementCenter(slotEl);
+      if (slotCenter) {
+        // Ghost rises from ground
+        const ghost = createEffectElement('spell-effect spell-effect--hart-ghost-rise', {
+          left: `${slotCenter.x}px`,
+          top: `${slotCenter.y + 50}px`,
+          '--spell-color': theme.tertiary,
+        });
+        if (ghost) removeOnAnimationEnd(ghost);
+
+        // Frost burst as creature materializes
+        setTimeout(() => {
+          screenShake('light', 150);
+
+          for (let f = 0; f < 10; f++) {
+            const burstAngle = (f / 10) * 360;
+            const frostBurst = createEffectElement('spell-particle spell-particle--hart-frost-burst', {
+              left: `${slotCenter.x}px`,
+              top: `${slotCenter.y}px`,
+              '--angle': `${burstAngle}deg`,
+              '--spell-color': theme.primary,
+            });
+            if (frostBurst) removeOnAnimationEnd(frostBurst);
+          }
+
+          // Ice coating on slot
+          const iceCoat = createEffectElement('spell-effect spell-effect--hart-ice-coat', {
+            left: `${slotCenter.x}px`,
+            top: `${slotCenter.y}px`,
+            '--spell-color': theme.primary,
+          });
+          if (iceCoat) removeAfterDelay(iceCoat, 600);
+        }, 200);
+      }
+
+      slotEl.classList.add('spell-hart-materialize');
+      setTimeout(() => slotEl.classList.remove('spell-hart-materialize'), 800);
+    }
+  }, 1100);
+
+  // Phase 5: Hart spirit fades gracefully (1400-1600ms)
+  setTimeout(() => {
+    // Final sparkles as spirit departs
+    for (let sp = 0; sp < 10; sp++) {
+      setTimeout(() => {
+        const fadeSparkle = createEffectElement('spell-particle spell-particle--hart-fade-sparkle', {
+          left: `${centerX + (Math.random() - 0.5) * 100}px`,
+          top: `${centerY - 60 + (Math.random() - 0.5) * 40}px`,
+          '--spell-color': theme.tertiary,
+        });
+        if (fadeSparkle) removeOnAnimationEnd(fadeSparkle);
+      }, sp * 30);
+    }
+  }, 1400);
 };
 
 /**
@@ -2912,6 +4140,9 @@ const playStatusEffect = (effect, state) => {
       break;
     case 'acuity':
       playAcuityStatusEffect(targetEl, theme);
+      break;
+    case 'ecdysis':
+      playEcdysisStatusEffect(targetEl, theme);
       break;
     default:
       playGenericStatusEffect(targetEl, theme);
@@ -2991,6 +4222,97 @@ const playAcuityStatusEffect = (targetEl, theme) => {
 };
 
 /**
+ * ECDYSIS - Snake sheds its old skin to regenerate
+ * Old translucent skin peels away revealing fresh shiny scales beneath
+ */
+const playEcdysisStatusEffect = (targetEl, theme) => {
+  const center = getElementCenter(targetEl);
+  if (!center) return;
+
+  // Phase 1: Creature shimmers with transformation energy
+  targetEl.classList.add('spell-ecdysis-shimmer');
+
+  // Create the shedding skin overlay
+  const skinOverlay = createEffectElement('spell-effect spell-effect--ecdysis-skin', {
+    left: `${center.x}px`,
+    top: `${center.y}px`,
+    '--spell-color': theme.secondary || '#9e9e9e',
+  });
+  if (skinOverlay) removeAfterDelay(skinOverlay, 1200);
+
+  // Phase 2: Skin starts peeling (300ms)
+  setTimeout(() => {
+    // Peeling skin fragments curl away
+    for (let p = 0; p < 8; p++) {
+      setTimeout(() => {
+        const angle = (p / 8) * 360;
+        const peel = createEffectElement('spell-particle spell-particle--ecdysis-peel', {
+          left: `${center.x + Math.cos(angle * Math.PI / 180) * 25}px`,
+          top: `${center.y + Math.sin(angle * Math.PI / 180) * 25}px`,
+          '--peel-angle': `${angle}deg`,
+          '--spell-color': theme.secondary || '#9e9e9e',
+        });
+        if (peel) removeOnAnimationEnd(peel);
+      }, p * 40);
+    }
+
+    // Scale pattern fragments drift away
+    for (let s = 0; s < 6; s++) {
+      setTimeout(() => {
+        const scale = createEffectElement('spell-particle spell-particle--ecdysis-scale', {
+          left: `${center.x + (Math.random() - 0.5) * 40}px`,
+          top: `${center.y + (Math.random() - 0.5) * 40}px`,
+          '--spell-color': theme.secondary || '#9e9e9e',
+        });
+        if (scale) removeOnAnimationEnd(scale);
+      }, s * 50);
+    }
+  }, 250);
+
+  // Phase 3: Fresh scales revealed with shine (600ms)
+  setTimeout(() => {
+    targetEl.classList.remove('spell-ecdysis-shimmer');
+    targetEl.classList.add('spell-ecdysis-reveal');
+
+    // Shiny new scale gleam
+    const shine = createEffectElement('spell-effect spell-effect--ecdysis-shine', {
+      left: `${center.x}px`,
+      top: `${center.y}px`,
+      '--spell-color': theme.primary,
+    });
+    if (shine) removeOnAnimationEnd(shine);
+
+    // Sparkle burst for regeneration
+    for (let sp = 0; sp < 10; sp++) {
+      const angle = (sp / 10) * 360;
+      setTimeout(() => {
+        const sparkle = createEffectElement('spell-particle spell-particle--ecdysis-sparkle', {
+          left: `${center.x}px`,
+          top: `${center.y}px`,
+          '--angle': `${angle}deg`,
+          '--spell-color': theme.primary,
+        });
+        if (sparkle) removeOnAnimationEnd(sparkle);
+      }, sp * 20);
+    }
+
+    // Health restoration particles rise
+    for (let h = 0; h < 5; h++) {
+      setTimeout(() => {
+        const heal = createEffectElement('spell-particle spell-particle--regen-heal', {
+          left: `${center.x + (Math.random() - 0.5) * 30}px`,
+          top: `${center.y}px`,
+          '--spell-color': '#4caf50',
+        });
+        if (heal) removeOnAnimationEnd(heal);
+      }, h * 60);
+    }
+
+    setTimeout(() => targetEl.classList.remove('spell-ecdysis-reveal'), 600);
+  }, 550);
+};
+
+/**
  * Generic status effect
  */
 const playGenericStatusEffect = (targetEl, theme) => {
@@ -3038,6 +4360,9 @@ const playUtilityEffect = (effect, state) => {
       break;
     case 'sacrifice-draw':
       playSacrificeDrawEffect(effect, state, theme);
+      break;
+    case 'neocortex':
+      playNeocortexEffect(casterIndex, theme);
       break;
     default:
       // Generic utility pulse
@@ -3207,7 +4532,8 @@ const playDrawEffect = (casterIndex, theme) => {
 };
 
 /**
- * Reveal effect - illuminating gaze
+ * BIRD'S EYE VIEW - Giant glowing eye opens and scans opponent's hand
+ * Dramatic reveal effect showing the all-seeing bird's gaze
  */
 const playRevealEffect = (casterIndex, theme) => {
   const opponentIndex = casterIndex === 0 ? 1 : 0;
@@ -3216,58 +4542,485 @@ const playRevealEffect = (casterIndex, theme) => {
 
   if (!handArea) return;
 
-  // Eye opening effect
-  const eye = createEffectElement('spell-effect spell-effect--eye', {
+  const handRect = handArea.getBoundingClientRect();
+  const layerRect = battleEffectsLayer.getBoundingClientRect();
+  const handCenter = {
+    x: handRect.left - layerRect.left + handRect.width / 2,
+    y: handRect.top - layerRect.top + handRect.height / 2,
+  };
+
+  // Phase 1: Sky darkens dramatically
+  screenTint('rgba(0, 0, 30, 0.4)', 0.5, 2000);
+
+  // Phase 2: Giant eye opens in the sky/above
+  const eye = createEffectElement('spell-effect spell-effect--birds-eye', {
+    left: `${handCenter.x}px`,
+    top: `${handCenter.y - 100}px`,
     '--spell-color': theme.primary,
   });
-  if (eye) {
-    removeOnAnimationEnd(eye);
-  }
 
-  // Illuminate hand
-  handArea.classList.add('spell-revealed');
-  setTimeout(() => handArea.classList.remove('spell-revealed'), 1000);
+  if (eye) {
+    // Create eye components
+    const eyeWhite = document.createElement('div');
+    eyeWhite.className = 'birds-eye-white';
+
+    const eyeIris = document.createElement('div');
+    eyeIris.className = 'birds-eye-iris';
+    eyeIris.style.setProperty('--iris-color', theme.primary);
+
+    const eyePupil = document.createElement('div');
+    eyePupil.className = 'birds-eye-pupil';
+
+    const eyeGlow = document.createElement('div');
+    eyeGlow.className = 'birds-eye-glow';
+    eyeGlow.style.setProperty('--spell-color', theme.primary);
+
+    eyeIris.appendChild(eyePupil);
+    eyeWhite.appendChild(eyeIris);
+    eye.appendChild(eyeGlow);
+    eye.appendChild(eyeWhite);
+
+    // Eye opens animation
+    eye.style.animation = 'birds-eye-open 0.4s ease-out forwards';
+
+    // Phase 3: Eye looks down at hand (pupil moves)
+    setTimeout(() => {
+      eyeIris.style.animation = 'birds-eye-look-down 0.3s ease-out forwards';
+    }, 400);
+
+    // Phase 4: Scanning beam sweeps across hand
+    setTimeout(() => {
+      const beam = createEffectElement('spell-effect spell-effect--eye-beam', {
+        left: `${handRect.left - layerRect.left}px`,
+        top: `${handCenter.y - 60}px`,
+        '--beam-width': `${handRect.width}px`,
+        '--spell-color': theme.primary,
+      });
+      if (beam) {
+        beam.style.animation = 'eye-beam-scan 0.8s ease-in-out forwards';
+        removeAfterDelay(beam, 800);
+      }
+
+      // Illuminate hand cards as beam passes
+      handArea.classList.add('spell-eye-revealed');
+
+      // Individual card reveal sparkles
+      const cards = handArea.querySelectorAll('.card, .opponent-card');
+      cards.forEach((card, i) => {
+        setTimeout(() => {
+          const cardRect = card.getBoundingClientRect();
+          const cardCenter = {
+            x: cardRect.left - layerRect.left + cardRect.width / 2,
+            y: cardRect.top - layerRect.top + cardRect.height / 2,
+          };
+
+          // Sparkle on each card
+          for (let j = 0; j < 4; j++) {
+            const sparkle = createEffectElement('spell-particle spell-particle--eye-sparkle', {
+              left: `${cardCenter.x + (Math.random() - 0.5) * 30}px`,
+              top: `${cardCenter.y + (Math.random() - 0.5) * 40}px`,
+              '--spell-color': theme.primary,
+            });
+            if (sparkle) removeOnAnimationEnd(sparkle);
+          }
+
+          card.classList.add('spell-card-revealed');
+          setTimeout(() => card.classList.remove('spell-card-revealed'), 1500);
+        }, i * 100);
+      });
+    }, 700);
+
+    // Phase 5: Eye closes and fades
+    setTimeout(() => {
+      eye.style.animation = 'birds-eye-close 0.3s ease-in forwards';
+      removeAfterDelay(eye, 300);
+    }, 1800);
+
+    // Cleanup
+    setTimeout(() => {
+      handArea.classList.remove('spell-eye-revealed');
+    }, 2500);
+  }
 };
 
 /**
  * Search effect - glow descends into deck
  */
+/**
+ * ANGLER - Glowing anglerfish lure descends into murky depths to search
+ * The lure dangles, glows, attracts the creature from the deck
+ */
 const playSearchEffect = (casterIndex, theme) => {
-  const search = createEffectElement('spell-effect spell-effect--search', {
+  const isLocal = casterIndex === (getLocalPlayerIndex?.() ?? 0);
+  const deckArea = document.querySelector(isLocal ? '.deck-pile' : '.opponent-deck-area');
+
+  let deckCenter = null;
+  if (deckArea && battleEffectsLayer) {
+    const deckRect = deckArea.getBoundingClientRect();
+    const layerRect = battleEffectsLayer.getBoundingClientRect();
+    deckCenter = {
+      x: deckRect.left - layerRect.left + deckRect.width / 2,
+      y: deckRect.top - layerRect.top + deckRect.height / 2,
+    };
+  }
+
+  if (!deckCenter) {
+    // Fallback to generic
+    const search = createEffectElement('spell-effect spell-effect--search', {
+      '--spell-color': theme.primary,
+    });
+    if (search) removeOnAnimationEnd(search);
+    return;
+  }
+
+  // Phase 1: Water darkens around deck area
+  const darkOverlay = createEffectElement('spell-effect spell-effect--angler-dark', {
+    left: `${deckCenter.x}px`,
+    top: `${deckCenter.y}px`,
     '--spell-color': theme.primary,
   });
-  if (search) {
-    removeOnAnimationEnd(search);
-  }
+  if (darkOverlay) removeAfterDelay(darkOverlay, 1800);
+
+  // Phase 2: Angler lure descends from above (200ms)
+  setTimeout(() => {
+    // The fishing line/tendril
+    const line = createEffectElement('spell-effect spell-effect--angler-line', {
+      left: `${deckCenter.x}px`,
+      top: `${deckCenter.y - 120}px`,
+      '--spell-color': theme.secondary || '#1a4d7a',
+    });
+    if (line) removeAfterDelay(line, 1400);
+
+    // The glowing lure bulb
+    const lure = createEffectElement('spell-effect spell-effect--angler-lure', {
+      left: `${deckCenter.x}px`,
+      top: `${deckCenter.y - 100}px`,
+      '--spell-color': theme.primary,
+      '--spell-glow': theme.glow,
+    });
+
+    if (lure) {
+      // Inner glow
+      lure.innerHTML = `
+        <div class="angler-lure-bulb"></div>
+        <div class="angler-lure-glow"></div>
+        <div class="angler-lure-filament"></div>
+      `;
+      removeAfterDelay(lure, 1400);
+    }
+  }, 150);
+
+  // Phase 3: Lure pulses and glows brighter (600ms)
+  setTimeout(() => {
+    // Bioluminescent particles emanate
+    for (let p = 0; p < 12; p++) {
+      setTimeout(() => {
+        const particle = createEffectElement('spell-particle spell-particle--angler-glow', {
+          left: `${deckCenter.x + (Math.random() - 0.5) * 40}px`,
+          top: `${deckCenter.y - 60 + (Math.random() - 0.5) * 30}px`,
+          '--spell-color': theme.primary,
+        });
+        if (particle) removeOnAnimationEnd(particle);
+      }, p * 50);
+    }
+
+    // Small fish silhouettes swim toward the light
+    for (let f = 0; f < 3; f++) {
+      setTimeout(() => {
+        const fishSilhouette = createEffectElement('spell-particle spell-particle--angler-fish', {
+          left: `${deckCenter.x + (f === 0 ? -80 : f === 1 ? 80 : 0)}px`,
+          top: `${deckCenter.y + (f === 2 ? 60 : 0)}px`,
+          '--target-x': `${deckCenter.x}px`,
+          '--target-y': `${deckCenter.y - 40}px`,
+          '--spell-color': theme.secondary || '#1a4d7a',
+        });
+        if (fishSilhouette) removeOnAnimationEnd(fishSilhouette);
+      }, f * 150);
+    }
+  }, 550);
+
+  // Phase 4: Card rises from deck (1000ms)
+  setTimeout(() => {
+    // Card emerges with bubbles
+    for (let b = 0; b < 6; b++) {
+      setTimeout(() => {
+        const bubble = createEffectElement('spell-particle spell-particle--search-bubble', {
+          left: `${deckCenter.x + (Math.random() - 0.5) * 40}px`,
+          top: `${deckCenter.y}px`,
+          '--spell-color': theme.primary,
+        });
+        if (bubble) removeOnAnimationEnd(bubble);
+      }, b * 40);
+    }
+
+    // Catch glow
+    screenFlash(theme.glow, 80);
+  }, 950);
 };
 
 /**
- * Treasure effect - chest opens
+ * SUNKEN TREASURE - Epic treasure chest rises from the murky depths
+ * Chest emerges trailing bubbles, opens with golden light burst, treasures scatter
  */
 const playTreasureEffect = (casterIndex, theme) => {
-  const treasure = createEffectElement('spell-effect spell-effect--treasure', {
-    '--spell-color': theme.primary,
-  });
-  if (treasure) {
-    removeOnAnimationEnd(treasure);
+  const arena = getBattleArena();
+  if (!arena || !battleEffectsLayer) return;
+
+  const arenaRect = arena.getBoundingClientRect();
+  const layerRect = battleEffectsLayer.getBoundingClientRect();
+  const centerX = arenaRect.left - layerRect.left + arenaRect.width / 2;
+  const centerY = arenaRect.top - layerRect.top + arenaRect.height / 2;
+
+  // Phase 1: Murky water darkening and bubbles rise from below
+  screenTint(theme.primary, 0.1, 800);
+
+  // Bubbles rising from depths
+  for (let i = 0; i < 15; i++) {
+    setTimeout(() => {
+      const bubble = createEffectElement('spell-particle spell-particle--treasure-bubble', {
+        left: `${centerX + (Math.random() - 0.5) * 150}px`,
+        bottom: '0',
+        '--spell-color': theme.primary,
+        '--bubble-size': `${6 + Math.random() * 10}px`,
+        '--sway': `${(Math.random() - 0.5) * 40}px`,
+      });
+      if (bubble) removeOnAnimationEnd(bubble);
+    }, i * 40);
   }
+
+  // Phase 2: Treasure chest rises from bottom (300ms)
+  setTimeout(() => {
+    const chest = createEffectElement('spell-effect spell-effect--treasure-chest', {
+      left: `${centerX}px`,
+      '--spell-color': theme.secondary || '#d4af37',
+    });
+
+    if (chest) {
+      // Add chest components
+      chest.innerHTML = `
+        <div class="treasure-chest-base"></div>
+        <div class="treasure-chest-lid"></div>
+        <div class="treasure-chest-lock"></div>
+      `;
+
+      // Chains of kelp/seaweed trail behind
+      for (let k = 0; k < 3; k++) {
+        const kelp = createEffectElement('spell-particle spell-particle--treasure-kelp', {
+          left: `${centerX + (k - 1) * 30}px`,
+          bottom: '0',
+          '--spell-color': '#2d5a27',
+        });
+        if (kelp) removeAfterDelay(kelp, 800);
+      }
+
+      removeAfterDelay(chest, 1800);
+    }
+  }, 250);
+
+  // Phase 3: Chest opens with golden light burst (800ms)
+  setTimeout(() => {
+    screenFlash('rgba(255, 215, 0, 0.4)', 150);
+
+    // Golden light rays burst from chest
+    const lightBurst = createEffectElement('spell-effect spell-effect--treasure-light', {
+      left: `${centerX}px`,
+      top: `${centerY}px`,
+      '--spell-color': '#ffd700',
+    });
+    if (lightBurst) removeOnAnimationEnd(lightBurst);
+
+    // Sparkles emanate
+    for (let s = 0; s < 20; s++) {
+      setTimeout(() => {
+        const angle = (s / 20) * 360;
+        const sparkle = createEffectElement('spell-particle spell-particle--treasure-sparkle', {
+          left: `${centerX}px`,
+          top: `${centerY}px`,
+          '--angle': `${angle}deg`,
+          '--distance': `${50 + Math.random() * 80}px`,
+          '--spell-color': Math.random() > 0.5 ? '#ffd700' : '#fff',
+        });
+        if (sparkle) removeOnAnimationEnd(sparkle);
+      }, s * 20);
+    }
+  }, 750);
+
+  // Phase 4: Treasures scatter - coins, gems, pearls (950ms)
+  setTimeout(() => {
+    const treasureTypes = ['coin', 'gem', 'pearl'];
+    for (let t = 0; t < 12; t++) {
+      setTimeout(() => {
+        const type = treasureTypes[t % 3];
+        const treasure = createEffectElement(`spell-particle spell-particle--treasure-${type}`, {
+          left: `${centerX}px`,
+          top: `${centerY}px`,
+          '--scatter-x': `${(Math.random() - 0.5) * 200}px`,
+          '--scatter-y': `${-50 - Math.random() * 100}px`,
+          '--spell-color': type === 'coin' ? '#ffd700' : type === 'gem' ? '#e91e63' : '#fff',
+        });
+        if (treasure) removeOnAnimationEnd(treasure);
+      }, t * 40);
+    }
+
+    // Magical mist settles
+    const mist = createEffectElement('spell-effect spell-effect--treasure-mist', {
+      left: `${centerX}px`,
+      top: `${centerY + 30}px`,
+      '--spell-color': theme.primary,
+    });
+    if (mist) removeOnAnimationEnd(mist);
+  }, 900);
+
+  // Phase 5: Lingering golden particles (1200ms)
+  setTimeout(() => {
+    for (let l = 0; l < 8; l++) {
+      setTimeout(() => {
+        const linger = createEffectElement('spell-particle spell-particle--treasure-linger', {
+          left: `${centerX + (Math.random() - 0.5) * 100}px`,
+          top: `${centerY + (Math.random() - 0.5) * 60}px`,
+          '--spell-color': '#ffd700',
+        });
+        if (linger) removeOnAnimationEnd(linger);
+      }, l * 60);
+    }
+  }, 1150);
 };
 
 /**
- * Copy effect - feathers swirl between creatures
+ * BIRDS OF A FEATHER - Feathers swirl from source creature, coalesce into copy
+ * Shows the "copying" mechanic visually with feathers carrying the essence
  */
 const playCopyEffect = (effect, state, theme) => {
-  // This would need source and target info
-  const pulse = createEffectElement('spell-aoe spell-aoe--copy', {
-    '--spell-color': theme.primary,
-  });
-  if (pulse) {
-    removeOnAnimationEnd(pulse);
+  const { targetCardId, targetOwnerIndex, targetSlotIndex, casterIndex } = effect;
+
+  // Find the source creature being copied
+  let sourceEl = null;
+  if (targetCardId) {
+    sourceEl = document.querySelector(`.card[data-instance-id="${targetCardId}"]`);
   }
+  if (!sourceEl && targetSlotIndex !== undefined) {
+    const slot = getFieldSlotElement(state, targetOwnerIndex, targetSlotIndex);
+    sourceEl = slot?.querySelector('.card');
+  }
+
+  // Find where the copy will appear (caster's field - find empty slot or rightmost)
+  const casterSlots = [];
+  for (let i = 0; i < 3; i++) {
+    const slot = getFieldSlotElement(state, casterIndex, i);
+    if (slot) casterSlots.push(slot);
+  }
+  const destSlot = casterSlots[casterSlots.length - 1]; // Rightmost slot typically
+
+  const sourceCenter = sourceEl ? getElementCenter(sourceEl) : null;
+  const destCenter = destSlot ? getElementCenter(destSlot) : null;
+
+  if (!sourceCenter) {
+    // Fallback to generic effect
+    const pulse = createEffectElement('spell-aoe spell-aoe--copy', {
+      '--spell-color': theme.primary,
+    });
+    if (pulse) removeOnAnimationEnd(pulse);
+    return;
+  }
+
+  // Phase 1: Source creature glows and feathers burst outward
+  if (sourceEl) {
+    sourceEl.classList.add('spell-being-copied');
+  }
+
+  // Feathers burst from source
+  for (let i = 0; i < 12; i++) {
+    setTimeout(() => {
+      const angle = (i / 12) * 360;
+      const feather = createEffectElement('spell-particle spell-particle--copy-feather-burst', {
+        left: `${sourceCenter.x}px`,
+        top: `${sourceCenter.y}px`,
+        '--angle': `${angle}deg`,
+        '--spell-color': theme.primary,
+      });
+      if (feather) removeOnAnimationEnd(feather);
+    }, i * 30);
+  }
+
+  // Phase 2: Feathers swirl in vortex around source
+  setTimeout(() => {
+    for (let i = 0; i < 8; i++) {
+      setTimeout(() => {
+        const feather = createEffectElement('spell-particle spell-particle--copy-feather-swirl', {
+          left: `${sourceCenter.x}px`,
+          top: `${sourceCenter.y}px`,
+          '--swirl-index': i,
+          '--spell-color': theme.primary,
+        });
+        if (feather) removeOnAnimationEnd(feather);
+      }, i * 40);
+    }
+  }, 300);
+
+  // Phase 3: Feathers stream toward destination
+  if (destCenter) {
+    setTimeout(() => {
+      const dx = destCenter.x - sourceCenter.x;
+      const dy = destCenter.y - sourceCenter.y;
+
+      for (let i = 0; i < 10; i++) {
+        setTimeout(() => {
+          const feather = createEffectElement('spell-particle spell-particle--copy-feather-stream', {
+            left: `${sourceCenter.x}px`,
+            top: `${sourceCenter.y}px`,
+            '--target-x': `${dx + (Math.random() - 0.5) * 30}px`,
+            '--target-y': `${dy + (Math.random() - 0.5) * 30}px`,
+            '--spell-color': theme.primary,
+          });
+          if (feather) removeOnAnimationEnd(feather);
+        }, i * 50);
+      }
+
+      // Phase 4: Copy materializes at destination
+      setTimeout(() => {
+        // Coalescing glow at destination
+        const coalesce = createEffectElement('spell-effect spell-effect--copy-coalesce', {
+          left: `${destCenter.x}px`,
+          top: `${destCenter.y}px`,
+          '--spell-color': theme.primary,
+        });
+        if (coalesce) removeAfterDelay(coalesce, 600);
+
+        // Final feather burst as copy appears
+        for (let i = 0; i < 8; i++) {
+          const angle = (i / 8) * 360;
+          const feather = createEffectElement('spell-particle spell-particle--copy-feather-burst', {
+            left: `${destCenter.x}px`,
+            top: `${destCenter.y}px`,
+            '--angle': `${angle}deg`,
+            '--spell-color': theme.primary,
+          });
+          if (feather) removeOnAnimationEnd(feather);
+        }
+
+        // Destination slot glows
+        if (destSlot) {
+          destSlot.classList.add('spell-copy-destination');
+          setTimeout(() => destSlot.classList.remove('spell-copy-destination'), 600);
+        }
+      }, 500);
+    }, 500);
+  }
+
+  // Cleanup source effect
+  setTimeout(() => {
+    if (sourceEl) {
+      sourceEl.classList.remove('spell-being-copied');
+    }
+  }, 800);
 };
 
 /**
  * Sacrifice draw effect - creature to energy to cards
+ */
+/**
+ * CURIOSITY - Creature transforms into pure knowledge/energy
+ * The creature dissolves into glowing particles that become cards flying to hand
  */
 const playSacrificeDrawEffect = (effect, state, theme) => {
   const { targetCardId, targetOwnerIndex, targetSlotIndex, casterIndex } = effect;
@@ -3281,15 +5034,219 @@ const playSacrificeDrawEffect = (effect, state, theme) => {
     targetEl = slot?.querySelector('.card');
   }
 
+  let center = null;
   if (targetEl) {
-    targetEl.classList.add('spell-sacrifice');
-    setTimeout(() => targetEl.classList.remove('spell-sacrifice'), 800);
+    center = getElementCenter(targetEl);
+
+    // Phase 1: Creature glows with curiosity (questions marks appear)
+    targetEl.classList.add('spell-curiosity-target');
+
+    // Question mark particles swirl around
+    for (let q = 0; q < 6; q++) {
+      setTimeout(() => {
+        if (!center) return;
+        const angle = (q / 6) * 360;
+        const question = createEffectElement('spell-particle spell-particle--curiosity-question', {
+          left: `${center.x + Math.cos(angle * Math.PI / 180) * 30}px`,
+          top: `${center.y + Math.sin(angle * Math.PI / 180) * 30}px`,
+          '--spell-color': theme.primary,
+        });
+        if (question) removeOnAnimationEnd(question);
+      }, q * 50);
+    }
   }
 
-  // Cards fly to hand after sacrifice
+  // Phase 2: Creature dissolves into energy particles (300ms)
+  setTimeout(() => {
+    if (targetEl) {
+      targetEl.classList.remove('spell-curiosity-target');
+      targetEl.classList.add('spell-curiosity-dissolve');
+
+      if (center) {
+        // Energy particles burst outward then converge
+        for (let e = 0; e < 15; e++) {
+          setTimeout(() => {
+            const angle = (e / 15) * 360;
+            const energy = createEffectElement('spell-particle spell-particle--curiosity-energy', {
+              left: `${center.x}px`,
+              top: `${center.y}px`,
+              '--angle': `${angle}deg`,
+              '--spell-color': theme.primary,
+              '--spell-glow': theme.glow,
+            });
+            if (energy) removeOnAnimationEnd(energy);
+          }, e * 20);
+        }
+
+        // Knowledge symbols float up (book, lightbulb, brain icons)
+        const symbols = ['📖', '💡', '🧠'];
+        for (let s = 0; s < 3; s++) {
+          setTimeout(() => {
+            const symbol = createEffectElement('spell-particle spell-particle--curiosity-symbol', {
+              left: `${center.x + (s - 1) * 25}px`,
+              top: `${center.y}px`,
+              '--symbol': `"${symbols[s]}"`,
+            });
+            if (symbol) removeOnAnimationEnd(symbol);
+          }, s * 100);
+        }
+      }
+
+      setTimeout(() => targetEl.classList.remove('spell-curiosity-dissolve'), 600);
+    }
+  }, 250);
+
+  // Phase 3: Cards fly to hand with trail (600ms)
   setTimeout(() => {
     playDrawEffect(casterIndex, theme);
-  }, 400);
+
+    // Extra sparkle trail
+    if (center) {
+      for (let t = 0; t < 8; t++) {
+        setTimeout(() => {
+          const trail = createEffectElement('spell-particle spell-particle--knowledge-trail', {
+            left: `${center.x}px`,
+            top: `${center.y - t * 15}px`,
+            '--spell-color': theme.primary,
+          });
+          if (trail) removeOnAnimationEnd(trail);
+        }, t * 30);
+      }
+    }
+  }, 550);
+};
+
+/**
+ * SIX-LAYERED NEOCORTEX - Neural network visualization searches through deck
+ * Brain pulses, neurons fire, synapses connect to find the perfect creature
+ */
+const playNeocortexEffect = (casterIndex, theme) => {
+  const isLocal = casterIndex === (getLocalPlayerIndex?.() ?? 0);
+  const deckArea = document.querySelector(isLocal ? '.deck-pile' : '.opponent-deck-area');
+
+  let deckCenter = null;
+  if (deckArea && battleEffectsLayer) {
+    const deckRect = deckArea.getBoundingClientRect();
+    const layerRect = battleEffectsLayer.getBoundingClientRect();
+    deckCenter = {
+      x: deckRect.left - layerRect.left + deckRect.width / 2,
+      y: deckRect.top - layerRect.top + deckRect.height / 2,
+    };
+  }
+
+  const arena = getBattleArena();
+  let arenaCenter = null;
+  if (arena && battleEffectsLayer) {
+    const arenaRect = arena.getBoundingClientRect();
+    const layerRect = battleEffectsLayer.getBoundingClientRect();
+    arenaCenter = {
+      x: arenaRect.left - layerRect.left + arenaRect.width / 2,
+      y: arenaRect.top - layerRect.top + arenaRect.height / 2,
+    };
+  }
+
+  const centerX = arenaCenter?.x || 300;
+  const centerY = arenaCenter?.y || 200;
+
+  // Phase 1: Brain outline appears with pulsing glow
+  const brain = createEffectElement('spell-effect spell-effect--neocortex-brain', {
+    left: `${centerX}px`,
+    top: `${centerY}px`,
+    '--spell-color': theme.primary,
+    '--spell-glow': theme.glow,
+  });
+
+  if (brain) {
+    brain.innerHTML = `
+      <div class="neocortex-outline"></div>
+      <div class="neocortex-glow"></div>
+      <div class="neocortex-layers"></div>
+    `;
+    removeAfterDelay(brain, 2000);
+  }
+
+  // Phase 2: Neural connections light up (200ms)
+  setTimeout(() => {
+    // Synapses fire across the brain
+    for (let n = 0; n < 12; n++) {
+      setTimeout(() => {
+        const startAngle = Math.random() * 360;
+        const endAngle = startAngle + 90 + Math.random() * 90;
+        const startDist = 20 + Math.random() * 30;
+        const endDist = 20 + Math.random() * 30;
+
+        const startX = centerX + Math.cos(startAngle * Math.PI / 180) * startDist;
+        const startY = centerY + Math.sin(startAngle * Math.PI / 180) * startDist;
+        const endX = centerX + Math.cos(endAngle * Math.PI / 180) * endDist;
+        const endY = centerY + Math.sin(endAngle * Math.PI / 180) * endDist;
+
+        const synapse = createEffectElement('spell-effect spell-effect--neocortex-synapse', {
+          left: `${startX}px`,
+          top: `${startY}px`,
+          '--target-x': `${endX - startX}px`,
+          '--target-y': `${endY - startY}px`,
+          '--spell-color': theme.primary,
+        });
+        if (synapse) removeOnAnimationEnd(synapse);
+
+        // Neuron spark at connection point
+        const spark = createEffectElement('spell-particle spell-particle--neocortex-spark', {
+          left: `${endX}px`,
+          top: `${endY}px`,
+          '--spell-color': theme.glow,
+        });
+        if (spark) removeOnAnimationEnd(spark);
+      }, n * 60);
+    }
+  }, 150);
+
+  // Phase 3: Thought waves pulse outward toward deck (600ms)
+  setTimeout(() => {
+    // Concentric thought rings
+    for (let r = 0; r < 3; r++) {
+      setTimeout(() => {
+        const ring = createEffectElement('spell-effect spell-effect--neocortex-wave', {
+          left: `${centerX}px`,
+          top: `${centerY}px`,
+          '--ring-index': r,
+          '--spell-color': theme.primary,
+        });
+        if (ring) removeOnAnimationEnd(ring);
+      }, r * 100);
+    }
+
+    // Connection beam to deck if visible
+    if (deckCenter) {
+      const beam = createEffectElement('spell-effect spell-effect--neocortex-beam', {
+        left: `${centerX}px`,
+        top: `${centerY}px`,
+        '--target-x': `${deckCenter.x - centerX}px`,
+        '--target-y': `${deckCenter.y - centerY}px`,
+        '--spell-color': theme.primary,
+      });
+      if (beam) removeOnAnimationEnd(beam);
+    }
+  }, 550);
+
+  // Phase 4: Memory fragments float up from deck (900ms)
+  setTimeout(() => {
+    if (deckCenter) {
+      // Ice crystal memory particles (since it searches for Frozen keyword)
+      for (let m = 0; m < 8; m++) {
+        setTimeout(() => {
+          const memory = createEffectElement('spell-particle spell-particle--neocortex-memory', {
+            left: `${deckCenter.x + (Math.random() - 0.5) * 50}px`,
+            top: `${deckCenter.y}px`,
+            '--spell-color': '#87ceeb',
+          });
+          if (memory) removeOnAnimationEnd(memory);
+        }, m * 50);
+      }
+    }
+
+    // Final brain pulse
+    screenFlash(theme.glow, 80);
+  }, 850);
 };
 
 /**

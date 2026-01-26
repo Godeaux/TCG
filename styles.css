@@ -13845,57 +13845,191 @@ select.menu-input option {
 }
 
 /* ============================================================================
-   NET SPELL - Enhanced
+   NET SPELL - Bespoke Fishing Net Animation
    ============================================================================ */
 
-@keyframes spell-net-anticipate {
-  0% { transform: translate(-50%, -50%) scale(1); }
-  100% { transform: translate(-50%, calc(-50% + 10px)) scale(0.9); }
-}
-
-@keyframes spell-net-arc {
-  0% {
-    transform: translate(-50%, -50%) scale(0.9);
-    opacity: 1;
-  }
-  50% {
-    transform: translate(calc(-50% + var(--target-x) * 0.5), calc(-50% + var(--target-y) * 0.5 - 60px)) scale(1.1) rotate(180deg);
-  }
-  100% {
-    transform: translate(calc(-50% + var(--target-x)), calc(-50% + var(--target-y))) scale(1) rotate(360deg);
-    opacity: 1;
-  }
-}
-
-.spell-effect--net-wrap {
+/* Net bundle that launches and opens mid-flight */
+.spell-projectile--net-bundle {
   position: absolute;
-  width: 80px;
-  height: 80px;
-  transform: translate(-50%, -50%);
-  border: 4px solid var(--spell-color, #4fc3f7);
-  border-radius: 50%;
-  background: radial-gradient(circle, transparent 20%, var(--spell-color, rgba(79, 195, 247, 0.3)) 80%);
-  animation: spell-net-wrap 0.6s ease-out forwards;
+  width: 40px;
+  height: 50px;
+  transform: translate(-50%, -50%) rotate(var(--net-angle, 0deg));
   pointer-events: none;
 }
 
-@keyframes spell-net-wrap {
-  0% { transform: translate(-50%, -50%) scale(1.5); opacity: 0.5; }
-  30% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-  60% { transform: translate(-50%, -50%) scale(0.8); opacity: 1; }
-  100% { transform: translate(-50%, -50%) scale(0.3) translateY(20px); opacity: 0; }
+.spell-projectile--net-bundle::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background:
+    repeating-linear-gradient(45deg, transparent, transparent 4px, var(--spell-color, #4fc3f7) 4px, var(--spell-color, #4fc3f7) 6px),
+    repeating-linear-gradient(-45deg, transparent, transparent 4px, var(--spell-color, #4fc3f7) 4px, var(--spell-color, #4fc3f7) 6px);
+  border-radius: 30% 30% 50% 50%;
+  opacity: 0.9;
+  animation: net-bundle-expand 0.55s ease-out forwards;
 }
 
-.spell-net-caught {
-  animation: spell-net-caught 0.8s ease-out forwards !important;
+@keyframes spell-net-bundle-launch {
+  0% {
+    transform: translate(-50%, -50%) rotate(var(--net-angle, 0deg)) scale(0.6);
+    opacity: 1;
+  }
+  30% {
+    transform: translate(calc(-50% + var(--target-x) * 0.3), calc(-50% + var(--target-y) * 0.3 - 50px)) rotate(var(--net-angle, 0deg)) scale(1);
+  }
+  100% {
+    transform: translate(calc(-50% + var(--target-x)), calc(-50% + var(--target-y))) rotate(var(--net-angle, 0deg)) scale(1.2);
+    opacity: 1;
+  }
 }
 
-@keyframes spell-net-caught {
+@keyframes net-bundle-expand {
+  0% { transform: scale(0.5, 0.7); border-radius: 30%; }
+  50% { transform: scale(1, 1); border-radius: 30% 30% 50% 50%; }
+  100% { transform: scale(1.3, 1.4); border-radius: 20% 20% 60% 60%; }
+}
+
+/* Rope trailing from net */
+.spell-effect--net-rope {
+  position: absolute;
+  left: var(--start-x);
+  top: var(--start-y);
+  width: 3px;
+  height: calc(
+    sqrt(
+      pow(calc(var(--end-x) - var(--start-x)), 2) +
+      pow(calc(var(--end-y) - var(--start-y)), 2)
+    )
+  );
+  background: linear-gradient(to bottom, #8b7355, #6b5344);
+  transform-origin: top center;
+  transform: rotate(calc(atan2(calc(var(--end-x) - var(--start-x)), calc(var(--end-y) - var(--start-y))) * -1));
+  animation: net-rope-extend 0.5s ease-out forwards;
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+@keyframes net-rope-extend {
+  0% { clip-path: inset(0 0 100% 0); }
+  100% { clip-path: inset(0 0 0 0); }
+}
+
+/* Mesh net that captures target */
+.spell-effect--net-mesh {
+  position: absolute;
+  width: 100px;
+  height: 120px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  overflow: visible;
+}
+
+.spell-effect--net-mesh::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(0deg, transparent 0px, transparent 8px, var(--spell-color, #4fc3f7) 8px, var(--spell-color, #4fc3f7) 10px),
+    repeating-linear-gradient(90deg, transparent 0px, transparent 8px, var(--spell-color, #4fc3f7) 8px, var(--spell-color, #4fc3f7) 10px);
+  border-radius: 20% 20% 50% 50%;
+  opacity: 0.7;
+}
+
+.net-mesh-line {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--spell-color, #4fc3f7), transparent);
+  transform-origin: left center;
+  transform: rotate(var(--line-angle, 0deg));
+}
+
+@keyframes spell-net-mesh-capture {
+  0% {
+    transform: translate(-50%, -80%) scale(1.5, 0.3);
+    opacity: 0.3;
+  }
+  30% {
+    transform: translate(-50%, -50%) scale(1.2, 1.2);
+    opacity: 0.8;
+  }
+  60% {
+    transform: translate(-50%, -50%) scale(0.9, 1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -30%) scale(0.5, 0.6);
+    opacity: 0;
+  }
+}
+
+/* Net sinker/weight */
+.spell-effect--net-sinker {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: radial-gradient(circle at 30% 30%, #888, var(--spell-color, #5f6368));
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: net-sinker-drop 0.5s ease-in forwards;
+  pointer-events: none;
+}
+
+@keyframes net-sinker-drop {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+  30% { transform: translate(-50%, 0%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, 30px) scale(0.8); opacity: 0; }
+}
+
+/* Target captured animation */
+.spell-net-captured {
+  animation: spell-net-captured 0.9s ease-out forwards !important;
+}
+
+@keyframes spell-net-captured {
   0% { transform: scale(1); }
-  20% { transform: scale(1.1) rotate(-5deg); }
-  50% { transform: scale(0.8) rotate(5deg); }
-  70% { transform: scale(0.5) translateY(10px); }
-  100% { transform: scale(0.3) translateY(30px); opacity: 0.5; }
+  15% { transform: scale(1.05) rotate(-3deg); }
+  30% { transform: scale(0.95) rotate(3deg); }
+  50% { transform: scale(0.85) rotate(-2deg) translateY(5px); }
+  70% { transform: scale(0.7) translateY(15px); }
+  100% { transform: scale(0.4) translateY(35px); opacity: 0.3; }
+}
+
+/* Net spray particles */
+.spell-particle--net-spray {
+  position: absolute;
+  width: 6px;
+  height: 10px;
+  background: var(--spell-color, #4fc3f7);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: net-spray 0.4s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes net-spray {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+  100% { transform: translate(calc(-50% + (random() - 0.5) * 30px), calc(-50% + 20px)) scale(0.3); opacity: 0; }
+}
+
+/* Bubble particle for net capture */
+.spell-particle--bubble {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8), var(--spell-color, rgba(79, 195, 247, 0.5)));
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: bubble-rise 0.7s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes bubble-rise {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+  100% { transform: translate(calc(-50% + var(--rise-offset, 0px)), calc(-50% - 60px)) scale(0.5); opacity: 0; }
 }
 
 .spell-effect--water-ring {
@@ -14057,16 +14191,1220 @@ select.menu-input option {
   }
 }
 
-.spell-rifle-hit {
-  animation: spell-rifle-hit 0.6s ease-out forwards !important;
+/* ============================================================================
+   RIFLE SPELL - Bespoke Sniper Animation
+   ============================================================================ */
+
+/* Scope vignette effect */
+.spell-effect--rifle-scope {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, transparent 30%, rgba(0,0,0,0.7) 70%, rgba(0,0,0,0.9) 100%);
+  animation: rifle-scope-zoom 0.5s ease-out forwards;
+  pointer-events: none;
+  z-index: 5;
 }
 
-@keyframes spell-rifle-hit {
+@keyframes rifle-scope-zoom {
+  0% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+/* Enhanced crosshair with range-finder */
+.spell-effect--rifle-crosshair {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 6;
+}
+
+.spell-effect--rifle-crosshair::before,
+.spell-effect--rifle-crosshair::after {
+  content: '';
+  position: absolute;
+  background: rgba(255, 50, 50, 0.9);
+}
+
+.spell-effect--rifle-crosshair::before {
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  transform: translateY(-50%);
+}
+
+.spell-effect--rifle-crosshair::after {
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  transform: translateX(-50%);
+}
+
+.rifle-range-mark {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + var(--mark-offset, 15px));
+  width: 10px;
+  height: 1px;
+  background: rgba(255, 50, 50, 0.6);
+  transform: translateX(-50%);
+}
+
+@keyframes spell-rifle-crosshair-lock {
+  0% {
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0.3;
+  }
+  60% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+.spell-effect--rifle-crosshair.locked {
+  animation: crosshair-locked-pulse 0.15s ease-in-out 2;
+}
+
+@keyframes crosshair-locked-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(0.95); }
+}
+
+/* Muzzle flash */
+.spell-effect--rifle-muzzle {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(255, 220, 150, 1) 0%, rgba(255, 150, 50, 0.8) 40%, transparent 70%);
+  border-radius: 50%;
+  animation: rifle-muzzle-flash 0.15s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes rifle-muzzle-flash {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+  50% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+}
+
+/* Bullet trace line */
+.spell-effect--bullet-trace {
+  position: absolute;
+  left: var(--start-x);
+  top: var(--start-y);
+  width: 4px;
+  height: calc(
+    sqrt(
+      pow(calc(var(--end-x) - var(--start-x)), 2) +
+      pow(calc(var(--end-y) - var(--start-y)), 2)
+    )
+  );
+  background: linear-gradient(to bottom, rgba(255, 220, 150, 0.9), rgba(255, 150, 50, 0.5), transparent);
+  transform-origin: top center;
+  transform: rotate(calc(atan2(calc(var(--end-x) - var(--start-x)), calc(var(--end-y) - var(--start-y))) * -1));
+  animation: bullet-trace-flash 0.2s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes bullet-trace-flash {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Rifle smoke */
+.spell-particle--rifle-smoke {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  background: radial-gradient(circle, rgba(150, 150, 150, 0.6) 0%, transparent 70%);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: rifle-smoke-drift 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes rifle-smoke-drift {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.8; }
+  100% { transform: translate(calc(-50% + (random() - 0.5) * 20px), calc(-50% - 20px)) scale(1.5); opacity: 0; }
+}
+
+/* Impact effect */
+.spell-effect--rifle-impact {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(255, 100, 100, 0.9) 0%, rgba(255, 50, 50, 0.5) 50%, transparent 70%);
+  border-radius: 50%;
+  animation: rifle-impact-burst 0.2s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes rifle-impact-burst {
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+}
+
+/* Shell casing eject */
+.spell-particle--shell-casing {
+  position: absolute;
+  width: 6px;
+  height: 14px;
+  background: linear-gradient(90deg, #b8860b, #daa520, #b8860b);
+  border-radius: 2px;
+  transform: translate(-50%, -50%);
+  animation: shell-casing-eject 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes shell-casing-eject {
+  0% { transform: translate(-50%, -50%) rotate(0deg); opacity: 1; }
+  100% { transform: translate(calc(-50% + 40px), calc(-50% + 60px)) rotate(720deg); opacity: 0; }
+}
+
+/* Target elimination */
+.spell-rifle-eliminated {
+  animation: spell-rifle-eliminated 0.7s ease-out forwards !important;
+}
+
+@keyframes spell-rifle-eliminated {
   0% { transform: scale(1); filter: brightness(1); }
-  10% { transform: scale(1.1) translateX(-5px); filter: brightness(2); }
-  30% { transform: scale(0.9) translateX(5px); filter: brightness(1.5); }
-  50% { transform: scale(1) translateX(-3px); }
-  100% { transform: scale(1); filter: brightness(1); }
+  10% { transform: scale(1.15) translateX(-8px); filter: brightness(3); }
+  25% { transform: scale(0.9) translateX(6px); filter: brightness(2); }
+  40% { transform: scale(0.95) translateX(-4px); filter: brightness(1.5); }
+  60% { transform: scale(0.9); filter: brightness(1) saturate(0.5); }
+  100% { transform: scale(0.85); filter: brightness(0.8) saturate(0.3); opacity: 0.6; }
+}
+
+/* ============================================================================
+   HARPOON SPELL - Bespoke Impale & Yank Animation
+   ============================================================================ */
+
+/* Barbed harpoon projectile */
+.spell-projectile--harpoon-barbed {
+  position: absolute;
+  width: 14px;
+  height: 70px;
+  transform: translate(-50%, -50%) rotate(var(--harpoon-angle, 0deg));
+  pointer-events: none;
+}
+
+.spell-projectile--harpoon-barbed::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 14px;
+  height: 25px;
+  background: linear-gradient(to bottom, #c0c0c0, #808080);
+  transform: translateX(-50%);
+  clip-path: polygon(50% 0%, 0% 40%, 20% 40%, 20% 100%, 80% 100%, 80% 40%, 100% 40%);
+}
+
+.spell-projectile--harpoon-barbed::after {
+  content: '';
+  position: absolute;
+  top: 25px;
+  left: 50%;
+  width: 8px;
+  height: 45px;
+  background: linear-gradient(90deg, #5a4a3a, #8b7355, #5a4a3a);
+  transform: translateX(-50%);
+  border-radius: 2px;
+}
+
+/* Harpoon rope */
+.spell-effect--harpoon-rope {
+  position: absolute;
+  left: var(--start-x);
+  top: var(--start-y);
+  width: 4px;
+  height: calc(
+    sqrt(
+      pow(calc(var(--end-x) - var(--start-x)), 2) +
+      pow(calc(var(--end-y) - var(--start-y)), 2)
+    )
+  );
+  background: repeating-linear-gradient(to bottom, #8b7355 0px, #8b7355 4px, #6b5344 4px, #6b5344 8px);
+  transform-origin: top center;
+  transform: rotate(calc(atan2(calc(var(--end-x) - var(--start-x)), calc(var(--end-y) - var(--start-y))) * -1));
+  animation: harpoon-rope-extend 0.3s ease-out forwards;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+.spell-effect--harpoon-rope.taut {
+  animation: harpoon-rope-taut 0.2s ease-out forwards;
+}
+
+@keyframes harpoon-rope-extend {
+  0% { clip-path: inset(0 0 100% 0); }
+  100% { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes harpoon-rope-taut {
+  0% { filter: brightness(1); }
+  50% { filter: brightness(1.3); transform: rotate(calc(atan2(calc(var(--end-x) - var(--start-x)), calc(var(--end-y) - var(--start-y))) * -1)) scaleX(1.1); }
+  100% { filter: brightness(1); }
+}
+
+/* Embedded harpoon */
+.spell-effect--harpoon-embedded {
+  position: absolute;
+  width: 12px;
+  height: 30px;
+  transform: translate(-50%, -50%) rotate(var(--harpoon-angle, 0deg));
+  pointer-events: none;
+  animation: harpoon-embedded-wobble 0.3s ease-out;
+}
+
+.spell-effect--harpoon-embedded::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 12px;
+  height: 20px;
+  background: linear-gradient(to bottom, #c0c0c0, #808080);
+  transform: translateX(-50%);
+  clip-path: polygon(50% 0%, 0% 50%, 25% 50%, 25% 100%, 75% 100%, 75% 50%, 100% 50%);
+}
+
+@keyframes harpoon-embedded-wobble {
+  0% { transform: translate(-50%, -50%) rotate(var(--harpoon-angle, 0deg)); }
+  25% { transform: translate(-50%, -50%) rotate(calc(var(--harpoon-angle, 0deg) + 8deg)); }
+  50% { transform: translate(-50%, -50%) rotate(calc(var(--harpoon-angle, 0deg) - 5deg)); }
+  75% { transform: translate(-50%, -50%) rotate(calc(var(--harpoon-angle, 0deg) + 2deg)); }
+  100% { transform: translate(-50%, -50%) rotate(var(--harpoon-angle, 0deg)); }
+}
+
+/* Target impaled reaction */
+.spell-harpoon-impaled {
+  animation: harpoon-impaled 0.2s ease-out forwards !important;
+}
+
+@keyframes harpoon-impaled {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1) rotate(-3deg); filter: brightness(1.5); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+/* Target yanked - shows steal mechanic */
+.spell-harpoon-yanked {
+  animation: harpoon-yanked 0.5s ease-out forwards !important;
+}
+
+@keyframes harpoon-yanked {
+  0% { transform: scale(1) translate(0, 0); }
+  30% { transform: scale(0.95) translate(calc(var(--yank-x, 0px) * 0.3), calc(var(--yank-y, 0px) * 0.3)); }
+  60% { transform: scale(0.9) translate(calc(var(--yank-x, 0px) * 0.6), calc(var(--yank-y, 0px) * 0.6)); filter: brightness(1.2); }
+  100% { transform: scale(0.85) translate(var(--yank-x, 0px), var(--yank-y, 0px)); filter: brightness(1); }
+}
+
+/* Rope tension particles */
+.spell-particle--rope-tension {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: #8b7355;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: rope-tension-pop 0.3s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes rope-tension-pop {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(calc(-50% + (random() - 0.5) * 20px), calc(-50% + (random() - 0.5) * 20px)) scale(0); opacity: 0; }
+}
+
+/* ============================================================================
+   TRANQUILIZER SPELL - Bespoke Sleep Dart Animation
+   ============================================================================ */
+
+/* Tranquilizer dart with feathered tail */
+.spell-projectile--tranq-dart {
+  position: absolute;
+  width: 8px;
+  height: 35px;
+  transform: translate(-50%, -50%) rotate(var(--dart-angle, 0deg));
+  pointer-events: none;
+}
+
+.spell-projectile--tranq-dart::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 4px;
+  height: 20px;
+  background: linear-gradient(to bottom, #c0c0c0, #808080);
+  transform: translateX(-50%);
+  clip-path: polygon(50% 0%, 0% 20%, 0% 100%, 100% 100%, 100% 20%);
+}
+
+.spell-projectile--tranq-dart::after {
+  content: '';
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  width: 12px;
+  height: 15px;
+  background: linear-gradient(to bottom, #ff6b6b, #cc5555);
+  transform: translateX(-50%);
+  clip-path: polygon(50% 0%, 0% 100%, 50% 70%, 100% 100%);
+}
+
+@keyframes spell-tranq-dart-arc {
+  0% {
+    transform: translate(-50%, -50%) rotate(var(--dart-angle, 0deg)) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(calc(-50% + var(--target-x) * 0.5), calc(-50% + var(--target-y) * 0.5 - 40px)) rotate(calc(var(--dart-angle, 0deg) + 15deg)) scale(1);
+  }
+  100% {
+    transform: translate(calc(-50% + var(--target-x)), calc(-50% + var(--target-y))) rotate(var(--dart-angle, 0deg)) scale(1);
+  }
+}
+
+/* Dart feather trail */
+.spell-particle--dart-feather {
+  position: absolute;
+  width: 6px;
+  height: 10px;
+  background: var(--spell-color, #ff6b6b);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  transform: translate(-50%, -50%);
+  animation: dart-feather-drift 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes dart-feather-drift {
+  0% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 0.8; }
+  100% { transform: translate(calc(-50% + (random() - 0.5) * 20px), calc(-50% + 15px)) scale(0.5) rotate(45deg); opacity: 0; }
+}
+
+/* Dart embedded in target */
+.spell-effect--dart-embedded {
+  position: absolute;
+  width: 6px;
+  height: 25px;
+  transform: translate(-50%, -50%) rotate(var(--dart-angle, 45deg));
+  pointer-events: none;
+  animation: dart-embedded-stick 0.3s ease-out;
+}
+
+.spell-effect--dart-embedded::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 3px;
+  height: 12px;
+  background: #808080;
+  transform: translateX(-50%);
+}
+
+.spell-effect--dart-embedded::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  width: 10px;
+  height: 12px;
+  background: #ff6b6b;
+  transform: translateX(-50%);
+  clip-path: polygon(50% 0%, 0% 100%, 50% 70%, 100% 100%);
+}
+
+@keyframes dart-embedded-stick {
+  0% { transform: translate(-50%, -50%) rotate(calc(var(--dart-angle, 45deg) - 10deg)); }
+  50% { transform: translate(-50%, -50%) rotate(calc(var(--dart-angle, 45deg) + 5deg)); }
+  100% { transform: translate(-50%, -50%) rotate(var(--dart-angle, 45deg)); }
+}
+
+/* Target hit by tranq */
+.spell-tranq-hit {
+  animation: spell-tranq-hit 0.2s ease-out forwards !important;
+}
+
+@keyframes spell-tranq-hit {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05) rotate(-2deg); }
+  100% { transform: scale(1); }
+}
+
+/* Target falls asleep */
+.spell-tranq-asleep {
+  animation: spell-tranq-asleep 1s ease-out forwards !important;
+}
+
+@keyframes spell-tranq-asleep {
+  0% { transform: scale(1) rotate(0deg); filter: brightness(1); }
+  30% { transform: scale(0.98) rotate(-3deg); filter: brightness(0.9) saturate(0.8); }
+  60% { transform: scale(0.95) rotate(-5deg); filter: brightness(0.8) saturate(0.6) hue-rotate(20deg); }
+  100% { transform: scale(0.9) rotate(-8deg); filter: brightness(0.7) saturate(0.5) hue-rotate(30deg); }
+}
+
+/* ZZZ sleep particles */
+.spell-particle--zzz {
+  position: absolute;
+  font-size: 16px;
+  font-weight: bold;
+  color: #81d4fa;
+  text-shadow: 0 0 5px rgba(129, 212, 250, 0.8);
+  transform: translate(-50%, -50%);
+  animation: zzz-float 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+.spell-particle--zzz::before {
+  content: 'Z';
+}
+
+@keyframes zzz-float {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 0;
+  }
+  30% {
+    transform: translate(calc(-50% + var(--zzz-index, 0) * 5px), calc(-50% - 20px)) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(-50% + var(--zzz-index, 0) * 10px), calc(-50% - 50px)) scale(1.2);
+    opacity: 0;
+  }
+}
+
+/* Frost crystals */
+.spell-particle--frost-crystal {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--spell-color, #81d4fa);
+  transform: translate(-50%, -50%) rotate(45deg);
+  animation: frost-crystal-form 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+.spell-particle--frost-crystal::before,
+.spell-particle--frost-crystal::after {
+  content: '';
+  position: absolute;
+  background: inherit;
+}
+
+.spell-particle--frost-crystal::before {
+  width: 100%;
+  height: 30%;
+  top: 35%;
+  left: 0;
+}
+
+.spell-particle--frost-crystal::after {
+  width: 30%;
+  height: 100%;
+  top: 0;
+  left: 35%;
+}
+
+@keyframes frost-crystal-form {
+  0% {
+    transform: translate(-50%, -50%) rotate(45deg) scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: translate(
+      calc(-50% + 20px * cos(var(--angle, 0deg))),
+      calc(-50% + 20px * sin(var(--angle, 0deg)))
+    ) rotate(45deg) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(
+      calc(-50% + 30px * cos(var(--angle, 0deg))),
+      calc(-50% + 30px * sin(var(--angle, 0deg)))
+    ) rotate(45deg) scale(0.5);
+    opacity: 0;
+  }
+}
+
+/* Cold mist effect */
+.spell-effect--cold-mist {
+  position: absolute;
+  width: 100px;
+  height: 60px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse, var(--spell-color, rgba(129, 212, 250, 0.5)) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: cold-mist-spread 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes cold-mist-spread {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+}
+
+/* ============================================================================
+   SHOTGUN SPELL - Bespoke Buckshot Spread Animation
+   ============================================================================ */
+
+/* Pump action visual */
+.spell-effect--shotgun-pump {
+  position: absolute;
+  width: 40px;
+  height: 15px;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(90deg, #5a4a3a, #8b7355, #5a4a3a);
+  border-radius: 3px;
+  animation: shotgun-pump-action 0.2s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes shotgun-pump-action {
+  0% { transform: translate(-50%, -50%) translateX(0); }
+  50% { transform: translate(-50%, -50%) translateX(-8px); }
+  100% { transform: translate(-50%, -50%) translateX(0); opacity: 0; }
+}
+
+/* Shell eject */
+.spell-particle--shell-eject {
+  position: absolute;
+  width: 8px;
+  height: 18px;
+  background: linear-gradient(90deg, #b8860b, #daa520, #b8860b);
+  border-radius: 2px;
+  transform: translate(-50%, -50%);
+  animation: shell-eject-fly 0.4s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes shell-eject-fly {
+  0% { transform: translate(-50%, -50%) rotate(0deg); opacity: 1; }
+  100% { transform: translate(calc(-50% + 30px), calc(-50% + 40px)) rotate(360deg); opacity: 0; }
+}
+
+/* Shotgun blast */
+.spell-effect--shotgun-blast {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  transform: translate(-50%, -50%) rotate(var(--blast-angle, 0rad));
+  pointer-events: none;
+}
+
+.spell-effect--shotgun-blast::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 60px;
+  background: radial-gradient(ellipse at left, rgba(255, 220, 100, 1) 0%, rgba(255, 150, 50, 0.8) 30%, transparent 60%);
+  transform: translate(-50%, -50%);
+  animation: shotgun-blast-flash 0.15s ease-out forwards;
+}
+
+@keyframes shotgun-blast-flash {
+  0% { transform: translate(-50%, -50%) scaleX(0.5); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scaleX(1.5); opacity: 0; }
+}
+
+/* Shotgun smoke */
+.spell-effect--shotgun-smoke {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(150, 150, 150, 0.7) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: shotgun-smoke-billow 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes shotgun-smoke-billow {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.8; }
+  100% { transform: translate(-50%, calc(-50% - 30px)) scale(2); opacity: 0; }
+}
+
+/* Buckshot pellet */
+.spell-projectile--buckshot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: radial-gradient(circle at 30% 30%, #ddd, #888);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 3px rgba(0,0,0,0.5);
+  pointer-events: none;
+}
+
+@keyframes spell-buckshot-fly {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(-50% + var(--target-x)), calc(-50% + var(--target-y))) scale(0.8);
+    opacity: 0.8;
+  }
+}
+
+/* Pellet trail */
+.spell-particle--pellet-trail {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: rgba(200, 200, 200, 0.6);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: pellet-trail-fade 0.2s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes pellet-trail-fade {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+  100% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+}
+
+/* Buckshot impact spark */
+.spell-particle--buckshot-impact {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: radial-gradient(circle, #fff 0%, var(--spell-color, #ffd54f) 50%, transparent 70%);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: buckshot-impact-spark 0.3s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes buckshot-impact-spark {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+}
+
+/* Debris particles */
+.spell-particle--debris {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: #8b7355;
+  border-radius: 2px;
+  transform: translate(-50%, -50%);
+  animation: debris-fly 0.4s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes debris-fly {
+  0% { transform: translate(-50%, -50%) rotate(0deg); opacity: 1; }
+  100% { transform: translate(calc(-50% + (random() - 0.5) * 40px), calc(-50% + 30px)) rotate(180deg); opacity: 0; }
+}
+
+/* Target blasted by shotgun */
+.spell-shotgun-blasted {
+  animation: spell-shotgun-blasted 0.6s ease-out forwards !important;
+}
+
+@keyframes spell-shotgun-blasted {
+  0% { transform: scale(1); filter: brightness(1); }
+  15% { transform: scale(1.1) translateX(-5px); filter: brightness(2); }
+  30% { transform: scale(0.95) translateX(3px) rotate(-2deg); filter: brightness(1.5); }
+  50% { transform: scale(0.9) translateX(-2px) rotate(1deg); }
+  70% { transform: scale(0.92) rotate(-1deg); filter: brightness(1); }
+  100% { transform: scale(0.95); filter: brightness(0.9); }
+}
+
+/* ============================================================================
+   LEAPFROG SPELL - Bespoke Frog Jumping Animation
+   ============================================================================ */
+
+/* Frog projectile */
+.spell-projectile--leapfrog {
+  position: absolute;
+  width: 40px;
+  height: 30px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.spell-projectile--leapfrog::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: var(--spell-color, #81c784);
+  border-radius: 50% 50% 45% 45%;
+  box-shadow:
+    inset -5px -5px 10px rgba(0,0,0,0.3),
+    0 0 15px var(--spell-color, rgba(129, 199, 132, 0.6));
+}
+
+/* Frog eyes */
+.spell-projectile--leapfrog::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30px;
+  height: 12px;
+  background:
+    radial-gradient(circle at 25% 50%, #fff 3px, #222 4px, transparent 5px),
+    radial-gradient(circle at 75% 50%, #fff 3px, #222 4px, transparent 5px);
+}
+
+@keyframes leapfrog-crouch {
+  0% { transform: translate(-50%, -50%) scaleY(1); }
+  100% { transform: translate(-50%, -50%) scaleY(0.7) scaleX(1.1); }
+}
+
+@keyframes leapfrog-jump {
+  0% {
+    transform: translate(-50%, -50%) scaleY(0.7) scaleX(1.1);
+  }
+  30% {
+    transform: translate(
+      calc(-50% + var(--target-x) * 0.3),
+      calc(-50% + var(--target-y) * 0.3 - 60px)
+    ) scaleY(1.2) scaleX(0.9) rotate(-15deg);
+  }
+  60% {
+    transform: translate(
+      calc(-50% + var(--target-x) * 0.7),
+      calc(-50% + var(--target-y) * 0.7 - 40px)
+    ) scaleY(1.1) rotate(-5deg);
+  }
+  100% {
+    transform: translate(
+      calc(-50% + var(--target-x)),
+      calc(-50% + var(--target-y))
+    ) scaleY(0.8) scaleX(1.1) rotate(0deg);
+  }
+}
+
+/* Frog splash trail */
+.spell-particle--frog-splash {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: var(--spell-color, #81c784);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: frog-splash-drop 0.4s ease-out forwards;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+@keyframes frog-splash-drop {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
+  100% { transform: translate(-50%, calc(-50% + 30px)) scale(0.3); opacity: 0; }
+}
+
+/* Frog impact ring */
+.spell-effect--frog-impact {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  transform: translate(-50%, -50%);
+  border: 4px solid var(--spell-color, #81c784);
+  border-radius: 50%;
+  animation: frog-impact-ring 0.4s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes frog-impact-ring {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+}
+
+/* Frog splat particles */
+.spell-particle--frog-splat {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--spell-color, #81c784);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: frog-splat 0.4s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes frog-splat {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% {
+    transform: translate(
+      calc(-50% + var(--spread, 40px) * cos(var(--angle, 0deg))),
+      calc(-50% + var(--spread, 40px) * sin(var(--angle, 0deg)))
+    ) scale(0.3);
+    opacity: 0;
+  }
+}
+
+/* Target hit by frog */
+.spell-frog-landed {
+  animation: spell-frog-landed 0.4s ease-out forwards !important;
+}
+
+@keyframes spell-frog-landed {
+  0% { transform: scale(1); }
+  30% { transform: scale(0.9) translateY(5px); }
+  60% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* Player badge hit by frog */
+.spell-frog-hit-player {
+  animation: spell-frog-hit-player 0.5s ease-out forwards !important;
+}
+
+@keyframes spell-frog-hit-player {
+  0% { transform: scale(1); filter: brightness(1); }
+  20% { transform: scale(1.1); filter: brightness(1.5); }
+  40% { transform: scale(0.95) rotate(-3deg); filter: brightness(1.2); }
+  60% { transform: scale(1.02) rotate(2deg); }
+  100% { transform: scale(1) rotate(0deg); filter: brightness(1); }
+}
+
+/* ============================================================================
+   BIRDS OF A FEATHER - Bespoke Copy Animation
+   ============================================================================ */
+
+/* Source creature glow when being copied */
+.spell-being-copied {
+  animation: spell-being-copied 0.8s ease-in-out forwards !important;
+}
+
+@keyframes spell-being-copied {
+  0% { filter: brightness(1); box-shadow: none; }
+  30% { filter: brightness(1.3); box-shadow: 0 0 20px var(--spell-color, #ffd54f); }
+  70% { filter: brightness(1.5); box-shadow: 0 0 30px var(--spell-color, #ffd54f); }
+  100% { filter: brightness(1.2); box-shadow: 0 0 15px var(--spell-color, #ffd54f); }
+}
+
+/* Feather burst from source */
+.spell-particle--copy-feather-burst {
+  position: absolute;
+  width: 12px;
+  height: 20px;
+  background: linear-gradient(to bottom, var(--spell-color, #ffd54f), rgba(255,255,255,0.8));
+  border-radius: 50% 50% 50% 50% / 70% 70% 30% 30%;
+  transform: translate(-50%, -50%);
+  animation: copy-feather-burst 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes copy-feather-burst {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5) rotate(0deg);
+    opacity: 0;
+  }
+  30% {
+    transform: translate(
+      calc(-50% + 30px * cos(var(--angle, 0deg))),
+      calc(-50% + 30px * sin(var(--angle, 0deg)))
+    ) scale(1) rotate(45deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(
+      calc(-50% + 50px * cos(var(--angle, 0deg))),
+      calc(-50% + 50px * sin(var(--angle, 0deg)))
+    ) scale(0.7) rotate(90deg);
+    opacity: 0;
+  }
+}
+
+/* Feather swirl around source */
+.spell-particle--copy-feather-swirl {
+  position: absolute;
+  width: 10px;
+  height: 16px;
+  background: linear-gradient(to bottom, var(--spell-color, #ffd54f), rgba(255,255,255,0.6));
+  border-radius: 50% 50% 50% 50% / 70% 70% 30% 30%;
+  transform: translate(-50%, -50%);
+  animation: copy-feather-swirl 0.6s ease-in-out forwards;
+  pointer-events: none;
+}
+
+@keyframes copy-feather-swirl {
+  0% {
+    transform: translate(-50%, -50%) rotate(calc(var(--swirl-index, 0) * 45deg));
+    opacity: 0;
+  }
+  30% {
+    transform: translate(
+      calc(-50% + 40px * cos(calc(var(--swirl-index, 0) * 45deg))),
+      calc(-50% + 40px * sin(calc(var(--swirl-index, 0) * 45deg)))
+    ) rotate(calc(var(--swirl-index, 0) * 45deg + 180deg));
+    opacity: 1;
+  }
+  70% {
+    transform: translate(
+      calc(-50% + 40px * cos(calc(var(--swirl-index, 0) * 45deg + 180deg))),
+      calc(-50% + 40px * sin(calc(var(--swirl-index, 0) * 45deg + 180deg)))
+    ) rotate(calc(var(--swirl-index, 0) * 45deg + 360deg));
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(calc(var(--swirl-index, 0) * 45deg + 540deg));
+    opacity: 0.5;
+  }
+}
+
+/* Feather streaming to destination */
+.spell-particle--copy-feather-stream {
+  position: absolute;
+  width: 8px;
+  height: 14px;
+  background: linear-gradient(to bottom, var(--spell-color, #ffd54f), rgba(255,255,255,0.7));
+  border-radius: 50% 50% 50% 50% / 70% 70% 30% 30%;
+  transform: translate(-50%, -50%);
+  animation: copy-feather-stream 0.5s ease-in forwards;
+  pointer-events: none;
+}
+
+@keyframes copy-feather-stream {
+  0% {
+    transform: translate(-50%, -50%) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(
+      calc(-50% + var(--target-x, 0px)),
+      calc(-50% + var(--target-y, 0px))
+    ) scale(0.6) rotate(720deg);
+    opacity: 0.3;
+  }
+}
+
+/* Copy coalescing effect at destination */
+.spell-effect--copy-coalesce {
+  position: absolute;
+  width: 80px;
+  height: 100px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse, var(--spell-color, rgba(255, 213, 79, 0.6)) 0%, transparent 70%);
+  border-radius: 10%;
+  animation: copy-coalesce 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes copy-coalesce {
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+
+/* Destination slot glow */
+.spell-copy-destination {
+  animation: copy-destination-glow 0.6s ease-out forwards !important;
+}
+
+@keyframes copy-destination-glow {
+  0% { box-shadow: none; }
+  50% { box-shadow: 0 0 30px rgba(255, 213, 79, 0.8), inset 0 0 20px rgba(255, 213, 79, 0.3); }
+  100% { box-shadow: none; }
+}
+
+/* ============================================================================
+   BIRD'S EYE VIEW - Bespoke Reveal Animation
+   ============================================================================ */
+
+/* Giant eye container */
+.spell-effect--birds-eye {
+  position: absolute;
+  width: 120px;
+  height: 60px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* Eye outer glow */
+.birds-eye-glow {
+  position: absolute;
+  inset: -20px;
+  background: radial-gradient(ellipse, var(--spell-color, rgba(255, 213, 79, 0.4)) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: birds-eye-glow-pulse 0.8s ease-in-out infinite;
+}
+
+@keyframes birds-eye-glow-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+/* Eye white/sclera */
+.birds-eye-white {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse, #fff 60%, #f0f0f0 100%);
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(0,0,0,0.3), inset 0 0 10px rgba(0,0,0,0.1);
+}
+
+/* Eye iris */
+.birds-eye-iris {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 40px;
+  height: 40px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, var(--iris-color, #ffd54f) 0%, #ff8f00 60%, #e65100 100%);
+  border-radius: 50%;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+}
+
+/* Eye pupil */
+.birds-eye-pupil {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 15px;
+  height: 20px;
+  transform: translate(-50%, -50%);
+  background: #000;
+  border-radius: 50%;
+  box-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+
+.birds-eye-pupil::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 5px;
+  height: 5px;
+  background: rgba(255,255,255,0.8);
+  border-radius: 50%;
+}
+
+/* Eye opening animation */
+@keyframes birds-eye-open {
+  0% {
+    clip-path: ellipse(50% 0% at 50% 50%);
+    opacity: 0;
+  }
+  50% {
+    clip-path: ellipse(50% 30% at 50% 50%);
+    opacity: 1;
+  }
+  100% {
+    clip-path: ellipse(50% 50% at 50% 50%);
+    opacity: 1;
+  }
+}
+
+/* Eye looking down */
+@keyframes birds-eye-look-down {
+  0% { transform: translate(-50%, -50%); }
+  100% { transform: translate(-50%, -30%); }
+}
+
+/* Eye closing */
+@keyframes birds-eye-close {
+  0% {
+    clip-path: ellipse(50% 50% at 50% 50%);
+    opacity: 1;
+  }
+  100% {
+    clip-path: ellipse(50% 0% at 50% 50%);
+    opacity: 0;
+  }
+}
+
+/* Scanning beam */
+.spell-effect--eye-beam {
+  position: absolute;
+  width: var(--beam-width, 200px);
+  height: 150px;
+  background: linear-gradient(to bottom,
+    var(--spell-color, rgba(255, 213, 79, 0.8)) 0%,
+    var(--spell-color, rgba(255, 213, 79, 0.4)) 30%,
+    transparent 100%);
+  clip-path: polygon(40% 0%, 60% 0%, 100% 100%, 0% 100%);
+  transform-origin: top center;
+  pointer-events: none;
+}
+
+@keyframes eye-beam-scan {
+  0% {
+    transform: scaleX(0.3) scaleY(0);
+    opacity: 0;
+  }
+  20% {
+    transform: scaleX(0.5) scaleY(1);
+    opacity: 0.8;
+  }
+  80% {
+    transform: scaleX(1) scaleY(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scaleX(1.2) scaleY(0.8);
+    opacity: 0;
+  }
+}
+
+/* Hand area revealed */
+.spell-eye-revealed {
+  animation: eye-revealed-glow 2s ease-in-out forwards !important;
+}
+
+@keyframes eye-revealed-glow {
+  0% { filter: brightness(1); }
+  30% { filter: brightness(1.3) drop-shadow(0 0 10px rgba(255, 213, 79, 0.5)); }
+  70% { filter: brightness(1.5) drop-shadow(0 0 20px rgba(255, 213, 79, 0.7)); }
+  100% { filter: brightness(1); }
+}
+
+/* Individual card revealed sparkle */
+.spell-card-revealed {
+  animation: card-revealed-flash 1.5s ease-out forwards !important;
+}
+
+@keyframes card-revealed-flash {
+  0% { filter: brightness(1); transform: scale(1); }
+  20% { filter: brightness(1.5); transform: scale(1.05); }
+  50% { filter: brightness(1.3); transform: scale(1.02); }
+  100% { filter: brightness(1); transform: scale(1); }
+}
+
+/* Eye sparkle particles */
+.spell-particle--eye-sparkle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--spell-color, #ffd54f);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: eye-sparkle 0.5s ease-out forwards;
+  pointer-events: none;
+  box-shadow: 0 0 10px var(--spell-color, #ffd54f);
+}
+
+@keyframes eye-sparkle {
+  0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
 }
 
 /* ============================================================================
@@ -15288,4 +16626,2351 @@ select.menu-input option {
     transform: translateX(100%);
     opacity: 0;
   }
+}
+
+/* ============================================================================
+   SUNKEN TREASURE - Bespoke Utility Animation
+   ============================================================================ */
+
+.spell-particle--treasure-bubble {
+  position: absolute;
+  width: var(--bubble-size, 10px);
+  height: var(--bubble-size, 10px);
+  background: radial-gradient(circle at 30% 30%,
+    rgba(255, 255, 255, 0.6),
+    var(--spell-color, rgba(33, 150, 243, 0.4)) 60%,
+    transparent);
+  border-radius: 50%;
+  animation: treasure-bubble-rise 1.2s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes treasure-bubble-rise {
+  0% { transform: translateY(0) translateX(0); opacity: 0.8; }
+  50% { transform: translateY(-150px) translateX(var(--sway, 20px)); opacity: 0.6; }
+  100% { transform: translateY(-300px) translateX(calc(var(--sway, 20px) * -1)); opacity: 0; }
+}
+
+.spell-effect--treasure-chest {
+  position: absolute;
+  bottom: 100%;
+  width: 80px;
+  height: 60px;
+  transform: translateX(-50%);
+  animation: treasure-chest-rise 1.5s ease-out forwards;
+  pointer-events: none;
+}
+
+.treasure-chest-base {
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  width: 80%;
+  height: 35px;
+  background: linear-gradient(135deg, #8b4513 0%, #654321 50%, #4a3728 100%);
+  border-radius: 4px;
+  box-shadow: inset 0 -5px 15px rgba(0,0,0,0.4);
+}
+
+.treasure-chest-lid {
+  position: absolute;
+  bottom: 30px;
+  left: 5%;
+  width: 90%;
+  height: 25px;
+  background: linear-gradient(135deg, #a0522d 0%, #8b4513 50%, #654321 100%);
+  border-radius: 8px 8px 0 0;
+  transform-origin: bottom center;
+  animation: chest-lid-open 0.5s ease-out 0.7s forwards;
+}
+
+.treasure-chest-lock {
+  position: absolute;
+  bottom: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 15px;
+  height: 15px;
+  background: #ffd700;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #ffd700;
+}
+
+@keyframes treasure-chest-rise {
+  0% { transform: translateX(-50%) translateY(200px); opacity: 0; }
+  60% { transform: translateX(-50%) translateY(-20px); opacity: 1; }
+  100% { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+
+@keyframes chest-lid-open {
+  0% { transform: rotateX(0); }
+  100% { transform: rotateX(-110deg); }
+}
+
+.spell-particle--treasure-kelp {
+  position: absolute;
+  width: 8px;
+  height: 100px;
+  background: linear-gradient(to top, var(--spell-color, #2d5a27), transparent);
+  animation: kelp-sway 0.8s ease-in-out forwards;
+  pointer-events: none;
+}
+
+@keyframes kelp-sway {
+  0% { transform: translateY(0) scaleY(1) rotate(-5deg); opacity: 0.7; }
+  50% { transform: translateY(-50px) scaleY(0.7) rotate(5deg); opacity: 0.5; }
+  100% { transform: translateY(-100px) scaleY(0.3) rotate(-3deg); opacity: 0; }
+}
+
+.spell-effect--treasure-light {
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle,
+    rgba(255, 215, 0, 0.8) 0%,
+    rgba(255, 215, 0, 0.4) 30%,
+    transparent 70%);
+  animation: treasure-light-burst 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes treasure-light-burst {
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+}
+
+.spell-particle--treasure-sparkle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--spell-color, #ffd700);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--spell-color, #ffd700);
+  animation: treasure-sparkle 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes treasure-sparkle {
+  0% {
+    transform: translate(-50%, -50%) translateX(0) translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%)
+               translateX(calc(cos(var(--angle, 0deg)) * var(--distance, 60px)))
+               translateY(calc(sin(var(--angle, 0deg)) * var(--distance, 60px)))
+               scale(0);
+    opacity: 0;
+  }
+}
+
+.spell-particle--treasure-coin,
+.spell-particle--treasure-gem,
+.spell-particle--treasure-pearl {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  animation: treasure-scatter 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+.spell-particle--treasure-coin {
+  width: 12px;
+  height: 12px;
+  background: radial-gradient(circle at 30% 30%, #fff, #ffd700 40%, #b8860b);
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+}
+
+.spell-particle--treasure-gem {
+  width: 10px;
+  height: 14px;
+  background: linear-gradient(135deg, #ff69b4 0%, #e91e63 50%, #ad1457 100%);
+  clip-path: polygon(50% 0%, 100% 40%, 80% 100%, 20% 100%, 0% 40%);
+  box-shadow: 0 0 8px rgba(233, 30, 99, 0.6);
+}
+
+.spell-particle--treasure-pearl {
+  width: 10px;
+  height: 10px;
+  background: radial-gradient(circle at 30% 30%, #fff, #f0f0f0 50%, #ddd);
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+}
+
+@keyframes treasure-scatter {
+  0% {
+    transform: translate(-50%, -50%) translateX(0) translateY(0) rotate(0);
+    opacity: 1;
+  }
+  60% {
+    transform: translate(-50%, -50%)
+               translateX(var(--scatter-x, 50px))
+               translateY(var(--scatter-y, -80px))
+               rotate(360deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%)
+               translateX(calc(var(--scatter-x, 50px) * 0.8))
+               translateY(100px)
+               rotate(540deg);
+    opacity: 0;
+  }
+}
+
+.spell-effect--treasure-mist {
+  position: absolute;
+  width: 200px;
+  height: 60px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse,
+    var(--spell-color, rgba(33, 150, 243, 0.3)) 0%,
+    transparent 70%);
+  animation: treasure-mist 1s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes treasure-mist {
+  0% { transform: translate(-50%, -50%) scaleX(0.5); opacity: 0.6; }
+  100% { transform: translate(-50%, -50%) scaleX(1.5) translateY(30px); opacity: 0; }
+}
+
+.spell-particle--treasure-linger {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--spell-color, #ffd700);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--spell-color, #ffd700);
+  animation: treasure-linger 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes treasure-linger {
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.5); opacity: 0.6; }
+  100% { transform: scale(0) translateY(-20px); opacity: 0; }
+}
+
+/* ============================================================================
+   ANGLER - Bespoke Search Animation
+   ============================================================================ */
+
+.spell-effect--angler-dark {
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle,
+    rgba(0, 20, 40, 0.6) 0%,
+    rgba(0, 10, 20, 0.3) 50%,
+    transparent 70%);
+  animation: angler-dark 1.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes angler-dark {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+  20% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  80% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(1.3); opacity: 0; }
+}
+
+.spell-effect--angler-line {
+  position: absolute;
+  width: 3px;
+  height: 0;
+  background: linear-gradient(to bottom,
+    transparent,
+    var(--spell-color, #1a4d7a) 20%,
+    var(--spell-color, #1a4d7a) 80%,
+    transparent);
+  animation: angler-line-drop 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes angler-line-drop {
+  0% { height: 0; opacity: 0; }
+  100% { height: 100px; opacity: 0.7; }
+}
+
+.spell-effect--angler-lure {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  transform: translate(-50%, -50%);
+  animation: angler-lure-dangle 1.4s ease-in-out forwards;
+  pointer-events: none;
+}
+
+.angler-lure-bulb {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  left: 5px;
+  top: 5px;
+  background: radial-gradient(circle at 30% 30%,
+    #fff,
+    var(--spell-color, #4fc3f7) 50%,
+    var(--spell-color, #2196f3));
+  border-radius: 50%;
+}
+
+.angler-lure-glow {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  left: -5px;
+  top: -5px;
+  background: radial-gradient(circle,
+    var(--spell-glow, rgba(79, 195, 247, 0.6)) 0%,
+    transparent 70%);
+  animation: angler-glow-pulse 0.5s ease-in-out infinite;
+}
+
+.angler-lure-filament {
+  position: absolute;
+  width: 2px;
+  height: 15px;
+  left: 14px;
+  top: -10px;
+  background: var(--spell-color, #4fc3f7);
+  opacity: 0.6;
+}
+
+@keyframes angler-lure-dangle {
+  0% { transform: translate(-50%, -100px); }
+  40% { transform: translate(-50%, 10px); }
+  50% { transform: translate(-50%, 0) rotate(-5deg); }
+  60% { transform: translate(-50%, 5px) rotate(5deg); }
+  70% { transform: translate(-50%, 0) rotate(-3deg); }
+  100% { transform: translate(-50%, 0) rotate(0); }
+}
+
+@keyframes angler-glow-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.3); opacity: 1; }
+}
+
+.spell-particle--angler-glow {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--spell-color, #4fc3f7);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--spell-color, #4fc3f7);
+  animation: angler-particle-float 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes angler-particle-float {
+  0% { transform: scale(1); opacity: 1; }
+  100% {
+    transform: scale(0)
+               translateX(calc((random() - 0.5) * 60px))
+               translateY(calc((random() - 0.5) * 40px));
+    opacity: 0;
+  }
+}
+
+.spell-particle--angler-fish {
+  position: absolute;
+  width: 15px;
+  height: 8px;
+  background: var(--spell-color, #1a4d7a);
+  border-radius: 50% 30% 30% 50%;
+  opacity: 0.5;
+  animation: angler-fish-swim 0.8s ease-in-out forwards;
+  pointer-events: none;
+}
+
+@keyframes angler-fish-swim {
+  0% { transform: scale(1); opacity: 0.5; }
+  100% {
+    transform: translateX(calc((var(--target-x) - 100%) * 0.8))
+               translateY(calc((var(--target-y) - 100%) * 0.8))
+               scale(0.5);
+    opacity: 0;
+  }
+}
+
+.spell-particle--search-bubble {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: radial-gradient(circle at 30% 30%, #fff, var(--spell-color, #4fc3f7) 50%, transparent);
+  border-radius: 50%;
+  animation: search-bubble-rise 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes search-bubble-rise {
+  0% { transform: translateY(0) scale(1); opacity: 0.8; }
+  100% { transform: translateY(-60px) scale(0.5); opacity: 0; }
+}
+
+/* ============================================================================
+   SWAN SONG - Bespoke Heal Animation
+   ============================================================================ */
+
+.spell-effect--swan-glow {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle,
+    rgba(255, 255, 255, 0.4) 0%,
+    rgba(255, 255, 255, 0.2) 40%,
+    transparent 70%);
+  animation: swan-glow 1.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes swan-glow {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+  30% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+}
+
+.spell-particle--swan-feather {
+  position: absolute;
+  width: var(--feather-size, 20px);
+  height: calc(var(--feather-size, 20px) * 0.4);
+  background: linear-gradient(90deg,
+    transparent 0%,
+    #fff 20%,
+    #fff 80%,
+    transparent 100%);
+  border-radius: 50%;
+  transform-origin: center;
+  animation: swan-feather-spiral 1.2s ease-out forwards;
+  animation-delay: var(--spiral-delay, 0s);
+  pointer-events: none;
+}
+
+@keyframes swan-feather-spiral {
+  0% {
+    transform: rotate(var(--spiral-angle, 0deg)) translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(calc(var(--spiral-angle, 0deg) + 720deg)) translateY(-150px) scale(0.3);
+    opacity: 0;
+  }
+}
+
+.spell-particle--swan-sparkle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #fff, 0 0 12px rgba(255, 255, 255, 0.5);
+  animation: swan-sparkle 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes swan-sparkle {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0) translateY(-20px); opacity: 0; }
+}
+
+.spell-effect--swan-heal-pulse {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  transform: translate(-50%, -50%);
+  border: 3px solid rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  animation: swan-heal-pulse 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes swan-heal-pulse {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+}
+
+.spell-effect--swan-barrier {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  transform: translate(-50%, -50%);
+  border: 2px solid var(--spell-color, #87ceeb);
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(135, 206, 235, 0.2) 0%,
+    transparent 70%);
+  animation: swan-barrier-form 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes swan-barrier-form {
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+
+.spell-particle--barrier-rune {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #87ceeb;
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  box-shadow: 0 0 8px #87ceeb;
+  animation: barrier-rune 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes barrier-rune {
+  0% { transform: scale(0) rotate(0); opacity: 1; }
+  50% { transform: scale(1.5) rotate(180deg); opacity: 1; }
+  100% { transform: scale(0) rotate(360deg); opacity: 0; }
+}
+
+/* ============================================================================
+   SIX-LAYERED NEOCORTEX - Bespoke Search Animation
+   ============================================================================ */
+
+.spell-effect--neocortex-brain {
+  position: absolute;
+  width: 120px;
+  height: 100px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.neocortex-outline {
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--spell-color, #f48fb1);
+  border-radius: 50% 50% 45% 45%;
+  opacity: 0.7;
+  animation: neocortex-pulse 0.8s ease-in-out infinite;
+}
+
+.neocortex-glow {
+  position: absolute;
+  inset: -10px;
+  background: radial-gradient(ellipse,
+    var(--spell-glow, rgba(244, 143, 177, 0.3)) 0%,
+    transparent 70%);
+  border-radius: 50%;
+  animation: neocortex-glow 0.6s ease-in-out infinite;
+}
+
+.neocortex-layers {
+  position: absolute;
+  inset: 10px;
+  background:
+    repeating-linear-gradient(90deg,
+      transparent 0px,
+      transparent 8px,
+      var(--spell-color, rgba(244, 143, 177, 0.3)) 8px,
+      var(--spell-color, rgba(244, 143, 177, 0.3)) 10px);
+  border-radius: 50% 50% 40% 40%;
+  opacity: 0.5;
+  animation: neocortex-layers-shift 1s ease-in-out infinite;
+}
+
+@keyframes neocortex-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes neocortex-glow {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes neocortex-layers-shift {
+  0%, 100% { background-position: 0 0; }
+  50% { background-position: 5px 0; }
+}
+
+.spell-effect--neocortex-synapse {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: var(--spell-color, #f48fb1);
+  box-shadow: 0 0 6px var(--spell-color, #f48fb1);
+  animation: neocortex-synapse 0.4s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes neocortex-synapse {
+  0% {
+    transform: translate(0, 0);
+    opacity: 1;
+    width: 2px;
+  }
+  100% {
+    transform: translate(var(--target-x, 30px), var(--target-y, 20px));
+    opacity: 0;
+    width: 30px;
+  }
+}
+
+.spell-particle--neocortex-spark {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--spell-color, #fff);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--spell-color, #f48fb1);
+  animation: neocortex-spark 0.3s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes neocortex-spark {
+  0% { transform: scale(0); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 1; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+.spell-effect--neocortex-wave {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  transform: translate(-50%, -50%);
+  border: 2px solid var(--spell-color, #f48fb1);
+  border-radius: 50%;
+  animation: neocortex-wave 0.8s ease-out forwards;
+  animation-delay: calc(var(--ring-index, 0) * 0.1s);
+  pointer-events: none;
+}
+
+@keyframes neocortex-wave {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
+}
+
+.spell-effect--neocortex-beam {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: var(--spell-color, #f48fb1);
+  box-shadow: 0 0 10px var(--spell-color, #f48fb1);
+  animation: neocortex-beam 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes neocortex-beam {
+  0% {
+    transform: translate(0, 0) scaleX(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--target-x, 100px), var(--target-y, 50px)) scaleX(50);
+    opacity: 0;
+  }
+}
+
+.spell-particle--neocortex-memory {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: var(--spell-color, #87ceeb);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  box-shadow: 0 0 8px var(--spell-color, #87ceeb);
+  animation: neocortex-memory 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes neocortex-memory {
+  0% { transform: translateY(0) rotate(0); opacity: 1; }
+  100% { transform: translateY(-80px) rotate(180deg); opacity: 0; }
+}
+
+/* ============================================================================
+   CURIOSITY - Bespoke Sacrifice/Draw Animation
+   ============================================================================ */
+
+.spell-curiosity-target {
+  animation: curiosity-glow 0.5s ease-in-out;
+}
+
+@keyframes curiosity-glow {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.3) drop-shadow(0 0 10px var(--spell-color, #f48fb1)); }
+}
+
+.spell-curiosity-dissolve {
+  animation: curiosity-dissolve 0.6s ease-out forwards;
+}
+
+@keyframes curiosity-dissolve {
+  0% { transform: scale(1); opacity: 1; filter: brightness(1); }
+  50% { transform: scale(1.1); opacity: 0.7; filter: brightness(1.5) hue-rotate(20deg); }
+  100% { transform: scale(0.8); opacity: 0; filter: brightness(2) blur(5px); }
+}
+
+.spell-particle--curiosity-question {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  font-size: 14px;
+  line-height: 16px;
+  text-align: center;
+  color: var(--spell-color, #f48fb1);
+  text-shadow: 0 0 8px var(--spell-color, #f48fb1);
+  animation: curiosity-question 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+.spell-particle--curiosity-question::before {
+  content: '?';
+}
+
+@keyframes curiosity-question {
+  0% { transform: scale(0) rotate(-45deg); opacity: 1; }
+  50% { transform: scale(1.5) rotate(0); opacity: 1; }
+  100% { transform: scale(0) rotate(45deg) translateY(-30px); opacity: 0; }
+}
+
+.spell-particle--curiosity-energy {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--spell-color, #f48fb1);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--spell-glow, rgba(244, 143, 177, 0.8));
+  animation: curiosity-energy 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes curiosity-energy {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, -50%)
+               translateX(calc(cos(var(--angle, 0deg)) * 50px))
+               translateY(calc(sin(var(--angle, 0deg)) * 50px))
+               scale(1.5);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) translateY(-80px) scale(0);
+    opacity: 0;
+  }
+}
+
+.spell-particle--curiosity-symbol {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  font-size: 20px;
+  text-align: center;
+  animation: curiosity-symbol 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+.spell-particle--curiosity-symbol::before {
+  content: var(--symbol, '📖');
+}
+
+@keyframes curiosity-symbol {
+  0% { transform: translateY(0) scale(0); opacity: 1; }
+  30% { transform: translateY(-20px) scale(1.2); opacity: 1; }
+  100% { transform: translateY(-100px) scale(0.5); opacity: 0; }
+}
+
+.spell-particle--knowledge-trail {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: var(--spell-color, #f48fb1);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--spell-color, #f48fb1);
+  animation: knowledge-trail 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes knowledge-trail {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(0) translateY(-30px); opacity: 0; }
+}
+
+/* ============================================================================
+   WARM BLOOD - Bespoke Thaw Animation
+   ============================================================================ */
+
+.spell-effect--warm-blood-glow {
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle,
+    rgba(255, 152, 0, 0.4) 0%,
+    rgba(255, 87, 34, 0.2) 50%,
+    transparent 70%);
+  animation: warm-blood-glow 1s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes warm-blood-glow {
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+  30% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+}
+
+.spell-effect--warm-blood-wave {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  transform: translate(-50%, -50%);
+  border: 3px solid var(--spell-color, #ff9800);
+  border-radius: 50%;
+  animation: warm-blood-wave 0.8s ease-out forwards;
+  animation-delay: calc(var(--wave-index, 0) * 0.15s);
+  pointer-events: none;
+}
+
+@keyframes warm-blood-wave {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
+}
+
+.spell-thawing {
+  animation: thawing 0.8s ease-out;
+}
+
+@keyframes thawing {
+  0% { filter: brightness(1) saturate(0.5) hue-rotate(-30deg); }
+  50% { filter: brightness(1.3) saturate(1) hue-rotate(0); }
+  100% { filter: brightness(1) saturate(1); }
+}
+
+.spell-particle--ice-crack {
+  position: absolute;
+  width: 15px;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #87ceeb, #fff, #87ceeb, transparent);
+  transform-origin: left center;
+  animation: ice-crack 0.4s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes ice-crack {
+  0% { transform: rotate(var(--angle, 0deg)) scaleX(0); opacity: 1; }
+  50% { transform: rotate(var(--angle, 0deg)) scaleX(1); opacity: 1; }
+  100% { transform: rotate(var(--angle, 0deg)) scaleX(1) translateX(10px); opacity: 0; }
+}
+
+.spell-particle--ice-shard-fall {
+  position: absolute;
+  width: 8px;
+  height: 12px;
+  background: linear-gradient(135deg, #fff, #87ceeb, #64b5f6);
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+  animation: ice-shard-fall 0.6s ease-in forwards;
+  pointer-events: none;
+}
+
+@keyframes ice-shard-fall {
+  0% { transform: translateY(0) rotate(0); opacity: 1; }
+  100% { transform: translateY(60px) rotate(180deg); opacity: 0; }
+}
+
+.spell-particle--steam {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.6), transparent);
+  border-radius: 50%;
+  animation: steam-rise 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes steam-rise {
+  0% { transform: translateY(0) scale(0.5); opacity: 0.8; }
+  100% { transform: translateY(-50px) translateX(calc((random() - 0.5) * 30px)) scale(1.5); opacity: 0; }
+}
+
+.spell-particle--warm-sparkle {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: var(--spell-color, #ff9800);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--spell-color, #ff9800);
+  animation: warm-sparkle 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes warm-sparkle {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(0) translateY(-15px); opacity: 0; }
+}
+
+/* ============================================================================
+   ECDYSIS - Bespoke Regeneration Animation
+   ============================================================================ */
+
+.spell-ecdysis-shimmer {
+  animation: ecdysis-shimmer 0.6s ease-in-out;
+}
+
+@keyframes ecdysis-shimmer {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.2) contrast(1.1); }
+}
+
+.spell-ecdysis-reveal {
+  animation: ecdysis-reveal 0.6s ease-out;
+}
+
+@keyframes ecdysis-reveal {
+  0% { filter: brightness(1.5) saturate(1.5); }
+  100% { filter: brightness(1) saturate(1); }
+}
+
+.spell-effect--ecdysis-skin {
+  position: absolute;
+  width: 70px;
+  height: 90px;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(135deg,
+    rgba(158, 158, 158, 0.3) 0%,
+    rgba(189, 189, 189, 0.2) 50%,
+    rgba(158, 158, 158, 0.1) 100%);
+  border: 1px solid rgba(200, 200, 200, 0.3);
+  border-radius: 20% 20% 30% 30%;
+  animation: ecdysis-skin 1.2s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes ecdysis-skin {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+  50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.3; }
+  100% { transform: translate(-50%, -50%) scale(1.3) translateX(30px); opacity: 0; }
+}
+
+.spell-particle--ecdysis-peel {
+  position: absolute;
+  width: 12px;
+  height: 8px;
+  background: linear-gradient(90deg,
+    var(--spell-color, #9e9e9e) 0%,
+    rgba(200, 200, 200, 0.5) 100%);
+  border-radius: 30%;
+  animation: ecdysis-peel 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes ecdysis-peel {
+  0% {
+    transform: rotate(var(--peel-angle, 0deg)) translateX(0) scale(1) rotateY(0);
+    opacity: 0.7;
+  }
+  100% {
+    transform: rotate(var(--peel-angle, 0deg)) translateX(40px) scale(0.5) rotateY(90deg);
+    opacity: 0;
+  }
+}
+
+.spell-particle--ecdysis-scale {
+  position: absolute;
+  width: 8px;
+  height: 10px;
+  background: var(--spell-color, #9e9e9e);
+  clip-path: polygon(50% 0%, 100% 30%, 100% 100%, 0% 100%, 0% 30%);
+  animation: ecdysis-scale-drift 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes ecdysis-scale-drift {
+  0% { transform: translateY(0) rotate(0); opacity: 0.6; }
+  100% { transform: translateY(50px) translateX(calc((random() - 0.5) * 40px)) rotate(180deg); opacity: 0; }
+}
+
+.spell-effect--ecdysis-shine {
+  position: absolute;
+  width: 80px;
+  height: 100px;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(135deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.4) 45%,
+    rgba(255, 255, 255, 0.6) 50%,
+    rgba(255, 255, 255, 0.4) 55%,
+    transparent 60%);
+  animation: ecdysis-shine 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes ecdysis-shine {
+  0% { transform: translate(-50%, -50%) translateX(-50px); opacity: 1; }
+  100% { transform: translate(-50%, -50%) translateX(50px); opacity: 0; }
+}
+
+.spell-particle--ecdysis-sparkle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--spell-color, #4caf50);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--spell-color, #4caf50);
+  animation: ecdysis-sparkle 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes ecdysis-sparkle {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%)
+               translateX(calc(cos(var(--angle, 0deg)) * 40px))
+               translateY(calc(sin(var(--angle, 0deg)) * 40px))
+               scale(0);
+    opacity: 0;
+  }
+}
+
+.spell-particle--regen-heal {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--spell-color, #4caf50);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--spell-color, #4caf50);
+  animation: regen-heal-rise 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes regen-heal-rise {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-60px) scale(0); opacity: 0; }
+}
+
+/* ============================================================================
+   SURPRISE - Bespoke Snake Strike Animation
+   ============================================================================ */
+
+.spell-particle--snake-grass {
+  position: absolute;
+  width: 4px;
+  height: 20px;
+  background: linear-gradient(to top, #2d5a27, var(--spell-color, #4caf50));
+  animation: snake-grass-rustle 0.3s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes snake-grass-rustle {
+  0% { transform: rotate(-10deg) scaleY(1); opacity: 0.8; }
+  30% { transform: rotate(15deg) scaleY(1.1); }
+  60% { transform: rotate(-5deg) scaleY(0.9); }
+  100% { transform: rotate(0) scaleY(1); opacity: 0; }
+}
+
+.spell-projectile--snake-strike {
+  position: absolute;
+  width: 60px;
+  height: 20px;
+  transform-origin: left center;
+  animation: spell-snake-strike 0.2s ease-out forwards;
+  pointer-events: none;
+}
+
+.snake-head {
+  position: absolute;
+  right: 0;
+  top: 2px;
+  width: 16px;
+  height: 16px;
+  background: var(--spell-color, #8bc34a);
+  border-radius: 50% 30% 30% 50%;
+  box-shadow: inset -3px 0 6px rgba(0, 0, 0, 0.3);
+}
+
+.snake-fangs {
+  position: absolute;
+  right: -4px;
+  top: 6px;
+  width: 8px;
+  height: 8px;
+}
+
+.snake-fangs::before,
+.snake-fangs::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 6px;
+  background: #fff;
+  border-radius: 0 0 50% 50%;
+}
+
+.snake-fangs::before { left: 0; }
+.snake-fangs::after { right: 0; }
+
+.snake-body {
+  position: absolute;
+  left: 0;
+  top: 5px;
+  width: 50px;
+  height: 10px;
+  background: linear-gradient(90deg,
+    transparent,
+    var(--spell-color, #8bc34a) 20%,
+    var(--spell-color, #8bc34a));
+  border-radius: 5px;
+}
+
+@keyframes spell-snake-strike {
+  0% {
+    transform: rotate(var(--strike-angle, 0deg)) translateX(0) scaleX(0.3);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(var(--strike-angle, 0deg))
+               translateX(var(--target-x, 100px))
+               translateY(var(--target-y, 0))
+               scaleX(1);
+    opacity: 1;
+  }
+}
+
+.spell-particle--snake-trail {
+  position: absolute;
+  width: 10px;
+  height: 6px;
+  background: var(--spell-color, #8bc34a);
+  border-radius: 50%;
+  opacity: 0.5;
+  animation: snake-trail-fade 0.2s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes snake-trail-fade {
+  0% { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(0.5); opacity: 0; }
+}
+
+.spell-effect--snake-bite {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  transform: translate(-50%, -50%);
+  border: 3px solid var(--spell-color, #8bc34a);
+  border-radius: 50%;
+  animation: snake-bite-burst 0.4s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes snake-bite-burst {
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+}
+
+.spell-effect--fang-marks {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.spell-effect--fang-marks::before,
+.spell-effect--fang-marks::after {
+  content: '';
+  position: absolute;
+  width: 4px;
+  height: 8px;
+  background: #c62828;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #c62828;
+  animation: fang-mark-appear 0.3s ease-out forwards;
+}
+
+.spell-effect--fang-marks::before { left: 3px; }
+.spell-effect--fang-marks::after { right: 3px; }
+
+@keyframes fang-mark-appear {
+  0% { transform: scaleY(0); opacity: 0; }
+  100% { transform: scaleY(1); opacity: 1; }
+}
+
+.spell-particle--venom-drip {
+  position: absolute;
+  width: 6px;
+  height: 10px;
+  background: linear-gradient(to bottom, var(--spell-color, #8bc34a), #4caf50);
+  border-radius: 50% 50% 50% 50% / 30% 30% 70% 70%;
+  animation: venom-drip 0.6s ease-in forwards;
+  pointer-events: none;
+}
+
+@keyframes venom-drip {
+  0% { transform: translateY(0) scale(1); opacity: 0.8; }
+  100% { transform: translateY(40px) scale(0.5); opacity: 0; }
+}
+
+.spell-snake-bitten {
+  animation: snake-bitten 0.6s ease-out;
+}
+
+@keyframes snake-bitten {
+  0% { transform: scale(1); }
+  10% { transform: scale(0.95) rotate(-2deg); }
+  30% { transform: scale(1.05) rotate(1deg); }
+  50% { transform: scale(0.98); filter: hue-rotate(30deg) brightness(1.1); }
+  100% { transform: scale(1); filter: none; }
+}
+
+/* ============================================================================
+   WHITE MISSILE - Bespoke Quill Projectile Animation
+   ============================================================================ */
+
+.spell-projectile--quill {
+  position: absolute;
+  width: 40px;
+  height: 12px;
+  transform-origin: center center;
+  animation: spell-quill-spin 0.3s linear forwards;
+  pointer-events: none;
+}
+
+.quill-tip {
+  position: absolute;
+  right: 0;
+  top: 4px;
+  width: 0;
+  height: 0;
+  border-left: 12px solid #333;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+}
+
+.quill-shaft {
+  position: absolute;
+  left: 5px;
+  right: 10px;
+  top: 4px;
+  height: 4px;
+  background: linear-gradient(90deg, #fff, #e0e0e0);
+  border-radius: 1px;
+}
+
+.quill-feathers {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 15px;
+  height: 12px;
+  background: linear-gradient(to bottom,
+    transparent 0%,
+    #fff 20%,
+    #f5f5f5 50%,
+    #fff 80%,
+    transparent 100%);
+  clip-path: polygon(100% 50%, 0% 0%, 0% 100%);
+}
+
+@keyframes spell-quill-spin {
+  0% {
+    transform: rotate(var(--quill-angle, 0deg)) translateX(0) translateY(0);
+    opacity: 0;
+  }
+  10% { opacity: 1; }
+  100% {
+    transform: rotate(calc(var(--quill-angle, 0deg) + 720deg))
+               translateX(var(--target-x, 100px))
+               translateY(var(--target-y, 0));
+    opacity: 1;
+  }
+}
+
+.spell-particle--quill-wisp {
+  position: absolute;
+  width: 8px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  animation: quill-wisp 0.3s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes quill-wisp {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+.spell-effect--quill-embedded {
+  position: absolute;
+  width: 30px;
+  height: 10px;
+  transform: translate(-50%, -50%) rotate(var(--embed-angle, 0deg));
+  animation: quill-embed-wobble 0.4s ease-out;
+  pointer-events: none;
+}
+
+.embedded-quill-tip {
+  position: absolute;
+  right: 0;
+  top: 3px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid #333;
+  border-top: 3px solid transparent;
+  border-bottom: 3px solid transparent;
+}
+
+.embedded-quill-shaft {
+  position: absolute;
+  left: 3px;
+  right: 6px;
+  top: 3px;
+  height: 4px;
+  background: linear-gradient(90deg, #fff, #e0e0e0);
+}
+
+.embedded-quill-feathers {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  clip-path: polygon(100% 50%, 0% 0%, 0% 100%);
+}
+
+@keyframes quill-embed-wobble {
+  0% { transform: translate(-50%, -50%) rotate(var(--embed-angle, 0deg)) translateX(5px); }
+  20% { transform: translate(-50%, -50%) rotate(calc(var(--embed-angle, 0deg) - 8deg)); }
+  40% { transform: translate(-50%, -50%) rotate(calc(var(--embed-angle, 0deg) + 5deg)); }
+  60% { transform: translate(-50%, -50%) rotate(calc(var(--embed-angle, 0deg) - 3deg)); }
+  80% { transform: translate(-50%, -50%) rotate(calc(var(--embed-angle, 0deg) + 1deg)); }
+  100% { transform: translate(-50%, -50%) rotate(var(--embed-angle, 0deg)); }
+}
+
+.spell-particle--quill-puff {
+  position: absolute;
+  width: 8px;
+  height: 4px;
+  background: var(--spell-color, #fff);
+  border-radius: 50%;
+  opacity: 0.7;
+  animation: quill-puff 0.4s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes quill-puff {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translate(-50%, -50%)
+               translateX(calc(cos(var(--angle, 0deg)) * 25px))
+               translateY(calc(sin(var(--angle, 0deg)) * 25px))
+               scale(0);
+    opacity: 0;
+  }
+}
+
+.spell-quill-hit {
+  animation: quill-hit 0.5s ease-out;
+}
+
+@keyframes quill-hit {
+  0% { transform: scale(1); }
+  20% { transform: scale(0.95) translateX(-3px); }
+  40% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+/* ============================================================================
+   METEOR - Epic Extinction-Level Board Wipe Animation
+   ============================================================================ */
+
+.spell-effect--meteor-distant-glow {
+  position: absolute;
+  top: 0;
+  right: 10%;
+  width: 80px;
+  height: 80px;
+  background: radial-gradient(circle, var(--spell-color, #ff7043) 0%, rgba(255, 112, 67, 0.5) 40%, transparent 70%);
+  border-radius: 50%;
+  animation: meteor-distant-glow 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes meteor-distant-glow {
+  0% { transform: scale(0.3); opacity: 0; }
+  30% { transform: scale(1.2); opacity: 0.8; }
+  100% { transform: scale(2) translateX(-30px) translateY(20px); opacity: 0; }
+}
+
+.spell-particle--meteor-warning-dust {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: var(--spell-color, #8b4513);
+  border-radius: 50%;
+  animation: meteor-warning-dust 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes meteor-warning-dust {
+  0% { transform: translateY(0) scale(1); opacity: 0.6; }
+  100% { transform: translateY(-40px) scale(0); opacity: 0; }
+}
+
+.spell-effect--meteor-sky-rift {
+  position: absolute;
+  top: 5%;
+  left: 50%;
+  width: 120px;
+  height: 40px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--spell-color, #ff7043) 20%,
+    var(--spell-secondary, #f4511e) 50%,
+    var(--spell-color, #ff7043) 80%,
+    transparent 100%);
+  border-radius: 50%;
+  animation: meteor-sky-rift 0.7s ease-out forwards;
+  box-shadow: 0 0 30px var(--spell-color, #ff7043), 0 0 60px var(--spell-secondary, #f4511e);
+  pointer-events: none;
+}
+
+@keyframes meteor-sky-rift {
+  0% { transform: translateX(-50%) scaleX(0); opacity: 0; }
+  30% { transform: translateX(-50%) scaleX(1.2); opacity: 1; }
+  100% { transform: translateX(-50%) scaleX(0.8) scaleY(1.5); opacity: 0; }
+}
+
+.spell-particle--rift-ember {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--spell-color, #ff7043);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--spell-color, #ff7043);
+  animation: rift-ember 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes rift-ember {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(60px) scale(0.3); opacity: 0; }
+}
+
+.spell-aoe--meteor-epic {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 70px;
+  height: 70px;
+  transform: translateX(-50%);
+  background: radial-gradient(circle at 30% 30%,
+    #ffd54f 0%,
+    var(--spell-color, #ff7043) 30%,
+    var(--spell-secondary, #f4511e) 60%,
+    #5d4037 80%,
+    #3e2723 100%);
+  border-radius: 50%;
+  box-shadow:
+    0 0 40px var(--spell-color, #ff7043),
+    0 0 80px var(--spell-secondary, #f4511e),
+    inset -10px -10px 20px rgba(0,0,0,0.5);
+  animation: meteor-epic-fall 0.35s ease-in forwards;
+  pointer-events: none;
+}
+
+@keyframes meteor-epic-fall {
+  0% { transform: translateX(-50%) translateY(0) scale(0.5); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translateX(-50%) translateY(calc(50vh)) scale(1.2); opacity: 1; }
+}
+
+.spell-effect--meteor-corona {
+  position: absolute;
+  left: 50%;
+  top: 10%;
+  width: 120px;
+  height: 120px;
+  transform: translateX(-50%);
+  background: radial-gradient(circle, transparent 30%, var(--spell-color, #ff7043) 50%, transparent 70%);
+  border-radius: 50%;
+  animation: meteor-corona 0.4s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes meteor-corona {
+  0% { transform: translateX(-50%) scale(0.5); opacity: 0.8; }
+  100% { transform: translateX(-50%) translateY(calc(50vh - 50px)) scale(0.3); opacity: 0; }
+}
+
+.spell-particle--meteor-fire-trail {
+  position: absolute;
+  left: 50%;
+  top: 5%;
+  width: 20px;
+  height: 100px;
+  transform: translateX(calc(-50% + var(--trail-offset, 0px)));
+  background: linear-gradient(to bottom,
+    var(--spell-color, #ff7043) 0%,
+    rgba(255, 112, 67, 0.5) 50%,
+    transparent 100%);
+  border-radius: 10px 10px 50% 50%;
+  animation: meteor-fire-trail 0.35s ease-in forwards;
+  pointer-events: none;
+}
+
+@keyframes meteor-fire-trail {
+  0% { transform: translateX(calc(-50% + var(--trail-offset, 0px))) translateY(0); opacity: 0.8; }
+  100% { transform: translateX(calc(-50% + var(--trail-offset, 0px))) translateY(calc(50vh - 100px)); opacity: 0; }
+}
+
+.spell-particle--meteor-smoke-epic {
+  position: absolute;
+  width: var(--size, 20px);
+  height: var(--size, 20px);
+  background: radial-gradient(circle, rgba(80, 80, 80, 0.6) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: meteor-smoke-epic 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes meteor-smoke-epic {
+  0% { transform: scale(0.5); opacity: 0.6; }
+  100% { transform: scale(2) translateX(30px); opacity: 0; }
+}
+
+.spell-effect--meteor-crater-epic {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 200px;
+  height: 100px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse,
+    var(--spell-secondary, #f4511e) 0%,
+    var(--spell-color, #ff7043) 30%,
+    rgba(93, 64, 55, 0.5) 60%,
+    transparent 80%);
+  border-radius: 50%;
+  animation: meteor-crater-epic 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes meteor-crater-epic {
+  0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+  30% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+
+.spell-effect--meteor-shockwave-epic {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 50px;
+  height: 50px;
+  transform: translate(-50%, -50%);
+  border: 4px solid var(--spell-color, #ff7043);
+  border-radius: 50%;
+  animation: meteor-shockwave-epic 0.5s ease-out forwards;
+  animation-delay: calc(var(--ring-index, 0) * 0.06s);
+  pointer-events: none;
+}
+
+@keyframes meteor-shockwave-epic {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; border-width: 8px; }
+  100% { transform: translate(-50%, -50%) scale(6); opacity: 0; border-width: 1px; }
+}
+
+.spell-effect--meteor-fire-pillar {
+  position: absolute;
+  left: var(--pillar-x, 50%);
+  bottom: 20%;
+  width: 30px;
+  height: 0;
+  background: linear-gradient(to top,
+    var(--spell-color, #ff7043) 0%,
+    #ffd54f 50%,
+    transparent 100%);
+  border-radius: 50% 50% 0 0;
+  animation: meteor-fire-pillar 0.6s ease-out forwards;
+  animation-delay: var(--pillar-delay, 0s);
+  pointer-events: none;
+}
+
+@keyframes meteor-fire-pillar {
+  0% { height: 0; opacity: 1; }
+  40% { height: 150px; opacity: 1; }
+  100% { height: 100px; opacity: 0; }
+}
+
+.spell-particle--meteor-debris-epic {
+  position: absolute;
+  width: var(--size, 8px);
+  height: var(--size, 8px);
+  background: var(--spell-color, #ff7043);
+  border-radius: 30% 70% 50% 50%;
+  box-shadow: 0 0 6px var(--spell-color, #ff7043);
+  animation: meteor-debris-epic 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes meteor-debris-epic {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% {
+    transform: translate(-50%, -50%)
+               translateX(calc(cos(var(--angle, 0deg)) * var(--speed, 80px)))
+               translateY(calc(sin(var(--angle, 0deg)) * var(--speed, 80px) - 30px))
+               rotate(720deg)
+               scale(0.3);
+    opacity: 0;
+  }
+}
+
+.spell-effect--meteor-creature-burn {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, var(--spell-color, #ff7043) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: meteor-creature-burn 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes meteor-creature-burn {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.9; }
+  50% { transform: translate(-50%, -50%) scale(1.3); opacity: 0.7; }
+  100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+}
+
+.spell-meteor-devastation {
+  animation: meteor-devastation 0.8s ease-out;
+}
+
+@keyframes meteor-devastation {
+  0% { transform: scale(1); filter: brightness(1); }
+  20% { transform: scale(0.85) rotate(-3deg); filter: brightness(2) saturate(0.5); }
+  40% { transform: scale(1.1) rotate(2deg); filter: brightness(1.5) hue-rotate(20deg); }
+  60% { transform: scale(0.95); filter: brightness(1.2); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+.spell-particle--meteor-ash {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--spell-color, #4a4a4a);
+  border-radius: 50%;
+  animation: meteor-ash 1.2s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes meteor-ash {
+  0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0.7; }
+  100% {
+    transform: translateY(120%) translateX(var(--sway, 0px)) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.spell-particle--ember-aftermath {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: var(--spell-color, #ff7043);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--spell-color, #ff7043);
+  animation: ember-aftermath 1s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes ember-aftermath {
+  0% { transform: translateY(0) scale(1); opacity: 0.8; }
+  100% { transform: translateY(-80px) scale(0); opacity: 0; }
+}
+
+/* ============================================================================
+   BLIZZARD - Epic Arctic Storm Animation
+   ============================================================================ */
+
+.spell-aoe--blizzard-frost-creep {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 0% 0%, var(--spell-color, #b3e5fc) 0%, transparent 40%),
+    radial-gradient(ellipse at 100% 0%, var(--spell-secondary, #81d4fa) 0%, transparent 40%),
+    radial-gradient(ellipse at 0% 100%, var(--spell-color, #b3e5fc) 0%, transparent 40%),
+    radial-gradient(ellipse at 100% 100%, var(--spell-secondary, #81d4fa) 0%, transparent 40%);
+  animation: blizzard-frost-creep 1.4s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes blizzard-frost-creep {
+  0% { opacity: 0; }
+  30% { opacity: 0.4; }
+  70% { opacity: 0.3; }
+  100% { opacity: 0; }
+}
+
+.spell-particle--frost-breath {
+  position: absolute;
+  width: 30px;
+  height: 15px;
+  background: radial-gradient(ellipse, var(--spell-color, #e1f5fe) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: frost-breath 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes frost-breath {
+  0% { transform: scale(0.5); opacity: 0.7; }
+  100% { transform: scale(1.5) translateY(-30px); opacity: 0; }
+}
+
+.spell-effect--blizzard-wind-streak {
+  position: absolute;
+  left: -10%;
+  width: 120%;
+  height: 3px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--spell-color, #e1f5fe) 20%,
+    rgba(255, 255, 255, 0.8) 50%,
+    var(--spell-color, #e1f5fe) 80%,
+    transparent 100%);
+  animation: blizzard-wind-streak 0.4s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes blizzard-wind-streak {
+  0% { transform: translateX(-100%); opacity: 0.8; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+
+.spell-particle--blizzard-snow {
+  position: absolute;
+  width: var(--size, 6px);
+  height: var(--size, 6px);
+  background: var(--spell-color, #fff);
+  border-radius: 50%;
+  box-shadow: 0 0 4px var(--spell-color, #fff);
+  animation: blizzard-snow 0.8s ease-in forwards;
+  pointer-events: none;
+}
+
+@keyframes blizzard-snow {
+  0% { transform: translateX(0) translateY(0) rotate(0deg); opacity: 0.9; }
+  100% {
+    transform: translateX(var(--wind-push, 100%)) translateY(120%) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.spell-particle--ice-shard-fly {
+  position: absolute;
+  width: var(--shard-size, 12px);
+  height: calc(var(--shard-size, 12px) * 0.4);
+  background: linear-gradient(90deg, var(--spell-color, #b3e5fc), #fff);
+  clip-path: polygon(0% 50%, 30% 0%, 100% 50%, 30% 100%);
+  animation: ice-shard-fly 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes ice-shard-fly {
+  0% { transform: translateX(0) rotate(-10deg); opacity: 0.9; }
+  100% { transform: translateX(120vw) rotate(10deg); opacity: 0; }
+}
+
+.spell-blizzard-encase {
+  animation: blizzard-encase 1.1s ease-out;
+}
+
+@keyframes blizzard-encase {
+  0% { transform: scale(1); filter: brightness(1); }
+  20% { transform: scale(0.95); filter: brightness(1.3) saturate(0.7) hue-rotate(-20deg); }
+  50% { transform: scale(1.02); filter: brightness(1.1) saturate(0.5) hue-rotate(-30deg); }
+  100% { transform: scale(1); filter: brightness(1) saturate(0.8); }
+}
+
+.spell-particle--ice-crystal-burst {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--spell-color, #b3e5fc);
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  animation: ice-crystal-burst 0.4s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes ice-crystal-burst {
+  0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); opacity: 1; }
+  100% {
+    transform: translate(-50%, -50%)
+               translateX(calc(cos(var(--angle, 0deg)) * var(--distance, 30px)))
+               translateY(calc(sin(var(--angle, 0deg)) * var(--distance, 30px)))
+               rotate(180deg)
+               scale(0.5);
+    opacity: 0;
+  }
+}
+
+.spell-effect--ice-encase {
+  position: absolute;
+  width: 70px;
+  height: 90px;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(180deg,
+    rgba(179, 229, 252, 0.3) 0%,
+    rgba(129, 212, 250, 0.4) 50%,
+    rgba(179, 229, 252, 0.3) 100%);
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  box-shadow:
+    inset 0 0 20px rgba(255, 255, 255, 0.3),
+    0 0 15px var(--spell-color, #b3e5fc);
+  animation: ice-encase 0.9s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes ice-encase {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+  30% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+
+.spell-particle--icicle-form {
+  position: absolute;
+  width: 6px;
+  height: var(--icicle-height, 20px);
+  background: linear-gradient(180deg, var(--spell-color, #b3e5fc) 0%, #fff 50%, rgba(255, 255, 255, 0.5) 100%);
+  clip-path: polygon(50% 100%, 0% 0%, 100% 0%);
+  animation: icicle-form 0.4s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes icicle-form {
+  0% { transform: scaleY(0); opacity: 0; }
+  100% { transform: scaleY(1); opacity: 0.9; }
+}
+
+.spell-effect--frost-crack {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  transform: translate(-50%, -50%);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Cpath d='M30 30 L30 10 M30 30 L45 20 M30 30 L50 35 M30 30 L40 50 M30 30 L20 48 M30 30 L10 40 M30 30 L15 20' stroke='%23b3e5fc' stroke-width='2' fill='none'/%3E%3C/svg%3E") center/contain no-repeat;
+  animation: frost-crack 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes frost-crack {
+  0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+
+.spell-effect--blizzard-player-hit {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, var(--spell-color, #b3e5fc) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: blizzard-player-hit 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes blizzard-player-hit {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+}
+
+.spell-particle--snow-gentle {
+  position: absolute;
+  width: var(--size, 4px);
+  height: var(--size, 4px);
+  background: var(--spell-color, #fff);
+  border-radius: 50%;
+  animation: snow-gentle 1.2s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes snow-gentle {
+  0% { transform: translateY(0) translateX(0); opacity: 0.7; }
+  100% { transform: translateY(120%) translateX(20px); opacity: 0; }
+}
+
+.spell-effect--frost-mist-linger {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 0%, rgba(179, 229, 252, 0.15) 70%, transparent 100%);
+  animation: frost-mist-linger 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes frost-mist-linger {
+  0% { opacity: 0.4; }
+  100% { opacity: 0; }
+}
+
+/* ============================================================================
+   SNAKE WINE - Exotic Healing Elixir Animation
+   ============================================================================ */
+
+.spell-effect--snake-wine-vessel {
+  position: absolute;
+  width: 40px;
+  height: 60px;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(180deg,
+    transparent 0%,
+    rgba(76, 175, 80, 0.3) 20%,
+    var(--spell-color, #ff7043) 40%,
+    var(--spell-secondary, #f4511e) 70%,
+    #5d4037 90%);
+  border: 2px solid #8d6e63;
+  border-radius: 5px 5px 15px 15px;
+  box-shadow:
+    inset 0 -20px 30px rgba(76, 175, 80, 0.4),
+    0 0 20px var(--spell-color, #ff7043);
+  animation: snake-wine-vessel-appear 1.4s ease-out forwards;
+  pointer-events: none;
+}
+
+.spell-effect--snake-wine-vessel::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 15px;
+  background: #5d4037;
+  border-radius: 3px 3px 0 0;
+}
+
+@keyframes snake-wine-vessel-appear {
+  0% { transform: translate(-50%, -50%) scale(0) rotate(-10deg); opacity: 0; }
+  20% { transform: translate(-50%, -50%) scale(1.1) rotate(5deg); opacity: 1; }
+  80% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(0.8) rotate(15deg); opacity: 0; }
+}
+
+.spell-particle--wine-mist {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: radial-gradient(circle, var(--spell-color, #ffccbc) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: wine-mist 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes wine-mist {
+  0% { transform: scale(0.5); opacity: 0.6; }
+  100% { transform: scale(1.5) translateY(-20px); opacity: 0; }
+}
+
+.spell-effect--wine-snake-coil {
+  position: absolute;
+  width: 30px;
+  height: 50px;
+  transform: translate(-50%, -50%);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 50'%3E%3Cpath d='M15 45 Q5 40 10 30 Q15 20 8 15 Q3 10 15 5' stroke='%232e7d32' stroke-width='4' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='15' cy='5' r='3' fill='%232e7d32'/%3E%3C/svg%3E") center/contain no-repeat;
+  animation: wine-snake-coil 0.8s ease-in-out forwards;
+  pointer-events: none;
+}
+
+@keyframes wine-snake-coil {
+  0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+  30% { transform: translate(-50%, -50%) scale(1) rotate(10deg); opacity: 0.8; }
+  60% { transform: translate(-50%, -50%) scale(1.1) rotate(-5deg); opacity: 0.9; }
+  100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 0; }
+}
+
+.spell-effect--wine-liquid-glow {
+  position: absolute;
+  width: 35px;
+  height: 40px;
+  transform: translate(-50%, -50%) translateY(10px);
+  background: radial-gradient(ellipse,
+    var(--spell-secondary, #4caf50) 0%,
+    var(--spell-color, #ff7043) 50%,
+    transparent 80%);
+  border-radius: 50%;
+  animation: wine-liquid-glow 0.9s ease-in-out forwards;
+  pointer-events: none;
+}
+
+@keyframes wine-liquid-glow {
+  0%, 100% { opacity: 0; }
+  30%, 70% { opacity: 0.7; transform: translate(-50%, -50%) translateY(10px) scale(1.1); }
+}
+
+.spell-particle--wine-bubble {
+  position: absolute;
+  width: var(--bubble-size, 4px);
+  height: var(--bubble-size, 4px);
+  background: var(--spell-color, #81c784);
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  animation: wine-bubble 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes wine-bubble {
+  0% { transform: translateY(0) scale(1); opacity: 0.8; }
+  100% { transform: translateY(-40px) scale(0.5); opacity: 0; }
+}
+
+.spell-effect--wine-drink {
+  position: absolute;
+  width: 40px;
+  height: 60px;
+  transform: translate(-50%, -50%);
+  background: transparent;
+  animation: wine-drink-tip 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes wine-drink-tip {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(45deg) translateY(20px); }
+}
+
+.spell-effect--wine-stream {
+  position: absolute;
+  width: 8px;
+  height: 40px;
+  transform: translate(-50%, 0) rotate(30deg);
+  background: linear-gradient(180deg,
+    var(--spell-color, #ff7043) 0%,
+    var(--spell-secondary, #4caf50) 50%,
+    rgba(76, 175, 80, 0.3) 100%);
+  border-radius: 4px;
+  animation: wine-stream 0.4s ease-in forwards;
+  pointer-events: none;
+}
+
+@keyframes wine-stream {
+  0% { transform: translate(-50%, 0) rotate(30deg) scaleY(0); opacity: 0.9; }
+  50% { transform: translate(-50%, 20px) rotate(20deg) scaleY(1); opacity: 0.8; }
+  100% { transform: translate(-50%, 40px) rotate(10deg) scaleY(0.5); opacity: 0; }
+}
+
+.spell-snake-wine-absorb {
+  animation: snake-wine-absorb 0.8s ease-out;
+}
+
+@keyframes snake-wine-absorb {
+  0% { filter: brightness(1); }
+  30% { filter: brightness(1.3) hue-rotate(60deg); box-shadow: 0 0 30px rgba(76, 175, 80, 0.6); }
+  60% { filter: brightness(1.2) hue-rotate(30deg); box-shadow: 0 0 20px rgba(255, 112, 67, 0.4); }
+  100% { filter: brightness(1); box-shadow: none; }
+}
+
+.spell-effect--wine-heal-ring {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  transform: translate(-50%, -50%);
+  border: 3px solid var(--spell-color, #ff7043);
+  border-radius: 50%;
+  animation: wine-heal-ring 0.5s ease-out forwards;
+  animation-delay: calc(var(--ring-index, 0) * 0.1s);
+  pointer-events: none;
+}
+
+@keyframes wine-heal-ring {
+  0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.9; border-width: 4px; }
+  100% { transform: translate(-50%, -50%) scale(3); opacity: 0; border-width: 1px; }
+}
+
+.spell-particle--snake-scale-heal {
+  position: absolute;
+  width: 8px;
+  height: 6px;
+  background: var(--spell-color, #4caf50);
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  animation: snake-scale-heal 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes snake-scale-heal {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 0.9; }
+  100% {
+    transform: translate(-50%, -50%)
+               translateX(calc(cos(var(--angle, 0deg)) * 50px))
+               translateY(calc(sin(var(--angle, 0deg)) * 50px))
+               rotate(180deg)
+               scale(0);
+    opacity: 0;
+  }
+}
+
+.spell-particle--wine-sparkle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--spell-color, #ffd700);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--spell-color, #ffd700);
+  animation: wine-sparkle 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes wine-sparkle {
+  0% { transform: scale(0); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.8; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+/* ============================================================================
+   WHITE HART - Majestic Resurrection Animation
+   ============================================================================ */
+
+.spell-particle--hart-mist-rise {
+  position: absolute;
+  width: var(--mist-width, 40px);
+  height: 60px;
+  background: radial-gradient(ellipse at bottom, var(--spell-color, #e1f5fe) 0%, transparent 70%);
+  border-radius: 50% 50% 0 0;
+  animation: hart-mist-rise 1s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes hart-mist-rise {
+  0% { transform: translateY(0) scaleY(0.5); opacity: 0.6; }
+  100% { transform: translateY(-100px) scaleY(1.5); opacity: 0; }
+}
+
+.spell-effect--hart-whisper {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--spell-color, #b3e5fc);
+  border-radius: 50%;
+  animation: hart-whisper 0.6s ease-out forwards;
+  animation-delay: calc(var(--whisper-index, 0) * 0.08s);
+  pointer-events: none;
+}
+
+@keyframes hart-whisper {
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0.6; }
+  100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+}
+
+.spell-effect--white-hart-spirit {
+  position: absolute;
+  width: 80px;
+  height: 100px;
+  transform: translate(-50%, -50%);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 100'%3E%3Cellipse cx='40' cy='60' rx='20' ry='25' fill='white' opacity='0.9'/%3E%3Cellipse cx='40' cy='35' rx='12' ry='15' fill='white' opacity='0.9'/%3E%3Cpath d='M28 25 Q20 10 15 5 M28 25 Q25 15 20 12 M52 25 Q60 10 65 5 M52 25 Q55 15 60 12' stroke='white' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='35' cy='33' r='2' fill='%2381d4fa'/%3E%3Ccircle cx='45' cy='33' r='2' fill='%2381d4fa'/%3E%3C/svg%3E") center/contain no-repeat;
+  filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.8));
+  animation: white-hart-spirit 1s ease-in-out forwards;
+  pointer-events: none;
+}
+
+@keyframes white-hart-spirit {
+  0% { transform: translate(-50%, -50%) scale(0) translateY(50px); opacity: 0; }
+  30% { transform: translate(-50%, -50%) scale(1.1) translateY(0); opacity: 1; }
+  70% { transform: translate(-50%, -50%) scale(1) translateY(-10px); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(0.8) translateY(-30px); opacity: 0; }
+}
+
+.spell-particle--hart-light-ray {
+  position: absolute;
+  width: 4px;
+  height: 60px;
+  transform: translate(-50%, -50%) rotate(var(--ray-angle, 0deg)) translateY(-50px);
+  transform-origin: center bottom;
+  background: linear-gradient(to top, var(--spell-color, #e1f5fe), transparent);
+  border-radius: 2px;
+  animation: hart-light-ray 0.9s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes hart-light-ray {
+  0% { transform: translate(-50%, -50%) rotate(var(--ray-angle, 0deg)) translateY(-50px) scaleY(0); opacity: 0.8; }
+  40% { transform: translate(-50%, -50%) rotate(var(--ray-angle, 0deg)) translateY(-50px) scaleY(1); opacity: 0.7; }
+  100% { transform: translate(-50%, -50%) rotate(var(--ray-angle, 0deg)) translateY(-50px) scaleY(0.5); opacity: 0; }
+}
+
+.spell-particle--hart-snowflake {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--spell-color, #fff);
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  animation: hart-snowflake 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes hart-snowflake {
+  0% { transform: scale(0) rotate(0deg); opacity: 0.9; }
+  50% { transform: scale(1.2) rotate(90deg); opacity: 0.7; }
+  100% { transform: scale(0) rotate(180deg); opacity: 0; }
+}
+
+.spell-effect--hart-resurrection-spark {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, #fff 0%, var(--spell-color, #b3e5fc) 50%, transparent 70%);
+  border-radius: 50%;
+  box-shadow: 0 0 15px #fff, 0 0 30px var(--spell-color, #b3e5fc);
+  animation: hart-resurrection-spark 0.5s ease-in forwards;
+  pointer-events: none;
+}
+
+@keyframes hart-resurrection-spark {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, calc(-50% + 80px)) scale(0.5); opacity: 0; }
+}
+
+.spell-effect--hart-magic-circle {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  transform: translate(-50%, -50%);
+  border: 2px solid var(--spell-color, #b3e5fc);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(179, 229, 252, 0.2) 0%, transparent 70%);
+  box-shadow: 0 0 20px var(--spell-color, #b3e5fc);
+  animation: hart-magic-circle 0.7s ease-out forwards;
+  pointer-events: none;
+}
+
+.spell-effect--hart-magic-circle::before {
+  content: '';
+  position: absolute;
+  inset: 10px;
+  border: 1px solid var(--spell-secondary, #81d4fa);
+  border-radius: 50%;
+}
+
+@keyframes hart-magic-circle {
+  0% { transform: translate(-50%, -50%) scale(0) rotate(0deg); opacity: 0; }
+  50% { transform: translate(-50%, -50%) scale(1.2) rotate(90deg); opacity: 0.9; }
+  100% { transform: translate(-50%, -50%) scale(1) rotate(180deg); opacity: 0; }
+}
+
+.spell-particle--hart-ice-crystal {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: var(--spell-color, #b3e5fc);
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  animation: hart-ice-crystal 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes hart-ice-crystal {
+  0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+  100% {
+    transform: translate(-50%, -50%)
+               translateX(calc(cos(var(--angle, 0deg)) * 40px))
+               translateY(calc(sin(var(--angle, 0deg)) * 40px))
+               scale(0.5);
+    opacity: 0;
+  }
+}
+
+.spell-effect--hart-ghost-rise {
+  position: absolute;
+  width: 60px;
+  height: 80px;
+  transform: translate(-50%, 0);
+  background: linear-gradient(to top, transparent 0%, rgba(255, 255, 255, 0.4) 30%, rgba(179, 229, 252, 0.3) 70%, transparent 100%);
+  border-radius: 30px 30px 0 0;
+  animation: hart-ghost-rise 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes hart-ghost-rise {
+  0% { transform: translate(-50%, 0) scaleY(0); opacity: 0.7; }
+  50% { transform: translate(-50%, -40px) scaleY(1); opacity: 0.6; }
+  100% { transform: translate(-50%, -80px) scaleY(0.5); opacity: 0; }
+}
+
+.spell-particle--hart-frost-burst {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--spell-color, #b3e5fc);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--spell-color, #b3e5fc);
+  animation: hart-frost-burst 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes hart-frost-burst {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% {
+    transform: translate(-50%, -50%)
+               translateX(calc(cos(var(--angle, 0deg)) * 50px))
+               translateY(calc(sin(var(--angle, 0deg)) * 50px))
+               scale(0);
+    opacity: 0;
+  }
+}
+
+.spell-effect--hart-ice-coat {
+  position: absolute;
+  width: 70px;
+  height: 90px;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(180deg,
+    rgba(179, 229, 252, 0.4) 0%,
+    rgba(129, 212, 250, 0.3) 50%,
+    rgba(179, 229, 252, 0.2) 100%);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  box-shadow: 0 0 20px var(--spell-color, #b3e5fc);
+  animation: hart-ice-coat 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes hart-ice-coat {
+  0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+  50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+
+.spell-hart-materialize {
+  animation: hart-materialize 0.8s ease-out;
+}
+
+@keyframes hart-materialize {
+  0% { transform: scale(0.8) translateY(20px); opacity: 0.5; filter: brightness(1.5) saturate(0.5); }
+  50% { transform: scale(1.05) translateY(-5px); opacity: 1; filter: brightness(1.2) saturate(0.8); }
+  100% { transform: scale(1) translateY(0); opacity: 1; filter: brightness(1); }
+}
+
+.spell-particle--hart-fade-sparkle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--spell-color, #e1f5fe);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--spell-color, #e1f5fe);
+  animation: hart-fade-sparkle 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes hart-fade-sparkle {
+  0% { transform: scale(1) translateY(0); opacity: 0.9; }
+  100% { transform: scale(0) translateY(-40px); opacity: 0; }
 }
