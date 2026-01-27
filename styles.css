@@ -5902,6 +5902,12 @@ select.menu-input option {
   min-height: 0;
 }
 
+/* Deck select overlay needs explicit height for flex layout to work */
+.deck-select-overlay .overlay-content.deck-select-card {
+  height: 100vh;
+  max-height: 100vh;
+}
+
 /* When deck catalog home is showing, ensure proper flex layout for fixed back button */
 .deck-select-card:has(.deck-catalog-home) {
   height: 100%;
@@ -5942,7 +5948,7 @@ select.menu-input option {
 
 .deck-select-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
   overflow-y: auto;
   padding-right: 6px;
@@ -6557,7 +6563,7 @@ select.menu-input option {
 
 .deck-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   grid-auto-rows: min-content;
   gap: 12px;
   flex: 1;

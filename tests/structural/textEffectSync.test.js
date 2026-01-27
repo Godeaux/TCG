@@ -44,6 +44,10 @@ function flattenEffects(effects) {
           }
         });
       }
+      // Handle composite effects
+      if (effect.type === 'composite' && effect.effects) {
+        effect.effects.forEach(addEffect);
+      }
     }
   }
 
@@ -725,6 +729,7 @@ describe('Trap Card Validation', () => {
     'rivalPlaysPrey',
     'targeted',
     'indirectDamage',
+    'creatureAttacks',
   ];
 
   describe('All traps have valid trigger field', () => {
@@ -788,12 +793,18 @@ describe('Trap Card Validation', () => {
   });
 
   describe('Traps mentioning "when attacked" have rivalAttacks trigger', () => {
-    it.each(trapsWithAttacked.map((c) => [c.name, c.id, c.trigger]))(
-      '%s (%s) trigger: %s',
-      (name, cardId, trigger) => {
-        expect(trigger).toBe('rivalAttacks');
-      }
-    );
+    if (trapsWithAttacked.length === 0) {
+      it('no traps with "when attacked" text found', () => {
+        expect(true).toBe(true);
+      });
+    } else {
+      it.each(trapsWithAttacked.map((c) => [c.name, c.id, c.trigger]))(
+        '%s (%s) trigger: %s',
+        (name, cardId, trigger) => {
+          expect(trigger).toBe('rivalAttacks');
+        }
+      );
+    }
   });
 
   describe('Traps mentioning "direct attack" have directAttack trigger', () => {

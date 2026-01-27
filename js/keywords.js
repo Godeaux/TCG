@@ -31,6 +31,9 @@ export const KEYWORDS = {
   MOLT: 'Molt', // Revives once at 1 HP, loses all keywords
   // Bird keywords
   MULTI_STRIKE: 'Multi-Strike', // Attacks X times in combat (e.g., "Multi-Strike 3")
+  // Insect keywords (Experimental)
+  EVASIVE: 'Evasive', // Cannot be blocked by creatures with lower ATK
+  UNSTOPPABLE: 'Unstoppable', // Cannot be blocked at all
 };
 
 /**
@@ -53,8 +56,8 @@ export const PRIMITIVES = {
  * This is the single source of truth for what each keyword does mechanically.
  */
 export const KEYWORD_PRIMITIVES = {
-  // Per CORE-RULES.md §7: Frozen grants Passive + Inedible only (NOT cant-consume)
-  [KEYWORDS.FROZEN]: [PRIMITIVES.CANT_ATTACK, PRIMITIVES.CANT_BE_CONSUMED],
+  // Frozen creatures: can't attack, can't be consumed, can't consume prey
+  [KEYWORDS.FROZEN]: [PRIMITIVES.CANT_ATTACK, PRIMITIVES.CANT_BE_CONSUMED, PRIMITIVES.CANT_CONSUME],
   [KEYWORDS.WEBBED]: [PRIMITIVES.CANT_ATTACK, PRIMITIVES.LOSES_ON_DAMAGE],
   [KEYWORDS.PASSIVE]: [PRIMITIVES.CANT_ATTACK],
   [KEYWORDS.HARMLESS]: [PRIMITIVES.CANT_ATTACK],
@@ -97,8 +100,12 @@ export const hasPrimitive = (card, primitive) => {
     // Per CORE-RULES.md §7: Paralysis grants Harmless (can't attack)
     if (card.frozen || card.webbed || card.paralyzed) return true;
   }
-  // Per CORE-RULES.md §7: Frozen grants Inedible (can't BE consumed) but NOT cant-consume
+  // Frozen: can't be consumed
   if (primitive === PRIMITIVES.CANT_BE_CONSUMED) {
+    if (card.frozen) return true;
+  }
+  // Frozen: can't consume prey
+  if (primitive === PRIMITIVES.CANT_CONSUME) {
     if (card.frozen) return true;
   }
   if (primitive === PRIMITIVES.LOSES_ON_DAMAGE) {
@@ -228,6 +235,9 @@ export const KEYWORD_DESCRIPTIONS = {
   // Bird keywords
   [KEYWORDS.MULTI_STRIKE]:
     'Can attack X times per turn (where X is the number after Multi-Strike).',
+  // Insect keywords (Experimental)
+  [KEYWORDS.EVASIVE]: 'Can only be blocked by creatures with equal or higher ATK.',
+  [KEYWORDS.UNSTOPPABLE]: 'Cannot be blocked. Attacks always go through to the target.',
 };
 
 /**

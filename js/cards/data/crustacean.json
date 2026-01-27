@@ -689,7 +689,7 @@
       "tribe": "Crustacean",
       "cost": 2,
       "keywords": [],
-      "triggerCondition": "onEnemyAttack",
+      "trigger": "defending",
       "effects": {
         "effect": {
           "type": "negateDamage"
@@ -704,7 +704,7 @@
       "tribe": "Crustacean",
       "cost": 2,
       "keywords": [],
-      "triggerCondition": "onEnemyAttack",
+      "trigger": "defending",
       "effects": {
         "effect": {
           "type": "dealDamageToAttacker",
@@ -720,7 +720,7 @@
       "tribe": "Crustacean",
       "cost": 3,
       "keywords": [],
-      "triggerCondition": "onEnemyPlay",
+      "trigger": "rivalPlaysCard",
       "effects": {
         "effect": {
           "type": "negatePlay"
@@ -735,7 +735,7 @@
       "tribe": "Crustacean",
       "cost": 3,
       "keywords": [],
-      "triggerCondition": "onEnemyAttack",
+      "trigger": "defending",
       "effects": {
         "effect": {
           "type": "composite",

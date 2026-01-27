@@ -429,10 +429,18 @@ const sortDeckByCategory = (cards, catalogOrder) => {
  * @param {Object} options - Options including callbacks
  * @param {boolean} options.bordered - If true, shows type-colored border + rarity strip (My Decks screen)
  * @param {boolean} options.disableInteraction - If true, disables click/drag handlers (read-only view)
+ * @param {Map|null} options.ownedCards - Map of card ID to owned rarity (for coloring by ownership)
  * @returns {HTMLElement}
  */
 const createDeckListRow = (card, options = {}) => {
-  const { onRemove, onDragStart, onClick, bordered = false, disableInteraction = false } = options;
+  const {
+    onRemove,
+    onDragStart,
+    onClick,
+    bordered = false,
+    disableInteraction = false,
+    ownedCards = null,
+  } = options;
 
   const row = document.createElement('div');
   row.className = 'deck-list-row' + (bordered ? ' deck-list-row--bordered' : '');
@@ -446,6 +454,17 @@ const createDeckListRow = (card, options = {}) => {
     row.style.setProperty('--card-image', `url(${imagePath})`);
   }
 
+  // Determine rarity for display:
+  // - If ownedCards is provided, use owned rarity (or null if not owned)
+  // - Otherwise fall back to card's inherent rarity
+  let displayRarity = null;
+  if (ownedCards !== null) {
+    displayRarity = ownedCards.get(card.id) || null;
+  } else {
+    displayRarity = card.rarity || 'common';
+  }
+  const isOwned = displayRarity !== null;
+
   // Color banner at top (color set via CSS based on data-type)
   // Hidden in bordered mode via CSS
   const banner = document.createElement('div');
@@ -454,15 +473,14 @@ const createDeckListRow = (card, options = {}) => {
   // Rarity strip on left edge (only in bordered mode)
   if (bordered) {
     const rarityStrip = document.createElement('div');
-    const rarity = card.rarity || 'common';
-    rarityStrip.className = `deck-list-row-rarity-strip rarity-${rarity}`;
+    rarityStrip.className = `deck-list-row-rarity-strip${isOwned ? ` rarity-${displayRarity}` : ''}`;
     row.appendChild(rarityStrip);
   }
 
   // Card name overlay
   const name = document.createElement('div');
-  const rarity = card.rarity || 'common';
-  name.className = 'deck-list-row-name' + (bordered ? ` rarity-${rarity}` : '');
+  name.className =
+    'deck-list-row-name' + (bordered && isOwned ? ` rarity-${displayRarity}` : '');
   name.textContent = card.name;
 
   row.appendChild(banner);
@@ -1418,10 +1436,13 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
           });
 
           // Render each card as a bordered row with type border + rarity strip
+          // Use owned rarity for coloring (white if not owned)
+          const ownedCards = state.menu?.profile?.ownedCards || null;
           sortedCards.forEach((card) => {
             const row = createDeckListRow(card, {
               bordered: true,
               disableInteraction: true,
+              ownedCards,
             });
             cardsContainer.appendChild(row);
           });

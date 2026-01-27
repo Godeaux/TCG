@@ -83,8 +83,8 @@ describe('Card Schema Validation', () => {
   describe('Keyword Validity', () => {
     const cardsWithKeywords = allCards.filter((c) => c.keywords && c.keywords.length > 0);
 
-    // Keywords that can have numeric values (e.g., "Venom 2", "Pack 3")
-    const numericKeywordBases = ['Venom', 'Pack'];
+    // Keywords that can have numeric values (e.g., "Venom 2", "Multi-Strike 3")
+    const numericKeywordBases = ['Venom', 'Pack', 'Multi-Strike'];
 
     const isValidKeyword = (keyword) => {
       // Direct match

@@ -268,7 +268,7 @@ describe('canPlayerMakeAnyMove', () => {
       state.phase = 'Combat';
 
       const { creature } = createTestCreature('fish-predator-sailfish', 0, 0, state);
-      creature.hasAttacked = true;
+      creature.attacksMadeThisTurn = 1; // Used all attacks (normal creatures have 1)
 
       expect(canPlayerMakeAnyMove(state, 0)).toBe(false);
     });
