@@ -540,13 +540,13 @@ describe('Shell and Molt Interaction', () => {
     defender.currentHp = 2;
     defender.currentShell = 1;
 
-    // Combat: 3 damage - 1 shell = 2 HP damage, defender lives
+    // Combat: 3 damage - 1 shell = 2 HP damage, kills defender (0 HP)
+    // cleanupDestroyed triggers Molt, reviving at 1 HP
     resolveCreatureCombat(state, attacker, defender, 0, 1);
     cleanupDestroyed(state);
 
-    expect(defender.currentHp).toBe(0);
-    // Molt triggers when HP <= 0
-    expect(defender.currentHp).toBe(1); // After molt
+    // After Molt: HP is 1, creature survives with no keywords
+    expect(defender.currentHp).toBe(1);
     expect(hasMolted(defender)).toBe(true);
     expect(hasShell(defender)).toBe(false);
   });

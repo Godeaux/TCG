@@ -900,7 +900,7 @@ describe('Feline Effects', () => {
   });
 
   describe('chasePrey Effect', () => {
-    it('Swift Chase grants ATK and Haste to all creatures', () => {
+    it('Swift Chase grants ATK and Haste to selected creature', () => {
       const { creature: feline1 } = createTestCreature('feline-prey-lioness', 0, 0, state);
       const startAtk = feline1.currentAtk;
 
@@ -917,8 +917,12 @@ describe('Feline Effects', () => {
         state,
       });
 
-      if (result) {
-        resolveEffectResult(state, result, {
+      // chasePrey returns a selectTarget - simulate selection
+      expect(result.selectTarget).toBeDefined();
+      const selectionResult = result.selectTarget.onSelect(feline1);
+
+      if (selectionResult) {
+        resolveEffectResult(state, selectionResult, {
           playerIndex: 0,
           opponentIndex: 1,
           card: spell,

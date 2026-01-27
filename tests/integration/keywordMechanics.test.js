@@ -490,7 +490,7 @@ describe('Poisonous Keyword', () => {
       expect(attacker.diedInCombat).toBeFalsy();
     });
 
-    it('Poisonous requires defender ATK > 0 to trigger', () => {
+    it('Poisonous triggers even when defender has 0 ATK', () => {
       const { creature: attacker } = createTestCreature('fish-prey-blobfish', 0, 0, state);
       attacker.currentAtk = 2;
       attacker.currentHp = 5;
@@ -498,15 +498,15 @@ describe('Poisonous Keyword', () => {
       // Poisonous defender with 0 ATK
       const defenderDef = getCardDefinitionById('token-poisonous-snake');
       const defender = createCardInstance(defenderDef, state.turn);
-      defender.currentAtk = 0; // Can't counter-attack
+      defender.currentAtk = 0; // Can't counter-attack, but Poisonous still applies
       defender.currentHp = 3;
       state.players[1].field[0] = defender;
 
       resolveCreatureCombat(state, attacker, defender, 0, 1);
 
-      // Attacker should survive (0 ATK = no counter = no Poisonous)
-      expect(attacker.currentHp).toBe(5);
-      expect(attacker.diedInCombat).toBeFalsy();
+      // Poisonous kills attacker regardless of defender's ATK
+      expect(attacker.currentHp).toBe(0);
+      expect(attacker.diedInCombat).toBe(true);
     });
   });
 });
@@ -523,7 +523,7 @@ describe('Neurotoxic Keyword', () => {
   });
 
   describe('Neurotoxic Combat Mechanics', () => {
-    it('Neurotoxic attacker freezes defender with death timer', () => {
+    it('Neurotoxic attacker paralyzes defender with death timer', () => {
       // Create attacker with Neurotoxic
       const { creature: attacker } = createTestCreature('fish-prey-blobfish', 0, 0, state);
       attacker.keywords = ['Neurotoxic'];
@@ -537,13 +537,13 @@ describe('Neurotoxic Keyword', () => {
 
       resolveCreatureCombat(state, attacker, defender, 0, 1);
 
-      // Defender should be frozen
-      expect(defender.frozen).toBe(true);
+      // Defender should be paralyzed (Neurotoxic applies Paralysis, not Frozen)
+      expect(defender.paralyzed).toBe(true);
       // Defender should have death timer
-      expect(defender.frozenDiesTurn).toBe(state.turn + 1);
+      expect(defender.paralyzedUntilTurn).toBe(state.turn + 1);
     });
 
-    it('Neurotoxic defender freezes attacker with death timer on counter', () => {
+    it('Neurotoxic defender paralyzes attacker with death timer on counter', () => {
       const { creature: attacker } = createTestCreature('fish-prey-blobfish', 0, 0, state);
       attacker.currentAtk = 2;
       attacker.currentHp = 10;
@@ -557,15 +557,15 @@ describe('Neurotoxic Keyword', () => {
 
       resolveCreatureCombat(state, attacker, defender, 0, 1);
 
-      // Attacker should be frozen from counter-attack
-      expect(attacker.frozen).toBe(true);
-      expect(attacker.frozenDiesTurn).toBe(state.turn + 1);
+      // Attacker should be paralyzed from counter-attack
+      expect(attacker.paralyzed).toBe(true);
+      expect(attacker.paralyzedUntilTurn).toBe(state.turn + 1);
     });
 
-    it('Neurotoxic requires ATK > 0 to apply freeze', () => {
+    it('Neurotoxic applies even with 0 ATK (no damage needed)', () => {
       const { creature: attacker } = createTestCreature('fish-prey-blobfish', 0, 0, state);
       attacker.keywords = ['Neurotoxic'];
-      attacker.currentAtk = 0; // 0 ATK
+      attacker.currentAtk = 0; // 0 ATK, but Neurotoxic still applies
       attacker.currentHp = 5;
 
       const { creature: defender } = createTestCreature('fish-prey-blobfish', 1, 0, state);
@@ -573,12 +573,12 @@ describe('Neurotoxic Keyword', () => {
 
       resolveCreatureCombat(state, attacker, defender, 0, 1);
 
-      // Defender should NOT be frozen (0 ATK = no Neurotoxic application)
-      expect(defender.frozen).toBeFalsy();
-      expect(defender.frozenDiesTurn).toBeUndefined();
+      // Defender SHOULD be paralyzed (Neurotoxic doesn't require damage)
+      expect(defender.paralyzed).toBe(true);
+      expect(defender.paralyzedUntilTurn).toBe(state.turn + 1);
     });
 
-    it('Ambush attacker with Neurotoxic still freezes defender', () => {
+    it('Ambush attacker with Neurotoxic still paralyzes defender', () => {
       const { creature: attacker } = createTestCreature('fish-prey-blobfish', 0, 0, state);
       attacker.keywords = ['Ambush', 'Neurotoxic'];
       attacker.currentAtk = 2;
@@ -589,9 +589,9 @@ describe('Neurotoxic Keyword', () => {
 
       resolveCreatureCombat(state, attacker, defender, 0, 1);
 
-      // Defender frozen
-      expect(defender.frozen).toBe(true);
-      expect(defender.frozenDiesTurn).toBe(state.turn + 1);
+      // Defender paralyzed
+      expect(defender.paralyzed).toBe(true);
+      expect(defender.paralyzedUntilTurn).toBe(state.turn + 1);
       // Attacker took no damage (Ambush)
       expect(attacker.currentHp).toBe(5);
     });

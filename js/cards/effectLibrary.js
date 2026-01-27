@@ -3428,11 +3428,13 @@ export const buffAllPride =
       return {};
     }
     log(`🦁 All Pride creatures gain +${bonus} ATK!`);
+    // Format expected by resolveEffectResult: array of { creature, attack, health }
     return {
-      buffCreatures: {
-        creatures: prideCreatures,
-        atk: bonus,
-      },
+      buffCreatures: prideCreatures.map((creature) => ({
+        creature,
+        attack: bonus,
+        health: 0,
+      })),
     };
   };
 
@@ -4818,6 +4820,40 @@ export const resolveEffect = (effectDef, context) => {
       break;
     case 'summonTokensPerWebbed':
       specificEffect = effectFn(params.tokenId);
+      break;
+    // Feline stalk/pride effects
+    case 'enterStalkMode':
+      specificEffect = effectFn();
+      break;
+    case 'enterStalkModeOnPlay':
+      specificEffect = effectFn();
+      break;
+    case 'drawPerStalking':
+      specificEffect = effectFn();
+      break;
+    case 'buffAllStalking':
+      specificEffect = effectFn(params.bonus || 1);
+      break;
+    case 'drawPerPride':
+      specificEffect = effectFn();
+      break;
+    case 'buffAllPride':
+      specificEffect = effectFn(params.bonus || 1);
+      break;
+    case 'summonTokensPerPride':
+      specificEffect = effectFn(params.tokenId);
+      break;
+    case 'healPerPride':
+      specificEffect = effectFn(params.healPer || 1);
+      break;
+    case 'grantPride':
+      specificEffect = effectFn();
+      break;
+    case 'damageEqualToStalkBonus':
+      specificEffect = effectFn();
+      break;
+    case 'chasePrey':
+      specificEffect = effectFn(params.atkBonus || 2);
       break;
     // Mammal freeze effects
     case 'selectEnemyToFreeze':

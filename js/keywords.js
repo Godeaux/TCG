@@ -309,7 +309,8 @@ export const isInedible = (card) => card?.keywords?.includes(KEYWORDS.INEDIBLE);
 export const getEffectiveAttack = (creature, state, ownerIndex) => {
   if (!creature) return 0;
   const baseAtk = creature.currentAtk ?? creature.atk ?? 0;
-  const stalkBonus = creature.stalkBonus || 0; // Stalk bonus from stalking
+  // Stalk bonus only applies if creature is actively stalking
+  const stalkBonus = isStalking(creature) ? creature.stalkBonus || 0 : 0;
   return baseAtk + stalkBonus;
 };
 

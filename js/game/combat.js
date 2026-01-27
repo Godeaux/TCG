@@ -65,14 +65,29 @@ export const getValidTargets = (state, attacker, opponent) => {
     if (!isCreatureCard(card)) {
       return false;
     }
-    // Per CORE-RULES.md §12: Lure overrides Hidden/Invisible (must target Lure creatures)
-    if (hasLure(card)) {
-      return true;
-    }
+    // Acuity can target Hidden/Invisible creatures
     if (hasPrecision) {
       return true;
     }
-    return !isHidden(card) && !isInvisible(card);
+    // Hidden/Lure interaction: later keyword in array wins (Hearthstone-style)
+    // If creature has both, check which was applied more recently
+    const cardHasLure = hasLure(card);
+    const cardIsHidden = isHidden(card);
+    const cardIsInvisible = isInvisible(card);
+
+    if (cardHasLure && (cardIsHidden || cardIsInvisible)) {
+      // Both present - check array order (later position = applied later wins)
+      const lureIndex = card.keywords?.indexOf('Lure') ?? -1;
+      const hiddenIndex = card.keywords?.indexOf('Hidden') ?? -1;
+      const invisibleIndex = card.keywords?.indexOf('Invisible') ?? -1;
+      const hideIndex = Math.max(hiddenIndex, invisibleIndex);
+      // If Lure was added after Hidden/Invisible, creature is targetable
+      return lureIndex > hideIndex;
+    }
+    if (cardHasLure) {
+      return true;
+    }
+    return !cardIsHidden && !cardIsInvisible;
   });
   const lureCreatures = targetableCreatures.filter((card) => hasLure(card));
 
@@ -196,7 +211,10 @@ export const resolveCreatureCombat = (
   }
 
   // Toxic kills any creature it damages, regardless of HP
-  if (hasToxic(attacker) && defenderDamage > 0 && defender.currentHp > 0) {
+  // Toxic triggers if attack connected (not blocked by Barrier) and ATK > 0
+  // Shell absorbs damage but poison still seeps through; Barrier fully blocks
+  const attackerDealtDamage = !defenderResult.barrierBlocked && attackerEffectiveAtk > 0;
+  if (hasToxic(attacker) && attackerDealtDamage && defender.currentHp > 0) {
     queueKeywordEffect(state, attacker, 'Toxic', attackerOwnerIndex);
     defender.currentHp = 0;
     defender.killedByToxic = true; // Prevents Molt from triggering (Toxic counters Molt)
@@ -206,7 +224,9 @@ export const resolveCreatureCombat = (
       `${getKeywordEmoji('Toxic')} TOXIC: ${formatCardForLog(defender)} is killed by ${formatCardForLog(attacker)}'s toxic venom!`
     );
   }
-  if (defenderDealsDamage && hasToxic(defender) && attackerDamage > 0 && attacker.currentHp > 0) {
+  // Defender Toxic: requires counter-attack to connect (not blocked by Barrier) and ATK > 0
+  const defenderDealtDamage = defenderDealsDamage && attackerDamage > 0;
+  if (hasToxic(defender) && defenderDealtDamage && attacker.currentHp > 0) {
     queueKeywordEffect(state, defender, 'Toxic', defenderOwnerIndex);
     attacker.currentHp = 0;
     attacker.killedByToxic = true; // Prevents Molt from triggering (Toxic counters Molt)
@@ -217,10 +237,10 @@ export const resolveCreatureCombat = (
     );
   }
 
-  // Per CORE-RULES.md §6: Neurotoxic applies Paralysis after combat (even if Neurotoxic creature dies)
-  // Per CORE-RULES.md §12: Neurotoxic vs Barrier - Barrier absorbs, no Paralysis (damage must land)
+  // Neurotoxic: applies Paralysis after combat (even if Neurotoxic creature dies)
+  // Neurotoxic does NOT require damage to apply - even 0 ATK creatures can paralyze
   // Paralysis: strips all abilities, grants Harmless, dies at end of controller's turn
-  if (hasNeurotoxic(attacker) && defenderDamage > 0) {
+  if (hasNeurotoxic(attacker) && defender.currentHp > 0) {
     queueKeywordEffect(state, attacker, 'Neurotoxic', attackerOwnerIndex);
     stripAbilities(defender);
     defender.keywords = ['Harmless'];
@@ -232,7 +252,8 @@ export const resolveCreatureCombat = (
       `${getKeywordEmoji('Neurotoxic')} ${formatCardForLog(defender)} is paralyzed by neurotoxin! (loses abilities, dies end of turn)`
     );
   }
-  if (defenderDealsDamage && hasNeurotoxic(defender) && attackerDamage > 0) {
+  // Defender Neurotoxic: requires ability to counter (blocked by Ambush/Harmless)
+  if (defenderDealsDamage && hasNeurotoxic(defender) && attacker.currentHp > 0) {
     queueKeywordEffect(state, defender, 'Neurotoxic', defenderOwnerIndex);
     stripAbilities(attacker);
     attacker.keywords = ['Harmless'];
