@@ -130,8 +130,9 @@ export const createGameState = () => {
     pendingReaction: null, // { deciderIndex, reactions, attackContext, timerStart }
     victoryProcessed: false, // Prevents multiple pack awards on re-renders
     setup: {
-      stage: 'rolling',
-      rolls: [null, null],
+      stage: 'waiting', // 'waiting', 'flipping', 'choice', 'complete'
+      coinResult: null, // 'gator' or 'shark'
+      playerSymbols: [null, null], // ['gator', 'shark'] or ['shark', 'gator']
       winnerIndex: null,
     },
     deckSelection: {
@@ -268,51 +269,64 @@ export const resetCombat = (state) => {
   });
 };
 
-export const rollSetupDie = (state, playerIndex) => {
-  if (!state.setup || state.setup.stage !== 'rolling') {
-    console.warn(`Cannot roll - invalid setup state. Stage: ${state.setup?.stage}`);
+/**
+ * Flip the setup coin to determine who chooses first player.
+ * Each player is randomly assigned gator or shark. The coin flip result
+ * determines the winner (whoever matches the result).
+ *
+ * @param {Object} state - Game state
+ * @returns {Object} - { result: 'gator'|'shark', playerSymbols: ['gator'|'shark', 'gator'|'shark'] }
+ */
+export const flipSetupCoin = (state) => {
+  if (!state.setup || state.setup.stage !== 'waiting') {
+    console.warn(`Cannot flip - invalid setup state. Stage: ${state.setup?.stage}`);
     return null;
   }
 
-  if (state.setup.rolls[playerIndex] !== null) {
-    console.log(`Player ${playerIndex + 1} already rolled: ${state.setup.rolls[playerIndex]}`);
-    return state.setup.rolls[playerIndex];
+  // Mark as flipping (animation in progress)
+  state.setup.stage = 'flipping';
+
+  // Randomly assign symbols to players
+  const p1IsGator = seededRandom() < 0.5;
+  state.setup.playerSymbols = p1IsGator ? ['gator', 'shark'] : ['shark', 'gator'];
+
+  // Determine coin flip result
+  const result = seededRandom() < 0.5 ? 'gator' : 'shark';
+  state.setup.coinResult = result;
+
+  // Winner is whoever matches the coin result
+  state.setup.winnerIndex = state.setup.playerSymbols[0] === result ? 0 : 1;
+
+  const p1Symbol = state.setup.playerSymbols[0] === 'gator' ? '🐊' : '🦈';
+  const p2Symbol = state.setup.playerSymbols[1] === 'gator' ? '🐊' : '🦈';
+  const resultEmoji = result === 'gator' ? '🐊' : '🦈';
+
+  console.log(`[CoinFlip] ${state.players[0].name}=${p1Symbol}, ${state.players[1].name}=${p2Symbol}`);
+  console.log(`[CoinFlip] Result: ${resultEmoji} - ${state.players[state.setup.winnerIndex].name} wins!`);
+
+  logMessage(state, `Coin flip: ${state.players[0].name} is ${p1Symbol}, ${state.players[1].name} is ${p2Symbol}`);
+
+  return { result, playerSymbols: state.setup.playerSymbols };
+};
+
+/**
+ * Complete the coin flip animation and transition to choice phase.
+ * Called after the coin flip animation finishes.
+ *
+ * @param {Object} state - Game state
+ */
+export const completeCoinFlip = (state) => {
+  if (!state.setup || state.setup.stage !== 'flipping') {
+    console.warn(`Cannot complete flip - invalid setup state. Stage: ${state.setup?.stage}`);
+    return;
   }
 
-  // Validate rolls array before proceeding
-  const rollsAreValid = state.setup.rolls.every(
-    (roll) => roll === null || (typeof roll === 'number' && roll >= 1 && roll <= 10)
-  );
+  state.setup.stage = 'choice';
 
-  if (!rollsAreValid) {
-    console.error('Invalid rolls array detected, resetting:', state.setup.rolls);
-    state.setup.rolls = [null, null];
-  }
+  const resultEmoji = state.setup.coinResult === 'gator' ? '🐊' : '🦈';
+  const winnerName = state.players[state.setup.winnerIndex].name;
 
-  const roll = Math.floor(seededRandom() * 10) + 1;
-  state.setup.rolls[playerIndex] = roll;
-
-  console.log(`${state.players[playerIndex].name} rolls a ${roll}.`);
-  logMessage(state, `${state.players[playerIndex].name} rolls a ${roll}.`);
-
-  const [p1Roll, p2Roll] = state.setup.rolls;
-  if (p1Roll !== null && p2Roll !== null) {
-    if (p1Roll === p2Roll) {
-      console.log('Tie detected - rerolling');
-      logMessage(state, 'Tie! Reroll the dice to determine who chooses first.');
-      state.setup.rolls = [null, null];
-    } else {
-      state.setup.winnerIndex = p1Roll > p2Roll ? 0 : 1;
-      state.setup.stage = 'choice';
-      console.log(`${state.players[state.setup.winnerIndex].name} wins the roll`);
-      logMessage(
-        state,
-        `${state.players[state.setup.winnerIndex].name} wins the roll and chooses who goes first.`
-      );
-    }
-  }
-
-  return roll;
+  logMessage(state, `${resultEmoji} ${state.setup.coinResult.toUpperCase()} wins! ${winnerName} chooses who goes first.`);
 };
 
 export const chooseFirstPlayer = (state, chosenIndex) => {

@@ -1,12 +1,13 @@
 /**
  * Setup Overlay Module
  *
- * Handles the opening roll overlay for determining first player.
+ * Handles the coin flip overlay for determining first player.
  * This overlay appears after both players have selected decks.
  *
  * Key Functions:
  * - renderSetupOverlay: Main setup overlay rendering
- * - Handles rolling phase (each player rolls d10)
+ * - Handles waiting phase (shows player symbols, auto-triggers flip)
+ * - Handles flipping phase (animation in progress)
  * - Handles choice phase (winner picks who goes first)
  */
 
@@ -15,18 +16,24 @@ import {
   sendLobbyBroadcast,
   saveGameStateToDatabase,
 } from '../../network/index.js';
-import { getLocalPlayerIndex, isAIMode, isAIvsAIMode, isAnyAIMode } from '../../state/selectors.js';
+import { getLocalPlayerIndex, isAIMode, isAIvsAIMode } from '../../state/selectors.js';
+import {
+  showCoinFlipOverlay,
+  playCoinFlip,
+  hideCoinFlip,
+  initCoinFlipEffect,
+} from '../effects/index.js';
 
-// Track if AI auto-actions are pending (to prevent double-triggering)
-let aiRollPending = false;
+// Track if auto-actions are pending (to prevent double-triggering)
+let coinFlipPending = false;
 let aiChoicePending = false;
 
 /**
- * Reset AI pending flags (call when restarting a game)
+ * Reset pending flags (call when restarting a game)
  */
 export const resetSetupAIState = () => {
-  console.log('[SetupOverlay] Resetting AI pending flags');
-  aiRollPending = false;
+  console.log('[SetupOverlay] Resetting pending flags');
+  coinFlipPending = false;
   aiChoicePending = false;
 };
 
@@ -62,176 +69,60 @@ const isDeckSelectionComplete = (state) => {
 };
 
 // ============================================================================
-// ROLLING PHASE
+// WAITING PHASE
 // ============================================================================
 
 /**
- * Render the rolling phase (both players roll dice)
+ * Render the waiting phase (about to flip coin)
+ * Auto-triggers the coin flip after a short delay
  */
-const renderRollingPhase = (state, elements, callbacks) => {
+const renderWaitingPhase = (state, elements, callbacks) => {
   const { rolls, actions } = elements;
 
-  // Display current rolls
+  // Clear any previous content
   clearPanel(rolls);
-  const rollSummary = document.createElement('div');
-  rollSummary.className = 'setup-roll-summary';
-  const p1Roll = state.setup.rolls[0];
-  const p2Roll = state.setup.rolls[1];
-  const p1Name = state.players[0]?.name || 'Player 1';
-  const p2Name = state.players[1]?.name || 'Player 2';
-  rollSummary.innerHTML = `
-    <div>${p1Name} roll: <strong>${p1Roll ?? '-'}</strong></div>
-    <div>${p2Name} roll: <strong>${p2Roll ?? '-'}</strong></div>
-  `;
-  rolls.appendChild(rollSummary);
-
-  // Reset aiRollPending if we need to re-roll (tie was detected and rolls were reset)
-  if (isAIvsAIMode(state) && p1Roll === null && p2Roll === null && aiRollPending) {
-    console.log('[AI vs AI] Tie detected, resetting aiRollPending for reroll');
-    aiRollPending = false;
-  }
-
-  // In AI vs AI mode, auto-roll for both players
-  if (isAIvsAIMode(state) && !aiRollPending) {
-    aiRollPending = true;
-    const rollDelay = state.menu?.aiSlowMode ? 800 : 200;
-
-    // Roll for player 0 if needed
-    if (state.setup.rolls[0] === null) {
-      setTimeout(() => {
-        if (state.setup?.stage === 'rolling' && state.setup.rolls[0] === null) {
-          console.log('[AI vs AI] Auto-rolling for AI player 0');
-          callbacks.onSetupRoll?.(0);
-        }
-      }, rollDelay);
-    }
-    // Roll for player 1 if needed (with slight delay after p0)
-    if (state.setup.rolls[1] === null) {
-      setTimeout(() => {
-        if (state.setup?.stage === 'rolling' && state.setup.rolls[1] === null) {
-          console.log('[AI vs AI] Auto-rolling for AI player 1');
-          callbacks.onSetupRoll?.(1);
-        }
-        aiRollPending = false;
-      }, rollDelay * 2);
-    } else {
-      aiRollPending = false;
-    }
-    return; // Don't render buttons in AI vs AI mode
-  }
-
-  // In regular AI mode, auto-roll for AI (player 1) after a short delay
-  if (isAIMode(state) && state.setup.rolls[1] === null && !aiRollPending) {
-    aiRollPending = true;
-    setTimeout(() => {
-      if (state.setup?.stage === 'rolling' && state.setup.rolls[1] === null) {
-        console.log('[AI] Auto-rolling for AI player');
-        callbacks.onSetupRoll?.(1);
-      }
-      aiRollPending = false;
-    }, 800);
-  }
-
-  // Create roll buttons
   clearPanel(actions);
-  const rollButtons = document.createElement('div');
-  rollButtons.className = 'setup-button-row';
 
-  const localIndex = getLocalPlayerIndex(state);
-  const isOnline = state.menu?.mode === 'online';
-  const canRollP1 = !isOnline || localIndex === 0;
-  const canRollP2 = !isOnline || localIndex === 1;
+  // Show "Flipping..." message
+  const message = document.createElement('p');
+  message.className = 'muted';
+  message.textContent = 'Preparing coin flip...';
+  rolls.appendChild(message);
 
-  // Player 1 roll button - only show if this player can roll (not online, or local is P1)
-  if (canRollP1) {
-    const rollP1 = document.createElement('button');
-    rollP1.textContent = `Roll for ${p1Name}`;
-    rollP1.onclick = async () => {
-      // Validate state before rolling
-      if (!state.setup || state.setup.stage !== 'rolling') {
-        console.error('Invalid setup state for rolling');
-        return;
+  // Auto-trigger coin flip after short delay
+  if (!coinFlipPending) {
+    coinFlipPending = true;
+    const flipDelay = state.menu?.aiSlowMode ? 500 : 300;
+
+    setTimeout(() => {
+      if (state.setup?.stage === 'waiting') {
+        console.log('[SetupOverlay] Auto-triggering coin flip');
+        callbacks.onCoinFlip?.();
       }
-
-      callbacks.onSetupRoll?.(0);
-
-      if (isOnline) {
-        try {
-          // Enhanced broadcasting with error handling
-          const payload = buildLobbySyncPayload(state);
-          console.log('Broadcasting P1 roll:', payload.setup?.rolls);
-
-          sendLobbyBroadcast('sync_state', payload);
-
-          // Also save to database as backup
-          await saveGameStateToDatabase(state);
-
-          console.log('P1 roll broadcast successful');
-        } catch (error) {
-          console.error('Failed to broadcast P1 roll:', error);
-          // Attempt recovery by requesting sync
-          setTimeout(() => {
-            sendLobbyBroadcast('sync_request', { senderId: state.menu?.profile?.id ?? null });
-          }, 1000);
-        }
-      }
-    };
-    rollP1.disabled = state.setup.rolls[0] !== null;
-    rollButtons.appendChild(rollP1);
+    }, flipDelay);
   }
+};
 
-  // Player 2 roll button - only show if this player can roll (not AI, and not online or local is P2)
-  if (!isAIMode(state) && canRollP2) {
-    const rollP2 = document.createElement('button');
-    rollP2.textContent = `Roll for ${p2Name}`;
-    rollP2.onclick = async () => {
-      // Validate state before rolling
-      if (!state.setup || state.setup.stage !== 'rolling') {
-        console.error('Invalid setup state for rolling');
-        return;
-      }
+// ============================================================================
+// FLIPPING PHASE
+// ============================================================================
 
-      callbacks.onSetupRoll?.(1);
+/**
+ * Render the flipping phase (animation in progress)
+ * The coin flip overlay handles the actual animation
+ */
+const renderFlippingPhase = (state, elements) => {
+  const { rolls, actions } = elements;
 
-      if (isOnline) {
-        try {
-          // Enhanced broadcasting with error handling
-          const payload = buildLobbySyncPayload(state);
-          console.log('Broadcasting P2 roll:', payload.setup?.rolls);
+  // Clear panels - the coin flip overlay shows the animation
+  clearPanel(rolls);
+  clearPanel(actions);
 
-          sendLobbyBroadcast('sync_state', payload);
-
-          // Also save to database as backup
-          await saveGameStateToDatabase(state);
-
-          console.log('P2 roll broadcast successful');
-        } catch (error) {
-          console.error('Failed to broadcast P2 roll:', error);
-          // Attempt recovery by requesting sync
-          setTimeout(() => {
-            sendLobbyBroadcast('sync_request', { senderId: state.menu?.profile?.id ?? null });
-          }, 1000);
-        }
-      }
-    };
-    rollP2.disabled = state.setup.rolls[1] !== null;
-    rollButtons.appendChild(rollP2);
-  }
-
-  // Show waiting message if in online mode and waiting for opponent to roll
-  if (isOnline) {
-    const waitingForOpponent =
-      (localIndex === 0 && state.setup.rolls[0] !== null && state.setup.rolls[1] === null) ||
-      (localIndex === 1 && state.setup.rolls[1] !== null && state.setup.rolls[0] === null);
-    if (waitingForOpponent) {
-      const waitingMsg = document.createElement('p');
-      waitingMsg.className = 'muted';
-      waitingMsg.textContent = 'Waiting for opponent to roll...';
-      rollButtons.appendChild(waitingMsg);
-    }
-  }
-
-  actions.appendChild(rollButtons);
+  // Show status message
+  const message = document.createElement('p');
+  message.className = 'muted';
+  message.textContent = 'Flipping...';
+  rolls.appendChild(message);
 };
 
 // ============================================================================
@@ -244,19 +135,23 @@ const renderRollingPhase = (state, elements, callbacks) => {
 const renderChoicePhase = (state, elements, callbacks) => {
   const { rolls, actions } = elements;
 
-  // Update the rolls display to show final values
+  // Display coin flip result
   clearPanel(rolls);
-  const rollSummary = document.createElement('div');
-  rollSummary.className = 'setup-roll-summary';
-  const p1Roll = state.setup.rolls[0];
-  const p2Roll = state.setup.rolls[1];
+  const resultSummary = document.createElement('div');
+  resultSummary.className = 'setup-roll-summary';
+
   const p1Name = state.players[0]?.name || 'Player 1';
   const p2Name = state.players[1]?.name || 'Player 2';
-  rollSummary.innerHTML = `
-    <div>${p1Name} roll: <strong>${p1Roll ?? '-'}</strong></div>
-    <div>${p2Name} roll: <strong>${p2Roll ?? '-'}</strong></div>
+  const p1Symbol = state.setup.playerSymbols?.[0] === 'gator' ? '🐊' : '🦈';
+  const p2Symbol = state.setup.playerSymbols?.[1] === 'gator' ? '🐊' : '🦈';
+  const resultEmoji = state.setup.coinResult === 'gator' ? '🐊' : '🦈';
+
+  resultSummary.innerHTML = `
+    <div>${p1Name}: ${p1Symbol}</div>
+    <div>${p2Name}: ${p2Symbol}</div>
+    <div style="margin-top: 8px; font-size: 1.2em;">Result: <strong>${resultEmoji}</strong></div>
   `;
-  rolls.appendChild(rollSummary);
+  rolls.appendChild(resultSummary);
 
   clearPanel(actions);
 
@@ -273,33 +168,31 @@ const renderChoicePhase = (state, elements, callbacks) => {
     setTimeout(() => {
       if (state.setup?.stage === 'choice') {
         console.log(`[AI vs AI] Auto-choosing player ${state.setup.winnerIndex} to go first`);
-        // Winner always chooses to go first
         callbacks.onSetupChoose?.(state.setup.winnerIndex);
       }
       aiChoicePending = false;
     }, choiceDelay);
-    return; // Don't render choice buttons in AI vs AI mode
+    return;
   }
 
-  // In regular AI mode, if AI won the roll, auto-choose to go first
+  // In regular AI mode, if AI won, auto-choose to go first
   if (isAIMode(state) && state.setup.winnerIndex === 1 && !aiChoicePending) {
     aiChoicePending = true;
     setTimeout(() => {
       if (state.setup?.stage === 'choice' && state.setup.winnerIndex === 1) {
         console.log('[AI] Auto-choosing to go first');
-        // AI always chooses to go first for strategic advantage
         callbacks.onSetupChoose?.(1);
       }
       aiChoicePending = false;
     }, 800);
-    return; // Don't render choice buttons since AI is choosing
+    return;
   }
 
   const isOnline = state.menu?.mode === 'online';
   const localIndex = getLocalPlayerIndex(state);
   const canChoose = !isOnline || localIndex === state.setup.winnerIndex;
 
-  // Only show choice buttons to the player who can choose (the winner)
+  // Only show choice buttons to the winner
   if (canChoose) {
     const choiceButtons = document.createElement('div');
     choiceButtons.className = 'setup-button-row';
@@ -309,7 +202,7 @@ const renderChoicePhase = (state, elements, callbacks) => {
     chooseSelf.textContent = `${winnerName} goes first`;
     chooseSelf.onclick = () => {
       callbacks.onSetupChoose?.(state.setup.winnerIndex);
-      if (state.menu?.mode === 'online') {
+      if (isOnline) {
         sendLobbyBroadcast('sync_state', buildLobbySyncPayload(state));
       }
     };
@@ -320,7 +213,7 @@ const renderChoicePhase = (state, elements, callbacks) => {
     chooseOther.textContent = `${state.players[(state.setup.winnerIndex + 1) % 2].name} goes first`;
     chooseOther.onclick = () => {
       callbacks.onSetupChoose?.((state.setup.winnerIndex + 1) % 2);
-      if (state.menu?.mode === 'online') {
+      if (isOnline) {
         sendLobbyBroadcast('sync_state', buildLobbySyncPayload(state));
       }
     };
@@ -328,7 +221,7 @@ const renderChoicePhase = (state, elements, callbacks) => {
 
     actions.appendChild(choiceButtons);
   } else {
-    // Show waiting message to the player who lost the roll
+    // Show waiting message to the player who lost
     const waitingMsg = document.createElement('p');
     waitingMsg.className = 'muted';
     waitingMsg.textContent = `Waiting for ${winnerName} to choose...`;
@@ -345,7 +238,7 @@ const renderChoicePhase = (state, elements, callbacks) => {
  *
  * @param {Object} state - Game state
  * @param {Object} callbacks - Callback functions
- * @param {Function} callbacks.onSetupRoll - Called when a player rolls (playerIndex)
+ * @param {Function} callbacks.onCoinFlip - Called to trigger coin flip
  * @param {Function} callbacks.onSetupChoose - Called when winner chooses first player (playerIndex)
  */
 export const renderSetupOverlay = (state, callbacks = {}) => {
@@ -358,6 +251,7 @@ export const renderSetupOverlay = (state, callbacks = {}) => {
   if (state.menu?.stage !== 'ready') {
     overlay.classList.remove('active');
     overlay.setAttribute('aria-hidden', 'true');
+    hideCoinFlip();
     return;
   }
 
@@ -365,6 +259,7 @@ export const renderSetupOverlay = (state, callbacks = {}) => {
   if (!state.setup || state.setup.stage === 'complete') {
     overlay.classList.remove('active');
     overlay.setAttribute('aria-hidden', 'true');
+    hideCoinFlip();
     return;
   }
 
@@ -372,18 +267,21 @@ export const renderSetupOverlay = (state, callbacks = {}) => {
   if (!isDeckSelectionComplete(state) || state.deckBuilder?.stage !== 'complete') {
     overlay.classList.remove('active');
     overlay.setAttribute('aria-hidden', 'true');
+    hideCoinFlip();
     return;
   }
 
   // Show overlay
   overlay.classList.add('active');
   overlay.setAttribute('aria-hidden', 'false');
-  title.textContent = 'Opening Roll';
-  subtitle.textContent = 'Each player rolls a d10. The winner chooses who takes the first turn.';
+  title.textContent = 'Coin Flip';
+  subtitle.textContent = 'The winner chooses who takes the first turn.';
 
   // Render appropriate phase
-  if (state.setup.stage === 'rolling') {
-    renderRollingPhase(state, elements, callbacks);
+  if (state.setup.stage === 'waiting') {
+    renderWaitingPhase(state, elements, callbacks);
+  } else if (state.setup.stage === 'flipping') {
+    renderFlippingPhase(state, elements);
   } else if (state.setup.stage === 'choice') {
     renderChoicePhase(state, elements, callbacks);
   }
@@ -398,4 +296,43 @@ export const hideSetupOverlay = () => {
     overlay.classList.remove('active');
     overlay.setAttribute('aria-hidden', 'true');
   }
+  hideCoinFlip();
+};
+
+/**
+ * Play the coin flip animation
+ * Called by main.js after flipSetupCoin updates the state
+ *
+ * @param {Object} state - Game state with coinResult and playerSymbols
+ * @param {Function} onComplete - Called when animation finishes
+ */
+export const playCoinFlipAnimation = async (state, onComplete) => {
+  // Initialize if needed
+  initCoinFlipEffect();
+
+  const playerNames = [
+    state.players[0]?.name || 'Player 1',
+    state.players[1]?.name || 'Player 2',
+  ];
+
+  // Show overlay with player assignments
+  showCoinFlipOverlay(state.setup.playerSymbols, playerNames);
+
+  // Play the animation
+  const isGator = state.setup.coinResult === 'gator';
+  await playCoinFlip(isGator, {
+    seed: state.randomSeed || Date.now(),
+  });
+
+  // Wait a moment to show the result
+  await new Promise((resolve) => setTimeout(resolve, 1200));
+
+  // Hide coin flip overlay
+  hideCoinFlip();
+
+  // Reset pending flag
+  coinFlipPending = false;
+
+  // Callback to complete the flip
+  onComplete?.();
 };

@@ -215,6 +215,8 @@ let infoBoxesElement = null;
 let hideTimeout = null;
 let isInitialized = false;
 let globalDismissHandler = null; // Track global tap-to-dismiss handler
+let currentTargetElement = null; // Track element for wheel handler
+let wheelHandler = null; // Track wheel handler for cleanup
 
 // ============================================================================
 // INITIALIZATION
@@ -303,6 +305,60 @@ const removeGlobalDismissHandler = () => {
   }
 };
 
+/**
+ * Check if current device is mobile (for skipping PC-only features).
+ * @returns {boolean}
+ */
+const isMobileDevice = () => {
+  return window.matchMedia('(max-width: 768px)').matches;
+};
+
+/**
+ * Set up wheel event handler on target element to scroll tooltip info boxes.
+ * PC-only feature - allows scrolling tooltip content while hovering over the card.
+ * @param {HTMLElement} targetElement - The card element being hovered
+ */
+const setupWheelHandler = (targetElement) => {
+  // Only on PC
+  if (isMobileDevice()) return;
+
+  removeWheelHandler();
+  currentTargetElement = targetElement;
+
+  wheelHandler = (e) => {
+    if (!infoBoxesElement) return;
+
+    // Check if info boxes are scrollable
+    const isScrollable = infoBoxesElement.scrollHeight > infoBoxesElement.clientHeight;
+    if (!isScrollable) return;
+
+    // Scroll the info boxes
+    infoBoxesElement.scrollTop += e.deltaY;
+
+    // Prevent page scroll only if we're actually scrolling content
+    const atTop = infoBoxesElement.scrollTop === 0 && e.deltaY < 0;
+    const atBottom =
+      infoBoxesElement.scrollTop + infoBoxesElement.clientHeight >=
+        infoBoxesElement.scrollHeight && e.deltaY > 0;
+    if (!atTop && !atBottom) {
+      e.preventDefault();
+    }
+  };
+
+  targetElement.addEventListener('wheel', wheelHandler, { passive: false });
+};
+
+/**
+ * Remove wheel event handler from target element.
+ */
+const removeWheelHandler = () => {
+  if (currentTargetElement && wheelHandler) {
+    currentTargetElement.removeEventListener('wheel', wheelHandler);
+  }
+  currentTargetElement = null;
+  wheelHandler = null;
+};
+
 // ============================================================================
 // PUBLIC API
 // ============================================================================
@@ -352,6 +408,9 @@ export const showCardTooltip = (card, targetElement, options = {}) => {
 
   // Set up tap-to-dismiss (for mobile)
   setupGlobalDismissHandler();
+
+  // Set up wheel handler for PC tooltip scrolling
+  setupWheelHandler(targetElement);
 };
 
 /**
@@ -362,6 +421,7 @@ export const showCardTooltip = (card, targetElement, options = {}) => {
 export const hideCardTooltip = () => {
   clearTimeout(hideTimeout);
   removeGlobalDismissHandler();
+  removeWheelHandler();
   hideTimeout = setTimeout(() => {
     if (tooltipElement) {
       tooltipElement.classList.remove('visible');
@@ -376,6 +436,7 @@ export const hideCardTooltip = () => {
 export const hideCardTooltipImmediate = () => {
   clearTimeout(hideTimeout);
   removeGlobalDismissHandler();
+  removeWheelHandler();
   if (tooltipElement) {
     tooltipElement.classList.remove('visible');
     tooltipElement.setAttribute('aria-hidden', 'true');

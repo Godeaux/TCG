@@ -84,11 +84,24 @@
 
     <div class="overlay setup-overlay" id="setup-overlay" aria-hidden="true">
       <div class="overlay-content setup-card">
-        <div class="setup-icon">🎲</div>
-        <h2 id="setup-title">Opening Roll</h2>
-        <p id="setup-subtitle">Each player rolls a d10 to decide who chooses first.</p>
+        <div class="setup-icon">🪙</div>
+        <h2 id="setup-title">Coin Flip</h2>
+        <p id="setup-subtitle">The winner chooses who goes first.</p>
         <div class="setup-rolls" id="setup-rolls"></div>
         <div class="setup-actions" id="setup-actions"></div>
+      </div>
+    </div>
+
+    <div class="overlay coin-flip-overlay" id="coin-flip-overlay" aria-hidden="true">
+      <div class="coin-flip-container">
+        <div class="coin-flip-assignments" id="coin-flip-assignments"></div>
+        <div class="coin-flip-scene">
+          <div class="coin" id="coin-flip-coin">
+            <div class="coin-face coin-face-gator">🐊</div>
+            <div class="coin-face coin-face-shark">🦈</div>
+          </div>
+        </div>
+        <div class="coin-flip-result" id="coin-flip-result"></div>
       </div>
     </div>
 
@@ -553,12 +566,6 @@
 
             <!-- Style Tab Content -->
             <div class="profile-tab-content" id="profile-style-tab" style="display: none;">
-              <!-- Name Preview -->
-              <div class="style-preview-section">
-                <div class="style-preview-label">Preview</div>
-                <div class="style-preview-name" id="style-preview-name">YourName</div>
-              </div>
-
               <!-- Effects Picker -->
               <div class="style-section">
                 <div class="style-section-title">Effect</div>

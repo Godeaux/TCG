@@ -16,7 +16,7 @@
  *   renderMenuOverlays(state);
  *
  *   // Render setup overlay
- *   renderSetupOverlay(state, { onSetupRoll, onSetupChoose });
+ *   renderSetupOverlay(state, { onCoinFlip, onSetupChoose });
  */
 
 // ============================================================================
@@ -29,7 +29,12 @@ export { renderMenuOverlays, hideAllMenuOverlays } from './MenuOverlay.js';
 // SETUP OVERLAY
 // ============================================================================
 
-export { renderSetupOverlay, hideSetupOverlay, resetSetupAIState } from './SetupOverlay.js';
+export {
+  renderSetupOverlay,
+  hideSetupOverlay,
+  resetSetupAIState,
+  playCoinFlipAnimation,
+} from './SetupOverlay.js';
 
 // ============================================================================
 // DECK BUILDER OVERLAYS

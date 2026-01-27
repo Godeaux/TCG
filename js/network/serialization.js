@@ -426,10 +426,11 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
           `[SYNC-DEBUG] Player ${index}: protected=${isProtectedLocalSnapshot}, forceApply=${forceApply}, localIndex=${localIndex}, currentHand=${player.hand.length}, payloadHand=${playerSnapshot.hand?.length ?? 'null'}`
         );
 
-        if (playerSnapshot.name) {
+        // Protect local player's name from being overwritten by sync
+        if (!isProtectedLocalSnapshot && playerSnapshot.name) {
           player.name = playerSnapshot.name;
         }
-        if (playerSnapshot.nameStyle) {
+        if (!isProtectedLocalSnapshot && playerSnapshot.nameStyle) {
           player.nameStyle = playerSnapshot.nameStyle;
         }
         if (typeof playerSnapshot.hp === 'number') {

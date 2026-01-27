@@ -406,19 +406,43 @@ const buildEffectContext = ({
   };
 
   switch (event) {
-    case TRIGGER_EVENTS.CARD_PLAYED:
+    case TRIGGER_EVENTS.CARD_PLAYED: {
+      // Re-lookup card from state using instanceId
+      // (object reference may be stale after network sync in multiplayer)
+      let currentCard = eventContext.card;
+      if (currentCard?.instanceId) {
+        const foundCard = triggeringPlayer.field.find(
+          (c) => c?.instanceId === currentCard.instanceId
+        );
+        if (foundCard) {
+          currentCard = foundCard;
+        }
+      }
       return {
         ...baseContext,
-        target: eventContext.card ? { type: 'creature', card: eventContext.card } : null,
-        attacker: eventContext.card,
+        target: currentCard ? { type: 'creature', card: currentCard } : null,
+        attacker: currentCard,
       };
+    }
 
-    case TRIGGER_EVENTS.ATTACK_DECLARED:
+    case TRIGGER_EVENTS.ATTACK_DECLARED: {
+      // Re-lookup attacker from state using instanceId
+      // (object reference may be stale after network sync in multiplayer)
+      let currentAttacker = eventContext.attacker;
+      if (currentAttacker?.instanceId) {
+        const foundAttacker = triggeringPlayer.field.find(
+          (c) => c?.instanceId === currentAttacker.instanceId
+        );
+        if (foundAttacker) {
+          currentAttacker = foundAttacker;
+        }
+      }
       return {
         ...baseContext,
-        attacker: eventContext.attacker,
+        attacker: currentAttacker,
         target: eventContext.target,
       };
+    }
 
     case TRIGGER_EVENTS.CREATURE_TARGETED:
       return {

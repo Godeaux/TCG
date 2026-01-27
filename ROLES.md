@@ -129,7 +129,7 @@ Specialized personas for Claude agents working on this project. When the user pr
 - Always verify the fix doesn't break something else
 - Add invariant checks for bugs you find
 
-**Output style:** Reproduction steps, root cause analysis, minimal fix following best modern practices with test case
+**Output style:** Reproduction steps, root cause analysis, minimal fix following best modern practices with test case, and run tests afterwards
 
 ---
 
