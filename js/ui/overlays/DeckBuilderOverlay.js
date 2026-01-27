@@ -479,8 +479,7 @@ const createDeckListRow = (card, options = {}) => {
 
   // Card name overlay
   const name = document.createElement('div');
-  name.className =
-    'deck-list-row-name' + (bordered && isOwned ? ` rarity-${displayRarity}` : '');
+  name.className = 'deck-list-row-name' + (bordered && isOwned ? ` rarity-${displayRarity}` : '');
   name.textContent = card.name;
 
   row.appendChild(banner);

@@ -34,7 +34,8 @@
       "Bash(npx eslint:*)",
       "Bash(npx stylelint:*)",
       "Bash(del \"x:\\\\Food Chain\\\\TCG\\\\tests\\\\integration\\\\fieldSpellOnEnd.test.js\" \"x:\\\\Food Chain\\\\TCG\\\\tests\\\\effects\\\\fieldEffects.test.js\")",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(npm run format:check:*)"
     ]
   }
 }
