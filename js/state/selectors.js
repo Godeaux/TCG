@@ -11,7 +11,15 @@
  * - Prevent scattered state access logic
  */
 
-import { isEdible, isInedible, isFreePlay, cantAttack, cantBeConsumed, cantConsume, getMultiStrikeValue } from '../keywords.js';
+import {
+  isEdible,
+  isInedible,
+  isFreePlay,
+  cantAttack,
+  cantBeConsumed,
+  cantConsume,
+  getMultiStrikeValue,
+} from '../keywords.js';
 
 // ============================================================================
 // PLAYER SELECTORS
@@ -640,7 +648,9 @@ export const canConsumeAnyPrey = (state, playerIndex) => {
   if (consumableCreatures.length === 0) return false;
 
   // Check if any predator on field can consume any prey
-  const predatorsOnField = player.field.filter((c) => c && c.type === 'Predator' && !cantConsume(c));
+  const predatorsOnField = player.field.filter(
+    (c) => c && c.type === 'Predator' && !cantConsume(c)
+  );
   for (const predator of predatorsOnField) {
     const predatorAtk = predator.currentAtk ?? predator.atk ?? 0;
     for (const prey of consumableCreatures) {

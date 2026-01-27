@@ -176,7 +176,8 @@ export const updateRematchStatus = (state) => {
   const localIndex = getLocalPlayerIndex(state);
   const opponentIndex = localIndex === 0 ? 1 : 0;
   const opponentChoice = state.rematch.choices?.[opponentIndex];
-  const opponentName = state.rematch.opponentName || state.players[opponentIndex]?.name || 'Opponent';
+  const opponentName =
+    state.rematch.opponentName || state.players[opponentIndex]?.name || 'Opponent';
 
   // Show opponent status if they've made a choice
   if (opponentChoice) {
@@ -349,7 +350,8 @@ const cancelAutoRestart = () => {
  */
 export const showVictoryScreen = (winner, stats = {}, options = {}) => {
   const elements = getVictoryElements();
-  const { overlay, winnerName, turns, cards, kills, menu, reward, rematchOptions, opponentStatus } = elements;
+  const { overlay, winnerName, turns, cards, kills, menu, reward, rematchOptions, opponentStatus } =
+    elements;
 
   if (!overlay) return;
 
@@ -655,7 +657,13 @@ export const checkForVictory = (state) => {
           console.error('[VictoryOverlay] Failed to notify simulation harness:', err);
         });
       }
-      showVictoryScreen(winner, stats, { awardPack, state, isAIvsAI, isOnline, stalemateWin: true });
+      showVictoryScreen(winner, stats, {
+        awardPack,
+        state,
+        isAIvsAI,
+        isOnline,
+        stalemateWin: true,
+      });
     }
 
     return true;

@@ -60,34 +60,42 @@ const setupMobileTouchHandlers = (cardElement, card, addCardToDeck) => {
     }
   };
 
-  cardElement.addEventListener('touchstart', (e) => {
-    if (e.touches.length !== 1) return;
+  cardElement.addEventListener(
+    'touchstart',
+    (e) => {
+      if (e.touches.length !== 1) return;
 
-    const touch = e.touches[0];
-    touchStartPos = { x: touch.clientX, y: touch.clientY };
-    previewShown = false;
+      const touch = e.touches[0];
+      touchStartPos = { x: touch.clientX, y: touch.clientY };
+      previewShown = false;
 
-    // Start hold timer for preview
-    clearHoldTimer();
-    holdTimer = setTimeout(() => {
-      previewShown = true;
-      showExpandedCard(card, cardElement);
-    }, HOLD_PREVIEW_DURATION_MS);
-  }, { passive: true });
-
-  cardElement.addEventListener('touchmove', (e) => {
-    if (e.touches.length !== 1) return;
-
-    const touch = e.touches[0];
-    const dx = touch.clientX - touchStartPos.x;
-    const dy = touch.clientY - touchStartPos.y;
-    const movement = Math.sqrt(dx * dx + dy * dy);
-
-    // Cancel hold if finger moved (scrolling)
-    if (movement > TAP_MAX_MOVEMENT_PX) {
+      // Start hold timer for preview
       clearHoldTimer();
-    }
-  }, { passive: true });
+      holdTimer = setTimeout(() => {
+        previewShown = true;
+        showExpandedCard(card, cardElement);
+      }, HOLD_PREVIEW_DURATION_MS);
+    },
+    { passive: true }
+  );
+
+  cardElement.addEventListener(
+    'touchmove',
+    (e) => {
+      if (e.touches.length !== 1) return;
+
+      const touch = e.touches[0];
+      const dx = touch.clientX - touchStartPos.x;
+      const dy = touch.clientY - touchStartPos.y;
+      const movement = Math.sqrt(dx * dx + dy * dy);
+
+      // Cancel hold if finger moved (scrolling)
+      if (movement > TAP_MAX_MOVEMENT_PX) {
+        clearHoldTimer();
+      }
+    },
+    { passive: true }
+  );
 
   cardElement.addEventListener('touchend', (e) => {
     clearHoldTimer();
@@ -479,7 +487,10 @@ const createDeckListRow = (card, options = {}) => {
 
     // Drag to remove
     row.addEventListener('dragstart', (e) => {
-      e.dataTransfer.setData('text/plain', JSON.stringify({ cardId: card.id, source: 'deck-list' }));
+      e.dataTransfer.setData(
+        'text/plain',
+        JSON.stringify({ cardId: card.id, source: 'deck-list' })
+      );
       e.dataTransfer.effectAllowed = 'move';
       row.classList.add('dragging');
       if (onDragStart) onDragStart(card);
@@ -2386,7 +2397,10 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
       // Desktop: Make card draggable
       cardElement.draggable = true;
       cardElement.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData('text/plain', JSON.stringify({ cardId: card.id, source: 'catalog' }));
+        e.dataTransfer.setData(
+          'text/plain',
+          JSON.stringify({ cardId: card.id, source: 'catalog' })
+        );
         e.dataTransfer.effectAllowed = 'copy';
         cardElement.classList.add('dragging');
         hideExpandedCard(); // Hide tooltip when dragging starts
@@ -2701,7 +2715,10 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
       // Desktop: Make card draggable
       cardElement.draggable = true;
       cardElement.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData('text/plain', JSON.stringify({ cardId: card.id, source: 'catalog' }));
+        e.dataTransfer.setData(
+          'text/plain',
+          JSON.stringify({ cardId: card.id, source: 'catalog' })
+        );
         e.dataTransfer.effectAllowed = 'copy';
         cardElement.classList.add('dragging');
         hideExpandedCard(); // Hide tooltip when dragging starts

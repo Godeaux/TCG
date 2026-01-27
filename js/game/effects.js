@@ -599,101 +599,97 @@ export const resolveEffectResult = (state, result, context) => {
     // Refresh target reference to avoid stale object from multiplayer sync.
     const { card: target, valid } = refreshCardReference(state, staleTarget);
     if (!valid || !target) {
-      logGameAction(
-        state,
-        DEBUFF,
-        `Copy abilities failed: target no longer exists.`
-      );
+      logGameAction(state, DEBUFF, `Copy abilities failed: target no longer exists.`);
       // Continue processing other results
     } else {
       // Check if source has onPlay effect that should be triggered (before we clear target)
       const sourceHasOnPlay = source.effects?.onPlay || source.onPlay;
 
-    // REPLACEMENT MODE: Clear target's existing abilities first
-    // This ensures the copy is a true replacement, not a merge
-    target.keywords = [];
-    target.effects = {};
-    target.onPlay = null;
-    target.onConsume = null;
-    target.onSlain = null;
-    target.onStart = null;
-    target.onEnd = null;
-    target.onBeforeCombat = null;
-    target.onDefend = null;
-    target.onTargeted = null;
-    target.effect = null;
-    target.hasBarrier = false;
+      // REPLACEMENT MODE: Clear target's existing abilities first
+      // This ensures the copy is a true replacement, not a merge
+      target.keywords = [];
+      target.effects = {};
+      target.onPlay = null;
+      target.onConsume = null;
+      target.onSlain = null;
+      target.onStart = null;
+      target.onEnd = null;
+      target.onBeforeCombat = null;
+      target.onDefend = null;
+      target.onTargeted = null;
+      target.effect = null;
+      target.hasBarrier = false;
 
-    // Now copy from source (ensure array to avoid spreading strings)
-    const sourceKeywords = Array.isArray(source.keywords) ? source.keywords : [];
-    target.keywords = [...sourceKeywords];
+      // Now copy from source (ensure array to avoid spreading strings)
+      const sourceKeywords = Array.isArray(source.keywords) ? source.keywords : [];
+      target.keywords = [...sourceKeywords];
 
-    // Copy Barrier state if source has it
-    if (sourceKeywords.includes('Barrier')) {
-      target.hasBarrier = true;
-    }
+      // Copy Barrier state if source has it
+      if (sourceKeywords.includes('Barrier')) {
+        target.hasBarrier = true;
+      }
 
-    // Copy effects object (for onPlay, onConsume, onSlain, and other triggered abilities)
-    if (source.effects) {
-      target.effects = { ...source.effects };
-    }
+      // Copy effects object (for onPlay, onConsume, onSlain, and other triggered abilities)
+      if (source.effects) {
+        target.effects = { ...source.effects };
+      }
 
-    // Also copy direct function properties if they exist (for backwards compatibility)
-    target.onPlay = source.onPlay || null;
-    target.onConsume = source.onConsume || null;
-    target.onSlain = source.onSlain || null;
-    target.onStart = source.onStart || null;
-    target.onEnd = source.onEnd || null;
-    target.onBeforeCombat = source.onBeforeCombat || null;
-    target.onDefend = source.onDefend || null;
-    target.onTargeted = source.onTargeted || null;
+      // Also copy direct function properties if they exist (for backwards compatibility)
+      target.onPlay = source.onPlay || null;
+      target.onConsume = source.onConsume || null;
+      target.onSlain = source.onSlain || null;
+      target.onStart = source.onStart || null;
+      target.onEnd = source.onEnd || null;
+      target.onBeforeCombat = source.onBeforeCombat || null;
+      target.onDefend = source.onDefend || null;
+      target.onTargeted = source.onTargeted || null;
 
-    // Copy the effect property as well (for cards using the single 'effect' property)
-    target.effect = source.effect || null;
+      // Copy the effect property as well (for cards using the single 'effect' property)
+      target.effect = source.effect || null;
 
-    // Update effect text to show copied abilities
-    if (source.effectText) {
-      target.effectText = `(Copied) ${source.effectText}`;
-    } else {
-      target.effectText = '(Copied) No effect text.';
-    }
+      // Update effect text to show copied abilities
+      if (source.effectText) {
+        target.effectText = `(Copied) ${source.effectText}`;
+      } else {
+        target.effectText = '(Copied) No effect text.';
+      }
 
-    // Track the source ID for multiplayer sync re-hydration
-    target.copiedFromId = source.id;
+      // Track the source ID for multiplayer sync re-hydration
+      target.copiedFromId = source.id;
 
-    const keywordsList =
-      sourceKeywords.length > 0 ? formatKeywordList(sourceKeywords) : 'no keywords';
-    const effectsList = source.effects
-      ? Object.keys(source.effects)
-          .filter((k) => source.effects[k])
-          .join(', ')
-      : '';
-    const abilitiesDesc = effectsList ? `${keywordsList}, effects: ${effectsList}` : keywordsList;
-    logGameAction(
-      state,
-      CHOICE,
-      `${formatCardForLog(target)} copies ${formatCardForLog(source)}'s abilities (replacing original): ${abilitiesDesc}.`
-    );
-
-    // Queue the copied onPlay for sequential resolution (if source had one)
-    // This ensures onPlay effects are resolved AFTER copyAbilities completes,
-    // preventing race conditions with user selection UI
-    if (sourceHasOnPlay && !target.abilitiesCancelled) {
-      const playerIndex = context.playerIndex ?? findCardOwnerIndex(state, target);
-      const opponentIndex = (playerIndex + 1) % 2;
-      console.log(
-        `[copyAbilities] Queueing copied onPlay for ${target.name}, playerIndex: ${playerIndex}`
+      const keywordsList =
+        sourceKeywords.length > 0 ? formatKeywordList(sourceKeywords) : 'no keywords';
+      const effectsList = source.effects
+        ? Object.keys(source.effects)
+            .filter((k) => source.effects[k])
+            .join(', ')
+        : '';
+      const abilitiesDesc = effectsList ? `${keywordsList}, effects: ${effectsList}` : keywordsList;
+      logGameAction(
+        state,
+        CHOICE,
+        `${formatCardForLog(target)} copies ${formatCardForLog(source)}'s abilities (replacing original): ${abilitiesDesc}.`
       );
 
-      // Mark that we need to trigger onPlay after this effect completes
-      // The caller (controller) will handle chaining this through resolveEffectChain
-      return {
-        pendingOnPlay: {
-          creature: target,
-          playerIndex,
-          opponentIndex,
-        },
-      };
+      // Queue the copied onPlay for sequential resolution (if source had one)
+      // This ensures onPlay effects are resolved AFTER copyAbilities completes,
+      // preventing race conditions with user selection UI
+      if (sourceHasOnPlay && !target.abilitiesCancelled) {
+        const playerIndex = context.playerIndex ?? findCardOwnerIndex(state, target);
+        const opponentIndex = (playerIndex + 1) % 2;
+        console.log(
+          `[copyAbilities] Queueing copied onPlay for ${target.name}, playerIndex: ${playerIndex}`
+        );
+
+        // Mark that we need to trigger onPlay after this effect completes
+        // The caller (controller) will handle chaining this through resolveEffectChain
+        return {
+          pendingOnPlay: {
+            creature: target,
+            playerIndex,
+            opponentIndex,
+          },
+        };
       }
     } // end else (valid target)
   }
@@ -707,9 +703,9 @@ export const resolveEffectResult = (state, result, context) => {
     const targetOwnerIndex = findCardOwnerIndex(state, staleTarget);
     const target =
       targetOwnerIndex >= 0
-        ? state.players[targetOwnerIndex].field.find(
+        ? (state.players[targetOwnerIndex].field.find(
             (c) => c?.instanceId === staleTarget.instanceId
-          ) ?? staleTarget
+          ) ?? staleTarget)
         : staleTarget;
 
     // Copy ATK (use current if available, otherwise base)
@@ -1176,6 +1172,33 @@ export const resolveEffectResult = (state, result, context) => {
     );
   }
 
+  if (result.transformMultiple) {
+    const { transforms } = result.transformMultiple;
+    for (const { card, newCardData } of transforms) {
+      const ownerIndex = findCardOwnerIndex(state, card);
+      if (ownerIndex === -1) continue;
+      const owner = state.players[ownerIndex];
+      const slotIndex = owner.field.findIndex((slot) => slot?.instanceId === card.instanceId);
+      if (slotIndex === -1) continue;
+      const resolvedCardData =
+        typeof newCardData === 'string'
+          ? getCardDefinitionById(newCardData) || getTokenById(newCardData)
+          : newCardData;
+      if (!resolvedCardData) {
+        console.error(`[transformMultiple] Card not found: ${newCardData}`);
+        continue;
+      }
+      const replacement = createCardInstance({ ...resolvedCardData, isToken: true }, state.turn);
+      replacement.isToken = true;
+      owner.field[slotIndex] = replacement;
+      logGameAction(
+        state,
+        SUMMON,
+        `${formatCardForLog(card)} transforms into ${formatCardForLog(replacement)}.`
+      );
+    }
+  }
+
   if (result.freezeCreature) {
     const { creature } = result.freezeCreature;
     creature.frozen = true;
@@ -1206,7 +1229,11 @@ export const resolveEffectResult = (state, result, context) => {
     creature.keywords = ['Harmless']; // Grant Harmless (can't attack, deals 0 combat damage)
     creature.paralyzed = true;
     creature.paralyzedUntilTurn = state.turn + 1;
-    logGameAction(state, DEBUFF, `${formatCardForLog(creature)} is paralyzed! (loses all abilities, gains Harmless)`);
+    logGameAction(
+      state,
+      DEBUFF,
+      `${formatCardForLog(creature)} is paralyzed! (loses all abilities, gains Harmless)`
+    );
   }
 
   // Freeze multiple creatures

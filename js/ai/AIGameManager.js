@@ -134,10 +134,13 @@ export const initializeAI = (state, options = {}) => {
         // Provide startNewGame callback to prevent simulation from stopping
         // The actual game restart is handled by VictoryOverlay's 5-second countdown
         startNewGame: () => {
-          console.log('[AIManager] Simulation harness requested new game - VictoryOverlay handles this');
+          console.log(
+            '[AIManager] Simulation harness requested new game - VictoryOverlay handles this'
+          );
         },
         onGameStart: (gameNum, gameState) => console.log(`[SimHarness] Game ${gameNum} started`),
-        onGameEnd: (result) => console.log(`[SimHarness] Game ${result.gameNumber} ended, winner: ${result.winner}`),
+        onGameEnd: (result) =>
+          console.log(`[SimHarness] Game ${result.gameNumber} ended, winner: ${result.winner}`),
         onStatsUpdate: () => {}, // Dashboard pulls stats via getFullStatistics()
       });
     }

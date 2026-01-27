@@ -10,13 +10,13 @@ export const DEBUG = false;
 
 // Category-specific flags for granular control
 export const DEBUG_CATEGORIES = {
-  AI: false,          // AI decision making
-  SYNC: false,        // Network sync/state updates
-  EFFECTS: false,     // Effect resolution chain
-  EOT: false,         // End of turn processing
-  COMBAT: false,      // Combat resolution
-  RENDER: false,      // UI rendering
-  PLAY: false,        // Card play handling
+  AI: false, // AI decision making
+  SYNC: false, // Network sync/state updates
+  EFFECTS: false, // Effect resolution chain
+  EOT: false, // End of turn processing
+  COMBAT: false, // Combat resolution
+  RENDER: false, // UI rendering
+  PLAY: false, // Card play handling
 };
 
 /**

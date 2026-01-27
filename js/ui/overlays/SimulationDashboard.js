@@ -353,7 +353,8 @@ const renderSynergiesTab = async () => {
   ]);
 
   // Check if we have interaction-based data
-  const hasInteractionData = topSynergies.length > 0 && topSynergies[0].type && topSynergies[0].type !== 'co_occurrence';
+  const hasInteractionData =
+    topSynergies.length > 0 && topSynergies[0].type && topSynergies[0].type !== 'co_occurrence';
 
   if (topSynergies.length === 0) {
     return `
@@ -373,7 +374,8 @@ const renderSynergiesTab = async () => {
     if (hasInteractionData && syn.winRateWhenExecuted !== undefined) {
       // New interaction-based format
       const swingDisplay = syn.avgSwing >= 0 ? `+${syn.avgSwing}` : syn.avgSwing;
-      const liftClass = syn.comboLift >= 20 ? 'lift-high' : syn.comboLift >= 0 ? 'lift-ok' : 'lift-low';
+      const liftClass =
+        syn.comboLift >= 20 ? 'lift-high' : syn.comboLift >= 0 ? 'lift-ok' : 'lift-low';
 
       return `
         <div class="sim-synergy-item ${isGood ? 'synergy-good' : 'synergy-bad'}">
@@ -414,18 +416,22 @@ const renderSynergiesTab = async () => {
 
   return `
     <div class="sim-synergies">
-      ${hasInteractionData ? `
+      ${
+        hasInteractionData
+          ? `
         <div class="sim-synergy-legend">
           <span class="legend-item"><span class="sim-synergy-type type-consume">Consume</span> Predator ate prey</span>
           <span class="legend-item"><span class="sim-synergy-type type-free_play">Free Play</span> Free prey + predator</span>
           <span class="legend-item"><span class="sim-synergy-type type-same_turn">Same Turn</span> Played together</span>
         </div>
-      ` : `
+      `
+          : `
         <div class="sim-synergy-note">
           <p>Showing co-occurrence data (cards in same deck).</p>
           <p class="sim-note">Run more AI vs AI games to detect actual combos.</p>
         </div>
-      `}
+      `
+      }
 
       <div class="sim-section">
         <h3>Best Synergies</h3>
@@ -435,7 +441,9 @@ const renderSynergiesTab = async () => {
         </div>
       </div>
 
-      ${worstSynergies.length > 0 ? `
+      ${
+        worstSynergies.length > 0
+          ? `
       <div class="sim-section">
         <h3>Anti-Synergies</h3>
         <p class="sim-note">${hasInteractionData ? 'Combos that underperform expectations' : 'Card pairs that lose more often together'}</p>
@@ -443,7 +451,9 @@ const renderSynergiesTab = async () => {
           ${worstSynergies.map((syn) => renderSynergyItem(syn, false)).join('')}
         </div>
       </div>
-      ` : ''}
+      `
+          : ''
+      }
     </div>
   `;
 };
@@ -494,11 +504,15 @@ const renderBalanceTab = () => {
         <button class="btn-secondary" id="run-more-balance-sim" style="margin-top: 8px;">Run 10 More Games</button>
       </div>
 
-      ${overCards.length > 0 ? `
+      ${
+        overCards.length > 0
+          ? `
       <div class="sim-section">
         <h3 style="color: #f66;">Overperforming Cards (Win Rate > 60%)</h3>
         <div class="sim-card-list">
-          ${overCards.map((card, i) => `
+          ${overCards
+            .map(
+              (card, i) => `
             <div class="sim-card-item">
               <span class="sim-card-rank" style="color: #f66;">#${i + 1}</span>
               <span class="sim-card-name">${escapeHtml(card.cardName)}</span>
@@ -506,16 +520,24 @@ const renderBalanceTab = () => {
               <span class="sim-card-impact" title="Avg Impact">+${card.avgImpact.toFixed(1)}</span>
               <span class="sim-card-games">${card.gamesPlayed} games</span>
             </div>
-          `).join('')}
+          `
+            )
+            .join('')}
         </div>
       </div>
-      ` : ''}
+      `
+          : ''
+      }
 
-      ${underCards.length > 0 ? `
+      ${
+        underCards.length > 0
+          ? `
       <div class="sim-section">
         <h3 style="color: #6af;">Underperforming Cards (Win Rate < 40%)</h3>
         <div class="sim-card-list">
-          ${underCards.map((card, i) => `
+          ${underCards
+            .map(
+              (card, i) => `
             <div class="sim-card-item">
               <span class="sim-card-rank" style="color: #6af;">#${i + 1}</span>
               <span class="sim-card-name">${escapeHtml(card.cardName)}</span>
@@ -523,33 +545,44 @@ const renderBalanceTab = () => {
               <span class="sim-card-impact" title="Avg Impact">${card.avgImpact.toFixed(1)}</span>
               <span class="sim-card-games">${card.gamesPlayed} games</span>
             </div>
-          `).join('')}
+          `
+            )
+            .join('')}
         </div>
       </div>
-      ` : ''}
+      `
+          : ''
+      }
 
-      ${overCards.length === 0 && underCards.length === 0 ? `
+      ${
+        overCards.length === 0 && underCards.length === 0
+          ? `
       <div class="sim-section">
         <p style="color: #8f8;">All cards are within balanced range (40-60% win rate).</p>
         <p class="sim-note">Run more games to get more accurate data.</p>
       </div>
-      ` : ''}
+      `
+          : ''
+      }
 
       <div class="sim-section">
         <h3>All Cards by Win Rate</h3>
         <div class="sim-card-list" style="max-height: 200px; overflow-y: auto;">
           ${data.cards
-            .filter(c => c.gamesPlayed >= 1)
+            .filter((c) => c.gamesPlayed >= 1)
             .slice(0, 30)
             .map((card) => {
-              const winClass = card.playWinRate > 0.6 ? 'win-high' : card.playWinRate < 0.4 ? 'win-low' : '';
+              const winClass =
+                card.playWinRate > 0.6 ? 'win-high' : card.playWinRate < 0.4 ? 'win-low' : '';
               return `
               <div class="sim-card-item">
                 <span class="sim-card-name">${escapeHtml(card.cardName)}</span>
                 <span class="sim-card-winrate ${winClass}">${(card.playWinRate * 100).toFixed(0)}%</span>
                 <span class="sim-card-games">${card.gamesPlayed}g</span>
               </div>
-            `;}).join('')}
+            `;
+            })
+            .join('')}
         </div>
       </div>
     </div>
@@ -629,7 +662,8 @@ const bindBalanceButtons = () => {
 
 const runBalanceSimulation = async (numGames) => {
   const elements = getElements();
-  const btn = document.getElementById('run-balance-sim') || document.getElementById('run-more-balance-sim');
+  const btn =
+    document.getElementById('run-balance-sim') || document.getElementById('run-more-balance-sim');
 
   if (btn) {
     btn.disabled = true;

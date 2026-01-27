@@ -393,11 +393,7 @@ export const advancePhase = (state) => {
   if (state.phase === 'Combat') {
     const player = state.players[state.activePlayerIndex];
     const readyAttackers = player.field.filter(
-      (c) =>
-        c &&
-        (c.type === 'Predator' || c.type === 'Prey') &&
-        !c.hasAttacked &&
-        !cantAttack(c) // Use primitive - covers Frozen, Webbed, Passive, Harmless
+      (c) => c && (c.type === 'Predator' || c.type === 'Prey') && !c.hasAttacked && !cantAttack(c) // Use primitive - covers Frozen, Webbed, Passive, Harmless
     );
     logGameAction(
       state,

@@ -160,9 +160,7 @@ const getTouchedCard = (x, y, state) => {
 
   for (const element of elements) {
     // Check if this element is a card or inside a card
-    const cardElement = element.classList.contains('card')
-      ? element
-      : element.closest('.card');
+    const cardElement = element.classList.contains('card') ? element : element.closest('.card');
 
     if (!cardElement || cardElement.classList.contains('back')) continue;
 

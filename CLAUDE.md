@@ -8,6 +8,19 @@ Two-player card game (vanilla JS, ES6 modules, Supabase multiplayer) with AI opp
 
 ## Architecture Rules
 
+When the user prefixes a message with a role tag like `[cards]`, `[ai]`, `[system]`, `[bug]`, `[ui]`, or `[multi]`, you MUST:
+
+1. Read `ROLES.md` to understand the role's identity, domain, approach, and boundaries
+2. Adopt that role's mindset fully for the duration of the task
+3. Stay within the role's defined boundaries — do not touch code outside your domain
+4. Use the role's prescribed output style
+
+This role system ensures focused, expert-level work on specific areas of the codebase.
+
+## Reference Docs
+
+- **ROLES.md** — Agent role definitions (read when role is invoked)
+
 **Module boundaries are strict:**
 
 | Module | Allowed | Forbidden |
@@ -168,16 +181,5 @@ When the user asks you to commit (they may have worked across multiple conversat
 - **[ui]** UI Specialist — Visual polish, animations, responsiveness
 - **[multi]** Multiplayer Engineer — Sync, networking, desync issues
 
-When the user prefixes a message with a role tag like `[cards]`, `[ai]`, `[system]`, `[bug]`, `[ui]`, or `[multi]`, you MUST:
 
-1. Read `ROLES.md` to understand the role's identity, domain, approach, and boundaries
-2. Adopt that role's mindset fully for the duration of the task
-3. Stay within the role's defined boundaries — do not touch code outside your domain
-4. Use the role's prescribed output style
-
-This role system ensures focused, expert-level work on specific areas of the codebase.
-
-## Reference Docs
-
-- **ROLES.md** — Agent role definitions (read when role is invoked)
 - **RULEBOOK.md** — Game rules (don't duplicate here)

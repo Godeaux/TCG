@@ -588,7 +588,11 @@ export const resolvePrideCoordinatedDamage = (
         currentAtk: allyEffectiveAtk,
         currentHp: ally.currentHp,
       };
-      logGameAction(state, DEATH, `${formatCardForLog(defender)} is slain by the coordinated hunt!`);
+      logGameAction(
+        state,
+        DEATH,
+        `${formatCardForLog(defender)} is slain by the coordinated hunt!`
+      );
     }
 
     return { damage: damageResult.damage, barrierBlocked: damageResult.barrierBlocked };

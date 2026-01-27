@@ -268,7 +268,7 @@ export const buildLobbySyncPayload = (state) => ({
   senderId: state.menu?.profile?.id ?? null,
   // Combine Date.now() with monotonic sequence to guarantee unique ordering
   // even when multiple broadcasts occur in the same millisecond
-  timestamp: Date.now() + (++broadcastSequence) / 10000,
+  timestamp: Date.now() + ++broadcastSequence / 10000,
 });
 
 // ============================================================================

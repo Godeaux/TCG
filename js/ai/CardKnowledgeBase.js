@@ -1196,7 +1196,8 @@ function getTargetGroupCount(ctx, targetGroup) {
 
     case 'friendly-predators':
     case 'friendly-predator':
-      return player.field.filter((c) => c !== null && c.currentHp > 0 && c.type === 'Predator').length;
+      return player.field.filter((c) => c !== null && c.currentHp > 0 && c.type === 'Predator')
+        .length;
 
     case 'friendly-prey':
       return player.field.filter((c) => c !== null && c.currentHp > 0 && c.type === 'Prey').length;
@@ -1207,10 +1208,12 @@ function getTargetGroupCount(ctx, targetGroup) {
 
     case 'enemy-predators':
     case 'enemy-predator':
-      return opponent.field.filter((c) => c !== null && c.currentHp > 0 && c.type === 'Predator').length;
+      return opponent.field.filter((c) => c !== null && c.currentHp > 0 && c.type === 'Predator')
+        .length;
 
     case 'enemy-prey':
-      return opponent.field.filter((c) => c !== null && c.currentHp > 0 && c.type === 'Prey').length;
+      return opponent.field.filter((c) => c !== null && c.currentHp > 0 && c.type === 'Prey')
+        .length;
 
     case 'all-creatures':
     case 'any-creature':

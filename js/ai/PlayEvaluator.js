@@ -184,7 +184,9 @@ export class PlayEvaluator {
               // We steal the creature instead of killing it
               // This is HUGE: remove their threat + gain it ourselves
               bonus += 120; // Even bigger than kill bonus
-              reasons.push(`STEALS LETHAL THREAT (${threat.name} ${atk}/${hp - damageAmount}): +120`);
+              reasons.push(
+                `STEALS LETHAL THREAT (${threat.name} ${atk}/${hp - damageAmount}): +120`
+              );
               return bonus;
             }
           }

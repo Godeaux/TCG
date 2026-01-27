@@ -275,9 +275,7 @@ export class CombatEvaluator {
 
       // Add any dangerous creatures we found that aren't already in criticalThreats
       for (const dc of dangerCreatures) {
-        const alreadyIncluded = allThreats.some(
-          (t) => t.creature?.instanceId === dc.instanceId
-        );
+        const alreadyIncluded = allThreats.some((t) => t.creature?.instanceId === dc.instanceId);
         if (!alreadyIncluded) {
           allThreats.push({ creature: dc, priority: 'critical' });
         }

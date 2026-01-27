@@ -1974,8 +1974,12 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
           spellName: context.spellCard.name,
           casterIndex: context.playerIndex,
           targetCardId: value?.instanceId,
-          targetOwnerIndex: value?.instanceId ? findCardOwnerIndex(state, value.instanceId) : undefined,
-          targetSlotIndex: value?.instanceId ? findCardSlotIndex(state, value.instanceId)?.slotIndex : undefined,
+          targetOwnerIndex: value?.instanceId
+            ? findCardOwnerIndex(state, value.instanceId)
+            : undefined,
+          targetSlotIndex: value?.instanceId
+            ? findCardSlotIndex(state, value.instanceId)?.slotIndex
+            : undefined,
         });
         if (spellEffect) {
           markEffectProcessed(spellEffect.id, spellEffect.createdAt);
@@ -2567,12 +2571,13 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
       const defender = state.players[defenderIndex];
 
       if (target.type === 'creature') {
-        const currentTarget = defender.field.find(
-          (c) => c && c.instanceId === targetInstanceId
-        );
+        const currentTarget = defender.field.find((c) => c && c.instanceId === targetInstanceId);
 
         if (!currentTarget) {
-          logMessage(state, `${currentAttacker.name}'s attack fizzles - target no longer on field.`);
+          logMessage(
+            state,
+            `${currentAttacker.name}'s attack fizzles - target no longer on field.`
+          );
           markCreatureAttacked(currentAttacker);
           onUpdate?.();
           broadcastSyncState(state);
@@ -2580,7 +2585,13 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
         }
 
         // Use current references for attack resolution
-        resolveAttack(state, currentAttacker, { type: 'creature', card: currentTarget }, wasNegated, negatedBy);
+        resolveAttack(
+          state,
+          currentAttacker,
+          { type: 'creature', card: currentTarget },
+          wasNegated,
+          negatedBy
+        );
       } else {
         // Player target - use current attacker reference
         resolveAttack(state, currentAttacker, target, wasNegated, negatedBy);
@@ -2908,8 +2919,12 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) 
           spellName: card.name,
           casterIndex: playerIndex,
           targetCardId: targetValue?.instanceId,
-          targetOwnerIndex: targetValue?.instanceId ? findCardOwnerIndex(state, targetValue.instanceId) : undefined,
-          targetSlotIndex: targetValue?.instanceId ? findCardSlotIndex(state, targetValue.instanceId)?.slotIndex : undefined,
+          targetOwnerIndex: targetValue?.instanceId
+            ? findCardOwnerIndex(state, targetValue.instanceId)
+            : undefined,
+          targetSlotIndex: targetValue?.instanceId
+            ? findCardSlotIndex(state, targetValue.instanceId)?.slotIndex
+            : undefined,
         });
         if (spellEffect) {
           markEffectProcessed(spellEffect.id, spellEffect.createdAt);
@@ -3232,7 +3247,10 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) 
     }
 
     triggerPlayTraps(state, creature, onUpdate, () => {
-      if ((card.type === 'Prey' || card.type === 'Predator') && (creature.onPlay || creature.effects?.onPlay)) {
+      if (
+        (card.type === 'Prey' || card.type === 'Predator') &&
+        (creature.onPlay || creature.effects?.onPlay)
+      ) {
         const result = resolveCardEffect(creature, 'onPlay', {
           log: (message) => logMessage(state, message),
           player,
@@ -3336,7 +3354,11 @@ const updateActionBar = (onNextPhase, state) => {
 
     // Skip combat confirmation: if in Combat with valid moves, require confirmation
     const localIndex = getLocalPlayerIndex(state);
-    if (isCombatPhase(state) && canPlayerMakeAnyMove(state, localIndex) && !skipCombatConfirmationActive) {
+    if (
+      isCombatPhase(state) &&
+      canPlayerMakeAnyMove(state, localIndex) &&
+      !skipCombatConfirmationActive
+    ) {
       const fieldTurnBtn = document.getElementById('field-turn-btn');
       const turnNumber = document.getElementById('field-turn-number');
       const phaseLabel = document.getElementById('field-phase-label');
@@ -3832,8 +3854,9 @@ const setupMobileNavigation = () => {
   const closeInspector = document.getElementById('close-inspector');
   const closeHistory = document.getElementById('close-history');
   // Support both two-column and three-column layouts
-  const battlefieldLayout = document.querySelector('.battlefield-layout-three-column') ||
-                            document.querySelector('.battlefield-layout-two-column');
+  const battlefieldLayout =
+    document.querySelector('.battlefield-layout-three-column') ||
+    document.querySelector('.battlefield-layout-two-column');
 
   if (!battlefieldLayout) return;
 
@@ -4414,7 +4437,11 @@ export const renderGame = (state, callbacks = {}) => {
     state.menu.loading = false;
 
     // Re-trigger deck complete to set up the game with same decks
-    if (deckBuilderSelections && deckBuilderSelections[0]?.length && deckBuilderSelections[1]?.length) {
+    if (
+      deckBuilderSelections &&
+      deckBuilderSelections[0]?.length &&
+      deckBuilderSelections[1]?.length
+    ) {
       callbacks.onDeckComplete?.(deckBuilderSelections);
     }
   });

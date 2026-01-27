@@ -371,7 +371,8 @@ export class PositionEvaluator {
         if (!c || isPassive(c) || hasKeyword(c, KEYWORDS.HARMLESS)) return sum;
         return sum + (c.currentAtk ?? c.atk ?? 0);
       }, 0);
-      bonus += this.weights.BARRIER_BASE + Math.min(incomingDamage * this.weights.BARRIER_SCALING, 10);
+      bonus +=
+        this.weights.BARRIER_BASE + Math.min(incomingDamage * this.weights.BARRIER_SCALING, 10);
     }
 
     // AMBUSH: Worth more when there are creatures we can cleanly kill

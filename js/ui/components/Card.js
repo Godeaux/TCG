@@ -15,7 +15,21 @@
  * - getCardEffectSummary: Effect text generation
  */
 
-import { KEYWORD_DESCRIPTIONS, areAbilitiesActive, getEffectiveAttack, hasShell, hasMolt, hasLure, isHidden, isInvisible, hasToxic, hasAcuity, hasVenom, getCurrentShell, getShellLevel } from '../../keywords.js';
+import {
+  KEYWORD_DESCRIPTIONS,
+  areAbilitiesActive,
+  getEffectiveAttack,
+  hasShell,
+  hasMolt,
+  hasLure,
+  isHidden,
+  isInvisible,
+  hasToxic,
+  hasAcuity,
+  hasVenom,
+  getCurrentShell,
+  getShellLevel,
+} from '../../keywords.js';
 import { hasCardImage, getCardImagePath } from '../../cardImages.js';
 import { getCardDefinitionById } from '../../cards/index.js';
 
@@ -66,7 +80,7 @@ const SVG_CONFIGS = {
     name: { width: 210, height: 28 },
     stats: { width: 200, height: 20 },
     keywords: { width: 200, height: 20 },
-    maxChars: 26
+    maxChars: 26,
   },
   // Field cards - smaller, prioritize fitting content
   field: {
@@ -74,7 +88,7 @@ const SVG_CONFIGS = {
     name: { width: 180, height: 24 },
     stats: { width: 180, height: 18 },
     keywords: { width: 180, height: 18 },
-    maxChars: 22
+    maxChars: 22,
   },
   // Tooltip/inspector - largest, maximum readability
   tooltip: {
@@ -82,7 +96,7 @@ const SVG_CONFIGS = {
     name: { width: 260, height: 34 },
     stats: { width: 240, height: 24 },
     keywords: { width: 240, height: 24 },
-    maxChars: 30
+    maxChars: 30,
   },
   // Default (backwards compatible with existing behavior)
   default: {
@@ -90,8 +104,8 @@ const SVG_CONFIGS = {
     name: { width: 200, height: 26 },
     stats: { width: 200, height: 20 },
     keywords: { width: 200, height: 20 },
-    maxChars: 24
-  }
+    maxChars: 24,
+  },
 };
 
 /**
@@ -640,7 +654,10 @@ export const getCardEffectSummary = (card, options = {}) => {
     // Collect all log messages for composite effects
     const logMessages = [];
     const log = (message) => {
-      const cleaned = message.replace(/^.*?\b(?:effect|triggers|summons|takes the field)\b:\s*/i, '');
+      const cleaned = message.replace(
+        /^.*?\b(?:effect|triggers|summons|takes the field)\b:\s*/i,
+        ''
+      );
       if (cleaned) {
         logMessages.push(cleaned);
       }
@@ -908,8 +925,16 @@ export const renderCard = (card, options = {}) => {
     const overlay = document.createElement('div');
     overlay.className = 'status-overlay frozen-overlay';
     // Add icicle elements around the border
-    const iciclePositions = ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'top-center', 'left-center', 'right-center'];
-    iciclePositions.forEach(pos => {
+    const iciclePositions = [
+      'top-left',
+      'top-right',
+      'bottom-left',
+      'bottom-right',
+      'top-center',
+      'left-center',
+      'right-center',
+    ];
+    iciclePositions.forEach((pos) => {
       const icicle = document.createElement('div');
       icicle.className = `icicle icicle-${pos}`;
       overlay.appendChild(icicle);
@@ -924,8 +949,16 @@ export const renderCard = (card, options = {}) => {
     const overlay = document.createElement('div');
     overlay.className = 'status-overlay thawing-overlay';
     // Add melting icicles
-    const iciclePositions = ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'top-center', 'left-center', 'right-center'];
-    iciclePositions.forEach(pos => {
+    const iciclePositions = [
+      'top-left',
+      'top-right',
+      'bottom-left',
+      'bottom-right',
+      'top-center',
+      'left-center',
+      'right-center',
+    ];
+    iciclePositions.forEach((pos) => {
       const icicle = document.createElement('div');
       icicle.className = `icicle icicle-${pos} melting`;
       overlay.appendChild(icicle);
@@ -949,7 +982,7 @@ export const renderCard = (card, options = {}) => {
     overlay.className = 'status-overlay webbed-overlay';
     // Add web strand elements
     const webPositions = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
-    webPositions.forEach(pos => {
+    webPositions.forEach((pos) => {
       const strand = document.createElement('div');
       strand.className = `web-strand web-${pos}`;
       overlay.appendChild(strand);
@@ -981,7 +1014,18 @@ export const renderCard = (card, options = {}) => {
     overlay.dataset.shellCurrent = currentShell;
     overlay.dataset.shellMax = shellLevel;
     // Add hexagonal scale elements along the border
-    const scalePositions = ['top-1', 'top-2', 'top-3', 'right-1', 'right-2', 'bottom-1', 'bottom-2', 'bottom-3', 'left-1', 'left-2'];
+    const scalePositions = [
+      'top-1',
+      'top-2',
+      'top-3',
+      'right-1',
+      'right-2',
+      'bottom-1',
+      'bottom-2',
+      'bottom-3',
+      'left-1',
+      'left-2',
+    ];
     scalePositions.forEach((pos, index) => {
       const scale = document.createElement('div');
       scale.className = `shell-scale scale-${pos}`;
@@ -1008,7 +1052,7 @@ export const renderCard = (card, options = {}) => {
     }
     // Add target reticle arrows pointing inward
     const arrowPositions = ['top', 'right', 'bottom', 'left'];
-    arrowPositions.forEach(pos => {
+    arrowPositions.forEach((pos) => {
       const arrow = document.createElement('div');
       arrow.className = `lure-arrow arrow-${pos}`;
       overlay.appendChild(arrow);
@@ -1017,7 +1061,12 @@ export const renderCard = (card, options = {}) => {
   }
 
   // Hidden - semi-transparent ghosted shimmer effect (field only)
-  if (context === 'field' && isHidden(card) && areAbilitiesActive(card) && !card.keywords?.includes('Stalking')) {
+  if (
+    context === 'field' &&
+    isHidden(card) &&
+    areAbilitiesActive(card) &&
+    !card.keywords?.includes('Stalking')
+  ) {
     const overlay = document.createElement('div');
     overlay.className = 'status-overlay hidden-overlay';
     // Add heat wave distortion layers
@@ -1035,7 +1084,7 @@ export const renderCard = (card, options = {}) => {
     overlay.className = 'status-overlay invisible-overlay';
     // Add prismatic refraction elements
     const prismPositions = ['top', 'right', 'bottom', 'left'];
-    prismPositions.forEach(pos => {
+    prismPositions.forEach((pos) => {
       const prism = document.createElement('div');
       prism.className = `prism-edge prism-${pos}`;
       overlay.appendChild(prism);
@@ -1085,7 +1134,7 @@ export const renderCard = (card, options = {}) => {
     overlay.appendChild(scanner);
     // Add corner brackets (targeting reticle)
     const bracketPositions = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
-    bracketPositions.forEach(pos => {
+    bracketPositions.forEach((pos) => {
       const bracket = document.createElement('div');
       bracket.className = `acuity-bracket bracket-${pos}`;
       overlay.appendChild(bracket);

@@ -331,10 +331,13 @@ export class MoveGenerator {
 
       case 'friendly-predators':
       case 'friendly-predator':
-        return player.field.filter((c) => c !== null && (c.type === 'Predator' || c.type === 'predator')).length;
+        return player.field.filter(
+          (c) => c !== null && (c.type === 'Predator' || c.type === 'predator')
+        ).length;
 
       case 'friendly-prey':
-        return player.field.filter((c) => c !== null && (c.type === 'Prey' || c.type === 'prey')).length;
+        return player.field.filter((c) => c !== null && (c.type === 'Prey' || c.type === 'prey'))
+          .length;
 
       case 'enemy-creatures':
       case 'enemy-creature':
@@ -342,14 +345,20 @@ export class MoveGenerator {
 
       case 'enemy-predators':
       case 'enemy-predator':
-        return opponent.field.filter((c) => c !== null && (c.type === 'Predator' || c.type === 'predator')).length;
+        return opponent.field.filter(
+          (c) => c !== null && (c.type === 'Predator' || c.type === 'predator')
+        ).length;
 
       case 'enemy-prey':
-        return opponent.field.filter((c) => c !== null && (c.type === 'Prey' || c.type === 'prey')).length;
+        return opponent.field.filter((c) => c !== null && (c.type === 'Prey' || c.type === 'prey'))
+          .length;
 
       case 'all-creatures':
       case 'any-creature':
-        return player.field.filter((c) => c !== null).length + opponent.field.filter((c) => c !== null).length;
+        return (
+          player.field.filter((c) => c !== null).length +
+          opponent.field.filter((c) => c !== null).length
+        );
 
       case 'carrion':
       case 'friendly-carrion':
@@ -646,9 +655,7 @@ export class MoveGenerator {
 
           // Stealing creatures is very valuable even when not facing lethal
           if (stealsTarget) {
-            const stealableTargets = opponent.field.filter(
-              (c) => c && c.currentHp > damageAmount
-            );
+            const stealableTargets = opponent.field.filter((c) => c && c.currentHp > damageAmount);
             if (stealableTargets.length > 0) {
               // Can steal something - prioritize this
               const bestSteal = stealableTargets.reduce((best, c) => {

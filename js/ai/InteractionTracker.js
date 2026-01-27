@@ -53,10 +53,7 @@ export class InteractionTracker {
     this.currentGame = {
       startTime: Date.now(),
       turn: state.turn || 1,
-      decks: [
-        this.extractDeckCardIds(state.players[0]),
-        this.extractDeckCardIds(state.players[1]),
-      ],
+      decks: [this.extractDeckCardIds(state.players[0]), this.extractDeckCardIds(state.players[1])],
 
       // Track cards played each turn: { turnNumber: [cardIds] }
       cardsPlayedByTurn: [{}, {}],
@@ -314,7 +311,7 @@ export class InteractionTracker {
     const ourBoardAfter = this.countCreatures(stateAfter.players[playerIndex].field);
     const ourBoardDelta = ourBoardAfter - ourBoardBefore;
 
-    return hpDelta + (boardDelta * 2) + (ourBoardDelta * 2);
+    return hpDelta + boardDelta * 2 + ourBoardDelta * 2;
   }
 
   countCreatures(field) {
@@ -329,7 +326,11 @@ export class InteractionTracker {
    * Update aggregated stats for an interaction
    */
   updateInteractionStats(interaction, winnerIndex) {
-    const key = this.makeInteractionKey(interaction.cards[0], interaction.cards[1], interaction.type);
+    const key = this.makeInteractionKey(
+      interaction.cards[0],
+      interaction.cards[1],
+      interaction.type
+    );
 
     if (!this.interactionStats.has(key)) {
       this.interactionStats.set(key, {

@@ -226,7 +226,8 @@ export const KEYWORD_DESCRIPTIONS = {
   [KEYWORDS.MOLT]:
     'When this would die, instead: revive at 1 HP and lose ALL keywords (including Shell). One-time use.',
   // Bird keywords
-  [KEYWORDS.MULTI_STRIKE]: 'Can attack X times per turn (where X is the number after Multi-Strike).',
+  [KEYWORDS.MULTI_STRIKE]:
+    'Can attack X times per turn (where X is the number after Multi-Strike).',
 };
 
 /**

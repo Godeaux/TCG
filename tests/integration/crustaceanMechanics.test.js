@@ -68,7 +68,12 @@ describe('Shell Keyword', () => {
     it('getShellLevel returns correct shell level', () => {
       const { creature: shell1 } = createTestCreature('crustacean-prey-hermit-crab', 0, 0, state);
       const { creature: shell2 } = createTestCreature('crustacean-prey-sand-crab', 0, 1, state);
-      const { creature: shell3 } = createTestCreature('crustacean-prey-decorator-crab', 0, 2, state);
+      const { creature: shell3 } = createTestCreature(
+        'crustacean-prey-decorator-crab',
+        0,
+        2,
+        state
+      );
 
       expect(getShellLevel(shell1)).toBe(1);
       expect(getShellLevel(shell2)).toBe(2);
@@ -212,7 +217,12 @@ describe('Shell Keyword', () => {
       attacker.currentHp = 5;
       attacker.keywords.push(KEYWORDS.TOXIC);
 
-      const { creature: defender } = createTestCreature('crustacean-prey-decorator-crab', 1, 0, state);
+      const { creature: defender } = createTestCreature(
+        'crustacean-prey-decorator-crab',
+        1,
+        0,
+        state
+      );
       defender.currentAtk = 1;
       defender.currentHp = 3;
       defender.currentShell = 3;
@@ -380,7 +390,12 @@ describe('Molt Keyword', () => {
       attacker.currentAtk = 5;
       attacker.currentHp = 10;
 
-      const { creature: defender } = createTestCreature('crustacean-prey-ghost-shrimp', 1, 0, state);
+      const { creature: defender } = createTestCreature(
+        'crustacean-prey-ghost-shrimp',
+        1,
+        0,
+        state
+      );
       defender.currentAtk = 1;
       defender.currentHp = 1;
 
@@ -400,7 +415,12 @@ describe('Molt Keyword', () => {
       attacker.currentHp = 10;
       attacker.keywords.push(KEYWORDS.TOXIC);
 
-      const { creature: defender } = createTestCreature('crustacean-prey-ghost-shrimp', 1, 0, state);
+      const { creature: defender } = createTestCreature(
+        'crustacean-prey-ghost-shrimp',
+        1,
+        0,
+        state
+      );
       defender.currentAtk = 1;
       defender.currentHp = 5;
 

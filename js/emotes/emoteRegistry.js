@@ -10,6 +10,7 @@ export const EMOTES = {
   thanks: { id: 'thanks', label: 'Thanks', emoji: '🙏' },
   oops: { id: 'oops', label: 'Oops', emoji: '😅' },
   threaten: { id: 'threaten', label: 'Threaten', emoji: '😈' },
+  hurryUp: { id: 'hurryUp', label: 'Hurry Up', emoji: '⏰‼️' },
 };
 
 /**

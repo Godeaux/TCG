@@ -16,11 +16,7 @@ import { MoveGenerator } from './MoveGenerator.js';
 import { MoveSimulator } from './MoveSimulator.js';
 import { ThreatDetector } from './ThreatDetector.js';
 import { CardPerformanceTracker } from './CardPerformanceTracker.js';
-import {
-  getDeckCategories,
-  getDeckCatalog,
-  initializeCardRegistry,
-} from '../cards/registry.js';
+import { getDeckCategories, getDeckCatalog, initializeCardRegistry } from '../cards/registry.js';
 
 // ============================================================================
 // SELF-PLAY SIMULATION RUNNER
@@ -61,11 +57,7 @@ export class SelfPlayTrainer {
    * @returns {Object} - Results summary
    */
   async runSimulation(numGames, options = {}) {
-    const {
-      searchDepth = this.searchDepth,
-      verbose = this.verbose,
-      onProgress = null,
-    } = options;
+    const { searchDepth = this.searchDepth, verbose = this.verbose, onProgress = null } = options;
 
     this.ensureRegistryInitialized();
 
@@ -110,7 +102,8 @@ export class SelfPlayTrainer {
     }
 
     results.elapsedMs = Date.now() - startTime;
-    results.avgTurnsPerGame = results.gamesPlayed > 0 ? results.totalTurns / results.gamesPlayed : 0;
+    results.avgTurnsPerGame =
+      results.gamesPlayed > 0 ? results.totalTurns / results.gamesPlayed : 0;
 
     return results;
   }
@@ -162,12 +155,7 @@ export class SelfPlayTrainer {
         if (result.success) {
           // Record card play for tracking
           if (searchResult.move.type === 'PLAY_CARD') {
-            this.tracker.recordCardPlayed(
-              searchResult.move.card,
-              playerIndex,
-              stateBefore,
-              state
-            );
+            this.tracker.recordCardPlayed(searchResult.move.card, playerIndex, stateBefore, state);
 
             // Track for synergy detection (same-turn combos)
             this.tracker.recordCardPlayForSynergy(
@@ -195,7 +183,8 @@ export class SelfPlayTrainer {
 
           // Record damage for attack moves
           if (searchResult.move.type === 'ATTACK' && searchResult.move.target.type === 'player') {
-            const damage = searchResult.move.attacker?.currentAtk || searchResult.move.attacker?.atk || 0;
+            const damage =
+              searchResult.move.attacker?.currentAtk || searchResult.move.attacker?.atk || 0;
             this.tracker.recordDamageDealt(searchResult.move.attackerInstanceId, damage);
           }
         }
@@ -205,7 +194,9 @@ export class SelfPlayTrainer {
       this.checkForDeaths(stateBefore, state, turns);
 
       if (verbose && turns % 10 === 0) {
-        console.log(`[Game] Turn ${turns}: P0=${state.players[0].hp}hp, P1=${state.players[1].hp}hp`);
+        console.log(
+          `[Game] Turn ${turns}: P0=${state.players[0].hp}hp, P1=${state.players[1].hp}hp`
+        );
       }
     }
 
@@ -238,9 +229,7 @@ export class SelfPlayTrainer {
       for (const creature of fieldBefore) {
         if (creature) {
           // Check if creature is still alive
-          const stillAlive = fieldAfter.some(
-            (c) => c && c.instanceId === creature.instanceId
-          );
+          const stillAlive = fieldAfter.some((c) => c && c.instanceId === creature.instanceId);
           if (!stillAlive) {
             this.tracker.recordCreatureDeath(creature.instanceId, turn);
           }
@@ -426,9 +415,7 @@ export class SelfPlayTrainer {
 
     // Draw card (skip first draw for first player on turn 1)
     const shouldSkipDraw =
-      state.skipFirstDraw &&
-      state.turn === 2 &&
-      state.activePlayerIndex === state.firstPlayerIndex;
+      state.skipFirstDraw && state.turn === 2 && state.activePlayerIndex === state.firstPlayerIndex;
 
     if (!shouldSkipDraw) {
       this.drawCard(state, state.activePlayerIndex);
@@ -487,9 +474,7 @@ export class SelfPlayTrainer {
    * @returns {Array}
    */
   getPreyOnField(field) {
-    return (field || []).filter(
-      (c) => c && (c.type === 'Prey' || c.cardType === 'Prey')
-    );
+    return (field || []).filter((c) => c && (c.type === 'Prey' || c.cardType === 'Prey'));
   }
 
   /**
@@ -501,10 +486,8 @@ export class SelfPlayTrainer {
     }
 
     // Stalemate check
-    const bothEmpty =
-      state.players[0].deck.length === 0 && state.players[1].deck.length === 0;
-    const bothHandsEmpty =
-      state.players[0].hand.length === 0 && state.players[1].hand.length === 0;
+    const bothEmpty = state.players[0].deck.length === 0 && state.players[1].deck.length === 0;
+    const bothHandsEmpty = state.players[0].hand.length === 0 && state.players[1].hand.length === 0;
     const bothFieldsEmpty =
       state.players[0].field.every((c) => c === null) &&
       state.players[1].field.every((c) => c === null);

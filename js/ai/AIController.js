@@ -662,9 +662,7 @@ export class AIController {
     // Use cantBeConsumed primitive - covers Frozen, Inedible
     const availablePrey = player.field.filter(
       (c) =>
-        c &&
-        !cantBeConsumed(c) &&
-        (c.type === 'Prey' || (c.type === 'Predator' && isEdible(c)))
+        c && !cantBeConsumed(c) && (c.type === 'Prey' || (c.type === 'Predator' && isEdible(c)))
     );
     const hasConsumablePrey = availablePrey.length > 0;
 
@@ -955,9 +953,7 @@ export class AIController {
     // Find available prey to consume - use cantBeConsumed primitive
     const availablePrey = player.field.filter(
       (c) =>
-        c &&
-        !cantBeConsumed(c) &&
-        (c.type === 'Prey' || (c.type === 'Predator' && isEdible(c)))
+        c && !cantBeConsumed(c) && (c.type === 'Prey' || (c.type === 'Predator' && isEdible(c)))
     );
 
     // Remove from hand

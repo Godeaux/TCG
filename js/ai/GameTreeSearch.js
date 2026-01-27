@@ -705,10 +705,7 @@ export class GameTreeSearch {
         }
 
         // Direct damage spells are tactical
-        if (
-          card.type === 'Spell' ||
-          card.type === 'Free Spell'
-        ) {
+        if (card.type === 'Spell' || card.type === 'Free Spell') {
           // Include spells that deal damage or kill creatures
           const effects = card.effects || {};
           if (

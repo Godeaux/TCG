@@ -520,7 +520,12 @@ describe('Pride Keyword', () => {
     it('getAvailablePrideAllies returns only Pride creatures', () => {
       const { creature: attacker } = createTestCreature('feline-prey-lioness', 0, 0, state);
       const { creature: prideAlly } = createTestCreature('feline-prey-young-lion', 0, 1, state);
-      const { creature: nonPrideCreature } = createTestCreature('feline-prey-sand-cat', 0, 2, state);
+      const { creature: nonPrideCreature } = createTestCreature(
+        'feline-prey-sand-cat',
+        0,
+        2,
+        state
+      );
 
       const allies = getAvailablePrideAllies(state, 0, attacker);
 

@@ -46,10 +46,7 @@ export class CardPerformanceTracker {
   startGame(state) {
     this.currentGame = {
       startTime: Date.now(),
-      decks: [
-        this.extractDeckCardIds(state.players[0]),
-        this.extractDeckCardIds(state.players[1]),
-      ],
+      decks: [this.extractDeckCardIds(state.players[0]), this.extractDeckCardIds(state.players[1])],
       cardsPlayed: [new Map(), new Map()], // playerIndex -> Map<cardId, playCount>
       cardImpacts: [new Map(), new Map()], // playerIndex -> Map<cardId, totalImpact>
       hpAtPlay: [new Map(), new Map()], // playerIndex -> Map<cardId, [hpBefore, hpAfter][]>
@@ -128,7 +125,11 @@ export class CardPerformanceTracker {
     if (card.type === 'Creature' || card.type === 'Predator' || card.type === 'Prey') {
       // Find the newly placed creature
       for (const creature of stateAfter.players[playerIndex].field) {
-        if (creature && creature.id === cardId && !this.currentGame.creatureSurvival.has(creature.instanceId)) {
+        if (
+          creature &&
+          creature.id === cardId &&
+          !this.currentGame.creatureSurvival.has(creature.instanceId)
+        ) {
           this.currentGame.creatureSurvival.set(creature.instanceId, {
             cardId,
             playerIndex,
@@ -303,25 +304,24 @@ export class CardPerformanceTracker {
       const deckWinRate = stats.gamesInDeck > 0 ? stats.deckWins / stats.gamesInDeck : 0;
       const playWinRate = stats.gamesPlayed > 0 ? stats.playWins / stats.gamesPlayed : 0;
       const playRate = stats.gamesInDeck > 0 ? stats.gamesPlayed / stats.gamesInDeck : 0;
-      const avgImpact = stats.impactSamples.length > 0
-        ? stats.impactSamples.reduce((a, b) => a + b, 0) / stats.impactSamples.length
-        : 0;
-      const avgSurvival = stats.creatureSummons > 0
-        ? stats.totalTurnsAlive / stats.creatureSummons
-        : null;
-      const survivalRate = stats.creatureSummons > 0
-        ? stats.survivedToEnd / stats.creatureSummons
-        : null;
-      const avgDamage = stats.creatureSummons > 0
-        ? stats.totalDamageDealt / stats.creatureSummons
-        : null;
+      const avgImpact =
+        stats.impactSamples.length > 0
+          ? stats.impactSamples.reduce((a, b) => a + b, 0) / stats.impactSamples.length
+          : 0;
+      const avgSurvival =
+        stats.creatureSummons > 0 ? stats.totalTurnsAlive / stats.creatureSummons : null;
+      const survivalRate =
+        stats.creatureSummons > 0 ? stats.survivedToEnd / stats.creatureSummons : null;
+      const avgDamage =
+        stats.creatureSummons > 0 ? stats.totalDamageDealt / stats.creatureSummons : null;
 
       // Get card name from registry if available
       let cardName = cardId;
       if (cardRegistry) {
-        const cardData = typeof cardRegistry.getCard === 'function'
-          ? cardRegistry.getCard(cardId)
-          : cardRegistry[cardId];
+        const cardData =
+          typeof cardRegistry.getCard === 'function'
+            ? cardRegistry.getCard(cardId)
+            : cardRegistry[cardId];
         if (cardData?.name) cardName = cardData.name;
       }
 
@@ -366,8 +366,8 @@ export class CardPerformanceTracker {
   getBalanceAnalysis(options = {}) {
     const {
       minGames = 5, // Minimum games played to be included
-      overThreshold = 0.60, // Win rate above this = overperforming
-      underThreshold = 0.40, // Win rate below this = underperforming
+      overThreshold = 0.6, // Win rate above this = overperforming
+      underThreshold = 0.4, // Win rate below this = underperforming
     } = options;
 
     const report = this.getPerformanceReport();
@@ -427,7 +427,9 @@ export class CardPerformanceTracker {
       for (const card of analysis.overperforming.slice(0, 10)) {
         const winPct = (card.playWinRate * 100).toFixed(1);
         const impact = card.avgImpact.toFixed(1);
-        lines.push(`  ${card.cardName.padEnd(25)} │ Win: ${winPct.padStart(5)}% │ Impact: ${impact.padStart(5)} │ n=${card.gamesPlayed}`);
+        lines.push(
+          `  ${card.cardName.padEnd(25)} │ Win: ${winPct.padStart(5)}% │ Impact: ${impact.padStart(5)} │ n=${card.gamesPlayed}`
+        );
       }
       lines.push('');
     }
@@ -438,7 +440,9 @@ export class CardPerformanceTracker {
       for (const card of analysis.underperforming.slice(0, 10)) {
         const winPct = (card.playWinRate * 100).toFixed(1);
         const impact = card.avgImpact.toFixed(1);
-        lines.push(`  ${card.cardName.padEnd(25)} │ Win: ${winPct.padStart(5)}% │ Impact: ${impact.padStart(5)} │ n=${card.gamesPlayed}`);
+        lines.push(
+          `  ${card.cardName.padEnd(25)} │ Win: ${winPct.padStart(5)}% │ Impact: ${impact.padStart(5)} │ n=${card.gamesPlayed}`
+        );
       }
       lines.push('');
     }
@@ -446,7 +450,9 @@ export class CardPerformanceTracker {
     lines.push('📊 SUMMARY');
     lines.push('───────────────────────────────────────────────────────────────');
     lines.push(`  Total Games: ${this.totalGames}`);
-    lines.push(`  Avg Game Length: ${(this.totalTurns / Math.max(1, this.totalGames)).toFixed(1)} turns`);
+    lines.push(
+      `  Avg Game Length: ${(this.totalTurns / Math.max(1, this.totalGames)).toFixed(1)} turns`
+    );
     lines.push(`  Cards Analyzed: ${analysis.summary.analyzedCards}`);
     lines.push(`  Overperforming: ${analysis.summary.overperformingCount}`);
     lines.push(`  Underperforming: ${analysis.summary.underperformingCount}`);
@@ -479,7 +485,13 @@ export class CardPerformanceTracker {
    * @param {Object} stateAfter - State after consumption
    */
   recordConsume(predator, consumedPrey, playerIndex, stateBefore, stateAfter) {
-    this.interactionTracker.recordConsume(predator, consumedPrey, playerIndex, stateBefore, stateAfter);
+    this.interactionTracker.recordConsume(
+      predator,
+      consumedPrey,
+      playerIndex,
+      stateBefore,
+      stateAfter
+    );
   }
 
   /**

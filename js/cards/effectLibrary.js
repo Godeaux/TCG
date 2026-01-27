@@ -641,9 +641,7 @@ export const selectTarget = (selectionType, effectCallback) => (context) => {
     const enemies = opponent.field.filter((c) => c && canTargetWithAbility(c, caster, state));
     const enemyLures = enemies.filter((c) => hasLure(c));
     validTargets =
-      enemyLures.length > 0
-        ? enemyLures
-        : [...player.field.filter((c) => c), ...enemies];
+      enemyLures.length > 0 ? enemyLures : [...player.field.filter((c) => c), ...enemies];
   }
 
   if (validTargets.length === 0) {
@@ -976,10 +974,14 @@ export const stealCreature = (targetType) => (context) => {
     return {};
   }
 
+  const opponentIndex = 1 - playerIndex;
+
   if (targetType === 'random') {
     const randomCreature = enemyCreatures[seededRandomInt(enemyCreatures.length)];
     log(`Steals ${randomCreature.name}.`);
-    return { stealCreature: { creature: randomCreature, newOwnerIndex: playerIndex } };
+    return {
+      stealCreature: { creature: randomCreature, fromIndex: opponentIndex, toIndex: playerIndex },
+    };
   }
 
   // For targeted steal, return selection request
@@ -987,7 +989,7 @@ export const stealCreature = (targetType) => (context) => {
     requestSelection: {
       targets: enemyCreatures,
       callback: (target) => ({
-        stealCreature: { creature: target, newOwnerIndex: playerIndex },
+        stealCreature: { creature: target, fromIndex: opponentIndex, toIndex: playerIndex },
       }),
     },
   };
@@ -2192,7 +2194,9 @@ export const killAllEnemyCreatures =
 export const selectEnemyForKeyword = (keyword) => (context) => {
   const { log, opponent, player, state, creature: caster } = context;
   // Per CORE-RULES.md §5.5: Acuity allows targeting Invisible
-  const targets = opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state));
+  const targets = opponent.field.filter(
+    (c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)
+  );
 
   if (targets.length === 0) {
     log(`No Rival's creatures to target.`);
@@ -2254,7 +2258,9 @@ export const selectCreatureToCopy = () => (context) => {
   // Per CORE-RULES.md §5.5: Acuity allows targeting Invisible (only matters for enemies)
   const candidates = [
     ...player.field.filter((c) => c && isCreatureCard(c)),
-    ...opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)),
+    ...opponent.field.filter(
+      (c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)
+    ),
   ];
 
   if (candidates.length === 0) {
@@ -2322,7 +2328,9 @@ export const selectCreatureForBuff = (stats) => (context) => {
   const { attack = 0, health = 0 } = stats;
   const creatures = [
     ...player.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)),
-    ...opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)),
+    ...opponent.field.filter(
+      (c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)
+    ),
   ];
 
   if (creatures.length === 0) {
@@ -2352,7 +2360,9 @@ export const selectCreatureToTransform = (newCardId) => (context) => {
   const { log, player, opponent, state, creature: caster } = context;
   const candidates = [
     ...player.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)),
-    ...opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)),
+    ...opponent.field.filter(
+      (c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)
+    ),
   ];
 
   if (candidates.length === 0) {
@@ -2526,7 +2536,9 @@ export const healAndSelectTargetForDamage = (healAmount, damageAmount) => (conte
   const { log, player, opponent, state, creature: caster } = context;
   const creatures = [
     ...player.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)),
-    ...opponent.field.filter((c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)),
+    ...opponent.field.filter(
+      (c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)
+    ),
   ];
   const candidates = [
     ...creatures.map((c) => ({ label: c.name, value: { type: 'creature', creature: c } })),
@@ -3231,19 +3243,21 @@ export const healPerWebbed =
 /**
  * Draw a card if any enemy creature is Webbed
  */
-export const drawIfEnemyWebbed = () => ({ log, opponent }) => {
-  const hasWebbed = opponent.field.some(
-    (c) => c && isCreatureCard(c) && c.keywords?.includes(KEYWORDS.WEBBED)
-  );
+export const drawIfEnemyWebbed =
+  () =>
+  ({ log, opponent }) => {
+    const hasWebbed = opponent.field.some(
+      (c) => c && isCreatureCard(c) && c.keywords?.includes(KEYWORDS.WEBBED)
+    );
 
-  if (!hasWebbed) {
-    log(`No Webbed enemies - no card drawn.`);
-    return {};
-  }
+    if (!hasWebbed) {
+      log(`No Webbed enemies - no card drawn.`);
+      return {};
+    }
 
-  log(`🕸️ Enemy creature is Webbed - drawing a card!`);
-  return { draw: 1 };
-};
+    log(`🕸️ Enemy creature is Webbed - drawing a card!`);
+    return { draw: 1 };
+  };
 
 /**
  * Buff creature's ATK based on number of Webbed enemy creatures
@@ -3926,7 +3940,7 @@ export const transformIfSurvives =
  * Like cicada swarm drowning out communication
  */
 export const silenceAllEnemies = () => (context) => {
-  const { log, opponent, opponentIndex } = context;
+  const { log, opponent } = context;
   const targets = opponent.field.filter((c) => c && isCreatureCard(c));
 
   if (targets.length === 0) {
@@ -3935,7 +3949,7 @@ export const silenceAllEnemies = () => (context) => {
   }
 
   log(`All enemy creatures are silenced!`);
-  return { removeAbilitiesFromAll: { creatures: targets, ownerIndex: opponentIndex } };
+  return { removeAbilitiesAll: targets };
 };
 
 /**
@@ -3943,31 +3957,29 @@ export const silenceAllEnemies = () => (context) => {
  * Used by parasitic wasps
  * @param {string} spawnOnDeath - Token ID to spawn when infested creature dies
  */
-export const infestEnemy =
-  (spawnOnDeath) =>
-  (context) => {
-    const { log, opponent, playerIndex, state, creature: caster, opponentIndex } = context;
-    let targets = opponent.field.filter(
-      (c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)
-    );
-    targets = filterForLure(targets);
+export const infestEnemy = (spawnOnDeath) => (context) => {
+  const { log, opponent, playerIndex, state, creature: caster, opponentIndex } = context;
+  let targets = opponent.field.filter(
+    (c) => c && isCreatureCard(c) && canTargetWithAbility(c, caster, state)
+  );
+  targets = filterForLure(targets);
 
-    if (targets.length === 0) {
-      log(`No enemies to infest.`);
+  if (targets.length === 0) {
+    log(`No enemies to infest.`);
+    return {};
+  }
+
+  return makeTargetedSelection({
+    title: 'Choose an enemy creature to infest',
+    candidates: targets.map((t) => ({ label: t.name, value: t })),
+    onSelect: (target) => {
+      log(`${target.name} is infested!`);
+      // Mark the creature as infested
+      target.infested = { byPlayer: playerIndex, spawnToken: spawnOnDeath };
       return {};
-    }
-
-    return makeTargetedSelection({
-      title: 'Choose an enemy creature to infest',
-      candidates: targets.map((t) => ({ label: t.name, value: t })),
-      onSelect: (target) => {
-        log(`${target.name} is infested!`);
-        // Mark the creature as infested
-        target.infested = { byPlayer: playerIndex, spawnToken: spawnOnDeath };
-        return {};
-      },
-    });
-  };
+    },
+  });
+};
 
 /**
  * Destroy a random enemy token
@@ -3993,29 +4005,27 @@ export const destroyEnemyToken = () => (context) => {
  * Like antlion catching weak prey
  * @param {number} maxHp - Maximum HP of creatures that can be destroyed
  */
-export const destroyCreatureWithLowHp =
-  (maxHp) =>
-  (context) => {
-    const { log, opponent, opponentIndex, state, creature: caster } = context;
-    let targets = opponent.field.filter(
-      (c) => c && isCreatureCard(c) && c.hp <= maxHp && canTargetWithAbility(c, caster, state)
-    );
-    targets = filterForLure(targets);
+export const destroyCreatureWithLowHp = (maxHp) => (context) => {
+  const { log, opponent, opponentIndex, state, creature: caster } = context;
+  let targets = opponent.field.filter(
+    (c) => c && isCreatureCard(c) && c.hp <= maxHp && canTargetWithAbility(c, caster, state)
+  );
+  targets = filterForLure(targets);
 
-    if (targets.length === 0) {
-      log(`No valid targets with ${maxHp} HP or less.`);
-      return {};
-    }
+  if (targets.length === 0) {
+    log(`No valid targets with ${maxHp} HP or less.`);
+    return {};
+  }
 
-    return makeTargetedSelection({
-      title: `Choose an enemy with ${maxHp} HP or less to destroy`,
-      candidates: targets.map((t) => ({ label: `${t.name} (${t.hp} HP)`, value: t })),
-      onSelect: (target) => {
-        log(`${target.name} is destroyed!`);
-        return { destroyCreatures: { creatures: [target], ownerIndex: opponentIndex } };
-      },
-    });
-  };
+  return makeTargetedSelection({
+    title: `Choose an enemy with ${maxHp} HP or less to destroy`,
+    candidates: targets.map((t) => ({ label: `${t.name} (${t.hp} HP)`, value: t })),
+    onSelect: (target) => {
+      log(`${target.name} is destroyed!`);
+      return { destroyCreatures: { creatures: [target], ownerIndex: opponentIndex } };
+    },
+  });
+};
 
 /**
  * Deal bonus damage based on number of friendly creatures attacking
@@ -4078,24 +4088,20 @@ export const destroySelf = () => (context) => {
  * Predatory hunting instinct
  * @param {number} amount - Damage amount
  */
-export const damageRandomEnemyPrey =
-  (amount) =>
-  (context) => {
-    const { log, opponent, state } = context;
-    const preys = opponent.field.filter(
-      (c) => c && (c.type === 'Prey' || c.type === 'prey')
-    );
+export const damageRandomEnemyPrey = (amount) => (context) => {
+  const { log, opponent, state } = context;
+  const preys = opponent.field.filter((c) => c && (c.type === 'Prey' || c.type === 'prey'));
 
-    if (preys.length === 0) {
-      log(`No enemy prey to damage.`);
-      return {};
-    }
+  if (preys.length === 0) {
+    log(`No enemy prey to damage.`);
+    return {};
+  }
 
-    const randomIndex = seededRandomInt(state, 0, preys.length - 1);
-    const target = preys[randomIndex];
-    log(`Deals ${amount} damage to ${target.name}!`);
-    return { damageCreature: { creature: target, amount, sourceLabel: 'sting' } };
-  };
+  const randomIndex = seededRandomInt(state, 0, preys.length - 1);
+  const target = preys[randomIndex];
+  log(`Deals ${amount} damage to ${target.name}!`);
+  return { damageCreature: { creature: target, amount, sourceLabel: 'sting' } };
+};
 
 /**
  * Survive lethal damage with 1 HP (once per game)
@@ -4140,7 +4146,9 @@ export const drawPerFriendlyCreature =
       return {};
     }
 
-    log(`Draws ${drawCount} card${drawCount > 1 ? 's' : ''} for ${creatureCount} creature${creatureCount > 1 ? 's' : ''}.`);
+    log(
+      `Draws ${drawCount} card${drawCount > 1 ? 's' : ''} for ${creatureCount} creature${creatureCount > 1 ? 's' : ''}.`
+    );
     return { draw: drawCount };
   };
 
@@ -4195,10 +4203,7 @@ export const stealRandomCardFromHand = () => (context) => {
 export const takeControlOfEnemyPrey = () => (context) => {
   const { log, opponent, playerIndex, state, creature: caster, opponentIndex } = context;
   let targets = opponent.field.filter(
-    (c) =>
-      c &&
-      (c.type === 'Prey' || c.type === 'prey') &&
-      canTargetWithAbility(c, caster, state)
+    (c) => c && (c.type === 'Prey' || c.type === 'prey') && canTargetWithAbility(c, caster, state)
   );
   targets = filterForLure(targets);
 
@@ -4212,7 +4217,9 @@ export const takeControlOfEnemyPrey = () => (context) => {
     candidates: targets.map((t) => ({ label: t.name, value: t })),
     onSelect: (target) => {
       log(`Takes control of ${target.name}!`);
-      return { stealCreature: { creature: target, fromPlayer: opponentIndex, toPlayer: playerIndex } };
+      return {
+        stealCreature: { creature: target, fromIndex: opponentIndex, toIndex: playerIndex },
+      };
     },
   });
 };

@@ -725,7 +725,10 @@ const placeCreatureInSpecificSlot = (card, slotIndex) => {
       'creature.effects?.onPlay:',
       creature.effects?.onPlay
     );
-    if ((card.type === 'Prey' || card.type === 'Predator') && (creature.onPlay || creature.effects?.onPlay)) {
+    if (
+      (card.type === 'Prey' || card.type === 'Predator') &&
+      (creature.onPlay || creature.effects?.onPlay)
+    ) {
       console.log('[placeCreatureInSpecificSlot] Triggering onPlay effect for:', creature.name);
       const player = getActivePlayer(state);
       const playerIndex = state.activePlayerIndex;
