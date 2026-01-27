@@ -129,3 +129,13 @@ export {
   hideSimulationDashboard,
   isSimulationDashboardVisible,
 } from './SimulationDashboard.js';
+
+// ============================================================================
+// SETTINGS OVERLAY
+// ============================================================================
+
+export {
+  showSettingsOverlay,
+  hideSettingsOverlay,
+  isSettingsOverlayVisible,
+} from './SettingsOverlay.js';

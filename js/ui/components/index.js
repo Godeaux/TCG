@@ -104,13 +104,13 @@ export {
 } from './StyledName.js';
 
 // ============================================================================
-// BUG BUTTON
+// SETTINGS BUTTON
 // ============================================================================
 
 export {
-  initBugButton,
-  showBugMenu,
-  hideBugMenu,
-  toggleBugMenu,
-  isBugMenuVisible,
-} from './BugButton.js';
+  initSettingsButton,
+  showSettingsMenu,
+  hideSettingsMenu,
+  toggleSettingsMenu,
+  isSettingsMenuVisible,
+} from './SettingsButton.js';

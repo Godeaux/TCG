@@ -11427,11 +11427,11 @@ select.menu-input option {
 }
 
 /* ============================================================================
-   BUG REPORTING FEATURE
+   SETTINGS BUTTON (Floating Action Button)
    ============================================================================ */
 
 /* Floating Action Button Container */
-.bug-button-container {
+.settings-button-container {
   position: fixed;
   bottom: 20px;
   right: 20px;
@@ -11443,8 +11443,8 @@ select.menu-input option {
   pointer-events: none; /* Allow clicks to pass through to elements below */
 }
 
-/* Bug FAB Button */
-.bug-fab {
+/* Settings FAB Button */
+.settings-fab {
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -11459,22 +11459,22 @@ select.menu-input option {
   pointer-events: auto; /* Re-enable clicks on the button itself */
 }
 
-.bug-fab:hover {
+.settings-fab:hover {
   transform: scale(1.1);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
 
-.bug-fab.active {
+.settings-fab.active {
   transform: rotate(45deg);
 }
 
-.bug-fab-icon {
+.settings-fab-icon {
   font-size: var(--font-xl);
   line-height: 1;
 }
 
-/* Bug Menu (Popout) */
-.bug-menu {
+/* Settings Menu (Popout) */
+.settings-menu {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -11484,13 +11484,13 @@ select.menu-input option {
   transition: opacity var(--transition-fast), transform var(--transition-fast);
 }
 
-.bug-menu.active {
+.settings-menu.active {
   opacity: 1;
   transform: translateY(0) scale(1);
   pointer-events: auto;
 }
 
-.bug-menu-item {
+.settings-menu-item {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -11506,14 +11506,149 @@ select.menu-input option {
   transition: background var(--transition-fast), transform var(--transition-fast);
 }
 
-.bug-menu-item:hover {
+.settings-menu-item:hover {
   background: rgba(212, 168, 83, 0.15);
   transform: translateX(-4px);
 }
 
-.bug-menu-icon {
+.settings-menu-icon {
   font-size: var(--font-base);
 }
+
+/* ============================================================================
+   SETTINGS FLOATING OVERLAY
+   ============================================================================ */
+
+.settings-floating-overlay {
+  z-index: 60;
+}
+
+.settings-floating-overlay .overlay-content {
+  max-width: 400px;
+}
+
+.settings-overlay-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  border-radius: 18px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.settings-overlay-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: rgba(212, 168, 83, 0.1);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.settings-overlay-header h2 {
+  margin: 0;
+  font-size: var(--font-lg);
+  color: var(--text-primary);
+}
+
+.settings-overlay-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: var(--font-xl);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.settings-overlay-close:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.settings-overlay-body {
+  padding: 20px;
+}
+
+.settings-section {
+  margin-bottom: 16px;
+}
+
+.settings-section:last-child {
+  margin-bottom: 0;
+}
+
+.settings-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-base);
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.settings-label-icon {
+  font-size: var(--font-lg);
+}
+
+.settings-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-slider {
+  flex: 1;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--border-subtle);
+  border-radius: 3px;
+  outline: none;
+}
+
+.settings-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: var(--gold);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform var(--transition-fast);
+}
+
+.settings-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.settings-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: var(--gold);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.settings-value {
+  min-width: 45px;
+  text-align: right;
+  font-size: var(--font-base);
+  color: var(--gold);
+  font-weight: 500;
+}
+
+.settings-overlay-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ============================================================================
+   BUG REPORTING FEATURE
+   ============================================================================ */
 
 /* Bug Report Overlay */
 .bug-report-overlay {
@@ -11859,18 +11994,22 @@ select.menu-input option {
 
 /* Mobile responsiveness */
 @media (max-width: 600px) {
-  .bug-button-container {
+  .settings-button-container {
     bottom: 16px;
     right: 16px;
   }
 
-  .bug-fab {
+  .settings-fab {
     width: 44px;
     height: 44px;
   }
 
-  .bug-fab-icon {
+  .settings-fab-icon {
     font-size: var(--font-lg);
+  }
+
+  .settings-floating-overlay .overlay-content {
+    margin: 10px;
   }
 
   .bug-report-overlay .overlay-content {

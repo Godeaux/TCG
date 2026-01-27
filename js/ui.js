@@ -124,8 +124,9 @@ import { showBugReportOverlay, hideBugReportOverlay } from './ui/overlays/BugRep
 // Simulation dashboard overlay
 import { showSimulationDashboard } from './ui/overlays/SimulationDashboard.js';
 
-// Bug button component
-import { initBugButton } from './ui/components/BugButton.js';
+// Settings button and overlay components
+import { initSettingsButton } from './ui/components/SettingsButton.js';
+import { showSettingsOverlay } from './ui/overlays/SettingsOverlay.js';
 
 // Trigger/Reaction system (extracted module)
 import {
@@ -4106,12 +4107,15 @@ const setupClickAwayHandler = () => {
 };
 
 /**
- * Set up the bug reporting button
- * Uses latestState to get current profile ID for submissions
+ * Set up the settings button (floating action button in bottom-right)
+ * Provides quick access to Settings, Bug Report, and Known Bugs from anywhere
  * @param {boolean} includeSimStats - Whether to include the simulation stats option
  */
-const setupBugReportButton = (includeSimStats = false) => {
-  initBugButton({
+const setupSettingsButton = (includeSimStats = false) => {
+  initSettingsButton({
+    onSettings: () => {
+      showSettingsOverlay();
+    },
     onReportBug: () => {
       const profileId = latestState?.menu?.profile?.id;
       showBugReportOverlay({ profileId, tab: 'report' });
@@ -4130,12 +4134,12 @@ const setupBugReportButton = (includeSimStats = false) => {
 };
 
 /**
- * Re-initialize bug button to show simulation stats option (for AI vs AI mode)
+ * Re-initialize settings button to show simulation stats option (for AI vs AI mode)
  * Also enables simulation mode on the bug detector (no pause on bugs)
  * Called when entering AI vs AI mode
  */
 export const enableSimulationMode = () => {
-  setupBugReportButton(true);
+  setupSettingsButton(true);
 
   // Enable simulation mode on the bug detector so it doesn't pause on bugs
   const detector = getBugDetector();
@@ -4154,7 +4158,7 @@ if (typeof window !== 'undefined') {
       setupResyncButton();
       setupClickAwayHandler();
       initCardTooltip();
-      setupBugReportButton();
+      setupSettingsButton();
     });
   } else {
     setupMobileNavigation();
@@ -4163,7 +4167,7 @@ if (typeof window !== 'undefined') {
     setupResyncButton();
     setupClickAwayHandler();
     initCardTooltip();
-    setupBugReportButton();
+    setupSettingsButton();
   }
 }
 
