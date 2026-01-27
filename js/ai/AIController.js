@@ -107,7 +107,7 @@ export class AIController {
     this.playerLabel = `AI-P${this.playerIndex + 1}`;
 
     // Initialize difficulty system
-    this.difficulty = new DifficultyManager(options.difficulty ?? 'medium');
+    this.difficulty = new DifficultyManager(options.difficulty ?? 'easy');
     this.showThinking = options.showThinking ?? true;
 
     // Initialize evaluation modules
