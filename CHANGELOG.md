@@ -4,6 +4,14 @@ All notable changes to Food Chain TCG.
 
 ---
 
+## v0.14 — Simplified AI difficulty options
+
+- Removed Easy and Medium AI difficulties (were too weak to be meaningful)
+- Renamed Hard to "Easy" (optimal heuristic-based play)
+- Renamed Expert to "True Sim" (deep alpha-beta search)
+- Added performance warning note for True Sim mode
+- Legacy difficulty selections are auto-mapped to new options
+
 ## v0.13 — Keyword mechanic fixes
 
 - Fixed Stalk bonus only applying when creature is actively stalking
