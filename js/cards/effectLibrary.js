@@ -343,6 +343,44 @@ export const transformCard =
   };
 
 /**
+ * Transform a creature into another card (alternative to transformCard)
+ * Uses cardId param instead of newCardId
+ * @param {string} cardId - Card/token ID to transform into
+ */
+export const transformInto =
+  (cardId) =>
+  ({ log, creature }) => {
+    log(`${creature.name} transforms.`);
+    return { transformCard: { card: creature, newCardData: cardId } };
+  };
+
+/**
+ * Return a creature to its owner's hand
+ * @param {string} target - 'self' to return the triggering creature
+ */
+export const returnToHand =
+  (target) =>
+  ({ log, creature, playerIndex }) => {
+    if (target === 'self') {
+      log(`${creature.name} returns to hand.`);
+      return { returnToHand: { creature, playerIndex } };
+    }
+    return {};
+  };
+
+/**
+ * Buff the creature that triggered this effect
+ * @param {number} attack - ATK bonus
+ * @param {number} health - HP bonus
+ */
+export const buffSelf =
+  (attack = 0, health = 0) =>
+  ({ log, creature }) => {
+    log(`${creature.name} gains +${attack}/+${health}.`);
+    return { buffCreature: { creature, attack, health } };
+  };
+
+/**
  * Kill a creature
  * @param {string} targetType - 'self' | 'target' | 'attacker'
  */
@@ -4439,6 +4477,11 @@ export const effectRegistry = {
   damageEnemiesAfterCombat,
   eatPreyInsteadOfAttacking,
 
+  // Shared utility effects
+  returnToHand,
+  buffSelf,
+  transformInto,
+
   // Insect effects (Experimental)
   incrementEmergeCounter,
   transformIfSurvives,
@@ -5017,6 +5060,15 @@ export const resolveEffect = (effectDef, context) => {
       break;
     case 'applyPoisonToAttacker':
       specificEffect = effectFn();
+      break;
+    case 'returnToHand':
+      specificEffect = effectFn(params.target);
+      break;
+    case 'buffSelf':
+      specificEffect = effectFn(params.attack, params.health);
+      break;
+    case 'transformInto':
+      specificEffect = effectFn(params.cardId);
       break;
     default:
       console.warn(`No parameter mapping for effect type: ${effectDef.type}`);
