@@ -21,6 +21,9 @@ import {
   hasMolt,
   triggerMolt,
   isHarmless,
+  hasEvasive,
+  canTargetEvasive,
+  hasUnstoppable,
   KEYWORDS,
 } from '../keywords.js';
 import {
@@ -65,6 +68,10 @@ export const getValidTargets = (state, attacker, opponent) => {
     if (!isCreatureCard(card)) {
       return false;
     }
+    // Evasive: creatures with 4+ ATK cannot target Evasive creatures
+    if (hasEvasive(card) && !canTargetEvasive(attacker, card)) {
+      return false;
+    }
     // Acuity can target Hidden/Invisible creatures
     if (hasPrecision) {
       return true;
@@ -99,16 +106,25 @@ export const getValidTargets = (state, attacker, opponent) => {
   return { creatures: targetableCreatures, player: canDirect };
 };
 
-const applyDamage = (creature, amount, state, ownerIndex) => {
+const applyDamage = (creature, amount, state, ownerIndex, attacker = null) => {
   if (amount <= 0) {
     return { damage: 0, barrierBlocked: false, webbedCleared: false, shellAbsorbed: 0 };
   }
-  if (creature.hasBarrier && areAbilitiesActive(creature)) {
+  // Unstoppable attacks ignore Barrier
+  const ignoreBarrier = attacker && hasUnstoppable(attacker);
+  if (creature.hasBarrier && areAbilitiesActive(creature) && !ignoreBarrier) {
     creature.hasBarrier = false;
     if (state && ownerIndex !== undefined) {
       queueKeywordEffect(state, creature, 'Barrier', ownerIndex);
     }
     return { damage: 0, barrierBlocked: true, webbedCleared: false, shellAbsorbed: 0 };
+  }
+  // If Unstoppable punched through, still consume the Barrier
+  if (creature.hasBarrier && ignoreBarrier) {
+    creature.hasBarrier = false;
+    if (state && ownerIndex !== undefined) {
+      logGameAction(state, COMBAT, `🦗 ${formatCardForLog(attacker)}'s Unstoppable attack ignores ${formatCardForLog(creature)}'s Barrier!`);
+    }
   }
 
   // Shell absorbs damage before HP (Crustacean mechanic)
@@ -170,7 +186,7 @@ export const resolveCreatureCombat = (
   // Per CORE-RULES.md §6: Harmless deals 0 combat damage when defending
   const harmlessDefender = isHarmless(defender);
 
-  const defenderResult = applyDamage(defender, attackerEffectiveAtk, state, defenderOwnerIndex);
+  const defenderResult = applyDamage(defender, attackerEffectiveAtk, state, defenderOwnerIndex, attacker);
   const defenderDamage = defenderResult.damage;
   const defenderSurvived = defender.currentHp > 0;
   // Ambush: attacker NEVER takes combat damage when attacking (per CORE-RULES.md §6)

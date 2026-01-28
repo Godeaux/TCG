@@ -22,6 +22,7 @@ import { checkTrigger, TRIGGER_EVENTS, getTriggersForEvent } from './triggerRegi
 import { getTrapsFromHand, logMessage, queueVisualEffect } from '../../state/gameState.js';
 import { resolveCardEffect } from '../../cards/index.js';
 import { getBugDetector } from '../../simulation/index.js';
+import { hasUnstoppable } from '../../keywords.js';
 
 // ============================================================================
 // CONSTANTS
@@ -294,9 +295,16 @@ export const resolveReaction = ({
     }
 
     // Track if this reaction negated an attack (for attack resolution)
+    // Unstoppable attacks cannot be negated by traps
     if (event === TRIGGER_EVENTS.ATTACK_DECLARED && result?.negateAttack) {
-      state._lastReactionNegatedAttack = true;
-      state._lastReactionNegatedBy = reaction.card?.name || 'a trap';
+      const attacker = eventContext?.attacker;
+      if (attacker && hasUnstoppable(attacker)) {
+        // Unstoppable ignores trap negation - log it but don't negate
+        logMessage(state, `🦗 ${attacker.name}'s Unstoppable attack cannot be negated by ${reaction.card?.name || 'a trap'}!`);
+      } else {
+        state._lastReactionNegatedAttack = true;
+        state._lastReactionNegatedBy = reaction.card?.name || 'a trap';
+      }
     }
 
     // Handle negated play - return card to hand

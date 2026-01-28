@@ -236,8 +236,8 @@ export const KEYWORD_DESCRIPTIONS = {
   [KEYWORDS.MULTI_STRIKE]:
     'Can attack X times per turn (where X is the number after Multi-Strike).',
   // Insect keywords (Experimental)
-  [KEYWORDS.EVASIVE]: 'Can only be blocked by creatures with equal or higher ATK.',
-  [KEYWORDS.UNSTOPPABLE]: 'Cannot be blocked. Attacks always go through to the target.',
+  [KEYWORDS.EVASIVE]: 'Cannot be targeted by attacks from creatures with 4 or more ATK.',
+  [KEYWORDS.UNSTOPPABLE]: 'Attacks ignore Barrier. Attacks cannot be negated by Traps.',
 };
 
 /**
@@ -297,6 +297,25 @@ export const isHarmless = (card) => hasKeyword(card, KEYWORDS.HARMLESS);
 
 // Inedible is a protection status, not an ability - it should apply even to dry-dropped predators
 export const isInedible = (card) => card?.keywords?.includes(KEYWORDS.INEDIBLE);
+
+// Insect keyword helpers
+export const hasEvasive = (card) => hasKeyword(card, KEYWORDS.EVASIVE);
+export const hasUnstoppable = (card) => hasKeyword(card, KEYWORDS.UNSTOPPABLE);
+
+/**
+ * Check if an attacker can target an Evasive creature.
+ * Evasive creatures cannot be targeted by attacks from creatures with 4+ ATK.
+ * @param {Object} attacker - The attacking creature
+ * @param {Object} defender - The defending creature (potentially Evasive)
+ * @returns {boolean} True if the attacker CAN target this defender
+ */
+export const canTargetEvasive = (attacker, defender) => {
+  if (!defender || !hasEvasive(defender)) return true;
+  if (!attacker) return true;
+  const attackerAtk = attacker.currentAtk ?? attacker.atk ?? 0;
+  // Evasive creatures can't be targeted by creatures with 4+ ATK
+  return attackerAtk < 4;
+};
 
 /**
  * Get effective attack value for a creature, including Stalk bonuses.
