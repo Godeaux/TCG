@@ -4,6 +4,18 @@ All notable changes to Food Chain TCG.
 
 ---
 
+## v0.15 — Experimental deck polish and Insect identity
+
+- Fixed Crustacean deck: removed mana costs, added nutrition values, fixed Free Spells
+- Added tooltip status displays for Stalking, Shell, hasMolted
+- Improved token detection in tooltips (summons, transformCard, per-keyword tokens)
+- Redesigned Evasive keyword: can't be targeted by 4+ ATK attackers
+- Redesigned Unstoppable keyword: ignores Barrier, can't be negated by Traps
+- Added Multi-Strike theme to Insect: Fire Ant (×2), Mayfly (×3), Army Ant (×2)
+- Implemented onFriendlySpellPlayed trigger (Dragonfly Nymph metamorphosis)
+- Implemented onFriendlyCreatureDies trigger (Atlas Moth metamorphosis)
+- Implemented missing effect primitives: returnToHand, buffSelf, transformInto
+
 ## v0.14 — Simplified AI difficulty options
 
 - Removed Easy and Medium AI difficulties (were too weak to be meaningful)
