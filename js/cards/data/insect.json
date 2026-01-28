@@ -273,7 +273,7 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 0,
-      "keywords": [],
+      "keywords": ["Multi-Strike 2"],
       "tribe": "Insect",
       "effects": {
         "onAttack": { "type": "bonusDamagePerAttacker", "params": { "bonusPerAttacker": 1 } }
@@ -283,10 +283,10 @@
       "id": "insect-prey-army-ant",
       "name": "Army Ant",
       "type": "Prey",
-      "atk": 2,
+      "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Haste"],
+      "keywords": ["Multi-Strike 2", "Haste"],
       "tribe": "Insect",
       "effects": {
         "onPlay": { "type": "forceAllFriendlyAttack", "params": {} }
@@ -466,10 +466,10 @@
       "id": "insect-prey-mayfly",
       "name": "Mayfly",
       "type": "Prey",
-      "atk": 3,
+      "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Haste"],
+      "keywords": ["Multi-Strike 3", "Haste"],
       "tribe": "Insect",
       "effects": {
         "onEnd": { "type": "destroySelf", "params": {} }

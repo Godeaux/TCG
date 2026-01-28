@@ -287,6 +287,9 @@ export class GameController {
         this.state.cardPlayedThisTurn = true;
       }
 
+      // Trigger onFriendlySpellPlayed for friendly creatures (metamorphosis triggers)
+      this.triggerFriendlySpellPlayed(playerIndex);
+
       this.notifyStateChange();
       this.broadcast();
     };
@@ -691,6 +694,45 @@ export class GameController {
       opponent.hand = opponent.hand.filter((card) => card.instanceId !== trap.instanceId);
       opponent.exile.push(trap);
     });
+  }
+
+  // ==========================================================================
+  // METAMORPHOSIS TRIGGERS
+  // ==========================================================================
+
+  /**
+   * Trigger onFriendlySpellPlayed for all friendly creatures
+   * Used for metamorphosis effects (e.g., Dragonfly Nymph transforms when spell played)
+   */
+  triggerFriendlySpellPlayed(playerIndex) {
+    const player = this.state.players[playerIndex];
+    const opponentIndex = (playerIndex + 1) % 2;
+
+    // Find creatures with onFriendlySpellPlayed effect
+    const triggeredCreatures = player.field.filter(
+      (creature) => creature?.effects?.onFriendlySpellPlayed && !creature.abilitiesCancelled
+    );
+
+    triggeredCreatures.forEach((creature) => {
+      logMessage(this.state, `${creature.name}'s metamorphosis triggers from spell!`);
+
+      const result = resolveCardEffect(creature, 'onFriendlySpellPlayed', {
+        log: (message) => logMessage(this.state, message),
+        player,
+        opponent: this.state.players[opponentIndex],
+        creature,
+        state: this.state,
+        playerIndex,
+        opponentIndex,
+      });
+
+      if (result) {
+        this.resolveEffectChain(result, { playerIndex, opponentIndex, creature });
+      }
+    });
+
+    // Cleanup any creatures that may have transformed
+    this.cleanupDestroyed();
   }
 
   // ==========================================================================
