@@ -225,8 +225,23 @@ that doesn't change network behavior yet.
 - [x] Phase 2e: Added `game_action` event handler in lobbyManager.js → routes to ActionBus
 - [x] Phase 2e: Added ActionBus reset to lobbyManager cleanup
 
+### Phase 1c Complete (Session 6)
+- [x] Route dragAndDrop slot placement through controller (handlePlayCard with slotIndex)
+- [x] Remove dead code: placeCreatureInSpecificSlot, startConsumptionForSpecificSlot (~240 lines)
+- [x] Add consumeTarget option to controller for direct drag-onto-prey consumption
+- [x] Add EXTEND_CONSUMPTION action type and controller handler
+- [x] Route dragAndDrop handleDirectConsumption and handleExtendedConsumption through controller
+- [x] Remove all broadcastSyncState calls from dragAndDrop.js (0 remaining)
+- [x] Fix consumption timing: defer onPlay/onConsume until player finishes additional consumption
+  - Added FINALIZE_PLACEMENT action, offerAdditionalConsumption flag, renderAdditionalConsumptionSelection UI
+- [x] Route all ui.js broadcastSyncState calls through GameController.broadcast()
+  - resolveEffectChain (4), reaction system (3), surrender (1), state.broadcast hook
+- [x] Remove dead applyEffectResult wrapper function
+- Only 3 broadcastSyncState references remain: import, controller onBroadcast, state.broadcast fallback
+
 ### Not Started
-- [ ] Phase 1c-1d, Phases 3-6
+- [ ] Phase 1d (controller becomes ONLY broadcast point — remaining in turnManager, combat, AI)
+- [ ] Phases 3-6
 
 ---
 
@@ -246,6 +261,8 @@ that doesn't change network behavior yet.
 | PLACE_CREATURE | handlePlaceCreature | Working |
 | SELECT_CONSUMPTION_TARGETS | handleSelectConsumptionTargets | Working |
 | DRY_DROP | handleDryDrop | Working |
+| EXTEND_CONSUMPTION | handleExtendConsumption | Working |
+| FINALIZE_PLACEMENT | handleFinalizePlacement | Working |
 | TRIGGER_EFFECT | handleTriggerEffect | Working |
 | DECLARE_ATTACK | (stub) | **NEEDS IMPLEMENTATION** |
 | RESOLVE_COMBAT | (stub) | **NEEDS IMPLEMENTATION** |
@@ -274,7 +291,7 @@ that doesn't change network behavior yet.
 This document is maintained across multiple Claude sessions. Each session
 should update the "Current Progress" section and check off completed items.
 
-Last updated: Session 5
+Last updated: Session 6
 - Pass 1: Initial plan + actionSync.js (seq, checksum, ACK, desync recovery)
 - Pass 2: Phase 1a complete — 8 new action types, 6 new GameController handlers
 - Pass 3: Phase 1b partial — wired 6 action types through controller.execute() in ui.js,
@@ -287,5 +304,9 @@ Last updated: Session 5
 - Pass 6: Phase 1b major — replaced handlePlayCard (450 → 25 lines) with controller delegation,
   enhanced controller with scavenge/carrion/preselectedTarget/spell visuals, routed
   handleDiscardEffect through new ACTIVATE_DISCARD_EFFECT action, removed ~500 lines from ui.js
-- Next: Phase 1c (make controller the ONLY broadcast entry point — route resolveEffectChain
-  callers, reaction system), then Phase 3 (host authority validation)
+- Pass 7 (Session 6): Phase 1c complete — routed all dragAndDrop through controller (removed
+  ~370 lines of duplicate code), routed all ui.js broadcastSyncState through controller.broadcast(),
+  fixed consumption timing bug (additional consumption now offered before onPlay), added
+  EXTEND_CONSUMPTION/FINALIZE_PLACEMENT actions, removed dead applyEffectResult wrapper
+- Next: Phase 1d (route remaining state.broadcast calls in turnManager/combat/AI through
+  controller), then Phase 3 (host authority validation)
