@@ -31,8 +31,6 @@ import {
   getActivePlayer,
   getOpponentPlayer,
   canPlayCards,
-  isMainPhase,
-  getLocalPlayerIndex,
   isLocalPlayersTurn,
   markCreatureAttacked,
 } from '../state/selectors.js';
@@ -45,7 +43,7 @@ import {
   setPlayerDeck,
   getTrapsFromHand,
 } from '../state/gameState.js';
-import { resolveCardEffect, getCardDefinitionById } from '../cards/index.js';
+import { resolveCardEffect } from '../cards/index.js';
 import { isCreatureCard, createCardInstance } from '../cardTypes.js';
 import { resolveEffectResult as applyEffect } from './effects.js';
 import { isFreePlay, isEdible, hasScavenge, cantBeConsumed } from '../keywords.js';
@@ -439,7 +437,7 @@ export class GameController {
     }
 
     // Place creature directly (prey or predator with no prey)
-    return this.placeCreatureInSlot(card, emptySlot, [], isFree);
+    return this.placeCreatureInSlot(card, emptySlot, [], [], isFree);
   }
 
   // ==========================================================================
@@ -707,9 +705,6 @@ export class GameController {
     if (uiResult && uiResult.pendingOnPlay) {
       const { creature, playerIndex, opponentIndex } = uiResult.pendingOnPlay;
       const pendingQueue = uiResult.pendingOnPlayQueue || [];
-      console.log(
-        `[applyEffectResult] Processing pendingOnPlay for ${creature.name}, queue length: ${pendingQueue.length}`
-      );
 
       // Resolve the creature's onPlay effect through the normal chain
       const onPlayResult = resolveCardEffect(creature, 'onPlay', {
@@ -725,9 +720,6 @@ export class GameController {
       // Create a callback that processes the next pending onPlay in the queue
       const processNextInQueue = () => {
         if (pendingQueue.length > 0) {
-          console.log(
-            `[applyEffectResult] Processing next in queue, ${pendingQueue.length} remaining`
-          );
           const next = pendingQueue.shift();
           this.applyEffectResult(
             { pendingOnPlay: next, pendingOnPlayQueue: pendingQueue },
@@ -1287,6 +1279,12 @@ export class GameController {
       return { success: false, error: 'Not your turn' };
     }
 
+    if (!card.discardEffect && !card.effects?.discardEffect) {
+      logMessage(this.state, `${card.name} has no discard effect.`);
+      this.notifyStateChange();
+      return { success: false, error: 'No discard effect' };
+    }
+
     const playerIndex = this.state.activePlayerIndex;
     const opponentIndex = (playerIndex + 1) % 2;
     const player = getActivePlayer(this.state);
@@ -1433,7 +1431,7 @@ export class GameController {
 
   handlePlaceCreature({ playerIndex, creature, slotIndex }) {
     // Direct placement (used internally)
-    return this.placeCreatureInSlot(creature, slotIndex, [], false);
+    return this.placeCreatureInSlot(creature, slotIndex, [], [], false);
   }
 
   handleTriggerEffect({ card, effectType, context }) {

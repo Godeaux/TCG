@@ -36,10 +36,9 @@ import {
   deckCatalogs,
   resolveCardEffect,
   getAllCards,
-  getCardByName,
   getCardDefinitionById,
 } from './cards/index.js';
-import { getCachedCardImage, isCardImageCached, preloadCardImages } from './cardImages.js';
+import { preloadCardImages } from './cardImages.js';
 import { positionEvaluator } from './ai/PositionEvaluator.js';
 
 // Initialize the position evaluator in turnManager to avoid circular dependency
@@ -73,8 +72,6 @@ import { SoundManager } from './audio/soundManager.js';
 
 // Victory overlay (extracted module)
 import {
-  showVictoryScreen,
-  hideVictoryScreen,
   checkForVictory,
   setVictoryMenuCallback,
   setAIvsAIRestartCallback,
@@ -84,7 +81,7 @@ import {
 } from './ui/overlays/VictoryOverlay.js';
 
 // Pass overlay (extracted module)
-import { renderPassOverlay, hidePassOverlay } from './ui/overlays/PassOverlay.js';
+import { renderPassOverlay } from './ui/overlays/PassOverlay.js';
 
 // Menu overlays (extracted module)
 import { renderMenuOverlays } from './ui/overlays/MenuOverlay.js';
@@ -95,26 +92,23 @@ import { renderSetupOverlay, resetSetupAIState } from './ui/overlays/SetupOverla
 // Reaction overlay (extracted module)
 import {
   renderReactionOverlay,
-  hideReactionOverlay,
   resetReactionAIState,
 } from './ui/overlays/ReactionOverlay.js';
 
 // Profile overlay (extracted module)
 import {
   renderProfileOverlay,
-  hideProfileOverlay,
   setupDuelInviteListener,
 } from './ui/overlays/ProfileOverlay.js';
 
 // Pack opening overlay (extracted module)
 import {
   renderPackOpeningOverlay,
-  hidePackOpeningOverlay,
   startPackOpening,
 } from './ui/overlays/PackOpeningOverlay.js';
 
 // Bug report overlay (extracted module)
-import { showBugReportOverlay, hideBugReportOverlay } from './ui/overlays/BugReportOverlay.js';
+import { showBugReportOverlay } from './ui/overlays/BugReportOverlay.js';
 
 // Simulation dashboard overlay
 import { showSimulationDashboard } from './ui/overlays/SimulationDashboard.js';
@@ -224,12 +218,10 @@ import {
   requestSyncFromOpponent,
   initActionBus,
   getActionBus,
-  resetActionBus,
 } from './network/index.js';
 
 import {
   initActionSync,
-  resetActionSync,
   verifyChecksum,
 } from './network/actionSync.js';
 
@@ -318,7 +310,6 @@ const lobbyCodeInput = document.getElementById('lobby-code');
 const lobbyError = document.getElementById('lobby-error');
 
 // UI state variables
-// pendingConsumption is now managed by GameController.uiState.pendingConsumption
 let inspectedCardId = null;
 let deckHighlighted = null;
 
