@@ -3961,15 +3961,9 @@ export const renderGame = (state, callbacks = {}) => {
         // Drag-and-drop helpers
         getLocalPlayerIndex,
         isLocalPlayersTurn,
-        broadcastSyncState,
-        triggerPlayTraps,
-        resolveEffectChain,
-        renderSelectionPanel,
-        clearSelectionPanel,
         handleTrapResponse,
         handlePlayCard,
-        applyEffectResult,
-        selectionPanelElement: selectionPanel,
+        gameController,
       },
       uiState: {
         currentPage,

@@ -17,9 +17,8 @@
  */
 
 import { getActivePlayer, getOpponentPlayer, logMessage } from '../../state/gameState.js';
-import { canPlayCard, cardLimitAvailable } from '../../game/turnManager.js';
+import { canPlayCard } from '../../game/turnManager.js';
 import {
-  isFreePlay,
   isPassive,
   isHarmless,
   isEdible,
@@ -34,9 +33,6 @@ import {
   cantConsume,
 } from '../../keywords.js';
 import { hideCardTooltipImmediate } from '../components/CardTooltip.js';
-import { createCardInstance } from '../../cardTypes.js';
-import { consumePrey } from '../../game/consumption.js';
-import { resolveCardEffect } from '../../cards/index.js';
 import { broadcastHandDrag } from '../../network/sync.js';
 
 // ============================================================================
@@ -68,11 +64,8 @@ let latestCallbacks = {};
 // External functions (will be injected)
 let getLocalPlayerIndex = null;
 let isLocalPlayersTurn = null;
-let broadcastSyncState = null;
-let triggerPlayTraps = null;
 let handleTrapResponse = null;
 let handlePlayCard = null;
-let applyEffectResult = null;
 let gameController = null;
 
 // ============================================================================
@@ -494,86 +487,46 @@ const revertCardToOriginalPosition = () => {
 // ============================================================================
 
 /**
- * Handle direct consumption when dragging predator onto single prey
+ * Handle direct consumption when dragging predator onto single prey.
+ * Routes through GameController with consumeTarget option.
  */
 const handleDirectConsumption = (predator, prey, slotIndex) => {
-  const state = latestState;
-  const player = getActivePlayer(state);
+  if (!gameController) {
+    console.error('[handleDirectConsumption] GameController not initialized');
+    return;
+  }
 
-  // Per CORE-RULES.md: Free Play keyword and Free Spell both require limit to be available
-  // They don't consume the limit, but can only be played while it's unused
-  // Traps are activated from hand on opponent's turn, not "played"
-  const isTrap = predator.type === 'Trap';
-  if (!isTrap && !cardLimitAvailable(state)) {
-    logMessage(state, 'You have already played a card this turn.');
+  const result = gameController.execute({
+    type: 'PLAY_CARD',
+    payload: { card: predator, slotIndex, options: { consumeTarget: prey } },
+  });
+
+  if (!result?.success) {
     revertCardToOriginalPosition();
     latestCallbacks.onUpdate?.();
     return;
   }
 
-  // Free Play keyword and Free Spell don't consume the limit
-  const isFree = isFreePlay(predator) || predator.type === 'Free Spell' || isTrap;
-
-  player.hand = player.hand.filter((item) => item.instanceId !== predator.instanceId);
-  const predatorInstance = createCardInstance(predator, state.turn);
-
-  consumePrey({
-    predator: predatorInstance,
-    preyList: [prey],
-    carrionList: [],
-    state,
-    playerIndex: state.activePlayerIndex,
-    onBroadcast: broadcastSyncState,
-  });
-
-  player.field[slotIndex] = predatorInstance;
-
-  // Set cardPlayedThisTurn BEFORE triggering traps (fixes bug where trap resolution
-  // would allow another card play before the callback sets the flag)
-  if (!isFree) {
-    state.cardPlayedThisTurn = true;
+  // Controller sets up extendedConsumption state — trigger visual highlights
+  if (latestState.extendedConsumption) {
+    setTimeout(() => highlightExtendedConsumptionTargets(), 50);
   }
 
-  triggerPlayTraps(state, predatorInstance, latestCallbacks.onUpdate, () => {
-    if (predatorInstance.onConsume || predatorInstance.effects?.onConsume) {
-      const result = resolveCardEffect(predatorInstance, 'onConsume', {
-        log: (message) => logMessage(state, message),
-        player,
-        opponent: getOpponentPlayer(state),
-        creature: predatorInstance,
-        state,
-        playerIndex: state.activePlayerIndex,
-        opponentIndex: (state.activePlayerIndex + 1) % 2,
-      });
-
-      applyEffectResult(result, state, latestCallbacks.onUpdate);
-    }
-
-    // Activate extended consumption window if more prey available
-    const remainingConsumablePrey = getConsumablePrey(predatorInstance, state);
-    if (remainingConsumablePrey.length > 0) {
-      state.extendedConsumption = {
-        predatorInstanceId: predatorInstance.instanceId,
-        predatorSlotIndex: slotIndex,
-        consumedCount: 1,
-        maxConsumption: 3,
-      };
-      // Delay highlight to ensure DOM is updated
-      setTimeout(() => highlightExtendedConsumptionTargets(), 50);
-    }
-
-    latestCallbacks.onUpdate?.();
-    broadcastSyncState(state);
-  });
+  latestCallbacks.onUpdate?.();
 };
 
 /**
- * Handle consumption during extended consumption window
- * Predator is already on field, consuming additional prey
+ * Handle consumption during extended consumption window.
+ * Predator is already on field, consuming additional prey.
+ * Routes through GameController EXTEND_CONSUMPTION action.
  */
 const handleExtendedConsumption = (predator, prey) => {
+  if (!gameController) {
+    console.error('[handleExtendedConsumption] GameController not initialized');
+    return;
+  }
+
   const state = latestState;
-  const player = getActivePlayer(state);
 
   if (!state.extendedConsumption) return;
   if (state.extendedConsumption.predatorInstanceId !== predator.instanceId) return;
@@ -582,7 +535,7 @@ const handleExtendedConsumption = (predator, prey) => {
     return;
   }
 
-  // Verify prey is valid for consumption
+  // Verify prey is valid for consumption (UI-side check for immediate feedback)
   if (!canConsumePreyDirectly(predator, prey, state)) {
     revertCardToOriginalPosition();
     latestCallbacks.onUpdate?.();
@@ -590,33 +543,27 @@ const handleExtendedConsumption = (predator, prey) => {
     return;
   }
 
-  // Perform consumption
-  consumePrey({
-    predator: predator,
-    preyList: [prey],
-    carrionList: [],
-    state,
-    playerIndex: state.activePlayerIndex,
-    onBroadcast: broadcastSyncState,
+  const result = gameController.execute({
+    type: 'EXTEND_CONSUMPTION',
+    payload: { predator, prey },
   });
 
-  // Update consumption count
-  state.extendedConsumption.consumedCount++;
+  if (!result?.success) {
+    revertCardToOriginalPosition();
+    latestCallbacks.onUpdate?.();
+    highlightExtendedConsumptionTargets();
+    return;
+  }
 
-  // NOTE: onConsume effect is NOT triggered here - it only fires once when the predator
-  // is initially played, not on subsequent extended consumption actions
-
-  // Check if max consumption reached or no more prey
-  const remainingPrey = getConsumablePrey(predator, state);
-  if (state.extendedConsumption.consumedCount >= 3 || remainingPrey.length === 0) {
-    clearExtendedConsumption();
-  } else {
-    // Re-highlight remaining targets after DOM update
+  // Controller clears extendedConsumption when done, or keeps it open
+  if (state.extendedConsumption) {
+    // Still consuming — re-highlight remaining targets
     setTimeout(() => highlightExtendedConsumptionTargets(), 50);
+  } else {
+    clearExtendedConsumption();
   }
 
   latestCallbacks.onUpdate?.();
-  broadcastSyncState(state);
 };
 
 // ============================================================================
@@ -1301,11 +1248,8 @@ export const initDragAndDrop = (options = {}) => {
 
   getLocalPlayerIndex = helpers.getLocalPlayerIndex;
   isLocalPlayersTurn = helpers.isLocalPlayersTurn;
-  broadcastSyncState = helpers.broadcastSyncState;
-  triggerPlayTraps = helpers.triggerPlayTraps;
   handleTrapResponse = helpers.handleTrapResponse;
   handlePlayCard = helpers.handlePlayCard;
-  applyEffectResult = helpers.applyEffectResult;
   gameController = helpers.gameController;
 
   document.addEventListener('dragstart', handleDragStart);
