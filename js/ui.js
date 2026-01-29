@@ -69,7 +69,6 @@ import {
   isAIvsAIMode,
   isCombatPhase,
   canPlayerMakeAnyMove,
-  markCreatureAttacked,
 } from './state/selectors.js';
 
 // AI module (for cleanup when returning to menu)
@@ -2319,12 +2318,12 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
       if (!currentAttacker || currentAttacker.currentHp <= 0) {
         const attackerName = currentAttacker?.name || attacker.name;
         logMessage(state, `${attackerName} is destroyed before the attack lands.`);
-        // Mark the current attacker if it exists (prevents re-attack after sync)
-        if (currentAttacker) {
-          markCreatureAttacked(currentAttacker);
+        // Controller handles markCreatureAttacked + cleanup + broadcast
+        if (gameController) {
+          gameController.execute(resolveAttackAction(
+            currentAttacker || attacker, target, true, 'destroyed before attack'
+          ));
         }
-        onUpdate?.();
-        broadcastSyncState(state);
         return;
       }
 
@@ -2340,13 +2339,16 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
             state,
             `${currentAttacker.name}'s attack fizzles - target no longer on field.`
           );
-          markCreatureAttacked(currentAttacker);
-          onUpdate?.();
-          broadcastSyncState(state);
+          // Controller handles markCreatureAttacked + cleanup + broadcast
+          if (gameController) {
+            gameController.execute(resolveAttackAction(
+              currentAttacker, target, true, 'target no longer on field'
+            ));
+          }
           return;
         }
 
-        // Use current references for attack resolution
+        // Use current references for attack resolution (controller handles broadcast)
         resolveAttack(
           state,
           currentAttacker,
@@ -2355,12 +2357,9 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
           negatedBy
         );
       } else {
-        // Player target - use current attacker reference
+        // Player target - use current attacker reference (controller handles broadcast)
         resolveAttack(state, currentAttacker, target, wasNegated, negatedBy);
       }
-
-      onUpdate?.();
-      broadcastSyncState(state);
     },
     onUpdate,
     broadcast: broadcastSyncState,

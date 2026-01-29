@@ -186,10 +186,15 @@ that doesn't change network behavior yet.
 - [x] Phase 1a: Wired DECLARE_ATTACK legacy stub to use RESOLVE_ATTACK
 
 ### In Progress
-- [ ] Phase 1b: Remaining ui.js broadcastSyncState calls (~17 remaining) need routing through controller
-- [ ] Phase 1b: handleTrapResponse still uses direct mutations + broadcastSyncState
+- [ ] Phase 1b: Remaining broadcastSyncState calls (14 non-infrastructure) in ui.js:
+  - 4 in resolveEffectChain — will disappear when callers route through controller
+  - 5 in handlePlayCard / consumption / dry drop / onPlay — need handlePlayCard refactor
+  - 1 in handleDiscardEffect — needs own controller handler
+  - 2 callback refs (createReactionWindow, triggerPlayTraps) — stay until reaction system routes through controller
+  - 1 surrender — intentionally kept
+  - 1 spell play completion — needs handlePlayCard refactor
 
-### Completed (Phase 1b — partial)
+### Completed (Phase 1b)
 - [x] Phase 1b: GameController instantiated in ui.js renderGame with onStateChange, onBroadcast, onSelectionNeeded callbacks
 - [x] Phase 1b: handleReturnToHand → controller.execute(returnToHandAction)
 - [x] Phase 1b: handleSacrifice → controller.execute(sacrificeCreatureAction)
@@ -197,7 +202,8 @@ that doesn't change network behavior yet.
 - [x] Phase 1b: resolveAttack + continueResolveAttack → controller.execute(resolveAttackAction) (250+ lines removed)
 - [x] Phase 1b: handleEatPreyAttack mutation → controller.execute(eatPreyAttackAction)
 - [x] Phase 1b: processEndOfTurnQueue → controller.execute(processEndPhaseAction) (80+ lines removed)
-- [x] Phase 1b: Removed unused imports (resolveCreatureCombat, resolveDirectAttack, hasBeforeCombatEffect, finalizeEndPhase)
+- [x] Phase 1b: handleTrapResponse edge cases → controller.execute(resolveAttackAction) for destroyed/fizzled attacks
+- [x] Phase 1b: Removed unused imports (resolveCreatureCombat, resolveDirectAttack, hasBeforeCombatEffect, finalizeEndPhase, markCreatureAttacked)
 - [x] Phase 1b: Enhanced controller executeCombat with damage values and slot indices for visual effects
 - [x] Phase 1b: Added findCardSlotIndex helper to GameController
 - [x] Phase 1b: Updated resolveAttack action creator to accept negateAttack/negatedBy params
@@ -251,10 +257,12 @@ that doesn't change network behavior yet.
 This document is maintained across multiple Claude sessions. Each session
 should update the "Current Progress" section and check off completed items.
 
-Last updated: Session 2
+Last updated: Session 3
 - Pass 1: Initial plan + actionSync.js (seq, checksum, ACK, desync recovery)
 - Pass 2: Phase 1a complete — 8 new action types, 6 new GameController handlers
 - Pass 3: Phase 1b partial — wired 6 action types through controller.execute() in ui.js,
   removed ~350 lines of direct state mutations, instantiated GameController in renderGame
-- Next: Phase 1b continued — wire remaining broadcastSyncState calls through controller,
-  handle trap response via controller
+- Pass 4: Phase 1b continued — wired trap response edge cases through controller,
+  removed markCreatureAttacked import from ui.js, audited remaining 14 broadcastSyncState calls
+- Next: Route handlePlayCard (spell + creature) through controller to eliminate 6+ more
+  broadcastSyncState calls, then Phase 1c (make controller the ONLY broadcast entry point)
