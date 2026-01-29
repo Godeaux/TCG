@@ -315,10 +315,11 @@ function resolveCardRef(ref, state, zoneHint) {
     }
   }
 
-  // Not found in player zones — could be pending placement or consumed
-  // Check controller UI state if available
+  // Not found — card may have been consumed/destroyed between send and receive.
+  // Return null so the controller gets a clear signal rather than a mystery object.
   console.warn(
-    `[actionSerializer] Could not resolve card ref: ${ref.name || ref.id} (instanceId=${instanceId}, uid=${uid})`
+    `[actionSerializer] Could not resolve card ref: ${ref.name || ref.id} ` +
+      `(instanceId=${instanceId}, uid=${uid}, zone=${zoneHint})`
   );
-  return ref; // Return the ref as fallback — controller will likely fail gracefully
+  return null;
 }

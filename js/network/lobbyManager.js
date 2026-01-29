@@ -29,7 +29,7 @@ import {
   handleDesyncRecoveryResponse,
   resetActionSync,
 } from './actionSync.js';
-import { getActionBus } from './actionBus.js';
+import { getActionBus, resetActionBus } from './actionBus.js';
 
 // ============================================================================
 // MODULE STATE
@@ -1145,6 +1145,7 @@ export const handleCancelMatchmaking = async (state) => {
  * Cleans up any active lobby connection
  */
 export const handleBackFromLobby = async (state) => {
+  resetActionBus();
   if (!state.menu.lobby || !state.menu.profile) {
     setMenuStage(state, 'main');
     state.menu.lobby = null;
@@ -1179,6 +1180,7 @@ export const handleBackFromLobby = async (state) => {
  * Leave current lobby and create a new one
  */
 export const handleLeaveLobby = async (state) => {
+  resetActionBus();
   if (!state.menu.lobby || !state.menu.profile) {
     setMenuStage(state, 'multiplayer');
     state.menu.lobby = null;

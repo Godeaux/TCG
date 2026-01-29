@@ -7,6 +7,7 @@ import {
   logGameAction,
   LOG_CATEGORIES,
   formatCardForLog,
+  createGameState,
 } from './state/gameState.js';
 import { initCardTooltip, showCardTooltip, hideCardTooltip } from './ui/components/CardTooltip.js';
 import {
@@ -4009,6 +4010,20 @@ export const renderGame = (state, callbacks = {}) => {
       getProfileId: () => state.menu?.profile?.id,
       getHostId: () => state.menu?.lobby?.host_id,
       executeAction: (action) => gameController.execute(action),
+      resetGameState: () => {
+        // Wipe live state to a blank game, preserving menu/lobby/profile
+        // so the action-log replay can rebuild the game from scratch.
+        const menu = latestState.menu;
+        const fresh = createGameState();
+        for (const key of Object.keys(latestState)) {
+          delete latestState[key];
+        }
+        Object.assign(latestState, fresh, { menu });
+        // Point controller at the same (now-reset) object
+        if (gameController) {
+          gameController.state = latestState;
+        }
+      },
       onActionConfirmed: (entry) => {
         renderGame(latestState, latestCallbacks);
       },
