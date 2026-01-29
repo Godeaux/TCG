@@ -88,6 +88,27 @@ export const ActionTypes = {
   /** Transform creature */
   TRANSFORM_CREATURE: 'TRANSFORM_CREATURE',
 
+  /** Sacrifice creature (activate sacrifice effect) */
+  SACRIFICE_CREATURE: 'SACRIFICE_CREATURE',
+
+  /** Return creature to owner's hand */
+  RETURN_TO_HAND: 'RETURN_TO_HAND',
+
+  /** Resolve full attack (before-combat, traps, combat, after-combat) */
+  RESOLVE_ATTACK: 'RESOLVE_ATTACK',
+
+  /** Eat prey attack (Hippo Frog-style consume-instead-of-attack) */
+  EAT_PREY_ATTACK: 'EAT_PREY_ATTACK',
+
+  /** Resolve trap/reaction response during attack */
+  RESOLVE_TRAP_RESPONSE: 'RESOLVE_TRAP_RESPONSE',
+
+  /** Resolve a pending discard choice */
+  RESOLVE_DISCARD: 'RESOLVE_DISCARD',
+
+  /** Process end-of-turn effect queue */
+  PROCESS_END_PHASE: 'PROCESS_END_PHASE',
+
   // ==========================================================================
   // CONSUMPTION ACTIONS
   // ==========================================================================
@@ -295,6 +316,41 @@ export const buffCreature = (creature, atkBonus, hpBonus, permanent = false) => 
 export const transformCreature = (creature, newCardDefinition) => ({
   type: ActionTypes.TRANSFORM_CREATURE,
   payload: { creature, newCardDefinition },
+});
+
+export const sacrificeCreature = (card) => ({
+  type: ActionTypes.SACRIFICE_CREATURE,
+  payload: { card },
+});
+
+export const returnToHand = (card) => ({
+  type: ActionTypes.RETURN_TO_HAND,
+  payload: { card },
+});
+
+export const resolveAttack = (attacker, target) => ({
+  type: ActionTypes.RESOLVE_ATTACK,
+  payload: { attacker, target },
+});
+
+export const eatPreyAttack = (attacker, prey) => ({
+  type: ActionTypes.EAT_PREY_ATTACK,
+  payload: { attacker, prey },
+});
+
+export const resolveTrapResponse = (attacker, target, negated, negatedBy) => ({
+  type: ActionTypes.RESOLVE_TRAP_RESPONSE,
+  payload: { attacker, target, negated, negatedBy },
+});
+
+export const resolveDiscard = (playerIndex, card) => ({
+  type: ActionTypes.RESOLVE_DISCARD,
+  payload: { playerIndex, card },
+});
+
+export const processEndPhase = () => ({
+  type: ActionTypes.PROCESS_END_PHASE,
+  payload: {},
 });
 
 // ============================================================================

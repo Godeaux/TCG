@@ -34,6 +34,7 @@ import {
   isMainPhase,
   getLocalPlayerIndex,
   isLocalPlayersTurn,
+  markCreatureAttacked,
 } from '../state/selectors.js';
 import {
   logMessage,
@@ -48,7 +49,12 @@ import { resolveCardEffect, getCardDefinitionById } from '../cards/index.js';
 import { isCreatureCard, createCardInstance } from '../cardTypes.js';
 import { resolveEffectResult as applyEffect } from './effects.js';
 import { isFreePlay, isEdible } from '../keywords.js';
-import { advancePhase, endTurn, getPositionEvaluator } from './turnManager.js';
+import { advancePhase, endTurn, finalizeEndPhase, getPositionEvaluator } from './turnManager.js';
+import {
+  resolveCreatureCombat,
+  resolveDirectAttack,
+  hasBeforeCombatEffect,
+} from './combat.js';
 
 // ============================================================================
 // GAME CONTROLLER CLASS
@@ -139,6 +145,25 @@ export class GameController {
         // Effects
         case ActionTypes.TRIGGER_EFFECT:
           return this.handleTriggerEffect(action.payload);
+
+        // New action types (Phase 1 of multiplayer authority refactor)
+        case ActionTypes.SACRIFICE_CREATURE:
+          return this.handleSacrificeCreature(action.payload);
+
+        case ActionTypes.RETURN_TO_HAND:
+          return this.handleReturnToHand(action.payload);
+
+        case ActionTypes.RESOLVE_ATTACK:
+          return this.handleResolveAttack(action.payload);
+
+        case ActionTypes.EAT_PREY_ATTACK:
+          return this.handleEatPreyAttack(action.payload);
+
+        case ActionTypes.RESOLVE_DISCARD:
+          return this.handleResolveDiscard(action.payload);
+
+        case ActionTypes.PROCESS_END_PHASE:
+          return this.handleProcessEndPhase(action.payload);
 
         default:
           console.warn(`[GameController] Unknown action type: ${action.type}`);
@@ -792,17 +817,455 @@ export class GameController {
   }
 
   // ==========================================================================
-  // ATTACK HANDLERS (Placeholder for now)
+  // SACRIFICE HANDLER
+  // ==========================================================================
+
+  handleSacrificeCreature({ card }) {
+    if (!isLocalPlayersTurn(this.state, this.uiState)) {
+      logMessage(this.state, 'Wait for your turn.');
+      this.notifyStateChange();
+      return { success: false, error: 'Not your turn' };
+    }
+
+    // Find card's owner and slot
+    const playerIndex = this.state.players.findIndex((p) =>
+      p.field.some((slot) => slot?.instanceId === card.instanceId)
+    );
+    if (playerIndex === -1) {
+      return { success: false, error: 'Card not found on field' };
+    }
+
+    const player = this.state.players[playerIndex];
+    const opponentIndex = (playerIndex + 1) % 2;
+    const opponent = this.state.players[opponentIndex];
+    const slotIndex = player.field.findIndex((slot) => slot?.instanceId === card.instanceId);
+    if (slotIndex === -1) {
+      return { success: false, error: 'Card not found in slot' };
+    }
+
+    if (!card.sacrificeEffect && !card.effects?.sacrificeEffect) {
+      logMessage(this.state, `${card.name} cannot be sacrificed.`);
+      this.notifyStateChange();
+      return { success: false, error: 'No sacrifice effect' };
+    }
+
+    logMessage(this.state, `${player.name} sacrifices ${card.name}.`);
+
+    const result = resolveCardEffect(card, 'sacrificeEffect', {
+      log: (message) => logMessage(this.state, message),
+      player,
+      opponent,
+      card,
+      state: this.state,
+    });
+
+    const finalizeSacrifice = () => {
+      player.field[slotIndex] = null;
+      // Tokens don't go to carrion
+      if (!card.isToken && !card.id?.startsWith('token-')) {
+        player.carrion.push(card);
+      }
+      this.cleanupDestroyed();
+      this.notifyStateChange();
+      this.broadcast();
+    };
+
+    this.resolveEffectChain(result, { playerIndex, opponentIndex, card }, finalizeSacrifice);
+
+    return { success: true };
+  }
+
+  // ==========================================================================
+  // RETURN TO HAND HANDLER
+  // ==========================================================================
+
+  handleReturnToHand({ card }) {
+    if (!isLocalPlayersTurn(this.state, this.uiState)) {
+      logMessage(this.state, 'Wait for your turn.');
+      this.notifyStateChange();
+      return { success: false, error: 'Not your turn' };
+    }
+
+    const playerIndex = this.state.players.findIndex((p) =>
+      p.field.some((slot) => slot?.instanceId === card.instanceId)
+    );
+    if (playerIndex === -1) {
+      return { success: false, error: 'Card not found on field' };
+    }
+
+    const player = this.state.players[playerIndex];
+    const slotIndex = player.field.findIndex((slot) => slot?.instanceId === card.instanceId);
+    if (slotIndex === -1) {
+      return { success: false, error: 'Card not found in slot' };
+    }
+
+    player.field[slotIndex] = null;
+    delete card.playedVia;
+    player.hand.push(card);
+
+    logMessage(this.state, `${card.name} returns to ${player.name}'s hand.`);
+
+    this.notifyStateChange();
+    this.broadcast();
+
+    return { success: true };
+  }
+
+  // ==========================================================================
+  // RESOLVE ATTACK HANDLER
+  // Handles the full attack flow: before-combat → traps → combat → after-combat
+  // ==========================================================================
+
+  handleResolveAttack({ attacker, target, negateAttack = false, negatedBy = null }) {
+    if (negateAttack) {
+      const targetName = target.type === 'creature' ? target.card.name : 'the player';
+      const sourceText = negatedBy ? ` by ${negatedBy}` : '';
+      logMessage(this.state, `${attacker.name}'s attack on ${targetName} was negated${sourceText}.`);
+      markCreatureAttacked(attacker);
+      this.cleanupDestroyed();
+      this.notifyStateChange();
+      this.broadcast();
+      return { success: true, negated: true };
+    }
+
+    // Check for beforeCombat effect
+    if (hasBeforeCombatEffect(attacker) && !attacker.beforeCombatFiredThisAttack) {
+      attacker.beforeCombatFiredThisAttack = true;
+      const playerIndex = this.state.activePlayerIndex;
+      const opponentIndex = (playerIndex + 1) % 2;
+
+      logMessage(this.state, `${attacker.name}'s before-combat effect triggers...`);
+      const result = resolveCardEffect(attacker, 'onBeforeCombat', {
+        log: (message) => logMessage(this.state, message),
+        player: this.state.players[playerIndex],
+        opponent: this.state.players[opponentIndex],
+        creature: attacker,
+        state: this.state,
+        playerIndex,
+        opponentIndex,
+      });
+
+      if (result) {
+        const continueAfterEffect = () => {
+          this.cleanupDestroyed();
+          if (attacker.currentHp <= 0) {
+            logMessage(this.state, `${attacker.name} is destroyed before the attack lands.`);
+            markCreatureAttacked(attacker);
+            this.notifyStateChange();
+            this.broadcast();
+            return;
+          }
+          if (target.type === 'creature' && target.card.currentHp <= 0) {
+            logMessage(this.state, `${target.card.name} is already destroyed.`);
+            markCreatureAttacked(attacker);
+            this.notifyStateChange();
+            this.broadcast();
+            return;
+          }
+          this.executeCombat(attacker, target);
+        };
+
+        this.resolveEffectChain(
+          result,
+          { playerIndex, opponentIndex, card: attacker },
+          continueAfterEffect
+        );
+        return { success: true, pendingEffect: true };
+      }
+
+      // No UI needed, check if creatures survived
+      this.cleanupDestroyed();
+      if (attacker.currentHp <= 0) {
+        logMessage(this.state, `${attacker.name} is destroyed before the attack lands.`);
+        markCreatureAttacked(attacker);
+        this.notifyStateChange();
+        this.broadcast();
+        return { success: true };
+      }
+      if (target.type === 'creature' && target.card.currentHp <= 0) {
+        logMessage(this.state, `${target.card.name} is already destroyed.`);
+        markCreatureAttacked(attacker);
+        this.notifyStateChange();
+        this.broadcast();
+        return { success: true };
+      }
+    }
+
+    this.executeCombat(attacker, target);
+    return { success: true };
+  }
+
+  /**
+   * Execute combat resolution (called after before-combat and traps resolve)
+   */
+  executeCombat(attacker, target) {
+    const playerIndex = this.state.activePlayerIndex;
+    const opponentIndex = (playerIndex + 1) % 2;
+
+    // Check for onDefend effect
+    if (target.type === 'creature' && (target.card.onDefend || target.card.effects?.onDefend)) {
+      const defender = target.card;
+      const result = resolveCardEffect(defender, 'onDefend', {
+        log: (message) => logMessage(this.state, message),
+        attacker,
+        defender,
+        player: this.state.players[playerIndex],
+        opponent: this.state.players[opponentIndex],
+        playerIndex,
+        opponentIndex,
+        state: this.state,
+      });
+
+      if (result) {
+        this.resolveEffectChain(result, {
+          playerIndex,
+          opponentIndex,
+          card: defender,
+        });
+      }
+
+      this.cleanupDestroyed();
+      if (attacker.currentHp <= 0) {
+        logMessage(this.state, `${attacker.name} is destroyed before the attack lands.`);
+        markCreatureAttacked(attacker);
+        this.notifyStateChange();
+        this.broadcast();
+        return;
+      }
+      if (result?.returnToHand) {
+        markCreatureAttacked(attacker);
+        this.cleanupDestroyed();
+        this.notifyStateChange();
+        this.broadcast();
+        return;
+      }
+    }
+
+    // --- Normal combat resolution ---
+    const attackerOwnerIndex = this.findCardOwnerIndex(attacker.instanceId);
+
+    if (target.type === 'player') {
+      resolveDirectAttack(this.state, attacker, target.player, attackerOwnerIndex);
+      queueVisualEffect(this.state, {
+        type: 'attack',
+        attackerId: attacker.instanceId,
+        attackerOwnerIndex,
+        targetType: 'player',
+        targetPlayerIndex: this.state.players.indexOf(target.player),
+      });
+    } else {
+      const defenderOwnerIndex = this.findCardOwnerIndex(target.card.instanceId);
+      resolveCreatureCombat(this.state, attacker, target.card, attackerOwnerIndex, defenderOwnerIndex);
+      queueVisualEffect(this.state, {
+        type: 'attack',
+        attackerId: attacker.instanceId,
+        attackerOwnerIndex,
+        targetType: 'creature',
+        defenderId: target.card.instanceId,
+        defenderOwnerIndex,
+      });
+    }
+
+    markCreatureAttacked(attacker);
+
+    // Trigger onAfterCombat for surviving creatures
+    this.triggerAfterCombat(attacker, attackerOwnerIndex);
+    if (target.type === 'creature' && target.card.currentHp > 0) {
+      const defOwnerIdx = this.findCardOwnerIndex(target.card.instanceId);
+      if (defOwnerIdx >= 0) {
+        this.triggerAfterCombat(target.card, defOwnerIdx);
+      }
+    }
+
+    this.cleanupDestroyed();
+    this.notifyStateChange();
+    this.broadcast();
+  }
+
+  triggerAfterCombat(creature, ownerIndex) {
+    if (creature.currentHp <= 0) return;
+    if (!creature.effects?.onAfterCombat && !creature.onAfterCombat) return;
+
+    const opponentIndex = (ownerIndex + 1) % 2;
+    const result = resolveCardEffect(creature, 'onAfterCombat', {
+      log: (message) => logMessage(this.state, message),
+      player: this.state.players[ownerIndex],
+      opponent: this.state.players[opponentIndex],
+      creature,
+      state: this.state,
+      playerIndex: ownerIndex,
+      opponentIndex,
+    });
+
+    if (result) {
+      this.resolveEffectChain(result, {
+        playerIndex: ownerIndex,
+        opponentIndex,
+        card: creature,
+      });
+    }
+  }
+
+  findCardOwnerIndex(instanceId) {
+    for (let i = 0; i < this.state.players.length; i++) {
+      if (this.state.players[i].field.some((c) => c?.instanceId === instanceId)) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  // ==========================================================================
+  // EAT PREY ATTACK HANDLER
+  // ==========================================================================
+
+  handleEatPreyAttack({ attacker, prey }) {
+    const attackerOwnerIndex = this.findCardOwnerIndex(attacker.instanceId);
+    if (attackerOwnerIndex === -1) {
+      return { success: false, error: 'Attacker not found on field' };
+    }
+
+    const preyOwnerIndex = this.findCardOwnerIndex(prey.instanceId);
+    if (preyOwnerIndex === -1) {
+      return { success: false, error: 'Prey not found on field' };
+    }
+
+    const preyOwner = this.state.players[preyOwnerIndex];
+    const slotIndex = preyOwner.field.findIndex((slot) => slot?.instanceId === prey.instanceId);
+    if (slotIndex === -1) {
+      return { success: false, error: 'Prey not in slot' };
+    }
+
+    preyOwner.field[slotIndex] = null;
+    if (!prey.isToken && !prey.id?.startsWith('token-')) {
+      preyOwner.carrion.push(prey);
+    }
+
+    logMessage(this.state, `${attacker.name} eats ${prey.name}!`);
+    markCreatureAttacked(attacker);
+
+    this.cleanupDestroyed();
+    this.notifyStateChange();
+    this.broadcast();
+
+    return { success: true };
+  }
+
+  // ==========================================================================
+  // RESOLVE DISCARD HANDLER
+  // ==========================================================================
+
+  handleResolveDiscard({ playerIndex, card }) {
+    const player = this.state.players[playerIndex];
+    if (!player) {
+      return { success: false, error: 'Invalid player index' };
+    }
+
+    player.hand = player.hand.filter((c) => c.instanceId !== card.instanceId);
+    if (card.type === 'Predator' || card.type === 'Prey') {
+      player.carrion.push(card);
+    } else {
+      player.exile.push(card);
+    }
+
+    logMessage(this.state, `${player.name} discards ${card.name}.`);
+    this.state.pendingChoice = null;
+
+    this.cleanupDestroyed();
+    this.notifyStateChange();
+    this.broadcast();
+
+    return { success: true };
+  }
+
+  // ==========================================================================
+  // PROCESS END PHASE HANDLER
+  // ==========================================================================
+
+  handleProcessEndPhase() {
+    if (this.state.phase !== 'End') {
+      return { success: false, error: 'Not in End phase' };
+    }
+
+    if (this.state.endOfTurnFinalized) {
+      return { success: false, error: 'Already finalized' };
+    }
+
+    if (this.state.endOfTurnProcessing) {
+      return { success: false, error: 'Already processing' };
+    }
+
+    if (this.state.endOfTurnQueue.length === 0) {
+      finalizeEndPhase(this.state);
+      this.notifyStateChange();
+      this.broadcast();
+      return { success: true, finalized: true };
+    }
+
+    const creature = this.state.endOfTurnQueue.shift();
+    if (!creature) {
+      finalizeEndPhase(this.state);
+      this.notifyStateChange();
+      this.broadcast();
+      return { success: true, finalized: true };
+    }
+
+    this.state.endOfTurnProcessing = true;
+    const playerIndex = this.state.activePlayerIndex;
+    const opponentIndex = (playerIndex + 1) % 2;
+
+    const finishCreature = () => {
+      if (creature.endOfTurnSummon) {
+        applyEffect(
+          this.state,
+          { summonTokens: { playerIndex, tokens: [creature.endOfTurnSummon] } },
+          { playerIndex, opponentIndex, card: creature }
+        );
+        creature.endOfTurnSummon = null;
+      }
+      this.cleanupDestroyed();
+      this.state.endOfTurnProcessing = false;
+      this.notifyStateChange();
+      this.broadcast();
+      // Continue processing queue (recursive via callback)
+    };
+
+    if (!creature.onEnd && !creature.effects?.onEnd) {
+      finishCreature();
+      return { success: true, moreInQueue: this.state.endOfTurnQueue.length > 0 };
+    }
+
+    const result = resolveCardEffect(creature, 'onEnd', {
+      log: (message) => logMessage(this.state, message),
+      player: this.state.players[playerIndex],
+      opponent: this.state.players[opponentIndex],
+      creature,
+      state: this.state,
+      playerIndex,
+      opponentIndex,
+    });
+
+    this.resolveEffectChain(
+      result,
+      { playerIndex, opponentIndex, card: creature },
+      finishCreature
+    );
+
+    return { success: true, moreInQueue: this.state.endOfTurnQueue.length > 0 };
+  }
+
+  // ==========================================================================
+  // ATTACK HANDLERS (Legacy stubs — use RESOLVE_ATTACK instead)
   // ==========================================================================
 
   handleDeclareAttack({ attacker, target }) {
-    // Will be implemented in detail
-    return { success: true, needsImplementation: true };
+    // Legacy — RESOLVE_ATTACK handles the full flow now
+    return this.handleResolveAttack({ attacker, target });
   }
 
   handleResolveCombat() {
-    // Will be implemented in detail
-    return { success: true, needsImplementation: true };
+    // Legacy — combat is resolved within RESOLVE_ATTACK flow
+    return { success: true };
   }
 
   handleDrawCard({ playerIndex }) {
