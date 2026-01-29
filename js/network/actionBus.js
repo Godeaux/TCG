@@ -18,6 +18,7 @@
 
 import { sendLobbyBroadcast } from './sync.js';
 import { computeStateChecksum } from './actionSync.js';
+import { validateAction } from './actionValidator.js';
 
 // ============================================================================
 // MODULE STATE
@@ -201,13 +202,20 @@ export class ActionBus {
   _handleGuestIntent(message) {
     const { action, intentId, senderId } = message;
 
-    // TODO Phase 3: Validate action legality here
-    // - Is it this player's turn?
-    // - Does the card exist in their hand?
-    // - Is the target valid?
-    // - Is the action legal in current phase?
+    // Phase 3: Validate action legality before applying
+    const state = this.getState();
+    const validation = validateAction(action, senderId, state);
+    if (!validation.valid) {
+      console.warn(`[ActionBus] Host rejected guest action: ${validation.error}`);
+      sendLobbyBroadcast('game_action', {
+        type: 'action_rejected',
+        intentId,
+        reason: validation.error,
+        senderId: this.getProfileId(),
+      });
+      return;
+    }
 
-    // For now, trust and apply (validation comes in Phase 3)
     this._seq++;
     const seq = this._seq;
 

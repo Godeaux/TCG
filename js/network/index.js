@@ -79,6 +79,12 @@ export {
 } from './actionBus.js';
 
 // ============================================================================
+// ACTION VALIDATOR (Host-side action validation)
+// ============================================================================
+
+export { validateAction } from './actionValidator.js';
+
+// ============================================================================
 // LOBBY MANAGER
 // Note: loadGameStateFromDatabase, updateLobbySubscription, refreshLobbyState
 // are exported from lobbyManager.js (they use callback pattern)
