@@ -29,6 +29,7 @@ import {
   handleDesyncRecoveryResponse,
   resetActionSync,
 } from './actionSync.js';
+import { getActionBus } from './actionBus.js';
 
 // ============================================================================
 // MODULE STATE
@@ -1341,6 +1342,18 @@ export const updateLobbySubscription = (state, { force = false } = {}) => {
     handleAck(payload);
   });
 
+  // Handle game_action broadcasts (ActionBus — host-authoritative action routing)
+  lobbyChannel.on('broadcast', { event: 'game_action' }, ({ payload }) => {
+    if (payload?.senderId === state.menu?.profile?.id) {
+      return; // Ignore our own messages
+    }
+    // Route to ActionBus if available
+    const bus = getActionBus();
+    if (bus) {
+      bus.handleMessage(payload);
+    }
+  });
+
   // Handle desync recovery request (opponent detected mismatch)
   lobbyChannel.on('broadcast', { event: 'desync_recovery_request' }, ({ payload }) => {
     console.warn('[lobbyManager] Desync recovery requested by opponent:', payload?.reason);
@@ -1589,6 +1602,10 @@ export const cleanup = () => {
 
   // Reset action sync state (sequence counters, pending ACKs)
   resetActionSync();
+
+  // Reset ActionBus (host-authoritative action routing)
+  const bus = getActionBus();
+  if (bus) bus.reset();
 
   // Clean up session validation
   stopSessionValidation();

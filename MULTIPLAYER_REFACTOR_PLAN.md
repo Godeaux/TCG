@@ -208,8 +208,18 @@ that doesn't change network behavior yet.
 - [x] Phase 1b: Added findCardSlotIndex helper to GameController
 - [x] Phase 1b: Updated resolveAttack action creator to accept negateAttack/negatedBy params
 
+### Completed (Phase 2 — ActionBus)
+- [x] Phase 2a: Created `js/network/actionBus.js` — ActionBus class with host/guest dispatch
+- [x] Phase 2b: Host logic: validate → assign seq → apply → compute checksum → broadcast confirmed
+- [x] Phase 2c: Guest logic: send intent → receive confirmed → apply → verify checksum
+- [x] Phase 2d: Action message format: `action_intent`, `action_confirmed`, `action_rejected`
+- [x] Phase 2e: Exported ActionBus from `js/network/index.js`
+- [x] Phase 2e: Wired ActionBus initialization in ui.js (online mode only)
+- [x] Phase 2e: Added `game_action` event handler in lobbyManager.js → routes to ActionBus
+- [x] Phase 2e: Added ActionBus reset to lobbyManager cleanup
+
 ### Not Started
-- [ ] Phase 1c-1d, Phases 2-6
+- [ ] Phase 1c-1d, Phases 3-6
 
 ---
 
@@ -257,12 +267,15 @@ that doesn't change network behavior yet.
 This document is maintained across multiple Claude sessions. Each session
 should update the "Current Progress" section and check off completed items.
 
-Last updated: Session 3
+Last updated: Session 5
 - Pass 1: Initial plan + actionSync.js (seq, checksum, ACK, desync recovery)
 - Pass 2: Phase 1a complete — 8 new action types, 6 new GameController handlers
 - Pass 3: Phase 1b partial — wired 6 action types through controller.execute() in ui.js,
   removed ~350 lines of direct state mutations, instantiated GameController in renderGame
 - Pass 4: Phase 1b continued — wired trap response edge cases through controller,
   removed markCreatureAttacked import from ui.js, audited remaining 14 broadcastSyncState calls
-- Next: Route handlePlayCard (spell + creature) through controller to eliminate 6+ more
-  broadcastSyncState calls, then Phase 1c (make controller the ONLY broadcast entry point)
+- Pass 5: Phase 2 complete — created ActionBus (host-authoritative action routing),
+  wired into lobbyManager (game_action event handler + cleanup), wired into ui.js (initActionBus
+  in renderGame for online mode), exported from network/index.js
+- Next: Route handlePlayCard through controller (Phase 1b remainder), then Phase 3
+  (host authority validation — turn checks, card existence, legal phase)

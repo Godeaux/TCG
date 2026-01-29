@@ -231,6 +231,8 @@ import {
   broadcastHandDrag,
   broadcastCursorMove,
   requestSyncFromOpponent,
+  initActionBus,
+  resetActionBus,
 } from './network/index.js';
 
 import {
@@ -4261,6 +4263,22 @@ export const renderGame = (state, callbacks = {}) => {
             },
           });
         }
+      },
+    });
+  }
+
+  // Initialize ActionBus for multiplayer (host-authoritative action routing)
+  if (isOnlineMode(state)) {
+    initActionBus({
+      getState: () => latestState,
+      getProfileId: () => state.menu?.profile?.id,
+      getHostId: () => state.menu?.lobby?.host_id,
+      executeAction: (action) => gameController.execute(action),
+      onActionConfirmed: (entry) => {
+        renderGame(latestState, latestCallbacks);
+      },
+      onActionRejected: ({ intentId, reason }) => {
+        console.warn(`[ui] Action rejected: ${reason}`);
       },
     });
   }

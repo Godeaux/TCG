@@ -68,6 +68,17 @@ export {
 } from './actionSync.js';
 
 // ============================================================================
+// ACTION BUS (Host-authoritative action routing)
+// ============================================================================
+
+export {
+  ActionBus,
+  initActionBus,
+  getActionBus,
+  resetActionBus,
+} from './actionBus.js';
+
+// ============================================================================
 // LOBBY MANAGER
 // Note: loadGameStateFromDatabase, updateLobbySubscription, refreshLobbyState
 // are exported from lobbyManager.js (they use callback pattern)
