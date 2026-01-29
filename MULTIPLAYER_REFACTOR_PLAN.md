@@ -186,13 +186,11 @@ that doesn't change network behavior yet.
 - [x] Phase 1a: Wired DECLARE_ATTACK legacy stub to use RESOLVE_ATTACK
 
 ### In Progress
-- [ ] Phase 1b: Remaining broadcastSyncState calls (14 non-infrastructure) in ui.js:
+- [ ] Phase 1b: Remaining broadcastSyncState calls (12 in ui.js):
   - 4 in resolveEffectChain — will disappear when callers route through controller
-  - 5 in handlePlayCard / consumption / dry drop / onPlay — need handlePlayCard refactor
-  - 1 in handleDiscardEffect — needs own controller handler
   - 2 callback refs (createReactionWindow, triggerPlayTraps) — stay until reaction system routes through controller
   - 1 surrender — intentionally kept
-  - 1 spell play completion — needs handlePlayCard refactor
+  - ~5 infrastructure (onBroadcast callback, state.broadcast, etc.)
 
 ### Completed (Phase 1b)
 - [x] Phase 1b: GameController instantiated in ui.js renderGame with onStateChange, onBroadcast, onSelectionNeeded callbacks
@@ -207,6 +205,15 @@ that doesn't change network behavior yet.
 - [x] Phase 1b: Enhanced controller executeCombat with damage values and slot indices for visual effects
 - [x] Phase 1b: Added findCardSlotIndex helper to GameController
 - [x] Phase 1b: Updated resolveAttack action creator to accept negateAttack/negatedBy params
+- [x] Phase 1b: handlePlayCard → controller.execute(PLAY_CARD) — replaced ~450 lines with 25-line delegation
+- [x] Phase 1b: Enhanced controller handlePlayCreature with scavenge, carrion, cantBeConsumed filtering
+- [x] Phase 1b: Enhanced controller handlePlaySpell with preselectedTarget and spell visual effects
+- [x] Phase 1b: placeCreatureInSlot now uses consumePrey() for proper nutrition/visual/carrion handling
+- [x] Phase 1b: Consumption selection UI extracted to renderConsumptionSelection, dispatches through controller
+- [x] Phase 1b: handleDiscardEffect → controller.execute(ACTIVATE_DISCARD_EFFECT)
+- [x] Phase 1b: New ACTIVATE_DISCARD_EFFECT action type and controller handler
+- [x] Phase 1b: Fixed ActionBus re-initialization bug (guard with getActionBus() check)
+- [x] Phase 1b: Removed unused imports (cardLimitAvailable, createCardInstance, consumePrey, hasScavenge, cantBeConsumed, isFreePlay, isPassive, isHarmless, isHidden, pendingConsumption)
 
 ### Completed (Phase 2 — ActionBus)
 - [x] Phase 2a: Created `js/network/actionBus.js` — ActionBus class with host/guest dispatch
@@ -277,5 +284,8 @@ Last updated: Session 5
 - Pass 5: Phase 2 complete — created ActionBus (host-authoritative action routing),
   wired into lobbyManager (game_action event handler + cleanup), wired into ui.js (initActionBus
   in renderGame for online mode), exported from network/index.js
-- Next: Route handlePlayCard through controller (Phase 1b remainder), then Phase 3
-  (host authority validation — turn checks, card existence, legal phase)
+- Pass 6: Phase 1b major — replaced handlePlayCard (450 → 25 lines) with controller delegation,
+  enhanced controller with scavenge/carrion/preselectedTarget/spell visuals, routed
+  handleDiscardEffect through new ACTIVATE_DISCARD_EFFECT action, removed ~500 lines from ui.js
+- Next: Phase 1c (make controller the ONLY broadcast entry point — route resolveEffectChain
+  callers, reaction system), then Phase 3 (host authority validation)
