@@ -89,19 +89,20 @@ that doesn't change network behavior yet.
 - [ ] 2e. Wire ActionBus into GameController constructor (replaces onBroadcast)
 
 ### Phase 3: Host Authority Protocol
-**Status**: Not started.
+**Status**: ✅ COMPLETE (core validation wired; seq/checksum/broadcast already in ActionBus from Phase 2)
 
 **Work needed**:
-- [ ] 3a. Determine host = lobby creator (player index 0, host_id)
-- [ ] 3b. Host validates actions before applying:
-  - Is it this player's turn?
-  - Does the card exist in their hand?
-  - Is the target valid?
-  - Is the action legal in current phase?
-- [ ] 3c. Host assigns monotonic sequence number to each action
-- [ ] 3d. Host broadcasts confirmed action to guest
-- [ ] 3e. Guest applies confirmed action via GameController
-- [ ] 3f. Both compute checksum after applying — compare via ACK
+- [x] 3a. Determine host = lobby creator (player index 0, host_id) — in ActionBus.isHost()
+- [x] 3b. Host validates actions before applying — actionValidator.js:
+  - Turn ownership (TURN_GATED_ACTIONS)
+  - Phase legality (PHASE_REQUIREMENTS)
+  - Card existence in hand (HAND_CARD_ACTIONS)
+  - Attacker/creature on field (RESOLVE_ATTACK, SACRIFICE, RETURN_TO_HAND, EAT_PREY)
+  - Setup action sender identity (ROLL_SETUP_DIE, CHOOSE_FIRST_PLAYER, SELECT_DECK)
+- [x] 3c. Host assigns monotonic sequence number to each action — ActionBus._seq (Phase 2)
+- [x] 3d. Host broadcasts confirmed action to guest — ActionBus._broadcastConfirmedAction (Phase 2)
+- [x] 3e. Guest applies confirmed action via GameController — ActionBus._handleConfirmedAction (Phase 2)
+- [x] 3f. Both compute checksum after applying — compare via ACK — ActionBus checksum logic (Phase 2)
 
 ### Phase 4: Action Log and Replay
 **Status**: Not started.
@@ -142,7 +143,8 @@ that doesn't change network behavior yet.
 |------|-------|---------|
 | `js/game/controller.js` | 1, 2 | Add ~9 missing action handlers; wire ActionBus |
 | `js/ui.js` | 1, 5 | Remove ~20 broadcastSyncState calls; route through controller |
-| `js/network/actionBus.js` | 2 | **NEW** — action routing, host/guest logic |
+| `js/network/actionBus.js` | 2, 3 | **NEW** — action routing, host/guest logic, validation wiring |
+| `js/network/actionValidator.js` | 3 | **NEW** — host-side action validation (turn, phase, card, sender) |
 | `js/network/actionLog.js` | 4 | **NEW** — append-only action log |
 | `js/network/actionSync.js` | 2, 3 | Refactor: merge into actionBus or keep for checksum/ACK |
 | `js/network/sync.js` | 5 | Gut broadcastSyncState; keep DB save |
@@ -239,9 +241,20 @@ that doesn't change network behavior yet.
 - [x] Remove dead applyEffectResult wrapper function
 - Only 3 broadcastSyncState references remain: import, controller onBroadcast, state.broadcast fallback
 
+### Completed (Phase 3 — Host Authority Validation)
+- [x] Phase 3: Created `js/network/actionValidator.js` — validates guest actions on host
+  - Turn ownership: TURN_GATED_ACTIONS set gates 15 action types to active player
+  - Phase legality: PHASE_REQUIREMENTS maps action types to valid phases
+  - Card existence: validates card in hand for PLAY_CARD / ACTIVATE_DISCARD_EFFECT
+  - Creature on field: validates attacker/creature for RESOLVE_ATTACK, EAT_PREY, SACRIFICE, RETURN_TO_HAND
+  - Setup identity: validates sender can only roll own die, choose first player if winner, select own deck
+  - Sender identity: maps profileId → playerIndex via lobby host_id/guest_id
+- [x] Phase 3: Wired validateAction into ActionBus._handleGuestIntent (replaces TODO)
+- [x] Phase 3: Exported validateAction from network/index.js
+- Note: Seq numbers, checksums, broadcast, and guest apply were already in ActionBus from Phase 2
+
 ### Not Started
-- [ ] Phase 1d (controller becomes ONLY broadcast point — remaining in turnManager, combat, AI)
-- [ ] Phases 3-6
+- [ ] Phases 4-6
 
 ---
 
@@ -291,7 +304,7 @@ that doesn't change network behavior yet.
 This document is maintained across multiple Claude sessions. Each session
 should update the "Current Progress" section and check off completed items.
 
-Last updated: Session 6
+Last updated: Session 7
 - Pass 1: Initial plan + actionSync.js (seq, checksum, ACK, desync recovery)
 - Pass 2: Phase 1a complete — 8 new action types, 6 new GameController handlers
 - Pass 3: Phase 1b partial — wired 6 action types through controller.execute() in ui.js,
@@ -308,5 +321,7 @@ Last updated: Session 6
   ~370 lines of duplicate code), routed all ui.js broadcastSyncState through controller.broadcast(),
   fixed consumption timing bug (additional consumption now offered before onPlay), added
   EXTEND_CONSUMPTION/FINALIZE_PLACEMENT actions, removed dead applyEffectResult wrapper
-- Next: Phase 1d (route remaining state.broadcast calls in turnManager/combat/AI through
-  controller), then Phase 3 (host authority validation)
+- Pass 8 (Session 7): Phase 1d confirmed already done (state.broadcast hook routes through
+  controller). Phase 3 complete — created actionValidator.js with turn/phase/card/sender
+  validation, wired into ActionBus._handleGuestIntent
+- Next: Phase 4 (action log and replay), Phase 5 (remove legacy sync), Phase 6 (setup sync)
