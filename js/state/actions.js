@@ -48,6 +48,9 @@ export const ActionTypes = {
   /** Discard a card */
   DISCARD_CARD: 'DISCARD_CARD',
 
+  /** Activate a card's discard effect (discard from hand to trigger effect) */
+  ACTIVATE_DISCARD_EFFECT: 'ACTIVATE_DISCARD_EFFECT',
+
   /** Set a trap */
   SET_TRAP: 'SET_TRAP',
 
@@ -241,12 +244,17 @@ export const passPriority = () => ({
 
 export const playCard = (card, slotIndex = null, options = {}) => ({
   type: ActionTypes.PLAY_CARD,
-  payload: { card, slotIndex, ...options },
+  payload: { card, slotIndex, options },
 });
 
 export const drawCard = (playerIndex) => ({
   type: ActionTypes.DRAW_CARD,
   payload: { playerIndex },
+});
+
+export const activateDiscardEffect = (card) => ({
+  type: ActionTypes.ACTIVATE_DISCARD_EFFECT,
+  payload: { card },
 });
 
 export const discardCard = (playerIndex, card) => ({

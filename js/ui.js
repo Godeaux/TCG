@@ -11,25 +11,16 @@ import {
 import { initCardTooltip, showCardTooltip, hideCardTooltip } from './ui/components/CardTooltip.js';
 import {
   canPlayCard,
-  cardLimitAvailable,
   initPositionEvaluator,
 } from './game/turnManager.js';
-import { createCardInstance } from './cardTypes.js';
-import { consumePrey } from './game/consumption.js';
 import {
   getValidTargets,
   cleanupDestroyed,
 } from './game/combat.js';
 import {
-  isFreePlay,
   isEdible,
-  isPassive,
-  hasScavenge,
-  isHarmless,
-  isHidden,
   isInvisible,
   hasAcuity,
-  cantBeConsumed,
 } from './keywords.js';
 import { resolveEffectResult } from './game/effects.js';
 import { GameController } from './game/controller.js';
@@ -232,6 +223,7 @@ import {
   broadcastCursorMove,
   requestSyncFromOpponent,
   initActionBus,
+  getActionBus,
   resetActionBus,
 } from './network/index.js';
 
@@ -326,7 +318,7 @@ const lobbyCodeInput = document.getElementById('lobby-code');
 const lobbyError = document.getElementById('lobby-error');
 
 // UI state variables
-let pendingConsumption = null;
+// pendingConsumption is now managed by GameController.uiState.pendingConsumption
 let inspectedCardId = null;
 let deckHighlighted = null;
 
@@ -2499,485 +2491,145 @@ const handleEatPreyAttack = (state, attacker, onUpdate) => {
 };
 
 export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) => {
-  if (!isLocalPlayersTurn(state)) {
-    logMessage(state, 'Wait for your turn to play cards.');
-    onUpdate?.();
+  if (!gameController) {
+    console.error('[handlePlayCard] GameController not initialized');
     return;
   }
-  if (!canPlayCard(state)) {
-    logMessage(state, 'Cards may only be played during a main phase.');
+
+  // Route through GameController (single entry point for all game actions)
+  const result = gameController.execute({
+    type: 'PLAY_CARD',
+    payload: { card, slotIndex: null, options: { preselectedTarget } },
+  });
+
+  if (!result?.success) {
     onUpdate?.();
     return;
   }
 
+  // If controller needs consumption selection, render the consumption UI
+  if (result.needsSelection && gameController.uiState?.pendingConsumption) {
+    renderConsumptionSelection(state, gameController.uiState.pendingConsumption, onUpdate);
+    return;
+  }
+
+  onUpdate?.();
+};
+
+/**
+ * Render the consumption/dry-drop selection UI for a predator being played.
+ * Called when GameController.handlePlayCreature returns { needsSelection: true }.
+ */
+const renderConsumptionSelection = (state, pending, onUpdate) => {
+  const { predator, emptySlot, availablePrey = [], availableCarrion = [] } = pending;
   const player = getActivePlayer(state);
-  const opponent = getOpponentPlayer(state);
-  const playerIndex = state.activePlayerIndex;
-  const opponentIndex = (state.activePlayerIndex + 1) % 2;
 
-  // Per CORE-RULES.md: Free Play keyword and Free Spell both require limit to be available
-  // They don't consume the limit, but can only be played while it's unused
-  // Traps are activated from hand on opponent's turn, not "played" during your turn
-  const isTrap = card.type === 'Trap';
-  const hasFreePlayKeyword = isFreePlay(card);
-  const isFreeSpell = card.type === 'Free Spell';
-
-  // Only Traps bypass the limit check (they're not really "played")
-  // All other cards require the limit to be available
-  if (!isTrap && !cardLimitAvailable(state)) {
-    logMessage(state, 'You have already played a card this turn.');
-    onUpdate?.();
-    return;
-  }
-
-  // Determine if playing this card consumes the card limit
-  // Free Spell and Free Play keyword cards don't consume the limit
-  const consumesLimit = !isTrap && !isFreeSpell && !hasFreePlayKeyword;
-
-  // Clear extended consumption window when a card is being played
-  state.extendedConsumption = null;
-
-  if (card.type === 'Spell' || card.type === 'Free Spell') {
-    // Use resolveCardEffect to properly handle both legacy and new effect formats
-    const result = resolveCardEffect(card, 'effect', {
-      log: (message) => logMessage(state, message),
-      player,
-      opponent,
-      state,
-      playerIndex,
-      opponentIndex,
+  const showConsumptionCheckboxes = () => {
+    const allTargets = [...availablePrey, ...availableCarrion];
+    const items = allTargets.map((prey) => {
+      const item = document.createElement('label');
+      item.className = 'selection-item';
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = prey.instanceId;
+      const label = document.createElement('span');
+      const nutrition =
+        prey.type === 'Predator' && isEdible(prey)
+          ? (prey.currentAtk ?? prey.atk ?? 0)
+          : (prey.nutrition ?? 0);
+      const sourceLabel = availableCarrion.includes(prey) ? 'Carrion' : 'Field';
+      label.textContent = `${prey.name} (${sourceLabel}, Nutrition ${nutrition})`;
+      item.appendChild(checkbox);
+      item.appendChild(label);
+      return item;
     });
-    if (result == null) {
-      onUpdate?.();
-      return;
-    }
 
-    const finalizePlay = () => {
-      cleanupDestroyed(state);
-      player.exile.push(card);
-      player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
-      if (consumesLimit) {
-        state.cardPlayedThisTurn = true;
-      }
-      onUpdate?.();
-      broadcastSyncState(state);
-    };
-
-    // If preselectedTarget is provided and spell requires targeting, bypass selection UI
-    if (preselectedTarget && result.selectTarget) {
-      const { candidates, onSelect } = result.selectTarget;
-      // Find matching candidate by instanceId
-      const matchingCandidate = candidates.find(
-        (c) => (c.value?.instanceId || c.card?.instanceId) === preselectedTarget.instanceId
-      );
-      if (matchingCandidate) {
-        logGameAction(
-          state,
-          LOG_CATEGORIES.SPELL,
-          `${player.name} casts ${formatCardForLog(card)}.`
+    renderSelectionPanel({
+      title: 'Select up to 3 prey to consume',
+      items,
+      onConfirm: () => {
+        const selectedIds = Array.from(selectionPanel.querySelectorAll('input:checked')).map(
+          (input) => input.value
         );
+        const preyToConsume = availablePrey.filter((p) => selectedIds.includes(p.instanceId));
+        const carrionToConsume = availableCarrion.filter((p) => selectedIds.includes(p.instanceId));
+        const totalSelected = preyToConsume.length + carrionToConsume.length;
 
-        // Queue spell visual effect for preselected target
-        const targetValue = matchingCandidate.value;
-        const spellEffect = queueVisualEffect(state, {
-          type: 'spell',
-          spellId: card.id,
-          spellName: card.name,
-          casterIndex: playerIndex,
-          targetCardId: targetValue?.instanceId,
-          targetOwnerIndex: targetValue?.instanceId
-            ? findCardOwnerIndex(state, targetValue.instanceId)
-            : undefined,
-          targetSlotIndex: targetValue?.instanceId
-            ? findCardSlotIndex(state, targetValue.instanceId)?.slotIndex
-            : undefined,
-        });
-        if (spellEffect) {
-          markEffectProcessed(spellEffect.id, spellEffect.createdAt);
-          playSpellEffect(spellEffect, state);
+        if (totalSelected > 3) {
+          logMessage(state, 'You can consume up to 3 prey.');
+          onUpdate?.();
+          return;
+        }
+        if (emptySlot == null && preyToConsume.length === 0) {
+          logMessage(state, 'You must consume a field prey to make room.');
+          onUpdate?.();
+          return;
         }
 
-        const followUp = onSelect(matchingCandidate.value);
-        resolveEffectChain(
-          state,
-          followUp,
-          {
-            playerIndex,
-            opponentIndex,
-            spellCard: undefined, // Already logged
-          },
-          onUpdate,
-          finalizePlay,
-          () => onUpdate?.()
-        );
-        return;
-      }
-      // If no matching candidate found, fall through to normal flow
-    }
-
-    // If spell requires target selection, defer the cast log until target is chosen
-    // Otherwise, log the cast immediately and queue visual effect
-    if (!result.selectTarget) {
-      logGameAction(state, LOG_CATEGORIES.SPELL, `${player.name} casts ${formatCardForLog(card)}.`);
-
-      // Queue spell visual effect for non-targeted spells
-      const spellEffect = queueVisualEffect(state, {
-        type: 'spell',
-        spellId: card.id,
-        spellName: card.name,
-        casterIndex: playerIndex,
-      });
-      if (spellEffect) {
-        markEffectProcessed(spellEffect.id, spellEffect.createdAt);
-        playSpellEffect(spellEffect, state);
-      }
-    }
-    resolveEffectChain(
-      state,
-      result,
-      {
-        playerIndex,
-        opponentIndex,
-        spellCard: card, // Pass spell info for deferred logging
+        clearSelectionPanel();
+        gameController.execute({
+          type: 'SELECT_CONSUMPTION_TARGETS',
+          payload: { predator, prey: preyToConsume, carrion: carrionToConsume },
+        });
+        onUpdate?.();
       },
-      onUpdate,
-      finalizePlay,
-      () => onUpdate?.()
-    );
-    return;
-  }
-
-  if (card.type === 'Trap') {
-    // Traps cannot be "played" - they remain in hand and trigger automatically
-    // when their condition is met on the opponent's turn
-    logMessage(state, `Traps trigger automatically from hand when conditions are met.`);
-    onUpdate?.();
-    return;
-  }
-
-  if (card.type === 'Predator' || card.type === 'Prey') {
-    const emptySlot = player.field.findIndex((slot) => slot === null);
-    const availablePrey =
-      card.type === 'Predator'
-        ? player.field.filter(
-            (slot) => slot && (slot.type === 'Prey' || (slot.type === 'Predator' && isEdible(slot)))
-          )
-        : [];
-    const ediblePrey = availablePrey.filter((slot) => !cantBeConsumed(slot));
-    if (card.type === 'Predator' && emptySlot === -1 && ediblePrey.length === 0) {
-      logMessage(state, 'No empty field slots available.');
-      onUpdate?.();
-      return;
-    }
-    if (card.type === 'Prey' && emptySlot === -1) {
-      logMessage(state, 'No empty field slots available.');
-      onUpdate?.();
-      return;
-    }
-
-    player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
-    const creature = createCardInstance(card, state.turn);
-
-    if (card.type === 'Predator') {
-      const availableCarrion = hasScavenge(creature)
-        ? player.carrion.filter(
-            (slot) => slot && (slot.type === 'Prey' || (slot.type === 'Predator' && isEdible(slot)))
-          )
-        : [];
-      const startConsumptionSelection = () => {
-        pendingConsumption = {
-          predator: creature,
-          playerIndex: state.activePlayerIndex,
-          slotIndex: emptySlot >= 0 ? emptySlot : null,
-        };
-
-        const items = [...ediblePrey, ...availableCarrion].map((prey) => {
-          const item = document.createElement('label');
-          item.className = 'selection-item';
-          const checkbox = document.createElement('input');
-          checkbox.type = 'checkbox';
-          checkbox.value = prey.instanceId;
-          const label = document.createElement('span');
-          // For Edible predators, use ATK as nutrition value
-          const nutrition =
-            prey.type === 'Predator' && isEdible(prey)
-              ? (prey.currentAtk ?? prey.atk ?? 0)
-              : (prey.nutrition ?? 0);
-          const sourceLabel = availableCarrion.includes(prey) ? 'Carrion' : 'Field';
-          label.textContent = `${prey.name} (${sourceLabel}, Nutrition ${nutrition})`;
-          item.appendChild(checkbox);
-          item.appendChild(label);
-          return item;
-        });
-
-        renderSelectionPanel({
-          title: 'Select up to 3 prey to consume',
-          items,
-          onConfirm: () => {
-            const selectedIds = Array.from(selectionPanel.querySelectorAll('input:checked')).map(
-              (input) => input.value
-            );
-            const preyToConsume = availablePrey.filter((prey) =>
-              selectedIds.includes(prey.instanceId)
-            );
-            const carrionToConsume = availableCarrion.filter((prey) =>
-              selectedIds.includes(prey.instanceId)
-            );
-            const totalSelected = preyToConsume.length + carrionToConsume.length;
-            if (totalSelected > 3) {
-              logMessage(state, 'You can consume up to 3 prey.');
-              onUpdate?.();
-              return;
-            }
-            if (emptySlot === -1 && preyToConsume.length === 0) {
-              logMessage(state, 'You must consume a field prey to make room.');
-              onUpdate?.();
-              return;
-            }
-            consumePrey({
-              predator: creature,
-              preyList: preyToConsume,
-              carrionList: carrionToConsume,
-              state,
-              playerIndex: state.activePlayerIndex,
-              onBroadcast: broadcastSyncState,
-            });
-            const placementSlot =
-              pendingConsumption.slotIndex ?? player.field.findIndex((slot) => slot === null);
-            if (placementSlot === -1) {
-              logMessage(state, 'No empty field slots available.');
-              clearSelectionPanel();
-              onUpdate?.();
-              return;
-            }
-            player.field[placementSlot] = creature;
-            clearSelectionPanel();
-
-            // Set cardPlayedThisTurn BEFORE triggering traps (fixes bug where trap resolution
-            // would allow another card play before the callback sets the flag)
-            if (consumesLimit) {
-              state.cardPlayedThisTurn = true;
-            }
-
-            triggerPlayTraps(state, creature, onUpdate, () => {
-              // Helper to trigger onConsume after onPlay completes
-              const triggerOnConsume = () => {
-                if (totalSelected > 0 && (creature.onConsume || creature.effects?.onConsume)) {
-                  const result = resolveCardEffect(creature, 'onConsume', {
-                    log: (message) => logMessage(state, message),
-                    player,
-                    opponent,
-                    creature,
-                    state,
-                    playerIndex,
-                    opponentIndex,
-                  });
-                  resolveEffectChain(
-                    state,
-                    result,
-                    {
-                      playerIndex: state.activePlayerIndex,
-                      opponentIndex: (state.activePlayerIndex + 1) % 2,
-                      card: creature,
-                    },
-                    onUpdate,
-                    () => cleanupDestroyed(state)
-                  );
-                }
-                pendingConsumption = null;
-                onUpdate?.();
-                broadcastSyncState(state);
-              };
-
-              // Trigger onPlay first (if present), then chain to onConsume
-              if (creature.onPlay || creature.effects?.onPlay) {
-                const playResult = resolveCardEffect(creature, 'onPlay', {
-                  log: (message) => logMessage(state, message),
-                  player,
-                  opponent,
-                  creature,
-                  state,
-                  playerIndex,
-                  opponentIndex,
-                });
-                if (playResult) {
-                  resolveEffectChain(
-                    state,
-                    playResult,
-                    {
-                      playerIndex: state.activePlayerIndex,
-                      opponentIndex: (state.activePlayerIndex + 1) % 2,
-                      card: creature,
-                    },
-                    onUpdate,
-                    triggerOnConsume
-                  );
-                  return;
-                }
-              }
-              // No onPlay effect, go directly to onConsume
-              triggerOnConsume();
-            });
-            onUpdate?.();
-          },
-        });
-        onUpdate?.();
-      };
-
-      if (ediblePrey.length > 0 || availableCarrion.length > 0) {
-        const items = [];
-        const dryDropButton = document.createElement('button');
-        dryDropButton.className = 'secondary';
-        dryDropButton.textContent = 'Dry drop';
-        dryDropButton.onclick = () => {
-          if (emptySlot === -1) {
-            logMessage(state, 'You must consume a field prey to make room.');
-            onUpdate?.();
-            return;
-          }
-          // Per CORE-RULES.md §2: Free Play cards can only be played while limit is available
-          // This is a safety check - the main limit check should have already blocked this
-          if (state.cardPlayedThisTurn) {
-            logMessage(state, 'You have already played a card this turn.');
-            clearSelectionPanel();
-            onUpdate?.();
-            return;
-          }
-          creature.dryDropped = true;
-          player.field[emptySlot] = creature;
-          logGameAction(
-            state,
-            LOG_CATEGORIES.SUMMON,
-            `${player.name} plays ${formatCardForLog(creature)} (dry-dropped).`
-          );
-          clearSelectionPanel();
-
-          // Set cardPlayedThisTurn BEFORE triggering traps (fixes bug where trap resolution
-          // would allow another card play before the callback sets the flag)
-          // Dry-dropped predators lose Free Play, so recalculate isFree
-          const isFreeAfterDryDrop = isFreePlay(creature);
-          if (!isFreeAfterDryDrop) {
-            state.cardPlayedThisTurn = true;
-          }
-
-          triggerPlayTraps(state, creature, onUpdate, () => {
-            onUpdate?.();
-            broadcastSyncState(state);
-          });
-        };
-        items.push(dryDropButton);
-
-        const consumeButton = document.createElement('button');
-        consumeButton.textContent = 'Consume';
-        consumeButton.onclick = () => {
-          clearSelectionPanel();
-          startConsumptionSelection();
-        };
-        items.push(consumeButton);
-
-        renderSelectionPanel({
-          title: 'Play predator',
-          items,
-          confirmLabel: null,
-        });
-        onUpdate?.();
-        return;
-      }
-    }
-
-    if (card.type === 'Predator') {
-      // Per CORE-RULES.md §2: Cards can only be played while limit is available
-      // This is a safety check - the main limit check should have already blocked this
-      if (state.cardPlayedThisTurn) {
-        logMessage(state, 'You have already played a card this turn.');
-        player.hand.push(card); // Return card to hand
-        onUpdate?.();
-        return;
-      }
-      creature.dryDropped = true;
-      logGameAction(
-        state,
-        LOG_CATEGORIES.SUMMON,
-        `${player.name} plays ${formatCardForLog(creature)} (dry-dropped).`
-      );
-    }
-    player.field[emptySlot] = creature;
-
-    // Set cardPlayedThisTurn BEFORE triggering traps (fixes bug where trap resolution
-    // would allow another card play before the callback sets the flag)
-    // Dry-dropped predators always consume the limit (abilities suppressed)
-    const consumesLimitAfterPlay =
-      card.type === 'Predator' && creature.dryDropped ? true : consumesLimit;
-    if (consumesLimitAfterPlay) {
-      state.cardPlayedThisTurn = true;
-    }
-
-    triggerPlayTraps(state, creature, onUpdate, () => {
-      if (
-        (card.type === 'Prey' || card.type === 'Predator') &&
-        (creature.onPlay || creature.effects?.onPlay)
-      ) {
-        const result = resolveCardEffect(creature, 'onPlay', {
-          log: (message) => logMessage(state, message),
-          player,
-          opponent,
-          creature,
-          state,
-          playerIndex,
-          opponentIndex,
-        });
-        resolveEffectChain(
-          state,
-          result,
-          {
-            playerIndex: state.activePlayerIndex,
-            opponentIndex: (state.activePlayerIndex + 1) % 2,
-            card: creature,
-          },
-          onUpdate,
-          () => cleanupDestroyed(state)
-        );
-      }
-      onUpdate?.();
-      broadcastSyncState(state);
     });
+    onUpdate?.();
+  };
+
+  // Show consume vs dry-drop choice
+  if (availablePrey.length > 0 || availableCarrion.length > 0) {
+    const items = [];
+    const dryDropButton = document.createElement('button');
+    dryDropButton.className = 'secondary';
+    dryDropButton.textContent = 'Dry drop';
+    dryDropButton.onclick = () => {
+      if (emptySlot == null) {
+        logMessage(state, 'You must consume a field prey to make room.');
+        onUpdate?.();
+        return;
+      }
+      clearSelectionPanel();
+      gameController.execute({
+        type: 'DRY_DROP',
+        payload: { predator, slotIndex: emptySlot },
+      });
+      onUpdate?.();
+    };
+    items.push(dryDropButton);
+
+    const consumeButton = document.createElement('button');
+    consumeButton.textContent = 'Consume';
+    consumeButton.onclick = () => {
+      clearSelectionPanel();
+      showConsumptionCheckboxes();
+    };
+    items.push(consumeButton);
+
+    renderSelectionPanel({
+      title: 'Play predator',
+      items,
+      confirmLabel: null,
+    });
+    onUpdate?.();
   }
 };
 
 const handleDiscardEffect = (state, card, onUpdate) => {
-  if (!isLocalPlayersTurn(state)) {
-    logMessage(state, 'Wait for your turn to discard cards.');
-    onUpdate?.();
-    return;
-  }
   if (!getDiscardEffectInfo(card).hasEffect) {
     return;
   }
-  const playerIndex = state.activePlayerIndex;
-  const opponentIndex = (playerIndex + 1) % 2;
-  const player = state.players[playerIndex];
-  const opponent = state.players[opponentIndex];
-  player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
-  // Per CORE-RULES.md §8: Tokens do NOT go to carrion
-  if (card.isToken || card.id?.startsWith('token-')) {
-    // Tokens are just removed, not added anywhere
-  } else if (card.type === 'Predator' || card.type === 'Prey') {
-    player.carrion.push(card);
-  } else {
-    player.exile.push(card);
+  if (!gameController) {
+    console.error('[handleDiscardEffect] GameController not initialized');
+    return;
   }
-  const result = resolveCardEffect(card, 'discardEffect', {
-    log: (message) => logMessage(state, message),
-    player,
-    opponent,
-    state,
-    playerIndex,
-    opponentIndex,
+
+  // Route through GameController
+  gameController.execute({
+    type: 'ACTIVATE_DISCARD_EFFECT',
+    payload: { card },
   });
-  resolveEffectChain(state, result, { playerIndex, opponentIndex }, onUpdate);
-  cleanupDestroyed(state);
   onUpdate?.();
-  broadcastSyncState(state);
 };
 
 /**
@@ -4268,7 +3920,7 @@ export const renderGame = (state, callbacks = {}) => {
   }
 
   // Initialize ActionBus for multiplayer (host-authoritative action routing)
-  if (isOnlineMode(state)) {
+  if (isOnlineMode(state) && !getActionBus()) {
     initActionBus({
       getState: () => latestState,
       getProfileId: () => state.menu?.profile?.id,
