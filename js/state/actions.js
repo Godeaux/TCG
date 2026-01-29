@@ -125,6 +125,9 @@ export const ActionTypes = {
   /** Extended consumption (on-field predator consumes additional prey) */
   EXTEND_CONSUMPTION: 'EXTEND_CONSUMPTION',
 
+  /** Finalize placement after additional consumption choice */
+  FINALIZE_PLACEMENT: 'FINALIZE_PLACEMENT',
+
   // ==========================================================================
   // EFFECT ACTIONS
   // ==========================================================================
@@ -381,6 +384,11 @@ export const dryDrop = (predator, slotIndex) => ({
 export const extendConsumption = (predator, prey) => ({
   type: ActionTypes.EXTEND_CONSUMPTION,
   payload: { predator, prey },
+});
+
+export const finalizePlacement = (additionalPrey = []) => ({
+  type: ActionTypes.FINALIZE_PLACEMENT,
+  payload: { additionalPrey },
 });
 
 // ============================================================================

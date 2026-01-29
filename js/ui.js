@@ -2481,7 +2481,7 @@ const handleEatPreyAttack = (state, attacker, onUpdate) => {
   });
 };
 
-export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null, slotIndex = null) => {
+export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null, slotIndex = null, extraOptions = {}) => {
   if (!gameController) {
     console.error('[handlePlayCard] GameController not initialized');
     return;
@@ -2490,7 +2490,7 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null, 
   // Route through GameController (single entry point for all game actions)
   const result = gameController.execute({
     type: 'PLAY_CARD',
-    payload: { card, slotIndex, options: { preselectedTarget } },
+    payload: { card, slotIndex, options: { preselectedTarget, ...extraOptions } },
   });
 
   if (!result?.success) {
@@ -2501,6 +2501,12 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null, 
   // If controller needs consumption selection, render the consumption UI
   if (result.needsSelection && gameController.uiState?.pendingConsumption) {
     renderConsumptionSelection(state, gameController.uiState.pendingConsumption, onUpdate);
+    return;
+  }
+
+  // If controller deferred effects for additional consumption, render that UI
+  if (result.needsAdditionalConsumption && gameController.uiState?.pendingPlacement) {
+    renderAdditionalConsumptionSelection(state, gameController.uiState.pendingPlacement, onUpdate);
     return;
   }
 
@@ -2604,6 +2610,60 @@ const renderConsumptionSelection = (state, pending, onUpdate) => {
     });
     onUpdate?.();
   }
+};
+
+/**
+ * Render additional consumption selection UI.
+ * Shown after a predator has consumed initial prey but more prey are available.
+ * Lets the player choose additional prey before onPlay/onConsume effects fire.
+ */
+const renderAdditionalConsumptionSelection = (state, pending, onUpdate) => {
+  const { creatureInstance, remainingPrey } = pending;
+  const alreadyConsumed = pending.consumedFieldPrey.length + pending.consumedCarrion.length;
+  const maxAdditional = 3 - alreadyConsumed;
+
+  const items = remainingPrey.map((prey) => {
+    const item = document.createElement('label');
+    item.className = 'selection-item';
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.value = prey.instanceId;
+    const label = document.createElement('span');
+    const nutrition =
+      prey.type === 'Predator' && isEdible(prey)
+        ? (prey.currentAtk ?? prey.atk ?? 0)
+        : (prey.nutrition ?? 0);
+    label.textContent = `${prey.name} (Nutrition ${nutrition})`;
+    item.appendChild(checkbox);
+    item.appendChild(label);
+    return item;
+  });
+
+  renderSelectionPanel({
+    title: `Consume additional prey? (up to ${maxAdditional} more)`,
+    items,
+    confirmLabel: 'Confirm',
+    onConfirm: () => {
+      const selectedIds = Array.from(selectionPanel.querySelectorAll('input:checked')).map(
+        (input) => input.value
+      );
+      const additionalPrey = remainingPrey.filter((p) => selectedIds.includes(p.instanceId));
+
+      if (additionalPrey.length > maxAdditional) {
+        logMessage(state, `You can consume up to ${maxAdditional} more prey.`);
+        onUpdate?.();
+        return;
+      }
+
+      clearSelectionPanel();
+      gameController.execute({
+        type: 'FINALIZE_PLACEMENT',
+        payload: { additionalPrey },
+      });
+      onUpdate?.();
+    },
+  });
+  onUpdate?.();
 };
 
 const handleDiscardEffect = (state, card, onUpdate) => {

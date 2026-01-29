@@ -144,6 +144,9 @@ export class GameController {
         case ActionTypes.EXTEND_CONSUMPTION:
           return this.handleExtendConsumption(action.payload);
 
+        case ActionTypes.FINALIZE_PLACEMENT:
+          return this.handleFinalizePlacement(action.payload);
+
         // Effects
         case ActionTypes.TRIGGER_EFFECT:
           return this.handleTriggerEffect(action.payload);
@@ -421,7 +424,7 @@ export class GameController {
         if (preySlotIndex === -1) {
           return { success: false, error: 'Target prey not on field' };
         }
-        return this.placeCreatureInSlot(card, preySlotIndex, [consumeTarget], [], isFree);
+        return this.placeCreatureInSlot(card, preySlotIndex, [consumeTarget], [], isFree, { offerAdditionalConsumption: true });
       }
 
       if (availablePrey.length > 0 || availableCarrion.length > 0) {
@@ -456,7 +459,7 @@ export class GameController {
   // CREATURE PLACEMENT
   // ==========================================================================
 
-  placeCreatureInSlot(creature, slotIndex, consumedFieldPrey = [], consumedCarrion = [], isFree) {
+  placeCreatureInSlot(creature, slotIndex, consumedFieldPrey = [], consumedCarrion = [], isFree, { offerAdditionalConsumption = false } = {}) {
     const player = getActivePlayer(this.state);
     const playerIndex = this.state.activePlayerIndex;
     const opponentIndex = (playerIndex + 1) % 2;
@@ -515,6 +518,40 @@ export class GameController {
     }
 
     logMessage(this.state, `${player.name} plays ${creatureInstance.name}.`);
+
+    // Check if player should be offered additional consumption before effects fire
+    // Only applies for direct consumption (drag-onto-prey), not checkbox selection
+    if (offerAdditionalConsumption && allConsumed.length > 0 && allConsumed.length < 3 && !creatureInstance.dryDropped) {
+      const remainingPrey = this.getConsumablePrey(creatureInstance);
+      if (remainingPrey.length > 0) {
+        // Defer onPlay/onConsume/traps — let player choose additional consumption first
+        this.uiState.pendingPlacement = {
+          creatureInstance,
+          finalSlot,
+          consumedFieldPrey: [...consumedFieldPrey],
+          consumedCarrion: [...consumedCarrion],
+          isFree: isFreeAfterPlacement,
+          remainingPrey,
+        };
+
+        this.notifyStateChange();
+        return { success: true, needsAdditionalConsumption: true };
+      }
+    }
+
+    // No additional consumption needed — fire effects immediately
+    return this.finalizePlacement(creatureInstance, allConsumed);
+  }
+
+  /**
+   * Finalize creature placement: trigger onPlay, traps, onConsume, extended consumption.
+   * Called either immediately from placeCreatureInSlot or after additional consumption via FINALIZE_PLACEMENT.
+   */
+  finalizePlacement(creatureInstance, allConsumed) {
+    const player = getActivePlayer(this.state);
+    const playerIndex = this.state.activePlayerIndex;
+    const opponentIndex = (playerIndex + 1) % 2;
+    const finalSlot = player.field.indexOf(creatureInstance);
 
     // Trigger onPlay effect
     const playResult = resolveCardEffect(creatureInstance, 'onPlay', {
@@ -579,6 +616,34 @@ export class GameController {
     this.broadcast();
 
     return { success: true };
+  }
+
+  /**
+   * Handle FINALIZE_PLACEMENT action — player finished choosing additional consumption.
+   */
+  handleFinalizePlacement({ additionalPrey = [] }) {
+    if (!this.uiState.pendingPlacement) {
+      return { success: false, error: 'No pending placement' };
+    }
+
+    const { creatureInstance, consumedFieldPrey, consumedCarrion } = this.uiState.pendingPlacement;
+    this.uiState.pendingPlacement = null;
+
+    const playerIndex = this.state.activePlayerIndex;
+
+    // Consume additional prey
+    if (additionalPrey.length > 0) {
+      consumePrey({
+        predator: creatureInstance,
+        preyList: additionalPrey,
+        carrionList: [],
+        state: this.state,
+        playerIndex,
+      });
+    }
+
+    const allConsumed = [...consumedFieldPrey, ...consumedCarrion, ...additionalPrey];
+    return this.finalizePlacement(creatureInstance, allConsumed);
   }
 
   /**

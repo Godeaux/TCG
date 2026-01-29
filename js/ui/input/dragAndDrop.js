@@ -488,31 +488,21 @@ const revertCardToOriginalPosition = () => {
 
 /**
  * Handle direct consumption when dragging predator onto single prey.
- * Routes through GameController with consumeTarget option.
+ * Routes through handlePlayCard (ui.js) which delegates to GameController
+ * and handles any UI follow-ups (additional consumption selection, etc.).
  */
 const handleDirectConsumption = (predator, prey, slotIndex) => {
-  if (!gameController) {
-    console.error('[handleDirectConsumption] GameController not initialized');
+  if (!handlePlayCard) {
+    console.error('[handleDirectConsumption] handlePlayCard not initialized');
     return;
   }
 
-  const result = gameController.execute({
-    type: 'PLAY_CARD',
-    payload: { card: predator, slotIndex, options: { consumeTarget: prey } },
-  });
+  handlePlayCard(latestState, predator, latestCallbacks.onUpdate, null, slotIndex, { consumeTarget: prey });
 
-  if (!result?.success) {
-    revertCardToOriginalPosition();
-    latestCallbacks.onUpdate?.();
-    return;
-  }
-
-  // Controller sets up extendedConsumption state — trigger visual highlights
+  // After controller processes, check if extended consumption was set up
   if (latestState.extendedConsumption) {
     setTimeout(() => highlightExtendedConsumptionTargets(), 50);
   }
-
-  latestCallbacks.onUpdate?.();
 };
 
 /**
