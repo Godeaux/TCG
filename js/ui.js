@@ -3937,7 +3937,12 @@ export const renderGame = (state, callbacks = {}) => {
       onStateChange: () => {
         renderGame(latestState, latestCallbacks);
       },
-      onBroadcast: (s) => broadcastSyncState(s),
+      onBroadcast: (s) => {
+        // When ActionBus is active, it handles broadcasting confirmed actions.
+        // Skip legacy full-state broadcast to avoid dual-broadcast conflicts.
+        if (getActionBus()) return;
+        broadcastSyncState(s);
+      },
       onSelectionNeeded: (selectionRequest) => {
         // Wire controller's selection needs to ui.js renderSelectionPanel
         if (selectionRequest.selectTarget) {
@@ -3984,7 +3989,16 @@ export const renderGame = (state, callbacks = {}) => {
       getState: () => latestState,
       getProfileId: () => state.menu?.profile?.id,
       getHostId: () => state.menu?.lobby?.host_id,
-      executeAction: (action) => gameController.execute(action),
+      executeAction: (action) => {
+        // Flag tells controller to skip isLocalPlayersTurn checks — the ActionBus
+        // (or host validator) has already verified turn ownership.
+        gameController._networkAuthoritative = true;
+        try {
+          return gameController.execute(action);
+        } finally {
+          gameController._networkAuthoritative = false;
+        }
+      },
       onActionConfirmed: (entry) => {
         renderGame(latestState, latestCallbacks);
       },

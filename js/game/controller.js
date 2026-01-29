@@ -78,6 +78,10 @@ export class GameController {
     this.onBroadcast = options.onBroadcast || (() => {});
     this.onSelectionNeeded = options.onSelectionNeeded || (() => {});
     this.onSelectionComplete = options.onSelectionComplete || (() => {});
+
+    // When true, skip isLocalPlayersTurn checks — the ActionBus has already
+    // validated turn ownership on the host before dispatching to the controller.
+    this._networkAuthoritative = false;
   }
 
   // ==========================================================================
@@ -240,7 +244,7 @@ export class GameController {
 
   handlePlayCard({ card, slotIndex, options = {} }) {
     // Validation
-    if (!isLocalPlayersTurn(this.state, this.uiState)) {
+    if (!this._networkAuthoritative && !isLocalPlayersTurn(this.state, this.uiState)) {
       logMessage(this.state, 'Wait for your turn to play cards.');
       this.notifyStateChange();
       return { success: false, error: 'Not your turn' };
@@ -1042,7 +1046,7 @@ export class GameController {
   // ==========================================================================
 
   handleSacrificeCreature({ card }) {
-    if (!isLocalPlayersTurn(this.state, this.uiState)) {
+    if (!this._networkAuthoritative && !isLocalPlayersTurn(this.state, this.uiState)) {
       logMessage(this.state, 'Wait for your turn.');
       this.notifyStateChange();
       return { success: false, error: 'Not your turn' };
@@ -1101,7 +1105,7 @@ export class GameController {
   // ==========================================================================
 
   handleReturnToHand({ card }) {
-    if (!isLocalPlayersTurn(this.state, this.uiState)) {
+    if (!this._networkAuthoritative && !isLocalPlayersTurn(this.state, this.uiState)) {
       logMessage(this.state, 'Wait for your turn.');
       this.notifyStateChange();
       return { success: false, error: 'Not your turn' };
@@ -1424,7 +1428,7 @@ export class GameController {
   // ==========================================================================
 
   handleActivateDiscardEffect({ card }) {
-    if (!isLocalPlayersTurn(this.state, this.uiState)) {
+    if (!this._networkAuthoritative && !isLocalPlayersTurn(this.state, this.uiState)) {
       logMessage(this.state, 'Wait for your turn to discard cards.');
       this.notifyStateChange();
       return { success: false, error: 'Not your turn' };
