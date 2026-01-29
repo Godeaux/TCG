@@ -122,6 +122,9 @@ export const ActionTypes = {
   /** Consume prey (dry drop - no consumption) */
   DRY_DROP: 'DRY_DROP',
 
+  /** Extended consumption (on-field predator consumes additional prey) */
+  EXTEND_CONSUMPTION: 'EXTEND_CONSUMPTION',
+
   // ==========================================================================
   // EFFECT ACTIONS
   // ==========================================================================
@@ -373,6 +376,11 @@ export const selectConsumptionTargets = (predator, prey) => ({
 export const dryDrop = (predator, slotIndex) => ({
   type: ActionTypes.DRY_DROP,
   payload: { predator, slotIndex },
+});
+
+export const extendConsumption = (predator, prey) => ({
+  type: ActionTypes.EXTEND_CONSUMPTION,
+  payload: { predator, prey },
 });
 
 // ============================================================================

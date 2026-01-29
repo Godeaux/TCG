@@ -73,6 +73,7 @@ let triggerPlayTraps = null;
 let handleTrapResponse = null;
 let handlePlayCard = null;
 let applyEffectResult = null;
+let gameController = null;
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -1305,6 +1306,7 @@ export const initDragAndDrop = (options = {}) => {
   handleTrapResponse = helpers.handleTrapResponse;
   handlePlayCard = helpers.handlePlayCard;
   applyEffectResult = helpers.applyEffectResult;
+  gameController = helpers.gameController;
 
   document.addEventListener('dragstart', handleDragStart);
   document.addEventListener('dragend', handleDragEnd);

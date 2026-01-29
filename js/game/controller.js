@@ -46,7 +46,7 @@ import {
 import { resolveCardEffect } from '../cards/index.js';
 import { isCreatureCard, createCardInstance } from '../cardTypes.js';
 import { resolveEffectResult as applyEffect } from './effects.js';
-import { isFreePlay, isEdible, hasScavenge, cantBeConsumed } from '../keywords.js';
+import { isFreePlay, isEdible, hasScavenge, cantBeConsumed, cantConsume } from '../keywords.js';
 import { advancePhase, endTurn, finalizeEndPhase, getPositionEvaluator } from './turnManager.js';
 import { consumePrey } from './consumption.js';
 import {
@@ -140,6 +140,9 @@ export class GameController {
 
         case ActionTypes.DRY_DROP:
           return this.handleDryDrop(action.payload);
+
+        case ActionTypes.EXTEND_CONSUMPTION:
+          return this.handleExtendConsumption(action.payload);
 
         // Effects
         case ActionTypes.TRIGGER_EFFECT:
@@ -278,7 +281,7 @@ export class GameController {
     }
 
     if (card.type === 'Predator' || card.type === 'Prey') {
-      return this.handlePlayCreature(card, slotIndex, isFree);
+      return this.handlePlayCreature(card, slotIndex, isFree, options.consumeTarget);
     }
 
     return { success: false, error: `Unknown card type: ${card.type}` };
@@ -379,7 +382,7 @@ export class GameController {
     return { success: false, error: 'Traps trigger automatically from hand' };
   }
 
-  handlePlayCreature(card, slotIndex, isFree) {
+  handlePlayCreature(card, slotIndex, isFree, consumeTarget = null) {
     const player = getActivePlayer(this.state);
     const playerIndex = this.state.activePlayerIndex;
 
@@ -410,6 +413,15 @@ export class GameController {
         logMessage(this.state, 'No empty field slots available.');
         this.notifyStateChange();
         return { success: false, error: 'Field full' };
+      }
+
+      // Direct consumption: predator dragged directly onto a specific prey
+      if (consumeTarget) {
+        const preySlotIndex = player.field.indexOf(consumeTarget);
+        if (preySlotIndex === -1) {
+          return { success: false, error: 'Target prey not on field' };
+        }
+        return this.placeCreatureInSlot(card, preySlotIndex, [consumeTarget], [], isFree);
       }
 
       if (availablePrey.length > 0 || availableCarrion.length > 0) {
@@ -549,11 +561,44 @@ export class GameController {
       }
     }
 
+    // Set up extended consumption window if predator consumed < 3 prey and more are available
+    if (allConsumed.length > 0 && allConsumed.length < 3 && !creatureInstance.dryDropped) {
+      const remainingPrey = this.getConsumablePrey(creatureInstance);
+      if (remainingPrey.length > 0) {
+        this.state.extendedConsumption = {
+          predatorInstanceId: creatureInstance.instanceId,
+          predatorSlotIndex: finalSlot,
+          consumedCount: allConsumed.length,
+          maxConsumption: 3,
+        };
+      }
+    }
+
     this.cleanupDestroyed();
     this.notifyStateChange();
     this.broadcast();
 
     return { success: true };
+  }
+
+  /**
+   * Get all consumable prey for a predator on the field
+   */
+  getConsumablePrey(predator) {
+    if (cantConsume(predator)) return [];
+
+    const player = getActivePlayer(this.state);
+    const predatorAtk = predator.currentAtk ?? predator.atk ?? 0;
+
+    return player.field.filter((slot) => {
+      if (!slot || slot.instanceId === predator.instanceId) return false;
+      if (!(slot.type === 'Prey' || (slot.type === 'Predator' && isEdible(slot)))) return false;
+      if (cantBeConsumed(slot)) return false;
+      const nutrition = (slot.type === 'Predator' && isEdible(slot))
+        ? (slot.currentAtk ?? slot.atk ?? 0)
+        : (slot.nutrition ?? 0);
+      return nutrition <= predatorAtk;
+    });
   }
 
   // ==========================================================================
@@ -593,6 +638,47 @@ export class GameController {
     predator.dryDropped = true;
 
     return this.placeCreatureInSlot(predator, targetSlot, [], [], isFree);
+  }
+
+  handleExtendConsumption({ predator, prey }) {
+    if (!this.state.extendedConsumption) {
+      return { success: false, error: 'No extended consumption active' };
+    }
+    if (this.state.extendedConsumption.predatorInstanceId !== predator.instanceId) {
+      return { success: false, error: 'Wrong predator for extended consumption' };
+    }
+    if (this.state.extendedConsumption.consumedCount >= 3) {
+      this.state.extendedConsumption = null;
+      this.notifyStateChange();
+      return { success: false, error: 'Max consumption reached' };
+    }
+
+    const player = getActivePlayer(this.state);
+    const playerIndex = this.state.activePlayerIndex;
+
+    // Perform consumption
+    consumePrey({
+      predator,
+      preyList: [prey],
+      carrionList: [],
+      state: this.state,
+      playerIndex,
+    });
+
+    // Update consumption count
+    this.state.extendedConsumption.consumedCount++;
+
+    // Check if max consumption reached or no more prey
+    const remainingPrey = this.getConsumablePrey(predator);
+    if (this.state.extendedConsumption.consumedCount >= 3 || remainingPrey.length === 0) {
+      this.state.extendedConsumption = null;
+    }
+
+    this.cleanupDestroyed();
+    this.notifyStateChange();
+    this.broadcast();
+
+    return { success: true };
   }
 
   // ==========================================================================
