@@ -2481,7 +2481,7 @@ const handleEatPreyAttack = (state, attacker, onUpdate) => {
   });
 };
 
-export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) => {
+export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null, slotIndex = null) => {
   if (!gameController) {
     console.error('[handlePlayCard] GameController not initialized');
     return;
@@ -2490,7 +2490,7 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null) 
   // Route through GameController (single entry point for all game actions)
   const result = gameController.execute({
     type: 'PLAY_CARD',
-    payload: { card, slotIndex: null, options: { preselectedTarget } },
+    payload: { card, slotIndex, options: { preselectedTarget } },
   });
 
   if (!result?.success) {
