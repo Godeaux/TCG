@@ -253,8 +253,16 @@ that doesn't change network behavior yet.
 - [x] Phase 3: Exported validateAction from network/index.js
 - Note: Seq numbers, checksums, broadcast, and guest apply were already in ActionBus from Phase 2
 
+### Completed (Phase 4 — Action Log)
+- [x] Phase 4a: Created `js/network/actionLog.js` — build/parse/replay utilities
+- [x] Phase 4b: Wired action log into DB save flow (sync.js saveGameStateToDatabase)
+- [x] Phase 4c: Action log persisted as `actionLog` field in game_state JSON payload
+- [x] Phase 4d: Exported all action log functions from network/index.js
+- Note: Replay on reconnect ready to use (replayActionLog) but not yet wired to loadGameStateFromDatabase
+
 ### Not Started
-- [ ] Phases 4-6
+- [ ] Phase 5 (remove legacy full-state sync — switch live transport to ActionBus)
+- [ ] Phase 6 (route setup/deck selection through ActionBus)
 
 ---
 
@@ -323,5 +331,6 @@ Last updated: Session 7
   EXTEND_CONSUMPTION/FINALIZE_PLACEMENT actions, removed dead applyEffectResult wrapper
 - Pass 8 (Session 7): Phase 1d confirmed already done (state.broadcast hook routes through
   controller). Phase 3 complete — created actionValidator.js with turn/phase/card/sender
-  validation, wired into ActionBus._handleGuestIntent
-- Next: Phase 4 (action log and replay), Phase 5 (remove legacy sync), Phase 6 (setup sync)
+  validation, wired into ActionBus._handleGuestIntent. Phase 4 complete — created actionLog.js
+  with build/parse/replay, wired into DB save flow.
+- Next: Phase 5 (switch live transport to ActionBus, remove legacy sync), Phase 6 (setup sync)
