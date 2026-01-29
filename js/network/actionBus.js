@@ -70,6 +70,13 @@ export class ActionBus {
     // Consecutive checksum mismatch counter (triggers recovery after threshold)
     this._desyncCount = 0;
     this._desyncThreshold = 2; // Request recovery after 2 consecutive mismatches
+
+    // One-time init log — confirms role assignment
+    const role = this.isHost() ? 'HOST' : 'GUEST';
+    console.log(
+      `[ActionBus] Initialized as ${role} ` +
+        `(profile=${this.getProfileId()}, hostId=${this.getHostId()})`
+    );
   }
 
   // ==========================================================================
@@ -91,8 +98,12 @@ export class ActionBus {
     }
 
     if (this._recovering) {
+      console.warn(`[ActionBus] Blocked ${action.type} — recovery in progress`);
       return { success: false, error: 'Desync recovery in progress' };
     }
+
+    const role = this.isHost() ? 'HOST' : 'GUEST';
+    console.log(`[ActionBus] ${role} dispatch: ${action.type}`);
 
     if (this.isHost()) {
       return this._hostDispatch(action);
@@ -108,6 +119,13 @@ export class ActionBus {
    */
   handleMessage(message) {
     if (!message || !message.type) return;
+
+    const role = this.isHost() ? 'HOST' : 'GUEST';
+    const actionType = message.action?.type || message.type;
+    console.log(`[ActionBus] ${role} received: ${message.type}` +
+      (message.seq ? ` seq=${message.seq}` : '') +
+      (message.intentId ? ` intent=${message.intentId}` : '') +
+      (actionType !== message.type ? ` action=${actionType}` : ''));
 
     switch (message.type) {
       case 'action_intent':
@@ -221,6 +239,7 @@ export class ActionBus {
     if (!result?.success) {
       // Rollback seq on failure
       this._seq--;
+      console.log(`[ActionBus] HOST execute failed: ${action.type} — ${result?.error}`);
       return result;
     }
 
@@ -238,6 +257,8 @@ export class ActionBus {
     };
     this._actionLog.push(entry);
 
+    console.log(`[ActionBus] HOST confirmed: ${action.type} seq=${seq} checksum=${checksum}`);
+
     // Broadcast confirmed action to guest (already serialized)
     this._broadcastConfirmedAction(entry);
 
@@ -254,10 +275,12 @@ export class ActionBus {
     const state = this.getState();
     const action = deserializeAction(serializedAction, state);
 
+    console.log(`[ActionBus] HOST processing guest intent: ${action.type} (${intentId})`);
+
     // Phase 3: Validate action legality before applying
     const validation = validateAction(action, senderId, state);
     if (!validation.valid) {
-      console.warn(`[ActionBus] Host rejected guest action: ${validation.error}`);
+      console.warn(`[ActionBus] HOST rejected guest intent: ${validation.error}`);
       sendLobbyBroadcast('game_action', {
         type: 'action_rejected',
         intentId,
@@ -274,6 +297,7 @@ export class ActionBus {
 
     if (!result?.success) {
       this._seq--;
+      console.log(`[ActionBus] HOST execute failed for guest intent: ${result?.error}`);
       // Reject the intent
       sendLobbyBroadcast('game_action', {
         type: 'action_rejected',
@@ -297,6 +321,8 @@ export class ActionBus {
     };
     this._actionLog.push(entry);
 
+    console.log(`[ActionBus] HOST confirmed guest action: ${action.type} seq=${seq} checksum=${checksum}`);
+
     // Broadcast confirmed action (both host and guest will have it)
     this._broadcastConfirmedAction(entry);
 
@@ -317,9 +343,11 @@ export class ActionBus {
     const result = this.executeAction(action);
 
     if (!result?.success) {
-      // Local validation failed — don't send to host
+      console.log(`[ActionBus] GUEST optimistic failed locally: ${action.type} — ${result?.error}`);
       return result;
     }
+
+    console.log(`[ActionBus] GUEST optimistic OK, sending intent: ${action.type} (${intentId})`);
 
     // Store pending intent as optimistically applied
     this._pendingIntents.set(intentId, {
@@ -360,9 +388,12 @@ export class ActionBus {
     // Optimistic actions were executed in _guestDispatch — re-executing would
     // double-apply (draw twice, play card twice, etc.)
     if (!wasOptimistic) {
+      console.log(`[ActionBus] GUEST applying host action: ${serializedAction?.type} seq=${seq}`);
       const state = this.getState();
       const action = deserializeAction(serializedAction, state);
       this.executeAction(action);
+    } else {
+      console.log(`[ActionBus] GUEST confirmed (already applied): ${serializedAction?.type} seq=${seq}`);
     }
 
     // Log it (store serialized form)
@@ -390,7 +421,7 @@ export class ActionBus {
         this._requestRecovery();
       }
     } else {
-      // Reset counter on successful checksum
+      console.log(`[ActionBus] GUEST checksum OK: seq=${seq} checksum=${localChecksum}`);
       this._desyncCount = 0;
     }
 
