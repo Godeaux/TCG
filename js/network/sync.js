@@ -5,10 +5,12 @@
  * This module provides:
  * - Broadcasting state changes to opponent via Supabase Realtime
  * - Persisting game state to database for reconnection support
+ * - Reliable delivery with sequence numbers and ACK protocol
+ * - Desync detection via state checksums
  *
  * Key Functions:
  * - sendLobbyBroadcast: Send a broadcast event to the lobby channel
- * - broadcastSyncState: Broadcast full game state to opponent
+ * - broadcastSyncState: Broadcast full game state to opponent (with seq + checksum)
  * - saveGameStateToDatabase: Persist game state for reconnection
  *
  * Note: loadGameStateFromDatabase is in lobbyManager.js (uses callback pattern)
@@ -17,6 +19,7 @@
 import { buildLobbySyncPayload } from './serialization.js';
 import { isOnlineMode } from '../state/selectors.js';
 import * as supabaseApi from './supabaseApi.js';
+import { enhancePayload, reliableBroadcast } from './actionSync.js';
 
 // Module-level variable for lobby channel (set externally)
 let lobbyChannel = null;
@@ -70,7 +73,8 @@ export const broadcastRematchChoice = (state, choice) => {
 
 /**
  * Broadcast game state to opponent
- * This is the main sync function called after every game action
+ * This is the main sync function called after every game action.
+ * Enhanced with sequence numbers and checksums for reliable delivery.
  *
  * @param {Object} state - Game state to broadcast
  */
@@ -78,19 +82,20 @@ export const broadcastSyncState = (state) => {
   if (!isOnlineMode(state)) {
     return;
   }
-  const payload = buildLobbySyncPayload(state);
-  console.log('Broadcasting sync state, payload structure:', {
-    hasGame: !!payload.game,
-    hasPlayers: !!payload.game?.players,
-    playerCount: payload.game?.players?.length,
-    player0HandCount: payload.game?.players?.[0]?.hand?.length,
-    player0FieldCount: payload.game?.players?.[0]?.field?.length,
-    player0HandSample: payload.game?.players?.[0]?.hand?.[0],
+  const rawPayload = buildLobbySyncPayload(state);
+  const payload = enhancePayload(rawPayload, state);
+  console.log('Broadcasting sync state:', {
+    seq: payload._seq,
+    checksum: payload._checksum,
+    turn: payload.game?.turn,
+    phase: payload.game?.phase,
+    player0Hand: payload.game?.players?.[0]?.hand?.length,
+    player0Field: payload.game?.players?.[0]?.field?.length,
   });
-  sendLobbyBroadcast('sync_state', payload);
+  reliableBroadcast('sync_state', payload);
 
   // Also save to database for reconnection support
-  saveGameStateToDatabase(state);
+  saveGameStateToDatabase(state, payload._seq);
 };
 
 /**
@@ -106,8 +111,9 @@ export const broadcastSyncState = (state) => {
  * from overwriting DB with empty/stale state.
  *
  * @param {Object} state - Game state to save
+ * @param {number} [seq=0] - Action sequence number for conflict resolution
  */
-export const saveGameStateToDatabase = async (state) => {
+export const saveGameStateToDatabase = async (state, seq = 0) => {
   if (!isOnlineMode(state) || !state.menu?.lobby?.id) {
     console.log('Skipping save - not online or no lobby');
     return;
@@ -131,7 +137,7 @@ export const saveGameStateToDatabase = async (state) => {
     await supabaseApi.saveGameState({
       lobbyId: state.menu.lobby.id,
       gameState: payload,
-      actionSequence: 0, // Will be used for future conflict resolution
+      actionSequence: seq,
     });
     console.log('Game state saved successfully');
   } catch (error) {

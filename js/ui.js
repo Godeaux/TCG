@@ -229,6 +229,12 @@ import {
   requestSyncFromOpponent,
 } from './network/index.js';
 
+import {
+  initActionSync,
+  resetActionSync,
+  verifyChecksum,
+} from './network/actionSync.js';
+
 // Lobby manager (extracted module)
 // All lobby subscription functions are now centralized in lobbyManager
 import {
@@ -4538,6 +4544,16 @@ export const renderGame = (state, callbacks = {}) => {
     callbacks.onUpdate?.();
   });
 
+  // Initialize action sync module for reliable multiplayer communication
+  initActionSync({
+    broadcast: sendLobbyBroadcast,
+    buildPayload: (s) => buildLobbySyncPayload(s),
+    getState: () => state,
+    onDesyncDetected: (reason) => {
+      console.warn(`[UI] Desync detected: ${reason} — recovery in progress`);
+    },
+  });
+
   // Register callbacks with lobbyManager so it can notify UI of changes
   registerLobbyCallbacks({
     onUpdate: () => callbacks.onUpdate?.(),
@@ -4551,6 +4567,12 @@ export const renderGame = (state, callbacks = {}) => {
       applyLobbySyncPayload(s, payload, options);
       // Apply UI-specific post-processing (deck rehydration, callbacks, recovery)
       handleSyncPostProcessing(s, payload, options);
+
+      // Verify state checksum after applying sync (detects desync)
+      // Skip for force-apply (DB restore) and recovery payloads
+      if (!options?.forceApply && !payload._isRecovery) {
+        verifyChecksum(s, payload);
+      }
 
       // Snapshot advantage after receiving sync (only if value changed)
       if (positionEvaluator && s.players) {

@@ -50,6 +50,24 @@ export {
 } from './sync.js';
 
 // ============================================================================
+// ACTION SYNC (Reliable delivery, checksums, desync detection)
+// ============================================================================
+
+export {
+  initActionSync,
+  resetActionSync,
+  computeStateChecksum,
+  verifyChecksum,
+  validateIncomingSeq,
+  sendAck,
+  handleAck,
+  handleDesyncRecoveryRequest,
+  handleDesyncRecoveryResponse,
+  isDesyncRecoveryInProgress,
+  getSyncDiagnostics,
+} from './actionSync.js';
+
+// ============================================================================
 // LOBBY MANAGER
 // Note: loadGameStateFromDatabase, updateLobbySubscription, refreshLobbyState
 // are exported from lobbyManager.js (they use callback pattern)

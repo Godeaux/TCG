@@ -21,6 +21,14 @@ import { resetPresenceState } from './presenceManager.js';
 import { setLobbyChannel, sendLobbyBroadcast, saveGameStateToDatabase } from './sync.js';
 import { buildLobbySyncPayload } from './serialization.js';
 import { getSupabaseApi } from './index.js';
+import {
+  validateIncomingSeq,
+  sendAck,
+  handleAck,
+  handleDesyncRecoveryRequest,
+  handleDesyncRecoveryResponse,
+  resetActionSync,
+} from './actionSync.js';
 
 // ============================================================================
 // MODULE STATE
@@ -1298,16 +1306,52 @@ export const updateLobbySubscription = (state, { force = false } = {}) => {
     sendLobbyBroadcast('sync_state', buildLobbySyncPayload(state));
   });
 
-  // Handle sync state broadcasts
+  // Handle sync state broadcasts (with sequence validation and ACK)
   lobbyChannel.on('broadcast', { event: 'sync_state' }, ({ payload }) => {
+    // Validate sequence ordering — drop out-of-order or duplicate messages
+    if (!validateIncomingSeq(payload)) {
+      return;
+    }
+
     console.log('[lobbyManager] Received sync_state broadcast:', {
-      hasPayload: !!payload,
-      hasGame: !!payload?.game,
+      seq: payload._seq,
+      checksum: payload._checksum,
       turn: payload?.game?.turn,
       phase: payload?.game?.phase,
       activePlayer: payload?.game?.activePlayerIndex,
     });
+
     callbacks.onApplySync?.(state, payload);
+    callbacks.onUpdate?.();
+
+    // Send ACK to confirm receipt
+    if (payload._seq) {
+      sendAck({
+        ...payload,
+        _ackSenderId: state.menu?.profile?.id ?? null,
+      });
+    }
+  });
+
+  // Handle ACK broadcasts (confirms opponent received our sync)
+  lobbyChannel.on('broadcast', { event: 'sync_ack' }, ({ payload }) => {
+    if (payload?.senderId === state.menu?.profile?.id) {
+      return; // Ignore our own ACKs
+    }
+    handleAck(payload);
+  });
+
+  // Handle desync recovery request (opponent detected mismatch)
+  lobbyChannel.on('broadcast', { event: 'desync_recovery_request' }, ({ payload }) => {
+    console.warn('[lobbyManager] Desync recovery requested by opponent:', payload?.reason);
+    handleDesyncRecoveryRequest();
+  });
+
+  // Handle desync recovery response (authoritative state from opponent)
+  lobbyChannel.on('broadcast', { event: 'desync_recovery_response' }, ({ payload }) => {
+    console.warn('[lobbyManager] Received desync recovery response');
+    const { payload: recoveryPayload, options } = handleDesyncRecoveryResponse(payload);
+    callbacks.onApplySync?.(state, recoveryPayload, options);
     callbacks.onUpdate?.();
   });
 
@@ -1542,6 +1586,9 @@ export const cleanup = () => {
   }
   activeLobbyId = null;
   lobbyRefreshInFlight = false;
+
+  // Reset action sync state (sequence counters, pending ACKs)
+  resetActionSync();
 
   // Clean up session validation
   stopSessionValidation();
