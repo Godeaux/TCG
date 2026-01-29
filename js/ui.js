@@ -375,11 +375,15 @@ let lastKnownHandSizes = [0, 0];
 
 /**
  * Dispatch a game action. In online multiplayer, routes through ActionBus
- * for host-authoritative validation. In offline/local mode, executes directly
- * on the GameController.
+ * for host-authoritative validation and optimistic execution. In offline/local
+ * mode, executes directly on the GameController.
+ *
+ * Turn validation lives here (not in the controller) — the controller is a pure
+ * executor. Online mode relies on the ActionBus validator for turn checks;
+ * offline mode uses isLocalPlayersTurn as a safety net.
  *
  * @param {Object} action - Action object { type, payload }
- * @returns {Object} Result from execution or { pending: true } for guest intents
+ * @returns {Object} Result from execution
  */
 const dispatchAction = (action) => {
   const bus = getActionBus();
@@ -387,10 +391,25 @@ const dispatchAction = (action) => {
     return bus.dispatch(action);
   }
   if (gameController) {
+    // Offline turn-gating: prevent out-of-turn actions.
+    // The UI already disables interactions, but this is defense-in-depth.
+    if (!isLocalPlayersTurn(latestState) && _isTurnGatedAction(action?.type)) {
+      return { success: false, error: 'Not your turn' };
+    }
     return gameController.execute(action);
   }
   return { success: false, error: 'No controller available' };
 };
+
+/** Actions that can only be performed on the active player's turn. */
+const _TURN_GATED = new Set([
+  'PLAY_CARD', 'DRAW_CARD', 'ADVANCE_PHASE', 'END_TURN',
+  'DECLARE_ATTACK', 'RESOLVE_ATTACK', 'EAT_PREY_ATTACK',
+  'SACRIFICE_CREATURE', 'RETURN_TO_HAND', 'ACTIVATE_DISCARD_EFFECT',
+  'PROCESS_END_PHASE', 'SELECT_CONSUMPTION_TARGETS', 'DRY_DROP',
+  'EXTEND_CONSUMPTION', 'FINALIZE_PLACEMENT',
+]);
+const _isTurnGatedAction = (type) => _TURN_GATED.has(type);
 
 // ============================================================================
 // LOBBY MANAGEMENT
@@ -3989,16 +4008,7 @@ export const renderGame = (state, callbacks = {}) => {
       getState: () => latestState,
       getProfileId: () => state.menu?.profile?.id,
       getHostId: () => state.menu?.lobby?.host_id,
-      executeAction: (action) => {
-        // Flag tells controller to skip isLocalPlayersTurn checks — the ActionBus
-        // (or host validator) has already verified turn ownership.
-        gameController._networkAuthoritative = true;
-        try {
-          return gameController.execute(action);
-        } finally {
-          gameController._networkAuthoritative = false;
-        }
-      },
+      executeAction: (action) => gameController.execute(action),
       onActionConfirmed: (entry) => {
         renderGame(latestState, latestCallbacks);
       },

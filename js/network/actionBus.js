@@ -305,9 +305,19 @@ export class ActionBus {
     this._intentCounter++;
     const intentId = `intent-${this._intentCounter}-${Date.now()}`;
 
-    // Store pending intent (original, unserialized)
+    // Optimistic execution — apply locally for instant feedback (Hearthstone model).
+    // The host will confirm or reject. On rejection, we recover via action log replay.
+    const result = this.executeAction(action);
+
+    if (!result?.success) {
+      // Local validation failed — don't send to host
+      return result;
+    }
+
+    // Store pending intent as optimistically applied
     this._pendingIntents.set(intentId, {
       action,
+      optimistic: true,
       timestamp: Date.now(),
     });
 
@@ -319,14 +329,19 @@ export class ActionBus {
       senderId: this.getProfileId(),
     });
 
-    return { success: true, pending: true, intentId };
+    // Return the real result so the UI can handle multi-step flows
+    // (consumption selection, target selection, etc.)
+    return { ...result, intentId };
   }
 
   /** @private — Handle confirmed action from host */
   _handleConfirmedAction(message) {
     const { seq, action: serializedAction, checksum, intentId } = message;
 
-    // Remove pending intent if this confirms one of ours
+    // Check if this confirms an optimistically-applied local action
+    const wasOptimistic = intentId && this._pendingIntents.has(intentId)
+      && this._pendingIntents.get(intentId).optimistic;
+
     if (intentId && this._pendingIntents.has(intentId)) {
       this._pendingIntents.delete(intentId);
     }
@@ -334,12 +349,14 @@ export class ActionBus {
     // Update local seq to match host
     this._seq = seq;
 
-    // Deserialize the action (resolve card refs from current state)
-    const state = this.getState();
-    const action = deserializeAction(serializedAction, state);
-
-    // Apply the confirmed action locally
-    const result = this.executeAction(action);
+    // Only execute if this wasn't already applied optimistically.
+    // Optimistic actions were executed in _guestDispatch — re-executing would
+    // double-apply (draw twice, play card twice, etc.)
+    if (!wasOptimistic) {
+      const state = this.getState();
+      const action = deserializeAction(serializedAction, state);
+      this.executeAction(action);
+    }
 
     // Log it (store serialized form)
     const entry = {
@@ -347,11 +364,11 @@ export class ActionBus {
       action: serializedAction,
       checksum,
       timestamp: Date.now(),
-      source: 'host-confirmed',
+      source: wasOptimistic ? 'guest-optimistic' : 'host-confirmed',
     };
     this._actionLog.push(entry);
 
-    // Verify checksum
+    // Verify checksum — catches both non-determinism and optimistic divergence
     const postState = this.getState();
     const localChecksum = postState ? computeStateChecksum(postState) : 0;
     if (checksum && localChecksum !== checksum) {
@@ -377,12 +394,22 @@ export class ActionBus {
   _handleRejection(message) {
     const { intentId, reason } = message;
 
+    const wasOptimistic = intentId && this._pendingIntents.has(intentId)
+      && this._pendingIntents.get(intentId).optimistic;
+
     if (intentId && this._pendingIntents.has(intentId)) {
       this._pendingIntents.delete(intentId);
     }
 
     console.warn(`[ActionBus] Action rejected by host: ${reason}`);
     this.onActionRejected({ intentId, reason });
+
+    // If we optimistically applied this action, our state has diverged from
+    // the host. Request full recovery to roll back to the host's authoritative state.
+    if (wasOptimistic) {
+      console.warn('[ActionBus] Optimistic action was rejected — requesting recovery to rollback');
+      this._requestRecovery();
+    }
   }
 
   // ==========================================================================

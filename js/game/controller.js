@@ -31,7 +31,6 @@ import {
   getActivePlayer,
   getOpponentPlayer,
   canPlayCards,
-  isLocalPlayersTurn,
   markCreatureAttacked,
 } from '../state/selectors.js';
 import {
@@ -78,10 +77,6 @@ export class GameController {
     this.onBroadcast = options.onBroadcast || (() => {});
     this.onSelectionNeeded = options.onSelectionNeeded || (() => {});
     this.onSelectionComplete = options.onSelectionComplete || (() => {});
-
-    // When true, skip isLocalPlayersTurn checks — the ActionBus has already
-    // validated turn ownership on the host before dispatching to the controller.
-    this._networkAuthoritative = false;
   }
 
   // ==========================================================================
@@ -243,13 +238,6 @@ export class GameController {
   // ==========================================================================
 
   handlePlayCard({ card, slotIndex, options = {} }) {
-    // Validation
-    if (!this._networkAuthoritative && !isLocalPlayersTurn(this.state, this.uiState)) {
-      logMessage(this.state, 'Wait for your turn to play cards.');
-      this.notifyStateChange();
-      return { success: false, error: 'Not your turn' };
-    }
-
     if (!canPlayCards(this.state)) {
       logMessage(this.state, 'Cards may only be played during a main phase.');
       this.notifyStateChange();
@@ -1028,7 +1016,17 @@ export class GameController {
   }
 
   broadcast() {
-    // Snapshot advantage on every state change (only if value changed)
+    this._snapshotAdvantage();
+    this.onBroadcast(this.state);
+  }
+
+  /**
+   * Track position advantage after state changes.
+   * Separated from broadcast so advantage tracking continues
+   * regardless of which network layer is active.
+   * @private
+   */
+  _snapshotAdvantage() {
     const evaluator = getPositionEvaluator();
     if (evaluator) {
       const currentAdvantage = evaluator.calculateAdvantage(this.state, 0);
@@ -1038,7 +1036,6 @@ export class GameController {
         evaluator.snapshotAdvantage(this.state, 'action');
       }
     }
-    this.onBroadcast(this.state);
   }
 
   // ==========================================================================
@@ -1046,11 +1043,6 @@ export class GameController {
   // ==========================================================================
 
   handleSacrificeCreature({ card }) {
-    if (!this._networkAuthoritative && !isLocalPlayersTurn(this.state, this.uiState)) {
-      logMessage(this.state, 'Wait for your turn.');
-      this.notifyStateChange();
-      return { success: false, error: 'Not your turn' };
-    }
 
     // Find card's owner and slot
     const playerIndex = this.state.players.findIndex((p) =>
@@ -1105,11 +1097,6 @@ export class GameController {
   // ==========================================================================
 
   handleReturnToHand({ card }) {
-    if (!this._networkAuthoritative && !isLocalPlayersTurn(this.state, this.uiState)) {
-      logMessage(this.state, 'Wait for your turn.');
-      this.notifyStateChange();
-      return { success: false, error: 'Not your turn' };
-    }
 
     const playerIndex = this.state.players.findIndex((p) =>
       p.field.some((slot) => slot?.instanceId === card.instanceId)
@@ -1428,11 +1415,6 @@ export class GameController {
   // ==========================================================================
 
   handleActivateDiscardEffect({ card }) {
-    if (!this._networkAuthoritative && !isLocalPlayersTurn(this.state, this.uiState)) {
-      logMessage(this.state, 'Wait for your turn to discard cards.');
-      this.notifyStateChange();
-      return { success: false, error: 'Not your turn' };
-    }
 
     if (!card.discardEffect && !card.effects?.discardEffect) {
       logMessage(this.state, `${card.name} has no discard effect.`);
