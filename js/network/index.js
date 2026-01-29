@@ -85,6 +85,18 @@ export {
 export { validateAction } from './actionValidator.js';
 
 // ============================================================================
+// ACTION LOG (Persistent action log for replay & reconnection)
+// ============================================================================
+
+export {
+  getActionLog,
+  getCurrentSequence,
+  buildActionLogPayload,
+  replayActionLog,
+  parseActionLogPayload,
+} from './actionLog.js';
+
+// ============================================================================
 // LOBBY MANAGER
 // Note: loadGameStateFromDatabase, updateLobbySubscription, refreshLobbyState
 // are exported from lobbyManager.js (they use callback pattern)

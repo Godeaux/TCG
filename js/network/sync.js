@@ -20,6 +20,7 @@ import { buildLobbySyncPayload } from './serialization.js';
 import { isOnlineMode } from '../state/selectors.js';
 import * as supabaseApi from './supabaseApi.js';
 import { enhancePayload, reliableBroadcast } from './actionSync.js';
+import { buildActionLogPayload } from './actionLog.js';
 
 // Module-level variable for lobby channel (set externally)
 let lobbyChannel = null;
@@ -123,6 +124,11 @@ export const saveGameStateToDatabase = async (state, seq = 0) => {
   // This ensures the database always has the most up-to-date state from both players
   try {
     const payload = buildLobbySyncPayload(state);
+    // Include action log for reconnect replay
+    const actionLog = buildActionLogPayload();
+    if (actionLog.entries.length > 0) {
+      payload.actionLog = actionLog;
+    }
     console.log('Saving game state to DB for lobby:', state.menu.lobby.id);
     console.log('Game state payload structure:', {
       hasGame: !!payload.game,
@@ -133,6 +139,7 @@ export const saveGameStateToDatabase = async (state, seq = 0) => {
       player1FieldCount: payload.game?.players?.[1]?.field?.length,
       turn: payload.game?.turn,
       phase: payload.game?.phase,
+      actionLogEntries: actionLog.entries.length,
     });
     await supabaseApi.saveGameState({
       lobbyId: state.menu.lobby.id,
