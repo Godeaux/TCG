@@ -186,7 +186,21 @@ that doesn't change network behavior yet.
 - [x] Phase 1a: Wired DECLARE_ATTACK legacy stub to use RESOLVE_ATTACK
 
 ### In Progress
-- [ ] Phase 1b: Refactor ui.js to call controller.execute() instead of direct mutations
+- [ ] Phase 1b: Remaining ui.js broadcastSyncState calls (~17 remaining) need routing through controller
+- [ ] Phase 1b: handleTrapResponse still uses direct mutations + broadcastSyncState
+
+### Completed (Phase 1b — partial)
+- [x] Phase 1b: GameController instantiated in ui.js renderGame with onStateChange, onBroadcast, onSelectionNeeded callbacks
+- [x] Phase 1b: handleReturnToHand → controller.execute(returnToHandAction)
+- [x] Phase 1b: handleSacrifice → controller.execute(sacrificeCreatureAction)
+- [x] Phase 1b: discard handleSelection → controller.execute(resolveDiscardAction)
+- [x] Phase 1b: resolveAttack + continueResolveAttack → controller.execute(resolveAttackAction) (250+ lines removed)
+- [x] Phase 1b: handleEatPreyAttack mutation → controller.execute(eatPreyAttackAction)
+- [x] Phase 1b: processEndOfTurnQueue → controller.execute(processEndPhaseAction) (80+ lines removed)
+- [x] Phase 1b: Removed unused imports (resolveCreatureCombat, resolveDirectAttack, hasBeforeCombatEffect, finalizeEndPhase)
+- [x] Phase 1b: Enhanced controller executeCombat with damage values and slot indices for visual effects
+- [x] Phase 1b: Added findCardSlotIndex helper to GameController
+- [x] Phase 1b: Updated resolveAttack action creator to accept negateAttack/negatedBy params
 
 ### Not Started
 - [ ] Phase 1c-1d, Phases 2-6
@@ -213,15 +227,15 @@ that doesn't change network behavior yet.
 | DECLARE_ATTACK | (stub) | **NEEDS IMPLEMENTATION** |
 | RESOLVE_COMBAT | (stub) | **NEEDS IMPLEMENTATION** |
 
-### Newly Added to GameController (Phase 1a — handlers exist, ui.js not yet wired)
+### Newly Added to GameController (Phase 1a+1b — implemented AND wired to ui.js)
 | Action | Controller Handler | Status |
 |--------|-------------------|--------|
-| SACRIFICE_CREATURE | handleSacrificeCreature | ✅ Implemented |
-| RETURN_TO_HAND | handleReturnToHand | ✅ Implemented |
-| RESOLVE_ATTACK | handleResolveAttack + executeCombat | ✅ Implemented |
-| EAT_PREY_ATTACK | handleEatPreyAttack | ✅ Implemented |
-| RESOLVE_DISCARD | handleResolveDiscard | ✅ Implemented |
-| PROCESS_END_PHASE | handleProcessEndPhase | ✅ Implemented |
+| SACRIFICE_CREATURE | handleSacrificeCreature | ✅ Implemented + Wired |
+| RETURN_TO_HAND | handleReturnToHand | ✅ Implemented + Wired |
+| RESOLVE_ATTACK | handleResolveAttack + executeCombat | ✅ Implemented + Wired |
+| EAT_PREY_ATTACK | handleEatPreyAttack | ✅ Implemented + Wired |
+| RESOLVE_DISCARD | handleResolveDiscard | ✅ Implemented + Wired |
+| PROCESS_END_PHASE | handleProcessEndPhase | ✅ Implemented + Wired |
 
 ### Still Missing (lower priority — can be added in Phase 1b)
 | Action | Current Location | Notes |
@@ -237,7 +251,10 @@ that doesn't change network behavior yet.
 This document is maintained across multiple Claude sessions. Each session
 should update the "Current Progress" section and check off completed items.
 
-Last updated: Session 1
+Last updated: Session 2
 - Pass 1: Initial plan + actionSync.js (seq, checksum, ACK, desync recovery)
 - Pass 2: Phase 1a complete — 8 new action types, 6 new GameController handlers
-- Next: Phase 1b — wire ui.js to call controller.execute() for these actions
+- Pass 3: Phase 1b partial — wired 6 action types through controller.execute() in ui.js,
+  removed ~350 lines of direct state mutations, instantiated GameController in renderGame
+- Next: Phase 1b continued — wire remaining broadcastSyncState calls through controller,
+  handle trap response via controller

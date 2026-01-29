@@ -1042,27 +1042,38 @@ export class GameController {
     }
 
     // --- Normal combat resolution ---
-    const attackerOwnerIndex = this.findCardOwnerIndex(attacker.instanceId);
+    const { ownerIndex: attackerOwnerIndex, slotIndex: attackerSlotIndex } =
+      this.findCardSlotIndex(attacker.instanceId);
 
     if (target.type === 'player') {
-      resolveDirectAttack(this.state, attacker, target.player, attackerOwnerIndex);
+      const damage = resolveDirectAttack(this.state, attacker, target.player, attackerOwnerIndex);
       queueVisualEffect(this.state, {
         type: 'attack',
         attackerId: attacker.instanceId,
         attackerOwnerIndex,
+        attackerSlotIndex,
         targetType: 'player',
         targetPlayerIndex: this.state.players.indexOf(target.player),
+        damageToTarget: damage,
+        damageToAttacker: 0,
       });
     } else {
-      const defenderOwnerIndex = this.findCardOwnerIndex(target.card.instanceId);
-      resolveCreatureCombat(this.state, attacker, target.card, attackerOwnerIndex, defenderOwnerIndex);
+      const { ownerIndex: defenderOwnerIndex, slotIndex: defenderSlotIndex } =
+        this.findCardSlotIndex(target.card.instanceId);
+      const { attackerDamage, defenderDamage } = resolveCreatureCombat(
+        this.state, attacker, target.card, attackerOwnerIndex, defenderOwnerIndex
+      );
       queueVisualEffect(this.state, {
         type: 'attack',
         attackerId: attacker.instanceId,
         attackerOwnerIndex,
+        attackerSlotIndex,
         targetType: 'creature',
         defenderId: target.card.instanceId,
         defenderOwnerIndex,
+        defenderSlotIndex,
+        damageToTarget: defenderDamage,
+        damageToAttacker: attackerDamage,
       });
     }
 
@@ -1113,6 +1124,15 @@ export class GameController {
       }
     }
     return -1;
+  }
+
+  findCardSlotIndex(instanceId) {
+    const ownerIndex = this.findCardOwnerIndex(instanceId);
+    if (ownerIndex === -1) return { ownerIndex: -1, slotIndex: -1 };
+    const slotIndex = this.state.players[ownerIndex].field.findIndex(
+      (c) => c?.instanceId === instanceId
+    );
+    return { ownerIndex, slotIndex };
   }
 
   // ==========================================================================

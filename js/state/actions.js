@@ -328,9 +328,9 @@ export const returnToHand = (card) => ({
   payload: { card },
 });
 
-export const resolveAttack = (attacker, target) => ({
+export const resolveAttack = (attacker, target, negateAttack = false, negatedBy = null) => ({
   type: ActionTypes.RESOLVE_ATTACK,
-  payload: { attacker, target },
+  payload: { attacker, target, negateAttack, negatedBy },
 });
 
 export const eatPreyAttack = (attacker, prey) => ({

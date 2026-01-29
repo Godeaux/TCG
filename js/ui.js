@@ -12,17 +12,13 @@ import { initCardTooltip, showCardTooltip, hideCardTooltip } from './ui/componen
 import {
   canPlayCard,
   cardLimitAvailable,
-  finalizeEndPhase,
   initPositionEvaluator,
 } from './game/turnManager.js';
 import { createCardInstance } from './cardTypes.js';
 import { consumePrey } from './game/consumption.js';
 import {
   getValidTargets,
-  resolveCreatureCombat,
-  resolveDirectAttack,
   cleanupDestroyed,
-  hasBeforeCombatEffect,
 } from './game/combat.js';
 import {
   isFreePlay,
@@ -36,6 +32,15 @@ import {
   cantBeConsumed,
 } from './keywords.js';
 import { resolveEffectResult } from './game/effects.js';
+import { GameController } from './game/controller.js';
+import {
+  sacrificeCreature as sacrificeCreatureAction,
+  returnToHand as returnToHandAction,
+  resolveDiscard as resolveDiscardAction,
+  resolveAttack as resolveAttackAction,
+  eatPreyAttack as eatPreyAttackAction,
+  processEndPhase as processEndPhaseAction,
+} from './state/actions.js';
 import {
   deckCatalogs,
   resolveCardEffect,
@@ -360,6 +365,7 @@ let currentPage = 0;
 let deckActiveTab = 'catalog';
 let latestState = null;
 let latestCallbacks = {};
+let gameController = null;
 const TOTAL_PAGES = 2;
 let handPreviewInitialized = false;
 let inputInitialized = false;
@@ -573,19 +579,9 @@ const handleSyncPostProcessing = (state, payload, options = {}) => {
 
       const handleSelection = (card) => {
         clearSelectionPanel();
-        // Apply the discard
-        player.hand = player.hand.filter((c) => c.instanceId !== card.instanceId);
-        if (card.type === 'Predator' || card.type === 'Prey') {
-          player.carrion.push(card);
-        } else {
-          player.exile.push(card);
+        if (gameController) {
+          gameController.execute(resolveDiscardAction(forPlayer, card));
         }
-        logMessage(state, `${player.name} discards ${card.name}.`);
-        // Clear pending choice
-        state.pendingChoice = null;
-        cleanupDestroyed(state);
-        broadcastSyncState(state);
-        latestCallbacks.onUpdate?.();
       };
 
       // AI vs AI mode: auto-select a card to discard (pick lowest value card)
@@ -2267,252 +2263,11 @@ const findCardByInstanceId = (state, instanceId) =>
     .find((card) => card?.instanceId === instanceId);
 
 const resolveAttack = (state, attacker, target, negateAttack = false, negatedBy = null) => {
-  if (negateAttack) {
-    const targetName = target.type === 'creature' ? target.card.name : 'the player';
-    const sourceText = negatedBy ? ` by ${negatedBy}` : '';
-    logMessage(state, `${attacker.name}'s attack on ${targetName} was negated${sourceText}.`);
-    markCreatureAttacked(attacker);
-    cleanupDestroyed(state);
-    clearSelectionPanel();
-    renderGame(state);
-    state.broadcast?.(state);
+  if (!gameController) {
+    console.warn('[resolveAttack] GameController not initialized');
     return;
   }
-
-  // Check for beforeCombat effect that needs to fire before this attack
-  if (hasBeforeCombatEffect(attacker) && !attacker.beforeCombatFiredThisAttack) {
-    attacker.beforeCombatFiredThisAttack = true;
-    const playerIndex = state.activePlayerIndex;
-    const opponentIndex = (playerIndex + 1) % 2;
-
-    logMessage(state, `${attacker.name}'s before-combat effect triggers...`);
-    const result = resolveCardEffect(attacker, 'onBeforeCombat', {
-      log: (message) => logMessage(state, message),
-      player: state.players[playerIndex],
-      opponent: state.players[opponentIndex],
-      creature: attacker,
-      state,
-      playerIndex,
-      opponentIndex,
-    });
-
-    if (result) {
-      // Effect needs UI interaction - resolve it then continue with attack
-      // onCancel is called if user clicks "Cancel" on selection panel (e.g., Electric Eel)
-      const continueAfterEffect = () => {
-        cleanupDestroyed(state);
-        // Check if attacker was destroyed by their own beforeCombat effect
-        if (attacker.currentHp <= 0) {
-          logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
-          markCreatureAttacked(attacker);
-          clearSelectionPanel();
-          renderGame(state);
-          state.broadcast?.(state);
-          return;
-        }
-        // Check if defender was destroyed by beforeCombat effect
-        if (target.type === 'creature' && target.card.currentHp <= 0) {
-          logMessage(state, `${target.card.name} is already destroyed.`);
-          markCreatureAttacked(attacker);
-          clearSelectionPanel();
-          renderGame(state);
-          state.broadcast?.(state);
-          return;
-        }
-        // Continue with the rest of resolveAttack logic
-        continueResolveAttack(state, attacker, target);
-      };
-
-      resolveEffectChain(
-        state,
-        result,
-        { playerIndex, opponentIndex, card: attacker },
-        () => {
-          renderGame(state);
-          broadcastSyncState(state);
-        },
-        // onComplete - effect was applied, continue attack
-        continueAfterEffect,
-        // onCancel - user cancelled selection, still continue attack (effect skipped)
-        () => {
-          logMessage(state, `${attacker.name}'s before-combat effect was cancelled.`);
-          continueResolveAttack(state, attacker, target);
-        }
-      );
-      return;
-    }
-    // No UI needed for this effect, cleanup and continue
-    cleanupDestroyed(state);
-    if (attacker.currentHp <= 0) {
-      logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
-      markCreatureAttacked(attacker);
-      clearSelectionPanel(); // Clear any stale selection panels to prevent softlock
-      renderGame(state);
-      state.broadcast?.(state);
-      return;
-    }
-    // Check if defender was destroyed by beforeCombat effect
-    if (target.type === 'creature' && target.card.currentHp <= 0) {
-      logMessage(state, `${target.card.name} is already destroyed.`);
-      markCreatureAttacked(attacker);
-      clearSelectionPanel(); // Clear any stale selection panels to prevent softlock
-      renderGame(state);
-      state.broadcast?.(state);
-      return;
-    }
-  }
-
-  // Continue with normal attack resolution
-  continueResolveAttack(state, attacker, target);
-};
-
-// Continuation of resolveAttack after beforeCombat effects
-const continueResolveAttack = (state, attacker, target) => {
-  if (target.type === 'creature' && (target.card.onDefend || target.card.effects?.onDefend)) {
-    const defender = target.card;
-    const playerIndex = state.activePlayerIndex;
-    const opponentIndex = (state.activePlayerIndex + 1) % 2;
-    const result = resolveCardEffect(defender, 'onDefend', {
-      log: (message) => logMessage(state, message),
-      attacker,
-      defender,
-      player: state.players[playerIndex],
-      opponent: state.players[opponentIndex],
-      playerIndex,
-      opponentIndex,
-      state,
-    });
-    resolveEffectChain(
-      state,
-      result,
-      {
-        playerIndex: state.activePlayerIndex,
-        opponentIndex: (state.activePlayerIndex + 1) % 2,
-        card: defender,
-      },
-      null
-    );
-    cleanupDestroyed(state);
-    if (attacker.currentHp <= 0) {
-      logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
-      markCreatureAttacked(attacker);
-      clearSelectionPanel(); // Clear any stale selection panels to prevent softlock
-      renderGame(state);
-      state.broadcast?.(state);
-      return;
-    }
-    if (result?.returnToHand) {
-      markCreatureAttacked(attacker);
-      cleanupDestroyed(state);
-      clearSelectionPanel(); // Clear any stale selection panels to prevent softlock
-      renderGame(state);
-      state.broadcast?.(state);
-      return;
-    }
-  }
-  // --- Normal combat resolution ---
-  let effect = null;
-  const { ownerIndex: attackerOwnerIndex, slotIndex: attackerSlotIndex } = findCardSlotIndex(
-    state,
-    attacker.instanceId
-  );
-  if (target.type === 'player') {
-    const damage = resolveDirectAttack(state, attacker, target.player, attackerOwnerIndex);
-    effect = queueVisualEffect(state, {
-      type: 'attack',
-      attackerId: attacker.instanceId,
-      attackerOwnerIndex,
-      attackerSlotIndex,
-      targetType: 'player',
-      targetPlayerIndex: state.players.indexOf(target.player),
-      damageToTarget: damage,
-      damageToAttacker: 0,
-    });
-  } else {
-    const { ownerIndex: defenderOwnerIndex, slotIndex: defenderSlotIndex } = findCardSlotIndex(
-      state,
-      target.card.instanceId
-    );
-    const { attackerDamage, defenderDamage } = resolveCreatureCombat(
-      state,
-      attacker,
-      target.card,
-      attackerOwnerIndex,
-      defenderOwnerIndex
-    );
-    effect = queueVisualEffect(state, {
-      type: 'attack',
-      attackerId: attacker.instanceId,
-      attackerOwnerIndex,
-      attackerSlotIndex,
-      targetType: 'creature',
-      defenderId: target.card.instanceId,
-      defenderOwnerIndex,
-      defenderSlotIndex,
-      damageToTarget: defenderDamage,
-      damageToAttacker: attackerDamage,
-    });
-  }
-  if (effect) {
-    markEffectProcessed(effect.id, effect.createdAt);
-    playAttackEffect(effect, state);
-  }
-  markCreatureAttacked(attacker);
-
-  // Trigger onAfterCombat effects for surviving creatures
-  if (attacker.currentHp > 0 && (attacker.effects?.onAfterCombat || attacker.onAfterCombat)) {
-    const attackerOwner = state.players[attackerOwnerIndex];
-    const result = resolveCardEffect(attacker, 'onAfterCombat', {
-      log: (message) => logMessage(state, message),
-      player: attackerOwner,
-      opponent: state.players[(attackerOwnerIndex + 1) % 2],
-      creature: attacker,
-      state,
-      playerIndex: attackerOwnerIndex,
-      opponentIndex: (attackerOwnerIndex + 1) % 2,
-    });
-    if (result) {
-      resolveEffectChain(state, result, {
-        playerIndex: attackerOwnerIndex,
-        opponentIndex: (attackerOwnerIndex + 1) % 2,
-        card: attacker,
-      });
-    }
-  }
-  if (
-    target.type === 'creature' &&
-    target.card.currentHp > 0 &&
-    (target.card.effects?.onAfterCombat || target.card.onAfterCombat)
-  ) {
-    const { ownerIndex: defenderOwnerIdx } = findCardSlotIndex(state, target.card.instanceId);
-    if (defenderOwnerIdx >= 0) {
-      const defenderOwner = state.players[defenderOwnerIdx];
-      const result = resolveCardEffect(target.card, 'onAfterCombat', {
-        log: (message) => logMessage(state, message),
-        player: defenderOwner,
-        opponent: state.players[(defenderOwnerIdx + 1) % 2],
-        creature: target.card,
-        state,
-        playerIndex: defenderOwnerIdx,
-        opponentIndex: (defenderOwnerIdx + 1) % 2,
-      });
-      if (result) {
-        resolveEffectChain(state, result, {
-          playerIndex: defenderOwnerIdx,
-          opponentIndex: (defenderOwnerIdx + 1) % 2,
-          card: target.card,
-        });
-      }
-    }
-  }
-
-  cleanupDestroyed(state);
-  // Clear any stale selection panels after combat resolution to prevent softlock
-  // This handles edge cases where creature death might leave a selection panel open
-  clearSelectionPanel();
-  renderGame(state);
-  state.broadcast?.(state);
-  return effect;
+  gameController.execute(resolveAttackAction(attacker, target, negateAttack, negatedBy));
 };
 
 // ============================================================================
@@ -2619,37 +2374,11 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
  * Used for cards played via effects (not from hand) that can be returned
  */
 const handleReturnToHand = (state, card, onUpdate) => {
-  if (!isLocalPlayersTurn(state)) {
-    logMessage(state, 'Wait for your turn.');
+  if (!gameController) {
+    console.warn('[handleReturnToHand] GameController not initialized');
     return;
   }
-
-  // Find card's owner and slot
-  const playerIndex = state.players.findIndex((p) =>
-    p.field.some((slot) => slot?.instanceId === card.instanceId)
-  );
-  if (playerIndex === -1) {
-    return;
-  }
-
-  const player = state.players[playerIndex];
-  const slotIndex = player.field.findIndex((slot) => slot?.instanceId === card.instanceId);
-  if (slotIndex === -1) {
-    return;
-  }
-
-  // Remove from field and add to hand
-  player.field[slotIndex] = null;
-  // Clear the playedVia flag when returning to hand
-  delete card.playedVia;
-  player.hand.push(card);
-
-  logGameAction(
-    state,
-    LOG_CATEGORIES.BUFF,
-    `${formatCardForLog(card)} returns to ${player.name}'s hand.`
-  );
-  onUpdate?.();
+  gameController.execute(returnToHandAction(card));
 };
 
 /**
@@ -2657,60 +2386,11 @@ const handleReturnToHand = (state, card, onUpdate) => {
  * Used for cards with sacrificeEffect (e.g., Golden Poison Frog, Phantasmal Poison Frog)
  */
 const handleSacrifice = (state, card, onUpdate) => {
-  if (!isLocalPlayersTurn(state)) {
-    logMessage(state, 'Wait for your turn.');
+  if (!gameController) {
+    console.warn('[handleSacrifice] GameController not initialized');
     return;
   }
-
-  // Find card's owner and slot
-  const playerIndex = state.players.findIndex((p) =>
-    p.field.some((slot) => slot?.instanceId === card.instanceId)
-  );
-  if (playerIndex === -1) {
-    return;
-  }
-
-  const player = state.players[playerIndex];
-  const opponentIndex = (playerIndex + 1) % 2;
-  const opponent = state.players[opponentIndex];
-  const slotIndex = player.field.findIndex((slot) => slot?.instanceId === card.instanceId);
-  if (slotIndex === -1) {
-    return;
-  }
-
-  // Check if card has a sacrifice effect
-  if (!card.sacrificeEffect && !card.effects?.sacrificeEffect) {
-    logMessage(state, `${card.name} cannot be sacrificed.`);
-    return;
-  }
-
-  logGameAction(
-    state,
-    LOG_CATEGORIES.EFFECT,
-    `${player.name} sacrifices ${formatCardForLog(card)}.`
-  );
-
-  // Resolve the sacrifice effect
-  const result = resolveCardEffect(card, 'sacrificeEffect', {
-    log: (message) => logMessage(state, message),
-    player,
-    opponent,
-    card,
-    state,
-  });
-
-  // Handle the effect chain
-  resolveEffectChain(state, result, { player, opponent, card }, onUpdate, () => {
-    // After effect resolves, move card to carrion
-    player.field[slotIndex] = null;
-    // Per CORE-RULES.md §8: Tokens do NOT go to carrion
-    if (!card.isToken && !card.id?.startsWith('token-')) {
-      player.carrion.push(card);
-    }
-    cleanupDestroyed(state);
-    onUpdate?.();
-    broadcastSyncState(state);
-  });
+  gameController.execute(sacrificeCreatureAction(card));
 };
 
 const handleAttackSelection = (state, attacker, onUpdate) => {
@@ -2777,15 +2457,12 @@ const handleAttackSelection = (state, attacker, onUpdate) => {
  */
 const handleEatPreyAttack = (state, attacker, onUpdate) => {
   const opponent = getOpponentPlayer(state);
-  const player = getActivePlayer(state);
-  const opponentIndex = (state.activePlayerIndex + 1) % 2;
 
   // Get enemy prey creatures that can be eaten
   // Hidden does NOT block this effect (only blocks direct attacks)
   // Invisible still blocks unless attacker has Acuity
   const targetablePrey = opponent.field.filter((card) => {
     if (!card || card.type !== 'Prey') return false;
-    // Can target if has Acuity, otherwise must not be invisible (Hidden does NOT block)
     if (hasAcuity(attacker)) return true;
     return !isInvisible(card);
   });
@@ -2795,6 +2472,7 @@ const handleEatPreyAttack = (state, attacker, onUpdate) => {
     return;
   }
 
+  // Show selection UI, then delegate mutation to controller
   const items = [];
   targetablePrey.forEach((prey) => {
     const item = document.createElement('label');
@@ -2803,28 +2481,8 @@ const handleEatPreyAttack = (state, attacker, onUpdate) => {
     button.textContent = `Eat ${prey.name}`;
     button.onclick = () => {
       clearSelectionPanel();
-
-      // Find and remove prey from opponent's field
-      const slotIndex = opponent.field.findIndex((slot) => slot?.instanceId === prey.instanceId);
-      if (slotIndex !== -1) {
-        opponent.field[slotIndex] = null;
-        // Per CORE-RULES.md §8: Tokens do NOT go to carrion
-        if (!prey.isToken && !prey.id?.startsWith('token-')) {
-          opponent.carrion.push(prey);
-        }
-
-        logGameAction(
-          state,
-          LOG_CATEGORIES.DEATH,
-          `${formatCardForLog(attacker)} eats ${formatCardForLog(prey)}!`
-        );
-
-        // Mark attacker as having attacked
-        markCreatureAttacked(attacker);
-
-        cleanupDestroyed(state);
-        onUpdate?.();
-        broadcastSyncState(state);
+      if (gameController) {
+        gameController.execute(eatPreyAttackAction(attacker, prey));
       }
     };
     item.appendChild(button);
@@ -3634,70 +3292,21 @@ const processEndOfTurnQueue = (state, onUpdate, onEndTurn) => {
     return;
   }
 
-  if (state.endOfTurnQueue.length === 0) {
-    finalizeEndPhase(state);
-    broadcastSyncState(state);
+  if (!gameController) {
+    console.warn('[processEndOfTurnQueue] GameController not initialized');
+    return;
+  }
+
+  const result = gameController.execute(processEndPhaseAction());
+  if (result?.finalized) {
     onEndTurn?.(); // Auto-end turn after finalization
     return;
   }
-
-  const creature = state.endOfTurnQueue.shift();
-  if (!creature) {
-    finalizeEndPhase(state);
-    broadcastSyncState(state);
-    onEndTurn?.(); // Auto-end turn after finalization
-    return;
+  if (result?.moreInQueue) {
+    // Continue processing remaining creatures in the queue
+    // Use setTimeout to avoid deep recursion and allow UI to update between creatures
+    setTimeout(() => processEndOfTurnQueue(state, onUpdate, onEndTurn), 0);
   }
-  state.endOfTurnProcessing = true;
-
-  const playerIndex = state.activePlayerIndex;
-  const opponentIndex = (playerIndex + 1) % 2;
-  const player = state.players[playerIndex];
-  const opponent = state.players[opponentIndex];
-
-  const finishCreature = () => {
-    if (creature.endOfTurnSummon) {
-      resolveEffectResult(
-        state,
-        {
-          summonTokens: { playerIndex, tokens: [creature.endOfTurnSummon] },
-        },
-        {
-          playerIndex,
-          opponentIndex,
-          card: creature,
-        }
-      );
-      creature.endOfTurnSummon = null;
-    }
-    cleanupDestroyed(state);
-    state.endOfTurnProcessing = false;
-    broadcastSyncState(state);
-    processEndOfTurnQueue(state, onUpdate, onEndTurn);
-  };
-
-  if (!creature.onEnd && !creature.effects?.onEnd) {
-    finishCreature();
-    return;
-  }
-
-  const result = resolveCardEffect(creature, 'onEnd', {
-    log: (message) => logMessage(state, message),
-    player,
-    opponent,
-    creature,
-    state,
-    playerIndex,
-    opponentIndex,
-  });
-  resolveEffectChain(
-    state,
-    result,
-    { playerIndex, opponentIndex, card: creature },
-    onUpdate,
-    () => finishCreature(),
-    () => finishCreature()
-  );
 };
 
 const showCarrionPilePopup = (player, opponent, onUpdate) => {
@@ -4609,6 +4218,54 @@ export const renderGame = (state, callbacks = {}) => {
 
   // Attach broadcast hook so downstream systems (effects) can broadcast after mutations
   state.broadcast = broadcastSyncState;
+
+  // Initialize GameController (single entry point for all game actions)
+  if (!gameController || gameController.state !== state) {
+    gameController = new GameController(state, null, {
+      onStateChange: () => {
+        renderGame(latestState, latestCallbacks);
+      },
+      onBroadcast: (s) => broadcastSyncState(s),
+      onSelectionNeeded: (selectionRequest) => {
+        // Wire controller's selection needs to ui.js renderSelectionPanel
+        if (selectionRequest.selectTarget) {
+          const { title, candidates: candidatesInput, onSelect, renderCards = false } =
+            selectionRequest.selectTarget;
+          const resolvedCandidates =
+            typeof candidatesInput === 'function' ? candidatesInput() : candidatesInput;
+          const candidates = Array.isArray(resolvedCandidates) ? resolvedCandidates : [];
+          if (candidates.length === 0) {
+            selectionRequest.onCancel?.();
+            return;
+          }
+          renderSelectionPanel({
+            title,
+            items: candidates.map((c) => ({
+              label: renderCards ? undefined : (c.label || c.name || String(c)),
+              value: c.value !== undefined ? c.value : c,
+              card: renderCards ? (c.value || c) : undefined,
+            })),
+            onConfirm: (value) => {
+              clearSelectionPanel();
+              selectionRequest.onSelect(value);
+            },
+            renderCards,
+          });
+        } else if (selectionRequest.selectOption) {
+          const { title, options, onSelect } = selectionRequest.selectOption;
+          renderSelectionPanel({
+            title,
+            items: options.map((o) => ({ label: o.label, value: o })),
+            onConfirm: (value) => {
+              clearSelectionPanel();
+              selectionRequest.onSelect(value);
+            },
+          });
+        }
+      },
+    });
+  }
+
   initHandPreview();
   initCursorTracking();
 
