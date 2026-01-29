@@ -85,6 +85,12 @@ export {
 export { validateAction } from './actionValidator.js';
 
 // ============================================================================
+// ACTION SERIALIZER (Network-safe action serialization)
+// ============================================================================
+
+export { serializeAction, deserializeAction } from './actionSerializer.js';
+
+// ============================================================================
 // ACTION LOG (Persistent action log for replay & reconnection)
 // ============================================================================
 

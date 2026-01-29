@@ -369,6 +369,30 @@ let lastKnownHandSizes = [0, 0];
 // All lobby management is now centralized there
 
 // ============================================================================
+// ACTION DISPATCH
+// Routes game actions through ActionBus (online) or GameController (offline)
+// ============================================================================
+
+/**
+ * Dispatch a game action. In online multiplayer, routes through ActionBus
+ * for host-authoritative validation. In offline/local mode, executes directly
+ * on the GameController.
+ *
+ * @param {Object} action - Action object { type, payload }
+ * @returns {Object} Result from execution or { pending: true } for guest intents
+ */
+const dispatchAction = (action) => {
+  const bus = getActionBus();
+  if (bus && isOnlineMode(latestState)) {
+    return bus.dispatch(action);
+  }
+  if (gameController) {
+    return gameController.execute(action);
+  }
+  return { success: false, error: 'No controller available' };
+};
+
+// ============================================================================
 // LOBBY MANAGEMENT
 // Core lobby functions moved to ./network/lobbyManager.js
 // UI-specific wrappers remain here for DOM access
@@ -563,9 +587,7 @@ const handleSyncPostProcessing = (state, payload, options = {}) => {
 
       const handleSelection = (card) => {
         clearSelectionPanel();
-        if (gameController) {
-          gameController.execute(resolveDiscardAction(forPlayer, card));
-        }
+        dispatchAction(resolveDiscardAction(forPlayer, card));
       };
 
       // AI vs AI mode: auto-select a card to discard (pick lowest value card)
@@ -2236,7 +2258,7 @@ const resolveAttack = (state, attacker, target, negateAttack = false, negatedBy 
     console.warn('[resolveAttack] GameController not initialized');
     return;
   }
-  gameController.execute(resolveAttackAction(attacker, target, negateAttack, negatedBy));
+  dispatchAction(resolveAttackAction(attacker, target, negateAttack, negatedBy));
 };
 
 // ============================================================================
@@ -2289,11 +2311,9 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
         const attackerName = currentAttacker?.name || attacker.name;
         logMessage(state, `${attackerName} is destroyed before the attack lands.`);
         // Controller handles markCreatureAttacked + cleanup + broadcast
-        if (gameController) {
-          gameController.execute(resolveAttackAction(
-            currentAttacker || attacker, target, true, 'destroyed before attack'
-          ));
-        }
+        dispatchAction(resolveAttackAction(
+          currentAttacker || attacker, target, true, 'destroyed before attack'
+        ));
         return;
       }
 
@@ -2310,11 +2330,9 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
             `${currentAttacker.name}'s attack fizzles - target no longer on field.`
           );
           // Controller handles markCreatureAttacked + cleanup + broadcast
-          if (gameController) {
-            gameController.execute(resolveAttackAction(
-              currentAttacker, target, true, 'target no longer on field'
-            ));
-          }
+          dispatchAction(resolveAttackAction(
+            currentAttacker, target, true, 'target no longer on field'
+          ));
           return;
         }
 
@@ -2347,7 +2365,7 @@ const handleReturnToHand = (state, card, onUpdate) => {
     console.warn('[handleReturnToHand] GameController not initialized');
     return;
   }
-  gameController.execute(returnToHandAction(card));
+  dispatchAction(returnToHandAction(card));
 };
 
 /**
@@ -2359,7 +2377,7 @@ const handleSacrifice = (state, card, onUpdate) => {
     console.warn('[handleSacrifice] GameController not initialized');
     return;
   }
-  gameController.execute(sacrificeCreatureAction(card));
+  dispatchAction(sacrificeCreatureAction(card));
 };
 
 const handleAttackSelection = (state, attacker, onUpdate) => {
@@ -2450,9 +2468,7 @@ const handleEatPreyAttack = (state, attacker, onUpdate) => {
     button.textContent = `Eat ${prey.name}`;
     button.onclick = () => {
       clearSelectionPanel();
-      if (gameController) {
-        gameController.execute(eatPreyAttackAction(attacker, prey));
-      }
+      dispatchAction(eatPreyAttackAction(attacker, prey));
     };
     item.appendChild(button);
     items.push(item);
@@ -2472,8 +2488,8 @@ export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null, 
     return;
   }
 
-  // Route through GameController (single entry point for all game actions)
-  const result = gameController.execute({
+  // Route through ActionBus (online) or GameController (offline)
+  const result = dispatchAction({
     type: 'PLAY_CARD',
     payload: { card, slotIndex, options: { preselectedTarget, ...extraOptions } },
   });
@@ -2549,7 +2565,7 @@ const renderConsumptionSelection = (state, pending, onUpdate) => {
         }
 
         clearSelectionPanel();
-        gameController.execute({
+        dispatchAction({
           type: 'SELECT_CONSUMPTION_TARGETS',
           payload: { predator, prey: preyToConsume, carrion: carrionToConsume },
         });
@@ -2572,7 +2588,7 @@ const renderConsumptionSelection = (state, pending, onUpdate) => {
         return;
       }
       clearSelectionPanel();
-      gameController.execute({
+      dispatchAction({
         type: 'DRY_DROP',
         payload: { predator, slotIndex: emptySlot },
       });
@@ -2641,7 +2657,7 @@ const renderAdditionalConsumptionSelection = (state, pending, onUpdate) => {
       }
 
       clearSelectionPanel();
-      gameController.execute({
+      dispatchAction({
         type: 'FINALIZE_PLACEMENT',
         payload: { additionalPrey },
       });
@@ -2660,8 +2676,8 @@ const handleDiscardEffect = (state, card, onUpdate) => {
     return;
   }
 
-  // Route through GameController
-  gameController.execute({
+  // Route through ActionBus (online) or GameController (offline)
+  dispatchAction({
     type: 'ACTIVATE_DISCARD_EFFECT',
     payload: { card },
   });
@@ -2986,7 +3002,7 @@ const processEndOfTurnQueue = (state, onUpdate, onEndTurn) => {
     return;
   }
 
-  const result = gameController.execute(processEndPhaseAction());
+  const result = dispatchAction(processEndPhaseAction());
   if (result?.finalized) {
     onEndTurn?.(); // Auto-end turn after finalization
     return;
@@ -3974,6 +3990,13 @@ export const renderGame = (state, callbacks = {}) => {
       },
       onActionRejected: ({ intentId, reason }) => {
         console.warn(`[ui] Action rejected: ${reason}`);
+        logMessage(latestState, `Action rejected: ${reason}`);
+        renderGame(latestState, latestCallbacks);
+      },
+      onDesyncDetected: ({ localSeq, desyncCount }) => {
+        console.warn(`[ui] Desync detected at seq ${localSeq} (${desyncCount} consecutive)`);
+        logMessage(latestState, 'Desync detected — requesting recovery from host...');
+        renderGame(latestState, latestCallbacks);
       },
     });
   }
@@ -4016,6 +4039,7 @@ export const renderGame = (state, callbacks = {}) => {
         handleTrapResponse,
         handlePlayCard,
         gameController,
+        dispatchAction,
       },
       uiState: {
         currentPage,

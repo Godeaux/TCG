@@ -67,6 +67,7 @@ let isLocalPlayersTurn = null;
 let handleTrapResponse = null;
 let handlePlayCard = null;
 let gameController = null;
+let dispatchAction = null;
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -533,7 +534,7 @@ const handleExtendedConsumption = (predator, prey) => {
     return;
   }
 
-  const result = gameController.execute({
+  const result = (dispatchAction || gameController.execute.bind(gameController))({
     type: 'EXTEND_CONSUMPTION',
     payload: { predator, prey },
   });
@@ -1241,6 +1242,7 @@ export const initDragAndDrop = (options = {}) => {
   handleTrapResponse = helpers.handleTrapResponse;
   handlePlayCard = helpers.handlePlayCard;
   gameController = helpers.gameController;
+  dispatchAction = helpers.dispatchAction;
 
   document.addEventListener('dragstart', handleDragStart);
   document.addEventListener('dragend', handleDragEnd);
