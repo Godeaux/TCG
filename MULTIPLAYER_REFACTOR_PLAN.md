@@ -114,16 +114,24 @@ that doesn't change network behavior yet.
 - [ ] 4d. Eliminates need for full-state DB snapshots (actions are smaller, ordered)
 - [ ] 4e. Enables future spectator mode (replay action stream)
 
-### Phase 5: Remove Legacy Full-State Sync
-**Status**: Not started.
+### Phase 5: Route All Online Actions Through ActionBus
+**Status**: ✅ COMPLETE (switch flipped — all online game actions route through ActionBus)
 
-**Work needed**:
-- [ ] 5a. Remove `broadcastSyncState()` — replaced by ActionBus
-- [ ] 5b. Remove `applyLobbySyncPayload()` zone protection logic
-- [ ] 5c. Remove `buildLobbySyncPayload()` full-state serialization (or keep for DB snapshots only)
-- [ ] 5d. Remove old timestamp-based dedup from serialization.js
-- [ ] 5e. Keep full-state sync ONLY for initial game load / reconnect recovery
-- [ ] 5f. Simplify `handleSyncPostProcessing()` in ui.js
+**Work done**:
+- [x] 5a. Created `actionSerializer.js` — serialize/deserialize card objects as lightweight refs
+- [x] 5b. Rewrote ActionBus with full serialization pipeline (serialize outbound, deserialize inbound)
+- [x] 5c. Added action-log-based desync recovery (guest requests host's log, replays from scratch)
+- [x] 5d. Fixed duplicate `const state` bug in `_handleGuestIntent`
+- [x] 5e. Added `dispatchAction()` wrapper in ui.js (ActionBus online, controller offline)
+- [x] 5f. Replaced all 13 `gameController.execute()` calls in ui.js with `dispatchAction()`
+- [x] 5g. Wired `dispatchAction` into dragAndDrop.js
+- [x] 5h. Added desync detection UI feedback (log messages + re-render)
+
+**Not yet done (legacy cleanup — can be done after testing)**:
+- [ ] Remove `broadcastSyncState()` (still used as fallback/DB save trigger)
+- [ ] Remove `applyLobbySyncPayload()` zone protection logic
+- [ ] Simplify `handleSyncPostProcessing()` in ui.js
+- [ ] Remove old timestamp-based dedup from serialization.js
 
 ### Phase 6: Setup & Deck Selection Sync
 **Status**: Not started.
@@ -143,8 +151,9 @@ that doesn't change network behavior yet.
 |------|-------|---------|
 | `js/game/controller.js` | 1, 2 | Add ~9 missing action handlers; wire ActionBus |
 | `js/ui.js` | 1, 5 | Remove ~20 broadcastSyncState calls; route through controller |
-| `js/network/actionBus.js` | 2, 3 | **NEW** — action routing, host/guest logic, validation wiring |
+| `js/network/actionBus.js` | 2, 3, 5 | **NEW** — action routing, validation, serialization, desync recovery |
 | `js/network/actionValidator.js` | 3 | **NEW** — host-side action validation (turn, phase, card, sender) |
+| `js/network/actionSerializer.js` | 5 | **NEW** — card ref serialization for network-safe actions |
 | `js/network/actionLog.js` | 4 | **NEW** — append-only action log |
 | `js/network/actionSync.js` | 2, 3 | Refactor: merge into actionBus or keep for checksum/ACK |
 | `js/network/sync.js` | 5 | Gut broadcastSyncState; keep DB save |
@@ -260,9 +269,17 @@ that doesn't change network behavior yet.
 - [x] Phase 4d: Exported all action log functions from network/index.js
 - Note: Replay on reconnect ready to use (replayActionLog) but not yet wired to loadGameStateFromDatabase
 
+### Completed (Phase 5 — Flip the Switch)
+- [x] Phase 5a: Created `js/network/actionSerializer.js` — card ref serialize/deserialize
+- [x] Phase 5b: Rewrote ActionBus with serialization + desync recovery
+- [x] Phase 5c: Added `dispatchAction()` wrapper in ui.js
+- [x] Phase 5d: Replaced all 13 `gameController.execute()` calls with `dispatchAction()`
+- [x] Phase 5e: Wired `dispatchAction` into dragAndDrop.js
+- [x] Phase 5f: Added onDesyncDetected and onActionRejected UI feedback
+
 ### Not Started
-- [ ] Phase 5 (remove legacy full-state sync — switch live transport to ActionBus)
 - [ ] Phase 6 (route setup/deck selection through ActionBus)
+- [ ] Legacy cleanup (remove broadcastSyncState, applyLobbySyncPayload zone protection)
 
 ---
 
@@ -333,4 +350,8 @@ Last updated: Session 7
   controller). Phase 3 complete — created actionValidator.js with turn/phase/card/sender
   validation, wired into ActionBus._handleGuestIntent. Phase 4 complete — created actionLog.js
   with build/parse/replay, wired into DB save flow.
-- Next: Phase 5 (switch live transport to ActionBus, remove legacy sync), Phase 6 (setup sync)
+- Pass 9 (Session 7 cont.): Phase 5 complete — FLIPPED THE SWITCH. Created actionSerializer.js
+  for network-safe card refs. Rewrote ActionBus with serialization pipeline + action-log-based
+  desync recovery. Added dispatchAction() wrapper, replaced all 13 gameController.execute()
+  calls in ui.js + 1 in dragAndDrop.js. All online game actions now route through ActionBus.
+- Next: Test multiplayer, Phase 6 (setup sync), legacy cleanup
