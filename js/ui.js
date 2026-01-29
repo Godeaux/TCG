@@ -1396,21 +1396,6 @@ const renderAdvantageGraph = (state, playerIndex) => {
 // Import: initializeInput, updateInputState, updateInputCallbacks
 // ============================================================================
 
-// Helper wrapper for applyEffectResult (used by drag-and-drop module)
-const applyEffectResult = (result, state, onUpdate) => {
-  if (!result) return;
-  resolveEffectChain(
-    state,
-    result,
-    {
-      playerIndex: state.activePlayerIndex,
-      opponentIndex: (state.activePlayerIndex + 1) % 2,
-    },
-    onUpdate,
-    () => cleanupDestroyed(state)
-  );
-};
-
 // NOTE: The following functions have been moved to ui/input/:
 // dragAndDrop.js: getTargetId, clearDragVisuals, getCardFromInstanceId,
 //   isValidAttackTarget, canConsumePreyDirectly, getConsumablePrey, handleDragStart,
@@ -1981,7 +1966,7 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
       resolveEffectChain(state, followUp, nextContext, onUpdate, onComplete);
       cleanupDestroyed(state);
       onUpdate?.();
-      broadcastSyncState(state);
+      gameController?.broadcast();
     };
 
     // AI vs AI mode: auto-select the best target
@@ -2110,7 +2095,7 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
       // (selectTarget/selectOption panels get destroyed by full re-render)
       if (!followUp?.selectTarget && !followUp?.selectOption) {
         onUpdate?.();
-        broadcastSyncState(state);
+        gameController?.broadcast();
       }
     };
 
@@ -2174,7 +2159,7 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
       onConfirm: null,
       confirmLabel: null,
     });
-    broadcastSyncState(state);
+    gameController?.broadcast();
     onUpdate?.();
     return;
   }
@@ -2217,7 +2202,7 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
   }
 
   onUpdate?.();
-  broadcastSyncState(state);
+  gameController?.broadcast();
   onComplete?.();
 };
 
@@ -2347,7 +2332,7 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
       }
     },
     onUpdate,
-    broadcast: broadcastSyncState,
+    broadcast: () => gameController?.broadcast(),
   });
 
   // If no window was created, attack resolves immediately (no reactions available)
@@ -2697,7 +2682,7 @@ const triggerPlayTraps = (state, creature, onUpdate, onResolved) => {
     },
     onResolved,
     onUpdate,
-    broadcast: broadcastSyncState,
+    broadcast: () => gameController?.broadcast(),
   });
 
   // If no window was created, onResolved was already called
@@ -3270,7 +3255,7 @@ const executeSurrender = () => {
       surrenderingPlayerIndex: localIndex,
       timestamp: Date.now(),
     });
-    broadcastSyncState(latestState);
+    gameController?.broadcast();
   }
 
   // Re-render to trigger victory check
@@ -3920,8 +3905,15 @@ export const renderGame = (state, callbacks = {}) => {
     },
   });
 
-  // Attach broadcast hook so downstream systems (effects) can broadcast after mutations
-  state.broadcast = broadcastSyncState;
+  // Attach broadcast hook so downstream systems (effects, turnManager, combat, AI) can broadcast
+  // Routes through controller when available for advantage snapshots and future ActionBus integration
+  state.broadcast = (s) => {
+    if (gameController) {
+      gameController.broadcast();
+    } else {
+      broadcastSyncState(s);
+    }
+  };
 
   // Initialize GameController (single entry point for all game actions)
   if (!gameController || gameController.state !== state) {
@@ -4151,7 +4143,7 @@ export const renderGame = (state, callbacks = {}) => {
         state,
         activated,
         onUpdate: callbacks.onUpdate,
-        broadcast: broadcastSyncState,
+        broadcast: () => gameController?.broadcast(),
         resolveEffectChain,
         cleanupDestroyed,
       });
