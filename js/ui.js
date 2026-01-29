@@ -3383,7 +3383,6 @@ const setupResyncButton = () => {
       if (!latestState) return;
 
       if (isOnlineMode(latestState)) {
-        console.log('[Resync] Manual resync requested by user');
         requestSyncFromOpponent(latestState);
       }
     });
@@ -3610,7 +3609,6 @@ export const renderGame = (state, callbacks = {}) => {
     const profile = state.menu?.profile;
     const decks = state.menu?.decks;
 
-    console.log('[AI vs AI] Auto-restarting with same decks:', aiVsAiDecks);
 
     // Clean up AI state
     cleanupAI();
@@ -3688,10 +3686,8 @@ export const renderGame = (state, callbacks = {}) => {
 
     // Regenerate the AI vs AI decks and start the game
     if (aiVsAiDecks) {
-      console.log('[AI vs AI] Generating fresh decks...');
       // generateAIvsAIDecks expects state object - it reads deck types from state.menu.aiVsAiDecks
       const generatedDecks = generateAIvsAIDecks(state);
-      console.log('[AI vs AI] Decks generated, calling onDeckComplete');
       callbacks.onDeckComplete?.(generatedDecks);
     } else {
       console.warn('[AI vs AI] No deck configuration found, cannot restart');
@@ -3700,7 +3696,6 @@ export const renderGame = (state, callbacks = {}) => {
 
   // Set up rematch callback (same decks) for multiplayer
   setRematchCallback(() => {
-    console.log('[Rematch] Starting rematch with same decks');
 
     // Preserve lobby, profile, decks, and deck selections
     const lobby = state.menu?.lobby;
@@ -3792,7 +3787,6 @@ export const renderGame = (state, callbacks = {}) => {
 
   // Set up rematch callback (deck selection) for multiplayer
   setRematchDeckCallback(() => {
-    console.log('[Rematch] Starting rematch with deck selection');
 
     // Preserve lobby, profile, decks
     const lobby = state.menu?.lobby;
@@ -3921,7 +3915,6 @@ export const renderGame = (state, callbacks = {}) => {
       // If pendingReaction was cleared by remote player and we have a local callback,
       // invoke it to continue the attack flow (fixes multiplayer trap decline bug)
       if (hadPendingReaction && hadLocalCallback && s.pendingReaction === null) {
-        console.log('[onApplySync] pendingReaction cleared via sync, invoking local callback');
         invokePendingReactionCallback();
       }
     },
@@ -4007,8 +4000,8 @@ export const renderGame = (state, callbacks = {}) => {
   if (isOnlineMode(state) && !getActionBus()) {
     initActionBus({
       getState: () => latestState,
-      getProfileId: () => state.menu?.profile?.id,
-      getHostId: () => state.menu?.lobby?.host_id,
+      getProfileId: () => latestState?.menu?.profile?.id,
+      getHostId: () => latestState?.menu?.lobby?.host_id,
       executeAction: (action) => gameController.execute(action),
       resetGameState: () => {
         // Wipe live state to a blank game, preserving menu/lobby/profile
@@ -4255,7 +4248,6 @@ export const renderGame = (state, callbacks = {}) => {
         setMenuStage(state, 'pack-opening');
         startPackOpening({
           onCardRevealed: (card) => {
-            console.log('Card revealed:', card.name, card.packRarity);
           },
         });
         callbacks.onUpdate?.();
@@ -4308,7 +4300,6 @@ export const renderGame = (state, callbacks = {}) => {
                     userId: state.menu.profile.id,
                   });
                 } catch (e) {
-                  console.log('Could not close lobby:', e);
                 }
                 state.menu.lobby = null;
               }
@@ -4324,7 +4315,6 @@ export const renderGame = (state, callbacks = {}) => {
                     userId: state.menu.profile.id,
                   });
                 } catch (e) {
-                  console.log('Could not close lobby:', e);
                 }
                 state.menu.lobby = null;
               }
@@ -4381,7 +4371,6 @@ export const renderGame = (state, callbacks = {}) => {
             userId: state.menu.profile.id,
           });
         } catch (e) {
-          console.log('Could not close lobby:', e);
         }
         state.menu.lobby = null;
       }
@@ -4425,7 +4414,6 @@ export const renderGame = (state, callbacks = {}) => {
               userId: state.menu.profile.id,
             });
           } catch (e) {
-            console.log('Could not close lobby:', e);
           }
           state.menu.lobby = null;
         }
@@ -4437,7 +4425,6 @@ export const renderGame = (state, callbacks = {}) => {
   // Pack opening overlay
   renderPackOpeningOverlay(state, {
     onSaveCards: async (packCards) => {
-      console.log('Saving pack cards:', packCards);
       // Save cards to database (this also updates local state)
       try {
         const savedCards = await savePlayerCardsToDatabase(state, packCards);
@@ -4453,7 +4440,6 @@ export const renderGame = (state, callbacks = {}) => {
       }
     },
     onDone: (packCards) => {
-      console.log('Pack opening done:', packCards);
       // Go back to profile
       setMenuStage(state, 'profile');
       callbacks.onUpdate?.();

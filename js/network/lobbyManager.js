@@ -206,9 +206,6 @@ export const isLobbyReady = (lobby) => Boolean(lobby?.guest_id && lobby?.status 
  */
 export const mapDeckIdsToCards = (deckId, deckIds = []) => {
   const catalog = deckCatalogs[deckId] ?? [];
-  console.log(
-    `[mapDeckIdsToCards] deckId=${deckId}, catalogSize=${catalog.length}, deckIdsCount=${deckIds.length}`
-  );
   if (catalog.length === 0) {
     console.warn(
       `[mapDeckIdsToCards] WARNING: No catalog found for deckId="${deckId}". Available catalogs:`,
@@ -220,7 +217,6 @@ export const mapDeckIdsToCards = (deckId, deckIds = []) => {
     .map((id) => catalogMap.get(id))
     .filter(Boolean)
     .map((card) => ({ ...card }));
-  console.log(`[mapDeckIdsToCards] Mapped ${deckIds.length} IDs to ${result.length} cards`);
   return result;
 };
 
@@ -405,7 +401,6 @@ export const savePlayerCardsToDatabase = async (state, cards) => {
     ownedCards.set(c.card_id, c.rarity);
   });
 
-  console.log(`Saved ${savedCards.length} cards to database`);
   return savedCards;
 };
 
@@ -434,7 +429,6 @@ export const updatePackCount = async (state, delta) => {
       profileId: state.menu.profile.id,
       packs: newPacks,
     });
-    console.log(`Packs updated: ${currentPacks} -> ${newPacks}`);
   } catch (error) {
     console.error('Failed to update packs in database:', error);
     // Revert local state on error
@@ -464,7 +458,6 @@ export const updateProfileStats = async (state, stats, matches) => {
       stats,
       matches,
     });
-    console.log('Profile stats synced to database');
     return true;
   } catch (error) {
     console.error('Failed to update profile stats in database:', error);
@@ -687,8 +680,6 @@ export const validateAndAutoLogout = async (state) => {
     const isValid = await api.validateSession(state.menu.profile.id);
 
     if (!isValid) {
-      console.log('Session invalidated - logged in from another location');
-
       // Perform local logout (don't call logoutProfile since we're already kicked)
       state.menu.profile = null;
       state.menu.decks = [];
@@ -929,7 +920,6 @@ export const handleCreateDuelLobby = async (state) => {
       try {
         await api.closeLobby({ lobbyId: state.menu.lobby.id, userId: state.menu.profile.id });
       } catch (e) {
-        console.log('Could not close existing lobby:', e);
       }
       state.menu.lobby = null;
     }
@@ -975,7 +965,6 @@ export const handleCreateLobby = async (state) => {
     // If we already found an existing lobby, use it directly (rejoin)
     if (state.menu.existingLobby) {
       lobby = state.menu.existingLobby;
-      console.log('Rejoining existing lobby:', lobby.code);
     } else {
       // Create helper to check if a game is actually in progress
       const checkGameInProgress = async (lobbyId) => {
@@ -1289,13 +1278,6 @@ export const updateLobbySubscription = (state, { force = false } = {}) => {
 
   // Handle deck update broadcasts
   lobbyChannel.on('broadcast', { event: 'deck_update' }, ({ payload }) => {
-    console.log('[lobbyManager] Received deck_update broadcast:', {
-      senderId: payload?.senderId,
-      hasDeckBuilder: !!payload?.deckBuilder,
-      deckBuilderStage: payload?.deckBuilder?.stage,
-      deckIdsLengths: payload?.deckBuilder?.deckIds?.map((d) => d?.length ?? 'null'),
-      readyStatus: payload?.deckSelection?.readyStatus,
-    });
     callbacks.onApplySync?.(state, payload);
     callbacks.onUpdate?.();
   });
@@ -1315,14 +1297,6 @@ export const updateLobbySubscription = (state, { force = false } = {}) => {
     if (!validateIncomingSeq(payload)) {
       return;
     }
-
-    console.log('[lobbyManager] Received sync_state broadcast:', {
-      seq: payload._seq,
-      checksum: payload._checksum,
-      turn: payload?.game?.turn,
-      phase: payload?.game?.phase,
-      activePlayer: payload?.game?.activePlayerIndex,
-    });
 
     callbacks.onApplySync?.(state, payload);
     callbacks.onUpdate?.();
@@ -1517,15 +1491,7 @@ export const refreshLobbyState = async (state, { silent = false } = {}) => {
  * @returns {Promise<boolean>} True if a game was restored
  */
 export const loadGameStateFromDatabase = async (state) => {
-  console.log('[DB-LOAD-DEBUG] loadGameStateFromDatabase called', {
-    isOnline: isOnlineMode(state),
-    lobbyId: state.menu?.lobby?.id,
-    setupStage: state.setup?.stage,
-    handSizes: state.players?.map((p) => p?.hand?.length),
-  });
-
   if (!isOnlineMode(state) || !state.menu?.lobby?.id) {
-    console.log('[DB-LOAD-DEBUG] Skipping - not online or no lobby ID');
     return false;
   }
 
@@ -1534,18 +1500,14 @@ export const loadGameStateFromDatabase = async (state) => {
   const localGameInProgress =
     state.setup?.stage === 'complete' && state.players?.some((p) => p?.hand?.length > 0);
   if (localGameInProgress) {
-    console.log('[DB-LOAD-DEBUG] Skipping - local game already in progress with active state');
     return false;
   }
 
   try {
     const api = await loadSupabaseApi(state);
-    console.log('Loading game state for lobby ID:', state.menu.lobby.id);
     const savedGame = await api.loadGameState({ lobbyId: state.menu.lobby.id });
-    console.log('Saved game from DB:', savedGame);
 
     if (savedGame && savedGame.game_state) {
-      console.log('Restoring saved game state from database');
 
       // Check if game has actually started
       const setupCompleted = savedGame.game_state.setup?.stage === 'complete';

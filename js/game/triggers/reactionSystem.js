@@ -179,8 +179,6 @@ export const resolveReaction = ({
   resolveEffectChain,
   cleanupDestroyed,
 }) => {
-  console.log('[ReactionSystem] resolveReaction called:', { activated, reactionIndex });
-
   if (!state.pendingReaction) {
     console.warn('[ReactionSystem] No pending reaction to resolve');
     return;
@@ -188,14 +186,6 @@ export const resolveReaction = ({
 
   const { event, reactingPlayerIndex, triggeringPlayerIndex, reactions, eventContext } =
     state.pendingReaction;
-
-  console.log('[ReactionSystem] Processing reaction:', {
-    event,
-    reactingPlayerIndex,
-    triggeringPlayerIndex,
-    reactionCount: reactions?.length,
-    trapName: reactions?.[0]?.card?.name,
-  });
 
   const reactingPlayer = state.players[reactingPlayerIndex];
 
@@ -208,7 +198,6 @@ export const resolveReaction = ({
 
   // If not activated, just continue
   if (!activated || reactions.length === 0) {
-    console.log('[ReactionSystem] Reaction not activated or no reactions');
     callback?.();
     onUpdate?.();
     broadcast?.(state);
@@ -227,7 +216,6 @@ export const resolveReaction = ({
 
   // Process the trap activation
   if (reaction.type === 'trap') {
-    console.log('[ReactionSystem] Activating trap:', reaction.card?.name);
     // Bug detection: snapshot before trap activation
     const detector = getBugDetector();
     if (detector?.isEnabled()) {
@@ -278,13 +266,11 @@ export const resolveReaction = ({
     // Resolve the trap's effect with error handling
     let result;
     try {
-      console.log('[ReactionSystem] Resolving trap effect...');
       result = resolveCardEffect(reaction.card, 'effect', {
         log: (message) => logMessage(state, message),
         state,
         ...effectContext,
       });
-      console.log('[ReactionSystem] Trap effect resolved:', result);
     } catch (error) {
       console.error('[ReactionSystem] Error resolving trap effect:', error);
       // Continue game flow even if effect fails
@@ -309,7 +295,6 @@ export const resolveReaction = ({
 
     // Handle negated play - return card to hand
     if (event === TRIGGER_EVENTS.CARD_PLAYED && result?.negatePlay) {
-      console.log('[ReactionSystem] Handling negated play');
       const playedCard = eventContext?.card;
       if (playedCard) {
         const triggeringPlayer = state.players[triggeringPlayerIndex];
@@ -333,7 +318,6 @@ export const resolveReaction = ({
 
     // Apply effect chain if needed, with proper callbacks for async effects
     if (result && resolveEffectChain) {
-      console.log('[ReactionSystem] Starting effect chain resolution');
       try {
         resolveEffectChain(
           state,
@@ -345,7 +329,6 @@ export const resolveReaction = ({
           onUpdate,
           () => {
             // Effect chain completed - continue game flow
-            console.log('[ReactionSystem] Effect chain completed');
             cleanupDestroyed?.(state);
             // Bug detection: check after trap effect chain completed
             if (detector?.isEnabled()) {
@@ -357,7 +340,6 @@ export const resolveReaction = ({
           },
           () => {
             // Effect chain cancelled - still continue game flow
-            console.log('[ReactionSystem] Effect chain cancelled');
             cleanupDestroyed?.(state);
             // Bug detection: check after trap effect chain cancelled
             if (detector?.isEnabled()) {
@@ -498,7 +480,6 @@ export const invokePendingReactionCallback = () => {
   const callback = pendingReactionCallback;
   pendingReactionCallback = null;
   if (callback) {
-    console.log('[ReactionSystem] Invoking pending callback from sync');
     callback();
     return true;
   }

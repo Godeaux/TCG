@@ -341,9 +341,6 @@ export const renderReactionOverlay = (state, callbacks = {}) => {
       const currentReactingIndex =
         state.pendingReaction?.reactingPlayerIndex ?? state.pendingReaction?.deciderIndex;
       if (state.pendingReaction && currentReactingIndex === reactingPlayerIndex) {
-        console.log(
-          `[AI] Trap decision: ${shouldActivate ? 'ACTIVATE' : 'PASS'} ${trap?.name || 'trap'}`
-        );
         callbacks.onReactionDecision?.(shouldActivate);
       }
       aiDecisionPending = false;
@@ -380,6 +377,5 @@ export const isReactionOverlayActive = () => {
  * Reset AI decision pending flag (call when restarting a game)
  */
 export const resetReactionAIState = () => {
-  console.log('[ReactionOverlay] Resetting AI decision pending flag');
   aiDecisionPending = false;
 };

@@ -677,10 +677,6 @@ export const resolveEffectResult = (state, result, context) => {
       if (sourceHasOnPlay && !target.abilitiesCancelled) {
         const playerIndex = context.playerIndex ?? findCardOwnerIndex(state, target);
         const opponentIndex = (playerIndex + 1) % 2;
-        console.log(
-          `[copyAbilities] Queueing copied onPlay for ${target.name}, playerIndex: ${playerIndex}`
-        );
-
         // Mark that we need to trigger onPlay after this effect completes
         // The caller (controller) will handle chaining this through resolveEffectChain
         return {
@@ -773,8 +769,6 @@ export const resolveEffectResult = (state, result, context) => {
 
   if (result.summonTokens) {
     const { playerIndex, tokens } = result.summonTokens;
-    console.log(`🎯 [effects.js summonTokens] playerIndex: ${playerIndex}, tokens:`, tokens);
-
     // Collect any pending onPlay effects from summoned tokens for sequential chaining
     const pendingOnPlays = [];
 
@@ -786,26 +780,17 @@ export const resolveEffectResult = (state, result, context) => {
           ? getTokenById(tokenIdOrData) || getCardDefinitionById(tokenIdOrData)
           : tokenIdOrData;
 
-      console.log(
-        `  → Attempting to summon token:`,
-        tokenIdOrData,
-        `→ resolved to:`,
-        tokenData?.name
-      );
-
       if (!tokenData) {
         console.error(`  ✗ Token not found: ${tokenIdOrData}`);
         return;
       }
 
       const summoned = placeToken(state, playerIndex, tokenData);
-      console.log(`  → Summoned:`, summoned ? summoned.name : 'FAILED');
 
       // Directly resolve token onPlay effects when summoned
       // This ensures they trigger regardless of code path (controller or turnManager)
       if (summoned?.effects?.onPlay && !summoned?.abilitiesCancelled) {
         const opponentIndex = (playerIndex + 1) % 2;
-        console.log(`  → Triggering onPlay effect for token: ${summoned.name}`);
 
         const onPlayResult = resolveCardEffect(summoned, 'onPlay', {
           log: (message) => logMessage(state, message),
@@ -819,7 +804,6 @@ export const resolveEffectResult = (state, result, context) => {
 
         // If the token's onPlay effect produces a result, resolve it
         if (onPlayResult && Object.keys(onPlayResult).length > 0) {
-          console.log(`  → Token ${summoned.name} onPlay returned:`, Object.keys(onPlayResult));
           const nestedResult = resolveEffectResult(state, onPlayResult, {
             playerIndex,
             opponentIndex,

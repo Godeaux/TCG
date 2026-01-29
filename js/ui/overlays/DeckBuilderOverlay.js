@@ -788,7 +788,6 @@ const initCatalogBuilder = (builder) => {
     return;
   }
   const catalog = deckCatalogs[builder.deckId] ?? [];
-  console.log('initCatalogBuilder - deckId:', builder.deckId, 'catalog length:', catalog.length);
   if (!builder.catalogOrder?.length) {
     builder.catalogOrder = catalog.map((card) => card.id);
   }
@@ -796,7 +795,6 @@ const initCatalogBuilder = (builder) => {
     builder.available = cloneDeckCatalog(catalog).filter(
       (card) => !builder.selections.some((picked) => picked.id === card.id)
     );
-    console.log('initCatalogBuilder - available length after setup:', builder.available.length);
   }
 };
 
@@ -864,9 +862,6 @@ const generateDeckForPlayer = (state, playerIndex, specificDeckId = null) => {
   state.deckBuilder.available[playerIndex] = available;
   state.deckBuilder.catalogOrder[playerIndex] = catalogOrder;
 
-  console.log(
-    `[AI] Generated ${deckName} deck for player ${playerIndex} with ${selected.length} cards`
-  );
   return selected;
 };
 
@@ -883,8 +878,6 @@ const generateAIDeck = (state) => {
 export const generateAIvsAIDecks = (state) => {
   const deck1Type = state.menu?.aiVsAiDecks?.player1 || state.aiVsAi?.deck1Type;
   const deck2Type = state.menu?.aiVsAiDecks?.player2 || state.aiVsAi?.deck2Type;
-
-  console.log(`[AI vs AI] Generating decks: P1=${deck1Type}, P2=${deck2Type}`);
 
   // Generate deck for AI player 1 (bottom/watching perspective)
   generateDeckForPlayer(state, 0, deck1Type);
@@ -1272,8 +1265,6 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
   if (isAIvsAIMode(state) && state.menu?.stage === 'ready') {
     // Only process once (check if already complete)
     if (state.deckSelection?.stage !== 'complete') {
-      console.log('[DeckBuilderOverlay] AI vs AI mode - generating both decks');
-
       // Initialize deck builder state if needed
       if (!state.deckBuilder) {
         state.deckBuilder = {
@@ -1602,17 +1593,6 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
     const localReady = state.deckSelection.readyStatus[localIndex];
     const opponentReady = state.deckSelection.readyStatus[opponentIndex];
 
-    console.log('[DeckBuilderOverlay] Online deck selection render:', {
-      localIndex,
-      opponentIndex,
-      selections: state.deckSelection.selections,
-      localSelection: state.deckSelection.selections[localIndex],
-      readyStatus: state.deckSelection.readyStatus,
-      localReady,
-      opponentReady,
-      lobby: { host_id: state.menu?.lobby?.host_id, guest_id: state.menu?.lobby?.guest_id },
-      profileId: state.menu?.profile?.id,
-    });
     const localPlayer = state.players[localIndex];
     const opponentPlayer = state.players[opponentIndex];
     const opponentName = opponentPlayer?.name || 'Opponent';
@@ -1623,14 +1603,6 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
     const bothDecksPopulated = state.deckBuilder.selections.every(
       (deck) => deck && deck.length > 0
     );
-    console.log('[DeckBuilderOverlay] Ready check:', {
-      localReady,
-      opponentReady,
-      bothDecksPopulated,
-      deckBuilderSelections: state.deckBuilder.selections.map((d) => d?.length ?? 'null'),
-      deckSelectionSelections: state.deckSelection.selections,
-      waitingScreenFading,
-    });
     if (localReady && opponentReady && bothDecksPopulated) {
       // If already fading or complete, just ensure overlay is hidden
       if (state.deckSelection.stage === 'complete' && state.deckBuilder.stage === 'complete') {
@@ -1641,12 +1613,10 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
 
       // Start fade-out transition if not already fading
       if (!waitingScreenFading && !waitingScreenFadeTimeout) {
-        console.log('[DeckBuilderOverlay] Starting waiting screen fade-out');
         waitingScreenFading = true;
         deckSelectOverlay?.classList.add('fading-out');
 
         waitingScreenFadeTimeout = setTimeout(() => {
-          console.log('[DeckBuilderOverlay] Fade complete, proceeding to setup');
           waitingScreenFading = false;
           waitingScreenFadeTimeout = null;
 
@@ -1727,13 +1697,6 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
 
     const localSelection = state.deckSelection.selections[localIndex];
     const hasSelectedDeck = Boolean(localSelection);
-
-    console.log('[DeckBuilderOverlay] Deck selection check:', {
-      localIndex,
-      localSelection,
-      hasSelectedDeck,
-      allSelections: state.deckSelection.selections,
-    });
 
     if (deckSelectTitle) {
       deckSelectTitle.textContent = hasSelectedDeck
@@ -1864,14 +1827,6 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
     const bothDecksPopulated = state.deckBuilder.selections.every(
       (deck) => deck && deck.length > 0
     );
-    console.log('[DeckBuilderOverlay] Ready check (random deck path):', {
-      localReady,
-      opponentReady,
-      bothDecksPopulated,
-      deckBuilderSelections: state.deckBuilder.selections.map((d) => d?.length ?? 'null'),
-      deckSelectionSelections: state.deckSelection.selections,
-      waitingScreenFading,
-    });
     if (localReady && opponentReady && bothDecksPopulated) {
       // If already fading or complete, just ensure overlay is hidden
       if (state.deckSelection.stage === 'complete' && state.deckBuilder.stage === 'complete') {
@@ -1882,12 +1837,10 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
 
       // Start fade-out transition if not already fading
       if (!waitingScreenFading && !waitingScreenFadeTimeout) {
-        console.log('[DeckBuilderOverlay] Starting waiting screen fade-out (random deck path)');
         waitingScreenFading = true;
         deckSelectOverlay?.classList.add('fading-out');
 
         waitingScreenFadeTimeout = setTimeout(() => {
-          console.log('[DeckBuilderOverlay] Fade complete, proceeding to setup (random deck path)');
           waitingScreenFading = false;
           waitingScreenFadeTimeout = null;
 
@@ -2289,12 +2242,6 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
   const available = state.catalogBuilder.available;
   const selected = state.catalogBuilder.selections;
   const catalogOrder = state.catalogBuilder.catalogOrder ?? [];
-  console.log(
-    'renderCatalogBuilderOverlay - available length:',
-    available.length,
-    'selected length:',
-    selected.length
-  );
   const predatorCount = selected.filter((card) => card.type === 'Predator').length;
   const preyCount = selected.filter((card) => card.type === 'Prey').length;
   const totalCount = selected.length;

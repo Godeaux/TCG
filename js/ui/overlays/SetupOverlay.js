@@ -25,7 +25,6 @@ let aiChoicePending = false;
  * Reset AI pending flags (call when restarting a game)
  */
 export const resetSetupAIState = () => {
-  console.log('[SetupOverlay] Resetting AI pending flags');
   aiRollPending = false;
   aiChoicePending = false;
 };
@@ -87,7 +86,6 @@ const renderRollingPhase = (state, elements, callbacks) => {
 
   // Reset aiRollPending if we need to re-roll (tie was detected and rolls were reset)
   if (isAIvsAIMode(state) && p1Roll === null && p2Roll === null && aiRollPending) {
-    console.log('[AI vs AI] Tie detected, resetting aiRollPending for reroll');
     aiRollPending = false;
   }
 
@@ -100,7 +98,6 @@ const renderRollingPhase = (state, elements, callbacks) => {
     if (state.setup.rolls[0] === null) {
       setTimeout(() => {
         if (state.setup?.stage === 'rolling' && state.setup.rolls[0] === null) {
-          console.log('[AI vs AI] Auto-rolling for AI player 0');
           callbacks.onSetupRoll?.(0);
         }
       }, rollDelay);
@@ -109,7 +106,6 @@ const renderRollingPhase = (state, elements, callbacks) => {
     if (state.setup.rolls[1] === null) {
       setTimeout(() => {
         if (state.setup?.stage === 'rolling' && state.setup.rolls[1] === null) {
-          console.log('[AI vs AI] Auto-rolling for AI player 1');
           callbacks.onSetupRoll?.(1);
         }
         aiRollPending = false;
@@ -125,7 +121,6 @@ const renderRollingPhase = (state, elements, callbacks) => {
     aiRollPending = true;
     setTimeout(() => {
       if (state.setup?.stage === 'rolling' && state.setup.rolls[1] === null) {
-        console.log('[AI] Auto-rolling for AI player');
         callbacks.onSetupRoll?.(1);
       }
       aiRollPending = false;
@@ -159,14 +154,10 @@ const renderRollingPhase = (state, elements, callbacks) => {
         try {
           // Enhanced broadcasting with error handling
           const payload = buildLobbySyncPayload(state);
-          console.log('Broadcasting P1 roll:', payload.setup?.rolls);
-
           sendLobbyBroadcast('sync_state', payload);
 
           // Also save to database as backup
           await saveGameStateToDatabase(state);
-
-          console.log('P1 roll broadcast successful');
         } catch (error) {
           console.error('Failed to broadcast P1 roll:', error);
           // Attempt recovery by requesting sync
@@ -197,14 +188,10 @@ const renderRollingPhase = (state, elements, callbacks) => {
         try {
           // Enhanced broadcasting with error handling
           const payload = buildLobbySyncPayload(state);
-          console.log('Broadcasting P2 roll:', payload.setup?.rolls);
-
           sendLobbyBroadcast('sync_state', payload);
 
           // Also save to database as backup
           await saveGameStateToDatabase(state);
-
-          console.log('P2 roll broadcast successful');
         } catch (error) {
           console.error('Failed to broadcast P2 roll:', error);
           // Attempt recovery by requesting sync
@@ -272,7 +259,6 @@ const renderChoicePhase = (state, elements, callbacks) => {
     const choiceDelay = state.menu?.aiSlowMode ? 800 : 200;
     setTimeout(() => {
       if (state.setup?.stage === 'choice') {
-        console.log(`[AI vs AI] Auto-choosing player ${state.setup.winnerIndex} to go first`);
         // Winner always chooses to go first
         callbacks.onSetupChoose?.(state.setup.winnerIndex);
       }
@@ -286,7 +272,6 @@ const renderChoicePhase = (state, elements, callbacks) => {
     aiChoicePending = true;
     setTimeout(() => {
       if (state.setup?.stage === 'choice' && state.setup.winnerIndex === 1) {
-        console.log('[AI] Auto-choosing to go first');
         // AI always chooses to go first for strategic advantage
         callbacks.onSetupChoose?.(1);
       }

@@ -71,40 +71,18 @@ export const getLocalPlayerIndex = (state) => {
   }
 
   const profileId = state.menu?.profile?.id;
-  if (!profileId) {
-    console.log('[getLocalPlayerIndex] No profileId, returning 0');
-    return 0;
-  }
+  if (!profileId) return 0;
 
   // Primary method: Use lobby host_id/guest_id (most reliable)
   const lobby = state.menu?.lobby;
   if (lobby) {
-    if (lobby.host_id === profileId) {
-      console.log('[getLocalPlayerIndex] Matched as HOST (index 0)', {
-        profileId,
-        host_id: lobby.host_id,
-      });
-      return 0;
-    }
-    if (lobby.guest_id === profileId) {
-      console.log('[getLocalPlayerIndex] Matched as GUEST (index 1)', {
-        profileId,
-        guest_id: lobby.guest_id,
-      });
-      return 1;
-    }
-    console.log('[getLocalPlayerIndex] No lobby match!', {
-      profileId,
-      host_id: lobby.host_id,
-      guest_id: lobby.guest_id,
-    });
-  } else {
-    console.log('[getLocalPlayerIndex] No lobby object in state');
+    if (lobby.host_id === profileId) return 0;
+    if (lobby.guest_id === profileId) return 1;
+    console.warn('[getLocalPlayerIndex] No lobby match!', { profileId, host_id: lobby.host_id, guest_id: lobby.guest_id });
   }
 
   // Fallback: Match by player profileId (if set)
   const matchingIndex = state.players.findIndex((player) => player.profileId === profileId);
-  console.log('[getLocalPlayerIndex] Fallback result:', matchingIndex);
   return matchingIndex >= 0 ? matchingIndex : 0;
 };
 

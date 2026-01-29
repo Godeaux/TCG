@@ -173,8 +173,15 @@ export class ActionBus {
   isHost() {
     const profileId = this.getProfileId();
     const hostId = this.getHostId();
-    // If no host info available, default to host (single player / fallback)
-    if (!hostId || !profileId) return true;
+    if (!hostId || !profileId) {
+      // This should never happen in an online game. If it does, something
+      // is wrong with lobby data. Log loudly so we can diagnose.
+      console.error(
+        `[ActionBus.isHost] Missing identity — profileId=${profileId}, hostId=${hostId}. ` +
+          `Cannot determine role. Defaulting to HOST as fallback.`
+      );
+      return true;
+    }
     return profileId === hostId;
   }
 

@@ -558,19 +558,16 @@ const shouldAwardPack = (state, winner, loser) => {
   if (gameMode === 'ai') {
     // In AI mode, player 0 is always the human, player 1 is AI
     const humanWon = winner === state.players[0];
-    console.log('AI mode - Human won:', humanWon);
     return humanWon;
   }
 
   // Online mode: Award pack for completing the game (win or lose)
   if (gameMode === 'online') {
-    console.log('Online mode - Pack awarded for completing game');
     return true;
   }
 
   // Local mode: No packs (it's just practice)
   if (gameMode === 'local') {
-    console.log('Local mode - No pack awarded');
     return false;
   }
 
@@ -804,8 +801,5 @@ const updateProfileStatsOnVictory = (state, winner, loser) => {
     // Sync to database (async, don't wait)
     updateProfileStats(state, profile.stats, profile.matches);
 
-    console.log(
-      `Profile stats updated: ${profile.stats.gamesPlayed} played, ${profile.stats.gamesWon} won, favorite: ${favoriteCard}`
-    );
   }
 };

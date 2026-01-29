@@ -176,8 +176,6 @@ const startAIGame = (state, callbacks) => {
     selectedDeckId: null,
   };
 
-  console.log('[AI] Starting game with settings:', aiSettings);
-
   // Set the game mode to AI
   state.menu.mode = 'ai';
   state.menu.aiDeckType = aiSettings.deckType;
@@ -287,8 +285,6 @@ const handleAIvsAIDeckSelect = (side, deckId, elements) => {
  */
 const startAIvsAIGame = (deck1Id, deck2Id, elements) => {
   if (!latestState) return;
-
-  console.log(`[AI vs AI] Starting game: ${deck1Id} vs ${deck2Id}`);
 
   // Set game mode to AI vs AI
   latestState.menu.mode = 'aiVsAi';
@@ -762,7 +758,6 @@ const initNavigation = () => {
     if (latestState) {
       latestState.menu = latestState.menu || {};
       latestState.menu.aiDifficulty = difficulty;
-      console.log(`[AI Setup] Difficulty set to: ${difficulty}`);
     }
   });
 
@@ -1049,7 +1044,6 @@ export const initializeInput = (options = {}) => {
     helpers,
   });
 
-  console.log('Input systems initialized');
 };
 
 /**

@@ -125,18 +125,9 @@ const queueEndOfTurnEffects = (state) => {
 // Handle Frozen thawing - creatures lose Frozen at end of owner's turn (they survive) - creatures frozen (without frozenDiesTurn) thaw at end of owner's turn
 const handleFrozenThaw = (state) => {
   const player = state.players[state.activePlayerIndex];
-  console.log(
-    `[FROZEN-DEBUG] handleFrozenThaw called for player ${state.activePlayerIndex} (${player.name}), turn ${state.turn}`
-  );
   player.field.forEach((creature, slot) => {
-    if (creature) {
-      console.log(
-        `[FROZEN-DEBUG] Slot ${slot}: ${creature.name} - frozen=${creature.frozen}, frozenDiesTurn=${creature.frozenDiesTurn}, keywords=${JSON.stringify(creature.keywords)}`
-      );
-    }
     // Thaw creatures that are frozen but NOT by Neurotoxic (no frozenDiesTurn)
     if (creature?.frozen && !creature.frozenDiesTurn) {
-      console.log(`[FROZEN-DEBUG] Thawing ${creature.name}`);
       creature.frozen = false;
       creature.thawing = true; // Trigger thaw dissipation animation in UI
       // Clear thawing flag after animation completes (2.5s)
@@ -151,10 +142,6 @@ const handleFrozenThaw = (state) => {
         }
       }
       logGameAction(state, BUFF, `${creature.name} thaws out.`);
-    } else if (creature?.frozen) {
-      console.log(
-        `[FROZEN-DEBUG] NOT thawing ${creature.name} because frozenDiesTurn=${creature.frozenDiesTurn}`
-      );
     }
   });
 };
@@ -298,12 +285,6 @@ export const startTurn = (state) => {
 };
 
 export const advancePhase = (state) => {
-  console.log(
-    '[PHASE-DEBUG] advancePhase called, current phase:',
-    state.phase,
-    'activePlayer:',
-    state.activePlayerIndex
-  );
   if (state.setup?.stage !== 'complete') {
     logMessage(state, 'Finish the opening roll before advancing phases.');
     return;
@@ -320,7 +301,6 @@ export const advancePhase = (state) => {
   const nextIndex = (currentIndex + 1) % PHASES.length;
   const previousPhase = state.phase;
   state.phase = PHASES[nextIndex];
-  console.log('[PHASE-DEBUG] Phase transition:', previousPhase, '->', state.phase);
 
   // Clear extended consumption window when leaving Main phases
   if (previousPhase === 'Main 1' || previousPhase === 'Main 2') {
@@ -335,11 +315,9 @@ export const advancePhase = (state) => {
   }
 
   if (state.phase === 'Draw') {
-    console.log('[PHASE-DEBUG] Entering Draw phase block');
     const skipFirst =
       state.skipFirstDraw && state.turn === 1 && state.activePlayerIndex === state.firstPlayerIndex;
     if (skipFirst) {
-      console.log('[PHASE-DEBUG] Skipping first draw');
       logGameAction(
         state,
         PHASE,
@@ -355,21 +333,7 @@ export const advancePhase = (state) => {
     const deckSize = player.deck.length;
     const handSize = player.hand.length;
 
-    console.log(
-      '[PHASE-DEBUG] About to call drawCard, player:',
-      state.activePlayerIndex,
-      'handSize:',
-      handSize,
-      'deckSize:',
-      deckSize
-    );
     const card = drawCard(state, state.activePlayerIndex);
-    console.log(
-      '[PHASE-DEBUG] drawCard returned:',
-      card?.name ?? 'null',
-      'new hand size:',
-      player.hand.length
-    );
     if (card) {
       // Don't reveal card name - hidden information for competitive fairness
       logGameAction(
@@ -463,7 +427,6 @@ export const advancePhase = (state) => {
 };
 
 export const endTurn = (state) => {
-  console.log('[PHASE-DEBUG] endTurn called, current phase:', state.phase, 'turn:', state.turn);
   if (state.setup?.stage !== 'complete') {
     logMessage(state, 'Complete the opening roll before ending the turn.');
     return;
@@ -541,11 +504,7 @@ export const canPlayCard = (state) => {
 };
 
 export const finalizeEndPhase = (state) => {
-  console.log('[EOT] finalizeEndPhase called, current finalized:', state.endOfTurnFinalized);
-  if (state.endOfTurnFinalized) {
-    console.log('[EOT] finalizeEndPhase: already finalized, returning early');
-    return;
-  }
+  if (state.endOfTurnFinalized) return;
 
   logGameAction(state, PHASE, `Processing end-of-turn effects...`);
   handleRegen(state);
@@ -563,7 +522,6 @@ export const finalizeEndPhase = (state) => {
     `${player.name} ends turn. (HP: ${player.hp}, Hand: ${player.hand.length}, Deck: ${player.deck.length})`
   );
   state.endOfTurnFinalized = true;
-  console.log('[EOT] finalizeEndPhase complete, endOfTurnFinalized set to true');
   // Note: Don't broadcast here - endTurn() will broadcast the final state after all transitions
 };
 

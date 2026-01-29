@@ -1056,7 +1056,6 @@ export const resetCollectionFilter = () => {
  */
 export const setupDuelInviteListener = (profileId, callbacks = {}) => {
   if (!profileId) {
-    console.log('[DUEL-INVITE] setupDuelInviteListener skipped - no profileId');
     return;
   }
 
@@ -1066,11 +1065,8 @@ export const setupDuelInviteListener = (profileId, callbacks = {}) => {
     return;
   }
 
-  console.log('[DUEL-INVITE] Setting up duel invite listener for profile:', profileId);
-
   // Cleanup existing subscription (different profile or first time)
   if (duelInvitesChannel) {
-    console.log('[DUEL-INVITE] Cleaning up existing subscription for different profile');
     unsubscribeFromDuelInvites(duelInvitesChannel);
     duelInvitesChannel = null;
     duelInvitesProfileId = null;
@@ -1080,23 +1076,18 @@ export const setupDuelInviteListener = (profileId, callbacks = {}) => {
     profileId,
     // onInvite - received a new challenge
     async (invite) => {
-      console.log('[DUEL-INVITE] Received invite!', invite);
-      console.log('[DUEL-INVITE] sender_id from invite:', invite?.sender_id);
       try {
         if (!invite?.sender_id) {
           console.error('[DUEL-INVITE] No sender_id in invite payload!');
           return;
         }
         const sender = await fetchPublicProfile({ profileId: invite.sender_id });
-        console.log('[DUEL-INVITE] Sender info:', sender?.username);
         showDuelInvitePopup(invite, sender?.username || 'Unknown', {
           onAccept: async (inv) => {
-            console.log('[DUEL-INVITE] User accepted invite');
             await respondToDuelInvite({ inviteId: inv.id, response: 'accepted' });
             callbacks.onAcceptChallenge?.(inv.lobby_code);
           },
           onDecline: async (inv) => {
-            console.log('[DUEL-INVITE] User declined invite');
             await respondToDuelInvite({ inviteId: inv.id, response: 'declined' });
           },
         });
@@ -1106,12 +1097,10 @@ export const setupDuelInviteListener = (profileId, callbacks = {}) => {
     },
     // onCancelled - sender cancelled the invite
     (invite) => {
-      console.log('[DUEL-INVITE] Invite cancelled:', invite.id);
       showInviteCancelled(invite.id);
     },
     // onResponse - response to invite we sent
     (invite) => {
-      console.log('[DUEL-INVITE] Got response to our invite:', invite.status);
       if (invite.status === 'accepted') {
         callbacks.onChallengeAccepted?.(invite.lobby_code);
       } else if (invite.status === 'declined') {
@@ -1121,10 +1110,6 @@ export const setupDuelInviteListener = (profileId, callbacks = {}) => {
   );
 
   duelInvitesProfileId = profileId;
-  console.log(
-    '[DUEL-INVITE] Subscription set up, channel:',
-    duelInvitesChannel ? 'exists' : 'null'
-  );
 };
 
 // ============================================================================

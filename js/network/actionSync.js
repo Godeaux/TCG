@@ -229,7 +229,6 @@ const retryBroadcast = (seq) => {
     return;
   }
 
-  console.log(`[ActionSync] Retrying broadcast seq=${seq} (attempt ${entry.retries}/${MAX_RETRIES})`);
   broadcastFn(entry.event, entry.payload);
   entry.timer = setTimeout(() => retryBroadcast(seq), ACK_TIMEOUT_MS * (entry.retries + 1));
 };
@@ -254,7 +253,6 @@ export const validateIncomingSeq = (payload) => {
 
   const lastSeq = remoteSeqBySender.get(senderId) ?? 0;
   if (seq <= lastSeq) {
-    console.log(`[ActionSync] Dropping out-of-order payload: seq=${seq}, lastSeq=${lastSeq}`);
     return false;
   }
 
@@ -297,7 +295,6 @@ export const verifyChecksum = (state, payload) => {
     return false;
   }
 
-  console.log(`[ActionSync] Checksum OK: ${localChecksum} (seq=${payload._seq})`);
   return true;
 };
 
@@ -330,7 +327,6 @@ export const handleAck = (payload) => {
   if (entry) {
     clearTimeout(entry.timer);
     pendingAcks.delete(seq);
-    console.log(`[ActionSync] ACK received for seq=${seq}`);
   }
 
   // Also clear all older pending ACKs (if we got seq 5, seqs 1-4 were implicitly received)
@@ -392,7 +388,6 @@ export const handleDesyncRecoveryRequest = () => {
   payload._checksum = computeStateChecksum(state);
 
   broadcastFn('desync_recovery_response', payload);
-  console.log('[ActionSync] Sent desync recovery response');
 };
 
 /**
@@ -410,7 +405,6 @@ export const handleDesyncRecoveryResponse = (payload) => {
     remoteSeqBySender.set(payload.senderId, payload._seq);
   }
 
-  console.log('[ActionSync] Applying desync recovery state');
   return { payload, options: { forceApply: true } };
 };
 

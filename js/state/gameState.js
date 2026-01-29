@@ -1,6 +1,3 @@
-// Module load verification - this should appear in console on page load
-console.log('[GAMESTATE-MODULE] Loaded at:', new Date().toISOString());
-
 // Re-export history logging functions for convenience
 export {
   LOG_CATEGORIES,
@@ -45,7 +42,7 @@ let currentSeed = null;
 export const initializeGameRandom = (seed) => {
   currentSeed = seed;
   gameRandom = createSeededRandom(seed);
-  console.log(`[PRNG] Initialized with seed: ${seed}`);
+
 };
 
 /**
@@ -181,19 +178,12 @@ export const createGameState = () => {
 
 export const drawCard = (state, playerIndex) => {
   const player = state.players[playerIndex];
-  console.log(
-    `[DRAW-DEBUG] Before: hand=${player.hand.length}, deck=${player.deck.length}, playerIndex=${playerIndex}`
-  );
   if (player.deck.length === 0) {
-    console.log(`[DRAW-DEBUG] Deck empty!`);
     return null;
   }
   const card = player.deck.shift();
   const newCard = { ...card, instanceId: crypto.randomUUID() };
   player.hand.push(newCard);
-  console.log(
-    `[DRAW-DEBUG] After: hand=${player.hand.length}, deck=${player.deck.length}, drew: ${card.name}`
-  );
   return card;
 };
 
@@ -275,7 +265,6 @@ export const rollSetupDie = (state, playerIndex) => {
   }
 
   if (state.setup.rolls[playerIndex] !== null) {
-    console.log(`Player ${playerIndex + 1} already rolled: ${state.setup.rolls[playerIndex]}`);
     return state.setup.rolls[playerIndex];
   }
 
@@ -292,19 +281,16 @@ export const rollSetupDie = (state, playerIndex) => {
   const roll = Math.floor(seededRandom() * 10) + 1;
   state.setup.rolls[playerIndex] = roll;
 
-  console.log(`${state.players[playerIndex].name} rolls a ${roll}.`);
   logMessage(state, `${state.players[playerIndex].name} rolls a ${roll}.`);
 
   const [p1Roll, p2Roll] = state.setup.rolls;
   if (p1Roll !== null && p2Roll !== null) {
     if (p1Roll === p2Roll) {
-      console.log('Tie detected - rerolling');
       logMessage(state, 'Tie! Reroll the dice to determine who chooses first.');
       state.setup.rolls = [null, null];
     } else {
       state.setup.winnerIndex = p1Roll > p2Roll ? 0 : 1;
       state.setup.stage = 'choice';
-      console.log(`${state.players[state.setup.winnerIndex].name} wins the roll`);
       logMessage(
         state,
         `${state.players[state.setup.winnerIndex].name} wins the roll and chooses who goes first.`
@@ -330,7 +316,6 @@ export const chooseFirstPlayer = (state, chosenIndex) => {
     const seed = Date.now() ^ (Math.random() * 0xffffffff);
     state.randomSeed = seed;
     initializeGameRandom(seed);
-    console.log('[PRNG] Host generated seed:', seed);
   }
 
   logMessage(state, `${state.players[chosenIndex].name} will take the first turn.`);

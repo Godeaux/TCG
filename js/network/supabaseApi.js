@@ -1318,8 +1318,6 @@ export const unsubscribeFromFriendships = (channel) => {
  * @returns {Promise<Object>} Created invite
  */
 export const sendDuelInvite = async ({ senderId, receiverId, lobbyCode }) => {
-  console.log('[DUEL-SEND] Sending invite:', { senderId, receiverId, lobbyCode });
-
   // Cancel any existing pending invites from this sender
   await supabase
     .from('duel_invites')
@@ -1345,7 +1343,6 @@ export const sendDuelInvite = async ({ senderId, receiverId, lobbyCode }) => {
     throw error;
   }
 
-  console.log('[DUEL-SEND] Invite sent successfully:', data);
   return data;
 };
 
@@ -1377,8 +1374,6 @@ export const respondToDuelInvite = async ({ inviteId, response }) => {
  * @returns {Object} Supabase channel for cleanup
  */
 export const subscribeToDuelInvites = (profileId, onInvite, onCancelled, onResponse) => {
-  console.log('[DUEL-SUB] Creating subscription for profile:', profileId);
-
   const channel = supabase
     .channel(`duel-invites:${profileId}`)
     // Listen for new invites (as receiver)
@@ -1391,8 +1386,6 @@ export const subscribeToDuelInvites = (profileId, onInvite, onCancelled, onRespo
         filter: `receiver_id=eq.${profileId}`,
       },
       (payload) => {
-        console.log('[DUEL-SUB] INSERT event received:', payload);
-        console.log('[DUEL-SUB] INSERT payload.new:', JSON.stringify(payload.new));
         onInvite?.(payload.new);
       }
     )
@@ -1406,7 +1399,6 @@ export const subscribeToDuelInvites = (profileId, onInvite, onCancelled, onRespo
         filter: `receiver_id=eq.${profileId}`,
       },
       (payload) => {
-        console.log('[DUEL-SUB] UPDATE event (receiver) received:', payload);
         if (payload.new.status === 'cancelled') {
           onCancelled?.(payload.new);
         }
@@ -1422,15 +1414,12 @@ export const subscribeToDuelInvites = (profileId, onInvite, onCancelled, onRespo
         filter: `sender_id=eq.${profileId}`,
       },
       (payload) => {
-        console.log('[DUEL-SUB] UPDATE event (sender) received:', payload);
         if (payload.new.status === 'accepted' || payload.new.status === 'declined') {
           onResponse?.(payload.new);
         }
       }
     )
-    .subscribe((status, err) => {
-      console.log('[DUEL-SUB] Subscription status:', status, err || '');
-    });
+    .subscribe();
 
   return channel;
 };

@@ -165,17 +165,7 @@ export const hydrateZoneSnapshots = (snapshots, size, fallbackTurn) => {
     console.warn('⚠️ hydrateZoneSnapshots: snapshots is not an array:', snapshots);
     return size ? Array.from({ length: size }, () => null) : [];
   }
-  console.log(
-    '🔄 Hydrating zone with',
-    snapshots.length,
-    'snapshots, size:',
-    size,
-    'fallbackTurn:',
-    fallbackTurn
-  );
-  console.log('  Input snapshots:', snapshots);
   const hydrated = snapshots.map((card) => hydrateCardSnapshot(card, fallbackTurn));
-  console.log('  Hydrated result:', hydrated);
   if (size) {
     const padded = hydrated.slice(0, size);
     while (padded.length < size) {
@@ -294,15 +284,8 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
 
   // Skip sender check when loading from database (force apply)
   if (!forceApply && senderId && senderId === state.menu?.profile?.id) {
-    console.log('[applySync] SKIPPING - this is our own broadcast (senderId matches profile.id)');
     return;
   }
-  console.log(
-    '[applySync] Processing sync from senderId:',
-    senderId,
-    '| our profile.id:',
-    state.menu?.profile?.id
-  );
 
   const timestamp = payload.timestamp ?? 0;
   if (!state.menu.lastLobbySyncBySender) {
@@ -318,14 +301,6 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
   }
 
   const localIndex = getLocalPlayerIndex(state);
-  console.log('[applyLobbySyncPayload] Starting sync', {
-    localIndex,
-    senderId,
-    payloadSelections: payload.deckSelection?.selections,
-    currentSelections: state.deckSelection?.selections,
-    payloadReadyStatus: payload.deckSelection?.readyStatus,
-    currentReadyStatus: state.deckSelection?.readyStatus,
-  });
   const deckSelectionOrder = ['p1', 'p1-selected', 'p2', 'complete'];
   const deckBuilderOrder = ['p1', 'p2', 'complete'];
   const getStageRank = (order, stage) => {
@@ -368,7 +343,6 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
     if (payload.game.randomSeed && !state.randomSeed) {
       state.randomSeed = payload.game.randomSeed;
       initializeGameRandom(payload.game.randomSeed);
-      console.log('[applySync] Initialized PRNG with synced seed:', payload.game.randomSeed);
     }
     if (payload.game.cardPlayedThisTurn !== undefined) {
       state.cardPlayedThisTurn = payload.game.cardPlayedThisTurn;
@@ -411,7 +385,6 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
       const incomingLen = payload.game.advantageHistory.length;
       if (incomingLen > currentLen) {
         state.advantageHistory = [...payload.game.advantageHistory];
-        console.log(`[Sync] Updated advantageHistory: ${currentLen} -> ${incomingLen} entries`);
       }
     }
     if (Array.isArray(payload.game.players)) {
@@ -422,9 +395,6 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
         }
 
         const isProtectedLocalSnapshot = !forceApply && index === localIndex;
-        console.log(
-          `[SYNC-DEBUG] Player ${index}: protected=${isProtectedLocalSnapshot}, forceApply=${forceApply}, localIndex=${localIndex}, currentHand=${player.hand.length}, payloadHand=${playerSnapshot.hand?.length ?? 'null'}`
-        );
 
         if (playerSnapshot.name) {
           player.name = playerSnapshot.name;
@@ -444,22 +414,10 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
           Array.isArray(playerSnapshot.hand) && playerSnapshot.hand.length > player.hand.length;
         const shouldAcceptDraw = isProtectedLocalSnapshot && isOurTurn && incomingHandLarger;
 
-        if (shouldAcceptDraw) {
-          console.log(
-            `[SYNC-DEBUG] Player ${index}: ACCEPTING DRAW - our turn and incoming hand larger (${player.hand.length} -> ${playerSnapshot.hand.length})`
-          );
-        }
-
         if ((!isProtectedLocalSnapshot || shouldAcceptDraw) && Array.isArray(playerSnapshot.deck)) {
-          console.log(
-            `[SYNC-DEBUG] Player ${index}: MODIFYING deck from ${player.deck.length} to ${playerSnapshot.deck.length}`
-          );
           player.deck = hydrateDeckSnapshots(playerSnapshot.deck);
         }
         if ((!isProtectedLocalSnapshot || shouldAcceptDraw) && Array.isArray(playerSnapshot.hand)) {
-          console.log(
-            `[SYNC-DEBUG] Player ${index}: MODIFYING hand from ${player.hand.length} to ${playerSnapshot.hand.length}`
-          );
           player.hand = hydrateZoneSnapshots(playerSnapshot.hand, null, state.turn);
         }
 
@@ -497,18 +455,9 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
         const localSelection = state.deckSelection.selections[index];
         const isLocalSlot = index === localIndex;
         const shouldProtect = isLocalSlot && localSelection;
-        console.log(`[applyLobbySyncPayload] Selection sync index ${index}:`, {
-          isLocalSlot,
-          localSelection,
-          incomingSelection: selection,
-          shouldProtect,
-          localIndex,
-        });
         if (shouldProtect) {
-          console.log(`[applyLobbySyncPayload] PROTECTING local selection at index ${index}`);
           return;
         }
-        console.log(`[applyLobbySyncPayload] APPLYING selection at index ${index}:`, selection);
         state.deckSelection.selections[index] = selection;
       });
     }
@@ -568,15 +517,11 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
       }
     }
     if (Array.isArray(payload.setup.rolls)) {
-      console.log('Processing roll sync:', payload.setup.rolls, { forceApply, localIndex });
       payload.setup.rolls.forEach((roll, index) => {
         // If incoming roll is null, do NOT clear existing local rolls.
         // A null in the payload just means the sender didn't know about that roll yet.
         // This prevents race conditions where out-of-order syncs clear valid rolls.
         if (roll === null || roll === undefined) {
-          console.log(
-            `Received null/undefined roll for Player ${index + 1}, preserving local state`
-          );
           return;
         }
 
@@ -588,7 +533,6 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
 
         // DB restore is authoritative - always accept
         if (forceApply) {
-          console.log(`[DB Authority] Applying roll ${roll} for Player ${index + 1}`);
           state.setup.rolls[index] = roll;
           return;
         }
@@ -600,17 +544,11 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
 
         if (isOurRoll && existingRoll !== null && existingRoll !== undefined) {
           // Protect our own roll - we are authoritative for it
-          if (existingRoll !== roll) {
-            console.log(
-              `Protecting local roll for Player ${index + 1}: keeping ${existingRoll}, ignoring remote ${roll}`
-            );
-          }
           return;
         }
 
         // Accept opponent's roll or fill in missing roll
         if (existingRoll === null || existingRoll === undefined || !isOurRoll) {
-          console.log(`Applying roll ${roll} for Player ${index + 1}`);
           state.setup.rolls[index] = roll;
         }
       });

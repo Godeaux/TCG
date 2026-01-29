@@ -50,7 +50,6 @@ export const sendLobbyBroadcast = (event, payload) => {
     console.warn(`[sendLobbyBroadcast] No lobby channel set - broadcast "${event}" dropped!`);
     return;
   }
-  console.log(`[sendLobbyBroadcast] Sending "${event}" event via lobby channel`);
   lobbyChannel.send({
     type: 'broadcast',
     event,
@@ -85,14 +84,6 @@ export const broadcastSyncState = (state) => {
   }
   const rawPayload = buildLobbySyncPayload(state);
   const payload = enhancePayload(rawPayload, state);
-  console.log('Broadcasting sync state:', {
-    seq: payload._seq,
-    checksum: payload._checksum,
-    turn: payload.game?.turn,
-    phase: payload.game?.phase,
-    player0Hand: payload.game?.players?.[0]?.hand?.length,
-    player0Field: payload.game?.players?.[0]?.field?.length,
-  });
   reliableBroadcast('sync_state', payload);
 
   // Also save to database for reconnection support
@@ -116,7 +107,6 @@ export const broadcastSyncState = (state) => {
  */
 export const saveGameStateToDatabase = async (state, seq = 0) => {
   if (!isOnlineMode(state) || !state.menu?.lobby?.id) {
-    console.log('Skipping save - not online or no lobby');
     return;
   }
 
@@ -129,24 +119,11 @@ export const saveGameStateToDatabase = async (state, seq = 0) => {
     if (actionLog.entries.length > 0) {
       payload.actionLog = actionLog;
     }
-    console.log('Saving game state to DB for lobby:', state.menu.lobby.id);
-    console.log('Game state payload structure:', {
-      hasGame: !!payload.game,
-      hasPlayers: !!payload.game?.players,
-      player0HandCount: payload.game?.players?.[0]?.hand?.length,
-      player0FieldCount: payload.game?.players?.[0]?.field?.length,
-      player1HandCount: payload.game?.players?.[1]?.hand?.length,
-      player1FieldCount: payload.game?.players?.[1]?.field?.length,
-      turn: payload.game?.turn,
-      phase: payload.game?.phase,
-      actionLogEntries: actionLog.entries.length,
-    });
     await supabaseApi.saveGameState({
       lobbyId: state.menu.lobby.id,
       gameState: payload,
       actionSequence: seq,
     });
-    console.log('Game state saved successfully');
   } catch (error) {
     console.error('Failed to save game state:', error);
     // Don't throw - we don't want to break gameplay if DB save fails
@@ -161,7 +138,6 @@ export const requestSyncFromOpponent = (state) => {
   if (!isOnlineMode(state)) {
     return;
   }
-  console.log('Requesting sync from opponent');
   sendLobbyBroadcast('sync_request', {
     senderId: state.menu?.profile?.id ?? null,
     timestamp: Date.now(),
