@@ -133,7 +133,7 @@
           <div class="menu-icon">🍽️</div>
           <div>
             <h2>Food Chain TCG</h2>
-            <p class="muted" id="game-version">v0.13</p>
+            <p class="muted" id="game-version">v0.14</p>
           </div>
         </div>
         <div class="menu-status" id="menu-status"></div>
@@ -781,18 +781,12 @@
         <div class="ai-setup-section ai-difficulty-section">
           <label class="ai-difficulty-label">AI Difficulty</label>
           <div class="ai-difficulty-options" id="ai-difficulty-options">
-            <button class="btn-difficulty" data-difficulty="easy" title="Makes occasional mistakes">
+            <button class="btn-difficulty active" data-difficulty="easy" title="Plays optimally">
               <span class="difficulty-name">Easy</span>
             </button>
-            <button class="btn-difficulty" data-difficulty="medium" title="Balanced Rival">
-              <span class="difficulty-name">Medium</span>
-            </button>
-            <button class="btn-difficulty active" data-difficulty="hard" title="Plays optimally">
-              <span class="difficulty-name">Hard</span>
-            </button>
-            <button class="btn-difficulty" data-difficulty="expert" title="Deep search AI">
-              <span class="difficulty-name">Expert</span>
-              <span class="difficulty-badge">NEW</span>
+            <button class="btn-difficulty" data-difficulty="trueSim" title="Deep search AI">
+              <span class="difficulty-name">True Sim</span>
+              <span class="difficulty-note">(Known to cause performance drops while processing decisions.)</span>
             </button>
           </div>
         </div>

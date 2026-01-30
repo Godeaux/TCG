@@ -1,14 +1,11 @@
 /**
  * Difficulty Manager
  *
- * Manages AI difficulty levels and "mistake injection" for easier difficulties.
- * Makes the AI feel more human at lower difficulties.
+ * Manages AI difficulty levels.
  *
  * Difficulty Levels:
- * - Easy: Makes frequent mistakes, no threat detection, faster thinking
- * - Medium: Occasional mistakes, threat detection enabled
- * - Hard: Optimal play, full lookahead, longer thinking (feels smarter)
- * - Expert: Uses deep game tree search for all decisions (alpha-beta pruning)
+ * - Easy: Optimal play, full lookahead, threat detection enabled
+ * - True Sim: Uses deep game tree search for all decisions (alpha-beta pruning)
  */
 
 // ============================================================================
@@ -18,50 +15,6 @@
 export const DIFFICULTY_LEVELS = {
   easy: {
     name: 'Easy',
-    description: 'Relaxed opponent that makes mistakes',
-
-    // Mistake injection
-    mistakeChance: 0.35, // 35% chance to pick suboptimal play
-    mistakeDepth: 3, // Can pick up to 3rd best option
-
-    // Feature toggles
-    threatDetectionEnabled: false, // Doesn't see incoming threats
-    lethalDetectionEnabled: true, // Always takes obvious lethal
-    advancedTradeAnalysis: false, // Simpler trade evaluation
-    trapAwareness: false, // Doesn't predict opponent traps
-
-    // Timing (feels less "thoughtful")
-    thinkingDelay: { min: 300, max: 600 },
-    betweenActionsDelay: { min: 300, max: 600 },
-
-    // Logging
-    showDetailedThinking: false, // Less verbose thoughts
-  },
-
-  medium: {
-    name: 'Medium',
-    description: 'Balanced opponent with occasional errors',
-
-    // Mistake injection
-    mistakeChance: 0.15, // 15% chance to make a mistake
-    mistakeDepth: 2, // Can pick 2nd best option at most
-
-    // Feature toggles
-    threatDetectionEnabled: true,
-    lethalDetectionEnabled: true,
-    advancedTradeAnalysis: true,
-    trapAwareness: false,
-
-    // Timing
-    thinkingDelay: { min: 500, max: 1000 },
-    betweenActionsDelay: { min: 400, max: 800 },
-
-    // Logging
-    showDetailedThinking: true,
-  },
-
-  hard: {
-    name: 'Hard',
     description: 'Skilled opponent that plays optimally',
 
     // Mistake injection
@@ -83,8 +36,8 @@ export const DIFFICULTY_LEVELS = {
     showDetailedThinking: true,
   },
 
-  expert: {
-    name: 'Expert',
+  trueSim: {
+    name: 'True Sim',
     description: 'Deep thinking AI using alpha-beta search',
 
     // Mistake injection - none
@@ -119,9 +72,9 @@ export const DIFFICULTY_LEVELS = {
 export class DifficultyManager {
   /**
    * Create a difficulty manager
-   * @param {string} level - 'easy' | 'medium' | 'hard'
+   * @param {string} level - 'easy' | 'trueSim'
    */
-  constructor(level = 'medium') {
+  constructor(level = 'easy') {
     this.setLevel(level);
   }
 
@@ -131,13 +84,22 @@ export class DifficultyManager {
    */
   setLevel(level) {
     const normalizedLevel = level.toLowerCase();
-    if (DIFFICULTY_LEVELS[normalizedLevel]) {
-      this.level = normalizedLevel;
-      this.config = DIFFICULTY_LEVELS[normalizedLevel];
+    // Handle legacy difficulty names
+    const levelMap = {
+      medium: 'easy',
+      hard: 'easy',
+      expert: 'trueSim',
+      truesim: 'trueSim',
+    };
+    const mappedLevel = levelMap[normalizedLevel] || normalizedLevel;
+
+    if (DIFFICULTY_LEVELS[mappedLevel]) {
+      this.level = mappedLevel;
+      this.config = DIFFICULTY_LEVELS[mappedLevel];
     } else {
-      console.warn(`[DifficultyManager] Unknown level '${level}', defaulting to medium`);
-      this.level = 'medium';
-      this.config = DIFFICULTY_LEVELS.medium;
+      console.warn(`[DifficultyManager] Unknown level '${level}', defaulting to easy`);
+      this.level = 'easy';
+      this.config = DIFFICULTY_LEVELS.easy;
     }
   }
 
@@ -304,23 +266,12 @@ export class DifficultyManager {
    * @returns {boolean} - True if AI blunders
    */
   shouldBlunder(obviousnessScore) {
-    // Hard difficulty never blunders
-    if (this.level === 'hard') {
-      return false;
-    }
-
-    // Easy: 10% base chance, reduced by obviousness
-    // Medium: 5% base chance, heavily reduced by obviousness
-    const baseChance = this.level === 'easy' ? 0.1 : 0.05;
-    const reductionFactor = obviousnessScore / 100;
-    const blunderChance = baseChance * (1 - reductionFactor * 0.8);
-
-    return Math.random() < blunderChance;
+    // Both Easy and True Sim never blunder
+    return false;
   }
 
   /**
    * Get a "thinking" message appropriate for difficulty
-   * Easy AI has simpler thoughts, Hard AI explains more
    *
    * @param {string} situation - What the AI is thinking about
    * @param {Object} details - Additional context
@@ -329,28 +280,16 @@ export class DifficultyManager {
   formatThought(situation, details = {}) {
     switch (situation) {
       case 'threat_detected':
-        if (this.level === 'hard') {
-          return `Threat analysis: ${details.damage} incoming damage vs ${details.hp} HP - ${details.level}`;
-        }
-        return `Hmm, ${details.damage} damage coming my way...`;
+        return `Threat analysis: ${details.damage} incoming damage vs ${details.hp} HP - ${details.level}`;
 
       case 'lethal_detected':
-        if (this.level === 'hard') {
-          return `Lethal confirmed! ${details.damage} damage available vs ${details.oppHp} HP`;
-        }
-        return `I can win this turn!`;
+        return `Lethal confirmed! ${details.damage} damage available vs ${details.oppHp} HP`;
 
       case 'card_played':
-        if (this.level === 'hard') {
-          return `Playing ${details.name} (score: ${details.score.toFixed(0)})`;
-        }
-        return `Playing ${details.name}`;
+        return `Playing ${details.name} (score: ${details.score.toFixed(0)})`;
 
       case 'attack_declared':
-        if (this.level === 'hard') {
-          return `${details.attacker} attacks ${details.target} (${details.reason})`;
-        }
-        return `${details.attacker} attacks ${details.target}`;
+        return `${details.attacker} attacks ${details.target} (${details.reason})`;
 
       case 'mistake_made':
         // Only shown in debug mode, not to player
@@ -363,7 +302,7 @@ export class DifficultyManager {
 }
 
 // Export factory functions for convenience
-export const createDifficultyManager = (level = 'medium') => new DifficultyManager(level);
+export const createDifficultyManager = (level = 'easy') => new DifficultyManager(level);
 
-// Export default instance at medium difficulty
-export const difficultyManager = new DifficultyManager('medium');
+// Export default instance at easy difficulty
+export const difficultyManager = new DifficultyManager('easy');

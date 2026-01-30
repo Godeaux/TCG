@@ -73,7 +73,7 @@ const getAIDelay = (state, fastDelay = 100) => {
  * Called when an AI game starts
  * @param {Object} state - Game state
  * @param {Object} options - AI options
- * @param {string} options.difficulty - 'easy' | 'medium' | 'hard'
+ * @param {string} options.difficulty - 'easy' | 'trueSim'
  * @param {boolean} options.showThinking - Show AI thoughts in game log
  */
 export const initializeAI = (state, options = {}) => {
@@ -82,7 +82,7 @@ export const initializeAI = (state, options = {}) => {
   console.log('[AIManager] isAIvsAIMode:', isAIvsAIMode(state), 'isAIMode:', isAIMode(state));
 
   // Get difficulty from options or state.menu
-  const difficulty = options.difficulty ?? state.menu?.aiDifficulty ?? 'hard';
+  const difficulty = options.difficulty ?? state.menu?.aiDifficulty ?? 'easy';
   const showThinking = options.showThinking ?? state.menu?.aiShowThinking ?? true;
 
   console.log(`[AIManager] AI difficulty: ${difficulty}, showThinking: ${showThinking}`);
