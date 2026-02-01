@@ -23,6 +23,52 @@ import { checkRejoinAvailable } from '../../network/lobbyManager.js';
 import { SoundManager } from '../../audio/soundManager.js';
 
 // ============================================================================
+// SPLASH TIPS
+// ============================================================================
+
+const SPLASH_TIPS = [
+  'Ambush beats Poisonous. No contact, no poison!',
+  'Ambush won\'t save you from Toxic.',
+  'Toxic kills anything it touches. Barrier blocks it!',
+  'Neurotoxic doesn\'t even need to deal damage!',
+  'Neurotoxic strips all abilities. Permanently.',
+  'Acuity sees through Hidden AND Invisible!',
+  'Lure vs Hidden? Whichever was applied last takes priority.',
+  'Frozen creatures thaw after one turn. Paralyzed ones die.',
+  'Tokens skip the Carrion pile!',
+  'Free Play cards are free, but only before you spend your one-card limit!',
+  'Creatures can attack other creatures the turn they\'re played. Haste lets you hit face straight away!',
+  'Traps don\'t wait for your turn!',
+  'Predators only get their consume effect when they eat a Prey!',
+  'Barrier eats one hit and pops.',
+  'Attack a Poisonous creature and your attacker dies.',
+  'Immune creatures ignore any source of damage other than a direct animal attack.',
+  'Regen restores to base HP only. Consumed stats don\'t count!',
+  'You get two Main phases. Use both!',
+];
+
+let lastSplashIndex = -1;
+let splashInitialized = false;
+
+const setRandomSplashTip = () => {
+  const el = document.getElementById('menu-splash-text');
+  if (!el) return;
+  let idx;
+  do {
+    idx = Math.floor(Math.random() * SPLASH_TIPS.length);
+  } while (idx === lastSplashIndex && SPLASH_TIPS.length > 1);
+  lastSplashIndex = idx;
+  el.textContent = SPLASH_TIPS[idx];
+};
+
+const initSplashClick = () => {
+  const el = document.getElementById('menu-splash-text');
+  if (!el || el.dataset.clickBound) return;
+  el.dataset.clickBound = 'true';
+  el.addEventListener('click', setRandomSplashTip);
+};
+
+// ============================================================================
 // ONLINE PRESENCE STATE
 // ============================================================================
 
@@ -195,6 +241,15 @@ export const renderMenuOverlays = (state, callbacks) => {
   // Toggle overlay visibility
   elements.menuOverlay?.classList.toggle('active', showMain);
   elements.menuOverlay?.setAttribute('aria-hidden', showMain ? 'false' : 'true');
+
+  // Set random splash tip once when main menu first appears
+  if (showMain && !splashInitialized) {
+    splashInitialized = true;
+    setRandomSplashTip();
+    initSplashClick();
+  } else if (!showMain) {
+    splashInitialized = false;
+  }
 
   elements.otherMenuOverlay?.classList.toggle('active', showOther);
   elements.otherMenuOverlay?.setAttribute('aria-hidden', showOther ? 'false' : 'true');

@@ -240,7 +240,8 @@ export const drawCard = (state, playerIndex) => {
   if (player.deck.length === 0) {
     return null;
   }
-  const card = player.deck.shift();
+  const randomIndex = Math.floor(Math.random() * player.deck.length);
+  const [card] = player.deck.splice(randomIndex, 1);
   // instanceId is already assigned at deck creation (seeded, deterministic).
   // Only assign a fallback if somehow missing (e.g. legacy/test code).
   if (!card.instanceId) {

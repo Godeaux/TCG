@@ -6,6 +6,12 @@ Instructions for Claude agents working on this codebase.
 
 Two-player card game (vanilla JS, ES6 modules, Supabase multiplayer) with AI opponent support.
 
+**Current focus: Multiplayer.** All work should prioritize multiplayer stability, correctness, intuitiveness, and cleanliness.
+
+## Agent Usage Preference
+
+Prefer subagents for exploration and research. Use the Explore agent liberally for any codebase search that might require more than 1-2 file reads. Use background agents for independent parallel tasks. Err on the side of delegating to preserve main context.
+
 ## Architecture Rules
 
 When the user prefixes a message with a role tag like `[cards]`, `[ai]`, `[system]`, `[bug]`, `[ui]`, or `[multi]`, you MUST:
@@ -21,6 +27,17 @@ This role system ensures focused, expert-level work on specific areas of the cod
 
 - **ROLES.md** — Agent role definitions (read when role is invoked)
 
+
+## Agent Roles
+
+**If the user types `[roles]`, immediately list all available roles with one-line descriptions:**
+- **[cards]** Card Designer — Creates cards, balances stats, designs effects
+- **[ai]** AI Tuner — Improves AI decision-making and difficulty
+- **[system]** Systems Architect — Plans features, enforces boundaries, designs systems
+- **[bug]** Bug Hunter — Traces bugs, finds root causes, minimal fixes
+- **[ui]** UI Specialist — Visual polish, animations, responsiveness
+- **[multi]** Multiplayer Engineer — Sync, networking, desync issues
+
 **Module boundaries are strict:**
 
 | Module | Allowed | Forbidden |
@@ -35,9 +52,11 @@ This role system ensures focused, expert-level work on specific areas of the cod
 
 **Data flow (always follow this):**
 ```
-User Input → Input Router → GameController.execute() → State Change → Re-render
-     ↓
-   Network sync (multiplayer)
+User Input → Input Router → ActionBus.dispatch(action)
+  ├─ Host: validate → assign seq → GameController.execute() → broadcast action
+  └─ Guest: send intent to host → host confirms → both apply deterministically
+                                          ↓
+                                      Re-render
 ```
 
 ## Directory Structure
@@ -48,7 +67,7 @@ js/
 ├── game/            Game logic (controller, combat, turnManager, effects, triggers/)
 ├── cards/           Card system (registry, effectLibrary, data/*.json)
 ├── ui/              User interface (components/, overlays/, input/, effects/)
-├── network/         Multiplayer (sync, serialization, lobbyManager, presence)
+├── network/         Multiplayer (actionBus, sync, serialization, lobby, presence)
 ├── ai/              AI opponent (AIController, evaluators, MoveGenerator, workers)
 ├── simulation/      Testing/validation (BugDetector, invariantChecks)
 ├── emotes/          Emote system for multiplayer
@@ -105,7 +124,12 @@ state.players[player].hand.push(card);
 | Triggers | `js/game/triggers/triggerRegistry.js` |
 | Reactions | `js/game/triggers/reactionSystem.js` |
 | UI orchestration | `js/ui.js` |
-| Multiplayer sync | `js/network/sync.js` |
+| Action routing | `js/network/actionBus.js` (host-authoritative dispatch) |
+| Action validation | `js/network/actionValidator.js` (host-side legality checks) |
+| Sync reliability | `js/network/actionSync.js` (seq numbers, checksums, desync detection) |
+| Action serialization | `js/network/actionSerializer.js` |
+| Action replay log | `js/network/actionLog.js` (reconnection, debugging) |
+| Lobby/broadcast | `js/network/sync.js` |
 | AI decisions | `js/ai/AIController.js` |
 | AI evaluation | `js/ai/PlayEvaluator.js`, `CombatEvaluator.js`, `PositionEvaluator.js` |
 | Bug detection | `js/simulation/BugDetector.js` |
@@ -141,6 +165,26 @@ Card abilities use a trigger/reaction system:
 - **triggerRegistry.js** — Defines trigger conditions (onPlay, onDeath, etc.)
 - **reactionSystem.js** — Handles card reactions with timing
 
+## Multiplayer Architecture (Current Focus)
+
+Host-authoritative model using the **ActionBus** (`js/network/actionBus.js`):
+
+- **ActionBus** — Central dispatch. All game actions route through it in multiplayer.
+  - Host: validates → assigns sequence number → applies locally → broadcasts confirmed action
+  - Guest: sends intent → waits for host confirmation → applies confirmed action
+- **actionValidator.js** — Host-side defense-in-depth. Rejects illegal actions before they reach the controller (turn ownership, phase legality, card existence).
+- **actionSync.js** — Reliability layer. Monotonic sequence numbers, state checksums for desync detection, ACK protocol with retry, automatic desync recovery via full-state resync.
+- **actionSerializer.js** — Compact action serialization for network transport.
+- **actionLog.js** — Append-only log of confirmed actions. Enables reconnection via replay and future spectator mode.
+- **sync.js** — Supabase lobby broadcast transport, presence, and lobby lifecycle.
+- **serialization.js** — Full game state serialization for lobby sync payloads.
+
+**Key invariants:**
+- Same actions applied in same order = same state (determinism required)
+- Guest never applies actions without host confirmation
+- Sequence gaps trigger desync recovery
+- All game actions still go through `GameController.execute()` after ActionBus routing
+
 ## Versioning & Changelog
 
 **When the user types `[changelog]`**, immediately:
@@ -170,16 +214,3 @@ When the user asks you to commit (they may have worked across multiple conversat
 4. If you modified effects, verify both single-player and multiplayer
 5. If you modified AI, run AI vs AI simulation to check for bugs
 6. Ensure version and changelog are updated (use `[changelog]` if not done)
-
-## Agent Roles
-
-**If the user types `[roles]`, immediately list all available roles with one-line descriptions:**
-- **[cards]** Card Designer — Creates cards, balances stats, designs effects
-- **[ai]** AI Tuner — Improves AI decision-making and difficulty
-- **[system]** Systems Architect — Plans features, enforces boundaries, designs systems
-- **[bug]** Bug Hunter — Traces bugs, finds root causes, minimal fixes
-- **[ui]** UI Specialist — Visual polish, animations, responsiveness
-- **[multi]** Multiplayer Engineer — Sync, networking, desync issues
-
-
-- **RULEBOOK.md** — Game rules (don't duplicate here)

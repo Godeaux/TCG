@@ -4979,6 +4979,46 @@ button {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  position: relative;
+  overflow: visible;
+}
+
+.menu-splash-text {
+  position: absolute;
+  top: 6px;
+  right: -20px;
+  transform: rotate(12deg) translateX(-25%);
+  transform-origin: center center;
+  text-align: center;
+  animation: splash-breathe 3.5s ease-in-out infinite;
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  z-index: 2;
+  text-shadow:
+    -1px -1px 0 rgba(0, 0, 0, 0.8),
+    1px -1px 0 rgba(0, 0, 0, 0.8),
+    -1px 1px 0 rgba(0, 0, 0, 0.8),
+    1px 1px 0 rgba(0, 0, 0, 0.8),
+    0 0 8px rgba(212, 168, 83, 0.4);
+}
+
+.menu-splash-text:empty {
+  display: none;
+}
+
+@keyframes splash-breathe {
+  0%, 100% {
+    transform: scale(1) rotate(12deg);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.08) rotate(12deg);
+    opacity: 1;
+  }
 }
 
 /* Two-column menu layout */

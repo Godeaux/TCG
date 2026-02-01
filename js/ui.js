@@ -1536,7 +1536,7 @@ const initHandPreview = () => {
   const handlePointer = (event) => {
     // Skip focus handling during touch drag operations (mobile)
     // This prevents other cards from "hovering" when dragging a card across the field
-    if (isTouchDragging() || targetingMode) {
+    if (isTouchDragging() || targetingMode || document.body.classList.contains('drag-in-progress')) {
       return;
     }
 
@@ -4644,6 +4644,11 @@ export const renderGame = (state, callbacks = {}) => {
             for (const c of candidates) {
               const candidateCard = c.card ?? c.value;
               if (isCardLike(candidateCard)) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'selection-item';
+                if (c.isRecentlyDrawn) {
+                  wrapper.classList.add('recently-drawn');
+                }
                 const cardEl = renderCard(candidateCard, {
                   showEffectSummary: true,
                   onClick: () => {
@@ -4651,7 +4656,8 @@ export const renderGame = (state, callbacks = {}) => {
                     selectionRequest.onSelect(c.value !== undefined ? c.value : c);
                   },
                 });
-                grid.appendChild(cardEl);
+                wrapper.appendChild(cardEl);
+                grid.appendChild(wrapper);
               }
             }
             overlay.appendChild(grid);
@@ -4661,6 +4667,9 @@ export const renderGame = (state, callbacks = {}) => {
           const items = candidates.map((c) => {
             const item = document.createElement('label');
             item.className = 'selection-item';
+            if (c.isRecentlyDrawn) {
+              item.classList.add('recently-drawn');
+            }
             const candidateCard = c.card ?? c.value;
             if (shouldRender && isCardLike(candidateCard)) {
               item.classList.add('selection-card');

@@ -1173,12 +1173,7 @@ export const selectPredatorForEndEffect = (tokenId) => (context) => {
 export const selectCardToDiscard =
   (count = 1) =>
   (context) => {
-    const { log, player, playerIndex, state } = context;
-
-    if (player.hand.length === 0) {
-      log(`No cards in hand to discard.`);
-      return {};
-    }
+    const { playerIndex, state } = context;
 
     return makeTargetedSelection({
       title: `Choose ${count} card${count > 1 ? 's' : ''} to discard`,
@@ -1735,8 +1730,9 @@ export const selectFromGroup = (params) => (context) => {
     return {};
   }
 
-  // If only one candidate, auto-select it
-  if (candidates.length === 1) {
+  // If only one candidate, auto-select it (unless effect copies abilities —
+  // the player should always see what they're copying)
+  if (candidates.length === 1 && !effect.copyAbilities) {
     const selection = candidates[0].value;
     return applyEffectToSelection(selection, effect, context);
   }

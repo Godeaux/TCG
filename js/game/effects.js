@@ -649,10 +649,16 @@ export const resolveEffectResult = (state, result, context) => {
       target.effect = source.effect || null;
 
       // Update effect text to show copied abilities
-      if (source.effectText) {
-        target.effectText = `(Copied) ${source.effectText}`;
+      // Fall back to registry definition if the carrion instance lost its effectText
+      let sourceEffectText = source.effectText;
+      if (!sourceEffectText && source.id) {
+        const registryCard = getCardDefinitionById(source.id);
+        if (registryCard) sourceEffectText = registryCard.effectText;
+      }
+      if (sourceEffectText) {
+        target.effectText = `(Copied) ${sourceEffectText}`;
       } else {
-        target.effectText = '(Copied) No effect text.';
+        target.effectText = '(Copied) No abilities.';
       }
 
       // Track the source ID for multiplayer sync re-hydration
