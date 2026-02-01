@@ -113,10 +113,18 @@ export class ActionBus {
       return { success: false, error: 'Desync recovery in progress' };
     }
 
-    const role = this.isHost() ? 'HOST' : 'GUEST';
+    let isHost;
+    try {
+      isHost = this.isHost();
+    } catch (err) {
+      console.error(err.message);
+      return { success: false, error: 'Missing identity — cannot dispatch' };
+    }
+
+    const role = isHost ? 'HOST' : 'GUEST';
     console.log(`[ActionBus] ${role} dispatch: ${action.type}`);
 
-    if (this.isHost()) {
+    if (isHost) {
       return this._hostDispatch(action);
     } else {
       return this._guestDispatch(action);
@@ -131,7 +139,15 @@ export class ActionBus {
   handleMessage(message) {
     if (!message || !message.type) return;
 
-    const role = this.isHost() ? 'HOST' : 'GUEST';
+    let isHost;
+    try {
+      isHost = this.isHost();
+    } catch (err) {
+      console.error('[ActionBus] handleMessage blocked:', err.message);
+      return;
+    }
+
+    const role = isHost ? 'HOST' : 'GUEST';
     const actionType = message.action?.type || message.type;
     console.log(`[ActionBus] ${role} received: ${message.type}` +
       (message.seq ? ` seq=${message.seq}` : '') +
@@ -141,35 +157,35 @@ export class ActionBus {
     switch (message.type) {
       case 'action_intent':
         // Host receives guest's action intent
-        if (this.isHost()) {
+        if (isHost) {
           this._handleGuestIntent(message);
         }
         break;
 
       case 'action_confirmed':
         // Guest receives host's confirmed action
-        if (!this.isHost()) {
+        if (!isHost) {
           this._handleConfirmedAction(message);
         }
         break;
 
       case 'action_rejected':
         // Guest receives rejection from host
-        if (!this.isHost()) {
+        if (!isHost) {
           this._handleRejection(message);
         }
         break;
 
       case 'desync_recovery_request':
         // Guest asks host for action log replay
-        if (this.isHost()) {
+        if (isHost) {
           this._handleRecoveryRequest(message);
         }
         break;
 
       case 'desync_recovery_response':
         // Host sends full action log to guest
-        if (!this.isHost()) {
+        if (!isHost) {
           this._handleRecoveryResponse(message);
         }
         break;
@@ -203,13 +219,9 @@ export class ActionBus {
     const profileId = this.getProfileId();
     const hostId = this.getHostId();
     if (!hostId || !profileId) {
-      // This should never happen in an online game. If it does, something
-      // is wrong with lobby data. Log loudly so we can diagnose.
-      console.error(
-        `[ActionBus.isHost] Missing identity — profileId=${profileId}, hostId=${hostId}. ` +
-          `Cannot determine role. Defaulting to HOST as fallback.`
+      throw new Error(
+        `[ActionBus] Cannot determine role: profileId=${profileId}, hostId=${hostId}`
       );
-      return true;
     }
     return profileId === hostId;
   }
@@ -228,6 +240,7 @@ export class ActionBus {
   reset() {
     this._seq = 0;
     this._actionLog = [];
+    this._pendingIntents.forEach(intent => clearTimeout(intent.timeoutId));
     this._pendingIntents.clear();
     this._intentCounter = 0;
     this._recovering = false;
@@ -403,11 +416,21 @@ export class ActionBus {
     console.log(`[ActionBus] GUEST optimistic OK, sending intent: ${action.type} (${intentId})` +
       (localCreatedIds.length ? ` (created ${localCreatedIds.length} IDs)` : ''));
 
-    // Store pending intent as optimistically applied, with local IDs for reconciliation
+    // Store pending intent as optimistically applied, with local IDs for reconciliation.
+    // Timeout triggers desync recovery if host never confirms/rejects.
+    const timeoutId = setTimeout(() => {
+      if (this._pendingIntents.has(intentId)) {
+        console.warn(`[ActionBus] Intent ${intentId} timed out after 15s — requesting recovery`);
+        this._pendingIntents.delete(intentId);
+        this._requestRecovery();
+      }
+    }, 15000);
+
     this._pendingIntents.set(intentId, {
       action,
       optimistic: true,
       localCreatedIds,
+      timeoutId,
       timestamp: Date.now(),
     });
 
@@ -434,6 +457,7 @@ export class ActionBus {
     const localCreatedIds = pendingIntent?.localCreatedIds || [];
 
     if (intentId && this._pendingIntents.has(intentId)) {
+      clearTimeout(this._pendingIntents.get(intentId).timeoutId);
       this._pendingIntents.delete(intentId);
     }
 
@@ -510,6 +534,7 @@ export class ActionBus {
       && this._pendingIntents.get(intentId).optimistic;
 
     if (intentId && this._pendingIntents.has(intentId)) {
+      clearTimeout(this._pendingIntents.get(intentId).timeoutId);
       this._pendingIntents.delete(intentId);
     }
 
@@ -611,6 +636,7 @@ export class ActionBus {
     this._actionLog = [];
     this._desyncCount = 0;
     this._recovering = false;
+    this._pendingIntents.forEach(intent => clearTimeout(intent.timeoutId));
     this._pendingIntents.clear();
 
     // Verify sync

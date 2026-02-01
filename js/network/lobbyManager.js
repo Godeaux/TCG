@@ -1331,13 +1331,17 @@ export const updateLobbySubscription = (state, { force = false } = {}) => {
   });
 
   // Handle desync recovery request (opponent detected mismatch)
+  // Skip when ActionBus is active — it handles its own recovery via game_action messages
   lobbyChannel.on('broadcast', { event: 'desync_recovery_request' }, ({ payload }) => {
+    if (getActionBus()) return; // ActionBus handles recovery
     console.warn('[lobbyManager] Desync recovery requested by opponent:', payload?.reason);
     handleDesyncRecoveryRequest();
   });
 
   // Handle desync recovery response (authoritative state from opponent)
+  // Skip when ActionBus is active — it handles its own recovery via game_action messages
   lobbyChannel.on('broadcast', { event: 'desync_recovery_response' }, ({ payload }) => {
+    if (getActionBus()) return; // ActionBus handles recovery
     console.warn('[lobbyManager] Received desync recovery response');
     const { payload: recoveryPayload, options } = handleDesyncRecoveryResponse(payload);
     callbacks.onApplySync?.(state, recoveryPayload, options);

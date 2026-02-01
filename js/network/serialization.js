@@ -420,17 +420,19 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
         }
 
         // Protect local player's private zones
-        // EXCEPTION: If it's our turn and the incoming hand is larger, accept it
-        // This handles draws processed by the opponent during turn transitions
+        // EXCEPTIONS:
+        // 1. If it's our turn and the incoming hand is larger, accept it (draw during turn transition)
+        // 2. If local deck+hand are both empty, accept it (initial deck setup broadcast from host)
         const isOurTurn = state.activePlayerIndex === localIndex;
         const incomingHandLarger =
           Array.isArray(playerSnapshot.hand) && playerSnapshot.hand.length > player.hand.length;
         const shouldAcceptDraw = isProtectedLocalSnapshot && isOurTurn && incomingHandLarger;
+        const localEmpty = isProtectedLocalSnapshot && player.deck.length === 0 && player.hand.length === 0;
 
-        if ((!isProtectedLocalSnapshot || shouldAcceptDraw) && Array.isArray(playerSnapshot.deck)) {
+        if ((!isProtectedLocalSnapshot || shouldAcceptDraw || localEmpty) && Array.isArray(playerSnapshot.deck)) {
           player.deck = hydrateDeckSnapshots(playerSnapshot.deck);
         }
-        if ((!isProtectedLocalSnapshot || shouldAcceptDraw) && Array.isArray(playerSnapshot.hand)) {
+        if ((!isProtectedLocalSnapshot || shouldAcceptDraw || localEmpty) && Array.isArray(playerSnapshot.hand)) {
           player.hand = hydrateZoneSnapshots(playerSnapshot.hand, null, state.turn);
         }
 

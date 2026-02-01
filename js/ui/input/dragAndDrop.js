@@ -99,7 +99,11 @@ const getSpellTargetingInfo = (card) => {
   // Otherwise probe the controller
   if (!gameController) return { requiresTarget: false };
   const selection = gameController.getEffectSelections(card, 'effect');
-  return { requiresTarget: selection?.type === 'selectTarget' };
+  if (selection?.type !== 'selectTarget') return { requiresTarget: false };
+  // Only count as "requires target" if candidates are field targets (creatures/players).
+  // Deck/hand selections (e.g. tutorFromDeck) are not drag-targetable — they use overlays.
+  const isFieldTargeting = selection.candidates?.some(c => c.value?.type === 'creature' || c.value?.type === 'player');
+  return { requiresTarget: !!isFieldTargeting };
 };
 
 /**
@@ -507,6 +511,13 @@ const handleFieldDrop = (card, fieldSlot) => {
   }
 
   if (card.type === 'Spell' || card.type === 'Free Spell') {
+    const targetingInfo = getSpellTargetingInfo(card);
+    if (targetingInfo?.requiresTarget) {
+      // Targeted spells must be dropped on a valid target, not an empty slot
+      revertCardToOriginalPosition();
+      latestCallbacks.onUpdate?.();
+      return;
+    }
     handlePlayCard(latestState, card, latestCallbacks.onUpdate);
     return;
   }
@@ -769,8 +780,11 @@ const handleDragStart = (event) => {
         if (c.card?.instanceId) validInstanceIds.add(c.card.instanceId);
         if (c.value?.type === 'player') canTargetPlayer = true;
       }
-      // Cache even if empty — distinguishes "targeted with 0 targets" from "non-targeted"
-      _spellCandidateCache = { validInstanceIds, canTargetPlayer };
+      // Only cache if there are actual field targets (creatures/players).
+      // Deck/hand selections (tutorFromDeck) have no field targets — leave cache null.
+      if (validInstanceIds.size > 0 || canTargetPlayer) {
+        _spellCandidateCache = { validInstanceIds, canTargetPlayer };
+      }
     }
   }
 
@@ -1083,8 +1097,15 @@ const handleDrop = (event) => {
 
   clearDragVisuals();
 
-  // Handle spell drop on player field area (any part of it)
+  // Handle spell drop on player field area (non-targeted spells only)
   if (isSpell && dropTarget?.classList.contains('player-field')) {
+    const targetingInfo = getSpellTargetingInfo(card);
+    if (targetingInfo?.requiresTarget) {
+      // Targeted spells must be dropped on a valid target, not the field
+      revertCardToOriginalPosition();
+      latestCallbacks.onUpdate?.();
+      return;
+    }
     handlePlayCard(latestState, card, latestCallbacks.onUpdate);
     return;
   }

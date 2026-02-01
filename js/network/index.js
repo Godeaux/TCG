@@ -98,8 +98,6 @@ export {
   getActionLog,
   getCurrentSequence,
   buildActionLogPayload,
-  replayActionLog,
-  parseActionLogPayload,
 } from './actionLog.js';
 
 // ============================================================================

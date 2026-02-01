@@ -1681,14 +1681,12 @@ const CURSOR_SETTLE_THRESHOLD = 2; // Snap to target when this close (in pixels)
 
 const handleOpponentCursorMove = (position) => {
   const cursor = document.getElementById('opponent-cursor');
-  const gameContainer = document.querySelector('.game-container');
-  if (!cursor || !position || !gameContainer) return;
+  const battlefield = document.querySelector('.battlefield-region');
+  if (!cursor || !position || !battlefield) return;
 
-  // Get local game container bounds
-  const rect = gameContainer.getBoundingClientRect();
-
-  // Convert relative position (0-1) to local pixels
+  // Convert battlefield-relative position (0-1) back to local pixels
   // Mirror Y-axis: opponent's bottom (1.0) becomes our top (0.0)
+  const rect = battlefield.getBoundingClientRect();
   const localX = rect.left + position.x * rect.width;
   const localY = rect.top + (1 - position.y) * rect.height;
 
@@ -1777,8 +1775,10 @@ let cursorTrackingInitialized = false;
 
 /**
  * Initialize cursor tracking for broadcasting to opponent
- * Broadcasts relative position (0-1 range) based on game container
- * This ensures cursor appears in same relative position regardless of resolution/zoom
+ * Broadcasts relative position (0-1 range) based on the battlefield region
+ * Using battlefield-region (not game-container) ensures accurate mirroring,
+ * since the battlefield is vertically symmetric while the full container is not
+ * (scoreboard row at top vs hand panel at bottom have different heights)
  */
 const initCursorTracking = () => {
   if (cursorTrackingInitialized) return;
@@ -1790,10 +1790,12 @@ const initCursorTracking = () => {
   gameContainer.addEventListener('mousemove', (event) => {
     if (!latestState) return;
 
-    // Get game container bounds
-    const rect = gameContainer.getBoundingClientRect();
+    const battlefield = document.querySelector('.battlefield-region');
+    if (!battlefield) return;
 
-    // Convert to relative position (0-1 range) within game container
+    const rect = battlefield.getBoundingClientRect();
+
+    // Normalize to battlefield-relative coordinates (can exceed 0-1 if cursor is outside)
     const relativeX = (event.clientX - rect.left) / rect.width;
     const relativeY = (event.clientY - rect.top) / rect.height;
 
@@ -4201,8 +4203,8 @@ export const renderGame = (state, callbacks = {}) => {
       handleSyncPostProcessing(s, payload, options);
 
       // Verify state checksum after applying sync (detects desync)
-      // Skip for force-apply (DB restore) and recovery payloads
-      if (!options?.forceApply && !payload._isRecovery) {
+      // Skip for force-apply (DB restore), recovery payloads, and when ActionBus handles checksums
+      if (!options?.forceApply && !payload._isRecovery && !getActionBus()) {
         verifyChecksum(s, payload);
       }
 
@@ -4250,7 +4252,7 @@ export const renderGame = (state, callbacks = {}) => {
 
   // Initialize GameController (single entry point for all game actions)
   if (!gameController || gameController.state !== state) {
-    gameController = new GameController(state, null, {
+    gameController = new GameController(state, { pendingConsumption: null, pendingPlacement: null, pendingAttack: null }, {
       onStateChange: () => {
         renderGame(latestState, latestCallbacks);
       },
@@ -4263,7 +4265,9 @@ export const renderGame = (state, callbacks = {}) => {
       onSelectionNeeded: (selectionRequest) => {
         // In multiplayer, only show selection UI to the active (local) player.
         // The opponent should not see selection popups for the other player's choices.
-        if (isOnlineMode(latestState) && !isLocalPlayersTurn(latestState)) {
+        // Use gameController.state (live during execution) rather than latestState (may be stale).
+        const currentState = gameController?.state || latestState;
+        if (isOnlineMode(currentState) && !isLocalPlayersTurn(currentState)) {
           selectionRequest.onCancel?.();
           return;
         }
@@ -4280,6 +4284,45 @@ export const renderGame = (state, callbacks = {}) => {
           }
           const shouldRender =
             renderCards || candidates.some((c) => isCardLike(c.card ?? c.value));
+
+          // Large card selections (deck tutor, etc.) use a full-screen overlay
+          if (shouldRender && candidates.length > 3) {
+            const overlay = document.createElement('div');
+            overlay.className = 'card-selection-overlay';
+
+            const header = document.createElement('div');
+            header.className = 'card-selection-overlay-header';
+            const titleEl = document.createElement('strong');
+            titleEl.textContent = title;
+            header.appendChild(titleEl);
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'cancel-targeting';
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.onclick = () => {
+              overlay.remove();
+              selectionRequest.onCancel?.();
+            };
+            header.appendChild(cancelBtn);
+            overlay.appendChild(header);
+
+            const grid = document.createElement('div');
+            grid.className = 'card-selection-overlay-grid';
+            for (const c of candidates) {
+              const candidateCard = c.card ?? c.value;
+              if (isCardLike(candidateCard)) {
+                const cardEl = renderCard(candidateCard, {
+                  showEffectSummary: true,
+                  onClick: () => {
+                    overlay.remove();
+                    selectionRequest.onSelect(c.value !== undefined ? c.value : c);
+                  },
+                });
+                grid.appendChild(cardEl);
+              }
+            }
+            overlay.appendChild(grid);
+            document.body.appendChild(overlay);
+          } else {
           const items = candidates.map((c) => {
             const item = document.createElement('label');
             item.className = 'selection-item';
@@ -4314,6 +4357,7 @@ export const renderGame = (state, callbacks = {}) => {
             },
             confirmLabel: 'Cancel',
           });
+          }
         } else if (selectionRequest.selectOption) {
           const { title, options, onSelect } = selectionRequest.selectOption;
           const optionItems = options.map((o) => {
@@ -4432,7 +4476,7 @@ export const renderGame = (state, callbacks = {}) => {
   // Initialize battle effects module
   if (!battleEffectsInitialized) {
     initBattleEffects({
-      getLocalPlayerIndex: (s) => getLocalPlayerIndex(s),
+      getLocalPlayerIndex: (s) => getLocalPlayerIndex(s || latestState),
     });
     battleEffectsInitialized = true;
   }

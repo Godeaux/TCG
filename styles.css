@@ -8054,6 +8054,48 @@ select.menu-input option {
   background: rgba(255, 200, 50, 0.35);
 }
 
+/* Card selection overlay (deck tutor, large card picks) */
+.card-selection-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.card-selection-overlay-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  color: #ffd700;
+  font-size: 1.2rem;
+}
+
+.card-selection-overlay-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.card-selection-overlay-grid .card {
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.card-selection-overlay-grid .card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 0 12px 4px rgba(255, 200, 50, 0.5);
+}
+
 /* Extended consumption - predator that can consume more prey */
 .extended-consumption-active {
   box-shadow: 0 0 25px rgba(39, 174, 96, 0.9), inset 0 0 15px rgba(39, 174, 96, 0.4);

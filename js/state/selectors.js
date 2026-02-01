@@ -417,7 +417,7 @@ export const isDeckBuilderOpen = (state) => {
  * Check if in online multiplayer mode
  */
 export const isOnlineMode = (state) => {
-  return state.menu?.mode === 'online';
+  return state?.menu?.mode === 'online';
 };
 
 /**

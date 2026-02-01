@@ -558,8 +558,8 @@ const renderInfoBoxes = (card) => {
 
   infoBoxesElement.innerHTML = '';
 
-  // Add keyword boxes
-  if (Array.isArray(card.keywords) && card.keywords.length > 0) {
+  // Add keyword boxes (suppressed for dry-dropped predators)
+  if (Array.isArray(card.keywords) && card.keywords.length > 0 && areAbilitiesActive(card)) {
     card.keywords.forEach((keyword) => {
       const description = KEYWORD_DESCRIPTIONS[keyword];
       if (description) {

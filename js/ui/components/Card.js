@@ -382,8 +382,8 @@ const renderStatsSvg = (stats, hasNut, context) => {
 const renderKeywordsSvg = (card, context) => {
   const tags = [];
 
-  // Add regular keywords
-  if (Array.isArray(card.keywords) && card.keywords.length) {
+  // Add regular keywords (suppressed for dry-dropped predators)
+  if (Array.isArray(card.keywords) && card.keywords.length && areAbilitiesActive(card)) {
     tags.push(...card.keywords.map((keyword) => ({ text: keyword })));
   }
 
@@ -499,8 +499,8 @@ export const hasNutrition = (card) => card.type === 'Prey';
 export const renderKeywordTags = (card) => {
   const tags = [];
 
-  // Add regular keywords (ensure array to avoid string iteration)
-  if (Array.isArray(card.keywords) && card.keywords.length) {
+  // Add regular keywords (suppressed for dry-dropped predators)
+  if (Array.isArray(card.keywords) && card.keywords.length && areAbilitiesActive(card)) {
     tags.push(...card.keywords.map((keyword) => `<span>${keyword}</span>`));
   }
 

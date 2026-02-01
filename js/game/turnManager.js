@@ -42,6 +42,9 @@ const { PHASE, BUFF, DEBUFF, DAMAGE, DEATH, HEAL } = LOG_CATEGORIES;
 const PHASES = ['Start', 'Draw', 'Main 1', 'Combat', 'Main 2', 'End'];
 
 const runStartOfTurnEffects = (state) => {
+  // Clear thawing animation flags deterministically (set during previous endTurn frozen thaw)
+  state.players.forEach(p => p.field.forEach(c => { if (c?.thawing) c.thawing = false; }));
+
   const player = state.players[state.activePlayerIndex];
   const playerIndex = state.activePlayerIndex;
   const opponentIndex = (state.activePlayerIndex + 1) % 2;
@@ -129,11 +132,7 @@ const handleFrozenThaw = (state) => {
     // Thaw creatures that are frozen but NOT by Neurotoxic (no frozenDiesTurn)
     if (creature?.frozen && !creature.frozenDiesTurn) {
       creature.frozen = false;
-      creature.thawing = true; // Trigger thaw dissipation animation in UI
-      // Clear thawing flag after animation completes (2.5s)
-      setTimeout(() => {
-        if (creature) creature.thawing = false;
-      }, 2500);
+      creature.thawing = true; // Trigger thaw dissipation animation in UI (cleared at next turn start)
       // Remove Frozen keyword if present
       if (creature.keywords) {
         const frozenIndex = creature.keywords.indexOf('Frozen');

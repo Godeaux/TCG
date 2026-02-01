@@ -358,14 +358,12 @@ export class GameController {
     };
 
     // Log spell cast and queue visual
-    if (!result.selectTarget) {
-      logMessage(this.state, `${player.name} casts ${card.name}.`);
-      queueSpellVisual();
-    } else if (this._effectTargets.length > 0) {
-      // Targeted spell with pre-resolved target — queue visual with target info
-      logMessage(this.state, `${player.name} casts ${card.name}.`);
+    logMessage(this.state, `${player.name} casts ${card.name}.`);
+    if (result.selectTarget && this._effectTargets.length > 0) {
       const targetRef = this._effectTargets[0];
       queueSpellVisual(targetRef.instanceId ? { instanceId: targetRef.instanceId } : undefined);
+    } else {
+      queueSpellVisual();
     }
 
     // Resolve effect chain (may show targeting UI via onSelectionNeeded)
@@ -768,13 +766,18 @@ export class GameController {
 
     // Handle selectTarget (requires user interaction)
     if (result.selectTarget) {
-      const { selectTarget, ...immediateEffects } = result;
+      const { selectTarget, endTurn: deferredEndTurn, ...immediateEffects } = result;
+
+      // Wrap onComplete to apply deferred endTurn after selection resolves
+      const wrappedComplete = deferredEndTurn
+        ? () => { this.applyEffectResult({ endTurn: true }, context); onComplete?.(); }
+        : onComplete;
 
       // Apply immediate effects first, but check for nested UI requirements
       if (Object.keys(immediateEffects).length > 0) {
         const nestedUI = this.applyEffectResult(immediateEffects, context, () => {
           // After nested UI completes, show the outer selectTarget
-          this.resolveEffectChain({ selectTarget }, context, onComplete);
+          this.resolveEffectChain({ selectTarget }, context, wrappedComplete);
         });
         if (nestedUI) {
           // Nested effect spawned UI - it will call the callback above when done
@@ -790,7 +793,7 @@ export class GameController {
         const match = candidates?.find(c => this._matchEffectTarget(c, preResolved));
         if (match) {
           const followUp = onSelect(match.value !== undefined ? match.value : match);
-          this.resolveEffectChain(followUp, context, onComplete);
+          this.resolveEffectChain(followUp, context, wrappedComplete);
           return;
         }
         // No match — fall through to interactive selection
@@ -802,10 +805,10 @@ export class GameController {
         selectTarget,
         onSelect: (value) => {
           const followUp = selectTarget.onSelect(value);
-          this.resolveEffectChain(followUp, context, onComplete);
+          this.resolveEffectChain(followUp, context, wrappedComplete);
         },
         onCancel: () => {
-          onComplete?.();
+          wrappedComplete?.();
         },
       });
 
@@ -814,13 +817,18 @@ export class GameController {
 
     // Handle selectOption (requires user interaction for choices)
     if (result.selectOption) {
-      const { selectOption, ...immediateEffects } = result;
+      const { selectOption, endTurn: deferredEndTurn, ...immediateEffects } = result;
+
+      // Wrap onComplete to apply deferred endTurn after selection resolves
+      const wrappedComplete = deferredEndTurn
+        ? () => { this.applyEffectResult({ endTurn: true }, context); onComplete?.(); }
+        : onComplete;
 
       // Apply immediate effects first, but check for nested UI requirements
       if (Object.keys(immediateEffects).length > 0) {
         const nestedUI = this.applyEffectResult(immediateEffects, context, () => {
           // After nested UI completes, show the outer selectOption
-          this.resolveEffectChain({ selectOption }, context, onComplete);
+          this.resolveEffectChain({ selectOption }, context, wrappedComplete);
         });
         if (nestedUI) {
           // Nested effect spawned UI - it will call the callback above when done
@@ -835,7 +843,7 @@ export class GameController {
         if (match) {
           logMessage(this.state, `Chose: ${match.label}`);
           const followUp = selectOption.onSelect(match);
-          this.resolveEffectChain(followUp, context, onComplete);
+          this.resolveEffectChain(followUp, context, wrappedComplete);
           return;
         }
         console.warn('[GameController] effectTarget option did not match, falling through to UI');
@@ -847,10 +855,10 @@ export class GameController {
         onSelect: (option) => {
           logMessage(this.state, `Chose: ${option.label}`);
           const followUp = selectOption.onSelect(option);
-          this.resolveEffectChain(followUp, context, onComplete);
+          this.resolveEffectChain(followUp, context, wrappedComplete);
         },
         onCancel: () => {
-          onComplete?.();
+          wrappedComplete?.();
         },
       });
 
