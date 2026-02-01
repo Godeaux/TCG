@@ -78,6 +78,65 @@ export const seededRandomInt = (max) => {
  * @param {Array} array - Array to shuffle (mutated in place)
  * @returns {Array} The shuffled array
  */
+// Track instanceIds generated during action execution.
+// The host includes these in confirmed broadcasts so the guest can use them.
+let _createdInstanceIds = [];
+let _trackingActive = false;
+
+/**
+ * Start tracking instanceIds created during action execution.
+ * Called by ActionBus before executeAction on the host.
+ */
+export const beginTrackingInstanceIds = () => {
+  _createdInstanceIds = [];
+  _trackingActive = true;
+};
+
+/**
+ * Get all instanceIds created since beginTrackingInstanceIds was called.
+ * @returns {string[]} Array of instanceIds in creation order
+ */
+export const getCreatedInstanceIds = () => [..._createdInstanceIds];
+
+/**
+ * Stop tracking instanceIds.
+ */
+export const stopTrackingInstanceIds = () => {
+  _trackingActive = false;
+};
+
+// Host-authoritative ID override queue.
+// When the guest applies a host-confirmed action, it uses the host's IDs
+// instead of generating its own, ensuring both sides have identical instanceIds.
+let _idOverrides = [];
+
+/**
+ * Set instance ID overrides (guest uses these when applying host actions).
+ * @param {string[]} ids - Array of instanceIds from the host
+ */
+export const setInstanceIdOverrides = (ids) => { _idOverrides = [...ids]; };
+
+/**
+ * Clear instance ID overrides after action execution.
+ */
+export const clearInstanceIdOverrides = () => { _idOverrides = []; };
+
+/**
+ * Generate an instance ID for a card.
+ * If overrides are queued (guest applying host action), uses the host's ID.
+ * Otherwise generates via crypto.randomUUID() (host path, or single-player).
+ */
+export const seededInstanceId = () => {
+  if (_idOverrides.length > 0) {
+    return _idOverrides.shift();
+  }
+  const id = crypto.randomUUID();
+  if (_trackingActive) {
+    _createdInstanceIds.push(id);
+  }
+  return id;
+};
+
 const shuffle = (array) => {
   for (let i = array.length - 1; i > 0; i -= 1) {
     const j = Math.floor(seededRandom() * (i + 1));
@@ -182,8 +241,12 @@ export const drawCard = (state, playerIndex) => {
     return null;
   }
   const card = player.deck.shift();
-  const newCard = { ...card, instanceId: crypto.randomUUID() };
-  player.hand.push(newCard);
+  // instanceId is already assigned at deck creation (seeded, deterministic).
+  // Only assign a fallback if somehow missing (e.g. legacy/test code).
+  if (!card.instanceId) {
+    card.instanceId = seededInstanceId();
+  }
+  player.hand.push(card);
   return card;
 };
 
@@ -233,7 +296,12 @@ export const setPlayerDeck = (state, playerIndex, deck, ownedCards = null) => {
     return { ...card };
   });
 
-  player.deck = shuffle(deckWithRarity);
+  // Assign stable instanceIds using seeded PRNG so host and guest get identical IDs
+  const deckWithIds = deckWithRarity.map((card) => ({
+    ...card,
+    instanceId: seededInstanceId(),
+  }));
+  player.deck = shuffle(deckWithIds);
   player.hand = [];
   player.field = [null, null, null];
   player.carrion = [];

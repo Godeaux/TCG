@@ -8,6 +8,7 @@ import {
   formatKeywordList,
   getKeywordEmoji,
   formatCardForLog,
+  seededInstanceId,
 } from '../state/gameState.js';
 import { createCardInstance, isCreatureCard } from '../cardTypes.js';
 import { consumePrey } from './consumption.js';
@@ -839,7 +840,7 @@ export const resolveEffectResult = (state, result, context) => {
         deck.splice(index, 1);
       }
     }
-    state.players[playerIndex].hand.push({ ...cardData, instanceId: crypto.randomUUID() });
+    state.players[playerIndex].hand.push({ ...cardData, instanceId: seededInstanceId() });
     logGameAction(
       state,
       BUFF,
@@ -855,7 +856,7 @@ export const resolveEffectResult = (state, result, context) => {
     if (cardIndex >= 0) {
       player.carrion.splice(cardIndex, 1);
       // Add to hand with new instance ID
-      player.hand.push({ ...card, instanceId: crypto.randomUUID() });
+      player.hand.push({ ...card, instanceId: seededInstanceId() });
       logGameAction(
         state,
         BUFF,

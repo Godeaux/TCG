@@ -1,11 +1,12 @@
 import { hasBarrier, hasFrozen } from './keywords.js';
+import { seededInstanceId } from './state/gameState.js';
 
 export const isCreatureCard = (card) => card && (card.type === 'Predator' || card.type === 'Prey');
 
 export const createCardInstance = (cardData, turn) => {
   const base = {
     ...cardData,
-    instanceId: crypto.randomUUID(),
+    instanceId: seededInstanceId(),
     // Deep copy keywords array to prevent shared mutation between instances
     // Must check Array.isArray to avoid spreading strings like "[Circular]" into chars
     keywords: Array.isArray(cardData.keywords) ? [...cardData.keywords] : [],

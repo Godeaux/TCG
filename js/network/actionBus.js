@@ -21,6 +21,14 @@ import { sendLobbyBroadcast } from './sync.js';
 import { computeStateChecksum } from './actionSync.js';
 import { validateAction } from './actionValidator.js';
 import { serializeAction, deserializeAction } from './actionSerializer.js';
+import { buildLobbySyncPayload, applyLobbySyncPayload } from './serialization.js';
+import {
+  beginTrackingInstanceIds,
+  getCreatedInstanceIds,
+  stopTrackingInstanceIds,
+  setInstanceIdOverrides,
+  clearInstanceIdOverrides,
+} from '../state/gameState.js';
 
 // ============================================================================
 // MODULE STATE
@@ -42,7 +50,6 @@ export class ActionBus {
    * @param {Function} options.onActionConfirmed - Called after a confirmed action is applied
    * @param {Function} options.onActionRejected - Called when host rejects a guest's action intent
    * @param {Function} options.onDesyncDetected - Called when checksum mismatch detected
-   * @param {Function} options.resetGameState - Resets game state to initial for replay recovery
    */
   constructor(options = {}) {
     this.getState = options.getState || (() => null);
@@ -52,7 +59,6 @@ export class ActionBus {
     this.onActionConfirmed = options.onActionConfirmed || (() => {});
     this.onActionRejected = options.onActionRejected || (() => {});
     this.onDesyncDetected = options.onDesyncDetected || (() => {});
-    this.resetGameState = options.resetGameState || null;
 
     // Monotonic sequence counter (host only)
     this._seq = 0;
@@ -69,7 +75,12 @@ export class ActionBus {
 
     // Consecutive checksum mismatch counter (triggers recovery after threshold)
     this._desyncCount = 0;
-    this._desyncThreshold = 2; // Request recovery after 2 consecutive mismatches
+    this._desyncThreshold = 1; // Request recovery immediately on first mismatch
+
+    // Host-side intent ordering queue — ensures guest intents are processed in
+    // the same order the guest dispatched them, even if network delivers out of order.
+    this._nextExpectedIntent = 1; // Next intent counter we expect from guest
+    this._intentQueue = new Map(); // intentCounter → message, for buffered out-of-order intents
 
     // One-time init log — confirms role assignment
     const role = this.isHost() ? 'HOST' : 'GUEST';
@@ -221,6 +232,8 @@ export class ActionBus {
     this._intentCounter = 0;
     this._recovering = false;
     this._desyncCount = 0;
+    this._nextExpectedIntent = 1;
+    this._intentQueue.clear();
   }
 
   // ==========================================================================
@@ -233,8 +246,11 @@ export class ActionBus {
     this._seq++;
     const seq = this._seq;
 
-    // Apply locally
+    // Track instanceIds created during execution so the guest can use them
+    beginTrackingInstanceIds();
     const result = this.executeAction(action);
+    const createdIds = getCreatedInstanceIds();
+    stopTrackingInstanceIds();
 
     if (!result?.success) {
       // Rollback seq on failure
@@ -252,6 +268,7 @@ export class ActionBus {
       seq,
       action: serializeAction(action),
       checksum,
+      createdIds: createdIds.length > 0 ? createdIds : undefined,
       timestamp: Date.now(),
       source: 'host',
     };
@@ -267,8 +284,36 @@ export class ActionBus {
     return { ...result, seq, checksum };
   }
 
-  /** @private — Handle a guest's action intent */
+  /** @private — Handle a guest's action intent, ensuring in-order processing */
   _handleGuestIntent(message) {
+    const { intentId } = message;
+
+    // Extract the intent counter from the intentId (format: "intent-{counter}-{timestamp}")
+    const intentCounter = parseInt(intentId.split('-')[1], 10);
+
+    if (intentCounter > this._nextExpectedIntent) {
+      // Out of order — buffer it and wait for the missing intent(s)
+      console.log(`[ActionBus] HOST buffering out-of-order intent ${intentId} (expecting ${this._nextExpectedIntent})`);
+      this._intentQueue.set(intentCounter, message);
+      return;
+    }
+
+    // Process this intent and then drain any buffered intents that are now in sequence
+    this._processGuestIntent(message);
+    this._nextExpectedIntent++;
+
+    // Drain buffered intents in order
+    while (this._intentQueue.has(this._nextExpectedIntent)) {
+      const buffered = this._intentQueue.get(this._nextExpectedIntent);
+      this._intentQueue.delete(this._nextExpectedIntent);
+      console.log(`[ActionBus] HOST processing buffered intent ${buffered.intentId}`);
+      this._processGuestIntent(buffered);
+      this._nextExpectedIntent++;
+    }
+  }
+
+  /** @private — Process a single guest intent (validation + execution) */
+  _processGuestIntent(message) {
     const { action: serializedAction, intentId, senderId } = message;
 
     // Deserialize the action (resolve card refs from game state)
@@ -293,7 +338,10 @@ export class ActionBus {
     this._seq++;
     const seq = this._seq;
 
+    beginTrackingInstanceIds();
     const result = this.executeAction(action);
+    const createdIds = getCreatedInstanceIds();
+    stopTrackingInstanceIds();
 
     if (!result?.success) {
       this._seq--;
@@ -315,6 +363,7 @@ export class ActionBus {
       seq,
       action: serializeAction(action),
       checksum,
+      createdIds: createdIds.length > 0 ? createdIds : undefined,
       timestamp: Date.now(),
       source: 'guest',
       intentId,
@@ -340,19 +389,25 @@ export class ActionBus {
 
     // Optimistic execution — apply locally for instant feedback (Hearthstone model).
     // The host will confirm or reject. On rejection, we recover via action log replay.
+    // Track instanceIds so we can reconcile with host's IDs on confirmation.
+    beginTrackingInstanceIds();
     const result = this.executeAction(action);
+    const localCreatedIds = getCreatedInstanceIds();
+    stopTrackingInstanceIds();
 
     if (!result?.success) {
       console.log(`[ActionBus] GUEST optimistic failed locally: ${action.type} — ${result?.error}`);
       return result;
     }
 
-    console.log(`[ActionBus] GUEST optimistic OK, sending intent: ${action.type} (${intentId})`);
+    console.log(`[ActionBus] GUEST optimistic OK, sending intent: ${action.type} (${intentId})` +
+      (localCreatedIds.length ? ` (created ${localCreatedIds.length} IDs)` : ''));
 
-    // Store pending intent as optimistically applied
+    // Store pending intent as optimistically applied, with local IDs for reconciliation
     this._pendingIntents.set(intentId, {
       action,
       optimistic: true,
+      localCreatedIds,
       timestamp: Date.now(),
     });
 
@@ -371,11 +426,12 @@ export class ActionBus {
 
   /** @private — Handle confirmed action from host */
   _handleConfirmedAction(message) {
-    const { seq, action: serializedAction, checksum, intentId } = message;
+    const { seq, action: serializedAction, checksum, intentId, createdIds } = message;
 
     // Check if this confirms an optimistically-applied local action
-    const wasOptimistic = intentId && this._pendingIntents.has(intentId)
-      && this._pendingIntents.get(intentId).optimistic;
+    const pendingIntent = intentId ? this._pendingIntents.get(intentId) : null;
+    const wasOptimistic = pendingIntent?.optimistic;
+    const localCreatedIds = pendingIntent?.localCreatedIds || [];
 
     if (intentId && this._pendingIntents.has(intentId)) {
       this._pendingIntents.delete(intentId);
@@ -389,10 +445,28 @@ export class ActionBus {
     // double-apply (draw twice, play card twice, etc.)
     if (!wasOptimistic) {
       console.log(`[ActionBus] GUEST applying host action: ${serializedAction?.type} seq=${seq}`);
-      const state = this.getState();
-      const action = deserializeAction(serializedAction, state);
-      this.executeAction(action);
+      try {
+        // Use host's instanceIds so cards created during this action match
+        if (createdIds?.length) {
+          setInstanceIdOverrides(createdIds);
+        }
+        const state = this.getState();
+        const action = deserializeAction(serializedAction, state);
+        const result = this.executeAction(action);
+        clearInstanceIdOverrides();
+        if (!result?.success) {
+          console.warn(`[ActionBus] GUEST failed to apply host action seq=${seq}: ${result?.error}`);
+        }
+      } catch (err) {
+        clearInstanceIdOverrides();
+        console.warn(`[ActionBus] GUEST error applying host action seq=${seq}:`, err);
+      }
     } else {
+      // Optimistic action confirmed — reconcile any instanceId mismatches.
+      // The guest generated its own IDs optimistically; patch them to match the host's.
+      if (createdIds?.length && localCreatedIds.length) {
+        this._reconcileOptimisticIds(localCreatedIds, createdIds);
+      }
       console.log(`[ActionBus] GUEST confirmed (already applied): ${serializedAction?.type} seq=${seq}`);
     }
 
@@ -455,8 +529,16 @@ export class ActionBus {
   // ==========================================================================
 
   /**
+   * Request recovery from host (state-snapshot based).
+   * Can be called externally (e.g. resync button) or internally on desync.
+   */
+  requestRecovery() {
+    this._requestRecovery();
+  }
+
+  /**
    * Guest requests recovery from host.
-   * Host will respond with its full action log so guest can replay.
+   * Host will respond with its authoritative state snapshot.
    * @private
    */
   _requestRecovery() {
@@ -483,18 +565,19 @@ export class ActionBus {
    */
   _handleRecoveryRequest(message) {
     const { guestSeq, senderId } = message;
+    const state = this.getState();
+
     console.log(
       `[ActionBus] Guest ${senderId} requested recovery from seq ${guestSeq}. ` +
-        `Host has ${this._actionLog.length} entries up to seq ${this._seq}.`
+        `Host at seq ${this._seq}.`
     );
 
-    // Send the full action log — guest will replay from scratch
-    // Actions are already serialized in the log
+    // Send the host's authoritative state snapshot — the guest will apply it directly
     sendLobbyBroadcast('game_action', {
       type: 'desync_recovery_response',
-      actionLog: this._actionLog,
+      stateSnapshot: buildLobbySyncPayload(state),
       hostSeq: this._seq,
-      hostChecksum: computeStateChecksum(this.getState()),
+      hostChecksum: computeStateChecksum(state),
       senderId: this.getProfileId(),
     });
   }
@@ -504,78 +587,46 @@ export class ActionBus {
    * @private
    */
   _handleRecoveryResponse(message) {
-    const { actionLog, hostSeq, hostChecksum } = message;
+    const { stateSnapshot, hostSeq, hostChecksum } = message;
 
     if (!this._recovering) {
       console.warn('[ActionBus] Received recovery response but not in recovery mode');
       return;
     }
 
-    console.log(
-      `[ActionBus] Received recovery response: ${actionLog?.length || 0} entries, ` +
-        `host seq=${hostSeq}`
-    );
-
-    if (!Array.isArray(actionLog) || actionLog.length === 0) {
-      console.warn('[ActionBus] Empty action log in recovery response');
+    if (!stateSnapshot) {
+      console.warn('[ActionBus] No state snapshot in recovery response');
       this._recovering = false;
       return;
     }
 
-    // Reset game state if the callback is available
-    if (this.resetGameState) {
-      console.log('[ActionBus] Resetting game state for replay recovery...');
-      this.resetGameState();
-    }
+    console.log(`[ActionBus] Applying host state snapshot for recovery (seq=${hostSeq})`);
 
-    // Replay all actions from the host's log
-    let replayed = 0;
-    let errors = 0;
-    const sortedLog = [...actionLog].sort((a, b) => a.seq - b.seq);
+    // Apply the host's authoritative state directly
+    const state = this.getState();
+    applyLobbySyncPayload(state, stateSnapshot, { forceApply: true });
 
-    for (const entry of sortedLog) {
-      try {
-        // Deserialize each action from the log (get fresh state each time)
-        const currentState = this.getState();
-        const action = deserializeAction(entry.action, currentState);
-        const result = this.executeAction(action);
-        if (result?.success) {
-          replayed++;
-        } else {
-          errors++;
-          console.warn(`[ActionBus] Recovery replay failed at seq ${entry.seq}: ${result?.error}`);
-        }
-      } catch (err) {
-        errors++;
-        console.error(`[ActionBus] Recovery replay error at seq ${entry.seq}:`, err);
-      }
-    }
-
-    // Update local state
+    // Sync ActionBus bookkeeping
     this._seq = hostSeq;
-    this._actionLog = [...actionLog];
+    this._actionLog = [];
     this._desyncCount = 0;
     this._recovering = false;
     this._pendingIntents.clear();
 
-    // Verify we're back in sync
-    const postState = this.getState();
-    const localChecksum = postState ? computeStateChecksum(postState) : 0;
+    // Verify sync
+    const localChecksum = computeStateChecksum(this.getState());
     const synced = !hostChecksum || localChecksum === hostChecksum;
 
     console.log(
-      `[ActionBus] Recovery complete: replayed=${replayed}, errors=${errors}, ` +
-        `synced=${synced}, localChecksum=${localChecksum}, hostChecksum=${hostChecksum}`
+      `[ActionBus] Recovery complete: synced=${synced}, ` +
+        `localChecksum=${localChecksum}, hostChecksum=${hostChecksum}`
     );
 
     if (!synced) {
-      console.error(
-        '[ActionBus] Recovery failed — still desynced after full replay. ' +
-          'This likely indicates non-deterministic game logic.'
-      );
+      console.warn('[ActionBus] Recovery checksum mismatch — state may still differ');
     }
 
-    // Notify UI to re-render
+    // Re-render with recovered state
     this.onActionConfirmed({ seq: hostSeq, recovery: true });
   }
 
@@ -586,14 +637,68 @@ export class ActionBus {
   /** @private */
   _broadcastConfirmedAction(entry) {
     // Actions in the log are already serialized
-    sendLobbyBroadcast('game_action', {
+    const msg = {
       type: 'action_confirmed',
       seq: entry.seq,
       action: entry.action,
       checksum: entry.checksum,
       intentId: entry.intentId,
       senderId: this.getProfileId(),
-    });
+    };
+    // Include host-generated instanceIds so guest can match them
+    if (entry.createdIds?.length) {
+      msg.createdIds = entry.createdIds;
+    }
+    sendLobbyBroadcast('game_action', msg);
+  }
+
+  /**
+   * Reconcile instanceIds for optimistically-applied actions.
+   * The guest tracked IDs it created locally; the host provides its authoritative IDs.
+   * We do a positional 1:1 swap: localIds[0] → hostIds[0], etc.
+   * @private
+   */
+  _reconcileOptimisticIds(localIds, hostIds) {
+    if (localIds.length !== hostIds.length) {
+      console.warn(
+        `[ActionBus] ID reconciliation length mismatch: local=${localIds.length}, host=${hostIds.length}. ` +
+        `Checksum will catch any divergence.`
+      );
+    }
+
+    const count = Math.min(localIds.length, hostIds.length);
+    let patched = 0;
+
+    // Build a map of localId → hostId for fast lookup
+    const idMap = new Map();
+    for (let i = 0; i < count; i++) {
+      if (localIds[i] !== hostIds[i]) {
+        idMap.set(localIds[i], hostIds[i]);
+      }
+    }
+
+    if (idMap.size === 0) return; // IDs already match
+
+    // Scan all zones in state and patch matching instanceIds
+    const state = this.getState();
+    if (!state?.players) return;
+
+    for (const player of state.players) {
+      const zones = [player.hand, player.field, player.carrion, player.deck, player.exile, player.traps];
+      for (const zone of zones) {
+        if (!Array.isArray(zone)) continue;
+        for (const card of zone) {
+          if (!card) continue;
+          const newId = idMap.get(card.instanceId);
+          if (newId) {
+            card.instanceId = newId;
+            patched++;
+          }
+        }
+      }
+    }
+
+    console.log(`[ActionBus] Reconciled ${patched} instanceId(s) to match host`);
   }
 }
 

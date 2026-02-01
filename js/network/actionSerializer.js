@@ -79,6 +79,17 @@ export function serializeAction(action) {
           preselectedTarget: toCardRef(payload.options.preselectedTarget, 'field'),
         };
       }
+      // Serialize effectTargets inside options
+      if (Array.isArray(payload.options?.effectTargets) && payload.options.effectTargets.length) {
+        serialized.payload.options = {
+          ...(serialized.payload.options || payload.options),
+          effectTargets: payload.options.effectTargets.map(et => {
+            if (et.type === 'player' || et.type === 'option') return et;
+            if (et.instanceId) return { _effectTarget: true, ...toCardRef(et, 'field') };
+            return et;
+          }),
+        };
+      }
       break;
 
     case 'ACTIVATE_DISCARD_EFFECT':
@@ -94,11 +105,15 @@ export function serializeAction(action) {
     // Attacker + target
     case 'RESOLVE_ATTACK':
       serialized.payload.attacker = toCardRef(payload.attacker, 'field');
-      if (payload.target && payload.target.type === 'creature' && payload.target.card) {
+      if (payload.target?.type === 'creature' && payload.target.card) {
         serialized.payload.target = {
           ...payload.target,
           card: toCardRef(payload.target.card, 'field'),
         };
+      } else if (payload.target?.type === 'player') {
+        // Strip the full player object — just keep type + playerIndex for resolution
+        const pIdx = payload.target.playerIndex ?? payload.target.player?.playerIndex;
+        serialized.payload.target = { type: 'player', playerIndex: pIdx };
       }
       break;
 
@@ -168,6 +183,16 @@ export function serializeAction(action) {
       }
   }
 
+  // Generic: serialize effectTargets on any action type
+  if (Array.isArray(payload.effectTargets)) {
+    serialized.payload.effectTargets = payload.effectTargets.map(et => {
+      if (et.type === 'player' || et.type === 'option') return et;
+      // Creature target — convert to card ref
+      if (et.instanceId) return { _effectTarget: true, ...toCardRef(et, 'field') };
+      return et;
+    });
+  }
+
   return serialized;
 }
 
@@ -204,6 +229,22 @@ export function deserializeAction(action, state) {
           preselectedTarget: resolveCardRef(payload.options.preselectedTarget, state, 'field'),
         };
       }
+      // Deserialize effectTargets inside options
+      if (Array.isArray(payload.options?.effectTargets)) {
+        deserialized.payload.options = {
+          ...(deserialized.payload.options || payload.options),
+          effectTargets: payload.options.effectTargets.map(et => {
+            if (et._cardRef || et._effectTarget) {
+              const resolved = resolveCardRef(et, state, 'field');
+              if (resolved && resolved !== et) {
+                return { instanceId: resolved.instanceId, type: 'creature' };
+              }
+              return { instanceId: et.instanceId, type: 'creature' };
+            }
+            return et;
+          }),
+        };
+      }
       break;
 
     case 'ACTIVATE_DISCARD_EFFECT':
@@ -221,6 +262,13 @@ export function deserializeAction(action, state) {
         deserialized.payload.target = {
           ...payload.target,
           card: resolveCardRef(payload.target.card, state, 'field'),
+        };
+      } else if (payload.target?.type === 'player' && payload.target.playerIndex !== undefined) {
+        // Resolve player ref back to actual player object from state
+        deserialized.payload.target = {
+          type: 'player',
+          player: state.players[payload.target.playerIndex],
+          playerIndex: payload.target.playerIndex,
         };
       }
       break;
@@ -273,6 +321,24 @@ export function deserializeAction(action, state) {
           deserialized.payload[key] = resolveCardRef(val, state, val.zone || 'unknown');
         }
       }
+  }
+
+  // Generic: deserialize effectTargets on any action type
+  // effectTargets stay as lightweight descriptors (instanceId, type, label) —
+  // they're matched against candidates in resolveEffectChain, not used as card objects.
+  if (Array.isArray(payload.effectTargets)) {
+    deserialized.payload.effectTargets = payload.effectTargets.map(et => {
+      if (et._cardRef || et._effectTarget) {
+        // Resolve instanceId in case of optimistic ID reconciliation, but keep as descriptor
+        const resolved = resolveCardRef(et, state, 'field');
+        if (resolved && resolved !== et) {
+          return { instanceId: resolved.instanceId, type: 'creature' };
+        }
+        // Fallback: use the instanceId from the ref directly
+        return { instanceId: et.instanceId, type: 'creature' };
+      }
+      return et;
+    });
   }
 
   return deserialized;

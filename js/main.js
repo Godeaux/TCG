@@ -20,6 +20,10 @@ import { generateAIvsAIDecks } from './ui/overlays/DeckBuilderOverlay.js';
 import { isSelectionActive } from './ui/components/index.js';
 import { onActionExecuted as simOnActionExecuted } from './simulation/index.js';
 import { SoundManager } from './audio/soundManager.js';
+import { getActionBus } from './network/actionBus.js';
+import { isOnlineMode } from './state/selectors.js';
+import { broadcastSyncState } from './network/sync.js';
+import { advancePhase as advancePhaseAction, endTurn as endTurnAction } from './state/actions.js';
 
 // Initialize the card registry (loads JSON card data)
 initializeCardRegistry();
@@ -95,6 +99,25 @@ const aiCallbacks = {
   },
 };
 
+// Action dispatch — routes through ActionBus in online mode, direct execution offline
+const dispatchAdvancePhase = () => {
+  const bus = getActionBus();
+  if (bus && isOnlineMode(state)) {
+    bus.dispatch(advancePhaseAction());
+  } else {
+    advancePhase(state);
+  }
+};
+
+const dispatchEndTurn = () => {
+  const bus = getActionBus();
+  if (bus && isOnlineMode(state)) {
+    bus.dispatch(endTurnAction());
+  } else {
+    endTurn(state);
+  }
+};
+
 // Auto-advance timeout tracking
 let autoAdvanceTimeout = null;
 
@@ -135,7 +158,7 @@ const checkAutoAdvance = () => {
     if (canPlayerMakeAnyMove(state, state.activePlayerIndex)) return;
 
     console.log(`[Auto-Advance] No moves available in ${state.phase}, advancing automatically`);
-    advancePhase(state);
+    dispatchAdvancePhase();
     refresh();
   }, 400); // Brief delay so player sees the state
 };
@@ -145,14 +168,14 @@ const refresh = () => {
   renderGame(state, {
     onNextPhase: () => {
       if (state.phase === 'End') {
-        endTurn(state);
+        dispatchEndTurn();
       } else {
-        advancePhase(state);
+        dispatchAdvancePhase();
       }
       refresh();
     },
     onEndTurn: () => {
-      endTurn(state);
+      dispatchEndTurn();
       refresh();
     },
     onUpdate: () => refresh(),
@@ -186,6 +209,19 @@ const refresh = () => {
       console.log('[DeckComplete] P1 deck length:', selections[0]?.length ?? 0);
       console.log('[DeckComplete] P2 deck length:', selections[1]?.length ?? 0);
 
+      // In online multiplayer, only the host builds decks and draws.
+      // The host then broadcasts the full state (with instanceIds) to the guest.
+      // This ensures both sides have identical card instanceIds.
+      const isHost = isOnlineMode(state) &&
+        state.menu?.profile?.id === state.menu?.lobby?.host_id;
+      const isGuest = isOnlineMode(state) && !isHost;
+
+      if (isGuest) {
+        console.log('[DeckComplete] Guest skipping deck setup — waiting for host broadcast');
+        refresh();
+        return;
+      }
+
       // Get the local player's owned cards for rarity assignment
       const ownedCards = state.menu?.profile?.ownedCards || null;
 
@@ -212,6 +248,12 @@ const refresh = () => {
         'deck:',
         state.players[1].deck.length
       );
+
+      // In online mode, host broadcasts full state so guest gets identical instanceIds
+      if (isHost) {
+        console.log('[DeckComplete] Host broadcasting deck state to guest');
+        broadcastSyncState(state);
+      }
 
       // Initialize AI if in any AI mode
       if (isAnyAIMode(state)) {

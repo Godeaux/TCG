@@ -95,6 +95,12 @@ export class GameController {
       return { success: false, error: 'Invalid action' };
     }
 
+    // Extract pre-resolved effect targets from the action payload.
+    // These are consumed sequentially by resolveEffectChain instead of
+    // showing UI via onSelectionNeeded — making actions fully synchronous.
+    const rawTargets = action.payload?.effectTargets || action.payload?.options?.effectTargets || [];
+    this._effectTargets = rawTargets.length ? [...rawTargets] : [];
+
     try {
       switch (action.type) {
         // Game flow
@@ -179,6 +185,8 @@ export class GameController {
     } catch (error) {
       console.error(`[GameController] Error executing ${action.type}:`, error);
       return { success: false, error: error.message };
+    } finally {
+      this._effectTargets = [];
     }
   }
 
@@ -266,9 +274,19 @@ export class GameController {
     // Clear extended consumption window when a card is being played
     this.state.extendedConsumption = null;
 
+    // Convert preselectedTarget to effectTargets if not already provided
+    if (options.preselectedTarget && !this._effectTargets.length) {
+      const pst = options.preselectedTarget;
+      this._effectTargets.push({
+        instanceId: pst.instanceId,
+        type: pst.type === 'player' ? 'player' : 'creature',
+        ...(pst.playerIndex !== undefined ? { playerIndex: pst.playerIndex } : {}),
+      });
+    }
+
     // Route by card type
     if (card.type === 'Spell' || card.type === 'Free Spell') {
-      return this.handlePlaySpell(card, isFree, options.preselectedTarget);
+      return this.handlePlaySpell(card, isFree);
     }
 
     if (card.type === 'Trap') {
@@ -282,7 +300,7 @@ export class GameController {
     return { success: false, error: `Unknown card type: ${card.type}` };
   }
 
-  handlePlaySpell(card, isFree, preselectedTarget = null) {
+  handlePlaySpell(card, isFree) {
     const player = getActivePlayer(this.state);
     const opponent = getOpponentPlayer(this.state);
     const playerIndex = this.state.activePlayerIndex;
@@ -339,26 +357,15 @@ export class GameController {
       this.broadcast();
     };
 
-    // Handle preselected target (drag-to-target spell casting)
-    if (preselectedTarget && result.selectTarget) {
-      const { candidates, onSelect } = result.selectTarget;
-      const matchingCandidate = candidates?.find(
-        (c) => (c.value?.instanceId || c.card?.instanceId) === preselectedTarget.instanceId
-      );
-      if (matchingCandidate) {
-        logMessage(this.state, `${player.name} casts ${card.name}.`);
-        queueSpellVisual(matchingCandidate.value);
-        const followUp = onSelect(matchingCandidate.value);
-        this.resolveEffectChain(followUp, { playerIndex, opponentIndex, spellCard: undefined }, finalizePlay);
-        return { success: true };
-      }
-      // No matching candidate — fall through to normal flow
-    }
-
-    // Log and queue visual for non-targeted spells
+    // Log spell cast and queue visual
     if (!result.selectTarget) {
       logMessage(this.state, `${player.name} casts ${card.name}.`);
       queueSpellVisual();
+    } else if (this._effectTargets.length > 0) {
+      // Targeted spell with pre-resolved target — queue visual with target info
+      logMessage(this.state, `${player.name} casts ${card.name}.`);
+      const targetRef = this._effectTargets[0];
+      queueSpellVisual(targetRef.instanceId ? { instanceId: targetRef.instanceId } : undefined);
     }
 
     // Resolve effect chain (may show targeting UI via onSelectionNeeded)
@@ -564,9 +571,12 @@ export class GameController {
       });
     }
 
-    // Trigger traps
-    this.triggerTraps('rivalPlaysPred', creatureInstance);
-    this.triggerTraps('rivalPlaysPrey', creatureInstance);
+    // Trigger traps matching the creature's type
+    if (creatureInstance.type === 'Predator') {
+      this.triggerTraps('rivalPlaysPred', creatureInstance);
+    } else if (creatureInstance.type === 'Prey') {
+      this.triggerTraps('rivalPlaysPrey', creatureInstance);
+    }
 
     // Trigger onConsume effects if prey were consumed
     if (allConsumed.length > 0 && !creatureInstance.dryDropped) {
@@ -772,7 +782,22 @@ export class GameController {
         }
       }
 
-      // No nested UI - notify UI that selection is needed
+      // Check for pre-resolved target from effectTargets queue (atomic multiplayer dispatch)
+      if (this._effectTargets?.length > 0) {
+        const preResolved = this._effectTargets.shift();
+        const { candidates: candidatesInput, onSelect } = selectTarget;
+        const candidates = typeof candidatesInput === 'function' ? candidatesInput() : candidatesInput;
+        const match = candidates?.find(c => this._matchEffectTarget(c, preResolved));
+        if (match) {
+          const followUp = onSelect(match.value !== undefined ? match.value : match);
+          this.resolveEffectChain(followUp, context, onComplete);
+          return;
+        }
+        // No match — fall through to interactive selection
+        console.warn('[GameController] effectTarget did not match any candidate, falling through to UI');
+      }
+
+      // No pre-resolved target — notify UI that selection is needed
       this.onSelectionNeeded({
         selectTarget,
         onSelect: (value) => {
@@ -803,7 +828,20 @@ export class GameController {
         }
       }
 
-      // No nested UI - notify UI that option selection is needed
+      // Check for pre-resolved option from effectTargets queue
+      if (this._effectTargets?.length > 0) {
+        const preResolved = this._effectTargets.shift();
+        const match = selectOption.options.find(o => o.label === preResolved.label);
+        if (match) {
+          logMessage(this.state, `Chose: ${match.label}`);
+          const followUp = selectOption.onSelect(match);
+          this.resolveEffectChain(followUp, context, onComplete);
+          return;
+        }
+        console.warn('[GameController] effectTarget option did not match, falling through to UI');
+      }
+
+      // No pre-resolved option — notify UI that option selection is needed
       this.onSelectionNeeded({
         selectOption,
         onSelect: (option) => {
@@ -819,7 +857,7 @@ export class GameController {
       return;
     }
 
-    // No selection needed - apply effects and complete
+    // No selection needed — apply effects and complete
     // Pass onComplete so nested UI can be properly chained
     const nestedUI = this.applyEffectResult(result, context, onComplete);
     if (!nestedUI) {
@@ -827,6 +865,26 @@ export class GameController {
       onComplete?.();
     }
     // If there was nested UI, onComplete will be called by the nested chain
+  }
+
+  /**
+   * Match a pre-resolved effectTarget against a candidate from selectTarget/selectFromGroup.
+   * Matches by instanceId (creatures) or playerIndex (player targets).
+   * @private
+   */
+  _matchEffectTarget(candidate, preResolved) {
+    const val = candidate.value !== undefined ? candidate.value : candidate;
+    // Creature match by instanceId
+    if (preResolved.instanceId) {
+      if (val?.creature?.instanceId === preResolved.instanceId) return true;
+      if (val?.instanceId === preResolved.instanceId) return true;
+      if (val?.card?.instanceId === preResolved.instanceId) return true;
+    }
+    // Player match by playerIndex
+    if (preResolved.type === 'player' && val?.type === 'player' && val?.playerIndex === preResolved.playerIndex) {
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -1544,6 +1602,52 @@ export class GameController {
   handleDeclareAttack({ attacker, target }) {
     // Legacy — RESOLVE_ATTACK handles the full flow now
     return this.handleResolveAttack({ attacker, target });
+  }
+
+  /**
+   * Get before-combat effect selection data for a creature.
+   * Used by the UI to pre-resolve the selection before dispatching RESOLVE_ATTACK,
+   * making the action atomic for multiplayer sync.
+   *
+   * @param {Object} attacker - The attacking creature
+   * @returns {Object|null} { title, candidates } or null if no selection needed
+   */
+  /**
+   * Dry-run a card's effect for a given trigger to discover what selections it needs.
+   * Returns { type: 'selectTarget'|'selectOption', title, candidates|options } or null.
+   */
+  getEffectSelections(card, trigger, { playerIndex, opponentIndex } = {}) {
+    if (playerIndex === undefined) {
+      playerIndex = this.state.activePlayerIndex;
+      opponentIndex = (playerIndex + 1) % 2;
+    }
+
+    const result = resolveCardEffect(card, trigger, {
+      log: () => {},
+      player: this.state.players[playerIndex],
+      opponent: this.state.players[opponentIndex],
+      creature: card,
+      state: this.state,
+      playerIndex,
+      opponentIndex,
+    });
+
+    if (result?.selectTarget) {
+      const { title, candidates: candidatesInput } = result.selectTarget;
+      const candidates = typeof candidatesInput === 'function' ? candidatesInput() : candidatesInput;
+      return { type: 'selectTarget', title, candidates: Array.isArray(candidates) ? candidates : [] };
+    }
+    if (result?.selectOption) {
+      return { type: 'selectOption', title: result.selectOption.title, options: result.selectOption.options };
+    }
+    return null;
+  }
+
+  getBeforeCombatSelection(attacker) {
+    if (!hasBeforeCombatEffect(attacker) || attacker.beforeCombatFiredThisAttack) {
+      return null;
+    }
+    return this.getEffectSelections(attacker, 'onBeforeCombat');
   }
 
   handleResolveCombat() {

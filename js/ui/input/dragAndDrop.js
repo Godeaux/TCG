@@ -33,7 +33,7 @@ import {
   cantConsume,
 } from '../../keywords.js';
 import { hideCardTooltipImmediate } from '../components/CardTooltip.js';
-import { broadcastHandDrag } from '../../network/sync.js';
+import { broadcastHandDrag, broadcastHandHover } from '../../network/sync.js';
 
 // ============================================================================
 // MODULE-LEVEL STATE
@@ -69,6 +69,9 @@ let handlePlayCard = null;
 let gameController = null;
 let dispatchAction = null;
 
+// Cached spell targeting candidates — populated once on drag start, used for all hover checks
+let _spellCandidateCache = null; // { validInstanceIds: Set<string>, canTargetPlayer: bool } | null
+
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
@@ -77,101 +80,32 @@ let dispatchAction = null;
  * Effect types that require targeting
  * Maps effect type to target type: 'creature', 'enemy-creature', 'friendly-creature', 'any-target', 'player'
  */
-const TARGETING_EFFECTS = {
-  // Selection-based effects
-  selectTarget: 'creature',
-  selectFromGroup: 'dynamic', // Depends on targetGroup param
-  selectCreatureForDamage: 'creature',
-  selectTargetForDamage: 'any-target', // Can target creatures or players
-  selectEnemyPreyToKill: 'enemy-creature',
-  selectEnemyToKill: 'enemy-creature',
-  selectEnemyToStripAbilities: 'enemy-creature',
-  selectCreatureToRestore: 'creature',
-  selectEnemyPreyToConsume: 'enemy-creature',
-  selectPredatorForKeyword: 'friendly-creature',
-  selectEnemyToAddToHand: 'enemy-creature',
-  // Grant keyword effects
-  grantKeyword: 'dynamic', // Depends on targetType param
-  grantBarrier: 'friendly-creature',
-  removeAbilities: 'dynamic',
-};
-
 /**
- * Check if a spell effect requires targeting and determine target type
+ * Check if a spell effect requires targeting.
+ * Uses the cached candidate list (populated on drag start) or probes the game controller.
+ * Single source of truth: the actual effect code via getEffectSelections().
+ *
  * @param {Object} card - Card to check
- * @returns {Object|null} { requiresTarget: boolean, targetType: string } or null
+ * @returns {Object|null} { requiresTarget: boolean } or null
  */
 const getSpellTargetingInfo = (card) => {
   if (!card || (card.type !== 'Spell' && card.type !== 'Free Spell')) {
     return null;
   }
-
-  // Get effect definition (could be in card.effects.effect or card.effect)
-  const effectDef = card.effects?.effect || card.effect;
-  if (!effectDef) {
-    return { requiresTarget: false, targetType: null };
+  // If cache is populated (during drag), use it
+  if (_spellCandidateCache) {
+    return { requiresTarget: true };
   }
-
-  // Handle string-based effect IDs (legacy)
-  if (typeof effectDef === 'string') {
-    // Check if it matches a known targeting effect pattern
-    for (const [effectType, targetType] of Object.entries(TARGETING_EFFECTS)) {
-      if (effectDef.toLowerCase().includes(effectType.toLowerCase())) {
-        return { requiresTarget: true, targetType };
-      }
-    }
-    return { requiresTarget: false, targetType: null };
-  }
-
-  // Handle object-based effect definition
-  if (typeof effectDef === 'object') {
-    const effectType = effectDef.type;
-    if (effectType && TARGETING_EFFECTS[effectType]) {
-      let targetType = TARGETING_EFFECTS[effectType];
-
-      // Handle dynamic target types based on params
-      if (targetType === 'dynamic' && effectDef.params) {
-        const params = effectDef.params;
-        if (params.targetGroup) {
-          // Map target groups to target types
-          if (params.targetGroup.includes('enemy')) {
-            targetType = 'enemy-creature';
-          } else if (params.targetGroup.includes('friendly')) {
-            targetType = 'friendly-creature';
-          } else if (params.targetGroup.includes('all')) {
-            targetType = 'creature';
-          } else if (params.targetGroup === 'rival') {
-            targetType = 'player';
-          }
-        }
-        if (params.targetType) {
-          if (params.targetType.includes('enemy')) {
-            targetType = 'enemy-creature';
-          } else if (params.targetType.includes('friendly')) {
-            targetType = 'friendly-creature';
-          }
-        }
-      }
-
-      return { requiresTarget: true, targetType };
-    }
-  }
-
-  // Handle array of effects - check if any require targeting
-  if (Array.isArray(effectDef)) {
-    for (const singleEffect of effectDef) {
-      const info = getSpellTargetingInfo({ ...card, effects: { effect: singleEffect } });
-      if (info?.requiresTarget) {
-        return info;
-      }
-    }
-  }
-
-  return { requiresTarget: false, targetType: null };
+  // Otherwise probe the controller
+  if (!gameController) return { requiresTarget: false };
+  const selection = gameController.getEffectSelections(card, 'effect');
+  return { requiresTarget: selection?.type === 'selectTarget' };
 };
 
 /**
- * Check if a target is valid for a spell's targeting requirement
+ * Check if a target is valid for a spell's targeting requirement.
+ * Uses the cached candidate list from getEffectSelections() — single source of truth.
+ *
  * @param {Object} card - Spell card
  * @param {Object} targetCard - Target card or null for player
  * @param {Object} state - Game state
@@ -180,47 +114,19 @@ const getSpellTargetingInfo = (card) => {
  * @returns {boolean}
  */
 const isValidSpellTarget = (card, targetCard, state, isPlayer = false, playerIndex = -1) => {
-  const targetingInfo = getSpellTargetingInfo(card);
-  if (!targetingInfo?.requiresTarget) {
-    return false;
+  // Use cache if available (populated on drag start)
+  if (_spellCandidateCache) {
+    if (isPlayer) return _spellCandidateCache.canTargetPlayer;
+    if (!targetCard?.instanceId) return false;
+    return _spellCandidateCache.validInstanceIds.has(targetCard.instanceId);
   }
-
-  const { targetType } = targetingInfo;
-  const localIndex = getLocalPlayerIndex ? getLocalPlayerIndex(state) : state.activePlayerIndex;
-  const opponentIndex = (localIndex + 1) % 2;
-
-  if (isPlayer) {
-    // Check if spell can target players
-    return targetType === 'any-target' || targetType === 'player';
-  }
-
-  if (!targetCard) return false;
-
-  // Check creature type requirements
-  const isCreature =
-    targetCard.type === 'Predator' ||
-    targetCard.type === 'Prey' ||
-    targetCard.type === 'predator' ||
-    targetCard.type === 'prey';
-  if (!isCreature) return false;
-
-  // Determine if target is friendly or enemy
-  const activePlayer = getActivePlayer(state);
-  const opponent = getOpponentPlayer(state);
-  const isFriendly = activePlayer.field.includes(targetCard);
-  const isEnemy = opponent.field.includes(targetCard);
-
-  switch (targetType) {
-    case 'creature':
-    case 'any-target':
-      return true;
-    case 'enemy-creature':
-      return isEnemy;
-    case 'friendly-creature':
-      return isFriendly;
-    default:
-      return true;
-  }
+  // Fallback: probe controller directly (for non-drag contexts like touch)
+  if (!gameController) return false;
+  const selection = gameController.getEffectSelections(card, 'effect');
+  if (!selection?.candidates?.length) return false;
+  if (isPlayer) return selection.candidates.some(c => c.value?.type === 'player');
+  if (!targetCard?.instanceId) return false;
+  return selection.candidates.some(c => c.card?.instanceId === targetCard.instanceId);
 };
 
 /**
@@ -702,7 +608,7 @@ const handlePlayerDrop = (card, playerBadge) => {
     latestState,
     targetPlayer,
     card,
-    { type: 'player', player: targetPlayer },
+    { type: 'player', player: targetPlayer, playerIndex: latestState.players.indexOf(targetPlayer) },
     latestCallbacks.onUpdate
   );
 };
@@ -851,6 +757,23 @@ const handleDragStart = (event) => {
   draggedCardElement = cardElement;
   draggedCard = card;
 
+  // Cache spell targeting candidates once (single source of truth from game logic)
+  _spellCandidateCache = null;
+  const isDraggedSpell = card.type === 'Spell' || card.type === 'Free Spell';
+  if (isDraggedSpell && gameController) {
+    const selection = gameController.getEffectSelections(card, 'effect');
+    if (selection?.type === 'selectTarget') {
+      const validInstanceIds = new Set();
+      let canTargetPlayer = false;
+      for (const c of (selection.candidates || [])) {
+        if (c.card?.instanceId) validInstanceIds.add(c.card.instanceId);
+        if (c.value?.type === 'player') canTargetPlayer = true;
+      }
+      // Cache even if empty — distinguishes "targeted with 0 targets" from "non-targeted"
+      _spellCandidateCache = { validInstanceIds, canTargetPlayer };
+    }
+  }
+
   originalParent = cardElement.parentElement;
   originalIndex = Array.from(originalParent.children).indexOf(cardElement);
 
@@ -859,15 +782,18 @@ const handleDragStart = (event) => {
     ? activePlayer.hand.findIndex((c) => c?.instanceId === instanceId)
     : -1;
 
+  // Remove hand-focus BEFORE adding dragging class so the browser captures
+  // the drag image without the translateY(-25px) offset from the hover lift.
+  const hadFocus = cardElement.classList.contains('hand-focus');
+  cardElement.classList.remove('hand-focus');
   cardElement.classList.add('dragging');
-  // Chrome: remove hand-focus to shrink card back - prevents enlarged card from blocking drop zones
-  // Firefox: uses CSS pointer-events: none instead (removing hand-focus breaks drag in Firefox)
-  if (window.chrome) {
-    cardElement.classList.remove('hand-focus');
-  }
   document.body.classList.add('drag-in-progress');
   event.dataTransfer.effectAllowed = 'move';
   event.dataTransfer.setData('text/plain', instanceId);
+
+  // Center the drag ghost on the cursor
+  const rect = cardElement.getBoundingClientRect();
+  event.dataTransfer.setDragImage(cardElement, rect.width / 2, rect.height / 2);
 
   // Broadcast drag start to opponent (if dragging from hand)
   if (latestState && draggedCardHandIndex >= 0) {
@@ -886,13 +812,14 @@ const handleDragStart = (event) => {
  * Handle drag end event
  */
 const handleDragEnd = (event) => {
-  // Broadcast drag end to opponent
+  // Broadcast drag and hover end to opponent
   if (latestState && draggedCardHandIndex >= 0) {
     broadcastHandDrag(latestState, {
       cardIndex: draggedCardHandIndex,
       position: null,
       isDragging: false,
     });
+    broadcastHandHover(latestState, null);
   }
 
   if (draggedCardElement) {
@@ -906,6 +833,7 @@ const handleDragEnd = (event) => {
   originalIndex = -1;
   draggedCardHandIndex = -1;
   draggedFromExtendedConsumption = false;
+  _spellCandidateCache = null;
 
   // Re-highlight extended consumption targets if still active
   if (latestState?.extendedConsumption) {
@@ -917,29 +845,21 @@ const handleDragEnd = (event) => {
  * Handle drag over event (visual feedback)
  */
 /**
- * Highlight valid spell targets when dragging a targeted spell
+ * Highlight valid spell targets when dragging a targeted spell.
+ * Uses the cached candidate list from getEffectSelections() — single source of truth.
  */
-const highlightSpellTargets = (card, state) => {
-  const targetingInfo = getSpellTargetingInfo(card);
-  if (!targetingInfo?.requiresTarget) return;
+const highlightSpellTargets = () => {
+  if (!_spellCandidateCache) return;
 
-  const { targetType } = targetingInfo;
-  const activePlayer = getActivePlayer(state);
-  const opponent = getOpponentPlayer(state);
-
-  // Highlight valid creature targets
-  const allFieldCards = document.querySelectorAll('.field-slot .card');
-  allFieldCards.forEach((cardEl) => {
-    const instanceId = cardEl.dataset.instanceId;
-    const targetCard = getCardFromInstanceId(instanceId, state);
-    if (targetCard && isValidSpellTarget(card, targetCard, state)) {
-      cardEl.classList.add('spell-target');
-    }
-  });
+  // Highlight valid creature targets by instanceId
+  for (const instanceId of _spellCandidateCache.validInstanceIds) {
+    const cardEl = document.querySelector(`.field-slot .card[data-instance-id="${instanceId}"]`);
+    if (cardEl) cardEl.classList.add('spell-target');
+  }
 
   // Highlight player badge if spell can target players
-  if (targetType === 'any-target' || targetType === 'player') {
-    const localIndex = getLocalPlayerIndex ? getLocalPlayerIndex(state) : state.activePlayerIndex;
+  if (_spellCandidateCache.canTargetPlayer) {
+    const localIndex = getLocalPlayerIndex ? getLocalPlayerIndex(latestState) : latestState?.activePlayerIndex;
     const opponentIndex = (localIndex + 1) % 2;
     const opponentBadge = document.querySelector(
       `.player-badge[data-player-index="${opponentIndex}"]`
@@ -1007,17 +927,16 @@ const handleDragOver = (event) => {
   clearDragVisuals();
   currentDragTargetId = targetId;
 
-  // For targeted spells, always show valid targets highlighted in blue
-  if (isSpell) {
-    const targetingInfo = getSpellTargetingInfo(draggedCard);
-    if (targetingInfo?.requiresTarget) {
-      highlightSpellTargets(draggedCard, latestState);
-    }
+  // For spells, determine if targeted or non-targeted
+  const isTargetedSpell = isSpell && getSpellTargetingInfo(draggedCard)?.requiresTarget;
+  if (isTargetedSpell) {
+    // Targeted spell: highlight only valid targets (gold glow via spell-target class)
+    highlightSpellTargets();
   }
 
   if (!target) {
-    // For non-targeted spells, highlight the player field area even if not over a specific element
-    if (isSpell) {
+    // For non-targeted spells, highlight the player field area as a valid drop zone
+    if (isSpell && !isTargetedSpell) {
       const playerField = document.querySelector('.player-field');
       if (playerField) {
         playerField.classList.add('spell-drop-zone');
@@ -1026,8 +945,8 @@ const handleDragOver = (event) => {
     return;
   }
 
-  // Handle player field row drop zone for spells
-  if (target.classList.contains('player-field') && isSpell) {
+  // Handle player field row drop zone for non-targeted spells only
+  if (target.classList.contains('player-field') && isSpell && !isTargetedSpell) {
     target.classList.add('spell-drop-zone');
     return;
   }
@@ -1035,10 +954,9 @@ const handleDragOver = (event) => {
   if (target.classList.contains('field-slot')) {
     const hasCard = Array.from(target.children).some((child) => child.classList.contains('card'));
 
-    // For spells, any player field slot (or area) is valid
-    if (isSpell && target.closest('.player-field')) {
+    // For non-targeted spells, player field area is valid drop zone
+    if (isSpell && !isTargetedSpell && target.closest('.player-field')) {
       target.classList.add('spell-drop-zone');
-      // Also highlight the parent player-field
       const playerField = target.closest('.player-field');
       if (playerField) {
         playerField.classList.add('spell-drop-zone');
@@ -1364,17 +1282,15 @@ export const updateDropTargetVisuals = (elementBelow, card, cardElement) => {
   currentDragTargetId = targetId;
 
   // For spells, provide clear visual feedback (Hearthstone style)
-  if (isSpell) {
-    const targetingInfo = getSpellTargetingInfo(card);
-    if (targetingInfo?.requiresTarget) {
-      // Targeted spell: highlight all valid targets
-      highlightSpellTargets(card, latestState);
-    } else {
-      // Non-targeted spell: ALWAYS highlight player field as valid drop zone
-      const playerField = document.querySelector('.player-field');
-      if (playerField) {
-        playerField.classList.add('spell-drop-zone');
-      }
+  const isTargetedSpell2 = isSpell && getSpellTargetingInfo(card)?.requiresTarget;
+  if (isTargetedSpell2) {
+    // Targeted spell: highlight only valid targets
+    highlightSpellTargets();
+  } else if (isSpell) {
+    // Non-targeted spell: highlight player field as valid drop zone
+    const playerField = document.querySelector('.player-field');
+    if (playerField) {
+      playerField.classList.add('spell-drop-zone');
     }
   }
 
@@ -1382,8 +1298,8 @@ export const updateDropTargetVisuals = (elementBelow, card, cardElement) => {
     return;
   }
 
-  // Handle player field row drop zone for spells
-  if (target.classList.contains('player-field') && isSpell) {
+  // Handle player field row drop zone for non-targeted spells only
+  if (target.classList.contains('player-field') && isSpell && !isTargetedSpell2) {
     target.classList.add('spell-drop-zone');
     return;
   }
@@ -1391,8 +1307,8 @@ export const updateDropTargetVisuals = (elementBelow, card, cardElement) => {
   if (target.classList.contains('field-slot')) {
     const hasCard = Array.from(target.children).some((child) => child.classList.contains('card'));
 
-    // For spells, any player field slot (or area) is valid
-    if (isSpell && target.closest('.player-field')) {
+    // For non-targeted spells, player field area is valid drop zone
+    if (isSpell && !isTargetedSpell2 && target.closest('.player-field')) {
       target.classList.add('spell-drop-zone');
       const playerField = target.closest('.player-field');
       if (playerField) {

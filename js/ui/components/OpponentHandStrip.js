@@ -128,6 +128,7 @@ export const clearOpponentDragPreview = () => {
   if (preview) {
     preview.classList.remove('active');
   }
+  opponentHandState.hoveredIndex = null;
   opponentHandState.draggingIndex = null;
   applyOpponentHandStates();
 };
@@ -186,7 +187,14 @@ export const renderOpponentHandStrip = (state, options = {}) => {
   const deckCategory = inferPlayerDeck(opponent);
   const emoji = getDeckEmoji(deckCategory);
 
-  // Update state tracking
+  // Update state tracking — reset stale hover/drag if hand size changed
+  // (opponent played or drew a card, so any drag/hover visual is stale)
+  if (handSize !== opponentHandState.handSize) {
+    opponentHandState.hoveredIndex = null;
+    opponentHandState.draggingIndex = null;
+    const preview = document.getElementById('opponent-drag-preview');
+    if (preview) preview.classList.remove('active');
+  }
   opponentHandState.handSize = handSize;
   opponentHandState.deckEmoji = emoji;
 

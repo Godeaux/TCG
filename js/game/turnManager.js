@@ -325,7 +325,6 @@ export const advancePhase = (state) => {
       );
       state.phase = 'Main 1';
       logPlainMessage(state, `━━━ PHASE: MAIN 1 ━━━`);
-      state.broadcast?.(state);
       return;
     }
 
@@ -413,7 +412,6 @@ export const advancePhase = (state) => {
       );
       queueEndOfTurnEffects(state);
       // Wait for effects to be resolved before ending turn
-      state.broadcast?.(state);
       return;
     }
     // No end-of-turn effects - auto-end turn and pass to next player
@@ -422,8 +420,6 @@ export const advancePhase = (state) => {
     return;
   }
 
-  // Broadcast after every phase change so rejoining players get the latest phase
-  state.broadcast?.(state);
 };
 
 export const endTurn = (state) => {
@@ -492,8 +488,6 @@ export const endTurn = (state) => {
     state.phase = 'Main 1';
   }
 
-  // Broadcast turn change so rejoining players get the latest state
-  state.broadcast?.(state);
 };
 
 export const canPlayCard = (state) => {

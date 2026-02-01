@@ -177,18 +177,31 @@ export const hydrateZoneSnapshots = (snapshots, size, fallbackTurn) => {
 };
 
 /**
- * Hydrate deck snapshots (deck is just IDs, not full instances)
- * @param {Array} deckIds - Array of card IDs
- * @returns {Array} Array of card definitions
+ * Hydrate deck snapshots. Supports two formats:
+ * - Full snapshots (objects with id + instanceId) — preserves instanceIds from host
+ * - Bare card IDs (strings) — legacy fallback, creates fresh definitions
+ * @param {Array} deckItems - Array of card snapshots or bare IDs
+ * @returns {Array} Array of card definitions with instanceIds
  */
-export const hydrateDeckSnapshots = (deckIds) => {
-  if (!Array.isArray(deckIds)) {
+export const hydrateDeckSnapshots = (deckItems) => {
+  if (!Array.isArray(deckItems)) {
     return [];
   }
-  return deckIds
-    .map((id) => getCardDefinitionById(id))
-    .filter(Boolean)
-    .map((card) => ({ ...card }));
+  return deckItems
+    .map((item) => {
+      if (item && typeof item === 'object' && item.id) {
+        // Full snapshot — hydrate and preserve instanceId
+        const definition = getCardDefinitionById(item.id);
+        if (!definition) return null;
+        const card = { ...definition };
+        if (item.instanceId) card.instanceId = item.instanceId;
+        return card;
+      }
+      // Bare ID (legacy format)
+      const definition = getCardDefinitionById(item);
+      return definition ? { ...definition } : null;
+    })
+    .filter(Boolean);
 };
 
 // ============================================================================
@@ -236,7 +249,7 @@ export const buildLobbySyncPayload = (state) => ({
       name: player.name,
       nameStyle: player.nameStyle || {},
       hp: player.hp,
-      deck: player.deck.map((card) => card.id),
+      deck: player.deck.map((card) => serializeCardSnapshot(card)),
       hand: player.hand.map((card) => serializeCardSnapshot(card)),
       field: player.field.map((card) => serializeCardSnapshot(card)),
       carrion: player.carrion.map((card) => serializeCardSnapshot(card)),

@@ -342,9 +342,9 @@ export const returnToHand = (card) => ({
   payload: { card },
 });
 
-export const resolveAttack = (attacker, target, negateAttack = false, negatedBy = null) => ({
+export const resolveAttack = (attacker, target, negateAttack = false, negatedBy = null, effectTargets = []) => ({
   type: ActionTypes.RESOLVE_ATTACK,
-  payload: { attacker, target, negateAttack, negatedBy },
+  payload: { attacker, target, negateAttack, negatedBy, effectTargets },
 });
 
 export const eatPreyAttack = (attacker, prey) => ({
@@ -362,9 +362,9 @@ export const resolveDiscard = (playerIndex, card) => ({
   payload: { playerIndex, card },
 });
 
-export const processEndPhase = () => ({
+export const processEndPhase = (effectTargets = []) => ({
   type: ActionTypes.PROCESS_END_PHASE,
-  payload: {},
+  payload: { effectTargets },
 });
 
 // ============================================================================

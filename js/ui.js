@@ -17,6 +17,7 @@ import {
 import {
   getValidTargets,
   cleanupDestroyed,
+  hasBeforeCombatEffect,
 } from './game/combat.js';
 import {
   isEdible,
@@ -357,6 +358,9 @@ let inputInitialized = false;
 let emoteInitialized = false;
 let selectedHandCardId = null;
 let battleEffectsInitialized = false;
+
+// On-field targeting mode state
+let targetingMode = null; // { title, candidates, onSelect, onCancel, sourceCard }
 let touchInitialized = false;
 let skipCombatConfirmationActive = false;
 
@@ -2273,12 +2277,218 @@ const findCardByInstanceId = (state, instanceId) =>
     .flatMap((player) => player.field.concat(player.hand, player.carrion, player.exile))
     .find((card) => card?.instanceId === instanceId);
 
-const resolveAttack = (state, attacker, target, negateAttack = false, negatedBy = null) => {
+const resolveAttack = (state, attacker, target, negateAttack = false, negatedBy = null, effectTargets = []) => {
   if (!gameController) {
     console.warn('[resolveAttack] GameController not initialized');
     return;
   }
-  dispatchAction(resolveAttackAction(attacker, target, negateAttack, negatedBy));
+  dispatchAction(resolveAttackAction(attacker, target, negateAttack, negatedBy, effectTargets));
+};
+
+// ============================================================================
+// ON-FIELD TARGETING MODE
+// Highlights valid targets on the board for effect resolution.
+// Used by beforeCombat, spells, onPlay, onEnd, onConsume selections.
+// ============================================================================
+
+/**
+ * Enter targeting mode — highlights valid targets on the board.
+ * Returns a Promise that resolves with the selected candidate or rejects on cancel.
+ *
+ * @param {Object} options
+ * @param {string} options.title - Banner text (e.g. "Rainbow Mantis Shrimp: Deal 3 damage")
+ * @param {Array} options.candidates - Array of { label, value } candidates from getEffectSelections
+ * @param {Object} [options.sourceCard] - The card triggering the effect (optional, for visual)
+ * @returns {Promise<Object>} Resolves with the selected candidate's value
+ */
+const enterTargetingMode = ({ title, candidates, sourceCard }) => {
+  return new Promise((resolve, reject) => {
+    // Clean up any existing targeting mode
+    if (targetingMode) exitTargetingMode();
+
+    targetingMode = { title, candidates, sourceCard, resolve, reject };
+
+    // Show targeting banner
+    const banner = document.createElement('div');
+    banner.className = 'targeting-banner';
+    banner.id = 'targeting-banner';
+    banner.innerHTML = `<span>${title}</span>`;
+    const skipBtn = document.createElement('button');
+    skipBtn.className = 'skip-targeting';
+    skipBtn.textContent = 'No Target';
+    skipBtn.onclick = () => {
+      exitTargetingMode();
+      resolve(null);
+    };
+    banner.appendChild(skipBtn);
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'cancel-targeting';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.onclick = () => {
+      exitTargetingMode();
+      reject(new Error('targeting-cancelled'));
+    };
+    banner.appendChild(cancelBtn);
+    document.body.appendChild(banner);
+
+    // Highlight valid targets on the field
+    const validInstanceIds = new Set();
+    const validPlayerIndices = new Set();
+
+    for (const candidate of candidates) {
+      const val = candidate.value !== undefined ? candidate.value : candidate;
+      // Creature targets
+      if (val?.creature?.instanceId) validInstanceIds.add(val.creature.instanceId);
+      else if (val?.instanceId) validInstanceIds.add(val.instanceId);
+      else if (val?.card?.instanceId) validInstanceIds.add(val.card.instanceId);
+      // Player targets
+      if (val?.type === 'player' && val?.playerIndex !== undefined) validPlayerIndices.add(val.playerIndex);
+    }
+
+    // Add .effect-target to valid targets, .effect-target-disabled to others
+    const allFieldCards = document.querySelectorAll('.field-slot .card');
+    allFieldCards.forEach(el => {
+      const iid = el.dataset.instanceId;
+      if (iid && validInstanceIds.has(iid)) {
+        el.classList.add('effect-target');
+      } else {
+        el.classList.add('effect-target-disabled');
+      }
+    });
+
+    // Player badges
+    const badges = document.querySelectorAll('.player-badge');
+    badges.forEach(badge => {
+      const pIdx = parseInt(badge.dataset.playerIndex, 10);
+      if (validPlayerIndices.has(pIdx)) {
+        badge.classList.add('effect-target');
+      }
+    });
+
+    // Click handler for field cards
+    const handleTargetClick = (e) => {
+      const cardEl = e.target.closest('.card.effect-target');
+      const badgeEl = e.target.closest('.player-badge.effect-target');
+
+      if (cardEl) {
+        const iid = cardEl.dataset.instanceId;
+        const match = candidates.find(c => {
+          const val = c.value !== undefined ? c.value : c;
+          return (val?.creature?.instanceId === iid || val?.instanceId === iid || val?.card?.instanceId === iid);
+        });
+        if (match) {
+          const selected = match.value !== undefined ? match.value : match;
+          exitTargetingMode();
+          resolve(selected);
+        }
+      } else if (badgeEl) {
+        const pIdx = parseInt(badgeEl.dataset.playerIndex, 10);
+        const match = candidates.find(c => {
+          const val = c.value !== undefined ? c.value : c;
+          return val?.type === 'player' && val?.playerIndex === pIdx;
+        });
+        if (match) {
+          const selected = match.value !== undefined ? match.value : match;
+          exitTargetingMode();
+          resolve(selected);
+        }
+      }
+    };
+
+    // ESC key handler
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') {
+        exitTargetingMode();
+        reject(new Error('targeting-cancelled'));
+      }
+    };
+
+    // Store handlers for cleanup
+    targetingMode._clickHandler = handleTargetClick;
+    targetingMode._escHandler = handleEsc;
+
+    document.addEventListener('click', handleTargetClick, true);
+    document.addEventListener('keydown', handleEsc);
+  });
+};
+
+/**
+ * Exit targeting mode — cleans up all highlights and handlers.
+ */
+const exitTargetingMode = () => {
+  if (!targetingMode) return;
+
+  // Remove handlers
+  if (targetingMode._clickHandler) {
+    document.removeEventListener('click', targetingMode._clickHandler, true);
+  }
+  if (targetingMode._escHandler) {
+    document.removeEventListener('keydown', targetingMode._escHandler);
+  }
+
+  // Remove highlighting
+  document.querySelectorAll('.effect-target').forEach(el => el.classList.remove('effect-target'));
+  document.querySelectorAll('.effect-target-disabled').forEach(el => el.classList.remove('effect-target-disabled'));
+
+  // Remove banner
+  const banner = document.getElementById('targeting-banner');
+  if (banner) banner.remove();
+
+  targetingMode = null;
+};
+
+/**
+ * Convert a selected target to an effectTarget descriptor for the action payload.
+ */
+const toEffectTarget = (selected) => {
+  if (selected?.creature?.instanceId) return { instanceId: selected.creature.instanceId, type: 'creature' };
+  if (selected?.instanceId) return { instanceId: selected.instanceId, type: 'creature' };
+  if (selected?.card?.instanceId) return { instanceId: selected.card.instanceId, type: 'creature' };
+  if (selected?.type === 'player') return { type: 'player', playerIndex: selected.playerIndex };
+  return selected;
+};
+
+// ============================================================================
+// ATTACK WITH TARGETING (beforeCombat pre-resolution)
+// ============================================================================
+
+/**
+ * Resolve an attack, probing for beforeCombat selections first.
+ * If the attacker has a beforeCombat effect needing a target, enters targeting mode
+ * to collect the selection, then dispatches with effectTargets.
+ */
+const resolveAttackWithTargeting = async (state, attacker, target, negateAttack = false, negatedBy = null) => {
+  if (negateAttack) {
+    resolveAttack(state, attacker, target, negateAttack, negatedBy);
+    return;
+  }
+
+  // Only probe for beforeCombat if this is the local player's turn
+  if (!isLocalPlayersTurn(state)) {
+    resolveAttack(state, attacker, target, negateAttack, negatedBy);
+    return;
+  }
+
+  // Probe for beforeCombat selection needs
+  const selection = gameController?.getBeforeCombatSelection(attacker);
+  if (!selection || !selection.candidates?.length) {
+    resolveAttack(state, attacker, target, negateAttack, negatedBy);
+    return;
+  }
+
+  try {
+    const selected = await enterTargetingMode({
+      title: `${attacker.name}: ${selection.title}`,
+      candidates: selection.candidates,
+      sourceCard: attacker,
+    });
+    resolveAttack(state, attacker, target, negateAttack, negatedBy, selected ? [toEffectTarget(selected)] : []);
+  } catch (e) {
+    // Cancelled — don't resolve the attack (attacker hasn't attacked yet)
+    // The attack declaration is already committed though, so we still need to resolve it
+    // with empty effectTargets — the controller will fall through to onSelectionNeeded (single-player compat)
+    resolveAttack(state, attacker, target, negateAttack, negatedBy);
+  }
 };
 
 // ============================================================================
@@ -2357,7 +2567,7 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
         }
 
         // Use current references for attack resolution (controller handles broadcast)
-        resolveAttack(
+        resolveAttackWithTargeting(
           state,
           currentAttacker,
           { type: 'creature', card: currentTarget },
@@ -2366,7 +2576,7 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
         );
       } else {
         // Player target - use current attacker reference (controller handles broadcast)
-        resolveAttack(state, currentAttacker, target, wasNegated, negatedBy);
+        resolveAttackWithTargeting(state, currentAttacker, target, wasNegated, negatedBy);
       }
     },
     onUpdate,
@@ -2445,7 +2655,8 @@ const handleAttackSelection = (state, attacker, onUpdate) => {
     button.textContent = `Attack ${opponent.name}`;
     button.onclick = () => {
       clearSelectionPanel();
-      handleTrapResponse(state, opponent, attacker, { type: 'player', player: opponent }, onUpdate);
+      const opponentIndex = state.players.indexOf(opponent);
+      handleTrapResponse(state, opponent, attacker, { type: 'player', player: opponent, playerIndex: opponentIndex }, onUpdate);
     };
     item.appendChild(button);
     items.push(item);
@@ -2502,16 +2713,64 @@ const handleEatPreyAttack = (state, attacker, onUpdate) => {
   });
 };
 
-export const handlePlayCard = (state, card, onUpdate, preselectedTarget = null, slotIndex = null, extraOptions = {}) => {
+export const handlePlayCard = async (state, card, onUpdate, preselectedTarget = null, slotIndex = null, extraOptions = {}) => {
   if (!gameController) {
     console.error('[handlePlayCard] GameController not initialized');
     return;
   }
 
+  // Clear selection/hover state — the card is being played
+  selectedHandCardId = null;
+  const handGrid = document.getElementById('active-hand');
+  handGrid?.querySelectorAll('.card.hand-focus').forEach((el) => el.classList.remove('hand-focus'));
+
+  // Build effectTargets from preselectedTarget or by probing for selections
+  let effectTargets = extraOptions.effectTargets || [];
+  if (preselectedTarget && !effectTargets.length) {
+    effectTargets = [toEffectTarget(preselectedTarget)];
+  }
+
+  // For spells/creatures without a preselected target, probe for targeting needs
+  const isSpell = card.type === 'Spell' || card.type === 'Free Spell';
+  const isCreature = card.type === 'Predator' || card.type === 'Prey';
+  if (!effectTargets.length && isLocalPlayersTurn(state)) {
+    const trigger = isSpell ? 'effect' : (isCreature ? 'onPlay' : null);
+    if (trigger) {
+      const selection = gameController.getEffectSelections(card, trigger);
+      if (selection?.type === 'selectTarget') {
+        if (!selection.candidates?.length) {
+          // Targeted effect with no valid targets — block the play
+          onUpdate?.();
+          return;
+        }
+        // Only use on-field targeting mode for field-targetable candidates
+        // (creatures/players from buildTargetCandidates have .value.type).
+        // Deck/hand selections (e.g. tutorFromDeck) fall through to onSelectionNeeded.
+        const isFieldTargeting = selection.candidates.some(c => c.value?.type === 'creature' || c.value?.type === 'player');
+        if (isFieldTargeting) {
+          try {
+            const selected = await enterTargetingMode({
+              title: `${card.name}: ${selection.title}`,
+              candidates: selection.candidates,
+              sourceCard: card,
+            });
+            if (selected) effectTargets = [toEffectTarget(selected)];
+          } catch (e) {
+            // Cancelled — don't play the card
+            onUpdate?.();
+            return;
+          }
+        }
+        // Non-field selections (deck picks, etc.) skip targeting mode —
+        // the controller's onSelectionNeeded callback will handle them.
+      }
+    }
+  }
+
   // Route through ActionBus (online) or GameController (offline)
   const result = dispatchAction({
     type: 'PLAY_CARD',
-    payload: { card, slotIndex, options: { preselectedTarget, ...extraOptions } },
+    payload: { card, slotIndex, options: { preselectedTarget, effectTargets, ...extraOptions } },
   });
 
   if (!result?.success) {
@@ -2565,7 +2824,7 @@ const renderConsumptionSelection = (state, pending, onUpdate) => {
     renderSelectionPanel({
       title: 'Select up to 3 prey to consume',
       items,
-      onConfirm: () => {
+      onConfirm: async () => {
         const selectedIds = Array.from(selectionPanel.querySelectorAll('input:checked')).map(
           (input) => input.value
         );
@@ -2585,9 +2844,28 @@ const renderConsumptionSelection = (state, pending, onUpdate) => {
         }
 
         clearSelectionPanel();
+
+        // Probe onConsume for targeting needs before dispatching
+        let effectTargets = [];
+        if (isLocalPlayersTurn(state) && (preyToConsume.length > 0 || carrionToConsume.length > 0)) {
+          const selection = gameController?.getEffectSelections(predator, 'onConsume');
+          if (selection?.type === 'selectTarget' && selection.candidates?.length) {
+            try {
+              const selected = await enterTargetingMode({
+                title: `${predator.name}: ${selection.title}`,
+                candidates: selection.candidates,
+                sourceCard: predator,
+              });
+              if (selected) effectTargets = [toEffectTarget(selected)];
+            } catch (e) {
+              // Cancelled — proceed without target (falls through to onSelectionNeeded)
+            }
+          }
+        }
+
         dispatchAction({
           type: 'SELECT_CONSUMPTION_TARGETS',
-          payload: { predator, prey: preyToConsume, carrion: carrionToConsume },
+          payload: { predator, prey: preyToConsume, carrion: carrionToConsume, effectTargets },
         });
         onUpdate?.();
       },
@@ -2989,7 +3267,7 @@ const navigateToPage = (pageIndex) => {
 // initNavigation moved to ./ui/input/inputRouter.js
 // Now initialized via initializeInput() from ./ui/input/index.js
 
-const processEndOfTurnQueue = (state, onUpdate, onEndTurn) => {
+const processEndOfTurnQueue = async (state, onUpdate, onEndTurn) => {
   if (state.phase !== 'End') {
     return;
   }
@@ -3022,7 +3300,27 @@ const processEndOfTurnQueue = (state, onUpdate, onEndTurn) => {
     return;
   }
 
-  const result = dispatchAction(processEndPhaseAction());
+  // Probe the next creature in the queue for targeting needs
+  let effectTargets = [];
+  const nextCreature = state.endOfTurnQueue?.[0];
+  if (nextCreature && isLocalPlayersTurn(state)) {
+    const selection = gameController.getEffectSelections(nextCreature, 'onEnd');
+    if (selection?.type === 'selectTarget' && selection.candidates?.length) {
+      try {
+        const selected = await enterTargetingMode({
+          title: `${nextCreature.name}: ${selection.title}`,
+          candidates: selection.candidates,
+          sourceCard: nextCreature,
+        });
+        if (selected) effectTargets = [toEffectTarget(selected)];
+      } catch (e) {
+        // Cancelled — can't cancel end phase effects, so proceed without target
+        // (resolveEffectChain will fall through to onSelectionNeeded)
+      }
+    }
+  }
+
+  const result = dispatchAction(processEndPhaseAction(effectTargets));
   if (result?.finalized) {
     onEndTurn?.(); // Auto-end turn after finalization
     return;
@@ -3383,7 +3681,13 @@ const setupResyncButton = () => {
       if (!latestState) return;
 
       if (isOnlineMode(latestState)) {
-        requestSyncFromOpponent(latestState);
+        // Use ActionBus recovery (state-snapshot) instead of legacy sync_request
+        const bus = getActionBus();
+        if (bus) {
+          bus.requestRecovery();
+        } else {
+          requestSyncFromOpponent(latestState);
+        }
       }
     });
   }
@@ -3957,6 +4261,12 @@ export const renderGame = (state, callbacks = {}) => {
         broadcastSyncState(s);
       },
       onSelectionNeeded: (selectionRequest) => {
+        // In multiplayer, only show selection UI to the active (local) player.
+        // The opponent should not see selection popups for the other player's choices.
+        if (isOnlineMode(latestState) && !isLocalPlayersTurn(latestState)) {
+          selectionRequest.onCancel?.();
+          return;
+        }
         // Wire controller's selection needs to ui.js renderSelectionPanel
         if (selectionRequest.selectTarget) {
           const { title, candidates: candidatesInput, onSelect, renderCards = false } =
@@ -3968,27 +4278,62 @@ export const renderGame = (state, callbacks = {}) => {
             selectionRequest.onCancel?.();
             return;
           }
+          const shouldRender =
+            renderCards || candidates.some((c) => isCardLike(c.card ?? c.value));
+          const items = candidates.map((c) => {
+            const item = document.createElement('label');
+            item.className = 'selection-item';
+            const candidateCard = c.card ?? c.value;
+            if (shouldRender && isCardLike(candidateCard)) {
+              item.classList.add('selection-card');
+              const cardEl = renderCard(candidateCard, {
+                showEffectSummary: true,
+                onClick: () => {
+                  clearSelectionPanel();
+                  selectionRequest.onSelect(c.value !== undefined ? c.value : c);
+                },
+              });
+              item.appendChild(cardEl);
+            } else {
+              const button = document.createElement('button');
+              button.textContent = c.label || c.name || String(c);
+              button.onclick = () => {
+                clearSelectionPanel();
+                selectionRequest.onSelect(c.value !== undefined ? c.value : c);
+              };
+              item.appendChild(button);
+            }
+            return item;
+          });
           renderSelectionPanel({
             title,
-            items: candidates.map((c) => ({
-              label: renderCards ? undefined : (c.label || c.name || String(c)),
-              value: c.value !== undefined ? c.value : c,
-              card: renderCards ? (c.value || c) : undefined,
-            })),
-            onConfirm: (value) => {
+            items,
+            onConfirm: () => {
               clearSelectionPanel();
-              selectionRequest.onSelect(value);
+              selectionRequest.onCancel?.();
             },
-            renderCards,
+            confirmLabel: 'Cancel',
           });
         } else if (selectionRequest.selectOption) {
           const { title, options, onSelect } = selectionRequest.selectOption;
+          const optionItems = options.map((o) => {
+            const item = document.createElement('label');
+            item.className = 'selection-item';
+            const button = document.createElement('button');
+            button.textContent = o.label;
+            button.onclick = () => {
+              clearSelectionPanel();
+              selectionRequest.onSelect(o);
+            };
+            item.appendChild(button);
+            return item;
+          });
           renderSelectionPanel({
             title,
-            items: options.map((o) => ({ label: o.label, value: o })),
-            onConfirm: (value) => {
+            items: optionItems,
+            onConfirm: () => {
               clearSelectionPanel();
-              selectionRequest.onSelect(value);
+              selectionRequest.onCancel?.();
             },
           });
         }
@@ -4003,21 +4348,20 @@ export const renderGame = (state, callbacks = {}) => {
       getProfileId: () => latestState?.menu?.profile?.id,
       getHostId: () => latestState?.menu?.lobby?.host_id,
       executeAction: (action) => gameController.execute(action),
-      resetGameState: () => {
-        // Wipe live state to a blank game, preserving menu/lobby/profile
-        // so the action-log replay can rebuild the game from scratch.
-        const menu = latestState.menu;
-        const fresh = createGameState();
-        for (const key of Object.keys(latestState)) {
-          delete latestState[key];
-        }
-        Object.assign(latestState, fresh, { menu });
-        // Point controller at the same (now-reset) object
-        if (gameController) {
-          gameController.state = latestState;
-        }
-      },
       onActionConfirmed: (entry) => {
+        clearOpponentDragPreview();
+        // Flash resync button green on successful recovery
+        if (entry.recovery) {
+          const btn = document.getElementById('field-resync-btn');
+          if (btn) {
+            btn.textContent = '✓';
+            btn.classList.add('resync-success');
+            setTimeout(() => {
+              btn.classList.remove('resync-success');
+              btn.textContent = '📶';
+            }, 1500);
+          }
+        }
         renderGame(latestState, latestCallbacks);
       },
       onActionRejected: ({ intentId, reason }) => {
@@ -4213,9 +4557,6 @@ export const renderGame = (state, callbacks = {}) => {
       return;
     }
     callbacks.onNextPhase?.();
-    if (isOnline) {
-      sendLobbyBroadcast('sync_state', buildLobbySyncPayload(state));
-    }
   };
   updateActionBar(handleNextPhase, state);
   appendLog(state);
