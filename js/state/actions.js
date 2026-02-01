@@ -106,6 +106,9 @@ export const ActionTypes = {
   /** Resolve trap/reaction response during attack */
   RESOLVE_TRAP_RESPONSE: 'RESOLVE_TRAP_RESPONSE',
 
+  /** Resolve play-trap reaction (defender activates/passes on creature play) */
+  RESOLVE_PLAY_TRAP: 'RESOLVE_PLAY_TRAP',
+
   /** Resolve a pending discard choice */
   RESOLVE_DISCARD: 'RESOLVE_DISCARD',
 
@@ -355,6 +358,11 @@ export const eatPreyAttack = (attacker, prey) => ({
 export const resolveTrapResponse = (attacker, target, negated, negatedBy) => ({
   type: ActionTypes.RESOLVE_TRAP_RESPONSE,
   payload: { attacker, target, negated, negatedBy },
+});
+
+export const resolvePlayTrap = (activated, reactionIndex = 0) => ({
+  type: ActionTypes.RESOLVE_PLAY_TRAP,
+  payload: { activated, reactionIndex },
 });
 
 export const resolveDiscard = (playerIndex, card) => ({

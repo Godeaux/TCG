@@ -53,6 +53,7 @@ import {
   resolveDirectAttack,
   hasBeforeCombatEffect,
 } from './combat.js';
+import { getAvailableReactions, TRIGGER_EVENTS } from './triggers/index.js';
 
 // ============================================================================
 // GAME CONTROLLER CLASS
@@ -177,6 +178,9 @@ export class GameController {
 
         case ActionTypes.ACTIVATE_DISCARD_EFFECT:
           return this.handleActivateDiscardEffect(action.payload);
+
+        case ActionTypes.RESOLVE_PLAY_TRAP:
+          return this.handleResolvePlayTrap(action.payload);
 
         default:
           console.warn(`[GameController] Unknown action type: ${action.type}`);
@@ -545,12 +549,71 @@ export class GameController {
    * Called either immediately from placeCreatureInSlot or after additional consumption via FINALIZE_PLACEMENT.
    */
   finalizePlacement(creatureInstance, allConsumed) {
+    const playerIndex = this.state.activePlayerIndex;
+    const reactingPlayerIndex = (playerIndex + 1) % 2;
+
+    // Check for play-trigger traps BEFORE effects fire.
+    // Traps must resolve before onPlay/onConsume so they can cancel abilities.
+    const reactions = getAvailableReactions({
+      state: this.state,
+      event: TRIGGER_EVENTS.CARD_PLAYED,
+      triggeringPlayerIndex: playerIndex,
+      eventContext: { card: creatureInstance },
+    });
+
+    if (reactions.length > 0) {
+      // Set pendingReaction in state — both host and guest will have this
+      // when they execute PLAY_CARD through the ActionBus.
+      // The UI renders the reaction overlay, defender dispatches RESOLVE_PLAY_TRAP.
+      this.state.pendingReaction = {
+        event: TRIGGER_EVENTS.CARD_PLAYED,
+        reactingPlayerIndex,
+        triggeringPlayerIndex: playerIndex,
+        reactions,
+        eventContext: { card: creatureInstance },
+        timerStart: Date.now(),
+      };
+
+      // Defer onPlay/onConsume until RESOLVE_PLAY_TRAP action fires
+      this._pendingPostTrap = {
+        creatureInstance,
+        allConsumed,
+        playerIndex,
+      };
+
+      this.notifyStateChange();
+      this.broadcast();
+
+      return {
+        success: true,
+        trapCheck: { triggerType: reactions[0].triggerType, creature: creatureInstance },
+      };
+    }
+
+    // No traps available — fire effects immediately
+    return this._resolvePostTrapEffects(creatureInstance, allConsumed);
+  }
+
+  /**
+   * Resolve onPlay, onConsume, and extended consumption AFTER trap reaction window.
+   * Called by the UI layer once the trap decision is made (or if no traps exist).
+   * If a trap set abilitiesCancelled, resolveCardEffect will skip the effect.
+   */
+  resolvePostTrapEffects() {
+    const pending = this._pendingPostTrap;
+    if (!pending) return;
+    this._pendingPostTrap = null;
+    this._resolvePostTrapEffects(pending.creatureInstance, pending.allConsumed);
+  }
+
+  /** @private — Shared logic for onPlay/onConsume/extended consumption */
+  _resolvePostTrapEffects(creatureInstance, allConsumed) {
     const player = getActivePlayer(this.state);
     const playerIndex = this.state.activePlayerIndex;
     const opponentIndex = (playerIndex + 1) % 2;
     const finalSlot = player.field.indexOf(creatureInstance);
 
-    // Trigger onPlay effect
+    // Trigger onPlay effect (skipped if abilitiesCancelled by trap)
     const playResult = resolveCardEffect(creatureInstance, 'onPlay', {
       log: (message) => logMessage(this.state, message),
       player,
@@ -569,14 +632,7 @@ export class GameController {
       });
     }
 
-    // Trigger traps matching the creature's type
-    if (creatureInstance.type === 'Predator') {
-      this.triggerTraps('rivalPlaysPred', creatureInstance);
-    } else if (creatureInstance.type === 'Prey') {
-      this.triggerTraps('rivalPlaysPrey', creatureInstance);
-    }
-
-    // Trigger onConsume effects if prey were consumed
+    // Trigger onConsume effects if prey were consumed (skipped if abilitiesCancelled)
     if (allConsumed.length > 0 && !creatureInstance.dryDropped) {
       const consumeResult = resolveCardEffect(creatureInstance, 'onConsume', {
         log: (message) => logMessage(this.state, message),
@@ -615,6 +671,126 @@ export class GameController {
     this.notifyStateChange();
     this.broadcast();
 
+    return { success: true };
+  }
+
+  /**
+   * Handle RESOLVE_PLAY_TRAP action — defender chose to activate or pass on a play-trigger trap.
+   * Runs through ActionBus so both clients process it deterministically.
+   * After resolving the trap (or passing), fires deferred onPlay/onConsume effects.
+   */
+  handleResolvePlayTrap({ activated, reactionIndex = 0 }) {
+    const pending = this.state.pendingReaction;
+    if (!pending) {
+      // No pending reaction — just fire post-trap effects if deferred
+      this.resolvePostTrapEffects();
+      return { success: true };
+    }
+
+    const { reactingPlayerIndex, triggeringPlayerIndex, reactions, eventContext, event } = pending;
+    const reactingPlayer = this.state.players[reactingPlayerIndex];
+
+    // Clear pending reaction
+    this.state.pendingReaction = null;
+
+    if (activated && reactions.length > 0) {
+      const reaction = reactions[reactionIndex];
+      if (reaction?.type === 'trap') {
+        // Move trap from hand to exile
+        reactingPlayer.hand = reactingPlayer.hand.filter(
+          (c) => c.instanceId !== reaction.instanceId
+        );
+        reactingPlayer.exile.push(reaction.card);
+
+        logMessage(this.state, `${reactingPlayer.name}'s ${reaction.card.name} trap activates!`);
+
+        // Queue trap reveal visual
+        queueVisualEffect(this.state, {
+          type: 'trap',
+          trapId: reaction.card.id,
+          trapName: reaction.card.name,
+          casterIndex: reactingPlayerIndex,
+          triggerEvent: event,
+        });
+
+        // Build effect context for the trap — trap owner is "player", triggering player is "opponent"
+        const effectContext = {
+          player: reactingPlayer,
+          opponent: this.state.players[triggeringPlayerIndex],
+          playerIndex: reactingPlayerIndex,
+          opponentIndex: triggeringPlayerIndex,
+          defenderIndex: reactingPlayerIndex,
+          target: eventContext.card ? { type: 'creature', card: eventContext.card } : null,
+          attacker: eventContext.card,
+        };
+
+        // Resolve the trap's effect
+        let result;
+        try {
+          result = resolveCardEffect(reaction.card, 'effect', {
+            log: (message) => logMessage(this.state, message),
+            state: this.state,
+            ...effectContext,
+          });
+        } catch (error) {
+          console.error('[GameController] Error resolving play trap effect:', error);
+        }
+
+        if (result) {
+          // Handle negatePlay — return card to hand
+          if (result.negatePlay) {
+            const playedCard = eventContext.card;
+            if (playedCard) {
+              const triggeringPlayer = this.state.players[triggeringPlayerIndex];
+              const slot = triggeringPlayer.field.findIndex(
+                (c) => c && c.instanceId === playedCard.instanceId
+              );
+              if (slot !== -1) {
+                triggeringPlayer.field[slot] = null;
+              }
+              triggeringPlayer.hand.push(playedCard);
+              logMessage(this.state, `${playedCard.name} is returned to ${triggeringPlayer.name}'s hand.`);
+
+              if (result.allowReplay) {
+                this.state.cardPlayedThisTurn = false;
+              }
+            }
+          }
+
+          // Apply the effect chain (handles removeAbilities, damage, etc.)
+          this.resolveEffectChain(result, {
+            playerIndex: reactingPlayerIndex,
+            opponentIndex: triggeringPlayerIndex,
+          });
+        }
+
+        this.cleanupDestroyed();
+      }
+    }
+
+    // Fire deferred onPlay/onConsume effects.
+    // If trap set abilitiesCancelled, resolveCardEffect will skip them.
+    // If trap negated the play (returned card to hand), clear the pending post-trap
+    // since there's nothing to resolve.
+    if (this._pendingPostTrap) {
+      const playedCard = eventContext?.card;
+      const negated = activated && reactions[reactionIndex]?.type === 'trap'
+        && playedCard && !this.state.players[triggeringPlayerIndex].field.some(
+          c => c && c.instanceId === playedCard.instanceId
+        );
+      if (negated) {
+        // Card was returned to hand by the trap — skip post-trap effects
+        this._pendingPostTrap = null;
+        this.notifyStateChange();
+        this.broadcast();
+      } else {
+        // resolvePostTrapEffects handles notify + broadcast internally
+        this.resolvePostTrapEffects();
+      }
+    } else {
+      this.notifyStateChange();
+      this.broadcast();
+    }
     return { success: true };
   }
 
@@ -1630,25 +1806,70 @@ export class GameController {
       opponentIndex = (playerIndex + 1) % 2;
     }
 
+    // Clone state for the probe to avoid mutating the real game state.
+    // Composite effects (e.g. Silver King: draw 3 → discard 1) execute early
+    // effects during the probe, which would corrupt state if run on the original.
+    let probeState;
+    try {
+      probeState = structuredClone(this.state);
+    } catch {
+      // Fallback: use real state (legacy behavior) — may mutate
+      probeState = this.state;
+    }
+
     const result = resolveCardEffect(card, trigger, {
       log: () => {},
-      player: this.state.players[playerIndex],
-      opponent: this.state.players[opponentIndex],
+      player: probeState.players[playerIndex],
+      opponent: probeState.players[opponentIndex],
       creature: card,
-      state: this.state,
+      state: probeState,
       playerIndex,
       opponentIndex,
     });
 
     if (result?.selectTarget) {
-      const { title, candidates: candidatesInput } = result.selectTarget;
+      const { title, candidates: candidatesInput, renderCards } = result.selectTarget;
       const candidates = typeof candidatesInput === 'function' ? candidatesInput() : candidatesInput;
-      return { type: 'selectTarget', title, candidates: Array.isArray(candidates) ? candidates : [] };
+      if (!Array.isArray(candidates) || candidates.length === 0) return null;
+
+      // Validate candidates exist in real state. If they only exist in the cloned
+      // probe (created by side-effects like draw), this selection must happen post-play
+      // via onSelectionNeeded rather than being pre-resolved.
+      if (probeState !== this.state) {
+        const realCards = this._collectAllCards();
+        const allReal = candidates.every(c => {
+          const val = c.value ?? c;
+          const iid = val?.instanceId || val?.card?.instanceId;
+          if (!iid) return true; // Non-card candidate (player targets, etc.)
+          return realCards.has(iid);
+        });
+        if (!allReal) return null; // Candidates from probe side-effects — defer to post-play
+      }
+
+      return { type: 'selectTarget', title, candidates, renderCards };
     }
     if (result?.selectOption) {
       return { type: 'selectOption', title: result.selectOption.title, options: result.selectOption.options };
     }
     return null;
+  }
+
+  /**
+   * Collect all card instanceIds currently in the real game state.
+   * Used to validate probe candidates against real state.
+   * @private
+   */
+  _collectAllCards() {
+    const ids = new Set();
+    for (const player of this.state.players) {
+      for (const zone of [player.hand, player.field, player.carrion, player.deck, player.exile, player.traps]) {
+        if (!Array.isArray(zone)) continue;
+        for (const card of zone) {
+          if (card?.instanceId) ids.add(card.instanceId);
+        }
+      }
+    }
+    return ids;
   }
 
   getBeforeCombatSelection(attacker) {

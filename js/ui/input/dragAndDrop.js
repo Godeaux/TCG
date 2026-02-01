@@ -96,6 +96,14 @@ const getSpellTargetingInfo = (card) => {
   if (_spellCandidateCache) {
     return { requiresTarget: true };
   }
+
+  // Check the card definition — selectFromGroup is inherently a targeted spell
+  // even when getEffectSelections returns null (0 valid targets currently).
+  const effectDef = card.effects?.effect;
+  if (effectDef?.type === 'selectFromGroup') {
+    return { requiresTarget: true };
+  }
+
   // Otherwise probe the controller
   if (!gameController) return { requiresTarget: false };
   const selection = gameController.getEffectSelections(card, 'effect');
@@ -215,6 +223,26 @@ const isValidAttackTarget = (attacker, target, state) => {
   }
 
   return true;
+};
+
+/**
+ * Flash all lure creatures on the opponent's field to indicate they must be targeted.
+ * Adds a brief shake + red glow animation.
+ */
+const flashLureCreatures = (state, attacker) => {
+  const attackerPlayer = state.players.find((p) => p.field.includes(attacker));
+  if (!attackerPlayer) return;
+  const opponentPlayer = state.players.find((p) => p !== attackerPlayer);
+  if (!opponentPlayer) return;
+
+  const lureCards = opponentPlayer.field.filter((c) => c && hasLure(c));
+  for (const lureCard of lureCards) {
+    const el = document.querySelector(`.card[data-instance-id="${lureCard.instanceId}"]`);
+    if (el) {
+      el.classList.add('lure-must-target');
+      el.addEventListener('animationend', () => el.classList.remove('lure-must-target'), { once: true });
+    }
+  }
 };
 
 /**
@@ -607,6 +635,7 @@ const handlePlayerDrop = (card, playerBadge) => {
       logMessage(latestState, `${card.name} is Harmless and cannot attack.`);
     } else if (lureBlocksDirectAttack) {
       logMessage(latestState, `${card.name} must attack ${lureCreatures[0].name} (Lure) first.`);
+      flashLureCreatures(latestState, card);
     } else if (!canAttackPlayerDirectly) {
       logMessage(latestState, `${card.name} cannot attack the turn it was summoned without Haste.`);
     }
@@ -662,6 +691,10 @@ const handleCreatureDrop = (attacker, target) => {
   }
 
   if (!isValidAttackTarget(attacker, target, state)) {
+    // If rejection is due to lure, flash the lure creatures
+    if (!hasLure(target)) {
+      flashLureCreatures(state, attacker);
+    }
     revertCardToOriginalPosition();
     latestCallbacks.onUpdate?.();
     return;
@@ -1135,7 +1168,13 @@ const handleDrop = (event) => {
           handlePlayCard(latestState, card, latestCallbacks.onUpdate);
           return;
         }
-        // Otherwise revert (e.g., dropped on enemy with no valid target)
+        // Targeted spell dropped on an invalid target — shake the target to show rejection
+        if (targetingInfo?.requiresTarget) {
+          dropTarget.classList.add('spell-reject-shake');
+          dropTarget.addEventListener('animationend', () => {
+            dropTarget.classList.remove('spell-reject-shake');
+          }, { once: true });
+        }
         revertCardToOriginalPosition();
         latestCallbacks.onUpdate?.();
         return;

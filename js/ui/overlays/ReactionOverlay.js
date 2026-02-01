@@ -21,6 +21,7 @@ import {
 } from '../../state/selectors.js';
 import { REACTION_TIMER_SECONDS } from '../../game/triggers/index.js';
 import { evaluateTrapActivation } from '../../ai/index.js';
+import { getCardEffectSummary, renderCard } from '../components/Card.js';
 
 // ============================================================================
 // CONTEXT DESCRIPTION HELPERS
@@ -277,14 +278,45 @@ export const renderReactionOverlay = (state, callbacks = {}) => {
   const contextWithTrap = getReactionContextDescription(state.pendingReaction, state.players, true);
   const trapName = getActivatableTrapName(state.pendingReaction);
 
+  // Get trap effect text from the card's effectText (auto-generated from effect definitions)
+  const trapCard = state.pendingReaction.reactions?.[0]?.card;
+  const trapEffectText = trapCard ? getCardEffectSummary(trapCard) || trapCard.effectText || '' : '';
+
   // Set title and subtitle based on who is viewing
   if (isReactingPlayer) {
     title.textContent = trapName ? `Activate ${trapName}?` : 'Reaction';
-    subtitle.textContent = contextDescription;
+    // Show context + trap effect description
+    subtitle.innerHTML = '';
+    const contextLine = document.createElement('div');
+    contextLine.textContent = contextDescription;
+    subtitle.appendChild(contextLine);
+    if (trapEffectText) {
+      const effectLine = document.createElement('div');
+      effectLine.className = 'reaction-effect-text';
+      effectLine.textContent = trapEffectText;
+      subtitle.appendChild(effectLine);
+    }
   } else {
     title.textContent = 'Waiting';
     // Don't reveal trap details to opponent - just show waiting message
     subtitle.textContent = `${reactingPlayer.name} is considering a response...`;
+  }
+
+  // Show a preview of the triggering creature (so the player knows what they're reacting to)
+  const existingPreview = overlay.querySelector('.reaction-card-preview');
+  if (existingPreview) existingPreview.remove();
+
+  if (isReactingPlayer) {
+    const triggerCard = state.pendingReaction.eventContext?.card
+      || state.pendingReaction.eventContext?.attacker;
+    if (triggerCard && (triggerCard.type === 'Predator' || triggerCard.type === 'Prey')) {
+      const previewContainer = document.createElement('div');
+      previewContainer.className = 'reaction-card-preview';
+      const cardEl = renderCard(triggerCard, { showEffectSummary: true });
+      previewContainer.appendChild(cardEl);
+      // Insert before timer
+      timer.parentNode.insertBefore(previewContainer, timer);
+    }
   }
 
   // Show timer

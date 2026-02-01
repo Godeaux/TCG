@@ -172,6 +172,7 @@ export function serializeAction(action) {
     case 'ROLL_SETUP_DIE':
     case 'CHOOSE_FIRST_PLAYER':
     case 'TRIGGER_EFFECT':
+    case 'RESOLVE_PLAY_TRAP':
       break;
 
     default:
@@ -311,6 +312,10 @@ export function deserializeAction(action, state) {
     case 'SELECT_DECK':
       // Deck cards are resolved from the card registry, not game state
       // Leave as-is — the controller handles deck setup by card ID
+      break;
+
+    case 'RESOLVE_PLAY_TRAP':
+      // No card objects — just { activated, reactionIndex }
       break;
 
     default:

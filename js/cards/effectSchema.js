@@ -425,7 +425,9 @@ export const EFFECT_SCHEMA = {
   tutorFromDeck: {
     params: { cardType: { type: 'string', required: false } },
     text: (p) =>
-      p.cardType ? `Add a ${p.cardType} from deck to hand` : `Add a card from deck to hand`,
+      p.cardType && p.cardType !== 'any'
+        ? `Add a ${p.cardType} from deck to hand`
+        : `Add a card from deck to hand`,
   },
 
   forceOpponentDiscard: {

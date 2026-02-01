@@ -376,7 +376,10 @@ export const resolveCardEffect = (card, effectType, context) => {
   // Check if abilities have been cancelled (e.g., by Undertow, Cramp, etc.)
   // This prevents effects from triggering on creatures that have been stripped
   if (card.abilitiesCancelled) {
-    console.log(`[Effect] ${card.name} → ${effectType} SKIPPED (abilities cancelled)`);
+    // Only log if the card actually has this effect — avoids noisy logs for cards without it
+    if (card.effects?.[effectType]) {
+      console.log(`[Effect] ${card.name} → ${effectType} SKIPPED (abilities cancelled)`);
+    }
     return null;
   }
 

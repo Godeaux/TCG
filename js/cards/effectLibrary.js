@@ -1180,16 +1180,18 @@ export const selectCardToDiscard =
       return {};
     }
 
-    // Track which cards were recently drawn for UI indication
-    const recentlyDrawn = state?.recentlyDrawnCards || [];
-
     return makeTargetedSelection({
       title: `Choose ${count} card${count > 1 ? 's' : ''} to discard`,
-      candidates: player.hand.map((card) => ({
-        label: card.name,
-        value: card,
-        isRecentlyDrawn: recentlyDrawn.includes(card.instanceId),
-      })),
+      // Lazy candidates: evaluated at UI render time so draw effects are applied first
+      candidates: () => {
+        const currentHand = state?.players?.[playerIndex]?.hand || player.hand;
+        const recentlyDrawn = state?.recentlyDrawnCards || [];
+        return currentHand.map((card) => ({
+          label: card.name,
+          value: card,
+          isRecentlyDrawn: recentlyDrawn.includes(card.instanceId),
+        }));
+      },
       onSelect: (card) => ({
         discardCards: { playerIndex, cards: [card] },
       }),

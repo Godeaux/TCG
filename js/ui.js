@@ -41,6 +41,7 @@ import {
   getCardDefinitionById,
 } from './cards/index.js';
 import { preloadCardImages } from './cardImages.js';
+import { getTokenById } from './cards/registry.js';
 import { positionEvaluator } from './ai/PositionEvaluator.js';
 
 // Initialize the position evaluator in turnManager to avoid circular dependency
@@ -1535,7 +1536,7 @@ const initHandPreview = () => {
   const handlePointer = (event) => {
     // Skip focus handling during touch drag operations (mobile)
     // This prevents other cards from "hovering" when dragging a card across the field
-    if (isTouchDragging()) {
+    if (isTouchDragging() || targetingMode) {
       return;
     }
 
@@ -2309,6 +2310,8 @@ const enterTargetingMode = ({ title, candidates, sourceCard }) => {
     if (targetingMode) exitTargetingMode();
 
     targetingMode = { title, candidates, sourceCard, resolve, reject };
+    document.body.classList.add('targeting-active');
+    clearFocus();
 
     // Show targeting banner
     const banner = document.createElement('div');
@@ -2331,7 +2334,8 @@ const enterTargetingMode = ({ title, candidates, sourceCard }) => {
       reject(new Error('targeting-cancelled'));
     };
     banner.appendChild(cancelBtn);
-    document.body.appendChild(banner);
+    const centerCol = document.querySelector('.battlefield-center-column') || document.body;
+    centerCol.appendChild(banner);
 
     // Highlight valid targets on the field
     const validInstanceIds = new Set();
@@ -2436,6 +2440,7 @@ const exitTargetingMode = () => {
   const banner = document.getElementById('targeting-banner');
   if (banner) banner.remove();
 
+  document.body.classList.remove('targeting-active');
   targetingMode = null;
 };
 
@@ -2448,6 +2453,203 @@ const toEffectTarget = (selected) => {
   if (selected?.card?.instanceId) return { instanceId: selected.card.instanceId, type: 'creature' };
   if (selected?.type === 'player') return { type: 'player', playerIndex: selected.playerIndex };
   return selected;
+};
+
+/**
+ * Show a card selection overlay (for deck tutor, hand picks, etc.) and return a promise.
+ * Used to pre-resolve selectTarget effects that target non-field zones before dispatch.
+ */
+const enterCardSelectionMode = ({ title, candidates, sourceCard }) => {
+  return new Promise((resolve, reject) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'card-selection-overlay';
+
+    const header = document.createElement('div');
+    header.className = 'card-selection-overlay-header';
+    const titleEl = document.createElement('strong');
+    titleEl.textContent = title;
+    header.appendChild(titleEl);
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'cancel-targeting';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.onclick = () => {
+      overlay.remove();
+      document.removeEventListener('keydown', handleEsc);
+      reject(new Error('selection-cancelled'));
+    };
+    const hideBtn = document.createElement('button');
+    hideBtn.className = 'cancel-targeting';
+    hideBtn.textContent = 'Hide';
+    hideBtn.onclick = () => {
+      overlay.classList.toggle('minimized');
+      hideBtn.textContent = overlay.classList.contains('minimized') ? 'Show' : 'Hide';
+    };
+    header.appendChild(hideBtn);
+    header.appendChild(cancelBtn);
+    overlay.appendChild(header);
+
+    const grid = document.createElement('div');
+    grid.className = 'card-selection-overlay-grid';
+    for (const c of candidates) {
+      const candidateCard = c.card ?? c.value;
+      if (isCardLike(candidateCard)) {
+        const cardEl = renderCard(candidateCard, {
+          showEffectSummary: true,
+          onClick: () => {
+            overlay.remove();
+            document.removeEventListener('keydown', handleEsc);
+            resolve(c.value !== undefined ? c.value : c);
+          },
+        });
+        grid.appendChild(cardEl);
+      } else {
+        const btn = document.createElement('button');
+        btn.className = 'option-selection-btn';
+        btn.textContent = c.label || c.name || String(c);
+        btn.onclick = () => {
+          overlay.remove();
+          document.removeEventListener('keydown', handleEsc);
+          resolve(c.value !== undefined ? c.value : c);
+        };
+        grid.appendChild(btn);
+      }
+    }
+    overlay.appendChild(grid);
+
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') {
+        overlay.remove();
+        document.removeEventListener('keydown', handleEsc);
+        reject(new Error('selection-cancelled'));
+      }
+    };
+    document.addEventListener('keydown', handleEsc);
+
+    const centerCol = document.querySelector('.battlefield-center-column') || document.body;
+    centerCol.appendChild(overlay);
+  });
+};
+
+/**
+ * Show an option selection UI and return a promise that resolves with the chosen option.
+ * Used to pre-resolve selectOption effects before dispatching actions atomically.
+ */
+const enterOptionMode = ({ title, options, sourceCard }) => {
+  return new Promise((resolve, reject) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'option-selection-overlay';
+    overlay.id = 'option-selection-overlay';
+
+    const header = document.createElement('div');
+    header.className = 'option-selection-header';
+    header.innerHTML = `<strong>${title}</strong>`;
+    overlay.appendChild(header);
+
+    // Token preview panel (shown on hover, positioned to the right)
+    const previewPanel = document.createElement('div');
+    previewPanel.className = 'option-token-preview';
+    previewPanel.style.display = 'none';
+
+    const list = document.createElement('div');
+    list.className = 'option-selection-list';
+
+    for (const option of options) {
+      const btn = document.createElement('button');
+      btn.className = 'option-selection-btn';
+
+      const labelSpan = document.createElement('span');
+      labelSpan.className = 'option-label';
+      labelSpan.textContent = option.label;
+      btn.appendChild(labelSpan);
+
+      if (option.description) {
+        const descSpan = document.createElement('span');
+        descSpan.className = 'option-description';
+        descSpan.textContent = option.description;
+        btn.appendChild(descSpan);
+      }
+
+      // Extract token IDs from the option's effect for hover preview
+      const tokenIds = extractTokenIdsFromEffect(option.effect);
+      if (tokenIds.length > 0) {
+        btn.addEventListener('mouseenter', () => {
+          previewPanel.innerHTML = '';
+          const seenTokens = new Set();
+          for (const tokenId of tokenIds) {
+            if (seenTokens.has(tokenId)) continue;
+            seenTokens.add(tokenId);
+            const token = getTokenById(tokenId);
+            if (token) {
+              const cardEl = renderCard(token, {
+                showEffectSummary: true,
+                draggable: false,
+                context: 'tooltip',
+              });
+              cardEl.classList.add('option-preview-card');
+              previewPanel.appendChild(cardEl);
+            }
+          }
+          if (previewPanel.children.length > 0) {
+            previewPanel.style.display = 'flex';
+          }
+        });
+        btn.addEventListener('mouseleave', () => {
+          previewPanel.style.display = 'none';
+        });
+      }
+
+      btn.onclick = () => {
+        overlay.remove();
+        document.removeEventListener('keydown', handleEsc);
+        resolve(option);
+      };
+      list.appendChild(btn);
+    }
+
+    overlay.appendChild(list);
+    overlay.appendChild(previewPanel);
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'cancel-targeting';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.onclick = () => {
+      overlay.remove();
+      document.removeEventListener('keydown', handleEsc);
+      reject(new Error('option-cancelled'));
+    };
+    overlay.appendChild(cancelBtn);
+
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') {
+        overlay.remove();
+        document.removeEventListener('keydown', handleEsc);
+        reject(new Error('option-cancelled'));
+      }
+    };
+    document.addEventListener('keydown', handleEsc);
+
+    document.body.appendChild(overlay);
+  });
+};
+
+/**
+ * Extract token IDs from an effect definition (for option hover previews).
+ */
+const extractTokenIdsFromEffect = (effect) => {
+  if (!effect) return [];
+  // Direct summonTokens
+  if (effect.type === 'summonTokens' && Array.isArray(effect.params?.tokenIds)) {
+    return effect.params.tokenIds;
+  }
+  // addToHand with token IDs
+  if (effect.type === 'addToHand' && Array.isArray(effect.params?.tokenIds)) {
+    return effect.params.tokenIds;
+  }
+  // Composite (array of effects)
+  if (Array.isArray(effect)) {
+    return effect.flatMap(extractTokenIdsFromEffect);
+  }
+  return [];
 };
 
 // ============================================================================
@@ -2582,7 +2784,7 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
       }
     },
     onUpdate,
-    broadcast: () => gameController?.broadcast(),
+    broadcast: () => { if (gameController?.state) gameController.state._broadcastReactionSync = true; gameController?.broadcast(); },
   });
 
   // If no window was created, attack resolves immediately (no reactions available)
@@ -2745,9 +2947,9 @@ export const handlePlayCard = async (state, card, onUpdate, preselectedTarget = 
           onUpdate?.();
           return;
         }
-        // Only use on-field targeting mode for field-targetable candidates
+        // Use on-field targeting mode for field-targetable candidates
         // (creatures/players from buildTargetCandidates have .value.type).
-        // Deck/hand selections (e.g. tutorFromDeck) fall through to onSelectionNeeded.
+        // Deck/hand selections (e.g. tutorFromDeck) use card selection overlay.
         const isFieldTargeting = selection.candidates.some(c => c.value?.type === 'creature' || c.value?.type === 'player');
         if (isFieldTargeting) {
           try {
@@ -2762,9 +2964,73 @@ export const handlePlayCard = async (state, card, onUpdate, preselectedTarget = 
             onUpdate?.();
             return;
           }
+        } else {
+          // Non-field selections (deck tutor, hand picks) — show card selection overlay
+          try {
+            const selected = await enterCardSelectionMode({
+              title: selection.title || `${card.name}: Choose a card`,
+              candidates: selection.candidates,
+              sourceCard: card,
+            });
+            if (selected) {
+              effectTargets = [toEffectTarget(selected)];
+            }
+          } catch (e) {
+            // Cancelled — don't play the card
+            onUpdate?.();
+            return;
+          }
         }
-        // Non-field selections (deck picks, etc.) skip targeting mode —
-        // the controller's onSelectionNeeded callback will handle them.
+      } else if (selection?.type === 'selectOption') {
+        // Pre-resolve option choices before dispatch (e.g. Cannibal Fish onPlay chooseOption)
+        try {
+          const chosen = await enterOptionMode({
+            title: selection.title || `Choose ${card.name}'s effect`,
+            options: selection.options,
+            sourceCard: card,
+          });
+          if (chosen) effectTargets = [{ type: 'option', label: chosen.label }];
+        } catch (e) {
+          // Cancelled — don't play the card
+          onUpdate?.();
+          return;
+        }
+      }
+    }
+  }
+
+  // Probe onConsume targeting for predators/prey that have onConsume effects.
+  // These effectTargets are appended after onPlay targets so the controller
+  // consumes them in order: onPlay first, then onConsume.
+  if (isCreature && extraOptions.consumeTarget && isLocalPlayersTurn(state)) {
+    const consumeSelection = gameController.getEffectSelections(card, 'onConsume');
+    if (consumeSelection?.type === 'selectTarget' && consumeSelection.candidates?.length) {
+      const isFieldTargeting = consumeSelection.candidates.some(c => {
+        const val = c.value ?? c;
+        return val?.type === 'creature' || val?.type === 'player';
+      });
+      if (isFieldTargeting) {
+        try {
+          const selected = await enterTargetingMode({
+            title: `${card.name}: ${consumeSelection.title}`,
+            candidates: consumeSelection.candidates,
+            sourceCard: card,
+          });
+          if (selected) effectTargets.push(toEffectTarget(selected));
+        } catch (e) {
+          // Cancelled — proceed without onConsume target (falls through to onSelectionNeeded)
+        }
+      }
+    } else if (consumeSelection?.type === 'selectOption') {
+      try {
+        const chosen = await enterOptionMode({
+          title: consumeSelection.title || `Choose ${card.name}'s effect`,
+          options: consumeSelection.options,
+          sourceCard: card,
+        });
+        if (chosen) effectTargets.push({ type: 'option', label: chosen.label });
+      } catch (e) {
+        // Cancelled — proceed without choice
       }
     }
   }
@@ -2789,6 +3055,14 @@ export const handlePlayCard = async (state, card, onUpdate, preselectedTarget = 
   // If controller deferred effects for additional consumption, render that UI
   if (result.needsAdditionalConsumption && gameController.uiState?.pendingPlacement) {
     renderAdditionalConsumptionSelection(state, gameController.uiState.pendingPlacement, onUpdate);
+    return;
+  }
+
+  // If a creature was played and traps are available, the controller has already set
+  // pendingReaction in state. The render loop will show the reaction overlay, and
+  // the defender dispatches RESOLVE_PLAY_TRAP through the ActionBus.
+  if (result.trapCheck) {
+    onUpdate?.();
     return;
   }
 
@@ -2861,6 +3135,17 @@ const renderConsumptionSelection = (state, pending, onUpdate) => {
               if (selected) effectTargets = [toEffectTarget(selected)];
             } catch (e) {
               // Cancelled — proceed without target (falls through to onSelectionNeeded)
+            }
+          } else if (selection?.type === 'selectOption') {
+            try {
+              const chosen = await enterOptionMode({
+                title: selection.title || `Choose ${predator.name}'s effect`,
+                options: selection.options,
+                sourceCard: predator,
+              });
+              if (chosen) effectTargets = [{ type: 'option', label: chosen.label }];
+            } catch (e) {
+              // Cancelled — proceed without choice
             }
           }
         }
@@ -2944,7 +3229,7 @@ const renderAdditionalConsumptionSelection = (state, pending, onUpdate) => {
     title: `Consume additional prey? (up to ${maxAdditional} more)`,
     items,
     confirmLabel: 'Confirm',
-    onConfirm: () => {
+    onConfirm: async () => {
       const selectedIds = Array.from(selectionPanel.querySelectorAll('input:checked')).map(
         (input) => input.value
       );
@@ -2957,9 +3242,40 @@ const renderAdditionalConsumptionSelection = (state, pending, onUpdate) => {
       }
 
       clearSelectionPanel();
+
+      // Probe onConsume for targeting needs before dispatching
+      let effectTargets = [];
+      const totalConsumed = alreadyConsumed + additionalPrey.length;
+      if (isLocalPlayersTurn(state) && totalConsumed > 0) {
+        const selection = gameController?.getEffectSelections(creatureInstance, 'onConsume');
+        if (selection?.type === 'selectTarget' && selection.candidates?.length) {
+          try {
+            const selected = await enterTargetingMode({
+              title: `${creatureInstance.name}: ${selection.title}`,
+              candidates: selection.candidates,
+              sourceCard: creatureInstance,
+            });
+            if (selected) effectTargets = [toEffectTarget(selected)];
+          } catch (e) {
+            // Cancelled — proceed without target (falls through to onSelectionNeeded)
+          }
+        } else if (selection?.type === 'selectOption') {
+          try {
+            const chosen = await enterOptionMode({
+              title: selection.title || `Choose ${creatureInstance.name}'s effect`,
+              options: selection.options,
+              sourceCard: creatureInstance,
+            });
+            if (chosen) effectTargets = [{ type: 'option', label: chosen.label }];
+          } catch (e) {
+            // Cancelled — proceed without choice
+          }
+        }
+      }
+
       dispatchAction({
         type: 'FINALIZE_PLACEMENT',
-        payload: { additionalPrey },
+        payload: { additionalPrey, effectTargets },
       });
       onUpdate?.();
     },
@@ -2984,26 +3300,6 @@ const handleDiscardEffect = (state, card, onUpdate) => {
   onUpdate?.();
 };
 
-/**
- * Trigger play traps using the new reaction system
- * Creates a reaction window for traps that trigger when a creature is played
- */
-const triggerPlayTraps = (state, creature, onUpdate, onResolved) => {
-  const windowCreated = createReactionWindow({
-    state,
-    event: TRIGGER_EVENTS.CARD_PLAYED,
-    triggeringPlayerIndex: state.activePlayerIndex,
-    eventContext: {
-      card: creature,
-    },
-    onResolved,
-    onUpdate,
-    broadcast: () => gameController?.broadcast(),
-  });
-
-  // If no window was created, onResolved was already called
-  // Otherwise, the reaction overlay will handle the decision
-};
 
 const updateActionBar = (onNextPhase, state) => {
   // Handler for advancing phase
@@ -3318,6 +3614,17 @@ const processEndOfTurnQueue = async (state, onUpdate, onEndTurn) => {
       } catch (e) {
         // Cancelled — can't cancel end phase effects, so proceed without target
         // (resolveEffectChain will fall through to onSelectionNeeded)
+      }
+    } else if (selection?.type === 'selectOption') {
+      try {
+        const chosen = await enterOptionMode({
+          title: selection.title || `Choose ${nextCreature.name}'s effect`,
+          options: selection.options,
+          sourceCard: nextCreature,
+        });
+        if (chosen) effectTargets = [{ type: 'option', label: chosen.label }];
+      } catch (e) {
+        // Cancelled — proceed without choice
       }
     }
   }
@@ -4258,8 +4565,16 @@ export const renderGame = (state, callbacks = {}) => {
       },
       onBroadcast: (s) => {
         // When ActionBus is active, it handles broadcasting confirmed actions.
-        // Skip legacy full-state broadcast to avoid dual-broadcast conflicts.
-        if (getActionBus()) return;
+        // Exception: pendingReaction changes must still sync so the defending player
+        // sees the trap decision UI and the attacker knows the decision.
+        // This is UI coordination state, not a game action.
+        if (getActionBus()) {
+          if (s._broadcastReactionSync) {
+            delete s._broadcastReactionSync;
+            broadcastSyncState(s);
+          }
+          return;
+        }
         broadcastSyncState(s);
       },
       onSelectionNeeded: (selectionRequest) => {
@@ -4282,6 +4597,25 @@ export const renderGame = (state, callbacks = {}) => {
             selectionRequest.onCancel?.();
             return;
           }
+
+          // Field-targetable candidates (creatures/players) use battlefield glow, not card overlay
+          const isFieldTargeting = candidates.some(c => {
+            const val = c.value ?? c;
+            return val?.type === 'creature' || val?.type === 'player';
+          });
+          if (isFieldTargeting) {
+            enterTargetingMode({
+              title,
+              candidates,
+              sourceCard: null,
+            }).then(selected => {
+              selectionRequest.onSelect(selected);
+            }).catch(() => {
+              selectionRequest.onCancel?.();
+            });
+            return;
+          }
+
           const shouldRender =
             renderCards || candidates.some((c) => isCardLike(c.card ?? c.value));
 
@@ -4321,7 +4655,8 @@ export const renderGame = (state, callbacks = {}) => {
               }
             }
             overlay.appendChild(grid);
-            document.body.appendChild(overlay);
+            const centerCol = document.querySelector('.battlefield-center-column') || document.body;
+            centerCol.appendChild(overlay);
           } else {
           const items = candidates.map((c) => {
             const item = document.createElement('label');
@@ -4583,11 +4918,22 @@ export const renderGame = (state, callbacks = {}) => {
   // Reaction overlay (traps & discard effects)
   renderReactionOverlay(state, {
     onReactionDecision: (activated) => {
+      // Play-trap reactions go through ActionBus for multiplayer determinism.
+      // Both clients process the same RESOLVE_PLAY_TRAP action.
+      if (state.pendingReaction?.event === TRIGGER_EVENTS.CARD_PLAYED) {
+        dispatchAction({
+          type: 'RESOLVE_PLAY_TRAP',
+          payload: { activated },
+        });
+        callbacks.onUpdate?.();
+        return;
+      }
+      // Other reactions (combat traps, etc.) use existing flow
       resolveReaction({
         state,
         activated,
         onUpdate: callbacks.onUpdate,
-        broadcast: () => gameController?.broadcast(),
+        broadcast: () => { if (gameController?.state) gameController.state._broadcastReactionSync = true; gameController?.broadcast(); },
         resolveEffectChain,
         cleanupDestroyed,
       });
