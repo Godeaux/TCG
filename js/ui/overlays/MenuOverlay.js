@@ -37,9 +37,9 @@ const SPLASH_TIPS = [
   'Frozen creatures thaw after one turn. Paralyzed ones die.',
   'Tokens skip the Carrion pile!',
   'Free Play cards are free, but only before you spend your one-card limit!',
-  'Creatures can attack other creatures the turn they\'re played. Haste lets you hit face straight away!',
+  'Creatures can fight the turn they\'re played. Haste lets you hit face!',
   'Traps don\'t wait for your turn!',
-  'Predators only get their consume effect when they eat a Prey!',
+  'Predators only get their effects when they eat a Prey! Otherwise they\'re Dry Dropped',
   'Barrier eats one hit and pops.',
   'Attack a Poisonous creature and your attacker dies.',
   'Immune creatures ignore any source of damage other than a direct animal attack.',
@@ -58,7 +58,13 @@ const setRandomSplashTip = () => {
     idx = Math.floor(Math.random() * SPLASH_TIPS.length);
   } while (idx === lastSplashIndex && SPLASH_TIPS.length > 1);
   lastSplashIndex = idx;
-  el.textContent = SPLASH_TIPS[idx];
+  // Write into inner span so the outer div stays a stable click zone
+  let span = el.querySelector('span');
+  if (!span) {
+    span = document.createElement('span');
+    el.appendChild(span);
+  }
+  span.textContent = SPLASH_TIPS[idx];
 };
 
 const initSplashClick = () => {
