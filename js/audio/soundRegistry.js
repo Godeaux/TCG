@@ -45,7 +45,9 @@ function loadAudio(path) {
     const audio = new Audio(path);
     audio.preload = 'auto';
     audio.addEventListener('canplaythrough', () => resolve(audio), { once: true });
-    audio.addEventListener('error', () => reject(new Error(`Failed to load: ${path}`)), { once: true });
+    audio.addEventListener('error', () => reject(new Error(`Failed to load: ${path}`)), {
+      once: true,
+    });
   });
 }
 

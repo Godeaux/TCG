@@ -948,8 +948,7 @@ export const handleCreateDuelLobby = async (state) => {
     if (state.menu.lobby) {
       try {
         await api.closeLobby({ lobbyId: state.menu.lobby.id, userId: state.menu.profile.id });
-      } catch (e) {
-      }
+      } catch (e) {}
       state.menu.lobby = null;
     }
 
@@ -1541,7 +1540,6 @@ export const loadGameStateFromDatabase = async (state) => {
     const savedGame = await api.loadGameState({ lobbyId: state.menu.lobby.id });
 
     if (savedGame && savedGame.game_state) {
-
       // Check if game has actually started
       const setupCompleted = savedGame.game_state.setup?.stage === 'complete';
       const hasGameStarted = setupCompleted || savedGame.game_state.game?.turn > 1;

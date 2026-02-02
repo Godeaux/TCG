@@ -11,31 +11,199 @@
 
 const CARDS = {
   // Generic defenders/attackers
-  salmon: { id: 'fish-prey-salmon', name: 'Salmon', type: 'Prey', atk: 2, hp: 2, nutrition: 2, keywords: [], rarity: 'common' },
-  mako: { id: 'fish-predator-shortfin-mako', name: 'Shortfin Mako', type: 'Predator', atk: 3, hp: 3, keywords: [], rarity: 'common' },
+  salmon: {
+    id: 'fish-prey-salmon',
+    name: 'Salmon',
+    type: 'Prey',
+    atk: 2,
+    hp: 2,
+    nutrition: 2,
+    keywords: [],
+    rarity: 'common',
+  },
+  mako: {
+    id: 'fish-predator-shortfin-mako',
+    name: 'Shortfin Mako',
+    type: 'Predator',
+    atk: 3,
+    hp: 3,
+    keywords: [],
+    rarity: 'common',
+  },
 
   // Keyword showcase cards
-  blackSwan: { id: 'bird-prey-black-swan', name: 'Black Swan', type: 'Prey', atk: 3, hp: 3, nutrition: 3, keywords: ['Ambush'], rarity: 'uncommon' },
-  flyingFish: { id: 'token-flying-fish', name: 'Flying Fish', type: 'Prey', atk: 1, hp: 1, nutrition: 1, keywords: ['Haste'], rarity: 'common' },
-  angler: { id: 'fish-prey-deep-sea-angler', name: 'Deep-sea Angler', type: 'Prey', atk: 2, hp: 2, nutrition: 2, keywords: ['Lure'], rarity: 'common' },
-  catfish: { id: 'token-catfish', name: 'Catfish', type: 'Prey', atk: 1, hp: 1, nutrition: 1, keywords: ['Barrier'], rarity: 'common' },
-  manOWar: { id: 'token-man-o-war', name: "Portuguese Man O' War", type: 'Prey', atk: 1, hp: 1, nutrition: 1, keywords: ['Passive'], rarity: 'common' },
-  kakapo: { id: 'bird-prey-kakapo', name: 'Kākāpō', type: 'Prey', atk: 0, hp: 2, nutrition: 2, keywords: ['Invisible'], rarity: 'rare' },
-  lancehead: { id: 'reptile-prey-golden-lancehead', name: 'Golden Lancehead', type: 'Prey', atk: 1, hp: 1, nutrition: 1, keywords: ['Toxic'], rarity: 'common' },
-  mamba: { id: 'reptile-prey-black-mamba', name: 'Black Mamba', type: 'Prey', atk: 3, hp: 1, nutrition: 1, keywords: ['Ambush', 'Neurotoxic'], rarity: 'rare' },
-  wahoo: { id: 'fish-predator-wahoo', name: 'Wahoo', type: 'Predator', atk: 3, hp: 2, keywords: ['Haste', 'Edible'], rarity: 'common' },
-  isopod: { id: 'crustacean-predator-giant-isopod', name: 'Giant Isopod', type: 'Predator', atk: 4, hp: 5, keywords: ['Scavenge'], rarity: 'rare' },
-  portia: { id: 'arachnid-prey-portia-spider', name: 'Portia Spider', type: 'Prey', atk: 2, hp: 2, nutrition: 2, keywords: ['Acuity'], rarity: 'common' },
-  snowshoeHare: { id: 'mammal-prey-snowshoe-hare', name: 'Snowshoe Hare', type: 'Prey', atk: 1, hp: 1, nutrition: 1, keywords: ['Haste', 'Hidden'], rarity: 'common' },
-  treeFrog: { id: 'token-radiated-tree-frog', name: 'Radiated Tree Frog', type: 'Prey', atk: 1, hp: 1, nutrition: 1, keywords: ['Immune'], rarity: 'common' },
+  blackSwan: {
+    id: 'bird-prey-black-swan',
+    name: 'Black Swan',
+    type: 'Prey',
+    atk: 3,
+    hp: 3,
+    nutrition: 3,
+    keywords: ['Ambush'],
+    rarity: 'uncommon',
+  },
+  flyingFish: {
+    id: 'token-flying-fish',
+    name: 'Flying Fish',
+    type: 'Prey',
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ['Haste'],
+    rarity: 'common',
+  },
+  angler: {
+    id: 'fish-prey-deep-sea-angler',
+    name: 'Deep-sea Angler',
+    type: 'Prey',
+    atk: 2,
+    hp: 2,
+    nutrition: 2,
+    keywords: ['Lure'],
+    rarity: 'common',
+  },
+  catfish: {
+    id: 'token-catfish',
+    name: 'Catfish',
+    type: 'Prey',
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ['Barrier'],
+    rarity: 'common',
+  },
+  manOWar: {
+    id: 'token-man-o-war',
+    name: "Portuguese Man O' War",
+    type: 'Prey',
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ['Passive'],
+    rarity: 'common',
+  },
+  kakapo: {
+    id: 'bird-prey-kakapo',
+    name: 'Kākāpō',
+    type: 'Prey',
+    atk: 0,
+    hp: 2,
+    nutrition: 2,
+    keywords: ['Invisible'],
+    rarity: 'rare',
+  },
+  lancehead: {
+    id: 'reptile-prey-golden-lancehead',
+    name: 'Golden Lancehead',
+    type: 'Prey',
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ['Toxic'],
+    rarity: 'common',
+  },
+  mamba: {
+    id: 'reptile-prey-black-mamba',
+    name: 'Black Mamba',
+    type: 'Prey',
+    atk: 3,
+    hp: 1,
+    nutrition: 1,
+    keywords: ['Ambush', 'Neurotoxic'],
+    rarity: 'rare',
+  },
+  wahoo: {
+    id: 'fish-predator-wahoo',
+    name: 'Wahoo',
+    type: 'Predator',
+    atk: 3,
+    hp: 2,
+    keywords: ['Haste', 'Edible'],
+    rarity: 'common',
+  },
+  isopod: {
+    id: 'crustacean-predator-giant-isopod',
+    name: 'Giant Isopod',
+    type: 'Predator',
+    atk: 4,
+    hp: 5,
+    keywords: ['Scavenge'],
+    rarity: 'rare',
+  },
+  portia: {
+    id: 'arachnid-prey-portia-spider',
+    name: 'Portia Spider',
+    type: 'Prey',
+    atk: 2,
+    hp: 2,
+    nutrition: 2,
+    keywords: ['Acuity'],
+    rarity: 'common',
+  },
+  snowshoeHare: {
+    id: 'mammal-prey-snowshoe-hare',
+    name: 'Snowshoe Hare',
+    type: 'Prey',
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ['Haste', 'Hidden'],
+    rarity: 'common',
+  },
+  treeFrog: {
+    id: 'token-radiated-tree-frog',
+    name: 'Radiated Tree Frog',
+    type: 'Prey',
+    atk: 1,
+    hp: 1,
+    nutrition: 1,
+    keywords: ['Immune'],
+    rarity: 'common',
+  },
 
   // Hidden card (for demo)
-  hiddenPrey: { id: 'token-leafy', name: 'Leafy', type: 'Prey', atk: 0, hp: 1, nutrition: 0, keywords: ['Hidden'], rarity: 'common' },
+  hiddenPrey: {
+    id: 'token-leafy',
+    name: 'Leafy',
+    type: 'Prey',
+    atk: 0,
+    hp: 1,
+    nutrition: 0,
+    keywords: ['Hidden'],
+    rarity: 'common',
+  },
 
   // Spell/trap examples
-  spell: { id: 'fish-spell-harpoon', name: 'Harpoon', type: 'Spell', atk: 0, hp: 0, keywords: [], rarity: 'common', effectText: 'Deal 3 damage to target creature' },
-  freeSpell: { id: 'token-alligator-skin', name: 'Alligator Skin', type: 'Free Spell', atk: 0, hp: 0, keywords: [], rarity: 'common', effectText: 'Grant Barrier to a creature' },
-  trap: { id: 'arachnid-trap-silk-trap', name: 'Silk Trap', type: 'Trap', atk: 0, hp: 0, keywords: [], rarity: 'common', effectText: 'Web attacker, negate attack' },
+  spell: {
+    id: 'fish-spell-harpoon',
+    name: 'Harpoon',
+    type: 'Spell',
+    atk: 0,
+    hp: 0,
+    keywords: [],
+    rarity: 'common',
+    effectText: 'Deal 3 damage to target creature',
+  },
+  freeSpell: {
+    id: 'token-alligator-skin',
+    name: 'Alligator Skin',
+    type: 'Free Spell',
+    atk: 0,
+    hp: 0,
+    keywords: [],
+    rarity: 'common',
+    effectText: 'Grant Barrier to a creature',
+  },
+  trap: {
+    id: 'arachnid-trap-silk-trap',
+    name: 'Silk Trap',
+    type: 'Trap',
+    atk: 0,
+    hp: 0,
+    keywords: [],
+    rarity: 'common',
+    effectText: 'Web attacker, negate attack',
+  },
 };
 
 // ============================================================================
@@ -52,9 +220,7 @@ export const TUTORIAL_SCENES = [
     text: `<p>Reduce your rival from <strong>10 HP</strong> to <strong>0 HP</strong> using creatures, spells, and clever consumption combos.</p>
 <p>Your creatures attack your rival directly — unless they have defenders blocking the way.</p>`,
     demo: {
-      setup: [
-        { slot: 'left', card: CARDS.mako },
-      ],
+      setup: [{ slot: 'left', card: CARDS.mako }],
       steps: [
         { type: 'fadeIn', target: 'left', duration: 500 },
         { type: 'wait', duration: 400 },
@@ -77,9 +243,7 @@ export const TUTORIAL_SCENES = [
 <p>Prey also have <strong>🍖 NUT</strong> (nutrition) — this determines how much power a predator gains when it consumes them.</p>
 <p class="tutorial-note">Higher nutrition = bigger predator swing when consumed.</p>`,
     demo: {
-      setup: [
-        { slot: 'center', card: CARDS.salmon },
-      ],
+      setup: [{ slot: 'center', card: CARDS.salmon }],
       steps: [
         { type: 'fadeIn', target: 'center', duration: 500 },
         { type: 'wait', duration: 400 },
@@ -127,9 +291,7 @@ export const TUTORIAL_SCENES = [
 <p>You can play <strong>one</strong> non-free-spell card per turn, in either Main phase.</p>
 <p class="tutorial-note">Main 2 is only available if you didn't play a card in Main 1.</p>`,
     demo: {
-      setup: [
-        { slot: 'center', card: CARDS.salmon },
-      ],
+      setup: [{ slot: 'center', card: CARDS.salmon }],
       steps: [
         { type: 'label', text: '① Start Phase' },
         { type: 'wait', duration: 1000 },
@@ -253,7 +415,7 @@ export const TUTORIAL_SCENES = [
       steps: [
         { type: 'fadeIn', target: 'right', duration: 500 },
         { type: 'wait', duration: 400 },
-        { type: 'label', text: 'Play a Free Spell — doesn\'t use your card play!' },
+        { type: 'label', text: "Play a Free Spell — doesn't use your card play!" },
         { type: 'fadeIn', target: 'left', duration: 400 },
         { type: 'arrow', from: 'left', to: 'right', duration: 600 },
         { type: 'applyStatus', target: 'right', status: 'barrier' },
@@ -300,14 +462,12 @@ export const TUTORIAL_SCENES = [
 <p>They CAN still block and fight defenders, just not hit the rival's HP.</p>
 <p class="tutorial-note">The keyword <strong>Haste</strong> bypasses summoning exhaustion!</p>`,
     demo: {
-      setup: [
-        { slot: 'center', card: CARDS.salmon },
-      ],
+      setup: [{ slot: 'center', card: CARDS.salmon }],
       steps: [
         { type: 'label', text: 'Creature played this turn' },
         { type: 'fadeIn', target: 'center', duration: 500 },
         { type: 'wait', duration: 800 },
-        { type: 'label', text: '😴 Summoning Exhaustion — can\'t attack rival yet!' },
+        { type: 'label', text: "😴 Summoning Exhaustion — can't attack rival yet!" },
         { type: 'highlight', target: 'center', duration: 1500 },
         { type: 'label', text: 'Next turn: ready to attack!' },
         { type: 'highlightAttacker', target: 'center' },
@@ -333,7 +493,7 @@ export const TUTORIAL_SCENES = [
         { type: 'label', text: 'Play one card...' },
         { type: 'fadeIn', target: 'left', duration: 500 },
         { type: 'wait', duration: 800 },
-        { type: 'label', text: '🚫 Can\'t play another this turn!' },
+        { type: 'label', text: "🚫 Can't play another this turn!" },
         { type: 'fadeIn', target: 'right', duration: 300 },
         { type: 'wait', duration: 200 },
         { type: 'death', target: 'right', duration: 500 },
@@ -355,9 +515,7 @@ export const TUTORIAL_SCENES = [
     text: `<p><strong>Haste</strong> lets a creature attack your rival directly on the turn it's played, bypassing Summoning Exhaustion.</p>
 <p>Haste creatures are great for surprise damage and closing out games.</p>`,
     demo: {
-      setup: [
-        { slot: 'center', card: CARDS.flyingFish },
-      ],
+      setup: [{ slot: 'center', card: CARDS.flyingFish }],
       steps: [
         { type: 'label', text: 'Haste creature enters the field' },
         { type: 'fadeIn', target: 'center', duration: 500 },
@@ -382,7 +540,10 @@ export const TUTORIAL_SCENES = [
 <p>You can play a Free Play card AND a regular card in the same turn!</p>`,
     demo: {
       setup: [
-        { slot: 'left', card: { ...CARDS.flyingFish, keywords: ['Free Play'], name: 'Token (Free Play)' } },
+        {
+          slot: 'left',
+          card: { ...CARDS.flyingFish, keywords: ['Free Play'], name: 'Token (Free Play)' },
+        },
         { slot: 'right', card: CARDS.salmon },
       ],
       steps: [
@@ -416,11 +577,11 @@ export const TUTORIAL_SCENES = [
         { type: 'fadeIn', target: 'all', duration: 500 },
         { type: 'wait', duration: 400 },
         { type: 'applyStatus', target: 'right', status: 'hidden' },
-        { type: 'label', text: 'Hidden — can\'t be targeted by attacks' },
+        { type: 'label', text: "Hidden — can't be targeted by attacks" },
         { type: 'wait', duration: 800 },
         { type: 'highlightAttacker', target: 'left' },
         { type: 'arrowFizzle', from: 'left', to: 'right', duration: 700 },
-        { type: 'label', text: '❌ Attack can\'t reach Hidden creature!' },
+        { type: 'label', text: "❌ Attack can't reach Hidden creature!" },
         { type: 'wait', duration: 2000 },
         { type: 'clearHighlights' },
         { type: 'wait', duration: 1500 },
@@ -474,7 +635,7 @@ export const TUTORIAL_SCENES = [
         { type: 'wait', duration: 600 },
         { type: 'highlightAttacker', target: 'left' },
         { type: 'arrowFizzle', from: 'left', to: 'center', duration: 600 },
-        { type: 'label', text: 'Can\'t attack Salmon...' },
+        { type: 'label', text: "Can't attack Salmon..." },
         { type: 'wait', duration: 600 },
         { type: 'arrow', from: 'left', to: 'right', duration: 600 },
         { type: 'highlightTarget', target: 'right' },
@@ -553,9 +714,7 @@ export const TUTORIAL_SCENES = [
     text: `<p><strong>Passive</strong> creatures cannot attack. They exist purely for their effects, nutrition value, or defensive abilities.</p>
 <p>They can still block incoming attacks and be consumed by predators.</p>`,
     demo: {
-      setup: [
-        { slot: 'center', card: CARDS.manOWar },
-      ],
+      setup: [{ slot: 'center', card: CARDS.manOWar }],
       steps: [
         { type: 'fadeIn', target: 'center', duration: 500 },
         { type: 'wait', duration: 400 },
@@ -589,7 +748,7 @@ export const TUTORIAL_SCENES = [
         { type: 'arrow', from: 'left', to: 'right', duration: 500 },
         { type: 'consumeInto', from: 'left', to: 'right', duration: 600 },
         { type: 'buffPop', target: 'right', text: '+3/+2', duration: 800 },
-        { type: 'label', text: 'Predator chain! Mako gains Wahoo\'s stats.' },
+        { type: 'label', text: "Predator chain! Mako gains Wahoo's stats." },
         { type: 'wait', duration: 2000 },
         { type: 'clearHighlights' },
         { type: 'wait', duration: 1500 },
@@ -603,9 +762,7 @@ export const TUTORIAL_SCENES = [
     text: `<p><strong>Scavenge</strong> lets a predator consume from the <strong>Carrion pile</strong> instead of the field.</p>
 <p>This means you can get value from creatures that already died — no setup required!</p>`,
     demo: {
-      setup: [
-        { slot: 'center', card: CARDS.isopod },
-      ],
+      setup: [{ slot: 'center', card: CARDS.isopod }],
       steps: [
         { type: 'label', text: 'Giant Isopod has Scavenge' },
         { type: 'fadeIn', target: 'center', duration: 500 },
@@ -721,16 +878,14 @@ export const TUTORIAL_SCENES = [
 <p>Some spells and effects can freeze enemy creatures, effectively removing them for a turn.</p>
 <p class="tutorial-note">Frozen thaws naturally at end of the controller's turn — but the creature is destroyed in the process.</p>`,
     demo: {
-      setup: [
-        { slot: 'center', card: CARDS.salmon },
-      ],
+      setup: [{ slot: 'center', card: CARDS.salmon }],
       steps: [
         { type: 'fadeIn', target: 'center', duration: 500 },
         { type: 'wait', duration: 400 },
         { type: 'label', text: '❄️ Creature gets frozen!' },
         { type: 'applyStatus', target: 'center', status: 'frozen' },
         { type: 'wait', duration: 1000 },
-        { type: 'label', text: 'Can\'t attack. Can\'t be consumed.' },
+        { type: 'label', text: "Can't attack. Can't be consumed." },
         { type: 'wait', duration: 1500 },
         { type: 'label', text: 'End of turn — frozen creature dies!' },
         { type: 'wait', duration: 800 },

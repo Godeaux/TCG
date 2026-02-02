@@ -286,7 +286,10 @@ export const resolveReaction = ({
       const attacker = eventContext?.attacker;
       if (attacker && hasUnstoppable(attacker)) {
         // Unstoppable ignores trap negation - log it but don't negate
-        logMessage(state, `🦗 ${attacker.name}'s Unstoppable attack cannot be negated by ${reaction.card?.name || 'a trap'}!`);
+        logMessage(
+          state,
+          `🦗 ${attacker.name}'s Unstoppable attack cannot be negated by ${reaction.card?.name || 'a trap'}!`
+        );
       } else {
         state._lastReactionNegatedAttack = true;
         state._lastReactionNegatedBy = reaction.card?.name || 'a trap';

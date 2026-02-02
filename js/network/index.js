@@ -71,12 +71,7 @@ export {
 // ACTION BUS (Host-authoritative action routing)
 // ============================================================================
 
-export {
-  ActionBus,
-  initActionBus,
-  getActionBus,
-  resetActionBus,
-} from './actionBus.js';
+export { ActionBus, initActionBus, getActionBus, resetActionBus } from './actionBus.js';
 
 // ============================================================================
 // ACTION VALIDATOR (Host-side action validation)
@@ -94,11 +89,7 @@ export { serializeAction, deserializeAction } from './actionSerializer.js';
 // ACTION LOG (Persistent action log for replay & reconnection)
 // ============================================================================
 
-export {
-  getActionLog,
-  getCurrentSequence,
-  buildActionLogPayload,
-} from './actionLog.js';
+export { getActionLog, getCurrentSequence, buildActionLogPayload } from './actionLog.js';
 
 // ============================================================================
 // LOBBY MANAGER

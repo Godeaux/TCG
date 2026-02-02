@@ -221,8 +221,7 @@ const refresh = () => {
       // In online multiplayer, only the host builds decks and draws.
       // The host then broadcasts the full state (with instanceIds) to the guest.
       // This ensures both sides have identical card instanceIds.
-      const isHost = isOnlineMode(state) &&
-        state.menu?.profile?.id === state.menu?.lobby?.host_id;
+      const isHost = isOnlineMode(state) && state.menu?.profile?.id === state.menu?.lobby?.host_id;
       const isGuest = isOnlineMode(state) && !isHost;
 
       if (isGuest) {
