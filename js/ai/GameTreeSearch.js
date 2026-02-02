@@ -955,5 +955,9 @@ export class GameTreeSearch {
   }
 }
 
-// Export singleton for convenience
-export const gameTreeSearch = new GameTreeSearch();
+// Lazy singleton getter to avoid circular initialization
+let _gameTreeSearch;
+export function getGameTreeSearch() {
+  if (!_gameTreeSearch) _gameTreeSearch = new GameTreeSearch();
+  return _gameTreeSearch;
+}

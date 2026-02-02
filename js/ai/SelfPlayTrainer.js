@@ -546,5 +546,9 @@ export class SelfPlayTrainer {
   }
 }
 
-// Export singleton for convenience
-export const selfPlayTrainer = new SelfPlayTrainer();
+// Lazy singleton getter to avoid circular initialization
+let _selfPlayTrainer;
+export function getSelfPlayTrainer() {
+  if (!_selfPlayTrainer) _selfPlayTrainer = new SelfPlayTrainer();
+  return _selfPlayTrainer;
+}

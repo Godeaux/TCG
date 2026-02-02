@@ -9,7 +9,9 @@
 export { SelectionEnumerator, selectionEnumerator } from '../SelectionEnumerator.js';
 export { MoveGenerator, moveGenerator } from '../MoveGenerator.js';
 export { MoveSimulator, moveSimulator } from '../MoveSimulator.js';
-export { GameTreeSearch, gameTreeSearch } from '../GameTreeSearch.js';
+export { GameTreeSearch, getGameTreeSearch } from '../GameTreeSearch.js';
+
+import { getGameTreeSearch as _getGTS } from '../GameTreeSearch.js';
 
 /**
  * Find the best move using deep search
@@ -21,6 +23,5 @@ export { GameTreeSearch, gameTreeSearch } from '../GameTreeSearch.js';
  * @returns {{move: Object, score: number, stats: Object}}
  */
 export function findBestMove(state, playerIndex, options = {}) {
-  const { gameTreeSearch } = require('../GameTreeSearch.js');
-  return gameTreeSearch.findBestMove(state, playerIndex, options);
+  return _getGTS().findBestMove(state, playerIndex, options);
 }

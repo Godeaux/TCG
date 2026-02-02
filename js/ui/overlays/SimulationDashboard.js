@@ -13,7 +13,7 @@ import * as SimulationHarness from '../../simulation/SimulationHarness.js';
 import * as SimDB from '../../simulation/SimulationDatabase.js';
 import * as BugRegistry from '../../simulation/BugRegistry.js';
 import * as GameDataCollector from '../../simulation/GameDataCollector.js';
-import { selfPlayTrainer } from '../../ai/SelfPlayTrainer.js';
+import { getSelfPlayTrainer } from '../../ai/SelfPlayTrainer.js';
 
 // ============================================================================
 // STATE
@@ -476,8 +476,8 @@ const getSynergyTypeClass = (type) => {
 };
 
 const renderBalanceTab = () => {
-  const analysis = selfPlayTrainer.getBalanceAnalysis({ minGames: 3 });
-  const data = selfPlayTrainer.getPerformanceData();
+  const analysis = getSelfPlayTrainer().getBalanceAnalysis({ minGames: 3 });
+  const data = getSelfPlayTrainer().getPerformanceData();
 
   if (data.totalGames === 0) {
     return `
@@ -671,7 +671,7 @@ const runBalanceSimulation = async (numGames) => {
   }
 
   try {
-    await selfPlayTrainer.runSimulation(numGames, {
+    await getSelfPlayTrainer().runSimulation(numGames, {
       searchDepth: 3, // Faster for quick results
       onProgress: (p) => {
         if (btn) {

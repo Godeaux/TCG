@@ -21,7 +21,7 @@
 import { checkTrigger, TRIGGER_EVENTS, getTriggersForEvent } from './triggerRegistry.js';
 import { getTrapsFromHand, logMessage, queueVisualEffect } from '../../state/gameState.js';
 import { resolveCardEffect } from '../../cards/index.js';
-import { getBugDetector } from '../../simulation/index.js';
+import { getBugDetector } from '../../simulation/BugDetector.js';
 import { hasUnstoppable } from '../../keywords.js';
 
 // ============================================================================

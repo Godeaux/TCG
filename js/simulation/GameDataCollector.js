@@ -10,7 +10,7 @@
  */
 
 import * as SimDB from './SimulationDatabase.js';
-import { selfPlayTrainer } from '../ai/SelfPlayTrainer.js';
+import { getSelfPlayTrainer } from '../ai/SelfPlayTrainer.js';
 import { SYNERGY_TYPES } from '../ai/InteractionTracker.js';
 
 // ============================================================================
@@ -350,7 +350,7 @@ export const getCurrentGameSummary = () => {
  * @returns {Array} - Synergy data with interaction details
  */
 export const getInteractionSynergies = (options = {}) => {
-  const tracker = selfPlayTrainer.tracker;
+  const tracker = getSelfPlayTrainer().tracker;
   if (!tracker?.getSynergyReport) {
     return [];
   }
@@ -411,7 +411,7 @@ export const getWorstSynergies = async (limit = 10) => {
  * @returns {Array}
  */
 export const getSynergiesByType = (type, limit = 10) => {
-  const tracker = selfPlayTrainer.tracker;
+  const tracker = getSelfPlayTrainer().tracker;
   if (!tracker?.getSynergiesByType) {
     return [];
   }
