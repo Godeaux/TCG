@@ -1,8 +1,7 @@
 import {
   createGameState,
   logMessage,
-  flipSetupCoin,
-  completeCoinFlip,
+  rollSetupDie,
   chooseFirstPlayer,
   setPlayerDeck,
   isAIMode,
@@ -14,7 +13,7 @@ import {
   canPlayerMakeAnyMove,
 } from './state/index.js';
 import { advancePhase, endTurn, startTurn } from './game/index.js';
-import { renderGame, setupInitialDraw, playCoinFlipAnimation } from './ui.js';
+import { renderGame, setupInitialDraw } from './ui.js';
 import { initializeCardRegistry } from './cards/index.js';
 import { initializeAI, cleanupAI, checkAndTriggerAITurn } from './ai/index.js';
 import { generateAIvsAIDecks } from './ui/overlays/DeckBuilderOverlay.js';
@@ -184,17 +183,9 @@ const refresh = () => {
       state.passPending = false;
       refresh();
     },
-    onCoinFlip: async () => {
-      // Flip the coin (updates state with result and player symbols)
-      flipSetupCoin(state);
+    onSetupRoll: (playerIndex) => {
+      rollSetupDie(state, playerIndex);
       refresh();
-
-      // Play the coin flip animation
-      await playCoinFlipAnimation(state, () => {
-        // Complete the flip (transition to choice phase)
-        completeCoinFlip(state);
-        refresh();
-      });
     },
     onSetupChoose: (playerIndex) => {
       chooseFirstPlayer(state, playerIndex);

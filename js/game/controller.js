@@ -37,8 +37,7 @@ import {
   logMessage,
   drawCard,
   queueVisualEffect,
-  flipSetupCoin,
-  completeCoinFlip,
+  rollSetupDie,
   chooseFirstPlayer,
   setPlayerDeck,
   getTrapsFromHand,
@@ -103,12 +102,6 @@ export class GameController {
     try {
       switch (action.type) {
         // Game flow
-        case ActionTypes.COIN_FLIP:
-          return this.handleCoinFlip();
-
-        case ActionTypes.COMPLETE_COIN_FLIP:
-          return this.handleCompleteCoinFlip();
-
         case ActionTypes.CHOOSE_FIRST_PLAYER:
           return this.handleChooseFirstPlayer(action.payload);
 
@@ -198,24 +191,6 @@ export class GameController {
   // ==========================================================================
   // GAME FLOW HANDLERS
   // ==========================================================================
-
-  handleCoinFlip() {
-    const result = flipSetupCoin(this.state);
-
-    this.notifyStateChange();
-    this.broadcast();
-
-    return { success: true, data: result };
-  }
-
-  handleCompleteCoinFlip() {
-    completeCoinFlip(this.state);
-
-    this.notifyStateChange();
-    this.broadcast();
-
-    return { success: true };
-  }
 
   handleChooseFirstPlayer({ playerIndex }) {
     chooseFirstPlayer(this.state, playerIndex);

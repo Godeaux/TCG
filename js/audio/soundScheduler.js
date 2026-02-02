@@ -20,6 +20,7 @@ const lastPlayTime = {}; // soundId → timestamp
 
 let cleanupTimer = null;
 
+/* global performance */
 function now() {
   return performance.now();
 }

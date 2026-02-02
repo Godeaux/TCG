@@ -16,7 +16,7 @@
  *   renderMenuOverlays(state);
  *
  *   // Render setup overlay
- *   renderSetupOverlay(state, { onCoinFlip, onSetupChoose });
+ *   renderSetupOverlay(state, { onSetupRoll, onSetupChoose });
  */
 
 // ============================================================================
@@ -33,7 +33,6 @@ export {
   renderSetupOverlay,
   hideSetupOverlay,
   resetSetupAIState,
-  playCoinFlipAnimation,
 } from './SetupOverlay.js';
 
 // ============================================================================

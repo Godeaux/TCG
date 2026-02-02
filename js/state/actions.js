@@ -17,12 +17,6 @@ export const ActionTypes = {
   // GAME FLOW ACTIONS
   // ==========================================================================
 
-  /** Flip coin during setup */
-  COIN_FLIP: 'COIN_FLIP',
-
-  /** Complete coin flip animation */
-  COMPLETE_COIN_FLIP: 'COMPLETE_COIN_FLIP',
-
   /** Choose which player goes first */
   CHOOSE_FIRST_PLAYER: 'CHOOSE_FIRST_PLAYER',
 
@@ -219,16 +213,6 @@ export const ActionTypes = {
 // ============================================================================
 // ACTION CREATORS - GAME FLOW
 // ============================================================================
-
-export const coinFlip = () => ({
-  type: ActionTypes.COIN_FLIP,
-  payload: {},
-});
-
-export const completeCoinFlip = () => ({
-  type: ActionTypes.COMPLETE_COIN_FLIP,
-  payload: {},
-});
 
 export const chooseFirstPlayer = (playerIndex) => ({
   type: ActionTypes.CHOOSE_FIRST_PLAYER,

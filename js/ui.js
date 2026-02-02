@@ -79,11 +79,7 @@ import { renderPassOverlay } from './ui/overlays/PassOverlay.js';
 import { renderMenuOverlays } from './ui/overlays/MenuOverlay.js';
 
 // Setup overlay (extracted module)
-import {
-  renderSetupOverlay,
-  resetSetupAIState,
-  playCoinFlipAnimation,
-} from './ui/overlays/SetupOverlay.js';
+import { renderSetupOverlay, resetSetupAIState } from './ui/overlays/SetupOverlay.js';
 
 // Reaction overlay (extracted module)
 import { renderReactionOverlay, resetReactionAIState } from './ui/overlays/ReactionOverlay.js';
@@ -2313,7 +2309,9 @@ const enterTargetingMode = ({ title, candidates, sourceCard }) => {
 
     targetingMode = { title, candidates, sourceCard, resolve, reject };
     document.body.classList.add('targeting-active');
-    clearFocus();
+    // Clear hand focus when entering targeting mode
+    document.querySelectorAll('.card.hand-focus').forEach((c) => c.classList.remove('hand-focus'));
+    hideCardTooltip();
 
     // Show targeting banner
     const banner = document.createElement('div');
@@ -5287,8 +5285,3 @@ export const handleCombatPass = (state) => {
 // Import: checkForVictory, showVictoryScreen, hideVictoryScreen
 // ============================================================================
 
-// ============================================================================
-// COIN FLIP ANIMATION (re-exported from SetupOverlay)
-// ============================================================================
-
-export { playCoinFlipAnimation };
