@@ -1,3 +1,4 @@
+/* global AbortController, DOMException */
 /**
  * TutorialEngine — Animated visual tutorial system
  *
@@ -37,8 +38,14 @@ export const TutorialEngine = {
 
     // Keyboard navigation
     keyHandler = (e) => {
-      if (e.key === 'ArrowRight') { goToScene(currentSceneIndex + 1); e.preventDefault(); }
-      if (e.key === 'ArrowLeft') { goToScene(currentSceneIndex - 1); e.preventDefault(); }
+      if (e.key === 'ArrowRight') {
+        goToScene(currentSceneIndex + 1);
+        e.preventDefault();
+      }
+      if (e.key === 'ArrowLeft') {
+        goToScene(currentSceneIndex - 1);
+        e.preventDefault();
+      }
     };
     document.addEventListener('keydown', keyHandler);
   },
@@ -222,8 +229,12 @@ function resetStage() {
     const card = slot.querySelector('.card');
     if (card) {
       card.classList.remove(
-        'keyword-ambush', 'keyword-barrier', 'keyword-toxic',
-        'keyword-neurotoxic', 'keyword-haste', 'keyword-lure',
+        'keyword-ambush',
+        'keyword-barrier',
+        'keyword-toxic',
+        'keyword-neurotoxic',
+        'keyword-haste',
+        'keyword-lure',
         'keyword-scavenge'
       );
     }
@@ -246,27 +257,48 @@ async function runSteps(steps, signal) {
 
 async function executeStep(step, signal) {
   switch (step.type) {
-    case 'fadeIn': return handleFadeIn(step);
-    case 'wait': return wait(step.duration, signal);
-    case 'highlightAttacker': return handleHighlightAttacker(step);
-    case 'highlightTarget': return handleHighlightTarget(step);
-    case 'clearHighlights': return handleClearHighlights();
-    case 'arrow': return handleArrow(step, signal);
-    case 'label': return handleLabel(step);
-    case 'clearLabel': return handleClearLabel();
-    case 'keywordFlash': return handleKeywordFlash(step, signal);
-    case 'attack': return handleAttack(step, signal);
-    case 'damagePop': return handleDamagePop(step, signal);
-    case 'healPop': return handleHealPop(step, signal);
-    case 'death': return handleDeath(step, signal);
-    case 'applyStatus': return handleApplyStatus(step);
-    case 'removeStatus': return handleRemoveStatus(step);
-    case 'consumeInto': return handleConsumeInto(step, signal);
-    case 'highlight': return handleHighlight(step, signal);
-    case 'pulsestat': return handlePulseStat(step, signal);
-    case 'buffPop': return handleBuffPop(step, signal);
-    case 'arrowFizzle': return handleArrowFizzle(step, signal);
-    case 'spellEffect': return handleSpellEffect(step, signal);
+    case 'fadeIn':
+      return handleFadeIn(step);
+    case 'wait':
+      return wait(step.duration, signal);
+    case 'highlightAttacker':
+      return handleHighlightAttacker(step);
+    case 'highlightTarget':
+      return handleHighlightTarget(step);
+    case 'clearHighlights':
+      return handleClearHighlights();
+    case 'arrow':
+      return handleArrow(step, signal);
+    case 'label':
+      return handleLabel(step);
+    case 'clearLabel':
+      return handleClearLabel();
+    case 'keywordFlash':
+      return handleKeywordFlash(step, signal);
+    case 'attack':
+      return handleAttack(step, signal);
+    case 'damagePop':
+      return handleDamagePop(step, signal);
+    case 'healPop':
+      return handleHealPop(step, signal);
+    case 'death':
+      return handleDeath(step, signal);
+    case 'applyStatus':
+      return handleApplyStatus(step);
+    case 'removeStatus':
+      return handleRemoveStatus(step);
+    case 'consumeInto':
+      return handleConsumeInto(step, signal);
+    case 'highlight':
+      return handleHighlight(step, signal);
+    case 'pulsestat':
+      return handlePulseStat(step, signal);
+    case 'buffPop':
+      return handleBuffPop(step, signal);
+    case 'arrowFizzle':
+      return handleArrowFizzle(step, signal);
+    case 'spellEffect':
+      return handleSpellEffect(step, signal);
     default:
       console.warn('[TutorialEngine] Unknown step type:', step.type);
   }
@@ -288,10 +320,14 @@ function handleFadeIn(step) {
 function wait(ms, signal) {
   return new Promise((resolve, reject) => {
     const id = setTimeout(resolve, ms);
-    signal?.addEventListener('abort', () => {
-      clearTimeout(id);
-      reject(new DOMException('Aborted', 'AbortError'));
-    }, { once: true });
+    signal?.addEventListener(
+      'abort',
+      () => {
+        clearTimeout(id);
+        reject(new DOMException('Aborted', 'AbortError'));
+      },
+      { once: true }
+    );
   });
 }
 
@@ -344,8 +380,14 @@ async function handleArrowFizzle(step, signal) {
   const from = { x: fromRect.left + fromRect.width / 2, y: fromRect.top + fromRect.height / 2 };
   // Stop short of the target
   const to = {
-    x: fromRect.left + fromRect.width / 2 + (toRect.left + toRect.width / 2 - fromRect.left - fromRect.width / 2) * 0.6,
-    y: fromRect.top + fromRect.height / 2 + (toRect.top + toRect.height / 2 - fromRect.top - fromRect.height / 2) * 0.6,
+    x:
+      fromRect.left +
+      fromRect.width / 2 +
+      (toRect.left + toRect.width / 2 - fromRect.left - fromRect.width / 2) * 0.6,
+    y:
+      fromRect.top +
+      fromRect.height / 2 +
+      (toRect.top + toRect.height / 2 - fromRect.top - fromRect.height / 2) * 0.6,
   };
 
   arrowSvg = createArrowSvg(from, to, 'red');
@@ -602,7 +644,15 @@ function handleApplyStatus(step) {
       }
       break;
     case 'frozen':
-      ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'top-center', 'left-center', 'right-center'].forEach((pos) => {
+      [
+        'top-left',
+        'top-right',
+        'bottom-left',
+        'bottom-right',
+        'top-center',
+        'left-center',
+        'right-center',
+      ].forEach((pos) => {
         const icicle = document.createElement('div');
         icicle.className = `icicle icicle-${pos}`;
         overlay.appendChild(icicle);
@@ -706,7 +756,12 @@ async function handleConsumeInto(step, signal) {
   const animation = ghost.animate(
     [
       { transform: 'translate(-50%, -50%) scale(1)', opacity: 1, filter: 'brightness(1)' },
-      { transform: 'translate(-50%, -50%) scale(0.8)', opacity: 0.9, filter: 'brightness(1.2)', offset: 0.3 },
+      {
+        transform: 'translate(-50%, -50%) scale(0.8)',
+        opacity: 0.9,
+        filter: 'brightness(1.2)',
+        offset: 0.3,
+      },
       {
         transform: `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(0.1)`,
         opacity: 0,

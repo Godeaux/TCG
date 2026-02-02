@@ -37,8 +37,6 @@ import {
   logMessage,
   drawCard,
   queueVisualEffect,
-  flipSetupCoin,
-  completeCoinFlip,
   chooseFirstPlayer,
   setPlayerDeck,
   getTrapsFromHand,
@@ -49,11 +47,7 @@ import { resolveEffectResult as applyEffect } from './effects.js';
 import { isFreePlay, isEdible, hasScavenge, cantBeConsumed, cantConsume } from '../keywords.js';
 import { advancePhase, endTurn, finalizeEndPhase, getPositionEvaluator } from './turnManager.js';
 import { consumePrey } from './consumption.js';
-import {
-  resolveCreatureCombat,
-  resolveDirectAttack,
-  hasBeforeCombatEffect,
-} from './combat.js';
+import { resolveCreatureCombat, resolveDirectAttack, hasBeforeCombatEffect } from './combat.js';
 import { getAvailableReactions, TRIGGER_EVENTS } from './triggers/index.js';
 
 // ============================================================================
@@ -100,18 +94,13 @@ export class GameController {
     // Extract pre-resolved effect targets from the action payload.
     // These are consumed sequentially by resolveEffectChain instead of
     // showing UI via onSelectionNeeded — making actions fully synchronous.
-    const rawTargets = action.payload?.effectTargets || action.payload?.options?.effectTargets || [];
+    const rawTargets =
+      action.payload?.effectTargets || action.payload?.options?.effectTargets || [];
     this._effectTargets = rawTargets.length ? [...rawTargets] : [];
 
     try {
       switch (action.type) {
         // Game flow
-        case ActionTypes.COIN_FLIP:
-          return this.handleCoinFlip();
-
-        case ActionTypes.COMPLETE_COIN_FLIP:
-          return this.handleCompleteCoinFlip();
-
         case ActionTypes.CHOOSE_FIRST_PLAYER:
           return this.handleChooseFirstPlayer(action.payload);
 
@@ -201,24 +190,6 @@ export class GameController {
   // ==========================================================================
   // GAME FLOW HANDLERS
   // ==========================================================================
-
-  handleCoinFlip() {
-    const result = flipSetupCoin(this.state);
-
-    this.notifyStateChange();
-    this.broadcast();
-
-    return { success: true, data: result };
-  }
-
-  handleCompleteCoinFlip() {
-    completeCoinFlip(this.state);
-
-    this.notifyStateChange();
-    this.broadcast();
-
-    return { success: true };
-  }
 
   handleChooseFirstPlayer({ playerIndex }) {
     chooseFirstPlayer(this.state, playerIndex);
@@ -438,7 +409,9 @@ export class GameController {
         if (preySlotIndex === -1) {
           return { success: false, error: 'Target prey not on field' };
         }
-        return this.placeCreatureInSlot(card, preySlotIndex, [consumeTarget], [], isFree, { offerAdditionalConsumption: true });
+        return this.placeCreatureInSlot(card, preySlotIndex, [consumeTarget], [], isFree, {
+          offerAdditionalConsumption: true,
+        });
       }
 
       if (availablePrey.length > 0 || availableCarrion.length > 0) {
@@ -473,7 +446,14 @@ export class GameController {
   // CREATURE PLACEMENT
   // ==========================================================================
 
-  placeCreatureInSlot(creature, slotIndex, consumedFieldPrey = [], consumedCarrion = [], isFree, { offerAdditionalConsumption = false } = {}) {
+  placeCreatureInSlot(
+    creature,
+    slotIndex,
+    consumedFieldPrey = [],
+    consumedCarrion = [],
+    isFree,
+    { offerAdditionalConsumption = false } = {}
+  ) {
     const player = getActivePlayer(this.state);
     const playerIndex = this.state.activePlayerIndex;
     const opponentIndex = (playerIndex + 1) % 2;
@@ -498,9 +478,10 @@ export class GameController {
     }
 
     // Determine placement slot — consuming field prey may have freed a slot
-    const finalSlot = slotIndex != null && player.field[slotIndex] === null
-      ? slotIndex
-      : player.field.findIndex((s) => s === null);
+    const finalSlot =
+      slotIndex != null && player.field[slotIndex] === null
+        ? slotIndex
+        : player.field.findIndex((s) => s === null);
 
     if (finalSlot === -1) {
       logMessage(this.state, 'No empty field slots available after consumption.');
@@ -535,7 +516,12 @@ export class GameController {
 
     // Check if player should be offered additional consumption before effects fire
     // Only applies for direct consumption (drag-onto-prey), not checkbox selection
-    if (offerAdditionalConsumption && allConsumed.length > 0 && allConsumed.length < 3 && !creatureInstance.dryDropped) {
+    if (
+      offerAdditionalConsumption &&
+      allConsumed.length > 0 &&
+      allConsumed.length < 3 &&
+      !creatureInstance.dryDropped
+    ) {
       const remainingPrey = this.getConsumablePrey(creatureInstance);
       if (remainingPrey.length > 0) {
         // Defer onPlay/onConsume/traps — let player choose additional consumption first
@@ -762,7 +748,10 @@ export class GameController {
                 triggeringPlayer.field[slot] = null;
               }
               triggeringPlayer.hand.push(playedCard);
-              logMessage(this.state, `${playedCard.name} is returned to ${triggeringPlayer.name}'s hand.`);
+              logMessage(
+                this.state,
+                `${playedCard.name} is returned to ${triggeringPlayer.name}'s hand.`
+              );
 
               if (result.allowReplay) {
                 this.state.cardPlayedThisTurn = false;
@@ -787,9 +776,12 @@ export class GameController {
     // since there's nothing to resolve.
     if (this._pendingPostTrap) {
       const playedCard = eventContext?.card;
-      const negated = activated && reactions[reactionIndex]?.type === 'trap'
-        && playedCard && !this.state.players[triggeringPlayerIndex].field.some(
-          c => c && c.instanceId === playedCard.instanceId
+      const negated =
+        activated &&
+        reactions[reactionIndex]?.type === 'trap' &&
+        playedCard &&
+        !this.state.players[triggeringPlayerIndex].field.some(
+          (c) => c && c.instanceId === playedCard.instanceId
         );
       if (negated) {
         // Card was returned to hand by the trap — skip post-trap effects
@@ -848,9 +840,10 @@ export class GameController {
       if (!slot || slot.instanceId === predator.instanceId) return false;
       if (!(slot.type === 'Prey' || (slot.type === 'Predator' && isEdible(slot)))) return false;
       if (cantBeConsumed(slot)) return false;
-      const nutrition = (slot.type === 'Predator' && isEdible(slot))
-        ? (slot.currentAtk ?? slot.atk ?? 0)
-        : (slot.nutrition ?? 0);
+      const nutrition =
+        slot.type === 'Predator' && isEdible(slot)
+          ? (slot.currentAtk ?? slot.atk ?? 0)
+          : (slot.nutrition ?? 0);
       return nutrition <= predatorAtk;
     });
   }
@@ -868,7 +861,8 @@ export class GameController {
     this.uiState.pendingConsumption = null;
 
     // Determine placement slot — consuming field prey may free a slot
-    const placementSlot = emptySlot ?? getActivePlayer(this.state).field.findIndex((s) => s === null);
+    const placementSlot =
+      emptySlot ?? getActivePlayer(this.state).field.findIndex((s) => s === null);
 
     return this.placeCreatureInSlot(predator, placementSlot, prey, carrion, isFree);
   }
@@ -959,7 +953,10 @@ export class GameController {
 
       // Wrap onComplete to apply deferred endTurn after selection resolves
       const wrappedComplete = deferredEndTurn
-        ? () => { this.applyEffectResult({ endTurn: true }, context); onComplete?.(); }
+        ? () => {
+            this.applyEffectResult({ endTurn: true }, context);
+            onComplete?.();
+          }
         : onComplete;
 
       // Apply immediate effects first, but check for nested UI requirements
@@ -978,15 +975,18 @@ export class GameController {
       if (this._effectTargets?.length > 0) {
         const preResolved = this._effectTargets.shift();
         const { candidates: candidatesInput, onSelect } = selectTarget;
-        const candidates = typeof candidatesInput === 'function' ? candidatesInput() : candidatesInput;
-        const match = candidates?.find(c => this._matchEffectTarget(c, preResolved));
+        const candidates =
+          typeof candidatesInput === 'function' ? candidatesInput() : candidatesInput;
+        const match = candidates?.find((c) => this._matchEffectTarget(c, preResolved));
         if (match) {
           const followUp = onSelect(match.value !== undefined ? match.value : match);
           this.resolveEffectChain(followUp, context, wrappedComplete);
           return;
         }
         // No match — fall through to interactive selection
-        console.warn('[GameController] effectTarget did not match any candidate, falling through to UI');
+        console.warn(
+          '[GameController] effectTarget did not match any candidate, falling through to UI'
+        );
       }
 
       // No pre-resolved target — notify UI that selection is needed
@@ -1010,7 +1010,10 @@ export class GameController {
 
       // Wrap onComplete to apply deferred endTurn after selection resolves
       const wrappedComplete = deferredEndTurn
-        ? () => { this.applyEffectResult({ endTurn: true }, context); onComplete?.(); }
+        ? () => {
+            this.applyEffectResult({ endTurn: true }, context);
+            onComplete?.();
+          }
         : onComplete;
 
       // Apply immediate effects first, but check for nested UI requirements
@@ -1028,7 +1031,7 @@ export class GameController {
       // Check for pre-resolved option from effectTargets queue
       if (this._effectTargets?.length > 0) {
         const preResolved = this._effectTargets.shift();
-        const match = selectOption.options.find(o => o.label === preResolved.label);
+        const match = selectOption.options.find((o) => o.label === preResolved.label);
         if (match) {
           logMessage(this.state, `Chose: ${match.label}`);
           const followUp = selectOption.onSelect(match);
@@ -1078,7 +1081,11 @@ export class GameController {
       if (val?.card?.instanceId === preResolved.instanceId) return true;
     }
     // Player match by playerIndex
-    if (preResolved.type === 'player' && val?.type === 'player' && val?.playerIndex === preResolved.playerIndex) {
+    if (
+      preResolved.type === 'player' &&
+      val?.type === 'player' &&
+      val?.playerIndex === preResolved.playerIndex
+    ) {
       return true;
     }
     return false;
@@ -1298,7 +1305,6 @@ export class GameController {
   // ==========================================================================
 
   handleSacrificeCreature({ card }) {
-
     // Find card's owner and slot
     const playerIndex = this.state.players.findIndex((p) =>
       p.field.some((slot) => slot?.instanceId === card.instanceId)
@@ -1352,7 +1358,6 @@ export class GameController {
   // ==========================================================================
 
   handleReturnToHand({ card }) {
-
     const playerIndex = this.state.players.findIndex((p) =>
       p.field.some((slot) => slot?.instanceId === card.instanceId)
     );
@@ -1387,7 +1392,10 @@ export class GameController {
     if (negateAttack) {
       const targetName = target.type === 'creature' ? target.card.name : 'the player';
       const sourceText = negatedBy ? ` by ${negatedBy}` : '';
-      logMessage(this.state, `${attacker.name}'s attack on ${targetName} was negated${sourceText}.`);
+      logMessage(
+        this.state,
+        `${attacker.name}'s attack on ${targetName} was negated${sourceText}.`
+      );
       markCreatureAttacked(attacker);
       this.cleanupDestroyed();
       this.notifyStateChange();
@@ -1509,8 +1517,9 @@ export class GameController {
     }
 
     // --- Normal combat resolution ---
-    const { ownerIndex: attackerOwnerIndex, slotIndex: attackerSlotIndex } =
-      this.findCardSlotIndex(attacker.instanceId);
+    const { ownerIndex: attackerOwnerIndex, slotIndex: attackerSlotIndex } = this.findCardSlotIndex(
+      attacker.instanceId
+    );
 
     if (target.type === 'player') {
       const damage = resolveDirectAttack(this.state, attacker, target.player, attackerOwnerIndex);
@@ -1528,7 +1537,11 @@ export class GameController {
       const { ownerIndex: defenderOwnerIndex, slotIndex: defenderSlotIndex } =
         this.findCardSlotIndex(target.card.instanceId);
       const { attackerDamage, defenderDamage } = resolveCreatureCombat(
-        this.state, attacker, target.card, attackerOwnerIndex, defenderOwnerIndex
+        this.state,
+        attacker,
+        target.card,
+        attackerOwnerIndex,
+        defenderOwnerIndex
       );
       queueVisualEffect(this.state, {
         type: 'attack',
@@ -1670,7 +1683,6 @@ export class GameController {
   // ==========================================================================
 
   handleActivateDiscardEffect({ card }) {
-
     if (!card.discardEffect && !card.effects?.discardEffect) {
       logMessage(this.state, `${card.name} has no discard effect.`);
       this.notifyStateChange();
@@ -1783,11 +1795,7 @@ export class GameController {
       opponentIndex,
     });
 
-    this.resolveEffectChain(
-      result,
-      { playerIndex, opponentIndex, card: creature },
-      finishCreature
-    );
+    this.resolveEffectChain(result, { playerIndex, opponentIndex, card: creature }, finishCreature);
 
     return { success: true, moreInQueue: this.state.endOfTurnQueue.length > 0 };
   }
@@ -1842,7 +1850,8 @@ export class GameController {
 
     if (result?.selectTarget) {
       const { title, candidates: candidatesInput, renderCards } = result.selectTarget;
-      const candidates = typeof candidatesInput === 'function' ? candidatesInput() : candidatesInput;
+      const candidates =
+        typeof candidatesInput === 'function' ? candidatesInput() : candidatesInput;
       if (!Array.isArray(candidates) || candidates.length === 0) return null;
 
       // Validate candidates exist in real state. If they only exist in the cloned
@@ -1850,7 +1859,7 @@ export class GameController {
       // via onSelectionNeeded rather than being pre-resolved.
       if (probeState !== this.state) {
         const realCards = this._collectAllCards();
-        const allReal = candidates.every(c => {
+        const allReal = candidates.every((c) => {
           const val = c.value ?? c;
           const iid = val?.instanceId || val?.card?.instanceId;
           if (!iid) return true; // Non-card candidate (player targets, etc.)
@@ -1862,7 +1871,11 @@ export class GameController {
       return { type: 'selectTarget', title, candidates, renderCards };
     }
     if (result?.selectOption) {
-      return { type: 'selectOption', title: result.selectOption.title, options: result.selectOption.options };
+      return {
+        type: 'selectOption',
+        title: result.selectOption.title,
+        options: result.selectOption.options,
+      };
     }
     return null;
   }
@@ -1875,7 +1888,14 @@ export class GameController {
   _collectAllCards() {
     const ids = new Set();
     for (const player of this.state.players) {
-      for (const zone of [player.hand, player.field, player.carrion, player.deck, player.exile, player.traps]) {
+      for (const zone of [
+        player.hand,
+        player.field,
+        player.carrion,
+        player.deck,
+        player.exile,
+        player.traps,
+      ]) {
         if (!Array.isArray(zone)) continue;
         for (const card of zone) {
           if (card?.instanceId) ids.add(card.instanceId);

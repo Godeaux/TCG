@@ -42,15 +42,3 @@ export {
   SPELL_VISUAL_EFFECTS,
   TRIBE_THEMES,
 } from './spellEffects.js';
-
-// ============================================================================
-// COIN FLIP EFFECT
-// ============================================================================
-
-export {
-  playCoinFlip,
-  hideCoinFlip,
-  showCoinFlipOverlay,
-  initCoinFlipEffect,
-  isCoinFlipAnimating,
-} from './coinFlipEffect.js';

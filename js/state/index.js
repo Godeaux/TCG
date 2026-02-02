@@ -32,8 +32,7 @@ export {
   getActivePlayer,
   getOpponentPlayer,
   resetCombat,
-  flipSetupCoin,
-  completeCoinFlip,
+  rollSetupDie,
   chooseFirstPlayer,
 } from './gameState.js';
 
@@ -144,8 +143,6 @@ export {
   ActionTypes,
 
   // Game flow actions
-  coinFlip as coinFlipAction,
-  completeCoinFlip as completeCoinFlipAction,
   chooseFirstPlayer as chooseFirstPlayerAction,
   selectDeck,
   advancePhase,

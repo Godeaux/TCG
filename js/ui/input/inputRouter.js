@@ -579,7 +579,7 @@ const initNavigation = () => {
   });
 
   // Options: Per-channel volume sliders
-  document.querySelectorAll('.options-channel-slider').forEach(slider => {
+  document.querySelectorAll('.options-channel-slider').forEach((slider) => {
     slider.addEventListener('input', (e) => {
       const value = parseInt(e.target.value, 10);
       const channel = e.target.dataset.channel;
@@ -1056,7 +1056,6 @@ export const initializeInput = (options = {}) => {
     callbacks,
     helpers,
   });
-
 };
 
 /**
