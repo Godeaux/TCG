@@ -38,6 +38,7 @@ import {
 } from './DuelInviteOverlay.js';
 import {
   renderStyledName,
+  applyStyledName,
   NAME_EFFECTS,
   NAME_FONTS,
   NAME_COLORS,
@@ -74,7 +75,6 @@ const getProfileElements = () => ({
   friendsContent: document.getElementById('profile-friends-tab'),
   styleContent: document.getElementById('profile-style-tab'),
   // Style tab elements
-  stylePreviewName: document.getElementById('style-preview-name'),
   styleEffectOptions: document.getElementById('style-effect-options'),
   styleFontOptions: document.getElementById('style-font-options'),
   styleColorOptions: document.getElementById('style-color-options'),
@@ -354,16 +354,15 @@ let currentNameStyle = { effect: null, font: null, color: null };
  * Render the style picker tab
  */
 const renderStyleTab = (elements, profileId, username, savedStyle, callbacks) => {
-  const { stylePreviewName, styleEffectOptions, styleFontOptions, styleColorOptions } = elements;
+  const { styleEffectOptions, styleFontOptions, styleColorOptions } = elements;
 
   // Initialize from saved style
   currentNameStyle = { ...savedStyle };
 
   const updatePreview = () => {
-    if (!stylePreviewName) return;
-    stylePreviewName.innerHTML = '';
-    const preview = renderStyledName(username || 'YourName', currentNameStyle);
-    stylePreviewName.appendChild(preview);
+    const { profileUsername } = elements;
+    if (!profileUsername) return;
+    applyStyledName(profileUsername, username || 'Player', currentNameStyle);
   };
 
   const saveStyle = async () => {

@@ -158,6 +158,9 @@ const getTargetId = (element) => {
   ) {
     return `player-${element.dataset.playerIndex}`;
   }
+  if (element.closest('.scoreboard-row')) {
+    return 'scoreboard-row';
+  }
   if (element.classList.contains('card') && element.dataset.instanceId) {
     return `card-${element.dataset.instanceId}`;
   }
@@ -944,8 +947,8 @@ const handleDragOver = (event) => {
 
   // For spells, also check if we're over the player field row (not just individual elements)
   let target = isSpell
-    ? event.target.closest('.field-slot, .player-badge, .scoreboard-player, .card, .player-field')
-    : event.target.closest('.field-slot, .player-badge, .scoreboard-player, .card');
+    ? event.target.closest('.field-slot, .player-badge, .scoreboard-player, .card, .player-field, .scoreboard-row')
+    : event.target.closest('.field-slot, .player-badge, .scoreboard-player, .card, .scoreboard-row');
 
   // If no direct target found, check if we're still within the player badge area
   // This prevents flickering when mouse moves between child elements
@@ -1054,6 +1057,40 @@ const handleDragOver = (event) => {
     } else if (!isSpell) {
       target.classList.add('invalid-target');
     }
+  } else if (target.classList.contains('scoreboard-row')) {
+    // Entire scoreboard row as attack target (always targets opponent)
+    const isCombatPhase = latestState.phase === 'Combat';
+    const localIndex = getLocalPlayerIndex(latestState);
+    const opponentIndex = (localIndex + 1) % 2;
+    const targetPlayer = latestState.players[opponentIndex];
+    const attackerPlayer = latestState.players.find((p) => p.field.includes(draggedCard));
+
+    if (
+      isCombatPhase &&
+      targetPlayer &&
+      attackerPlayer &&
+      attackerPlayer !== targetPlayer &&
+      (draggedCard.type === 'Predator' || draggedCard.type === 'Prey')
+    ) {
+      const canAttackPlayerDirectly =
+        hasHaste(draggedCard) || draggedCard.summonedTurn < latestState.turn;
+      const hasPrecision = hasAcuity(draggedCard);
+      const targetableCreatures = targetPlayer.field.filter((card) => {
+        if (!card || (card.type !== 'Predator' && card.type !== 'Prey')) return false;
+        if (hasPrecision) return true;
+        return !isHidden(card) && !isInvisible(card);
+      });
+      const lureCreatures = targetableCreatures.filter((card) => hasLure(card));
+      const lureBlocksDirectAttack = lureCreatures.length > 0;
+
+      if (canAttackPlayerDirectly && !lureBlocksDirectAttack) {
+        target.classList.add('valid-drop-zone');
+      } else {
+        target.classList.add('invalid-target');
+      }
+    } else if (!isSpell) {
+      target.classList.add('invalid-target');
+    }
   } else if (target.classList.contains('card')) {
     if (target.dataset.instanceId === draggedCard.instanceId) {
       return;
@@ -1125,8 +1162,8 @@ const handleDrop = (event) => {
 
   // For spells, also check for player-field container
   const dropTarget = isSpell
-    ? event.target.closest('.field-slot, .player-badge, .scoreboard-player, .card, .player-field')
-    : event.target.closest('.field-slot, .player-badge, .scoreboard-player, .card');
+    ? event.target.closest('.field-slot, .player-badge, .scoreboard-player, .card, .player-field, .scoreboard-row')
+    : event.target.closest('.field-slot, .player-badge, .scoreboard-player, .card, .scoreboard-row');
 
   clearDragVisuals();
 
@@ -1150,6 +1187,13 @@ const handleDrop = (event) => {
     dropTarget?.classList.contains('scoreboard-player')
   ) {
     handlePlayerDrop(card, dropTarget);
+  } else if (dropTarget?.classList.contains('scoreboard-row')) {
+    // Treat entire scoreboard row as attack on opponent
+    const localIndex = getLocalPlayerIndex(latestState);
+    const opponentIndex = (localIndex + 1) % 2;
+    // Create a fake target with opponent's player index for handlePlayerDrop
+    const fakeTarget = { dataset: { playerIndex: String(opponentIndex) } };
+    handlePlayerDrop(card, fakeTarget);
   } else if (dropTarget?.classList.contains('card')) {
     const targetCard = getCardFromInstanceId(dropTarget.dataset.instanceId, latestState);
     if (targetCard) {

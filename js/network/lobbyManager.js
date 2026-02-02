@@ -485,15 +485,33 @@ export const updateLobbyPlayerNames = async (state, lobby = state.menu?.lobby) =
     }
     const profiles = await api.fetchProfilesByIds(playerIds);
     const profileMap = new Map(profiles.map((profile) => [profile.id, profile]));
-    if (lobby.host_id && profileMap.has(lobby.host_id)) {
-      const hostProfile = profileMap.get(lobby.host_id);
-      state.players[0].name = hostProfile.username;
-      state.players[0].nameStyle = hostProfile.name_style || {};
+
+    // Use perspective-aware assignment: local player sees themselves at their calculated index
+    const localIndex = getLocalPlayerIndex(state);
+    const remoteIndex = (localIndex + 1) % 2;
+    const localProfileId = state.menu?.profile?.id;
+
+    // Determine which profile is local vs remote
+    let localProfile = null;
+    let remoteProfile = null;
+
+    if (lobby.host_id === localProfileId) {
+      // I am the host
+      localProfile = profileMap.get(lobby.host_id);
+      remoteProfile = profileMap.get(lobby.guest_id);
+    } else if (lobby.guest_id === localProfileId) {
+      // I am the guest
+      localProfile = profileMap.get(lobby.guest_id);
+      remoteProfile = profileMap.get(lobby.host_id);
     }
-    if (lobby.guest_id && profileMap.has(lobby.guest_id)) {
-      const guestProfile = profileMap.get(lobby.guest_id);
-      state.players[1].name = guestProfile.username;
-      state.players[1].nameStyle = guestProfile.name_style || {};
+
+    if (localProfile) {
+      state.players[localIndex].name = localProfile.username;
+      state.players[localIndex].nameStyle = localProfile.name_style || {};
+    }
+    if (remoteProfile) {
+      state.players[remoteIndex].name = remoteProfile.username;
+      state.players[remoteIndex].nameStyle = remoteProfile.name_style || {};
     }
     callbacks.onUpdate?.();
   } catch (error) {
@@ -783,7 +801,7 @@ export const checkExistingLobby = async (state) => {
 // REJOIN DETECTION
 // ============================================================================
 
-const REJOIN_TIMEOUT_MS = 60000; // 60 seconds
+const REJOIN_TIMEOUT_MS = 300000; // 5 minutes
 
 /**
  * Save rejoin info when both players are in a lobby
@@ -841,12 +859,23 @@ export const checkRejoinAvailable = async (state) => {
   const info = getRejoinInfo();
   if (!info) return null;
 
-  // Check if other player is still online
-  if (!isUserOnline(info.otherPlayerId)) {
-    return null;
+  // Fast path: presence check (if opponent is confirmed online)
+  if (isUserOnline(info.otherPlayerId)) {
+    return info;
   }
 
-  return info;
+  // Fallback: verify lobby exists in database (handles presence race condition)
+  try {
+    const api = await loadSupabaseApi(state);
+    const lobby = await api.findLobbyByCode({ code: info.lobbyCode });
+    if (lobby && lobby.status !== 'closed') {
+      return info;
+    }
+  } catch (e) {
+    console.warn('Failed to check lobby for rejoin:', e);
+  }
+
+  return null;
 };
 
 /**

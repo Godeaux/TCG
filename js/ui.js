@@ -90,7 +90,11 @@ import { renderPassOverlay } from './ui/overlays/PassOverlay.js';
 import { renderMenuOverlays } from './ui/overlays/MenuOverlay.js';
 
 // Setup overlay (extracted module)
-import { renderSetupOverlay, resetSetupAIState } from './ui/overlays/SetupOverlay.js';
+import {
+  renderSetupOverlay,
+  resetSetupAIState,
+  playCoinFlipAnimation,
+} from './ui/overlays/SetupOverlay.js';
 
 // Reaction overlay (extracted module)
 import {
@@ -5237,3 +5241,9 @@ export const handleCombatPass = (state) => {
 //            calculateCardsPlayed, calculateCreaturesDefeated
 // Import: checkForVictory, showVictoryScreen, hideVictoryScreen
 // ============================================================================
+
+// ============================================================================
+// COIN FLIP ANIMATION (re-exported from SetupOverlay)
+// ============================================================================
+
+export { playCoinFlipAnimation };
