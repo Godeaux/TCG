@@ -21,6 +21,7 @@ import {
 } from '../../network/presenceManager.js';
 import { checkRejoinAvailable } from '../../network/lobbyManager.js';
 import { SoundManager } from '../../audio/soundManager.js';
+import { TutorialEngine } from './TutorialEngine.js';
 
 // ============================================================================
 // SPLASH TIPS
@@ -269,6 +270,21 @@ export const renderMenuOverlays = (state, callbacks) => {
   elements.tutorialOverlay?.classList.toggle('active', showTutorial);
   elements.tutorialOverlay?.setAttribute('aria-hidden', showTutorial ? 'false' : 'true');
 
+  // Initialize or destroy the tutorial engine based on visibility
+  if (showTutorial) {
+    const contentEl = document.getElementById('tutorial-content');
+    if (contentEl && !contentEl.dataset.tutorialInit) {
+      contentEl.dataset.tutorialInit = '1';
+      TutorialEngine.init(contentEl);
+    }
+  } else {
+    const contentEl = document.getElementById('tutorial-content');
+    if (contentEl?.dataset.tutorialInit) {
+      delete contentEl.dataset.tutorialInit;
+      TutorialEngine.destroy();
+    }
+  }
+
   elements.aiSetupOverlay?.classList.toggle('active', showAISetup);
   elements.aiSetupOverlay?.setAttribute('aria-hidden', showAISetup ? 'false' : 'true');
 
@@ -281,7 +297,7 @@ export const renderMenuOverlays = (state, callbacks) => {
   elements.changelogOverlay?.classList.toggle('active', showChangelog);
   elements.changelogOverlay?.setAttribute('aria-hidden', showChangelog ? 'false' : 'true');
 
-  // Initialize options slider when shown
+  // Initialize options sliders when shown
   if (showOptions) {
     const currentVolume = Math.round(SoundManager.getVolume() * 100);
     if (elements.optionsSoundVolume) {
@@ -289,6 +305,14 @@ export const renderMenuOverlays = (state, callbacks) => {
     }
     if (elements.optionsSoundValue) {
       elements.optionsSoundValue.textContent = `${currentVolume}%`;
+    }
+    // Sync channel sliders
+    for (const ch of SoundManager.getChannelNames()) {
+      const slider = document.getElementById(`options-${ch}-volume`);
+      const label = document.getElementById(`options-${ch}-value`);
+      const val = Math.round(SoundManager.getChannelVolume(ch) * 100);
+      if (slider) slider.value = val;
+      if (label) label.textContent = `${val}%`;
     }
   }
 

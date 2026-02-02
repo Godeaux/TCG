@@ -14,7 +14,7 @@ Prefer subagents for exploration and research. Use the Explore agent liberally f
 
 ## Architecture Rules
 
-When the user prefixes a message with a role tag like `[cards]`, `[ai]`, `[system]`, `[bug]`, `[ui]`, or `[multi]`, you MUST:
+When the user prefixes a message with a role tag like `[cards]`, `[ai]`, `[system]`, `[bug]`, `[ui]`, `[multi]`, or `[audio]`, you MUST:
 
 1. Read `ROLES.md` to understand the role's identity, domain, approach, and boundaries
 2. Adopt that role's mindset fully for the duration of the task
@@ -37,6 +37,7 @@ This role system ensures focused, expert-level work on specific areas of the cod
 - **[bug]** Bug Hunter — Traces bugs, finds root causes, minimal fixes
 - **[ui]** UI Specialist — Visual polish, animations, responsiveness
 - **[multi]** Multiplayer Engineer — Sync, networking, desync issues
+- **[audio]** Audio Engineer — Sound design, music system, per-card audio, mixing
 
 **Module boundaries are strict:**
 
@@ -48,6 +49,7 @@ This role system ensures focused, expert-level work on specific areas of the cod
 | `ui/` | Rendering, input, animations, components, overlays | State mutation, game rules |
 | `network/` | Serialization, sync, database, lobby, presence | DOM, game rules |
 | `ai/` | Decision-making, evaluation, move generation | DOM, state mutation |
+| `audio/` | Sound playback, music, sound registry, mixing | State mutation, game rules, DOM |
 | `simulation/` | Bug detection, invariant checks, validation | DOM, networking |
 
 **Data flow (always follow this):**

@@ -21,7 +21,30 @@ let overlayElement = null;
 // OVERLAY HTML TEMPLATE
 // ============================================================================
 
-const createOverlayHTML = () => `
+const CHANNEL_LABELS = {
+  music: { icon: '🎵', label: 'Music' },
+  sfx: { icon: '🔊', label: 'Sound Effects' },
+  voice: { icon: '🗣️', label: 'Voice / Creature' },
+};
+
+const createOverlayHTML = () => {
+  const channelSliders = SoundManager.getChannelNames().map(ch => {
+    const info = CHANNEL_LABELS[ch] || { icon: '🔈', label: ch };
+    const val = Math.round(SoundManager.getChannelVolume(ch) * 100);
+    return `
+      <div class="settings-section">
+        <label class="settings-label" for="settings-overlay-${ch}">
+          <span class="settings-label-icon">${info.icon}</span>
+          ${info.label}
+        </label>
+        <div class="settings-slider-row">
+          <input type="range" id="settings-overlay-${ch}" class="settings-slider" min="0" max="100" value="${val}" data-channel="${ch}">
+          <span class="settings-value" id="settings-overlay-${ch}-value">${val}%</span>
+        </div>
+      </div>`;
+  }).join('');
+
+  return `
   <div class="overlay-content settings-overlay-card">
     <div class="settings-overlay-header">
       <h2>Settings</h2>
@@ -31,19 +54,20 @@ const createOverlayHTML = () => `
       <div class="settings-section">
         <label class="settings-label" for="settings-overlay-volume">
           <span class="settings-label-icon">🔊</span>
-          Sound Volume
+          Master Volume
         </label>
         <div class="settings-slider-row">
           <input type="range" id="settings-overlay-volume" class="settings-slider" min="0" max="100" value="50">
           <span class="settings-value" id="settings-overlay-volume-value">50%</span>
         </div>
       </div>
+      ${channelSliders}
     </div>
     <div class="settings-overlay-footer">
       <button class="btn-secondary" id="settings-overlay-done">Done</button>
     </div>
-  </div>
-`;
+  </div>`;
+};
 
 // ============================================================================
 // DOM ELEMENTS
@@ -74,15 +98,31 @@ const updateVolumeDisplay = () => {
   if (elements.volumeValue) {
     elements.volumeValue.textContent = `${currentVolume}%`;
   }
+
+  // Update channel sliders
+  for (const ch of SoundManager.getChannelNames()) {
+    const slider = overlayElement?.querySelector(`#settings-overlay-${ch}`);
+    const label = overlayElement?.querySelector(`#settings-overlay-${ch}-value`);
+    const val = Math.round(SoundManager.getChannelVolume(ch) * 100);
+    if (slider) slider.value = val;
+    if (label) label.textContent = `${val}%`;
+  }
 };
 
 const handleVolumeChange = (e) => {
   const value = parseInt(e.target.value, 10);
-  SoundManager.setVolume(value / 100);
+  const channel = e.target.dataset.channel;
 
-  const elements = getElements();
-  if (elements.volumeValue) {
-    elements.volumeValue.textContent = `${value}%`;
+  if (channel) {
+    SoundManager.setChannelVolume(channel, value / 100);
+    const label = overlayElement?.querySelector(`#settings-overlay-${channel}-value`);
+    if (label) label.textContent = `${value}%`;
+  } else {
+    SoundManager.setVolume(value / 100);
+    const elements = getElements();
+    if (elements.volumeValue) {
+      elements.volumeValue.textContent = `${value}%`;
+    }
   }
 };
 
@@ -114,6 +154,12 @@ export const showSettingsOverlay = () => {
     elements.closeBtn?.addEventListener('click', hideSettingsOverlay);
     elements.doneBtn?.addEventListener('click', hideSettingsOverlay);
     elements.volumeSlider?.addEventListener('input', handleVolumeChange);
+
+    // Bind channel volume sliders
+    for (const ch of SoundManager.getChannelNames()) {
+      const slider = overlayElement.querySelector(`#settings-overlay-${ch}`);
+      slider?.addEventListener('input', handleVolumeChange);
+    }
 
     // Close on overlay background click
     overlayElement.addEventListener('click', (e) => {

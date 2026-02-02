@@ -1,102 +1,145 @@
-// Sound manager for game audio
+// Sound Manager — unified API for all game audio
+// Delegates to AudioChannels (volume), SoundRegistry (card sounds),
+// and SoundScheduler (priority/throttling)
 
-// Sound registry - maps sound names to file paths
-const SOUNDS = {
+import { EVENT_SOUNDS, SoundRegistry } from './soundRegistry.js';
+import { AudioChannels } from './audioChannels.js';
+import { SoundScheduler, SoundPriority } from './soundScheduler.js';
+
+// Preloaded audio cache for event sounds (small set, always loaded)
+const eventAudioCache = {};
+
+// Which channel each sound category belongs to
+const SOUND_CHANNELS = {
   // UI
-  turnEnd: 'audio/turn-end.wav',
-  cardDraw: 'audio/card-draw.wav',
+  turnEnd: 'sfx',
+  cardDraw: 'sfx',
 
   // Combat
-  attackWhoosh: 'audio/attack-whoosh.wav',
-  impactMedium: 'audio/impact-medium.wav',
-  impactHeavy: 'audio/impact-heavy.wav',
-  creatureDeath: 'audio/creature-death.wav',
+  attackWhoosh: 'sfx',
+  impactMedium: 'sfx',
+  impactHeavy: 'sfx',
+  creatureDeath: 'sfx',
 
   // Card play
-  cardSlam: 'audio/card-slam.wav',
-  cardSlamHeavy: 'audio/card-slam-heavy.wav',
+  cardSlam: 'sfx',
+  cardSlamHeavy: 'sfx',
 
   // Consumption
-  consumptionCrunch: 'audio/consumption-crunch.wav',
+  consumptionCrunch: 'sfx',
 };
 
-// LocalStorage key for volume
-const VOLUME_KEY = 'foodchain_sound_volume';
+// Default priority for known sounds
+const SOUND_PRIORITIES = {
+  attackWhoosh: SoundPriority.HIGH,
+  impactMedium: SoundPriority.HIGH,
+  impactHeavy: SoundPriority.HIGH,
+  cardSlam: SoundPriority.HIGH,
+  cardSlamHeavy: SoundPriority.HIGH,
+  consumptionCrunch: SoundPriority.HIGH,
+  creatureDeath: SoundPriority.NORMAL,
+  cardDraw: SoundPriority.LOW,
+  turnEnd: SoundPriority.NORMAL,
+};
 
-// Cached Audio objects
-const audioCache = {};
-
-// Volume level (0-1)
-let volume = loadVolume();
-
-// Load volume from localStorage
-function loadVolume() {
-  try {
-    const stored = localStorage.getItem(VOLUME_KEY);
-    if (stored !== null) {
-      const val = parseFloat(stored);
-      if (!isNaN(val) && val >= 0 && val <= 1) {
-        return val;
-      }
-    }
-  } catch {
-    // localStorage not available
-  }
-  return 0.5; // default volume
-}
-
-// Save volume to localStorage
-function saveVolume(val) {
-  try {
-    localStorage.setItem(VOLUME_KEY, String(val));
-  } catch {
-    // localStorage not available
-  }
-}
-
-// Preload sounds into cache
-const preloadSounds = () => {
-  Object.entries(SOUNDS).forEach(([name, path]) => {
+function preloadEventSounds() {
+  for (const [name, path] of Object.entries(EVENT_SOUNDS)) {
     const audio = new Audio(path);
     audio.preload = 'auto';
-    audioCache[name] = audio;
+    eventAudioCache[name] = audio;
+  }
+}
+
+function playAudioClone(source, volume, id, priority) {
+  if (volume === 0) return;
+  const sound = source.cloneNode();
+  sound.volume = volume;
+
+  const scheduled = SoundScheduler.schedule(sound, { id, priority });
+  if (!scheduled) return;
+
+  sound.play().catch((err) => {
+    if (err.name !== 'NotAllowedError') {
+      console.warn(`[SoundManager] Failed to play ${id}:`, err);
+    }
   });
-};
+}
 
 export const SoundManager = {
   init() {
-    preloadSounds();
+    preloadEventSounds();
   },
 
+  // Play a named event sound (backward-compatible API)
   play(soundName) {
-    // Skip if volume is 0
-    if (volume === 0) {
-      return;
-    }
+    const channelName = SOUND_CHANNELS[soundName] || 'sfx';
+    const vol = AudioChannels.getVolume(channelName);
+    if (vol === 0) return;
 
-    const audio = audioCache[soundName];
+    const audio = eventAudioCache[soundName];
     if (!audio) {
       console.warn(`[SoundManager] Unknown sound: ${soundName}`);
       return;
     }
 
-    // Clone the audio for overlapping sounds
-    const sound = audio.cloneNode();
-    sound.volume = volume;
-    sound.play().catch((err) => {
-      // Ignore autoplay errors (browser policy)
-      if (err.name !== 'NotAllowedError') {
-        console.warn(`[SoundManager] Failed to play ${soundName}:`, err);
-      }
-    });
+    const priority = SOUND_PRIORITIES[soundName] || SoundPriority.NORMAL;
+    playAudioClone(audio, vol, soundName, priority);
   },
 
+  // Play a card-specific sound (on-demand loaded)
+  // usage: SoundManager.playCard('apex-shark', 'onPlay')
+  async playCard(cardId, event) {
+    const vol = AudioChannels.getVolume('voice');
+    if (vol === 0) return;
+
+    const audio = await SoundRegistry.getCardAudio(cardId, event);
+    if (!audio) return;
+
+    playAudioClone(audio, vol, `${cardId}:${event}`, SoundPriority.CRITICAL);
+  },
+
+  // --- Volume API (backward-compatible) ---
+
   getVolume() {
-    return volume;
+    return AudioChannels.getMasterVolume();
   },
 
   setVolume(val) {
-    volume = Math.max(0, Math.min(1, val));
-    saveVolume(volume);
+    AudioChannels.setMasterVolume(val);
+  },
+
+  // --- Per-channel volume API ---
+
+  getChannelVolume(channel) {
+    return AudioChannels.getChannelVolume(channel);
+  },
+
+  setChannelVolume(channel, val) {
+    AudioChannels.setChannelVolume(channel, val);
+  },
+
+  getChannelNames() {
+    return AudioChannels.getChannelNames();
+  },
+
+  // --- Card registry pass-through ---
+
+  registerCardSounds(config) {
+    SoundRegistry.registerCards(config);
+  },
+
+  preloadDeckSounds(cardIds) {
+    return SoundRegistry.preloadForDeck(cardIds);
+  },
+
+  // --- Lifecycle ---
+
+  stopAll() {
+    SoundScheduler.stopAll();
+  },
+
+  dispose() {
+    SoundScheduler.dispose();
+    SoundRegistry.clearCache();
   },
 };

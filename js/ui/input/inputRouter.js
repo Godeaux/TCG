@@ -569,13 +569,26 @@ const initNavigation = () => {
     latestCallbacks.onUpdate?.();
   });
 
-  // Options: Sound volume slider
+  // Options: Master volume slider
   elements.optionsSoundVolume?.addEventListener('input', (e) => {
     const value = parseInt(e.target.value, 10);
     SoundManager.setVolume(value / 100);
     if (elements.optionsSoundValue) {
       elements.optionsSoundValue.textContent = `${value}%`;
     }
+  });
+
+  // Options: Per-channel volume sliders
+  document.querySelectorAll('.options-channel-slider').forEach(slider => {
+    slider.addEventListener('input', (e) => {
+      const value = parseInt(e.target.value, 10);
+      const channel = e.target.dataset.channel;
+      if (channel) {
+        SoundManager.setChannelVolume(channel, value / 100);
+        const label = document.getElementById(`options-${channel}-value`);
+        if (label) label.textContent = `${value}%`;
+      }
+    });
   });
 
   // Options: Back button

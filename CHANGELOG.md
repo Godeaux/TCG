@@ -4,6 +4,43 @@ All notable changes to Food Chain TCG.
 
 ---
 
+## v0.16 — Host-authoritative multiplayer, interactive tutorial, and audio channels
+
+### Multiplayer Overhaul
+- Built host-authoritative ActionBus: all online actions route through central dispatch
+- Added action validation layer (host rejects illegal actions before controller)
+- Added reliable sync: sequence numbers, checksums, ACK protocol, desync recovery
+- Added persistent action log for replay and reconnection
+- Hearthstone-model refactor: optimistic execution, pure controller, clean separation
+- Deterministic card instance IDs for multiplayer sync
+- Fixed ActionBus host detection, turn-gating, and dual broadcast bugs
+- Removed ~100 leftover debug console.log statements
+
+### Interactive Tutorial Engine
+- Replaced static HTML tutorial with scene-driven TutorialEngine
+- Side-by-side layout: animated card stage (left) + text panel (right)
+- Visual effects: damage pops, heal pops, buff rises, spell bursts, attack ghosts
+- Scene navigation with prev/next buttons
+- Responsive: stacks vertically on mobile
+
+### Audio System Upgrade
+- Refactored SoundManager into channel-based architecture (Music, SFX, Voice)
+- Added SoundRegistry for per-card sound mapping with on-demand loading
+- Added SoundScheduler for priority and throttling
+- Per-channel volume sliders in both menu options and settings overlay
+- Master volume renamed from "Sound Volume"
+
+### Gameplay
+- Pre-resolve targeting and trap reactions for card play
+- Fixed consumption timing: additional consumption allowed before onPlay effects fire
+
+### UI Polish
+- Animated splash tips on main menu
+- Stable click zone for splash tip cycling
+- Added [audio] Audio Engineer role to ROLES.md
+
+---
+
 ## v0.15 — Experimental deck polish and Insect identity
 
 - Fixed Crustacean deck: removed mana costs, added nutrition values, fixed Free Spells
