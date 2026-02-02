@@ -3,6 +3,7 @@
     {
       "id": "mammal-prey-western-harvest-mouse",
       "name": "Western Harvest Mouse",
+      "flavorText": "Weighing under 15 grams, it builds spherical grass nests and can produce up to 10 litters per year.",
       "type": "Prey",
       "atk": 0,
       "hp": 1,
@@ -16,6 +17,7 @@
     {
       "id": "mammal-prey-arctic-ground-squirrels",
       "name": "Arctic Ground Squirrels",
+      "flavorText": "The only mammal that can supercool its body below freezing — brain temperature drops to -3°C during hibernation.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -31,6 +33,7 @@
     {
       "id": "mammal-prey-snowshoe-hare",
       "name": "Snowshoe Hare",
+      "flavorText": "Its oversized hind feet act like snowshoes, and its coat turns white in winter — a full molt every season.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -43,6 +46,7 @@
     {
       "id": "mammal-prey-bobcat",
       "name": "Bobcat",
+      "flavorText": "A solitary ambush hunter that can take down prey up to 8x its weight, including deer and small livestock.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -57,6 +61,7 @@
     {
       "id": "mammal-prey-florida-white-rabbit",
       "name": "Florida White Rabbit",
+      "flavorText": "Domestic rabbits can conceive again within hours of giving birth — a 30-day gestation fuels explosive population growth.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -70,6 +75,7 @@
     {
       "id": "mammal-prey-giant-golden-mole",
       "name": "Giant Golden Mole",
+      "flavorText": "Completely blind and earless, it 'swims' through Namib Desert sand using powerful forelimbs to detect vibrations from prey.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -82,6 +88,7 @@
     {
       "id": "mammal-prey-japanese-weasel",
       "name": "Japanese Weasel",
+      "flavorText": "Has anal scent glands that spray a foul musk when threatened. It can kill rats, frogs, and snakes twice its size.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -93,6 +100,7 @@
     {
       "id": "mammal-prey-meerkat-matriarch",
       "name": "Meerkat Matriarch",
+      "flavorText": "The dominant female produces 80% of the mob's pups and can kill subordinates' offspring to maintain control.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -106,6 +114,7 @@
     {
       "id": "mammal-prey-north-american-opossum",
       "name": "North American Opossum",
+      "flavorText": "Its 'playing dead' is involuntary — a catatonic state lasting up to 4 hours, complete with drool and foul odor.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -117,6 +126,7 @@
     {
       "id": "mammal-prey-black-tree-kangaroo",
       "name": "Black Tree-kangaroo",
+      "flavorText": "One of the few kangaroo species adapted to trees — it can leap 30 feet down to the forest floor unharmed.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -130,6 +140,7 @@
     {
       "id": "mammal-prey-platypus",
       "name": "Platypus",
+      "flavorText": "One of five egg-laying mammals. Males have venomous ankle spurs that deliver excruciating, morphine-resistant pain.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -143,6 +154,7 @@
     {
       "id": "mammal-prey-red-handed-howler",
       "name": "Red-handed Howler",
+      "flavorText": "Its howl reaches 140 decibels — audible 3 miles away — thanks to an enlarged hyoid bone that acts as a resonator.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -157,6 +169,7 @@
     {
       "id": "mammal-prey-sable",
       "name": "Sable",
+      "flavorText": "Its fur was once worth more than gold by weight. Sables are one of few mustelids that breed only once per year.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -169,6 +182,7 @@
     {
       "id": "mammal-prey-pronghorn",
       "name": "Pronghorn",
+      "flavorText": "Sustains 55 mph over long distances — evolved alongside now-extinct American cheetahs, explaining its extreme speed.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -180,6 +194,7 @@
     {
       "id": "mammal-prey-golden-takin",
       "name": "Golden Takin",
+      "flavorText": "Secretes an oily substance that waterproofs its coat in Himalayan rains. Herds live above 4,000 meters elevation.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -191,6 +206,7 @@
     {
       "id": "mammal-prey-black-springbok",
       "name": "Black Springbok",
+      "flavorText": "Performs 'pronking' — leaping 6 feet straight up — likely to signal fitness to predators and deter pursuit.",
       "type": "Prey",
       "atk": 1,
       "hp": 2,
@@ -204,6 +220,7 @@
     {
       "id": "mammal-prey-holstein-friesian",
       "name": "Holstein Friesian",
+      "flavorText": "The world's highest-producing dairy breed, averaging 23,000 lbs of milk per year — over 2,600 gallons annually.",
       "type": "Prey",
       "atk": 1,
       "hp": 3,
@@ -216,6 +233,7 @@
     {
       "id": "mammal-prey-hart",
       "name": "Hart",
+      "flavorText": "A mature male red deer. It regrows its antlers annually — up to an inch per day, the fastest bone growth in any mammal.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -227,6 +245,7 @@
     {
       "id": "mammal-prey-malayan-tapir",
       "name": "Malayan Tapir",
+      "flavorText": "A key seed disperser — its dung germinates forest plants. Calves are born with stripes that fade to black and white.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -238,6 +257,7 @@
     {
       "id": "mammal-prey-mountain-zebra",
       "name": "Mountain Zebra",
+      "flavorText": "Adapted to steep, rocky terrain above 2,000 meters. Its stripe pattern is species-unique — narrow with a white belly.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -258,6 +278,7 @@
     {
       "id": "mammal-prey-mountain-reindeer",
       "name": "Mountain Reindeer",
+      "flavorText": "The only deer species where both sexes grow antlers. Their eyes shift to UV vision in winter to spot lichen on snow.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -270,6 +291,7 @@
     {
       "id": "mammal-prey-muskox",
       "name": "Muskox",
+      "flavorText": "Its qiviut undercoat is 8x warmer than sheep wool by weight. Herds form defensive circles against wolves, calves inside.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -283,6 +305,7 @@
     {
       "id": "mammal-prey-giant-forest-hog",
       "name": "Giant Forest Hog",
+      "flavorText": "The largest wild pig — up to 600 lbs. Only discovered by science in 1904 despite living in African forests for millennia.",
       "type": "Prey",
       "atk": 3,
       "hp": 2,
@@ -292,6 +315,7 @@
     {
       "id": "mammal-prey-alaskan-moose",
       "name": "Alaskan Moose",
+      "flavorText": "The largest deer species — bulls exceed 1,500 lbs with 6-foot antler spans. They can dive 18 feet to eat aquatic plants.",
       "type": "Prey",
       "atk": 3,
       "hp": 3,
@@ -301,6 +325,7 @@
     {
       "id": "mammal-predator-dholes",
       "name": "Dholes",
+      "flavorText": "Asian wild dogs that communicate with whistles instead of howls. Packs of 12+ can drive tigers off their kills.",
       "type": "Predator",
       "atk": 1,
       "hp": 1,
@@ -315,6 +340,7 @@
     {
       "id": "mammal-predator-eurasian-lynx",
       "name": "Eurasian Lynx",
+      "flavorText": "Europe's third-largest predator. Its tufted ears improve hearing by 20%, and it can detect a hare at 300 meters.",
       "type": "Predator",
       "atk": 2,
       "hp": 1,
@@ -326,6 +352,7 @@
     {
       "id": "mammal-predator-gray-wolf",
       "name": "Gray Wolf",
+      "flavorText": "Packs maintain territories of 80-300 square miles. Their reintroduction to Yellowstone literally changed river courses.",
       "type": "Predator",
       "atk": 2,
       "hp": 2,
@@ -337,6 +364,7 @@
     {
       "id": "mammal-predator-black-leopards",
       "name": "Black Leopards",
+      "flavorText": "Melanism occurs in about 11% of leopards. Their rosette markings are still visible under infrared light.",
       "type": "Predator",
       "atk": 3,
       "hp": 2,
@@ -349,6 +377,7 @@
     {
       "id": "mammal-predator-jaguar",
       "name": "Jaguar",
+      "flavorText": "Has the strongest bite relative to size of any big cat — powerful enough to pierce turtle shells and caiman skulls.",
       "type": "Predator",
       "atk": 3,
       "hp": 3,
@@ -359,6 +388,7 @@
     {
       "id": "mammal-predator-north-american-cougar",
       "name": "North American Cougar",
+      "flavorText": "Holds the record for the largest range of any wild land mammal in the Americas — from Yukon to Patagonia.",
       "type": "Predator",
       "atk": 3,
       "hp": 3,
@@ -369,6 +399,7 @@
     {
       "id": "mammal-predator-malayan-tiger",
       "name": "Malayan Tiger",
+      "flavorText": "Fewer than 150 remain in the wild, making it the most endangered tiger subspecies. It hunts sun bears and tapirs.",
       "type": "Predator",
       "atk": 3,
       "hp": 3,
@@ -377,6 +408,7 @@
     {
       "id": "mammal-predator-southern-african-lion",
       "name": "Southern African Lion",
+      "flavorText": "A lion's roar reaches 114 decibels, audible 5 miles away. Females do 90% of the hunting; males defend territory.",
       "type": "Predator",
       "atk": 3,
       "hp": 3,
@@ -387,6 +419,7 @@
     {
       "id": "mammal-predator-sumatran-tiger",
       "name": "Sumatran Tiger",
+      "flavorText": "The smallest surviving tiger — about half the size of a Bengal. It has webbed toes for swimming through Sumatran swamps.",
       "type": "Predator",
       "atk": 3,
       "hp": 3,
@@ -397,6 +430,7 @@
     {
       "id": "mammal-predator-cheetah",
       "name": "Cheetah",
+      "flavorText": "Reaches 70 mph in 3 seconds but overheats after 30 seconds. It succeeds in only 40-50% of hunts.",
       "type": "Predator",
       "atk": 4,
       "hp": 2,
@@ -405,6 +439,7 @@
     {
       "id": "mammal-predator-grizzly-bear",
       "name": "Grizzly Bear",
+      "flavorText": "Emerges from hibernation having lost up to a third of its body weight. It can eat 90 lbs of food per day in autumn.",
       "type": "Predator",
       "atk": 4,
       "hp": 4,
@@ -415,6 +450,7 @@
     {
       "id": "mammal-predator-kodiak-bear",
       "name": "Kodiak Bear",
+      "flavorText": "The largest brown bear subspecies — males exceed 1,500 lbs. Isolated on Kodiak Island for 12,000 years.",
       "type": "Predator",
       "atk": 5,
       "hp": 5,
@@ -426,6 +462,7 @@
     {
       "id": "mammal-predator-polar-bear",
       "name": "Polar Bear",
+      "flavorText": "Its fur is transparent, not white — each hollow hair scatters light. Its skin underneath is jet black to absorb heat.",
       "type": "Predator",
       "atk": 5,
       "hp": 5,
@@ -436,6 +473,7 @@
     {
       "id": "mammal-predator-hippopotamus",
       "name": "Hippopotamus",
+      "flavorText": "Kills more humans in Africa than any other large animal. It secretes natural red sunscreen and can outrun most people.",
       "type": "Predator",
       "atk": 6,
       "hp": 6,
@@ -446,6 +484,7 @@
     {
       "id": "mammal-spell-blizzard",
       "name": "Blizzard",
+      "flavorText": "Mammals survive blizzards via brown fat thermogenesis — burning specialized fat cells to generate heat without shivering.",
       "type": "Spell",
       "effects": {
         "effect": [
@@ -458,6 +497,7 @@
     {
       "id": "mammal-spell-milk",
       "name": "Milk",
+      "flavorText": "Mammary glands define the class Mammalia. Milk composition varies wildly — hooded seal milk is 60% fat.",
       "type": "Spell",
       "effects": {
         "effect": { "type": "buffStats", "params": { "targetType": "all-friendly", "stats": { "attack": 2, "health": 2 } } }
@@ -466,6 +506,7 @@
     {
       "id": "mammal-spell-rifle",
       "name": "Rifle",
+      "flavorText": "Firearms drove 2% of mammal species to extinction since 1500. Humans are the only mammal to hunt at global scale.",
       "type": "Spell",
       "effects": {
         "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to kill", "effect": { "kill": true } } }
@@ -474,6 +515,7 @@
     {
       "id": "mammal-spell-six-layered-neocortex",
       "name": "Six-layered Neocortex",
+      "flavorText": "Unique to mammals, this brain structure handles reasoning and language. In humans it contains 16 billion neurons.",
       "type": "Spell",
       "effects": {
         "effect": { "type": "selectCreatureFromDeckWithKeyword", "params": { "keyword": "Frozen" } }
@@ -482,6 +524,7 @@
     {
       "id": "mammal-spell-white-hart",
       "name": "White Hart",
+      "flavorText": "White deer lack camouflage yet survive — many cultures historically forbade hunting them, creating accidental refuges.",
       "type": "Spell",
       "effects": {
         "effect": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-carrion", "title": "Choose a carrion to play", "effect": { "play": true, "keyword": "Frozen" } } }
@@ -490,6 +533,7 @@
     {
       "id": "mammal-free-spell-curiosity",
       "name": "Curiosity",
+      "flavorText": "Neophilia — attraction to novelty — is a mammalian trait linked to dopamine. It drives exploration but increases predation risk.",
       "type": "Free Spell",
       "effects": {
         "effect": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-creatures", "title": "Choose a creature to sacrifice", "effect": { "sacrifice": true, "draw": 3 } } }
@@ -498,6 +542,7 @@
     {
       "id": "mammal-free-spell-tranquilizer",
       "name": "Tranquilizer",
+      "flavorText": "Modern tranquilizer darts use etorphine — 3,000x stronger than morphine — and can immobilize an elephant in 10 minutes.",
       "type": "Free Spell",
       "effects": {
         "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to freeze", "effect": { "keyword": "Frozen" } } }
@@ -506,6 +551,7 @@
     {
       "id": "mammal-free-spell-warm-blood",
       "name": "Warm Blood",
+      "flavorText": "Endothermy lets mammals stay active in any climate. Maintaining 37°C costs 10x more energy than cold-blooded life.",
       "type": "Free Spell",
       "effects": {
         "effect": { "type": "removeFrozenFromFriendlies" }
@@ -514,6 +560,7 @@
     {
       "id": "mammal-trap-human-intervention",
       "name": "Human Intervention",
+      "flavorText": "Wildlife management relocated 67 gray wolves to Yellowstone in 1995-96, triggering a trophic cascade across the ecosystem.",
       "type": "Trap",
       "trigger": "targeted",
       "effects": {
@@ -523,6 +570,7 @@
     {
       "id": "mammal-trap-pitfall",
       "name": "Pitfall",
+      "flavorText": "Pitfall traps date back 45,000 years in mammoth hunting. Humans are the only mammal to engineer passive traps.",
       "type": "Trap",
       "trigger": "directAttack",
       "effects": {
@@ -535,6 +583,7 @@
     {
       "id": "mammal-trap-snow-squall",
       "name": "Snow Squall",
+      "flavorText": "Sudden whiteout events drop visibility to zero. Arctic mammals survive by sensing magnetic fields to navigate blind.",
       "type": "Trap",
       "trigger": "indirectDamage",
       "effects": {
@@ -547,6 +596,7 @@
     {
       "id": "mammal-trap-burial-ground",
       "name": "Burial Ground",
+      "flavorText": "Elephants revisit bones of dead relatives, gently touching them with their trunks — one of few mammals to mourn their dead.",
       "type": "Trap",
       "trigger": "slain",
       "effects": {

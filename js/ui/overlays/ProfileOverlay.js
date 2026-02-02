@@ -14,6 +14,7 @@
 
 import { getAllCards } from '../../cards/index.js';
 import { renderCard } from '../components/Card.js';
+import { showCardTooltip, hideCardTooltip } from '../components/CardTooltip.js';
 import { RARITY_COLORS, RARITY_LABELS } from '../../packs/packConfig.js';
 import { clearOpponentDragPreview } from '../components/OpponentHandStrip.js';
 import {
@@ -144,6 +145,14 @@ const renderCollectionCard = (card, ownedRarity, onClick) => {
     gem.title = RARITY_LABELS[ownedRarity];
     cardEl.appendChild(gem);
   }
+
+  // Show tooltip with flavor text on hover (desktop) and click (mobile)
+  cardEl.addEventListener('mouseenter', () => {
+    showCardTooltip(card, cardEl, { showPreview: true, context: 'collection' });
+  });
+  cardEl.addEventListener('mouseleave', () => {
+    hideCardTooltip();
+  });
 
   wrapper.appendChild(cardEl);
   return wrapper;

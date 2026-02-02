@@ -3,6 +3,7 @@
     {
       "id": "bird-prey-kakapo",
       "name": "Kākāpō",
+      "flavorText": "The world's heaviest parrot, it can't fly. Only 250 remain, breeding once every 2-4 years.",
       "type": "Prey",
       "atk": 0,
       "hp": 2,
@@ -16,6 +17,7 @@
     {
       "id": "bird-prey-carrier-pigeon",
       "name": "Carrier Pigeon",
+      "flavorText": "Homing pigeons navigate using Earth's magnetic field, infrasound, and visual landmarks.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -30,6 +32,7 @@
     {
       "id": "bird-prey-common-swift",
       "name": "Common Swift",
+      "flavorText": "Swifts can stay airborne for 10 months straight, sleeping, eating, and mating in flight.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -39,6 +42,7 @@
     {
       "id": "bird-prey-doctor-bird",
       "name": "Doctor Bird",
+      "flavorText": "Jamaica's national bird, the red-billed streamertail beats its wings 80 times per second.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -51,6 +55,7 @@
     {
       "id": "bird-prey-doves",
       "name": "Doves",
+      "flavorText": "Doves produce crop milk -- a nutrient-rich secretion to feed their chicks, like mammalian lactation.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -67,6 +72,7 @@
     {
       "id": "bird-prey-eurasian-magpie",
       "name": "Eurasian Magpie",
+      "flavorText": "One of the few non-mammals to pass the mirror test, recognizing its own reflection.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -81,6 +87,7 @@
     {
       "id": "bird-prey-golden-headed-manakin",
       "name": "Golden-Headed Manakin",
+      "flavorText": "Males perform a moonwalk-like slide on branches to impress females, snapping wing feathers audibly.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -92,6 +99,7 @@
     {
       "id": "bird-prey-golden-song-sparrows",
       "name": "Golden Song Sparrows",
+      "flavorText": "Song sparrows learn regional dialects; neighboring populations sing noticeably different tunes.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -107,6 +115,7 @@
     {
       "id": "bird-prey-mexican-violetear",
       "name": "Mexican Violetear",
+      "flavorText": "This hummingbird's iridescent violet ear patches shift color depending on the angle of light.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -118,6 +127,7 @@
     {
       "id": "bird-prey-mockingbird",
       "name": "Mockingbird",
+      "flavorText": "A single mockingbird can learn over 200 songs, mimicking other birds, frogs, and car alarms.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -129,6 +139,7 @@
     {
       "id": "bird-prey-moluccan-cockatoo",
       "name": "Moluccan Cockatoo",
+      "flavorText": "Cockatoos are among the few animals that craft tools, trimming sticks to extract grubs from bark.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -140,6 +151,7 @@
     {
       "id": "bird-prey-oriental-magpies",
       "name": "Oriental Magpies",
+      "flavorText": "Oriental magpies mate for life and hold \"funerals,\" gathering around their dead in silence.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -156,6 +168,7 @@
     {
       "id": "bird-prey-quetzal",
       "name": "Quetzal",
+      "flavorText": "Quetzals swallow avocados whole, then regurgitate the pits -- making them key seed dispersers.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -168,6 +181,7 @@
     {
       "id": "bird-prey-raven",
       "name": "Raven",
+      "flavorText": "Ravens cache food in dozens of locations and remember each one for months.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -179,6 +193,7 @@
     {
       "id": "bird-prey-robin",
       "name": "Robin",
+      "flavorText": "Robins can see Earth's magnetic field through quantum effects in proteins in their eyes.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -191,6 +206,7 @@
     {
       "id": "bird-prey-seagull",
       "name": "Seagull",
+      "flavorText": "Gulls drink both fresh and salt water, filtering out salt through glands above their eyes.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -202,6 +218,7 @@
     {
       "id": "bird-prey-white-bellbird",
       "name": "White Bellbird",
+      "flavorText": "At 125 decibels, its mating call is as loud as a rock concert -- the loudest bird on record.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -213,6 +230,7 @@
     {
       "id": "bird-prey-hoatzin",
       "name": "Hoatzin",
+      "flavorText": "The only bird that digests leaves by fermentation, like a cow. Nicknamed the \"stinkbird.\"",
       "type": "Prey",
       "atk": 2,
       "hp": 1,
@@ -225,6 +243,7 @@
     {
       "id": "bird-prey-golden-goose",
       "name": "Golden Goose",
+      "flavorText": "Domestic geese were among the first animals domesticated, over 3,000 years ago in ancient Egypt.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -238,6 +257,7 @@
     {
       "id": "bird-prey-indian-peacock",
       "name": "Indian Peacock",
+      "flavorText": "A peacock's tail has microscopic crystal structures that create color through light interference, not pigment.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -251,6 +271,7 @@
     {
       "id": "bird-prey-jersey-giant",
       "name": "Jersey Giant",
+      "flavorText": "The largest chicken breed, Jersey Giants can weigh over 13 lbs and were bred to replace turkeys.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -263,6 +284,7 @@
     {
       "id": "bird-prey-pileated-woodpecker",
       "name": "Pileated Woodpecker",
+      "flavorText": "It strikes wood at 20 times per second. A spongy skull bone absorbs the shock of each impact.",
       "type": "Prey",
       "atk": 3,
       "hp": 1,
@@ -272,6 +294,7 @@
     {
       "id": "bird-prey-black-swan",
       "name": "Black Swan",
+      "flavorText": "Native only to Australia, black swans were once thought impossible by Europeans -- inspiring a philosophy term.",
       "type": "Prey",
       "atk": 3,
       "hp": 3,
@@ -284,6 +307,7 @@
     {
       "id": "bird-prey-eastern-wild-turkey",
       "name": "Eastern Wild Turkey",
+      "flavorText": "Wild turkeys can fly at 55 mph in bursts and roost in trees, unlike their domestic relatives.",
       "type": "Prey",
       "atk": 3,
       "hp": 3,
@@ -296,6 +320,7 @@
     {
       "id": "bird-predator-black-and-white-hawk-eagle",
       "name": "Black-and-white Hawk-eagle",
+      "flavorText": "This eagle hunts toucans, macaws, and monkeys in the treetops of Central and South American rainforests.",
       "type": "Predator",
       "atk": 2,
       "hp": 2,
@@ -307,6 +332,7 @@
     {
       "id": "bird-predator-firehawk",
       "name": "Firehawk",
+      "flavorText": "Black kites and brown falcons carry burning sticks to start new fires, flushing prey into the open.",
       "type": "Predator",
       "atk": 2,
       "hp": 2,
@@ -317,6 +343,7 @@
     {
       "id": "bird-predator-great-gray-owl",
       "name": "Great Gray Owl",
+      "flavorText": "Its facial disc funnels sound so precisely it can locate and catch voles under two feet of snow.",
       "type": "Predator",
       "atk": 2,
       "hp": 2,
@@ -330,6 +357,7 @@
     {
       "id": "bird-predator-short-toed-snake-eagle",
       "name": "Short-toed Snake Eagle",
+      "flavorText": "Specializing in reptiles, it hovers like a kestrel to spot snakes, then crushes their heads mid-air.",
       "type": "Predator",
       "atk": 2,
       "hp": 2,
@@ -341,6 +369,7 @@
     {
       "id": "bird-predator-wolf-hawk",
       "name": "Wolf Hawk",
+      "flavorText": "The Harris's hawk hunts cooperatively in packs of 2-6, the only raptor known to do so regularly.",
       "type": "Predator",
       "atk": 2,
       "hp": 2,
@@ -352,6 +381,7 @@
     {
       "id": "bird-predator-peregrine-falcon",
       "name": "Peregrine Falcon",
+      "flavorText": "In a hunting stoop, it reaches 240 mph -- the fastest animal on Earth by a wide margin.",
       "type": "Predator",
       "atk": 3,
       "hp": 1,
@@ -360,6 +390,7 @@
     {
       "id": "bird-predator-red-tailed-hawk",
       "name": "Red-tailed Hawk",
+      "flavorText": "Hollywood dubs its raspy scream over bald eagle footage -- the eagle's real call is a weak chirp.",
       "type": "Predator",
       "atk": 3,
       "hp": 2,
@@ -371,6 +402,7 @@
     {
       "id": "bird-predator-monkey-eating-eagle",
       "name": "Monkey-eating Eagle",
+      "flavorText": "With a 7-foot wingspan, the Philippine eagle is critically endangered -- fewer than 800 remain in the wild.",
       "type": "Predator",
       "atk": 3,
       "hp": 3,
@@ -381,6 +413,7 @@
     {
       "id": "bird-predator-gyrfalcon",
       "name": "Gyrfalcon",
+      "flavorText": "The largest true falcon, gyrfalcons hunt ptarmigan in the Arctic and were worth more than gold to medieval kings.",
       "type": "Predator",
       "atk": 4,
       "hp": 2,
@@ -389,6 +422,7 @@
     {
       "id": "bird-predator-golden-eagle",
       "name": "Golden Eagle",
+      "flavorText": "Golden eagles can spot a rabbit from two miles away. Mongolian hunters still use them to catch wolves.",
       "type": "Predator",
       "atk": 4,
       "hp": 4,
@@ -399,6 +433,7 @@
     {
       "id": "bird-predator-martial-eagle",
       "name": "Martial Eagle",
+      "flavorText": "Africa's largest eagle, it preys on monitor lizards, jackals, and small antelopes up to 35 lbs.",
       "type": "Predator",
       "atk": 4,
       "hp": 4,
@@ -409,6 +444,7 @@
     {
       "id": "bird-predator-harpy-eagle",
       "name": "Harpy Eagle",
+      "flavorText": "Its talons exert 530 psi of pressure -- strong enough to crush a howler monkey's skull instantly.",
       "type": "Predator",
       "atk": 5,
       "hp": 5,
@@ -419,6 +455,7 @@
     {
       "id": "bird-predator-pacific-sea-eagle",
       "name": "Pacific Sea Eagle",
+      "flavorText": "Steller's sea eagle has the largest wingspan of any eagle at nearly 8 feet and weighs up to 20 lbs.",
       "type": "Predator",
       "atk": 6,
       "hp": 6,
@@ -427,6 +464,7 @@
     {
       "id": "bird-spell-bird-food",
       "name": "Bird Food",
+      "flavorText": "Wild birds need high-fat seeds in winter; a chickadee must eat its body weight daily to survive the cold.",
       "type": "Spell",
       "effects": {
         "effect": { "type": "buffStats", "params": { "targetType": "all-friendly", "stats": { "attack": 2, "health": 2 } } }
@@ -435,6 +473,7 @@
     {
       "id": "bird-spell-birds-of-a-feather",
       "name": "Birds of a Feather",
+      "flavorText": "Mixed-species flocks are common: different birds forage together to share predator-detection duties.",
       "type": "Spell",
       "effects": {
         "effect": {
@@ -446,6 +485,7 @@
     {
       "id": "bird-spell-shotgun",
       "name": "Shotgun",
+      "flavorText": "Lead shot was banned for waterfowl hunting in 1991 after poisoning millions of birds who ingested spent pellets.",
       "type": "Spell",
       "effects": {
         "effect": {
@@ -474,6 +514,7 @@
     {
       "id": "bird-spell-swan-song",
       "name": "Swan Song",
+      "flavorText": "Mute swans aren't actually mute -- they hiss, grunt, and snort. The \"swan song\" myth is ancient Greek.",
       "type": "Spell",
       "effects": {
         "effect": [
@@ -485,6 +526,7 @@
     {
       "id": "bird-free-spell-birds-eye-view",
       "name": "Bird's Eye View",
+      "flavorText": "Raptors see UV light and have 8x the visual acuity of humans, spotting prey from over a mile up.",
       "type": "Free Spell",
       "effects": {
         "effect": { "type": "revealHand", "params": { "durationMs": 5000 } }
@@ -493,6 +535,7 @@
     {
       "id": "bird-free-spell-white-feathers",
       "name": "White Feathers",
+      "flavorText": "Down feathers trap air in a 3D lattice, insulating so well that Arctic eiders survive -40 degrees.",
       "type": "Free Spell",
       "effects": {
         "effect": { "type": "heal", "params": { "amount": 2 } }
@@ -501,6 +544,7 @@
     {
       "id": "bird-free-spell-white-missile",
       "name": "White Missile",
+      "flavorText": "Bird droppings are white because birds excrete uric acid instead of urea -- it saves water.",
       "type": "Free Spell",
       "effects": {
         "effect": { "type": "selectFromGroup", "params": { "targetGroup": "all-entities", "title": "Choose a target for damage", "effect": { "damage": 1, "label": "white missile" } } }
@@ -509,6 +553,7 @@
     {
       "id": "bird-trap-alleyway-mobbing",
       "name": "Alleyway Mobbing",
+      "flavorText": "Small birds mob predators in coordinated attacks, dive-bombing owls and hawks until they flee the area.",
       "type": "Trap",
       "trigger": "directAttack",
       "summons": ["token-bushtit"],
@@ -522,6 +567,7 @@
     {
       "id": "bird-trap-fly-off",
       "name": "Fly Off",
+      "flavorText": "Bar-headed geese migrate over the Himalayas at 29,000 feet, where oxygen is a third of sea level.",
       "type": "Trap",
       "trigger": "defending",
       "effects": {
@@ -534,6 +580,7 @@
     {
       "id": "bird-trap-icarus",
       "name": "Icarus",
+      "flavorText": "Bird bones are hollow but reinforced with internal struts, making them lighter than mammal bones yet just as strong.",
       "type": "Trap",
       "trigger": "lifeZero",
       "effects": {

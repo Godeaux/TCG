@@ -35,6 +35,7 @@
       "_comment": "=== AMBUSH SPECIALISTS (Stalk archetype) - Patient solo hunters ===",
       "id": "feline-prey-sand-cat",
       "name": "Sand Cat",
+      "flavorText": "Sand cats survive without drinking water, getting all moisture from their prey.",
       "type": "Prey",
       "atk": 1,
       "hp": 2,
@@ -45,6 +46,7 @@
     {
       "id": "feline-prey-black-footed-cat",
       "name": "Black-Footed Cat",
+      "flavorText": "At 2.4 lbs, the black-footed cat has a 60% kill rate — the highest of any wild cat.",
       "type": "Prey",
       "atk": 2,
       "hp": 1,
@@ -55,6 +57,7 @@
     {
       "id": "feline-prey-pallas-cat",
       "name": "Pallas's Cat",
+      "flavorText": "Pallas's cats have round pupils, unique among small cats, adapted to low-light steppe hunting.",
       "type": "Prey",
       "atk": 1,
       "hp": 3,
@@ -65,6 +68,7 @@
     {
       "id": "feline-prey-jungle-cat",
       "name": "Jungle Cat",
+      "flavorText": "Jungle cats were semi-domesticated by ancient Egyptians and mummified alongside their owners.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -78,6 +82,7 @@
     {
       "id": "feline-prey-african-wildcat",
       "name": "African Wildcat",
+      "flavorText": "DNA confirms the African wildcat is the sole ancestor of all 600 million domestic cats.",
       "type": "Prey",
       "atk": 1,
       "hp": 2,
@@ -91,6 +96,7 @@
     {
       "id": "feline-prey-european-wildcat",
       "name": "European Wildcat",
+      "flavorText": "European wildcats are 25% larger than domestic cats, with a distinctive blunt-tipped bushy tail.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -104,6 +110,7 @@
     {
       "id": "feline-prey-rusty-spotted-cat",
       "name": "Rusty-Spotted Cat",
+      "flavorText": "Weighing just 2 lbs, the rusty-spotted cat is the world's smallest wild felid.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -114,6 +121,7 @@
     {
       "id": "feline-prey-fishing-cat",
       "name": "Fishing Cat",
+      "flavorText": "Fishing cats have partially webbed feet and dive headfirst to catch fish underwater.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -128,6 +136,7 @@
       "_comment": "=== PURSUIT SPECIALISTS (Speed archetype) - Fast aggro hunters ===",
       "id": "feline-prey-serval",
       "name": "Serval",
+      "flavorText": "Servals catch prey with a 62% pounce success rate, leaping up to 10 feet vertically.",
       "type": "Prey",
       "atk": 3,
       "hp": 1,
@@ -138,6 +147,7 @@
     {
       "id": "feline-prey-caracal",
       "name": "Caracal",
+      "flavorText": "Caracals can swat multiple birds from a flock mid-flight using oversized hind legs.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -148,6 +158,7 @@
     {
       "id": "feline-prey-african-golden-cat",
       "name": "African Golden Cat",
+      "flavorText": "African golden cats shift color from red to grey over their lifetime. No one knows why.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -161,6 +172,7 @@
     {
       "id": "feline-prey-asian-golden-cat",
       "name": "Asian Golden Cat",
+      "flavorText": "Asian golden cats can take down prey three times their size, including water buffalo calves.",
       "type": "Prey",
       "atk": 2,
       "hp": 3,
@@ -171,6 +183,7 @@
     {
       "id": "feline-prey-jaguarundi",
       "name": "Jaguarundi",
+      "flavorText": "Jaguarundis are diurnal, unlike most wild cats, and have been seen foraging alongside monkeys.",
       "type": "Prey",
       "atk": 2,
       "hp": 1,
@@ -181,6 +194,7 @@
     {
       "id": "feline-prey-geoffroys-cat",
       "name": "Geoffroy's Cat",
+      "flavorText": "Geoffroy's cats are strong swimmers and one of the few felids that hunt in water regularly.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -194,6 +208,7 @@
     {
       "id": "feline-prey-pampas-cat",
       "name": "Pampas Cat",
+      "flavorText": "Pampas cats thrive from sea level to 16,000 ft, one of the widest altitude ranges of any cat.",
       "type": "Prey",
       "atk": 1,
       "hp": 2,
@@ -207,6 +222,7 @@
     {
       "id": "feline-prey-bay-cat",
       "name": "Bay Cat",
+      "flavorText": "The Borneo bay cat went unphoto­graphed until 2003 — one of Earth's least-known felids.",
       "type": "Prey",
       "atk": 2,
       "hp": 1,
@@ -221,6 +237,7 @@
       "_comment": "=== PRIDE HUNTERS (Coordinated Hunt archetype) - Pack tactics ===",
       "id": "feline-prey-lioness",
       "name": "Lioness",
+      "flavorText": "Lionesses do 85-90% of the pride's hunting, using coordinated flanking strategies.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -231,6 +248,7 @@
     {
       "id": "feline-prey-young-lion",
       "name": "Young Lion",
+      "flavorText": "Young male lions are expelled from the pride at age 2-3 and must form nomadic coalitions.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -241,6 +259,7 @@
     {
       "id": "feline-prey-lion-cub",
       "name": "Lion Cub",
+      "flavorText": "Lion cubs are born blind and weigh just 3 lbs. Females synchronize births to nurse communally.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -255,6 +274,7 @@
     {
       "id": "feline-prey-asiatic-lioness",
       "name": "Asiatic Lioness",
+      "flavorText": "Fewer than 700 Asiatic lions survive, all in India's Gir Forest — one disease could end them.",
       "type": "Prey",
       "atk": 2,
       "hp": 3,
@@ -265,6 +285,7 @@
     {
       "id": "feline-prey-white-lion",
       "name": "White Lion",
+      "flavorText": "White lions carry a recessive leucism gene — not albinism. Their eyes remain normal color.",
       "type": "Prey",
       "atk": 1,
       "hp": 3,
@@ -278,6 +299,7 @@
     {
       "id": "feline-prey-barbary-lioness",
       "name": "Barbary Lioness",
+      "flavorText": "Barbary lions had the largest manes of any subspecies, extending down the belly and chest.",
       "type": "Prey",
       "atk": 3,
       "hp": 2,
@@ -288,6 +310,7 @@
     {
       "id": "feline-prey-cave-lioness",
       "name": "Cave Lioness",
+      "flavorText": "Cave lions were 25% larger than modern lions and hunted mammoths across Ice Age Europe.",
       "type": "Prey",
       "atk": 2,
       "hp": 3,
@@ -301,6 +324,7 @@
     {
       "id": "feline-prey-tsavo-lioness",
       "name": "Tsavo Lioness",
+      "flavorText": "Tsavo male lions are maneless — likely an adaptation to the region's extreme heat.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -315,6 +339,7 @@
       "_comment": "=== PREDATORS - STALK APEX ===",
       "id": "feline-predator-bengal-tiger",
       "name": "Bengal Tiger",
+      "flavorText": "Bengal tigers in the Sundarbans are the only big cats that routinely swim between islands to hunt.",
       "type": "Predator",
       "atk": 4,
       "hp": 4,
@@ -328,6 +353,7 @@
     {
       "id": "feline-predator-jaguar",
       "name": "Jaguar",
+      "flavorText": "Jaguars have the strongest bite of any big cat — 1,500 PSI, enough to pierce turtle shells.",
       "type": "Predator",
       "atk": 4,
       "hp": 3,
@@ -338,6 +364,7 @@
     {
       "id": "feline-predator-snow-leopard",
       "name": "Snow Leopard",
+      "flavorText": "Snow leopards use their 3-foot-long tails as blankets, wrapping them around their face while sleeping.",
       "type": "Predator",
       "atk": 3,
       "hp": 3,
@@ -351,6 +378,7 @@
     {
       "id": "feline-predator-clouded-leopard",
       "name": "Clouded Leopard",
+      "flavorText": "Clouded leopards can climb headfirst down trees thanks to rotating ankle joints unique among cats.",
       "type": "Predator",
       "atk": 3,
       "hp": 2,
@@ -365,6 +393,7 @@
       "_comment": "=== PREDATORS - PURSUIT APEX ===",
       "id": "feline-predator-cheetah",
       "name": "Cheetah",
+      "flavorText": "Cheetahs accelerate 0 to 60 mph in 3 seconds but overheat after just 30 seconds of sprinting.",
       "type": "Predator",
       "atk": 4,
       "hp": 2,
@@ -378,6 +407,7 @@
     {
       "id": "feline-predator-cougar",
       "name": "Cougar",
+      "flavorText": "Cougars hold the Guinness record for most names: puma, mountain lion, catamount, and 40+ others.",
       "type": "Predator",
       "atk": 3,
       "hp": 3,
@@ -388,6 +418,7 @@
     {
       "id": "feline-predator-eurasian-lynx",
       "name": "Eurasian Lynx",
+      "flavorText": "Eurasian lynx ear tufts act as antennas, enhancing hearing to detect prey under deep snow.",
       "type": "Predator",
       "atk": 3,
       "hp": 3,
@@ -401,6 +432,7 @@
     {
       "id": "feline-predator-iberian-lynx",
       "name": "Iberian Lynx",
+      "flavorText": "The Iberian lynx dropped to 94 individuals in 2002. Conservation brought them back past 2,000.",
       "type": "Predator",
       "atk": 3,
       "hp": 2,
@@ -415,6 +447,7 @@
       "_comment": "=== PREDATORS - PRIDE LEADERS ===",
       "id": "feline-predator-african-lion",
       "name": "African Lion",
+      "flavorText": "A lion's roar reaches 114 decibels and can be heard 5 miles away across the savanna.",
       "type": "Predator",
       "atk": 4,
       "hp": 4,
@@ -428,6 +461,7 @@
     {
       "id": "feline-predator-barbary-lion",
       "name": "Barbary Lion",
+      "flavorText": "Barbary lions weighed up to 600 lbs — the largest lion subspecies ever recorded.",
       "type": "Predator",
       "atk": 5,
       "hp": 4,
@@ -438,6 +472,7 @@
     {
       "id": "feline-predator-pride-matriarch",
       "name": "Pride Matriarch",
+      "flavorText": "The oldest female leads pride hunts, choosing formation and timing based on decades of experience.",
       "type": "Predator",
       "atk": 3,
       "hp": 4,
@@ -452,6 +487,7 @@
     {
       "id": "feline-predator-king-of-beasts",
       "name": "King of Beasts",
+      "flavorText": "Male lions sleep up to 20 hours a day, conserving energy for territorial fights that decide everything.",
       "type": "Predator",
       "atk": 5,
       "hp": 5,
@@ -466,6 +502,7 @@
       "_comment": "=== SPELLS ===",
       "id": "feline-spell-ambush-from-cover",
       "name": "Ambush from Cover",
+      "flavorText": "A cat's fur pattern breaks up its outline — natural camouflage called disruptive coloration.",
       "type": "Spell",
       "tribe": "Feline",
       "effects": {
@@ -475,6 +512,7 @@
     {
       "id": "feline-spell-swift-chase",
       "name": "Swift Chase",
+      "flavorText": "Cats use a rotary gallop at top speed — the same gait as racehorses, with all four feet airborne.",
       "type": "Spell",
       "tribe": "Feline",
       "effects": {
@@ -484,6 +522,7 @@
     {
       "id": "feline-spell-pride-rally",
       "name": "Pride Rally",
+      "flavorText": "Lions are the only social cats. Prides coordinate hunts with assigned roles like flankers and drivers.",
       "type": "Spell",
       "tribe": "Feline",
       "effects": {
@@ -496,6 +535,7 @@
     {
       "id": "feline-spell-territorial-roar",
       "name": "Territorial Roar",
+      "flavorText": "Tigers scent-mark territories up to 400 sq miles. The smell alone deters most rivals.",
       "type": "Spell",
       "tribe": "Feline",
       "effects": {
@@ -505,6 +545,7 @@
     {
       "id": "feline-spell-apex-strike",
       "name": "Apex Strike",
+      "flavorText": "A tiger's paw swipe delivers roughly 10,000 lbs of force — enough to shatter a bear's skull.",
       "type": "Spell",
       "tribe": "Feline",
       "effects": {
@@ -521,6 +562,7 @@
     {
       "id": "feline-spell-primal-roar",
       "name": "Primal Roar",
+      "flavorText": "Big cats roar thanks to a flexible hyoid bone. Small cats purr instead — none can do both.",
       "type": "Spell",
       "tribe": "Feline",
       "effects": {
@@ -534,6 +576,7 @@
       "_comment": "=== FREE SPELLS ===",
       "id": "feline-freespell-quick-pounce",
       "name": "Quick Pounce",
+      "flavorText": "Cats can go from resting to full sprint in a single bound using fast-twitch muscle fibers.",
       "type": "Free Spell",
       "tribe": "Feline",
       "effects": {
@@ -550,6 +593,7 @@
     {
       "id": "feline-freespell-feline-grace",
       "name": "Feline Grace",
+      "flavorText": "Cats' righting reflex lets them twist mid-air in 0.3 seconds to land feet-first from any height.",
       "type": "Free Spell",
       "tribe": "Feline",
       "effects": {
@@ -559,6 +603,7 @@
     {
       "id": "feline-freespell-night-eyes",
       "name": "Night Eyes",
+      "flavorText": "Cat eyes have a reflective tapetum lucidum layer, giving them 6x better night vision than humans.",
       "type": "Free Spell",
       "tribe": "Feline",
       "effects": {
@@ -575,6 +620,7 @@
     {
       "id": "feline-freespell-primal-instinct",
       "name": "Primal Instinct",
+      "flavorText": "A cat's whiskers detect air vibrations, letting them sense prey movement in total darkness.",
       "type": "Free Spell",
       "tribe": "Feline",
       "effects": {
@@ -585,6 +631,7 @@
       "_comment": "=== TRAPS ===",
       "id": "feline-trap-hidden-in-grass",
       "name": "Hidden in the Grass",
+      "flavorText": "Cats can flatten their ears and compress their body to hide in grass just 6 inches tall.",
       "type": "Trap",
       "trigger": "directAttack",
       "tribe": "Feline",
@@ -598,6 +645,7 @@
     {
       "id": "feline-trap-from-the-trees",
       "name": "From the Trees",
+      "flavorText": "Leopards cache kills in trees up to 50 feet high, safe from hyenas and lions below.",
       "type": "Trap",
       "trigger": "creatureAttacks",
       "tribe": "Feline",
@@ -608,6 +656,7 @@
     {
       "id": "feline-trap-coordinated-ambush",
       "name": "Coordinated Ambush",
+      "flavorText": "Lionesses split into wings during group hunts — one flushes prey, the other cuts off escape.",
       "type": "Trap",
       "trigger": "directAttack",
       "tribe": "Feline",
@@ -622,6 +671,7 @@
     {
       "id": "feline-trap-patient-hunter",
       "name": "Patient Hunter",
+      "flavorText": "Cats blink less than almost any mammal — they can stare motionless for over 30 minutes straight.",
       "type": "Trap",
       "trigger": "creatureAttacks",
       "tribe": "Feline",

@@ -36,6 +36,7 @@
       "_comment": "=== SHELL PREY - Defensive creatures with protective shells ===",
       "id": "crustacean-prey-hermit-crab",
       "name": "Hermit Crab",
+      "flavorText": "Hermit crabs upgrade shells as they grow, sometimes forming queues to swap in size order.",
       "type": "Prey",
       "tribe": "Crustacean",
       "atk": 1,
@@ -47,6 +48,7 @@
     {
       "id": "crustacean-prey-pea-crab",
       "name": "Pea Crab",
+      "flavorText": "Pea crabs are tiny parasites that live inside mussels and oysters, stealing food from their host's gills.",
       "type": "Prey",
       "tribe": "Crustacean",
       "atk": 1,
@@ -64,6 +66,7 @@
     {
       "id": "crustacean-prey-sand-crab",
       "name": "Sand Crab",
+      "flavorText": "Sand crabs filter-feed by extending feathery antennae into receding waves, facing the ocean backward.",
       "type": "Prey",
       "tribe": "Crustacean",
       "atk": 1,
@@ -75,6 +78,7 @@
     {
       "id": "crustacean-prey-fiddler-crab",
       "name": "Fiddler Crab",
+      "flavorText": "Male fiddler crabs wave their oversized claw to attract mates. If lost, the other claw grows large instead.",
       "type": "Prey",
       "tribe": "Crustacean",
       "atk": 2,
@@ -92,6 +96,7 @@
     {
       "id": "crustacean-prey-porcelain-crab",
       "name": "Porcelain Crab",
+      "flavorText": "Porcelain crabs aren't true crabs. They can autotomize limbs instantly to escape predators.",
       "type": "Prey",
       "tribe": "Crustacean",
       "atk": 1,
@@ -103,6 +108,7 @@
     {
       "id": "crustacean-prey-cleaner-shrimp",
       "name": "Cleaner Shrimp",
+      "flavorText": "Cleaner shrimp set up stations where fish line up to have parasites picked off their bodies.",
       "type": "Prey",
       "tribe": "Crustacean",
       "atk": 1,
@@ -120,6 +126,7 @@
     {
       "id": "crustacean-prey-rock-crab",
       "name": "Rock Crab",
+      "flavorText": "Rock crabs can regenerate lost limbs over several molts, regrowing claws almost to full size.",
       "type": "Prey",
       "tribe": "Crustacean",
       "atk": 2,
@@ -131,6 +138,7 @@
     {
       "id": "crustacean-prey-decorator-crab",
       "name": "Decorator Crab",
+      "flavorText": "Decorator crabs attach sponges, algae, and anemones to hooked hairs on their shells as camouflage.",
       "type": "Prey",
       "tribe": "Crustacean",
       "atk": 1,
@@ -143,6 +151,7 @@
       "_comment": "=== MOLT PREY - Creatures that regenerate and grow ===",
       "id": "crustacean-prey-ghost-shrimp",
       "name": "Ghost Shrimp",
+      "flavorText": "Ghost shrimp build elaborate Y-shaped burrows that aerate seafloor sediment, benefiting entire ecosystems.",
       "type": "Prey",
       "tribe": "Crustacean",
       "atk": 1,
@@ -153,6 +162,7 @@
     {
       "id": "crustacean-prey-krill",
       "name": "Krill",
+      "flavorText": "Antarctic krill swarms can weigh over 2 million tons. They sustain whales, seals, and penguins alike.",
       "type": "Prey",
       "tribe": "Crustacean",
       "atk": 0,
@@ -163,6 +173,7 @@
     {
       "id": "crustacean-prey-cherry-shrimp",
       "name": "Cherry Shrimp",
+      "flavorText": "Cherry shrimp are selectively bred from wild Neocaridina. Their red color comes from astaxanthin pigment.",
       "type": "Prey",
       "tribe": "Crustacean",
       "atk": 1,
@@ -178,6 +189,7 @@
     {
       "id": "crustacean-prey-glass-shrimp",
       "name": "Glass Shrimp",
+      "flavorText": "Glass shrimp are nearly transparent. Internal organs are visible through their exoskeleton.",
       "type": "Prey",
       "tribe": "Crustacean",
       "atk": 1,
@@ -188,6 +200,7 @@
     {
       "id": "crustacean-prey-amphipod",
       "name": "Amphipod",
+      "flavorText": "Amphipods thrive everywhere from deep-sea trenches to backyard puddles. Over 10,000 species are known.",
       "type": "Prey",
       "tribe": "Crustacean",
       "atk": 2,
@@ -198,6 +211,7 @@
     {
       "id": "crustacean-prey-crawfish",
       "name": "Crawfish",
+      "flavorText": "Crawfish can walk forward but escape danger by flipping their tail to shoot backward at high speed.",
       "type": "Prey",
       "tribe": "Crustacean",
       "atk": 2,
@@ -213,6 +227,7 @@
     {
       "id": "crustacean-prey-bamboo-shrimp",
       "name": "Bamboo Shrimp",
+      "flavorText": "Bamboo shrimp fan-feed by spreading specialized bristled legs into the current to catch microorganisms.",
       "type": "Prey",
       "tribe": "Crustacean",
       "atk": 2,
@@ -230,6 +245,7 @@
       "_comment": "=== HYBRID PREY - Both Shell and Molt ===",
       "id": "crustacean-prey-boxer-crab",
       "name": "Boxer Crab",
+      "flavorText": "Boxer crabs carry a sea anemone in each claw for defense. If one is lost, they split the other in two.",
       "type": "Prey",
       "tribe": "Crustacean",
       "atk": 2,
@@ -241,6 +257,7 @@
     {
       "id": "crustacean-prey-mud-crab",
       "name": "Mud Crab",
+      "flavorText": "Mud crabs tolerate huge salinity swings, thriving in brackish mangrove estuaries worldwide.",
       "type": "Prey",
       "tribe": "Crustacean",
       "atk": 1,
@@ -252,6 +269,7 @@
     {
       "id": "crustacean-prey-horseshoe-crab",
       "name": "Horseshoe Crab",
+      "flavorText": "Horseshoe crabs have blue copper-based blood used to test medical equipment for bacterial contamination.",
       "type": "Prey",
       "tribe": "Crustacean",
       "atk": 1,
@@ -263,6 +281,7 @@
     {
       "id": "crustacean-prey-velvet-crab",
       "name": "Velvet Crab",
+      "flavorText": "Velvet crabs get their name from fine hair covering their shell. They are among the most aggressive UK crabs.",
       "type": "Prey",
       "tribe": "Crustacean",
       "atk": 2,
@@ -274,6 +293,7 @@
     {
       "id": "crustacean-prey-snow-crab",
       "name": "Snow Crab",
+      "flavorText": "Snow crabs live at depths up to 1,200m in near-freezing water. Males can be twice the size of females.",
       "type": "Prey",
       "tribe": "Crustacean",
       "atk": 2,
@@ -292,6 +312,7 @@
       "_comment": "=== UTILITY PREY - Special abilities ===",
       "id": "crustacean-prey-sally-lightfoot",
       "name": "Sally Lightfoot Crab",
+      "flavorText": "Sally Lightfoot crabs graze algae off Galapagos lava rocks. Juveniles are black for camouflage; adults turn red.",
       "type": "Prey",
       "tribe": "Crustacean",
       "atk": 2,
@@ -308,6 +329,7 @@
     {
       "id": "crustacean-prey-slipper-lobster",
       "name": "Slipper Lobster",
+      "flavorText": "Slipper lobsters lack claws entirely. Their antennae evolved into broad flat plates used for digging.",
       "type": "Prey",
       "tribe": "Crustacean",
       "atk": 2,
@@ -324,6 +346,7 @@
       "_comment": "=== SHELL PREDATORS ===",
       "id": "crustacean-predator-blue-crab",
       "name": "Blue Crab",
+      "flavorText": "Blue crabs can swim using paddle-shaped rear legs. Males have blue claws; females have red-tipped ones.",
       "type": "Predator",
       "tribe": "Crustacean",
       "atk": 3,
@@ -334,6 +357,7 @@
     {
       "id": "crustacean-predator-stone-crab",
       "name": "Stone Crab",
+      "flavorText": "Florida law requires harvesting only one stone crab claw and releasing the crab alive to regrow it.",
       "type": "Predator",
       "tribe": "Crustacean",
       "atk": 3,
@@ -349,6 +373,7 @@
     {
       "id": "crustacean-predator-dungeness-crab",
       "name": "Dungeness Crab",
+      "flavorText": "Dungeness crabs molt up to 15 times before reaching market size. They are named after a Washington port.",
       "type": "Predator",
       "tribe": "Crustacean",
       "atk": 4,
@@ -365,6 +390,7 @@
     {
       "id": "crustacean-predator-king-crab",
       "name": "King Crab",
+      "flavorText": "Red king crabs have a leg span up to 1.8m. Despite their name, they have only 6 walking legs and 2 claws.",
       "type": "Predator",
       "tribe": "Crustacean",
       "atk": 5,
@@ -381,6 +407,7 @@
       "_comment": "=== MOLT PREDATORS ===",
       "id": "crustacean-predator-pistol-shrimp",
       "name": "Pistol Shrimp",
+      "flavorText": "A pistol shrimp's claw snap creates a cavitation bubble reaching 4,700C and producing a 218-decibel shockwave.",
       "type": "Predator",
       "tribe": "Crustacean",
       "atk": 3,
@@ -400,6 +427,7 @@
     {
       "id": "crustacean-predator-spiny-lobster",
       "name": "Spiny Lobster",
+      "flavorText": "Spiny lobsters migrate in single-file lines of up to 60 individuals, navigating by Earth's magnetic field.",
       "type": "Predator",
       "tribe": "Crustacean",
       "atk": 3,
@@ -415,6 +443,7 @@
     {
       "id": "crustacean-predator-giant-isopod",
       "name": "Giant Isopod",
+      "flavorText": "Giant isopods can survive 5+ years without eating. They gorge on whale falls and other deep-sea carrion.",
       "type": "Predator",
       "tribe": "Crustacean",
       "atk": 4,
@@ -424,6 +453,7 @@
     {
       "id": "crustacean-predator-american-lobster",
       "name": "American Lobster",
+      "flavorText": "American lobsters can live over 100 years and never stop growing. The largest on record weighed 20 kg.",
       "type": "Predator",
       "tribe": "Crustacean",
       "atk": 5,
@@ -440,6 +470,7 @@
       "_comment": "=== HYBRID PREDATORS ===",
       "id": "crustacean-predator-coconut-crab",
       "name": "Coconut Crab",
+      "flavorText": "Coconut crabs have the strongest grip of any crustacean, exerting force comparable to a lion's bite.",
       "type": "Predator",
       "tribe": "Crustacean",
       "atk": 4,
@@ -450,6 +481,7 @@
     {
       "id": "crustacean-predator-japanese-spider-crab",
       "name": "Japanese Spider Crab",
+      "flavorText": "Japanese spider crabs are the largest living arthropods, with leg spans reaching 3.7 meters across.",
       "type": "Predator",
       "tribe": "Crustacean",
       "atk": 4,
@@ -466,6 +498,7 @@
     {
       "id": "crustacean-predator-mantis-shrimp",
       "name": "Mantis Shrimp",
+      "flavorText": "Mantis shrimp strike at 23 m/s, accelerating faster than a .22 caliber bullet. They see 12 color channels.",
       "type": "Predator",
       "tribe": "Crustacean",
       "atk": 5,
@@ -485,6 +518,7 @@
     {
       "id": "crustacean-predator-robber-crab",
       "name": "Robber Crab",
+      "flavorText": "Robber crabs are a land-dwelling form of coconut crab. They climb trees and have an acute sense of smell.",
       "type": "Predator",
       "tribe": "Crustacean",
       "atk": 5,
@@ -502,6 +536,7 @@
       "_comment": "=== SPELLS ===",
       "id": "crustacean-spell-shell-shock",
       "name": "Shell Shock",
+      "flavorText": "Crustacean shells are made of chitin reinforced with calcium carbonate, one of nature's toughest composites.",
       "type": "Spell",
       "tribe": "Crustacean",
       "effects": {
@@ -513,6 +548,7 @@
     {
       "id": "crustacean-spell-exoskeleton",
       "name": "Exoskeleton",
+      "flavorText": "A crustacean's exoskeleton hardens through sclerotization, a chemical process that cross-links proteins.",
       "type": "Spell",
       "tribe": "Crustacean",
       "effects": {
@@ -525,6 +561,7 @@
     {
       "id": "crustacean-spell-tidal-pool",
       "name": "Tidal Pool",
+      "flavorText": "Tide pools host over 100 crustacean species. Water temperature can swing 20C in a single tidal cycle.",
       "type": "Spell",
       "tribe": "Crustacean",
       "effects": {
@@ -537,6 +574,7 @@
     {
       "id": "crustacean-spell-pincer-assault",
       "name": "Pincer Assault",
+      "flavorText": "Crab claws generate crushing force up to 19,000 newtons per square cm through leveraged muscle geometry.",
       "type": "Spell",
       "tribe": "Crustacean",
       "effects": {
@@ -549,6 +587,7 @@
     {
       "id": "crustacean-spell-deep-sea-refuge",
       "name": "Deep Sea Refuge",
+      "flavorText": "Below 200m, the aphotic zone holds crustaceans adapted to total darkness and crushing pressure.",
       "type": "Spell",
       "tribe": "Crustacean",
       "effects": {
@@ -561,6 +600,7 @@
     {
       "id": "crustacean-spell-crustacean-swarm",
       "name": "Crustacean Swarm",
+      "flavorText": "Christmas Island's annual red crab migration involves 50 million crabs marching from forest to sea.",
       "type": "Spell",
       "tribe": "Crustacean",
       "summons": ["token-hermit-crab"],
@@ -575,6 +615,7 @@
       "_comment": "=== FREE SPELLS ===",
       "id": "crustacean-free-spell-shell-fragment",
       "name": "Shell Fragment",
+      "flavorText": "Discarded crustacean shells are rich in chitin, now used to make biodegradable plastics and wound dressings.",
       "type": "Free Spell",
       "tribe": "Crustacean",
       "effects": {
@@ -587,6 +628,7 @@
     {
       "id": "crustacean-free-spell-shed-skin",
       "name": "Shed Skin",
+      "flavorText": "After molting, a crustacean absorbs water to expand before its new shell hardens over several hours.",
       "type": "Free Spell",
       "tribe": "Crustacean",
       "effects": {
@@ -599,6 +641,7 @@
     {
       "id": "crustacean-free-spell-barnacle-grip",
       "name": "Barnacle Grip",
+      "flavorText": "Barnacles glue themselves with the strongest natural adhesive known, resisting forces over 5,000 lbs/sq in.",
       "type": "Free Spell",
       "tribe": "Crustacean",
       "effects": {
@@ -611,6 +654,7 @@
     {
       "id": "crustacean-free-spell-quick-molt",
       "name": "Quick Molt",
+      "flavorText": "Molting is triggered by ecdysone hormone. Crustaceans often eat their old shell to reclaim the calcium.",
       "type": "Free Spell",
       "tribe": "Crustacean",
       "effects": {
@@ -623,6 +667,7 @@
       "_comment": "=== TRAPS ===",
       "id": "crustacean-trap-chitinous-defense",
       "name": "Chitinous Defense",
+      "flavorText": "Chitin is the second most abundant biopolymer on Earth after cellulose, found in all crustacean shells.",
       "type": "Trap",
       "tribe": "Crustacean",
       "trigger": "defending",
@@ -635,6 +680,7 @@
     {
       "id": "crustacean-trap-snap-trap",
       "name": "Snap Trap",
+      "flavorText": "A crab's claw muscles can close 10x faster than they open, optimized for ambush-speed prey capture.",
       "type": "Trap",
       "tribe": "Crustacean",
       "trigger": "defending",
@@ -648,6 +694,7 @@
     {
       "id": "crustacean-trap-reef-ambush",
       "name": "Reef Ambush",
+      "flavorText": "Coral reefs shelter over 1,200 crustacean species. Many are nocturnal, hiding in crevices by day.",
       "type": "Trap",
       "tribe": "Crustacean",
       "trigger": "rivalPlaysCard",
@@ -660,6 +707,7 @@
     {
       "id": "crustacean-trap-claw-lock",
       "name": "Claw Lock",
+      "flavorText": "Crabs lock claws in territorial disputes that can last hours. The loser often autotomizes its claw to flee.",
       "type": "Trap",
       "tribe": "Crustacean",
       "trigger": "defending",

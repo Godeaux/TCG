@@ -675,7 +675,7 @@ let expandedCardElement = null;
  * @param {HTMLElement} sourceElement - Element that triggered the preview
  */
 const showExpandedCard = (card, sourceElement) => {
-  showCardTooltip(card, sourceElement, { showPreview: true });
+  showCardTooltip(card, sourceElement, { showPreview: true, context: 'catalog' });
   expandedCardElement = sourceElement;
 };
 

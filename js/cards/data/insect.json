@@ -155,6 +155,7 @@
       "_comment": "=== METAMORPHOSIS PREY - Larvae that transform ===",
       "id": "insect-prey-monarch-caterpillar",
       "name": "Monarch Caterpillar",
+      "flavorText": "Monarch caterpillars feed exclusively on toxic milkweed, storing poison that protects them as butterflies.",
       "type": "Prey",
       "atk": 1,
       "hp": 2,
@@ -169,6 +170,7 @@
     {
       "id": "insect-prey-beetle-grub",
       "name": "Beetle Grub",
+      "flavorText": "Hercules beetle grubs spend up to two years underground, growing to the size of a human fist.",
       "type": "Prey",
       "atk": 0,
       "hp": 3,
@@ -183,6 +185,7 @@
     {
       "id": "insect-prey-dragonfly-nymph",
       "name": "Dragonfly Nymph",
+      "flavorText": "Dragonfly nymphs are aquatic ambush predators that breathe through gills and hunt for up to five years.",
       "type": "Prey",
       "atk": 1,
       "hp": 2,
@@ -197,6 +200,7 @@
     {
       "id": "insect-prey-periodical-cicada",
       "name": "Periodical Cicada",
+      "flavorText": "Periodical cicadas emerge in synchronized broods of billions after 13 or 17 years underground.",
       "type": "Prey",
       "atk": 0,
       "hp": 2,
@@ -211,6 +215,7 @@
     {
       "id": "insect-prey-luna-moth-caterpillar",
       "name": "Luna Moth Caterpillar",
+      "flavorText": "Adult luna moths have no mouths. They live about one week on energy stored as caterpillars.",
       "type": "Prey",
       "atk": 1,
       "hp": 2,
@@ -226,6 +231,7 @@
     {
       "id": "insect-prey-atlas-moth-caterpillar",
       "name": "Atlas Moth Caterpillar",
+      "flavorText": "With a wingspan up to 30 cm, the atlas moth is one of the largest insects on Earth.",
       "type": "Prey",
       "atk": 0,
       "hp": 4,
@@ -241,6 +247,7 @@
       "_comment": "=== COLONY PREY - Ants and support ===",
       "id": "insect-prey-queen-ant",
       "name": "Queen Ant",
+      "flavorText": "A queen leafcutter ant can live 20 years and produce over 150 million offspring in her lifetime.",
       "type": "Prey",
       "atk": 0,
       "hp": 6,
@@ -255,6 +262,7 @@
     {
       "id": "insect-prey-leafcutter-ant",
       "name": "Leafcutter Ant",
+      "flavorText": "Leafcutter ants don't eat leaves -- they chew them into mulch to farm fungus underground.",
       "type": "Prey",
       "atk": 1,
       "hp": 2,
@@ -269,6 +277,7 @@
     {
       "id": "insect-prey-fire-ant",
       "name": "Fire Ant",
+      "flavorText": "Fire ants link their bodies into living rafts that can float for weeks during floods.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -282,6 +291,7 @@
     {
       "id": "insect-prey-army-ant",
       "name": "Army Ant",
+      "flavorText": "Army ants are nomadic -- they have no permanent nest and relocate their entire colony nightly.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -295,6 +305,7 @@
     {
       "id": "insect-prey-bullet-ant",
       "name": "Bullet Ant",
+      "flavorText": "The bullet ant's sting ranks highest on the Schmidt pain index -- pure pain lasting 24 hours.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -309,6 +320,7 @@
       "_comment": "=== UNIQUE BEHAVIOR PREY ===",
       "id": "insect-prey-bombardier-beetle",
       "name": "Bombardier Beetle",
+      "flavorText": "Bombardier beetles spray boiling-hot toxic chemicals at 100\u00b0C from their abdomen with pinpoint aim.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -322,6 +334,7 @@
     {
       "id": "insect-prey-firefly",
       "name": "Firefly",
+      "flavorText": "Firefly light is the most efficient on Earth -- nearly 100% of the energy becomes light, not heat.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -336,6 +349,7 @@
     {
       "id": "insect-prey-parasitic-wasp",
       "name": "Parasitic Wasp",
+      "flavorText": "Parasitic wasps lay eggs inside living caterpillars. The larvae eat the host from the inside out.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -350,6 +364,7 @@
     {
       "id": "insect-prey-cockroach",
       "name": "Cockroach",
+      "flavorText": "Cockroaches can survive a week without their head. They only die because they can't drink water.",
       "type": "Prey",
       "atk": 1,
       "hp": 2,
@@ -363,6 +378,7 @@
     {
       "id": "insect-prey-japanese-hornet",
       "name": "Japanese Giant Hornet",
+      "flavorText": "Japanese giant hornets can kill 40 honeybees per minute. Japanese bees counter by cooking them alive.",
       "type": "Prey",
       "atk": 3,
       "hp": 1,
@@ -376,6 +392,7 @@
     {
       "id": "insect-prey-ladybug",
       "name": "Ladybug",
+      "flavorText": "A single ladybug can eat up to 5,000 aphids in its lifetime, making it a prized pest controller.",
       "type": "Prey",
       "atk": 1,
       "hp": 2,
@@ -389,6 +406,7 @@
     {
       "id": "insect-prey-deaths-head-hawkmoth",
       "name": "Death's-Head Hawkmoth",
+      "flavorText": "Death's-head hawkmoths raid beehives by mimicking bee scent and squeaking to calm the colony.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -402,6 +420,7 @@
     {
       "id": "insect-prey-walking-stick",
       "name": "Walking Stick",
+      "flavorText": "Some stick insects are over 60 cm long -- the longest insects alive. They even sway like twigs.",
       "type": "Prey",
       "atk": 2,
       "hp": 3,
@@ -412,6 +431,7 @@
     {
       "id": "insect-prey-locust",
       "name": "Locust",
+      "flavorText": "A desert locust swarm can contain 80 million per square km and eat its own weight daily.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -425,6 +445,7 @@
     {
       "id": "insect-prey-grasshopper",
       "name": "Grasshopper",
+      "flavorText": "Grasshoppers can leap 20 times their body length -- equivalent to a human jumping a basketball court.",
       "type": "Prey",
       "atk": 1,
       "hp": 2,
@@ -439,6 +460,7 @@
     {
       "id": "insect-prey-dung-beetle",
       "name": "Dung Beetle",
+      "flavorText": "Dung beetles navigate at night using the Milky Way -- the only insects known to orient by starlight.",
       "type": "Prey",
       "atk": 1,
       "hp": 3,
@@ -452,6 +474,7 @@
     {
       "id": "insect-prey-tarantula-hawk",
       "name": "Tarantula Hawk",
+      "flavorText": "The tarantula hawk paralyzes tarantulas with one sting, then lays an egg on the living spider.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -465,6 +488,7 @@
     {
       "id": "insect-prey-mayfly",
       "name": "Mayfly",
+      "flavorText": "Adult mayflies live as little as five minutes -- just long enough to mate. They have no mouths.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -478,6 +502,7 @@
     {
       "id": "insect-prey-moth",
       "name": "Moth",
+      "flavorText": "Moths navigate by moonlight. Artificial lights confuse them into spiraling endlessly.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -491,6 +516,7 @@
     {
       "id": "insect-prey-assassin-bug",
       "name": "Assassin Bug",
+      "flavorText": "Some assassin bugs stack dead ant bodies on their backs as camouflage armor against predators.",
       "type": "Prey",
       "atk": 2,
       "hp": 1,
@@ -505,6 +531,7 @@
       "_comment": "=== PREDATORS - Hunting insects ===",
       "id": "insect-predator-praying-mantis",
       "name": "Praying Mantis",
+      "flavorText": "A mantis strikes in 50 milliseconds -- faster than you can blink. They also eat hummingbirds.",
       "type": "Predator",
       "atk": 3,
       "hp": 2,
@@ -517,6 +544,7 @@
     {
       "id": "insect-predator-orchid-mantis",
       "name": "Orchid Mantis",
+      "flavorText": "Orchid mantises mimic flowers so well that real pollinators prefer them over actual orchids.",
       "type": "Predator",
       "atk": 2,
       "hp": 3,
@@ -529,6 +557,7 @@
     {
       "id": "insect-predator-giant-water-bug",
       "name": "Giant Water Bug",
+      "flavorText": "Giant water bugs inject digestive enzymes that liquefy prey from the inside, then drink the result.",
       "type": "Predator",
       "atk": 3,
       "hp": 3,
@@ -541,6 +570,7 @@
     {
       "id": "insect-predator-goliath-beetle",
       "name": "Goliath Beetle",
+      "flavorText": "Goliath beetles weigh up to 100 grams -- heavier than some birds. Their larvae are even heavier.",
       "type": "Predator",
       "atk": 5,
       "hp": 4,
@@ -554,6 +584,7 @@
     {
       "id": "insect-predator-rhinoceros-beetle",
       "name": "Rhinoceros Beetle",
+      "flavorText": "Rhinoceros beetles can lift 850 times their own body weight -- the strongest animals on the planet.",
       "type": "Predator",
       "atk": 4,
       "hp": 4,
@@ -563,6 +594,7 @@
     {
       "id": "insect-predator-stag-beetle",
       "name": "Stag Beetle",
+      "flavorText": "Male stag beetles wrestle rivals with oversized mandibles to win mating rights -- like tiny jousters.",
       "type": "Predator",
       "atk": 4,
       "hp": 3,
@@ -575,6 +607,7 @@
     {
       "id": "insect-predator-titan-beetle",
       "name": "Titan Beetle",
+      "flavorText": "At 17 cm long, the titan beetle is the largest beetle alive. Adults never eat -- they run on larval fat.",
       "type": "Predator",
       "atk": 6,
       "hp": 5,
@@ -587,6 +620,7 @@
     {
       "id": "insect-predator-emperor-dragonfly",
       "name": "Emperor Dragonfly",
+      "flavorText": "Dragonflies catch 95% of prey they target -- the highest hunt success rate of any predator on Earth.",
       "type": "Predator",
       "atk": 3,
       "hp": 3,
@@ -599,6 +633,7 @@
     {
       "id": "insect-predator-asian-giant-hornet",
       "name": "Asian Giant Hornet",
+      "flavorText": "Asian giant hornets grow to 5 cm with a 7.5 cm wingspan. Their venom dissolves human tissue.",
       "type": "Predator",
       "atk": 4,
       "hp": 2,
@@ -611,6 +646,7 @@
     {
       "id": "insect-predator-antlion",
       "name": "Antlion",
+      "flavorText": "Antlion larvae dig conical sand pits and flick grains at prey to trigger miniature landslides.",
       "type": "Predator",
       "atk": 3,
       "hp": 4,
@@ -623,6 +659,7 @@
     {
       "id": "insect-predator-robber-fly",
       "name": "Robber Fly",
+      "flavorText": "Robber flies calculate interception trajectories mid-air -- a feat rivaling fighter pilot math.",
       "type": "Predator",
       "atk": 3,
       "hp": 2,
@@ -635,6 +672,7 @@
     {
       "id": "insect-predator-tiger-beetle",
       "name": "Tiger Beetle",
+      "flavorText": "Tiger beetles run so fast their eyes can't keep up -- they go temporarily blind mid-chase.",
       "type": "Predator",
       "atk": 3,
       "hp": 2,
@@ -644,6 +682,7 @@
     {
       "id": "insect-predator-dobsonfly",
       "name": "Dobsonfly",
+      "flavorText": "Male dobsonflies have massive mandibles up to 4 cm long, used only for gripping mates, never prey.",
       "type": "Predator",
       "atk": 4,
       "hp": 4,
@@ -656,6 +695,7 @@
     {
       "id": "insect-predator-driver-ant",
       "name": "Driver Ant Swarm",
+      "flavorText": "Driver ant colonies of 20 million individuals consume everything in their path, including scorpions.",
       "type": "Predator",
       "atk": 2,
       "hp": 4,
@@ -669,6 +709,7 @@
     {
       "id": "insect-predator-cicada-killer",
       "name": "Cicada Killer Wasp",
+      "flavorText": "Cicada killer wasps sting cicadas into paralysis, then fly them back to underground burrows as larval food.",
       "type": "Predator",
       "atk": 4,
       "hp": 3,
@@ -681,6 +722,7 @@
     {
       "id": "insect-predator-jewel-wasp",
       "name": "Jewel Wasp",
+      "flavorText": "The jewel wasp stings a cockroach's brain twice, turning it into a docile zombie that walks to its doom.",
       "type": "Predator",
       "atk": 2,
       "hp": 3,
@@ -694,6 +736,7 @@
       "_comment": "=== SPELLS ===",
       "id": "insect-spell-swarm",
       "name": "Swarm",
+      "flavorText": "A single locust swarm in 2020 over East Africa covered 2,400 square km -- the size of Moscow.",
       "type": "Spell",
       "tribe": "Insect",
       "summons": ["token-insect-swarm"],
@@ -704,6 +747,7 @@
     {
       "id": "insect-spell-infestation",
       "name": "Infestation",
+      "flavorText": "Insects make up 80% of all known animal species -- roughly 10 quintillion are alive right now.",
       "type": "Spell",
       "tribe": "Insect",
       "effects": {
@@ -716,6 +760,7 @@
     {
       "id": "insect-spell-plague-of-locusts",
       "name": "Plague of Locusts",
+      "flavorText": "Locusts are just grasshoppers that underwent a behavioral phase change triggered by overcrowding.",
       "type": "Spell",
       "tribe": "Insect",
       "effects": {
@@ -728,6 +773,7 @@
     {
       "id": "insect-spell-pheromone-trail",
       "name": "Pheromone Trail",
+      "flavorText": "Ants communicate via 20+ distinct pheromones -- alarm, trail, food, even 'I'm dead, remove me.'",
       "type": "Spell",
       "tribe": "Insect",
       "effects": {
@@ -740,6 +786,7 @@
     {
       "id": "insect-spell-hivemind",
       "name": "Hivemind",
+      "flavorText": "Ant colonies solve optimization problems collectively that stump individual brains -- true swarm intelligence.",
       "type": "Spell",
       "tribe": "Insect",
       "effects": {
@@ -749,6 +796,7 @@
     {
       "id": "insect-spell-metamorphosis",
       "name": "Metamorphosis",
+      "flavorText": "During metamorphosis, a caterpillar's body dissolves into cellular soup before rebuilding as a butterfly.",
       "type": "Spell",
       "tribe": "Insect",
       "effects": {
@@ -759,6 +807,7 @@
       "_comment": "=== FREE SPELLS ===",
       "id": "insect-free-spell-pollinate",
       "name": "Pollinate",
+      "flavorText": "Bees pollinate roughly one-third of every bite of food humans eat worldwide.",
       "type": "Free Spell",
       "tribe": "Insect",
       "effects": {
@@ -768,6 +817,7 @@
     {
       "id": "insect-free-spell-shed-exoskeleton",
       "name": "Shed Exoskeleton",
+      "flavorText": "Insects molt by splitting their old exoskeleton and inflating a soft new one underneath with air.",
       "type": "Free Spell",
       "tribe": "Insect",
       "effects": {
@@ -777,6 +827,7 @@
     {
       "id": "insect-free-spell-camouflage",
       "name": "Camouflage",
+      "flavorText": "Leaf insects have veins, spots, and bite marks on their wings to perfectly mimic real foliage.",
       "type": "Free Spell",
       "tribe": "Insect",
       "effects": {
@@ -787,6 +838,7 @@
       "_comment": "=== TRAPS ===",
       "id": "insect-trap-pitfall",
       "name": "Pitfall",
+      "flavorText": "Antlion pits use physics: the angle of sand sits exactly at its critical angle of repose.",
       "type": "Trap",
       "trigger": "directAttack",
       "tribe": "Insect",
@@ -800,6 +852,7 @@
     {
       "id": "insect-trap-ambush-predator",
       "name": "Ambush Predator",
+      "flavorText": "The total biomass of ants on Earth roughly equals the total biomass of all humans combined.",
       "type": "Trap",
       "trigger": "rivalPlaysCreature",
       "tribe": "Insect",
@@ -811,6 +864,7 @@
     {
       "id": "insect-trap-defensive-swarm",
       "name": "Defensive Swarm",
+      "flavorText": "Honeybees defend their hive by 'balling' intruders -- 500 bees vibrate to cook threats at 45\u00b0C.",
       "type": "Trap",
       "trigger": "defending",
       "tribe": "Insect",
@@ -824,6 +878,7 @@
     {
       "id": "insect-trap-venomous-sting",
       "name": "Venomous Sting",
+      "flavorText": "Harvester ant venom is the most toxic insect venom known -- 12 stings can kill a 2 kg rat.",
       "type": "Trap",
       "trigger": "directAttack",
       "tribe": "Insect",

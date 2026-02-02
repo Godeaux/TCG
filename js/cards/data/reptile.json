@@ -3,6 +3,7 @@
     {
       "id": "reptile-prey-cuban-brown-anole",
       "name": "Cuban Brown Anole",
+      "flavorText": "Native to Cuba, this anole has displaced green anoles across the U.S. Southeast since the 1940s.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -16,6 +17,7 @@
     {
       "id": "reptile-prey-european-glass-lizard",
       "name": "European Glass Lizard",
+      "flavorText": "A legless lizard, not a snake. It can drop its tail into multiple wriggling pieces to distract predators.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -29,6 +31,7 @@
     {
       "id": "reptile-prey-yucatan-neotropical-rattlesnake",
       "name": "Yucatan Neotropical Rattlesnake",
+      "flavorText": "Its venom causes neurotoxic paralysis, unlike most rattlesnakes which rely on hemotoxins.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -41,6 +44,7 @@
     {
       "id": "reptile-prey-frosts-iguana",
       "name": "Frost's Iguana",
+      "flavorText": "Endemic to Central America, this iguana enters torpor in cold snaps and may fall frozen from tree branches.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -53,6 +57,7 @@
     {
       "id": "reptile-prey-galapagos-lava-lizards",
       "name": "Galápagos Lava Lizards",
+      "flavorText": "Found on every major Galapagos island, each population evolved distinct colors to match its local lava rock.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -69,6 +74,7 @@
     {
       "id": "reptile-prey-green-anole",
       "name": "Green Anole",
+      "flavorText": "Females lay a single egg every two weeks throughout the breeding season, totaling up to 10 eggs per year.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -82,6 +88,7 @@
     {
       "id": "reptile-prey-gold-dust-day-gecko",
       "name": "Gold Dust Day Gecko",
+      "flavorText": "This gecko pollinates flowers and licks nectar — one of few reptiles that acts as a pollinator.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -94,6 +101,7 @@
     {
       "id": "reptile-prey-golden-lancehead",
       "name": "Golden Lancehead",
+      "flavorText": "Found only on Brazil's Ilha da Queimada Grande, its venom can melt flesh around the bite site.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -106,6 +114,7 @@
     {
       "id": "reptile-prey-cryptic-golden-tegu",
       "name": "Cryptic Golden Tegu",
+      "flavorText": "Discovered in 2015 and rarely seen, this small tegu spends most of its life burrowed underground.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -122,6 +131,7 @@
     {
       "id": "reptile-prey-phantastic-leaf-tailed-gecko",
       "name": "Phantastic Leaf-tailed Gecko",
+      "flavorText": "Its body mimics a dead leaf so precisely — veins, notches, and all — that it's nearly invisible at rest.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -137,6 +147,7 @@
     {
       "id": "reptile-prey-pygmy-rock-monitor",
       "name": "Pygmy Rock Monitor",
+      "flavorText": "At just 20 cm long, it's one of the smallest monitor lizards, hiding in rock crevices across arid Australia.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -146,6 +157,7 @@
     {
       "id": "reptile-prey-solomons-coral-snake",
       "name": "Solomons Coral Snake",
+      "flavorText": "Endemic to the Solomon Islands, this burrowing elapid has some of the most potent venom per drop of any coral snake.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -155,6 +167,7 @@
     {
       "id": "reptile-prey-saw-scaled-viper",
       "name": "Saw-scaled Viper",
+      "flavorText": "Kills more people than any other snake. It rubs its serrated scales together to produce a warning \"sizzle\" sound.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -164,6 +177,7 @@
     {
       "id": "reptile-prey-plumed-basilisk",
       "name": "Plumed Basilisk",
+      "flavorText": "Runs across water at 1.5 m/s using fringed toes that trap air pockets, earning the name 'Jesus Christ lizard.'",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -176,6 +190,7 @@
     {
       "id": "reptile-prey-veiled-chameleon",
       "name": "Veiled Chameleon",
+      "flavorText": "Color change signals mood and temperature, not camouflage. Its eyes rotate independently for 360-degree vision.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -188,6 +203,7 @@
     {
       "id": "reptile-prey-central-american-snapping-turtle",
       "name": "Central American Snapping Turtle",
+      "flavorText": "Its bite force exceeds 1,000 psi. Snapping turtles have been on Earth since the late Cretaceous, 80 million years.",
       "type": "Prey",
       "atk": 1,
       "hp": 3,
@@ -200,6 +216,7 @@
     {
       "id": "reptile-prey-south-american-snapping-turtle",
       "name": "South American Snapping Turtle",
+      "flavorText": "Uses a worm-shaped lure on its tongue to bait fish directly into its open mouth — a rare example of reptile luring.",
       "type": "Prey",
       "atk": 1,
       "hp": 3,
@@ -212,6 +229,7 @@
     {
       "id": "reptile-prey-gaboon-viper",
       "name": "Gaboon Viper",
+      "flavorText": "Holds the record for the longest fangs of any snake at 5 cm, and can deliver 600 mg of venom in one bite.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -221,6 +239,7 @@
     {
       "id": "reptile-prey-king-brown-snake",
       "name": "King Brown Snake",
+      "flavorText": "Despite its name, it's actually an elapid, not a brown snake. It delivers the highest venom yield per bite in Australia.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -233,6 +252,7 @@
     {
       "id": "reptile-prey-alcedo-giant-tortoise",
       "name": "Alcedo Giant Tortoise",
+      "flavorText": "Galapagos giant tortoises can live over 175 years and survive a full year without food or water.",
       "type": "Prey",
       "atk": 2,
       "hp": 3,
@@ -246,6 +266,7 @@
     {
       "id": "reptile-prey-darwin-volcano-giant-tortoise",
       "name": "Darwin Volcano Giant Tortoise",
+      "flavorText": "Thought extinct until 2019 when a female was found on the active Darwin volcano after 112 years unseen.",
       "type": "Prey",
       "atk": 2,
       "hp": 3,
@@ -261,6 +282,7 @@
     {
       "id": "reptile-prey-wolf-volcano-giant-tortoise",
       "name": "Wolf Volcano Giant Tortoise",
+      "flavorText": "Hybridizes with other tortoise species on Wolf Volcano, creating genetically unique populations found nowhere else.",
       "type": "Prey",
       "atk": 2,
       "hp": 3,
@@ -273,6 +295,7 @@
     {
       "id": "reptile-prey-black-mamba",
       "name": "Black Mamba",
+      "flavorText": "Can slither at 20 km/h and delivers enough neurotoxin in one bite to kill 10 adults within an hour.",
       "type": "Prey",
       "atk": 3,
       "hp": 1,
@@ -282,6 +305,7 @@
     {
       "id": "reptile-predator-papuan-monitor",
       "name": "Papuan Monitor",
+      "flavorText": "One of the largest predators in New Guinea's highlands, it hunts birds, eggs, and small mammals in montane forests.",
       "type": "Predator",
       "atk": 2,
       "hp": 3,
@@ -296,6 +320,7 @@
     {
       "id": "reptile-predator-gharial",
       "name": "Gharial",
+      "flavorText": "Its thin snout holds over 100 interlocking teeth designed exclusively for catching fish — it cannot eat larger prey.",
       "type": "Predator",
       "atk": 2,
       "hp": 4,
@@ -307,6 +332,7 @@
     {
       "id": "reptile-predator-king-cobra",
       "name": "King Cobra",
+      "flavorText": "The world's longest venomous snake at 5.5 m. It primarily eats other snakes, including cobras and kraits.",
       "type": "Predator",
       "atk": 3,
       "hp": 2,
@@ -318,6 +344,7 @@
     {
       "id": "reptile-predator-boa-constrictor",
       "name": "Boa Constrictor",
+      "flavorText": "Kills by sensing the prey's heartbeat through its coils, tightening between beats until circulation stops completely.",
       "type": "Predator",
       "atk": 3,
       "hp": 3,
@@ -329,6 +356,7 @@
     {
       "id": "reptile-predator-chinese-alligator",
       "name": "Chinese Alligator",
+      "flavorText": "Fewer than 150 remain in the wild. Unlike most crocs, it brumates in winter burrows — the only cold-tolerant crocodilian.",
       "type": "Predator",
       "atk": 3,
       "hp": 3,
@@ -350,6 +378,7 @@
     {
       "id": "reptile-predator-american-alligator",
       "name": "American Alligator",
+      "flavorText": "A keystone species — its wallowing creates wetland habitats that hundreds of other species depend on.",
       "type": "Predator",
       "atk": 4,
       "hp": 4,
@@ -362,6 +391,7 @@
     {
       "id": "reptile-predator-american-crocodile",
       "name": "American Crocodile",
+      "flavorText": "Tolerates saltwater thanks to specialized salt-excreting glands on its tongue, thriving in coastal mangrove estuaries.",
       "type": "Predator",
       "atk": 4,
       "hp": 4,
@@ -370,6 +400,7 @@
     {
       "id": "reptile-predator-black-caiman",
       "name": "Black Caiman",
+      "flavorText": "South America's largest predator at 5+ meters. Its dark coloring absorbs heat faster for nocturnal hunting.",
       "type": "Predator",
       "atk": 4,
       "hp": 4,
@@ -378,6 +409,7 @@
     {
       "id": "reptile-predator-burmese-python",
       "name": "Burmese Python",
+      "flavorText": "Invasive in Florida, it has caused a 99% decline in raccoon and opossum populations in the Everglades.",
       "type": "Predator",
       "atk": 4,
       "hp": 4,
@@ -389,6 +421,7 @@
     {
       "id": "reptile-predator-green-anaconda",
       "name": "Green Anaconda",
+      "flavorText": "Weighing over 200 kg, it's the heaviest snake on Earth. It gives live birth to up to 40 young at once.",
       "type": "Predator",
       "atk": 4,
       "hp": 4,
@@ -403,6 +436,7 @@
     {
       "id": "reptile-predator-komodo-dragon",
       "name": "Komodo Dragon",
+      "flavorText": "Confirmed venomous in 2009 — it uses venom glands in its lower jaw, not bacteria, to cause shock and blood loss.",
       "type": "Predator",
       "atk": 4,
       "hp": 4,
@@ -411,6 +445,7 @@
     {
       "id": "reptile-predator-nile-crocodile",
       "name": "Nile Crocodile",
+      "flavorText": "Generates the strongest bite force ever measured in a living animal — over 22,000 newtons at the back teeth.",
       "type": "Predator",
       "atk": 5,
       "hp": 5,
@@ -423,6 +458,7 @@
     {
       "id": "reptile-predator-saltwater-crocodile",
       "name": "Saltwater Crocodile",
+      "flavorText": "The largest living reptile at 6+ meters. It can swim over 900 km across open ocean using sea currents.",
       "type": "Predator",
       "atk": 6,
       "hp": 6,
@@ -434,6 +470,7 @@
     {
       "id": "reptile-spell-scythian-arrows",
       "name": "Scythian Arrows",
+      "flavorText": "Scythian warriors dipped arrowheads in decomposed viper venom mixed with dung — an early form of biological warfare.",
       "type": "Spell",
       "effects": {
         "effect": [
@@ -445,6 +482,7 @@
     {
       "id": "reptile-spell-meteor",
       "name": "Meteor",
+      "flavorText": "The Chicxulub asteroid wiped out 75% of species, but crocodilians, turtles, and snakes survived to diversify rapidly.",
       "type": "Spell",
       "effects": {
         "effect": { "type": "killAll", "params": { "targetType": "all" } }
@@ -453,6 +491,7 @@
     {
       "id": "reptile-spell-snake-wine",
       "name": "Snake Wine",
+      "flavorText": "A real Southeast Asian drink: a venomous snake steeped in rice wine. Ethanol denatures the venom proteins, making it safe.",
       "type": "Spell",
       "effects": {
         "effect": { "type": "heal", "params": { "amount": 7 } }
@@ -461,6 +500,7 @@
     {
       "id": "reptile-spell-paralyze",
       "name": "Paralyze",
+      "flavorText": "Snake neurotoxins block acetylcholine receptors at nerve-muscle junctions, causing progressive paralysis within minutes.",
       "type": "Spell",
       "effects": {
         "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a Rival's creature to paralyze", "effect": { "paralyze": true } } }
@@ -469,6 +509,7 @@
     {
       "id": "reptile-spell-sunshine",
       "name": "Sunshine",
+      "flavorText": "Reptiles bask to reach optimal body temperature — even a few degrees can double their digestion speed and reflexes.",
       "type": "Spell",
       "effects": {
         "effect": { "type": "buffStats", "params": { "targetType": "all-friendly", "stats": { "attack": 2, "health": 2 } } }
@@ -477,6 +518,7 @@
     {
       "id": "reptile-free-spell-ecdysis",
       "name": "Ecdysis",
+      "flavorText": "Snakes shed their skin in one piece, including transparent eye caps. The process is triggered by thyroid hormones.",
       "type": "Free Spell",
       "effects": {
         "effect": {
@@ -492,6 +534,7 @@
     {
       "id": "reptile-free-spell-vengeful",
       "name": "Vengeful",
+      "flavorText": "Many vipers can control venom injection — 'dry bites' with no venom occur in up to 50% of defensive strikes.",
       "type": "Free Spell",
       "effects": {
         "effect": {
@@ -507,6 +550,7 @@
     {
       "id": "reptile-free-spell-cold-blooded",
       "name": "Cold-blooded",
+      "flavorText": "Ectotherms use just 10% of the calories a same-sized mammal needs, giving reptiles an edge in resource-scarce habitats.",
       "type": "Free Spell",
       "effects": {
         "effect": {
@@ -522,6 +566,7 @@
     {
       "id": "reptile-free-spell-surprise",
       "name": "Surprise",
+      "flavorText": "A striking snake accelerates its head at up to 100 m/s squared — faster than any mammalian predator's lunge.",
       "type": "Free Spell",
       "effects": {
         "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature for damage", "effect": { "damage": 2, "label": "surprise" } } }
@@ -530,6 +575,7 @@
     {
       "id": "reptile-trap-scales",
       "name": "Scales",
+      "flavorText": "Reptile scales are made of beta-keratin, harder than mammalian hair. Crocodilian osteoderms contain bone for extra armor.",
       "type": "Trap",
       "trigger": "indirectDamage",
       "effects": {
@@ -542,6 +588,7 @@
     {
       "id": "reptile-trap-snake-oil",
       "name": "Snake Oil",
+      "flavorText": "19th-century 'snake oil' was real — Chinese water snake oil contains omega-3 fats that reduce inflammation.",
       "type": "Trap",
       "trigger": "rivalDraws",
       "effects": {
@@ -554,6 +601,7 @@
     {
       "id": "reptile-trap-snake-pit",
       "name": "Snake Pit",
+      "flavorText": "Some snake species den communally — Manitoba's Narcisse pits hold up to 75,000 garter snakes in a single hibernaculum.",
       "type": "Trap",
       "trigger": "directAttack",
       "summons": ["token-snakes"],

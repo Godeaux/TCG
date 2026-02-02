@@ -11925,6 +11925,21 @@ select.menu-input option {
   border-left: 4px solid #5bc0de; /* Cyan accent for triggers */
 }
 
+/* Flavor text info box (collection/catalog only) */
+.tooltip-info-box.flavor-text-box {
+  background: linear-gradient(135deg, rgba(212, 168, 83, 0.9), rgba(212, 168, 83, 0.85));
+  border-left: 3px solid var(--gold);
+  margin-top: 8px;
+}
+
+.tooltip-flavor-text {
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: var(--font-sm);
+  line-height: 1.6;
+  text-align: center;
+}
+
 /* Token section header */
 .tooltip-token-header {
   font-family: var(--font-display);

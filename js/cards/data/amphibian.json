@@ -3,6 +3,7 @@
     {
       "id": "amphibian-prey-chernobyl-tree-frogs",
       "name": "Chernobyl Tree Frogs",
+      "flavorText": "Tree frogs near Chernobyl evolved darker skin pigmentation to resist ionizing radiation.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -16,6 +17,7 @@
     {
       "id": "amphibian-prey-confusing-rocket-frog",
       "name": "Confusing Rocket Frog",
+      "flavorText": "Allobates femoralis males wrestle rivals and carry tadpoles on their backs to scattered pools.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -28,6 +30,7 @@
     {
       "id": "amphibian-prey-desert-rain-frog",
       "name": "Desert Rain Frog",
+      "flavorText": "Breviceps macrops burrows in Namibian coastal sand dunes and squeaks like a dog toy when threatened.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -42,6 +45,7 @@
     {
       "id": "amphibian-prey-emperor-newt",
       "name": "Emperor Newt",
+      "flavorText": "Tylototriton shanjing secretes toxins through bony ribs that pierce its own skin as a defense.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -55,6 +59,7 @@
     {
       "id": "amphibian-prey-fire-salamander",
       "name": "Fire Salamander",
+      "flavorText": "Fire salamanders spray neurotoxic alkaloids from glands behind their eyes up to several meters.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -67,6 +72,7 @@
     {
       "id": "amphibian-prey-frosts-toad",
       "name": "Frost's Toad",
+      "flavorText": "Incilius cristatus lives in cloud forests above 1,800m and breeds only in cold mountain streams.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -78,6 +84,7 @@
     {
       "id": "amphibian-prey-golden-flecked-glass-frog",
       "name": "Golden-flecked Glass Frog",
+      "flavorText": "Glass frogs hide red blood cells in their liver while sleeping, becoming nearly transparent to predators.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -93,6 +100,7 @@
     {
       "id": "amphibian-prey-golden-mantellas",
       "name": "Golden Mantellas",
+      "flavorText": "Golden mantellas are endemic to a single swamp in eastern Madagascar, spanning just 10 sq km.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -109,6 +117,7 @@
     {
       "id": "amphibian-prey-golden-poison-frog",
       "name": "Golden Poison Frog",
+      "flavorText": "One golden poison frog holds enough batrachotoxin to kill 10 humans. It gets its toxin from its diet.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -123,6 +132,7 @@
     {
       "id": "amphibian-prey-java-flying-frog",
       "name": "Java Flying Frog",
+      "flavorText": "Rhacophorus reinwardtii glides up to 15 meters between trees using oversized webbed feet as parachutes.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -132,6 +142,7 @@
     {
       "id": "amphibian-prey-monte-iberia-eleuth",
       "name": "Monte Iberia Eleuth",
+      "flavorText": "At just 10mm long, the Monte Iberia eleuth is one of the world's smallest tetrapods.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -145,6 +156,7 @@
     {
       "id": "amphibian-prey-panamanian-golden-frog",
       "name": "Panamanian Golden Frog",
+      "flavorText": "Presumed extinct in the wild, it communicates via semaphore-like hand waving since waterfalls drown out calls.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -158,6 +170,7 @@
     {
       "id": "amphibian-prey-phantasmal-poison-frog",
       "name": "Phantasmal Poison Frog",
+      "flavorText": "Epipedobates tricolor produces epibatidine, a painkiller 200 times stronger than morphine.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -171,6 +184,7 @@
     {
       "id": "amphibian-prey-purple-frog",
       "name": "Purple Frog",
+      "flavorText": "The purple frog spends 50 weeks underground eating termites, surfacing only during monsoon to breed.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -185,6 +199,7 @@
     {
       "id": "amphibian-prey-red-tailed-knobby-newts",
       "name": "Red-tailed Knobby Newts",
+      "flavorText": "These newts push sharp rib tips through their skin to inject toxin into a predator's mouth.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -198,6 +213,7 @@
     {
       "id": "amphibian-prey-siberian-salamander",
       "name": "Siberian Salamander",
+      "flavorText": "Can survive being frozen at -35C for years by producing glycerol antifreeze in its tissues.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -213,6 +229,7 @@
     {
       "id": "amphibian-prey-turtle-frog",
       "name": "Turtle Frog",
+      "flavorText": "Myobatrachus gouldii digs headfirst with muscular arms to reach termite nests in Australian sand.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -226,6 +243,7 @@
     {
       "id": "amphibian-prey-tomato-frog",
       "name": "Tomato Frog",
+      "flavorText": "When grabbed, tomato frogs secrete a thick white glue from their skin that numbs predators' eyes.",
       "type": "Prey",
       "atk": 1,
       "hp": 2,
@@ -239,6 +257,7 @@
     {
       "id": "amphibian-prey-hippo-frog",
       "name": "Hippo Frog",
+      "flavorText": "Hemisus marmoratus headbutts into soil to burrow and can eat prey nearly as large as itself.",
       "type": "Prey",
       "atk": 1,
       "hp": 2,
@@ -250,6 +269,7 @@
     {
       "id": "amphibian-prey-surinam-toad",
       "name": "Surinam Toad",
+      "flavorText": "Females embed fertilized eggs into spongy back skin, where tadpoles develop and erupt as fully formed frogs.",
       "type": "Prey",
       "atk": 1,
       "hp": 2,
@@ -262,6 +282,7 @@
     {
       "id": "amphibian-prey-axolotl",
       "name": "Axolotl",
+      "flavorText": "Axolotls can regenerate limbs, spinal cord, heart tissue, and even parts of their brain without scarring.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -274,6 +295,7 @@
     {
       "id": "amphibian-prey-bigfoot-leopard-frog",
       "name": "Bigfoot Leopard Frog",
+      "flavorText": "Discovered in 2012, Lithobates megapoda has disproportionately large hind feet for navigating rocky streams.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -286,6 +308,7 @@
     {
       "id": "amphibian-predator-indian-bullfrog",
       "name": "Indian Bullfrog",
+      "flavorText": "Males turn bright yellow during breeding season. They eat insects, mice, and even small snakes.",
       "type": "Predator",
       "atk": 2,
       "hp": 2,
@@ -300,6 +323,7 @@
     {
       "id": "amphibian-predator-american-bullfrogs",
       "name": "American Bullfrogs",
+      "flavorText": "American bullfrogs eat anything that fits in their mouth: birds, bats, snakes, and other frogs.",
       "type": "Predator",
       "atk": 3,
       "hp": 3,
@@ -311,6 +335,7 @@
     {
       "id": "amphibian-predator-mountain-chicken",
       "name": "Mountain Chicken",
+      "flavorText": "Named for tasting like chicken, Leptodactylus fallax is critically endangered with fewer than 8,000 left.",
       "type": "Predator",
       "atk": 4,
       "hp": 4,
@@ -323,6 +348,7 @@
     {
       "id": "amphibian-predator-titicaca-water-frog",
       "name": "Titicaca Water Frog",
+      "flavorText": "Its excessive loose skin folds increase surface area for absorbing oxygen from Lake Titicaca at 3,800m.",
       "type": "Predator",
       "atk": 3,
       "hp": 3,
@@ -334,6 +360,7 @@
     {
       "id": "amphibian-predator-african-bullfrog",
       "name": "African Bullfrog",
+      "flavorText": "Males guard tadpole pools and dig channels to connect drying puddles, saving thousands of offspring.",
       "type": "Predator",
       "atk": 4,
       "hp": 4,
@@ -345,6 +372,7 @@
     {
       "id": "amphibian-predator-cane-toad",
       "name": "Cane Toad",
+      "flavorText": "Introduced to Australia in 1935 for pest control, cane toads now number over 200 million there.",
       "type": "Predator",
       "atk": 4,
       "hp": 4,
@@ -357,6 +385,7 @@
     {
       "id": "amphibian-predator-goliath-frog",
       "name": "Goliath Frog",
+      "flavorText": "The world's largest frog at 3.3kg. It moves rocks up to half its body weight to build river nests.",
       "type": "Predator",
       "atk": 4,
       "hp": 4,
@@ -370,6 +399,7 @@
     {
       "id": "amphibian-predator-hellbender-salamander",
       "name": "Hellbender Salamander",
+      "flavorText": "North America's largest salamander at 74cm. It breathes entirely through its wrinkled skin underwater.",
       "type": "Predator",
       "atk": 4,
       "hp": 4,
@@ -380,6 +410,7 @@
     {
       "id": "amphibian-predator-helmeted-water-toad",
       "name": "Helmeted Water Toad",
+      "flavorText": "Calyptocephalella gayi has a bony, helmet-like skull used to block burrow entrances from predators.",
       "type": "Predator",
       "atk": 4,
       "hp": 4,
@@ -388,6 +419,7 @@
     {
       "id": "amphibian-predator-lake-junin-giant-frog",
       "name": "Lake Junin Giant Frog",
+      "flavorText": "Endemic to Peru's Lake Junin at 4,080m elevation, it is one of the highest-dwelling frogs on Earth.",
       "type": "Predator",
       "atk": 4,
       "hp": 4,
@@ -401,6 +433,7 @@
     {
       "id": "amphibian-predator-japanese-giant-salamander",
       "name": "Japanese Giant Salamander",
+      "flavorText": "Up to 1.5m long, it hunts by ambush using sensory nodes on its head to detect water vibrations.",
       "type": "Predator",
       "atk": 5,
       "hp": 5,
@@ -411,6 +444,7 @@
     {
       "id": "amphibian-predator-chinese-giant-salamander",
       "name": "Chinese Giant Salamander",
+      "flavorText": "The largest living amphibian at 1.8m. Its vocalizations sound eerily like a crying human baby.",
       "type": "Predator",
       "atk": 6,
       "hp": 6,
@@ -423,6 +457,7 @@
     {
       "id": "amphibian-spell-ambiguity",
       "name": "Ambiguity",
+      "flavorText": "Many amphibians can switch sex under environmental stress, blurring the line between male and female.",
       "type": "Spell",
       "effects": {
         "effect": {
@@ -441,6 +476,7 @@
     {
       "id": "amphibian-spell-bounce",
       "name": "Bounce",
+      "flavorText": "Frogs absorb water through a permeable patch on their belly instead of drinking with their mouths.",
       "type": "Spell",
       "effects": {
         "effect": {
@@ -452,6 +488,7 @@
     {
       "id": "amphibian-spell-leapfrog",
       "name": "Leapfrog",
+      "flavorText": "Some frogs can leap 20 times their body length in a single bound using elastic tendon energy storage.",
       "type": "Spell",
       "effects": {
         "effect": [
@@ -463,6 +500,7 @@
     {
       "id": "amphibian-spell-monsoon",
       "name": "Monsoon",
+      "flavorText": "Tropical monsoons trigger mass amphibian breeding events with thousands spawning in a single night.",
       "type": "Spell",
       "summons": ["token-rainbow"],
       "effects": {
@@ -476,6 +514,7 @@
     {
       "id": "amphibian-spell-pounce-plummet",
       "name": "Pounce Plummet",
+      "flavorText": "Red-eyed tree frogs use startle coloration, flashing bright eyes and flanks to confuse lunging predators.",
       "type": "Spell",
       "effects": {
         "effect": [
@@ -487,6 +526,7 @@
     {
       "id": "amphibian-spell-shower",
       "name": "Shower",
+      "flavorText": "Amphibian skin secretes antimicrobial peptides now being studied as next-generation antibiotics.",
       "type": "Spell",
       "effects": {
         "effect": { "type": "buffStats", "params": { "targetType": "all-friendly", "stats": { "attack": 2, "health": 2 } } }
@@ -495,6 +535,7 @@
     {
       "id": "amphibian-spell-terrain-shift",
       "name": "Terrain Shift",
+      "flavorText": "Amphibians are bioindicators: their permeable skin makes them the first to vanish when ecosystems degrade.",
       "type": "Spell",
       "effects": {
         "effect": { "type": "killEnemyTokens", "params": {} }
@@ -503,6 +544,7 @@
     {
       "id": "amphibian-spell-whitewater",
       "name": "Whitewater",
+      "flavorText": "Torrent frogs have enlarged toe pads and muscular legs to cling to rocks in fast-flowing rapids.",
       "type": "Spell",
       "effects": {
         "effect": [
@@ -514,6 +556,7 @@
     {
       "id": "amphibian-free-spell-metamorphosis",
       "name": "Metamorphosis",
+      "flavorText": "Metamorphosis remodels nearly every organ: gills become lungs, tails are reabsorbed, and the jaw restructures.",
       "type": "Free Spell",
       "effects": {
         "effect": {
@@ -529,6 +572,7 @@
     {
       "id": "amphibian-free-spell-newt",
       "name": "Newt",
+      "flavorText": "Newts regenerate entire limbs, lens tissue, and cardiac muscle throughout their lives without tumors.",
       "type": "Free Spell",
       "effects": {
         "effect": {
@@ -542,6 +586,7 @@
     {
       "id": "amphibian-free-spell-sleight-of-hand",
       "name": "Sleight of Hand",
+      "flavorText": "Frog toe pads use wet adhesion: nanopillar structures and mucus create grip strong enough to climb glass.",
       "type": "Free Spell",
       "effects": {
         "effect": { "type": "draw", "params": { "count": 2 } }
@@ -550,6 +595,7 @@
     {
       "id": "amphibian-free-spell-slime",
       "name": "Slime",
+      "flavorText": "Frog mucus contains over 100 unique compounds, some antiviral enough to neutralize influenza strains.",
       "type": "Free Spell",
       "effects": {
         "effect": {
@@ -568,6 +614,7 @@
     {
       "id": "amphibian-trap-blowdart",
       "name": "Blowdart",
+      "flavorText": "Choco people rub dart tips on golden poison frogs; one frog can coat 50 darts that stay lethal for years.",
       "type": "Trap",
       "trigger": "directAttack",
       "effects": {
@@ -580,6 +627,7 @@
     {
       "id": "amphibian-trap-rebound",
       "name": "Rebound",
+      "flavorText": "Frogs use their eyeballs to swallow food, retracting them into the mouth to push prey down the throat.",
       "type": "Trap",
       "trigger": "rivalPlaysCard",
       "effects": {
@@ -592,6 +640,7 @@
     {
       "id": "amphibian-trap-slip",
       "name": "Slip",
+      "flavorText": "Amphibian skin mucus inspired biomimetic coatings that reduce surgical adhesions and infection rates.",
       "type": "Trap",
       "trigger": "defending",
       "effects": {

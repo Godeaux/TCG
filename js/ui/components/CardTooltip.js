@@ -387,9 +387,10 @@ const removeWheelHandler = () => {
  * @param {Object} options - Display options
  * @param {boolean} options.showPreview - Whether to show enlarged card preview (default: true)
  * @param {HTMLElement} options.anchorRight - Element to anchor tooltip's right edge to (for consistent positioning)
+ * @param {string} options.context - Display context: 'collection', 'catalog', or 'gameplay' (default: 'gameplay')
  */
 export const showCardTooltip = (card, targetElement, options = {}) => {
-  const { showPreview = true, anchorRight = null } = options;
+  const { showPreview = true, anchorRight = null, context = 'gameplay' } = options;
 
   // Lazy init if needed
   if (!isInitialized) {
@@ -412,7 +413,7 @@ export const showCardTooltip = (card, targetElement, options = {}) => {
     cardPreviewElement.style.display = 'none';
     tooltipElement.classList.add('info-only');
   }
-  renderInfoBoxes(card);
+  renderInfoBoxes(card, context);
 
   // Position and show
   positionTooltip(targetElement, { showPreview, anchorRight });
@@ -614,7 +615,7 @@ const createTokenPreview = (token) => {
  * Render keyword and status info boxes.
  * @param {Object} card - Card data
  */
-const renderInfoBoxes = (card) => {
+const renderInfoBoxes = (card, context = 'gameplay') => {
   if (!infoBoxesElement) return;
 
   infoBoxesElement.innerHTML = '';
@@ -736,6 +737,14 @@ const renderInfoBoxes = (card) => {
         infoBoxesElement.appendChild(createTokenPreview(token));
       }
     });
+  }
+
+  // Add flavor text at the bottom (only in collection/catalog contexts)
+  if ((context === 'collection' || context === 'catalog') && card.flavorText) {
+    const flavorBox = document.createElement('div');
+    flavorBox.className = 'tooltip-info-box flavor-text-box';
+    flavorBox.innerHTML = `<div class="tooltip-flavor-text">${card.flavorText}</div>`;
+    infoBoxesElement.appendChild(flavorBox);
   }
 };
 

@@ -3,6 +3,7 @@
     {
       "id": "fish-prey-atlantic-flying-fish",
       "name": "Atlantic Flying Fish",
+      "flavorText": "Can glide 200 meters on wing-like pectoral fins, reaching 60 km/h to escape predators.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -21,6 +22,7 @@
     {
       "id": "fish-prey-black-mullet",
       "name": "Black Mullet",
+      "flavorText": "Feeds by scooping mud and filtering algae through its gill rakers — a living vacuum cleaner.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -30,6 +32,7 @@
     {
       "id": "fish-prey-blobfish",
       "name": "Blobfish",
+      "flavorText": "At 1,200m depth its gelatinous body is firm and functional — it only 'melts' at surface pressure.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -42,6 +45,7 @@
     {
       "id": "fish-prey-celestial-eye-goldfish",
       "name": "Celestial Eye Goldfish",
+      "flavorText": "Selectively bred in China for 300+ years — its upward-locked eyes cannot look forward at all.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -67,6 +71,7 @@
     {
       "id": "fish-prey-ghost-eel",
       "name": "Ghost Eel",
+      "flavorText": "A white garden eel that burrows tail-first into sand and sways with the current to catch plankton.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -79,6 +84,7 @@
     {
       "id": "fish-prey-golden-angelfish",
       "name": "Golden Angelfish",
+      "flavorText": "Angelfish form monogamous pairs and both parents fiercely guard their eggs from intruders.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -99,6 +105,7 @@
     {
       "id": "fish-prey-leafy-seadragon",
       "name": "Leafy Seadragon",
+      "flavorText": "Males carry the eggs on a spongy patch under their tail — females play no role after mating.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -117,6 +124,7 @@
     {
       "id": "fish-prey-portuguese-man-o-war-legion",
       "name": "Portuguese Man O' War Legion",
+      "flavorText": "Not one animal but a colony of specialized organisms called zooids, each with a unique function.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -143,6 +151,7 @@
     {
       "id": "fish-prey-psychedelic-frogfish",
       "name": "Psychedelic Frogfish",
+      "flavorText": "Discovered in 2009 off Indonesia — it bounces along the seafloor instead of swimming.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -152,6 +161,7 @@
     {
       "id": "fish-prey-rainbow-mantis-shrimp",
       "name": "Rainbow Mantis Shrimp",
+      "flavorText": "Its strike accelerates faster than a .22 caliber bullet, creating cavitation bubbles that boil the water.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -177,6 +187,7 @@
     {
       "id": "fish-prey-rainbow-sardines",
       "name": "Rainbow Sardines",
+      "flavorText": "Sardine schools can number in the millions, creating 'bait balls' that attract every predator nearby.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -209,6 +220,7 @@
     {
       "id": "fish-prey-rainbow-trout",
       "name": "Rainbow Trout",
+      "flavorText": "Their pink flesh comes from carotenoids in their crustacean diet — farm-raised ones are naturally gray.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -236,6 +248,7 @@
     {
       "id": "fish-prey-spearfish-remora",
       "name": "Spearfish Remora",
+      "flavorText": "Remoras attach via a modified dorsal fin that acts as a suction cup — the bond is entirely voluntary.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -248,6 +261,7 @@
     {
       "id": "fish-prey-blue-ringed-octopus",
       "name": "Blue-ringed Octopus",
+      "flavorText": "Carries enough tetrodotoxin to kill 26 adults — and there is no known antidote.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
@@ -257,6 +271,7 @@
     {
       "id": "fish-prey-cannibal-fish",
       "name": "Cannibal Fish",
+      "flavorText": "Lancetfish are among the few fish known to regularly eat their own species — stomachs often contain smaller lancetfish.",
       "type": "Prey",
       "atk": 2,
       "hp": 1,
@@ -287,6 +302,7 @@
     {
       "id": "fish-prey-black-drum",
       "name": "Black Drum",
+      "flavorText": "Produces a drumming sound using muscles against its swim bladder — audible from above the water.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -308,6 +324,7 @@
     {
       "id": "fish-prey-deep-sea-angler",
       "name": "Deep-sea Angler",
+      "flavorText": "The male fuses permanently to the female's body, sharing her bloodstream — losing his eyes and organs.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -326,6 +343,7 @@
     {
       "id": "fish-prey-electric-eel",
       "name": "Electric Eel",
+      "flavorText": "Not a true eel — it's a knifefish that must surface to breathe air, producing up to 860 volts.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -345,6 +363,7 @@
     {
       "id": "fish-prey-golden-dorado",
       "name": "Golden Dorado",
+      "flavorText": "South America's top freshwater predator — it leaps clear out of the water to snatch birds mid-flight.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -362,6 +381,7 @@
     {
       "id": "fish-prey-king-salmon",
       "name": "King Salmon",
+      "flavorText": "Chinook salmon navigate home using Earth's magnetic field, then stop eating and die after spawning.",
       "type": "Prey",
       "atk": 2,
       "hp": 2,
@@ -380,6 +400,7 @@
     {
       "id": "fish-prey-kingfish",
       "name": "Kingfish",
+      "flavorText": "King mackerel migrate over 1,000 miles seasonally and can sprint at 40 mph in short bursts.",
       "type": "Prey",
       "atk": 3,
       "hp": 2,
@@ -389,6 +410,7 @@
     {
       "id": "fish-prey-silver-king",
       "name": "Silver King",
+      "flavorText": "Tarpon can gulp air using a primitive lung-like swim bladder, letting them survive in oxygen-poor water.",
       "type": "Prey",
       "atk": 3,
       "hp": 3,
@@ -411,6 +433,7 @@
     {
       "id": "fish-predator-sailfish",
       "name": "Sailfish",
+      "flavorText": "The fastest fish in the ocean at 110 km/h — it folds its dorsal sail flat for maximum hydrodynamics.",
       "type": "Predator",
       "atk": 3,
       "hp": 1,
@@ -419,6 +442,7 @@
     {
       "id": "fish-predator-wahoo",
       "name": "Wahoo",
+      "flavorText": "One of the fastest fish alive at 80 km/h, with razor teeth that can sever wire fishing leaders.",
       "type": "Predator",
       "atk": 3,
       "hp": 2,
@@ -427,6 +451,7 @@
     {
       "id": "fish-predator-alligator-gar",
       "name": "Alligator Gar",
+      "flavorText": "A living fossil from the Cretaceous — its ganoid scales are so hard, Native Americans used them as arrowheads.",
       "type": "Predator",
       "atk": 3,
       "hp": 3,
@@ -444,6 +469,7 @@
     {
       "id": "fish-predator-atlantic-bluefin-tuna",
       "name": "Atlantic Bluefin Tuna",
+      "flavorText": "Warm-blooded for a fish — it heats its muscles and brain to hunt in frigid deep water at 70 km/h.",
       "type": "Predator",
       "atk": 3,
       "hp": 3,
@@ -461,6 +487,7 @@
     {
       "id": "fish-predator-goliath-grouper",
       "name": "Goliath Grouper",
+      "flavorText": "Can weigh over 360 kg and swallows prey whole using a powerful vacuum created by its massive mouth.",
       "type": "Predator",
       "atk": 3,
       "hp": 3,
@@ -472,6 +499,7 @@
     {
       "id": "fish-predator-shortfin-mako",
       "name": "Shortfin Mako",
+      "flavorText": "The fastest shark at 74 km/h — one of few sharks that can leap fully out of the water when hunting.",
       "type": "Predator",
       "atk": 3,
       "hp": 3,
@@ -490,6 +518,7 @@
     {
       "id": "fish-predator-swordfish",
       "name": "Swordfish",
+      "flavorText": "Uses its bill to slash through fish schools, stunning prey with lateral swipes before circling back to eat.",
       "type": "Predator",
       "atk": 4,
       "hp": 2,
@@ -498,6 +527,7 @@
     {
       "id": "fish-predator-beluga-whale",
       "name": "Beluga Whale",
+      "flavorText": "The only whale that can change its facial expression — and echolocates with a flexible, oil-filled melon.",
       "type": "Predator",
       "atk": 4,
       "hp": 4,
@@ -509,6 +539,7 @@
     {
       "id": "fish-predator-narwhal",
       "name": "Narwhal",
+      "flavorText": "Its tusk is actually a left canine tooth with 10 million nerve endings — it senses temperature and salinity.",
       "type": "Predator",
       "atk": 4,
       "hp": 4,
@@ -526,6 +557,7 @@
     {
       "id": "fish-predator-tiger-shark",
       "name": "Tiger Shark",
+      "flavorText": "Nicknamed the 'garbage can of the sea' — stomachs have contained license plates, tires, and suits of armor.",
       "type": "Predator",
       "atk": 4,
       "hp": 4,
@@ -537,6 +569,7 @@
     {
       "id": "fish-predator-black-marlin",
       "name": "Black Marlin",
+      "flavorText": "Clocked at 130 km/h — likely the fastest fish on Earth, though its speed is difficult to measure.",
       "type": "Predator",
       "atk": 5,
       "hp": 3,
@@ -545,6 +578,7 @@
     {
       "id": "fish-predator-great-white-shark",
       "name": "Great White Shark",
+      "flavorText": "Can detect one drop of blood in 100 liters of water and sense electrical fields from muscle contractions.",
       "type": "Predator",
       "atk": 5,
       "hp": 5,
@@ -556,6 +590,7 @@
     {
       "id": "fish-predator-orca",
       "name": "Orca",
+      "flavorText": "Orca pods have unique dialects and hunting techniques passed down through generations — a true culture.",
       "type": "Predator",
       "atk": 6,
       "hp": 6,
@@ -572,6 +607,7 @@
     {
       "id": "fish-spell-net",
       "name": "Net",
+      "flavorText": "Gill nets have been used since the Stone Age — modern drift nets can stretch over 50 km long.",
       "type": "Spell",
       "effects": {
         "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-prey", "title": "Choose a prey to kill", "effect": { "kill": true } } }
@@ -580,6 +616,7 @@
     {
       "id": "fish-spell-fish-food",
       "name": "Fish Food",
+      "flavorText": "Commercial fish feed converts at a 1.2:1 ratio — among the most efficient protein production in agriculture.",
       "type": "Spell",
       "effects": {
         "effect": {
@@ -597,6 +634,7 @@
     {
       "id": "fish-spell-flood",
       "name": "Flood",
+      "flavorText": "Flash floods reshape entire river ecosystems in hours, redistributing nutrients across floodplains.",
       "type": "Spell",
       "effects": {
         "effect": {
@@ -610,6 +648,7 @@
     {
       "id": "fish-spell-sunken-treasure",
       "name": "Sunken Treasure",
+      "flavorText": "The ocean floor holds an estimated 20 million tons of gold — but it's too diluted to extract profitably.",
       "type": "Spell",
       "effects": {
         "effect": {
@@ -628,6 +667,7 @@
     {
       "id": "fish-spell-harpoon",
       "name": "Harpoon",
+      "flavorText": "Toggling harpoons revolutionized whaling — the head pivots after entry, making extraction impossible.",
       "type": "Spell",
       "effects": {
         "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a Rival's creature", "effect": { "damage": 4, "steal": true } } }
@@ -636,6 +676,7 @@
     {
       "id": "fish-free-spell-angler",
       "name": "Angler",
+      "flavorText": "Anglerfish lures glow via symbiotic bioluminescent bacteria that live nowhere else in nature.",
       "type": "Free Spell",
       "effects": {
         "effect": [
@@ -647,6 +688,7 @@
     {
       "id": "fish-free-spell-edible",
       "name": "Edible",
+      "flavorText": "Trophic cascades show that removing one predator can collapse an entire ecosystem within years.",
       "type": "Free Spell",
       "effects": {
         "effect": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-predators", "title": "Choose a predator to gain Edible", "effect": { "keyword": "Edible" } } }
@@ -655,6 +697,7 @@
     {
       "id": "fish-spell-washout",
       "name": "Washout",
+      "flavorText": "Storm surges can push seawater miles inland, stripping habitats bare and resetting coastal ecosystems.",
       "type": "Spell",
       "effects": {
         "effect": [
@@ -666,6 +709,7 @@
     {
       "id": "fish-free-spell-undertow",
       "name": "Undertow",
+      "flavorText": "Undertows pull at up to 8 feet per second — faster than an Olympic swimmer's sustained speed.",
       "type": "Free Spell",
       "effects": {
         "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a Rival's creature to strip abilities", "effect": { "removeAbilities": true } } }
@@ -674,6 +718,7 @@
     {
       "id": "fish-trap-cramp",
       "name": "Cramp",
+      "flavorText": "Cold water cramps occur when muscles lose electrolytes — marine mammals counter this with high myoglobin stores.",
       "type": "Trap",
       "trigger": "rivalPlaysPred",
       "effects": {
@@ -683,6 +728,7 @@
     {
       "id": "fish-trap-riptide",
       "name": "Riptide",
+      "flavorText": "Rip currents form when waves break unevenly — they account for 80% of ocean rescue calls worldwide.",
       "type": "Trap",
       "trigger": "rivalPlaysPrey",
       "effects": {
@@ -692,6 +738,7 @@
     {
       "id": "fish-trap-maelstrom",
       "name": "Maelstrom",
+      "flavorText": "The Moskstraumen maelstrom off Norway generates whirlpools strong enough to pull small boats underwater.",
       "type": "Trap",
       "trigger": "directAttack",
       "effects": {
