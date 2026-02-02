@@ -29,11 +29,7 @@ export { renderMenuOverlays, hideAllMenuOverlays } from './MenuOverlay.js';
 // SETUP OVERLAY
 // ============================================================================
 
-export {
-  renderSetupOverlay,
-  hideSetupOverlay,
-  resetSetupAIState,
-} from './SetupOverlay.js';
+export { renderSetupOverlay, hideSetupOverlay, resetSetupAIState } from './SetupOverlay.js';
 
 // ============================================================================
 // DECK BUILDER OVERLAYS

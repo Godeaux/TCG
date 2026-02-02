@@ -42,4 +42,3 @@ export {
   SPELL_VISUAL_EFFECTS,
   TRIBE_THEMES,
 } from './spellEffects.js';
-

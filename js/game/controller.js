@@ -37,7 +37,6 @@ import {
   logMessage,
   drawCard,
   queueVisualEffect,
-  rollSetupDie,
   chooseFirstPlayer,
   setPlayerDeck,
   getTrapsFromHand,
