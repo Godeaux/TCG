@@ -1,0 +1,17 @@
+{
+  "name": "ai-game-studio",
+  "version": "0.1.0",
+  "description": "Multi-agent AI game development studio — watch AI agents collaborate to build games in real-time",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node src/ui/server.js",
+    "studio": "node src/index.js --with-ui"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "express": "^4.21.0",
+    "ws": "^8.18.0"
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "name": "turn-based",
+  "genre": "turn-based strategy",
+  "description": "Starter template for turn-based games (card games, tactics, RPGs)",
+
+  "directories": [
+    "src/state",
+    "src/game",
+    "src/ui",
+    "src/ai",
+    "data",
+    "assets",
+    "tests",
+    "docs",
+    "design"
+  ],
+
+  "modules": {
+    "state": {
+      "description": "Game state management — immutable state, selectors, action types",
+      "allowedRoles": ["programmer"],
+      "paths": ["src/state/**"]
+    },
+    "game": {
+      "description": "Game rules, turn logic, combat, effects",
+      "allowedRoles": ["programmer"],
+      "paths": ["src/game/**"]
+    },
+    "ui": {
+      "description": "Rendering, input, animations, components",
+      "allowedRoles": ["designer", "programmer"],
+      "paths": ["src/ui/**"]
+    },
+    "ai": {
+      "description": "AI opponent decision-making and evaluation",
+      "allowedRoles": ["programmer"],
+      "paths": ["src/ai/**"]
+    },
+    "data": {
+      "description": "Game content — card definitions, level data, balance numbers",
+      "allowedRoles": ["designer"],
+      "paths": ["data/**"]
+    },
+    "tests": {
+      "description": "Test files and test infrastructure",
+      "allowedRoles": ["tester"],
+      "paths": ["tests/**"]
+    },
+    "docs": {
+      "description": "Documentation and design documents",
+      "allowedRoles": ["architect"],
+      "paths": ["docs/**", "design/**"]
+    }
+  },
+
+  "files": [
+    {
+      "path": "src/state/gameState.js",
+      "content": "/**\n * Central game state.\n * All state access goes through selectors.\n * All mutations go through the controller.\n */\nexport function createInitialState() {\n  return {\n    turn: 0,\n    phase: 'setup',\n    players: {},\n    board: {},\n  };\n}\n"
+    },
+    {
+      "path": "src/game/controller.js",
+      "content": "/**\n * Game controller — single entry point for all game actions.\n * Every state mutation flows through here.\n */\nexport class GameController {\n  static execute(action, state) {\n    // Action dispatch — implement per game\n    return state;\n  }\n}\n"
+    },
+    {
+      "path": "src/ui/renderer.js",
+      "content": "/**\n * Main renderer — reads state and updates the DOM.\n * Never mutates state directly.\n */\nexport function render(state) {\n  // Implement rendering\n}\n"
+    },
+    {
+      "path": "docs/architecture.md",
+      "content": "# {{name}} Architecture\\n\\nGenre: {{genre}}\\n\\n## Modules\\n\\n- **state/** — Game state management\\n- **game/** — Game logic and rules\\n- **ui/** — User interface\\n- **ai/** — AI opponent\\n- **data/** — Game content\\n"
+    }
+  ]
+}

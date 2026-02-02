@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Game Studio</title>
+  <link rel="stylesheet" href="studio.css">
+</head>
+<body>
+  <header>
+    <h1>AI Game Studio</h1>
+    <div id="studio-status" class="status">Disconnected</div>
+  </header>
+
+  <main>
+    <!-- Agent cards — one per active agent -->
+    <section id="agents" class="panel">
+      <h2>Agents</h2>
+      <div id="agent-list"></div>
+    </section>
+
+    <!-- Task board — kanban-style columns -->
+    <section id="tasks" class="panel">
+      <h2>Tasks</h2>
+      <div id="task-columns">
+        <div class="column" data-status="pending">
+          <h3>Pending</h3>
+          <div class="task-list"></div>
+        </div>
+        <div class="column" data-status="active">
+          <h3>Active</h3>
+          <div class="task-list"></div>
+        </div>
+        <div class="column" data-status="completed">
+          <h3>Done</h3>
+          <div class="task-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Live event feed -->
+    <section id="timeline" class="panel">
+      <h2>Timeline</h2>
+      <div id="event-feed"></div>
+    </section>
+
+    <!-- File activity -->
+    <section id="files" class="panel">
+      <h2>File Activity</h2>
+      <div id="file-feed"></div>
+    </section>
+  </main>
+
+  <script type="module" src="studio.js"></script>
+</body>
+</html>
