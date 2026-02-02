@@ -9,18 +9,12 @@ function loadStored(key, fallback) {
   try {
     const val = parseFloat(localStorage.getItem(key));
     if (!isNaN(val) && val >= 0 && val <= 1) return val;
-  } catch {
-    /* noop */
-  }
+  } catch { /* noop */ }
   return fallback;
 }
 
 function saveStored(key, val) {
-  try {
-    localStorage.setItem(key, String(val));
-  } catch {
-    /* noop */
-  }
+  try { localStorage.setItem(key, String(val)); } catch { /* noop */ }
 }
 
 // Channel definition

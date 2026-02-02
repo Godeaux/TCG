@@ -29,22 +29,22 @@ import { TutorialEngine } from './TutorialEngine.js';
 
 const SPLASH_TIPS = [
   'Ambush beats Poisonous. No contact, no poison!',
-  "Ambush won't save you from Toxic.",
+  'Ambush won\'t save you from Toxic.',
   'Toxic kills anything it touches. Barrier blocks it!',
-  "Neurotoxic doesn't even need to deal damage!",
+  'Neurotoxic doesn\'t even need to deal damage!',
   'Neurotoxic strips all abilities. Permanently.',
   'Acuity sees through Hidden AND Invisible!',
   'Lure vs Hidden? Whichever was applied last takes priority.',
   'Frozen creatures thaw after one turn. Paralyzed ones die.',
   'Tokens skip the Carrion pile!',
   'Free Play cards are free, but only before you spend your one-card limit!',
-  "Creatures can fight the turn they're played. Haste lets you hit face!",
-  "Traps don't wait for your turn!",
-  "Predators only get their effects when they eat a Prey! Otherwise they're Dry Dropped",
+  'Creatures can fight the turn they\'re played. Haste lets you hit face!',
+  'Traps don\'t wait for your turn!',
+  'Predators only get their effects when they eat a Prey! Otherwise they\'re Dry Dropped',
   'Barrier eats one hit and pops.',
   'Attack a Poisonous creature and your attacker dies.',
   'Immune creatures ignore any source of damage other than a direct animal attack.',
-  "Regen restores to base HP only. Consumed stats don't count!",
+  'Regen restores to base HP only. Consumed stats don\'t count!',
   'You get two Main phases. Use both!',
 ];
 

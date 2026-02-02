@@ -355,8 +355,8 @@ const setupWheelHandler = (targetElement) => {
     // Prevent page scroll only if we're actually scrolling content
     const atTop = infoBoxesElement.scrollTop === 0 && e.deltaY < 0;
     const atBottom =
-      infoBoxesElement.scrollTop + infoBoxesElement.clientHeight >= infoBoxesElement.scrollHeight &&
-      e.deltaY > 0;
+      infoBoxesElement.scrollTop + infoBoxesElement.clientHeight >=
+        infoBoxesElement.scrollHeight && e.deltaY > 0;
     if (!atTop && !atBottom) {
       e.preventDefault();
     }
@@ -692,7 +692,11 @@ const renderInfoBoxes = (card) => {
     const info = STATUS_DESCRIPTIONS.stalking;
     const stalkBonus = card.stalkBonus || 0;
     infoBoxesElement.appendChild(
-      createInfoBox(`${info.emoji} ${info.name} (+${stalkBonus} ATK)`, info.description, 'status')
+      createInfoBox(
+        `${info.emoji} ${info.name} (+${stalkBonus} ATK)`,
+        info.description,
+        'status'
+      )
     );
   }
 

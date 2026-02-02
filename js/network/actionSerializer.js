@@ -83,7 +83,7 @@ export function serializeAction(action) {
       if (Array.isArray(payload.options?.effectTargets) && payload.options.effectTargets.length) {
         serialized.payload.options = {
           ...(serialized.payload.options || payload.options),
-          effectTargets: payload.options.effectTargets.map((et) => {
+          effectTargets: payload.options.effectTargets.map(et => {
             if (et.type === 'player' || et.type === 'option') return et;
             if (et.instanceId) return { _effectTarget: true, ...toCardRef(et, 'field') };
             return et;
@@ -186,7 +186,7 @@ export function serializeAction(action) {
 
   // Generic: serialize effectTargets on any action type
   if (Array.isArray(payload.effectTargets)) {
-    serialized.payload.effectTargets = payload.effectTargets.map((et) => {
+    serialized.payload.effectTargets = payload.effectTargets.map(et => {
       if (et.type === 'player' || et.type === 'option') return et;
       // Creature target — convert to card ref
       if (et.instanceId) return { _effectTarget: true, ...toCardRef(et, 'field') };
@@ -234,7 +234,7 @@ export function deserializeAction(action, state) {
       if (Array.isArray(payload.options?.effectTargets)) {
         deserialized.payload.options = {
           ...(deserialized.payload.options || payload.options),
-          effectTargets: payload.options.effectTargets.map((et) => {
+          effectTargets: payload.options.effectTargets.map(et => {
             if (et._cardRef || et._effectTarget) {
               const resolved = resolveCardRef(et, state, 'field');
               if (resolved && resolved !== et) {
@@ -332,7 +332,7 @@ export function deserializeAction(action, state) {
   // effectTargets stay as lightweight descriptors (instanceId, type, label) —
   // they're matched against candidates in resolveEffectChain, not used as card objects.
   if (Array.isArray(payload.effectTargets)) {
-    deserialized.payload.effectTargets = payload.effectTargets.map((et) => {
+    deserialized.payload.effectTargets = payload.effectTargets.map(et => {
       if (et._cardRef || et._effectTarget) {
         // Resolve instanceId in case of optimistic ID reconciliation, but keep as descriptor
         const resolved = resolveCardRef(et, state, 'field');

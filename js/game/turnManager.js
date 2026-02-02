@@ -43,11 +43,7 @@ const PHASES = ['Start', 'Draw', 'Main 1', 'Combat', 'Main 2', 'End'];
 
 const runStartOfTurnEffects = (state) => {
   // Clear thawing animation flags deterministically (set during previous endTurn frozen thaw)
-  state.players.forEach((p) =>
-    p.field.forEach((c) => {
-      if (c?.thawing) c.thawing = false;
-    })
-  );
+  state.players.forEach(p => p.field.forEach(c => { if (c?.thawing) c.thawing = false; }));
 
   const player = state.players[state.activePlayerIndex];
   const playerIndex = state.activePlayerIndex;
@@ -422,6 +418,7 @@ export const advancePhase = (state) => {
     endTurn(state);
     return;
   }
+
 };
 
 export const endTurn = (state) => {
@@ -489,6 +486,7 @@ export const endTurn = (state) => {
     }
     state.phase = 'Main 1';
   }
+
 };
 
 export const canPlayCard = (state) => {

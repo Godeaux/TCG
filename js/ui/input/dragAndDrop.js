@@ -110,9 +110,7 @@ const getSpellTargetingInfo = (card) => {
   if (selection?.type !== 'selectTarget') return { requiresTarget: false };
   // Only count as "requires target" if candidates are field targets (creatures/players).
   // Deck/hand selections (e.g. tutorFromDeck) are not drag-targetable — they use overlays.
-  const isFieldTargeting = selection.candidates?.some(
-    (c) => c.value?.type === 'creature' || c.value?.type === 'player'
-  );
+  const isFieldTargeting = selection.candidates?.some(c => c.value?.type === 'creature' || c.value?.type === 'player');
   return { requiresTarget: !!isFieldTargeting };
 };
 
@@ -138,9 +136,9 @@ const isValidSpellTarget = (card, targetCard, state, isPlayer = false, playerInd
   if (!gameController) return false;
   const selection = gameController.getEffectSelections(card, 'effect');
   if (!selection?.candidates?.length) return false;
-  if (isPlayer) return selection.candidates.some((c) => c.value?.type === 'player');
+  if (isPlayer) return selection.candidates.some(c => c.value?.type === 'player');
   if (!targetCard?.instanceId) return false;
-  return selection.candidates.some((c) => c.card?.instanceId === targetCard.instanceId);
+  return selection.candidates.some(c => c.card?.instanceId === targetCard.instanceId);
 };
 
 /**
@@ -245,9 +243,7 @@ const flashLureCreatures = (state, attacker) => {
     const el = document.querySelector(`.card[data-instance-id="${lureCard.instanceId}"]`);
     if (el) {
       el.classList.add('lure-must-target');
-      el.addEventListener('animationend', () => el.classList.remove('lure-must-target'), {
-        once: true,
-      });
+      el.addEventListener('animationend', () => el.classList.remove('lure-must-target'), { once: true });
     }
   }
 };
@@ -443,9 +439,7 @@ const handleDirectConsumption = (predator, prey, slotIndex) => {
     return;
   }
 
-  handlePlayCard(latestState, predator, latestCallbacks.onUpdate, null, slotIndex, {
-    consumeTarget: prey,
-  });
+  handlePlayCard(latestState, predator, latestCallbacks.onUpdate, null, slotIndex, { consumeTarget: prey });
 
   // After controller processes, check if extended consumption was set up
   if (latestState.extendedConsumption) {
@@ -657,11 +651,7 @@ const handlePlayerDrop = (card, playerBadge) => {
     latestState,
     targetPlayer,
     card,
-    {
-      type: 'player',
-      player: targetPlayer,
-      playerIndex: latestState.players.indexOf(targetPlayer),
-    },
+    { type: 'player', player: targetPlayer, playerIndex: latestState.players.indexOf(targetPlayer) },
     latestCallbacks.onUpdate
   );
 };
@@ -822,7 +812,7 @@ const handleDragStart = (event) => {
     if (selection?.type === 'selectTarget') {
       const validInstanceIds = new Set();
       let canTargetPlayer = false;
-      for (const c of selection.candidates || []) {
+      for (const c of (selection.candidates || [])) {
         if (c.card?.instanceId) validInstanceIds.add(c.card.instanceId);
         if (c.value?.type === 'player') canTargetPlayer = true;
       }
@@ -919,9 +909,7 @@ const highlightSpellTargets = () => {
 
   // Highlight player badge if spell can target players
   if (_spellCandidateCache.canTargetPlayer) {
-    const localIndex = getLocalPlayerIndex
-      ? getLocalPlayerIndex(latestState)
-      : latestState?.activePlayerIndex;
+    const localIndex = getLocalPlayerIndex ? getLocalPlayerIndex(latestState) : latestState?.activePlayerIndex;
     const opponentIndex = (localIndex + 1) % 2;
     const opponentBadge = document.querySelector(
       `.player-badge[data-player-index="${opponentIndex}"]`
@@ -959,12 +947,8 @@ const handleDragOver = (event) => {
 
   // For spells, also check if we're over the player field row (not just individual elements)
   let target = isSpell
-    ? event.target.closest(
-        '.field-slot, .player-badge, .scoreboard-player, .card, .player-field, .scoreboard-row'
-      )
-    : event.target.closest(
-        '.field-slot, .player-badge, .scoreboard-player, .card, .scoreboard-row'
-      );
+    ? event.target.closest('.field-slot, .player-badge, .scoreboard-player, .card, .player-field, .scoreboard-row')
+    : event.target.closest('.field-slot, .player-badge, .scoreboard-player, .card, .scoreboard-row');
 
   // If no direct target found, check if we're still within the player badge area
   // This prevents flickering when mouse moves between child elements
@@ -1178,12 +1162,8 @@ const handleDrop = (event) => {
 
   // For spells, also check for player-field container
   const dropTarget = isSpell
-    ? event.target.closest(
-        '.field-slot, .player-badge, .scoreboard-player, .card, .player-field, .scoreboard-row'
-      )
-    : event.target.closest(
-        '.field-slot, .player-badge, .scoreboard-player, .card, .scoreboard-row'
-      );
+    ? event.target.closest('.field-slot, .player-badge, .scoreboard-player, .card, .player-field, .scoreboard-row')
+    : event.target.closest('.field-slot, .player-badge, .scoreboard-player, .card, .scoreboard-row');
 
   clearDragVisuals();
 
@@ -1235,13 +1215,9 @@ const handleDrop = (event) => {
         // Targeted spell dropped on an invalid target — shake the target to show rejection
         if (targetingInfo?.requiresTarget) {
           dropTarget.classList.add('spell-reject-shake');
-          dropTarget.addEventListener(
-            'animationend',
-            () => {
-              dropTarget.classList.remove('spell-reject-shake');
-            },
-            { once: true }
-          );
+          dropTarget.addEventListener('animationend', () => {
+            dropTarget.classList.remove('spell-reject-shake');
+          }, { once: true });
         }
         revertCardToOriginalPosition();
         latestCallbacks.onUpdate?.();

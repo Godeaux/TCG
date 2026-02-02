@@ -57,7 +57,10 @@ const SETUP_ACTIONS = new Set([
  * Actions that reference a card in the sender's hand.
  * The payload field containing the card varies by action type.
  */
-const HAND_CARD_ACTIONS = new Set([ActionTypes.PLAY_CARD, ActionTypes.ACTIVATE_DISCARD_EFFECT]);
+const HAND_CARD_ACTIONS = new Set([
+  ActionTypes.PLAY_CARD,
+  ActionTypes.ACTIVATE_DISCARD_EFFECT,
+]);
 
 /**
  * Phase restrictions — which phases allow which action types.
@@ -171,7 +174,7 @@ function validateSetupAction(action, senderIndex, state) {
   if (action.type === ActionTypes.ROLL_SETUP_DIE) {
     // Player can only roll their own die
     if (action.payload?.playerIndex !== senderIndex) {
-      return { valid: false, error: "Cannot roll opponent's die" };
+      return { valid: false, error: 'Cannot roll opponent\'s die' };
     }
   }
 
@@ -185,7 +188,7 @@ function validateSetupAction(action, senderIndex, state) {
   if (action.type === ActionTypes.SELECT_DECK) {
     // Player can only select their own deck
     if (action.payload?.playerIndex !== senderIndex) {
-      return { valid: false, error: "Cannot select opponent's deck" };
+      return { valid: false, error: 'Cannot select opponent\'s deck' };
     }
   }
 
@@ -207,7 +210,9 @@ function validateCardInHand(action, senderIndex, state) {
   }
 
   // Match by instanceId (unique per card instance)
-  const found = hand.some((c) => c.instanceId === card.instanceId || c.uid === card.uid);
+  const found = hand.some(
+    (c) => c.instanceId === card.instanceId || c.uid === card.uid
+  );
   if (!found) {
     return {
       valid: false,
@@ -232,7 +237,7 @@ function validateResolveAttack(action, senderIndex, state) {
     (c) => c && (c.instanceId === attacker.instanceId || c.uid === attacker.uid)
   );
   if (!onField) {
-    return { valid: false, error: "Attacker not on sender's field" };
+    return { valid: false, error: 'Attacker not on sender\'s field' };
   }
 
   return { valid: true };
@@ -252,7 +257,7 @@ function validateEatPreyAttack(action, senderIndex, state) {
     (c) => c && (c.instanceId === attacker.instanceId || c.uid === attacker.uid)
   );
   if (!onField) {
-    return { valid: false, error: "Attacker not on sender's field" };
+    return { valid: false, error: 'Attacker not on sender\'s field' };
   }
 
   return { valid: true };

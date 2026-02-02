@@ -10,9 +10,20 @@ import {
   createGameState,
 } from './state/gameState.js';
 import { initCardTooltip, showCardTooltip, hideCardTooltip } from './ui/components/CardTooltip.js';
-import { canPlayCard, initPositionEvaluator } from './game/turnManager.js';
-import { getValidTargets, cleanupDestroyed, hasBeforeCombatEffect } from './game/combat.js';
-import { isEdible, isInvisible, hasAcuity } from './keywords.js';
+import {
+  canPlayCard,
+  initPositionEvaluator,
+} from './game/turnManager.js';
+import {
+  getValidTargets,
+  cleanupDestroyed,
+  hasBeforeCombatEffect,
+} from './game/combat.js';
+import {
+  isEdible,
+  isInvisible,
+  hasAcuity,
+} from './keywords.js';
 import { resolveEffectResult } from './game/effects.js';
 import { GameController } from './game/controller.js';
 import {
@@ -79,16 +90,29 @@ import { renderPassOverlay } from './ui/overlays/PassOverlay.js';
 import { renderMenuOverlays } from './ui/overlays/MenuOverlay.js';
 
 // Setup overlay (extracted module)
-import { renderSetupOverlay, resetSetupAIState } from './ui/overlays/SetupOverlay.js';
+import {
+  renderSetupOverlay,
+  resetSetupAIState,
+  playCoinFlipAnimation,
+} from './ui/overlays/SetupOverlay.js';
 
 // Reaction overlay (extracted module)
-import { renderReactionOverlay, resetReactionAIState } from './ui/overlays/ReactionOverlay.js';
+import {
+  renderReactionOverlay,
+  resetReactionAIState,
+} from './ui/overlays/ReactionOverlay.js';
 
 // Profile overlay (extracted module)
-import { renderProfileOverlay, setupDuelInviteListener } from './ui/overlays/ProfileOverlay.js';
+import {
+  renderProfileOverlay,
+  setupDuelInviteListener,
+} from './ui/overlays/ProfileOverlay.js';
 
 // Pack opening overlay (extracted module)
-import { renderPackOpeningOverlay, startPackOpening } from './ui/overlays/PackOpeningOverlay.js';
+import {
+  renderPackOpeningOverlay,
+  startPackOpening,
+} from './ui/overlays/PackOpeningOverlay.js';
 
 // Bug report overlay (extracted module)
 import { showBugReportOverlay } from './ui/overlays/BugReportOverlay.js';
@@ -203,7 +227,10 @@ import {
   getActionBus,
 } from './network/index.js';
 
-import { initActionSync, verifyChecksum } from './network/actionSync.js';
+import {
+  initActionSync,
+  verifyChecksum,
+} from './network/actionSync.js';
 
 // Lobby manager (extracted module)
 // All lobby subscription functions are now centralized in lobbyManager
@@ -386,21 +413,11 @@ const dispatchAction = (action) => {
 
 /** Actions that can only be performed on the active player's turn. */
 const _TURN_GATED = new Set([
-  'PLAY_CARD',
-  'DRAW_CARD',
-  'ADVANCE_PHASE',
-  'END_TURN',
-  'DECLARE_ATTACK',
-  'RESOLVE_ATTACK',
-  'EAT_PREY_ATTACK',
-  'SACRIFICE_CREATURE',
-  'RETURN_TO_HAND',
-  'ACTIVATE_DISCARD_EFFECT',
-  'PROCESS_END_PHASE',
-  'SELECT_CONSUMPTION_TARGETS',
-  'DRY_DROP',
-  'EXTEND_CONSUMPTION',
-  'FINALIZE_PLACEMENT',
+  'PLAY_CARD', 'DRAW_CARD', 'ADVANCE_PHASE', 'END_TURN',
+  'DECLARE_ATTACK', 'RESOLVE_ATTACK', 'EAT_PREY_ATTACK',
+  'SACRIFICE_CREATURE', 'RETURN_TO_HAND', 'ACTIVATE_DISCARD_EFFECT',
+  'PROCESS_END_PHASE', 'SELECT_CONSUMPTION_TARGETS', 'DRY_DROP',
+  'EXTEND_CONSUMPTION', 'FINALIZE_PLACEMENT',
 ]);
 const _isTurnGatedAction = (type) => _TURN_GATED.has(type);
 
@@ -1523,11 +1540,7 @@ const initHandPreview = () => {
   const handlePointer = (event) => {
     // Skip focus handling during touch drag operations (mobile)
     // This prevents other cards from "hovering" when dragging a card across the field
-    if (
-      isTouchDragging() ||
-      targetingMode ||
-      document.body.classList.contains('drag-in-progress')
-    ) {
+    if (isTouchDragging() || targetingMode || document.body.classList.contains('drag-in-progress')) {
       return;
     }
 
@@ -2271,14 +2284,7 @@ const findCardByInstanceId = (state, instanceId) =>
     .flatMap((player) => player.field.concat(player.hand, player.carrion, player.exile))
     .find((card) => card?.instanceId === instanceId);
 
-const resolveAttack = (
-  state,
-  attacker,
-  target,
-  negateAttack = false,
-  negatedBy = null,
-  effectTargets = []
-) => {
+const resolveAttack = (state, attacker, target, negateAttack = false, negatedBy = null, effectTargets = []) => {
   if (!gameController) {
     console.warn('[resolveAttack] GameController not initialized');
     return;
@@ -2309,9 +2315,7 @@ const enterTargetingMode = ({ title, candidates, sourceCard }) => {
 
     targetingMode = { title, candidates, sourceCard, resolve, reject };
     document.body.classList.add('targeting-active');
-    // Clear hand focus when entering targeting mode
-    document.querySelectorAll('.card.hand-focus').forEach((c) => c.classList.remove('hand-focus'));
-    hideCardTooltip();
+    clearFocus();
 
     // Show targeting banner
     const banner = document.createElement('div');
@@ -2348,13 +2352,12 @@ const enterTargetingMode = ({ title, candidates, sourceCard }) => {
       else if (val?.instanceId) validInstanceIds.add(val.instanceId);
       else if (val?.card?.instanceId) validInstanceIds.add(val.card.instanceId);
       // Player targets
-      if (val?.type === 'player' && val?.playerIndex !== undefined)
-        validPlayerIndices.add(val.playerIndex);
+      if (val?.type === 'player' && val?.playerIndex !== undefined) validPlayerIndices.add(val.playerIndex);
     }
 
     // Add .effect-target to valid targets, .effect-target-disabled to others
     const allFieldCards = document.querySelectorAll('.field-slot .card');
-    allFieldCards.forEach((el) => {
+    allFieldCards.forEach(el => {
       const iid = el.dataset.instanceId;
       if (iid && validInstanceIds.has(iid)) {
         el.classList.add('effect-target');
@@ -2365,7 +2368,7 @@ const enterTargetingMode = ({ title, candidates, sourceCard }) => {
 
     // Player badges
     const badges = document.querySelectorAll('.player-badge');
-    badges.forEach((badge) => {
+    badges.forEach(badge => {
       const pIdx = parseInt(badge.dataset.playerIndex, 10);
       if (validPlayerIndices.has(pIdx)) {
         badge.classList.add('effect-target');
@@ -2379,13 +2382,9 @@ const enterTargetingMode = ({ title, candidates, sourceCard }) => {
 
       if (cardEl) {
         const iid = cardEl.dataset.instanceId;
-        const match = candidates.find((c) => {
+        const match = candidates.find(c => {
           const val = c.value !== undefined ? c.value : c;
-          return (
-            val?.creature?.instanceId === iid ||
-            val?.instanceId === iid ||
-            val?.card?.instanceId === iid
-          );
+          return (val?.creature?.instanceId === iid || val?.instanceId === iid || val?.card?.instanceId === iid);
         });
         if (match) {
           const selected = match.value !== undefined ? match.value : match;
@@ -2394,7 +2393,7 @@ const enterTargetingMode = ({ title, candidates, sourceCard }) => {
         }
       } else if (badgeEl) {
         const pIdx = parseInt(badgeEl.dataset.playerIndex, 10);
-        const match = candidates.find((c) => {
+        const match = candidates.find(c => {
           const val = c.value !== undefined ? c.value : c;
           return val?.type === 'player' && val?.playerIndex === pIdx;
         });
@@ -2438,10 +2437,8 @@ const exitTargetingMode = () => {
   }
 
   // Remove highlighting
-  document.querySelectorAll('.effect-target').forEach((el) => el.classList.remove('effect-target'));
-  document
-    .querySelectorAll('.effect-target-disabled')
-    .forEach((el) => el.classList.remove('effect-target-disabled'));
+  document.querySelectorAll('.effect-target').forEach(el => el.classList.remove('effect-target'));
+  document.querySelectorAll('.effect-target-disabled').forEach(el => el.classList.remove('effect-target-disabled'));
 
   // Remove banner
   const banner = document.getElementById('targeting-banner');
@@ -2455,8 +2452,7 @@ const exitTargetingMode = () => {
  * Convert a selected target to an effectTarget descriptor for the action payload.
  */
 const toEffectTarget = (selected) => {
-  if (selected?.creature?.instanceId)
-    return { instanceId: selected.creature.instanceId, type: 'creature' };
+  if (selected?.creature?.instanceId) return { instanceId: selected.creature.instanceId, type: 'creature' };
   if (selected?.instanceId) return { instanceId: selected.instanceId, type: 'creature' };
   if (selected?.card?.instanceId) return { instanceId: selected.card.instanceId, type: 'creature' };
   if (selected?.type === 'player') return { type: 'player', playerIndex: selected.playerIndex };
@@ -2669,13 +2665,7 @@ const extractTokenIdsFromEffect = (effect) => {
  * If the attacker has a beforeCombat effect needing a target, enters targeting mode
  * to collect the selection, then dispatches with effectTargets.
  */
-const resolveAttackWithTargeting = async (
-  state,
-  attacker,
-  target,
-  negateAttack = false,
-  negatedBy = null
-) => {
+const resolveAttackWithTargeting = async (state, attacker, target, negateAttack = false, negatedBy = null) => {
   if (negateAttack) {
     resolveAttack(state, attacker, target, negateAttack, negatedBy);
     return;
@@ -2700,14 +2690,7 @@ const resolveAttackWithTargeting = async (
       candidates: selection.candidates,
       sourceCard: attacker,
     });
-    resolveAttack(
-      state,
-      attacker,
-      target,
-      negateAttack,
-      negatedBy,
-      selected ? [toEffectTarget(selected)] : []
-    );
+    resolveAttack(state, attacker, target, negateAttack, negatedBy, selected ? [toEffectTarget(selected)] : []);
   } catch (e) {
     // Cancelled — don't resolve the attack (attacker hasn't attacked yet)
     // The attack declaration is already committed though, so we still need to resolve it
@@ -2766,9 +2749,9 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
         const attackerName = currentAttacker?.name || attacker.name;
         logMessage(state, `${attackerName} is destroyed before the attack lands.`);
         // Controller handles markCreatureAttacked + cleanup + broadcast
-        dispatchAction(
-          resolveAttackAction(currentAttacker || attacker, target, true, 'destroyed before attack')
-        );
+        dispatchAction(resolveAttackAction(
+          currentAttacker || attacker, target, true, 'destroyed before attack'
+        ));
         return;
       }
 
@@ -2785,9 +2768,9 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
             `${currentAttacker.name}'s attack fizzles - target no longer on field.`
           );
           // Controller handles markCreatureAttacked + cleanup + broadcast
-          dispatchAction(
-            resolveAttackAction(currentAttacker, target, true, 'target no longer on field')
-          );
+          dispatchAction(resolveAttackAction(
+            currentAttacker, target, true, 'target no longer on field'
+          ));
           return;
         }
 
@@ -2805,10 +2788,7 @@ const handleTrapResponse = (state, defender, attacker, target, onUpdate) => {
       }
     },
     onUpdate,
-    broadcast: () => {
-      if (gameController?.state) gameController.state._broadcastReactionSync = true;
-      gameController?.broadcast();
-    },
+    broadcast: () => { if (gameController?.state) gameController.state._broadcastReactionSync = true; gameController?.broadcast(); },
   });
 
   // If no window was created, attack resolves immediately (no reactions available)
@@ -2884,13 +2864,7 @@ const handleAttackSelection = (state, attacker, onUpdate) => {
     button.onclick = () => {
       clearSelectionPanel();
       const opponentIndex = state.players.indexOf(opponent);
-      handleTrapResponse(
-        state,
-        opponent,
-        attacker,
-        { type: 'player', player: opponent, playerIndex: opponentIndex },
-        onUpdate
-      );
+      handleTrapResponse(state, opponent, attacker, { type: 'player', player: opponent, playerIndex: opponentIndex }, onUpdate);
     };
     item.appendChild(button);
     items.push(item);
@@ -2947,14 +2921,7 @@ const handleEatPreyAttack = (state, attacker, onUpdate) => {
   });
 };
 
-export const handlePlayCard = async (
-  state,
-  card,
-  onUpdate,
-  preselectedTarget = null,
-  slotIndex = null,
-  extraOptions = {}
-) => {
+export const handlePlayCard = async (state, card, onUpdate, preselectedTarget = null, slotIndex = null, extraOptions = {}) => {
   if (!gameController) {
     console.error('[handlePlayCard] GameController not initialized');
     return;
@@ -2975,7 +2942,7 @@ export const handlePlayCard = async (
   const isSpell = card.type === 'Spell' || card.type === 'Free Spell';
   const isCreature = card.type === 'Predator' || card.type === 'Prey';
   if (!effectTargets.length && isLocalPlayersTurn(state)) {
-    const trigger = isSpell ? 'effect' : isCreature ? 'onPlay' : null;
+    const trigger = isSpell ? 'effect' : (isCreature ? 'onPlay' : null);
     if (trigger) {
       const selection = gameController.getEffectSelections(card, trigger);
       if (selection?.type === 'selectTarget') {
@@ -2987,9 +2954,7 @@ export const handlePlayCard = async (
         // Use on-field targeting mode for field-targetable candidates
         // (creatures/players from buildTargetCandidates have .value.type).
         // Deck/hand selections (e.g. tutorFromDeck) use card selection overlay.
-        const isFieldTargeting = selection.candidates.some(
-          (c) => c.value?.type === 'creature' || c.value?.type === 'player'
-        );
+        const isFieldTargeting = selection.candidates.some(c => c.value?.type === 'creature' || c.value?.type === 'player');
         if (isFieldTargeting) {
           try {
             const selected = await enterTargetingMode({
@@ -3044,7 +3009,7 @@ export const handlePlayCard = async (
   if (isCreature && extraOptions.consumeTarget && isLocalPlayersTurn(state)) {
     const consumeSelection = gameController.getEffectSelections(card, 'onConsume');
     if (consumeSelection?.type === 'selectTarget' && consumeSelection.candidates?.length) {
-      const isFieldTargeting = consumeSelection.candidates.some((c) => {
+      const isFieldTargeting = consumeSelection.candidates.some(c => {
         const val = c.value ?? c;
         return val?.type === 'creature' || val?.type === 'player';
       });
@@ -3162,10 +3127,7 @@ const renderConsumptionSelection = (state, pending, onUpdate) => {
 
         // Probe onConsume for targeting needs before dispatching
         let effectTargets = [];
-        if (
-          isLocalPlayersTurn(state) &&
-          (preyToConsume.length > 0 || carrionToConsume.length > 0)
-        ) {
+        if (isLocalPlayersTurn(state) && (preyToConsume.length > 0 || carrionToConsume.length > 0)) {
           const selection = gameController?.getEffectSelections(predator, 'onConsume');
           if (selection?.type === 'selectTarget' && selection.candidates?.length) {
             try {
@@ -3341,6 +3303,7 @@ const handleDiscardEffect = (state, card, onUpdate) => {
   });
   onUpdate?.();
 };
+
 
 const updateActionBar = (onNextPhase, state) => {
   // Handler for advancing phase
@@ -4263,6 +4226,7 @@ export const renderGame = (state, callbacks = {}) => {
     const profile = state.menu?.profile;
     const decks = state.menu?.decks;
 
+
     // Clean up AI state
     cleanupAI();
 
@@ -4349,6 +4313,7 @@ export const renderGame = (state, callbacks = {}) => {
 
   // Set up rematch callback (same decks) for multiplayer
   setRematchCallback(() => {
+
     // Preserve lobby, profile, decks, and deck selections
     const lobby = state.menu?.lobby;
     const profile = state.menu?.profile;
@@ -4439,6 +4404,7 @@ export const renderGame = (state, callbacks = {}) => {
 
   // Set up rematch callback (deck selection) for multiplayer
   setRematchDeckCallback(() => {
+
     // Preserve lobby, profile, decks
     const lobby = state.menu?.lobby;
     const profile = state.menu?.profile;
@@ -4597,185 +4563,174 @@ export const renderGame = (state, callbacks = {}) => {
 
   // Initialize GameController (single entry point for all game actions)
   if (!gameController || gameController.state !== state) {
-    gameController = new GameController(
-      state,
-      { pendingConsumption: null, pendingPlacement: null, pendingAttack: null },
-      {
-        onStateChange: () => {
-          renderGame(latestState, latestCallbacks);
-        },
-        onBroadcast: (s) => {
-          // When ActionBus is active, it handles broadcasting confirmed actions.
-          // Exception: pendingReaction changes must still sync so the defending player
-          // sees the trap decision UI and the attacker knows the decision.
-          // This is UI coordination state, not a game action.
-          if (getActionBus()) {
-            if (s._broadcastReactionSync) {
-              delete s._broadcastReactionSync;
-              broadcastSyncState(s);
-            }
-            return;
+    gameController = new GameController(state, { pendingConsumption: null, pendingPlacement: null, pendingAttack: null }, {
+      onStateChange: () => {
+        renderGame(latestState, latestCallbacks);
+      },
+      onBroadcast: (s) => {
+        // When ActionBus is active, it handles broadcasting confirmed actions.
+        // Exception: pendingReaction changes must still sync so the defending player
+        // sees the trap decision UI and the attacker knows the decision.
+        // This is UI coordination state, not a game action.
+        if (getActionBus()) {
+          if (s._broadcastReactionSync) {
+            delete s._broadcastReactionSync;
+            broadcastSyncState(s);
           }
-          broadcastSyncState(s);
-        },
-        onSelectionNeeded: (selectionRequest) => {
-          // In multiplayer, only show selection UI to the active (local) player.
-          // The opponent should not see selection popups for the other player's choices.
-          // Use gameController.state (live during execution) rather than latestState (may be stale).
-          const currentState = gameController?.state || latestState;
-          if (isOnlineMode(currentState) && !isLocalPlayersTurn(currentState)) {
+          return;
+        }
+        broadcastSyncState(s);
+      },
+      onSelectionNeeded: (selectionRequest) => {
+        // In multiplayer, only show selection UI to the active (local) player.
+        // The opponent should not see selection popups for the other player's choices.
+        // Use gameController.state (live during execution) rather than latestState (may be stale).
+        const currentState = gameController?.state || latestState;
+        if (isOnlineMode(currentState) && !isLocalPlayersTurn(currentState)) {
+          selectionRequest.onCancel?.();
+          return;
+        }
+        // Wire controller's selection needs to ui.js renderSelectionPanel
+        if (selectionRequest.selectTarget) {
+          const { title, candidates: candidatesInput, onSelect, renderCards = false } =
+            selectionRequest.selectTarget;
+          const resolvedCandidates =
+            typeof candidatesInput === 'function' ? candidatesInput() : candidatesInput;
+          const candidates = Array.isArray(resolvedCandidates) ? resolvedCandidates : [];
+          if (candidates.length === 0) {
             selectionRequest.onCancel?.();
             return;
           }
-          // Wire controller's selection needs to ui.js renderSelectionPanel
-          if (selectionRequest.selectTarget) {
-            const {
+
+          // Field-targetable candidates (creatures/players) use battlefield glow, not card overlay
+          const isFieldTargeting = candidates.some(c => {
+            const val = c.value ?? c;
+            return val?.type === 'creature' || val?.type === 'player';
+          });
+          if (isFieldTargeting) {
+            enterTargetingMode({
               title,
-              candidates: candidatesInput,
-              onSelect,
-              renderCards = false,
-            } = selectionRequest.selectTarget;
-            const resolvedCandidates =
-              typeof candidatesInput === 'function' ? candidatesInput() : candidatesInput;
-            const candidates = Array.isArray(resolvedCandidates) ? resolvedCandidates : [];
-            if (candidates.length === 0) {
+              candidates,
+              sourceCard: null,
+            }).then(selected => {
+              selectionRequest.onSelect(selected);
+            }).catch(() => {
               selectionRequest.onCancel?.();
-              return;
-            }
-
-            // Field-targetable candidates (creatures/players) use battlefield glow, not card overlay
-            const isFieldTargeting = candidates.some((c) => {
-              const val = c.value ?? c;
-              return val?.type === 'creature' || val?.type === 'player';
             });
-            if (isFieldTargeting) {
-              enterTargetingMode({
-                title,
-                candidates,
-                sourceCard: null,
-              })
-                .then((selected) => {
-                  selectionRequest.onSelect(selected);
-                })
-                .catch(() => {
-                  selectionRequest.onCancel?.();
-                });
-              return;
-            }
+            return;
+          }
 
-            const shouldRender =
-              renderCards || candidates.some((c) => isCardLike(c.card ?? c.value));
+          const shouldRender =
+            renderCards || candidates.some((c) => isCardLike(c.card ?? c.value));
 
-            // Large card selections (deck tutor, etc.) use a full-screen overlay
-            if (shouldRender && candidates.length > 3) {
-              const overlay = document.createElement('div');
-              overlay.className = 'card-selection-overlay';
+          // Large card selections (deck tutor, etc.) use a full-screen overlay
+          if (shouldRender && candidates.length > 3) {
+            const overlay = document.createElement('div');
+            overlay.className = 'card-selection-overlay';
 
-              const header = document.createElement('div');
-              header.className = 'card-selection-overlay-header';
-              const titleEl = document.createElement('strong');
-              titleEl.textContent = title;
-              header.appendChild(titleEl);
-              const cancelBtn = document.createElement('button');
-              cancelBtn.className = 'cancel-targeting';
-              cancelBtn.textContent = 'Cancel';
-              cancelBtn.onclick = () => {
-                overlay.remove();
-                selectionRequest.onCancel?.();
-              };
-              header.appendChild(cancelBtn);
-              overlay.appendChild(header);
+            const header = document.createElement('div');
+            header.className = 'card-selection-overlay-header';
+            const titleEl = document.createElement('strong');
+            titleEl.textContent = title;
+            header.appendChild(titleEl);
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'cancel-targeting';
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.onclick = () => {
+              overlay.remove();
+              selectionRequest.onCancel?.();
+            };
+            header.appendChild(cancelBtn);
+            overlay.appendChild(header);
 
-              const grid = document.createElement('div');
-              grid.className = 'card-selection-overlay-grid';
-              for (const c of candidates) {
-                const candidateCard = c.card ?? c.value;
-                if (isCardLike(candidateCard)) {
-                  const wrapper = document.createElement('div');
-                  wrapper.className = 'selection-item';
-                  if (c.isRecentlyDrawn) {
-                    wrapper.classList.add('recently-drawn');
-                  }
-                  const cardEl = renderCard(candidateCard, {
-                    showEffectSummary: true,
-                    onClick: () => {
-                      overlay.remove();
-                      selectionRequest.onSelect(c.value !== undefined ? c.value : c);
-                    },
-                  });
-                  wrapper.appendChild(cardEl);
-                  grid.appendChild(wrapper);
-                }
-              }
-              overlay.appendChild(grid);
-              const centerCol =
-                document.querySelector('.battlefield-center-column') || document.body;
-              centerCol.appendChild(overlay);
-            } else {
-              const items = candidates.map((c) => {
-                const item = document.createElement('label');
-                item.className = 'selection-item';
+            const grid = document.createElement('div');
+            grid.className = 'card-selection-overlay-grid';
+            for (const c of candidates) {
+              const candidateCard = c.card ?? c.value;
+              if (isCardLike(candidateCard)) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'selection-item';
                 if (c.isRecentlyDrawn) {
-                  item.classList.add('recently-drawn');
+                  wrapper.classList.add('recently-drawn');
                 }
-                const candidateCard = c.card ?? c.value;
-                if (shouldRender && isCardLike(candidateCard)) {
-                  item.classList.add('selection-card');
-                  const cardEl = renderCard(candidateCard, {
-                    showEffectSummary: true,
-                    onClick: () => {
-                      clearSelectionPanel();
-                      selectionRequest.onSelect(c.value !== undefined ? c.value : c);
-                    },
-                  });
-                  item.appendChild(cardEl);
-                } else {
-                  const button = document.createElement('button');
-                  button.textContent = c.label || c.name || String(c);
-                  button.onclick = () => {
-                    clearSelectionPanel();
+                const cardEl = renderCard(candidateCard, {
+                  showEffectSummary: true,
+                  onClick: () => {
+                    overlay.remove();
                     selectionRequest.onSelect(c.value !== undefined ? c.value : c);
-                  };
-                  item.appendChild(button);
-                }
-                return item;
-              });
-              renderSelectionPanel({
-                title,
-                items,
-                onConfirm: () => {
-                  clearSelectionPanel();
-                  selectionRequest.onCancel?.();
-                },
-                confirmLabel: 'Cancel',
-              });
+                  },
+                });
+                wrapper.appendChild(cardEl);
+                grid.appendChild(wrapper);
+              }
             }
-          } else if (selectionRequest.selectOption) {
-            const { title, options, onSelect } = selectionRequest.selectOption;
-            const optionItems = options.map((o) => {
-              const item = document.createElement('label');
-              item.className = 'selection-item';
+            overlay.appendChild(grid);
+            const centerCol = document.querySelector('.battlefield-center-column') || document.body;
+            centerCol.appendChild(overlay);
+          } else {
+          const items = candidates.map((c) => {
+            const item = document.createElement('label');
+            item.className = 'selection-item';
+            if (c.isRecentlyDrawn) {
+              item.classList.add('recently-drawn');
+            }
+            const candidateCard = c.card ?? c.value;
+            if (shouldRender && isCardLike(candidateCard)) {
+              item.classList.add('selection-card');
+              const cardEl = renderCard(candidateCard, {
+                showEffectSummary: true,
+                onClick: () => {
+                  clearSelectionPanel();
+                  selectionRequest.onSelect(c.value !== undefined ? c.value : c);
+                },
+              });
+              item.appendChild(cardEl);
+            } else {
               const button = document.createElement('button');
-              button.textContent = o.label;
+              button.textContent = c.label || c.name || String(c);
               button.onclick = () => {
                 clearSelectionPanel();
-                selectionRequest.onSelect(o);
+                selectionRequest.onSelect(c.value !== undefined ? c.value : c);
               };
               item.appendChild(button);
-              return item;
-            });
-            renderSelectionPanel({
-              title,
-              items: optionItems,
-              onConfirm: () => {
-                clearSelectionPanel();
-                selectionRequest.onCancel?.();
-              },
-            });
+            }
+            return item;
+          });
+          renderSelectionPanel({
+            title,
+            items,
+            onConfirm: () => {
+              clearSelectionPanel();
+              selectionRequest.onCancel?.();
+            },
+            confirmLabel: 'Cancel',
+          });
           }
-        },
-      }
-    );
+        } else if (selectionRequest.selectOption) {
+          const { title, options, onSelect } = selectionRequest.selectOption;
+          const optionItems = options.map((o) => {
+            const item = document.createElement('label');
+            item.className = 'selection-item';
+            const button = document.createElement('button');
+            button.textContent = o.label;
+            button.onclick = () => {
+              clearSelectionPanel();
+              selectionRequest.onSelect(o);
+            };
+            item.appendChild(button);
+            return item;
+          });
+          renderSelectionPanel({
+            title,
+            items: optionItems,
+            onConfirm: () => {
+              clearSelectionPanel();
+              selectionRequest.onCancel?.();
+            },
+          });
+        }
+      },
+    });
   }
 
   // Initialize ActionBus for multiplayer (host-authoritative action routing)
@@ -4991,10 +4946,7 @@ export const renderGame = (state, callbacks = {}) => {
         state,
         activated,
         onUpdate: callbacks.onUpdate,
-        broadcast: () => {
-          if (gameController?.state) gameController.state._broadcastReactionSync = true;
-          gameController?.broadcast();
-        },
+        broadcast: () => { if (gameController?.state) gameController.state._broadcastReactionSync = true; gameController?.broadcast(); },
         resolveEffectChain,
         cleanupDestroyed,
       });
@@ -5039,7 +4991,8 @@ export const renderGame = (state, callbacks = {}) => {
         await updatePackCount(state, -1);
         setMenuStage(state, 'pack-opening');
         startPackOpening({
-          onCardRevealed: (card) => {},
+          onCardRevealed: (card) => {
+          },
         });
         callbacks.onUpdate?.();
       }
@@ -5090,7 +5043,8 @@ export const renderGame = (state, callbacks = {}) => {
                     lobbyId: state.menu.lobby.id,
                     userId: state.menu.profile.id,
                   });
-                } catch (e) {}
+                } catch (e) {
+                }
                 state.menu.lobby = null;
               }
               state.menu.pendingChallenge = null;
@@ -5104,7 +5058,8 @@ export const renderGame = (state, callbacks = {}) => {
                     lobbyId: state.menu.lobby.id,
                     userId: state.menu.profile.id,
                   });
-                } catch (e) {}
+                } catch (e) {
+                }
                 state.menu.lobby = null;
               }
               state.menu.pendingChallenge = null;
@@ -5159,7 +5114,8 @@ export const renderGame = (state, callbacks = {}) => {
             lobbyId: state.menu.lobby.id,
             userId: state.menu.profile.id,
           });
-        } catch (e) {}
+        } catch (e) {
+        }
         state.menu.lobby = null;
       }
       state.menu.pendingChallenge = null;
@@ -5201,7 +5157,8 @@ export const renderGame = (state, callbacks = {}) => {
               lobbyId: state.menu.lobby.id,
               userId: state.menu.profile.id,
             });
-          } catch (e) {}
+          } catch (e) {
+          }
           state.menu.lobby = null;
         }
         state.menu.pendingChallenge = null;
@@ -5284,3 +5241,9 @@ export const handleCombatPass = (state) => {
 //            calculateCardsPlayed, calculateCreaturesDefeated
 // Import: checkForVictory, showVictoryScreen, hideVictoryScreen
 // ============================================================================
+
+// ============================================================================
+// COIN FLIP ANIMATION (re-exported from SetupOverlay)
+// ============================================================================
+
+export { playCoinFlipAnimation };

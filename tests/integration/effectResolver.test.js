@@ -1003,7 +1003,7 @@ describe('Copy Effect Resolution', () => {
         context
       );
 
-      expect(target.effectText).toBe('(Copied) No effect text.');
+      expect(target.effectText).toBe('(Copied) No abilities.');
     });
   });
 });

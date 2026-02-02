@@ -428,19 +428,12 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
         const incomingHandLarger =
           Array.isArray(playerSnapshot.hand) && playerSnapshot.hand.length > player.hand.length;
         const shouldAcceptDraw = isProtectedLocalSnapshot && isOurTurn && incomingHandLarger;
-        const localEmpty =
-          isProtectedLocalSnapshot && player.deck.length === 0 && player.hand.length === 0;
+        const localEmpty = isProtectedLocalSnapshot && player.deck.length === 0 && player.hand.length === 0;
 
-        if (
-          (!isProtectedLocalSnapshot || shouldAcceptDraw || localEmpty) &&
-          Array.isArray(playerSnapshot.deck)
-        ) {
+        if ((!isProtectedLocalSnapshot || shouldAcceptDraw || localEmpty) && Array.isArray(playerSnapshot.deck)) {
           player.deck = hydrateDeckSnapshots(playerSnapshot.deck);
         }
-        if (
-          (!isProtectedLocalSnapshot || shouldAcceptDraw || localEmpty) &&
-          Array.isArray(playerSnapshot.hand)
-        ) {
+        if ((!isProtectedLocalSnapshot || shouldAcceptDraw || localEmpty) && Array.isArray(playerSnapshot.hand)) {
           player.hand = hydrateZoneSnapshots(playerSnapshot.hand, null, state.turn);
         }
 

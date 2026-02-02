@@ -123,11 +123,7 @@ const applyDamage = (creature, amount, state, ownerIndex, attacker = null) => {
   if (creature.hasBarrier && ignoreBarrier) {
     creature.hasBarrier = false;
     if (state && ownerIndex !== undefined) {
-      logGameAction(
-        state,
-        COMBAT,
-        `🦗 ${formatCardForLog(attacker)}'s Unstoppable attack ignores ${formatCardForLog(creature)}'s Barrier!`
-      );
+      logGameAction(state, COMBAT, `🦗 ${formatCardForLog(attacker)}'s Unstoppable attack ignores ${formatCardForLog(creature)}'s Barrier!`);
     }
   }
 
@@ -190,13 +186,7 @@ export const resolveCreatureCombat = (
   // Per CORE-RULES.md §6: Harmless deals 0 combat damage when defending
   const harmlessDefender = isHarmless(defender);
 
-  const defenderResult = applyDamage(
-    defender,
-    attackerEffectiveAtk,
-    state,
-    defenderOwnerIndex,
-    attacker
-  );
+  const defenderResult = applyDamage(defender, attackerEffectiveAtk, state, defenderOwnerIndex, attacker);
   const defenderDamage = defenderResult.damage;
   const defenderSurvived = defender.currentHp > 0;
   // Ambush: attacker NEVER takes combat damage when attacking (per CORE-RULES.md §6)

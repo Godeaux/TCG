@@ -800,5 +800,6 @@ const updateProfileStatsOnVictory = (state, winner, loser) => {
 
     // Sync to database (async, don't wait)
     updateProfileStats(state, profile.stats, profile.matches);
+
   }
 };

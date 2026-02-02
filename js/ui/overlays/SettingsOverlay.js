@@ -28,11 +28,10 @@ const CHANNEL_LABELS = {
 };
 
 const createOverlayHTML = () => {
-  const channelSliders = SoundManager.getChannelNames()
-    .map((ch) => {
-      const info = CHANNEL_LABELS[ch] || { icon: '🔈', label: ch };
-      const val = Math.round(SoundManager.getChannelVolume(ch) * 100);
-      return `
+  const channelSliders = SoundManager.getChannelNames().map(ch => {
+    const info = CHANNEL_LABELS[ch] || { icon: '🔈', label: ch };
+    const val = Math.round(SoundManager.getChannelVolume(ch) * 100);
+    return `
       <div class="settings-section">
         <label class="settings-label" for="settings-overlay-${ch}">
           <span class="settings-label-icon">${info.icon}</span>
@@ -43,8 +42,7 @@ const createOverlayHTML = () => {
           <span class="settings-value" id="settings-overlay-${ch}-value">${val}%</span>
         </div>
       </div>`;
-    })
-    .join('');
+  }).join('');
 
   return `
   <div class="overlay-content settings-overlay-card">

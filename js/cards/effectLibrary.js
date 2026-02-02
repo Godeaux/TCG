@@ -1179,7 +1179,7 @@ export const selectCardToDiscard =
       title: `Choose ${count} card${count > 1 ? 's' : ''} to discard`,
       // Lazy candidates: evaluated at UI render time so draw effects are applied first
       candidates: () => {
-        const currentHand = state?.players?.[playerIndex]?.hand || [];
+        const currentHand = state?.players?.[playerIndex]?.hand || player.hand;
         const recentlyDrawn = state?.recentlyDrawnCards || [];
         return currentHand.map((card) => ({
           label: card.name,

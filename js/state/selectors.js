@@ -78,11 +78,7 @@ export const getLocalPlayerIndex = (state) => {
   if (lobby) {
     if (lobby.host_id === profileId) return 0;
     if (lobby.guest_id === profileId) return 1;
-    console.warn('[getLocalPlayerIndex] No lobby match!', {
-      profileId,
-      host_id: lobby.host_id,
-      guest_id: lobby.guest_id,
-    });
+    console.warn('[getLocalPlayerIndex] No lobby match!', { profileId, host_id: lobby.host_id, guest_id: lobby.guest_id });
   }
 
   // Fallback: Match by player profileId (if set)

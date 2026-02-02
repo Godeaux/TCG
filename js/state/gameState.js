@@ -42,6 +42,7 @@ let currentSeed = null;
 export const initializeGameRandom = (seed) => {
   currentSeed = seed;
   gameRandom = createSeededRandom(seed);
+
 };
 
 /**
@@ -113,16 +114,12 @@ let _idOverrides = [];
  * Set instance ID overrides (guest uses these when applying host actions).
  * @param {string[]} ids - Array of instanceIds from the host
  */
-export const setInstanceIdOverrides = (ids) => {
-  _idOverrides = [...ids];
-};
+export const setInstanceIdOverrides = (ids) => { _idOverrides = [...ids]; };
 
 /**
  * Clear instance ID overrides after action execution.
  */
-export const clearInstanceIdOverrides = () => {
-  _idOverrides = [];
-};
+export const clearInstanceIdOverrides = () => { _idOverrides = []; };
 
 /**
  * Generate an instance ID for a card.

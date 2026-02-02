@@ -183,22 +183,26 @@ describe('Select Card To Discard Effect', () => {
     const discardFn = effectLibrary.selectCardToDiscard();
     const result = discardFn(context);
 
-    expect(result.selectTarget.candidates.length).toBe(2);
+    // candidates is a lazy function evaluated at UI render time
+    const candidates = result.selectTarget.candidates();
+    expect(candidates.length).toBe(2);
   });
 
-  it('returns empty result when hand is empty', () => {
+  it('returns empty candidates when hand is empty', () => {
     state.players[0].hand = [];
     const discardFn = effectLibrary.selectCardToDiscard();
     const result = discardFn(context);
 
-    expect(result).toEqual({});
+    // Lazy candidates returns empty array for empty hand
+    const candidates = result.selectTarget.candidates();
+    expect(candidates).toEqual([]);
   });
 
   it('onSelect returns discardCards result', () => {
     const discardFn = effectLibrary.selectCardToDiscard();
     const result = discardFn(context);
 
-    const card = result.selectTarget.candidates[0].value;
+    const card = result.selectTarget.candidates()[0].value;
     const selectionResult = result.selectTarget.onSelect(card);
 
     expect(selectionResult.discardCards).toBeDefined();

@@ -149,12 +149,10 @@ export class ActionBus {
 
     const role = isHost ? 'HOST' : 'GUEST';
     const actionType = message.action?.type || message.type;
-    console.log(
-      `[ActionBus] ${role} received: ${message.type}` +
-        (message.seq ? ` seq=${message.seq}` : '') +
-        (message.intentId ? ` intent=${message.intentId}` : '') +
-        (actionType !== message.type ? ` action=${actionType}` : '')
-    );
+    console.log(`[ActionBus] ${role} received: ${message.type}` +
+      (message.seq ? ` seq=${message.seq}` : '') +
+      (message.intentId ? ` intent=${message.intentId}` : '') +
+      (actionType !== message.type ? ` action=${actionType}` : ''));
 
     switch (message.type) {
       case 'action_intent':
@@ -242,7 +240,7 @@ export class ActionBus {
   reset() {
     this._seq = 0;
     this._actionLog = [];
-    this._pendingIntents.forEach((intent) => clearTimeout(intent.timeoutId));
+    this._pendingIntents.forEach(intent => clearTimeout(intent.timeoutId));
     this._pendingIntents.clear();
     this._intentCounter = 0;
     this._recovering = false;
@@ -308,9 +306,7 @@ export class ActionBus {
 
     if (intentCounter > this._nextExpectedIntent) {
       // Out of order — buffer it and wait for the missing intent(s)
-      console.log(
-        `[ActionBus] HOST buffering out-of-order intent ${intentId} (expecting ${this._nextExpectedIntent})`
-      );
+      console.log(`[ActionBus] HOST buffering out-of-order intent ${intentId} (expecting ${this._nextExpectedIntent})`);
       this._intentQueue.set(intentCounter, message);
       return;
     }
@@ -387,9 +383,7 @@ export class ActionBus {
     };
     this._actionLog.push(entry);
 
-    console.log(
-      `[ActionBus] HOST confirmed guest action: ${action.type} seq=${seq} checksum=${checksum}`
-    );
+    console.log(`[ActionBus] HOST confirmed guest action: ${action.type} seq=${seq} checksum=${checksum}`);
 
     // Broadcast confirmed action (both host and guest will have it)
     this._broadcastConfirmedAction(entry);
@@ -419,10 +413,8 @@ export class ActionBus {
       return result;
     }
 
-    console.log(
-      `[ActionBus] GUEST optimistic OK, sending intent: ${action.type} (${intentId})` +
-        (localCreatedIds.length ? ` (created ${localCreatedIds.length} IDs)` : '')
-    );
+    console.log(`[ActionBus] GUEST optimistic OK, sending intent: ${action.type} (${intentId})` +
+      (localCreatedIds.length ? ` (created ${localCreatedIds.length} IDs)` : ''));
 
     // Store pending intent as optimistically applied, with local IDs for reconciliation.
     // Timeout triggers desync recovery if host never confirms/rejects.
@@ -487,9 +479,7 @@ export class ActionBus {
         const result = this.executeAction(action);
         clearInstanceIdOverrides();
         if (!result?.success) {
-          console.warn(
-            `[ActionBus] GUEST failed to apply host action seq=${seq}: ${result?.error}`
-          );
+          console.warn(`[ActionBus] GUEST failed to apply host action seq=${seq}: ${result?.error}`);
         }
       } catch (err) {
         clearInstanceIdOverrides();
@@ -501,9 +491,7 @@ export class ActionBus {
       if (createdIds?.length && localCreatedIds.length) {
         this._reconcileOptimisticIds(localCreatedIds, createdIds);
       }
-      console.log(
-        `[ActionBus] GUEST confirmed (already applied): ${serializedAction?.type} seq=${seq}`
-      );
+      console.log(`[ActionBus] GUEST confirmed (already applied): ${serializedAction?.type} seq=${seq}`);
     }
 
     // Log it (store serialized form)
@@ -542,10 +530,8 @@ export class ActionBus {
   _handleRejection(message) {
     const { intentId, reason } = message;
 
-    const wasOptimistic =
-      intentId &&
-      this._pendingIntents.has(intentId) &&
-      this._pendingIntents.get(intentId).optimistic;
+    const wasOptimistic = intentId && this._pendingIntents.has(intentId)
+      && this._pendingIntents.get(intentId).optimistic;
 
     if (intentId && this._pendingIntents.has(intentId)) {
       clearTimeout(this._pendingIntents.get(intentId).timeoutId);
@@ -650,7 +636,7 @@ export class ActionBus {
     this._actionLog = [];
     this._desyncCount = 0;
     this._recovering = false;
-    this._pendingIntents.forEach((intent) => clearTimeout(intent.timeoutId));
+    this._pendingIntents.forEach(intent => clearTimeout(intent.timeoutId));
     this._pendingIntents.clear();
 
     // Verify sync
@@ -702,7 +688,7 @@ export class ActionBus {
     if (localIds.length !== hostIds.length) {
       console.warn(
         `[ActionBus] ID reconciliation length mismatch: local=${localIds.length}, host=${hostIds.length}. ` +
-          `Checksum will catch any divergence.`
+        `Checksum will catch any divergence.`
       );
     }
 
@@ -724,14 +710,7 @@ export class ActionBus {
     if (!state?.players) return;
 
     for (const player of state.players) {
-      const zones = [
-        player.hand,
-        player.field,
-        player.carrion,
-        player.deck,
-        player.exile,
-        player.traps,
-      ];
+      const zones = [player.hand, player.field, player.carrion, player.deck, player.exile, player.traps];
       for (const zone of zones) {
         if (!Array.isArray(zone)) continue;
         for (const card of zone) {

@@ -280,9 +280,7 @@ export const renderReactionOverlay = (state, callbacks = {}) => {
 
   // Get trap effect text from the card's effectText (auto-generated from effect definitions)
   const trapCard = state.pendingReaction.reactions?.[0]?.card;
-  const trapEffectText = trapCard
-    ? getCardEffectSummary(trapCard) || trapCard.effectText || ''
-    : '';
+  const trapEffectText = trapCard ? getCardEffectSummary(trapCard) || trapCard.effectText || '' : '';
 
   // Set title and subtitle based on who is viewing
   if (isReactingPlayer) {
@@ -309,8 +307,8 @@ export const renderReactionOverlay = (state, callbacks = {}) => {
   if (existingPreview) existingPreview.remove();
 
   if (isReactingPlayer) {
-    const triggerCard =
-      state.pendingReaction.eventContext?.card || state.pendingReaction.eventContext?.attacker;
+    const triggerCard = state.pendingReaction.eventContext?.card
+      || state.pendingReaction.eventContext?.attacker;
     if (triggerCard && (triggerCard.type === 'Predator' || triggerCard.type === 'Prey')) {
       const previewContainer = document.createElement('div');
       previewContainer.className = 'reaction-card-preview';
