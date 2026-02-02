@@ -2,6 +2,7 @@ import { EventBus } from './timeline/EventBus.js';
 import { Timeline } from './timeline/Timeline.js';
 import { AgentPool } from './agents/AgentPool.js';
 import { Workspace } from './workspace/Workspace.js';
+import { Toolchain } from './workspace/Toolchain.js';
 import { ProjectTemplate } from './workspace/ProjectTemplate.js';
 import { Orchestrator } from './orchestrator/Orchestrator.js';
 import { ClaudeProvider } from './llm/ClaudeProvider.js';
@@ -15,57 +16,82 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 /**
  * AI Game Studio — main entry point.
  *
+ * Language-agnostic: the project config defines the tech stack,
+ * file extensions, and toolchain commands. Templates provide
+ * starter scaffolds for different game types and languages.
+ *
  * Usage:
- *   const studio = await Studio.create({ goal: 'Build a card game about food chains' });
- *   studio.start();
+ *   const studio = await Studio.create({
+ *     template: 'vanilla-js',
+ *     project: { name: 'my-game', language: 'javascript' },
+ *   });
+ *   await studio.start('Build a card game about food chains');
  *
  * Or from CLI:
- *   node src/index.js --goal "Build a tower defense game"
+ *   node src/index.js --goal "Build a tower defense game" --template vanilla-js
  */
 export class Studio {
-  constructor({ eventBus, timeline, workspace, agentPool, orchestrator, server, config }) {
+  constructor({ eventBus, timeline, workspace, toolchain, agentPool, orchestrator, server, config }) {
     this.eventBus = eventBus;
     this.timeline = timeline;
     this.workspace = workspace;
+    this.toolchain = toolchain;
     this.agentPool = agentPool;
     this.orchestrator = orchestrator;
     this.server = server;
     this.config = config;
   }
 
-  /**
-   * Create and wire up a complete studio instance.
-   */
   static async create(opts = {}) {
-    const config = { ...defaultConfig, ...opts };
+    // Deep merge config
+    const config = {
+      ...defaultConfig,
+      ...opts,
+      llm: { ...defaultConfig.llm, ...opts.llm },
+      ui: { ...defaultConfig.ui, ...opts.ui },
+      project: { ...defaultConfig.project, ...opts.project },
+    };
+    if (opts.project?.toolchain) {
+      config.project.toolchain = { ...defaultConfig.project.toolchain, ...opts.project.toolchain };
+    }
 
-    // Core event system
     const eventBus = new EventBus();
     const timeline = new Timeline(eventBus);
 
-    // Workspace
     const workspaceDir = path.resolve(config.workspaceDir || './workspace');
-    const workspace = new Workspace(workspaceDir);
+    const workspace = new Workspace(workspaceDir, config.project);
 
-    // Scaffold from template if workspace is empty
+    // Scaffold from template if specified
     if (config.template) {
-      const templateDir = path.resolve(
-        __dirname, '..', 'templates', config.template
-      );
-      ProjectTemplate.scaffold(templateDir, workspaceDir, {
-        name: config.projectName || 'my-game',
+      const templateDir = path.resolve(__dirname, '..', 'templates', config.template);
+      const vars = {
+        name: config.project.name || 'my-game',
         genre: config.genre || '',
-      });
+        language: config.project.language || 'javascript',
+      };
+      ProjectTemplate.scaffold(templateDir, workspaceDir, vars);
     }
 
-    // LLM provider
+    // Toolchain
+    const toolchain = new Toolchain(
+      config.project.toolchain,
+      workspaceDir,
+      eventBus,
+    );
+
+    // LLM
     const llmProvider = new ClaudeProvider({
       model: config.llm?.model,
       apiKey: config.llm?.apiKey,
     });
 
-    // Agents
-    const agentPool = new AgentPool({ eventBus, workspace, llmProvider });
+    // Agents — pass project config so they know the tech stack
+    const agentPool = new AgentPool({
+      eventBus,
+      workspace,
+      llmProvider,
+      projectConfig: config.project,
+    });
     if (config.agents) {
       for (const roleName of config.agents) {
         agentPool.spawn(roleName);
@@ -75,28 +101,21 @@ export class Studio {
     }
 
     // Orchestrator
-    const orchestrator = new Orchestrator({ agentPool, eventBus, config });
+    const orchestrator = new Orchestrator({ agentPool, eventBus, config, toolchain });
 
     // UI server
     let server = null;
     if (config.ui?.enabled) {
-      server = new StudioServer({
-        port: config.ui.port,
-        eventBus,
-        timeline,
-      });
+      server = new StudioServer({ port: config.ui.port, eventBus, timeline });
     }
 
-    return new Studio({ eventBus, timeline, workspace, agentPool, orchestrator, server, config });
+    return new Studio({ eventBus, timeline, workspace, toolchain, agentPool, orchestrator, server, config });
   }
 
-  /**
-   * Start the studio with a goal.
-   */
   async start(goal) {
     if (this.server) this.server.start();
 
-    // Log to console as a simple fallback viewer
+    // Console fallback viewer
     this.eventBus.onAny((event) => {
       const time = new Date(event.timestamp).toLocaleTimeString();
       const agent = event.agentId ? `[${event.agentId}]` : '[studio]';
@@ -119,12 +138,17 @@ if (args.includes('--goal')) {
   const goalIdx = args.indexOf('--goal');
   const goal = args[goalIdx + 1];
   if (!goal) {
-    console.error('Usage: node src/index.js --goal "Build a card game"');
+    console.error('Usage: node src/index.js --goal "Build a card game" [--template vanilla-js]');
     process.exit(1);
   }
 
   const templateIdx = args.indexOf('--template');
-  const template = templateIdx !== -1 ? args[templateIdx + 1] : 'turn-based';
+  const template = templateIdx !== -1 ? args[templateIdx + 1] : 'vanilla-js';
 
-  Studio.create({ template }).then((studio) => studio.start(goal));
+  const langIdx = args.indexOf('--language');
+  const language = langIdx !== -1 ? args[langIdx + 1] : undefined;
+
+  const projectOpts = language ? { project: { language } } : {};
+
+  Studio.create({ template, ...projectOpts }).then((studio) => studio.start(goal));
 }

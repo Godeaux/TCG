@@ -1,0 +1,117 @@
+{
+  "name": "python-pygame",
+  "genre": "desktop game",
+  "description": "Python game using Pygame — desktop window, sprite-based rendering",
+
+  "project": {
+    "language": "python",
+    "sourceExtensions": [".py"],
+    "styleExtensions": [],
+    "dataExtensions": [".json", ".yaml", ".toml"],
+    "toolchain": {
+      "install": "pip install -r requirements.txt",
+      "build": null,
+      "test": "pytest tests/",
+      "run": "python main.py",
+      "lint": "ruff check src/",
+      "typecheck": "mypy src/"
+    }
+  },
+
+  "directories": [
+    "src/state",
+    "src/game",
+    "src/ui",
+    "src/ai",
+    "data",
+    "assets",
+    "tests",
+    "docs",
+    "design"
+  ],
+
+  "modules": {
+    "state": {
+      "description": "Game state management — immutable state, selectors",
+      "allowedRoles": ["programmer"],
+      "paths": ["src/state/**"]
+    },
+    "game": {
+      "description": "Game rules, turn logic, combat, effects",
+      "allowedRoles": ["programmer"],
+      "paths": ["src/game/**"]
+    },
+    "ui": {
+      "description": "Pygame rendering, sprites, input handling",
+      "allowedRoles": ["designer", "programmer"],
+      "paths": ["src/ui/**"]
+    },
+    "ai": {
+      "description": "AI opponent decision-making and evaluation",
+      "allowedRoles": ["programmer"],
+      "paths": ["src/ai/**"]
+    },
+    "data": {
+      "description": "Game content — card definitions, level data, balance",
+      "allowedRoles": ["designer"],
+      "paths": ["data/**"]
+    },
+    "tests": {
+      "description": "Test files (pytest)",
+      "allowedRoles": ["tester"],
+      "paths": ["tests/**"]
+    },
+    "docs": {
+      "description": "Documentation and design documents",
+      "allowedRoles": ["architect"],
+      "paths": ["docs/**", "design/**"]
+    }
+  },
+
+  "files": [
+    {
+      "path": "main.py",
+      "content": "\"\"\"Entry point for {{name}}.\"\"\"\nimport pygame\nfrom src.game.controller import GameController\nfrom src.ui.renderer import Renderer\n\ndef main():\n    pygame.init()\n    screen = pygame.display.set_mode((800, 600))\n    pygame.display.set_caption('{{name}}')\n    clock = pygame.time.Clock()\n    controller = GameController()\n    renderer = Renderer(screen)\n\n    running = True\n    while running:\n        for event in pygame.event.get():\n            if event.type == pygame.QUIT:\n                running = False\n            controller.handle_input(event)\n\n        controller.update()\n        renderer.render(controller.state)\n        pygame.display.flip()\n        clock.tick(60)\n\n    pygame.quit()\n\nif __name__ == '__main__':\n    main()\n"
+    },
+    {
+      "path": "src/__init__.py",
+      "content": ""
+    },
+    {
+      "path": "src/state/__init__.py",
+      "content": ""
+    },
+    {
+      "path": "src/state/game_state.py",
+      "content": "\"\"\"Central game state.\"\"\"\nfrom dataclasses import dataclass, field\nfrom typing import Dict, Any\n\n@dataclass\nclass GameState:\n    turn: int = 0\n    phase: str = 'setup'\n    players: Dict[str, Any] = field(default_factory=dict)\n    board: Dict[str, Any] = field(default_factory=dict)\n"
+    },
+    {
+      "path": "src/game/__init__.py",
+      "content": ""
+    },
+    {
+      "path": "src/game/controller.py",
+      "content": "\"\"\"Game controller — single entry point for all game actions.\"\"\"\nfrom src.state.game_state import GameState\n\nclass GameController:\n    def __init__(self):\n        self.state = GameState()\n\n    def handle_input(self, event):\n        pass\n\n    def update(self):\n        pass\n"
+    },
+    {
+      "path": "src/ui/__init__.py",
+      "content": ""
+    },
+    {
+      "path": "src/ui/renderer.py",
+      "content": "\"\"\"Pygame renderer — reads state and draws to screen.\"\"\"\nimport pygame\nfrom src.state.game_state import GameState\n\nclass Renderer:\n    def __init__(self, screen: pygame.Surface):\n        self.screen = screen\n\n    def render(self, state: GameState):\n        self.screen.fill((0, 0, 0))\n"
+    },
+    {
+      "path": "src/ai/__init__.py",
+      "content": ""
+    },
+    {
+      "path": "requirements.txt",
+      "content": "pygame>=2.5.0\npytest>=7.0.0\nruff>=0.1.0\nmypy>=1.0.0\n"
+    },
+    {
+      "path": "docs/architecture.md",
+      "content": "# {{name}} Architecture\n\nLanguage: Python 3.11+ with Pygame\nGenre: {{genre}}\n\n## Modules\n\n- **state/** — Game state (dataclasses)\n- **game/** — Game logic and rules\n- **ui/** — Pygame rendering\n- **ai/** — AI opponent\n- **data/** — Game content\n"
+    }
+  ]
+}

@@ -6,19 +6,21 @@ import { Event, EventType } from '../timeline/Event.js';
  * the workspace through guarded file operations, and with the
  * LLM through the provider abstraction.
  *
- * Agents don't call the LLM directly — the Orchestrator drives
- * their turns, passing context and receiving actions.
+ * Language-agnostic: the agent receives project config (language,
+ * extensions, toolchain) and injects it into its system prompt so
+ * the LLM knows what tech stack to use.
  */
 export class Agent {
   /**
    * @param {object} opts
-   * @param {string} opts.id - Unique agent ID (e.g., 'architect-1')
-   * @param {object} opts.role - Role definition from roles/
+   * @param {string} opts.id
+   * @param {object} opts.role
    * @param {import('../timeline/EventBus.js').EventBus} opts.eventBus
    * @param {import('../workspace/Workspace.js').Workspace} opts.workspace
    * @param {import('../llm/LLMProvider.js').LLMProvider} opts.llmProvider
+   * @param {object} [opts.projectConfig] - Project config (language, extensions, toolchain)
    */
-  constructor({ id, role, eventBus, workspace, llmProvider }) {
+  constructor({ id, role, eventBus, workspace, llmProvider, projectConfig = {} }) {
     this.id = id;
     this.role = role;
     this.status = 'idle'; // idle | thinking | blocked | error
@@ -26,6 +28,7 @@ export class Agent {
     this._eventBus = eventBus;
     this._workspace = workspace;
     this._llm = llmProvider;
+    this._projectConfig = projectConfig;
     this._conversationHistory = [];
 
     this._emit(EventType.AGENT_SPAWNED, { role: role.name });
@@ -84,11 +87,36 @@ export class Agent {
    */
   _buildSystemPrompt() {
     const r = this.role;
-    return [
+    const p = this._projectConfig;
+
+    const lines = [
       `You are ${r.name}, a specialized AI agent in a game development studio.`,
       ``,
       `Identity: ${r.identity}`,
       ``,
+    ];
+
+    // Inject project tech stack context
+    if (p.language) {
+      lines.push(
+        `## Project Tech Stack`,
+        `- Language: ${p.language}`,
+        `- Source extensions: ${(p.sourceExtensions || []).join(', ')}`,
+        `- Style extensions: ${(p.styleExtensions || []).join(', ')}`,
+        `- Data extensions: ${(p.dataExtensions || []).join(', ')}`,
+      );
+      if (p.toolchain) {
+        const cmds = Object.entries(p.toolchain)
+          .filter(([, v]) => v)
+          .map(([k, v]) => `  ${k}: ${v}`);
+        if (cmds.length) {
+          lines.push(`- Toolchain commands:`, ...cmds);
+        }
+      }
+      lines.push(``);
+    }
+
+    lines.push(
       `Your domain and responsibilities:`,
       ...r.domain.map((d) => `- ${d}`),
       ``,
@@ -104,7 +132,9 @@ export class Agent {
       ``,
       `When you are done with your current task, call the 'complete_task' tool.`,
       `If you are blocked and need another agent's help, call the 'request_help' tool.`,
-    ].join('\n');
+    );
+
+    return lines.join('\n');
   }
 
   /**

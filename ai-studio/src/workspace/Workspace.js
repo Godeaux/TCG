@@ -6,27 +6,33 @@ import { FileGuard } from './FileGuard.js';
  * Virtual filesystem for the game project being built.
  * All agent file operations go through here, enforcing
  * role-based access control via FileGuard.
+ *
+ * The Workspace is language-agnostic — it doesn't care what
+ * kind of files are being written. The FileGuard handles
+ * extension-based access control using the project config.
  */
 export class Workspace {
   /**
    * @param {string} rootDir - Absolute path to workspace directory
+   * @param {object} [projectConfig] - Project config for FileGuard
    */
-  constructor(rootDir) {
+  constructor(rootDir, projectConfig = {}) {
     this.root = path.resolve(rootDir);
-    this._guard = new FileGuard();
+    this._guard = new FileGuard(projectConfig);
     this._ensureDir(this.root);
   }
 
-  /**
-   * Read a file. Returns { content } or { denied, reason }.
-   */
+  /** Update project config (e.g. after loading from template) */
+  setProjectConfig(projectConfig) {
+    this._guard.setProjectConfig(projectConfig);
+  }
+
   readFile(filePath, agentId, role) {
     const resolved = this._resolve(filePath);
     const check = this._guard.canRead(filePath, role);
     if (!check.allowed) {
       return { denied: true, reason: check.reason };
     }
-
     try {
       const content = fs.readFileSync(resolved, 'utf-8');
       return { content };
@@ -35,16 +41,12 @@ export class Workspace {
     }
   }
 
-  /**
-   * Write a file. Returns { written } or { denied, reason }.
-   */
   writeFile(filePath, content, agentId, role) {
     const resolved = this._resolve(filePath);
     const check = this._guard.canWrite(filePath, role);
     if (!check.allowed) {
       return { denied: true, reason: check.reason };
     }
-
     try {
       this._ensureDir(path.dirname(resolved));
       fs.writeFileSync(resolved, content, 'utf-8');
@@ -54,9 +56,6 @@ export class Workspace {
     }
   }
 
-  /**
-   * List files in a directory.
-   */
   listFiles(dirPath, agentId, role) {
     const resolved = this._resolve(dirPath || '.');
     try {
@@ -70,16 +69,10 @@ export class Workspace {
     }
   }
 
-  /**
-   * Check if a file exists.
-   */
   exists(filePath) {
     return fs.existsSync(this._resolve(filePath));
   }
 
-  /**
-   * Get project structure as a tree (for context).
-   */
   getProjectTree(maxDepth = 3) {
     return this._buildTree(this.root, 0, maxDepth);
   }
@@ -106,9 +99,7 @@ export class Workspace {
       if (entry.name.startsWith('.') || entry.name === 'node_modules') continue;
       if (entry.isDirectory()) {
         result[entry.name + '/'] = this._buildTree(
-          path.join(dir, entry.name),
-          depth + 1,
-          maxDepth
+          path.join(dir, entry.name), depth + 1, maxDepth
         );
       } else {
         result[entry.name] = null;

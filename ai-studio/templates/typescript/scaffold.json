@@ -1,0 +1,103 @@
+{
+  "name": "typescript",
+  "genre": "browser game",
+  "description": "TypeScript browser game with build step, strict types, and Vite dev server",
+
+  "project": {
+    "language": "typescript",
+    "sourceExtensions": [".ts", ".tsx"],
+    "styleExtensions": [".css", ".html", ".svg"],
+    "dataExtensions": [".json", ".yaml"],
+    "toolchain": {
+      "install": "npm install",
+      "build": "npm run build",
+      "test": "npx vitest run",
+      "run": "npx vite",
+      "lint": "npx eslint src/",
+      "typecheck": "npx tsc --noEmit"
+    }
+  },
+
+  "directories": [
+    "src/state",
+    "src/game",
+    "src/ui",
+    "src/ai",
+    "src/types",
+    "data",
+    "assets",
+    "tests",
+    "docs",
+    "design"
+  ],
+
+  "modules": {
+    "state": {
+      "description": "Game state management — immutable state, selectors, action types",
+      "allowedRoles": ["programmer"],
+      "paths": ["src/state/**"]
+    },
+    "game": {
+      "description": "Game rules, turn logic, combat, effects",
+      "allowedRoles": ["programmer"],
+      "paths": ["src/game/**"]
+    },
+    "ui": {
+      "description": "Rendering, input, animations, components",
+      "allowedRoles": ["designer", "programmer"],
+      "paths": ["src/ui/**"]
+    },
+    "ai": {
+      "description": "AI opponent decision-making and evaluation",
+      "allowedRoles": ["programmer"],
+      "paths": ["src/ai/**"]
+    },
+    "types": {
+      "description": "Shared TypeScript type definitions",
+      "allowedRoles": ["programmer", "architect"],
+      "paths": ["src/types/**"]
+    },
+    "data": {
+      "description": "Game content — card definitions, level data, balance numbers",
+      "allowedRoles": ["designer"],
+      "paths": ["data/**"]
+    },
+    "tests": {
+      "description": "Test files and test infrastructure",
+      "allowedRoles": ["tester"],
+      "paths": ["tests/**"]
+    },
+    "docs": {
+      "description": "Documentation and design documents",
+      "allowedRoles": ["architect"],
+      "paths": ["docs/**", "design/**"]
+    }
+  },
+
+  "files": [
+    {
+      "path": "src/state/gameState.ts",
+      "content": "import type { GameState } from '../types/state.js';\n\nexport function createInitialState(): GameState {\n  return {\n    turn: 0,\n    phase: 'setup',\n    players: {},\n    board: {},\n  };\n}\n"
+    },
+    {
+      "path": "src/types/state.ts",
+      "content": "export interface GameState {\n  turn: number;\n  phase: string;\n  players: Record<string, unknown>;\n  board: Record<string, unknown>;\n}\n"
+    },
+    {
+      "path": "src/game/controller.ts",
+      "content": "import type { GameState } from '../types/state.js';\n\nexport interface GameAction {\n  type: string;\n  payload?: Record<string, unknown>;\n}\n\nexport class GameController {\n  static execute(action: GameAction, state: GameState): GameState {\n    return state;\n  }\n}\n"
+    },
+    {
+      "path": "src/ui/renderer.ts",
+      "content": "import type { GameState } from '../types/state.js';\n\nexport function render(state: GameState): void {\n  // Implement rendering\n}\n"
+    },
+    {
+      "path": "tsconfig.json",
+      "content": "{\n  \"compilerOptions\": {\n    \"target\": \"ES2022\",\n    \"module\": \"ESNext\",\n    \"moduleResolution\": \"bundler\",\n    \"strict\": true,\n    \"outDir\": \"dist\",\n    \"rootDir\": \"src\"\n  },\n  \"include\": [\"src\"]\n}\n"
+    },
+    {
+      "path": "docs/architecture.md",
+      "content": "# {{name}} Architecture\n\nLanguage: TypeScript (strict mode, Vite bundler)\nGenre: {{genre}}\n\n## Modules\n\n- **state/** — Game state management\n- **game/** — Game logic and rules\n- **ui/** — User interface\n- **ai/** — AI opponent\n- **types/** — Shared type definitions\n- **data/** — Game content\n"
+    }
+  ]
+}
