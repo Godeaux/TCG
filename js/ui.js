@@ -4173,6 +4173,25 @@ export const renderGame = (state, callbacks = {}) => {
   latestState = state;
   latestCallbacks = callbacks;
 
+  // Render menu overlays early — before game board rendering — so the menu
+  // is shown even if a later rendering step throws.  The HTML defaults to
+  // the menu overlay being visible (active class in markup) and the
+  // battlefield page hidden, so this call keeps them in sync with state.
+  renderMenuOverlays(state, callbacks);
+
+  // Activate the battlefield page once the menu is dismissed (menu.stage === 'ready').
+  // The page starts without the 'active' class in HTML so the game board is hidden
+  // until JS confirms the menu has been passed.  Only activate on the first
+  // transition — after that, navigateToPage() manages page visibility.
+  const battlefieldPage = document.querySelector('.page-battlefield');
+  if (
+    battlefieldPage &&
+    state.menu?.stage === 'ready' &&
+    !battlefieldPage.classList.contains('active')
+  ) {
+    navigateToPage(currentPage);
+  }
+
   // Update resync button visibility based on online mode
   updateResyncButtonVisibility(state);
 
@@ -5022,8 +5041,8 @@ export const renderGame = (state, callbacks = {}) => {
   renderDeckSelectionOverlay(state, callbacks);
   renderSetupOverlay(state, callbacks);
   renderDeckBuilderOverlay(state, callbacks);
-  // Menu overlays (uses extracted MenuOverlay module)
-  renderMenuOverlays(state, callbacks);
+  // Note: renderMenuOverlays is called early in renderGame (before game board rendering)
+  // to ensure the menu is always shown even if later rendering steps fail.
   // Note: Lobby subscriptions are managed by lobbyManager.js (handleCreateLobby/handleJoinLobby)
   // No need to call updateLobbySubscription here - it's set up when entering a lobby
 
