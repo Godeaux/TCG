@@ -127,63 +127,6 @@ const KNOWN_EFFECT_TYPES = [
   // Play from hand
   'playSpellFromHand',
 
-  // Arachnid web effects
-  'webAllEnemies',
-  'webAttacker',
-  'webTarget',
-  'webRandomEnemy',
-  'damageWebbed',
-  'drawPerWebbed',
-  'healPerWebbed',
-  'buffAtkPerWebbed',
-  'drawIfEnemyWebbed',
-  'summonTokensPerWebbed',
-
-  // Feline effects
-  'enterStalkMode',
-  'enterStalkModeOnPlay',
-  'chasePrey',
-  'drawPerStalking',
-  'drawPerPride',
-  'buffAllPride',
-  'grantPride',
-  'summonTokensPerPride',
-  'healPerPride',
-  'selectEnemyToReturn',
-
-  // Crustacean effects
-  'grantShell',
-  'buffAllShell',
-  'buffHpPerShell',
-  'drawPerShell',
-  'healPerShell',
-  'regenerateAllShells',
-  'damageEqualToTotalShell',
-  'summonTokensPerShell',
-  'grantMolt',
-  'buffAllMolt',
-  'drawPerMolt',
-  'composite',
-
-  // Insect effects
-  'incrementEmergeCounter',
-  'transformIfSurvives',
-  'transformAllLarvaeImmediately',
-  'bonusDamagePerAttacker',
-  'forceAllFriendlyAttack',
-  'infestEnemy',
-  'surviveWithOneHp',
-  'destroyEnemyToken',
-  'returnCardFromDiscardToDeck',
-  'destroySelf',
-  'destroyCreatureWithLowHp',
-  'buffSelf',
-  'damageRandomEnemyPrey',
-  'stealRandomCardFromHand',
-  'takeControlOfEnemyPrey',
-  'drawPerFriendlyCreature',
-  'silenceAllEnemies',
-
   // Combat reaction effects
   'damageAttacker',
   'applyPoisonToAttacker',

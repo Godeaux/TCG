@@ -127,10 +127,6 @@ export const isLocalPlayersTurn = (state) => {
   if (state._isSimulation) {
     return true;
   }
-  // AI vs AI: no human player, so never the local player's turn
-  if (isAIvsAIMode(state)) {
-    return false;
-  }
   // Regular AI mode: human is player 0
   if (isAIMode(state)) {
     return state.activePlayerIndex === 0;
@@ -439,17 +435,10 @@ export const isAIMode = (state) => {
 };
 
 /**
- * Check if in AI vs AI (spectator) mode
- */
-export const isAIvsAIMode = (state) => {
-  return state.menu?.mode === 'aiVsAi';
-};
-
-/**
- * Check if either AI mode is active (human vs AI or AI vs AI)
+ * Check if either AI mode is active
  */
 export const isAnyAIMode = (state) => {
-  return isAIMode(state) || isAIvsAIMode(state);
+  return isAIMode(state);
 };
 
 /**

@@ -5,7 +5,6 @@ import {
   chooseFirstPlayer,
   setPlayerDeck,
   isAIMode,
-  isAIvsAIMode,
   isAnyAIMode,
   isLocalPlayersTurn,
   isMainPhase,
@@ -16,9 +15,7 @@ import { advancePhase, endTurn, startTurn } from './game/index.js';
 import { renderGame, setupInitialDraw } from './ui.js';
 import { initializeCardRegistry } from './cards/index.js';
 import { initializeAI, cleanupAI, checkAndTriggerAITurn } from './ai/index.js';
-import { generateAIvsAIDecks } from './ui/overlays/DeckBuilderOverlay.js';
 import { isSelectionActive } from './ui/components/index.js';
-import { onActionExecuted as simOnActionExecuted } from './simulation/index.js';
 import { SoundManager } from './audio/soundManager.js';
 import { getActionBus } from './network/actionBus.js';
 import { isOnlineMode } from './state/selectors.js';
@@ -64,18 +61,10 @@ const checkWinCondition = () => {
 // The AI controller now directly modifies game state, so these just refresh UI
 const aiCallbacks = {
   onAIPlayCard: (card, slotIndex, options) => {
-    // Track the action for simulation stats (cards/synergies)
-    if (isAIvsAIMode(state)) {
-      simOnActionExecuted({ type: 'PLAY_CARD', payload: { card } }, state);
-    }
     // AI has already modified game state, just refresh UI
     refresh();
   },
   onAIAttack: (attacker, target) => {
-    // Track combat actions for simulation stats
-    if (isAIvsAIMode(state)) {
-      simOnActionExecuted({ type: 'DECLARE_ATTACK', payload: { attacker, target } }, state);
-    }
     // AI has already resolved combat, just refresh UI
     refresh();
   },
@@ -193,16 +182,6 @@ const refresh = () => {
       // Auto-advance through Start → Draw → Main 1 (consistent with endTurn flow)
       advancePhase(state);
       refresh();
-
-      // In AI vs AI mode, explicitly trigger the first AI turn after a short delay
-      // This ensures the UI has fully updated before AI starts
-      if (isAIvsAIMode(state)) {
-        console.log('[Main] Setup complete in AI vs AI mode, scheduling first AI turn');
-        setTimeout(() => {
-          console.log('[Main] Triggering first AI turn after setup');
-          checkAndTriggerAITurn(state, aiCallbacks);
-        }, 500);
-      }
     },
     onDeckComplete: (selections) => {
       console.log('[DeckComplete] Received selections:', selections);
@@ -227,9 +206,8 @@ const refresh = () => {
       selections.forEach((deck, index) => {
         console.log(`[DeckComplete] Setting deck for player ${index}, cards: ${deck?.length ?? 0}`);
         // In AI mode, player 0 is the human - attach their card rarities
-        // In AI vs AI mode, no players get rarities
         // In local mode, only player 0 gets rarities
-        const playerOwnedCards = index === 0 && !isAIvsAIMode(state) ? ownedCards : null;
+        const playerOwnedCards = index === 0 ? ownedCards : null;
         setPlayerDeck(state, index, deck.slice(0, 20), playerOwnedCards);
       });
       setupInitialDraw(state, 5);
@@ -257,11 +235,7 @@ const refresh = () => {
       // Initialize AI if in any AI mode
       if (isAnyAIMode(state)) {
         initializeAI(state);
-        if (isAIvsAIMode(state)) {
-          logMessage(state, `AI vs AI mode initialized.`);
-        } else {
-          logMessage(state, `AI opponent initialized.`);
-        }
+        logMessage(state, `AI opponent initialized.`);
       }
 
       refresh();

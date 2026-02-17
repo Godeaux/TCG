@@ -13,12 +13,10 @@
  * Design: Reuses existing modules (no parallel game logic)
  * - ThreatDetector for threat analysis
  * - GameController for move simulation
- * - stateSnapshot for deep cloning
  */
 
 import { ThreatDetector } from './ThreatDetector.js';
 import { GameController } from '../game/controller.js';
-import { createSnapshot, diffSnapshots } from '../simulation/stateSnapshot.js';
 import { hasKeyword, KEYWORDS, isPassive } from '../keywords.js';
 import { hasCreatureAttacked } from '../state/selectors.js';
 import { ActionTypes } from '../state/actions.js';
@@ -80,7 +78,7 @@ export class PositionEvaluator {
    * @returns {GameController} - Controller with cloned state
    */
   createSimulationController(state, playerIndex = 0) {
-    const clonedState = createSnapshot(state);
+    const clonedState = structuredClone(state);
     if (!clonedState) {
       console.warn('[PositionEvaluator] Failed to clone state for simulation');
       return null;
@@ -119,7 +117,7 @@ export class PositionEvaluator {
     // Set active player for simulation
     simController.state.activePlayerIndex = playerIndex;
 
-    const before = createSnapshot(simController.state);
+    const before = structuredClone(simController.state);
 
     // Execute using REAL game logic
     const result = simController.execute({
@@ -132,12 +130,10 @@ export class PositionEvaluator {
     }
 
     const after = simController.state;
-    const diff = diffSnapshots(before, after);
-
     return {
       success: true,
       resultingState: after,
-      changes: diff,
+      changes: null,
       evaluation: this.evaluatePosition(after, playerIndex),
     };
   }

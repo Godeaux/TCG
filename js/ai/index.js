@@ -20,7 +20,8 @@ export {
   executeAITurn,
   checkAndTriggerAITurn,
   getAIController,
-  getAIController0,
+  resetStuckDetection,
+  getStuckDetectionStats,
 } from './AIGameManager.js';
 
 export {

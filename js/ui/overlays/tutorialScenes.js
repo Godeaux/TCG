@@ -121,24 +121,23 @@ const CARDS = {
     keywords: ['Haste', 'Edible'],
     rarity: 'common',
   },
-  isopod: {
-    id: 'crustacean-predator-giant-isopod',
-    name: 'Giant Isopod',
+  scavenger: {
+    id: 'bird-predator-vulture',
+    name: 'Vulture',
     type: 'Predator',
-    atk: 4,
-    hp: 5,
+    atk: 3,
+    hp: 4,
     keywords: ['Scavenge'],
     rarity: 'rare',
   },
-  portia: {
-    id: 'arachnid-prey-portia-spider',
-    name: 'Portia Spider',
-    type: 'Prey',
-    atk: 2,
-    hp: 2,
-    nutrition: 2,
+  greatWhite: {
+    id: 'fish-predator-great-white',
+    name: 'Great White Shark',
+    type: 'Predator',
+    atk: 5,
+    hp: 5,
     keywords: ['Acuity'],
-    rarity: 'common',
+    rarity: 'rare',
   },
   snowshoeHare: {
     id: 'mammal-prey-snowshoe-hare',
@@ -195,14 +194,14 @@ const CARDS = {
     effectText: 'Grant Barrier to a creature',
   },
   trap: {
-    id: 'arachnid-trap-silk-trap',
-    name: 'Silk Trap',
+    id: 'fish-trap-maelstrom',
+    name: 'Maelstrom',
     type: 'Trap',
     atk: 0,
     hp: 0,
     keywords: [],
     rarity: 'common',
-    effectText: 'Web attacker, negate attack',
+    effectText: 'Negate attack, deal 2 damage to all',
   },
 };
 
@@ -445,9 +444,9 @@ export const TUTORIAL_SCENES = [
         { type: 'fadeIn', target: 'right', duration: 400 },
         { type: 'arrow', from: 'right', to: 'left', duration: 500 },
         { type: 'wait', duration: 400 },
-        { type: 'label', text: '💥 Trap triggers! Silk Trap webs attacker!' },
+        { type: 'label', text: '💥 Trap triggers! Maelstrom damages all!' },
         { type: 'keywordFlash', target: 'left', keyword: 'ambush', duration: 500 },
-        { type: 'applyStatus', target: 'right', status: 'webbed' },
+        { type: 'damagePop', target: 'right', amount: 2, duration: 500 },
         { type: 'wait', duration: 2000 },
         { type: 'clearHighlights' },
         { type: 'wait', duration: 1500 },
@@ -762,9 +761,9 @@ export const TUTORIAL_SCENES = [
     text: `<p><strong>Scavenge</strong> lets a predator consume from the <strong>Carrion pile</strong> instead of the field.</p>
 <p>This means you can get value from creatures that already died — no setup required!</p>`,
     demo: {
-      setup: [{ slot: 'center', card: CARDS.isopod }],
+      setup: [{ slot: 'center', card: CARDS.scavenger }],
       steps: [
-        { type: 'label', text: 'Giant Isopod has Scavenge' },
+        { type: 'label', text: 'Vulture has Scavenge' },
         { type: 'fadeIn', target: 'center', duration: 500 },
         { type: 'wait', duration: 600 },
         { type: 'label', text: 'Consumes from Carrion — no live prey needed!' },
@@ -785,7 +784,7 @@ export const TUTORIAL_SCENES = [
 <p>It's the hard counter to stealth-based strategies.</p>`,
     demo: {
       setup: [
-        { slot: 'left', card: CARDS.portia },
+        { slot: 'left', card: CARDS.greatWhite },
         { slot: 'right', card: CARDS.hiddenPrey },
       ],
       steps: [
@@ -798,7 +797,7 @@ export const TUTORIAL_SCENES = [
         { type: 'arrow', from: 'left', to: 'right', duration: 600 },
         { type: 'highlightTarget', target: 'right' },
         { type: 'attack', from: 'left', to: 'right', duration: 420 },
-        { type: 'damagePop', target: 'right', amount: 2, duration: 500 },
+        { type: 'damagePop', target: 'right', amount: 5, duration: 500 },
         { type: 'label', text: 'Target locked and hit!' },
         { type: 'death', target: 'right', duration: 700 },
         { type: 'clearHighlights' },

@@ -1,43 +1,30 @@
 /**
  * AI Game Manager
  *
- * Manages AI behavior during singleplayer and AI vs AI games.
+ * Manages AI behavior during singleplayer games.
  * Handles:
- * - Initializing AI controllers (one for AI mode, two for AI vs AI)
- * - Detecting when it's an AI's turn
+ * - Initializing the AI controller
+ * - Detecting when it's the AI's turn
  * - Executing AI turns with proper timing
  * - Coordinating with the game UI
  */
 
 import { createAIController } from './AIController.js';
-import { isAIMode, isAIvsAIMode, isAnyAIMode } from '../state/selectors.js';
+import { isAIMode, isAnyAIMode } from '../state/selectors.js';
 import { logMessage } from '../state/gameState.js';
-import {
-  initBugDetector,
-  getBugDetector,
-  logBugMessage,
-  onGameStarted as simOnGameStarted,
-  onGameEnded as simOnGameEnded,
-  connectToBugDetector,
-  startSimulation,
-  getSimulationStatus,
-} from '../simulation/index.js';
 
 // ============================================================================
 // MODULE STATE
 // ============================================================================
 
-// AI controllers (one for regular AI mode, two for AI vs AI mode)
-let aiController = null; // Player 1 AI (used in both modes)
-let aiController0 = null; // Player 0 AI (only used in AI vs AI mode)
+// AI controller for player 1
+let aiController = null;
 let isAITurnInProgress = false;
 
 // ============================================================================
-// BUG DETECTION STATE
+// STUCK DETECTION STATE
 // ============================================================================
 
-let lastTurnCompletedAt = null;
-let lastTurnPlayer = null;
 let stuckDetectionTimer = null;
 let consecutiveStuckCount = 0;
 const STUCK_TIMEOUT_MS = 15000; // 15 seconds without turn completion = potentially stuck
@@ -79,80 +66,13 @@ const getAIDelay = (state, fastDelay = 100) => {
 export const initializeAI = (state, options = {}) => {
   console.log('[AIManager] initializeAI called');
   console.log('[AIManager] state.menu.mode:', state.menu?.mode);
-  console.log('[AIManager] isAIvsAIMode:', isAIvsAIMode(state), 'isAIMode:', isAIMode(state));
+  console.log('[AIManager] isAIMode:', isAIMode(state));
 
   // Get difficulty from options or state.menu
   const difficulty = options.difficulty ?? state.menu?.aiDifficulty ?? 'easy';
   const showThinking = options.showThinking ?? state.menu?.aiShowThinking ?? true;
 
   console.log(`[AIManager] AI difficulty: ${difficulty}, showThinking: ${showThinking}`);
-
-  if (isAIvsAIMode(state)) {
-    // AI vs AI mode: create two controllers
-    console.log('[AIManager] Initializing AI vs AI mode - creating both controllers');
-
-    aiController0 = createAIController(0, { difficulty, showThinking }); // AI for player 0
-    aiController = createAIController(1, { difficulty, showThinking }); // AI for player 1
-    isAITurnInProgress = false;
-
-    // Set AI player names
-    const deck1 = state.aiVsAi?.deck1Type || state.menu?.aiVsAiDecks?.player1 || 'AI';
-    const deck2 = state.aiVsAi?.deck2Type || state.menu?.aiVsAiDecks?.player2 || 'AI';
-
-    if (state.players[0]) {
-      state.players[0].name = `AI (${deck1})`;
-      state.players[0].isAI = true;
-    }
-    if (state.players[1]) {
-      state.players[1].name = `AI (${deck2})`;
-      state.players[1].isAI = true;
-    }
-
-    logMessage(state, `AI vs AI: ${deck1} vs ${deck2}`);
-
-    // Initialize bug detector for AI vs AI mode
-    initBugDetector({
-      logBug: (bugState, message) => logBugMessage(bugState, message),
-      onBugDetected: (bugs) => {
-        console.log('[AIManager] Bug detected, pausing AI execution');
-      },
-      onPause: () => {
-        console.log('[AIManager] Bug detector paused - click game area to continue');
-      },
-      onResume: () => {
-        console.log('[AIManager] Bug detector resumed');
-      },
-    });
-    getBugDetector().enable({ simulationMode: true });
-    logMessage(state, `Bug detector enabled (simulation mode - bugs won't pause game).`);
-
-    // Start simulation harness for analytics tracking (only if not already running)
-    // The VictoryOverlay will call onGameEnded, and onAIvsAIRestart callback handles new games
-    const simStatus = getSimulationStatus();
-    if (!simStatus.isRunning) {
-      startSimulation({
-        // Provide startNewGame callback to prevent simulation from stopping
-        // The actual game restart is handled by VictoryOverlay's 5-second countdown
-        startNewGame: () => {
-          console.log(
-            '[AIManager] Simulation harness requested new game - VictoryOverlay handles this'
-          );
-        },
-        onGameStart: (gameNum, gameState) => console.log(`[SimHarness] Game ${gameNum} started`),
-        onGameEnd: (result) =>
-          console.log(`[SimHarness] Game ${result.gameNumber} ended, winner: ${result.winner}`),
-        onStatsUpdate: () => {}, // Dashboard pulls stats via getFullStatistics()
-      });
-    }
-
-    // Connect simulation harness to bug detector for analytics
-    connectToBugDetector();
-
-    // Notify simulation harness that a game has started
-    simOnGameStarted(state);
-
-    return;
-  }
 
   if (!isAIMode(state)) {
     console.log('[AIManager] Not in AI mode, skipping initialization');
@@ -165,7 +85,6 @@ export const initializeAI = (state, options = {}) => {
 
   // AI is always player 1 (index 1) in regular AI mode
   aiController = createAIController(1, { difficulty, showThinking });
-  aiController0 = null;
   isAITurnInProgress = false;
 
   // Set AI player name
@@ -180,15 +99,8 @@ export const initializeAI = (state, options = {}) => {
  */
 export const cleanupAI = () => {
   aiController = null;
-  aiController0 = null;
   isAITurnInProgress = false;
-  resetBugDetection();
-
-  // Disable bug detector
-  const detector = getBugDetector();
-  if (detector) {
-    detector.disable();
-  }
+  resetStuckDetection();
 };
 
 // ============================================================================
@@ -196,16 +108,11 @@ export const cleanupAI = () => {
 // ============================================================================
 
 /**
- * Check if it's any AI's turn
+ * Check if it's the AI's turn
  */
 export const isAIsTurn = (state) => {
   if (!isAnyAIMode(state)) {
     return false;
-  }
-
-  if (isAIvsAIMode(state)) {
-    // In AI vs AI mode, it's always an AI's turn (both players are AI)
-    return true;
   }
 
   // In regular AI mode, only player 1 is AI
@@ -216,9 +123,6 @@ export const isAIsTurn = (state) => {
  * Get the AI controller for the current active player
  */
 const getActiveAIController = (state) => {
-  if (isAIvsAIMode(state)) {
-    return state.activePlayerIndex === 0 ? aiController0 : aiController;
-  }
   return state.activePlayerIndex === 1 ? aiController : null;
 };
 
@@ -242,17 +146,6 @@ export const executeAITurn = async (state, callbacks) => {
     `[AIManager] executeAITurn called, activePlayer: ${state.activePlayerIndex}, inProgress: ${isAITurnInProgress}`
   );
 
-  // Check if bug detector is paused
-  const detector = getBugDetector();
-  if (detector?.isPaused()) {
-    console.log('[AIManager] executeAITurn: bug detector is paused, waiting...');
-    // Set resume callback to retry
-    detector.setResumeCallback(() => {
-      setTimeout(() => executeAITurn(state, callbacks), 100);
-    });
-    return;
-  }
-
   if (isAITurnInProgress) {
     console.log('[AIManager] executeAITurn: already in progress, returning');
     return;
@@ -266,9 +159,7 @@ export const executeAITurn = async (state, callbacks) => {
 
   if (!controller) {
     console.log('[AIManager] executeAITurn: no controller found, returning');
-    console.log(
-      `[AIManager] aiController0: ${aiController0 ? 'exists' : 'null'}, aiController: ${aiController ? 'exists' : 'null'}`
-    );
+    console.log(`[AIManager] aiController: ${aiController ? 'exists' : 'null'}`);
     return;
   }
 
@@ -337,25 +228,6 @@ export const executeAITurn = async (state, callbacks) => {
       controller.isSearching = false;
       controller.isProcessing = false;
     }
-
-    // Mark turn as completed (resets stuck detection)
-    if (isAIvsAIMode(state)) {
-      markTurnCompleted(state);
-    }
-
-    // After this AI's turn completes, check if the next player is also AI
-    // This is needed because when onEndTurn calls refresh() -> checkAndTriggerAITurn,
-    // isAITurnInProgress was still true, so the next turn wasn't triggered
-    const shouldScheduleNextTurn =
-      isAIvsAIMode(state) && !state.winner && state.menu?.aiSpeed !== 'paused';
-    if (state.menu?.aiSpeed === 'paused') {
-      console.log('[AIManager] AI is paused, not scheduling next turn');
-    } else if (shouldScheduleNextTurn) {
-      const nextDelay = getAIDelay(state, 200);
-      setTimeout(() => {
-        checkAndTriggerAITurn(state, callbacks);
-      }, nextDelay);
-    }
   }
 };
 
@@ -368,27 +240,14 @@ export const checkAndTriggerAITurn = (state, callbacks) => {
     `[AIManager] checkAndTriggerAITurn called - mode: ${state.menu?.mode}, phase: ${state.phase}, turn: ${state.turn}, activePlayer: ${state.activePlayerIndex}`
   );
   console.log(
-    `[AIManager] checkAndTriggerAITurn - isAnyAIMode: ${isAnyAIMode(state)}, isAIvsAIMode: ${isAIvsAIMode(state)}`
+    `[AIManager] checkAndTriggerAITurn - isAnyAIMode: ${isAnyAIMode(state)}`
   );
   console.log(
     `[AIManager] checkAndTriggerAITurn - setup.stage: ${state.setup?.stage}, winner: ${state.winner}, isAITurnInProgress: ${isAITurnInProgress}`
   );
   console.log(
-    `[AIManager] checkAndTriggerAITurn - aiController0: ${aiController0 ? 'exists' : 'null'}, aiController: ${aiController ? 'exists' : 'null'}`
+    `[AIManager] checkAndTriggerAITurn - aiController: ${aiController ? 'exists' : 'null'}`
   );
-
-  // Check if bug detector is paused
-  const detector = getBugDetector();
-  if (detector?.isPaused()) {
-    console.log('[AIManager] checkAndTriggerAITurn: bug detector is paused, skipping');
-    return;
-  }
-
-  // Check if AI is manually paused via speed control
-  if (state.menu?.aiSpeed === 'paused') {
-    console.log('[AIManager] checkAndTriggerAITurn: AI is paused via speed control, skipping');
-    return;
-  }
 
   if (!isAnyAIMode(state)) {
     console.log('[AIManager] checkAndTriggerAITurn: not AI mode, skipping');
@@ -423,14 +282,11 @@ export const checkAndTriggerAITurn = (state, callbacks) => {
       `[AIManager] checkAndTriggerAITurn: triggering AI turn for player ${state.activePlayerIndex}`
     );
     // Use setTimeout to allow UI to update first
-    // Shorter delay for AI vs AI mode for faster gameplay
     // Lightning mode uses minimum delay
     const speed = state.menu?.aiSpeed;
     let delay = 500;
     if (speed === 'lightning') {
       delay = 1;
-    } else if (isAIvsAIMode(state)) {
-      delay = 200;
     }
     console.log(
       `[AIManager] checkAndTriggerAITurn: scheduling executeAITurn with ${delay}ms delay`
@@ -445,12 +301,11 @@ export const checkAndTriggerAITurn = (state, callbacks) => {
 };
 
 // ============================================================================
-// BUG DETECTION
+// STUCK DETECTION
 // ============================================================================
 
 /**
  * Start monitoring for stuck state
- * Works for all AI modes, not just AI vs AI
  */
 const startStuckDetection = (state, callbacks) => {
   if (stuckDetectionTimer) {
@@ -514,7 +369,6 @@ const logStuckState = (state) => {
     console.log('Active Player Deck Size:', activePlayer.deck?.length);
   }
 
-  console.log('aiController0 exists:', !!aiController0);
   console.log('aiController exists:', !!aiController);
   console.log('================================');
 };
@@ -527,9 +381,6 @@ const attemptRecovery = (state, callbacks) => {
   isAITurnInProgress = false;
 
   // Reset AI controller processing flags
-  if (aiController0) {
-    aiController0.isProcessing = false;
-  }
   if (aiController) {
     aiController.isProcessing = false;
   }
@@ -542,38 +393,20 @@ const attemptRecovery = (state, callbacks) => {
 };
 
 /**
- * Reset bug detection state (call on game end/restart)
+ * Reset stuck detection state (call on game end/restart)
  */
-export const resetBugDetection = () => {
+export const resetStuckDetection = () => {
   if (stuckDetectionTimer) {
     clearTimeout(stuckDetectionTimer);
     stuckDetectionTimer = null;
   }
-  lastTurnCompletedAt = null;
-  lastTurnPlayer = null;
   consecutiveStuckCount = 0;
 };
 
 /**
- * Mark turn as completed (resets stuck detection)
+ * Get stuck detection statistics
  */
-const markTurnCompleted = (state) => {
-  lastTurnCompletedAt = Date.now();
-  lastTurnPlayer = state.activePlayerIndex;
-  consecutiveStuckCount = 0;
-
-  if (stuckDetectionTimer) {
-    clearTimeout(stuckDetectionTimer);
-    stuckDetectionTimer = null;
-  }
-};
-
-/**
- * Get bug detection statistics
- */
-export const getBugDetectionStats = () => ({
-  lastTurnCompletedAt,
-  lastTurnPlayer,
+export const getStuckDetectionStats = () => ({
   consecutiveStuckCount,
   isAITurnInProgress,
 });
@@ -583,4 +416,3 @@ export const getBugDetectionStats = () => ({
 // ============================================================================
 
 export const getAIController = () => aiController;
-export const getAIController0 = () => aiController0;

@@ -10,7 +10,6 @@
  */
 
 import { GameController } from '../game/controller.js';
-import { createSnapshot } from '../simulation/stateSnapshot.js';
 import { ActionTypes } from '../state/actions.js';
 
 // ============================================================================
@@ -28,7 +27,7 @@ export class MoveSimulator {
    */
   simulate(state, move, playerIndex) {
     // Clone state to avoid mutations
-    const clonedState = createSnapshot(state);
+    const clonedState = structuredClone(state);
     if (!clonedState) {
       return { success: false, error: 'Failed to clone state' };
     }

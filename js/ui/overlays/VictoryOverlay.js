@@ -16,7 +16,6 @@
 
 import { updatePackCount, updateProfileStats } from '../../network/lobbyManager.js';
 import { getLocalPlayerIndex } from '../../state/selectors.js';
-import { onGameEnded as simOnGameEnded, getSimulationStatus } from '../../simulation/index.js';
 import { broadcastRematchChoice } from '../../network/sync.js';
 
 // ============================================================================
@@ -108,20 +107,10 @@ const calculateCreaturesDefeated = (state) => {
 // Store callback for menu button
 let onReturnToMenuCallback = null;
 
-// Store callback for AI vs AI restart
-let onAIvsAIRestartCallback = null;
-
 // Store callbacks for rematch options (multiplayer)
 let onRematchCallback = null;
 let onRematchDeckCallback = null;
 let onRematchUpdateCallback = null;
-
-// Auto-restart timer for AI vs AI mode
-let autoRestartTimer = null;
-let countdownInterval = null;
-
-// Track if we're in lightning mode (for skipping animations)
-let isLightningMode = false;
 
 // Store current game state reference for rematch UI updates
 let currentRematchState = null;
@@ -132,14 +121,6 @@ let currentRematchState = null;
  */
 export const setVictoryMenuCallback = (callback) => {
   onReturnToMenuCallback = callback;
-};
-
-/**
- * Set the callback for restarting AI vs AI with same decks
- * This should be called from ui.js to provide proper restart functionality
- */
-export const setAIvsAIRestartCallback = (callback) => {
-  onAIvsAIRestartCallback = callback;
 };
 
 /**
@@ -316,25 +297,6 @@ const setupRematchHandlers = (elements, state) => {
 };
 
 /**
- * Cancel the auto-restart timer
- */
-const cancelAutoRestart = () => {
-  if (autoRestartTimer) {
-    clearTimeout(autoRestartTimer);
-    autoRestartTimer = null;
-  }
-  if (countdownInterval) {
-    clearInterval(countdownInterval);
-    countdownInterval = null;
-  }
-  // Remove countdown element if it exists
-  const countdown = document.getElementById('victory-countdown');
-  if (countdown) {
-    countdown.remove();
-  }
-};
-
-/**
  * Show the victory screen
  *
  * @param {Object} winner - The winning player
@@ -345,7 +307,6 @@ const cancelAutoRestart = () => {
  * @param {Object} options - Additional options
  * @param {boolean} options.awardPack - Whether to award a pack
  * @param {Object} options.state - Game state (for updating pack count)
- * @param {boolean} options.isAIvsAI - Whether this is AI vs AI mode
  * @param {boolean} options.isOnline - Whether this is online multiplayer mode
  */
 export const showVictoryScreen = (winner, stats = {}, options = {}) => {
@@ -354,9 +315,6 @@ export const showVictoryScreen = (winner, stats = {}, options = {}) => {
     elements;
 
   if (!overlay) return;
-
-  // Cancel any existing auto-restart timer
-  cancelAutoRestart();
 
   // Set winner name (or "Draw" if no winner)
   if (winnerName) {
@@ -441,76 +399,9 @@ export const showVictoryScreen = (winner, stats = {}, options = {}) => {
     if (rematchOptions) rematchOptions.style.display = 'none';
   }
 
-  // AI vs AI mode: Add auto-restart countdown
-  if (options.isAIvsAI && onAIvsAIRestartCallback) {
-    // Track lightning mode at module level for hideVictoryScreen
-    isLightningMode = options.state?.menu?.aiSpeed === 'lightning';
-
-    // Lightning mode: restart immediately with no countdown UI
-    if (isLightningMode) {
-      autoRestartTimer = setTimeout(() => {
-        cancelAutoRestart();
-        hideVictoryScreen(() => {
-          if (onAIvsAIRestartCallback) {
-            onAIvsAIRestartCallback();
-          }
-        });
-      }, 1);
-      return;
-    }
-
-    const COUNTDOWN_SECONDS = 5;
-    let secondsRemaining = COUNTDOWN_SECONDS;
-
-    // Create countdown element
-    const countdownDiv = document.createElement('div');
-    countdownDiv.id = 'victory-countdown';
-    countdownDiv.className = 'victory-countdown';
-    countdownDiv.innerHTML = `
-      <div class="countdown-text">Next match in <span class="countdown-number">${secondsRemaining}</span>s</div>
-      <div class="countdown-hint">(click to cancel)</div>
-    `;
-
-    // Insert after the menu button
-    const menuContainer = menu?.parentElement;
-    if (menuContainer) {
-      menuContainer.appendChild(countdownDiv);
-    }
-
-    // Update countdown every second
-    countdownInterval = setInterval(() => {
-      secondsRemaining--;
-      const numberSpan = countdownDiv.querySelector('.countdown-number');
-      if (numberSpan) {
-        numberSpan.textContent = secondsRemaining;
-      }
-      if (secondsRemaining <= 0) {
-        clearInterval(countdownInterval);
-        countdownInterval = null;
-      }
-    }, 1000);
-
-    // Auto-restart after countdown
-    autoRestartTimer = setTimeout(() => {
-      cancelAutoRestart();
-      hideVictoryScreen(() => {
-        if (onAIvsAIRestartCallback) {
-          onAIvsAIRestartCallback();
-        }
-      });
-    }, COUNTDOWN_SECONDS * 1000);
-
-    // Click countdown to cancel and show menu options
-    countdownDiv.onclick = (e) => {
-      e.stopPropagation();
-      cancelAutoRestart();
-    };
-  }
-
   // Add event listener for main menu
   if (menu) {
     menu.onclick = () => {
-      cancelAutoRestart();
       hideVictoryScreen(() => {
         // Use callback if provided, otherwise fall back to reload
         if (onReturnToMenuCallback) {
@@ -536,11 +427,9 @@ export const hideVictoryScreen = (callback) => {
   overlay.classList.remove('show');
   overlay.setAttribute('aria-hidden', 'true');
 
-  // Lightning mode: skip fade animation delay
-  const delay = isLightningMode ? 1 : 1000;
   setTimeout(() => {
     if (callback) callback();
-  }, delay);
+  }, 1000);
 };
 
 /**
@@ -616,7 +505,6 @@ export const checkForVictory = (state) => {
       creaturesDefeated: calculateCreaturesDefeated(state),
     };
 
-    const isAIvsAI = state.menu?.mode === 'aiVsAi';
     const isOnline = state.menu?.mode === 'online';
 
     // Determine winner by HP, or draw if equal
@@ -638,26 +526,14 @@ export const checkForVictory = (state) => {
     if (isDraw) {
       // Handle draw
       state.winner = 'draw';
-      if (isAIvsAI) {
-        simOnGameEnded(state).catch((err) => {
-          console.error('[VictoryOverlay] Failed to notify simulation harness:', err);
-        });
-      }
-      showVictoryScreen(null, stats, { awardPack: false, state, isAIvsAI, isOnline, isDraw: true });
+      showVictoryScreen(null, stats, { awardPack: false, state, isOnline, isDraw: true });
     } else {
       // Winner determined by HP
       const awardPack = shouldAwardPack(state, winner, loser);
       updateProfileStatsOnVictory(state, winner, loser);
-      if (isAIvsAI) {
-        state.winner = state.players.indexOf(winner);
-        simOnGameEnded(state).catch((err) => {
-          console.error('[VictoryOverlay] Failed to notify simulation harness:', err);
-        });
-      }
       showVictoryScreen(winner, stats, {
         awardPack,
         state,
-        isAIvsAI,
         isOnline,
         stalemateWin: true,
       });
@@ -689,24 +565,14 @@ export const checkForVictory = (state) => {
     // Determine if pack should be awarded
     const awardPack = shouldAwardPack(state, winner, loser);
 
-    // Check game modes
-    const isAIvsAI = state.menu?.mode === 'aiVsAi';
+    // Check game mode
     const isOnline = state.menu?.mode === 'online';
 
     // Update profile stats and match history
     updateProfileStatsOnVictory(state, winner, loser);
 
-    // Notify simulation harness of game end (for AI vs AI analytics)
-    if (isAIvsAI) {
-      const winnerIndex = state.players.indexOf(winner);
-      state.winner = winnerIndex;
-      simOnGameEnded(state).catch((err) => {
-        console.error('[VictoryOverlay] Failed to notify simulation harness:', err);
-      });
-    }
-
     // Show victory screen with pack reward if applicable
-    showVictoryScreen(winner, stats, { awardPack, state, isAIvsAI, isOnline });
+    showVictoryScreen(winner, stats, { awardPack, state, isOnline });
 
     return true; // Game over
   }

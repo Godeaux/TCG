@@ -117,7 +117,6 @@ export {
   isOnlineMode,
   isLocalMode,
   isAIMode,
-  isAIvsAIMode,
   isAnyAIMode,
   isGameReady,
 

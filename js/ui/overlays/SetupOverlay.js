@@ -15,7 +15,7 @@ import {
   sendLobbyBroadcast,
   saveGameStateToDatabase,
 } from '../../network/index.js';
-import { getLocalPlayerIndex, isAIMode, isAIvsAIMode, isAnyAIMode } from '../../state/selectors.js';
+import { getLocalPlayerIndex, isAIMode, isAnyAIMode } from '../../state/selectors.js';
 
 // Track if AI auto-actions are pending (to prevent double-triggering)
 let aiRollPending = false;
@@ -85,12 +85,12 @@ const renderRollingPhase = (state, elements, callbacks) => {
   rolls.appendChild(rollSummary);
 
   // Reset aiRollPending if we need to re-roll (tie was detected and rolls were reset)
-  if (isAIvsAIMode(state) && p1Roll === null && p2Roll === null && aiRollPending) {
+  if (isAnyAIMode(state) && p1Roll === null && p2Roll === null && aiRollPending) {
     aiRollPending = false;
   }
 
   // In AI vs AI mode, auto-roll for both players
-  if (isAIvsAIMode(state) && !aiRollPending) {
+  if (isAnyAIMode(state) && !aiRollPending) {
     aiRollPending = true;
     const rollDelay = state.menu?.aiSlowMode ? 800 : 200;
 
@@ -254,7 +254,7 @@ const renderChoicePhase = (state, elements, callbacks) => {
   actions.appendChild(message);
 
   // In AI vs AI mode, auto-choose winner to go first
-  if (isAIvsAIMode(state) && !aiChoicePending) {
+  if (isAnyAIMode(state) && !aiChoicePending) {
     aiChoicePending = true;
     const choiceDelay = state.menu?.aiSlowMode ? 800 : 200;
     setTimeout(() => {

@@ -16,7 +16,6 @@ let containerElement = null;
  * @param {Function} callbacks.onSettings - Called when "Settings" is clicked
  * @param {Function} callbacks.onReportBug - Called when "Report Bug" is clicked
  * @param {Function} callbacks.onViewBugs - Called when "View Known Bugs" is clicked
- * @param {Function} callbacks.onSimulationStats - Called when "Simulation Stats" is clicked (AI vs AI mode)
  */
 export const initSettingsButton = (callbacks = {}) => {
   // Remove existing container if re-initializing
@@ -35,16 +34,6 @@ export const initSettingsButton = (callbacks = {}) => {
   // Set extremely high z-index via JS to ensure it's above everything
   containerElement.style.zIndex = '100000';
 
-  // Include simulation stats option if callback is provided (AI vs AI mode)
-  const simStatsOption = callbacks.onSimulationStats
-    ? `
-      <button class="settings-menu-item" id="settings-menu-sim-stats">
-        <span class="settings-menu-icon">📊</span>
-        <span>Simulation Stats</span>
-      </button>
-  `
-    : '';
-
   containerElement.innerHTML = `
     <div class="settings-menu" id="settings-menu">
       <button class="settings-menu-item" id="settings-menu-settings">
@@ -59,7 +48,6 @@ export const initSettingsButton = (callbacks = {}) => {
         <span class="settings-menu-icon">📋</span>
         <span>Known Bugs</span>
       </button>
-      ${simStatsOption}
     </div>
     <button class="settings-fab" id="settings-fab" title="Settings">
       <span class="settings-fab-icon">⚙️</span>
@@ -70,7 +58,6 @@ export const initSettingsButton = (callbacks = {}) => {
   const settingsBtn = containerElement.querySelector('#settings-menu-settings');
   const reportBtn = containerElement.querySelector('#settings-menu-report');
   const viewBtn = containerElement.querySelector('#settings-menu-view');
-  const simStatsBtn = containerElement.querySelector('#settings-menu-sim-stats');
 
   // Toggle menu on FAB click
   fab?.addEventListener('click', (e) => {
@@ -94,12 +81,6 @@ export const initSettingsButton = (callbacks = {}) => {
   viewBtn?.addEventListener('click', () => {
     hideSettingsMenu();
     callbacks.onViewBugs?.();
-  });
-
-  // Simulation stats action (AI vs AI only)
-  simStatsBtn?.addEventListener('click', () => {
-    hideSettingsMenu();
-    callbacks.onSimulationStats?.();
   });
 
   // Close menu when clicking outside

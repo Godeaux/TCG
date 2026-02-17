@@ -6034,106 +6034,6 @@ select.menu-input option {
   color: var(--text-primary);
 }
 
-/* ============================================================================
-   AI VS AI DECK PICKER
-   ============================================================================ */
-
-.ai-vs-ai-deck-overlay .menu-card {
-  max-width: 800px;
-  width: 90vw;
-}
-
-.ai-vs-ai-deck-picker {
-  display: flex;
-  gap: 20px;
-  align-items: flex-start;
-  justify-content: center;
-  margin: 20px 0;
-}
-
-.ai-vs-ai-side {
-  flex: 1;
-  max-width: 300px;
-}
-
-.ai-vs-ai-side h3 {
-  font-family: var(--font-display);
-  font-size: var(--font-base);
-  letter-spacing: 0.05em;
-  text-align: center;
-  margin: 0 0 12px;
-  color: var(--text-secondary);
-}
-
-.ai-vs-ai-divider {
-  font-family: var(--font-display);
-  font-size: var(--font-xl);
-  color: var(--gold);
-  padding: 60px 10px;
-  letter-spacing: 0.1em;
-}
-
-.ai-vs-ai-deck-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.ai-vs-ai-deck-btn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
-  border-radius: 10px;
-  border: 2px solid var(--border-subtle);
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text-primary);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  width: 100%;
-  text-align: left;
-}
-
-.ai-vs-ai-deck-btn:hover:not(.selected) {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.15);
-}
-
-.ai-vs-ai-deck-btn.selected {
-  background: rgba(74, 222, 128, 0.15);
-  border-color: #4ade80;
-  position: relative;
-}
-
-.ai-vs-ai-deck-btn.selected::after {
-  content: '✓';
-  position: absolute;
-  right: 12px;
-  color: #4ade80;
-  font-size: var(--font-lg);
-  font-weight: bold;
-}
-
-.ai-vs-ai-deck-btn .deck-emoji {
-  font-size: var(--font-lg);
-}
-
-.ai-vs-ai-deck-btn .deck-name {
-  font-size: var(--font-base);
-  flex: 1;
-}
-
-.ai-vs-ai-deck-btn.experimental {
-  position: relative;
-}
-
-.ai-vs-ai-deck-btn .deck-experimental-badge {
-  position: static;
-  font-size: var(--font-xs);
-  padding: 2px 6px;
-  margin-left: auto;
-}
-
 /* Bug log styling */
 .log-entry.log-bug {
   color: #ff4444;
@@ -6323,21 +6223,6 @@ select.menu-input option {
   background: linear-gradient(135deg, rgba(92, 180, 116, 0.85), rgba(26, 92, 54, 0.95));
 }
 
-.deck-select-panel--arachnid {
-  background: linear-gradient(135deg, rgba(48, 48, 48, 0.85), rgba(20, 20, 20, 0.95));
-}
-
-.deck-select-panel--feline {
-  background: linear-gradient(135deg, rgba(193, 154, 107, 0.85), rgba(139, 90, 43, 0.95));
-}
-
-.deck-select-panel--crustacean {
-  background: linear-gradient(135deg, rgba(220, 100, 50, 0.85), rgba(180, 60, 30, 0.95));
-}
-
-.deck-select-panel--insect {
-  background: linear-gradient(135deg, rgba(124, 179, 66, 0.85), rgba(56, 100, 28, 0.95));
-}
 
 /* Experimental deck badge */
 .deck-experimental-badge {

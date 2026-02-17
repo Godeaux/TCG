@@ -12,7 +12,7 @@
  * without creating circular dependencies.
  */
 
-import { isOnlineMode, isAIMode, isAIvsAIMode } from '../state/selectors.js';
+import { isOnlineMode, isAIMode } from '../state/selectors.js';
 import { deckCatalogs } from '../cards/index.js';
 import { resetDecksLoaded } from '../ui/overlays/DeckBuilderOverlay.js';
 import { resetProfileState } from '../ui/overlays/ProfileOverlay.js';
@@ -160,7 +160,6 @@ export const getLocalPlayerIndex = (state) => {
 /**
  * Check if it's the local player's turn
  * - Simulation mode: always (simulated states allow any player to act)
- * - AI vs AI mode: never (both players are AI, no human interaction)
  * - AI mode: only when player 0 is active (human is player 0)
  * - Online mode: when local player is active
  * - Local mode: always (hot-seat play, both players take turns on same device)
@@ -170,11 +169,7 @@ export const isLocalPlayersTurn = (state) => {
   if (state._isSimulation) {
     return true;
   }
-  // AI vs AI: no human player, so never the local player's turn
-  if (isAIvsAIMode(state)) {
-    return false;
-  }
-  // Regular AI mode: human is player 0
+  // AI mode: human is player 0
   if (isAIMode(state)) {
     return state.activePlayerIndex === 0;
   }

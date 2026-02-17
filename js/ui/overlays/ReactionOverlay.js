@@ -17,7 +17,6 @@ import {
   getLocalPlayerIndex,
   isOnlineMode,
   isAIMode,
-  isAIvsAIMode,
 } from '../../state/selectors.js';
 import { REACTION_TIMER_SECONDS } from '../../game/triggers/index.js';
 import { evaluateTrapActivation } from '../../ai/index.js';
@@ -356,7 +355,7 @@ export const renderReactionOverlay = (state, callbacks = {}) => {
   }
 
   // AI trap decision handling (both regular AI mode and AI vs AI mode)
-  const isAIReacting = (isAIMode(state) && reactingPlayerIndex === 1) || isAIvsAIMode(state); // Both players are AI in AI vs AI mode
+  const isAIReacting = isAIMode(state) && reactingPlayerIndex === 1;
 
   if (isAIReacting && !aiDecisionPending) {
     aiDecisionPending = true;

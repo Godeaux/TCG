@@ -17,7 +17,6 @@
  */
 
 import { GameController } from '../game/controller.js';
-import { createSnapshot } from '../simulation/stateSnapshot.js';
 import { ActionTypes } from '../state/actions.js';
 
 // ============================================================================
@@ -169,7 +168,7 @@ export class SelectionEnumerator {
    * @returns {{success: boolean, state: Object, pendingSelection: Object, error: string}}
    */
   probeForSelection(state, card, slotIndex, playerIndex, selections, dryDrop) {
-    const clonedState = createSnapshot(state);
+    const clonedState = structuredClone(state);
     if (!clonedState) {
       return { success: false, error: 'Failed to clone state' };
     }

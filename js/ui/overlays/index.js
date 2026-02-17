@@ -121,16 +121,6 @@ export {
 } from './BugReportOverlay.js';
 
 // ============================================================================
-// SIMULATION DASHBOARD OVERLAY
-// ============================================================================
-
-export {
-  showSimulationDashboard,
-  hideSimulationDashboard,
-  isSimulationDashboardVisible,
-} from './SimulationDashboard.js';
-
-// ============================================================================
 // SETTINGS OVERLAY
 // ============================================================================
 

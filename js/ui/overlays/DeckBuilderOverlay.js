@@ -21,7 +21,7 @@ import {
   getSupabaseApi,
   ensureDecksLoaded,
 } from '../../network/index.js';
-import { getLocalPlayerIndex, isAIMode, isAIvsAIMode } from '../../state/selectors.js';
+import { getLocalPlayerIndex, isAIMode } from '../../state/selectors.js';
 import { renderDeckCard, renderCardStats, getCardEffectSummary } from '../components/Card.js';
 import { showCardTooltip, hideCardTooltip } from '../components/CardTooltip.js';
 import { KEYWORD_DESCRIPTIONS } from '../../keywords.js';
@@ -162,38 +162,6 @@ const DECK_OPTIONS = [
     emoji: '🐸',
     panelClass: 'deck-select-panel--amphibian',
     available: true,
-  },
-  {
-    id: 'arachnid',
-    name: 'Arachnid',
-    emoji: '🕷️',
-    panelClass: 'deck-select-panel--arachnid',
-    available: true,
-    experimental: true,
-  },
-  {
-    id: 'feline',
-    name: 'Feline',
-    emoji: '🐆',
-    panelClass: 'deck-select-panel--feline',
-    available: true,
-    experimental: true,
-  },
-  {
-    id: 'crustacean',
-    name: 'Crustacean',
-    emoji: '🦀',
-    panelClass: 'deck-select-panel--crustacean',
-    available: true,
-    experimental: true,
-  },
-  {
-    id: 'insect',
-    name: 'Insect',
-    emoji: '🦋',
-    panelClass: 'deck-select-panel--insect',
-    available: true,
-    experimental: true,
   },
 ];
 
@@ -873,24 +841,6 @@ const generateAIDeck = (state) => {
 };
 
 /**
- * Generate decks for both AI players in AI vs AI mode
- */
-export const generateAIvsAIDecks = (state) => {
-  const deck1Type = state.menu?.aiVsAiDecks?.player1 || state.aiVsAi?.deck1Type;
-  const deck2Type = state.menu?.aiVsAiDecks?.player2 || state.aiVsAi?.deck2Type;
-
-  // Generate deck for AI player 1 (bottom/watching perspective)
-  generateDeckForPlayer(state, 0, deck1Type);
-
-  // Generate deck for AI player 2 (top/opponent)
-  generateDeckForPlayer(state, 1, deck2Type);
-
-  logMessage(state, `AI vs AI: ${deck1Type} vs ${deck2Type}`);
-
-  return state.deckBuilder.selections;
-};
-
-/**
  * Set deck inspector panel content
  */
 const setDeckInspectorContent = (card) => {
@@ -1260,43 +1210,6 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
 
   // Store callbacks for async operations
   latestCallbacks = callbacks;
-
-  // AI vs AI mode: auto-generate both decks and skip selection UI
-  if (isAIvsAIMode(state) && state.menu?.stage === 'ready') {
-    // Only process once (check if already complete)
-    if (state.deckSelection?.stage !== 'complete') {
-      // Initialize deck builder state if needed
-      if (!state.deckBuilder) {
-        state.deckBuilder = {
-          stage: 'p1',
-          selections: [[], []],
-          available: [[], []],
-          catalogOrder: [[], []],
-        };
-      }
-      if (!state.deckSelection) {
-        state.deckSelection = {
-          stage: 'p1',
-          selections: [null, null],
-        };
-      }
-
-      // Generate both AI decks
-      generateAIvsAIDecks(state);
-
-      // Mark as complete
-      state.deckBuilder.stage = 'complete';
-      state.deckSelection.stage = 'complete';
-
-      // Trigger deck complete callback
-      callbacks.onDeckComplete?.(state.deckBuilder.selections);
-    }
-
-    // Hide overlay
-    deckSelectOverlay?.classList.remove('active');
-    deckSelectOverlay?.setAttribute('aria-hidden', 'true');
-    return;
-  }
 
   // Catalog mode: deck management home screen or category selection
   if (isCatalogMode(state)) {

@@ -153,30 +153,6 @@ export const TRIBE_THEMES = {
     tertiary: '#c8e6c9',
     glow: 'rgba(129, 199, 132, 0.6)',
   },
-  crustacean: {
-    primary: '#ffcc80',
-    secondary: '#ff9800',
-    tertiary: '#ffe0b2',
-    glow: 'rgba(255, 152, 0, 0.6)',
-  },
-  arachnid: {
-    primary: '#9e9e9e',
-    secondary: '#757575',
-    tertiary: '#e0e0e0',
-    glow: 'rgba(158, 158, 158, 0.6)',
-  },
-  feline: {
-    primary: '#c19a6b',
-    secondary: '#8d6e63',
-    tertiary: '#d7ccc8',
-    glow: 'rgba(141, 110, 99, 0.6)',
-  },
-  insect: {
-    primary: '#7cb342',
-    secondary: '#558b2f',
-    tertiary: '#c5e1a5',
-    glow: 'rgba(124, 179, 66, 0.6)',
-  },
 };
 
 // ============================================================================
@@ -423,209 +399,6 @@ export const SPELL_VISUAL_EFFECTS = {
     description: 'Slime blob reveals choice',
   },
 
-  // ==================== ARACHNID TRIBE ====================
-  'arachnid-spell-web-bomb': {
-    type: 'aoe',
-    effect: 'web-explosion',
-    description: 'Cocoon explodes, webs hit all enemies',
-  },
-  'arachnid-spell-ensnare': {
-    type: 'aoe',
-    effect: 'web-spread',
-    description: 'Web strands crisscross enemy field',
-  },
-  'arachnid-spell-venom-strike': {
-    type: 'projectile',
-    projectile: 'venom',
-    description: 'Green venom bolt to webbed target',
-  },
-  'arachnid-spell-swarm': {
-    type: 'summon',
-    effect: 'spiders',
-    description: 'Spiderlings skitter from edges',
-  },
-  'arachnid-spell-venomous-bite': {
-    type: 'projectile',
-    projectile: 'fangs',
-    description: 'Fangs strike target with venom',
-  },
-  'arachnid-spell-hunters-pounce': {
-    type: 'buff',
-    effect: 'pounce',
-    description: 'Blur of motion, haste spark',
-  },
-  'arachnid-free-spell-silk-thread': {
-    type: 'projectile',
-    projectile: 'web-strand',
-    description: 'Single web strand wraps target',
-  },
-  'arachnid-free-spell-quick-spin': {
-    type: 'projectile',
-    projectile: 'web-quick',
-    description: 'Quick web shot to random enemy',
-  },
-  'arachnid-free-spell-shed-exoskeleton': {
-    type: 'status',
-    effect: 'barrier',
-    description: 'Exoskeleton shimmer grants barrier',
-  },
-  'arachnid-free-spell-venom-spit': {
-    type: 'projectile',
-    projectile: 'venom-small',
-    description: 'Small venom spit to webbed target',
-  },
-
-  // ==================== CRUSTACEAN TRIBE ====================
-  'crustacean-spell-shell-shock': {
-    type: 'aoe',
-    effect: 'shell-shatter',
-    description: 'Shells glow and shatter outward',
-  },
-  'crustacean-spell-exoskeleton': {
-    type: 'buff',
-    effect: 'shell-armor',
-    description: 'Shell plates materialize on creatures',
-  },
-  'crustacean-spell-tidal-pool': {
-    type: 'heal',
-    effect: 'tidal-pool',
-    description: 'Water pools, shells regenerate',
-  },
-  'crustacean-spell-pincer-assault': {
-    type: 'buff',
-    effect: 'pincers',
-    description: 'Giant pincers snap, power pulse',
-  },
-  'crustacean-spell-deep-sea-refuge': {
-    type: 'status',
-    effect: 'shell-grant',
-    description: 'Deep water shimmer grants shell',
-  },
-  'crustacean-spell-crustacean-swarm': {
-    type: 'summon',
-    effect: 'crabs',
-    description: 'Hermit crabs scuttle from edges',
-  },
-  'crustacean-free-spell-shell-fragment': {
-    type: 'heal',
-    effect: 'shell-heal',
-    description: 'Shell fragment heals',
-  },
-  'crustacean-free-spell-shed-skin': {
-    type: 'utility',
-    effect: 'draw',
-    description: 'Shed skin, card flies to hand',
-  },
-  'crustacean-free-spell-barnacle-grip': {
-    type: 'buff',
-    effect: 'barnacles',
-    description: 'Barnacles attach, shell boost',
-  },
-  'crustacean-free-spell-quick-molt': {
-    type: 'status',
-    effect: 'molt',
-    description: 'Quick molt regenerates shells',
-  },
-
-  // ==================== FELINE TRIBE ====================
-  'feline-spell-ambush-from-cover': {
-    type: 'status',
-    effect: 'stalk',
-    description: 'Tall grass, creature fades to stalking',
-  },
-  'feline-spell-swift-chase': {
-    type: 'buff',
-    effect: 'chase',
-    description: 'Blur of speed, chase boost',
-  },
-  'feline-spell-pride-rally': {
-    type: 'buff',
-    effect: 'pride',
-    description: 'Roar waves, golden strength aura',
-  },
-  'feline-spell-territorial-roar': {
-    type: 'bounce',
-    effect: 'roar',
-    description: 'Fierce roar rings push enemy back',
-  },
-  'feline-spell-apex-strike': {
-    type: 'projectile',
-    projectile: 'claw',
-    description: 'Claw swipe, slash marks on target',
-  },
-  'feline-spell-primal-roar': {
-    type: 'heal',
-    effect: 'roar-heal',
-    description: 'Primal roar heals per pride',
-  },
-  'feline-free-spell-quick-pounce': {
-    type: 'buff',
-    effect: 'haste',
-    description: 'Blur of motion, haste spark',
-  },
-  'feline-free-spell-feline-grace': {
-    type: 'status',
-    effect: 'barrier',
-    description: 'Graceful shimmer grants barrier',
-  },
-  'feline-free-spell-night-eyes': {
-    type: 'status',
-    effect: 'acuity',
-    description: 'Eyes glow, acuity granted',
-  },
-  'feline-free-spell-primal-instinct': {
-    type: 'utility',
-    effect: 'draw',
-    description: 'Instinct pulse, card to hand',
-  },
-
-  // ==================== INSECT TRIBE ====================
-  'insect-spell-swarm': {
-    type: 'summon',
-    effect: 'swarm',
-    description: 'Buzzing cloud of insects materializes',
-  },
-  'insect-spell-infestation': {
-    type: 'aoe',
-    effect: 'infestation',
-    description: 'Crawling insects swarm over enemy creatures',
-  },
-  'insect-spell-plague-of-locusts': {
-    type: 'aoe',
-    effect: 'locusts',
-    description: 'Locusts descend in a devouring cloud',
-  },
-  'insect-spell-pheromone-trail': {
-    type: 'buff',
-    effect: 'pheromone',
-    description: 'Glowing trail connects all friendly creatures',
-  },
-  'insect-spell-hivemind': {
-    type: 'utility',
-    effect: 'hivemind',
-    description: 'Neural network pulses between creatures',
-  },
-  'insect-spell-metamorphosis': {
-    type: 'utility',
-    effect: 'metamorphosis',
-    description: 'Chrysalis glow envelops all larvae',
-  },
-  'insect-free-spell-pollinate': {
-    type: 'buff',
-    effect: 'pollen',
-    description: 'Golden pollen sparkles on target',
-  },
-  'insect-free-spell-shed-exoskeleton': {
-    type: 'heal',
-    effect: 'molt',
-    description: 'Old shell cracks away, revealing renewed form',
-  },
-  'insect-free-spell-camouflage': {
-    type: 'status',
-    effect: 'camouflage',
-    description: 'Creature blends into surroundings',
-  },
-
   // ==================== TRAPS (all tribes) ====================
   // Traps use simpler trigger effects
   'fish-trap-cramp': { type: 'trap', effect: 'disable' },
@@ -644,22 +417,6 @@ export const SPELL_VISUAL_EFFECTS = {
   'amphibian-trap-blowdart': { type: 'trap', effect: 'kill-counter' },
   'amphibian-trap-rebound': { type: 'trap', effect: 'negate' },
   'amphibian-trap-slip': { type: 'trap', effect: 'negate-combat' },
-  'arachnid-trap-silk-trap': { type: 'trap', effect: 'web-counter' },
-  'arachnid-trap-sticky-web': { type: 'trap', effect: 'web-counter' },
-  'arachnid-trap-venomous-ambush': { type: 'trap', effect: 'venom-counter' },
-  'arachnid-trap-trapdoor-ambush': { type: 'trap', effect: 'ambush-summon' },
-  'crustacean-trap-chitinous-defense': { type: 'trap', effect: 'shell-block' },
-  'crustacean-trap-snap-trap': { type: 'trap', effect: 'snap-counter' },
-  'crustacean-trap-reef-ambush': { type: 'trap', effect: 'negate' },
-  'crustacean-trap-claw-lock': { type: 'trap', effect: 'claw-counter' },
-  'feline-trap-hidden-in-grass': { type: 'trap', effect: 'ambush-counter' },
-  'feline-trap-from-the-trees': { type: 'trap', effect: 'ambush-counter' },
-  'feline-trap-coordinated-ambush': { type: 'trap', effect: 'summon-ambush' },
-  'feline-trap-patient-hunter': { type: 'trap', effect: 'stalk-trigger' },
-  'insect-trap-pitfall': { type: 'trap', effect: 'pitfall-counter' },
-  'insect-trap-ambush-predator': { type: 'trap', effect: 'swarm-ambush' },
-  'insect-trap-defensive-swarm': { type: 'trap', effect: 'swarm-counter' },
-  'insect-trap-venomous-sting': { type: 'trap', effect: 'venom-counter' },
 };
 
 // ============================================================================
@@ -969,10 +726,6 @@ const playProjectileEffect = (effect, state) => {
     case 'venom-bolt':
     case 'venom-small':
       playVenomProjectile(targetEl, targetCenter, casterIndex, theme);
-      break;
-    case 'web-strand':
-    case 'web-quick':
-      playWebStrandProjectile(targetEl, targetCenter, casterIndex, theme);
       break;
     case 'feather-bolt':
       playFeatherBoltProjectile(targetEl, targetCenter, casterIndex, theme);
@@ -1705,47 +1458,6 @@ const playVenomProjectile = (targetEl, targetCenter, casterIndex, theme) => {
   }
 };
 
-/**
- * WEB STRAND - Single silk thread shoots and wraps
- */
-const playWebStrandProjectile = (targetEl, targetCenter, casterIndex, theme) => {
-  const start = getProjectileStart(casterIndex);
-  if (!start) return;
-
-  // Web strand stretches from caster to target
-  const strand = createEffectElement('spell-effect spell-effect--web-strand', {
-    '--start-x': `${start.x}px`,
-    '--start-y': `${start.y}px`,
-    '--end-x': `${targetCenter.x}px`,
-    '--end-y': `${targetCenter.y}px`,
-    '--spell-color': theme.primary,
-  });
-
-  if (strand) {
-    strand.style.animation = 'spell-web-strand-shoot 0.3s ease-out forwards';
-
-    setTimeout(() => {
-      strand.remove();
-
-      // Web wraps around target
-      targetEl.classList.add('spell-webbed');
-
-      // Sticky web particles
-      for (let i = 0; i < 4; i++) {
-        const angle = (i / 4) * 360;
-        const web = createEffectElement('spell-particle spell-particle--web-bit', {
-          left: `${targetCenter.x}px`,
-          top: `${targetCenter.y}px`,
-          '--angle': `${angle}deg`,
-          '--spell-color': theme.primary,
-        });
-        if (web) removeOnAnimationEnd(web);
-      }
-
-      setTimeout(() => targetEl.classList.remove('spell-webbed'), 1000);
-    }, 300);
-  }
-};
 
 /**
  * FEATHER BOLT - Sharp feather spins toward target
@@ -2289,17 +2001,8 @@ const playAoeEffect = (effect, state) => {
     case 'wave':
       playWaveEffect(state, theme, casterIndex);
       break;
-    case 'web-explosion':
-      playWebExplosionEffect(state, theme, casterIndex);
-      break;
-    case 'web-spread':
-      playWebSpreadEffect(state, theme, casterIndex);
-      break;
     case 'monsoon':
       playMonsoonEffect(state, theme);
-      break;
-    case 'shell-shatter':
-      playShellShatterEffect(state, theme);
       break;
     case 'double-strike':
       playDoubleStrikeEffect(state, theme, casterIndex);
@@ -2881,54 +2584,6 @@ const playWaveEffect = (state, theme, casterIndex) => {
   }, 300);
 };
 
-/**
- * Web explosion - cocoon explodes outward
- */
-const playWebExplosionEffect = (state, theme, casterIndex) => {
-  const center = createEffectElement('spell-aoe spell-aoe--web-center', {
-    '--spell-color': theme.primary,
-  });
-
-  if (center) {
-    center.style.animation = 'spell-web-explode 0.8s ease-out forwards';
-    removeOnAnimationEnd(center);
-  }
-
-  // Web strands hit all enemies
-  const opponentIndex = casterIndex === 0 ? 1 : 0;
-  setTimeout(() => {
-    const enemies = getFriendlyCreatureElements(state, opponentIndex);
-    enemies.forEach((el) => {
-      el.classList.add('spell-webbed');
-      setTimeout(() => el.classList.remove('spell-webbed'), 800);
-    });
-  }, 400);
-};
-
-/**
- * Web spread - strands crisscross enemy field
- */
-const playWebSpreadEffect = (state, theme, casterIndex) => {
-  const web = createEffectElement('spell-aoe spell-aoe--web-spread', {
-    '--spell-color': theme.primary,
-    '--wave-direction': casterIndex === 0 ? '1' : '-1',
-  });
-
-  if (web) {
-    removeOnAnimationEnd(web);
-  }
-
-  const opponentIndex = casterIndex === 0 ? 1 : 0;
-  setTimeout(() => {
-    const enemies = getFriendlyCreatureElements(state, opponentIndex);
-    enemies.forEach((el, i) => {
-      setTimeout(() => {
-        el.classList.add('spell-webbed');
-        setTimeout(() => el.classList.remove('spell-webbed'), 800);
-      }, i * 150);
-    });
-  }, 300);
-};
 
 /**
  * Monsoon effect - Dramatic storm with thunder, lightning, and torrential rain
@@ -3005,33 +2660,6 @@ const playMonsoonEffect = (state, theme) => {
   }, 1050);
 };
 
-/**
- * Shell shatter effect - shells explode outward
- */
-const playShellShatterEffect = (state, theme) => {
-  // Glow all shell creatures first
-  const creatures = getAllCreatureElements(state);
-  creatures.forEach((el) => {
-    el.classList.add('spell-shell-glow');
-  });
-
-  // Then shatter
-  setTimeout(() => {
-    creatures.forEach((el) => {
-      el.classList.remove('spell-shell-glow');
-      el.classList.add('spell-shell-shatter');
-      setTimeout(() => el.classList.remove('spell-shell-shatter'), 500);
-    });
-
-    // Shrapnel particles
-    const shatter = createEffectElement('spell-aoe spell-aoe--shatter', {
-      '--spell-color': theme.primary,
-    });
-    if (shatter) {
-      removeOnAnimationEnd(shatter);
-    }
-  }, 400);
-};
 
 /**
  * Double strike effect - two shockwaves
@@ -3121,18 +2749,6 @@ const playBuffEffect = (effect, state) => {
       break;
     case 'rain':
       playRainEffect(friendlies, theme);
-      break;
-    case 'pride':
-      playPrideEffect(friendlies, theme);
-      break;
-    case 'shell-armor':
-      playShellArmorEffect(friendlies, theme);
-      break;
-    case 'pincers':
-      playPincersEffect(friendlies, theme);
-      break;
-    case 'barnacles':
-      playBarnaclesEffect(friendlies, theme);
       break;
     case 'thaw':
       playThawEffect(friendlies, theme);
@@ -3388,71 +3004,6 @@ const playRainEffect = (targets, theme) => {
   }, 300);
 };
 
-/**
- * Pride effect - roar waves spread
- */
-const playPrideEffect = (targets, theme) => {
-  // Roar wave
-  const roar = createEffectElement('spell-aoe spell-aoe--roar', {
-    '--spell-color': theme.primary,
-  });
-  if (roar) {
-    removeOnAnimationEnd(roar);
-  }
-
-  setTimeout(() => {
-    targets.forEach((el, i) => {
-      setTimeout(() => {
-        el.classList.add('spell-buff-pride');
-        setTimeout(() => el.classList.remove('spell-buff-pride'), 1000);
-        showBuffPop(el, '+2');
-      }, i * 100);
-    });
-  }, 200);
-};
-
-/**
- * Shell armor effect - plates materialize
- */
-const playShellArmorEffect = (targets, theme) => {
-  targets.forEach((el, i) => {
-    setTimeout(() => {
-      el.classList.add('spell-shell-form');
-      setTimeout(() => el.classList.remove('spell-shell-form'), 800);
-    }, i * 150);
-  });
-};
-
-/**
- * Pincers effect - giant pincers snap
- */
-const playPincersEffect = (targets, theme) => {
-  const pincer = createEffectElement('spell-aoe spell-aoe--pincers', {
-    '--spell-color': theme.primary,
-  });
-  if (pincer) {
-    removeOnAnimationEnd(pincer);
-  }
-
-  setTimeout(() => {
-    targets.forEach((el) => {
-      el.classList.add('spell-buff-glow');
-      setTimeout(() => el.classList.remove('spell-buff-glow'), 600);
-    });
-  }, 300);
-};
-
-/**
- * Barnacles effect - barnacles attach
- */
-const playBarnaclesEffect = (targets, theme) => {
-  targets.forEach((el, i) => {
-    setTimeout(() => {
-      el.classList.add('spell-barnacle');
-      setTimeout(() => el.classList.remove('spell-barnacle'), 600);
-    }, i * 100);
-  });
-};
 
 /**
  * Generic buff glow effect
@@ -4266,13 +3817,6 @@ const playStatusEffect = (effect, state) => {
     case 'freeze-trap':
       playFreezeStatusEffect(targetEl, theme);
       break;
-    case 'web':
-    case 'web-counter':
-      playWebStatusEffect(targetEl, theme);
-      break;
-    case 'stalk':
-      playStalkStatusEffect(targetEl, theme);
-      break;
     case 'barrier':
       playBarrierStatusEffect(targetEl, theme);
       break;
@@ -4315,33 +3859,6 @@ const playFreezeStatusEffect = (targetEl, theme) => {
   setTimeout(() => targetEl.classList.remove('spell-freeze'), 1000);
 };
 
-/**
- * Web status - web overlay
- */
-const playWebStatusEffect = (targetEl, theme) => {
-  targetEl.classList.add('spell-webbed');
-  setTimeout(() => targetEl.classList.remove('spell-webbed'), 1000);
-};
-
-/**
- * Stalk status - fade into grass
- */
-const playStalkStatusEffect = (targetEl, theme) => {
-  targetEl.classList.add('spell-stalk');
-  setTimeout(() => targetEl.classList.remove('spell-stalk'), 800);
-
-  const center = getElementCenter(targetEl);
-  if (center) {
-    const grass = createEffectElement('spell-effect spell-effect--grass', {
-      left: `${center.x}px`,
-      top: `${center.y}px`,
-      '--spell-color': theme.primary,
-    });
-    if (grass) {
-      removeOnAnimationEnd(grass);
-    }
-  }
-};
 
 /**
  * Barrier status - shimmer

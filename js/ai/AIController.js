@@ -45,8 +45,7 @@ import {
 import { resolveCardEffect } from '../cards/index.js';
 import { resolveEffectResult } from '../game/effects.js';
 import { createReactionWindow, TRIGGER_EVENTS } from '../game/triggers/index.js';
-import { isAIvsAIMode, markCreatureAttacked, hasCreatureAttacked } from '../state/selectors.js';
-import { getBugDetector } from '../simulation/index.js';
+import { markCreatureAttacked, hasCreatureAttacked } from '../state/selectors.js';
 
 // New AI evaluation modules
 import { ThreatDetector } from './ThreatDetector.js';
@@ -71,15 +70,6 @@ const AI_DELAYS = {
   END_TURN: { min: 300, max: 600 }, // Delay before ending turn
   PHASE_ADVANCE: 300, // Fixed delay for phase advances
   TRAP_CONSIDERATION: 1000, // "AI is considering..." delay for trap decisions
-};
-
-// Instant mode delays (bunny mode in AI vs AI) - minimal delays to prevent race conditions
-const AI_DELAYS_INSTANT = {
-  THINKING: { min: 30, max: 50 },
-  BETWEEN_ACTIONS: { min: 30, max: 50 },
-  END_TURN: { min: 30, max: 50 },
-  PHASE_ADVANCE: 30,
-  TRAP_CONSIDERATION: 30,
 };
 
 // Lightning mode delays - absolute minimum for fastest AI vs AI simulations
@@ -299,11 +289,6 @@ export class AIController {
     // Lightning mode - absolute minimum delays for fastest AI vs AI
     if (speed === 'lightning') {
       return AI_DELAYS_LIGHTNING;
-    }
-
-    // In AI vs AI mode with bunny (fast) mode, use instant delays
-    if (isAIvsAIMode(state) && speed !== 'slow') {
-      return AI_DELAYS_INSTANT;
     }
 
     // Use difficulty-based delays for more natural feel
@@ -826,19 +811,6 @@ export class AIController {
     const opponentIndex = 1 - this.playerIndex;
     const isFree = card.type === 'Free Spell' || card.type === 'Trap' || isFreePlay(card);
 
-    // Bug detection: snapshot before action
-    const detector = getBugDetector();
-    if (detector?.isEnabled()) {
-      detector.beforeAction(
-        state,
-        { type: 'PLAY_CARD', payload: { card, slotIndex } },
-        {
-          card,
-          playerIndex,
-        }
-      );
-    }
-
     // Handle spells
     if (card.type === 'Spell' || card.type === 'Free Spell') {
       logMessage(state, `${player.name} casts ${card.name}.`);
@@ -868,11 +840,6 @@ export class AIController {
 
       cleanupDestroyed(state);
 
-      // Bug detection: check after action
-      if (detector?.isEnabled()) {
-        detector.afterAction(state);
-      }
-
       callbacks.onPlayCard?.(card, slotIndex);
       return { success: true };
     }
@@ -901,19 +868,6 @@ export class AIController {
     const player = this.getAIPlayer(state);
     const isFree = isFreePlay(card);
 
-    // Bug detection: snapshot before action
-    const detector = getBugDetector();
-    if (detector?.isEnabled()) {
-      detector.beforeAction(
-        state,
-        { type: 'PLAY_CREATURE', payload: { card, slotIndex } },
-        {
-          card,
-          playerIndex: this.playerIndex,
-        }
-      );
-    }
-
     // Remove from hand
     player.hand = player.hand.filter((c) => c.instanceId !== card.instanceId);
 
@@ -933,11 +887,6 @@ export class AIController {
     // Traps resolve BEFORE onPlay effects per RULEBOOK
     await this.triggerPlayTrapsForCreature(state, creature, callbacks);
     this.triggerOnPlayEffect(state, creature);
-
-    // Bug detection: check after action
-    if (detector?.isEnabled()) {
-      detector.afterAction(state);
-    }
 
     callbacks.onPlayCard?.(card, slotIndex);
     return { success: true };
@@ -962,21 +911,7 @@ export class AIController {
     // Create card instance
     const creature = createCardInstance(card, state.turn);
 
-    // Bug detection: snapshot before action
-    const detector = getBugDetector();
     const isDryDrop = availablePrey.length === 0;
-
-    if (detector?.isEnabled()) {
-      detector.beforeAction(
-        state,
-        { type: 'PLAY_PREDATOR', payload: { card, slotIndex } },
-        {
-          predator: creature,
-          playerIndex: this.playerIndex,
-          consumedPrey: isDryDrop ? [] : null, // Will be set after selection
-        }
-      );
-    }
 
     if (isDryDrop) {
       // Dry drop - play without consumption
@@ -995,17 +930,6 @@ export class AIController {
       // Traps resolve BEFORE onPlay effects per RULEBOOK
       await this.triggerPlayTrapsForCreature(state, creature, callbacks);
       this.triggerOnPlayEffect(state, creature);
-
-      // Bug detection: check after dry drop
-      if (detector?.isEnabled()) {
-        // Update context with dry drop info
-        detector.actionContext = {
-          ...detector.actionContext,
-          predator: creature,
-          consumedPrey: [],
-        };
-        detector.afterAction(state);
-      }
 
       callbacks.onPlayCard?.(card, slotIndex, { dryDrop: true });
       return { success: true };
@@ -1046,17 +970,6 @@ export class AIController {
     await this.triggerPlayTrapsForCreature(state, creature, callbacks);
     this.triggerOnPlayEffect(state, creature);
     this.triggerOnConsumeEffect(state, creature, preyToConsume);
-
-    // Bug detection: check after consumption play
-    if (detector?.isEnabled()) {
-      // Update context with consumption info
-      detector.actionContext = {
-        ...detector.actionContext,
-        predator: creature,
-        consumedPrey: preyToConsume,
-      };
-      detector.afterAction(state);
-    }
 
     callbacks.onPlayCard?.(card, actualSlot, { consumeTargets: preyToConsume });
     return { success: true };
@@ -1410,21 +1323,6 @@ export class AIController {
     const attackerOwnerIndex = this.playerIndex;
     const defenderOwnerIndex = 1 - this.playerIndex;
 
-    // Bug detection: snapshot before attack
-    const detector = getBugDetector();
-    const attackAction = {
-      type: 'DECLARE_ATTACK',
-      payload: { attacker, target },
-    };
-    if (detector?.isEnabled()) {
-      detector.beforeAction(state, attackAction, {
-        attacker,
-        target,
-        attackerOwnerIndex,
-        defenderOwnerIndex,
-      });
-    }
-
     // Create a promise to wait for the reaction window to resolve
     return new Promise((resolve) => {
       const windowCreated = createReactionWindow({
@@ -1444,10 +1342,6 @@ export class AIController {
           // Check if attacker still exists and has HP
           if (attacker.currentHp <= 0) {
             logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
-            // Bug detection: check after (attack cancelled due to attacker death)
-            if (detector?.isEnabled()) {
-              detector.afterAction(state);
-            }
             callbacks.onUpdate?.();
             state.broadcast?.(state);
             resolve();
@@ -1517,11 +1411,6 @@ export class AIController {
 
           // Clean up destroyed creatures
           cleanupDestroyed(state);
-
-          // Bug detection: check after attack resolution
-          if (detector?.isEnabled()) {
-            detector.afterAction(state);
-          }
 
           callbacks.onUpdate?.();
           state.broadcast?.(state);
