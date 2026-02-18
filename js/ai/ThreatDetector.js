@@ -235,9 +235,9 @@ export class ThreatDetector {
       score -= 25;
       reasons.push('Harmless');
     }
-    if (creature.frozen || creature.webbed) {
+    if (creature.frozen) {
       score -= 15;
-      reasons.push(creature.frozen ? 'Frozen' : 'Webbed');
+      reasons.push('Frozen');
     }
 
     return { score: Math.max(0, score), reasons };

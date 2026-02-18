@@ -636,8 +636,6 @@ const handlePlayerDrop = (card, playerBadge) => {
       logMessage(latestState, `${card.name} has already attacked this turn.`);
     } else if (card.frozen) {
       logMessage(latestState, `${card.name} is frozen and cannot attack.`);
-    } else if (card.webbed) {
-      logMessage(latestState, `${card.name} is trapped in a web and cannot attack.`);
     } else if (isPassive(card)) {
       logMessage(latestState, `${card.name} has Passive and cannot attack.`);
     } else if (isHarmless(card)) {
@@ -733,8 +731,6 @@ const handleCreatureDrop = (attacker, target) => {
       logMessage(latestState, `${attacker.name} has already attacked this turn.`);
     } else if (attacker.frozen) {
       logMessage(latestState, `${attacker.name} is frozen and cannot attack.`);
-    } else if (attacker.webbed) {
-      logMessage(latestState, `${attacker.name} is trapped in a web and cannot attack.`);
     } else if (isPassive(attacker)) {
       logMessage(latestState, `${attacker.name} has Passive and cannot attack.`);
     } else if (isHarmless(attacker)) {

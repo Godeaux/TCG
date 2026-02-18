@@ -57,10 +57,6 @@ export const serializeCardSnapshot = (card) => {
     keywords: Array.isArray(card.keywords) ? [...card.keywords] : null,
     // Track if abilities were copied from another card (for re-applying after hydration)
     copiedFromId: card.copiedFromId ?? null,
-    // Mechanic-specific state that must sync
-    stalkBonus: card.stalkBonus ?? 0, // Feline ATK bonus from stalking
-    currentShell: card.currentShell ?? null, // Crustacean shell absorption
-    webbed: card.webbed ?? false, // Spider web status (takes venom damage)
   };
 };
 
@@ -142,13 +138,6 @@ export const hydrateCardSnapshot = (snapshot, fallbackTurn) => {
         : '(Copied) No effect text.';
     }
   }
-
-  // Restore mechanic-specific state
-  instance.stalkBonus = snapshot.stalkBonus ?? 0;
-  if (snapshot.currentShell !== null && snapshot.currentShell !== undefined) {
-    instance.currentShell = snapshot.currentShell;
-  }
-  instance.webbed = snapshot.webbed ?? false;
 
   return instance;
 };

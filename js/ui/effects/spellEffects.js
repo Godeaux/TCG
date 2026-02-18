@@ -10,7 +10,7 @@
  * - aoe: Board-wide effects (Flood, Meteor, Blizzard)
  * - buff: Team buff effects (Fish Food, Milk, Sunshine)
  * - heal: Healing effects (Snake Wine, Swan Song)
- * - status: Status application (Freeze, Web, Paralyze)
+ * - status: Status application (Freeze, Paralyze)
  * - summon: Token summoning (Swarm, Crustacean Swarm)
  * - utility: Draw, reveal, transform effects
  * - bounce: Return to hand effects (Bounce, Territorial Roar)
@@ -722,11 +722,6 @@ const playProjectileEffect = (effect, state) => {
     case 'claw':
       playClawProjectile(targetEl, targetCenter, casterIndex, theme);
       break;
-    case 'venom':
-    case 'venom-bolt':
-    case 'venom-small':
-      playVenomProjectile(targetEl, targetCenter, casterIndex, theme);
-      break;
     case 'feather-bolt':
       playFeatherBoltProjectile(targetEl, targetCenter, casterIndex, theme);
       break;
@@ -1406,58 +1401,6 @@ const playClawProjectile = (targetEl, targetCenter, casterIndex, theme) => {
     setTimeout(() => targetEl.classList.remove('spell-claw-hit'), 600);
   }, 150);
 };
-
-/**
- * VENOM - Poison bolt arcs with dripping trail
- */
-const playVenomProjectile = (targetEl, targetCenter, casterIndex, theme) => {
-  const start = getProjectileStart(casterIndex);
-  if (!start) return;
-
-  const venom = createEffectElement('spell-projectile spell-projectile--venom', {
-    left: `${start.x}px`,
-    top: `${start.y}px`,
-    '--target-x': `${targetCenter.x - start.x}px`,
-    '--target-y': `${targetCenter.y - start.y}px`,
-    '--spell-color': theme.primary,
-    '--spell-glow': theme.glow,
-  });
-
-  if (venom) {
-    venom.style.animation = 'spell-venom-arc 0.4s ease-out forwards';
-
-    // Dripping venom trail
-    for (let i = 0; i < 5; i++) {
-      setTimeout(() => {
-        const t = i / 4;
-        const x = start.x + (targetCenter.x - start.x) * t;
-        const y = start.y + (targetCenter.y - start.y) * t;
-        const drip = createEffectElement('spell-particle spell-particle--venom-drip', {
-          left: `${x}px`,
-          top: `${y}px`,
-          '--spell-color': theme.primary,
-        });
-        if (drip) removeOnAnimationEnd(drip);
-      }, i * 60);
-    }
-
-    setTimeout(() => {
-      venom.remove();
-
-      // Venom seeps into target
-      const seep = createEffectElement('spell-effect spell-effect--venom-seep', {
-        left: `${targetCenter.x}px`,
-        top: `${targetCenter.y}px`,
-        '--spell-color': theme.primary,
-      });
-      if (seep) removeOnAnimationEnd(seep);
-
-      targetEl.classList.add('spell-venom-hit');
-      setTimeout(() => targetEl.classList.remove('spell-venom-hit'), 800);
-    }, 400);
-  }
-};
-
 
 /**
  * FEATHER BOLT - Sharp feather spins toward target

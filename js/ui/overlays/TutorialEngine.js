@@ -664,13 +664,6 @@ function handleApplyStatus(step) {
     case 'barrier':
       // Simple golden glow overlay
       break;
-    case 'webbed':
-      ['top-left', 'top-right', 'bottom-left', 'bottom-right'].forEach((pos) => {
-        const strand = document.createElement('div');
-        strand.className = `web-strand web-${pos}`;
-        overlay.appendChild(strand);
-      });
-      break;
     case 'hidden':
       for (let i = 0; i < 3; i++) {
         const wave = document.createElement('div');
@@ -696,17 +689,6 @@ function handleApplyStatus(step) {
         arr.className = `lure-arrow arrow-${pos}`;
         overlay.appendChild(arr);
       });
-      break;
-    case 'venom':
-      ['left-1', 'left-2', 'right-1', 'right-2'].forEach((pos, i) => {
-        const drip = document.createElement('div');
-        drip.className = `venom-drip drip-${pos}`;
-        drip.style.animationDelay = `${i * 0.4}s`;
-        overlay.appendChild(drip);
-      });
-      const pool = document.createElement('div');
-      pool.className = 'venom-pool';
-      overlay.appendChild(pool);
       break;
   }
 

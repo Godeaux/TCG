@@ -1565,8 +1565,8 @@ export class CardKnowledgeBase {
       threat -= 20;
     }
 
-    // Frozen/Webbed creatures are less threatening
-    if (card.frozen || card.webbed) {
+    // Frozen creatures are less threatening
+    if (card.frozen) {
       threat -= 20;
     }
 

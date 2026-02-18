@@ -19,16 +19,11 @@ import {
   KEYWORD_DESCRIPTIONS,
   areAbilitiesActive,
   getEffectiveAttack,
-  hasShell,
-  hasMolt,
   hasLure,
   isHidden,
   isInvisible,
   hasToxic,
   hasAcuity,
-  hasVenom,
-  getCurrentShell,
-  getShellLevel,
 } from '../../keywords.js';
 import { hasCardImage, getCardImagePath } from '../../cardImages.js';
 import { getCardDefinitionById } from '../../cards/index.js';
@@ -708,19 +703,8 @@ export const getStatusIndicators = (card) => {
   if (card.frozen) {
     indicators.push('❄️');
   }
-  if (card.webbed) {
-    indicators.push('🕸️');
-  }
   if (card.isToken) {
     indicators.push('⚪');
-  }
-  // Crustacean Shell indicator - show 🦀 + current shell amount
-  if (hasShell(card) && card.currentShell > 0) {
-    indicators.push(`🦀${card.currentShell}`);
-  }
-  // Crustacean Molt indicator - show 🐚 only if hasn't molted yet
-  if (hasMolt(card) && !card.hasMolted) {
-    indicators.push('🐚');
   }
   return indicators.join(' ');
 };
@@ -976,70 +960,6 @@ export const renderCard = (card, options = {}) => {
     cardElement.appendChild(overlay);
   }
 
-  // Webbed - spider web strands across corners
-  if (card.webbed) {
-    const overlay = document.createElement('div');
-    overlay.className = 'status-overlay webbed-overlay';
-    // Add web strand elements
-    const webPositions = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
-    webPositions.forEach((pos) => {
-      const strand = document.createElement('div');
-      strand.className = `web-strand web-${pos}`;
-      overlay.appendChild(strand);
-    });
-    cardElement.appendChild(overlay);
-  }
-
-  // Stalking - grass ferns in corners with darkened "hiding" effect (field only)
-  if (context === 'field' && card.keywords?.includes('Stalking')) {
-    const overlay = document.createElement('div');
-    overlay.className = 'status-overlay stalking-overlay';
-    // Add grass fern elements in corners
-    const fern1 = document.createElement('div');
-    fern1.className = 'grass-fern fern-left';
-    overlay.appendChild(fern1);
-    const fern2 = document.createElement('div');
-    fern2.className = 'grass-fern fern-right';
-    overlay.appendChild(fern2);
-    cardElement.appendChild(overlay);
-  }
-
-  // Shell - hexagonal scale armor along edges (field only)
-  if (context === 'field' && hasShell(card)) {
-    const overlay = document.createElement('div');
-    const currentShell = getCurrentShell(card);
-    const shellLevel = getShellLevel(card);
-    const isDepleted = currentShell <= 0;
-    overlay.className = `status-overlay shell-overlay${isDepleted ? ' shell-depleted' : ''}`;
-    overlay.dataset.shellCurrent = currentShell;
-    overlay.dataset.shellMax = shellLevel;
-    // Add hexagonal scale elements along the border
-    const scalePositions = [
-      'top-1',
-      'top-2',
-      'top-3',
-      'right-1',
-      'right-2',
-      'bottom-1',
-      'bottom-2',
-      'bottom-3',
-      'left-1',
-      'left-2',
-    ];
-    scalePositions.forEach((pos, index) => {
-      const scale = document.createElement('div');
-      scale.className = `shell-scale scale-${pos}`;
-      // Stagger animation for organic feel
-      scale.style.animationDelay = `${index * 0.1}s`;
-      overlay.appendChild(scale);
-    });
-    // Add shimmer layer
-    const shimmer = document.createElement('div');
-    shimmer.className = 'shell-shimmer';
-    overlay.appendChild(shimmer);
-    cardElement.appendChild(overlay);
-  }
-
   // Lure - red pulsing beacon effect (field only)
   if (context === 'field' && hasLure(card) && areAbilitiesActive(card)) {
     const overlay = document.createElement('div');
@@ -1061,12 +981,7 @@ export const renderCard = (card, options = {}) => {
   }
 
   // Hidden - semi-transparent ghosted shimmer effect (field only)
-  if (
-    context === 'field' &&
-    isHidden(card) &&
-    areAbilitiesActive(card) &&
-    !card.keywords?.includes('Stalking')
-  ) {
+  if (context === 'field' && isHidden(card) && areAbilitiesActive(card)) {
     const overlay = document.createElement('div');
     overlay.className = 'status-overlay hidden-overlay';
     // Add heat wave distortion layers
@@ -1089,25 +1004,6 @@ export const renderCard = (card, options = {}) => {
       prism.className = `prism-edge prism-${pos}`;
       overlay.appendChild(prism);
     });
-    cardElement.appendChild(overlay);
-  }
-
-  // Venom - dripping green liquid from corners (field only)
-  if (context === 'field' && hasVenom(card) && areAbilitiesActive(card)) {
-    const overlay = document.createElement('div');
-    overlay.className = 'status-overlay venom-overlay';
-    // Add drip elements
-    const dripPositions = ['left-1', 'left-2', 'right-1', 'right-2'];
-    dripPositions.forEach((pos, index) => {
-      const drip = document.createElement('div');
-      drip.className = `venom-drip drip-${pos}`;
-      drip.style.animationDelay = `${index * 0.4}s`;
-      overlay.appendChild(drip);
-    });
-    // Add pooling effect at bottom
-    const pool = document.createElement('div');
-    pool.className = 'venom-pool';
-    overlay.appendChild(pool);
     cardElement.appendChild(overlay);
   }
 

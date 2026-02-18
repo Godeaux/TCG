@@ -11,20 +11,10 @@ import {
   hasToxic,
   hasPoisonous,
   getEffectiveAttack,
-  hasWeb,
-  isStalking,
-  endStalking,
-  hasPride,
-  getAvailablePrideAllies,
-  hasShell,
-  applyDamageWithShell,
-  hasMolt,
-  triggerMolt,
   isHarmless,
   hasEvasive,
   canTargetEvasive,
   hasUnstoppable,
-  KEYWORDS,
 } from '../keywords.js';
 import {
   logMessage,
@@ -108,7 +98,7 @@ export const getValidTargets = (state, attacker, opponent) => {
 
 const applyDamage = (creature, amount, state, ownerIndex, attacker = null) => {
   if (amount <= 0) {
-    return { damage: 0, barrierBlocked: false, webbedCleared: false, shellAbsorbed: 0 };
+    return { damage: 0, barrierBlocked: false };
   }
   // Unstoppable attacks ignore Barrier
   const ignoreBarrier = attacker && hasUnstoppable(attacker);
@@ -117,7 +107,7 @@ const applyDamage = (creature, amount, state, ownerIndex, attacker = null) => {
     if (state && ownerIndex !== undefined) {
       queueKeywordEffect(state, creature, 'Barrier', ownerIndex);
     }
-    return { damage: 0, barrierBlocked: true, webbedCleared: false, shellAbsorbed: 0 };
+    return { damage: 0, barrierBlocked: true };
   }
   // If Unstoppable punched through, still consume the Barrier
   if (creature.hasBarrier && ignoreBarrier) {
@@ -131,40 +121,9 @@ const applyDamage = (creature, amount, state, ownerIndex, attacker = null) => {
     }
   }
 
-  // Shell absorbs damage before HP (Crustacean mechanic)
-  let shellAbsorbed = 0;
-  let actualDamage = amount;
-  if (hasShell(creature)) {
-    const shellResult = applyDamageWithShell(creature, amount);
-    shellAbsorbed = shellResult.shellAbsorbed;
-    actualDamage = shellResult.hpDamage;
+  creature.currentHp -= amount;
 
-    if (shellAbsorbed > 0 && state) {
-      logGameAction(
-        state,
-        BUFF,
-        `🦀 ${formatCardForLog(creature)}'s shell absorbs ${shellAbsorbed} damage! (Shell: ${creature.currentShell}/${creature.shellLevel})`
-      );
-    }
-  }
-
-  // Apply remaining damage to HP
-  creature.currentHp -= actualDamage;
-
-  // Clear Webbed status when creature takes damage (any damage, including shell-absorbed)
-  let webbedCleared = false;
-  if (creature.webbed && amount > 0) {
-    creature.webbed = false;
-    if (creature.keywords) {
-      const webbedIndex = creature.keywords.indexOf(KEYWORDS.WEBBED);
-      if (webbedIndex >= 0) {
-        creature.keywords.splice(webbedIndex, 1);
-      }
-    }
-    webbedCleared = true;
-  }
-
-  return { damage: actualDamage, barrierBlocked: false, webbedCleared, shellAbsorbed };
+  return { damage: amount, barrierBlocked: false };
 };
 
 export const resolveCreatureCombat = (
@@ -174,7 +133,7 @@ export const resolveCreatureCombat = (
   attackerOwnerIndex,
   defenderOwnerIndex
 ) => {
-  // Calculate effective attack values (includes Stalk bonus for Felines)
+  // Calculate effective attack values
   const attackerEffectiveAtk = getEffectiveAttack(attacker, state, attackerOwnerIndex);
   const defenderEffectiveAtk = getEffectiveAttack(defender, state, defenderOwnerIndex);
 
@@ -198,7 +157,6 @@ export const resolveCreatureCombat = (
     attacker
   );
   const defenderDamage = defenderResult.damage;
-  const defenderSurvived = defender.currentHp > 0;
   // Ambush: attacker NEVER takes combat damage when attacking (per CORE-RULES.md §6)
   // Harmless: defender deals 0 combat damage (per CORE-RULES.md §6)
   const defenderDealsDamage = !ambushAttack && !harmlessDefender;
@@ -238,12 +196,10 @@ export const resolveCreatureCombat = (
 
   // Toxic kills any creature it damages, regardless of HP
   // Toxic triggers if attack connected (not blocked by Barrier) and ATK > 0
-  // Shell absorbs damage but poison still seeps through; Barrier fully blocks
   const attackerDealtDamage = !defenderResult.barrierBlocked && attackerEffectiveAtk > 0;
   if (hasToxic(attacker) && attackerDealtDamage && defender.currentHp > 0) {
     queueKeywordEffect(state, attacker, 'Toxic', attackerOwnerIndex);
     defender.currentHp = 0;
-    defender.killedByToxic = true; // Prevents Molt from triggering (Toxic counters Molt)
     logGameAction(
       state,
       DEATH,
@@ -255,7 +211,6 @@ export const resolveCreatureCombat = (
   if (hasToxic(defender) && defenderDealtDamage && attacker.currentHp > 0) {
     queueKeywordEffect(state, defender, 'Toxic', defenderOwnerIndex);
     attacker.currentHp = 0;
-    attacker.killedByToxic = true; // Prevents Molt from triggering (Toxic counters Molt)
     logGameAction(
       state,
       DEATH,
@@ -289,23 +244,6 @@ export const resolveCreatureCombat = (
       state,
       DEBUFF,
       `${getKeywordEmoji('Neurotoxic')} ${formatCardForLog(attacker)} is paralyzed by neurotoxin! (loses abilities, dies end of turn)`
-    );
-  }
-
-  // Web: attacker applies Webbed to defender on attack (if defender survives)
-  if (hasWeb(attacker) && defenderDamage > 0 && defender.currentHp > 0 && !defender.webbed) {
-    queueKeywordEffect(state, attacker, 'Web', attackerOwnerIndex);
-    defender.webbed = true;
-    if (!defender.keywords) {
-      defender.keywords = [];
-    }
-    if (!defender.keywords.includes(KEYWORDS.WEBBED)) {
-      defender.keywords.push(KEYWORDS.WEBBED);
-    }
-    logGameAction(
-      state,
-      DEBUFF,
-      `${getKeywordEmoji('Web')} WEB: ${formatCardForLog(defender)} is trapped in a web by ${formatCardForLog(attacker)}!`
     );
   }
 
@@ -366,18 +304,6 @@ export const resolveCreatureCombat = (
       state,
       DEATH,
       `${getKeywordEmoji('Poisonous')} POISONOUS: ${formatCardForLog(defender)} kills ${formatCardForLog(attacker)} with poison!`
-    );
-  }
-
-  // Stalk: End stalking after attacking from stalk (ambush completed)
-  // The stalk bonus was already applied via getEffectiveAttack, now remove it
-  if (isStalking(attacker)) {
-    const stalkBonusUsed = attacker.stalkBonus || 0;
-    endStalking(attacker);
-    logGameAction(
-      state,
-      COMBAT,
-      `🐆 AMBUSH: ${formatCardForLog(attacker)} strikes from the shadows! (+${stalkBonusUsed} ATK bonus applied, stalking ends)`
     );
   }
 
@@ -492,31 +418,11 @@ const triggerFriendlyCreatureDies = (state, player, playerIndex, opponentIndex, 
 export const cleanupDestroyed = (state, { silent = false } = {}) => {
   const destroyedCreatures = [];
 
-  // PHASE 1: Identify destroyed creatures, handle molt, clear slots immediately
+  // PHASE 1: Identify destroyed creatures, clear slots immediately
   // This ensures field slots are freed BEFORE onSlain effects resolve (e.g., Meerkat Matriarch summons)
   state.players.forEach((player, playerIndex) => {
     player.field = player.field.map((card, slotIndex) => {
       if (card && card.currentHp <= 0) {
-        // Check for Molt - creature revives at 1 HP but loses all keywords (Crustacean mechanic)
-        // Molt does NOT trigger if killed by Toxic (Toxic counters Molt)
-        if (hasMolt(card) && !card.killedByToxic) {
-          const didMolt = triggerMolt(card);
-          if (didMolt) {
-            if (!silent) {
-              logGameAction(
-                state,
-                BUFF,
-                `🐚 MOLT: ${formatCardForLog(card)} sheds its shell and survives! (1 HP, all keywords lost)`
-              );
-            }
-            // Clear combat flags so the creature can be processed normally
-            card.diedInCombat = false;
-            card.slainBy = null;
-            card.killedByToxic = false;
-            return card; // Creature survives, stays on field
-          }
-        }
-
         // Queue death visual effect
         queueVisualEffect(state, {
           type: 'creatureDeath',
@@ -607,166 +513,4 @@ export const cleanupDestroyed = (state, { silent = false } = {}) => {
   if (!silent) {
     state.broadcast?.(state);
   }
-};
-
-/**
- * Check if a Pride coordinated hunt can occur.
- * Returns available Pride allies that can join the attack.
- * @param {Object} state - Game state
- * @param {Object} attacker - The primary attacking creature
- * @param {number} attackerOwnerIndex - Index of attacker's owner
- * @returns {Array} Array of Pride creatures that can join
- */
-export const checkPrideCoordinatedHunt = (state, attacker, attackerOwnerIndex) => {
-  // Only Pride creatures can initiate coordinated hunts
-  if (!hasPride(attacker) || !areAbilitiesActive(attacker)) {
-    return [];
-  }
-  return getAvailablePrideAllies(state, attackerOwnerIndex, attacker);
-};
-
-/**
- * Resolve Pride coordinated hunt damage.
- * The ally deals damage to the defender but takes no counter-damage.
- * The ally's attack is consumed for the turn.
- *
- * @param {Object} state - Game state
- * @param {Object} ally - The Pride ally joining the attack
- * @param {Object} defender - The defending creature (or null for direct attack)
- * @param {number} allyOwnerIndex - Index of ally's owner
- * @param {number} defenderOwnerIndex - Index of defender's owner
- * @returns {Object} Result of the coordinated damage
- */
-export const resolvePrideCoordinatedDamage = (
-  state,
-  ally,
-  defender,
-  allyOwnerIndex,
-  defenderOwnerIndex
-) => {
-  const allyEffectiveAtk = getEffectiveAttack(ally, state, allyOwnerIndex);
-
-  // Mark ally as having joined a Pride attack (can't attack or join again this turn)
-  ally.joinedPrideAttack = true;
-  ally.hasAttackedThisTurn = true;
-
-  if (defender) {
-    // Coordinated attack on creature
-    const defenderPreHp = defender.currentHp;
-    const damageResult = applyDamageForPride(defender, allyEffectiveAtk, state, defenderOwnerIndex);
-
-    logGameAction(
-      state,
-      COMBAT,
-      `🦁 PRIDE HUNT: ${formatCardForLog(ally)} joins the attack! Deals ${damageResult.damage} damage to ${formatCardForLog(defender)} (${defenderPreHp} → ${defender.currentHp})`
-    );
-
-    // Toxic from ally still applies
-    if (hasToxic(ally) && damageResult.damage > 0 && defender.currentHp > 0) {
-      queueKeywordEffect(state, ally, 'Toxic', allyOwnerIndex);
-      defender.currentHp = 0;
-      logGameAction(
-        state,
-        DEATH,
-        `${getKeywordEmoji('Toxic')} TOXIC: ${formatCardForLog(defender)} is killed by ${formatCardForLog(ally)}'s toxic venom during coordinated hunt!`
-      );
-    }
-
-    if (defender.currentHp <= 0) {
-      defender.diedInCombat = true;
-      defender.slainBy = {
-        instanceId: ally.instanceId,
-        name: ally.name,
-        type: ally.type,
-        currentAtk: allyEffectiveAtk,
-        currentHp: ally.currentHp,
-      };
-      logGameAction(
-        state,
-        DEATH,
-        `${formatCardForLog(defender)} is slain by the coordinated hunt!`
-      );
-    }
-
-    return { damage: damageResult.damage, barrierBlocked: damageResult.barrierBlocked };
-  } else {
-    // Direct attack on player
-    const opponent = state.players[defenderOwnerIndex];
-    const previousHp = opponent.hp;
-    opponent.hp -= allyEffectiveAtk;
-
-    logGameAction(
-      state,
-      COMBAT,
-      `🦁 PRIDE HUNT: ${formatCardForLog(ally)} joins the direct attack! Hits ${opponent.name} for ${allyEffectiveAtk} damage (${previousHp} → ${opponent.hp} HP)`
-    );
-
-    return { damage: allyEffectiveAtk, barrierBlocked: false };
-  }
-};
-
-/**
- * Apply damage for Pride coordinated attack (helper to avoid exposing applyDamage)
- */
-const applyDamageForPride = (creature, amount, state, ownerIndex) => {
-  if (amount <= 0) {
-    return { damage: 0, barrierBlocked: false, shellAbsorbed: 0 };
-  }
-  if (creature.hasBarrier && areAbilitiesActive(creature)) {
-    creature.hasBarrier = false;
-    queueKeywordEffect(state, creature, 'Barrier', ownerIndex);
-    logGameAction(
-      state,
-      BUFF,
-      `${formatCardForLog(creature)}'s ${getKeywordEmoji('Barrier')} Barrier blocks the coordinated attack!`
-    );
-    return { damage: 0, barrierBlocked: true, shellAbsorbed: 0 };
-  }
-
-  // Shell absorbs damage before HP (Crustacean mechanic)
-  let shellAbsorbed = 0;
-  let actualDamage = amount;
-  if (hasShell(creature)) {
-    const shellResult = applyDamageWithShell(creature, amount);
-    shellAbsorbed = shellResult.shellAbsorbed;
-    actualDamage = shellResult.hpDamage;
-
-    if (shellAbsorbed > 0) {
-      logGameAction(
-        state,
-        BUFF,
-        `🦀 ${formatCardForLog(creature)}'s shell absorbs ${shellAbsorbed} damage from coordinated attack! (Shell: ${creature.currentShell}/${creature.shellLevel})`
-      );
-    }
-  }
-
-  creature.currentHp -= actualDamage;
-
-  // Clear Webbed status when creature takes damage
-  if (creature.webbed && amount > 0) {
-    creature.webbed = false;
-    if (creature.keywords) {
-      const webbedIndex = creature.keywords.indexOf(KEYWORDS.WEBBED);
-      if (webbedIndex >= 0) {
-        creature.keywords.splice(webbedIndex, 1);
-      }
-    }
-  }
-
-  return { damage: actualDamage, barrierBlocked: false, shellAbsorbed };
-};
-
-/**
- * Reset Pride attack flags at end of turn.
- * Called during turn cleanup.
- * @param {Object} state - Game state
- */
-export const resetPrideFlags = (state) => {
-  state.players.forEach((player) => {
-    player.field.forEach((creature) => {
-      if (creature) {
-        creature.joinedPrideAttack = false;
-      }
-    });
-  });
 };

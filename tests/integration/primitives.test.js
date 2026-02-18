@@ -57,19 +57,6 @@ describe('Primitives Mapping', () => {
     });
   });
 
-  describe('Webbed keyword primitives', () => {
-    it('should map Webbed to cantAttack, losesOnDamage', () => {
-      const webbedPrimitives = KEYWORD_PRIMITIVES[KEYWORDS.WEBBED];
-      expect(webbedPrimitives).toContain(PRIMITIVES.CANT_ATTACK);
-      expect(webbedPrimitives).toContain(PRIMITIVES.LOSES_ON_DAMAGE);
-    });
-
-    it('should NOT map Webbed to cantBeConsumed (webbed creatures can be consumed)', () => {
-      const webbedPrimitives = KEYWORD_PRIMITIVES[KEYWORDS.WEBBED];
-      expect(webbedPrimitives).not.toContain(PRIMITIVES.CANT_BE_CONSUMED);
-    });
-  });
-
   describe('Passive keyword primitives', () => {
     it('should map Passive to cantAttack only', () => {
       const passivePrimitives = KEYWORD_PRIMITIVES[KEYWORDS.PASSIVE];
@@ -113,23 +100,9 @@ describe('hasPrimitive()', () => {
       expect(hasPrimitive(creature, PRIMITIVES.CANT_ATTACK)).toBe(true);
     });
 
-    it('should return true for webbed creature (via boolean flag)', () => {
-      const { creature } = createTestCreature(PREY_NO_KEYWORDS, 0, 0, state);
-      creature.webbed = true;
-
-      expect(hasPrimitive(creature, PRIMITIVES.CANT_ATTACK)).toBe(true);
-    });
-
     it('should return true for creature with Frozen keyword', () => {
       const { creature } = createTestCreature(PREY_NO_KEYWORDS, 0, 0, state);
       creature.keywords = [KEYWORDS.FROZEN];
-
-      expect(hasPrimitive(creature, PRIMITIVES.CANT_ATTACK)).toBe(true);
-    });
-
-    it('should return true for creature with Webbed keyword', () => {
-      const { creature } = createTestCreature(PREY_NO_KEYWORDS, 0, 0, state);
-      creature.keywords = [KEYWORDS.WEBBED];
 
       expect(hasPrimitive(creature, PRIMITIVES.CANT_ATTACK)).toBe(true);
     });

@@ -6,20 +6,13 @@ import {
   LOG_CATEGORIES,
   getKeywordEmoji,
 } from '../state/gameState.js';
-import { cleanupDestroyed, resetPrideFlags } from './combat.js';
+import { cleanupDestroyed } from './combat.js';
 import { resolveEffectResult } from './effects.js';
 import { logPlainMessage } from './historyLog.js';
 import { resolveCardEffect } from '../cards/index.js';
 import { isOnlineMode } from '../state/selectors.js';
 import { SoundManager } from '../audio/soundManager.js';
 import {
-  calculateTotalVenom,
-  hasWebbed,
-  isStalking,
-  incrementStalkBonus,
-  hasShell,
-  regenerateShell,
-  KEYWORDS,
   cantAttack,
 } from '../keywords.js';
 
@@ -114,9 +107,6 @@ const runStartOfTurnEffects = (state) => {
       );
     }
   });
-
-  // Handle Stalk bonus increment for stalking creatures (Feline mechanic)
-  handleStalkBonusIncrement(state);
 };
 
 const queueEndOfTurnEffects = (state) => {
@@ -173,92 +163,6 @@ const handleRegen = (state) => {
           state,
           HEAL,
           `${creature.name} regenerates to full health (+${healAmount} HP).`
-        );
-      }
-    }
-  });
-};
-
-// Handle Venom damage - deal damage to all Webbed enemy creatures at end of turn
-const handleVenomDamage = (state) => {
-  const activePlayerIndex = state.activePlayerIndex;
-  const opponentIndex = (activePlayerIndex + 1) % 2;
-  const opponent = state.players[opponentIndex];
-
-  // Calculate total venom from all friendly creatures
-  const totalVenom = calculateTotalVenom(state, activePlayerIndex);
-  if (totalVenom <= 0) return;
-
-  // Find all Webbed enemy creatures
-  const webbedCreatures = opponent.field.filter((creature) => creature && hasWebbed(creature));
-  if (webbedCreatures.length === 0) return;
-
-  logGameAction(
-    state,
-    DAMAGE,
-    `🕷️ Venom activates! Dealing ${totalVenom} damage to ${webbedCreatures.length} Webbed creature(s).`
-  );
-
-  // Deal venom damage to each Webbed creature
-  webbedCreatures.forEach((creature) => {
-    const previousHp = creature.currentHp ?? creature.hp;
-    creature.currentHp = previousHp - totalVenom;
-
-    // Remove Webbed status since the creature took damage
-    if (creature.keywords) {
-      const webbedIndex = creature.keywords.indexOf(KEYWORDS.WEBBED);
-      if (webbedIndex >= 0) {
-        creature.keywords.splice(webbedIndex, 1);
-      }
-    }
-    creature.webbed = false;
-
-    if (creature.currentHp <= 0) {
-      logGameAction(
-        state,
-        DEATH,
-        `🕷️ ${creature.name} is killed by venom! (${previousHp} → ${creature.currentHp} HP)`
-      );
-    } else {
-      logGameAction(
-        state,
-        DAMAGE,
-        `🕷️ ${creature.name} takes ${totalVenom} venom damage and breaks free from web. (${previousHp} → ${creature.currentHp} HP)`
-      );
-    }
-  });
-};
-
-// Handle Stalk bonus increment - stalking creatures gain +1 ATK at start of their owner's turn (max +3)
-const handleStalkBonusIncrement = (state) => {
-  const activePlayer = state.players[state.activePlayerIndex];
-  activePlayer.field.forEach((creature) => {
-    if (creature && isStalking(creature)) {
-      const previousBonus = creature.stalkBonus || 0;
-      const newBonus = incrementStalkBonus(creature);
-      if (newBonus > previousBonus) {
-        logGameAction(
-          state,
-          BUFF,
-          `🐆 ${creature.name} stalks patiently... (+${newBonus} ATK from stalking, max +3)`
-        );
-      }
-    }
-  });
-};
-
-// Handle Shell regeneration - creatures with Shell regenerate to full at end of their owner's turn
-const handleShellRegeneration = (state) => {
-  const activePlayer = state.players[state.activePlayerIndex];
-  activePlayer.field.forEach((creature) => {
-    if (creature && hasShell(creature)) {
-      const previousShell = creature.currentShell || 0;
-      const didRegen = regenerateShell(creature);
-      if (didRegen && creature.currentShell > previousShell) {
-        logGameAction(
-          state,
-          BUFF,
-          `🦀 ${creature.name}'s shell regenerates! (${previousShell} → ${creature.currentShell})`
         );
       }
     }
@@ -503,11 +407,8 @@ export const finalizeEndPhase = (state) => {
 
   logGameAction(state, PHASE, `Processing end-of-turn effects...`);
   handleRegen(state);
-  handleShellRegeneration(state); // Regenerate Shell for Crustacean creatures
-  handleVenomDamage(state); // Deal venom damage to Webbed enemies (before thaw/cleanup)
   handleFrozenThaw(state); // Thaw frozen creatures (they survive)
   handleParalysisDeath(state); // Kill paralyzed creatures (per CORE-RULES.md §7)
-  resetPrideFlags(state); // Reset Pride joinedPrideAttack flags (Feline mechanic)
   cleanupDestroyed(state, { silent: true }); // Silent: endTurn broadcasts final state
 
   const player = state.players[state.activePlayerIndex];
