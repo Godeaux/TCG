@@ -114,7 +114,7 @@ export const resolveCreatureCombat = (
   attackerOwnerIndex,
   defenderOwnerIndex
 ) => {
-  // Calculate effective attack values (includes Stalk bonus for Felines)
+  // Calculate effective attack values
   const attackerEffectiveAtk = getEffectiveAttack(attacker, state, attackerOwnerIndex);
   const defenderEffectiveAtk = getEffectiveAttack(defender, state, defenderOwnerIndex);
 

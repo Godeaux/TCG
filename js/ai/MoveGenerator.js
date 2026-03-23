@@ -448,7 +448,7 @@ export class MoveGenerator {
     if (!creature) return false;
     if (creature.currentHp <= 0) return false;
     if (hasCreatureAttacked(creature)) return false; // Multi-Strike aware
-    // Use cantAttack primitive - covers Frozen, Webbed, Passive, Harmless
+    // Use cantAttack primitive - covers Frozen, Passive, Harmless
     if (cantAttack(creature)) return false;
 
     // NOTE: Summoning sickness only prevents attacking the PLAYER, not creatures

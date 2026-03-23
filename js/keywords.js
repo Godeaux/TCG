@@ -24,7 +24,7 @@ export const KEYWORDS = {
 
 /**
  * Primitives are the underlying behavioral traits that keywords grant.
- * Multiple keywords can share the same primitive (e.g., Frozen and Webbed both grant cantAttack).
+ * Multiple keywords can share the same primitive (e.g., Frozen grants Passive).
  * This allows centralized checking without hardcoding keyword combinations everywhere.
  */
 export const PRIMITIVES = {
@@ -98,7 +98,7 @@ export const hasPrimitive = (card, primitive) => {
   if (!areAbilitiesActive(card)) return false;
 
   for (const keyword of card.keywords) {
-    // Handle numeric keywords like "Venom 2" - extract base keyword
+    // Handle numeric keywords like "Multi-Strike 3" - extract base keyword
     const baseKeyword = typeof keyword === 'string' ? keyword.split(' ')[0] : keyword;
     const primitives = KEYWORD_PRIMITIVES[baseKeyword];
     if (primitives?.includes(primitive)) {

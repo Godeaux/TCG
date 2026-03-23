@@ -237,7 +237,7 @@ export class ThreatDetector {
     }
     if (creature.frozen || creature.webbed) {
       score -= 15;
-      reasons.push(creature.frozen ? 'Frozen' : 'Webbed');
+      reasons.push('Frozen');
     }
 
     return { score: Math.max(0, score), reasons };
@@ -354,7 +354,7 @@ export class ThreatDetector {
       if (!creature) return false;
       if (creature.currentHp <= 0) return false;
       if (hasCreatureAttacked(creature)) return false; // Multi-Strike aware
-      // Use cantAttack primitive - covers Frozen, Webbed, Passive, Harmless
+      // Use cantAttack primitive - covers Frozen, Passive, Harmless
       if (cantAttack(creature)) return false;
       return true;
     });
@@ -426,7 +426,7 @@ export class ThreatDetector {
       if (!creature) return false;
       if (creature.currentHp <= 0) return false;
       if (hasCreatureAttacked(creature)) return false; // Multi-Strike aware
-      // Use cantAttack primitive - covers Frozen, Webbed, Passive, Harmless
+      // Use cantAttack primitive - covers Frozen, Passive, Harmless
       if (cantAttack(creature)) return false;
       return true;
     });

@@ -568,7 +568,7 @@ export const canPlayAnyCardFromHand = (state, playerIndex) => {
 
 /**
  * Get creatures that can actually attack (includes status effect checks)
- * Uses cantAttack primitive - covers Frozen, Webbed, Passive, Harmless
+ * Uses cantAttack primitive - covers Frozen, Passive, Harmless
  * Note: Summoning sickness only prevents direct player attacks, not creature attacks
  */
 export const getCreaturesThatCanAttack = (state, playerIndex) => {
@@ -580,7 +580,7 @@ export const getCreaturesThatCanAttack = (state, playerIndex) => {
     // Must not have attacked already
     if (hasCreatureAttacked(creature)) return false;
 
-    // Use cantAttack primitive - covers Frozen, Webbed, Passive, Harmless
+    // Use cantAttack primitive - covers Frozen, Passive, Harmless
     if (cantAttack(creature)) return false;
 
     // Check summoning sickness (unless Haste) - only matters for direct player attacks

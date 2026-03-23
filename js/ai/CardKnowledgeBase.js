@@ -240,7 +240,7 @@ const getPotentialDamage = (ctx) => {
 
   return ai.field
     .filter((c) => c && c.currentHp > 0 && !hasCreatureAttacked(c)) // Multi-Strike aware
-    .filter((c) => !cantAttack(c)) // Use primitive - covers Frozen, Webbed, Passive, Harmless
+    .filter((c) => !cantAttack(c)) // Use primitive - covers Frozen, Passive, Harmless
     .filter((c) => c.summonedTurn !== state.turn || hasHaste(c))
     .reduce((sum, c) => sum + (c.currentAtk ?? c.atk ?? 0), 0);
 };
@@ -1565,7 +1565,7 @@ export class CardKnowledgeBase {
       threat -= 20;
     }
 
-    // Frozen/Webbed creatures are less threatening
+    // Frozen creatures are less threatening
     if (card.frozen || card.webbed) {
       threat -= 20;
     }

@@ -46,7 +46,6 @@ import { resolveCardEffect } from '../cards/index.js';
 import { resolveEffectResult } from '../game/effects.js';
 import { createReactionWindow, TRIGGER_EVENTS } from '../game/triggers/index.js';
 import { isAIvsAIMode, markCreatureAttacked, hasCreatureAttacked } from '../state/selectors.js';
-import { getBugDetector } from '../simulation/index.js';
 
 // New AI evaluation modules
 import { ThreatDetector } from './ThreatDetector.js';
@@ -827,9 +826,7 @@ export class AIController {
     const isFree = card.type === 'Free Spell' || card.type === 'Trap' || isFreePlay(card);
 
     // Bug detection: snapshot before action
-    const detector = getBugDetector();
     if (detector?.isEnabled()) {
-      detector.beforeAction(
         state,
         { type: 'PLAY_CARD', payload: { card, slotIndex } },
         {
@@ -870,7 +867,6 @@ export class AIController {
 
       // Bug detection: check after action
       if (detector?.isEnabled()) {
-        detector.afterAction(state);
       }
 
       callbacks.onPlayCard?.(card, slotIndex);
@@ -902,9 +898,7 @@ export class AIController {
     const isFree = isFreePlay(card);
 
     // Bug detection: snapshot before action
-    const detector = getBugDetector();
     if (detector?.isEnabled()) {
-      detector.beforeAction(
         state,
         { type: 'PLAY_CREATURE', payload: { card, slotIndex } },
         {
@@ -936,7 +930,6 @@ export class AIController {
 
     // Bug detection: check after action
     if (detector?.isEnabled()) {
-      detector.afterAction(state);
     }
 
     callbacks.onPlayCard?.(card, slotIndex);
@@ -963,11 +956,9 @@ export class AIController {
     const creature = createCardInstance(card, state.turn);
 
     // Bug detection: snapshot before action
-    const detector = getBugDetector();
     const isDryDrop = availablePrey.length === 0;
 
     if (detector?.isEnabled()) {
-      detector.beforeAction(
         state,
         { type: 'PLAY_PREDATOR', payload: { card, slotIndex } },
         {
@@ -999,12 +990,9 @@ export class AIController {
       // Bug detection: check after dry drop
       if (detector?.isEnabled()) {
         // Update context with dry drop info
-        detector.actionContext = {
-          ...detector.actionContext,
           predator: creature,
           consumedPrey: [],
         };
-        detector.afterAction(state);
       }
 
       callbacks.onPlayCard?.(card, slotIndex, { dryDrop: true });
@@ -1050,12 +1038,9 @@ export class AIController {
     // Bug detection: check after consumption play
     if (detector?.isEnabled()) {
       // Update context with consumption info
-      detector.actionContext = {
-        ...detector.actionContext,
         predator: creature,
         consumedPrey: preyToConsume,
       };
-      detector.afterAction(state);
     }
 
     callbacks.onPlayCard?.(card, actualSlot, { consumeTargets: preyToConsume });
@@ -1411,13 +1396,11 @@ export class AIController {
     const defenderOwnerIndex = 1 - this.playerIndex;
 
     // Bug detection: snapshot before attack
-    const detector = getBugDetector();
     const attackAction = {
       type: 'DECLARE_ATTACK',
       payload: { attacker, target },
     };
     if (detector?.isEnabled()) {
-      detector.beforeAction(state, attackAction, {
         attacker,
         target,
         attackerOwnerIndex,
@@ -1446,7 +1429,6 @@ export class AIController {
             logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
             // Bug detection: check after (attack cancelled due to attacker death)
             if (detector?.isEnabled()) {
-              detector.afterAction(state);
             }
             callbacks.onUpdate?.();
             state.broadcast?.(state);
@@ -1520,7 +1502,6 @@ export class AIController {
 
           // Bug detection: check after attack resolution
           if (detector?.isEnabled()) {
-            detector.afterAction(state);
           }
 
           callbacks.onUpdate?.();
@@ -1549,7 +1530,7 @@ export class AIController {
       if (!card || !isCreatureCard(card)) return false;
       if (card.currentHp <= 0) return false; // Dead creatures can't attack
       if (hasCreatureAttacked(card)) return false; // Multi-Strike aware
-      // Use cantAttack primitive - covers Frozen, Webbed, Passive, Harmless
+      // Use cantAttack primitive - covers Frozen, Passive, Harmless
       if (cantAttack(card)) return false;
       return true;
     });
