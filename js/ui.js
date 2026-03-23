@@ -56,9 +56,6 @@ import {
 // AI module (for cleanup when returning to menu)
 import { cleanupAI } from './ai/index.js';
 
-// Bug detection (for AI vs AI mode)
-import { getBugDetector } from './simulation/index.js';
-
 // Sound manager (for turn end animation sound)
 import { SoundManager } from './audio/soundManager.js';
 
@@ -89,12 +86,6 @@ import { renderProfileOverlay, setupDuelInviteListener } from './ui/overlays/Pro
 
 // Pack opening overlay (extracted module)
 import { renderPackOpeningOverlay, startPackOpening } from './ui/overlays/PackOpeningOverlay.js';
-
-// Bug report overlay (extracted module)
-import { showBugReportOverlay } from './ui/overlays/BugReportOverlay.js';
-
-// Simulation dashboard overlay
-import { showSimulationDashboard } from './ui/overlays/SimulationDashboard.js';
 
 // Settings button and overlay components
 import { initSettingsButton } from './ui/components/SettingsButton.js';
@@ -4104,41 +4095,12 @@ const setupClickAwayHandler = () => {
  * Provides quick access to Settings, Bug Report, and Known Bugs from anywhere
  * @param {boolean} includeSimStats - Whether to include the simulation stats option
  */
-const setupSettingsButton = (includeSimStats = false) => {
+const setupSettingsButton = () => {
   initSettingsButton({
     onSettings: () => {
       showSettingsOverlay();
     },
-    onReportBug: () => {
-      const profileId = latestState?.menu?.profile?.id;
-      showBugReportOverlay({ profileId, tab: 'report' });
-    },
-    onViewBugs: () => {
-      const profileId = latestState?.menu?.profile?.id;
-      showBugReportOverlay({ profileId, tab: 'list' });
-    },
-    // Only include simulation stats callback if requested (AI vs AI mode)
-    onSimulationStats: includeSimStats
-      ? () => {
-          showSimulationDashboard();
-        }
-      : null,
   });
-};
-
-/**
- * Re-initialize settings button to show simulation stats option (for AI vs AI mode)
- * Also enables simulation mode on the bug detector (no pause on bugs)
- * Called when entering AI vs AI mode
- */
-export const enableSimulationMode = () => {
-  setupSettingsButton(true);
-
-  // Enable simulation mode on the bug detector so it doesn't pause on bugs
-  const detector = getBugDetector();
-  if (detector) {
-    detector.enableSimulationMode();
-  }
 };
 
 // Initialize mobile features and log card links when DOM is ready

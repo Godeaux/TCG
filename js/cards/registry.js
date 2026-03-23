@@ -17,10 +17,6 @@ import reptileData from './data/reptile.json' with { type: 'json' };
 import amphibianData from './data/amphibian.json' with { type: 'json' };
 import birdData from './data/bird.json' with { type: 'json' };
 import mammalData from './data/mammal.json' with { type: 'json' };
-import arachnidData from './data/arachnid.json' with { type: 'json' };
-import felineData from './data/feline.json' with { type: 'json' };
-import crustaceanData from './data/crustacean.json' with { type: 'json' };
-import insectData from './data/insect.json' with { type: 'json' };
 import { resolveEffect } from './effectLibrary.js';
 import { validateCardEffects } from './effectValidator.js';
 import { generateCardEffectText } from './effectTextGenerator.js';
@@ -48,10 +44,6 @@ const deckCatalogs = {
   amphibian: [],
   bird: [],
   mammal: [],
-  arachnid: [],
-  feline: [],
-  crustacean: [],
-  insect: [],
 };
 
 // ============================================================================
@@ -147,70 +139,6 @@ export const initializeCardRegistry = () => {
   });
   deckCatalogs.mammal = sortCardsByType(
     mammalData.cards.filter((card) => !card.id.includes('token'))
-  );
-
-  // Load arachnid tokens (if present in the JSON)
-  if (arachnidData.tokens) {
-    arachnidData.tokens.forEach((token) => {
-      tokenRegistry.set(token.id, token);
-      cardRegistry.set(token.id, token);
-    });
-  }
-
-  // Load arachnid cards
-  arachnidData.cards.forEach((card) => {
-    cardRegistry.set(card.id, card);
-  });
-  deckCatalogs.arachnid = sortCardsByType(
-    arachnidData.cards.filter((card) => !card.id.includes('token'))
-  );
-
-  // Load feline tokens (if present in the JSON)
-  if (felineData.tokens) {
-    felineData.tokens.forEach((token) => {
-      tokenRegistry.set(token.id, token);
-      cardRegistry.set(token.id, token);
-    });
-  }
-
-  // Load feline cards
-  felineData.cards.forEach((card) => {
-    cardRegistry.set(card.id, card);
-  });
-  deckCatalogs.feline = sortCardsByType(
-    felineData.cards.filter((card) => !card.id.includes('token'))
-  );
-
-  // Load crustacean tokens (if present in the JSON)
-  if (crustaceanData.tokens) {
-    crustaceanData.tokens.forEach((token) => {
-      tokenRegistry.set(token.id, token);
-      cardRegistry.set(token.id, token);
-    });
-  }
-
-  // Load crustacean cards
-  crustaceanData.cards.forEach((card) => {
-    cardRegistry.set(card.id, card);
-  });
-  deckCatalogs.crustacean = sortCardsByType(
-    crustaceanData.cards.filter((card) => !card.id.includes('token'))
-  );
-
-  // Load insect tokens (if present in the JSON)
-  if (insectData.tokens) {
-    insectData.tokens.forEach((token) => {
-      tokenRegistry.set(token.id, token);
-      cardRegistry.set(token.id, token);
-    });
-  }
-
-  // Load insect cards
-  insectData.cards.forEach((card) => {
-    cardRegistry.set(card.id, card);
-  });
-  deckCatalogs.insect = sortCardsByType(
-    insectData.cards.filter((card) => !card.id.includes('token'))
   );
 
   console.log(

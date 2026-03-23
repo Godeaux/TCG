@@ -16,7 +16,6 @@
 
 import { updatePackCount, updateProfileStats } from '../../network/lobbyManager.js';
 import { getLocalPlayerIndex } from '../../state/selectors.js';
-import { onGameEnded as simOnGameEnded, getSimulationStatus } from '../../simulation/index.js';
 import { broadcastRematchChoice } from '../../network/sync.js';
 
 // ============================================================================
@@ -638,22 +637,11 @@ export const checkForVictory = (state) => {
     if (isDraw) {
       // Handle draw
       state.winner = 'draw';
-      if (isAIvsAI) {
-        simOnGameEnded(state).catch((err) => {
-          console.error('[VictoryOverlay] Failed to notify simulation harness:', err);
-        });
-      }
       showVictoryScreen(null, stats, { awardPack: false, state, isAIvsAI, isOnline, isDraw: true });
     } else {
       // Winner determined by HP
       const awardPack = shouldAwardPack(state, winner, loser);
       updateProfileStatsOnVictory(state, winner, loser);
-      if (isAIvsAI) {
-        state.winner = state.players.indexOf(winner);
-        simOnGameEnded(state).catch((err) => {
-          console.error('[VictoryOverlay] Failed to notify simulation harness:', err);
-        });
-      }
       showVictoryScreen(winner, stats, {
         awardPack,
         state,
@@ -695,15 +683,6 @@ export const checkForVictory = (state) => {
 
     // Update profile stats and match history
     updateProfileStatsOnVictory(state, winner, loser);
-
-    // Notify simulation harness of game end (for AI vs AI analytics)
-    if (isAIvsAI) {
-      const winnerIndex = state.players.indexOf(winner);
-      state.winner = winnerIndex;
-      simOnGameEnded(state).catch((err) => {
-        console.error('[VictoryOverlay] Failed to notify simulation harness:', err);
-      });
-    }
 
     // Show victory screen with pack reward if applicable
     showVictoryScreen(winner, stats, { awardPack, state, isAIvsAI, isOnline });

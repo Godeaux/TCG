@@ -76,11 +76,6 @@ const STATUS_DESCRIPTIONS = {
     name: 'Frozen',
     description: "Cannot attack, be consumed, or consume prey. Thaws at end of owner's turn.",
   },
-  webbed: {
-    emoji: '🕸️',
-    name: 'Webbed',
-    description: 'Cannot attack. Cleared when this creature takes damage.',
-  },
   isToken: {
     emoji: '⚪',
     name: 'Token',
@@ -90,23 +85,6 @@ const STATUS_DESCRIPTIONS = {
     emoji: '💀',
     name: 'Neurotoxined',
     description: "Poisoned by neurotoxin. Will die at end of owner's turn.",
-  },
-  // Feline status effects
-  stalking: {
-    emoji: '🐆',
-    name: 'Stalking',
-    description: 'Hidden and gaining +1 ATK per turn (max +3). Attacking ends the stalk.',
-  },
-  // Crustacean status effects
-  shell: {
-    emoji: '🦀',
-    name: 'Shell Active',
-    description: 'Absorbs damage before HP is reduced. Regenerates with certain effects.',
-  },
-  hasMolted: {
-    emoji: '🔄',
-    name: 'Has Molted',
-    description: 'This creature has already used its Molt ability to survive death once.',
   },
 };
 
@@ -559,16 +537,6 @@ const extractTokenIds = (card) => {
         tokenIds.add(effect.params.spawnOnDeath);
       }
 
-      // Check for "per X" summon effects (Feline Pride, Crustacean Shell, Arachnid Webbed)
-      if (effect.type === 'summonTokensPerPride' && effect.params?.tokenId) {
-        tokenIds.add(effect.params.tokenId);
-      }
-      if (effect.type === 'summonTokensPerShell' && effect.params?.tokenId) {
-        tokenIds.add(effect.params.tokenId);
-      }
-      if (effect.type === 'summonTokensPerWebbed' && effect.params?.tokenId) {
-        tokenIds.add(effect.params.tokenId);
-      }
 
       // Check nested effects (like in chooseOption)
       if (effect.params?.options) {
@@ -688,34 +656,7 @@ const renderInfoBoxes = (card, context = 'gameplay') => {
     );
   }
 
-  // Feline: Stalking status
-  if (card.keywords?.includes('Stalking')) {
-    const info = STATUS_DESCRIPTIONS.stalking;
-    const stalkBonus = card.stalkBonus || 0;
-    infoBoxesElement.appendChild(
-      createInfoBox(`${info.emoji} ${info.name} (+${stalkBonus} ATK)`, info.description, 'status')
-    );
-  }
 
-  // Crustacean: Shell status (only show if creature has shell and it's active)
-  if (card.shellLevel > 0 && card.currentShell !== undefined) {
-    const info = STATUS_DESCRIPTIONS.shell;
-    infoBoxesElement.appendChild(
-      createInfoBox(
-        `${info.emoji} ${info.name} (${card.currentShell}/${card.shellLevel})`,
-        info.description,
-        'status'
-      )
-    );
-  }
-
-  // Crustacean: Has Molted status
-  if (card.hasMolted) {
-    const info = STATUS_DESCRIPTIONS.hasMolted;
-    infoBoxesElement.appendChild(
-      createInfoBox(`${info.emoji} ${info.name}`, info.description, 'status')
-    );
-  }
 
   // Add token previews for cards that summon tokens
   const tokenIds = extractTokenIds(card);

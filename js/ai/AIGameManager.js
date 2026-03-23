@@ -12,16 +12,7 @@
 import { createAIController } from './AIController.js';
 import { isAIMode, isAIvsAIMode, isAnyAIMode } from '../state/selectors.js';
 import { logMessage } from '../state/gameState.js';
-import {
-  initBugDetector,
-  getBugDetector,
-  logBugMessage,
-  onGameStarted as simOnGameStarted,
-  onGameEnded as simOnGameEnded,
-  connectToBugDetector,
-  startSimulation,
-  getSimulationStatus,
-} from '../simulation/index.js';
+
 
 // ============================================================================
 // MODULE STATE
@@ -110,47 +101,6 @@ export const initializeAI = (state, options = {}) => {
 
     logMessage(state, `AI vs AI: ${deck1} vs ${deck2}`);
 
-    // Initialize bug detector for AI vs AI mode
-    initBugDetector({
-      logBug: (bugState, message) => logBugMessage(bugState, message),
-      onBugDetected: (bugs) => {
-        console.log('[AIManager] Bug detected, pausing AI execution');
-      },
-      onPause: () => {
-        console.log('[AIManager] Bug detector paused - click game area to continue');
-      },
-      onResume: () => {
-        console.log('[AIManager] Bug detector resumed');
-      },
-    });
-    getBugDetector().enable({ simulationMode: true });
-    logMessage(state, `Bug detector enabled (simulation mode - bugs won't pause game).`);
-
-    // Start simulation harness for analytics tracking (only if not already running)
-    // The VictoryOverlay will call onGameEnded, and onAIvsAIRestart callback handles new games
-    const simStatus = getSimulationStatus();
-    if (!simStatus.isRunning) {
-      startSimulation({
-        // Provide startNewGame callback to prevent simulation from stopping
-        // The actual game restart is handled by VictoryOverlay's 5-second countdown
-        startNewGame: () => {
-          console.log(
-            '[AIManager] Simulation harness requested new game - VictoryOverlay handles this'
-          );
-        },
-        onGameStart: (gameNum, gameState) => console.log(`[SimHarness] Game ${gameNum} started`),
-        onGameEnd: (result) =>
-          console.log(`[SimHarness] Game ${result.gameNumber} ended, winner: ${result.winner}`),
-        onStatsUpdate: () => {}, // Dashboard pulls stats via getFullStatistics()
-      });
-    }
-
-    // Connect simulation harness to bug detector for analytics
-    connectToBugDetector();
-
-    // Notify simulation harness that a game has started
-    simOnGameStarted(state);
-
     return;
   }
 
@@ -183,12 +133,6 @@ export const cleanupAI = () => {
   aiController0 = null;
   isAITurnInProgress = false;
   resetBugDetection();
-
-  // Disable bug detector
-  const detector = getBugDetector();
-  if (detector) {
-    detector.disable();
-  }
 };
 
 // ============================================================================
@@ -241,17 +185,6 @@ export const executeAITurn = async (state, callbacks) => {
   console.log(
     `[AIManager] executeAITurn called, activePlayer: ${state.activePlayerIndex}, inProgress: ${isAITurnInProgress}`
   );
-
-  // Check if bug detector is paused
-  const detector = getBugDetector();
-  if (detector?.isPaused()) {
-    console.log('[AIManager] executeAITurn: bug detector is paused, waiting...');
-    // Set resume callback to retry
-    detector.setResumeCallback(() => {
-      setTimeout(() => executeAITurn(state, callbacks), 100);
-    });
-    return;
-  }
 
   if (isAITurnInProgress) {
     console.log('[AIManager] executeAITurn: already in progress, returning');
@@ -376,13 +309,6 @@ export const checkAndTriggerAITurn = (state, callbacks) => {
   console.log(
     `[AIManager] checkAndTriggerAITurn - aiController0: ${aiController0 ? 'exists' : 'null'}, aiController: ${aiController ? 'exists' : 'null'}`
   );
-
-  // Check if bug detector is paused
-  const detector = getBugDetector();
-  if (detector?.isPaused()) {
-    console.log('[AIManager] checkAndTriggerAITurn: bug detector is paused, skipping');
-    return;
-  }
 
   // Check if AI is manually paused via speed control
   if (state.menu?.aiSpeed === 'paused') {

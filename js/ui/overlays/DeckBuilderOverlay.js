@@ -163,38 +163,6 @@ const DECK_OPTIONS = [
     panelClass: 'deck-select-panel--amphibian',
     available: true,
   },
-  {
-    id: 'arachnid',
-    name: 'Arachnid',
-    emoji: '🕷️',
-    panelClass: 'deck-select-panel--arachnid',
-    available: true,
-    experimental: true,
-  },
-  {
-    id: 'feline',
-    name: 'Feline',
-    emoji: '🐆',
-    panelClass: 'deck-select-panel--feline',
-    available: true,
-    experimental: true,
-  },
-  {
-    id: 'crustacean',
-    name: 'Crustacean',
-    emoji: '🦀',
-    panelClass: 'deck-select-panel--crustacean',
-    available: true,
-    experimental: true,
-  },
-  {
-    id: 'insect',
-    name: 'Insect',
-    emoji: '🦋',
-    panelClass: 'deck-select-panel--insect',
-    available: true,
-    experimental: true,
-  },
 ];
 
 // Deck builder UI state
@@ -945,7 +913,6 @@ const setDeckInspectorContent = (card) => {
     card.abilitiesCancelled ? '🚫 Abilities canceled' : null,
     card.hasBarrier ? '🛡️ Barrier' : null,
     card.frozen ? '❄️ Frozen' : null,
-    card.webbed ? '🕸️ Webbed' : null,
     card.isToken ? '⚪ Token' : null,
   ].filter(Boolean);
   const keywordLabel = keywords ? `Keywords: ${keywords}` : '';

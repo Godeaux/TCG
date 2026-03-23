@@ -111,26 +111,6 @@ export {
 } from './DuelInviteOverlay.js';
 
 // ============================================================================
-// BUG REPORT OVERLAY
-// ============================================================================
-
-export {
-  showBugReportOverlay,
-  hideBugReportOverlay,
-  isBugReportOverlayVisible,
-} from './BugReportOverlay.js';
-
-// ============================================================================
-// SIMULATION DASHBOARD OVERLAY
-// ============================================================================
-
-export {
-  showSimulationDashboard,
-  hideSimulationDashboard,
-  isSimulationDashboardVisible,
-} from './SimulationDashboard.js';
-
-// ============================================================================
 // SETTINGS OVERLAY
 // ============================================================================
 

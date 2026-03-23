@@ -615,7 +615,7 @@ const handlePlayerDrop = (card, playerBadge) => {
     isLocalPlayersTurn(latestState) &&
     latestState.phase === 'Combat' &&
     !card.hasAttacked &&
-    !cantAttack(card) && // Use primitive - covers Frozen, Webbed, Passive, Harmless
+    !cantAttack(card) && // Use primitive - covers Frozen, Passive, Harmless
     isCreature &&
     canAttackPlayerDirectly &&
     !lureBlocksDirectAttack;
@@ -718,7 +718,7 @@ const handleCreatureDrop = (attacker, target) => {
     isLocalPlayersTurn(latestState) &&
     latestState.phase === 'Combat' &&
     !attacker.hasAttacked &&
-    !cantAttack(attacker) && // Use primitive - covers Frozen, Webbed, Passive, Harmless
+    !cantAttack(attacker) && // Use primitive - covers Frozen, Passive, Harmless
     isCreature;
 
   if (!canAttackCheck) {
@@ -799,7 +799,7 @@ const handleDragStart = (event) => {
     isCombatPhase &&
     isLocalPlayersTurn?.(state) &&
     !card.hasAttacked &&
-    !cantAttack(card); // Use primitive - covers Frozen, Webbed, Passive, Harmless
+    !cantAttack(card); // Use primitive - covers Frozen, Passive, Harmless
   const isCombatDrag = isOnField && canCreatureAttack;
 
   // For field cards, allow drag if in extended consumption mode OR valid combat attack

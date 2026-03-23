@@ -18,22 +18,8 @@ export const KEYWORDS = {
   POISONOUS: 'Poisonous',
   HARMLESS: 'Harmless',
   FROZEN: 'Frozen',
-  // Arachnid keywords (Experimental)
-  WEB: 'Web',
-  WEBBED: 'Webbed',
-  VENOM: 'Venom',
-  // Feline keywords (Experimental)
-  STALK: 'Stalk',
-  STALKING: 'Stalking', // Status: creature is currently stalking
-  PRIDE: 'Pride',
-  // Crustacean keywords (Experimental)
-  SHELL: 'Shell', // Has Shell with shellLevel property (1/2/3)
-  MOLT: 'Molt', // Revives once at 1 HP, loses all keywords
   // Bird keywords
   MULTI_STRIKE: 'Multi-Strike', // Attacks X times in combat (e.g., "Multi-Strike 3")
-  // Insect keywords (Experimental)
-  EVASIVE: 'Evasive', // Cannot be blocked by creatures with lower ATK
-  UNSTOPPABLE: 'Unstoppable', // Cannot be blocked at all
 };
 
 /**
@@ -58,7 +44,6 @@ export const PRIMITIVES = {
 export const KEYWORD_PRIMITIVES = {
   // Frozen creatures: can't attack, can't be consumed, can't consume prey
   [KEYWORDS.FROZEN]: [PRIMITIVES.CANT_ATTACK, PRIMITIVES.CANT_BE_CONSUMED, PRIMITIVES.CANT_CONSUME],
-  [KEYWORDS.WEBBED]: [PRIMITIVES.CANT_ATTACK, PRIMITIVES.LOSES_ON_DAMAGE],
   [KEYWORDS.PASSIVE]: [PRIMITIVES.CANT_ATTACK],
   [KEYWORDS.HARMLESS]: [PRIMITIVES.CANT_ATTACK],
   [KEYWORDS.INEDIBLE]: [PRIMITIVES.CANT_BE_CONSUMED],
@@ -98,7 +83,7 @@ export const hasPrimitive = (card, primitive) => {
   // These exist alongside keywords due to legacy code
   if (primitive === PRIMITIVES.CANT_ATTACK) {
     // Per CORE-RULES.md §7: Paralysis grants Harmless (can't attack)
-    if (card.frozen || card.webbed || card.paralyzed) return true;
+    if (card.frozen || card.paralyzed) return true;
   }
   // Frozen: can't be consumed
   if (primitive === PRIMITIVES.CANT_BE_CONSUMED) {
@@ -108,10 +93,6 @@ export const hasPrimitive = (card, primitive) => {
   if (primitive === PRIMITIVES.CANT_CONSUME) {
     if (card.frozen) return true;
   }
-  if (primitive === PRIMITIVES.LOSES_ON_DAMAGE) {
-    if (card.webbed) return true;
-  }
-
   // Then check keywords
   if (!card.keywords || !Array.isArray(card.keywords)) return false;
   if (!areAbilitiesActive(card)) return false;
@@ -147,11 +128,6 @@ export const getActivePrimitives = (card) => {
     activePrimitives.add(PRIMITIVES.CANT_BE_CONSUMED);
     activePrimitives.add(PRIMITIVES.CANT_CONSUME);
   }
-  if (card.webbed) {
-    activePrimitives.add(PRIMITIVES.CANT_ATTACK);
-    activePrimitives.add(PRIMITIVES.LOSES_ON_DAMAGE);
-  }
-
   // Then check keywords if they exist and abilities are active
   if (card.keywords && Array.isArray(card.keywords) && areAbilitiesActive(card)) {
     for (const keyword of card.keywords) {
@@ -192,8 +168,6 @@ export const cantConsume = (card) => hasPrimitive(card, PRIMITIVES.CANT_CONSUME)
  * @param {Object} card - The creature card
  * @returns {boolean} True if creature has a status that clears on damage
  */
-export const losesStatusOnDamage = (card) => hasPrimitive(card, PRIMITIVES.LOSES_ON_DAMAGE);
-
 export const KEYWORD_DESCRIPTIONS = {
   [KEYWORDS.HASTE]: 'Can attack the Rival directly on the turn it is played.',
   [KEYWORDS.FREE_PLAY]: 'Does not count toward the one-card-per-turn limit.',
@@ -216,28 +190,9 @@ export const KEYWORD_DESCRIPTIONS = {
   [KEYWORDS.HARMLESS]: 'Cannot attack (0 attack permanently).',
   [KEYWORDS.FROZEN]:
     "Cannot attack, be consumed, or consume prey. Thaws at the end of the creature-owning player's turn.",
-  // Arachnid keywords (Experimental)
-  [KEYWORDS.WEB]: 'On attack, applies Webbed to the defender (if it survives).',
-  [KEYWORDS.WEBBED]: 'Cannot attack. Status persists until the creature takes damage.',
-  [KEYWORDS.VENOM]: 'At end of turn, deals damage to each Webbed enemy creature.',
-  // Feline keywords (Experimental)
-  [KEYWORDS.STALK]:
-    'Can enter Stalking instead of attacking. While Stalking: gain Hidden and +1 ATK per turn (max +3). Attack once to ambush, then lose Hidden and bonus.',
-  [KEYWORDS.STALKING]:
-    'Currently stalking prey. Has Hidden. Gains +1 ATK at start of turn. Attacking ends the stalk.',
-  [KEYWORDS.PRIDE]:
-    'Coordinated Hunt: When this attacks, another Pride creature may join (deals damage, skips its attack). Only primary takes counter-damage.',
-  // Crustacean keywords (Experimental)
-  [KEYWORDS.SHELL]:
-    'Absorbs damage up to Shell level before HP is affected. Depletes on damage, regenerates fully at end of your turn.',
-  [KEYWORDS.MOLT]:
-    'When this would die, instead: revive at 1 HP and lose ALL keywords (including Shell). One-time use.',
   // Bird keywords
   [KEYWORDS.MULTI_STRIKE]:
     'Can attack X times per turn (where X is the number after Multi-Strike).',
-  // Insect keywords (Experimental)
-  [KEYWORDS.EVASIVE]: 'Cannot be targeted by attacks from creatures with 4 or more ATK.',
-  [KEYWORDS.UNSTOPPABLE]: 'Attacks ignore Barrier. Attacks cannot be negated by Traps.',
 };
 
 /**
@@ -298,27 +253,8 @@ export const isHarmless = (card) => hasKeyword(card, KEYWORDS.HARMLESS);
 // Inedible is a protection status, not an ability - it should apply even to dry-dropped predators
 export const isInedible = (card) => card?.keywords?.includes(KEYWORDS.INEDIBLE);
 
-// Insect keyword helpers
-export const hasEvasive = (card) => hasKeyword(card, KEYWORDS.EVASIVE);
-export const hasUnstoppable = (card) => hasKeyword(card, KEYWORDS.UNSTOPPABLE);
-
 /**
- * Check if an attacker can target an Evasive creature.
- * Evasive creatures cannot be targeted by attacks from creatures with 4+ ATK.
- * @param {Object} attacker - The attacking creature
- * @param {Object} defender - The defending creature (potentially Evasive)
- * @returns {boolean} True if the attacker CAN target this defender
- */
-export const canTargetEvasive = (attacker, defender) => {
-  if (!defender || !hasEvasive(defender)) return true;
-  if (!attacker) return true;
-  const attackerAtk = attacker.currentAtk ?? attacker.atk ?? 0;
-  // Evasive creatures can't be targeted by creatures with 4+ ATK
-  return attackerAtk < 4;
-};
-
-/**
- * Get effective attack value for a creature, including Stalk bonuses.
+ * Get effective attack value for a creature.
  * This should be used for combat damage calculations and display.
  * @param {Object} creature - The creature
  * @param {Object} state - Game state (optional, for future expansion)
@@ -327,287 +263,7 @@ export const canTargetEvasive = (attacker, defender) => {
  */
 export const getEffectiveAttack = (creature, state, ownerIndex) => {
   if (!creature) return 0;
-  const baseAtk = creature.currentAtk ?? creature.atk ?? 0;
-  // Stalk bonus only applies if creature is actively stalking
-  const stalkBonus = isStalking(creature) ? creature.stalkBonus || 0 : 0;
-  return baseAtk + stalkBonus;
-};
-
-// Arachnid keyword helpers
-export const hasWeb = (card) => hasKeyword(card, KEYWORDS.WEB);
-export const hasWebbed = (card) => hasKeyword(card, KEYWORDS.WEBBED);
-
-/**
- * Get Venom value for a creature.
- * Venom is a numeric keyword (e.g., "Venom 2" = 2 damage per Webbed enemy).
- * @param {Object} card - The creature card
- * @returns {number} The Venom damage value (0 if no Venom)
- */
-export const getVenomValue = (card) => {
-  if (!areAbilitiesActive(card) || !card.keywords) return 0;
-  for (const kw of card.keywords) {
-    if (typeof kw === 'string' && kw.startsWith('Venom')) {
-      const parts = kw.split(' ');
-      return parts.length > 1 ? parseInt(parts[1], 10) : 1;
-    }
-  }
-  return 0;
-};
-
-/**
- * Check if a creature has any Venom keyword.
- * @param {Object} card - The creature card
- * @returns {boolean} True if creature has Venom
- */
-export const hasVenom = (card) => getVenomValue(card) > 0;
-
-/**
- * Calculate total Venom damage from all friendly creatures.
- * @param {Object} state - Game state
- * @param {number} playerIndex - Index of the player with Venom creatures
- * @returns {number} Total Venom damage to apply to each Webbed enemy
- */
-export const calculateTotalVenom = (state, playerIndex) => {
-  if (!state?.players?.[playerIndex]?.field) return 0;
-
-  const field = state.players[playerIndex].field;
-  let totalVenom = 0;
-
-  for (const card of field) {
-    if (!card) continue;
-    totalVenom += getVenomValue(card);
-  }
-
-  return totalVenom;
-};
-
-// Feline keyword helpers
-export const hasStalk = (card) => hasKeyword(card, KEYWORDS.STALK);
-export const isStalking = (card) => hasKeyword(card, KEYWORDS.STALKING);
-export const hasPride = (card) => hasKeyword(card, KEYWORDS.PRIDE);
-
-/**
- * Enter Stalking mode for a creature with Stalk ability.
- * Grants Hidden and starts tracking stalk bonus.
- * @param {Object} creature - The creature to enter stalking
- */
-export const enterStalking = (creature) => {
-  if (!creature || !hasStalk(creature)) return false;
-  if (isStalking(creature)) return false; // Already stalking
-
-  // Add Stalking status
-  if (!creature.keywords) creature.keywords = [];
-  if (!creature.keywords.includes(KEYWORDS.STALKING)) {
-    creature.keywords.push(KEYWORDS.STALKING);
-  }
-  // Grant Hidden while stalking
-  if (!creature.keywords.includes(KEYWORDS.HIDDEN)) {
-    creature.keywords.push(KEYWORDS.HIDDEN);
-  }
-  // Initialize stalk bonus tracker
-  creature.stalkBonus = 0;
-  creature.stalkingFromHidden = true; // Track that Hidden came from stalking
-  return true;
-};
-
-/**
- * Increment stalk bonus for a stalking creature (called at start of turn).
- * Max bonus is +3 ATK.
- * @param {Object} creature - The stalking creature
- * @returns {number} The new stalk bonus
- */
-export const incrementStalkBonus = (creature) => {
-  if (!creature || !isStalking(creature)) return 0;
-  creature.stalkBonus = Math.min((creature.stalkBonus || 0) + 1, 3);
-  return creature.stalkBonus;
-};
-
-/**
- * Get the current stalk bonus for a creature.
- * @param {Object} creature - The creature
- * @returns {number} Current stalk ATK bonus (0 if not stalking)
- */
-export const getStalkBonus = (creature) => {
-  if (!creature || !isStalking(creature)) return 0;
-  return creature.stalkBonus || 0;
-};
-
-/**
- * End stalking mode after an attack (ambush completed).
- * Removes Hidden, Stalking status, and resets stalk bonus.
- * @param {Object} creature - The creature that attacked from stalking
- */
-export const endStalking = (creature) => {
-  if (!creature) return;
-
-  // Remove Stalking status
-  if (creature.keywords) {
-    const stalkingIdx = creature.keywords.indexOf(KEYWORDS.STALKING);
-    if (stalkingIdx >= 0) creature.keywords.splice(stalkingIdx, 1);
-
-    // Only remove Hidden if it came from stalking
-    if (creature.stalkingFromHidden) {
-      const hiddenIdx = creature.keywords.indexOf(KEYWORDS.HIDDEN);
-      if (hiddenIdx >= 0) creature.keywords.splice(hiddenIdx, 1);
-    }
-  }
-
-  // Reset stalk bonus
-  creature.stalkBonus = 0;
-  creature.stalkingFromHidden = false;
-};
-
-/**
- * Get other Pride creatures that could join a coordinated attack.
- * @param {Object} state - Game state
- * @param {number} ownerIndex - Index of the creature's owner
- * @param {Object} attacker - The primary attacking creature (to exclude)
- * @returns {Array} Array of Pride creatures that can join
- */
-export const getAvailablePrideAllies = (state, ownerIndex, attacker) => {
-  if (!state?.players?.[ownerIndex]?.field) return [];
-
-  return state.players[ownerIndex].field.filter((card) => {
-    if (!card || card.instanceId === attacker?.instanceId) return false;
-    if (!hasPride(card) || !areAbilitiesActive(card)) return false;
-    if (card.hasAttackedThisTurn || card.joinedPrideAttack) return false;
-    return true;
-  });
-};
-
-// Crustacean keyword helpers
-
-/**
- * Check if a creature has Shell keyword.
- * @param {Object} card - The creature card
- * @returns {boolean} True if creature has Shell
- */
-export const hasShell = (card) => {
-  if (!areAbilitiesActive(card)) return false;
-  return card.shellLevel > 0;
-};
-
-/**
- * Check if a creature has Molt keyword.
- * @param {Object} card - The creature card
- * @returns {boolean} True if creature has Molt
- */
-export const hasMolt = (card) => hasKeyword(card, KEYWORDS.MOLT);
-
-/**
- * Get the shell level (max capacity) for a creature.
- * @param {Object} card - The creature card
- * @returns {number} Shell level (1, 2, or 3), or 0 if no Shell
- */
-export const getShellLevel = (card) => {
-  if (!hasShell(card)) return 0;
-  return card.shellLevel || 0;
-};
-
-/**
- * Get the current active shell (damage that can be absorbed).
- * @param {Object} card - The creature card
- * @returns {number} Current shell value, or 0 if depleted/no Shell
- */
-export const getCurrentShell = (card) => {
-  if (!hasShell(card)) return 0;
-  return card.currentShell ?? card.shellLevel ?? 0;
-};
-
-/**
- * Initialize Shell on a creature when it enters play.
- * Sets currentShell to match shellLevel.
- * @param {Object} creature - The creature to initialize Shell for
- */
-export const initializeShell = (creature) => {
-  if (!creature || !creature.shellLevel) return;
-  creature.currentShell = creature.shellLevel;
-};
-
-/**
- * Apply damage to a creature with Shell.
- * Shell absorbs damage first (all-or-nothing), remainder goes to HP.
- * Returns the damage dealt to HP and damage absorbed by Shell.
- * @param {Object} creature - The creature taking damage
- * @param {number} damage - Amount of damage to deal
- * @returns {Object} { hpDamage, shellAbsorbed, shellDepleted }
- */
-export const applyDamageWithShell = (creature, damage) => {
-  if (!creature || damage <= 0) {
-    return { hpDamage: 0, shellAbsorbed: 0, shellDepleted: false };
-  }
-
-  const currentShell = getCurrentShell(creature);
-
-  if (currentShell <= 0) {
-    // No shell, all damage goes to HP
-    return { hpDamage: damage, shellAbsorbed: 0, shellDepleted: false };
-  }
-
-  // Shell absorbs up to its current value
-  const shellAbsorbed = Math.min(damage, currentShell);
-  const hpDamage = damage - shellAbsorbed;
-
-  // Deplete shell
-  creature.currentShell = currentShell - shellAbsorbed;
-  const shellDepleted = creature.currentShell <= 0;
-
-  return { hpDamage, shellAbsorbed, shellDepleted };
-};
-
-/**
- * Regenerate Shell to full capacity at end of turn.
- * @param {Object} creature - The creature to regenerate Shell for
- * @returns {boolean} True if Shell was regenerated
- */
-export const regenerateShell = (creature) => {
-  if (!creature || !creature.shellLevel) return false;
-  if (!areAbilitiesActive(creature)) return false;
-
-  const previousShell = creature.currentShell || 0;
-  creature.currentShell = creature.shellLevel;
-  return creature.currentShell > previousShell;
-};
-
-/**
- * Trigger Molt when a creature would die.
- * Revives at 1 HP, removes ALL keywords (naked state).
- * @param {Object} creature - The creature that would die
- * @returns {boolean} True if Molt triggered, false if no Molt available
- */
-export const triggerMolt = (creature) => {
-  if (!creature || !hasMolt(creature)) return false;
-
-  // Revive at 1 HP
-  creature.currentHp = 1;
-
-  // Remove ALL keywords (naked state after molting)
-  creature.keywords = [];
-
-  // Clear Shell entirely
-  creature.shellLevel = 0;
-  creature.currentShell = 0;
-
-  // Clear any status effects
-  creature.stalkBonus = 0;
-  creature.stalkingFromHidden = false;
-  creature.hasBarrier = false;
-  creature.frozen = false;
-  creature.webbed = false;
-
-  // Mark that molt has been used (creature no longer has Molt keyword since keywords cleared)
-  creature.hasMolted = true;
-
-  return true;
-};
-
-/**
- * Check if a creature has already molted (used its Molt ability).
- * @param {Object} card - The creature card
- * @returns {boolean} True if creature has already molted
- */
-export const hasMolted = (card) => {
-  return card?.hasMolted === true;
+  return creature.currentAtk ?? creature.atk ?? 0;
 };
 
 // Bird keyword helpers

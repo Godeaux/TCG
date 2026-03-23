@@ -140,7 +140,7 @@ const canCreatureAttack = (card, state) => {
     isCombatPhase &&
     isLocalPlayersTurn(state) &&
     !card.hasAttacked &&
-    !cantAttack(card) // Use primitive - covers Frozen, Webbed, Passive, Harmless
+    !cantAttack(card) // Use primitive - covers Frozen, Passive, Harmless
   );
 };
 

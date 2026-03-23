@@ -67,7 +67,7 @@ export const renderField = (state, playerIndex, isOpponent, options = {}) => {
       isLocalPlayersTurn(state) &&
       state.phase === 'Combat' &&
       !card.hasAttacked &&
-      !cantAttackPrimitive(card) && // Use primitive - covers Frozen, Webbed, Passive, Harmless
+      !cantAttackPrimitive(card) && // Use primitive - covers Frozen, Passive, Harmless
       isCreature;
 
     // Determine if creature can be returned to hand (played via effect, not from hand)

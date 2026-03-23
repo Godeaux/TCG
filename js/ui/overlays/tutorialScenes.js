@@ -121,18 +121,18 @@ const CARDS = {
     keywords: ['Haste', 'Edible'],
     rarity: 'common',
   },
-  isopod: {
-    id: 'crustacean-predator-giant-isopod',
-    name: 'Giant Isopod',
+  hawk: {
+    id: 'bird-predator-red-tailed-hawk',
+    name: 'Red-tailed Hawk',
     type: 'Predator',
     atk: 4,
     hp: 5,
     keywords: ['Scavenge'],
     rarity: 'rare',
   },
-  portia: {
-    id: 'arachnid-prey-portia-spider',
-    name: 'Portia Spider',
+  chameleon: {
+    id: 'reptile-prey-chameleon',
+    name: 'Chameleon',
     type: 'Prey',
     atk: 2,
     hp: 2,
@@ -195,8 +195,8 @@ const CARDS = {
     effectText: 'Grant Barrier to a creature',
   },
   trap: {
-    id: 'arachnid-trap-silk-trap',
-    name: 'Silk Trap',
+    id: 'fish-trap-fish-net',
+    name: 'Fish Net',
     type: 'Trap',
     atk: 0,
     hp: 0,
@@ -785,7 +785,7 @@ export const TUTORIAL_SCENES = [
 <p>It's the hard counter to stealth-based strategies.</p>`,
     demo: {
       setup: [
-        { slot: 'left', card: CARDS.portia },
+        { slot: 'left', card: CARDS.chameleon },
         { slot: 'right', card: CARDS.hiddenPrey },
       ],
       steps: [

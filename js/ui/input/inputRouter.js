@@ -16,7 +16,7 @@
  */
 
 import { initDragAndDrop, updateDragState, updateDragCallbacks } from './dragAndDrop.js';
-import { enableSimulationMode } from '../../ui.js';
+
 import { SoundManager } from '../../audio/soundManager.js';
 
 // ============================================================================
@@ -127,10 +127,6 @@ const AI_VS_AI_DECK_OPTIONS = [
   { id: 'mammal', name: 'Mammal', emoji: '🐻' },
   { id: 'reptile', name: 'Reptile', emoji: '🦎' },
   { id: 'amphibian', name: 'Amphibian', emoji: '🐸' },
-  { id: 'arachnid', name: 'Arachnid', emoji: '🕷️', experimental: true },
-  { id: 'feline', name: 'Feline', emoji: '🐆', experimental: true },
-  { id: 'crustacean', name: 'Crustacean', emoji: '🦀', experimental: true },
-  { id: 'insect', name: 'Insect', emoji: '🦋', experimental: true },
 ];
 
 // ============================================================================
@@ -300,9 +296,6 @@ const startAIvsAIGame = (deck1Id, deck2Id, elements) => {
     bugsDetected: [],
     gameCount: 0,
   };
-
-  // Enable simulation mode UI (adds stats button to bug menu)
-  enableSimulationMode();
 
   // Hide the deck picker overlay
   elements.aiVsAiDeckOverlay?.classList.remove('active');
