@@ -30,7 +30,7 @@ describe('Keyword Interaction Edge Cases', () => {
       state = createTestState();
     });
 
-    it('selectEnemyToKill includes invisible enemies (Invisible does not prevent targeting)', () => {
+    it('selectEnemyToKill excludes invisible enemies (Invisible prevents targeted effects)', () => {
       // Create an invisible enemy
       createTestCreature('fish-prey-psychedelic-frogfish', 1, 0, state); // Has Invisible
       context = createEffectContext(state, 0);
@@ -38,13 +38,14 @@ describe('Keyword Interaction Edge Cases', () => {
       const killFn = effectLibrary.selectEnemyToKill();
       const result = killFn(context);
 
-      // Invisible creatures are still targetable by kill effects
-      // (Invisible prevents being attacked, not targeted by effects)
-      expect(result.selectTarget).toBeDefined();
-      expect(result.selectTarget.candidates.length).toBe(1);
+      // Invisible creatures CANNOT be targeted by kill effects
+      // Per CORE-RULES-S.md §6: "Cannot be TARGETED by attacks OR spells/abilities.
+      // Mass effects still affect them."
+      // selectEnemyToKill is a TARGETED effect, so Invisible blocks it
+      expect(result.selectTarget?.candidates?.length ?? 0).toBe(0);
     });
 
-    it('killAll still affects visible creatures on field', () => {
+    it('killAll affects ALL creatures including invisible (mass effect)', () => {
       createTestCreature('fish-prey-atlantic-flying-fish', 1, 0, state);
       createTestCreature('fish-prey-psychedelic-frogfish', 1, 1, state); // Invisible
       context = createEffectContext(state, 0);
@@ -52,8 +53,9 @@ describe('Keyword Interaction Edge Cases', () => {
       const killFn = effectLibrary.killAll('all');
       const result = killFn(context);
 
-      // Should only affect visible creatures
-      expect(result.killAllCreatures.length).toBe(1);
+      // Mass effects ("all") still affect Invisible creatures
+      // Per CORE-RULES-S.md §6: mass effects bypass Invisible targeting restriction
+      expect(result.killAllCreatures.length).toBe(2);
     });
   });
 

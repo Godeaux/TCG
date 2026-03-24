@@ -59,15 +59,16 @@ describe('Frozen Keyword', () => {
       expect(prey.frozen).toBe(true);
     });
 
-    it('neurotoxic frozen creature has frozenDiesTurn set', () => {
+    it('paralyzed creature (from Neurotoxic) has paralyzed flag and death turn', () => {
       const { creature } = createTestCreature('fish-prey-blobfish', 0, 0, state);
 
-      // Neurotoxic freeze sets both frozen and death turn
-      creature.frozen = true;
-      creature.frozenDiesTurn = state.turn + 1;
+      // Neurotoxic applies PARALYSIS (not Frozen) per CORE-RULES-S.md §7
+      // Paralysis: loses all abilities, grants Harmless, dies at end of turn
+      creature.paralyzed = true;
+      creature.paralyzedUntilTurn = state.turn + 1;
 
-      expect(creature.frozen).toBe(true);
-      expect(creature.frozenDiesTurn).toBe(state.turn + 1);
+      expect(creature.paralyzed).toBe(true);
+      expect(creature.paralyzedUntilTurn).toBe(state.turn + 1);
     });
 
     it('regular frozen creature does NOT have frozenDiesTurn', () => {
