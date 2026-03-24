@@ -1212,10 +1212,16 @@ export class GameController {
             player.field[index] = null;
 
             // Trigger onSlain effect
+            const playerIndex = this.state.players.indexOf(player);
+            const opponentIndex = (playerIndex + 1) % 2;
+            const opponent = this.state.players[opponentIndex];
+
             const slainResult = resolveCardEffect(creature, 'onSlain', {
               log: (message) => logMessage(this.state, message),
               player,
-              playerIndex: this.state.players.indexOf(player),
+              playerIndex,
+              opponent,
+              opponentIndex,
               state: this.state,
               creature,
             });
@@ -1223,7 +1229,8 @@ export class GameController {
             if (slainResult) {
               // Use resolveEffectChain to handle any UI requirements from onSlain effects
               this.resolveEffectChain(slainResult, {
-                playerIndex: this.state.players.indexOf(player),
+                playerIndex,
+                opponentIndex,
               });
             }
           }
