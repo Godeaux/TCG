@@ -12,7 +12,7 @@ import {
 } from '../state/gameState.js';
 import { createCardInstance, isCreatureCard } from '../cardTypes.js';
 import { consumePrey } from './consumption.js';
-import { isImmune, areAbilitiesActive, hasBarrier } from '../keywords.js';
+import { isImmune, areAbilitiesActive, hasBarrier, isEdible } from '../keywords.js';
 import { getTokenById, getCardDefinitionById, resolveCardEffect } from '../cards/index.js';
 import { endTurn } from './turnManager.js';
 
@@ -1258,6 +1258,7 @@ export const resolveEffectResult = (state, result, context) => {
   }
 
   // Play a creature from carrion
+  // Per CORE-RULES.md §3: Predators can eat when played from ANY source (hand, deck, carrion)
   if (result.playFromCarrion) {
     const { playerIndex, card } = result.playFromCarrion;
     const player = state.players[playerIndex];
@@ -1267,6 +1268,24 @@ export const resolveEffectResult = (state, result, context) => {
       const emptySlot = player.field.findIndex((slot) => slot === null);
       if (emptySlot >= 0) {
         const instance = createCardInstance(card);
+
+        // Predators consume available prey when played from carrion (same as hand/deck)
+        if (instance.type === 'Predator') {
+          const consumablePrey = player.field.filter(
+            (c) => c && (c.type === 'Prey' || (c.type === 'Predator' && isEdible(c))) && !c.frozen
+          );
+          if (consumablePrey.length > 0) {
+            const toConsume = consumablePrey.slice(0, 3);
+            consumePrey({
+              predator: instance,
+              preyList: toConsume,
+              carrionList: [],
+              state,
+              playerIndex,
+            });
+          }
+        }
+
         player.field[emptySlot] = instance;
         state._lastPlayedCreature = instance;
         logGameAction(state, SUMMON, `${formatCardForLog(card)} returns from the carrion.`);
