@@ -488,4 +488,100 @@ State must sync after:
 
 ---
 
+## 18. FIELD SPELLS
+
+- Occupy one of the 3 creature field slots
+- Persist until destroyed by a "destroy target field spell" effect
+- **Cannot be attacked** by creatures (not a valid attack target)
+- **Can be targeted** by spell/ability effects that say "destroy target field spell"
+- Have Dawn/Dusk triggers (see §19)
+- Do NOT have HP, ATK, or keywords
+- Do NOT count as creatures for effects that target "creatures" or "animals"
+
+---
+
+## 19. DAWN & DUSK TRIGGERS
+
+- **Dawn** = Start of controller's turn (same timing as START_PHASE effects)
+- **Dusk** = End of controller's turn (same timing as END_PHASE effects)
+- Multiple Dawn/Dusk effects: controller chooses order
+
+---
+
+## 20. PENDING GAME MASTER RULINGS
+
+These mechanics appear in the physical card set but are not yet defined with enough precision for digital implementation. Each needs a ruling before it can be coded.
+
+### 20.1 Stunned
+- **Used by:** Cottonmouth, Eastern Diamondback Rattlesnake (Reptile)
+- **Questions:**
+  - What does Stunned do? (Skip next attack? Lose abilities? Can't act for a turn?)
+  - Duration? (One turn? Until damaged? Permanent until removed?)
+  - Does it stack?
+  - How does it interact with Frozen? Paralysis?
+
+### 20.2 Enraged
+- **Used by:** Javan Chorus Frogs, Trumpeter Swan, American Bullfrogs, African Bullfrog, Tomato (via Tomato Frog)
+- **Questions:**
+  - What does Enraged do? (Must attack? Gains ATK? Forces creature to attack the enraged target?)
+  - Is it a buff or debuff? (Applied to enemies in most cases, but what's the downside?)
+  - Duration?
+
+### 20.3 Drowning
+- **Used by:** Orca, Whirlpool, Undertow, Cramp, Riptide (Fish)
+- **Questions:**
+  - What does Drowning do? (Damage over time? Can't attack? Dies after X turns?)
+  - Duration?
+  - Can it be removed? (By healing? By returning to hand?)
+
+### 20.4 Slay vs Kill vs Destroy
+- **"Slay"** appears throughout the physical set (Saltwater Crocodile: "slay enemies", Flood: "slay animals", Blowdart: "negate its attack and slay it")
+- **Questions:**
+  - Is "slay" identical to "kill" (HP → 0, carrion, triggers onSlain)?
+  - Or is "slay" a third removal type distinct from both "kill" and "destroy"?
+  - "Slay animals" — does this include the caster's own creatures?
+  - "Slay enemies" — only opponent's creatures?
+  - "Slay enemy preds" — only opponent's predators?
+
+### 20.5 Bleed
+- **Used by:** Scythian Arrows ("either bleed 2, discard 1, or kill target ally, slay enemies")
+- **Questions:**
+  - What does "bleed 2" do? (Deal 2 damage per turn? Reduce max HP? One-time damage?)
+  - Who/what bleeds? (Target creature? All enemies? The rival player?)
+  - Duration?
+
+### 20.6 Discard as Activated Ability
+- **Used by:** Golden Dart Frog ("discard, add Blowgun to hand"), Spearfish Remora ("discard, target pred gains ambush"), Silver King ("discard, draw 1"), Tomato Frog ("discard, add Tomato to hand"), Resplendent Quetzal ("discard, allies gain +1/+0")
+- **Questions:**
+  - When can you activate "discard, do X"? (Only during your main phase? Any time?)
+  - Does it cost your 1-card-per-turn play limit?
+  - Can you activate it multiple times per turn?
+  - "Discard" means discard the creature itself from hand (not from field), correct?
+
+### 20.7 Sacrifice as Activated Ability
+- **Used by:** Javelin Frog ("sacrifice, deal 1 damage to any target"), Golden Dart Frog ("sacrifice, add Golden Blowgun to hand"), Phantasmal Poison Frog ("sacrifice, add Phantasmal Blowgun to hand"), Curiosity ("sacrifice target ally, draw 3")
+- **Questions:**
+  - When can you activate sacrifice? (Only your main phase? Only during combat?)
+  - Does it cost your card play limit?
+  - Does sacrifice trigger onSlain? (Per current rules, sacrifice goes to carrion but this should be confirmed)
+  - Can you sacrifice a creature with summoning sickness?
+
+### 20.8 "Become" Transformation
+- **Used by:** Egg tokens ("dawn, become Green Anole"), Hidden Eleuth Egg ("dawn, become Monte Iberia Eleuth")
+- **Questions:**
+  - Does "become" keep the same slot position?
+  - Does the new creature get summoning sickness?
+  - Does the new creature trigger onPlay?
+  - Are stats/damage/keywords carried over, or is it a fresh card?
+
+### 20.9 "Play a spell" / "Play a carrion" Effects
+- **Used by:** Northern Lights ("play a carrion"), White Hart ("play a carrion it gains frozen"), Six-layered Neocortex ("play an ally from deck it gains frozen")
+- **Questions:**
+  - "Play a carrion" — choose any creature from your carrion pile and put it on the field?
+  - Does it trigger consumption for predators? (Per CORE-RULES.md §3: eating happens when playing from ANY source)
+  - Does it trigger onPlay?
+  - Does it get summoning sickness?
+
+---
+
 *Last updated: 2026-03-24 — Definitive S revision*
