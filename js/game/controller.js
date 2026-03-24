@@ -831,17 +831,13 @@ export class GameController {
     if (cantConsume(predator)) return [];
 
     const player = getActivePlayer(this.state);
-    const predatorAtk = predator.currentAtk ?? predator.atk ?? 0;
 
     return player.field.filter((slot) => {
       if (!slot || slot.instanceId === predator.instanceId) return false;
       if (!(slot.type === 'Prey' || (slot.type === 'Predator' && isEdible(slot)))) return false;
       if (cantBeConsumed(slot)) return false;
-      const nutrition =
-        slot.type === 'Predator' && isEdible(slot)
-          ? (slot.currentAtk ?? slot.atk ?? 0)
-          : (slot.nutrition ?? 0);
-      return nutrition <= predatorAtk;
+      // Any predator can consume any valid prey regardless of ATK
+      return true;
     });
   }
 

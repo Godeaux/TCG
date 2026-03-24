@@ -640,13 +640,10 @@ export const canConsumeAnyPrey = (state, playerIndex) => {
     (c) => c && c.type === 'Predator' && !cantConsume(c)
   );
   for (const predator of predatorsOnField) {
-    const predatorAtk = predator.currentAtk ?? predator.atk ?? 0;
     for (const prey of consumableCreatures) {
       if (predator.instanceId === prey.instanceId) continue; // Can't consume itself
-      const preyNut = getNutritionValue(prey);
-      if (preyNut <= predatorAtk) {
-        return true; // Found a valid consumption on field
-      }
+      // Any predator can consume any valid prey regardless of ATK
+      return true; // Found a valid consumption on field
     }
   }
 
@@ -655,12 +652,9 @@ export const canConsumeAnyPrey = (state, playerIndex) => {
   if (!wasCardPlayedThisTurn(state)) {
     const predatorsInHand = player.hand.filter((c) => c && c.type === 'Predator');
     for (const predator of predatorsInHand) {
-      const predatorAtk = predator.currentAtk ?? predator.atk ?? 0;
       for (const prey of consumableCreatures) {
-        const preyNut = getNutritionValue(prey);
-        if (preyNut <= predatorAtk) {
-          return true; // Found a valid play-and-consume from hand
-        }
+        // Any predator can consume any valid prey regardless of ATK
+        return true; // Found a valid play-and-consume from hand
       }
     }
   }

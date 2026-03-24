@@ -40,7 +40,7 @@ describe('canConsumeAnyPrey', () => {
       expect(canConsumeAnyPrey(state, 0)).toBe(true);
     });
 
-    it('returns false when predator ATK is less than prey nutrition', () => {
+    it('returns true when predator ATK is less than prey nutrition', () => {
       // Create a predator with low ATK
       const { creature: predator } = createTestCreature('fish-predator-sailfish', 0, 0, state);
       predator.currentAtk = 1;
@@ -50,7 +50,7 @@ describe('canConsumeAnyPrey', () => {
       const { creature: prey } = createTestCreature('fish-prey-atlantic-flying-fish', 0, 1, state);
       prey.nutrition = 5;
 
-      expect(canConsumeAnyPrey(state, 0)).toBe(false);
+      expect(canConsumeAnyPrey(state, 0)).toBe(true);
     });
   });
 
@@ -117,21 +117,21 @@ describe('canConsumeAnyPrey', () => {
 
   describe('Edible predator handling', () => {
     it('returns true when predator can consume Edible predator', () => {
-      // Strong predator
-      const { creature: strongPred } = createTestCreature('fish-predator-sailfish', 0, 0, state);
-      strongPred.currentAtk = 5;
-      strongPred.atk = 5;
+      // Weak predator
+      const { creature: weakPred } = createTestCreature('fish-predator-sailfish', 0, 0, state);
+      weakPred.currentAtk = 1;
+      weakPred.atk = 1;
 
       // Edible predator as prey (uses ATK as nutrition)
       const { creature: ediblePred } = createTestCreature('fish-predator-sailfish', 0, 1, state);
       ediblePred.keywords = ['Edible'];
-      ediblePred.currentAtk = 2;
-      ediblePred.atk = 2;
+      ediblePred.currentAtk = 5;
+      ediblePred.atk = 5;
 
       expect(canConsumeAnyPrey(state, 0)).toBe(true);
     });
 
-    it('returns false when predator is not strong enough to consume Edible predator', () => {
+    it('returns true when predator is weaker than Edible predator', () => {
       // Weak predator
       const { creature: weakPred } = createTestCreature('fish-predator-sailfish', 0, 0, state);
       weakPred.currentAtk = 1;
@@ -143,7 +143,7 @@ describe('canConsumeAnyPrey', () => {
       ediblePred.currentAtk = 5;
       ediblePred.atk = 5;
 
-      expect(canConsumeAnyPrey(state, 0)).toBe(false);
+      expect(canConsumeAnyPrey(state, 0)).toBe(true);
     });
   });
 
