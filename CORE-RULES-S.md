@@ -220,7 +220,7 @@ When a creature declares an attack, resolve in this exact order:
 | **Barrier** | Negates the first instance of damage taken (from any source). Then removed. Blocks Toxic and Neurotoxic when it absorbs combat damage. |
 | **Immune** | Only takes damage from direct animal attacks. Ignores spell/ability/trap damage. |
 | **Hidden** | Cannot be targeted by attacks (but CAN be targeted by spells/abilities). Overridden by Lure. |
-| **Invisible** | Cannot be targeted by attacks OR spells/abilities. Overridden by Lure. |
+| **Invisible** | Cannot be TARGETED by attacks OR spells/abilities. Mass effects ("all enemies", "all creatures") still affect Invisible creatures. Overridden by Lure. |
 | **Inedible** | Cannot be eaten by predators. |
 
 ### Eating Keywords
