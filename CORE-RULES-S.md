@@ -38,6 +38,7 @@
 - Field limit: **3** creature slots
 - Hand limit: **none**
 - First player: **skips draw** on turn 1
+- Opening roll tie: **both players must re-roll** (applies to AI and multiplayer)
 
 ---
 
