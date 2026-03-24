@@ -60,21 +60,11 @@ export const getValidTargets = (state, attacker, opponent) => {
     if (hasPrecision) {
       return true;
     }
-    // Hidden/Lure interaction: later keyword in array wins (Hearthstone-style)
-    // If creature has both, check which was applied more recently
     const cardHasLure = hasLure(card);
     const cardIsHidden = isHidden(card);
     const cardIsInvisible = isInvisible(card);
 
-    if (cardHasLure && (cardIsHidden || cardIsInvisible)) {
-      // Both present - check array order (later position = applied later wins)
-      const lureIndex = card.keywords?.indexOf('Lure') ?? -1;
-      const hiddenIndex = card.keywords?.indexOf('Hidden') ?? -1;
-      const invisibleIndex = card.keywords?.indexOf('Invisible') ?? -1;
-      const hideIndex = Math.max(hiddenIndex, invisibleIndex);
-      // If Lure was added after Hidden/Invisible, creature is targetable
-      return lureIndex > hideIndex;
-    }
+    // Lure ALWAYS overrides Hidden and Invisible (CORE-RULES.md §5.2)
     if (cardHasLure) {
       return true;
     }

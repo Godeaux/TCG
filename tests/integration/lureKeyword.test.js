@@ -151,8 +151,8 @@ describe('Lure Keyword', () => {
     });
 
     it('Hidden creature with Lure can still taunt', () => {
-      // Note: This is an edge case - Hidden + Lure combo might be invalid by rules
-      // But let's test what actually happens
+      // Per CORE-RULES.md §5.2: "Lure ALWAYS overrides Hidden and Invisible"
+      // So a Hidden + Lure creature should be fully targetable
       const { creature: lureCreature } = createTestCreature(
         'bird-prey-indian-peacock',
         1,
@@ -166,9 +166,9 @@ describe('Lure Keyword', () => {
       const opponent = state.players[1];
       const validTargets = getValidTargets(state, attacker, opponent);
 
-      // Hidden creatures are filtered out BEFORE Lure check
-      // So Hidden + Lure means creature isn't targetable, Lure doesn't apply
-      expect(validTargets.creatures.length).toBe(0);
+      // Lure overrides Hidden, so creature is targetable
+      expect(validTargets.creatures.length).toBe(1);
+      expect(validTargets.creatures[0].instanceId).toBe(lureCreature.instanceId);
     });
 
     it('dry-dropped predator with Lure does not force attacks', () => {
