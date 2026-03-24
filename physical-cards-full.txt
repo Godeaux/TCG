@@ -1,0 +1,2329 @@
+Food Chain™ - Set 1: Dawn 
+
+Update Sheets                                                                                                                         Updated 3/20 
+Food Chain™ - Set 1: Dawn 
+ 
+Reptiles - toxic 
+Prey 
+ 
+1.​ Asclepius Snake: 1/1 (1) - discard, add Rod of Asclepius to hand | heal 2 | regen target ally | add 
+a carrion to hand 
+●​
+Rod of Asclepius: spell - heal 4 | regen allies | add a carrion to hand 
+2.​ Black Spiny-tailed Iguana: 1/1 (1) - haste | ambush | before combat, deal 1 damage 
+3.​ Cottonmouth: 1/1 (1) - enemies gain stunned | toxic 
+4.​ Cryptic Golden Tegu: 1/1 (1) - play 2 Cryptic Tegu Eggs | draw 1 
+●​
+Cryptic Tegu Egg: 0/1 (0) - harmless | barrier | hidden 
+5.​ Green Anole: 1/1 (1) - dusk, play Carolina Anole 
+●​
+Carolina Anole: 1/1 (1) - add Enola Egg to hand 
+●​
+Anole Egg: 0/1 (0) - free play | harmless | dawn, become Green Anole 
+6.​ Galapagos Lava Lizards: 1/1 (1) - play 2 Galapagos Lava Lizards | deal 1 damage to target 
+enemy  
+●​
+Galapagos Lava Lizard: 1/1 (1) - deal 1 damage to target enemy 
+7.​ Golden Lancehead: 1/1 (1) - draw 1 | toxic 
+8.​ Golden Tree Snake: 1/1 (1) - draw 2 | barrier | hidden 
+9.​ Inland Taipan: 1/1 (1) - haste | neurotoxic | hidden 
+10.​Phantastic Leaf-tailed Gecko: 1/1 (1) - deal 1 damage to any target | invisible | dusk, deal 1 
+damage to any target 
+11.​ Plumed Basilisk: 1/1 (1) - free play | target enemy gains frozen 
+12.​Saw-scaled Viper: 1/1 (1) - free play | haste | toxic 
+13.​Sidewinder: 1/1 (1) - haste | toxic | hidden 
+14.​Spider-tailed Horned Viper: 1/1 (1) - ambush | toxic | lure 
+15.​Terciopelo: 1/1 (1) - toxic | dusk, play 2 Toxic Snake 
+●​
+Toxic Snake: 1/1 (1) - toxic 
+16.​Veiled Chameleon: 1/1 (1) - copy abilities of target animal | hidden 
+17.​Yucatan Neotropical Rattlesnake: 1/1 (1) - toxic | slain, heal 3 | dawn, play Neurotoxic Snake 
+●​
+Neurotoxic Snake: 1/1 (1) - neurotoxic  
+18.​Common Snapping Turtle: 1/3 (2) - before combat, deal 2 damage 
+19.​Black Mamba: 2/2 (2) - ambush | neurotoxic 
+20.​Coastal Taipan: 2/2 (2) - haste | neurotoxic 
+21.​Eastern Diamondback Rattlesnake: 2/2 (2) - target enemy gains stunned | toxic 
+22.​Gaboon Viper: 2/2 (2) - toxic | hidden 
+23.​King Brown Snake: 2/2 (2) - immune | toxic 
+24.​Alcedo Volcano Giant Tortoise: 2/4 (3) - barrier  
+ 
+Preds 
+ 
+25.​Crocodile Monitor: 2/2 - deal 4 damage to any target | edible 
+26.​Alligator Snapping Turtle: 2/4 - lure | before combat, deal 2 damage 
+27.​King Cobra: 3/2 - heal 3 | neurotoxic | slain, play Cobra | edible 
+●​
+Cobra: 3/2 - neurotoxic | edible 
+28.​Black Dragon Monitor Lizard: 3/3 - deal 2 damage to enemies and rival | ambush 
+29.​Boa Constrictor: 3/3 - after combat, regen | lure 
+30.​Chinese Alligator: 3/3 - either draw 3, heal 3, or deal 3 damage to rival 
+31.​American Alligator: 4/4 - hidden 
+32.​American Crocodile: 4/4 - barrier 
+33.​Green Anaconda: 4/4 - add a card from deck to hand | heal 2 
+34.​Komodo Dragon: 4/4 - immune | toxic 
+35.​Nile Crocodile: 5/5 - heal 3 and deal 3 damage to rival 
+36.​Saltwater Crocodile: 6/6 - slay enemies 
+ 
+ 
+
+Updated 3/18 
+Support 
+  
+37.​Dehydration: spell - slay enemy preds 
+38.​Volcanic Eruption: spell - destroy field spells | slay animals 
+39.​Pyroclastic Flow: spell - destroy target field spell | deal 3 damage to rival 
+40.​Scythian Arrows: spell - either bleed 2, discard 1, or kill target ally, slay enemies 
+41.​Paralyze: spell - target enemy gains paralysis  
+42.​Sunshine: spell - allies gain +2/+2 
+43.​Cold-blooded: free play spell - target ally gains +2/+0 
+44.​Ecdysis: free play spell - regen target ally 
+45.​Snake Toss: free play spell - play Toxic Snake | end turn 
+●​
+Toxic Snake: 1/1 (1) - toxic 
+46.​Toxic: free play spell - target ally gains toxic 
+47.​Snake Nest: field spell - dusk, play Toxic Snake | dawn, play Toxic Snake 
+●​
+Toxic Snake: 1/1 (1) - toxic 
+48.​Scales: trap - when damaged indirectly, negate damage | heal 5 
+49.​Snake Oil: trap - when rival draws, rival discards 1 | draw 1 
+50.​Snake Pit: trap - when target enemy attacks directly, negate attack | play Toxic Snake 
+●​
+Toxic Snakes: 1/1 (1) - toxic 
+ 
+Amphibians - poisonous 
+Prey 
+ 
+1.​ Monte Iberia Eleuth: 0/1 (1) - dusk, play Hidden Eleuth Egg | poisonous 
+●​
+Hidden Eleuth Egg: 0/1 (0) - harmless | hidden | dawn, become Monte Iberia Eleuth 
+2.​ Black Salamander: 1/1 (1) - ambush | poisonous | dusk, play 2 Black Salamander Eggs 
+●​
+Black Salamander Egg: 0/1 (0) - harmless | poisonous | dawn, become Black Salamander 
+3.​ Chernobyl Tree Frogs: 1/1 (1) - play 2 Radiated Tree Frogs | immune 
+●​
+Radiated Tree Frog: 1/1 (1) - immune 
+4.​ Desert Rain Frog: 1/1 (1) - add a card from deck to hand | dusk, heal 2 | hidden 
+5.​ Emperor Newt: 1/1 (1) - play 2 Mandarin Newts | poisonous 
+●​
+Mandarin Newt: 1/1 (1) - poisonous 
+6.​ Fire Salamander: 1/1 (1) - immune | deal 2 damage to rival | poisonous 
+7.​ Frost’s Toad: 1/1 (1) - enemies gain frozen 
+8.​ Golden-flecked Glass Frog: 1/1 (1) - draw 1 | rival reveals hand | invisible 
+9.​ Golden Mantellas: 1/1 (1) - play Golden Mantella | draw 1 | poisonous | dawn, play Golden 
+Mantella 
+●​
+Golden Mantella: 1/1 (1) - draw 1 | poisonous  
+10.​Golden Dart Frog: 1/1 (1) - discard, add Blowgun to hand | draw 2 | sacrifice, add Golden 
+Blowgun to hand | poisonous 
+●​
+Blowgun: spell - slay target enemy 
+●​
+Golden Blowgun: spell - draw 1 | slay target enemy 
+11.​ Golden Rocket Frog: 1/1 (1) - free play | draw 1 | haste 
+12.​Hippo Frog: 1/1 (1) - eat target prey 
+13.​Javan Chorus Frogs: 1/1 (1) - play 2 Javan Chorus Frogs | target enemy gains enraged 
+●​
+Javan Chorus Frog: 1/1 (1) - target enemy gains enraged 
+14.​Javelin Frog: 1/1 (1) - discard, deal 1 damage to rival | free play | sacrifice, deal 1 damage 
+to any target | haste 
+15.​Panamanian Golden Frog: 1/1 (1) - discard, draw 1 | draw 1 | poisonous | slain, draw 2 
+16.​Phantasmal Poison Frog: 1/1 (1) - sacrifice, add Phantasmal Blowgun to hand | slain, add 
+Phantasmal Blowgun to hand | poisonous 
+●​
+Phantasmal Blowgun: spell - slay enemies  
+17.​Purple Frog: 1/1 (1) - deal 2 damage to enemies and rival 
+18.​Siberian Salamander: 1/1 (1) - deal 2 damage to enemy and rival | enemies gain frozen | 
+frozen 
+19.​Vietnamese Mossy Frogs: 1/1 (1) - play 2 Vietnamese Mossy Frogs 
+
+Updated 3/18 
+●​
+Vietnamese Mossy Frog: 1/1 (1) - invisible 
+20.​Tomato Frog: 1/1 (2) - discard, add Tomato to hand | poisonous 
+●​
+Tomato: free play spell - target animal gains enraged 
+21.​Surinam Toad: 1/2 (2) - slain, play 3 Toadlets 
+●​
+Toadlet: 1/1 (1) 
+22.​Axolotl: 2/2 (2) - heal 4 | dusk, regen | dawn, regen 
+ 
+Preds 
+ 
+23.​Argentine Horned Frog: 2/2 - dusk, slay target enemy | dawn, slay target enemy 
+24.​Tiger Frog: 2/2 - play Indian BullFrog | deal 2 damage to rival 
+●​
+Indian Bullfrogs: 2/2 - play Indian Bullfrog | heal 2 
+●​
+Indian Bullfrog: 2/2 - heal 2 
+25.​American Bullfrogs: 3/3 - play Bullfrog | target enemy gains enraged 
+●​
+American Bullfrog: 3/3 - target enemy gains enraged 
+26.​Titicaca Water Frog: 3/3 - add Unu Pachakuti to hand 
+●​
+Unu Pachakuti: free play spell - slay animals 
+27.​African Bullfrog: 4/4 - play Pixie Frog | target enemy gains enraged 
+●​
+Pixie Frog: 2/2 - target enemy gains enraged 
+28.​Cane Toad: 4/4 - play 2 Poisonous Eggs | slain, play 3 Poisonous Eggs | poisonous 
+●​
+Poisonous Egg: 0/1 (0) - harmless | poisonous  
+29.​Goliath Frog: 4/4 - deal 2 damage to enemies and rival 
+30.​Hellbender Salamander: 4/4 - deal 4 damage to rival  
+31.​Helmeted Water Toad: 4/4 - barrier 
+32.​Japanese Giant Salamander: 5/5 - slain, deal 2 damage to enemies and rival | dusk, regen | 
+poisonous 
+33.​Chinese Giant Salamander: 6/6 - lure | poisonous | dawn, regen 
+ 
+Support 
+ 
+34.​Ambiguity: spell - either draw 3, heal 3, or deal 3 damage to any target 
+35.​Bounce: spell - return enemies to hand 
+36.​Fog: spell - heal 4 | regen allies | allies gain barrier 
+37.​Hurricane: spell - destroy target field spell | deal 2 damage to enemies and rival 
+38.​Leapfrog: spell - deal 3 damage to target enemy | deal 3 damage to rival 
+39.​Pounce Plummet: spell - deal 2 damage to target enemy | deal 2 damage to enemies 
+40.​Shower: spell - allies gain +2/+2 
+41.​Spring Flood: spell - destroy target field spell | slay enemy tokens | regen allies 
+42.​Whitewater: spell - deal 3 damage to any target | heal 3 
+43.​Metamorphosis: free play spell - target prey ally gains +2/+2 
+44.​Poisonous: free play spell - target creature gains poisonous 
+45.​Sleight of Hand: free play spell - draw 2 
+46.​Slime: free play spell: either draw 1, heal 1, or deal 1 damage to rival 
+47.​Waterfall: field spell - deal 2 damage to rival | dusk, deal 1, damage to rival | dawn, deal 1 
+damage to rival 
+48.​Blowdart: trap - when target enemy attacks directly, negate its attack and slay it 
+49.​Rebound: trap - when rival plays an enemy, negate play | put that enemy on top of rival's 
+deck 
+50.​Slip: trap - when target ally is defending, negate combat 
+ 
+Birds - heal 
+Prey 
+ 
+1.​ American Bitterns: 1/1 (1) - hidden | slain, play American Bittern 
+●​
+American Bittern: 1/1 (1) - hidden | dawn, play Hidden Egg 
+●​
+Hidden Egg: 0/1 (0) - harmless | hidden 
+
+Updated 3/18 
+2.​ American Goldfinches: 1/1 (1) - play American Goldfinch | draw 1 | heal 1 | dawn, play 
+American Goldfinch 
+●​
+American Goldfinch: 1/1 (1) - draw 1 | heal 1 
+3.​ Carrier Pigeon: 1/1 (1) - rival reveals hand | add a card from deck to hand 
+4.​ Dark-necked Tailorbirds: 1/1 (1) - play Dark-necked Tailorbird | barrier | hidden 
+●​
+Dark-necked Tailorbird: 1/1 (1) - barrier | hidden 
+5.​ Doctor Bird: 1/1 (1) - free play | heal 1 | immune 
+6.​ Eurasian Magpies: 1/1 (1) - play Eurasian Magpie | heal 2 
+●​
+Eurasian Magpie: 1/1 (1) - deal 1 damage to enemies and rival 
+7.​ Gadwalls: 1/1 (1) - play 2 Gadwalls | hidden | dawn, play 2 Gadwalls 
+●​
+Gadwall: 1/1 (1) - hidden 
+8.​ Golden Pheasant: 1/1 (1) - draw 1 | slain, play Rainbow Pheasant 
+●​
+Rainbow Pheasant: 1/1 (1) - heal 2 | regen target ally 
+9.​ Golden Song Sparrows: 1/1 (1) - play 2 Golden Song Sparrows | draw 1 
+●​
+Golden Song Sparrow: 1/1 (1) - draw 1 
+10.​Mexican Violetear: 1/1 (1) - copy abilities of a carrion 
+11.​ Mockingbird: 1/1 (1) - copy stats of target animal 
+12.​Moluccan Cockatoo: 1/1 (1) - copy abilities of target animal 
+13.​Mourning Doves: 1/1 (1) - play Mourning Dove | heal 4 | passive 
+●​
+Mourning Dove: 1/1 (1) - heal 4 | passive 
+14.​Resplendent Quetzal: 1/1 (1) - discard, allies gains +1/+0 | immune | allies gains +1/+0 
+15.​Rainbow Lorikeets: 1/1 (1) - play Rainbow Lorikeet | heal 2 | regen target ally 
+●​
+Rainbow Lorikeet: 1/1 (1) - heal 2 
+16.​Raven: 1/1 (1) - copy stats of a carrion 
+17.​Seagull: 1/1 (1) - eat target enemy prey 
+18.​Seychelles Warblers: 1/1 (1) - play 2 Seychelles Warblers | heal 1 
+●​
+Seychelles Warbler: 1/1 (1) - heal 1 
+19.​White Bellbird: 1/1 (1) - either heal 3 or deal 3 damage to rival 
+20.​Eurasian Swift: 2/1 (1) - free play | haste 
+21.​Pileated Woodpecker: 2/1 (1) - destroy target field spell | can attack twice | hidden 
+22.​Black Swan: 2/2 (2) - heal 3 | ambush 
+23.​Indian Peacock: 2/2 (2) - barrier | lure | slain, add Rainbow Feathers to hand 
+●​
+Rainbow Feathers: free play spell - heal 2 | regen target ally 
+24.​Red-crowned Cranes: 2/2 (2) - play Red-crowned Crane | immune 
+●​
+Red-crowned Crane: 2/2 (2) - immune 
+25.​Trumpeter Swan: 2/2 (2) - heal 3 | enemies gain enraged 
+ 
+Preds 
+ 
+26.​Black-and-white Hawk-eagle: 2/2 - heal 6 | ambush 
+27.​Great Gray Owl: 2/2 - add a card from deck to hand | add a carrion to hand 
+28.​Red-tailed Hawk: 2/2 - add Red Tailfeather to hand  
+●​
+Red Tailfeather: free play spell - heal 4 | target ally gains +2/+2 
+29.​Short-toed Snake Eagle: 2/2 - play 2 Toxic Snakes 
+●​
+Toxic Snake: 1/1 (1) - toxic  
+30.​Wolf Hawk: 2/2 - play Wolf Hawk | slay target prey 
+31.​Peregrine Falcon: 3/1 - free play | haste 
+32.​Monkey-eating Eagle: 3/3 - eat target enemy prey 
+33.​Gyrfalcon: 4/2 - haste 
+34.​Golden Eagle 4/4 - draw 7 
+35.​Martial Eagle: 4/4 - slay target pred | slay target prey 
+36.​Harpy Eagle: 5/5 - add target enemy to hand 
+37.​Pacific Sea Eagle: 6/6 - heal 2 | immune 
+ 
+Support 
+ 
+
+Updated 3/18 
+38.​Bird’s Eye View: spell - draw 2 | rival reveals hand 
+39.​Bird Food: spell - allies gain +2/+2 
+40.​Birds of a Feather: spell - play a copy of target ally 
+41.​Migration: spell - destroy target field spell | either play an ally or return target ally to hand 
+42.​Shotgun: spell - either deal 2 damage to enemies and rival or deal 8 damage to target 
+enemy 
+43.​Swan Song: spell - heal 9 
+44.​Golden Feather: free play spell - draw 1 | heal 1 
+45.​White Missiles: free play spell - deal 1 damage to any target 
+46.​White Feather: free play spell - heal 2 
+47.​Roost: field spell - heal 3 | regen allies | dusk, heal 3 
+48.​Fly Off: trap - when target ally is defending, negate combat and return it to hand | add 
+Feather to hand 
+●​
+Feather: free play spell - heal 1 
+49.​Mobbing: trap - when target enemy attacks directly, negate attack | play 2 Birds 
+●​
+Bird: 1/1 (1)  
+50.​Phoenix: trap - when life is 0, heal 3 
+ 
+Fish - ambush 
+Prey 
+ 
+1.​ Atlantic Flying Fish: 1/1 (1) - play 2 Flying Fish | haste 
+●​
+Flying Fish: 1/1 (1) - haste 
+2.​ Black Kingfish: 1/1 (1) - play 2 Black Jacks | ambush 
+●​
+Black Jack: 1/1 (1) - ambush 
+3.​ Black Mullet: 1/1 (1) - free play | ambush 
+4.​ Black Sea Devil: 1/1 (1) - play 2 Angler Eggs | ambush | lure 
+●​
+Angler Egg: 0/1 - harmless | lure 
+5.​ Blobfish: 1/1 (1) - immune | passive | dusk, eat target enemy prey 
+6.​ Celestial Eye Goldfish: 1/1 (1) - draw 2 | rival reveals hand 
+7.​ Goldentail Moray: 1/1 (1) - draw 1 | ambush | hidden | dawn, draw 1 
+8.​ Googly-eyed Glass Squid: 1/1 (1) - invisible | add a card from deck to hand 
+9.​ Leafy Seadragons: 1/1 (1) - invisible | dusk, play Leafy Seadragon | dawn, play Leafy Seadragon 
+●​
+Leafy Seadragon: 1/1 (1) - invisible 
+10.​Mimic Octopus: 1/1 - before combat, copy stats of target animal 
+11.​ Psychedelic Frogfish: 1/1 (1) - rivals discards 1 | ambush | invisible 
+12.​Rainbow Mantis Shrimp: 1/1 (1) - heal 1 | before combat, deal 3 damage 
+13.​Rainbow Sardines: 1/1 (1) - play 2 Sardines | heal 1 | slain, play Sardine 
+●​
+Sardine: 1/1 (1) - heal 1 
+14.​Rainbow Trout: 1/1 (1) - heal 4 | regen allies 
+15.​Roving Coral Grouper: 1/1 (1) - play Giant Moray | hidden 
+●​
+Giant Moray: 2/2 (2) - ambush | hidden 
+16.​Spearfish Remora: 1/1 (1) - discard, target pred gains ambush | free play | sacrifice, target pred 
+gains +1/+1 
+17.​Cannibal Fish: 2/1 (1) - either play Lancetfish or gain +1/+1 | ambush 
+●​
+Lancetfish: 2/1 (1) - ambush 
+18.​Black Drum: 2/2 (2) - allies gain +1/+0 | ambush 
+19.​Electric Eel: 2/2 (2) - before combat, deal 2 damage 
+20.​Giant Pacific Octopus: 2/2 (2) - invisible | ambush 
+21.​Golden Dorado: 2/2 (2) - draw 2 | dawn, draw 2 
+22.​King Salmon: 2/2 (2) - add Salmon to hand 
+●​
+Salmon: 1/1 (1) - free play 
+23.​Kingfish: 3/2 (2) - haste 
+24.​Silver King: 3/3 (3) - discard, draw 1 | discard 1 | draw 3 
+ 
+Preds 
+
+Updated 3/18 
+ 
+25.​Giant Black Sea Bass: 2/2 - ambush | hidden | edible 
+26.​Goliath Grouper: 2/2 - eat target enemy prey | edible 
+27.​Sailfish: 3/1 - free play | haste 
+28.​Wahoo: 3/2 - haste | edible 
+29.​Atlantic Bluefin Tuna: 3/3 - play 2 Tunas | edible 
+●​
+Tuna: 2/2 (2) 
+30.​Shortfin Mako: 3/3 - deal 3 damage to any target 
+31.​Swordfish: 4/2 - haste 
+32.​Beluga Whale: 4/4 - add a card from deck to hand 
+33.​Tiger Shark: 4/4 - copy abilities of a carrion pred 
+34.​Black Marlin: 5/3 - ambush | after combat, deal 1 damage to rival 
+35.​Great White Shark: 5/5 - heal 5 | ambush 
+36.​Orca: 6/6 - enemies gain drowning | ambush 
+ 
+Support 
+ 
+37.​Dynamite: spell - destroy target field spell | add Salmon to hand 
+●​
+Salmon: 1/1 (1) - free play 
+38.​Fish Food: spell - allies gain +2/+2 
+39.​Flood: spell - slay animals 
+40.​Harpoon: spell - deal 4 damage to target enemy then gain control of it 
+41.​Net: spell - slay enemy prey 
+42.​Sunken Treasure: spell - either draw 3, heal 3, or target ally gains +3/+3 
+43.​Whirlpool: spell - enemies gain drowning | deal 2 damage to enemies and rival 
+44.​Ambush - free play spell - target ally gains ambush 
+45.​Anchor: free play spell - destroy target field spell 
+46.​Edible: free play spell - target ally gains edible 
+47.​Rocky Reef: field spell - dusk, play Eel | destroyed, play Eel 
+●​
+Eel: 1/1 (1) - ambush | hidden 
+48.​Cramp: trap - when rival plays a pred, it gains drowning 
+49.​Riptide: trap - when rival plays a prey, it gains drowning 
+50.​Maelstrom: trap - when target enemy attacks directly, negate attack | deal 2 damage 
+enemies and rival 
+ 
+Mammals - frozen 
+Prey 
+ 
+1.​ Western Harvest Mouse: 0/1 (0) - free play | play 2 Pups 
+●​
+Pup: 0/1 (0) 
+2.​ Arctic Fox: 1/1 (1) - target enemy gain frozen | add Northern Lights to hand 
+3.​ Northern Lights: spell - play a carrion 
+4.​ Arctic Ground Squirrels: 1/1 (1) - play 2 Arctic Ground Squirrels | target enemy gains 
+frozen | frozen | hidden 
+●​
+Arctic Ground Squirrel: 1/1 (1) - target enemy gains frozen | frozen | hidden 
+5.​ Black Tree-kangaroo: 1/1 (1) - ambush | hidden | slain, play Joey 
+●​
+Joey: 1/1 (1) 
+6.​ Florida White Rabbit: 1/1 (1) - slain, heal 1 | dusk, play 2 Kits 
+●​
+Kit: 1/1 (1) - dawn, become Florida White Rabbit 
+7.​ Giant Golden Mole: 1/1 (1) - free play | draw 1 | hidden 
+8.​ Japanese Weasel: 1/1 (1) - deal 3 damage to any target 
+9.​ Meerkat Matriarch: 1/1 (1) - play 2 Pups | slain, play 3 Pups 
+●​
+Pup: 0/1 (0) 
+10.​North American Beaver: 1/1 (1) destroy target field spell | barrier | hidden | dusk, gain barrier 
+11.​ North American Opossum: 1/1 (1) - slain, revive 
+12.​Platypus: 1/1 (1) - play 2 Mammal Eggs | poisonous 
+
+Updated 3/18 
+●​
+Mammal Egg: 0/1 (0) - harmless | barrier | hidden 
+13.​Red-handed Howler: 1/1 (1) - rival discards 1 | add a card from deck to hand 
+14.​Snowshoe Hare: 1/1 (1) - target enemy gains frozen | haste | hidden 
+15.​Black Springboks: 1/2 (1) - play White Springbok | haste | ambush 
+●​
+White Springbok: 1/2 (1) - heal 2 | haste 
+16.​Eurasian Wild Boar: 2/2 (2) - destroy target field spell | haste 
+17.​Golden Takin: 2/2 (2) - draw 2 | dawn, draw 2 
+18.​Malayan Tapir: 2/2 (2) - return enemies to hand 
+19.​Mountain Reindeer: 2/2 (2) - add Present to hand 
+●​
+Present: free play spell - heal 2 | target ally gains +2/+2 
+20.​Mountain Zebra: 2/2 (2) - heal 2 | deal 2 damage to rival 
+21.​Muskox: 2/2 (2) - immune | slain, add Qiviut to hand 
+●​
+Qiviut: free play spell - target ally gains immune 
+22.​Pronghorn: 2/2 (2) - deal 2 damage to any target  
+23.​Giant Forest Hog: 3/2 (2) - haste 
+24.​Alaskan Moose: 3/3 (3) - barrier 
+25.​24. 
+ 
+Preds 
+ 
+26.​Eurasian Lynx: 1/1 - free play | rival reveals hand | edible 
+27.​Arctic Wolf: 2/2 - play Arctic Wolf | target enemy gains frozen 
+28.​Snow Leopard: 2/2 - target enemy gains frozen | hidden 
+29.​African Lion: 3/3 - allies gain +1/+1 
+30.​Black Jaguar: 3/3 - sacrifice, play a carrion | ambush 
+31.​Puma: 3/3 - attacking before combat, slay enemy  
+32.​Sumatran Tiger: 3/3 - copy abilities of a carrion  
+33.​Cheetahs: 4/2 - haste 
+34.​Grizzly Bear: 4/4 - dusk, regen | dawn, heal 4 
+35.​Siberian Tiger: 4/4 - immune | lure 
+36.​Kodiak Bear: 5/5 - add Salmon to hand | dawn, regen 
+●​
+Salmon: 1/1 (1) - free play 
+37.​Polar Bear: 6/6 - enemies gain frozen 
+ 
+Support 
+ 
+38.​Blizzard: spell - deal 2 damage to enemies and rival | enemies gain frozen 
+39.​Hailstorm: spell - deal 1 damage to enemies and rival | deal 1 damage to enemies and rival 
+40.​Javelin: spell - slay target animal | deal 2 damage to rival 
+41.​Milk: spell - allies gain +2/+2 
+42.​Six-layered Neocortex: spell - play an ally from deck it gains frozen 
+43.​White Hart: spell - play a carrion it gains frozen 
+44.​Winter Coats: spell - allies gain immune 
+45.​Curiosity: free play spell - slay target ally, draw 3 
+46.​Hibernate: free play spell - target ally loses it abilities and gains frozen 
+47.​Tranquilizer: free play spell - target enemy gains frozen 
+48.​Burrow: field spell - play Groundhog | dawn, play Groundhog 
+●​
+Groundhog: 1/1 (1) - target enemy gains frozen 
+49.​Pitfall: trap - when target enemy attacks directly, negate attack | enemies gain frozen 
+50.​Snow Squall: trap - when damaged indirectly, negate damage | enemies gain frozen 
+51.​Whiteout: trap - when target ally is targeted, negate target 
+
+ 
+Signature Abilities 
+
+ 
+Signature Abilities 
+ 
+Amphibians: 8 (Poisonous) 
+Prey 
+ 
+1.​ Emperor Newt: 1/1 (1) - dusk, play Empress Newt 
+●​
+Empress Newt: 1/1  
+2.​ Fire Salamander: 1/1 (1) - deal 2 damage to rival | immune 
+3.​ Golden Mantellas: 1/1 (1) - draw 1 | play Golden Mantella 
+●​
+Golden Mantellas: 1/1 (1) - draw 1 
+4.​ Golden Poison Frog: 1/1 (1) - draw 1 | sacrifice, add Golden Blowdart to hand 
+●​
+Golden Blowdart: kill target enemy | draw 1 
+5.​ Monte Iberia Eleuth: 1/1 (1) - dusk, play Hidden Eleuth Egg  
+●​
+Hidden Eleuth Egg: 0/1 (0) - harmless | hidden | dawn, become Monte Iberia Eleuth 
+6.​ Panamanian Golden Frog: 1/1 (1) - draw 2 | slain, draw 1 
+7.​ Phantasmal Poison Frog: 1/1 (1) - sacrifice, add Phantasmal Darts to hand 
+ 
+Preds 
+ 
+8.​ Cane Toad: 4/4 - play 2 Poisonous Eggs 
+●​
+Poisonous Egg: 0/1 (0) - harmless 
+ 
+Birds: 11 (Heal) 
+Prey 
+ 
+1.​ Doctor Bird: 1/1 (1) - free play | heal 1 
+2.​ Doves: 1/1 (1) - play Dove | heal 3 | passive 
+●​
+Dove: 1/1 (1) - heal 3 
+3.​ Eurasian Magpie: 1/1 (1) - dusk, either heal 4 or deal 2 damage to enemies and rival  
+4.​ Oriental Magpies: 1/1 (1) - play Oriental Magpie | heal 2 | regen target ally 
+●​
+Oriental Magpie: 1/1 (1) - heal 2 
+5.​ Indian Peacock: 2/2 (2) - barrier | lure | slain, add Rainbow Feathers to hand 
+●​
+Rainbow Feathers: free play spell - either heal 2 or regen target ally 
+6.​ Black Swan: 3/3 (3) - heal 3 | ambush 
+ 
+Preds 
+ 
+7.​ Black-and-white Hawk-eagle: 2/2 - ambush | after combat, heal 2 
+8.​ Red-tailed Hawk: 3/2 - add Red Feathers to hand 
+●​
+Red Feathers: free play spell - either heal 6 or target ally gains +3/+3 
+ 
+Support 
+ 
+9.​ Swan Song: spell - heal 3 | gain barrier 
+10.​White Feathers - free play spell - heal 2 
+11.​ Icarus: trap - when your life is 0, heal 1 
+ 
+Fish: 10 (Ambush) 
+Prey 
+ 
+1.​ Black Mullet: 1/1 (1) - free play | ambush 
+2.​ Ghost Eel: 1/1 (1) - discard, negate direct attack | ambush | hidden 
+3.​ Psychedelic Frogfish: 1/1 (1) - ambush | invisible 
+4.​ Spearfish Remora: 1/1 (1) - discard, target pred gains ambush | free play 
+5.​ Black Drum: 2/2 (2) - allies gain +1/+0 | ambush 
+ 
+
+ 
+Preds 
+ 
+6.​ Wahoo: 3/2 - haste | edible 
+7.​ Atlantic Bluefin Tuna: 3/3 - play 2 Tuna Eggs | edible 
+●​
+Tuna Egg: 0/1 (0) - passive | dawn, become Tuna 
+●​
+Tuna: 2/2 (2) 
+8.​ Goliath Grouper: 3/3 - kill target prey | edible 
+9.​ Black Marlin: 5/3 - ambush 
+ 
+Support 
+ 
+10.​Edible: free play spell - target ally gains edible 
+ 
+Mammal: 10 (Frozen) 
+Prey 
+ 
+1.​ Arctic Ground Squirrels: 1/1 (1) - play 2 Arctic Ground Squirrels | target enemy gains frozen | 
+frozen 
+●​
+Arctic Ground Squirrel: 1/1 (1) - target enemy gains frozen | frozen 
+2.​ Snowshoe Hare: 1/1 (1) - target enemy gains frozen | haste | hidden 
+ 
+Preds 
+ 
+3.​ Polar Bear: 6/6 - enemies gain frozen 
+ 
+Support 
+ 
+4.​ Blizzard: spell - deal 2 damage to enemies and rival | enemies gain frozen 
+5.​ Six-layered Neocortex: spell - play an ally from deck it gains frozen 
+6.​ White Hart: spell - play a carrion it gains frozen 
+7.​ Tranquilizer: free play spell - target enemy gains frozen 
+8.​ Warm blood: free play spell - allies lose frozen 
+9.​ Pitfall: trap - when target enemy attacks directly, negate attack | enemies gain frozen 
+10.​Snow Squall: trap - when damaged directly, negate damage | enemies gain frozen 
+ 
+Reptiles: 9 (Toxic & Neurotoxic) 
+Prey 
+ 
+1.​ Golden Lancehead: 1/1 (1) - draw 1 | toxic 
+2.​ Saw-scaled Viper: 1/1 (1) - free play | toxic 
+3.​ Solomons Coral Snake: 1/1 (1) - barrier | defending, neurotoxic 
+4.​ Gaboon Viper: 2/2 (2) - toxic | hidden 
+5.​ King Brown Snake: 2/2 (2) - toxic | add a card from deck to hand 
+6.​ Black Mamba: 3/1 (1) - ambush | neurotoxic 
+ 
+Preds 
+ 
+7.​ King Cobra: 3/2 - neurotoxic | slain, deal 3 damage to rival 
+8.​ Komodo Dragon: 4/4 - toxic | immune 
+ 
+Support 
+ 
+9.​ Paralyze: spell - target enemy gains paralysis  
+
+ 
+Ambush 
+
+ 
+Ambush 
+ 
+Amphibians: 0 
+ 
+Birds: 2 
+Prey 
+ 
+1.​ Black Swan: 3/3 (3) - heal 3 | ambush 
+ 
+Preds 
+ 
+2.​ Black-and-white Hawk-eagle: 2/2 - ambush | after combat, heal 2 
+ 
+Fish: 5 
+Prey 
+ 
+1.​ Black Mullet: 1/1 (1) - free play | ambush 
+2.​ Psychedelic Frogfish: 1/1 (1) - ambush | invisible 
+3.​ Spearfish Remora: 1/1 (1) - discard, target pred gains ambush | free play 
+4.​ Black Drum: 2/2 (2) - allies gain +1/+0 | ambush 
+ 
+Preds 
+ 
+5.​ Black Marlin: 5/3 - ambush 
+ 
+Mammals: 3 
+Prey 
+ 
+1.​ Black Tree-kangaroo: 1/1 (1) - ambush | hidden | slain, play Joey 
+●​
+Joey: 1/1 (1) 
+ 
+Preds 
+ 
+2.​ Black Leopard: 2/2 - kill target enemy | ambush 
+3.​ Black Jaguar: 3/3 - sacrifice, play a carrion | ambush 
+ 
+Reptiles: 2 
+Prey 
+ 
+1.​ Black Mamba: 3/1 (1) - ambush | neurotoxic 
+ 
+Preds 
+ 
+2.​ Black Caiman: 4/4 - ambush 
+ 
+ 
+ 
+ 
+
+ 
+Barrier 
+
+ 
+Barrier 
+ 
+Amphibians: 1 
+Preds 
+ 
+1.​ Helmeted Water Toad: 4/4 - barrier 
+ 
+Birds: 2 
+Prey 
+ 
+1.​ Indian Peacock: 2/2 (2) - barrier | lure | slain, add Rainbow Feathers to hand 
+●​
+Rainbow Feathers: free play spell - either heal 2 or regen target ally 
+ 
+Support 
+ 
+2.​ Swan Song: spell - heal 3 | gain barrier 
+ 
+Fish: 2 
+Prey 
+ 
+1.​ Golden Angelfish: 1/1 (1) - draw 1 | allies gain barrier 
+ 
+Preds 
+ 
+2.​ Alligator Gar: 3/3 - barrier | slain, add Scale Arrows to hand 
+●​
+Scale Arrows: free play spell - kill enemies 
+ 
+Mammals: 3 
+Prey 
+ 
+1.​ Platypus: 1/1 (1) - play 2 Mammal Eggs | poisonous 
+●​
+Mammal Egg: 0/1 (0) - passive | barrier | hidden 
+2.​ Alaskan Moose: 3/3 (3) - barrier 
+ 
+Preds 
+ 
+3.​ Malayan Tiger: 3/3 - barrier | immune 
+ 
+Reptiles: 6 
+Prey 
+ 
+1.​ Cryptic Golden Tegu: 1/1 (1) - draw 1 | play Golden Tegu Egg 
+●​
+Golden Tegu Egg: 0/1 (0) - harmless | draw 1 | barrier | hidden 
+2.​ Pygmy Rock Monitor: 1/1 (1) - barrier | invisible 
+3.​ Solomons Coral Snake: 1/1 (1) - barrier | defending, neurotoxic 
+4.​ Yucatan Neotropical Rattlesnake: 1/1 (1) - barrier | lure | poisonous | slain, heal 3 
+ 
+Preds 
+ 
+5.​ American Alligator: 4/4 - slain, add Alligator Skin to hand 
+●​
+Alligator Skin: free play spell - target ally gains barrier 
+6.​ American Crocodile: 4/4 - barrier 
+ 
+
+ 
+Carrion 
+
+ 
+Carrion 
+ 
+Amphibians: 0 
+ 
+Birds: 3 
+Prey 
+ 
+1.​ Mexican Violetear: 1/1 - copy abilities of a carrion 
+2.​ Raven: 1/1 (1) - copy stats of a carrion 
+ 
+Preds 
+ 
+3.​ Great Gray Owl: 2/2 - add a carrion to hand | add a card from deck to hand 
+ 
+Fish: 1 
+Preds 
+ 
+1.​ Tiger Shark: 4/4 - copy abilities of a carrion pred 
+ 
+Mammals: 4 
+Prey 
+ 
+1.​ Hart: 2/2 (2) - add a carrion to hand 
+2.​ Jaguar: 3/3 - sacrifice, play a carrion 
+3.​ Sumatran Tiger: 3/3 - copy abilities of a carrion 
+4.​ White Hart: spell - play a carrion it gains frozen 
+ 
+Reptiles: 1 
+Preds 
+ 
+1.​ Burmese Python: 4/4 - copy abilities of a carrion pred 
+
+ 
+Copy 
+
+ 
+Copy 
+ 
+Amphibians: 0 
+ 
+Birds: 5 
+Prey 
+ 
+1.​ Mexican Violetear: 1/1 - copy abilities of a carrion 
+2.​ Mockingbird: 1/1 (1) - copy stats of target animal 
+3.​ Moluccan Cockatoo: 1/1 (1) - copy abilities of target animal 
+4.​ Raven: 1/1 (1) - copy stats of a carrion 
+ 
+Support 
+ 
+5.​ Birds of a Feather: spell - play copy of target ally 
+ 
+Fish: 1 
+Preds 
+ 
+1.​ Tiger Shark: 4/4 - copy abilities of a carrion pred 
+ 
+Mammals: 1 
+Preds 
+ 
+1.​ Sumatran Tiger: 3/3 - copy abilities of a carrion  
+ 
+ 
+Reptiles: 2 
+Prey 
+ 
+1.​ Veiled Chameleon: 1/1 (1) - copy abilities of target animal 
+ 
+Preds 
+ 
+2.​ Burmese Python: 4/4 - copy abilities of a carrion pred 
+ 
+ 
+
+ 
+Discard 
+
+ 
+Discard 
+ 
+Amphibians: 1 
+Prey 
+ 
+1.​ Tomato Frog: 1/1 (2) - discard, add Tomato to hand | poisonous 
+●​
+Tomato: free play spell - target enemy gains inedible 
+ 
+Birds: 1 
+Prey 
+ 
+1.​ Quetzal: 1/1 (1) - discard, alliesgains +1/+0 | alliesgains +1/+0 
+ 
+Fish: 3 
+Prey 
+ 
+1.​ Ghost Eel: 1/1 (1) - discard, negate direct attack | ambush | hidden 
+2.​ Spearfish Remora: 1/1 (1) - discard, target pred gains ambush | free play 
+3.​ Silver King: 3/3 (3) - discard, draw 1 | discard 1 | draw 3 
+ 
+Mammals: 0 
+ 
+Reptiles: 0 
+ 
+
+ 
+Draw 
+
+ 
+Draw 
+ 
+Amphibians: 7 cards | 14 draw 
+Prey: 4 cards | 8 draw 
+ 
+1.​ Golden-flecked Glass Frog: 1/1 (1) - draw 1 | rival reveals hand | invisible 
+2.​ Golden Mantellas: 1/1 (1) - draw 1 | play Golden Mantella | poisonous 
+●​
+Golden Mantella: draw 1 | poisonous  
+3.​ Golden Poison Frog: 1/1 (1) - draw 1 | sacrifice, add Golden Blowdart to hand | poisonous 
+●​
+Golden Blowdart: spell - kill target enemy | draw 1 
+4.​ Panamanian Golden Frog: 1/1 (1) - draw 2 | poisonous | slain, draw 1 
+ 
+Support: 3 cards | 6 draw 
+ 
+5.​ Ambiguity: spell - either draw 3, heal 3, or deal 3 damage to rival 
+6.​ Sleight of Hand: free play spell - draw 2 
+7.​ Slime: free play spell: either draw 1, heal 1, or deal 1 damage to rival 
+ 
+Birds: 4 cards | 13 draw 
+Prey: 3 cards | 9 draw 
+ 
+1.​ Golden Song Sparrows: 1/1 (1) - play 2 Golden Song Sparrows | draw 1 
+●​
+Golden Song Sparrow: 1/1 (1) - draw 1 
+2.​ Golden-Headed Manakin: 1/1 (1) - dusk, draw 3 
+3.​ Golden Goose: 2/2 (2) - draw 1 | dusk, play Golden Egg 
+●​
+Golden Egg: 0/1 (0) - draw 1 | harmless 
+ 
+Preds: 1 card | 4 draw 
+ 
+4.​ Golden Eagle 4/4 - draw 4 
+ 
+Fish: 5 cards | 11 draw 
+Prey: 4 cards | 8 draw 
+ 
+1.​ Celestial Eye Goldfish: 1/1 (1) - draw 2 | rival reveals hand 
+2.​ Golden Angelfish: 1/1 (1) - draw 1 | allies gain barrier 
+3.​ Golden Dorado: 2/2 (2) - draw 2 
+4.​ Silver King: 3/3 (3) - discard, draw 1 | discard 1 | draw 3 
+ 
+Support: 1 card | 3 draw 
+ 
+5.​ Sunken Treasure: spell - either draw 3, heal 3, or target ally gains +3/+3 
+ 
+Mammals: 4 cards | 7 draw 
+Prey: 3 cards | 4 draw 
+ 
+1.​ Giant Golden Mole: 1/1 (1) - free play | draw 1 
+2.​ Sable: 1/1 (1) - slain, add Sable Fur to hand 
+●​
+Sable Fur: free play spell - draw 1 | heal 1 | target ally gains +1/+1 
+3.​ Golden Takin: 2/2 (2) - dusk, draw 2 
+ 
+Support: 1 cards | 3 draw 
+ 
+4.​ Curiosity: free play spell - sacrifice target ally, draw 3 
+ 
+Reptiles: 5 cards | 10 draw 
+
+ 
+Prey: 3 cards | 6 draw 
+ 
+1.​ Cryptic Golden Tegu: 1/1 (1) - draw 1 | play Golden Tegu Egg 
+●​
+Golden Tegu Egg: 0/1 (0) - harmless | draw 1 | barrier | hidden 
+2.​ Gold Dust Day Gecko: 1/1 (1) - draw 3 
+3.​ Golden Lancehead: 1/1 (1) - draw 1 | toxic 
+ 
+Preds: 1 cards | 3 draw 
+ 
+4.​ Chinese Alligator: 3/3 - either draw 3, heal 3, or deal 3 damage to rival 
+ 
+Support: 1 card | 1 draw 
+ 
+5.​ Snake Oil: trap - when rival draws, rival discards 1 | draw 1 
+ 
+
+ 
+Drowning 
+
+ 
+Drowning 
+ 
+Amphibians: 
+ 
+Birds: 
+ 
+Fish: 4 
+Support 
+ 
+1.​ Whirlpool: spell - enemies gain drowning | deal 2 damage to enemies 
+2.​ Undertow: free play spell - target enemy gains drowning 
+3.​ Cramp: trap - when rival plays a pred, it gains drowning 
+4.​ Riptide: trap - when rival plays a prey, it gains drowning 
+ 
+Mammals: 
+ 
+Reptiles: 
+
+ 
+Edible 
+
+ 
+Edible 
+ 
+Amphibians: 1 
+Preds 
+ 
+1.​ Mountain Chicken: 4/4 - dusk, play Mountain Chicken Egg | edible 
+●​
+Mountain Chicken Egg: 0/1 (0) - harmless | hidden | dawn, become Giant  
+●​
+Giant Ditch Frog: 2/2 (2) - dusk, play Mountain Chicken Egg 
+ 
+Birds: 0 
+ 
+Fish: 4 
+Preds 
+ 
+1.​ Wahoo: 3/2 - haste | edible 
+2.​ Atlantic Bluefin Tuna: 3/3 - play 2 Tuna Eggs | edible 
+●​
+Tuna Egg: 0/1 (0) - passive | dawn, become Tuna 
+●​
+Tuna: 2/2 (2) 
+3.​ Goliath Grouper: 3/3 - kill target prey | edible 
+ 
+Support 
+ 
+4.​ Edible: free play spell - target pred ally gain edible 
+ 
+Mammals: 1 
+Preds 
+ 
+1.​ Eurasian Lynx: 1/1 - free play | rival reveals hand | edible 
+ 
+Reptiles: 0 
+ 
+
+ 
+End of Turn 
+
+ 
+dusk 
+ 
+Amphibians: 3 
+Prey 
+ 
+1.​ Emperor Newt: 1/1 (1) - dusk, play 2 Empress Newts | poisonous 
+●​
+Empress Newt: 1/1 (1)  - poisonous  
+2.​ Monte Iberia Eleuth: 1/1 (1) - dusk, play Hidden Eleuth Egg | poisonous 
+●​
+Hidden Eleuth Egg: 0/1 (0) - harmless | hidden | dawn, become Monte Iberia Eleuth 
+ 
+Preds 
+ 
+3.​ Mountain Chicken: 4/4 - dusk, play Mountain Chicken Egg | edible 
+●​
+Mountain Chicken Egg: 0/1 (0) - harmless | hidden | start of turn, become Giant  
+●​
+Giant Ditch Frog: 2/2 (2) - dusk, play Mountain Chicken Egg 
+ 
+Birds: 7 
+Prey 
+ 
+1.​ Eurasian Magpie: 1/1 (1) - dusk, deal 2 damage to enemies and rival 
+2.​ Golden-Headed Manakin: 1/1 (1) - dusk, draw 3 
+3.​ Robin: 1/1 (1) - dusk, play 2 Blue Eggs 
+4.​ White Bellbird: 1/1 (1) - dusk, deal 3 damage to any target 
+5.​ Hoatzin: 2/1 (1) - after combat, deal 2 damage | dusk, deal 2 damage to rival 
+6.​ Golden Goose: 2/2 (2) - draw 1 | dusk, play Golden Egg 
+ 
+Preds 
+ 
+7.​ Martial Eagle: 4/4 - dusk, kill target enemy 
+ 
+Fish: 1 
+Prey 
+ 
+1.​ Blobfish: 1/1 (1) - passive | dusk, eat target enemy prey | immune 
+ 
+Mammals: 3 
+Prey 
+ 
+1.​ Florida White Rabbit: 1/1 (1) - dusk, play 2 Kits 
+●​
+Kit: 1/1 (1) - dawn, become Florida White Rabbit 
+2.​ Holstein Friesian: 1/3 (3) - dusk, add Fresh Milk to hand 
+●​
+Fresh Milk: free play spell - allies gain +1/+1 
+ 
+Preds 
+ 
+3.​ Grizzly Bear: 4/4 - dusk, regen 
+ 
+Reptiles: 3 
+Prey 
+ 
+1.​ Cuban Brown Anole: 1/1 (1) - play Brown Anole 
+●​
+Brown Anole: 1/1 (1) - dusk, play Cuban Brown Anole 
+2.​ European Glass Lizard: 1/1 (1) - slain, become Tailless  
+●​
+Tailless: 1/1 (1) - dusk, become European Glass Lizard | dawn, become European Glass Lizard 
+3.​ Green Anole: 1/1 (1) - dusk, play Carolina Anole 
+●​
+Carolina Anole: 1/1 (1) - add Hand Egg to hand 
+
+ 
+●​
+Hand Egg: free play spell - play Enola Egg 
+●​
+Anole Egg: 0/1 (0) - dawn, become Green Anole 
+ 
+ 
+ 
+
+ 
+Free Play 
+
+ 
+Free Play 
+ 
+Amphibians: 6 
+Prey 
+ 
+1.​ Confusing Rocket Frog: 1/1 (1) - free play | rival discards 1 
+2.​ Turtle Frog: 1/1 (1) - free play | play Turtle Froglet | hidden 
+●​
+Turtle Froglet: 1/1 (1) - passive | hidden 
+ 
+Support 
+ 
+3.​ Metamorphosis free play spell - target prey ally gains +2/+2 
+4.​ Newt: free play spell - target animal becomes Newt 
+●​
+Newt: 1/1 (1) - inedible 
+5.​ Sleight of Hand: free play spell - draw 2 
+6.​ Slime: free play spell - either draw 1, heal 1, or deal 1 damage to rival 
+ 
+Birds: 6 
+Prey 
+ 
+1.​ Common Swift: 1/1 (1) - free play | haste 
+2.​ Doctor Bird: 1/1 (1) - free play | heal 1 
+ 
+Preds 
+ 
+3.​ Peregrine Falcon: 3/1 - free play | haste 
+ 
+Support 
+ 
+4.​ Bird's Eye View: free play spell - rival reveals hand 
+5.​ White Feathers: free play spell - heal 2 
+6.​ White Missile: free play spell - deal 1 damage to any target 
+ 
+Fish: 6 
+Prey 
+ 
+1.​ Black Mullet: 1/1 (1) - free play | ambush 
+2.​ Spearfish Remora: 1/1 (1) - discard, target pred gains ambush | free play 
+ 
+Preds 
+ 
+3.​ Sailfish: 3/1 - free play | haste 
+ 
+Support 
+ 
+4.​ Angler: free play spell - add a card from deck to hand | end turn 
+5.​ Edible: free play spell - target pred ally gain edible 
+6.​ Undertow: free play spell - target enemy loses abilities 
+ 
+Mammals: 6 
+Prey 
+ 
+1.​ Western Harvest Mouse: 0/1 (0) - free play | play 2 Pups 
+●​
+Pup: 0/1 (0) 
+2.​ Giant Golden Mole: 1/1 (1) - free play | draw 1 
+ 
+
+ 
+Preds 
+ 
+3.​ Eurasian Lynx: 2/1 - free play | rival reveals hand 
+ 
+Support 
+ 
+4.​ Curiosity: free play spell - sacrifice target ally, draw 3 
+5.​ Tranquilizer: free play spell - target enemy gains frozen 
+6.​ Warm Blood: free play spell - allyies lose frozen 
+ 
+Reptiles: 6 
+Prey 
+ 
+1.​ Saw-scaled Viper: 1/1 (1) - free play | toxic 
+2.​ Plumed Basilisk: 1/1 (1) - free play | target enemy gains frozen 
+ 
+Support 
+ 
+3.​ Ecdysis: free play spell - regen target ally 
+4.​ Vengeful: free play spell - target ally gains poisonous 
+5.​ Surprise: free play spell - deal 2 damage to target enemy 
+6.​ Cold-blooded: free play spell - target ally gains +1/+1 
+
+ 
+Free Play Spells 
+
+ 
+Free Play Spell 
+ 
+Amphibians: 6 
+Prey 
+ 
+1.​ Tomato Frog: 1/1 (2) - discard, add Tomato to hand | poisonous 
+●​
+Tomato: free play spell - target enemy gains inedible 
+ 
+Preds 
+ 
+1.​ Titicaca Water Frog: 3/3 - add Titicaca Water to hand 
+●​
+Titicaca Water: free play spell - kill animals 
+ 
+Support 
+ 
+2.​ Monsoon: spell - deal 2 damage to enemies and rival | add Rainbow to hand 
+●​
+Rainbow: free play spell - regen allies 
+3.​ Metamorphosis: free play spell - target prey ally gains +2/+2 
+4.​ Newt: free play spell - target animal becomes Newt 
+●​
+Newt: 1/1 (1) - inedible 
+5.​ Sleight of Hand: free play spell - draw 2 
+6.​ Slime: free play spell: either draw 1, heal 1, or deal 1 damage to rival 
+ 
+Bird: 7 
+Prey 
+ 
+1.​ Kākāpō: 0/2 (2) - harmless | invisible | slain, add Kākāpō Feathers to hand 
+●​
+Kākāpō Feathers: free play spell - target ally gains invisible  
+2.​ Indian Peacock: 2/2 (2) - barrier | lure | slain, add Rainbow Feathers to hand 
+●​
+Rainbow Feathers: free play spell - either heal 2 or regen target ally 
+3.​ Eastern Wild Turkey: 3/3 (3) - add Feed to hand 
+●​
+Feed: free play spell - target ally gains +1/+1 
+ 
+Preds 
+ 
+4.​ Red-tailed Hawk: 3/2 - add Red Tailfeathers to hand  
+●​
+Red Tailfeathers: free play spell - either heal 6 or target ally gains +3/+3 
+ 
+Support 
+ 
+5.​ Bird's Eye View: free play spell - rival reveals hand 
+6.​ White Feathers: free play spell - heal 2 
+7.​ White Missile: free play spell - deal 1 damage to any target 
+ 
+Fish: 4 
+Preds 
+ 
+1.​ Alligator Gar: 3/3 - barrier | slain, add Scale Arrows to hand 
+●​
+Scale Arrows: free play spell - kill enemies 
+ 
+Support 
+ 
+2.​ Angler: free play spell - add a card from deck to hand | end turn 
+3.​ Edible: free play spell - target pred ally gain edible 
+4.​ Undertow: free play spell - target enemy loses abilities 
+Mammals: 7 
+
+ 
+Prey 
+ 
+1.​ Sable: 1/1 (1) - slain, add Sable Fur to hand 
+●​
+Sable Fur: free play spell - draw 1 | heal 1 | target ally gains +1/+1 
+2.​ Holstein Friesian: 1/3 (3) - dusk, add Fresh Milk to hand 
+●​
+Fresh Milk: free play spell - allies gain +1/+1 
+3.​ Mountain Reindeer: 2/2 (2) - add Present to hand 
+●​
+Present: free play spell - either heal 2 or target ally gains +2/+2 
+4.​ Muskox: 2/2 (2) - immune | slain, add Qiviut to hand 
+●​
+Qiviut: free play spell - target ally gains immune 
+ 
+Support 
+ 
+5.​ Curiosity: free play spell - sacrifice target ally, draw 3 
+6.​ Tranquilizer: free play spell - target enemy gains frozen 
+7.​ Warm Blood: free play spell - allies lose frozen 
+ 
+Reptiles: 6 
+Prey 
+ 
+1.​ Green Anole: 1/1 (1) - dusk, play Carolina Anole 
+●​
+Carolina Anole: 1/1 (1) - add Hand Egg to hand 
+●​
+Hand Egg: free play spell - play Enola Egg 
+●​
+Anole Egg: 0/1 (0) - dawn, become Green Anole 
+ 
+Preds 
+ 
+2.​ American Alligator: 4/4 - slain, add Alligator Skin to hand 
+●​
+Alligator Skin: free play spell - target ally gains barrier 
+ 
+Support 
+ 
+3.​ Cold-blooded: free play spell - target ally gains +1/+1 
+4.​ Ecdysis: free play spell - regen target ally 
+5.​ Surprise: free play spell - deal 2 damage to target enemy 
+6.​ Vengeful: free play spell - target ally gains poisonous 
+
+ 
+Frozen 
+
+ 
+Frozen 
+ 
+Amphibians: 2 
+Prey 
+ 
+1.​ Frost’s Toad: 1/1 (1) - enemies gain frozen 
+2.​ Siberian Salamander: 1/1 (1) - deal 2 damage to players & other animals | animals gain 
+frozen 
+ 
+Birds: 0 
+ 
+Fish: 0 
+ 
+Mammals: 12 
+Prey 
+ 
+1.​ Arctic Ground Squirrels: 1/1 (1) - play 2 Arctic Ground Squirrels | target enemy gains frozen | 
+frozen 
+●​
+Arctic Ground Squirrel: 1/1 (1) - target enemy gains frozen | frozen 
+2.​ Snowshoe Hare: 1/1 (1) - target enemy gains frozen | haste | hidden 
+ 
+Preds 
+ 
+3.​ Arctic Wolf: 2/2 - play Arctic Wolf | target enemy gains frozen 
+4.​ Snow Leopard: 2/2 - target enemy gains frozen | hidden 
+5.​ Polar Bear: 5/5 - enemies gain frozen 
+ 
+Support 
+ 
+6.​ Blizzard: spell - deal 2 damage to enemies and rival | enemies gain frozen 
+7.​ Six-layered Neocortex: spell - play an ally from deck it gains frozen 
+8.​ White Hart: spell - play a carrion it gains frozen 
+9.​ Tranquilizer: free play spell - target enemy gains frozen 
+10.​Warm Blood: free play spell - allies lose frozen 
+ 
+Support 
+ 
+11.​ Pitfall: trap - when target enemy attacks directly, negate attack | enemies gain frozen 
+12.​Snow Squall: trap - when damaged indirectly, negate damage | enemies gain frozen 
+ 
+Reptiles: 2 
+Prey 
+ 
+1.​ Frost’s Iguana: 1/1 (1) - enemies gain frozen 
+2.​ Plumed Basilisk: 1/1 (1) - free play | target enemy gains frozen 
+
+ 
+Haste 
+
+ 
+Haste 
+ 
+Amphibians: 0 
+ 
+Birds: 4 
+Prey 
+ 
+1.​ Common Swift: 1/1 (1) - free play | haste 
+2.​ Roadrunner: 1/1 (1) - haste | immune | defending, return to hand 
+ 
+Preds 
+ 
+3.​ Peregrine Falcon: 3/1 - free play | haste 
+4.​ Gyrfalcon: 4/2 - haste 
+ 
+Fish: 5 
+Prey 
+ 
+1.​ Atlantic Flying Fish: 1/1 (1) - play 2 Flying Fish | haste 
+●​
+Flying Fish: 1/1 (1) - haste 
+2.​ Kingfish: 3/2 (2) - haste 
+ 
+Preds 
+ 
+3.​ Sailfish: 3/1 - free play | haste 
+4.​ Wahoo: 3/2 - haste | edible 
+5.​ Swordfish: 4/2 - haste 
+ 
+Mammals: 4 
+Prey 
+ 
+1.​ Snowshoe Hare: 1/1 (1) - target enemy gains frozen | haste | hidden 
+2.​ Springboks: 1/2 (2) - haste | either play Black Springbok or White Springbok 
+●​
+Black Springbok: 1/2 (2) - haste | ambush 
+●​
+White Springbok: 1/2 (2) - haste | heal 1 
+3.​ Giant Forest Hog: 3/2 (2) - haste 
+ 
+Preds 
+ 
+4.​ Cheetah: 4/2 - haste 
+ 
+Reptiles: 0 
+
+ 
+Heal 
+
+ 
+Heal 
+ 
+Amphibians: 7 cards | 17 heal 
+Prey: 1 card | heal 4 
+ 
+1.​ Axolotl: 2/2 (2) - heal 4 | dusk, regen 
+ 
+Preds: 2 cards | heal 6 
+ 
+2.​ Lake Junin Giant Frog: 4/4 - heal 4 | regen other allies 
+3.​ Chinese Giant Salamander: 6/6 - play Chinese Salamander | lure 
+4.​ Chinese Salamander: 2/2 (2) - heal 2 
+ 
+Support: 3 cards | heal 7 
+ 
+5.​ Ambiguity: spell - either draw 3, heal 3, or deal 3 damage to rival 
+6.​ Whitewater: spell - deal 3 damage to any target | heal 3 
+7.​ Slime: free play spell: either draw 1, heal 1, or deal 1 damage to rival 
+ 
+Birds: 11 cards | 29 heals 
+Prey: 9 cards | heal 16 
+ 
+1.​ Doctor Bird: 1/1 (1) - free play | heal 1 
+2.​ Doves: 1/1 (1) - play Dove | heal 3 | passive 
+3.​ Dove: 1/1 (1) - heal 3 | passive 
+4.​ Oriental Magpies: 1/1 (1) - play Oriental Magpie | heal 2 | regen target ally 
+5.​ Oriental Magpie: 1/1 (1) - heal 2 
+6.​ Indian Peacock: 2/2 (2) - barrier | lure | slain, add Rainbow Feathers to hand 
+●​
+Rainbow Feathers: free play spell - either heal 2 or regen target ally 
+7.​ Black Swan: 3/3 (3) - heal 3 | ambush 
+ 
+Preds: 2 cards | 8 heals 
+ 
+8.​ Black-and-white Hawk-eagle: 2/2 - ambush | after combat, heal 2 
+9.​ Red-tailed Hawk: 3/2 - add Red Tailfeathers to hand  
+●​
+Red Tailfeathers: free play spell - either heal 6 or target ally gains +3/+3 
+ 
+Support: 2 cards | 5 heals 
+ 
+10.​Swan Song: spell - heal 3 | gain barrier 
+11.​ White Feathers: free play spell - heal 2 
+ 
+Fish: 4 cards | 12 heals 
+Prey: 3 cards | heal 9 
+ 
+1.​ Rainbow Mantis Shrimp: 1/1 (1) - heal 1 | before combat, deal 3 damage 
+2.​ Rainbow Sardines: 1/1 (1) - play 2 Sardines | heal 1 | slain play Sardine 
+●​
+Sardine: 1/1 (1) - heal 1 
+3.​ Rainbow Trout: 1/1 (1) - heal 4 | regen target ally 
+ 
+Support: 1 card | heal 3 
+ 
+4.​ Sunken Treasure: spell - either draw 3, heal 3, or target ally gains +3/+3 
+ 
+Mammal: 4 cards | 9 heals 
+Prey: 3 cards | heal 5 
+
+ 
+ 
+1.​ Florida White Rabbit: 1/1 (1) - slain, heal 1 | dusk, play 2 Kits 
+●​
+Kit: 1/1 (1) - dawn, become Florida White Rabbit 
+2.​ Mountain Reindeer: 2/2 (2) - add Present to hand 
+●​
+Present: free play spell - either heal 2 or target ally gains +2/+2 
+3.​ Mountain Zebra: 2/2 (2) - either heal 2 or deal 2 damage to rival 
+ 
+Pred: 1 card | heal 4 
+ 
+4.​ Grizzly: 4/4 - dusk, regen | start of turn, heal 4 
+ 
+Reptile: 7 cards | 23 heals 
+Prey: 1 card | heal 3 
+ 
+1.​ Yucatan Neotropical Rattlesnake: 1/1 (1) - barrier | lure | poisonous | slain, heal 3 
+ 
+Preds: 3 cards | heal 10 
+ 
+2.​ Boa Constrictor: 3/3 - attacking after combat, regen & heal 2 
+3.​ Chinese Alligator: 3/3 - either draw 3, heal 3, or deal 3 damage to rival 
+4.​ Green Anaconda: 4/4 - heal 2 | add a card from deck to hand 
+5.​ Nile Crocodile: 5/5 - heal 3 & deal 3 damage to rival 
+ 
+Support: 2 cards | heal 10 
+ 
+6.​ Snake Wine: 7 
+7.​ Scales: 3 
+ 
+ 
+
+ 
+Hidden & Invisible 
+
+ 
+Hidden & Invisible 
+ 
+Amphibians: 5 
+Prey: 4 cards | 3 hidden | 1 invisible 
+ 
+1.​ Golden-flecked Glass Frog: 1/1 (1) - draw 1 | rival reveals hand | invisible 
+2.​ Java Flying Frog: 1/1 (1) - immune | hidden 
+3.​ Monte Iberia Eleuth: 1/1 (1) - poisonous | dusk play Hidden Egg 
+●​
+Hidden Eleuth Egg: 0/1 (0) - harmless | hidden | dawn, become Monte Iberia Eleuth 
+4.​ Turtle Frog: 1/1 (1) - free play | play Turtle Froglet | hidden 
+●​
+Turtle Froglet: 1/1 (1) - passive | hidden 
+ 
+Preds: 1 card | 1 hidden 
+ 
+5.​ Mountain Chicken: 4/4 - dusk, play Mountain Chicken Egg | edible 
+●​
+Mountain Chicken Egg: 0/1 (0) - harmless | hidden | start of turn, become Giant  
+●​
+Giant Ditch Frog: 2/2 (2) - dusk, play Mountain Chicken Egg 
+ 
+Hidden: 4 
+Invisible: 1 
+ 
+Birds: 2 
+Prey: 2 cards | 1 hidden | 1 invisible 
+ 
+1.​ Kākāpō: 0/2 (2) - harmless | invisible | slain, add Kākāpō Feathers to hand 
+●​
+Kākāpō Feathers: free play spell - target ally gains invisible  
+2.​ Robin: 1/1 (1) - dusk, play 2 Blue Eggs 
+●​
+Blue Egg: 0/1 (0) - harmless | hidden | dawn, become Robin 
+ 
+Hidden: 1 
+Invisible: 1 
+ 
+Fish: 4 
+Prey: 4 cards | 1 hidden | 3 invisible 
+ 
+1.​ Blue-ringed Octopus: 1/1 (1) - invisible | neurotoxic 
+2.​ Ghost Eel: 1/1 (1) - discard, negate direct attack | ambush | hidden 
+3.​ Leafy Seadragon: 1/1 (1) - invisible | dawn, play Leafy 
+●​
+Leafy: 0/1 (0) - hidden 
+4.​ Psychedelic Frogfish: 1/1 (1) - ambush | invisible 
+ 
+Hidden: 1 
+Invisible: 3 
+ 
+Mammals: 3 
+Prey: 3 cards | 3 hidden 
+ 
+1.​ Black Tree-kangaroo: 1/1 (1) - ambush | hidden | slain, play Joey 
+●​
+Joey: 1/1 (1) 
+2.​ Platypus: 1/1 (1) - play 2 Mammal Eggs | poisonous 
+●​
+Mammal Egg: 0/1 (0) - passive | barrier | hidden 
+3.​ Snowshoe Hare: 1/1 (1) - target enemy gains frozen | haste | hidden 
+ 
+Hidden: 3 
+Invisible: 0 
+ 
+
+ 
+Reptiles: 4 
+Prey: 4 cards | 2 hidden | 2 invisible 
+ 
+1.​ Cryptic Golden Tegu: 1/1 (1) - draw 1 | play Golden Tegu Egg 
+●​
+Golden Tegu Egg: 0/1 (0) - harmless | draw 1 | barrier | hidden 
+2.​ Phantastic Leaf-tailed Gecko: 1/1 (1) - invisible | dusk, deal 1 damage to rival | dawn, deal 1 
+damage to rival 
+3.​ Pygmy Rock Monitor: 1/1 (1) - barrier | invisible   
+4.​ Gaboon Viper: 2/2 (2) - toxic | hidden 
+ 
+Hidden: 2  
+Invisible: 2 
+
+ 
+Immune 
+
+ 
+Immune 
+ 
+Amphibians: 3 
+Prey 
+ 
+1.​ Chernobyl Tree Frogs: 1/1 (1) - play 2 Radiated Tree Frogs | immune 
+●​
+Radiated Tree Frog: 1/1 (1) - immune 
+2.​ Fire Salamander: 1/1 (1) - deal 2 damage to rival | immune | poisonous 
+3.​ Java Flying Frog: 1/1 (1) - immune | hidden 
+ 
+Birds: 2 
+Prey 
+ 
+1.​ Roadrunner: 1/1 (1) - haste | immune | defending, return to hand 
+Preds 
+ 
+2.​ Pacific Sea Eagle: 6/6 - immune 
+ 
+Fish: 2 
+Prey 
+ 
+1.​ Blobfish: 1/1 (1) - passive | dusk, eat target enemy prey | immune 
+ 
+Preds 
+ 
+2.​ Narwhal: 4/4 - allies gain immune   
+ 
+Mammals: 3 
+Prey 
+ 
+1.​ Muskox: 2/2 (2) - immune | slain, add Qiviut to hand 
+●​
+Qiviut: free play spell - target ally gains immune 
+ 
+Preds 
+ 
+2.​ Malayan Tiger: 3/3 - barrier | lure 
+3.​ Siberian Tiger: 4/4 - lure | immune 
+ 
+Reptiles: 1 
+Preds 
+ 
+1.​ Komodo Dragon: 4/4 - toxic | immune 
+
+ 
+Inedible 
+
+ 
+Inedible 
+ 
+Amphibians: 2 
+Prey 
+ 
+1.​ Tomato Frog: 1/1 (2) - discard, add Tomato to hand | poisonous 
+●​
+Tomato: free play spell - target enemy gains inedible 
+ 
+Support 
+ 
+2.​ Newt: free play spell - target animal becomes Newt 
+●​
+Newt: 1/1 (1) - inedible 
+ 
+Birds: 0 
+ 
+Fish: 0 
+ 
+Mammals: 0 
+ 
+Reptiles: 0 
+
+ 
+Indirect Damage 
+
+ 
+Indirect Damage 
+ 
+Amphibians: 12 cards | 24 damage 
+Prey: 3 cards | 6 damage 
+ 
+1.​ Fire Salamander: 1/1 (1) - deal 2 damage to rival | immune | poisonous 
+2.​ Purple Frog: 1/1 (1) - deal 2 damage to enemies and rival 
+3.​ Siberian Salamander: 1/1 (1) - deal 2 damage to players & other animals | animals gain 
+frozen 
+ 
+Preds: 3 cards | 6 damage 
+ 
+4.​ Indian Bullfrogs: 2/2 - play Indian BullFrog | deal 1 damage to any target 
+5.​ Tiger Frog: 2/2 - deal 1 damage to any target 
+6.​ Hellbender Salamander: 4/4 - deal 4 damage to rival  
+ 
+Support: 6 cards | 12 damage 
+ 
+7.​ Ambiguity: spell - either draw 3, heal 3, or deal 3 damage to rival 
+8.​ Leapfrog: spell - deal 3 damage to rival | deal 3 damage to target enemy 
+9.​ Monsoon: spell - deal 2 damage to enemies and rival | add Rainbow to hand 
+10.​Rainbow: free play spell - regen allies 
+11.​ Whitewater: spell - deal 3 damage to any target | heal 3 
+12.​Slime: free play spell: either draw 1, heal 1, or deal 1 damage to rival 
+ 
+Birds: 5 cards | 10 damage 
+Prey: 3 cards | 7 damage 
+ 
+1.​ Eurasian Magpie: 1/1 (1) - dusk, deal 2 damage to enemies and rival 
+2.​ White Bellbird: 1/1 (1) - dusk, deal 3 damage to any target 
+3.​ Hoatzin: 2/1 (1) - after combat, deal 2 damage | dusk, deal 2 damage to rival 
+ 
+Support: 2 cards | 3 damage 
+ 
+4.​ Shotgun: spell - either deal 2 damage to enemies and rival or deal 6 damage to target 
+enemy 
+5.​ White Missile: free play spell - deal 1 damage to any target 
+ 
+Fish: 2 cards | 5 damage 
+Preds: 1 card | 3 damage 
+ 
+1.​ Shortfin Mako: 3/3 - deal 3 damage to any target 
+ 
+Support: 1 card | 2 damage 
+ 
+2.​ Maelstrom: trap - when target enemy attacks directly, negate attack | deal 2 damage players & 
+animals 
+ 
+Mammals: 4 cards | 9 damage 
+Prey: 3 cards | 7 damage 
+ 
+1.​ Japanese Weasel: 1/1 (1) - deal 3 damage to any target 
+2.​ Pronghorn: 2/2 (2) - deal 2 damage to any target  
+3.​ Mountain Zebra: 2/2 (2) - either heal 2 or deal 2 damage to rival 
+ 
+Support: 1 card | 2 damage 
+
+ 
+ 
+4.​ Blizzard: spell - deal 2 damage to enemies and rival | enemies gain frozen 
+ 
+Reptiles: 7 cards | 17 damage 
+ 
+Prey: 3 cards | 6 damage 
+ 
+1.​ Galápagos Lava Lizards: 1/1 (1) - play 2 Lava Lizards | deal 1 damage to rival 
+●​
+Lava Lizard: 1/1 (1) - deal 1 damage to rival 
+2.​ Phantastic Leaf-tailed Gecko: 1/1 (1) - invisible | dawn, deal 1 damage to enemies and rival 
+3.​ Darwin Volcano Giant Tortoise: 2/3 (3) - deal 2 damage to players & other animals 
+ 
+Preds: 4 cards | 11 damage 
+ 
+4.​ Papuan Monitor: 2/3 - deal 2 damage to enemies and rival 
+5.​ King Cobra: 3/2 - neurotoxic | slain, deal 3 damage to rival 
+6.​ Chinese Alligator: 3/3 - either draw 3, heal 3, or deal 3 damage to rival 
+7.​ Nile Crocodile: 5/5 - heal 3 & deal 3 damage to rival 
+ 
+ 
+ 
+
+ 
+Kill 
+
+ 
+Kill 
+ 
+Amphibians: 4 
+Prey 
+ 
+1.​ Golden Poison Frog: 1/1 (1) - draw 1 | sacrifice, add Golden Blowdart to hand | poisonous 
+●​
+Golden Blowdart: spell - kill target enemy | draw 1 
+2.​ Phantasmal Poison Frog: 1/1 (1) - sacrifice, add Phantasmal Darts to hand | poisonous 
+●​
+Phantasmal Darts: spell - kill enemies  
+ 
+Preds 
+ 
+3.​ Titicaca Water Frog: 3/3 - add Titicaca Water to hand 
+●​
+Titicaca Water: free play spell - kill animals 
+ 
+Support 
+ 
+4.​ Blowdart: trap - when target enemy attacks directly, negate attack & kill it 
+ 
+Birds: 1 
+Preds 
+ 
+1.​ Martial Eagle: 4/4 - dusk, kill target enemy 
+ 
+Fish: 5 
+Preds 
+ 
+1.​ Alligator Gar: 3/3 - barrier | slain, add Scale Arrows to hand 
+●​
+Scale Arrows: free play spell - kill enemies 
+2.​ Goliath Grouper: 3/3 - kill target prey | edible 
+3.​ Great White Shark: 5/5 - kill target enemy | acuity 
+ 
+Support 
+ 
+4.​ Flood: spell - kill animals 
+5.​ Net: spell - kill enemy prey 
+ 
+Mammals: 4 
+Prey 
+ 
+1.​ Bobcat: 1/1 (1) - rival reveals hand | kill target prey 
+ 
+Preds 
+ 
+2.​ Black Leopard: 2/2 - kill target enemy | ambush 
+3.​ Hippopotamus: 6/6 - kill target enemy 
+ 
+Support 
+ 
+4.​ Rifle: spell - kill target enemy 
+ 
+Reptiles: 4 
+Preds 
+ 
+1.​ Gharial: 2/4 - kill enemy prey 
+2.​ Saltwater Crocodile: 6/6 - kill target enemy 
+
+ 
+ 
+Support 
+ 
+3.​ Meteor: spell - destroy field spells | kill animals 
+4.​ Scythian Arrows: spell - discard 1 | kill enemies 
+
+ 
+Poisonous 
+
+ 
+Poisonous 
+ 
+Amphibians: 9 
+Prey 
+ 
+1.​ Emperor Newt: 1/1 (1) - dusk, play 2 Empress Newts | poisonous 
+●​
+Empress Newt: 1/1 (1)  - poisonous 
+2.​ Fire Salamander: 1/1 (1) - deal 2 damage to rival | immune | poisonous 
+3.​ Golden Mantellas: 1/1 (1) - draw 1 | play Golden Mantella | poisonous 
+●​
+Golden Mantella: draw 1 | poisonous  
+4.​ Golden Poison Frog: 1/1 (1) - draw 1 | sacrifice, add Golden Blowdart to hand | poisonous 
+●​
+Golden Blowdart: spell - kill target enemy | draw 1 
+5.​ Monte Iberia Eleuth: 1/1 (1) - dusk, play Hidden Eleuth Egg | poisonous 
+●​
+Hidden Eleuth Egg: 0/1 (0) - harmless | hidden | dawn, become Monte Iberia Eleuth 
+6.​ Panamanian Golden Frog: 1/1 (1) - draw 2 | poisonous | slain, draw 1 
+7.​ Phantasmal Poison Frog: 1/1 (1) - sacrifice, add Phantasmal Darts to hand | poisonous 
+●​
+Phantasmal Darts: spell - kill enemies 
+8.​ Tomato Frog: 1/1 (2) - discard, add Tomato to hand | poisonous 
+●​
+Tomato: free play spell - target enemy gains inedible 
+ 
+Preds 
+ 
+9.​ Cane Toad: 4/4 - play 2 Poisonous Eggs | poisonous 
+●​
+Poisonous Egg: 0/1 (0) - harmless | poisonous  
+ 
+Birds: 0 
+ 
+Fish: 0 
+ 
+Mammals: 1 
+Prey 
+ 
+1.​ Platypus: 1/1 (1) - play 2 Mammal Eggs | poisonous 
+●​
+Mammal Egg: 0/1 (0) - passive | barrier | hidden 
+ 
+Reptiles: 1 
+Prey 
+ 
+1.​ Yucatan Neotropical Rattlesnake: 1/1 (1) - barrier | lure | poisonous | slain, heal 3 
+
+ 
+Regen 
+
+ 
+Regen 
+ 
+Amphibians: 3 
+Prey 
+ 
+1.​ Axolotl: 2/2 (2) - heal 4 | dusk, regen 
+ 
+Preds 
+ 
+2.​ Lake Junin Giant Frog: 4/4 - heal 4 | regen other allies 
+ 
+Support 
+ 
+3.​ Monsoon: spell - deal 2 damage to enemies and rival | add Rainbow to hand 
+●​
+Rainbow: free play spell - regen allies 
+ 
+Birds: 2 
+ 
+Prey 
+ 
+1.​ Oriental Magpies: 1/1 (1) - play Oriental Magpie | heal 2 | regen target ally 
+●​
+Oriental Magpie: 1/1 (1) - heal 2 
+2.​ Indian Peacock: 2/2 (2) - barrier | lure | slain, add Rainbow Feathers to hand 
+●​
+Rainbow Feathers: free play spell - either heal 2 or regen target ally 
+ 
+Fish: 1 
+ 
+Prey 
+ 
+1.​ Rainbow Trout: 1/1 (1) - heal 4 | regen target ally 
+ 
+Mammals: 1 
+ 
+Preds 
+ 
+1.​ Grizzly Bear: 4/4 - dusk, regen 
+ 
+Reptiles: 2 
+ 
+Preds 
+ 
+1.​ Boa Constrictor: 3/3 - attacking after combat, regen & heal 2 
+ 
+Support 
+ 
+2.​ Ecdysis: free play spell - regen target ally 
+ 
+ 
+
+ 
+Rival Discards 
+
+ 
+Rival Discards 
+ 
+Amphibians: 1 
+Prey 
+ 
+1.​ Confusing Rocket Frog: 1/1 (1) - free play | rival discards 1 
+ 
+Birds: 0 
+ 
+Fish: 0 
+ 
+Mammals: 1 
+Prey 
+ 
+1.​ Red-handed Howler: 1/1 (1) - rival discards 1 | add a card from deck to hand 
+ 
+Reptiles: 1 
+Support 
+ 
+1.​ Snake Oil: trap - when rival draws, rival discards 1 | draw 1 
+
+ 
+Sacrifice 
+
+ 
+Sacrifice 
+ 
+Ambhibians: 2 
+Prey 
+ 
+1.​ Golden Poison Frog: 1/1 (1) - draw 1 | sacrifice, add Golden Blowdart to hand | poisonous 
+●​
+Golden Blowdart: spell - kill target enemy | draw 1 
+2.​ Phantasmal Poison Frog: 1/1 (1) - sacrifice, add Phantasmal Darts to hand | poisonous 
+●​
+Phantasmal Darts: spell - kill enemies  
+ 
+Birds: 0 
+ 
+Fish: 0 
+ 
+Mammals: 2 
+Preds 
+ 
+1.​ Jaguar: 3/3 - sacrifice, play a carrion 
+ 
+Support 
+ 
+2.​ Curiosity: free play spell - sacrifice target ally, draw 3 
+ 
+Reptiles: 0 
+
+ 
+Slain 
+
+ 
+Slain 
+ 
+Amphibians: 2 
+Prey 
+ 
+1.​ Panamanian Golden Frog: 1/1 (1) - draw 2 | poisonous | slain, draw 1 
+2.​ Surinam Toad: 1/2 (2) - slain, play 3 Froglets 
+●​
+Froglet: 1/1 (1) 
+ 
+Birds: 3 
+Prey 
+ 
+1.​ Kākāpō: 0/2 (2) - harmless | invisible | slain, add Kākāpō Feathers to hand 
+●​
+Kākāpō Feathers: free play spell - target ally gains invisible  
+2.​ Indian Peacock: 2/2 (2) - barrier | lure | slain, add Rainbow Feathers to hand 
+●​
+Rainbow Feathers: free play spell - either heal 2 or regen target ally 
+3.​ Jersey Giant: 2/2 (2) - slain, play Hen 
+●​
+Hen: 1/2 (2) - dawn, play Egg 
+●​
+Egg: 0/1 (0) - harmless 
+ 
+Fish: 3 
+Prey 
+ 
+1.​ Rainbow Sardines: 1/1 (1) - play 2 Sardines | heal 1 | slain play Sardine 
+●​
+Sardine: 1/1 (1) - heal 1 
+2.​ King Salmon: 2/2 (2) - slain, add Salmon to hand 
+●​
+Salmon: 1/1 (1) - free play 
+ 
+Preds 
+ 
+3.​ Alligator Gar: 3/3 - barrier | slain, add Scale Arrows to hand 
+●​
+Scale Arrows: free play spell - kill enemies 
+ 
+Mammals: 6 
+Prey 
+ 
+1.​ Black Tree-kangaroo: 1/1 (1) - ambush | hidden | slain, play Joey 
+●​
+Joey: 1/1 (1) 
+2.​ Meerkat Matriarch: 1/1 (1) - play 2 Pups | slain, play 3 Pups 
+●​
+Pup: 0/1 (0) 
+3.​ North American Opossum: 1/1 (1) - slain, revive 
+4.​ Sable: 1/1 (1) - slain, add Sable Fur to hand 
+●​
+Sable Fur: free play spell - draw 1 | heal 1 | target ally gains +1/+1 
+5.​ Muskox: 2/2 (2) - immune | slain, add Qiviut to hand 
+ 
+Preds 
+ 
+6.​ Black Leopards: 3/2 - ambush | slain, play Black Leopard 
+●​
+Black Leopard: 3/2: ambush 
+ 
+Reptiles: 4 
+Prey 
+ 
+1.​ European Glass Lizard: 1/1 (1) - slain, become Tailless  
+●​
+Tailless: 1/1 (1) - dusk, become European Glass Lizard | dawn, become European Glass Lizard 
+2.​ Yucatan Neotropical Rattlesnake: 1/1 (1) - barrier | lure | poisonous | slain, heal 3 
+
+ 
+ 
+Preds 
+ 
+3.​ King Cobra: 3/2 - neurotoxic | slain, deal 3 damage to rival 
+4.​ American Alligator: 4/4 - slain, add Alligator Skin to hand 
+●​
+Alligator Skin: free play spell - target ally gains barrier 
+
+ 
+Spells 
+
+ 
+Spells 
+ 
+Amphibians: 11 
+Prey 
+ 
+1.​ Desert Rain Frog: 1/1 (1) - add a card from deck to hand | play a spell 
+2.​ Golden Poison Frog: 1/1 (1) - draw 1 | sacrifice, add Golden Blowdart to hand | poisonous 
+●​
+Golden Blowdart: spell - kill target enemy | draw 1 
+3.​ Phantasmal Poison Frog: 1/1 (1) - sacrifice, add Phantasmal Darts to hand | poisonous 
+●​
+Phantasmal Darts: spell - kill enemies  
+ 
+Support 
+ 
+4.​ Ambiguity: spell - either draw 3, heal 3, or deal 3 damage to rival 
+5.​ Bounce: spell - return enemies to hand 
+6.​ Leapfrog: spell - deal 3 damage to rival | deal 3 damage to target enemy 
+7.​ Monsoon: spell - deal 2 damage to enemies and rival | add Rainbow to hand 
+●​
+Rainbow: free play spell - regen allies 
+8.​ Pounce Plummet: spell - deal 2 damage to enemies | deal 2 damage to enemies 
+9.​ Shower: spell - allies gain +2/+2 
+10.​Terrain Shift: spell - destroy target field spell | kill enemy tokens 
+11.​ Whitewater: spell - deal 3 damage to any target | heal 3 
+ 
+Birds: 4 
+ 
+Support 
+ 
+1.​ Bird Food: spell - allies gain +2/+2 
+2.​ Birds of a Feather: spell - play copy of target ally 
+3.​ Shotgun: spell - either deal 2 damage to enemies and rival or deal 6 damage to target 
+enemy 
+4.​ Swan Song: spell - heal 3 | gain barrier 
+ 
+Fish: 6 
+Support 
+ 
+1.​ Fish Food: spell - allies gain +2/+2 
+2.​ Flood: spell - kill animals 
+3.​ Harpoon: spell - deal 4 damage to target enemy then gain control of it 
+4.​ Net: spell - kill enemy prey 
+5.​ Sunken Treasure: spell - either draw 3, heal 3, or target ally gains +3/+3 
+6.​ Washout: spell - enemies lose abilities | deal 2 damage to enemies 
+ 
+Mammals: 5 
+Support 
+ 
+1.​ Blizzard: spell - deal 2 damage to enemies and rival | enemies gain frozen 
+2.​ Milk: spell - allies gain +2/+2 
+3.​ Rifle: spell - kill target enemy 
+4.​ Six-layered Neocortex: spell - play a ally from deck it gains frozen 
+5.​ White Hart: spell - play a carrion it gains frozen 
+ 
+Reptiles: 5 
+Support 
+ 
+1.​ Meteor: spell - destroy field spells | kill animals 
+
+ 
+2.​ Scythian Arrows: spell - discard 1 | kill enemies 
+3.​ Snake Wine: spell - heal 7 
+4.​ Paralyze: spell - target enemy gains paralysis  
+5.​ Sunshine: spell - allies gain +2/+2 
+
+ 
+Start of Turn 
+
+ 
+dawn 
+ 
+Amphibians: 3 
+Prey 
+ 
+1.​ Monte Iberia Eleuth: 1/1 (1) - dusk, play Hidden Eleuth Egg | poisonous 
+●​
+Hidden Eleuth Egg: 0/1 (0) - harmless | hidden | dawn, become Monte Iberia Eleuth 
+2.​ Bigfoot Leopard Frog: 2/2 (2) - dusk, play Bigfoot Tadpole 
+●​
+Bigfoot Tadpole: 0/1 (0) - dawn, become Bigfoot Leopard Frog 
+ 
+Preds 
+ 
+3.​ Mountain Chicken: 4/4 - dusk, play Mountain Chicken Egg | edible 
+●​
+Mountain Chicken Egg: 0/1 (0) - harmless | hidden | start of turn, become Giant  
+●​
+Giant Ditch Frog: 2/2 (2) - dusk, play Mountain Chicken Egg 
+ 
+Birds: 2 
+Prey 
+ 
+1.​ Robin: 1/1 (1) - dusk, play 2 Blue Eggs 
+●​
+Blue Egg: 0/1 (0) - harmless | hidden | dawn, become Robin 
+2.​ Jersey Giant: 2/2 (2) - slain, play Hen 
+●​
+Hen: 1/2 (2) - dawn, play Egg 
+●​
+Egg: 0/1 (0) - harmless 
+ 
+Fish: 2 
+Prey 
+ 
+1.​ Leafy Seadragon: 1/1 (1) - invisible | dawn, play Leafy 
+●​
+Leafy: 0/1 (0) - hidden 
+ 
+Preds 
+ 
+2.​ Atlantic Bluefin Tuna: 3/3 - play 2 Tuna Eggs | edible 
+●​
+Tuna Egg: 0/1 (0) - passive | dawn, become Tuna 
+●​
+Tuna: 2/2 (2) 
+ 
+Mammals: 1 
+Prey 
+ 
+1.​ Florida White Rabbit: 1/1 (1) - dusk, play 2 Kits 
+●​
+Kit: 1/1 (1) - dawn, become Florida White Rabbit 
+ 
+Reptiles: 4 
+Prey 
+ 
+1.​ European Glass Lizard: 1/1 (1) - slain, become Tailless  
+●​
+Tailless: 1/1 (1) - dusk, become European Glass Lizard | dawn, become European Glass Lizard 
+2.​ Green Anole: 1/1 (1) - dusk, play Carolina Anole 
+●​
+Carolina Anole: 1/1 (1) - add Hand Egg to hand 
+●​
+Hand Egg: free play spell - play Enola Egg 
+●​
+Anole Egg: 0/1 (0) - dawn, become Green Anole 
+3.​ Phantastic Leaf-tailed Gecko: 1/1 (1) - invisible | dawn, deal 1 damage to enemies and rival 
+4.​ Alcedo Giant Tortoise: 2/3 (3) - dawn, play Giant Tortoise 
+●​
+Giant Tortoise: 2/3 (3) 
+
+ 
+Toxic & Neurotoxic 
+
+ 
+Toxic & Neurotoxic 
+ 
+Amphibians: 0 
+ 
+Toxic: 0 
+Neurotoxic: 0 
+ 
+Birds: 1 
+Preds 
+ 
+1.​ Short-toed Snake Eagle: 2/2 - play 2 Toxic Snakes 
+●​
+Toxic Snake: 1/1 (1) - toxic  
+ 
+Toxic: 1 
+Neurotoxic: 0 
+ 
+Fish: 1 
+Prey 
+ 
+1.​ Blue-ringed Octopus: 1/1 (1) - invisible | neurotoxic 
+ 
+Toxic: 0 
+Neurotoxic: 1 
+ 
+Mammals: 0 
+ 
+Toxic: 0 
+Neurotoxic: 0 
+ 
+Reptiles: 11 
+Prey 
+ 
+1.​ Golden Lancehead: 1/1 (1) - draw 1 | toxic 
+2.​ Saw-scaled Viper: 1/1 (1) - free play | toxic 
+3.​ Solomons Coral Snake: 1/1 (1) - barrier | defending, neurotoxic 
+4.​ Gaboon Viper: 2/2 (2) - toxic | hidden 
+5.​ King Brown Snake: 2/2 (2) - toxic | add a card from deck to hand 
+6.​ Black Mamba: 3/1 (1) - ambush | neurotoxic 
+ 
+Preds 
+ 
+7.​ King Cobra: 3/2 - neurotoxic | slain, deal 3 damage to rival 
+8.​ Komodo Dragon: 4/4 - toxic | immune 
+ 
+Support 
+ 
+9.​ Paralyze: spell - target enemy gains paralysis  
+10.​Toxic: free play spell - target ally gains toxic 
+11.​ Snake Pit: trap - when target enemy attacks directly, negate attack | play Toxic Snakes 
+●​
+Toxic Snakes: 2/2 - toxic 
+ 
+Toxic: 7 
+Neurotoxic: 4 
+
+ 
+Traps 
+
+ 
+Traps 
+ 
+Amphibians 
+ 
+1.​ Blowdart: trap - when target enemy attacks directly, negate its attack and slay it 
+2.​ Rebound: trap - when rival plays an enemy, negate play | put that enemy on top of rival's deck 
+3.​ Slip: trap - when target ally is defending, negate combat 
+ 
+Birds 
+ 
+1.​ Fly Off: trap - when target ally is defending, negate combat and return it to hand | add Feather to 
+hand 
+●​
+Feather: free play spell - heal 1 
+2.​ Mobbing: trap - when target enemy attacks directly, negate attack | play 2 Birds 
+●​
+Bird: 1/1 (1)  
+3.​ Phoenix: trap - when life is 0, heal 3 
+ 
+Fish 
+ 
+1.​ Cramp: trap - when rival plays a pred, it gains drowning 
+2.​ Riptide: trap - when rival plays a prey, it gains drowning 
+3.​ Maelstrom: trap - when target enemy attacks directly, negate attack | deal 2 damage enemies and 
+rival 
+ 
+Mammals 
+ 
+1.​ Pitfall: trap - when target enemy attacks directly, negate attack | enemies gain frozen 
+2.​ Snow Squall: trap - when damaged indirectly, negate damage | enemies gain frozen 
+3.​ Whiteout: trap - when target ally is targeted, negate target 
+ 
+Reptiles 
+ 
+1.​ Scales: trap - when damaged indirectly, negate damage | heal 5 
+2.​ Snake Oil: trap - when rival draws, rival discards 1 | draw 1 
+3.​ Snake Pit: trap - when target enemy attacks directly, negate attack | play Toxic Snake 
+●​
+Toxic Snakes: 1/1 (1) - toxic 
+
+ 
+Card Backs 
+
+ 
+Card Backs 
+ 
+Amphibians: Black w/Yellow Spots (Fire Salamander) 
+Birds: White Feathers (Swan) 
+Fish: Blue Scales 
+Mammals: Brown Fur (Grizzly Bear) 
+Reptiles: Green Snake Skin 
+
+ 
+Broken Support 
+
+ 
+Broken Support 
+ 
+Support 
+ 
+1.​ Pacify: spell - target enemy gains passive 
+2.​ Haste: free play spell - target ally gains haste 
+3.​ Overabundance: free play spell - play a prey 
+4.​ Hunger: free play spell - play a pred 
+5.​ Free Spell: free play spell - play a spell 
+6.​ Burial Ground: trap - when target defending ally is slain, play a carrion it gains frozen 
+ 
+ 
+
+ 
+Themes 
+
+ 
+Themes 
+ 
+Amphibians 
+ 
+1.​ poisonous 
+2.​ draw 
+ 
+Birds 
+ 
+1.​ copy 
+2.​ dusk 
+ 
+Fish 
+ 
+1.​ ambush 
+2.​ edible 
+ 
+Mammals 
+ 
+1.​ frozen 
+2.​ slain 
+3.​ carrion 
+ 
+Reptiles 
+ 
+1.​ toxic 
+2.​ neurotoxic 
+ 
+

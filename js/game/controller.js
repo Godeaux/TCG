@@ -881,6 +881,7 @@ export class GameController {
 
     // Mark as dry dropped
     predator.dryDropped = true;
+    predator.keywords = [];
 
     return this.placeCreatureInSlot(predator, targetSlot, [], [], isFree);
   }

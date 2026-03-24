@@ -15,6 +15,7 @@ import {
   isEdible,
   isInedible,
   isFreePlay,
+  hasKeyword,
   cantAttack,
   cantBeConsumed,
   cantConsume,
@@ -220,7 +221,8 @@ export const wasCardPlayedThisTurn = (state) => {
  */
 export const canPlayAnotherCard = (state, card) => {
   // Free Play cards don't count toward limit
-  if (card?.keywords?.includes('Free Play')) {
+  // Use hasKeyword() which respects dryDropped suppression
+  if (card && hasKeyword(card, 'Free Play')) {
     return true;
   }
 
@@ -518,7 +520,8 @@ export const getAttackableCreatures = (state, playerIndex) => {
     if (hasCreatureAttacked(creature)) return false;
 
     // Check for Haste keyword or summoning exhaustion
-    const hasHaste = creature.keywords?.includes('Haste');
+    // Use hasKeyword() which respects dryDropped suppression
+    const hasHaste = hasKeyword(creature, 'Haste');
     const summonedThisTurn = creature.summonedTurn === state.turn;
 
     // Can attack if has Haste OR wasn't summoned this turn
