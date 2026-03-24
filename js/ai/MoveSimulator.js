@@ -10,7 +10,7 @@
  */
 
 import { GameController } from '../game/controller.js';
-import { createSnapshot } from '../simulation/stateSnapshot.js';
+import { createSnapshot } from './stateUtils.js';
 import { ActionTypes } from '../state/actions.js';
 
 // ============================================================================

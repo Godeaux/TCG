@@ -18,7 +18,7 @@
 
 import { ThreatDetector } from './ThreatDetector.js';
 import { GameController } from '../game/controller.js';
-import { createSnapshot, diffSnapshots } from '../simulation/stateSnapshot.js';
+import { createSnapshot, diffSnapshots } from './stateUtils.js';
 import { hasKeyword, KEYWORDS, isPassive } from '../keywords.js';
 import { hasCreatureAttacked } from '../state/selectors.js';
 import { ActionTypes } from '../state/actions.js';

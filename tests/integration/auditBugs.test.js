@@ -122,64 +122,43 @@ describe("Root Cause A: Neurotoxic doesn't gate on damage actually dealt", () =>
 // ROOT CAUSE B: Duplicate cleanupDestroyed
 // ============================================================================
 describe('Root Cause B: Duplicate cleanupDestroyed implementations', () => {
-  it('B1. Controller cleanupDestroyed should trigger onFriendlyCreatureDies (metamorphosis)', () => {
-    // BUG: Controller's cleanupDestroyed doesn't call triggerFriendlyCreatureDies
-    // unlike the combat.js version. This means metamorphosis effects (like Atlas Moth
-    // Caterpillar transforming when an ally dies) don't fire during controller cleanup.
+  it('B1. Controller cleanupDestroyed should pass opponentIndex to onSlain context', () => {
+    // BUG: Controller's cleanupDestroyed doesn't pass opponentIndex to the onSlain
+    // effect context, unlike the combat.js version which does. This means onSlain
+    // effects that target the opponent (e.g., damageOpponent) will fail silently
+    // in controller cleanup because opponentIndex is undefined.
     const state = createTestState();
+    state.activePlayerIndex = 0;
     const uiState = { pendingConsumption: null, pendingAttack: null };
     const controller = new GameController(state, uiState, {
       onStateChange: () => {},
       onBroadcast: () => {},
     });
 
-    let metamorphosisTriggered = false;
-
-    // Dying creature
+    // Dying creature with onSlain that damages opponent
     const dyingCreature = makeCreature({
-      name: 'Dying Ally',
-      type: 'Prey',
-      hp: 0,
-      currentHp: 0,
-      instanceId: 'dying-1',
-    });
-
-    // Living creature with onFriendlyCreatureDies effect (metamorphosis)
-    const metamorphCreature = makeCreature({
-      name: 'Metamorph',
+      name: 'Vengeful Dying',
       type: 'Prey',
       hp: 3,
-      currentHp: 3,
-      instanceId: 'metamorph-1',
+      currentHp: 0,
       effects: {
-        onFriendlyCreatureDies: {
-          type: 'transformSelf',
-          params: { cardId: 'test-transform' },
-          description: 'Transform when ally dies',
-        },
+        onSlain: { type: 'damageRival', params: { amount: 2 } },
       },
+      instanceId: 'dying-vengeful-b1',
     });
 
     state.players[0].field[0] = dyingCreature;
-    state.players[0].field[1] = metamorphCreature;
+    const opponentHpBefore = state.players[1].hp;
 
     controller.cleanupDestroyed();
 
-    // The dying creature should have been cleaned up
+    // The creature should have been cleaned up
     expect(state.players[0].field[0]).toBeNull();
 
-    // onFriendlyCreatureDies should have fired on metamorphCreature
-    // BUG: Controller's cleanupDestroyed doesn't trigger onFriendlyCreatureDies
-    // The metamorphCreature's effect should have been processed
-    // We check that the creature was at least attempted to be transformed
-    // (Since the transform target doesn't exist, it won't actually transform,
-    // but the effect should have been attempted)
-    // As a proxy, check if the controller called resolveCardEffect for onFriendlyCreatureDies
-    // This is hard to test directly, so we check the log for any metamorphosis message
-    const logText = state.log
-      .map((l) => (typeof l === 'string' ? l : l.message || l.text || JSON.stringify(l)))
-      .join('\n');
-    expect(logText).toMatch(/metamorphosis|transform|friendly.*dies/i);
+    // onSlain should have dealt 2 damage to opponent
+    // BUG: Controller's cleanupDestroyed doesn't pass opponentIndex,
+    // so damageRival effects may not resolve correctly
+    expect(state.players[1].hp).toBe(opponentHpBefore - 2);
   });
 });
 

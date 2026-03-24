@@ -144,11 +144,7 @@ const TRIGGER_DESCRIPTIONS = {
     name: 'Death Watch',
     description: 'Triggers whenever one of your creatures dies.',
   },
-  'Emerge:': {
-    name: 'Emerge (Metamorphosis)',
-    description:
-      'This larva transforms into an adult form. The counter tracks turns survived. When the counter reaches the required turns, it transforms into a powerful adult creature.',
-  },
+
   // Trap triggers
   'When Rival plays a Predator,': {
     name: 'Trap: Rival Plays Predator',
@@ -521,22 +517,9 @@ const extractTokenIds = (card) => {
         tokenIds.add(effect.params.cardId);
       }
 
-      // Check for transformation effects (Insect metamorphosis)
-      if (effect.type === 'incrementEmergeCounter' && effect.params?.transformInto) {
-        tokenIds.add(effect.params.transformInto);
-      }
-      if (effect.type === 'transformIfSurvives' && effect.params?.transformInto) {
-        tokenIds.add(effect.params.transformInto);
-      }
       if (effect.type === 'transformCard' && effect.params?.newCardId?.startsWith('token-')) {
         tokenIds.add(effect.params.newCardId);
       }
-
-      // Check for infest effect (parasitic wasps)
-      if (effect.type === 'infestEnemy' && effect.params?.spawnOnDeath) {
-        tokenIds.add(effect.params.spawnOnDeath);
-      }
-
 
       // Check nested effects (like in chooseOption)
       if (effect.params?.options) {
@@ -655,8 +638,6 @@ const renderInfoBoxes = (card, context = 'gameplay') => {
       createInfoBox(`${info.emoji} ${info.name}`, info.description, 'status')
     );
   }
-
-
 
   // Add token previews for cards that summon tokens
   const tokenIds = extractTokenIds(card);

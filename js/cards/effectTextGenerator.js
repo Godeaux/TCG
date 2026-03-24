@@ -36,8 +36,6 @@ export function generateCardEffectText(card) {
     'onAfterCombat',
     'onStart',
     'onEnd',
-    'onFriendlySpellPlayed',
-    'onFriendlyCreatureDies',
     'effect',
     'discardEffect',
     'sacrificeEffect',
@@ -53,8 +51,6 @@ export function generateCardEffectText(card) {
     onAfterCombat: 'After combat, ',
     onStart: 'Start of turn, ',
     onEnd: 'End of turn; ',
-    onFriendlySpellPlayed: 'When you play a spell: ',
-    onFriendlyCreatureDies: 'When a friendly creature dies: ',
     discardEffect: 'Discard: ',
     sacrificeEffect: 'Sacrifice: ',
     attackReplacement: '', // No prefix - effect text itself describes the replacement

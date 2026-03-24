@@ -12,10 +12,7 @@ import { logPlainMessage } from './historyLog.js';
 import { resolveCardEffect } from '../cards/index.js';
 import { isOnlineMode } from '../state/selectors.js';
 import { SoundManager } from '../audio/soundManager.js';
-import {
-  KEYWORDS,
-  cantAttack,
-} from '../keywords.js';
+import { KEYWORDS, cantAttack } from '../keywords.js';
 
 // Lazy-loaded to avoid circular dependency during module initialization
 // The positionEvaluator is loaded by ui.js, so we fetch it once available
@@ -108,7 +105,6 @@ const runStartOfTurnEffects = (state) => {
       );
     }
   });
-
 };
 
 const queueEndOfTurnEffects = (state) => {
@@ -291,21 +287,6 @@ export const advancePhase = (state) => {
       PHASE,
       `${player.name} can play cards. (Hand: ${player.hand.length}, Card limit: ${state.cardPlayedThisTurn ? 'USED' : 'Available'})`
     );
-
-    // Handle Boa Constrictor effect: if it attacked this turn, regen and heal player
-    const playerIndex = state.activePlayerIndex;
-    player.field.forEach((creature) => {
-      if (creature?.boaConstrictorEffect && creature.attackedThisTurn) {
-        creature.currentHp = creature.hp;
-        player.hp += 2;
-        logGameAction(
-          state,
-          BUFF,
-          `${creature.name} constriction effect: regenerates to ${creature.hp} HP and heals ${player.name} for 2 HP.`
-        );
-        creature.attackedThisTurn = false; // Reset flag
-      }
-    });
   }
 
   if (state.phase === 'End') {

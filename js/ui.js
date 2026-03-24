@@ -282,7 +282,7 @@ const lobbyError = document.getElementById('lobby-error');
 
 // UI state variables
 let inspectedCardId = null;
-let deckHighlighted = null;
+const deckHighlighted = null;
 
 // AI thinking ellipsis animation state
 let aiThinkingEllipsisFrame = 0;
@@ -1120,7 +1120,7 @@ const renderAdvantageDisplay = (state, playerIndex) => {
 /**
  * State for hologram display
  */
-let hologramState = {
+const hologramState = {
   active: false,
   snapshotIndex: -1,
   nodePositions: [], // [{x, y, index}] for hit detection
@@ -1892,7 +1892,7 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
     return;
   }
   const { revealHand, ...restResult } = result;
-  let nextResult = restResult;
+  const nextResult = restResult;
 
   if (revealHand) {
     const { playerIndex } = revealHand;
@@ -5238,6 +5238,17 @@ export const setupInitialDraw = (state, count) => {
 export const handleCombatPass = (state) => {
   logMessage(state, `${getActivePlayer(state).name} passes combat.`);
 };
+
+// ============================================================================
+// QA API ACCESSORS
+// Expose internal references so qaApi.js can dispatch actions and read state.
+// ============================================================================
+
+/** Get the current GameController instance (may be null before first render). */
+export const getGameController = () => gameController;
+
+/** Get the dispatch function (routes through ActionBus online, controller offline). */
+export const getDispatchAction = () => dispatchAction;
 
 // ============================================================================
 // VICTORY SCREEN FUNCTIONS

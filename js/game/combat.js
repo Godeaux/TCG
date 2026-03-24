@@ -357,46 +357,6 @@ export const resolveDirectAttack = (state, attacker, opponent, attackerOwnerInde
   return effectiveAtk;
 };
 
-/**
- * Trigger onFriendlyCreatureDies for friendly creatures when an ally dies
- * Used for metamorphosis effects (e.g., Atlas Moth Caterpillar transforms when ally dies)
- *
- * @param {Object} state - Game state
- * @param {Object} player - The player who owned the dead creature
- * @param {number} playerIndex - Index of the player
- * @param {number} opponentIndex - Index of the opponent
- * @param {Object} deadCreature - The creature that just died
- */
-const triggerFriendlyCreatureDies = (state, player, playerIndex, opponentIndex, deadCreature) => {
-  // Find friendly creatures with onFriendlyCreatureDies effect
-  const triggeredCreatures = player.field.filter(
-    (creature) => creature?.effects?.onFriendlyCreatureDies && !creature.abilitiesCancelled
-  );
-
-  triggeredCreatures.forEach((creature) => {
-    logMessage(state, `${creature.name}'s metamorphosis triggers from ally death!`);
-
-    const result = resolveCardEffect(creature, 'onFriendlyCreatureDies', {
-      log: (message) => logMessage(state, message),
-      player,
-      opponent: state.players[opponentIndex],
-      creature,
-      deadCreature,
-      state,
-      playerIndex,
-      opponentIndex,
-    });
-
-    if (result) {
-      resolveEffectResult(state, result, {
-        playerIndex,
-        opponentIndex,
-        card: creature,
-      });
-    }
-  });
-};
-
 export const cleanupDestroyed = (state, { silent = false } = {}) => {
   const destroyedCreatures = [];
 
@@ -480,12 +440,6 @@ export const cleanupDestroyed = (state, { silent = false } = {}) => {
     } else if (!silent) {
       logGameAction(state, DEATH, `${formatCardForLog(card)} (token) destroyed.`);
     }
-
-    // Trigger onFriendlyCreatureDies for other friendly creatures (metamorphosis triggers)
-    // This allows creatures like Atlas Moth Caterpillar to transform when allies die
-    if (!silent) {
-      triggerFriendlyCreatureDies(state, player, playerIndex, opponentIndex, card);
-    }
   }
 
   if (!silent && destroyedCreatures.length > 0) {
@@ -496,5 +450,3 @@ export const cleanupDestroyed = (state, { silent = false } = {}) => {
     state.broadcast?.(state);
   }
 };
-
-

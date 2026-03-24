@@ -9,7 +9,7 @@
  * from thousands of simulated games.
  */
 
-import { createSnapshot } from '../simulation/stateSnapshot.js';
+import { createSnapshot } from './stateUtils.js';
 import { PositionEvaluator } from './PositionEvaluator.js';
 import { GameTreeSearch } from './GameTreeSearch.js';
 import { MoveGenerator } from './MoveGenerator.js';

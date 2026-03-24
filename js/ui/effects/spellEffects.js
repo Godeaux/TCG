@@ -153,7 +153,6 @@ export const TRIBE_THEMES = {
     tertiary: '#c8e6c9',
     glow: 'rgba(129, 199, 132, 0.6)',
   },
-
 };
 
 // ============================================================================
@@ -378,11 +377,6 @@ export const SPELL_VISUAL_EFFECTS = {
     type: 'projectile',
     projectile: 'water-bolt',
     description: 'Water bolt strikes and heals',
-  },
-  'amphibian-free-spell-metamorphosis': {
-    type: 'buff',
-    effect: 'transform-buff',
-    description: 'Magical shimmer on all prey',
   },
   'amphibian-free-spell-newt': {
     type: 'utility',

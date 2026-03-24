@@ -62,10 +62,12 @@ Priority order (from AUDIT-REPORT.md):
 
 ## Key Principles
 - **Tests are the source of truth.** Every rule has a test.
-- **TDD always.** Failing test first, then fix.
+- **TDD always.** Failing test first, then fix. No exceptions.
+- **TDD for cleanup too.** Before removing dead code, write tests that prove the remaining code works without it. Run tests after every removal to catch cascading breakage immediately.
 - **No simulation bloat.** No invariant checkers, no BugDetector.
 - **Player's perspective.** Playwright tests play the game like a human would.
 - **CORE-RULES.md is authoritative.** If code disagrees with rules, code is wrong.
+- **Programmatic error detection.** Tight tests catch bugs before they hit context. Write tests that surface errors affirmatively, don't stumble on them later.
 
 ---
 

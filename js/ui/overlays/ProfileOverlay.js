@@ -176,7 +176,7 @@ const renderCollectionGrid = (elements, ownedCards, filter, onCardClick) => {
   const allCards = getAllCards();
 
   // Filter cards
-  let filteredCards = allCards.filter((card) => {
+  const filteredCards = allCards.filter((card) => {
     // Skip tokens
     if (card.isToken) return false;
 
@@ -1224,8 +1224,5 @@ export const hideFriendProfile = () => {
   if (modal) {
     modal.classList.remove('active');
     modal.setAttribute('aria-hidden', 'true');
-  }
-};
-tAttribute('aria-hidden', 'true');
   }
 };

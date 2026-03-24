@@ -825,16 +825,7 @@ export class AIController {
     const opponentIndex = 1 - this.playerIndex;
     const isFree = card.type === 'Free Spell' || card.type === 'Trap' || isFreePlay(card);
 
-    // Bug detection: snapshot before action
-    if (detector?.isEnabled()) {
-        state,
-        { type: 'PLAY_CARD', payload: { card, slotIndex } },
-        {
-          card,
-          playerIndex,
-        }
-      );
-    }
+    // Bug detection removed (simulation system stripped)
 
     // Handle spells
     if (card.type === 'Spell' || card.type === 'Free Spell') {
@@ -866,8 +857,7 @@ export class AIController {
       cleanupDestroyed(state);
 
       // Bug detection: check after action
-      if (detector?.isEnabled()) {
-      }
+      // Bug detection removed (simulation system stripped)
 
       callbacks.onPlayCard?.(card, slotIndex);
       return { success: true };
@@ -898,15 +888,7 @@ export class AIController {
     const isFree = isFreePlay(card);
 
     // Bug detection: snapshot before action
-    if (detector?.isEnabled()) {
-        state,
-        { type: 'PLAY_CREATURE', payload: { card, slotIndex } },
-        {
-          card,
-          playerIndex: this.playerIndex,
-        }
-      );
-    }
+    // Bug detection removed (simulation system stripped)
 
     // Remove from hand
     player.hand = player.hand.filter((c) => c.instanceId !== card.instanceId);
@@ -929,8 +911,7 @@ export class AIController {
     this.triggerOnPlayEffect(state, creature);
 
     // Bug detection: check after action
-    if (detector?.isEnabled()) {
-    }
+    // Bug detection removed (simulation system stripped)
 
     callbacks.onPlayCard?.(card, slotIndex);
     return { success: true };
@@ -958,16 +939,7 @@ export class AIController {
     // Bug detection: snapshot before action
     const isDryDrop = availablePrey.length === 0;
 
-    if (detector?.isEnabled()) {
-        state,
-        { type: 'PLAY_PREDATOR', payload: { card, slotIndex } },
-        {
-          predator: creature,
-          playerIndex: this.playerIndex,
-          consumedPrey: isDryDrop ? [] : null, // Will be set after selection
-        }
-      );
-    }
+    // Bug detection removed (simulation system stripped)
 
     if (isDryDrop) {
       // Dry drop - play without consumption
@@ -987,13 +959,7 @@ export class AIController {
       await this.triggerPlayTrapsForCreature(state, creature, callbacks);
       this.triggerOnPlayEffect(state, creature);
 
-      // Bug detection: check after dry drop
-      if (detector?.isEnabled()) {
-        // Update context with dry drop info
-          predator: creature,
-          consumedPrey: [],
-        };
-      }
+      // Bug detection removed (simulation system stripped)
 
       callbacks.onPlayCard?.(card, slotIndex, { dryDrop: true });
       return { success: true };
@@ -1035,13 +1001,7 @@ export class AIController {
     this.triggerOnPlayEffect(state, creature);
     this.triggerOnConsumeEffect(state, creature, preyToConsume);
 
-    // Bug detection: check after consumption play
-    if (detector?.isEnabled()) {
-      // Update context with consumption info
-        predator: creature,
-        consumedPrey: preyToConsume,
-      };
-    }
+    // Bug detection removed (simulation system stripped)
 
     callbacks.onPlayCard?.(card, actualSlot, { consumeTargets: preyToConsume });
     return { success: true };
@@ -1395,18 +1355,7 @@ export class AIController {
     const attackerOwnerIndex = this.playerIndex;
     const defenderOwnerIndex = 1 - this.playerIndex;
 
-    // Bug detection: snapshot before attack
-    const attackAction = {
-      type: 'DECLARE_ATTACK',
-      payload: { attacker, target },
-    };
-    if (detector?.isEnabled()) {
-        attacker,
-        target,
-        attackerOwnerIndex,
-        defenderOwnerIndex,
-      });
-    }
+    // Bug detection removed (simulation system stripped)
 
     // Create a promise to wait for the reaction window to resolve
     return new Promise((resolve) => {
@@ -1428,8 +1377,7 @@ export class AIController {
           if (attacker.currentHp <= 0) {
             logMessage(state, `${attacker.name} is destroyed before the attack lands.`);
             // Bug detection: check after (attack cancelled due to attacker death)
-            if (detector?.isEnabled()) {
-            }
+            // Bug detection removed (simulation system stripped)
             callbacks.onUpdate?.();
             state.broadcast?.(state);
             resolve();
@@ -1501,8 +1449,7 @@ export class AIController {
           cleanupDestroyed(state);
 
           // Bug detection: check after attack resolution
-          if (detector?.isEnabled()) {
-          }
+          // Bug detection removed (simulation system stripped)
 
           callbacks.onUpdate?.();
           state.broadcast?.(state);

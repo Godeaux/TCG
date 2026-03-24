@@ -13,7 +13,8 @@ import {
   canPlayerMakeAnyMove,
 } from './state/index.js';
 import { advancePhase, endTurn, startTurn } from './game/index.js';
-import { renderGame, setupInitialDraw } from './ui.js';
+import { renderGame, setupInitialDraw, getGameController, getDispatchAction } from './ui.js';
+import { initQaApi, updateQaController } from './qa/qaApi.js';
 import { initializeCardRegistry } from './cards/index.js';
 import { initializeAI, cleanupAI, checkAndTriggerAITurn } from './ai/index.js';
 import { generateAIvsAIDecks } from './ui/overlays/DeckBuilderOverlay.js';
@@ -266,6 +267,18 @@ const refresh = () => {
 
   // Check if human player has no moves and should auto-advance
   checkAutoAdvance();
+
+  // Keep QA API controller reference in sync (ui.js may recreate it)
+  const ctrl = getGameController();
+  if (ctrl) updateQaController(ctrl);
 };
+
+// Initialize QA API (always loaded — dev prototype)
+initQaApi({
+  state,
+  gameController: getGameController(),
+  dispatchAction: (...args) => getDispatchAction()(...args),
+  refresh,
+});
 
 refresh();
