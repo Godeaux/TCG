@@ -158,8 +158,9 @@ export const resolveCreatureCombat = (
     );
   }
 
+  let attackerResult = { damage: 0, barrierBlocked: false };
   if (defenderDealsDamage) {
-    const attackerResult = applyDamage(attacker, defenderEffectiveAtk, state, attackerOwnerIndex);
+    attackerResult = applyDamage(attacker, defenderEffectiveAtk, state, attackerOwnerIndex);
     attackerDamage = attackerResult.damage;
     if (attackerResult.barrierBlocked) {
       logGameAction(
@@ -201,9 +202,9 @@ export const resolveCreatureCombat = (
   }
 
   // Neurotoxic: applies Paralysis after combat (even if Neurotoxic creature dies)
-  // Neurotoxic does NOT require damage to apply - even 0 ATK creatures can paralyze
+  // Neurotoxic applies at 0 ATK, but NOT when Barrier blocks the attack
   // Paralysis: strips all abilities, grants Harmless, dies at end of controller's turn
-  if (hasNeurotoxic(attacker) && defender.currentHp > 0) {
+  if (hasNeurotoxic(attacker) && defender.currentHp > 0 && !defenderResult.barrierBlocked) {
     queueKeywordEffect(state, attacker, 'Neurotoxic', attackerOwnerIndex);
     stripAbilities(defender);
     defender.keywords = ['Harmless'];
@@ -215,8 +216,14 @@ export const resolveCreatureCombat = (
       `${getKeywordEmoji('Neurotoxic')} ${formatCardForLog(defender)} is paralyzed by neurotoxin! (loses abilities, dies end of turn)`
     );
   }
-  // Defender Neurotoxic: requires ability to counter (blocked by Ambush/Harmless)
-  if (defenderDealsDamage && hasNeurotoxic(defender) && attacker.currentHp > 0) {
+  // Defender Neurotoxic: requires ability to counter (blocked by Ambush/Harmless/Barrier)
+  const attackerCounterBlocked = defenderDealsDamage && attackerResult?.barrierBlocked;
+  if (
+    defenderDealsDamage &&
+    !attackerCounterBlocked &&
+    hasNeurotoxic(defender) &&
+    attacker.currentHp > 0
+  ) {
     queueKeywordEffect(state, defender, 'Neurotoxic', defenderOwnerIndex);
     stripAbilities(attacker);
     attacker.keywords = ['Harmless'];

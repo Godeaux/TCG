@@ -86,8 +86,8 @@ describe("Root Cause A: Neurotoxic doesn't gate on damage actually dealt", () =>
     expect(defender.keywords).not.toContain('Harmless');
   });
 
-  it('A2. Neurotoxic at 0 ATK — no damage dealt, defender should NOT be paralyzed', () => {
-    // BUG: Neurotoxic paralyzes defender even when attacker has 0 ATK (0 damage)
+  it('A2. Neurotoxic at 0 ATK — DOES paralyze (0 damage ≠ Barrier block)', () => {
+    // CORRECT BEHAVIOR: 0 ATK Neurotoxic still paralyzes per game master ruling
     const attacker = makeCreature({
       name: 'Neurotoxic 0-ATK',
       type: 'Prey',
@@ -112,9 +112,9 @@ describe("Root Cause A: Neurotoxic doesn't gate on damage actually dealt", () =>
 
     resolveCreatureCombat(state, attacker, defender, 0, 1);
 
-    // 0 ATK means 0 damage dealt — Neurotoxic should NOT trigger
-    expect(defender.paralyzed).toBeFalsy();
-    expect(defender.keywords).not.toContain('Harmless');
+    // 0 ATK still paralyzes — only Barrier blocks Neurotoxic
+    expect(defender.paralyzed).toBe(true);
+    expect(defender.keywords).toContain('Harmless');
   });
 });
 
