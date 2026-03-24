@@ -66,7 +66,8 @@ describe('Primitives Mapping', () => {
     it('should map Harmless to cantAttack only', () => {
       const harmlessPrimitives = KEYWORD_PRIMITIVES[KEYWORDS.HARMLESS];
       expect(harmlessPrimitives).toContain(PRIMITIVES.CANT_ATTACK);
-      expect(harmlessPrimitives.length).toBe(1);
+      expect(harmlessPrimitives).toContain(PRIMITIVES.DEALS_ZERO_DAMAGE);
+      expect(harmlessPrimitives.length).toBe(2);
     });
   });
 

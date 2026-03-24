@@ -29,6 +29,7 @@ export const KEYWORDS = {
  */
 export const PRIMITIVES = {
   CANT_ATTACK: 'cantAttack',
+  DEALS_ZERO_DAMAGE: 'dealsZeroDamage',
   CANT_BE_CONSUMED: 'cantBeConsumed',
   CANT_CONSUME: 'cantConsume',
   LOSES_ON_DAMAGE: 'losesOnDamage',
@@ -45,7 +46,7 @@ export const KEYWORD_PRIMITIVES = {
   // Frozen creatures: can't attack, can't be consumed, can't consume prey
   [KEYWORDS.FROZEN]: [PRIMITIVES.CANT_ATTACK, PRIMITIVES.CANT_BE_CONSUMED, PRIMITIVES.CANT_CONSUME],
   [KEYWORDS.PASSIVE]: [PRIMITIVES.CANT_ATTACK],
-  [KEYWORDS.HARMLESS]: [PRIMITIVES.CANT_ATTACK],
+  [KEYWORDS.HARMLESS]: [PRIMITIVES.CANT_ATTACK, PRIMITIVES.DEALS_ZERO_DAMAGE],
   [KEYWORDS.INEDIBLE]: [PRIMITIVES.CANT_BE_CONSUMED],
   [KEYWORDS.HIDDEN]: [PRIMITIVES.CANT_BE_TARGETED_BY_ATTACKS],
   [KEYWORDS.INVISIBLE]: [
@@ -60,6 +61,7 @@ export const KEYWORD_PRIMITIVES = {
  */
 export const PRIMITIVE_DESCRIPTIONS = {
   [PRIMITIVES.CANT_ATTACK]: 'Cannot attack',
+  [PRIMITIVES.DEALS_ZERO_DAMAGE]: 'Deals 0 combat damage',
   [PRIMITIVES.CANT_BE_CONSUMED]: 'Cannot be consumed',
   [PRIMITIVES.CANT_CONSUME]: 'Cannot consume prey',
   [PRIMITIVES.LOSES_ON_DAMAGE]: 'Removed when damaged',
@@ -187,7 +189,7 @@ export const KEYWORD_DESCRIPTIONS = {
   [KEYWORDS.AMBUSH]: 'When attacking, cannot be dealt combat damage.',
   [KEYWORDS.TOXIC]: 'Kills any creature it damages in combat regardless of HP.',
   [KEYWORDS.POISONOUS]: 'When defending, kills the attacker after combat.',
-  [KEYWORDS.HARMLESS]: 'Cannot attack (0 attack permanently).',
+  [KEYWORDS.HARMLESS]: 'Cannot attack. Deals 0 combat damage (both when attacking and defending).',
   [KEYWORDS.FROZEN]:
     "Cannot attack, be consumed, or consume prey. Thaws at the end of the creature-owning player's turn.",
   // Bird keywords
