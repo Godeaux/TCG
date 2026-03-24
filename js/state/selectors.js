@@ -359,11 +359,14 @@ export const hasPlayerWon = (state, playerIndex) => {
 };
 
 /**
- * Get winning player index (or null if no winner)
+ * Get winning player index (or 'draw' if both at 0 HP, null if no winner)
  */
 export const getWinningPlayerIndex = (state) => {
-  if (state.players[0].hp <= 0) return 1;
-  if (state.players[1].hp <= 0) return 0;
+  const p0Dead = state.players[0].hp <= 0;
+  const p1Dead = state.players[1].hp <= 0;
+  if (p0Dead && p1Dead) return 'draw';
+  if (p0Dead) return 1;
+  if (p1Dead) return 0;
   return null;
 };
 
