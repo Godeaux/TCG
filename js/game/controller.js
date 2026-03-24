@@ -854,6 +854,11 @@ export class GameController {
       return { success: false, error: 'No pending consumption' };
     }
 
+    // Validate eating limit: max 3 creatures can be consumed
+    if (prey.length + carrion.length > 3) {
+      return { success: false, error: 'Maximum 3 creatures can be consumed' };
+    }
+
     const { emptySlot, isFree } = this.uiState.pendingConsumption;
     this.uiState.pendingConsumption = null;
 
