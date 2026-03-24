@@ -1035,25 +1035,27 @@ export const killAll = (targetType) => (context) => {
   const { log, player, opponent, state } = context;
   let targets = [];
 
+  // Per CORE-RULES-S.md §6: Mass effects ("all") affect Invisible creatures.
+  // Invisible only prevents TARGETED effects, not mass effects.
   if (targetType === 'all-prey') {
     targets = [
       ...player.field.filter((c) => c && c.type === 'prey'),
-      ...opponent.field.filter((c) => c && c.type === 'prey' && !isInvisible(c, state)),
+      ...opponent.field.filter((c) => c && c.type === 'prey'),
     ];
     log(`All prey creatures are destroyed.`);
   } else if (targetType === 'all-predators') {
     targets = [
       ...player.field.filter((c) => c && c.type === 'predator'),
-      ...opponent.field.filter((c) => c && c.type === 'predator' && !isInvisible(c, state)),
+      ...opponent.field.filter((c) => c && c.type === 'predator'),
     ];
     log(`All predator creatures are destroyed.`);
   } else if (targetType === 'all-enemy') {
-    targets = opponent.field.filter((c) => c && !isInvisible(c, state));
+    targets = opponent.field.filter((c) => c);
     log(`All Rival's creatures are destroyed.`);
   } else if (targetType === 'all') {
     targets = [
       ...player.field.filter((c) => c),
-      ...opponent.field.filter((c) => c && !isInvisible(c, state)),
+      ...opponent.field.filter((c) => c),
     ];
     log(`All creatures are destroyed.`);
   }
@@ -1193,10 +1195,12 @@ export const selectCardToDiscard =
  */
 export const selectEnemyToKill = () => (context) => {
   const { log, opponent, player, state } = context;
+  // Per CORE-RULES-S.md §6: Invisible prevents TARGETED effects (including kill selection)
   const targets = opponent.field.filter(
     (c) =>
       c &&
-      (c.type === 'Prey' || c.type === 'Predator' || c.type === 'prey' || c.type === 'predator')
+      (c.type === 'Prey' || c.type === 'Predator' || c.type === 'prey' || c.type === 'predator') &&
+      !isInvisible(c, state)
   );
 
   if (targets.length === 0) {
