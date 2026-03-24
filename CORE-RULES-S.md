@@ -4,6 +4,31 @@
 
 ---
 
+## Table of Contents
+
+1. [Game State](#1-game-state)
+2. [Turn Phases](#2-turn-phases-strict-order)
+3. [Eating (Predator Play)](#3-eating-predator-play)
+4. [Summoning Exhaustion](#4-summoning-exhaustion)
+5. [Combat Resolution](#5-combat-resolution)
+6. [Keywords — Exact Behaviors](#6-keywords--exact-behaviors)
+7. [Status Effects](#7-status-effects)
+8. [Traps](#8-traps)
+9. [Death & Removal](#9-death--removal)
+10. [Tokens](#10-tokens)
+11. [Spell Categories](#11-spell-categories)
+12. [Edge Cases — Verification Checklist](#12-edge-cases--verification-checklist)
+13. [Damage/Death Sources](#13-damagedeath-sources)
+14. [End-of-Turn Priority Order](#14-end-of-turn-priority-order)
+15. [Card Play Priority Order](#15-card-play-priority-order)
+16. [UI Selection Requirements](#16-ui-selection-requirements)
+17. [Network Sync Points](#17-network-sync-points)
+18. [Field Spells](#18-field-spells)
+19. [Dawn & Dusk Triggers](#19-dawn--dusk-triggers)
+20. [Pending Game Master Rulings](#20-pending-game-master-rulings)
+
+---
+
 ## 1. GAME STATE
 
 - Starting HP: **10** each
