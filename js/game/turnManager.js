@@ -226,7 +226,7 @@ export const advancePhase = (state) => {
       logGameAction(
         state,
         PHASE,
-        `${state.players[state.activePlayerIndex].name} skips first draw (going second).`
+        `${state.players[state.activePlayerIndex].name} skips first draw (going first).`
       );
       state.phase = 'Main 1';
       logPlainMessage(state, `━━━ PHASE: MAIN 1 ━━━`);
