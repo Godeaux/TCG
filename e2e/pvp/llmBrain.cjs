@@ -48,6 +48,12 @@ PLAY 0 EAT 0
 My Gyrfalcon has Haste and the rival has no creatures. I can attack directly for 4 damage. The rival is at 6 HP so two more direct attacks wins the game. No reason to hold back.
 ATTACK 0 PLAYER
 ---
+I have two creatures that can attack the rival directly: a 4/2 at slot 0 and a 4/4 at slot 1. The combat math says 8 total damage and the rival is at 4 HP — that's lethal. I should attack directly with both creatures to win the game this turn. Starting with slot 0.
+ATTACK 0 PLAYER
+---
+My field is full with three 1/1 creatures and I can't play any more cards. I should attack with what I have, trade into enemy threats, or advance if no good attacks exist. Trying to play a card when the field is full will fail.
+ATTACK 0 0
+---
 
 Action commands: PLAY n, PLAY n EAT n,n,n, PLAY n DRY_DROP, ATTACK slot target/PLAYER, ADVANCE, END_TURN, EAT n, DRY_DROP, ACTIVATE n, PASS`;
 

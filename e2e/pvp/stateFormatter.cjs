@@ -134,6 +134,31 @@ function formatStatePrompt(qaState, playerIndex, deckName = 'Unknown') {
   }
   lines.push('');
   
+  // SITUATION ASSESSMENT — help the LLM see the math
+  if (qaState.phase === 'Combat') {
+    const canAttackDirect = myCreatures.filter(c => c.canAttackPlayer);
+    const canAttackAny = myCreatures.filter(c => c.canAttack);
+    const totalDirectATK = canAttackDirect.reduce((s, c) => s + (c.currentAtk ?? c.atk ?? 0), 0);
+    const oppHP = opp?.hp ?? 99;
+    
+    if (canAttackDirect.length > 0) {
+      lines.push(`COMBAT MATH: You have ${canAttackDirect.length} creature(s) that can attack the rival directly for ${totalDirectATK} total damage. Rival is at ${oppHP} HP.`);
+    }
+    if (canAttackAny.length > 0 && canAttackDirect.length === 0) {
+      lines.push(`COMBAT MATH: You have ${canAttackAny.length} creature(s) that can attack enemy creatures (but not the rival directly due to summoning sickness).`);
+    }
+    if (canAttackAny.length === 0) {
+      lines.push('COMBAT MATH: No creatures can attack this turn.');
+    }
+    lines.push('');
+  } else if (qaState.phase === 'Main 1' || qaState.phase === 'Main 2') {
+    const emptyCount = myField.filter(c => !c).length;
+    if (emptyCount === 0) {
+      lines.push('⚠️ YOUR FIELD IS FULL (3/3 slots). You cannot play creatures. Consider playing a spell or advancing.');
+    }
+    lines.push('');
+  }
+  
   // Your hand (labeled "hand #" to distinguish from field "slot #")
   if (me?.hand) {
     lines.push(`YOUR HAND (${me.hand.length} cards) — use PLAY hand# to play:`);
