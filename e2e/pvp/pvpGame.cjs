@@ -35,7 +35,7 @@ async function createPlayer(browser, index, deckName) {
   });
   
   await page.goto(GAME_URL);
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(1000);
   
   return {
     index,
@@ -76,13 +76,13 @@ async function loginPlayer(page, username, pin) {
   await page.fill('#login-username', username);
   await page.fill('#login-pin', pin);
   try { await page.click('#login-create'); } catch { await page.click('#login-submit'); }
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(1000);
 }
 
 async function createLobby(page) {
   await page.click('#menu-other', { force: true }); await page.waitForTimeout(300);
   await page.click('#other-multiplayer', { force: true }); await page.waitForTimeout(300);
-  await page.click('#lobby-create', { force: true }); await page.waitForTimeout(3000);
+  await page.click('#lobby-create', { force: true }); await page.waitForTimeout(1500);
   return page.evaluate(() => window.__qa?.act?.menu?.getMenuState()?.lobby?.code);
 }
 
@@ -102,7 +102,7 @@ async function joinLobby(page, code) {
 
 async function continueTaGame(page) {
   await page.click('#lobby-continue', { force: true });
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(1000);
 }
 
 // ============================================================================
@@ -131,7 +131,7 @@ async function selectDeck(page, deckName) {
       if (p.offsetHeight > 0) p.click();
     });
   }, {name: deckName});
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(1000);
   
   // Step 3: Click 'CONFIRM DECK & READY UP' (dynamically created in grid)
   await page.evaluate(() => {
@@ -140,7 +140,7 @@ async function selectDeck(page, deckName) {
       if (b.innerText.includes('CONFIRM') && b.offsetHeight > 0) b.click();
     });
   });
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(1000);
   
   // AI mode fallback: RANDOM + static CONFIRM
   const needsRandom = await page.evaluate(() => document.getElementById('deck-random')?.offsetHeight > 0);
@@ -148,7 +148,7 @@ async function selectDeck(page, deckName) {
     await page.evaluate(() => document.getElementById('deck-random')?.click());
     await page.waitForTimeout(500);
     await page.evaluate(() => document.getElementById('deck-confirm')?.click());
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
   }
 }
 
@@ -306,24 +306,22 @@ async function playTurn(player, turnNum, model, recorder) {
   }
   
   // === END TURN ===
-  // End turn — DOM button clicks only, max 2 (skip combat + end turn)
   const startTurn = await player.page.evaluate(() => window.__qa?.getState()?.turn);
   const isMyTurn = await player.page.evaluate(() => window.__qa?.getState()?.ui?.isMyTurn);
   
   if (isMyTurn) {
-    // Click 1: advance from current phase (Combat → Main 2 or Main 2 → End)
+    // DOM button click to advance through remaining phases
     await player.page.evaluate(() => document.getElementById('field-turn-btn')?.click());
-    await player.page.waitForTimeout(1000);
+    await player.page.waitForTimeout(800);
     
-    let state = await player.page.evaluate(() => {
+    // Check if turn ended — if not, use QA endTurn as fallback
+    const state = await player.page.evaluate(() => {
       const s = window.__qa?.getState();
       return { turn: s?.turn, isMyTurn: s?.ui?.isMyTurn };
     });
-    
-    // Click 2 only if still our turn (need to advance one more phase)
     if (state.turn === startTurn && state.isMyTurn) {
-      await player.page.evaluate(() => document.getElementById('field-turn-btn')?.click());
-      await player.page.waitForTimeout(1000);
+      await player.page.evaluate(() => window.__qa?.act?.endTurn());
+      await player.page.waitForTimeout(800);
     }
   }
   
@@ -378,7 +376,7 @@ async function main() {
     log(`✅ P2 selected ${deck2}`);
     
     // Wait for both decks to sync (multiplayer needs both ready)
-    await p1.page.waitForTimeout(3000);
+    await p1.page.waitForTimeout(1500);
     await p2.page.waitForTimeout(1000);
     
     // Debug: check deck state
