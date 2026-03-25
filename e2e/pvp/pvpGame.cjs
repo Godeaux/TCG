@@ -248,10 +248,12 @@ async function playTurn(player, turnNum, model, recorder) {
   // Re-fetch state FRESH for combat (not stale from main phase)
   let combatState = await player.getState();
   if (combatState?.phase === 'Combat') {
+    const attackedSlots = new Set(); // Track which slots already attacked this turn
+    
     // Attack up to 3 times (max creatures), refreshing state each time
     for (let attackNum = 0; attackNum < 3; attackNum++) {
       combatState = await player.getState(); // FRESH state each attack
-      const attackers = combatState.players?.[0]?.field?.filter(c => c && c.canAttack) || [];
+      const attackers = combatState.players?.[0]?.field?.filter(c => c && c.canAttack && !attackedSlots.has(c.slot)) || [];
       if (attackers.length === 0) break;
       
       const atkDecision = await getDecision(combatState, 0, player.deckName, { model });
@@ -263,6 +265,9 @@ async function playTurn(player, turnNum, model, recorder) {
         const result = await executeAction(player.page, atkDecision.action, combatState);
         logP(player.index, `Attack: ${result.description} — ${result.success ? '💥' : '❌ ' + result.error}`);
         actions.push({ decision: atkDecision, result });
+        
+        // Track this slot as attacked to prevent duplicates
+        attackedSlots.add(atkDecision.action.attackerSlot);
         
         // Wait for state to settle (Supabase sync + animations)
         await player.page.waitForTimeout(800);

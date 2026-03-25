@@ -166,9 +166,13 @@ async function dragAttackPlayer(page, attackerSlot) {
     const attackerEl = slots[aSlot + 3]?.querySelector('.card');
     if (!attackerEl) return { success: false, error: `No card in my slot ${aSlot}` };
     
-    // Target: opponent's player badge or scoreboard
-    const target = document.querySelector('.opponent-badge, .scoreboard-player[data-player-index="1"], .opponent-info, .field-row.opponent-field');
-    if (!target) return { success: false, error: 'No opponent badge found' };
+    // Determine opponent index dynamically (NOT hardcoded to "1")
+    const localPlayerIndex = window.__qa?.getState()?.localPlayer ?? 0;
+    const opponentIndex = 1 - localPlayerIndex;
+    
+    // Target: opponent's player badge
+    const target = document.querySelector(`.player-badge[data-player-index="${opponentIndex}"]`);
+    if (!target) return { success: false, error: `No opponent badge found (opponent index ${opponentIndex})` };
     
     const aRect = attackerEl.getBoundingClientRect();
     const tRect = target.getBoundingClientRect();
