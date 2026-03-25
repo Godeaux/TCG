@@ -204,6 +204,9 @@ async function playTurn(player, turnNum, model, recorder) {
   const stateBefore = await player.getState();
   if (!stateBefore) return { error: 'No state' };
   
+  // Quick state fingerprint for polling state changes
+  const quickSnap = (s) => s ? `${s.players?.[0]?.hp}-${s.players?.[0]?.hand?.length ?? s.players?.[0]?.handSize}-${s.players?.[0]?.field?.filter(c=>c).length}-${s.players?.[1]?.hp}-${s.players?.[1]?.field?.filter(c=>c).length}` : '';
+  
   const actions = [];
   
   // === MAIN PHASE ===
@@ -220,13 +223,15 @@ async function playTurn(player, turnNum, model, recorder) {
       const result = await executeAction(player.page, decision.action, stateBefore);
       logP(player.index, `Result: ${result.description} — ${result.success ? '✅' : '❌ ' + result.error}`);
       actions.push({ decision, result });
-      await player.page.waitForTimeout(500);
       
-      // Wait for state to settle
-      await player.page.waitForTimeout(800);
-      
-      // Check if state actually changed (detect silently rejected actions)
-      const stateAfter = await player.getState();
+      // Poll until state changes or timeout (Supabase sync can be slow)
+      let stateAfter = null;
+      const beforeSnap = quickSnap(stateBefore);
+      for (let wait = 0; wait < 8; wait++) {
+        await player.page.waitForTimeout(500);
+        stateAfter = await player.getState();
+        if (quickSnap(stateAfter) !== beforeSnap) break;
+      }
       if (recorder) {
         const { entry, suspicious } = recorder.recordAction(
           turnNum, player.index, 'Main 1',
@@ -272,8 +277,13 @@ async function playTurn(player, turnNum, model, recorder) {
         // Track this slot as attacked to prevent duplicates
         attackedSlots.add(atkDecision.action.attackerSlot);
         
-        // Wait for state to settle (Supabase sync + animations)
-        await player.page.waitForTimeout(800);
+        // Poll until state changes (Supabase sync)
+        const combatSnap = quickSnap(combatBefore);
+        for (let wait = 0; wait < 6; wait++) {
+          await player.page.waitForTimeout(500);
+          const s = await player.getState();
+          if (quickSnap(s) !== combatSnap) break;
+        }
         
         if (recorder) {
           const combatAfter = await player.getState();
