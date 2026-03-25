@@ -208,34 +208,32 @@ async function playTurn(player, turnNum, model, recorder) {
   
   // === MAIN PHASE ===
   if (stateBefore.phase === 'Main 1') {
-    // Get LLM decision
     const decision = await getDecision(stateBefore, 0, player.deckName, { model });
     const retryTag = decision.retried ? ' [RETRY]' : '';
     logP(player.index, `Think (${decision.timeMs}ms)${retryTag}: ${decision.rawResponse?.substring(0, 120) || decision.reasoning?.substring(0, 120)}`);
     logP(player.index, `Action: ${JSON.stringify(decision.action)}`);
     
-    // Execute the action
     if (decision.action.type !== 'unknown' && decision.action.type !== 'advance' && decision.action.type !== 'endTurn') {
       const result = await executeAction(player.page, decision.action, stateBefore);
       logP(player.index, `Result: ${result.description} — ${result.success ? '✅' : '❌ ' + result.error}`);
       actions.push({ decision, result });
       await player.page.waitForTimeout(500);
       
-      // Record the action with state diff
+      // Check if state actually changed (detect silently rejected actions)
       if (recorder) {
         const stateAfter = await player.getState();
-        const { suspicious } = recorder.recordAction(
+        const { entry, suspicious } = recorder.recordAction(
           turnNum, player.index, 'Main 1',
           `${decision.action.type} ${JSON.stringify(decision.action)}`,
-          decision.rawResponse,
-          stateBefore, stateAfter
+          decision.rawResponse, stateBefore, stateAfter
         );
+        if (!entry.diff || entry.diff.length === 0) {
+          logP(player.index, '⚠️ Action had NO EFFECT — game likely rejected it');
+        }
         if (suspicious?.length > 0) {
           logP(player.index, `🚨 SUSPICIOUS: ${suspicious.join(', ')}`);
         }
       }
-    } else if (decision.action.type === 'unknown') {
-      logP(player.index, `⚠️ Parse failed even after retry`);
     }
   }
   
@@ -244,54 +242,51 @@ async function playTurn(player, turnNum, model, recorder) {
   await player.page.waitForTimeout(500);
   
   // === COMBAT PHASE ===
-  const combatState = await player.getState();
+  // Re-fetch state FRESH for combat (not stale from main phase)
+  let combatState = await player.getState();
   if (combatState?.phase === 'Combat') {
-    const myCreatures = combatState.players?.[0]?.field?.filter(c => c && c.canAttack) || [];
-    
-    for (const creature of myCreatures) {
-      // Get LLM decision for each attack
-      const atkDecision = await getDecision(combatState, 0, player.deckName, { model });
-      logP(player.index, `Combat think (${atkDecision.timeMs}ms): ${atkDecision.rawResponse?.substring(0, 100)}`);
-      logP(player.index, `Combat action: ${JSON.stringify(atkDecision.action)}`);
+    // Attack up to 3 times (max creatures), refreshing state each time
+    for (let attackNum = 0; attackNum < 3; attackNum++) {
+      combatState = await player.getState(); // FRESH state each attack
+      const attackers = combatState.players?.[0]?.field?.filter(c => c && c.canAttack) || [];
+      if (attackers.length === 0) break;
       
+      const atkDecision = await getDecision(combatState, 0, player.deckName, { model });
+      logP(player.index, `Combat (${atkDecision.timeMs}ms): ${atkDecision.rawResponse?.substring(0, 100)}`);
+      
+      // ONLY accept ATTACK actions during combat — reject anything else
       if (atkDecision.action.type === 'attack') {
         const combatBefore = await player.getState();
         const result = await executeAction(player.page, atkDecision.action, combatState);
         logP(player.index, `Attack: ${result.description} — ${result.success ? '💥' : '❌ ' + result.error}`);
         actions.push({ decision: atkDecision, result });
         
-        // Record combat action with diff
         if (recorder) {
           const combatAfter = await player.getState();
-          const { suspicious } = recorder.recordAction(
-            turnNum, player.index, 'Combat',
+          recorder.recordAction(turnNum, player.index, 'Combat',
             `attack ${JSON.stringify(atkDecision.action)}`,
-            atkDecision.rawResponse,
-            combatBefore, combatAfter
-          );
-          if (suspicious?.length > 0) {
-            logP(player.index, `🚨 SUSPICIOUS: ${suspicious.join(', ')}`);
-          }
+            atkDecision.rawResponse, combatBefore, combatAfter);
         }
+        await player.page.waitForTimeout(500);
       } else if (atkDecision.action.type === 'advance' || atkDecision.action.type === 'endTurn') {
-        break; // LLM chose not to attack
+        logP(player.index, 'Skipping remaining attacks');
+        break;
+      } else {
+        // LLM output non-attack action during combat — skip it
+        logP(player.index, `⚠️ Non-attack action in combat (${atkDecision.action.type}) — skipping`);
+        break;
       }
-      await player.page.waitForTimeout(500);
     }
   }
   
   // === END TURN ===
   const startTurn = await player.page.evaluate(() => window.__qa?.getState()?.turn);
-  
-  // Try DOM phase button first
   for (let i = 0; i < 8; i++) {
     await player.page.evaluate(() => document.getElementById('field-turn-btn')?.click());
     await player.page.waitForTimeout(300);
     const turn = await player.page.evaluate(() => window.__qa?.getState()?.turn);
     if (turn !== startTurn) break;
   }
-  
-  // Fallback: QA API end turn if DOM didn't work
   const currentTurn = await player.page.evaluate(() => window.__qa?.getState()?.turn);
   if (currentTurn === startTurn) {
     logP(player.index, '⚠️ DOM end-turn failed, using QA fallback');
