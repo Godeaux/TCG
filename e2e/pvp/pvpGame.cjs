@@ -313,7 +313,7 @@ async function playTurn(player, turnNum, model, recorder) {
   }
   
   // === END TURN ===
-  // Advance through remaining phases (Combat→Main2→End) via DOM clicks
+  // Advance through remaining phases until turn changes
   const startTurn = await player.page.evaluate(() => window.__qa?.getState()?.turn);
   
   for (let click = 0; click < 4; click++) {
@@ -321,10 +321,19 @@ async function playTurn(player, turnNum, model, recorder) {
       const s = window.__qa?.getState();
       return { turn: s?.turn, isMyTurn: s?.ui?.isMyTurn, phase: s?.phase };
     });
-    if (s.turn !== startTurn || !s.isMyTurn) break; // Turn ended
+    if (s.turn !== startTurn || !s.isMyTurn) break;
     
+    // DOM click first, QA fallback if it doesn't advance
+    const phaseBefore = s.phase;
     await player.page.evaluate(() => document.getElementById('field-turn-btn')?.click());
     await player.page.waitForTimeout(600);
+    
+    const phaseAfter = await player.page.evaluate(() => window.__qa?.getState()?.phase);
+    if (phaseAfter === phaseBefore) {
+      // DOM click didn't advance — use QA API
+      await player.page.evaluate(() => window.__qa?.act?.advancePhase());
+      await player.page.waitForTimeout(400);
+    }
   }
   
   return { actions, turnEnded: true };
