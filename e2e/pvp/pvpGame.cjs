@@ -12,6 +12,7 @@
 const { webkit, chromium } = require('@playwright/test');
 const { getDecision } = require('./llmBrain.cjs');
 const { executeAction, dismissPassOverlay } = require('./actionExecutor.cjs');
+const { createRecording } = require('./gameRecorder.cjs');
 
 const GAME_URL = 'http://localhost:3000';
 
@@ -199,25 +200,42 @@ async function waitForPlayerTurn(player, maxWait = 30) {
   return { timeout: true };
 }
 
-async function playTurn(player, turnNum, model) {
-  const state = await player.getState();
-  if (!state) return { error: 'No state' };
+async function playTurn(player, turnNum, model, recorder) {
+  const stateBefore = await player.getState();
+  if (!stateBefore) return { error: 'No state' };
   
   const actions = [];
   
   // === MAIN PHASE ===
-  if (state.phase === 'Main 1') {
+  if (stateBefore.phase === 'Main 1') {
     // Get LLM decision
-    const decision = await getDecision(state, 0, player.deckName, { model });
-    logP(player.index, `Think (${decision.timeMs}ms): ${decision.rawResponse?.substring(0, 120) || decision.reasoning?.substring(0, 120)}`);
+    const decision = await getDecision(stateBefore, 0, player.deckName, { model });
+    const retryTag = decision.retried ? ' [RETRY]' : '';
+    logP(player.index, `Think (${decision.timeMs}ms)${retryTag}: ${decision.rawResponse?.substring(0, 120) || decision.reasoning?.substring(0, 120)}`);
     logP(player.index, `Action: ${JSON.stringify(decision.action)}`);
     
     // Execute the action
     if (decision.action.type !== 'unknown' && decision.action.type !== 'advance' && decision.action.type !== 'endTurn') {
-      const result = await executeAction(player.page, decision.action, state);
+      const result = await executeAction(player.page, decision.action, stateBefore);
       logP(player.index, `Result: ${result.description} — ${result.success ? '✅' : '❌ ' + result.error}`);
       actions.push({ decision, result });
       await player.page.waitForTimeout(500);
+      
+      // Record the action with state diff
+      if (recorder) {
+        const stateAfter = await player.getState();
+        const { suspicious } = recorder.recordAction(
+          turnNum, player.index, 'Main 1',
+          `${decision.action.type} ${JSON.stringify(decision.action)}`,
+          decision.rawResponse,
+          stateBefore, stateAfter
+        );
+        if (suspicious?.length > 0) {
+          logP(player.index, `🚨 SUSPICIOUS: ${suspicious.join(', ')}`);
+        }
+      }
+    } else if (decision.action.type === 'unknown') {
+      logP(player.index, `⚠️ Parse failed even after retry`);
     }
   }
   
@@ -237,9 +255,24 @@ async function playTurn(player, turnNum, model) {
       logP(player.index, `Combat action: ${JSON.stringify(atkDecision.action)}`);
       
       if (atkDecision.action.type === 'attack') {
+        const combatBefore = await player.getState();
         const result = await executeAction(player.page, atkDecision.action, combatState);
         logP(player.index, `Attack: ${result.description} — ${result.success ? '💥' : '❌ ' + result.error}`);
         actions.push({ decision: atkDecision, result });
+        
+        // Record combat action with diff
+        if (recorder) {
+          const combatAfter = await player.getState();
+          const { suspicious } = recorder.recordAction(
+            turnNum, player.index, 'Combat',
+            `attack ${JSON.stringify(atkDecision.action)}`,
+            atkDecision.rawResponse,
+            combatBefore, combatAfter
+          );
+          if (suspicious?.length > 0) {
+            logP(player.index, `🚨 SUSPICIOUS: ${suspicious.join(', ')}`);
+          }
+        }
       } else if (atkDecision.action.type === 'advance' || atkDecision.action.type === 'endTurn') {
         break; // LLM chose not to attack
       }
@@ -360,6 +393,9 @@ async function main() {
     log(`P1 sees: ${p1Init}`);
     log(`P2 sees: ${p2Init}`);
     
+    // Create game recorder
+    const recorder = createRecording(deck1, deck2, model);
+    
     let lastTurn = 0;
     let sameCount = 0;
     
@@ -371,15 +407,32 @@ async function main() {
         if (waitResult.gameOver) {
           const go = waitResult.gameOver;
           const compact = await player.getCompact();
+          const finalState = await player.getState();
+          
           log(`\n🏆 GAME OVER at turn ${round + 1}`);
           log(`   Winner: Player ${(go.winner ?? -1) + 1} | ${go.reason}`);
           log(`   ${compact}`);
           
-          // Final summary
+          // Save recording
+          recorder.setResult(go.winner, go.reason, finalState);
+          const logPath = recorder.save();
+          const summary = recorder.getSummary();
+          
           log('\n═══ GAME LOG ═══');
           gameLog.forEach(entry => {
             log(`  T${entry.turn} P${entry.player + 1}: ${entry.summary}`);
           });
+          
+          log(`\n═══ RECORDING ═══`);
+          log(`  File: ${logPath}`);
+          log(`  Actions: ${summary.actions}`);
+          log(`  Suspicious: ${summary.suspicious}`);
+          if (summary.suspiciousDetails.length > 0) {
+            log('  Flags:');
+            summary.suspiciousDetails.forEach(s => {
+              log(`    T${s.turn} ${s.action}: ${s.flags.join(', ')}`);
+            });
+          }
           return;
         }
         
@@ -411,7 +464,7 @@ async function main() {
           log(`\n──── Turn ${turnNum} | P${player.index + 1} (${player.deckName}) ────`);
           log(`  ${compact}`);
           
-          const turnResult = await playTurn(player, turnNum, model);
+          const turnResult = await playTurn(player, turnNum, model, recorder);
           
           const summary = turnResult.actions?.map(a => a.result?.description).join(', ') || 'no actions';
           gameLog.push({ turn: turnNum, player: player.index, summary });
@@ -423,6 +476,15 @@ async function main() {
     }
     
   } finally {
+    // Save recording even if game didn't finish (crash/timeout)
+    if (!recorder.recording.result) {
+      recorder.setResult(null, 'incomplete', null);
+    }
+    const logPath = recorder.save();
+    const summary = recorder.getSummary();
+    log(`\n📝 Recording saved: ${logPath}`);
+    log(`   Actions: ${summary.actions} | Suspicious: ${summary.suspicious}`);
+    
     await browser1.close().catch(() => {});
     await browser2.close().catch(() => {});
   }

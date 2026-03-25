@@ -104,6 +104,38 @@ async function getDecision(qaState, playerIndex, deckName, options = {}) {
       ? `[Thinking] ${thinking.trim()}\n[Response] ${rawResponse.trim()}`
       : rawResponse.trim();
     
+    // If parse failed, retry with a short action-only prompt
+    if (action.type === 'unknown') {
+      const retryPrompt = `You are playing Food Chain TCG. Your previous response didn't include a valid action command.\n\nGiven this board state:\n${statePrompt}\n\nOutput ONLY one action command. Nothing else. No explanation.\nExample: PLAY 0\nExample: ATTACK 0 PLAYER\nExample: END_TURN`;
+      
+      try {
+        const retryResp = await fetch(OLLAMA_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model, prompt: retryPrompt, stream: false,
+            options: { temperature: 0.1, num_predict: 30 },
+          }),
+        });
+        const retryData = await retryResp.json();
+        const retryAction = parseAction(retryData.response || '');
+        
+        if (retryAction.type !== 'unknown') {
+          return {
+            reasoning: fullReasoning + '\n[RETRY] ' + (retryData.response || '').trim(),
+            action: retryAction,
+            rawResponse: retryData.response || '',
+            thinking,
+            tokensUsed: (data.eval_count || 0) + (retryData.eval_count || 0),
+            promptTokens: (data.prompt_eval_count || 0) + (retryData.prompt_eval_count || 0),
+            timeMs: Date.now() - start,
+            model,
+            retried: true,
+          };
+        }
+      } catch (e) { /* retry failed, return original */ }
+    }
+    
     return {
       reasoning: fullReasoning,
       action,
