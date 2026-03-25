@@ -224,10 +224,10 @@ async function playTurn(player, turnNum, model, recorder) {
       logP(player.index, `Result: ${result.description} — ${result.success ? '✅' : '❌ ' + result.error}`);
       actions.push({ decision, result });
       
-      // Poll until state changes or timeout (Supabase sync can be slow)
+      // Poll until state changes (max 2s — Supabase sync)
       let stateAfter = null;
       const beforeSnap = quickSnap(stateBefore);
-      for (let wait = 0; wait < 8; wait++) {
+      for (let wait = 0; wait < 4; wait++) {
         await player.page.waitForTimeout(500);
         stateAfter = await player.getState();
         if (quickSnap(stateAfter) !== beforeSnap) break;
@@ -277,9 +277,9 @@ async function playTurn(player, turnNum, model, recorder) {
         // Track this slot as attacked to prevent duplicates
         attackedSlots.add(atkDecision.action.attackerSlot);
         
-        // Poll until state changes (Supabase sync)
+        // Poll until state changes (max 1.5s)
         const combatSnap = quickSnap(combatBefore);
-        for (let wait = 0; wait < 6; wait++) {
+        for (let wait = 0; wait < 3; wait++) {
           await player.page.waitForTimeout(500);
           const s = await player.getState();
           if (quickSnap(s) !== combatSnap) break;
@@ -429,9 +429,12 @@ async function main() {
     let sameCount = 0;
     
     for (let round = 0; round < 50; round++) {
-      // Determine whose turn it is
-      for (const player of [p1, p2]) {
-        const waitResult = await waitForPlayerTurn(player, 15);
+      // Determine whose turn it is — check active player first
+      const activeIdx = await p1.page.evaluate(() => window.__qa?.getState()?.activePlayer);
+      const turnOrder = activeIdx === 1 ? [p2, p1] : [p1, p2];
+      
+      for (const player of turnOrder) {
+        const waitResult = await waitForPlayerTurn(player, 10);
         
         if (waitResult.gameOver) {
           const go = waitResult.gameOver;
