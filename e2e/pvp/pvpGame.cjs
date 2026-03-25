@@ -241,12 +241,19 @@ async function playTurn(player, turnNum, model, recorder) {
   }
   
   // === ADVANCE TO COMBAT ===
-  await player.page.evaluate(() => window.__qa?.act?.advancePhase());
-  await player.page.waitForTimeout(500);
+  // Try QA API first, fall back to DOM button
+  const advResult = await player.page.evaluate(() => window.__qa?.act?.advancePhase());
+  await player.page.waitForTimeout(600);
+  
+  // Verify we're in combat — if not, try DOM button as fallback
+  let combatState = await player.getState();
+  if (combatState?.phase !== 'Combat' && combatState?.ui?.isMyTurn) {
+    await player.page.evaluate(() => document.getElementById('field-turn-btn')?.click());
+    await player.page.waitForTimeout(600);
+    combatState = await player.getState();
+  }
   
   // === COMBAT PHASE ===
-  // Re-fetch state FRESH for combat (not stale from main phase)
-  let combatState = await player.getState();
   if (combatState?.phase === 'Combat') {
     const attackedSlots = new Set(); // Track which slots already attacked this turn
     
@@ -293,18 +300,32 @@ async function playTurn(player, turnNum, model, recorder) {
   }
   
   // === END TURN ===
-  // End turn via QA API — reliable and won't overshoot into opponent's turn
+  // End turn — advance through remaining phases until turn changes
   const startTurn = await player.page.evaluate(() => window.__qa?.getState()?.turn);
   const isMyTurn = await player.page.evaluate(() => window.__qa?.getState()?.ui?.isMyTurn);
   
   if (isMyTurn) {
-    // Advance through remaining phases until turn changes
     for (let i = 0; i < 6; i++) {
+      // Try QA API first
       await player.page.evaluate(() => window.__qa?.act?.advancePhase());
-      await player.page.waitForTimeout(400);
-      const newTurn = await player.page.evaluate(() => window.__qa?.getState()?.turn);
-      const stillMyTurn = await player.page.evaluate(() => window.__qa?.getState()?.ui?.isMyTurn);
-      if (newTurn !== startTurn || !stillMyTurn) break;
+      await player.page.waitForTimeout(500);
+      
+      const state = await player.page.evaluate(() => {
+        const s = window.__qa?.getState();
+        return { turn: s?.turn, isMyTurn: s?.ui?.isMyTurn, phase: s?.phase };
+      });
+      
+      if (state.turn !== startTurn || !state.isMyTurn) break;
+      
+      // If QA didn't advance, try DOM button
+      await player.page.evaluate(() => document.getElementById('field-turn-btn')?.click());
+      await player.page.waitForTimeout(500);
+      
+      const state2 = await player.page.evaluate(() => {
+        const s = window.__qa?.getState();
+        return { turn: s?.turn, isMyTurn: s?.ui?.isMyTurn };
+      });
+      if (state2.turn !== startTurn || !state2.isMyTurn) break;
     }
   }
   
