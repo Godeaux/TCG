@@ -219,9 +219,12 @@ async function playTurn(player, turnNum, model, recorder) {
       actions.push({ decision, result });
       await player.page.waitForTimeout(500);
       
+      // Wait for state to settle
+      await player.page.waitForTimeout(800);
+      
       // Check if state actually changed (detect silently rejected actions)
+      const stateAfter = await player.getState();
       if (recorder) {
-        const stateAfter = await player.getState();
         const { entry, suspicious } = recorder.recordAction(
           turnNum, player.index, 'Main 1',
           `${decision.action.type} ${JSON.stringify(decision.action)}`,
@@ -261,13 +264,18 @@ async function playTurn(player, turnNum, model, recorder) {
         logP(player.index, `Attack: ${result.description} — ${result.success ? '💥' : '❌ ' + result.error}`);
         actions.push({ decision: atkDecision, result });
         
+        // Wait for state to settle (Supabase sync + animations)
+        await player.page.waitForTimeout(800);
+        
         if (recorder) {
           const combatAfter = await player.getState();
-          recorder.recordAction(turnNum, player.index, 'Combat',
+          const { entry } = recorder.recordAction(turnNum, player.index, 'Combat',
             `attack ${JSON.stringify(atkDecision.action)}`,
             atkDecision.rawResponse, combatBefore, combatAfter);
+          if (!entry.diff || entry.diff.length === 0) {
+            logP(player.index, '⚠️ Attack had NO DIFF — state may not have synced');
+          }
         }
-        await player.page.waitForTimeout(500);
       } else if (atkDecision.action.type === 'advance' || atkDecision.action.type === 'endTurn') {
         logP(player.index, 'Skipping remaining attacks');
         break;
@@ -312,6 +320,7 @@ async function main() {
   // P1: Chromium (most stable), P2: WebKit (Safari — tests cross-browser)
   const browser1 = await chromium.launch({ headless: true });
   const browser2 = await webkit.launch({ headless: true });
+  let recorder = null;
   
   try {
     // Create players on separate browser engines
@@ -389,7 +398,7 @@ async function main() {
     log(`P2 sees: ${p2Init}`);
     
     // Create game recorder
-    const recorder = createRecording(deck1, deck2, model);
+    recorder = createRecording(deck1, deck2, model);
     
     let lastTurn = 0;
     let sameCount = 0;
@@ -472,13 +481,15 @@ async function main() {
     
   } finally {
     // Save recording even if game didn't finish (crash/timeout)
-    if (!recorder.recording.result) {
-      recorder.setResult(null, 'incomplete', null);
+    if (recorder) {
+      if (!recorder.recording.result) {
+        recorder.setResult(null, 'incomplete', null);
+      }
+      const logPath = recorder.save();
+      const summary = recorder.getSummary();
+      log(`\n📝 Recording saved: ${logPath}`);
+      log(`   Actions: ${summary.actions} | Suspicious: ${summary.suspicious}`);
     }
-    const logPath = recorder.save();
-    const summary = recorder.getSummary();
-    log(`\n📝 Recording saved: ${logPath}`);
-    log(`   Actions: ${summary.actions} | Suspicious: ${summary.suspicious}`);
     
     await browser1.close().catch(() => {});
     await browser2.close().catch(() => {});
