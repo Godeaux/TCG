@@ -1,0 +1,395 @@
+/**
+ * PvP Game Orchestrator — Two LLM players, two browsers, full multiplayer
+ * 
+ * Architecture:
+ * - Two Playwright browser contexts connected via Supabase lobby
+ * - Each player has an independent LLM brain (Qwen3 Coder)
+ * - All actions via DOM drag-and-drop (real player simulation)
+ * - State verification via __qa API only
+ * - Full game log with reasoning for each decision
+ */
+
+const { webkit } = require('@playwright/test');
+const { getDecision } = require('./llmBrain.cjs');
+const { executeAction, dismissPassOverlay } = require('./actionExecutor.cjs');
+
+const GAME_URL = 'http://localhost:3000';
+
+function log(msg) { console.log(msg); }
+function logP(player, msg) { console.log(`  [P${player + 1}] ${msg}`); }
+
+// ============================================================================
+// PLAYER SETUP
+// ============================================================================
+
+async function createPlayer(browser, index, deckName) {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.goto(GAME_URL);
+  await page.waitForTimeout(2000);
+  
+  return {
+    index,
+    deckName,
+    page,
+    context,
+    
+    async getState() {
+      return page.evaluate(() => window.__qa?.getState());
+    },
+    
+    async getCompact() {
+      return page.evaluate(() => window.__qa?.getCompactState());
+    },
+    
+    async isMyTurn() {
+      return page.evaluate(() => window.__qa?.getState()?.ui?.isMyTurn);
+    },
+    
+    async getPhase() {
+      return page.evaluate(() => window.__qa?.getState()?.phase);
+    },
+    
+    async isGameOver() {
+      return page.evaluate(() => window.__qa?.isGameOver());
+    },
+  };
+}
+
+// ============================================================================
+// LOBBY SETUP (Supabase multiplayer)
+// ============================================================================
+
+async function loginPlayer(page, username, pin) {
+  await page.click('#menu-other', { force: true }); await page.waitForTimeout(300);
+  await page.click('#other-multiplayer', { force: true }); await page.waitForTimeout(300);
+  await page.click('#multiplayer-auth', { force: true }); await page.waitForTimeout(1000);
+  await page.fill('#login-username', username);
+  await page.fill('#login-pin', pin);
+  try { await page.click('#login-create'); } catch { await page.click('#login-submit'); }
+  await page.waitForTimeout(2000);
+}
+
+async function createLobby(page) {
+  await page.click('#menu-other', { force: true }); await page.waitForTimeout(300);
+  await page.click('#other-multiplayer', { force: true }); await page.waitForTimeout(300);
+  await page.click('#lobby-create', { force: true }); await page.waitForTimeout(3000);
+  return page.evaluate(() => window.__qa?.act?.menu?.getMenuState()?.lobby?.code);
+}
+
+async function joinLobby(page, code) {
+  await page.click('#menu-other', { force: true }); await page.waitForTimeout(300);
+  await page.click('#other-multiplayer', { force: true }); await page.waitForTimeout(300);
+  await page.click('#lobby-join', { force: true }); await page.waitForTimeout(1000);
+  await page.fill('#lobby-code', code);
+  await page.click('#lobby-join-form button[type=submit]', { force: true });
+  await page.waitForTimeout(5000);
+}
+
+async function continueTaGame(page) {
+  await page.click('#lobby-continue', { force: true });
+  await page.waitForTimeout(2000);
+}
+
+// ============================================================================
+// DECK SELECTION (multiplayer — each player picks independently)
+// ============================================================================
+
+async function selectDeck(page, deckName) {
+  // Wait for deck selection overlay to be active
+  for (let i = 0; i < 10; i++) {
+    const active = await page.evaluate(() => document.querySelector('.deck-select-overlay.active') !== null);
+    if (active) break;
+    await page.waitForTimeout(500);
+  }
+  
+  // Check if we have deck category panels (AI mode) or saved deck list (multiplayer)
+  const hasCategories = await page.evaluate(({name}) => {
+    const panel = document.querySelector(`.deck-select-panel--${name}`);
+    return panel && panel.offsetHeight > 0;
+  }, {name: deckName});
+  
+  if (hasCategories) {
+    // AI mode: direct category selection
+    await page.click(`.deck-select-panel--${deckName}`, { force: true });
+    await page.waitForTimeout(1000);
+    await page.click('#deck-random', { force: true });
+    await page.waitForTimeout(500);
+    await page.click('#deck-confirm', { force: true });
+    await page.waitForTimeout(2000);
+  } else {
+    // Multiplayer mode: need to create a deck first via the ➕ button
+    // Click the create/add button
+    await page.evaluate(() => {
+      const buttons = document.querySelectorAll('.deck-select-overlay button, .deck-select-overlay [class*=create]');
+      for (const btn of buttons) {
+        if (btn.innerText.includes('➕') || btn.innerText.includes('+') || btn.innerText.includes('Create') || btn.innerText.includes('Build')) {
+          if (btn.offsetHeight > 0) { btn.click(); return; }
+        }
+      }
+      // Fallback: click first button-like element after "No saved decks"
+      const grid = document.getElementById('deck-select-grid');
+      const addBtn = grid?.querySelector('button');
+      if (addBtn) addBtn.click();
+    });
+    await page.waitForTimeout(1000);
+    
+    // Now we should see the category selection
+    const hasCatNow = await page.evaluate(({name}) => {
+      const panel = document.querySelector(`.deck-select-panel--${name}`);
+      return panel && panel.offsetHeight > 0;
+    }, {name: deckName});
+    
+    if (hasCatNow) {
+      await page.click(`.deck-select-panel--${deckName}`, { force: true });
+      await page.waitForTimeout(1000);
+    }
+    
+    // Fill with random cards
+    await page.click('#deck-random', { force: true });
+    await page.waitForTimeout(500);
+    
+    // Save the deck
+    await page.click('#deck-save', { force: true });
+    await page.waitForTimeout(1000);
+    
+    // Confirm / select the deck
+    await page.click('#deck-confirm', { force: true });
+    await page.waitForTimeout(2000);
+  }
+}
+
+// ============================================================================
+// SETUP FLOW (roll + choice)
+// ============================================================================
+
+async function completeSetup(page) {
+  for (let attempt = 0; attempt < 15; attempt++) {
+    const setup = await page.evaluate(() => window.__qa?.act?.menu?.getMenuState()?.setup);
+    const phase = await page.evaluate(() => window.__qa?.getState()?.phase);
+    
+    if (setup?.stage === 'complete' || (phase && phase !== 'Setup')) return;
+    
+    // Click roll buttons
+    await page.evaluate(() => {
+      document.querySelectorAll('.setup-overlay button').forEach(b => {
+        if (b.innerText.includes('Roll') && b.offsetHeight > 0) b.click();
+      });
+    });
+    await page.waitForTimeout(1500);
+    
+    // Click "goes first" buttons
+    await page.evaluate(() => {
+      document.querySelectorAll('.setup-overlay button').forEach(b => {
+        if (b.innerText.includes('goes first') && b.offsetHeight > 0) b.click();
+      });
+    });
+    await page.waitForTimeout(1000);
+    
+    await dismissPassOverlay(page);
+  }
+}
+
+// ============================================================================
+// MAIN GAME LOOP
+// ============================================================================
+
+async function waitForPlayerTurn(player, maxWait = 30) {
+  for (let i = 0; i < maxWait; i++) {
+    await dismissPassOverlay(player.page);
+    const myTurn = await player.isMyTurn();
+    const phase = await player.getPhase();
+    const gameOver = await player.isGameOver();
+    if (gameOver?.over) return { gameOver };
+    if (myTurn && phase === 'Main 1') return { ready: true, phase };
+    await player.page.waitForTimeout(500);
+  }
+  return { timeout: true };
+}
+
+async function playTurn(player, turnNum, model) {
+  const state = await player.getState();
+  if (!state) return { error: 'No state' };
+  
+  const actions = [];
+  
+  // === MAIN PHASE ===
+  if (state.phase === 'Main 1') {
+    // Get LLM decision
+    const decision = await getDecision(state, 0, player.deckName, { model });
+    logP(player.index, `Think (${decision.timeMs}ms): ${decision.rawResponse?.substring(0, 120) || decision.reasoning?.substring(0, 120)}`);
+    logP(player.index, `Action: ${JSON.stringify(decision.action)}`);
+    
+    // Execute the action
+    if (decision.action.type !== 'unknown' && decision.action.type !== 'advance' && decision.action.type !== 'endTurn') {
+      const result = await executeAction(player.page, decision.action, state);
+      logP(player.index, `Result: ${result.description} — ${result.success ? '✅' : '❌ ' + result.error}`);
+      actions.push({ decision, result });
+      await player.page.waitForTimeout(500);
+    }
+  }
+  
+  // === ADVANCE TO COMBAT ===
+  await player.page.evaluate(() => document.getElementById('field-turn-btn')?.click());
+  await player.page.waitForTimeout(500);
+  
+  // === COMBAT PHASE ===
+  const combatState = await player.getState();
+  if (combatState?.phase === 'Combat') {
+    const myCreatures = combatState.players?.[0]?.field?.filter(c => c && c.canAttack) || [];
+    
+    for (const creature of myCreatures) {
+      // Get LLM decision for each attack
+      const atkDecision = await getDecision(combatState, 0, player.deckName, { model });
+      logP(player.index, `Combat think (${atkDecision.timeMs}ms): ${atkDecision.rawResponse?.substring(0, 100)}`);
+      logP(player.index, `Combat action: ${JSON.stringify(atkDecision.action)}`);
+      
+      if (atkDecision.action.type === 'attack') {
+        const result = await executeAction(player.page, atkDecision.action, combatState);
+        logP(player.index, `Attack: ${result.description} — ${result.success ? '💥' : '❌ ' + result.error}`);
+        actions.push({ decision: atkDecision, result });
+      } else if (atkDecision.action.type === 'advance' || atkDecision.action.type === 'endTurn') {
+        break; // LLM chose not to attack
+      }
+      await player.page.waitForTimeout(500);
+    }
+  }
+  
+  // === END TURN ===
+  const startTurn = await player.page.evaluate(() => window.__qa?.getState()?.turn);
+  for (let i = 0; i < 6; i++) {
+    await player.page.evaluate(() => document.getElementById('field-turn-btn')?.click());
+    await player.page.waitForTimeout(300);
+    const turn = await player.page.evaluate(() => window.__qa?.getState()?.turn);
+    if (turn !== startTurn) break;
+  }
+  
+  return { actions };
+}
+
+// ============================================================================
+// MAIN
+// ============================================================================
+
+async function main() {
+  const deck1 = process.argv[2] || 'bird';
+  const deck2 = process.argv[3] || 'fish';
+  const model = process.argv[4] || 'qwen3-coder-next:latest';
+  
+  log(`\n🃏 PvP Match: ${deck1.toUpperCase()} vs ${deck2.toUpperCase()}`);
+  log(`   Model: ${model}\n`);
+  
+  const browser = await webkit.launch({ headless: true });
+  
+  try {
+    // Create players
+    const p1 = await createPlayer(browser, 0, deck1);
+    const p2 = await createPlayer(browser, 1, deck2);
+    log('✅ Both browsers launched');
+    
+    // Login
+    const ts = Date.now();
+    await loginPlayer(p1.page, `P1_${ts}`, '1111');
+    await loginPlayer(p2.page, `P2_${ts}`, '2222');
+    log('✅ Both logged in');
+    
+    // Create + join lobby
+    const code = await createLobby(p1.page);
+    log(`✅ Lobby: ${code}`);
+    await joinLobby(p2.page, code);
+    log('✅ P2 joined');
+    
+    // Continue to game
+    await continueTaGame(p1.page);
+    await continueTaGame(p2.page);
+    log('✅ Both in game');
+    
+    // Select decks — in multiplayer, need to build decks in the selection screen
+    // The deck-select overlay shows after Continue, with saved deck list
+    await selectDeck(p1.page, deck1);
+    log(`✅ P1 selected ${deck1}`);
+    await selectDeck(p2.page, deck2);
+    log(`✅ P2 selected ${deck2}`);
+    
+    // Wait for both decks to sync (multiplayer needs both ready)
+    await p1.page.waitForTimeout(3000);
+    await p2.page.waitForTimeout(1000);
+    
+    // Debug: check deck state
+    const d1 = await p1.page.evaluate(() => {
+      const s = window.__qa?.getState();
+      return { hand: s?.players?.[0]?.hand?.length, deck: s?.players?.[0]?.deckSize, phase: s?.phase };
+    });
+    const d2 = await p2.page.evaluate(() => {
+      const s = window.__qa?.getState();
+      return { hand: s?.players?.[0]?.hand?.length, deck: s?.players?.[0]?.deckSize, phase: s?.phase };
+    });
+    log(`  P1 deck state: hand=${d1.hand} deck=${d1.deck} phase=${d1.phase}`);
+    log(`  P2 deck state: hand=${d2.hand} deck=${d2.deck} phase=${d2.phase}`);
+    
+    // Complete setup (roll, choose)
+    await completeSetup(p1.page);
+    await completeSetup(p2.page);
+    log('✅ Setup complete\n');
+    
+    // === GAME LOOP ===
+    const gameLog = [];
+    
+    // Debug: check initial state for both players
+    const p1Init = await p1.getCompact();
+    const p2Init = await p2.getCompact();
+    log(`P1 sees: ${p1Init}`);
+    log(`P2 sees: ${p2Init}`);
+    
+    for (let round = 0; round < 50; round++) {
+      // Determine whose turn it is
+      for (const player of [p1, p2]) {
+        const waitResult = await waitForPlayerTurn(player, 20);
+        
+        if (waitResult.gameOver) {
+          const go = waitResult.gameOver;
+          const compact = await player.getCompact();
+          log(`\n🏆 GAME OVER at turn ${round + 1}`);
+          log(`   Winner: Player ${(go.winner ?? -1) + 1} | ${go.reason}`);
+          log(`   ${compact}`);
+          
+          // Final summary
+          log('\n═══ GAME LOG ═══');
+          gameLog.forEach(entry => {
+            log(`  T${entry.turn} P${entry.player + 1}: ${entry.summary}`);
+          });
+          return;
+        }
+        
+        if (waitResult.timeout) {
+          // This player's turn hasn't come, try the other player
+          continue;
+        }
+        
+        if (waitResult.ready) {
+          const state = await player.getState();
+          const compact = await player.getCompact();
+          
+          log(`\n──── Turn ${state?.turn} | P${player.index + 1} (${player.deckName}) ────`);
+          log(`  ${compact}`);
+          
+          const turnResult = await playTurn(player, state?.turn, model);
+          
+          const summary = turnResult.actions?.map(a => a.result?.description).join(', ') || 'no actions';
+          gameLog.push({ turn: state?.turn, player: player.index, summary });
+          
+          await player.page.waitForTimeout(1000);
+          break; // Only one player acts per iteration
+        }
+      }
+    }
+    
+  } finally {
+    await browser.close();
+  }
+}
+
+main().catch(err => {
+  console.error('Fatal:', err.message);
+  process.exit(1);
+});
