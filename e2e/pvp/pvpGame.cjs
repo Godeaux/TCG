@@ -16,8 +16,10 @@ const { createRecording } = require('./gameRecorder.cjs');
 
 const GAME_URL = 'http://localhost:3000';
 
+const _t0 = Date.now();
 function log(msg) { console.log(msg); }
 function logP(player, msg) { console.log(`  [P${player + 1}] ${msg}`); }
+function dbg(msg) { console.log(`  ⏱ ${((Date.now()-_t0)/1000).toFixed(1)}s ${msg}`); }
 
 // ============================================================================
 // PLAYER SETUP
@@ -195,8 +197,10 @@ async function waitForPlayerTurn(player, maxWait = 30) {
     const gameOver = await player.isGameOver();
     if (gameOver?.over) return { gameOver };
     if (myTurn && phase === 'Main 1') return { ready: true, phase };
+    if (i === 0) dbg(`P${player.index+1} waiting: myTurn=${myTurn} phase=${phase}`);
     await player.page.waitForTimeout(500);
   }
+  dbg(`P${player.index+1} wait TIMEOUT after ${maxWait} checks`);
   return { timeout: true };
 }
 
@@ -256,10 +260,12 @@ async function playTurn(player, turnNum, model, recorder) {
   }
   
   // === ADVANCE TO COMBAT ===
-  // Single DOM button click to advance from Main 1 → Combat
+  const preAdvPhase = await player.page.evaluate(() => window.__qa?.getState()?.phase);
+  dbg(`P${player.index+1} advance: ${preAdvPhase} → Combat (DOM click)`);
   await player.page.evaluate(() => document.getElementById('field-turn-btn')?.click());
   await player.page.waitForTimeout(800);
   let combatState = await player.getState();
+  dbg(`P${player.index+1} now in: ${combatState?.phase}`);
   
   // === COMBAT PHASE ===
   if (combatState?.phase === 'Combat') {
@@ -313,26 +319,33 @@ async function playTurn(player, turnNum, model, recorder) {
   }
   
   // === END TURN ===
-  // Advance through remaining phases until turn changes
   const startTurn = await player.page.evaluate(() => window.__qa?.getState()?.turn);
+  const startPhase = await player.page.evaluate(() => window.__qa?.getState()?.phase);
+  dbg(`P${player.index+1} end-turn: T${startTurn} phase=${startPhase}`);
   
   for (let click = 0; click < 4; click++) {
     const s = await player.page.evaluate(() => {
       const s = window.__qa?.getState();
       return { turn: s?.turn, isMyTurn: s?.ui?.isMyTurn, phase: s?.phase };
     });
-    if (s.turn !== startTurn || !s.isMyTurn) break;
+    if (s.turn !== startTurn || !s.isMyTurn) {
+      dbg(`P${player.index+1} turn ended: T${s.turn} phase=${s.phase} myTurn=${s.isMyTurn}`);
+      break;
+    }
     
-    // DOM click first, QA fallback if it doesn't advance
     const phaseBefore = s.phase;
     await player.page.evaluate(() => document.getElementById('field-turn-btn')?.click());
     await player.page.waitForTimeout(600);
     
     const phaseAfter = await player.page.evaluate(() => window.__qa?.getState()?.phase);
+    dbg(`P${player.index+1} click ${click+1}: ${phaseBefore} → ${phaseAfter}`);
+    
     if (phaseAfter === phaseBefore) {
-      // DOM click didn't advance — use QA API
+      dbg(`P${player.index+1} DOM stuck at ${phaseBefore}, QA fallback`);
       await player.page.evaluate(() => window.__qa?.act?.advancePhase());
       await player.page.waitForTimeout(400);
+      const afterQA = await player.page.evaluate(() => window.__qa?.getState()?.phase);
+      dbg(`P${player.index+1} after QA: ${afterQA}`);
     }
   }
   

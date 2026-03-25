@@ -83,9 +83,11 @@ async function getDecision(qaState, playerIndex, deckName, options = {}) {
         model,
         prompt: fullPrompt,
         stream: false,
+        keep_alive: '30m',
         options: {
           temperature,
-          num_predict: 500, // 4-5 sentences reasoning + action (rarely exceeds 350)
+          num_predict: 300,
+          num_ctx: 8192, // Smaller context = faster loading, our prompts are ~2k tokens
         },
       }),
     });
@@ -114,7 +116,7 @@ async function getDecision(qaState, playerIndex, deckName, options = {}) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            model, prompt: retryPrompt, stream: false,
+            model, prompt: retryPrompt, stream: false, keep_alive: '30m',
             options: { temperature: 0.1, num_predict: 30 },
           }),
         });
