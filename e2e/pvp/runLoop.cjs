@@ -25,11 +25,11 @@ async function runLoop(maxGames = 5) {
       execSync(`node e2e/pvp/pvpGame.cjs ${d1} ${d2}`, {
         cwd: PROJECT,
         stdio: 'inherit',
-        timeout: 480000, // 8 minutes max per game
+        timeout: 900000, // 15 minutes max per game
       });
     } catch (err) {
       if (err.killed) {
-        console.log(`\n⏱️ Game ${i + 1} timed out after 8 minutes`);
+        console.log(`\n⏱️ Game ${i + 1} timed out after 15 minutes`);
       } else {
         console.log(`\n❌ Game ${i + 1} error: ${err.message?.substring(0, 100)}`);
       }
