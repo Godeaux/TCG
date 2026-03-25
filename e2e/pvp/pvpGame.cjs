@@ -213,7 +213,10 @@ async function playTurn(player, turnNum, model, recorder) {
     logP(player.index, `Think (${decision.timeMs}ms)${retryTag}: ${decision.rawResponse?.substring(0, 120) || decision.reasoning?.substring(0, 120)}`);
     logP(player.index, `Action: ${JSON.stringify(decision.action)}`);
     
-    if (decision.action.type !== 'unknown' && decision.action.type !== 'advance' && decision.action.type !== 'endTurn') {
+    // Pre-validate: reject ATTACK during Main phase (LLM confusion)
+    if (decision.action.type === 'attack') {
+      logP(player.index, '⚠️ ATTACK during Main phase — skipping (attacks only in Combat)');
+    } else if (decision.action.type !== 'unknown' && decision.action.type !== 'advance' && decision.action.type !== 'endTurn') {
       const result = await executeAction(player.page, decision.action, stateBefore);
       logP(player.index, `Result: ${result.description} — ${result.success ? '✅' : '❌ ' + result.error}`);
       actions.push({ decision, result });
@@ -241,17 +244,10 @@ async function playTurn(player, turnNum, model, recorder) {
   }
   
   // === ADVANCE TO COMBAT ===
-  // Try QA API first, fall back to DOM button
-  const advResult = await player.page.evaluate(() => window.__qa?.act?.advancePhase());
-  await player.page.waitForTimeout(600);
-  
-  // Verify we're in combat — if not, try DOM button as fallback
+  // Single DOM button click to advance from Main 1 → Combat
+  await player.page.evaluate(() => document.getElementById('field-turn-btn')?.click());
+  await player.page.waitForTimeout(800);
   let combatState = await player.getState();
-  if (combatState?.phase !== 'Combat' && combatState?.ui?.isMyTurn) {
-    await player.page.evaluate(() => document.getElementById('field-turn-btn')?.click());
-    await player.page.waitForTimeout(600);
-    combatState = await player.getState();
-  }
   
   // === COMBAT PHASE ===
   if (combatState?.phase === 'Combat') {
@@ -300,32 +296,24 @@ async function playTurn(player, turnNum, model, recorder) {
   }
   
   // === END TURN ===
-  // End turn — advance through remaining phases until turn changes
+  // End turn — DOM button clicks only, max 2 (skip combat + end turn)
   const startTurn = await player.page.evaluate(() => window.__qa?.getState()?.turn);
   const isMyTurn = await player.page.evaluate(() => window.__qa?.getState()?.ui?.isMyTurn);
   
   if (isMyTurn) {
-    for (let i = 0; i < 6; i++) {
-      // Try QA API first
-      await player.page.evaluate(() => window.__qa?.act?.advancePhase());
-      await player.page.waitForTimeout(500);
-      
-      const state = await player.page.evaluate(() => {
-        const s = window.__qa?.getState();
-        return { turn: s?.turn, isMyTurn: s?.ui?.isMyTurn, phase: s?.phase };
-      });
-      
-      if (state.turn !== startTurn || !state.isMyTurn) break;
-      
-      // If QA didn't advance, try DOM button
+    // Click 1: advance from current phase (Combat → Main 2 or Main 2 → End)
+    await player.page.evaluate(() => document.getElementById('field-turn-btn')?.click());
+    await player.page.waitForTimeout(1000);
+    
+    let state = await player.page.evaluate(() => {
+      const s = window.__qa?.getState();
+      return { turn: s?.turn, isMyTurn: s?.ui?.isMyTurn };
+    });
+    
+    // Click 2 only if still our turn (need to advance one more phase)
+    if (state.turn === startTurn && state.isMyTurn) {
       await player.page.evaluate(() => document.getElementById('field-turn-btn')?.click());
-      await player.page.waitForTimeout(500);
-      
-      const state2 = await player.page.evaluate(() => {
-        const s = window.__qa?.getState();
-        return { turn: s?.turn, isMyTurn: s?.ui?.isMyTurn };
-      });
-      if (state2.turn !== startTurn || !state2.isMyTurn) break;
+      await player.page.waitForTimeout(1000);
     }
   }
   

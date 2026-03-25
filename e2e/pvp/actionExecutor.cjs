@@ -159,19 +159,15 @@ async function executeAttack(page, action, state) {
   const myCreature = state?.players?.[0]?.field?.[attackerSlot];
   
   if (target === 'player') {
-    // Use QA API for face attacks — DOM drag unreliable across browsers
-    const result = await page.evaluate(({slot}) => {
-      return window.__qa?.act?.attack(slot, 'player');
-    }, {slot: attackerSlot});
+    // DOM drag to opponent badge (dynamically resolved)
+    const result = await dragAttackPlayer(page, attackerSlot);
     await page.waitForTimeout(800);
     
     const desc = `${myCreature?.name || 'Creature'} attacks Player`;
     return { success: result?.success || false, description: desc, error: result?.error };
   } else {
-    // Use QA API for creature attacks too — consistent and reliable
-    const result = await page.evaluate(({slot, tSlot}) => {
-      return window.__qa?.act?.attack(slot, 'creature', tSlot);
-    }, {slot: attackerSlot, tSlot: target});
+    // DOM drag to enemy creature
+    const result = await dragAttack(page, attackerSlot, target);
     await page.waitForTimeout(800);
     
     const oppCreature = state?.players?.[1]?.field?.[target];
