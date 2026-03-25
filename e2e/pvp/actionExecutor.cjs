@@ -156,18 +156,24 @@ async function executePlay(page, action, state) {
 async function executeAttack(page, action, state) {
   const { attackerSlot, target } = action;
   
+  const myCreature = state?.players?.[0]?.field?.[attackerSlot];
+  
   if (target === 'player') {
-    const result = await dragAttackPlayer(page, attackerSlot);
+    // Use QA API for face attacks — DOM drag unreliable across browsers
+    const result = await page.evaluate(({slot}) => {
+      return window.__qa?.act?.attack(slot, 'player');
+    }, {slot: attackerSlot});
     await page.waitForTimeout(800);
     
-    const myCreature = state?.players?.[0]?.field?.[attackerSlot];
     const desc = `${myCreature?.name || 'Creature'} attacks Player`;
     return { success: result?.success || false, description: desc, error: result?.error };
   } else {
-    const result = await dragAttack(page, attackerSlot, target);
+    // Use QA API for creature attacks too — consistent and reliable
+    const result = await page.evaluate(({slot, tSlot}) => {
+      return window.__qa?.act?.attack(slot, 'creature', tSlot);
+    }, {slot: attackerSlot, tSlot: target});
     await page.waitForTimeout(800);
     
-    const myCreature = state?.players?.[0]?.field?.[attackerSlot];
     const oppCreature = state?.players?.[1]?.field?.[target];
     const desc = `${myCreature?.name || '?'} → ${oppCreature?.name || '?'}`;
     
