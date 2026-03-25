@@ -84,7 +84,7 @@ async function getDecision(qaState, playerIndex, deckName, options = {}) {
         stream: false,
         options: {
           temperature,
-          num_predict: 400, // Brief reasoning + action
+          num_predict: 500, // 4-5 sentences reasoning + action (rarely exceeds 350)
         },
       }),
     });

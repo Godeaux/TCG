@@ -127,7 +127,7 @@ function pickAttack(attacker, oppCreatures, canAttackPlayer, oppHP) {
   await p.waitForTimeout(2000);
   
   log('🃏 Smart Player v2 — Bird vs AI (Amphibian)\n');
-  await setupGame(p, 'bird');
+  await setupGame(p, 'reptile');
   log('✅ Game ready\n');
   
   let prevState = null;

@@ -591,7 +591,8 @@ export const getCreaturesThatCanAttack = (state, playerIndex) => {
 
     // Check summoning sickness (unless Haste) - only matters for direct player attacks
     // Creatures can always attack other creatures regardless of summoning sickness
-    const hasHaste = creature.keywords?.includes('Haste');
+    // Use hasKeyword() to respect dry-drop keyword suppression
+    const hasHaste = hasKeyword(creature, 'Haste');
     const summonedThisTurn = creature.summonedTurn === state.turn;
     if (!hasHaste && summonedThisTurn && !hasTargetableCreatures) return false;
 

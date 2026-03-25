@@ -13,6 +13,7 @@ import {
   getWinningPlayerIndex,
   canPlayAnotherCard,
   getAttackableCreatures,
+  getCreaturesThatCanAttack,
 } from '../../js/state/selectors.js';
 import { GameController } from '../../js/game/controller.js';
 import { resolveEffectResult } from '../../js/game/effects.js';
@@ -160,6 +161,44 @@ describe('Root Cause B: Duplicate cleanupDestroyed implementations', () => {
     // so damageRival effects may not resolve correctly
     expect(state.players[1].hp).toBe(opponentHpBefore - 2);
   });
+
+  it('B1b. Controller cleanupDestroyed should NOT trigger onSlain when abilitiesCancelled', () => {
+    // BUG: Controller's cleanupDestroyed triggers onSlain even when
+    // creature has abilitiesCancelled=true (e.g., Paralysis).
+    // combat.js's version correctly checks !card.abilitiesCancelled.
+    const state = createTestState();
+    state.activePlayerIndex = 0;
+    const uiState = { pendingConsumption: null, pendingAttack: null };
+    const controller = new GameController(state, uiState, {
+      onStateChange: () => {},
+      onBroadcast: () => {},
+    });
+
+    // Dying creature with abilitiesCancelled AND an onSlain effect
+    const dyingCreature = makeCreature({
+      name: 'Silenced Dying',
+      type: 'Prey',
+      hp: 3,
+      currentHp: 0,
+      abilitiesCancelled: true,
+      effects: {
+        onSlain: { type: 'draw', params: { count: 1 } },
+      },
+      instanceId: 'dying-silenced-b1b',
+    });
+
+    state.players[0].field[0] = dyingCreature;
+    state.players[0].deck = [makeCreature({ instanceId: 'deck-card-b1b' })];
+    const handSizeBefore = state.players[0].hand.length;
+
+    controller.cleanupDestroyed();
+
+    // Creature should still be removed from field
+    expect(state.players[0].field[0]).toBeNull();
+
+    // onSlain should NOT have triggered because abilities are cancelled
+    expect(state.players[0].hand.length).toBe(handSizeBefore);
+  });
 });
 
 // ============================================================================
@@ -299,6 +338,36 @@ describe('Root Cause E: Dry drop keyword suppression', () => {
     // Should NOT include this creature: lost Haste due to dry-drop, has summoning exhaustion
     expect(attackable).not.toContain(creature);
     expect(attackable.length).toBe(0);
+  });
+
+  it('E3. Dry dropped Haste creature — getCreaturesThatCanAttack should also respect dry-drop', () => {
+    // BUG: getCreaturesThatCanAttack uses raw creature.keywords?.includes('Haste')
+    // instead of hasKeyword(), bypassing dry-drop suppression
+    const state = createTestState();
+    state.turn = 1;
+    state.phase = 'combat'; // Combat phase for getCreaturesThatCanAttack
+
+    const creature = makeCreature({
+      name: 'Haste Predator',
+      type: 'Predator',
+      keywords: ['Haste'],
+      dryDropped: true,
+      summonedTurn: 1, // Summoned this turn
+      instanceId: 'haste-e3',
+      hasAttacked: false,
+      attacksMadeThisTurn: 0,
+    });
+
+    state.players[0].field[0] = creature;
+
+    // areAbilitiesActive should return false for dry-dropped predators
+    expect(areAbilitiesActive(creature)).toBe(false);
+
+    const canAttack = getCreaturesThatCanAttack(state, 0);
+
+    // Should NOT include this creature: lost Haste due to dry-drop, has summoning sickness
+    expect(canAttack).not.toContain(creature);
+    expect(canAttack.length).toBe(0);
   });
 });
 
