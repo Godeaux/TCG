@@ -182,6 +182,9 @@ function createRecording(deck1, deck2, model) {
       recording.actions.push(entry);
       if (suspicious.length > 0) recording.suspiciousCount += suspicious.length;
       
+      // Auto-save after every action (crash-safe)
+      this.save();
+      
       return { entry, suspicious };
     },
     
