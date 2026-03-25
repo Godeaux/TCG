@@ -9,7 +9,7 @@
  * - Full game log with reasoning for each decision
  */
 
-const { webkit } = require('@playwright/test');
+const { webkit, chromium } = require('@playwright/test');
 const { getDecision } = require('./llmBrain.cjs');
 const { executeAction, dismissPassOverlay } = require('./actionExecutor.cjs');
 
@@ -25,6 +25,14 @@ function logP(player, msg) { console.log(`  [P${player + 1}] ${msg}`); }
 async function createPlayer(browser, index, deckName) {
   const context = await browser.newContext();
   const page = await context.newPage();
+  
+  // Error listeners — catch crashes immediately
+  page.on('crash', () => log(`💥 P${index + 1} PAGE CRASHED`));
+  page.on('pageerror', (err) => log(`🔴 P${index + 1} JS ERROR: ${err.message}`));
+  page.on('console', (msg) => {
+    if (msg.type() === 'error') log(`🟡 P${index + 1} console.error: ${msg.text().substring(0, 100)}`);
+  });
+  
   await page.goto(GAME_URL);
   await page.waitForTimeout(2000);
   
@@ -241,14 +249,24 @@ async function playTurn(player, turnNum, model) {
   
   // === END TURN ===
   const startTurn = await player.page.evaluate(() => window.__qa?.getState()?.turn);
-  for (let i = 0; i < 6; i++) {
+  
+  // Try DOM phase button first
+  for (let i = 0; i < 8; i++) {
     await player.page.evaluate(() => document.getElementById('field-turn-btn')?.click());
     await player.page.waitForTimeout(300);
     const turn = await player.page.evaluate(() => window.__qa?.getState()?.turn);
     if (turn !== startTurn) break;
   }
   
-  return { actions };
+  // Fallback: QA API end turn if DOM didn't work
+  const currentTurn = await player.page.evaluate(() => window.__qa?.getState()?.turn);
+  if (currentTurn === startTurn) {
+    logP(player.index, '⚠️ DOM end-turn failed, using QA fallback');
+    await player.page.evaluate(() => window.__qa?.act?.endTurn());
+    await player.page.waitForTimeout(500);
+  }
+  
+  return { actions, turnEnded: true };
 }
 
 // ============================================================================
@@ -263,13 +281,15 @@ async function main() {
   log(`\n🃏 PvP Match: ${deck1.toUpperCase()} vs ${deck2.toUpperCase()}`);
   log(`   Model: ${model}\n`);
   
-  const browser = await webkit.launch({ headless: true });
+  // P1: Chromium (most stable), P2: WebKit (Safari — tests cross-browser)
+  const browser1 = await chromium.launch({ headless: true });
+  const browser2 = await webkit.launch({ headless: true });
   
   try {
-    // Create players
-    const p1 = await createPlayer(browser, 0, deck1);
-    const p2 = await createPlayer(browser, 1, deck2);
-    log('✅ Both browsers launched');
+    // Create players on separate browser engines
+    const p1 = await createPlayer(browser1, 0, deck1);
+    const p2 = await createPlayer(browser2, 1, deck2);
+    log('✅ P1 (Chromium) + P2 (WebKit) launched');
     
     // Login
     const ts = Date.now();
@@ -340,10 +360,13 @@ async function main() {
     log(`P1 sees: ${p1Init}`);
     log(`P2 sees: ${p2Init}`);
     
+    let lastTurn = 0;
+    let sameCount = 0;
+    
     for (let round = 0; round < 50; round++) {
       // Determine whose turn it is
       for (const player of [p1, p2]) {
-        const waitResult = await waitForPlayerTurn(player, 20);
+        const waitResult = await waitForPlayerTurn(player, 15);
         
         if (waitResult.gameOver) {
           const go = waitResult.gameOver;
@@ -368,14 +391,30 @@ async function main() {
         if (waitResult.ready) {
           const state = await player.getState();
           const compact = await player.getCompact();
+          const turnNum = state?.turn || 0;
           
-          log(`\n──── Turn ${state?.turn} | P${player.index + 1} (${player.deckName}) ────`);
+          // Guard: detect stuck turns
+          if (turnNum === lastTurn) {
+            sameCount++;
+            if (sameCount > 3) {
+              log(`⚠️ Stuck on turn ${turnNum} — forcing end turn`);
+              await player.page.evaluate(() => window.__qa?.act?.endTurn());
+              await player.page.waitForTimeout(1000);
+              sameCount = 0;
+              break;
+            }
+          } else {
+            lastTurn = turnNum;
+            sameCount = 0;
+          }
+          
+          log(`\n──── Turn ${turnNum} | P${player.index + 1} (${player.deckName}) ────`);
           log(`  ${compact}`);
           
-          const turnResult = await playTurn(player, state?.turn, model);
+          const turnResult = await playTurn(player, turnNum, model);
           
           const summary = turnResult.actions?.map(a => a.result?.description).join(', ') || 'no actions';
-          gameLog.push({ turn: state?.turn, player: player.index, summary });
+          gameLog.push({ turn: turnNum, player: player.index, summary });
           
           await player.page.waitForTimeout(1000);
           break; // Only one player acts per iteration
@@ -384,7 +423,8 @@ async function main() {
     }
     
   } finally {
-    await browser.close();
+    await browser1.close().catch(() => {});
+    await browser2.close().catch(() => {});
   }
 }
 
