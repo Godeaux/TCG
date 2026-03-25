@@ -218,8 +218,15 @@ async function playTurn(player, turnNum, model, recorder) {
     
     // Pre-validate: reject ATTACK during Main phase (LLM confusion)
     if (decision.action.type === 'attack') {
-      logP(player.index, '⚠️ ATTACK during Main phase — skipping (attacks only in Combat)');
-    } else if (decision.action.type !== 'unknown' && decision.action.type !== 'advance' && decision.action.type !== 'endTurn') {
+      logP(player.index, '⚠️ ATTACK during Main phase — skipping');
+      if (recorder) recorder.recordAction(turnNum, player.index, 'Main 1', `skipped_attack ${JSON.stringify(decision.action)}`, decision.rawResponse, stateBefore, stateBefore);
+    } else if (decision.action.type === 'unknown') {
+      logP(player.index, '⚠️ Parse failed — skipping');
+      if (recorder) recorder.recordAction(turnNum, player.index, 'Main 1', `parse_fail`, decision.rawResponse, stateBefore, stateBefore);
+    } else if (decision.action.type === 'advance' || decision.action.type === 'endTurn') {
+      // Player chose to skip main phase — that's valid, record it
+      if (recorder) recorder.recordAction(turnNum, player.index, 'Main 1', `skip`, decision.rawResponse, stateBefore, stateBefore);
+    } else {
       const result = await executeAction(player.page, decision.action, stateBefore);
       logP(player.index, `Result: ${result.description} — ${result.success ? '✅' : '❌ ' + result.error}`);
       actions.push({ decision, result });
@@ -306,23 +313,18 @@ async function playTurn(player, turnNum, model, recorder) {
   }
   
   // === END TURN ===
+  // Advance through remaining phases (Combat→Main2→End) via DOM clicks
   const startTurn = await player.page.evaluate(() => window.__qa?.getState()?.turn);
-  const isMyTurn = await player.page.evaluate(() => window.__qa?.getState()?.ui?.isMyTurn);
   
-  if (isMyTurn) {
-    // DOM button click to advance through remaining phases
-    await player.page.evaluate(() => document.getElementById('field-turn-btn')?.click());
-    await player.page.waitForTimeout(800);
-    
-    // Check if turn ended — if not, use QA endTurn as fallback
-    const state = await player.page.evaluate(() => {
+  for (let click = 0; click < 4; click++) {
+    const s = await player.page.evaluate(() => {
       const s = window.__qa?.getState();
-      return { turn: s?.turn, isMyTurn: s?.ui?.isMyTurn };
+      return { turn: s?.turn, isMyTurn: s?.ui?.isMyTurn, phase: s?.phase };
     });
-    if (state.turn === startTurn && state.isMyTurn) {
-      await player.page.evaluate(() => window.__qa?.act?.endTurn());
-      await player.page.waitForTimeout(800);
-    }
+    if (s.turn !== startTurn || !s.isMyTurn) break; // Turn ended
+    
+    await player.page.evaluate(() => document.getElementById('field-turn-btn')?.click());
+    await player.page.waitForTimeout(600);
   }
   
   return { actions, turnEnded: true };
