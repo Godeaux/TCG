@@ -53,8 +53,17 @@ async function executePlay(page, action, state) {
   // Find first empty field slot
   const myField = state?.players?.[0]?.field || [];
   let targetSlot = myField.findIndex(c => c === null);
-  if (targetSlot < 0 && (card.type === 'Prey' || card.type === 'Predator')) {
-    return { success: false, description: 'Field full', error: 'No empty slot' };
+  
+  // Field full check — but predators CAN eat prey to make room
+  if (targetSlot < 0 && card.type === 'Prey') {
+    return { success: false, description: 'Field full', error: 'No empty slot for prey' };
+  }
+  if (targetSlot < 0 && card.type === 'Predator' && !eat?.length && !isDryDrop) {
+    return { success: false, description: 'Field full', error: 'No empty slot (specify EAT to make room)' };
+  }
+  if (targetSlot < 0 && card.type === 'Predator' && eat?.length > 0) {
+    // Predator will eat prey, freeing a slot — use the slot of first prey to be eaten
+    targetSlot = eat[0];
   }
   if (targetSlot < 0) targetSlot = 0; // Spells don't need a slot
   
@@ -86,11 +95,42 @@ async function executePlay(page, action, state) {
         await page.waitForTimeout(500);
         return { success: true, description: `${desc} (dry drop)` };
       } else {
-        // Eat via QA API (modal response to consumption prompt)
-        const targets = eat || [0]; // Default: eat first prey
-        await page.evaluate(({t}) => window.__qa?.act?.selectEatTargets(t), {t: targets});
+        // Map LLM's field slot indices to consumption option indices
+        // The LLM says EAT 1,2 (field slots), but selectEatTargets wants 
+        // sequential indices into the pending.options array
+        let targetIndices = eat || [0];
+        
+        if (pending.options && pending.options.length > 0 && eat && eat.length > 0) {
+          // Get the field creatures at the requested slots
+          const myField = await page.evaluate(() => {
+            const s = window.__qa?.getState();
+            return s?.players?.[0]?.field?.map(c => c ? c.instanceId : null) || [];
+          });
+          
+          // Map each requested field slot to its consumption option index
+          const mapped = [];
+          for (const slotIdx of eat) {
+            const instanceId = myField[slotIdx];
+            if (instanceId) {
+              const optIdx = pending.options.findIndex(o => o.instanceId === instanceId);
+              if (optIdx >= 0 && !mapped.includes(optIdx)) {
+                mapped.push(optIdx);
+              }
+            }
+          }
+          
+          // If mapping found valid indices, use them; otherwise fall back to sequential
+          targetIndices = mapped.length > 0 ? mapped : eat.filter(i => i < pending.options.length);
+          if (targetIndices.length === 0) targetIndices = [0]; // Last resort: eat first option
+        }
+        
+        // Cap at 3 (max consumption)
+        targetIndices = targetIndices.slice(0, 3);
+        
+        await page.evaluate(({t}) => window.__qa?.act?.selectEatTargets(t), {t: targetIndices});
         await page.waitForTimeout(500);
-        return { success: true, description: `${desc} (ate ${targets.length} prey)` };
+        const optionNames = targetIndices.map(i => pending.options?.[i]?.name || '?').join(', ');
+        return { success: true, description: `${desc} (ate: ${optionNames})` };
       }
     }
   }
