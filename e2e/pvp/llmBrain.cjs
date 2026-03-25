@@ -38,9 +38,23 @@ STRATEGY TIPS:
 - Save removal spells for big threats.
 - Go face (attack rival) when you have lethal or clear board advantage.
 
-RESPOND FORMAT:
-Think step by step (2-3 sentences), then give your action on the final line.
-Your action MUST be one of: PLAY [n], PLAY [n] EAT [targets], PLAY [n] DRY_DROP, ATTACK [slot] [target/PLAYER], ADVANCE, END_TURN, EAT [targets], DRY_DROP, ACTIVATE [n], PASS`;
+RESPONSE FORMAT:
+1. Think about your play in 4-5 sentences. Consider threats, trades, board state, and lethal potential.
+2. Your FINAL LINE must be ONLY the action command — nothing else on that line.
+
+EXAMPLES:
+---
+My hand has a 3/3 Prey with Ambush and my opponent has a 2/2 creature. Playing the Prey gives me board presence and Ambush means I won't take counter-damage when I attack next turn. The opponent's creature is a threat if left unchecked but I can handle it in combat. I'll play the Prey now and attack with it next turn since summoning sickness only blocks direct player attacks.
+PLAY 2
+---
+I have a Haste predator and a Prey on my field. If I eat the Prey, my predator becomes 5/5 and can attack the rival directly for 5 damage this turn thanks to Haste. The rival is at 7 HP so this puts them in lethal range. The Prey's nutrition of 2 boosts my predator from 3/3 to 5/5 which is worth sacrificing the board slot.
+PLAY 0 EAT 0
+---
+My Gyrfalcon has Haste and the rival has no creatures. I can attack directly for 4 damage. The rival is at 6 HP so two more direct attacks wins the game. No reason to hold back.
+ATTACK 0 PLAYER
+---
+
+Action commands: PLAY n, PLAY n EAT n,n,n, PLAY n DRY_DROP, ATTACK slot target/PLAYER, ADVANCE, END_TURN, EAT n, DRY_DROP, ACTIVATE n, PASS`;
 
 /**
  * Call the LLM for a game decision

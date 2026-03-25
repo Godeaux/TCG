@@ -81,8 +81,13 @@ async function joinLobby(page, code) {
   await page.click('#menu-other', { force: true }); await page.waitForTimeout(300);
   await page.click('#other-multiplayer', { force: true }); await page.waitForTimeout(300);
   await page.click('#lobby-join', { force: true }); await page.waitForTimeout(1000);
-  await page.fill('#lobby-code', code);
-  await page.click('#lobby-join-form button[type=submit]', { force: true });
+  // Use evaluate to fill + submit (avoids visibility timing issues)
+  await page.evaluate(({lobbyCode}) => {
+    const input = document.getElementById('lobby-code');
+    if (input) { input.value = lobbyCode; input.dispatchEvent(new Event('input', {bubbles: true})); }
+    const form = document.getElementById('lobby-join-form');
+    if (form) form.dispatchEvent(new Event('submit', {bubbles: true}));
+  }, {lobbyCode: code});
   await page.waitForTimeout(5000);
 }
 

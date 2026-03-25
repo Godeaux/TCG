@@ -202,9 +202,7 @@ function formatStatePrompt(qaState, playerIndex, deckName = 'Unknown') {
   }
   
   lines.push('');
-  lines.push('Think briefly (2-3 sentences max), then output ONLY your action on the last line.');
-  lines.push('Keep reasoning SHORT. The action line must be parseable.');
-  lines.push('Format: ACTION [args]');
+  lines.push('Think about your play (4-5 sentences). Then your FINAL LINE must be ONLY the action command.');
   
   return lines.join('\n');
 }
