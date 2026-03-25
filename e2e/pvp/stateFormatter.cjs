@@ -214,75 +214,106 @@ function formatStatePrompt(qaState, playerIndex, deckName = 'Unknown') {
  * @returns {Object} Parsed action: { type, args }
  */
 function parseAction(response) {
-  // Find the last line that looks like an action
-  const lines = response.trim().split('\n').reverse();
+  // Aggressively find action commands anywhere in the response
+  // Scan lines in reverse — last action wins
+  const lines = response.trim().split(String.fromCharCode(10)).reverse();
+
   
   for (const line of lines) {
     const clean = line.trim().toUpperCase();
     
-    // PLAY [index]
-    const playMatch = clean.match(/^PLAY\s+\[?(\d+)\]?/);
+    // PLAY with EAT — match anywhere in line
+    const playEatMatch = clean.match(/PLAY\s+\[?(\d+)\]?\s+EAT\s+\[?([\d,\s]+)\]?/);
+    if (playEatMatch) {
+      const idx = parseInt(playEatMatch[1]);
+      const targets = playEatMatch[2].split(/[,\s]+/).map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+      return { type: 'play', handIndex: idx, eat: targets };
+    }
+    
+    // PLAY with DRY_DROP — match anywhere
+    const playDryMatch = clean.match(/PLAY\s+\[?(\d+)\]?\s+DRY[_\s]?DROP/);
+    if (playDryMatch) {
+      return { type: 'play', handIndex: parseInt(playDryMatch[1]), dryDrop: true };
+    }
+    
+    // PLAY [index] — match anywhere in line
+    const playMatch = clean.match(/PLAY\s+\[?(\d+)\]?/);
     if (playMatch) {
-      const idx = parseInt(playMatch[1]);
-      
-      // Check for EAT targets
-      const eatMatch = clean.match(/EAT\s+\[?([\d,\s]+)\]?/);
-      if (eatMatch) {
-        const targets = eatMatch[1].split(/[,\s]+/).map(n => parseInt(n.trim())).filter(n => !isNaN(n));
-        return { type: 'play', handIndex: idx, eat: targets };
-      }
-      
-      // Check for DRY_DROP
-      if (clean.includes('DRY_DROP') || clean.includes('DRY DROP')) {
-        return { type: 'play', handIndex: idx, dryDrop: true };
-      }
-      
-      return { type: 'play', handIndex: idx };
+      return { type: 'play', handIndex: parseInt(playMatch[1]) };
     }
     
-    // ATTACK [my_slot] [target_slot/PLAYER]
-    const attackMatch = clean.match(/^ATTACK\s+\[?(\d+)\]?\s+\[?(PLAYER|\d+)\]?/);
+    // ATTACK [slot] [target/PLAYER] — match anywhere
+    const attackMatch = clean.match(/ATTACK\s+\[?(\d+)\]?\s+\[?(PLAYER|\d+)\]?/);
     if (attackMatch) {
-      const mySlot = parseInt(attackMatch[1]);
       const target = attackMatch[2] === 'PLAYER' ? 'player' : parseInt(attackMatch[2]);
-      return { type: 'attack', attackerSlot: mySlot, target };
+      return { type: 'attack', attackerSlot: parseInt(attackMatch[1]), target };
     }
     
-    // EAT [indices]
-    const eatOnly = clean.match(/^EAT\s+\[?([\d,\s]+)\]?/);
+    // EAT [indices] — match anywhere
+    const eatOnly = clean.match(/(?:^|\s)EAT\s+\[?([\d,\s]+)\]?/);
     if (eatOnly) {
       const targets = eatOnly[1].split(/[,\s]+/).map(n => parseInt(n.trim())).filter(n => !isNaN(n));
       return { type: 'eat', targets };
     }
     
-    // DRY_DROP
-    if (clean.match(/^DRY[_\s]?DROP/)) {
+    // DRY_DROP — match anywhere
+    if (clean.match(/(?:^|\s)DRY[_\s]?DROP(?:\s|$)/)) {
       return { type: 'dryDrop' };
     }
     
-    // ACTIVATE [index]
-    const activateMatch = clean.match(/^ACTIVATE\s+(\d+)/);
+    // ACTIVATE [index] — match anywhere
+    const activateMatch = clean.match(/ACTIVATE\s+\[?(\d+)\]?/);
     if (activateMatch) {
       return { type: 'activate', index: parseInt(activateMatch[1]) };
     }
     
-    // PASS
-    if (clean.match(/^PASS$/)) {
+    // PASS — exact or at end of line
+    if (clean.match(/(?:^|\s)PASS\s*$/)) {
       return { type: 'pass' };
     }
     
-    // ADVANCE
-    if (clean.match(/^ADVANCE$/)) {
+    // ADVANCE — exact or at end of line
+    if (clean.match(/(?:^|\s)ADVANCE\s*$/)) {
       return { type: 'advance' };
     }
     
-    // END_TURN
-    if (clean.match(/^END[_\s]?TURN$/)) {
+    // END_TURN — match anywhere
+    if (clean.match(/(?:^|\s)END[_\s]?TURN\s*$/)) {
       return { type: 'endTurn' };
     }
   }
   
-  // Fallback: couldn't parse
+  // Fallback: scan the ENTIRE response for any action pattern (not line-by-line)
+  const full = response.toUpperCase();
+  
+  const lastPlay = full.lastIndexOf('PLAY ');
+  if (lastPlay >= 0) {
+    const sub = full.substring(lastPlay);
+    const m = sub.match(/PLAY\s+\[?(\d+)\]?(?:\s+EAT\s+\[?([\d,\s]+)\]?)?(?:\s+DRY[_\s]?DROP)?/);
+    if (m) {
+      const idx = parseInt(m[1]);
+      if (m[2]) {
+        const targets = m[2].split(/[,\s]+/).map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+        return { type: 'play', handIndex: idx, eat: targets };
+      }
+      if (sub.includes('DRY')) return { type: 'play', handIndex: idx, dryDrop: true };
+      return { type: 'play', handIndex: idx };
+    }
+  }
+  
+  const lastAtk = full.lastIndexOf('ATTACK ');
+  if (lastAtk >= 0) {
+    const sub = full.substring(lastAtk);
+    const m = sub.match(/ATTACK\s+\[?(\d+)\]?\s+\[?(PLAYER|\d+)\]?/);
+    if (m) {
+      const target = m[2] === 'PLAYER' ? 'player' : parseInt(m[2]);
+      return { type: 'attack', attackerSlot: parseInt(m[1]), target };
+    }
+  }
+  
+  if (full.includes('END_TURN') || full.includes('END TURN')) return { type: 'endTurn' };
+  if (full.match(/ADVANCE/)) return { type: 'advance' };
+  
   return { type: 'unknown', raw: response.substring(response.length - 100) };
 }
 
