@@ -1,0 +1,173 @@
+{
+  "id": "game-1774430272088",
+  "timestamp": "2026-03-25T09:17:52.088Z",
+  "decks": {
+    "p1": "bird",
+    "p2": "reptile"
+  },
+  "model": "qwen3-coder-next:latest",
+  "actions": [
+    {
+      "turn": 1,
+      "player": 1,
+      "phase": "Main 1",
+      "action": "play {\"type\":\"play\",\"handIndex\":1}",
+      "reasoning": "I'm on turn 1 with a strong hand of predators and prey, and the field is empty. The Galápagos Lava Lizards (hand 1) is a powerful early play: it gives me immediate board presence (3x 1/1s), deals 1 da",
+      "diff": [
+        {
+          "type": "hand",
+          "player": "p1",
+          "from": 5,
+          "to": 4
+        },
+        {
+          "type": "creature_entered",
+          "player": "p1",
+          "slot": 0,
+          "creature": "Galápagos Lava Lizards",
+          "stats": "1/1"
+        },
+        {
+          "type": "creature_entered",
+          "player": "p1",
+          "slot": 1,
+          "creature": "Lava Lizard",
+          "stats": "1/1"
+        },
+        {
+          "type": "creature_entered",
+          "player": "p1",
+          "slot": 2,
+          "creature": "Lava Lizard",
+          "stats": "1/1"
+        },
+        {
+          "type": "hp",
+          "player": "p2",
+          "from": 10,
+          "to": 7,
+          "delta": -3
+        }
+      ]
+    },
+    {
+      "turn": 2,
+      "player": 0,
+      "phase": "Main 1",
+      "action": "play {\"type\":\"play\",\"handIndex\":0}",
+      "reasoning": "I’m at 7 HP with an empty field, while the rival has three 1/1 Prey creatures — a solid early board. My hand includes two low-cost Prey (Hoatzin, Mockingbird), a healing Dove, a powerful Predator (Gol",
+      "diff": [
+        {
+          "type": "hand",
+          "player": "p1",
+          "from": 6,
+          "to": 5
+        },
+        {
+          "type": "creature_entered",
+          "player": "p1",
+          "slot": 0,
+          "creature": "Hoatzin",
+          "stats": "2/1"
+        }
+      ]
+    },
+    {
+      "turn": 2,
+      "player": 0,
+      "phase": "Combat",
+      "action": "attack {\"type\":\"attack\",\"attackerSlot\":0,\"target\":0}",
+      "reasoning": "I have Hoatzin (2/1) on the field, and the rival has three 1/1 Prey creatures. Hoatzin can attack any of them, and after combat, its effect deals 2 damage to the rival — that’s a 2-damage direct hit *",
+      "diff": [
+        {
+          "type": "carrion",
+          "player": "p1",
+          "from": 0,
+          "to": 1
+        },
+        {
+          "type": "creature_died",
+          "player": "p1",
+          "slot": 0,
+          "creature": "Hoatzin"
+        },
+        {
+          "type": "carrion",
+          "player": "p2",
+          "from": 0,
+          "to": 1
+        },
+        {
+          "type": "creature_died",
+          "player": "p2",
+          "slot": 0,
+          "creature": "Galápagos Lava Lizards"
+        }
+      ]
+    },
+    {
+      "turn": 3,
+      "player": 1,
+      "phase": "Main 1",
+      "action": "play {\"type\":\"play\",\"handIndex\":0,\"eat\":[1,2]}",
+      "reasoning": "I’m at 10 HP, opponent at 7, and I have two Lava Lizards on the field dealing 1 damage each (so 2 damage already applied this turn). My hand has two strong predators: Nile Crocodile (5/5 with 3-damage"
+    },
+    {
+      "turn": 4,
+      "player": 0,
+      "phase": "Main 1",
+      "action": "eat {\"type\":\"eat\",\"targets\":[0,1]}",
+      "reasoning": "I just played Nile Crocodile, a Predator, and I need to decide whether to eat prey to boost it or dry drop. The rival has two 1/1 Lava Lizards on the field, each worth 1 nutrition. Eating both would g"
+    },
+    {
+      "turn": 5,
+      "player": 1,
+      "phase": "Main 1",
+      "action": "play {\"type\":\"play\",\"handIndex\":0,\"eat\":[1,2]}",
+      "reasoning": "I just played Nile Crocodile and need to decide how to consume prey. I have two Lava Lizards on the field, each worth 1 nutrition, totaling 2 nutrition. Eating both would make the Crocodile 7/7 (base "
+    },
+    {
+      "turn": 6,
+      "player": 0,
+      "phase": "Main 1",
+      "action": "dryDrop {\"type\":\"dryDrop\"}",
+      "reasoning": "I just played Nile Crocodile, a Predator, and now need to decide whether to eat prey to boost it. There are two 1/1 Lava Lizards on the rival’s field, but predators can only eat *friendly* prey — and "
+    },
+    {
+      "turn": 7,
+      "player": 1,
+      "phase": "Main 1",
+      "action": "play {\"type\":\"play\",\"handIndex\":0,\"eat\":[0,1]}",
+      "reasoning": "I just played Nile Crocodile and need to decide how to consume prey. I have two Lava Lizards on the field, each worth 1 nutrition. Eating both gives +2/+2, turning the 5/5 into a 7/7 with its full eff",
+      "diff": [
+        {
+          "type": "hand",
+          "player": "p1",
+          "from": 7,
+          "to": 6
+        },
+        {
+          "type": "creature_entered",
+          "player": "p1",
+          "slot": 0,
+          "creature": "Nile Crocodile",
+          "stats": "7/7"
+        },
+        {
+          "type": "creature_died",
+          "player": "p1",
+          "slot": 1,
+          "creature": "Lava Lizard"
+        },
+        {
+          "type": "creature_died",
+          "player": "p1",
+          "slot": 2,
+          "creature": "Lava Lizard"
+        }
+      ]
+    }
+  ],
+  "result": null,
+  "suspiciousCount": 0
+}
