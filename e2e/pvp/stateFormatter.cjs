@@ -143,18 +143,7 @@ function formatStatePrompt(qaState, playerIndex, deckName = 'Unknown') {
   }
   lines.push('');
   
-  // LETHAL CHECK — if total ATK on field >= opponent HP during combat
-  if (qaState.phase === 'Combat') {
-    const totalAtk = myCreatures.reduce((sum, c) => sum + (c.canAttackPlayer ? (c.currentAtk ?? c.atk ?? 0) : 0), 0);
-    const totalCreatureAtk = myCreatures.reduce((sum, c) => sum + (c.canAttack ? (c.currentAtk ?? c.atk ?? 0) : 0), 0);
-    if (totalAtk >= (opp?.hp ?? 99)) {
-      lines.push(`⚠️ LETHAL ON BOARD: You have ${totalAtk} total direct damage. Rival is at ${opp?.hp} HP. GO FACE WITH EVERYTHING!`);
-      lines.push('');
-    } else if (oppCreatures.length === 0 && totalCreatureAtk > 0) {
-      lines.push(`⚠️ OPEN BOARD: Rival has no creatures. Attack directly for ${totalCreatureAtk} damage!`);
-      lines.push('');
-    }
-  }
+
   
   // Zones
   lines.push(`Deck: ${me?.deckSize ?? '?'} cards | Carrion: ${me?.carrion?.length ?? 0} | Exile: ${me?.exile?.length ?? 0}`);

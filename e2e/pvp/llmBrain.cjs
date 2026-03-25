@@ -30,13 +30,8 @@ CARD TYPES:
 - Free Spell: one-use effect, doesn't cost limit but needs limit available.
 - Trap: stays in hand, activates on opponent's turn when triggered.
 
-STRATEGY TIPS:
-- Board presence wins games. Play creatures early.
-- Predators are strongest when you have prey to eat.
-- Don't dry-drop a predator unless desperate — they lose all keywords.
-- Trade favorably: attack enemies you can kill without losing your creature.
-- Save removal spells for big threats.
-- Go face (attack rival) when you have lethal or clear board advantage.
+STRATEGY:
+Your goal is to reduce the rival's HP to 0. Every decision you make — what to play, when to attack, what to save — should work toward that goal based on what's in your hand and what's on the board. Think about tempo, board control, and damage. Consider what the opponent might do next turn. Factor in keywords like Lure, Barrier, Poisonous, and Ambush when deciding whether to attack. Predators are strongest when you have prey on the field to consume — plan your turns around setting that up. Don't be passive — if you have the advantage, press it. If you're behind, find the play that gives you the best chance to come back.
 
 RESPONSE FORMAT:
 1. Think about your play in 4-5 sentences. Consider threats, trades, board state, and lethal potential.
