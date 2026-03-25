@@ -96,65 +96,44 @@ async function continueTaGame(page) {
 // ============================================================================
 
 async function selectDeck(page, deckName) {
-  // Wait for deck selection overlay to be active
+  // Wait for deck selection overlay
   for (let i = 0; i < 10; i++) {
     const active = await page.evaluate(() => document.querySelector('.deck-select-overlay.active') !== null);
     if (active) break;
     await page.waitForTimeout(500);
   }
   
-  // Check if we have deck category panels (AI mode) or saved deck list (multiplayer)
-  const hasCategories = await page.evaluate(({name}) => {
-    const panel = document.querySelector(`.deck-select-panel--${name}`);
-    return panel && panel.offsetHeight > 0;
-  }, {name: deckName});
-  
-  if (hasCategories) {
-    // AI mode: direct category selection
-    await page.click(`.deck-select-panel--${deckName}`, { force: true });
-    await page.waitForTimeout(1000);
-    await page.click('#deck-random', { force: true });
-    await page.waitForTimeout(500);
-    await page.click('#deck-confirm', { force: true });
-    await page.waitForTimeout(2000);
-  } else {
-    // Multiplayer mode: need to create a deck first via the ➕ button
-    // Click the create/add button
-    await page.evaluate(() => {
-      const buttons = document.querySelectorAll('.deck-select-overlay button, .deck-select-overlay [class*=create]');
-      for (const btn of buttons) {
-        if (btn.innerText.includes('➕') || btn.innerText.includes('+') || btn.innerText.includes('Create') || btn.innerText.includes('Build')) {
-          if (btn.offsetHeight > 0) { btn.click(); return; }
-        }
-      }
-      // Fallback: click first button-like element after "No saved decks"
-      const grid = document.getElementById('deck-select-grid');
-      const addBtn = grid?.querySelector('button');
-      if (addBtn) addBtn.click();
+  // Step 1: Click 'Create a deck (Not saved)' (multiplayer mode)
+  await page.evaluate(() => {
+    document.querySelectorAll('#deck-select-grid button').forEach(b => {
+      if (b.innerText.includes('Create a deck') && b.offsetHeight > 0) b.click();
     });
-    await page.waitForTimeout(1000);
-    
-    // Now we should see the category selection
-    const hasCatNow = await page.evaluate(({name}) => {
-      const panel = document.querySelector(`.deck-select-panel--${name}`);
-      return panel && panel.offsetHeight > 0;
-    }, {name: deckName});
-    
-    if (hasCatNow) {
-      await page.click(`.deck-select-panel--${deckName}`, { force: true });
-      await page.waitForTimeout(1000);
-    }
-    
-    // Fill with random cards
-    await page.click('#deck-random', { force: true });
+  });
+  await page.waitForTimeout(1000);
+  
+  // Step 2: Click deck category panel
+  await page.evaluate(({name}) => {
+    document.querySelectorAll('.deck-select-panel--' + name).forEach(p => {
+      if (p.offsetHeight > 0) p.click();
+    });
+  }, {name: deckName});
+  await page.waitForTimeout(2000);
+  
+  // Step 3: Click 'CONFIRM DECK & READY UP' (dynamically created in grid)
+  await page.evaluate(() => {
+    const grid = document.getElementById('deck-select-grid');
+    (grid?.querySelectorAll('button') || []).forEach(b => {
+      if (b.innerText.includes('CONFIRM') && b.offsetHeight > 0) b.click();
+    });
+  });
+  await page.waitForTimeout(2000);
+  
+  // AI mode fallback: RANDOM + static CONFIRM
+  const needsRandom = await page.evaluate(() => document.getElementById('deck-random')?.offsetHeight > 0);
+  if (needsRandom) {
+    await page.evaluate(() => document.getElementById('deck-random')?.click());
     await page.waitForTimeout(500);
-    
-    // Save the deck
-    await page.click('#deck-save', { force: true });
-    await page.waitForTimeout(1000);
-    
-    // Confirm / select the deck
-    await page.click('#deck-confirm', { force: true });
+    await page.evaluate(() => document.getElementById('deck-confirm')?.click());
     await page.waitForTimeout(2000);
   }
 }

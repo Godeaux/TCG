@@ -223,7 +223,7 @@ function parseAction(response) {
     const clean = line.trim().toUpperCase();
     
     // PLAY [index]
-    const playMatch = clean.match(/^PLAY\s+(\d+)/);
+    const playMatch = clean.match(/^PLAY\s+\[?(\d+)\]?/);
     if (playMatch) {
       const idx = parseInt(playMatch[1]);
       
@@ -243,7 +243,7 @@ function parseAction(response) {
     }
     
     // ATTACK [my_slot] [target_slot/PLAYER]
-    const attackMatch = clean.match(/^ATTACK\s+(\d+)\s+(PLAYER|\d+)/);
+    const attackMatch = clean.match(/^ATTACK\s+\[?(\d+)\]?\s+\[?(PLAYER|\d+)\]?/);
     if (attackMatch) {
       const mySlot = parseInt(attackMatch[1]);
       const target = attackMatch[2] === 'PLAYER' ? 'player' : parseInt(attackMatch[2]);
