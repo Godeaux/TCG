@@ -69,26 +69,28 @@ async function executePlay(page, action, state) {
     return { success: false, description: desc, error: result?.error || 'Drag failed' };
   }
   
-  // Handle consumption if specified
+  // Handle consumption if predator
   if (card.type === 'Predator') {
-    await page.waitForTimeout(500);
-    
-    // Check for consumption prompt
-    const pending = await page.evaluate(() => window.__qa?.getState()?.pendingContext);
+    // Wait for consumption prompt to appear
+    let pending = null;
+    for (let i = 0; i < 6; i++) {
+      await page.waitForTimeout(500);
+      pending = await page.evaluate(() => window.__qa?.getState()?.pendingContext);
+      if (pending?.type === 'pending_consumption') break;
+    }
     
     if (pending?.type === 'pending_consumption') {
-      if (isDryDrop) {
-        return await executeDryDrop(page, desc);
-      } else if (eat && eat.length > 0) {
-        return await executeEat(page, { targets: eat }, desc);
+      if (isDryDrop || (!eat && pending.options?.length === 0)) {
+        // Dry drop via QA API (modal response, not a game action)
+        await page.evaluate(() => window.__qa?.act?.dryDrop());
+        await page.waitForTimeout(500);
+        return { success: true, description: `${desc} (dry drop)` };
       } else {
-        // No eat specified — check if there are options
-        if (pending.options?.length > 0) {
-          // Default: eat the highest nutrition target
-          return await executeEat(page, { targets: [0] }, desc);
-        } else {
-          return await executeDryDrop(page, desc);
-        }
+        // Eat via QA API (modal response to consumption prompt)
+        const targets = eat || [0]; // Default: eat first prey
+        await page.evaluate(({t}) => window.__qa?.act?.selectEatTargets(t), {t: targets});
+        await page.waitForTimeout(500);
+        return { success: true, description: `${desc} (ate ${targets.length} prey)` };
       }
     }
   }

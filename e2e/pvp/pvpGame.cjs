@@ -312,8 +312,23 @@ async function main() {
     log(`  P2 deck state: hand=${d2.hand} deck=${d2.deck} phase=${d2.phase}`);
     
     // Complete setup (roll, choose)
-    await completeSetup(p1.page);
-    await completeSetup(p2.page);
+    // Complete setup — both players may need to roll/choose, interleave
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const phase1 = await p1.page.evaluate(() => window.__qa?.getState()?.phase);
+      const phase2 = await p2.page.evaluate(() => window.__qa?.getState()?.phase);
+      if (phase1 !== 'Setup' && phase2 !== 'Setup') break;
+      
+      // Click any roll/choice buttons on both sides
+      for (const page of [p1.page, p2.page]) {
+        await page.evaluate(() => {
+          document.querySelectorAll('.setup-overlay button').forEach(b => {
+            if ((b.innerText.includes('Roll') || b.innerText.includes('goes first')) && b.offsetHeight > 0) b.click();
+          });
+          document.getElementById('pass-confirm')?.click();
+        });
+      }
+      await p1.page.waitForTimeout(1000);
+    }
     log('✅ Setup complete\n');
     
     // === GAME LOOP ===
