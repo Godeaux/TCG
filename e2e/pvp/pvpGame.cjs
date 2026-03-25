@@ -241,7 +241,7 @@ async function playTurn(player, turnNum, model, recorder) {
   }
   
   // === ADVANCE TO COMBAT ===
-  await player.page.evaluate(() => document.getElementById('field-turn-btn')?.click());
+  await player.page.evaluate(() => window.__qa?.act?.advancePhase());
   await player.page.waitForTimeout(500);
   
   // === COMBAT PHASE ===
@@ -293,18 +293,19 @@ async function playTurn(player, turnNum, model, recorder) {
   }
   
   // === END TURN ===
+  // End turn via QA API — reliable and won't overshoot into opponent's turn
   const startTurn = await player.page.evaluate(() => window.__qa?.getState()?.turn);
-  for (let i = 0; i < 8; i++) {
-    await player.page.evaluate(() => document.getElementById('field-turn-btn')?.click());
-    await player.page.waitForTimeout(300);
-    const turn = await player.page.evaluate(() => window.__qa?.getState()?.turn);
-    if (turn !== startTurn) break;
-  }
-  const currentTurn = await player.page.evaluate(() => window.__qa?.getState()?.turn);
-  if (currentTurn === startTurn) {
-    logP(player.index, '⚠️ DOM end-turn failed, using QA fallback');
-    await player.page.evaluate(() => window.__qa?.act?.endTurn());
-    await player.page.waitForTimeout(500);
+  const isMyTurn = await player.page.evaluate(() => window.__qa?.getState()?.ui?.isMyTurn);
+  
+  if (isMyTurn) {
+    // Advance through remaining phases until turn changes
+    for (let i = 0; i < 6; i++) {
+      await player.page.evaluate(() => window.__qa?.act?.advancePhase());
+      await player.page.waitForTimeout(400);
+      const newTurn = await player.page.evaluate(() => window.__qa?.getState()?.turn);
+      const stillMyTurn = await player.page.evaluate(() => window.__qa?.getState()?.ui?.isMyTurn);
+      if (newTurn !== startTurn || !stillMyTurn) break;
+    }
   }
   
   return { actions, turnEnded: true };
