@@ -1,0 +1,156 @@
+{
+  "id": "game-1774482720942",
+  "timestamp": "2026-03-25T23:52:00.942Z",
+  "decks": {
+    "p1": "fish",
+    "p2": "reptile"
+  },
+  "model": "qwen3-coder-next:latest",
+  "actions": [
+    {
+      "turn": 1,
+      "player": 1,
+      "phase": "Main 1",
+      "action": "play {\"type\":\"play\",\"handIndex\":2}",
+      "reasoning": "I'm on turn 1 with an empty field and a strong hand of early-game prey and a high-impact predator. The Saltwater Crocodile (hand 3) is a 6/6 Predator with a powerful Kill effect, but it needs prey to ",
+      "diff": [
+        {
+          "type": "hand",
+          "player": "p1",
+          "from": 5,
+          "to": 4
+        },
+        {
+          "type": "creature_entered",
+          "player": "p1",
+          "slot": 0,
+          "creature": "Plumed Basilisk",
+          "stats": "1/1"
+        }
+      ]
+    },
+    {
+      "turn": 2,
+      "player": 0,
+      "phase": "Main 1",
+      "action": "play {\"type\":\"play\",\"handIndex\":4}",
+      "reasoning": "I need to establish board presence and set up future predator plays. The rival has a 1/1 Prey on the field, which is useful nutrition for my predators. My hand has two strong predators: Alligator Gar ",
+      "diff": [
+        {
+          "type": "hand",
+          "player": "p1",
+          "from": 6,
+          "to": 5
+        },
+        {
+          "type": "creature_entered",
+          "player": "p1",
+          "slot": 0,
+          "creature": "Atlantic Bluefin Tuna",
+          "stats": "3/3"
+        }
+      ]
+    },
+    {
+      "turn": 2,
+      "player": 0,
+      "phase": "Combat",
+      "action": "attack {\"type\":\"attack\",\"attackerSlot\":0,\"target\":\"player\"}",
+      "reasoning": "My Atlantic Bluefin Tuna has Haste (indicated by ⚔️), so it can attack the rival directly despite being played this turn—summoning sickness only blocks direct attacks on the player for non-Haste creat"
+    },
+    {
+      "turn": 3,
+      "player": 1,
+      "phase": "Main 1",
+      "action": "parse_fail",
+      "reasoning": "I need to assess the board: my Plumed Basilisk is a 1/1 with Free Play and can freeze the rival's Tuna, which is a 3/3 Predator. The Tuna has no keywords listed, so freezing it prevents it from attack"
+    },
+    {
+      "turn": 3,
+      "player": 1,
+      "phase": "Combat",
+      "action": "attack {\"type\":\"attack\",\"attackerSlot\":0,\"target\":0}",
+      "reasoning": "I have a 1/1 Plumed Basilisk with Free Play and Lure, and the rival has a 3/3 Atlantic Bluefin Tuna (Predator) with Edible. Since the Basilisk has Lure, the rival *must* block it if they have a creatu",
+      "diff": [
+        {
+          "type": "carrion",
+          "player": "p1",
+          "from": 0,
+          "to": 1
+        },
+        {
+          "type": "creature_died",
+          "player": "p1",
+          "slot": 0,
+          "creature": "Plumed Basilisk"
+        },
+        {
+          "type": "creature_hp",
+          "player": "p2",
+          "slot": 0,
+          "creature": "Atlantic Bluefin Tuna",
+          "from": 3,
+          "to": 2
+        }
+      ]
+    },
+    {
+      "turn": 4,
+      "player": 0,
+      "phase": "Main 1",
+      "action": "play {\"type\":\"play\",\"handIndex\":1}",
+      "reasoning": "I have a 3/2 Atlantic Bluefin Tuna on the field with Edible, and two empty slots. My hand has strong options: Celestial Eye Goldfish gives card advantage and hand reveal (useful against unknown rival ",
+      "diff": [
+        {
+          "type": "hand",
+          "player": "p1",
+          "from": 6,
+          "to": 7
+        },
+        {
+          "type": "deck",
+          "player": "p1",
+          "from": 13,
+          "to": 11
+        },
+        {
+          "type": "creature_entered",
+          "player": "p1",
+          "slot": 1,
+          "creature": "Celestial Eye Goldfish",
+          "stats": "1/1"
+        }
+      ]
+    },
+    {
+      "turn": 4,
+      "player": 0,
+      "phase": "Combat",
+      "action": "attack {\"type\":\"attack\",\"attackerSlot\":0,\"target\":\"player\"}",
+      "reasoning": "I have a 3/2 Atlantic Bluefin Tuna with Edible and⚔️👤 (can attack both creatures and players), and no enemy creatures to block. Since the rival has no field presence, attacking directly with the Tuna",
+      "diff": [
+        {
+          "type": "hp",
+          "player": "p2",
+          "from": 10,
+          "to": 7,
+          "delta": -3
+        }
+      ]
+    },
+    {
+      "turn": 4,
+      "player": 0,
+      "phase": "Combat",
+      "action": "attack {\"type\":\"attack\",\"attackerSlot\":0,\"target\":\"player\"}",
+      "reasoning": "I have a 3/2 Atlantic Bluefin Tuna on the field with Edible, and my rival has no creatures — so I can’t attack enemy creatures, but summoning sickness prevents me from attacking the rival directly. Ho"
+    }
+  ],
+  "result": {
+    "winner": null,
+    "reason": "incomplete",
+    "turns": 8,
+    "finalHP": {}
+  },
+  "suspiciousCount": 0
+}

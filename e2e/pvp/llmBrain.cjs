@@ -87,7 +87,6 @@ async function getDecision(qaState, playerIndex, deckName, options = {}) {
         options: {
           temperature,
           num_predict: 300,
-          num_ctx: 8192, // Smaller context = faster loading, our prompts are ~2k tokens
         },
       }),
     });

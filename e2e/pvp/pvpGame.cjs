@@ -523,8 +523,27 @@ async function main() {
           const summary = turnResult.actions?.map(a => a.result?.description).join(', ') || 'no actions';
           gameLog.push({ turn: turnNum, player: player.index, summary });
           
-          await player.page.waitForTimeout(1000);
+          await player.page.waitForTimeout(500);
           break; // Only one player acts per iteration
+        }
+      }
+      
+      // If neither player got a turn, wait for Supabase sync
+      const p1Turn = await p1.isMyTurn();
+      const p2Turn = await p2.isMyTurn();
+      if (!p1Turn && !p2Turn) {
+        dbg('Neither player has turn — waiting for sync...');
+        await p1.page.waitForTimeout(3000);
+        // Check for game over
+        const go1 = await p1.isGameOver();
+        const go2 = await p2.isGameOver();
+        if (go1?.over || go2?.over) {
+          const go = go1?.over ? go1 : go2;
+          log(`\n🏆 GAME OVER (detected during sync wait)`);
+          recorder.setResult(go.winner, go.reason, await p1.getState());
+          const logPath = recorder.save();
+          log(`  File: ${logPath}`);
+          return;
         }
       }
     }
