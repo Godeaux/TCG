@@ -134,14 +134,27 @@ function formatStatePrompt(qaState, playerIndex, deckName = 'Unknown') {
   }
   lines.push('');
   
-  // Your hand
+  // Your hand (labeled "hand #" to distinguish from field "slot #")
   if (me?.hand) {
-    lines.push(`YOUR HAND (${me.hand.length} cards):`);
+    lines.push(`YOUR HAND (${me.hand.length} cards) — use PLAY hand# to play:`);
     me.hand.forEach((c, i) => {
-      lines.push(`  [${i}] ${formatCard(c)}`);
+      lines.push(`  [hand ${i}] ${formatCard(c)}`);
     });
   }
   lines.push('');
+  
+  // LETHAL CHECK — if total ATK on field >= opponent HP during combat
+  if (qaState.phase === 'Combat') {
+    const totalAtk = myCreatures.reduce((sum, c) => sum + (c.canAttackPlayer ? (c.currentAtk ?? c.atk ?? 0) : 0), 0);
+    const totalCreatureAtk = myCreatures.reduce((sum, c) => sum + (c.canAttack ? (c.currentAtk ?? c.atk ?? 0) : 0), 0);
+    if (totalAtk >= (opp?.hp ?? 99)) {
+      lines.push(`⚠️ LETHAL ON BOARD: You have ${totalAtk} total direct damage. Rival is at ${opp?.hp} HP. GO FACE WITH EVERYTHING!`);
+      lines.push('');
+    } else if (oppCreatures.length === 0 && totalCreatureAtk > 0) {
+      lines.push(`⚠️ OPEN BOARD: Rival has no creatures. Attack directly for ${totalCreatureAtk} damage!`);
+      lines.push('');
+    }
+  }
   
   // Zones
   lines.push(`Deck: ${me?.deckSize ?? '?'} cards | Carrion: ${me?.carrion?.length ?? 0} | Exile: ${me?.exile?.length ?? 0}`);
@@ -179,16 +192,18 @@ function formatStatePrompt(qaState, playerIndex, deckName = 'Unknown') {
   // Available actions
   lines.push('AVAILABLE ACTIONS:');
   if (qaState.phase === 'Main 1' || qaState.phase === 'Main 2') {
-    lines.push('  PLAY [hand_index]           — Play a card from hand');
-    lines.push('  PLAY [hand_index] EAT [prey_indices]  — Play predator and eat prey');
-    lines.push('  PLAY [hand_index] DRY_DROP  — Play predator without eating');
+    lines.push('  PLAY hand#                  — Play a card from hand (e.g. PLAY 0)');
+    lines.push('  PLAY hand# EAT slot#,slot#  — Play predator and eat field prey');
+    lines.push('  PLAY hand# DRY_DROP         — Play predator without eating');
     lines.push('  ADVANCE                     — Move to next phase');
-    lines.push('  END_TURN                    — Skip remaining phases, end turn');
+    lines.push('  END_TURN                    — End turn');
   } else if (qaState.phase === 'Combat') {
-    lines.push('  ATTACK [my_slot] [target_slot]  — Attack enemy creature');
-    lines.push('  ATTACK [my_slot] PLAYER         — Attack rival directly');
-    lines.push('  ADVANCE                         — End combat, move to next phase');
-    lines.push('  END_TURN                        — End turn');
+    lines.push('  *** YOU CAN ONLY ATTACK DURING COMBAT — NOT PLAY CARDS ***');
+    lines.push('  ATTACK slot# slot#    — Attack enemy creature (YOUR slot → ENEMY slot)');
+    lines.push('  ATTACK slot# PLAYER   — Attack rival directly (YOUR slot → rival HP)');
+    lines.push('  ADVANCE               — End combat');
+    lines.push('  END_TURN              — End turn');
+    lines.push('  NOTE: slot numbers are 0-2 (field positions), NOT hand indices!');
   } else {
     lines.push('  ADVANCE — Move to next phase');
   }
