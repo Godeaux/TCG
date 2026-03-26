@@ -141,8 +141,11 @@ function formatStatePrompt(qaState, playerIndex, deckName = 'Unknown') {
     const totalDirectATK = canAttackDirect.reduce((s, c) => s + (c.currentAtk ?? c.atk ?? 0), 0);
     const oppHP = opp?.hp ?? 99;
     
-    if (canAttackDirect.length > 0) {
-      lines.push(`COMBAT MATH: You have ${canAttackDirect.length} creature(s) that can attack the rival directly for ${totalDirectATK} total damage. Rival is at ${oppHP} HP.`);
+    if (canAttackDirect.length > 0 && totalDirectATK >= oppHP) {
+      lines.push(`🔥 LETHAL AVAILABLE: You have ${totalDirectATK} direct damage vs rival's ${oppHP} HP. Attack the rival directly to WIN.`);
+    } else if (canAttackDirect.length > 0) {
+      const pctDmg = Math.round(totalDirectATK / oppHP * 100);
+      lines.push(`COMBAT MATH: ${canAttackDirect.length} creature(s) can attack rival directly for ${totalDirectATK} damage (${pctDmg}% of rival's ${oppHP} HP). Prioritize face damage unless a trade saves you from lethal.`);
     }
     if (canAttackAny.length > 0 && canAttackDirect.length === 0) {
       lines.push(`COMBAT MATH: You have ${canAttackAny.length} creature(s) that can attack enemy creatures (but not the rival directly due to summoning sickness).`);
