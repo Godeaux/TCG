@@ -68,8 +68,95 @@ async function executePlay(page, action, state) {
   }
   if (targetSlot < 0) targetSlot = 0; // Spells don't need a slot
   
-  // For spells: drag to the field area (they resolve on drop)
-  // For creatures: drag to specific slot
+  // For targeted spells: drag directly onto an enemy creature (not onto field slot)
+  // The game reverts targeted spells dropped on empty slots
+  const isSpell = card.type === 'Spell' || card.type === 'Free Spell';
+  if (isSpell) {
+    // Check if this spell requires a target by looking for selectFromGroup or similar
+    const needsTarget = await page.evaluate(({hi}) => {
+      const state = window.__qa?.getState();
+      const card = state?.players?.[0]?.hand?.[hi];
+      if (!card) return false;
+      // Check card effects for targeting patterns
+      const eff = card.effects?.effect;
+      if (eff?.type === 'selectFromGroup' || eff?.type === 'selectTarget') return true;
+      if (eff?.params?.targetGroup) return true;
+      // Check via game controller
+      try {
+        const gc = window.__qa?._getController?.() || window.gameController;
+        if (gc) {
+          const sel = gc.getEffectSelections(card, 'effect');
+          if (sel?.type === 'selectTarget') return true;
+        }
+      } catch {}
+      return false;
+    }, {hi: handIndex});
+    
+    if (needsTarget) {
+      // Find enemy creatures to target
+      const oppField = state?.players?.[1]?.field?.filter(c => c) || [];
+      if (oppField.length === 0) {
+        return { success: false, description: `Play ${card.name} (${card.type})`, error: 'No targets for targeted spell' };
+      }
+      
+      // Ask LLM which enemy creature to target
+      const selHP = [state?.players?.[0]?.hp ?? '?', state?.players?.[1]?.hp ?? '?'];
+      const gameCtx = `HP: You ${selHP[0]} | Rival ${selHP[1]}. Casting ${card.name}${card.effectText ? ' — ' + card.effectText : ''}.`;
+      const targetOptions = oppField.map((c, i) => ({ index: i, name: `${c.name} ${c.currentAtk}/${c.currentHp}${c.keywords?.length ? ' [' + c.keywords.join(',') + ']' : ''}` }));
+      
+      let targetSlotIdx = oppField[0].slot; // Default to first
+      if (targetOptions.length > 1) {
+        const { askLLMChoice } = require('./selectionHandler.cjs');
+        const chosen = await askLLMChoice(`Target for ${card.name}`, targetOptions, gameCtx);
+        targetSlotIdx = oppField[chosen]?.slot ?? oppField[0].slot;
+      }
+      
+      // Drag spell card onto the enemy creature
+      console.log(`  [SPELL-TARGET] ${card.name} → enemy slot ${targetSlotIdx}`);
+      const spellResult = await page.evaluate(({hi, tSlot}) => {
+        // Find hand card element
+        const handCards = document.querySelectorAll('.hand .card, .hand-container .card');
+        const visible = Array.from(handCards).filter(c => c.offsetHeight > 0);
+        const cardEl = visible[hi];
+        if (!cardEl) return { success: false, error: 'No hand card element' };
+        
+        // Find enemy creature element (opponent field is slots 0-2, our field is 3-5)
+        const slots = document.querySelectorAll('.field-slot');
+        const targetEl = slots[tSlot]?.querySelector('.card');
+        if (!targetEl) return { success: false, error: `No enemy card at slot ${tSlot}` };
+        
+        const dt = new DataTransfer();
+        const instanceId = cardEl.dataset.instanceId;
+        if (instanceId) dt.setData('text/plain', instanceId);
+        
+        const sr = cardEl.getBoundingClientRect();
+        const tr = targetEl.getBoundingClientRect();
+        
+        cardEl.dispatchEvent(new DragEvent('dragstart', { bubbles:true, cancelable:true, dataTransfer:dt, clientX:sr.x+sr.width/2, clientY:sr.y+sr.height/2 }));
+        targetEl.dispatchEvent(new DragEvent('dragover', { bubbles:true, cancelable:true, dataTransfer:dt, clientX:tr.x+tr.width/2, clientY:tr.y+tr.height/2 }));
+        targetEl.dispatchEvent(new DragEvent('drop', { bubbles:true, cancelable:true, dataTransfer:dt, clientX:tr.x+tr.width/2, clientY:tr.y+tr.height/2 }));
+        cardEl.dispatchEvent(new DragEvent('dragend', { bubbles:true, cancelable:true, dataTransfer:dt }));
+        
+        return { success: true };
+      }, {hi: handIndex, tSlot: targetSlotIdx});
+      
+      await page.waitForTimeout(800);
+      const desc = `Play ${card.name} (${card.type}) → target slot ${targetSlotIdx}`;
+      
+      // Handle any follow-up selections after the targeted spell
+      for (let attempt = 0; attempt < 3; attempt++) {
+        await page.waitForTimeout(400);
+        const targeting = await handleTargetingMode(page, `spell:${card.name}`, gameCtx);
+        if (targeting.handled) break;
+        const selection = await handleSelectionUI(page, `spell:${card.name}`, gameCtx);
+        if (selection.handled) break;
+      }
+      
+      return { success: spellResult?.success || false, description: desc, error: spellResult?.error };
+    }
+  }
+  
+  // For non-targeted spells and creatures: drag to field slot
   const result = await dragCardToField(page, handIndex, targetSlot);
   await page.waitForTimeout(800);
   
