@@ -274,7 +274,10 @@ async function playTurn(player, turnNum, model, recorder) {
     // Attack up to 3 times (max creatures), refreshing state each time
     for (let attackNum = 0; attackNum < 3; attackNum++) {
       combatState = await player.getState(); // FRESH state each attack
-      const attackers = combatState.players?.[0]?.field?.filter(c => c && c.canAttack && !attackedSlots.has(c.slot)) || [];
+      const allField = combatState.players?.[0]?.field || [];
+      const fieldDebug = allField.map(c => c ? `${c.name}:s${c.slot},atk=${c.canAttack},atkP=${c.canAttackPlayer}` : '_');
+      const attackers = allField.filter(c => c && c.canAttack && !attackedSlots.has(c.slot));
+      dbg(`P${player.index+1} combat#${attackNum}: field=[${fieldDebug}] attackedSlots=[${[...attackedSlots]}] eligible=${attackers.length}`);
       if (attackers.length === 0) break;
       
       const atkDecision = await getDecision(combatState, 0, player.deckName, { model });
@@ -282,6 +285,15 @@ async function playTurn(player, turnNum, model, recorder) {
       
       // ONLY accept ATTACK actions during combat — reject anything else
       if (atkDecision.action.type === 'attack') {
+        // Verify the chosen slot is actually eligible
+        const chosenSlot = atkDecision.action.attackerSlot;
+        const isEligible = attackers.some(c => c.slot === chosenSlot);
+        if (!isEligible) {
+          logP(player.index, `⚠️ LLM chose slot ${chosenSlot} but it's not eligible — skipping`);
+          attackedSlots.add(chosenSlot); // Prevent retry
+          if (recorder) recorder.recordAction(turnNum, player.index, 'Combat', `invalid_slot ${chosenSlot}`, atkDecision.rawResponse, combatState, combatState);
+          continue;
+        }
         const combatBefore = await player.getState();
         
         // A1 DEBUG: snapshot key state values before attack
