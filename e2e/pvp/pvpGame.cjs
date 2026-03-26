@@ -503,7 +503,7 @@ async function main() {
           log(`   ${compact}`);
           
           // Save recording
-          recorder.setResult(go.winner, go.reason, finalState);
+          recorder.setResult(go.winner, go.reason, finalState, player.index);
           const logPath = recorder.save();
           const summary = recorder.getSummary();
           
@@ -575,7 +575,7 @@ async function main() {
         if (go1?.over || go2?.over) {
           const go = go1?.over ? go1 : go2;
           log(`\n🏆 GAME OVER (detected during sync wait)`);
-          recorder.setResult(go.winner, go.reason, await p1.getState());
+          recorder.setResult(go.winner, go.reason, await p1.getState(), 0);
           const logPath = recorder.save();
           log(`  File: ${logPath}`);
           return;

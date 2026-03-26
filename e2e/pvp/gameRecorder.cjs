@@ -13,7 +13,7 @@ const LOG_DIR = path.join(__dirname, '..', 'logs');
 /**
  * Compact state snapshot — just the fields needed for diff comparison
  */
-function snapshotState(qaState) {
+function snapshotState(qaState, actingPlayerIndex) {
   if (!qaState) return null;
   
   const formatField = (field) => (field || []).map(c => {
@@ -32,25 +32,36 @@ function snapshotState(qaState) {
     };
   });
   
+  // Map from local perspective (players[0]=local, [1]=opponent) 
+  // to absolute game perspective (p1=game player 1, p2=game player 2)
+  const localIdx = qaState.localPlayer ?? 0;
+  const local = qaState.players?.[0];  // Always the acting player's view
+  const opponent = qaState.players?.[1];
+  
+  // If actingPlayerIndex is 0 (P1), local=P1, opponent=P2
+  // If actingPlayerIndex is 1 (P2), local=P2, opponent=P1
+  const gameP1 = actingPlayerIndex === 0 ? local : opponent;
+  const gameP2 = actingPlayerIndex === 0 ? opponent : local;
+  
   return {
     phase: qaState.phase,
     turn: qaState.turn,
     activePlayer: qaState.activePlayer,
     p1: {
-      hp: qaState.players?.[0]?.hp,
-      handSize: qaState.players?.[0]?.hand?.length ?? 0,
-      deckSize: qaState.players?.[0]?.deckSize ?? 0,
-      field: formatField(qaState.players?.[0]?.field),
-      carrionSize: qaState.players?.[0]?.carrion?.length ?? 0,
-      exileSize: qaState.players?.[0]?.exile?.length ?? 0,
+      hp: gameP1?.hp,
+      handSize: gameP1?.hand?.length ?? gameP1?.handSize ?? 0,
+      deckSize: gameP1?.deckSize ?? 0,
+      field: formatField(gameP1?.field),
+      carrionSize: gameP1?.carrion?.length ?? 0,
+      exileSize: gameP1?.exile?.length ?? 0,
     },
     p2: {
-      hp: qaState.players?.[1]?.hp,
-      handSize: qaState.players?.[1]?.handSize ?? qaState.players?.[1]?.hand?.length ?? 0,
-      deckSize: qaState.players?.[1]?.deckSize ?? 0,
-      field: formatField(qaState.players?.[1]?.field),
-      carrionSize: qaState.players?.[1]?.carrion?.length ?? 0,
-      exileSize: qaState.players?.[1]?.exile?.length ?? 0,
+      hp: gameP2?.hp,
+      handSize: gameP2?.hand?.length ?? gameP2?.handSize ?? 0,
+      deckSize: gameP2?.deckSize ?? 0,
+      field: formatField(gameP2?.field),
+      carrionSize: gameP2?.carrion?.length ?? 0,
+      exileSize: gameP2?.exile?.length ?? 0,
     },
   };
 }
@@ -164,8 +175,8 @@ function createRecording(deck1, deck2, model) {
      * Record an action with before/after state diffs
      */
     recordAction(turn, player, phase, actionType, reasoning, stateBefore, stateAfter) {
-      const before = snapshotState(stateBefore);
-      const after = snapshotState(stateAfter);
+      const before = snapshotState(stateBefore, player);
+      const after = snapshotState(stateAfter, player);
       const diff = computeDiff(before, after);
       const suspicious = checkSuspicious({ type: actionType }, diff, before, after);
       
@@ -191,15 +202,23 @@ function createRecording(deck1, deck2, model) {
     /**
      * Record game result
      */
-    setResult(winner, reason, finalState) {
+    setResult(winner, reason, finalState, viewingPlayerIndex = 0) {
+      // Map from local perspective to absolute game perspective
+      let p1hp, p2hp;
+      if (finalState?.players) {
+        if (viewingPlayerIndex === 0) {
+          p1hp = finalState.players[0]?.hp;
+          p2hp = finalState.players[1]?.hp;
+        } else {
+          p1hp = finalState.players[1]?.hp;
+          p2hp = finalState.players[0]?.hp;
+        }
+      }
       recording.result = {
         winner,
         reason,
         turns: finalState?.turn || recording.actions.length,
-        finalHP: {
-          p1: finalState?.players?.[0]?.hp,
-          p2: finalState?.players?.[1]?.hp,
-        },
+        finalHP: { p1: p1hp, p2: p2hp },
       };
     },
     
