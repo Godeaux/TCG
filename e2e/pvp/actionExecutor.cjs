@@ -6,7 +6,7 @@
  */
 
 const { dragCardToField, dragAttack, dragAttackPlayer, scanUI } = require('../domInteraction.cjs');
-const { handleSelectionUI } = require('./selectionHandler.cjs');
+const { handleSelectionUI, handleTargetingMode } = require('./selectionHandler.cjs');
 
 /**
  * Execute a parsed action from the LLM brain
@@ -145,8 +145,12 @@ async function executePlay(page, action, state) {
   
   for (let attempt = 0; attempt < 5; attempt++) {
     await page.waitForTimeout(400);
-    const { handled } = await handleSelectionUI(page, `play:${card.name}`, gameCtx);
-    if (handled) break;
+    // Check for targeting mode first (spell targets — click on field)
+    const targeting = await handleTargetingMode(page, `play:${card.name}`, gameCtx);
+    if (targeting.handled) break;
+    // Then check for selection panel (consumption, choices)
+    const selection = await handleSelectionUI(page, `play:${card.name}`, gameCtx);
+    if (selection.handled) break;
     if (attempt >= 4) break;
   }
   

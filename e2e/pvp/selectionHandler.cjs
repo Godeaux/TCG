@@ -133,4 +133,73 @@ async function handleSelectionUI(page, context = '', gameContext = '') {
   return { handled: false, choice: null };
 }
 
-module.exports = { handleSelectionUI };
+/**
+ * Check for and handle targeting mode (spell/effect target selection)
+ * This is separate from the selection panel — targeting mode highlights
+ * valid targets on the field and waits for a click.
+ */
+async function handleTargetingMode(page, context = '', gameContext = '') {
+  const targetInfo = await page.evaluate(() => {
+    if (!document.body.classList.contains('targeting-active')) return { active: false };
+    
+    // Get banner title
+    const banner = document.getElementById('targeting-banner');
+    const title = banner?.querySelector('span')?.textContent?.trim() || '';
+    
+    // Find all valid targets
+    const targets = document.querySelectorAll('.effect-target');
+    const options = [];
+    for (const el of targets) {
+      if (el.offsetHeight === 0) continue;
+      const isCard = el.classList.contains('card');
+      const isBadge = el.classList.contains('player-badge');
+      
+      if (isCard) {
+        const nameEl = el.querySelector('[class*="name"], .card-name');
+        const name = nameEl?.textContent?.trim() || 'Unknown';
+        const instanceId = el.dataset.instanceId;
+        options.push({ index: options.length, name, instanceId, type: 'creature' });
+      } else if (isBadge) {
+        const pIdx = el.dataset.playerIndex;
+        options.push({ index: options.length, name: `Player ${parseInt(pIdx)+1}`, type: 'player', playerIndex: pIdx });
+      }
+    }
+    
+    return { active: true, title, options };
+  });
+  
+  if (!targetInfo.active || targetInfo.options.length === 0) {
+    return { handled: false };
+  }
+  
+  console.log(`  [TARGETING] ${context}: "${targetInfo.title}" — ${targetInfo.options.length} targets: ${targetInfo.options.map(o => o.name).join(', ')}`);
+  
+  // Ask LLM to choose
+  const chosenIndex = await askLLMChoice(targetInfo.title, targetInfo.options, gameContext || context);
+  const chosen = targetInfo.options[chosenIndex];
+  
+  // Click the chosen target
+  const clicked = await page.evaluate(({ type, instanceId, playerIndex }) => {
+    if (type === 'creature' && instanceId) {
+      const el = document.querySelector(`.card.effect-target[data-instance-id="${instanceId}"]`);
+      if (el) { el.click(); return true; }
+    } else if (type === 'player' && playerIndex !== undefined) {
+      const el = document.querySelector(`.player-badge.effect-target[data-player-index="${playerIndex}"]`);
+      if (el) { el.click(); return true; }
+    }
+    // Fallback: click first effect-target
+    const first = document.querySelector('.effect-target');
+    if (first) { first.click(); return true; }
+    return false;
+  }, chosen);
+  
+  if (clicked) {
+    console.log(`  [TARGETING] LLM chose [${chosenIndex}]: ${chosen.name}`);
+    await page.waitForTimeout(500);
+    return { handled: true, choice: chosen.name };
+  }
+  
+  return { handled: false };
+}
+
+module.exports = { handleSelectionUI, handleTargetingMode };
