@@ -6,6 +6,7 @@
  */
 
 const { dragCardToField, dragAttack, dragAttackPlayer, scanUI } = require('../domInteraction.cjs');
+const { handleSelectionUI } = require('./selectionHandler.cjs');
 
 /**
  * Execute a parsed action from the LLM brain
@@ -135,37 +136,14 @@ async function executePlay(page, action, state) {
     }
   }
   
-  // Handle spell target selection — check for selection panel in DOM
-  if (card.type === 'Spell' || card.type === 'Free Spell') {
-    for (let attempt = 0; attempt < 6; attempt++) {
-      await page.waitForTimeout(300);
-      
-      // Check DOM selection panel
-      const panelInfo = await page.evaluate(() => {
-        const panel = document.getElementById('selection-panel');
-        if (!panel) return { exists: false };
-        const cards = panel.querySelectorAll('.card, .selection-item, button');
-        const visible = Array.from(cards).filter(c => c.offsetHeight > 0);
-        return {
-          exists: true,
-          visible: visible.length,
-          panelVisible: panel.offsetHeight > 0,
-          panelHTML: panel.innerHTML.substring(0, 200),
-        };
-      });
-      
-      if (panelInfo.panelVisible && panelInfo.visible > 0) {
-        console.log(`  [SPELL-TARGET] ${card.name}: ${panelInfo.visible} targets in selection panel`);
-        await clickFirstSelectionOption(page);
-        await page.waitForTimeout(500);
-        break;
-      }
-      
-      // If panel not showing after 1.8s, spell probably doesn't need a target
-      if (attempt >= 5) {
-        console.log(`  [SPELL-TARGET] ${card.name}: no selection panel appeared (non-targeted spell or already resolved)`);
-      }
-    }
+  // Handle any follow-up selection UI (spell targets, creature effects like Pistol Shrimp, etc.)
+  // Poll for up to 2s — some effects take time to render the selection panel
+  for (let attempt = 0; attempt < 5; attempt++) {
+    await page.waitForTimeout(400);
+    const { handled } = await handleSelectionUI(page, `play:${card.name}`);
+    if (handled) break;
+    // If no panel after 2s, the card didn't need a selection
+    if (attempt >= 4) break;
   }
   
   return { success: true, description: desc };
