@@ -10,20 +10,21 @@
 const OLLAMA_CHAT_URL = 'http://localhost:11434/api/chat';
 
 /**
- * Ask the LLM to choose between options
+ * Ask the LLM to choose between options with full game context
  */
 async function askLLMChoice(title, options, gameContext) {
   const optionList = options.map((o, i) => `  [${i}] ${o.name}`).join('\n');
-  const prompt = `You are playing Food Chain TCG. A choice appeared:
+  const prompt = `You are playing Food Chain TCG. A follow-up choice appeared after your action.
 
-"${title}"
+CURRENT BOARD STATE:
+${gameContext}
+
+CHOICE REQUIRED: "${title}"
 
 Options:
 ${optionList}
 
-Game context: ${gameContext}
-
-Pick the best option. Reply with ONLY the number (e.g. 0, 1, 2).`;
+Think about which option gives you the best strategic advantage (1-2 sentences), then reply with ONLY the number on the last line.`;
 
   try {
     const response = await fetch(OLLAMA_CHAT_URL, {
@@ -35,7 +36,7 @@ Pick the best option. Reply with ONLY the number (e.g. 0, 1, 2).`;
         stream: false,
         keep_alive: '30m',
         think: false,
-        options: { temperature: 0.1, num_predict: 20 },
+        options: { temperature: 0.3, num_predict: 100 },
       }),
     });
     const data = await response.json();

@@ -138,10 +138,21 @@ async function executePlay(page, action, state) {
   
   // Handle any follow-up selection UI (spell targets, creature effects like Pistol Shrimp, etc.)
   // Build game context for LLM decision
-  const selHP = [state?.players?.[0]?.hp ?? '?', state?.players?.[1]?.hp ?? '?'];
-  const selMyField = state?.players?.[0]?.field?.filter(c => c)?.map(c => `${c.name} ${c.currentAtk}/${c.currentHp}`)?.join(', ') || 'empty';
-  const selOppField = state?.players?.[1]?.field?.filter(c => c)?.map(c => `${c.name} ${c.currentAtk}/${c.currentHp}`)?.join(', ') || 'empty';
-  const gameCtx = `You ${selHP[0]}hp [${selMyField}] vs Rival ${selHP[1]}hp [${selOppField}]. Just played ${card.name}.`;
+  // Build rich context for follow-up LLM decisions
+  const selMyField = state?.players?.[0]?.field?.filter(c => c)?.map(c => {
+    const kw = c.keywords?.length ? ` [${c.keywords.join(', ')}]` : '';
+    const eff = c.effectText ? ` — ${c.effectText}` : '';
+    return `  ${c.name} ${c.currentAtk}/${c.currentHp}${kw}${eff}`;
+  })?.join('\n') || '  (empty)';
+  const selOppField = state?.players?.[1]?.field?.filter(c => c)?.map(c => {
+    const kw = c.keywords?.length ? ` [${c.keywords.join(', ')}]` : '';
+    const eff = c.effectText ? ` — ${c.effectText}` : '';
+    return `  ${c.name} ${c.currentAtk}/${c.currentHp}${kw}${eff}`;
+  })?.join('\n') || '  (empty)';
+  const gameCtx = `HP: You ${state?.players?.[0]?.hp ?? '?'} | Rival ${state?.players?.[1]?.hp ?? '?'}
+Your field:\n${selMyField}
+Rival field:\n${selOppField}
+You just played: ${card.name} (${card.type})${card.effectText ? ' — ' + card.effectText : ''}`;
   
   for (let attempt = 0; attempt < 5; attempt++) {
     await page.waitForTimeout(400);
