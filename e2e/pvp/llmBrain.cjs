@@ -38,8 +38,9 @@ STRATEGY:
 Your goal is to reduce the rival's HP to 0. Every decision you make — what to play, when to attack, what to save — should work toward that goal based on what's in your hand and what's on the board. Think about tempo, board control, and damage. Consider what the opponent might do next turn. Factor in keywords like Lure, Barrier, Poisonous, and Ambush when deciding whether to attack. Predators are strongest when you have prey on the field to consume — plan your turns around setting that up. Don't be passive — if you have the advantage, press it. If you're behind, find the play that gives you the best chance to come back.
 
 RESPONSE FORMAT:
-1. Think about your play in 4-5 sentences. Consider threats, trades, board state, and lethal potential.
+1. Think briefly (2-3 sentences). What's the best play and why?
 2. Your FINAL LINE must be ONLY the action command — nothing else on that line.
+3. During Main phase: PLAY a card if you can. Only PASS if field is full and no spells to play.
 
 EXAMPLES:
 ---
@@ -59,7 +60,7 @@ My field is full with three 1/1 creatures and I can't play any more cards. I sho
 ATTACK 0 0
 ---
 
-Action commands: PLAY n, PLAY n EAT n,n,n, PLAY n DRY_DROP, ATTACK slot target/PLAYER, ADVANCE, END_TURN, EAT n, DRY_DROP, ACTIVATE n, PASS`;
+Action commands: PLAY n, PLAY n EAT n,n,n, PLAY n DRY_DROP, ATTACK slot# slot#/PLAYER, PASS, EAT n, DRY_DROP, ACTIVATE n`;
 
 /**
  * Call the LLM for a game decision
