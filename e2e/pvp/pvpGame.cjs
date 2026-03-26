@@ -213,7 +213,21 @@ async function waitForPlayerTurn(player, maxWait = 30) {
   return { timeout: true };
 }
 
-async function playTurn(player, turnNum, model, recorder) {
+const path = require('path');
+const SCREENSHOT_DIR = path.join(__dirname, '..', 'screenshots');
+
+async function screenshotBoth(p1Page, p2Page, label) {
+  const fs = require('fs');
+  if (!fs.existsSync(SCREENSHOT_DIR)) fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
+  const ts = Date.now();
+  await Promise.all([
+    p1Page.screenshot({ path: path.join(SCREENSHOT_DIR, `${label}_P1_${ts}.png`), fullPage: false }),
+    p2Page.screenshot({ path: path.join(SCREENSHOT_DIR, `${label}_P2_${ts}.png`), fullPage: false }),
+  ]);
+  dbg(`📸 Screenshots: ${label}_P1/P2_${ts}.png`);
+}
+
+async function playTurn(player, turnNum, model, recorder, otherPlayer) {
   const stateBefore = await player.getState();
   if (!stateBefore) return { error: 'No state' };
   
@@ -311,9 +325,20 @@ async function playTurn(player, turnNum, model, recorder) {
         const beforeField0 = combatBefore.players?.[0]?.field?.map(c => c ? `${c.name}:${c.currentHp}hp` : '_') || [];
         const beforeField1 = combatBefore.players?.[1]?.field?.map(c => c ? `${c.name}:${c.currentHp}hp` : '_') || [];
         
+        // Screenshot BEFORE face attacks
+        const isFaceAtk = chosenTarget === 'player';
+        if (isFaceAtk && otherPlayer) {
+          await screenshotBoth(player.page, otherPlayer.page, `T${turnNum}_P${player.index+1}_face_BEFORE`);
+        }
+        
         const result = await executeAction(player.page, atkDecision.action, combatState);
         logP(player.index, `Attack: ${result.description} — ${result.success ? '💥' : '❌ ' + result.error}`);
         actions.push({ decision: atkDecision, result });
+        
+        // Screenshot AFTER face attacks (especially if failed)
+        if (isFaceAtk && otherPlayer && result?.hpChanged === false) {
+          await screenshotBoth(player.page, otherPlayer.page, `T${turnNum}_P${player.index+1}_face_FAILED`);
+        }
         
         // Track this slot as attacked to prevent duplicates
         attackedSlots.add(atkDecision.action.attackerSlot);
@@ -402,9 +427,10 @@ async function main() {
   log(`\n🃏 PvP Match: ${deck1.toUpperCase()} vs ${deck2.toUpperCase()}`);
   log(`   Model: ${model}\n`);
   
-  // Both Chromium — eliminates WebKit synthetic drag issues
-  const browser1 = await chromium.launch({ headless: true });
-  const browser2 = await chromium.launch({ headless: true });
+  // Both Chromium — non-headless for screenshot debugging
+  const headless = process.env.PVP_HEADLESS !== 'false';
+  const browser1 = await chromium.launch({ headless });
+  const browser2 = await chromium.launch({ headless });
   let recorder = null;
   
   try {
@@ -556,7 +582,8 @@ async function main() {
           log(`\n──── Turn ${turnNum} | P${player.index + 1} (${player.deckName}) ────`);
           log(`  ${compact}`);
           
-          const turnResult = await playTurn(player, turnNum, model, recorder);
+          const other = player === p1 ? p2 : p1;
+          const turnResult = await playTurn(player, turnNum, model, recorder, other);
           
           const summary = turnResult.actions?.map(a => a.result?.description).join(', ') || 'no actions';
           gameLog.push({ turn: turnNum, player: player.index, summary });
