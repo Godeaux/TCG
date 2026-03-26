@@ -35,12 +35,11 @@ CARD TYPES:
 - Trap: stays in hand, activates on opponent's turn when triggered.
 
 STRATEGY:
-Your goal is to reduce the rival's HP to 0. NEVER be passive — every turn you should be working toward lethal.
-- ALWAYS attack the rival directly when you can. Only trade into enemy creatures if they threaten lethal or have dangerous effects.
-- Field full? Attack enemy creatures to open slots for stronger cards from your hand. Sacrifice weak creatures to make room.
-- Have predators in hand with prey on field? Eat your own prey to upgrade (PLAY n EAT slot#).
-- Spells are free advantage — play them whenever possible, don't hoard them.
-- Passing without doing ANYTHING is almost never correct. Find a play every turn.
+Your goal is to reduce the rival's HP to 0. Be proactive — every turn should advance your position.
+- Prioritize direct player attacks when possible. Only trade into creatures when they pose real threats.
+- Field full? Trade weak creatures in combat to open slots for stronger cards. Consider eating prey with predators (PLAY n EAT slot#) to upgrade.
+- Read card effects carefully — some cards (like steal effects) are worth holding for the right moment.
+- Passing is fine when your field is full and you have no good plays. But if you CAN do something productive, do it.
 
 RESPONSE FORMAT:
 1. Think briefly (2-3 sentences). What's the best play and why?
