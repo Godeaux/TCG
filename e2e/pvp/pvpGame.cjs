@@ -26,7 +26,7 @@ function dbg(msg) { console.log(`  ⏱ ${((Date.now()-_t0)/1000).toFixed(1)}s ${
 // ============================================================================
 
 async function createPlayer(browser, index, deckName) {
-  const context = await browser.newContext();
+  const context = await browser.newContext({ viewport: { width: 800, height: 600 } });
   const page = await context.newPage();
   
   // Error listeners — catch crashes immediately
@@ -214,17 +214,46 @@ async function waitForPlayerTurn(player, maxWait = 30) {
 }
 
 const path = require('path');
+const { createCanvas, loadImage } = (() => { try { return require('canvas'); } catch { return {}; } })();
 const SCREENSHOT_DIR = path.join(__dirname, '..', 'screenshots');
 
 async function screenshotBoth(p1Page, p2Page, label) {
   const fs = require('fs');
   if (!fs.existsSync(SCREENSHOT_DIR)) fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
   const ts = Date.now();
+  const p1Path = path.join(SCREENSHOT_DIR, `_tmp_p1_${ts}.png`);
+  const p2Path = path.join(SCREENSHOT_DIR, `_tmp_p2_${ts}.png`);
+  const combinedPath = path.join(SCREENSHOT_DIR, `${label}_${ts}.png`);
+  
   await Promise.all([
-    p1Page.screenshot({ path: path.join(SCREENSHOT_DIR, `${label}_P1_${ts}.png`), fullPage: false }),
-    p2Page.screenshot({ path: path.join(SCREENSHOT_DIR, `${label}_P2_${ts}.png`), fullPage: false }),
+    p1Page.screenshot({ path: p1Path, fullPage: false }),
+    p2Page.screenshot({ path: p2Path, fullPage: false }),
   ]);
-  dbg(`📸 Screenshots: ${label}_P1/P2_${ts}.png`);
+  
+  // Combine side by side using canvas (if available) or just keep separate
+  if (createCanvas && loadImage) {
+    try {
+      const [img1, img2] = await Promise.all([loadImage(p1Path), loadImage(p2Path)]);
+      const canvas = createCanvas(img1.width + img2.width, Math.max(img1.height, img2.height));
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img1, 0, 0);
+      ctx.drawImage(img2, img1.width, 0);
+      // Add labels
+      ctx.fillStyle = 'white'; ctx.font = 'bold 24px sans-serif';
+      ctx.fillText('P1 (HOST)', 10, 30);
+      ctx.fillText('P2 (GUEST)', img1.width + 10, 30);
+      fs.writeFileSync(combinedPath, canvas.toBuffer('image/png'));
+      fs.unlinkSync(p1Path); fs.unlinkSync(p2Path);
+      dbg(`📸 ${combinedPath}`);
+    } catch (e) {
+      dbg(`📸 Separate: ${p1Path} + ${p2Path} (canvas error: ${e.message})`);
+    }
+  } else {
+    // No canvas — just keep both files
+    fs.renameSync(p1Path, path.join(SCREENSHOT_DIR, `${label}_P1_${ts}.png`));
+    fs.renameSync(p2Path, path.join(SCREENSHOT_DIR, `${label}_P2_${ts}.png`));
+    dbg(`📸 ${label}_P1/P2_${ts}.png (no canvas for combining)`);
+  }
 }
 
 async function playTurn(player, turnNum, model, recorder, otherPlayer) {
