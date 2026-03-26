@@ -7,7 +7,11 @@
 
 const { formatStatePrompt, parseAction } = require('./stateFormatter.cjs');
 
-const OLLAMA_URL = 'http://localhost:11434/api/generate';
+const OLLAMA_GENERATE_URL = 'http://localhost:11434/api/generate';
+const OLLAMA_CHAT_URL = 'http://localhost:11434/api/chat';
+
+// Models that need chat API with think:false (thinking models that eat all tokens)
+const CHAT_API_MODELS = new Set(['qwen3.5:9b', 'qwen3.5:latest']);
 
 /**
  * System prompt that teaches the LLM how to play Food Chain TCG
@@ -76,19 +80,30 @@ async function getDecision(qaState, playerIndex, deckName, options = {}) {
   const start = Date.now();
   
   try {
-    const response = await fetch(OLLAMA_URL, {
+    const useChatAPI = CHAT_API_MODELS.has(model);
+    const url = useChatAPI ? OLLAMA_CHAT_URL : OLLAMA_GENERATE_URL;
+    
+    const body = useChatAPI
+      ? {
+          model,
+          messages: [{ role: 'user', content: fullPrompt }],
+          stream: false,
+          keep_alive: '30m',
+          think: false,
+          options: { temperature, num_predict: 300 },
+        }
+      : {
+          model,
+          prompt: fullPrompt,
+          stream: false,
+          keep_alive: '30m',
+          options: { temperature, num_predict: 300 },
+        };
+    
+    const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model,
-        prompt: fullPrompt,
-        stream: false,
-        keep_alive: '30m',
-        options: {
-          temperature,
-          num_predict: 300,
-        },
-      }),
+      body: JSON.stringify(body),
     });
     
     if (!response.ok) {
@@ -97,8 +112,8 @@ async function getDecision(qaState, playerIndex, deckName, options = {}) {
     
     const data = await response.json();
     const timeMs = Date.now() - start;
-    const rawResponse = data.response || '';
-    const thinking = data.thinking || '';
+    const rawResponse = useChatAPI ? (data.message?.content || '') : (data.response || '');
+    const thinking = useChatAPI ? '' : (data.thinking || '');
     const action = parseAction(rawResponse);
     
     // Combine thinking + response for full reasoning log
