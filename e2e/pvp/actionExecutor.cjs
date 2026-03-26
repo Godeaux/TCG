@@ -163,6 +163,7 @@ async function executeAttack(page, action, state) {
     const result = await dragAttackPlayer(page, attackerSlot);
     if (result?.hpChanged === false) {
       console.log(`  [A1-DIAG] Face drag: instanceId=${result.instanceId} hp=${result.hpBefore}→${result.hpAfter} UNCHANGED`);
+      console.log(`  [A1-DIAG] Preflight: ${JSON.stringify(result.preflight)}`);
     }
     await page.waitForTimeout(800);
     

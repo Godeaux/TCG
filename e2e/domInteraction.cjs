@@ -182,8 +182,20 @@ async function dragAttackPlayer(page, attackerSlot) {
     if (!instanceId) return { success: false, error: `No instanceId on card element at slot ${aSlot}` };
     dataTransfer.setData('text/plain', instanceId);
     
-    // Capture HP before
-    const hpBefore = window.__qa?.getState()?.players?.[1]?.hp;
+    // Pre-flight check: verify conditions match what the game expects
+    const state = window.__qa?.getState();
+    const hpBefore = state?.players?.[1]?.hp;
+    const myCard = state?.players?.[0]?.field?.find(c => c?.slot === aSlot);
+    const preflight = {
+      phase: state?.phase,
+      isMyTurn: state?.ui?.isMyTurn,
+      cardExists: !!myCard,
+      cardName: myCard?.name,
+      canAttack: myCard?.canAttack,
+      canAttackPlayer: myCard?.canAttackPlayer,
+      instanceIdOnEl: !!attackerEl.dataset.instanceId,
+      instanceIdMatch: attackerEl.dataset.instanceId === myCard?.instanceId,
+    };
     
     attackerEl.dispatchEvent(new DragEvent('dragstart', {
       bubbles: true, cancelable: true, dataTransfer,
@@ -213,6 +225,7 @@ async function dragAttackPlayer(page, attackerSlot) {
       hpBefore,
       hpAfter,
       hpChanged: hpBefore !== hpAfter,
+      preflight,
     };
   }, {aSlot: attackerSlot});
 }
