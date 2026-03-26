@@ -151,7 +151,16 @@ function formatStatePrompt(qaState, playerIndex, deckName = 'Unknown') {
       lines.push(`COMBAT MATH: You have ${canAttackAny.length} creature(s) that can attack enemy creatures (but not the rival directly due to summoning sickness).`);
     }
     if (canAttackAny.length === 0) {
-      lines.push('COMBAT MATH: No creatures can attack this turn.');
+      lines.push('COMBAT MATH: No creatures can attack this turn. Use ADVANCE to end combat.');
+    }
+    
+    // List ONLY eligible attackers — prevent LLM from picking ineligible ones
+    if (canAttackAny.length > 0) {
+      lines.push('YOUR ELIGIBLE ATTACKERS (only these can be used):');
+      for (const c of canAttackAny) {
+        const atkType = c.canAttackPlayer ? 'can hit PLAYER or creatures' : 'creatures ONLY (summoning sickness)';
+        lines.push(`  slot ${c.slot}: ${c.name} (${c.currentAtk ?? c.atk} ATK) — ${atkType}`);
+      }
     }
     lines.push('');
   } else if (qaState.phase === 'Main 1' || qaState.phase === 'Main 2') {

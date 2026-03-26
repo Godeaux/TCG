@@ -135,46 +135,36 @@ async function executePlay(page, action, state) {
     }
   }
   
-  // Handle spell target selection — check for pending selection UI
+  // Handle spell target selection — check for selection panel in DOM
   if (card.type === 'Spell' || card.type === 'Free Spell') {
-    // Wait for target selection to appear
-    for (let attempt = 0; attempt < 4; attempt++) {
-      await page.waitForTimeout(400);
+    for (let attempt = 0; attempt < 6; attempt++) {
+      await page.waitForTimeout(300);
       
-      // Check QA state for pending context (more reliable than DOM scanning)
-      const pending = await page.evaluate(() => {
-        const s = window.__qa?.getState();
-        return s?.pendingContext;
+      // Check DOM selection panel
+      const panelInfo = await page.evaluate(() => {
+        const panel = document.getElementById('selection-panel');
+        if (!panel) return { exists: false };
+        const cards = panel.querySelectorAll('.card, .selection-item, button');
+        const visible = Array.from(cards).filter(c => c.offsetHeight > 0);
+        return {
+          exists: true,
+          visible: visible.length,
+          panelVisible: panel.offsetHeight > 0,
+          panelHTML: panel.innerHTML.substring(0, 200),
+        };
       });
       
-      if (pending?.type === 'pending_selection') {
-        // Selection needed — pick the best target
-        // For damage spells: pick the creature with lowest HP (easiest kill)
-        // For buffs: pick our strongest creature
-        // Default: pick first option
-        const options = pending.options || [];
-        if (options.length > 0) {
-          console.log(`  [SPELL-TARGET] ${card.name} needs target, ${options.length} options: ${options.map(o => o.name || o.value).join(', ')}`);
-          // Click the first option in the selection panel
-          await clickFirstSelectionOption(page);
-          await page.waitForTimeout(500);
-        }
-        break;
-      }
-      
-      // Also check DOM for selection panel (fallback)
-      const ui = await scanUI(page);
-      const selection = ui.find(u => u.type === 'selection');
-      if (selection && selection.count > 0) {
-        console.log(`  [SPELL-TARGET] ${card.name} DOM selection: ${selection.count} options`);
+      if (panelInfo.panelVisible && panelInfo.visible > 0) {
+        console.log(`  [SPELL-TARGET] ${card.name}: ${panelInfo.visible} targets in selection panel`);
         await clickFirstSelectionOption(page);
         await page.waitForTimeout(500);
         break;
       }
       
-      // Check if spell already resolved (no selection needed)
-      const stateNow = await page.evaluate(() => window.__qa?.getState());
-      if (!stateNow?.pendingContext) break;
+      // If panel not showing after 1.8s, spell probably doesn't need a target
+      if (attempt >= 5) {
+        console.log(`  [SPELL-TARGET] ${card.name}: no selection panel appeared (non-targeted spell or already resolved)`);
+      }
     }
   }
   
