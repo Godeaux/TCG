@@ -80,7 +80,8 @@ async function getDecision(qaState, playerIndex, deckName, options = {}) {
   const temperature = options.temperature ?? 0.3;
   
   const statePrompt = formatStatePrompt(qaState, playerIndex, deckName);
-  const fullPrompt = `${SYSTEM_PROMPT}\n\n---\n\n${statePrompt}`;
+  const correctionContext = options.systemOverride ? `\n\n⚠️ CORRECTION:\n${options.systemOverride}` : '';
+  const fullPrompt = `${SYSTEM_PROMPT}\n\n---\n\n${statePrompt}${correctionContext}`;
   
   const start = Date.now();
   

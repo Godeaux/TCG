@@ -256,6 +256,64 @@ async function screenshotBoth(p1Page, p2Page, label) {
   }
 }
 
+/**
+ * Pre-validate a Main phase action before executing
+ */
+function validateMainAction(action, state) {
+  if (!action || action.type === 'unknown' || action.type === 'advance' || action.type === 'endTurn' || action.type === 'pass') {
+    return { valid: true }; // These are handled separately
+  }
+  
+  if (action.type === 'attack') {
+    return { valid: false, fatal: true, reason: 'Cannot ATTACK during Main phase. Attacks happen in Combat phase.', suggestion: 'PLAY a card or PASS.' };
+  }
+  
+  if (action.type === 'play') {
+    const hand = state.players?.[0]?.hand || [];
+    const field = state.players?.[0]?.field || [];
+    const handIndex = action.handIndex;
+    
+    // Check hand index
+    if (handIndex === undefined || handIndex < 0 || handIndex >= hand.length) {
+      return { valid: false, reason: `Hand index ${handIndex} is out of range. You have ${hand.length} cards (indices 0-${hand.length - 1}).`, suggestion: `PLAY 0 through PLAY ${hand.length - 1}, or PASS.` };
+    }
+    
+    const card = hand[handIndex];
+    
+    // Check EAT targets for predators
+    if (action.eat && action.eat.length > 0) {
+      const fieldCreatures = field.map((c, i) => c ? { name: c.name, slot: i, type: c.type } : null).filter(Boolean);
+      const invalidEats = [];
+      const validSlots = [];
+      
+      for (const eatSlot of action.eat) {
+        const creature = field[eatSlot];
+        if (!creature) {
+          invalidEats.push(eatSlot);
+        }
+      }
+      
+      if (invalidEats.length > 0) {
+        const availablePrey = fieldCreatures.filter(c => c.type === 'Prey');
+        const suggestion = availablePrey.length > 0 
+          ? `Available prey to eat: ${availablePrey.map(p => `slot ${p.slot} (${p.name})`).join(', ')}. Use: PLAY ${handIndex} EAT ${availablePrey.map(p => p.slot).join(',')}`
+          : `No prey on your field to eat. Use: PLAY ${handIndex} DRY_DROP (loses keywords) or play a different card.`;
+        return { valid: false, reason: `No creature at slot(s) ${invalidEats.join(', ')} to eat.`, suggestion };
+      }
+    }
+    
+    // Check field full for creatures
+    if ((card.type === 'Prey' || card.type === 'Predator') && !action.eat?.length && !action.dryDrop) {
+      const emptySlots = field.filter(c => !c).length;
+      if (emptySlots === 0 && card.type === 'Prey') {
+        return { valid: false, reason: 'Field is full (3/3 slots). Cannot play creatures.', suggestion: 'PASS, or play a spell from hand.' };
+      }
+    }
+  }
+  
+  return { valid: true };
+}
+
 async function playTurn(player, turnNum, model, recorder, otherPlayer) {
   const stateBefore = await player.getState();
   if (!stateBefore) return { error: 'No state' };
@@ -267,23 +325,41 @@ async function playTurn(player, turnNum, model, recorder, otherPlayer) {
   
   // === MAIN PHASE ===
   if (stateBefore.phase === 'Main 1') {
-    const decision = await getDecision(stateBefore, 0, player.deckName, { model });
+    let decision = await getDecision(stateBefore, 0, player.deckName, { model });
     const retryTag = decision.retried ? ' [RETRY]' : '';
     logP(player.index, `Think (${decision.timeMs}ms)${retryTag}: ${decision.rawResponse?.substring(0, 120) || decision.reasoning?.substring(0, 120)}`);
     logP(player.index, `Action: ${JSON.stringify(decision.action)}`);
     
-    // Pre-validate: reject ATTACK during Main phase (LLM confusion)
-    if (decision.action.type === 'attack') {
-      logP(player.index, '⚠️ ATTACK during Main phase — skipping');
-      if (recorder) recorder.recordAction(turnNum, player.index, 'Main 1', `skipped_attack ${JSON.stringify(decision.action)}`, decision.rawResponse, stateBefore, stateBefore);
-    } else if (decision.action.type === 'unknown') {
-      logP(player.index, '⚠️ Parse failed — skipping');
+    // Pre-validate and retry loop (up to 2 retries with corrective context)
+    let validAction = decision.action;
+    for (let retryAttempt = 0; retryAttempt < 2; retryAttempt++) {
+      const validation = validateMainAction(validAction, stateBefore);
+      if (validation.valid) break;
+      
+      // Invalid action — ask LLM again with corrective feedback
+      logP(player.index, `⚠️ Invalid: ${validation.reason}`);
+      const correctionPrompt = `Your action was invalid: ${validation.reason}\n\nValid options: ${validation.suggestion}\n\nTry again. Reply with ONLY the action command.`;
+      
+      const { getDecision: getRetry } = require('./llmBrain.cjs');
+      const retryDecision = await getRetry(stateBefore, 0, player.deckName, { model, systemOverride: correctionPrompt });
+      logP(player.index, `Retry ${retryAttempt + 1}: ${JSON.stringify(retryDecision.action)}`);
+      validAction = retryDecision.action;
+      decision = retryDecision;
+    }
+    
+    // Final validation
+    const finalValidation = validateMainAction(validAction, stateBefore);
+    
+    if (validAction.type === 'attack' || (finalValidation && !finalValidation.valid && finalValidation.fatal)) {
+      logP(player.index, '⚠️ Action invalid after retries — passing');
+      if (recorder) recorder.recordAction(turnNum, player.index, 'Main 1', `invalid_action ${JSON.stringify(validAction)}`, decision.rawResponse, stateBefore, stateBefore);
+    } else if (validAction.type === 'unknown') {
+      logP(player.index, '⚠️ Parse failed — passing');
       if (recorder) recorder.recordAction(turnNum, player.index, 'Main 1', `parse_fail`, decision.rawResponse, stateBefore, stateBefore);
-    } else if (decision.action.type === 'advance' || decision.action.type === 'endTurn' || decision.action.type === 'pass') {
-      // Player chose to skip/pass main phase
+    } else if (validAction.type === 'advance' || validAction.type === 'endTurn' || validAction.type === 'pass') {
       if (recorder) recorder.recordAction(turnNum, player.index, 'Main 1', `skip`, decision.rawResponse, stateBefore, stateBefore);
     } else {
-      const result = await executeAction(player.page, decision.action, stateBefore);
+      const result = await executeAction(player.page, validAction, stateBefore);
       logP(player.index, `Result: ${result.description} — ${result.success ? '✅' : '❌ ' + result.error}`);
       actions.push({ decision, result });
       
