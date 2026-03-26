@@ -129,7 +129,7 @@ function formatStatePrompt(qaState, playerIndex, deckName = 'Unknown') {
     lines.push('  (empty)');
   } else {
     oppField.forEach((c, i) => {
-      if (c) lines.push(`  [slot ${i}] ${formatCard(c, false)}`);
+      if (c) lines.push(`  [slot ${i}] ${formatCard(c, true)}`);
     });
   }
   lines.push('');

@@ -11,7 +11,7 @@ const OLLAMA_GENERATE_URL = 'http://localhost:11434/api/generate';
 const OLLAMA_CHAT_URL = 'http://localhost:11434/api/chat';
 
 // Models that need chat API with think:false (thinking models that eat all tokens)
-const CHAT_API_MODELS = new Set(['qwen3.5:9b', 'qwen3.5:latest']);
+const CHAT_API_MODELS = new Set(['qwen3.5:9b', 'qwen3.5:2b', 'qwen3.5:latest']);
 
 /**
  * System prompt that teaches the LLM how to play Food Chain TCG
@@ -43,10 +43,10 @@ RESPONSE FORMAT:
 
 EXAMPLES:
 ---
-My hand has a 3/3 Prey with Ambush and my opponent has a 2/2 creature. Playing the Prey gives me board presence and Ambush means I won't take counter-damage when I attack next turn. The opponent's creature is a threat if left unchecked but I can handle it in combat. I'll play the Prey now and attack with it next turn since summoning sickness only blocks direct player attacks.
+My hand has a 3/3 Prey with Ambush and my opponent has a 2/2 creature. Playing the Prey gives me board presence and Ambush means I won't take counter-damage when I attack it. New creatures CAN attack enemy creatures the same turn — only direct player attacks require waiting. I'll play the Prey now and trade into their 2/2 during combat this turn.
 PLAY 2
 ---
-I have a Haste predator and a Prey on my field. If I eat the Prey, my predator becomes 5/5 and can attack the rival directly for 5 damage this turn thanks to Haste. The rival is at 7 HP so this puts them in lethal range. The Prey's nutrition of 2 boosts my predator from 3/3 to 5/5 which is worth sacrificing the board slot.
+I have a Haste predator in hand and a Prey on my field. If I eat the Prey, my predator becomes 5/5 with Haste and can attack the rival directly for 5 damage THIS turn. The rival is at 7 HP so this puts them in lethal range next turn. Eating prey is the key — without it, the predator dry-drops and loses Haste and all keywords.
 PLAY 0 EAT 0
 ---
 My Gyrfalcon has Haste and the rival has no creatures. I can attack directly for 4 damage. The rival is at 6 HP so two more direct attacks wins the game. No reason to hold back.
