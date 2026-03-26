@@ -137,12 +137,16 @@ async function executePlay(page, action, state) {
   }
   
   // Handle any follow-up selection UI (spell targets, creature effects like Pistol Shrimp, etc.)
-  // Poll for up to 2s — some effects take time to render the selection panel
+  // Build game context for LLM decision
+  const selHP = [state?.players?.[0]?.hp ?? '?', state?.players?.[1]?.hp ?? '?'];
+  const selMyField = state?.players?.[0]?.field?.filter(c => c)?.map(c => `${c.name} ${c.currentAtk}/${c.currentHp}`)?.join(', ') || 'empty';
+  const selOppField = state?.players?.[1]?.field?.filter(c => c)?.map(c => `${c.name} ${c.currentAtk}/${c.currentHp}`)?.join(', ') || 'empty';
+  const gameCtx = `You ${selHP[0]}hp [${selMyField}] vs Rival ${selHP[1]}hp [${selOppField}]. Just played ${card.name}.`;
+  
   for (let attempt = 0; attempt < 5; attempt++) {
     await page.waitForTimeout(400);
-    const { handled } = await handleSelectionUI(page, `play:${card.name}`);
+    const { handled } = await handleSelectionUI(page, `play:${card.name}`, gameCtx);
     if (handled) break;
-    // If no panel after 2s, the card didn't need a selection
     if (attempt >= 4) break;
   }
   
