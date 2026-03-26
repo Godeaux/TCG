@@ -203,7 +203,10 @@ async function waitForPlayerTurn(player, maxWait = 30) {
       continue; // Re-check phase
     }
     if (myTurn && phase === 'Main 1') return { ready: true, phase };
-    if (i === 0) dbg(`P${player.index+1} waiting: myTurn=${myTurn} phase=${phase}`);
+    if (i === 0) {
+      const activeIdx = await player.page.evaluate(() => window.__qa?.getState()?.activePlayer);
+      dbg(`P${player.index+1} waiting: myTurn=${myTurn} phase=${phase} activePlayer=${activeIdx}`);
+    }
     await player.page.waitForTimeout(500);
   }
   dbg(`P${player.index+1} wait TIMEOUT after ${maxWait} checks`);
@@ -567,8 +570,26 @@ async function main() {
       const p1Turn = await p1.isMyTurn();
       const p2Turn = await p2.isMyTurn();
       if (!p1Turn && !p2Turn) {
-        dbg('Neither player has turn — waiting for sync...');
-        await p1.page.waitForTimeout(3000);
+        // Check if stuck at Start phase — try advancing
+        const p1Phase = await p1.getPhase();
+        const p2Phase = await p2.getPhase();
+        dbg(`Neither player has turn — P1 phase=${p1Phase} P2 phase=${p2Phase}`);
+        
+        if (p1Phase === 'Start' || p2Phase === 'Start') {
+          // Try clicking the turn button on both pages to advance past Start
+          for (const p of [p1, p2]) {
+            await p.page.evaluate(() => document.getElementById('field-turn-btn')?.click());
+          }
+          await p1.page.waitForTimeout(1000);
+          // Also try QA advancePhase on both
+          for (const p of [p1, p2]) {
+            await p.page.evaluate(() => window.__qa?.act?.advancePhase());
+          }
+          await p1.page.waitForTimeout(1000);
+        } else {
+          await p1.page.waitForTimeout(3000);
+        }
+        
         // Check for game over
         const go1 = await p1.isGameOver();
         const go2 = await p2.isGameOver();
