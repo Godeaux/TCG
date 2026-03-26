@@ -185,6 +185,7 @@ async function dragAttackPlayer(page, attackerSlot) {
     // Pre-flight check: verify conditions match what the game expects
     const state = window.__qa?.getState();
     const hpBefore = state?.players?.[1]?.hp;
+    const logLenBefore = state?.log?.length ?? 0;
     const myCard = state?.players?.[0]?.field?.find(c => c?.slot === aSlot);
     const preflight = {
       phase: state?.phase,
@@ -219,6 +220,12 @@ async function dragAttackPlayer(page, attackerSlot) {
     // Check HP immediately after drag
     const hpAfter = window.__qa?.getState()?.players?.[1]?.hp;
     
+    // Check game log — did the game process anything?
+    const stateAfter = window.__qa?.getState();
+    const logLenAfter = stateAfter?.log?.length ?? 0;
+    const gameLogChanged = logLenAfter !== logLenBefore;
+    const newLogs = gameLogChanged ? stateAfter.log.slice(0, logLenAfter - logLenBefore).map(l => typeof l === 'string' ? l : l?.message || JSON.stringify(l)).join(' | ') : '';
+    
     return { 
       success: true, 
       instanceId,
@@ -226,6 +233,8 @@ async function dragAttackPlayer(page, attackerSlot) {
       hpAfter,
       hpChanged: hpBefore !== hpAfter,
       preflight,
+      gameLogChanged,
+      newLogs: newLogs.substring(0, 200),
     };
   }, {aSlot: attackerSlot});
 }

@@ -285,9 +285,10 @@ async function playTurn(player, turnNum, model, recorder) {
       
       // ONLY accept ATTACK actions during combat — reject anything else
       if (atkDecision.action.type === 'attack') {
-        // Verify the chosen slot is actually eligible
+        // Verify the chosen slot is actually eligible for the chosen target
         const chosenSlot = atkDecision.action.attackerSlot;
-        const isEligible = attackers.some(c => c.slot === chosenSlot);
+        const chosenTarget = atkDecision.action.target;
+        const isEligible = attackers.some(c => c.slot === chosenSlot && (chosenTarget !== 'player' || c.canAttackPlayer));
         if (!isEligible) {
           logP(player.index, `⚠️ LLM chose slot ${chosenSlot} but it's not eligible — skipping`);
           attackedSlots.add(chosenSlot); // Prevent retry
