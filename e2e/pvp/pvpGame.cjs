@@ -196,6 +196,12 @@ async function waitForPlayerTurn(player, maxWait = 30) {
     const phase = await player.getPhase();
     const gameOver = await player.isGameOver();
     if (gameOver?.over) return { gameOver };
+    // Handle Start phase (beginning of turn, before draw) — advance to Main 1
+    if (myTurn && phase === 'Start') {
+      await player.page.evaluate(() => document.getElementById('field-turn-btn')?.click());
+      await player.page.waitForTimeout(500);
+      continue; // Re-check phase
+    }
     if (myTurn && phase === 'Main 1') return { ready: true, phase };
     if (i === 0) dbg(`P${player.index+1} waiting: myTurn=${myTurn} phase=${phase}`);
     await player.page.waitForTimeout(500);
