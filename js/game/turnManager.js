@@ -217,6 +217,9 @@ export const advancePhase = (state) => {
 
   if (state.phase === 'Start') {
     startTurn(state);
+    // Auto-advance through Start → Draw (Start is non-interactive)
+    state.phase = 'Draw';
+    logPlainMessage(state, `━━━ PHASE: DRAW ━━━`);
   }
 
   if (state.phase === 'Draw') {
