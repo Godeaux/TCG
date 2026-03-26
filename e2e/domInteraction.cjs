@@ -179,7 +179,11 @@ async function dragAttackPlayer(page, attackerSlot) {
     
     const dataTransfer = new DataTransfer();
     const instanceId = attackerEl.dataset.instanceId;
-    if (instanceId) dataTransfer.setData('text/plain', instanceId);
+    if (!instanceId) return { success: false, error: `No instanceId on card element at slot ${aSlot}` };
+    dataTransfer.setData('text/plain', instanceId);
+    
+    // Capture HP before
+    const hpBefore = window.__qa?.getState()?.players?.[1]?.hp;
     
     attackerEl.dispatchEvent(new DragEvent('dragstart', {
       bubbles: true, cancelable: true, dataTransfer,
@@ -200,7 +204,16 @@ async function dragAttackPlayer(page, attackerSlot) {
       bubbles: true, cancelable: true, dataTransfer,
     }));
     
-    return { success: true };
+    // Check HP immediately after drag
+    const hpAfter = window.__qa?.getState()?.players?.[1]?.hp;
+    
+    return { 
+      success: true, 
+      instanceId,
+      hpBefore,
+      hpAfter,
+      hpChanged: hpBefore !== hpAfter,
+    };
   }, {aSlot: attackerSlot});
 }
 

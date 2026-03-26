@@ -283,6 +283,12 @@ async function playTurn(player, turnNum, model, recorder) {
       // ONLY accept ATTACK actions during combat — reject anything else
       if (atkDecision.action.type === 'attack') {
         const combatBefore = await player.getState();
+        
+        // A1 DEBUG: snapshot key state values before attack
+        const beforeHP = [combatBefore.players?.[0]?.hp, combatBefore.players?.[1]?.hp];
+        const beforeField0 = combatBefore.players?.[0]?.field?.map(c => c ? `${c.name}:${c.currentHp}hp` : '_') || [];
+        const beforeField1 = combatBefore.players?.[1]?.field?.map(c => c ? `${c.name}:${c.currentHp}hp` : '_') || [];
+        
         const result = await executeAction(player.page, atkDecision.action, combatState);
         logP(player.index, `Attack: ${result.description} — ${result.success ? '💥' : '❌ ' + result.error}`);
         actions.push({ decision: atkDecision, result });
@@ -300,11 +306,21 @@ async function playTurn(player, turnNum, model, recorder) {
         
         if (recorder) {
           const combatAfter = await player.getState();
+          
+          // A1 DEBUG: snapshot key state values after attack
+          const afterHP = [combatAfter.players?.[0]?.hp, combatAfter.players?.[1]?.hp];
+          const afterField0 = combatAfter.players?.[0]?.field?.map(c => c ? `${c.name}:${c.currentHp}hp` : '_') || [];
+          const afterField1 = combatAfter.players?.[1]?.field?.map(c => c ? `${c.name}:${c.currentHp}hp` : '_') || [];
+          
           const { entry } = recorder.recordAction(turnNum, player.index, 'Combat',
             `attack ${JSON.stringify(atkDecision.action)}`,
             atkDecision.rawResponse, combatBefore, combatAfter);
           if (!entry.diff || entry.diff.length === 0) {
-            logP(player.index, '⚠️ Attack had NO DIFF — state may not have synced');
+            logP(player.index, '⚠️ A1 DEBUG — NO DIFF detected');
+            logP(player.index, `  BEFORE: HP=[${beforeHP}] myField=[${beforeField0}] oppField=[${beforeField1}]`);
+            logP(player.index, `  AFTER:  HP=[${afterHP}] myField=[${afterField0}] oppField=[${afterField1}]`);
+            logP(player.index, `  quickSnap before: ${combatSnap}`);
+            logP(player.index, `  quickSnap after:  ${quickSnap(combatAfter)}`);
           }
         }
       } else if (atkDecision.action.type === 'advance' || atkDecision.action.type === 'endTurn') {
@@ -364,16 +380,16 @@ async function main() {
   log(`\n🃏 PvP Match: ${deck1.toUpperCase()} vs ${deck2.toUpperCase()}`);
   log(`   Model: ${model}\n`);
   
-  // P1: Chromium (most stable), P2: WebKit (Safari — tests cross-browser)
+  // Both Chromium — eliminates WebKit synthetic drag issues
   const browser1 = await chromium.launch({ headless: true });
-  const browser2 = await webkit.launch({ headless: true });
+  const browser2 = await chromium.launch({ headless: true });
   let recorder = null;
   
   try {
     // Create players on separate browser engines
     const p1 = await createPlayer(browser1, 0, deck1);
     const p2 = await createPlayer(browser2, 1, deck2);
-    log('✅ P1 (Chromium) + P2 (WebKit) launched');
+    log('✅ P1 (Chromium) + P2 (Chromium) launched');
     
     // Login
     const ts = Date.now();
