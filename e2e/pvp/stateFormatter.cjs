@@ -212,8 +212,9 @@ function formatStatePrompt(qaState, playerIndex, deckName = 'Unknown') {
     lines.push('  PLAY hand#                  — Play a card from hand (e.g. PLAY 0)');
     lines.push('  PLAY hand# EAT slot#,slot#  — Play predator and eat field prey');
     lines.push('  PLAY hand# DRY_DROP         — Play predator without eating');
-    lines.push('  ADVANCE                     — Move to next phase');
+    lines.push('  ADVANCE                     — Move to next phase (to Combat)');
     lines.push('  END_TURN                    — End turn');
+    lines.push('  *** DO NOT use ATTACK here — attacks happen in Combat phase (after you advance) ***');
   } else if (qaState.phase === 'Combat') {
     lines.push('  *** YOU CAN ONLY ATTACK DURING COMBAT — NOT PLAY CARDS ***');
     lines.push('  ATTACK slot# slot#    — Attack enemy creature (YOUR slot → ENEMY slot)');
@@ -234,7 +235,7 @@ function formatStatePrompt(qaState, playerIndex, deckName = 'Unknown') {
   }
   
   lines.push('');
-  lines.push('Think about your play (4-5 sentences). Then your FINAL LINE must be ONLY the action command.');
+  lines.push('Think briefly (2-3 sentences max). Then your FINAL LINE must be ONLY the action command.');
   
   return lines.join('\n');
 }

@@ -135,15 +135,46 @@ async function executePlay(page, action, state) {
     }
   }
   
-  // Handle spell target selection
+  // Handle spell target selection — check for pending selection UI
   if (card.type === 'Spell' || card.type === 'Free Spell') {
-    await page.waitForTimeout(500);
-    const ui = await scanUI(page);
-    const selection = ui.find(u => u.type === 'selection');
-    if (selection && selection.count > 0) {
-      // Click the first available target (simple heuristic for now)
-      await clickFirstSelectionOption(page);
-      await page.waitForTimeout(500);
+    // Wait for target selection to appear
+    for (let attempt = 0; attempt < 4; attempt++) {
+      await page.waitForTimeout(400);
+      
+      // Check QA state for pending context (more reliable than DOM scanning)
+      const pending = await page.evaluate(() => {
+        const s = window.__qa?.getState();
+        return s?.pendingContext;
+      });
+      
+      if (pending?.type === 'pending_selection') {
+        // Selection needed — pick the best target
+        // For damage spells: pick the creature with lowest HP (easiest kill)
+        // For buffs: pick our strongest creature
+        // Default: pick first option
+        const options = pending.options || [];
+        if (options.length > 0) {
+          console.log(`  [SPELL-TARGET] ${card.name} needs target, ${options.length} options: ${options.map(o => o.name || o.value).join(', ')}`);
+          // Click the first option in the selection panel
+          await clickFirstSelectionOption(page);
+          await page.waitForTimeout(500);
+        }
+        break;
+      }
+      
+      // Also check DOM for selection panel (fallback)
+      const ui = await scanUI(page);
+      const selection = ui.find(u => u.type === 'selection');
+      if (selection && selection.count > 0) {
+        console.log(`  [SPELL-TARGET] ${card.name} DOM selection: ${selection.count} options`);
+        await clickFirstSelectionOption(page);
+        await page.waitForTimeout(500);
+        break;
+      }
+      
+      // Check if spell already resolved (no selection needed)
+      const stateNow = await page.evaluate(() => window.__qa?.getState());
+      if (!stateNow?.pendingContext) break;
     }
   }
   

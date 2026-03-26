@@ -90,14 +90,14 @@ async function getDecision(qaState, playerIndex, deckName, options = {}) {
           stream: false,
           keep_alive: '30m',
           think: false,
-          options: { temperature, num_predict: 300 },
+          options: { temperature, num_predict: 400 },
         }
       : {
           model,
           prompt: fullPrompt,
           stream: false,
           keep_alive: '30m',
-          options: { temperature, num_predict: 300 },
+          options: { temperature, num_predict: 400 },
         };
     
     const response = await fetch(url, {
