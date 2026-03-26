@@ -181,15 +181,23 @@ async function executeAttack(page, action, state) {
   
   if (target === 'player') {
     // DOM drag to opponent badge (dynamically resolved)
-    const result = await dragAttackPlayer(page, attackerSlot);
+    let result = await dragAttackPlayer(page, attackerSlot);
+    
+    // Retry once if drag failed (synthetic DragEvent intermittent issue)
     if (result?.hpChanged === false) {
-      console.log(`  [A1-DIAG] Face drag FAILED: hp=${result.hpBefore}→${result.hpAfter} gameLog=${result.gameLogChanged} newLogs="${result.newLogs}"`);
-      console.log(`  [A1-DIAG] Preflight: ${JSON.stringify(result.preflight)}`);
+      console.log(`  [A1-DIAG] Face drag FAILED (attempt 1), retrying...`);
+      await page.waitForTimeout(300);
+      result = await dragAttackPlayer(page, attackerSlot);
+      if (result?.hpChanged === false) {
+        console.log(`  [A1-DIAG] Face drag FAILED (attempt 2): hp=${result.hpBefore}→${result.hpAfter} gameLog=${result.gameLogChanged}`);
+      } else {
+        console.log(`  [A1-DIAG] Retry succeeded!`);
+      }
     }
     await page.waitForTimeout(800);
     
     const desc = `${myCreature?.name || 'Creature'} attacks Player`;
-    return { success: result?.success || false, description: desc, error: result?.error };
+    return { success: result?.success || false, description: desc, error: result?.error, hpChanged: result?.hpChanged };
   } else {
     // DOM drag to enemy creature
     const result = await dragAttack(page, attackerSlot, target);
