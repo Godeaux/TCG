@@ -166,7 +166,16 @@ function formatStatePrompt(qaState, playerIndex, deckName = 'Unknown') {
   } else if (qaState.phase === 'Main 1' || qaState.phase === 'Main 2') {
     const emptyCount = myField.filter(c => !c).length;
     if (emptyCount === 0) {
-      lines.push('⚠️ YOUR FIELD IS FULL (3/3 slots). You cannot play creatures. Consider playing a spell or advancing.');
+      // Check if player has spells in hand
+      const spells = me?.hand?.filter(c => c.type === 'Spell' || c.type === 'Free Spell') || [];
+      const predators = me?.hand?.filter(c => c.type === 'Predator') || [];
+      if (spells.length > 0) {
+        lines.push(`⚠️ FIELD FULL — but you have ${spells.length} spell(s) in hand. Play a spell to gain advantage!`);
+      } else if (predators.length > 0 && myCreatures.some(c => c.type === 'Prey')) {
+        lines.push(`⚠️ FIELD FULL — consider playing a Predator with EAT to consume a weaker Prey and upgrade your board.`);
+      } else {
+        lines.push(`⚠️ FIELD FULL — no spells available. Trade aggressively in combat to open slots for stronger cards next turn.`);
+      }
     }
     lines.push('');
   }

@@ -279,8 +279,8 @@ async function playTurn(player, turnNum, model, recorder, otherPlayer) {
     } else if (decision.action.type === 'unknown') {
       logP(player.index, '⚠️ Parse failed — skipping');
       if (recorder) recorder.recordAction(turnNum, player.index, 'Main 1', `parse_fail`, decision.rawResponse, stateBefore, stateBefore);
-    } else if (decision.action.type === 'advance' || decision.action.type === 'endTurn') {
-      // Player chose to skip main phase — that's valid, record it
+    } else if (decision.action.type === 'advance' || decision.action.type === 'endTurn' || decision.action.type === 'pass') {
+      // Player chose to skip/pass main phase
       if (recorder) recorder.recordAction(turnNum, player.index, 'Main 1', `skip`, decision.rawResponse, stateBefore, stateBefore);
     } else {
       const result = await executeAction(player.page, decision.action, stateBefore);

@@ -35,7 +35,12 @@ CARD TYPES:
 - Trap: stays in hand, activates on opponent's turn when triggered.
 
 STRATEGY:
-Your goal is to reduce the rival's HP to 0. Every decision you make — what to play, when to attack, what to save — should work toward that goal based on what's in your hand and what's on the board. Think about tempo, board control, and damage. Consider what the opponent might do next turn. Factor in keywords like Lure, Barrier, Poisonous, and Ambush when deciding whether to attack. Predators are strongest when you have prey on the field to consume — plan your turns around setting that up. Don't be passive — if you have the advantage, press it. If you're behind, find the play that gives you the best chance to come back.
+Your goal is to reduce the rival's HP to 0. NEVER be passive — every turn you should be working toward lethal.
+- ALWAYS attack the rival directly when you can. Only trade into enemy creatures if they threaten lethal or have dangerous effects.
+- Field full? Attack enemy creatures to open slots for stronger cards from your hand. Sacrifice weak creatures to make room.
+- Have predators in hand with prey on field? Eat your own prey to upgrade (PLAY n EAT slot#).
+- Spells are free advantage — play them whenever possible, don't hoard them.
+- Passing without doing ANYTHING is almost never correct. Find a play every turn.
 
 RESPONSE FORMAT:
 1. Think briefly (2-3 sentences). What's the best play and why?
