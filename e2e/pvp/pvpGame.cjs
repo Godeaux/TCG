@@ -202,7 +202,7 @@ async function waitForPlayerTurn(player, maxWait = 30) {
       await player.page.waitForTimeout(500);
       continue; // Re-check phase
     }
-    if (myTurn && phase === 'Main 1') return { ready: true, phase };
+    if (myTurn && (phase === 'Main 1' || phase === 'Combat' || phase === 'Main 2')) return { ready: true, phase };
     if (i === 0) {
       const activeIdx = await player.page.evaluate(() => window.__qa?.getState()?.activePlayer);
       dbg(`P${player.index+1} waiting: myTurn=${myTurn} phase=${phase} activePlayer=${activeIdx}`);
