@@ -22,7 +22,9 @@ async function runLoop(maxGames = 5) {
     console.log(`${'='.repeat(50)}\n`);
     
     try {
-      execSync(`node e2e/pvp/pvpGame.cjs ${d1} ${d2}`, {
+      const model = process.argv[3] || '';
+      const modelArg = model ? ` ${model}` : '';
+      execSync(`node e2e/pvp/pvpGame.cjs ${d1} ${d2}${modelArg}`, {
         cwd: PROJECT,
         stdio: 'inherit',
         timeout: 900000, // 15 minutes max per game
