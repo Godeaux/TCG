@@ -27,3 +27,9 @@ npm-debug.log*
 
 # Test artifacts
 .vitest/
+
+# PvP playtesting artifacts
+e2e/logs/
+e2e/screenshots/
+/tmp/pvp-*.log
+PVP-ISSUES.md
