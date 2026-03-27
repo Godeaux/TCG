@@ -26,7 +26,7 @@ function dbg(msg) { console.log(`  ⏱ ${((Date.now()-_t0)/1000).toFixed(1)}s ${
 // ============================================================================
 
 async function createPlayer(browser, index, deckName) {
-  const context = await browser.newContext({ viewport: { width: 800, height: 600 } });
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const page = await context.newPage();
   
   // Error listeners — catch crashes immediately
@@ -249,14 +249,20 @@ async function screenshotBoth(p1Page, p2Page, label) {
   if (createCanvas && loadImage) {
     try {
       const [img1, img2] = await Promise.all([loadImage(p1Path), loadImage(p2Path)]);
-      const canvas = createCanvas(img1.width + img2.width, Math.max(img1.height, img2.height));
+      const gap = 6;
+      const canvas = createCanvas(img1.width + gap + img2.width, Math.max(img1.height, img2.height));
       const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ff0000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img1, 0, 0);
-      ctx.drawImage(img2, img1.width, 0);
-      // Add labels
-      ctx.fillStyle = 'white'; ctx.font = 'bold 24px sans-serif';
-      ctx.fillText('P1 (HOST)', 10, 30);
-      ctx.fillText('P2 (GUEST)', img1.width + 10, 30);
+      ctx.drawImage(img2, img1.width + gap, 0);
+      // Add labels with background for readability
+      ctx.font = 'bold 28px sans-serif';
+      ctx.fillStyle = 'rgba(0,0,0,0.8)';
+      ctx.fillRect(0, 0, 220, 40);
+      ctx.fillRect(img1.width + gap, 0, 220, 40);
+      ctx.fillStyle = '#00ff00'; ctx.fillText('P1 (HOST) ←', 10, 30);
+      ctx.fillStyle = '#ffff00'; ctx.fillText('P2 (GUEST) →', img1.width + gap + 10, 30);
       fs.writeFileSync(combinedPath, canvas.toBuffer('image/png'));
       fs.unlinkSync(p1Path); fs.unlinkSync(p2Path);
       dbg(`📸 ${combinedPath}`);
@@ -341,7 +347,10 @@ async function playTurn(player, turnNum, model, recorder, otherPlayer) {
   const shot = async (label) => {
     if (!otherPlayer) return;
     stepNum++;
-    await screenshotBoth(player.page, otherPlayer.page, `T${turnNum}_P${player.index+1}_${String(stepNum).padStart(2,'0')}_${label}`);
+    // Always P1 (index 0) on left, P2 (index 1) on right — consistent layout
+    const p1Page = player.index === 0 ? player.page : otherPlayer.page;
+    const p2Page = player.index === 0 ? otherPlayer.page : player.page;
+    await screenshotBoth(p1Page, p2Page, `T${turnNum}_P${player.index+1}_${String(stepNum).padStart(2,'0')}_${label}`);
   };
   
   // === MAIN PHASE ===
