@@ -435,7 +435,14 @@ export class GameController {
       return { success: false, error: 'Field full' };
     }
 
-    // Place creature directly (prey or predator with no prey)
+    // Predator with no prey to eat — auto-dry-drop
+    if (card.type === 'Predator') {
+      card.dryDropped = true;
+      card.keywords = [];
+      logMessage(this.state, `${card.name} has no prey to consume — dry dropped (abilities suppressed).`);
+    }
+    
+    // Place creature directly
     return this.placeCreatureInSlot(card, emptySlot, [], [], isFree);
   }
 
