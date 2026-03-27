@@ -92,17 +92,34 @@ async function joinLobby(page, code) {
   await page.click('#menu-other', { force: true }); await page.waitForTimeout(300);
   await page.click('#other-multiplayer', { force: true }); await page.waitForTimeout(300);
   await page.click('#lobby-join', { force: true }); await page.waitForTimeout(1000);
-  // Fill code using Playwright's fill (triggers proper input events)
-  await page.fill('#lobby-code', code);
-  await page.waitForTimeout(300);
-  // Submit via form's submit button click
-  await page.click('#lobby-join-form button[type="submit"]', { force: true });
+  // Fill code and submit the join form
+  await page.evaluate(({lobbyCode}) => {
+    const input = document.getElementById('lobby-code');
+    if (input) { input.value = lobbyCode; input.dispatchEvent(new Event('input', {bubbles: true})); }
+    // Click the submit button (more reliable than form.submit event)
+    const form = document.getElementById('lobby-join-form');
+    const btn = form?.querySelector('button[type="submit"]');
+    if (btn) btn.click();
+  }, {lobbyCode: code});
   await page.waitForTimeout(5000);
 }
 
 async function continueTaGame(page) {
-  await page.click('#lobby-continue', { force: true });
-  await page.waitForTimeout(1000);
+  // Wait for Continue button to become visible (means both players are in lobby)
+  for (let i = 0; i < 20; i++) {
+    const visible = await page.evaluate(() => {
+      const btn = document.getElementById('lobby-continue');
+      return btn && btn.offsetHeight > 0;
+    });
+    if (visible) {
+      await page.click('#lobby-continue');
+      dbg('continueTaGame: clicked');
+      await page.waitForTimeout(1000);
+      return;
+    }
+    await page.waitForTimeout(500);
+  }
+  dbg('continueTaGame: button never became visible — lobby join may have failed');
 }
 
 // ============================================================================
@@ -361,6 +378,11 @@ async function playTurn(player, turnNum, model, recorder, otherPlayer) {
       logP(player.index, `Result: ${result.description} — ${result.success ? '✅' : '❌ ' + result.error}`);
       actions.push({ decision, result });
       
+      // Screenshot after every main phase play
+      if (otherPlayer) {
+        await screenshotBoth(player.page, otherPlayer.page, `T${turnNum}_P${player.index+1}_main_AFTER`);
+      }
+      
       // Poll until state changes (max 2s — Supabase sync)
       let stateAfter = null;
       const beforeSnap = quickSnap(stateBefore);
@@ -428,19 +450,18 @@ async function playTurn(player, turnNum, model, recorder, otherPlayer) {
         const beforeField0 = combatBefore.players?.[0]?.field?.map(c => c ? `${c.name}:${c.currentHp}hp` : '_') || [];
         const beforeField1 = combatBefore.players?.[1]?.field?.map(c => c ? `${c.name}:${c.currentHp}hp` : '_') || [];
         
-        // Screenshot BEFORE face attacks
         const isFaceAtk = chosenTarget === 'player';
-        if (isFaceAtk && otherPlayer) {
-          await screenshotBoth(player.page, otherPlayer.page, `T${turnNum}_P${player.index+1}_face_BEFORE`);
-        }
         
         const result = await executeAction(player.page, atkDecision.action, combatState);
         logP(player.index, `Attack: ${result.description} — ${result.success ? '💥' : '❌ ' + result.error}`);
         actions.push({ decision: atkDecision, result });
         
-        // Screenshot AFTER face attacks (especially if failed)
-        if (isFaceAtk && otherPlayer && result?.hpChanged === false) {
-          await screenshotBoth(player.page, otherPlayer.page, `T${turnNum}_P${player.index+1}_face_FAILED`);
+        // Screenshot after every combat action
+        if (otherPlayer) {
+          const shotLabel = (isFaceAtk && result?.hpChanged === false)
+            ? `T${turnNum}_P${player.index+1}_face_FAILED`
+            : `T${turnNum}_P${player.index+1}_combat`;
+          await screenshotBoth(player.page, otherPlayer.page, shotLabel);
         }
         
         // Track this slot as attacked to prevent duplicates
