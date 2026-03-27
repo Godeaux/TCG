@@ -445,6 +445,13 @@ async function playTurn(player, turnNum, model, recorder, otherPlayer) {
       const atkDecision = await getDecision(combatState, 0, player.deckName, { model });
       logP(player.index, `Combat (${atkDecision.timeMs}ms): ${atkDecision.rawResponse?.substring(0, 100)}`);
       
+      // Re-verify phase after LLM think time (host may have synced a phase change)
+      const freshPhase = await player.page.evaluate(() => window.__qa?.getState()?.phase);
+      if (freshPhase !== 'Combat') {
+        logP(player.index, `⚠️ Phase changed during LLM think: ${freshPhase} (was Combat) — aborting combat`);
+        break;
+      }
+      
       // ONLY accept ATTACK actions during combat — reject anything else
       if (atkDecision.action.type === 'attack') {
         // Verify the chosen slot is actually eligible for the chosen target
