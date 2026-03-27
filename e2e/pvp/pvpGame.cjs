@@ -337,9 +337,16 @@ async function playTurn(player, turnNum, model, recorder, otherPlayer) {
   const quickSnap = (s) => s ? `${s.players?.[0]?.hp}-${s.players?.[0]?.hand?.length ?? s.players?.[0]?.handSize}-${s.players?.[0]?.field?.filter(c=>c).length}-${s.players?.[1]?.hp}-${s.players?.[1]?.field?.filter(c=>c).length}` : '';
   
   const actions = [];
+  let stepNum = 0;
+  const shot = async (label) => {
+    if (!otherPlayer) return;
+    stepNum++;
+    await screenshotBoth(player.page, otherPlayer.page, `T${turnNum}_P${player.index+1}_${String(stepNum).padStart(2,'0')}_${label}`);
+  };
   
   // === MAIN PHASE ===
   if (stateBefore.phase === 'Main 1') {
+    await shot('main_BEFORE');
     let decision = await getDecision(stateBefore, 0, player.deckName, { model });
     const retryTag = decision.retried ? ' [RETRY]' : '';
     logP(player.index, `Think (${decision.timeMs}ms)${retryTag}: ${decision.rawResponse?.substring(0, 120) || decision.reasoning?.substring(0, 120)}`);
@@ -378,10 +385,7 @@ async function playTurn(player, turnNum, model, recorder, otherPlayer) {
       logP(player.index, `Result: ${result.description} — ${result.success ? '✅' : '❌ ' + result.error}`);
       actions.push({ decision, result });
       
-      // Screenshot after every main phase play
-      if (otherPlayer) {
-        await screenshotBoth(player.page, otherPlayer.page, `T${turnNum}_P${player.index+1}_main_AFTER`);
-      }
+      await shot('main_AFTER');
       
       // Poll until state changes (max 2s — Supabase sync)
       let stateAfter = null;
@@ -414,6 +418,7 @@ async function playTurn(player, turnNum, model, recorder, otherPlayer) {
   await player.page.waitForTimeout(800);
   let combatState = await player.getState();
   dbg(`P${player.index+1} now in: ${combatState?.phase}`);
+  await shot(`phase_${combatState?.phase?.replace(/\s/g,'') || 'unknown'}`);
   
   // === COMBAT PHASE ===
   if (combatState?.phase === 'Combat') {
@@ -452,17 +457,11 @@ async function playTurn(player, turnNum, model, recorder, otherPlayer) {
         
         const isFaceAtk = chosenTarget === 'player';
         
+        await shot('combat_BEFORE');
         const result = await executeAction(player.page, atkDecision.action, combatState);
         logP(player.index, `Attack: ${result.description} — ${result.success ? '💥' : '❌ ' + result.error}`);
         actions.push({ decision: atkDecision, result });
-        
-        // Screenshot after every combat action
-        if (otherPlayer) {
-          const shotLabel = (isFaceAtk && result?.hpChanged === false)
-            ? `T${turnNum}_P${player.index+1}_face_FAILED`
-            : `T${turnNum}_P${player.index+1}_combat`;
-          await screenshotBoth(player.page, otherPlayer.page, shotLabel);
-        }
+        await shot(isFaceAtk && result?.hpChanged === false ? 'face_FAILED' : 'combat_AFTER');
         
         // Track this slot as attacked to prevent duplicates
         attackedSlots.add(atkDecision.action.attackerSlot);
@@ -517,6 +516,7 @@ async function playTurn(player, turnNum, model, recorder, otherPlayer) {
     });
     if (s.turn !== startTurn || !s.isMyTurn) {
       dbg(`P${player.index+1} turn ended: T${s.turn} phase=${s.phase} myTurn=${s.isMyTurn}`);
+      await shot('turn_END');
       break;
     }
     
