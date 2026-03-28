@@ -546,7 +546,7 @@ Rulings received from the game master on 2026-03-27. Items marked ✅ RULED have
 ### 20.2 Enraged ✅ RULED
 - **Used by:** Javan Chorus Frogs, Trumpeter Swan, American Bullfrogs, African Bullfrog, Tomato (via Tomato Frog)
 - **Ruling:** Enraged = **Lose abilities** + **Inedible** (cannot be consumed by predators).
-- **Summary:** Debuff that strips all abilities AND prevents consumption. Duration not specified (likely permanent unless removed).
+- **Summary:** Debuff that strips all abilities AND prevents consumption. **Permanent** unless another ability specifically removes it.
 
 ### 20.3 Drowning ✅ RULED
 - **Used by:** Orca, Whirlpool, Undertow, Cramp, Riptide (Fish)
@@ -556,13 +556,12 @@ Rulings received from the game master on 2026-03-27. Items marked ✅ RULED have
 ### 20.4 Slay vs Kill ✅ RULED
 - **Ruling:** Keyword "kill" has been **changed to "slay"** throughout. They are the same mechanic — just a terminology change.
 - **Summary:** All instances of "kill" in game text should read "slay." Slay = set HP to 0, goes to carrion, triggers onSlain effects.
-- **❓ Follow-up needed:** Does "slay animals" include own creatures? "Slay enemies" = only opponent's?
+- **Scope:** "Slay animals" = ALL creatures (both sides, including own). "Slay enemies" = only opponent's creatures.
 
 ### 20.5 Bleed ✅ RULED
 - **Used by:** Scythian Arrows ("either bleed 2, discard 1, or kill target ally, slay enemies")
-- **Ruling:** Bleed = **deal damage to self** (the creature with Bleed takes damage).
-- **Summary:** "Bleed 2" = the creature deals 2 damage to itself. Self-damage, not opponent damage.
-- **❓ Follow-up needed:** Is Bleed one-time or recurring (per turn)? Does it stack?
+- **Ruling:** Bleed = **self-inflicted PLAYER damage** (not creature damage). "Bleed 2" = the PLAYER who plays the card takes 2 damage to their HP.
+- **Summary:** Bleed is a cost/downside on the player, not on creatures. One-time on play.
 
 ### 20.6 Discard as Activated Ability ✅ RULED
 - **Used by:** Golden Dart Frog ("discard, add Blowgun to hand"), Spearfish Remora ("discard, target pred gains ambush"), Silver King ("discard, draw 1"), Tomato Frog ("discard, add Tomato to hand"), Resplendent Quetzal ("discard, allies gain +1/+0")
@@ -582,13 +581,16 @@ Rulings received from the game master on 2026-03-27. Items marked ✅ RULED have
   - **DOES** send the creature to your carrion pile
   - **NOT** affected by summoning sickness (can sacrifice a creature the turn it's played)
 
-### 20.8 "Become" Transformation
+### 20.8 "Become" Transformation ✅ RULED
 - **Used by:** Egg tokens ("dawn, become Green Anole"), Hidden Eleuth Egg ("dawn, become Monte Iberia Eleuth")
-- **Questions:**
-  - Does "become" keep the same slot position?
-  - Does the new creature get summoning sickness?
-  - Does the new creature trigger onPlay?
-  - Are stats/damage/keywords carried over, or is it a fresh card?
+- **Ruling:**
+  - **NO summoning sickness** — the card has been on the field since before dawn
+  - **Does NOT trigger onPlay** — it's not being played, it's transforming in place
+  - **Does NOT trigger "when played" reactions** (Rebound, Riptide, etc.)
+  - Works like flipping a card over to reveal a second animal on the back — same card, new identity
+  - Keeps the same slot position
+  - Fresh stats/abilities from the new creature form (not carried over from the egg)
+- **Visual:** Show a card flip animation — the card changes animals and abilities but stays in place
 
 ### 20.9 "Play a spell" / "Play a carrion" Effects
 - **Used by:** Northern Lights ("play a carrion"), White Hart ("play a carrion it gains frozen"), Six-layered Neocortex ("play an ally from deck it gains frozen")
@@ -604,4 +606,4 @@ Rulings received from the game master on 2026-03-27. Items marked ✅ RULED have
 
 ---
 
-*Last updated: 2026-03-27 — Game master rulings applied to §20*
+*Last updated: 2026-03-28 — All §20 rulings complete (Bleed, Enraged, Become clarified)*
