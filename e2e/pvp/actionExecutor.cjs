@@ -74,22 +74,7 @@ async function executePlay(page, action, state) {
   if (isSpell) {
     // Check if this spell requires a target by looking for selectFromGroup or similar
     const needsTarget = await page.evaluate(({hi}) => {
-      const state = window.__qa?.getState();
-      const card = state?.players?.[0]?.hand?.[hi];
-      if (!card) return false;
-      // Check card effects for targeting patterns
-      const eff = card.effects?.effect;
-      if (eff?.type === 'selectFromGroup' || eff?.type === 'selectTarget') return true;
-      if (eff?.params?.targetGroup) return true;
-      // Check via game controller
-      try {
-        const gc = window.__qa?._getController?.() || window.gameController;
-        if (gc) {
-          const sel = gc.getEffectSelections(card, 'effect');
-          if (sel?.type === 'selectTarget') return true;
-        }
-      } catch {}
-      return false;
+      return window.__qa?.cardNeedsTarget?.(hi) ?? false;
     }, {hi: handIndex});
     
     if (needsTarget) {
