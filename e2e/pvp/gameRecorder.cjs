@@ -111,6 +111,12 @@ function computeDiff(before, after) {
         const removedKw = (bCreature.keywords || []).filter(k => !(aCreature.keywords || []).includes(k));
         if (addedKw.length) changes.push({ type: 'keyword_added', player: p, slot: i, creature: aCreature.name, keywords: addedKw });
         if (removedKw.length) changes.push({ type: 'keyword_removed', player: p, slot: i, creature: aCreature.name, keywords: removedKw });
+        // Status flag changes (Barrier, Frozen, Paralyzed, DryDropped)
+        if (bCreature.hasBarrier && !aCreature.hasBarrier) changes.push({ type: 'barrier_removed', player: p, slot: i, creature: aCreature.name });
+        if (!bCreature.hasBarrier && aCreature.hasBarrier) changes.push({ type: 'barrier_added', player: p, slot: i, creature: aCreature.name });
+        if (bCreature.isFrozen !== aCreature.isFrozen) changes.push({ type: 'frozen_changed', player: p, slot: i, creature: aCreature.name, from: bCreature.isFrozen, to: aCreature.isFrozen });
+        if (bCreature.isParalyzed !== aCreature.isParalyzed) changes.push({ type: 'paralyzed_changed', player: p, slot: i, creature: aCreature.name, from: bCreature.isParalyzed, to: aCreature.isParalyzed });
+        if (bCreature.isDryDropped !== aCreature.isDryDropped) changes.push({ type: 'drydrop_changed', player: p, slot: i, creature: aCreature.name, from: bCreature.isDryDropped, to: aCreature.isDryDropped });
       }
     }
   }

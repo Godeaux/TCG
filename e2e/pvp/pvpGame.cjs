@@ -567,6 +567,17 @@ async function main() {
   log(`\n🃏 PvP Match: ${deck1.toUpperCase()} vs ${deck2.toUpperCase()}`);
   log(`   Model: ${model}\n`);
   
+  // Pre-warm LLM model to avoid cold-start latency
+  try {
+    const CHAT_MODELS = new Set(['qwen3.5:9b', 'qwen3.5:2b', 'qwen3.5:latest']);
+    const url = CHAT_MODELS.has(model) ? 'http://localhost:11434/api/chat' : 'http://localhost:11434/api/generate';
+    const body = CHAT_MODELS.has(model)
+      ? { model, messages: [{ role: 'user', content: 'ready' }], stream: false, keep_alive: '30m', think: false, options: { num_predict: 1 } }
+      : { model, prompt: 'ready', stream: false, keep_alive: '30m', options: { num_predict: 1 } };
+    await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    dbg('Model pre-warmed');
+  } catch (e) { dbg(`Model warm failed: ${e.message}`); }
+  
   // Both Chromium — non-headless for screenshot debugging
   const headless = process.env.PVP_HEADLESS !== 'false';
   const browser1 = await chromium.launch({ headless });
