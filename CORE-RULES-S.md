@@ -534,63 +534,53 @@ State must sync after:
 
 ---
 
-## 20. PENDING GAME MASTER RULINGS
+## 20. GAME MASTER RULINGS
 
-These mechanics appear in the physical card set but are not yet defined with enough precision for digital implementation. Each needs a ruling before it can be coded.
+Rulings received from the game master on 2026-03-27. Items marked ✅ RULED have definitive answers. Items marked ❓ PENDING still need clarification.
 
-### 20.1 Stunned
+### 20.1 Stunned ✅ RULED
 - **Used by:** Cottonmouth, Eastern Diamondback Rattlesnake (Reptile)
-- **Questions:**
-  - What does Stunned do? (Skip next attack? Lose abilities? Can't act for a turn?)
-  - Duration? (One turn? Until damaged? Permanent until removed?)
-  - Does it stack?
-  - How does it interact with Frozen? Paralysis?
+- **Ruling:** Stunned = **Passive** (cannot attack). At **dusk** (end of turn), lose Stunned.
+- **Summary:** One-turn attack suppression. Creature can still be attacked and use non-attack abilities.
 
-### 20.2 Enraged
+### 20.2 Enraged ✅ RULED
 - **Used by:** Javan Chorus Frogs, Trumpeter Swan, American Bullfrogs, African Bullfrog, Tomato (via Tomato Frog)
-- **Questions:**
-  - What does Enraged do? (Must attack? Gains ATK? Forces creature to attack the enraged target?)
-  - Is it a buff or debuff? (Applied to enemies in most cases, but what's the downside?)
-  - Duration?
+- **Ruling:** Enraged = **Lose abilities** + **Inedible** (cannot be consumed by predators).
+- **Summary:** Debuff that strips all abilities AND prevents consumption. Duration not specified (likely permanent unless removed).
 
-### 20.3 Drowning
+### 20.3 Drowning ✅ RULED
 - **Used by:** Orca, Whirlpool, Undertow, Cramp, Riptide (Fish)
-- **Questions:**
-  - What does Drowning do? (Damage over time? Can't attack? Dies after X turns?)
-  - Duration?
-  - Can it be removed? (By healing? By returning to hand?)
+- **Ruling:** Drowning = **Lose abilities** + **Passive** (cannot attack). At **dusk** (end of turn), lose Drowning.
+- **Summary:** One-turn full suppression — no abilities AND no attacks. Clears at end of turn.
 
-### 20.4 Slay vs Kill vs Destroy
-- **"Slay"** appears throughout the physical set (Saltwater Crocodile: "slay enemies", Flood: "slay animals", Blowdart: "negate its attack and slay it")
-- **Questions:**
-  - Is "slay" identical to "kill" (HP → 0, carrion, triggers onSlain)?
-  - Or is "slay" a third removal type distinct from both "kill" and "destroy"?
-  - "Slay animals" — does this include the caster's own creatures?
-  - "Slay enemies" — only opponent's creatures?
-  - "Slay enemy preds" — only opponent's predators?
+### 20.4 Slay vs Kill ✅ RULED
+- **Ruling:** Keyword "kill" has been **changed to "slay"** throughout. They are the same mechanic — just a terminology change.
+- **Summary:** All instances of "kill" in game text should read "slay." Slay = set HP to 0, goes to carrion, triggers onSlain effects.
+- **❓ Follow-up needed:** Does "slay animals" include own creatures? "Slay enemies" = only opponent's?
 
-### 20.5 Bleed
+### 20.5 Bleed ✅ RULED
 - **Used by:** Scythian Arrows ("either bleed 2, discard 1, or kill target ally, slay enemies")
-- **Questions:**
-  - What does "bleed 2" do? (Deal 2 damage per turn? Reduce max HP? One-time damage?)
-  - Who/what bleeds? (Target creature? All enemies? The rival player?)
-  - Duration?
+- **Ruling:** Bleed = **deal damage to self** (the creature with Bleed takes damage).
+- **Summary:** "Bleed 2" = the creature deals 2 damage to itself. Self-damage, not opponent damage.
+- **❓ Follow-up needed:** Is Bleed one-time or recurring (per turn)? Does it stack?
 
-### 20.6 Discard as Activated Ability
+### 20.6 Discard as Activated Ability ✅ RULED
 - **Used by:** Golden Dart Frog ("discard, add Blowgun to hand"), Spearfish Remora ("discard, target pred gains ambush"), Silver King ("discard, draw 1"), Tomato Frog ("discard, add Tomato to hand"), Resplendent Quetzal ("discard, allies gain +1/+0")
-- **Questions:**
-  - When can you activate "discard, do X"? (Only during your main phase? Any time?)
-  - Does it cost your 1-card-per-turn play limit?
-  - Can you activate it multiple times per turn?
-  - "Discard" means discard the creature itself from hand (not from field), correct?
+- **Ruling:**
+  - Discard = discard the card **with the discard ability from your hand** (the card itself is discarded)
+  - Can be activated during **Main 1 or Main 2**
+  - Does **NOT** count as a play (doesn't consume card limit)
+  - **Multiple** discard abilities can be used on the same turn
 
-### 20.7 Sacrifice as Activated Ability
+### 20.7 Sacrifice as Activated Ability ✅ RULED
 - **Used by:** Javelin Frog ("sacrifice, deal 1 damage to any target"), Golden Dart Frog ("sacrifice, add Golden Blowgun to hand"), Phantasmal Poison Frog ("sacrifice, add Phantasmal Blowgun to hand"), Curiosity ("sacrifice target ally, draw 3")
-- **Questions:**
-  - When can you activate sacrifice? (Only your main phase? Only during combat?)
-  - Does it cost your card play limit?
-  - Does sacrifice trigger onSlain? (Per current rules, sacrifice goes to carrion but this should be confirmed)
-  - Can you sacrifice a creature with summoning sickness?
+- **Ruling:**
+  - Sacrifice = sacrificing the card **with the sacrifice ability on the field**
+  - Can be activated during **Main 1 or Main 2**
+  - Does **NOT** count as a play (doesn't consume card limit)
+  - Does **NOT** count as slain (doesn't trigger onSlain effects)
+  - **DOES** send the creature to your carrion pile
+  - **NOT** affected by summoning sickness (can sacrifice a creature the turn it's played)
 
 ### 20.8 "Become" Transformation
 - **Used by:** Egg tokens ("dawn, become Green Anole"), Hidden Eleuth Egg ("dawn, become Monte Iberia Eleuth")
@@ -604,10 +594,14 @@ These mechanics appear in the physical card set but are not yet defined with eno
 - **Used by:** Northern Lights ("play a carrion"), White Hart ("play a carrion it gains frozen"), Six-layered Neocortex ("play an ally from deck it gains frozen")
 - **Questions:**
   - "Play a carrion" — choose any creature from your carrion pile and put it on the field?
-  - Does it trigger consumption for predators? (Per CORE-RULES.md §3: eating happens when playing from ANY source)
-  - Does it trigger onPlay?
-  - Does it get summoning sickness?
+### 20.9 Play from Carrion/Deck ✅ RULED
+- **Ruling:**
+  - Play from carrion can target **any** carrion card (not just own)
+  - Play from deck and carrion **triggers consumption** (predators can eat prey when played from these sources)
+  - **Triggers onPlay** effects
+  - **Gets summoning sickness**
+- **Summary:** Playing from carrion/deck behaves identically to playing from hand — full consumption, onPlay, and summoning sickness apply.
 
 ---
 
-*Last updated: 2026-03-24 — Definitive S revision*
+*Last updated: 2026-03-27 — Game master rulings applied to §20*
