@@ -294,6 +294,15 @@ function validateMainAction(action, state) {
     const field = state.players?.[0]?.field || [];
     const handIndex = action.handIndex;
     
+    // Check card limit (1 card per turn, Free Spells don't consume but need available)
+    if (state.ui?.cardPlayedThisTurn) {
+      const card = hand[handIndex];
+      const isFree = card?.type === 'Free Spell' || card?.keywords?.includes('Free Play');
+      if (!isFree) {
+        return { valid: false, reason: 'Card limit already used this turn. You already played a card.', suggestion: 'PASS or play a Free Spell if you have one.' };
+      }
+    }
+    
     // Check hand index
     if (handIndex === undefined || handIndex < 0 || handIndex >= hand.length) {
       return { valid: false, reason: `Hand index ${handIndex} is out of range. You have ${hand.length} cards (indices 0-${hand.length - 1}).`, suggestion: `PLAY 0 through PLAY ${hand.length - 1}, or PASS.` };

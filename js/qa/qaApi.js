@@ -241,6 +241,7 @@ const buildUiState = (state) => {
     pendingSelection,
     overlayOpen,
     isMyTurn: isLocalPlayersTurn(state),
+    cardPlayedThisTurn: state.cardPlayedThisTurn ?? false,
     extendedConsumption: state.extendedConsumption
       ? {
           predatorInstanceId: state.extendedConsumption.predatorInstanceId,
