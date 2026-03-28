@@ -187,6 +187,8 @@ function formatStatePrompt(qaState, playerIndex, deckName = 'Unknown') {
       } else {
         lines.push(`⚠️ FIELD FULL — no spells available. Trade aggressively in combat to open slots for stronger cards next turn.`);
       }
+    } else if (myCreatures.length === 0) {
+      lines.push('⚠️ EMPTY FIELD — play a creature first. Buff/heal spells have no effect without creatures on your field.');
     }
     lines.push('');
   }

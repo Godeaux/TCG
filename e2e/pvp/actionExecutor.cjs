@@ -226,16 +226,21 @@ Your field:\n${selMyField}
 Rival field:\n${selOppField}
 You just played: ${card.name} (${card.type})${card.effectText ? ' — ' + card.effectText : ''}`;
   
-  for (let attempt = 0; attempt < 5; attempt++) {
-    await page.waitForTimeout(400);
-    // Check for targeting mode first (spell targets — click on field)
-    const targeting = await handleTargetingMode(page, `play:${card.name}`, gameCtx);
-    if (targeting.handled) break;
-    // Then check for selection panel (consumption, choices)
-    const selection = await handleSelectionUI(page, `play:${card.name}`, gameCtx);
-    if (selection.handled) break;
-    if (attempt >= 4) break;
+  // Handle chained UIs — some effects trigger multiple choices in sequence
+  // Keep checking until no more UIs appear (up to 5 chains)
+  let chainsHandled = 0;
+  for (let chain = 0; chain < 5; chain++) {
+    let foundUI = false;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      await page.waitForTimeout(400);
+      const targeting = await handleTargetingMode(page, `play:${card.name} (chain ${chain})`, gameCtx);
+      if (targeting.handled) { foundUI = true; chainsHandled++; break; }
+      const selection = await handleSelectionUI(page, `play:${card.name} (chain ${chain})`, gameCtx);
+      if (selection.handled) { foundUI = true; chainsHandled++; break; }
+    }
+    if (!foundUI) break; // No more UIs — done
   }
+  if (chainsHandled > 1) console.log(`  [CHAIN] Handled ${chainsHandled} chained UIs for ${card.name}`);
   
   return { success: true, description: desc };
 }
