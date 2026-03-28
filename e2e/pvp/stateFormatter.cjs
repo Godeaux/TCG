@@ -154,13 +154,24 @@ function formatStatePrompt(qaState, playerIndex, deckName = 'Unknown') {
       lines.push('COMBAT MATH: No creatures can attack this turn. Use ADVANCE to end combat.');
     }
     
-    // List ONLY eligible attackers — prevent LLM from picking ineligible ones
-    if (canAttackAny.length > 0) {
-      lines.push('YOUR ELIGIBLE ATTACKERS (only these can be used):');
-      for (const c of canAttackAny) {
-        const atkType = c.canAttackPlayer ? 'can hit PLAYER or creatures' : 'creatures ONLY (summoning sickness)';
-        lines.push(`  slot ${c.slot}: ${c.name} (${c.currentAtk ?? c.atk} ATK) — ${atkType}`);
+    // Split eligible attackers into face-attackers vs creature-only
+    const faceAttackers = canAttackAny.filter(c => c.canAttackPlayer);
+    const creatureOnly = canAttackAny.filter(c => !c.canAttackPlayer);
+    
+    if (faceAttackers.length > 0) {
+      lines.push('CAN ATTACK RIVAL DIRECTLY (ATTACK slot# PLAYER):');
+      for (const c of faceAttackers) {
+        lines.push(`  slot ${c.slot}: ${c.name} (${c.currentAtk ?? c.atk} ATK)`);
       }
+    }
+    if (creatureOnly.length > 0) {
+      lines.push('CAN ATTACK CREATURES ONLY (summoning sickness — CANNOT hit PLAYER):');
+      for (const c of creatureOnly) {
+        lines.push(`  slot ${c.slot}: ${c.name} (${c.currentAtk ?? c.atk} ATK) — creatures only`);
+      }
+    }
+    if (faceAttackers.length === 0 && creatureOnly.length === 0) {
+      lines.push('No creatures can attack this turn.');
     }
     lines.push('');
   } else if (qaState.phase === 'Main 1' || qaState.phase === 'Main 2') {
