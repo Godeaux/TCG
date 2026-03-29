@@ -212,8 +212,11 @@ async function waitForPlayerTurn(player, maxWait = 30) {
     const gameOver = await player.isGameOver();
     if (gameOver?.over) return { gameOver };
     // Handle Start phase (beginning of turn, before draw) — advance to Main 1
-    if (myTurn && phase === 'Start') {
+    if (myTurn && (phase === 'Start' || phase === 'Setup' || phase === 'Draw')) {
+      // Auto-advance through non-interactive phases
       await player.page.evaluate(() => document.getElementById('field-turn-btn')?.click());
+      await player.page.waitForTimeout(300);
+      await player.page.evaluate(() => window.__qa?.act?.advancePhase());
       await player.page.waitForTimeout(500);
       continue; // Re-check phase
     }
@@ -803,6 +806,32 @@ async function main() {
           await p1.page.waitForTimeout(1000);
         } else {
           await p1.page.waitForTimeout(3000);
+        }
+        
+        // Desync recovery: if both players see different activePlayer, force Supabase re-fetch
+        const p1Active = await p1.page.evaluate(() => window.__qa?.getState()?.activePlayerIndex);
+        const p2Active = await p2.page.evaluate(() => window.__qa?.getState()?.activePlayerIndex);
+        if (p1Active !== undefined && p2Active !== undefined && p1Active !== p2Active) {
+          dbg(`⚠️ DESYNC detected! P1 sees active=${p1Active}, P2 sees active=${p2Active}. Forcing Supabase re-fetch...`);
+          // Force both browsers to re-fetch authoritative state from Supabase
+          for (const p of [p1, p2]) {
+            const result = await p.page.evaluate(() => window.__qa?.act?.resyncState?.());
+            dbg(`  P${p.index+1} resync: ${JSON.stringify(result)}`);
+          }
+          await p1.page.waitForTimeout(2000);
+          
+          // Check if resync fixed it
+          const p1MyTurn2 = await p1.isMyTurn();
+          const p2MyTurn2 = await p2.isMyTurn();
+          if (p1MyTurn2 || p2MyTurn2) {
+            dbg(`✅ Desync resolved! P1=${p1MyTurn2} P2=${p2MyTurn2}`);
+          } else {
+            dbg(`⚠️ Still desync'd after re-fetch. Forcing advancePhase on both...`);
+            for (const p of [p1, p2]) {
+              await p.page.evaluate(() => window.__qa?.act?.advancePhase());
+              await p.page.waitForTimeout(500);
+            }
+          }
         }
         
         // Check for game over

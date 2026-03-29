@@ -564,6 +564,30 @@ const qaApi = {
     },
 
     /**
+     * Force re-fetch game state from Supabase to fix desync.
+     * Loads the latest state from the server and replaces local state.
+     */
+    async resyncState() {
+      const state = s();
+      const lobbyId = state.menu?.lobby?.id;
+      if (!lobbyId) return { success: false, error: 'No lobby id' };
+      try {
+        const { loadGameState } = await import('../network/supabaseApi.js');
+        const data = await loadGameState({ lobbyId });
+        if (data?.game_state) {
+          _gameController?.dispatch?.({
+            type: ActionTypes.RECEIVE_SYNCED_STATE,
+            payload: { state: data.game_state },
+          });
+          return { success: true, turn: data.game_state.turn, activePlayer: data.game_state.activePlayerIndex };
+        }
+        return { success: false, error: 'No game state in DB' };
+      } catch (e) {
+        return { success: false, error: e.message };
+      }
+    },
+
+    /**
      * Respond to a pending reaction/trap prompt.
      * @param {'activate'|'pass'} choice
      * @param {number} reactionIndex — which reaction to activate (default 0)
