@@ -680,6 +680,7 @@ async function main() {
     
     let lastTurn = 0;
     let sameCount = 0;
+    let forceAttempts = 0;
     
     for (let round = 0; round < 50; round++) {
       // Determine whose turn it is — check active player first
@@ -735,7 +736,18 @@ async function main() {
           if (turnNum === lastTurn) {
             sameCount++;
             if (sameCount > 2) {
-              log(`⚠️ CRITICAL: Turn ${turnNum} replayed ${sameCount}x — forcing advance`);
+              forceAttempts++;
+              log(`⚠️ CRITICAL: Turn ${turnNum} replayed ${sameCount}x (force attempt #${forceAttempts}) — forcing advance`);
+              
+              if (forceAttempts >= 2) {
+                // Already force-advanced once and still stuck — game is broken
+                log(`🛑 STUCK: Turn ${turnNum} unrecoverable after ${forceAttempts} force attempts. Ending game.`);
+                recorder.setResult(null, 'stuck', await player.page.evaluate(() => window.__qa?.getState()), player.index);
+                const logPath = recorder.save();
+                log(`  Recording saved: ${logPath}`);
+                return { result: 'stuck', turn: turnNum, player: player.index };
+              }
+              
               // Force advance through ALL remaining phases to the next turn
               for (let force = 0; force < 6; force++) {
                 await player.page.evaluate(() => window.__qa?.act?.advancePhase());
@@ -744,7 +756,7 @@ async function main() {
                   const s = window.__qa?.getState();
                   return { turn: s?.turn, phase: s?.phase, myTurn: s?.ui?.isMyTurn };
                 });
-                if (fs.turn !== turnNum || !fs.myTurn) break;
+                if (fs.turn !== turnNum || !fs.myTurn) { forceAttempts = 0; break; }
               }
               sameCount = 0;
               break;
@@ -752,6 +764,7 @@ async function main() {
           } else {
             lastTurn = turnNum;
             sameCount = 0;
+            forceAttempts = 0;
           }
           
           log(`\n──── Turn ${turnNum} | P${player.index + 1} (${player.deckName}) ────`);
