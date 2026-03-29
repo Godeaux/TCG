@@ -684,6 +684,7 @@ async function main() {
     let lastTurn = 0;
     let sameCount = 0;
     let forceAttempts = 0;
+    let totalForceAttempts = 0;
     
     for (let round = 0; round < 50; round++) {
       // Determine whose turn it is — check active player first
@@ -740,9 +741,10 @@ async function main() {
             sameCount++;
             if (sameCount > 2) {
               forceAttempts++;
-              log(`⚠️ CRITICAL: Turn ${turnNum} replayed ${sameCount}x (force attempt #${forceAttempts}) — forcing advance`);
+              totalForceAttempts++;
+              log(`⚠️ CRITICAL: Turn ${turnNum} replayed ${sameCount}x (force #${forceAttempts}, total #${totalForceAttempts}) — forcing advance`);
               
-              if (forceAttempts >= 2) {
+              if (forceAttempts >= 2 || totalForceAttempts >= 4) {
                 // Already force-advanced once and still stuck — game is broken
                 log(`🛑 STUCK: Turn ${turnNum} unrecoverable after ${forceAttempts} force attempts. Ending game.`);
                 recorder.setResult(null, 'stuck', await player.page.evaluate(() => window.__qa?.getState()), player.index);
