@@ -213,19 +213,17 @@ async function waitForPlayerTurn(player, maxWait = 30) {
     if (gameOver?.over) return { gameOver };
     // Handle Start phase (beginning of turn, before draw) — advance to Main 1
     if (myTurn && (phase === 'Start' || phase === 'Setup' || phase === 'Draw')) {
-      // Auto-advance through non-interactive phases
+      // Auto-advance through non-interactive phases — DOM click only (not QA API to avoid desync)
       await player.page.evaluate(() => document.getElementById('field-turn-btn')?.click());
-      await player.page.waitForTimeout(300);
-      await player.page.evaluate(() => window.__qa?.act?.advancePhase());
-      await player.page.waitForTimeout(500);
+      await player.page.waitForTimeout(800);
       continue; // Re-check phase
     }
     // Only accept Main 1 as valid turn start. If we're at Combat/Main 2, advance past them.
     if (myTurn && phase === 'Main 1') return { ready: true, phase };
     if (myTurn && (phase === 'Combat' || phase === 'Main 2' || phase === 'End')) {
-      // We're mid-turn in the wrong phase — advance to end this turn
-      await player.page.evaluate(() => window.__qa?.act?.advancePhase());
-      await player.page.waitForTimeout(500);
+      // We're mid-turn in the wrong phase — use DOM click to advance (not QA API, to avoid desync)
+      await player.page.evaluate(() => document.getElementById('field-turn-btn')?.click());
+      await player.page.waitForTimeout(800);
       continue; // Re-check
     }
     if (i === 0) {
@@ -563,11 +561,14 @@ async function playTurn(player, turnNum, model, recorder, otherPlayer) {
     dbg(`P${player.index+1} click ${click+1}: ${phaseBefore} → ${phaseAfter}`);
     
     if (phaseAfter === phaseBefore) {
-      dbg(`P${player.index+1} DOM stuck at ${phaseBefore}, QA fallback`);
-      await player.page.evaluate(() => window.__qa?.act?.advancePhase());
-      await player.page.waitForTimeout(400);
-      const afterQA = await player.page.evaluate(() => window.__qa?.getState()?.phase);
-      dbg(`P${player.index+1} after QA: ${afterQA}`);
+      // DON'T call QA advancePhase as fallback — in online mode, the DOM click
+      // already dispatched through ActionBus. A second QA dispatch would double-advance,
+      // flipping activePlayerIndex back to the same player (causing desync G6).
+      // Instead, wait longer for the ActionBus roundtrip to propagate.
+      dbg(`P${player.index+1} phase unchanged at ${phaseBefore}, waiting for sync...`);
+      await player.page.waitForTimeout(1500);
+      const afterWait = await player.page.evaluate(() => window.__qa?.getState()?.phase);
+      dbg(`P${player.index+1} after wait: ${afterWait}`);
     }
   }
   
@@ -753,10 +754,10 @@ async function main() {
                 return { result: 'stuck', turn: turnNum, player: player.index };
               }
               
-              // Force advance through ALL remaining phases to the next turn
+              // Force advance through ALL remaining phases using DOM click (not QA API)
               for (let force = 0; force < 6; force++) {
-                await player.page.evaluate(() => window.__qa?.act?.advancePhase());
-                await player.page.waitForTimeout(300);
+                await player.page.evaluate(() => document.getElementById('field-turn-btn')?.click());
+                await player.page.waitForTimeout(800);
                 const fs = await player.page.evaluate(() => {
                   const s = window.__qa?.getState();
                   return { turn: s?.turn, phase: s?.phase, myTurn: s?.ui?.isMyTurn };
@@ -795,17 +796,13 @@ async function main() {
         const p2Phase = await p2.getPhase();
         dbg(`Neither player has turn — P1 phase=${p1Phase} P2 phase=${p2Phase}`);
         
-        if (p1Phase === 'Start' || p2Phase === 'Start') {
-          // Try clicking the turn button on both pages to advance past Start
+        if (p1Phase === 'Start' || p2Phase === 'Start' || p1Phase === 'Setup' || p2Phase === 'Setup' || p1Phase === 'Draw' || p2Phase === 'Draw') {
+          // Try clicking the turn button on both pages to advance past Start/Setup/Draw
+          // DOM clicks only — QA API double-dispatch causes desync
           for (const p of [p1, p2]) {
             await p.page.evaluate(() => document.getElementById('field-turn-btn')?.click());
           }
-          await p1.page.waitForTimeout(1000);
-          // Also try QA advancePhase on both
-          for (const p of [p1, p2]) {
-            await p.page.evaluate(() => window.__qa?.act?.advancePhase());
-          }
-          await p1.page.waitForTimeout(1000);
+          await p1.page.waitForTimeout(1500);
         } else {
           await p1.page.waitForTimeout(3000);
         }
@@ -828,10 +825,10 @@ async function main() {
           if (p1MyTurn2 || p2MyTurn2) {
             dbg(`✅ Desync resolved! P1=${p1MyTurn2} P2=${p2MyTurn2}`);
           } else {
-            dbg(`⚠️ Still desync'd after re-fetch. Forcing advancePhase on both...`);
+            dbg(`⚠️ Still desync'd after re-fetch. Clicking turn button on both...`);
             for (const p of [p1, p2]) {
-              await p.page.evaluate(() => window.__qa?.act?.advancePhase());
-              await p.page.waitForTimeout(500);
+              await p.page.evaluate(() => document.getElementById('field-turn-btn')?.click());
+              await p.page.waitForTimeout(800);
             }
           }
         }
