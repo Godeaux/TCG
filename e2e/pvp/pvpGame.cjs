@@ -217,7 +217,14 @@ async function waitForPlayerTurn(player, maxWait = 30) {
       await player.page.waitForTimeout(500);
       continue; // Re-check phase
     }
-    if (myTurn && (phase === 'Main 1' || phase === 'Combat' || phase === 'Main 2')) return { ready: true, phase };
+    // Only accept Main 1 as valid turn start. If we're at Combat/Main 2, advance past them.
+    if (myTurn && phase === 'Main 1') return { ready: true, phase };
+    if (myTurn && (phase === 'Combat' || phase === 'Main 2' || phase === 'End')) {
+      // We're mid-turn in the wrong phase — advance to end this turn
+      await player.page.evaluate(() => window.__qa?.act?.advancePhase());
+      await player.page.waitForTimeout(500);
+      continue; // Re-check
+    }
     if (i === 0) {
       const activeIdx = await player.page.evaluate(() => window.__qa?.getState()?.activePlayer);
       dbg(`P${player.index+1} waiting: myTurn=${myTurn} phase=${phase} activePlayer=${activeIdx}`);
@@ -724,13 +731,21 @@ async function main() {
           const compact = await player.getCompact();
           const turnNum = state?.turn || 0;
           
-          // Guard: detect stuck turns
+          // Guard: detect stuck turns (max 2 replays before forcing advance)
           if (turnNum === lastTurn) {
             sameCount++;
-            if (sameCount > 3) {
-              log(`⚠️ Stuck on turn ${turnNum} — forcing end turn`);
-              await player.page.evaluate(() => window.__qa?.act?.endTurn());
-              await player.page.waitForTimeout(1000);
+            if (sameCount > 2) {
+              log(`⚠️ CRITICAL: Turn ${turnNum} replayed ${sameCount}x — forcing advance`);
+              // Force advance through ALL remaining phases to the next turn
+              for (let force = 0; force < 6; force++) {
+                await player.page.evaluate(() => window.__qa?.act?.advancePhase());
+                await player.page.waitForTimeout(300);
+                const fs = await player.page.evaluate(() => {
+                  const s = window.__qa?.getState();
+                  return { turn: s?.turn, phase: s?.phase, myTurn: s?.ui?.isMyTurn };
+                });
+                if (fs.turn !== turnNum || !fs.myTurn) break;
+              }
               sameCount = 0;
               break;
             }
