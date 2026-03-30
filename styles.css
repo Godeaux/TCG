@@ -6355,20 +6355,121 @@ select.menu-input option {
   background: linear-gradient(135deg, rgba(48, 48, 48, 0.85), rgba(20, 20, 20, 0.95));
 }
 
-/* Desktop: widen deck select and use horizontal 5-across layout */
+/* Desktop: star/pentagon formation for deck selection */
 @media (min-width: 769px) {
   .deck-select-overlay .overlay-content.deck-select-card {
-    width: 80vw;
-    max-width: 1100px;
+    width: 85vw;
+    max-width: 1200px;
   }
 
   .deck-select-grid {
-    grid-template-columns: repeat(5, 1fr);
-    gap: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 24px;
+    justify-items: center;
+    padding: 20px 40px;
+  }
+
+  /* Star layout: top row has 2 centered, bottom row has 3 */
+  .deck-select-grid .deck-select-panel:nth-child(1) {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: end;
+  }
+  .deck-select-grid .deck-select-panel:nth-child(2) {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: start;
+  }
+  .deck-select-grid .deck-select-panel:nth-child(3) {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .deck-select-grid .deck-select-panel:nth-child(4) {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .deck-select-grid .deck-select-panel:nth-child(5) {
+    grid-column: 3;
+    grid-row: 2;
   }
 
   .deck-select-panel {
-    min-height: 120px;
+    width: 220px;
+    min-height: 160px;
+    border-radius: 20px;
+    padding: 24px 20px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.3s ease,
+                border-color 0.3s ease,
+                filter 0.3s ease;
+  }
+
+  /* Ambient glow behind each panel */
+  .deck-select-panel::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 22px;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    z-index: -1;
+  }
+
+  .deck-select-panel--fish::before {
+    background: radial-gradient(circle, rgba(54, 108, 180, 0.6), transparent 70%);
+  }
+  .deck-select-panel--bird::before {
+    background: radial-gradient(circle, rgba(200, 160, 40, 0.6), transparent 70%);
+  }
+  .deck-select-panel--mammal::before {
+    background: radial-gradient(circle, rgba(140, 92, 68, 0.6), transparent 70%);
+  }
+  .deck-select-panel--reptile::before {
+    background: radial-gradient(circle, rgba(60, 142, 74, 0.6), transparent 70%);
+  }
+  .deck-select-panel--amphibian::before {
+    background: radial-gradient(circle, rgba(92, 180, 116, 0.6), transparent 70%);
+  }
+
+  /* Hover: lift, scale, glow */
+  .deck-select-panel:hover:not(.disabled) {
+    transform: translateY(-8px) scale(1.06);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.5);
+    filter: brightness(1.15);
+  }
+
+  .deck-select-panel:hover::before {
+    opacity: 1;
+  }
+
+  /* Active press */
+  .deck-select-panel:active:not(.disabled) {
+    transform: translateY(-2px) scale(0.98);
+    transition-duration: 0.1s;
+  }
+
+  /* Bigger emoji on desktop */
+  .deck-select-panel .deck-emoji {
+    font-size: 2.5rem;
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .deck-select-panel:hover .deck-emoji {
+    transform: scale(1.2) rotate(-5deg);
+  }
+
+  .deck-select-panel .deck-name {
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   }
 }
 
