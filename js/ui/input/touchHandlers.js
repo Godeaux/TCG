@@ -47,6 +47,10 @@ let touchedCardHandIndex = -1; // Track hand index for drag broadcasting
 let touchedFromField = false; // Track if touch started from field (combat drag)
 let touchStartTime = 0; // Track when touch started for tap detection
 
+// Frozen card zones — snapshotted at touchstart, used throughout the touch session.
+// Prevents layout-shift flicker when focused cards lift/scale and shift neighbor positions.
+let frozenCardZones = []; // Array of { element, centerX, card }
+
 // Tap detection config
 const TAP_MAX_DURATION_MS = 200; // Max ms for a touch to count as "tap" vs "hold"
 const TAP_MAX_MOVEMENT_PX = 10; // Max px movement for a touch to count as "tap"
@@ -276,6 +280,24 @@ const handleTouchStart = (e) => {
   touchedCardElement = touched.element;
   touchedCard = touched.card;
 
+  // Snapshot card zones BEFORE any focus/lift animation changes layout.
+  // These frozen positions are used for all browse decisions during this touch.
+  const handGrid = document.getElementById('active-hand');
+  frozenCardZones = [];
+  if (handGrid) {
+    const cards = Array.from(handGrid.querySelectorAll('.card'));
+    for (const card of cards) {
+      const rect = card.getBoundingClientRect();
+      const instanceId = card.dataset.instanceId;
+      const cardData = instanceId ? getCardFromInstanceId(instanceId, state) : null;
+      frozenCardZones.push({
+        element: card,
+        centerX: rect.left + rect.width / 2,
+        card: cardData,
+      });
+    }
+  }
+
   // Dismiss any existing tooltip from a previous tap
   hideCardTooltipImmediate();
 
@@ -361,40 +383,25 @@ const handleTouchMove = (e) => {
     });
     touchedCardElement.dispatchEvent(dragStartEvent);
   } else if (!isDragging) {
-    // Horizontal browsing — find the nearest card by center distance.
-    // Uses the same hysteresis approach as the desktop system: only switch
-    // focus if the new card's center is meaningfully closer than the current one.
-    const handGrid = document.getElementById('active-hand');
-    if (!handGrid) return;
-    const cards = Array.from(handGrid.querySelectorAll('.card'));
-    if (cards.length === 0) return;
+    // Horizontal browsing — use frozen card zones (snapshotted at touchstart).
+    // These positions never change during the touch, so no layout-shift flicker.
+    if (frozenCardZones.length === 0) return;
 
-    let closestEl = null;
+    let closestZone = null;
     let closestDist = Infinity;
-    let currentDist = Infinity;
 
-    for (const card of cards) {
-      const rect = card.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2;
-      const dist = Math.abs(currentTouchPos.x - cx);
+    for (const zone of frozenCardZones) {
+      const dist = Math.abs(currentTouchPos.x - zone.centerX);
       if (dist < closestDist) {
         closestDist = dist;
-        closestEl = card;
-      }
-      if (card === touchedCardElement) {
-        currentDist = dist;
+        closestZone = zone;
       }
     }
 
-    // Only switch if the new card is at least 15px closer than the current one
-    if (closestEl && closestEl !== touchedCardElement && (currentDist - closestDist) > 15) {
-      const state = getLatestState();
-      const card = getCardFromInstanceId(closestEl.dataset.instanceId, state);
-      if (card) {
-        touchedCardElement = closestEl;
-        touchedCard = card;
-        focusCardElement(closestEl);
-      }
+    if (closestZone && closestZone.element !== touchedCardElement) {
+      touchedCardElement = closestZone.element;
+      touchedCard = closestZone.card;
+      focusCardElement(closestZone.element);
     }
   }
 
