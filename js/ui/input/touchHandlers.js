@@ -186,7 +186,7 @@ const getTouchedCard = (x, y, state) => {
 /**
  * Focus a card element for inspection (highlights it and shows details)
  */
-export const focusCardElement = (cardElement) => {
+export const focusCardElement = (cardElement, { showTooltip = false } = {}) => {
   if (!cardElement) return;
 
   // Remove focus from all other cards
@@ -194,11 +194,11 @@ export const focusCardElement = (cardElement) => {
     el.classList.remove('hand-focus');
   });
 
-  // Add focus to this card
+  // Add focus to this card (visual lift only — no tooltip unless explicitly requested)
   cardElement.classList.add('hand-focus');
 
-  // Notify external callback (for inspector panel updates)
-  if (onCardFocus) {
+  // Only show tooltip on explicit request (tap, not hold/drag)
+  if (showTooltip && onCardFocus) {
     const instanceId = cardElement.dataset.instanceId;
     const state = getLatestState();
     if (instanceId && state) {
@@ -275,6 +275,9 @@ const handleTouchStart = (e) => {
 
   touchedCardElement = touched.element;
   touchedCard = touched.card;
+
+  // Dismiss any existing tooltip from a previous tap
+  hideCardTooltipImmediate();
 
   // Immediately elevate (focus) the touched card - this is the card that will be dragged
   // The hand-focus class makes it visually elevated and is used to determine what to drag
@@ -491,8 +494,8 @@ const handleTouchEnd = (e) => {
     const wasQuickTap = touchDuration < TAP_MAX_DURATION_MS && touchMovement < TAP_MAX_MOVEMENT_PX;
 
     if (wasQuickTap && touchedCard && touchedCardElement) {
-      // Quick tap on card - show tooltip/focus the card
-      focusCardElement(touchedCardElement);
+      // Quick tap on card - show tooltip AND focus the card
+      focusCardElement(touchedCardElement, { showTooltip: true });
     }
   }
 

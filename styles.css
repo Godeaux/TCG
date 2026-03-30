@@ -2806,7 +2806,7 @@ button {
   border-bottom: 1px solid var(--border-subtle);
 }
 
-/* Card name: ~8% of card height */
+/* Card name: auto-sized, never collapses below readable height */
 .card-name {
   font-weight: 600;
   font-size: var(--font-sm);
@@ -2814,9 +2814,10 @@ button {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  padding: 4px 6px;
+  padding: 2cqi 3cqi;
   background: rgba(0, 0, 0, 0.4);
-  flex: 0 0 8%;
+  flex: 0 0 auto;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
