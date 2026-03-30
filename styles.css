@@ -7110,11 +7110,12 @@ select.menu-input option {
   }
 
   .deck-select-panel .deck-emoji {
-    font-size: 1.4rem;
+    font-size: 1.8rem;
   }
 
   .deck-select-panel .deck-name {
-    font-size: 1rem;
+    font-size: 1.3rem;
+    font-weight: 700;
   }
 
   .deck-grid {
