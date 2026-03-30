@@ -1,7 +1,7 @@
 /**
  * Rules Coverage Tests
  *
- * Comprehensive tests for game rules documented in CORE-RULES-S.md.
+ * Comprehensive tests for game rules documented in CORE-RULES.md.
  * Each test references the specific section it covers.
  * Tests that FAIL represent bugs in the game code that need fixing.
  */

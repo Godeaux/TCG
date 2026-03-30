@@ -62,7 +62,7 @@ describe('Frozen Keyword', () => {
     it('paralyzed creature (from Neurotoxic) has paralyzed flag and death turn', () => {
       const { creature } = createTestCreature('fish-prey-blobfish', 0, 0, state);
 
-      // Neurotoxic applies PARALYSIS (not Frozen) per CORE-RULES-S.md §7
+      // Neurotoxic applies PARALYSIS (not Frozen) per CORE-RULES.md §7
       // Paralysis: loses all abilities, grants Harmless, dies at end of turn
       creature.paralyzed = true;
       creature.paralyzedUntilTurn = state.turn + 1;

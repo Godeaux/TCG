@@ -142,7 +142,7 @@ The game has two different functions that handle creature death, with different 
 
 ### H1. Regen ignores consumption/buff HP gains (Major)
 - **File:** `js/game/turnManager.js`, `handleRegen()` ~line 151
-- **Rule:** CORE-RULES-S.md §6.1 — "Current max HP: Base HP + any HP gained from consumption, buffs, or effects. This becomes the new ceiling for healing/Regen."
+- **Rule:** CORE-RULES.md §6.1 — "Current max HP: Base HP + any HP gained from consumption, buffs, or effects. This becomes the new ceiling for healing/Regen."
 - **What happens:** A predator with Regen that consumed prey (gaining +N/+N) or received buff HP takes damage. At end of turn, Regen heals to `creature.hp` (base HP), ignoring the consumption/buff gains.
 - **Example:** Predator base 3/3, consumes 2 prey (+2/+2) → 5/5. Takes 3 damage → 5/2. Regen heals to 3 (base) instead of 5 (boosted max).
 - **Why:** `handleRegen` uses `creature.hp` (base stat) as the healing ceiling instead of tracking the creature's actual max HP (base + consumption + buffs).
@@ -156,7 +156,7 @@ The game has two different functions that handle creature death, with different 
 
 ### O1. finalizeEndPhase runs Frozen thaw before Paralysis death
 - **File:** `js/game/turnManager.js`, `finalizeEndPhase()` ~line 393
-- **Rule:** CORE-RULES-S.md §14 — Order should be: Regen → Paralysis death → cleanup → Frozen thaw
+- **Rule:** CORE-RULES.md §14 — Order should be: Regen → Paralysis death → cleanup → Frozen thaw
 - **What happens:** Code runs `handleRegen → handleFrozenThaw → handleParalysisDeath → cleanupDestroyed`. Frozen thaw happens at step 2 instead of step 5.
 - **Impact:** No observable gameplay bug yet because thaw and paralysis death don't currently interact. But violates the spec and could matter if future mechanics depend on order.
 - **Fix:** Reorder to: `handleRegen → handleParalysisDeath → cleanupDestroyed → handleFrozenThaw`

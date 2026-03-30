@@ -5,7 +5,7 @@
  * Player 1: Bird deck
  * Player 2: Reptile deck
  *
- * Tests game rules, keyword interactions, and edge cases per CORE-RULES-S.md.
+ * Tests game rules, keyword interactions, and edge cases per CORE-RULES.md.
  * Any bugs found here are written as FAILING tests.
  */
 
@@ -484,7 +484,7 @@ describe('Explorer Run 7: End-of-Turn Rule Compliance', () => {
   });
 
   it('FAILING: Paralysis death should happen BEFORE Frozen thaw per §14', () => {
-    // Per CORE-RULES-S.md §14:
+    // Per CORE-RULES.md §14:
     // Step 3: Paralysis death
     // Step 5: Frozen thaw (LAST)
     // A creature that is both Paralyzed and Frozen should die from Paralysis
@@ -596,7 +596,7 @@ describe('Explorer Run 7: Controller cleanup inconsistency (Root Cause B)', () =
 // ============================================================================
 describe('Explorer Run 7: Regen heals to base HP instead of max HP (NEW BUG)', () => {
   it('FAILING: Regen should heal to current max HP (base + consumption/buff gains), not just base HP', () => {
-    // Per CORE-RULES-S.md §6.1:
+    // Per CORE-RULES.md §6.1:
     //   "Current max HP: Base HP + any HP gained from consumption, buffs, or effects.
     //    This becomes the new ceiling for healing/Regen."
     //

@@ -39,7 +39,7 @@ describe('Keyword Interaction Edge Cases', () => {
       const result = killFn(context);
 
       // Invisible creatures CANNOT be targeted by kill effects
-      // Per CORE-RULES-S.md §6: "Cannot be TARGETED by attacks OR spells/abilities.
+      // Per CORE-RULES.md §6: "Cannot be TARGETED by attacks OR spells/abilities.
       // Mass effects still affect them."
       // selectEnemyToKill is a TARGETED effect, so Invisible blocks it
       expect(result.selectTarget?.candidates?.length ?? 0).toBe(0);
@@ -54,7 +54,7 @@ describe('Keyword Interaction Edge Cases', () => {
       const result = killFn(context);
 
       // Mass effects ("all") still affect Invisible creatures
-      // Per CORE-RULES-S.md §6: mass effects bypass Invisible targeting restriction
+      // Per CORE-RULES.md §6: mass effects bypass Invisible targeting restriction
       expect(result.killAllCreatures.length).toBe(2);
     });
   });

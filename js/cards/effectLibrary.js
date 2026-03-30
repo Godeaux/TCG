@@ -1035,7 +1035,7 @@ export const killAll = (targetType) => (context) => {
   const { log, player, opponent, state } = context;
   let targets = [];
 
-  // Per CORE-RULES-S.md §6: Mass effects ("all") affect Invisible creatures.
+  // Per CORE-RULES.md §6: Mass effects ("all") affect Invisible creatures.
   // Invisible only prevents TARGETED effects, not mass effects.
   if (targetType === 'all-prey') {
     targets = [
@@ -1195,7 +1195,7 @@ export const selectCardToDiscard =
  */
 export const selectEnemyToKill = () => (context) => {
   const { log, opponent, player, state } = context;
-  // Per CORE-RULES-S.md §6: Invisible prevents TARGETED effects (including kill selection)
+  // Per CORE-RULES.md §6: Invisible prevents TARGETED effects (including kill selection)
   const targets = opponent.field.filter(
     (c) =>
       c &&

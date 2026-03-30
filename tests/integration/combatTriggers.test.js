@@ -352,7 +352,7 @@ describe('onDefend Trigger', () => {
 
   describe('Ambush vs onDefend Interaction', () => {
     it('Ambush attacker IS affected by onDefend effects (Ambush only blocks counter-damage)', () => {
-      // Per CORE-RULES-S.md §5.3: Combat priority order is:
+      // Per CORE-RULES.md §5.3: Combat priority order is:
       // Step 3: Before-combat effects
       // Step 4: On-defend effects (ALWAYS fires)
       // Step 5: Combat damage (Ambush prevents counter-damage HERE)
