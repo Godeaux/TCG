@@ -1494,24 +1494,27 @@ const initHandPreview = () => {
       // The raise animation (translateY + scale) takes ~180ms; if we measure
       // getBoundingClientRect() before it completes, the tooltip anchors to the
       // pre-raise position instead of the final raised position.
-      const onRaised = () => {
-        if (cardElement.classList.contains('hand-focus')) {
-          showCardTooltip(card, cardElement, { showPreview: false });
-        }
-      };
-      // Listen for transitionend on the transform property
-      const handler = (e) => {
-        if (e.propertyName === 'transform') {
+      // ONLY show auto-tooltip on desktop — mobile touchHandlers manage tooltips separately.
+      if (!('ontouchstart' in window)) {
+        const onRaised = () => {
+          if (cardElement.classList.contains('hand-focus')) {
+            showCardTooltip(card, cardElement, { showPreview: false });
+          }
+        };
+        // Listen for transitionend on the transform property
+        const handler = (e) => {
+          if (e.propertyName === 'transform') {
+            cardElement.removeEventListener('transitionend', handler);
+            onRaised();
+          }
+        };
+        cardElement.addEventListener('transitionend', handler);
+        // Fallback: if transition doesn't fire (e.g. prefers-reduced-motion), show after 200ms
+        setTimeout(() => {
           cardElement.removeEventListener('transitionend', handler);
           onRaised();
-        }
-      };
-      cardElement.addEventListener('transitionend', handler);
-      // Fallback: if transition doesn't fire (e.g. prefers-reduced-motion), show after 200ms
-      setTimeout(() => {
-        cardElement.removeEventListener('transitionend', handler);
-        onRaised();
-      }, 220);
+        }, 220);
+      }
     }
   };
 
@@ -1519,8 +1522,12 @@ const initHandPreview = () => {
   const getCardBaseRect = (card) => card.getBoundingClientRect();
 
   const handlePointer = (event) => {
-    // Skip focus handling during touch drag operations (mobile)
-    // This prevents other cards from "hovering" when dragging a card across the field
+    // Skip ALL touch-originated pointer events — mobile has its own focus system
+    // in touchHandlers.js. Only desktop mouse/pen should use proximity detection.
+    if (event.pointerType === 'touch') {
+      return;
+    }
+    // Skip focus handling during drag operations
     if (
       isTouchDragging() ||
       targetingMode ||
