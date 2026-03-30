@@ -2836,6 +2836,7 @@ button {
   flex-wrap: nowrap;
   align-items: center;
   flex: 0 0 10%;
+  width: 100%;
   padding: 0;
   background: rgba(0, 0, 0, 0.3);
 }
@@ -3004,8 +3005,8 @@ button {
 .card-footer .card-stats-row {
   display: flex;
   gap: 0;
-  justify-content: stretch;
   align-items: stretch;
+  width: 100%;
 }
 
 .card-stat-box {
