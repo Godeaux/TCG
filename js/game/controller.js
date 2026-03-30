@@ -42,12 +42,17 @@ import {
   getTrapsFromHand,
 } from '../state/gameState.js';
 import { resolveCardEffect } from '../cards/index.js';
-import { isCreatureCard, createCardInstance } from '../cardTypes.js';
+import { createCardInstance } from '../cardTypes.js';
 import { resolveEffectResult as applyEffect } from './effects.js';
 import { isFreePlay, isEdible, hasScavenge, cantBeConsumed, cantConsume } from '../keywords.js';
 import { advancePhase, endTurn, finalizeEndPhase, getPositionEvaluator } from './turnManager.js';
 import { consumePrey } from './consumption.js';
-import { resolveCreatureCombat, resolveDirectAttack, hasBeforeCombatEffect } from './combat.js';
+import {
+  resolveCreatureCombat,
+  resolveDirectAttack,
+  hasBeforeCombatEffect,
+  cleanupDestroyed as combatCleanupDestroyed,
+} from './combat.js';
 import { getAvailableReactions, TRIGGER_EVENTS } from './triggers/index.js';
 
 // ============================================================================
@@ -439,9 +444,12 @@ export class GameController {
     if (card.type === 'Predator') {
       card.dryDropped = true;
       card.keywords = [];
-      logMessage(this.state, `${card.name} has no prey to consume — dry dropped (abilities suppressed).`);
+      logMessage(
+        this.state,
+        `${card.name} has no prey to consume — dry dropped (abilities suppressed).`
+      );
     }
-    
+
     // Place creature directly
     return this.placeCreatureInSlot(card, emptySlot, [], [], isFree);
   }
@@ -1208,44 +1216,18 @@ export class GameController {
   // ==========================================================================
 
   cleanupDestroyed() {
-    // Remove destroyed creatures
-    this.state.players.forEach((player) => {
-      player.field.forEach((creature, index) => {
-        if (creature && isCreatureCard(creature)) {
-          const currentHp = creature.currentHp ?? creature.hp;
-          if (currentHp <= 0) {
-            // Per CORE-RULES.md §8: Tokens do NOT go to carrion
-            if (!creature.isToken && !creature.id?.startsWith('token-')) {
-              player.carrion.push(creature);
-            }
-            player.field[index] = null;
+    // Delegate to combat.js's canonical implementation (single source of truth)
+    // Combat.js handles: two-phase slot clearing, abilitiesCancelled checks,
+    // visual effects, carrion, and synchronous onSlain resolution.
+    // Any onSlain effects requiring UI interaction (selectTarget/selectOption)
+    // are returned here for the controller to resolve.
+    const pendingUI = combatCleanupDestroyed(this.state);
 
-            // Trigger onSlain effect
-            const playerIndex = this.state.players.indexOf(player);
-            const opponentIndex = (playerIndex + 1) % 2;
-            const opponent = this.state.players[opponentIndex];
-
-            const slainResult = resolveCardEffect(creature, 'onSlain', {
-              log: (message) => logMessage(this.state, message),
-              player,
-              playerIndex,
-              opponent,
-              opponentIndex,
-              state: this.state,
-              creature,
-            });
-
-            if (slainResult) {
-              // Use resolveEffectChain to handle any UI requirements from onSlain effects
-              this.resolveEffectChain(slainResult, {
-                playerIndex,
-                opponentIndex,
-              });
-            }
-          }
-        }
-      });
-    });
+    if (pendingUI) {
+      for (const { result, playerIndex, opponentIndex } of pendingUI) {
+        this.resolveEffectChain(result, { playerIndex, opponentIndex });
+      }
+    }
   }
 
   notifyStateChange() {
