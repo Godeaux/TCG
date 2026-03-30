@@ -911,6 +911,24 @@ async function runGame(deck1Name, deck2Name, modelName) {
         continue;
       }
 
+      // Auto-skip Main phase if card limit is spent and no Free Spells in hand
+      if (
+        gameState.cardPlayedThisTurn &&
+        (gameState.phase === 'Main 1' || gameState.phase === 'Main 2')
+      ) {
+        const activeHand = gameState.players[activeIdx].hand;
+        const hasFreeSpell = activeHand.some((c) => c.type === 'Free Spell');
+        if (!hasFreeSpell) {
+          // Nothing playable — auto-advance past this Main phase
+          controller.execute({
+            type: engine.ActionTypes.ADVANCE_PHASE,
+            payload: {},
+          });
+          actionsThisTurn++;
+          continue;
+        }
+      }
+
       // Build state and ask LLM for decision
       const stateBefore = snapshotState(gameState);
       const qaState = buildQAState(gameState, activeIdx);
