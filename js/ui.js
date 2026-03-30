@@ -1493,23 +1493,8 @@ const initHandPreview = () => {
     }
   };
 
-  // Get base position of card (without focus transform applied)
-  const getCardBaseRect = (card) => {
-    const rect = card.getBoundingClientRect();
-    // If this card has focus, compensate for the transform offset
-    if (card.classList.contains('hand-focus')) {
-      // hand-focus applies translateY(-25px) scale(1.15)
-      // Approximate the original position
-      return {
-        left: rect.left + rect.width * 0.075, // compensate for scale
-        right: rect.right - rect.width * 0.075,
-        width: rect.width / 1.15,
-        height: rect.height / 1.15,
-        top: rect.top + 25 + rect.height * 0.075, // compensate for translateY and scale
-      };
-    }
-    return rect;
-  };
+  // Get bounding rect for a card — proximity detection uses relative centers
+  const getCardBaseRect = (card) => card.getBoundingClientRect();
 
   const handlePointer = (event) => {
     // Skip focus handling during touch drag operations (mobile)
