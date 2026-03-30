@@ -356,8 +356,9 @@ export const resolveDirectAttack = (state, attacker, opponent, attackerOwnerInde
 
 export const cleanupDestroyed = (state, { silent = false } = {}) => {
   const destroyedCreatures = [];
+  const pendingUI = [];
 
-  // PHASE 1: Identify destroyed creatures, handle molt, clear slots immediately
+  // PHASE 1: Identify destroyed creatures, clear slots immediately
   // This ensures field slots are freed BEFORE onSlain effects resolve (e.g., Meerkat Matriarch summons)
   state.players.forEach((player, playerIndex) => {
     player.field = player.field.map((card, slotIndex) => {
@@ -416,11 +417,15 @@ export const cleanupDestroyed = (state, { silent = false } = {}) => {
       }
 
       if (result) {
-        resolveEffectResult(state, result, {
+        // Resolve what we can synchronously; collect UI-dependent results for the controller
+        const uiResult = resolveEffectResult(state, result, {
           playerIndex,
           opponentIndex,
           card,
         });
+        if (uiResult) {
+          pendingUI.push({ result: uiResult, playerIndex, opponentIndex });
+        }
       }
     }
 
@@ -446,4 +451,8 @@ export const cleanupDestroyed = (state, { silent = false } = {}) => {
   if (!silent) {
     state.broadcast?.(state);
   }
+
+  // Return any pending UI interactions (selectTarget/selectOption from onSlain effects)
+  // for the controller to resolve via resolveEffectChain
+  return pendingUI.length > 0 ? pendingUI : null;
 };
