@@ -2834,10 +2834,9 @@ button {
   display: flex;
   gap: 0;
   flex-wrap: nowrap;
-  justify-content: space-around;
   align-items: center;
   flex: 0 0 10%;
-  padding: 0 4px;
+  padding: 0;
   background: rgba(0, 0, 0, 0.3);
 }
 
@@ -3004,8 +3003,8 @@ button {
 
 .card-footer .card-stats-row {
   display: flex;
-  gap: 6px;
-  justify-content: center;
+  gap: 0;
+  justify-content: stretch;
   align-items: stretch;
 }
 
