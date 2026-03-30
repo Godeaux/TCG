@@ -34,6 +34,11 @@ export const consumePrey = ({
   predator.currentAtk += totalNutrition;
   predator.currentHp += totalNutrition;
 
+  // Track consumption gains so Regen can heal to boosted max (CORE-RULES.md §6.1)
+  if (!predator.consumptionGains) predator.consumptionGains = { atk: 0, hp: 0 };
+  predator.consumptionGains.atk += totalNutrition;
+  predator.consumptionGains.hp += totalNutrition;
+
   preyList.forEach((prey) => {
     const player = state.players[playerIndex];
     const slotIndex = player.field.findIndex((slot) => slot?.instanceId === prey.instanceId);

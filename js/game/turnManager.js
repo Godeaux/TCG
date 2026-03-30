@@ -150,13 +150,17 @@ const handleParalysisDeath = (state) => {
 
 const handleRegen = (state) => {
   // Regen keyword: at end of turn, creatures with Regen restore to full HP
+  // Per CORE-RULES.md §6.1: "Current max HP" = base HP + consumption gains + buff gains
   const activePlayer = state.players[state.activePlayerIndex];
   activePlayer.field.forEach((creature) => {
     if (creature && creature.keywords?.includes('Regen')) {
-      const baseHp = creature.hp;
-      if (creature.currentHp < baseHp) {
-        const healAmount = baseHp - creature.currentHp;
-        creature.currentHp = baseHp;
+      // Calculate actual max HP including consumption and buff gains
+      const consumptionHp = creature.consumptionGains?.hp ?? 0;
+      const buffHp = creature.buffGains?.hp ?? 0;
+      const maxHp = creature.hp + consumptionHp + buffHp;
+      if (creature.currentHp < maxHp) {
+        const healAmount = maxHp - creature.currentHp;
+        creature.currentHp = maxHp;
         logGameAction(
           state,
           HEAL,
@@ -392,10 +396,11 @@ export const finalizeEndPhase = (state) => {
   if (state.endOfTurnFinalized) return;
 
   logGameAction(state, PHASE, `Processing end-of-turn effects...`);
+  // CORE-RULES.md §14 order: Regen → Paralysis death → cleanup → Frozen thaw
   handleRegen(state);
-  handleFrozenThaw(state); // Thaw frozen creatures (they survive)
   handleParalysisDeath(state); // Kill paralyzed creatures (per CORE-RULES.md §7)
-  cleanupDestroyed(state, { silent: true }); // Silent: endTurn broadcasts final state
+  cleanupDestroyed(state, { silent: true }); // Remove dead creatures before thaw
+  handleFrozenThaw(state); // Thaw frozen creatures last (they survive)
 
   const player = state.players[state.activePlayerIndex];
   logGameAction(

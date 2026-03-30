@@ -374,6 +374,12 @@ export const resolveEffectResult = (state, result, context) => {
       if (creature && (creature.type === 'Predator' || creature.type === 'Prey')) {
         creature.currentAtk += atk;
         creature.currentHp += hp;
+        // Track buff gains so Regen can heal to boosted max (CORE-RULES.md §6.1)
+        if (hp > 0) {
+          if (!creature.buffGains) creature.buffGains = { atk: 0, hp: 0 };
+          creature.buffGains.atk += atk;
+          creature.buffGains.hp += hp;
+        }
       }
     });
   }
