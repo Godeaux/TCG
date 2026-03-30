@@ -60,326 +60,44 @@ export const isCardLike = (value) =>
   typeof value.id === 'string';
 
 // ============================================================================
-// SVG EFFECT TEXT RENDERING
+// HTML TEXT RENDERING (uses CSS container query units for scaling)
 // ============================================================================
 
 /**
- * Context-aware SVG configurations
- * Different card contexts (hand, field, tooltip) need different viewBox sizes
- * to ensure text is readable at each scale
- */
-const SVG_CONFIGS = {
-  // Hand cards - medium-sized, need good readability
-  hand: {
-    effect: { width: 260, height: 60 },
-    name: { width: 210, height: 28 },
-    stats: { width: 200, height: 20 },
-    keywords: { width: 200, height: 20 },
-    maxChars: 26,
-  },
-  // Field cards - smaller, prioritize fitting content
-  field: {
-    effect: { width: 220, height: 50 },
-    name: { width: 180, height: 24 },
-    stats: { width: 180, height: 18 },
-    keywords: { width: 180, height: 18 },
-    maxChars: 22,
-  },
-  // Tooltip/inspector - largest, maximum readability
-  tooltip: {
-    effect: { width: 300, height: 70 },
-    name: { width: 260, height: 34 },
-    stats: { width: 240, height: 24 },
-    keywords: { width: 240, height: 24 },
-    maxChars: 30,
-  },
-  // Default (backwards compatible with existing behavior)
-  default: {
-    effect: { width: 240, height: 55 },
-    name: { width: 200, height: 26 },
-    stats: { width: 200, height: 20 },
-    keywords: { width: 200, height: 20 },
-    maxChars: 24,
-  },
-};
-
-/**
- * Get SVG config for a given context
- * @param {string} context - Card context ('hand', 'field', 'tooltip', or undefined)
- * @returns {Object} SVG configuration
- */
-const getSvgConfig = (context) => SVG_CONFIGS[context] || SVG_CONFIGS.default;
-
-// ============================================================================
-// TEXT MEASUREMENT (Canvas-based for accurate width calculation)
-// ============================================================================
-
-/**
- * Singleton canvas context for text measurement
- * Lazy-initialized to avoid issues in non-DOM environments (AI workers)
- */
-let measureCanvas = null;
-let measureContext = null;
-
-const getMeasureContext = () => {
-  if (!measureContext && typeof document !== 'undefined') {
-    measureCanvas = document.createElement('canvas');
-    measureContext = measureCanvas.getContext('2d');
-  }
-  return measureContext;
-};
-
-/**
- * Wrap text into lines based on pixel width (word-boundary aware)
- * Uses canvas measurement for accurate proportional font handling
- * @param {string} text - Text to wrap
- * @param {number} maxWidth - Maximum width in pixels (relative to viewBox)
- * @param {number} fontSize - Font size in pixels
- * @returns {string[]} Array of lines
- */
-const wrapTextByWidth = (text, maxWidth, fontSize) => {
-  if (!text) return [];
-
-  const font = `${fontSize}px system-ui, -apple-system, sans-serif`;
-  const ctx = getMeasureContext();
-
-  // Fallback to character-based if no canvas available
-  if (!ctx) {
-    // Estimate chars from width (assuming ~7px per char at fontSize 14)
-    const avgCharWidth = fontSize * 0.5;
-    const maxChars = Math.floor(maxWidth / avgCharWidth);
-    return wrapTextToLinesByChars(text, maxChars);
-  }
-
-  ctx.font = font;
-  const words = text.split(' ');
-  const lines = [];
-  let currentLine = '';
-
-  for (const word of words) {
-    const testLine = currentLine ? `${currentLine} ${word}` : word;
-    const testWidth = ctx.measureText(testLine).width;
-
-    if (testWidth <= maxWidth) {
-      currentLine = testLine;
-    } else {
-      if (currentLine) lines.push(currentLine);
-      // Handle words wider than maxWidth
-      const wordWidth = ctx.measureText(word).width;
-      if (wordWidth > maxWidth) {
-        lines.push(word); // Push as-is, will overflow but no good break point
-        currentLine = '';
-      } else {
-        currentLine = word;
-      }
-    }
-  }
-  if (currentLine) lines.push(currentLine);
-  return lines;
-};
-
-/**
- * Wrap text into lines based on character count (word-boundary aware)
- * Used as fallback for non-DOM environments (AI workers)
- * @param {string} text - Text to wrap
- * @param {number} maxChars - Maximum characters per line
- * @returns {string[]} Array of lines
- */
-const wrapTextToLinesByChars = (text, maxChars = 26) => {
-  if (!text) return [];
-
-  const words = text.split(' ');
-  const lines = [];
-  let currentLine = '';
-
-  for (const word of words) {
-    const testLine = currentLine ? `${currentLine} ${word}` : word;
-    if (testLine.length <= maxChars) {
-      currentLine = testLine;
-    } else {
-      if (currentLine) lines.push(currentLine);
-      // Handle words longer than maxChars
-      if (word.length > maxChars) {
-        lines.push(word);
-        currentLine = '';
-      } else {
-        currentLine = word;
-      }
-    }
-  }
-  if (currentLine) lines.push(currentLine);
-  return lines;
-};
-
-/**
- * Render effect text as SVG that scales perfectly with card
- * Uses width-based text wrapping for accurate line breaks with proportional fonts
- * @param {string} effectText - The effect text to render
- * @param {string} context - Card context ('hand', 'field', 'tooltip')
- * @returns {string} SVG markup
- */
-const renderEffectSvg = (effectText, context) => {
-  if (!effectText) return '';
-
-  const config = getSvgConfig(context);
-
-  // Context-aware viewBox dimensions
-  const viewBoxWidth = config.effect.width;
-  const viewBoxHeight = config.effect.height;
-
-  // Text area is 90% of viewBox width (leaving padding)
-  const maxTextWidth = viewBoxWidth * 0.9;
-
-  // Font size tiers for different line counts
-  const fontTiers = [
-    { maxLines: 1, fontSize: 19, lineHeight: 21, startY: 35 },
-    { maxLines: 2, fontSize: 16, lineHeight: 18, startY: 22 },
-    { maxLines: 3, fontSize: 14, lineHeight: 16, startY: 16 },
-    { maxLines: 4, fontSize: 12, lineHeight: 14, startY: 12 },
-    { maxLines: Infinity, fontSize: 10, lineHeight: 12, startY: 8 },
-  ];
-
-  // Try each font tier until text fits within viewBox height
-  let lines, fontSize, lineHeight, startY;
-
-  for (const tier of fontTiers) {
-    fontSize = tier.fontSize;
-    lineHeight = tier.lineHeight;
-    startY = tier.startY;
-
-    // Wrap text using width-based measurement (or char-based fallback)
-    lines = wrapTextByWidth(effectText, maxTextWidth, fontSize);
-
-    // Check if this fits (within maxLines for this tier, or last tier)
-    if (lines.length <= tier.maxLines) {
-      break;
-    }
-  }
-
-  // Create text elements for each line, centered
-  const textElements = lines
-    .map((line, i) => {
-      // Escape HTML entities
-      const escapedLine = line
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-
-      return `<text x="50%" y="${startY + i * lineHeight}" text-anchor="middle" font-size="${fontSize}" fill="#a0aec0">${escapedLine}</text>`;
-    })
-    .join('');
-
-  // xMidYMid meet: center content, scale uniformly to fit
-  return `
-    <svg class="card-effect-svg" viewBox="0 0 ${viewBoxWidth} ${viewBoxHeight}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-      <style>
-        text { font-family: system-ui, -apple-system, sans-serif; }
-      </style>
-      ${textElements}
-    </svg>
-  `;
-};
-
-/**
- * Render card name as SVG that scales with card size
+ * Render card name as HTML text (sized via CSS cqi units)
  * @param {string} name - Card name
- * @param {string} rarityClass - Optional rarity class for styling
- * @param {string} context - Card context ('hand', 'field', 'tooltip')
- * @returns {string} SVG markup
+ * @returns {string} HTML markup
  */
-const renderNameSvg = (name, rarityClass = '', context) => {
+const renderNameHtml = (name) => {
   if (!name) return '';
-
-  const config = getSvgConfig(context);
-  const viewBoxWidth = config.name.width;
-  const viewBoxHeight = config.name.height;
-
-  // Escape HTML entities
-  const escapedName = name
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-
-  // Adjust font size based on name length for better fit
-  let fontSize = 24;
-
-  if (name.length > 15) fontSize = 24;
-  if (name.length > 20) fontSize = 20;
-  if (name.length > 25) fontSize = 18;
-
-  // Map rarity to fill colors (matching existing CSS)
-  let fillColor = '#e2e8f0'; // default
-  if (rarityClass.includes('rarity-uncommon')) fillColor = '#22c55e';
-  if (rarityClass.includes('rarity-rare')) fillColor = '#3b82f6';
-  if (rarityClass.includes('rarity-epic')) fillColor = '#a855f7';
-  if (rarityClass.includes('rarity-legendary')) fillColor = '#f59e0b';
-
-  return `
-    <svg class="card-name-svg" viewBox="0 0 ${viewBoxWidth} ${viewBoxHeight}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-      <style>
-        text { font-family: system-ui, -apple-system, sans-serif; font-weight: 600; }
-      </style>
-      <text x="50%" y="20" text-anchor="middle" font-size="${fontSize}" fill="${fillColor}">${escapedName}</text>
-    </svg>
-  `;
+  const escaped = name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return `<div class="card-name-text">${escaped}</div>`;
 };
 
 /**
- * Render card stats as SVG that scales with card size
+ * Render card stats as HTML text (sized via CSS cqi units)
  * @param {Array} stats - Array of stat objects { emoji, value, className }
- * @param {boolean} hasNut - Whether the card has nutrition stat
- * @param {string} context - Card context ('hand', 'field', 'tooltip')
- * @returns {string} SVG markup
+ * @returns {string} HTML markup
  */
-const renderStatsSvg = (stats, hasNut, context) => {
+const renderStatsHtml = (stats) => {
   if (!stats || stats.length === 0) return '';
-
-  const config = getSvgConfig(context);
-  const viewBoxWidth = config.stats.width;
-  const viewBoxHeight = config.stats.height;
-  const fontSize = Math.round(viewBoxHeight * 0.7); // Scale font with viewBox
-
-  // Calculate spacing based on number of stats
-  const statCount = stats.length;
-  const spacing = viewBoxWidth / (statCount + 1);
-
-  const statElements = stats
-    .map((stat, i) => {
-      const x = spacing * (i + 1);
-      // Color based on stat type
-      let fillColor = '#a0aec0';
-      if (stat.className === 'atk') fillColor = '#f97316'; // orange
-      if (stat.className === 'hp') fillColor = '#ef4444'; // red
-      if (stat.className === 'nut') fillColor = '#3dfe1fff'; // purple
-
-      return `<text x="${x}" y="16" text-anchor="middle" font-size="${fontSize}" fill="${fillColor}">${stat.emoji} ${stat.value}</text>`;
-    })
-    .join('');
-
-  return `
-    <svg class="card-stats-svg" viewBox="0 0 ${viewBoxWidth} ${viewBoxHeight}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-      <style>
-        text { font-family: system-ui, -apple-system, sans-serif; font-weight: 600; }
-      </style>
-      ${statElements}
-    </svg>
-  `;
+  const spans = stats
+    .map((stat) => `<span class="stat-${stat.className}">${stat.emoji} ${stat.value}</span>`)
+    .join(' ');
+  return `<div class="card-stats-text">${spans}</div>`;
 };
 
 /**
- * Render keywords as SVG that scales with card size
+ * Render keywords as HTML text (sized via CSS cqi units)
  * @param {Object} card - Card with keywords array
- * @param {string} context - Card context ('hand', 'field', 'tooltip')
- * @returns {string} SVG markup
+ * @returns {string} HTML markup
  */
-const renderKeywordsSvg = (card, context) => {
+const renderKeywordsHtml = (card) => {
   const tags = [];
 
   // Add regular keywords (suppressed for dry-dropped predators)
   if (Array.isArray(card.keywords) && card.keywords.length && areAbilitiesActive(card)) {
-    tags.push(...card.keywords.map((keyword) => ({ text: keyword })));
+    tags.push(...card.keywords.map((keyword) => ({ text: keyword, isDeadly: false })));
   }
 
   // Add Neurotoxined status
@@ -389,58 +107,14 @@ const renderKeywordsSvg = (card, context) => {
 
   if (tags.length === 0) return '';
 
-  const config = getSvgConfig(context);
-  const viewBoxWidth = config.keywords.width;
-  const viewBoxHeight = config.keywords.height;
-  const fontSize = Math.round(viewBoxHeight * 0.6); // Scale font with viewBox
-
-  // Calculate total text width estimate and spacing
-  const totalChars = tags.reduce((sum, tag) => sum + tag.text.length, 0);
-  const avgCharWidth = 7; // approximate pixels per character at fontSize 12
-  const totalTextWidth = totalChars * avgCharWidth + (tags.length - 1) * 10; // with gaps
-
-  // If content is too wide, reduce font size
-  let adjustedFontSize = fontSize;
-  if (totalTextWidth > viewBoxWidth - 20) {
-    adjustedFontSize = Math.max(8, (fontSize * (viewBoxWidth - 20)) / totalTextWidth);
-  }
-
-  // Calculate x positions for each tag (centered layout)
-  let currentX = viewBoxWidth / 2;
-  const tagWidths = tags.map(
-    (tag) => tag.text.length * avgCharWidth * (adjustedFontSize / fontSize)
-  );
-  const totalWidth = tagWidths.reduce((sum, w) => sum + w, 0) + (tags.length - 1) * 8;
-  let startX = (viewBoxWidth - totalWidth) / 2;
-
-  const tagElements = tags
-    .map((tag, i) => {
-      const x =
-        startX + tagWidths.slice(0, i).reduce((sum, w) => sum + w + 8, 0) + tagWidths[i] / 2;
-
-      // Escape HTML entities
-      const escapedText = tag.text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-
-      // Color based on tag type - white for keywords to pop
-      let fillColor = '#ffffff'; // white for regular keywords
-      if (tag.isDeadly) fillColor = '#ef4444'; // red
-
-      return `<text x="${x}" y="14" text-anchor="middle" font-size="${adjustedFontSize}" font-weight="600" fill="${fillColor}">${escapedText}</text>`;
+  const spans = tags
+    .map((tag) => {
+      const escaped = tag.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const cls = tag.isDeadly ? 'keyword-tag keyword-tag-deadly' : 'keyword-tag';
+      return `<span class="${cls}">${escaped}</span>`;
     })
-    .join('');
-
-  return `
-    <svg class="card-keywords-svg" viewBox="0 0 ${viewBoxWidth} ${viewBoxHeight}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-      <style>
-        text { font-family: system-ui, -apple-system, sans-serif; }
-      </style>
-      ${tagElements}
-    </svg>
-  `;
+    .join(' ');
+  return `<div class="card-keywords-text">${spans}</div>`;
 };
 
 // ============================================================================
@@ -728,9 +402,9 @@ export const renderCardInnerHtml = (
   const hasNut = hasNutrition(card);
 
   const effectSummary = showEffectSummary ? getCardEffectSummary(card) : '';
-  // Use SVG for effect text - scales perfectly with card size
+  // Use HTML text with CSS container query units for scaling
   const effectRow = effectSummary
-    ? `<div class="card-effect">${renderEffectSvg(effectSummary, context)}</div>`
+    ? `<div class="card-effect"><div class="card-effect-text">${effectSummary}</div></div>`
     : '';
 
   // Check if card has an image (and hasn't failed to load before)
@@ -747,15 +421,15 @@ export const renderCardInnerHtml = (
   // Add rarity class to card name if card has a rarity
   const nameRarityClass = card.rarity ? ` rarity-${card.rarity}` : '';
 
-  // Use SVG rendering for title, stats, and keywords - scales proportionally with card size
+  // HTML text rendering with CSS cqi units handles all sizing automatically
   return `
-    <div class="card-name${nameRarityClass}">${renderNameSvg(card.name, nameRarityClass, context)}</div>
+    <div class="card-name${nameRarityClass}">${renderNameHtml(card.name)}</div>
     <div class="card-image-container">
       ${imageHtml}
     </div>
     <div class="card-content-area">
-      <div class="card-stats-row${!hasNut && stats.length > 0 ? ' two-stats' : ''}">${renderStatsSvg(stats, hasNut, context)}</div>
-      <div class="card-keywords">${renderKeywordsSvg(card, context)}</div>
+      <div class="card-stats-row${!hasNut && stats.length > 0 ? ' two-stats' : ''}">${renderStatsHtml(stats)}</div>
+      <div class="card-keywords">${renderKeywordsHtml(card)}</div>
       ${effectRow}
     </div>
   `;
@@ -1087,7 +761,7 @@ export const renderCard = (card, options = {}) => {
     });
   }
 
-  // Text scaling is now handled by SVG viewBox - no manual adjustment needed
+  // Text scaling is now handled by CSS container query (cqi) units - no manual adjustment needed
 
   return cardElement;
 };

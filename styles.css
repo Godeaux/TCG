@@ -2749,6 +2749,7 @@ button {
   transition: transform var(--transition-fast), box-shadow var(--transition-fast);
   aspect-ratio: 5 / 7; /* Standard playing card ratio */
   width: 100%;
+  container-type: inline-size;
 }
 
 .card::before {
@@ -2905,34 +2906,51 @@ button {
   overflow: hidden;
 }
 
-/* SVG effect text - scales perfectly with card */
-.card-effect-svg {
-  width: 100%;
-  height: 100%;
-  max-height: 100%;
-  min-height: 0; /* Allow SVG to shrink with container */
+/* HTML text elements - scaled via CSS container query (cqi) units */
+.card-name-text {
+  font-size: clamp(8px, 7cqi, 20px);
+  font-weight: 600;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* SVG name/title - scales proportionally with card */
-.card-name-svg {
-  width: 100%;
-  height: 100%;
-  display: block;
+.card-effect-text {
+  font-size: clamp(6px, 5cqi, 14px);
+  color: var(--text-muted, #a0aec0);
+  text-align: center;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
 }
 
-/* SVG stats - scales proportionally with card */
-.card-stats-svg {
-  width: 100%;
-  height: 100%;
-  display: block;
+.card-stats-text {
+  font-size: clamp(7px, 5.5cqi, 16px);
+  font-weight: 600;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  gap: 2cqi;
 }
 
-/* SVG keywords - scales proportionally with card */
-.card-keywords-svg {
-  width: 100%;
-  height: 100%;
-  display: block;
+.stat-atk { color: #f97316; }
+.stat-hp { color: #ef4444; }
+.stat-nut { color: #3dfe1f; }
+
+.card-keywords-text {
+  font-size: clamp(6px, 4.5cqi, 12px);
+  font-weight: 600;
+  color: #ffffff;
+  text-align: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1cqi;
 }
+
+.keyword-tag-deadly { color: #ef4444; }
 
 /* Image container: ~50% of card height */
 .card-image-container {
@@ -11846,25 +11864,6 @@ select.menu-input option {
 
 .tooltip-card-preview .card.tooltip-card {
   pointer-events: none;
-}
-
-/* Container query sizing for tooltip cards - scales with preview width */
-@container tooltip-preview (min-width: 200px) {
-  .card .card-name {
-    font-size: clamp(12px, 6cqi, 18px);
-  }
-  .card .card-stat {
-    font-size: clamp(10px, 5cqi, 14px);
-  }
-}
-
-@container tooltip-preview (min-width: 300px) {
-  .card .card-name {
-    font-size: clamp(14px, 5cqi, 20px);
-  }
-  .card .card-stat {
-    font-size: clamp(12px, 4cqi, 16px);
-  }
 }
 
 /* Info-only mode (hand cards) - no card preview, just info boxes */
