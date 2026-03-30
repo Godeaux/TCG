@@ -2945,8 +2945,13 @@ button {
   font-weight: 600;
   text-align: center;
   display: flex;
-  justify-content: center;
-  gap: 2cqi;
+  width: 100%;
+  gap: 0;
+}
+
+.card-stats-text > span {
+  flex: 1;
+  text-align: center;
 }
 
 .stat-atk { color: #f97316; }
