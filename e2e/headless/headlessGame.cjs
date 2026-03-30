@@ -482,6 +482,21 @@ async function executeLLMAction(controller, state, uiState, action, playerIndex,
       const attacker = me.field[action.attackerSlot];
       if (!attacker) return { success: false, error: `No creature at slot ${action.attackerSlot}` };
 
+      // Check if creature already attacked this turn
+      const maxStrikes = attacker.multiStrike || 1;
+      if (attacker.attacksMadeThisTurn >= maxStrikes) {
+        return { success: false, error: `${attacker.name} already attacked this turn` };
+      }
+
+      // Check summoning sickness for face attacks
+      if (
+        action.target === 'player' &&
+        attacker.summonedTurn >= state.turn &&
+        !engine.keywords.hasHaste(attacker)
+      ) {
+        return { success: false, error: `${attacker.name} has summoning sickness` };
+      }
+
       let target;
       if (action.target === 'player') {
         target = { type: 'player', player: opp };
@@ -541,11 +556,23 @@ async function executeLLMAction(controller, state, uiState, action, playerIndex,
     }
 
     case 'endTurn': {
-      // Advance through remaining phases to end turn
+      // Use END_TURN action directly — it handles all phase advancement internally
       const startTurn = state.turn;
-      let safety = 0;
+      const endResult = controller.execute({
+        type: engine.ActionTypes.END_TURN,
+        payload: {},
+      });
 
-      while (state.turn === startTurn && safety < 20) {
+      // Resolve any pending selections from end-of-turn effects
+      while (_pendingSelection) {
+        const sel = _pendingSelection;
+        _pendingSelection = null;
+        await resolveSelection(sel, state, playerIndex, '', model);
+      }
+
+      // If END_TURN didn't advance (e.g., pending end-of-turn effects), fall back to ADVANCE_PHASE loop
+      let safety = 0;
+      while (state.turn === startTurn && safety < 10) {
         safety++;
 
         // Process any pending end-of-turn effects
