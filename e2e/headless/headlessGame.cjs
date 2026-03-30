@@ -178,6 +178,7 @@ function buildQAState(state, playerIndex) {
     pendingContext,
     ui: {
       isMyTurn: state.activePlayerIndex === playerIndex,
+      cardPlayedThisTurn: state.cardPlayedThisTurn || false,
     },
   };
 }

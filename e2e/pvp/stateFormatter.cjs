@@ -271,15 +271,21 @@ function formatStatePrompt(qaState, playerIndex, deckName = 'Unknown') {
   // Available actions
   lines.push('AVAILABLE ACTIONS:');
   if (qaState.phase === 'Main 1' || qaState.phase === 'Main 2') {
-    lines.push(
-      '  This is the PLAY phase. Play a card OR pass. Combat happens automatically after.'
-    );
-    lines.push('  PLAY hand#                  — Play a card (e.g. PLAY 0)');
-    lines.push(
-      '  PLAY hand# EAT slot#,slot#  — Play predator eating field prey for +1/+1 per prey'
-    );
-    lines.push('  PLAY hand# DRY_DROP         — Play predator without eating (loses keywords!)');
-    lines.push('  PASS                        — Skip playing (if field full or no good plays)');
+    if (qaState.ui?.cardPlayedThisTurn) {
+      lines.push('  ⚠️ CARD LIMIT USED — you already played a card this turn.');
+      lines.push("  You may still play FREE SPELL cards (they don't consume the limit).");
+      lines.push('  PASS                        — End your main phase');
+    } else {
+      lines.push(
+        '  This is the PLAY phase. Play a card OR pass. Combat happens automatically after.'
+      );
+      lines.push('  PLAY hand#                  — Play a card (e.g. PLAY 0)');
+      lines.push(
+        '  PLAY hand# EAT slot#,slot#  — Play predator eating field prey for +1/+1 per prey'
+      );
+      lines.push('  PLAY hand# DRY_DROP         — Play predator without eating (loses keywords!)');
+      lines.push('  PASS                        — Skip playing (if field full or no good plays)');
+    }
     lines.push('  You CANNOT attack during this phase. Attacks happen next in Combat.');
   } else if (qaState.phase === 'Combat') {
     lines.push('  *** YOU CAN ONLY ATTACK DURING COMBAT — NOT PLAY CARDS ***');
