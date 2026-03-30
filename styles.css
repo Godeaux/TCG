@@ -3066,6 +3066,12 @@ button {
   color: #f97316;
 }
 .stat-hp {
+  color: #ffffff;
+}
+.stat-hp.hp-buffed {
+  color: #22c55e;
+}
+.stat-hp.hp-damaged {
   color: #ef4444;
 }
 .stat-nut {

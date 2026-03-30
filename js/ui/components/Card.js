@@ -143,7 +143,13 @@ export const renderCardStats = (card, options = {}) => {
     }
     const hp = useBaseStats ? card.hp : (card.currentHp ?? card.hp);
     stats.push({ emoji: '⚔', value: atk, className: 'atk' });
-    stats.push({ emoji: '❤', value: hp, className: 'hp' });
+    // HP color: green if above base, red if below base, white at base (Hearthstone-style)
+    let hpClass = 'hp';
+    if (!useBaseStats && card.currentHp !== undefined) {
+      if (card.currentHp > card.hp) hpClass = 'hp hp-buffed';
+      else if (card.currentHp < card.hp) hpClass = 'hp hp-damaged';
+    }
+    stats.push({ emoji: '❤', value: hp, className: hpClass });
   }
   if (card.type === 'Prey') {
     stats.push({ emoji: '🍖', value: card.nutrition, className: 'nut' });
