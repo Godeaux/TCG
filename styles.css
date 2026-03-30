@@ -7101,6 +7101,22 @@ select.menu-input option {
     display: none;
   }
 
+  .deck-select-panel {
+    min-height: 60px;
+    padding: 10px 14px;
+    gap: 4px;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .deck-select-panel .deck-emoji {
+    font-size: 1.4rem;
+  }
+
+  .deck-select-panel .deck-name {
+    font-size: 1rem;
+  }
+
   .deck-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 8px;
