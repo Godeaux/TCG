@@ -6355,121 +6355,174 @@ select.menu-input option {
   background: linear-gradient(135deg, rgba(48, 48, 48, 0.85), rgba(20, 20, 20, 0.95));
 }
 
-/* Desktop: star/pentagon formation for deck selection */
+/* Desktop: pentagonal wedge formation for deck selection */
 @media (min-width: 769px) {
   .deck-select-overlay .overlay-content.deck-select-card {
-    width: 85vw;
+    width: 90vw;
     max-width: 1200px;
   }
 
   .deck-select-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: auto auto;
-    gap: 24px;
-    justify-items: center;
-    padding: 20px 40px;
-  }
-
-  /* Star layout: top row has 2 centered, bottom row has 3 */
-  .deck-select-grid .deck-select-panel:nth-child(1) {
-    grid-column: 1;
-    grid-row: 1;
-    justify-self: end;
-  }
-  .deck-select-grid .deck-select-panel:nth-child(2) {
-    grid-column: 3;
-    grid-row: 1;
-    justify-self: start;
-  }
-  .deck-select-grid .deck-select-panel:nth-child(3) {
-    grid-column: 1;
-    grid-row: 2;
-  }
-  .deck-select-grid .deck-select-panel:nth-child(4) {
-    grid-column: 2;
-    grid-row: 2;
-  }
-  .deck-select-grid .deck-select-panel:nth-child(5) {
-    grid-column: 3;
-    grid-row: 2;
-  }
-
-  .deck-select-panel {
-    width: 220px;
-    min-height: 160px;
-    border-radius: 20px;
-    padding: 24px 20px;
     position: relative;
+    display: block;
+    aspect-ratio: 16 / 9;
     overflow: hidden;
-    cursor: pointer;
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
-                box-shadow 0.3s ease,
-                border-color 0.3s ease,
-                filter 0.3s ease;
+    border-radius: 20px;
+    background: rgba(0, 0, 0, 0.2);
   }
 
-  /* Ambient glow behind each panel */
-  .deck-select-panel::before {
+  /* Hide extra text — just emoji + name in wedges */
+  .deck-select-grid .deck-select-panel .deck-status,
+  .deck-select-grid .deck-select-panel .deck-meta,
+  .deck-select-grid .deck-select-panel .deck-experimental-badge {
+    display: none;
+  }
+
+  /* Hide back button inside the star grid */
+  .deck-select-grid .deck-select-back-btn,
+  .deck-select-grid > div:not(.deck-select-panel) {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+  }
+
+  /* All panels: absolute-fill, clipped to wedge */
+  .deck-select-grid .deck-select-panel {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    border: none;
+    min-height: unset;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0;
+    cursor: pointer;
+    z-index: 1;
+    transition: filter 0.35s ease, opacity 0.35s ease;
+  }
+
+  /* Wedge border lines */
+  .deck-select-grid .deck-select-panel::after {
     content: '';
     position: absolute;
-    inset: -2px;
-    border-radius: 22px;
-    opacity: 0;
-    transition: opacity 0.4s ease;
-    z-index: -1;
+    inset: 0;
+    clip-path: inherit;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    pointer-events: none;
+    z-index: 3;
   }
 
-  .deck-select-panel--fish::before {
-    background: radial-gradient(circle, rgba(54, 108, 180, 0.6), transparent 70%);
+  /* === PENTAGONAL CLIP PATHS === */
+  /* 5 wedges from center (50%,50%) to edges, 72° each */
+  .deck-select-grid .deck-select-panel--fish {
+    clip-path: polygon(50% 50%, 13.7% 0%, 86.3% 0%);
   }
-  .deck-select-panel--bird::before {
-    background: radial-gradient(circle, rgba(200, 160, 40, 0.6), transparent 70%);
+  .deck-select-grid .deck-select-panel--bird {
+    clip-path: polygon(50% 50%, 86.3% 0%, 100% 0%, 100% 66.2%);
   }
-  .deck-select-panel--mammal::before {
-    background: radial-gradient(circle, rgba(140, 92, 68, 0.6), transparent 70%);
+  .deck-select-grid .deck-select-panel--mammal {
+    clip-path: polygon(50% 50%, 0% 66.2%, 0% 0%, 13.7% 0%);
   }
-  .deck-select-panel--reptile::before {
-    background: radial-gradient(circle, rgba(60, 142, 74, 0.6), transparent 70%);
+  .deck-select-grid .deck-select-panel--reptile {
+    clip-path: polygon(50% 50%, 100% 66.2%, 100% 100%, 50% 100%);
   }
-  .deck-select-panel--amphibian::before {
-    background: radial-gradient(circle, rgba(92, 180, 116, 0.6), transparent 70%);
-  }
-
-  /* Hover: lift, scale, glow */
-  .deck-select-panel:hover:not(.disabled) {
-    transform: translateY(-8px) scale(1.06);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.5);
-    filter: brightness(1.15);
+  .deck-select-grid .deck-select-panel--amphibian {
+    clip-path: polygon(50% 50%, 50% 100%, 0% 100%, 0% 66.2%);
   }
 
-  .deck-select-panel:hover::before {
-    opacity: 1;
+  /* === POSITION CONTENT AT WEDGE CENTROIDS (padding bias) === */
+  .deck-select-grid .deck-select-panel--fish {
+    padding-bottom: 66%;
+  }
+  .deck-select-grid .deck-select-panel--bird {
+    padding-left: 50%;
+    padding-bottom: 42%;
+  }
+  .deck-select-grid .deck-select-panel--mammal {
+    padding-right: 50%;
+    padding-bottom: 42%;
+  }
+  .deck-select-grid .deck-select-panel--reptile {
+    padding-left: 35%;
+    padding-top: 35%;
+  }
+  .deck-select-grid .deck-select-panel--amphibian {
+    padding-right: 35%;
+    padding-top: 35%;
   }
 
-  /* Active press */
-  .deck-select-panel:active:not(.disabled) {
-    transform: translateY(-2px) scale(0.98);
-    transition-duration: 0.1s;
+  /* === WEDGE GRADIENTS (richer than flat color) === */
+  .deck-select-grid .deck-select-panel--fish {
+    background: radial-gradient(ellipse at 50% 20%, rgba(70, 140, 220, 0.9) 0%, rgba(20, 50, 100, 0.95) 70%);
+  }
+  .deck-select-grid .deck-select-panel--bird {
+    background: radial-gradient(ellipse at 80% 25%, rgba(220, 180, 50, 0.85) 0%, rgba(100, 65, 15, 0.95) 70%);
+  }
+  .deck-select-grid .deck-select-panel--mammal {
+    background: radial-gradient(ellipse at 15% 25%, rgba(160, 110, 80, 0.85) 0%, rgba(70, 40, 25, 0.95) 70%);
+  }
+  .deck-select-grid .deck-select-panel--reptile {
+    background: radial-gradient(ellipse at 80% 80%, rgba(70, 160, 85, 0.85) 0%, rgba(20, 70, 35, 0.95) 70%);
+  }
+  .deck-select-grid .deck-select-panel--amphibian {
+    background: radial-gradient(ellipse at 20% 80%, rgba(100, 200, 130, 0.85) 0%, rgba(25, 100, 55, 0.95) 70%);
   }
 
-  /* Bigger emoji on desktop */
-  .deck-select-panel .deck-emoji {
-    font-size: 2.5rem;
-    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* === EMOJI + NAME STYLING === */
+  .deck-select-grid .deck-select-panel .deck-emoji {
+    font-size: 3rem;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+                filter 0.35s ease;
+    z-index: 2;
   }
 
-  .deck-select-panel:hover .deck-emoji {
-    transform: scale(1.2) rotate(-5deg);
-  }
-
-  .deck-select-panel .deck-name {
-    font-size: 1.2rem;
+  .deck-select-grid .deck-select-panel .deck-name {
+    font-size: 1.3rem;
     font-weight: 700;
-    letter-spacing: 0.04em;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+    z-index: 2;
+    transition: transform 0.35s ease, letter-spacing 0.35s ease;
+  }
+
+  /* === HOVER: brighten wedge, scale content === */
+  .deck-select-grid .deck-select-panel:hover:not(.disabled) {
+    filter: brightness(1.3) saturate(1.2);
+    z-index: 5;
+  }
+
+  .deck-select-grid .deck-select-panel:hover .deck-emoji {
+    transform: scale(1.3);
+    filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.6));
+  }
+
+  .deck-select-grid .deck-select-panel:hover .deck-name {
+    transform: scale(1.1);
+    letter-spacing: 0.12em;
+  }
+
+  /* Dim non-hovered wedges when any is hovered */
+  .deck-select-grid:has(.deck-select-panel:hover) .deck-select-panel:not(:hover) {
+    filter: brightness(0.6) saturate(0.7);
+  }
+
+  /* === ACTIVE: press feedback === */
+  .deck-select-grid .deck-select-panel:active:not(.disabled) {
+    filter: brightness(1.5) saturate(1.4);
+  }
+
+  .deck-select-grid .deck-select-panel:active .deck-emoji {
+    transform: scale(0.9);
+    transition-duration: 0.1s;
   }
 }
 
