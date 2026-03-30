@@ -363,13 +363,21 @@ const handleTouchMove = (e) => {
   } else if (!isDragging) {
     // Horizontal browsing - update focus to card under finger
     // The focused card is elevated and will be what gets dragged
-    const state = getLatestState();
-    const touched = getTouchedCard(currentTouchPos.x, currentTouchPos.y, state);
+    // Use hysteresis: only switch if finger moved far enough horizontally from the
+    // center of the currently focused card (prevents jitter between overlapping cards)
+    const dx = Math.abs(currentTouchPos.x - touchStartPos.x);
+    const BROWSE_HYSTERESIS = 20; // pixels of horizontal movement before switching cards
+    if (dx > BROWSE_HYSTERESIS || !touchedCardElement?.classList.contains('hand-focus')) {
+      const state = getLatestState();
+      const touched = getTouchedCard(currentTouchPos.x, currentTouchPos.y, state);
 
-    if (touched && touched.source === 'hand' && touched.element !== touchedCardElement) {
-      touchedCardElement = touched.element;
-      touchedCard = touched.card;
-      focusCardElement(touched.element);
+      if (touched && touched.source === 'hand' && touched.element !== touchedCardElement) {
+        touchedCardElement = touched.element;
+        touchedCard = touched.card;
+        focusCardElement(touched.element);
+        // Reset start position so next switch also requires movement
+        touchStartPos.x = currentTouchPos.x;
+      }
     }
   }
 
