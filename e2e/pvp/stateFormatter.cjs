@@ -194,6 +194,21 @@ function formatStatePrompt(qaState, playerIndex, deckName = 'Unknown') {
     if (faceAttackers.length === 0 && creatureOnly.length === 0) {
       lines.push('No creatures can attack this turn.');
     }
+
+    // Show valid enemy targets (only occupied slots)
+    const enemyCreatures = oppField.filter((c) => c);
+    if (enemyCreatures.length > 0) {
+      lines.push('ENEMY TARGETS (ATTACK slot# target_slot#):');
+      for (const c of enemyCreatures) {
+        lines.push(
+          `  enemy slot ${c.slot}: ${c.name} (${c.currentAtk ?? c.atk}/${c.currentHp ?? c.hp})`
+        );
+      }
+    } else {
+      lines.push(
+        'NO ENEMY CREATURES — can only ATTACK slot# PLAYER (if creature can attack directly).'
+      );
+    }
     lines.push('');
   } else if (qaState.phase === 'Main 1' || qaState.phase === 'Main 2') {
     const emptyCount = myField.filter((c) => !c).length;
@@ -222,12 +237,25 @@ function formatStatePrompt(qaState, playerIndex, deckName = 'Unknown') {
     lines.push('');
   }
 
-  // Your hand (labeled "hand #" to distinguish from field "slot #")
+  // Your hand — filter out traps (they trigger automatically, never played manually)
   if (me?.hand) {
-    lines.push(`YOUR HAND (${me.hand.length} cards) — use PLAY hand# to play:`);
-    me.hand.forEach((c, i) => {
-      lines.push(`  [hand ${i}] ${formatCard(c)}`);
-    });
+    const playableHand = me.hand.map((c, i) => ({ ...c, handIndex: i }));
+    const nonTraps = playableHand.filter((c) => c.type !== 'Trap');
+    const traps = playableHand.filter((c) => c.type === 'Trap');
+
+    if (nonTraps.length > 0) {
+      lines.push(`YOUR HAND (${nonTraps.length} playable cards) — use PLAY hand# to play:`);
+      nonTraps.forEach((c) => {
+        lines.push(`  [hand ${c.handIndex}] ${formatCard(c)}`);
+      });
+    } else {
+      lines.push('YOUR HAND: no playable cards (only traps, which trigger automatically).');
+    }
+    if (traps.length > 0) {
+      lines.push(
+        `  (${traps.length} trap(s) in hand — trigger automatically on opponent's turn, do NOT play them)`
+      );
+    }
   }
   lines.push('');
 

@@ -361,10 +361,37 @@ async function executeLLMAction(controller, state, uiState, action, playerIndex,
   const me = state.players[playerIndex];
   const opp = state.players[1 - playerIndex];
 
+  // Phase validation
+  if (action.type === 'play' && state.phase !== 'Main 1' && state.phase !== 'Main 2') {
+    return { success: false, error: 'Wrong phase' };
+  }
+  if (action.type === 'attack' && state.phase !== 'Combat') {
+    return { success: false, error: 'Wrong phase' };
+  }
+
   switch (action.type) {
     case 'play': {
       const card = me.hand[action.handIndex];
       if (!card) return { success: false, error: `No card at hand index ${action.handIndex}` };
+
+      // Pre-validate: traps can't be played manually
+      if (card.type === 'Trap') {
+        return { success: false, error: 'Traps trigger automatically from hand' };
+      }
+
+      // Pre-validate: field full (unless spell)
+      if (
+        card.type !== 'Spell' &&
+        card.type !== 'Free Spell' &&
+        me.field.filter((c) => c !== null).length >= 3
+      ) {
+        // Exception: predator can eat to free a slot
+        if (card.type === 'Predator' && action.eat && action.eat.length > 0) {
+          // Allow — consumption will free slots
+        } else {
+          return { success: false, error: 'Field full' };
+        }
+      }
 
       // Handle predator consumption via eat targets
       let consumeTarget = null;
@@ -938,15 +965,26 @@ async function runGame(deck1Name, deck2Name, modelName) {
         continue;
       }
 
-      // Auto-skip Main phase if card limit is spent and no Free Spells in hand
-      if (
-        gameState.cardPlayedThisTurn &&
-        (gameState.phase === 'Main 1' || gameState.phase === 'Main 2')
-      ) {
+      // Auto-skip Main phase when nothing useful to do
+      if (gameState.phase === 'Main 1' || gameState.phase === 'Main 2') {
         const activeHand = gameState.players[activeIdx].hand;
+        const playableCards = activeHand.filter((c) => c.type !== 'Trap');
         const hasFreeSpell = activeHand.some((c) => c.type === 'Free Spell');
-        if (!hasFreeSpell) {
-          // Nothing playable — auto-advance past this Main phase
+        const fieldFull = gameState.players[activeIdx].field.filter((c) => c !== null).length >= 3;
+
+        const shouldAutoSkip =
+          // Card limit spent and no free spells
+          (gameState.cardPlayedThisTurn && !hasFreeSpell) ||
+          // Hand is all traps (nothing playable)
+          playableCards.length === 0 ||
+          // Hand is empty
+          activeHand.length === 0 ||
+          // Field full, card limit spent, and no spells in hand
+          (fieldFull &&
+            gameState.cardPlayedThisTurn &&
+            !activeHand.some((c) => c.type === 'Spell' || c.type === 'Free Spell'));
+
+        if (shouldAutoSkip) {
           controller.execute({
             type: engine.ActionTypes.ADVANCE_PHASE,
             payload: {},
