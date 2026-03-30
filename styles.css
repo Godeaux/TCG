@@ -6408,13 +6408,12 @@ select.menu-input option {
     transition: filter 0.35s ease, opacity 0.35s ease;
   }
 
-  /* Wedge border lines */
+  /* Wedge border lines — thin line overlay via box-shadow (Safari-safe, no clip-path: inherit) */
   .deck-select-grid .deck-select-panel::after {
     content: '';
     position: absolute;
     inset: 0;
-    clip-path: inherit;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
     pointer-events: none;
     z-index: 3;
   }
@@ -6422,18 +6421,23 @@ select.menu-input option {
   /* === PENTAGONAL CLIP PATHS === */
   /* 5 wedges from center (50%,50%) to edges, 72° each */
   .deck-select-grid .deck-select-panel--fish {
+    -webkit-clip-path: polygon(50% 50%, 13.7% 0%, 86.3% 0%);
     clip-path: polygon(50% 50%, 13.7% 0%, 86.3% 0%);
   }
   .deck-select-grid .deck-select-panel--bird {
+    -webkit-clip-path: polygon(50% 50%, 86.3% 0%, 100% 0%, 100% 66.2%);
     clip-path: polygon(50% 50%, 86.3% 0%, 100% 0%, 100% 66.2%);
   }
   .deck-select-grid .deck-select-panel--mammal {
+    -webkit-clip-path: polygon(50% 50%, 0% 66.2%, 0% 0%, 13.7% 0%);
     clip-path: polygon(50% 50%, 0% 66.2%, 0% 0%, 13.7% 0%);
   }
   .deck-select-grid .deck-select-panel--reptile {
+    -webkit-clip-path: polygon(50% 50%, 100% 66.2%, 100% 100%, 50% 100%);
     clip-path: polygon(50% 50%, 100% 66.2%, 100% 100%, 50% 100%);
   }
   .deck-select-grid .deck-select-panel--amphibian {
+    -webkit-clip-path: polygon(50% 50%, 50% 100%, 0% 100%, 0% 66.2%);
     clip-path: polygon(50% 50%, 50% 100%, 0% 100%, 0% 66.2%);
   }
 
