@@ -90,6 +90,7 @@ import { renderPackOpeningOverlay, startPackOpening } from './ui/overlays/PackOp
 // Settings button and overlay components
 import { initSettingsButton } from './ui/components/SettingsButton.js';
 import { showSettingsOverlay } from './ui/overlays/SettingsOverlay.js';
+import { showBugReportOverlay } from './ui/overlays/BugReportOverlay.js';
 
 // Trigger/Reaction system (extracted module)
 import {
@@ -4105,6 +4106,14 @@ const setupSettingsButton = () => {
   initSettingsButton({
     onSettings: () => {
       showSettingsOverlay();
+    },
+    onReportBug: () => {
+      const profileId = latestState?.menu?.profile?.id;
+      showBugReportOverlay({ profileId, tab: 'report' });
+    },
+    onViewBugs: () => {
+      const profileId = latestState?.menu?.profile?.id;
+      showBugReportOverlay({ profileId, tab: 'list' });
     },
   });
 };
