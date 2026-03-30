@@ -753,12 +753,12 @@ async function main() {
           // Guard: detect stuck turns (max 2 replays before forcing advance)
           if (turnNum === lastTurn) {
             sameCount++;
-            if (sameCount > 2) {
+            if (sameCount > 1) {
               forceAttempts++;
               totalForceAttempts++;
               log(`⚠️ CRITICAL: Turn ${turnNum} replayed ${sameCount}x (force #${forceAttempts}, total #${totalForceAttempts}) — forcing advance`);
               
-              if (forceAttempts >= 2 || totalForceAttempts >= 4) {
+              if (forceAttempts >= 2 || totalForceAttempts >= 3) {
                 // Already force-advanced once and still stuck — game is broken
                 log(`🛑 STUCK: Turn ${turnNum} unrecoverable after ${forceAttempts} force attempts. Ending game.`);
                 recorder.setResult(null, 'stuck', await player.page.evaluate(() => window.__qa?.getState()), player.index);
