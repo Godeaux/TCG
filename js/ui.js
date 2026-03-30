@@ -1489,7 +1489,28 @@ const initHandPreview = () => {
       inspectedCardId = card.instanceId;
       // Don't update selectedHandCardId on hover - only on click
       // Show info boxes only for hand cards (no enlarged preview since card is already focused)
-      showCardTooltip(card, cardElement, { showPreview: false });
+      // Wait for the .hand-focus CSS transition to finish before positioning the tooltip.
+      // The raise animation (translateY + scale) takes ~180ms; if we measure
+      // getBoundingClientRect() before it completes, the tooltip anchors to the
+      // pre-raise position instead of the final raised position.
+      const onRaised = () => {
+        if (cardElement.classList.contains('hand-focus')) {
+          showCardTooltip(card, cardElement, { showPreview: false });
+        }
+      };
+      // Listen for transitionend on the transform property
+      const handler = (e) => {
+        if (e.propertyName === 'transform') {
+          cardElement.removeEventListener('transitionend', handler);
+          onRaised();
+        }
+      };
+      cardElement.addEventListener('transitionend', handler);
+      // Fallback: if transition doesn't fire (e.g. prefers-reduced-motion), show after 200ms
+      setTimeout(() => {
+        cardElement.removeEventListener('transitionend', handler);
+        onRaised();
+      }, 220);
     }
   };
 
