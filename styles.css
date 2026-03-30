@@ -1630,6 +1630,8 @@ button {
   flex: 1;
   overflow-x: hidden;
   overflow-y: auto; /* Allow scrolling if log content is too tall */
+  -webkit-overflow-scrolling: touch; /* Smooth momentum scrolling on iOS Safari */
+  touch-action: pan-y; /* Allow vertical scroll, prevent horizontal swipe interference */
   min-height: var(--min-log-height); /* Ensure minimum visibility */
   max-height: 100%; /* Don't exceed parent */
   width: 100%;

@@ -361,22 +361,39 @@ const handleTouchMove = (e) => {
     });
     touchedCardElement.dispatchEvent(dragStartEvent);
   } else if (!isDragging) {
-    // Horizontal browsing - update focus to card under finger
-    // The focused card is elevated and will be what gets dragged
-    // Use hysteresis: only switch if finger moved far enough horizontally from the
-    // center of the currently focused card (prevents jitter between overlapping cards)
-    const dx = Math.abs(currentTouchPos.x - touchStartPos.x);
-    const BROWSE_HYSTERESIS = 20; // pixels of horizontal movement before switching cards
-    if (dx > BROWSE_HYSTERESIS || !touchedCardElement?.classList.contains('hand-focus')) {
-      const state = getLatestState();
-      const touched = getTouchedCard(currentTouchPos.x, currentTouchPos.y, state);
+    // Horizontal browsing — find the nearest card by center distance.
+    // Uses the same hysteresis approach as the desktop system: only switch
+    // focus if the new card's center is meaningfully closer than the current one.
+    const handGrid = document.getElementById('active-hand');
+    if (!handGrid) return;
+    const cards = Array.from(handGrid.querySelectorAll('.card'));
+    if (cards.length === 0) return;
 
-      if (touched && touched.source === 'hand' && touched.element !== touchedCardElement) {
-        touchedCardElement = touched.element;
-        touchedCard = touched.card;
-        focusCardElement(touched.element);
-        // Reset start position so next switch also requires movement
-        touchStartPos.x = currentTouchPos.x;
+    let closestEl = null;
+    let closestDist = Infinity;
+    let currentDist = Infinity;
+
+    for (const card of cards) {
+      const rect = card.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const dist = Math.abs(currentTouchPos.x - cx);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closestEl = card;
+      }
+      if (card === touchedCardElement) {
+        currentDist = dist;
+      }
+    }
+
+    // Only switch if the new card is at least 15px closer than the current one
+    if (closestEl && closestEl !== touchedCardElement && (currentDist - closestDist) > 15) {
+      const state = getLatestState();
+      const card = getCardFromInstanceId(closestEl.dataset.instanceId, state);
+      if (card) {
+        touchedCardElement = closestEl;
+        touchedCard = card;
+        focusCardElement(closestEl);
       }
     }
   }
