@@ -997,6 +997,15 @@ button {
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
 }
 
+/* Subtler focus on mobile to avoid overflow/clipping */
+@media (max-width: 768px) {
+  .hand-grid .card.hand-focus {
+    z-index: 2000;
+    transform: translateY(-25%) scale(1.15) rotate(0deg);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.5);
+  }
+}
+
 .hand-grid .card .card-name {
   font-size: 1.4vh;
 }
