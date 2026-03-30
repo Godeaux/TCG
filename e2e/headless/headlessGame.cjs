@@ -79,6 +79,92 @@ const { formatStatePrompt, parseAction } = require('../pvp/stateFormatter.cjs');
 const OLLAMA_CHAT_URL = 'http://localhost:11434/api/chat';
 
 /**
+ * Call Ollama directly for non-game prompts (reflection, analysis)
+ */
+async function callOllama(prompt, model, { numPredict = 2000, temperature = 0.3 } = {}) {
+  const isChatModel = [
+    'qwen3.5:9b',
+    'qwen3.5:2b',
+    'qwen3.5:latest',
+    'qwen3.5:122b-a10b',
+    'qwen3.5-tuned:latest',
+  ].some((m) => model.includes(m));
+
+  const body = isChatModel
+    ? {
+        model,
+        messages: [{ role: 'user', content: prompt }],
+        stream: false,
+        think: false,
+        options: { temperature, num_predict: numPredict },
+      }
+    : {
+        model,
+        prompt,
+        stream: false,
+        options: { temperature, num_predict: numPredict },
+      };
+
+  const endpoint = isChatModel ? 'chat' : 'generate';
+  const resp = await fetch(`http://localhost:11434/api/${endpoint}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await resp.json();
+  return isChatModel ? data.message?.content || '' : data.response || '';
+}
+
+/**
+ * Build a post-game reflection prompt from the game log.
+ * The LLM reviews the full game for bugs, anomalies, and strategic observations.
+ */
+function buildPostGameReflection(gameLog, deckNames, result) {
+  const lines = [];
+  lines.push(
+    'You just observed a complete game of Food Chain TCG. Review it for bugs and anomalies.'
+  );
+  lines.push(`Decks: P1=${deckNames[0]} vs P2=${deckNames[1]}`);
+  lines.push(
+    `Result: P${(result.winner ?? -1) + 1} wins | HP: ${result.finalHP[0]}/${result.finalHP[1]} | ${result.totalTurns} turns`
+  );
+  lines.push('');
+  lines.push('FULL GAME LOG:');
+
+  for (const turn of gameLog.turns || []) {
+    lines.push(`\n--- Turn ${turn.turn} (P${turn.player + 1}) ---`);
+    for (const a of turn.actions || []) {
+      const act = a.action || {};
+      const res = a.result || {};
+      const ok = res.success !== false;
+      const desc = res.description || JSON.stringify(act).substring(0, 80);
+      lines.push(`  ${ok ? '✅' : '❌'} ${act.type}: ${desc}`);
+      if (a.reasoning) lines.push(`     💭 ${a.reasoning.substring(0, 120)}`);
+      if (!ok && res.error) lines.push(`     ⚠️ ${res.error}`);
+    }
+  }
+
+  lines.push('\n\nANALYSIS REQUESTED:');
+  lines.push(
+    '1. BUGS: Did any card effects fail to proc, proc incorrectly, or cause errors? List each with the turn number and what went wrong.'
+  );
+  lines.push(
+    "2. RULE VIOLATIONS: Did any action succeed that shouldn't have (e.g., attacking with summoning sickness, playing cards in wrong phase)? Or fail when it should have succeeded?"
+  );
+  lines.push(
+    "3. ANOMALIES: Any suspicious HP changes, missing death triggers, incorrect stat calculations, or effects that didn't match the card text?"
+  );
+  lines.push(
+    '4. STRATEGIC NOTES: Any obviously wrong decisions that suggest the game state was misleading?'
+  );
+  lines.push(
+    '\nBe concise. Only report actual issues, not things that worked correctly. If everything looked clean, say "No issues found."'
+  );
+
+  return lines.join('\n');
+}
+
+/**
  * Build a QA-style state object from raw game state for the stateFormatter.
  * The formatter expects the structure that __qa.getState() provides in the browser.
  */
@@ -1140,6 +1226,21 @@ async function runGame(deck1Name, deck2Name, modelName) {
     `Turns: ${result.totalTurns} | Actions: ${result.totalActions} | Time: ${(result.duration / 1000).toFixed(1)}s`
   );
   console.log(`${'='.repeat(60)}\n`);
+
+  // Post-game reflection — LLM reviews the full game for bugs and anomalies
+  const reflectionPrompt = buildPostGameReflection(gameLog, deckNames, result);
+  console.log(`\n🔍 Post-game reflection (${modelName})...`);
+  try {
+    const reflectionResponse = await callOllama(reflectionPrompt, modelName, {
+      numPredict: 2000,
+      temperature: 0.3,
+    });
+    gameLog.reflection = reflectionResponse;
+    console.log(`\n📋 REFLECTION:\n${reflectionResponse}\n`);
+  } catch (err) {
+    console.log(`  ⚠️ Reflection failed: ${err.message}`);
+    gameLog.reflection = null;
+  }
 
   // Save log
   fs.mkdirSync(LOG_DIR, { recursive: true });
