@@ -481,6 +481,7 @@ const handleTouchEnd = (e) => {
     }
 
     touchedCardElement.classList.remove('dragging');
+    touchedCardElement.classList.remove('hand-focus');
     clearDragVisuals();
 
     // Remove drag preview
@@ -494,8 +495,13 @@ const handleTouchEnd = (e) => {
     const wasQuickTap = touchDuration < TAP_MAX_DURATION_MS && touchMovement < TAP_MAX_MOVEMENT_PX;
 
     if (wasQuickTap && touchedCard && touchedCardElement) {
-      // Quick tap on card - show tooltip AND focus the card
+      // Quick tap on card - show tooltip AND keep card focused (lifted)
       focusCardElement(touchedCardElement, { showTooltip: true });
+    } else {
+      // Hold/slide released - retract the card back to resting position
+      document.querySelectorAll('.card.hand-focus').forEach((el) => {
+        el.classList.remove('hand-focus');
+      });
     }
   }
 
