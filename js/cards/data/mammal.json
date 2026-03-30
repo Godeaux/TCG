@@ -25,8 +25,20 @@
       "summons": ["token-arctic-ground-squirrel"],
       "effects": {
         "onPlay": [
-          { "type": "summonTokens", "params": { "tokenIds": ["token-arctic-ground-squirrel", "token-arctic-ground-squirrel"] } },
-          { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to freeze", "effect": { "keyword": "Frozen" } } }
+          {
+            "type": "summonTokens",
+            "params": {
+              "tokenIds": ["token-arctic-ground-squirrel", "token-arctic-ground-squirrel"]
+            }
+          },
+          {
+            "type": "selectFromGroup",
+            "params": {
+              "targetGroup": "enemy-creatures",
+              "title": "Choose a creature to freeze",
+              "effect": { "keyword": "Frozen" }
+            }
+          }
         ]
       }
     },
@@ -40,7 +52,14 @@
       "nutrition": 1,
       "keywords": ["Haste", "Hidden"],
       "effects": {
-        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to freeze", "effect": { "keyword": "Frozen" } } }
+        "onPlay": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "enemy-creatures",
+            "title": "Choose a creature to freeze",
+            "effect": { "keyword": "Frozen" }
+          }
+        }
       }
     },
     {
@@ -54,7 +73,14 @@
       "effects": {
         "onPlay": [
           { "type": "revealHand", "params": {} },
-          { "type": "selectFromGroup", "params": { "targetGroup": "all-prey", "title": "Choose a prey to kill", "effect": { "kill": true } } }
+          {
+            "type": "selectFromGroup",
+            "params": {
+              "targetGroup": "all-prey",
+              "title": "Choose a prey to kill",
+              "effect": { "kill": true }
+            }
+          }
         ]
       }
     },
@@ -94,7 +120,14 @@
       "hp": 1,
       "nutrition": 1,
       "effects": {
-        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "all-entities", "title": "Choose a target for damage", "effect": { "damage": 3, "label": "weasel" } } }
+        "onPlay": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "all-entities",
+            "title": "Choose a target for damage",
+            "effect": { "damage": 3, "label": "weasel" }
+          }
+        }
       }
     },
     {
@@ -108,7 +141,10 @@
       "summons": ["token-pup"],
       "effects": {
         "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-pup", "token-pup"] } },
-        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["token-pup", "token-pup", "token-pup"] } }
+        "onSlain": {
+          "type": "summonTokens",
+          "params": { "tokenIds": ["token-pup", "token-pup", "token-pup"] }
+        }
       }
     },
     {
@@ -148,7 +184,10 @@
       "keywords": ["Poisonous"],
       "summons": ["token-mammal-egg"],
       "effects": {
-        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-mammal-egg", "token-mammal-egg"] } }
+        "onPlay": {
+          "type": "summonTokens",
+          "params": { "tokenIds": ["token-mammal-egg", "token-mammal-egg"] }
+        }
       }
     },
     {
@@ -188,7 +227,14 @@
       "hp": 2,
       "nutrition": 2,
       "effects": {
-        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "all-entities", "title": "Choose a target for damage", "effect": { "damage": 2, "label": "pronghorn" } } }
+        "onPlay": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "all-entities",
+            "title": "Choose a target for damage",
+            "effect": { "damage": 2, "label": "pronghorn" }
+          }
+        }
       }
     },
     {
@@ -239,7 +285,14 @@
       "hp": 2,
       "nutrition": 2,
       "effects": {
-        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-carrion", "title": "Choose a carrion to add to hand", "effect": { "addToHand": true } } }
+        "onPlay": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "friendly-carrion",
+            "title": "Choose a carrion to add to hand",
+            "effect": { "addToHand": true }
+          }
+        }
       }
     },
     {
@@ -268,8 +321,16 @@
           "params": {
             "title": "Choose an effect",
             "options": [
-              { "label": "Deal 2 damage", "description": "Deal 2 damage to rival", "effect": { "type": "damageRival", "params": { "amount": 2 } } },
-              { "label": "Heal 2", "description": "Heal 2 HP", "effect": { "type": "heal", "params": { "amount": 2 } } }
+              {
+                "label": "Deal 2 damage",
+                "description": "Deal 2 damage to rival",
+                "effect": { "type": "damageRival", "params": { "amount": 2 } }
+              },
+              {
+                "label": "Heal 2",
+                "description": "Heal 2 HP",
+                "effect": { "type": "heal", "params": { "amount": 2 } }
+              }
             ]
           }
         }
@@ -333,7 +394,14 @@
       "effects": {
         "onConsume": [
           { "type": "summonTokens", "params": { "tokenIds": ["token-dhole", "token-dhole"] } },
-          { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to kill", "effect": { "kill": true } } }
+          {
+            "type": "selectFromGroup",
+            "params": {
+              "targetGroup": "enemy-creatures",
+              "title": "Choose a creature to kill",
+              "effect": { "kill": true }
+            }
+          }
         ]
       }
     },
@@ -358,7 +426,10 @@
       "hp": 2,
       "summons": ["mammal-predator-gray-wolf"],
       "effects": {
-        "onConsume": { "type": "summonTokens", "params": { "tokenIds": ["mammal-predator-gray-wolf"] } }
+        "onConsume": {
+          "type": "summonTokens",
+          "params": { "tokenIds": ["mammal-predator-gray-wolf"] }
+        }
       }
     },
     {
@@ -382,7 +453,14 @@
       "atk": 3,
       "hp": 3,
       "effects": {
-        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-carrion", "title": "Choose a carrion to play", "effect": { "play": true } } }
+        "onConsume": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "friendly-carrion",
+            "title": "Choose a carrion to play",
+            "effect": { "play": true }
+          }
+        }
       }
     },
     {
@@ -393,7 +471,10 @@
       "atk": 3,
       "hp": 3,
       "effects": {
-        "onBeforeCombat": { "type": "damageCreature", "params": { "targetType": "target", "amount": 3, "sourceLabel": "cougar" } }
+        "onBeforeCombat": {
+          "type": "damageCreature",
+          "params": { "targetType": "target", "amount": 3, "sourceLabel": "cougar" }
+        }
       }
     },
     {
@@ -413,7 +494,10 @@
       "atk": 3,
       "hp": 3,
       "effects": {
-        "onConsume": { "type": "buffStats", "params": { "targetType": "all-friendly", "stats": { "attack": 1, "health": 1 } } }
+        "onConsume": {
+          "type": "buffStats",
+          "params": { "targetType": "all-friendly", "stats": { "attack": 1, "health": 1 } }
+        }
       }
     },
     {
@@ -424,7 +508,14 @@
       "atk": 3,
       "hp": 3,
       "effects": {
-        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "carrion", "title": "Choose a carrion to copy abilities from", "effect": { "copyAbilities": true } } }
+        "onConsume": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "carrion",
+            "title": "Choose a carrion to copy abilities from",
+            "effect": { "copyAbilities": true }
+          }
+        }
       }
     },
     {
@@ -478,7 +569,14 @@
       "atk": 6,
       "hp": 6,
       "effects": {
-        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to kill", "effect": { "kill": true } } }
+        "onConsume": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "enemy-creatures",
+            "title": "Choose a creature to kill",
+            "effect": { "kill": true }
+          }
+        }
       }
     },
     {
@@ -500,7 +598,10 @@
       "flavorText": "Mammary glands define the class Mammalia. Milk composition varies wildly — hooded seal milk is 60% fat.",
       "type": "Spell",
       "effects": {
-        "effect": { "type": "buffStats", "params": { "targetType": "all-friendly", "stats": { "attack": 2, "health": 2 } } }
+        "effect": {
+          "type": "buffStats",
+          "params": { "targetType": "all-friendly", "stats": { "attack": 2, "health": 2 } }
+        }
       }
     },
     {
@@ -509,7 +610,14 @@
       "flavorText": "Firearms drove 2% of mammal species to extinction since 1500. Humans are the only mammal to hunt at global scale.",
       "type": "Spell",
       "effects": {
-        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to kill", "effect": { "kill": true } } }
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "enemy-creatures",
+            "title": "Choose a creature to kill",
+            "effect": { "kill": true }
+          }
+        }
       }
     },
     {
@@ -527,7 +635,14 @@
       "flavorText": "White deer lack camouflage yet survive — many cultures historically forbade hunting them, creating accidental refuges.",
       "type": "Spell",
       "effects": {
-        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-carrion", "title": "Choose a carrion to play", "effect": { "play": true, "keyword": "Frozen" } } }
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "friendly-carrion",
+            "title": "Choose a carrion to play",
+            "effect": { "play": true, "keyword": "Frozen" }
+          }
+        }
       }
     },
     {
@@ -536,7 +651,14 @@
       "flavorText": "Neophilia — attraction to novelty — is a mammalian trait linked to dopamine. It drives exploration but increases predation risk.",
       "type": "Free Spell",
       "effects": {
-        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-creatures", "title": "Choose a creature to sacrifice", "effect": { "sacrifice": true, "draw": 3 } } }
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "friendly-creatures",
+            "title": "Choose a creature to sacrifice",
+            "effect": { "sacrifice": true, "draw": 3 }
+          }
+        }
       }
     },
     {
@@ -545,7 +667,14 @@
       "flavorText": "Modern tranquilizer darts use etorphine — 3,000x stronger than morphine — and can immobilize an elephant in 10 minutes.",
       "type": "Free Spell",
       "effects": {
-        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to freeze", "effect": { "keyword": "Frozen" } } }
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "enemy-creatures",
+            "title": "Choose a creature to freeze",
+            "effect": { "keyword": "Frozen" }
+          }
+        }
       }
     },
     {
@@ -600,7 +729,14 @@
       "type": "Trap",
       "trigger": "slain",
       "effects": {
-        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-carrion", "title": "Choose a carrion to play", "effect": { "play": true, "keyword": "Frozen" } } }
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "friendly-carrion",
+            "title": "Choose a carrion to play",
+            "effect": { "play": true, "keyword": "Frozen" }
+          }
+        }
       }
     }
   ]

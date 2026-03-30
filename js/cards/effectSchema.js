@@ -33,7 +33,6 @@ const TOKEN_NAMES = {
   'token-hatchling': { singular: 'Hatchling', plural: 'Hatchlings' },
   'token-chick': { singular: 'Chick', plural: 'Chicks' },
   'token-salmon': { singular: 'Salmon', plural: 'Salmon' },
-
 };
 
 /**

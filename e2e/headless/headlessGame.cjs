@@ -97,8 +97,7 @@ function buildQAState(state, playerIndex) {
       !engine.keywords.cantAttack(card);
 
     const canAttackPlayer =
-      canAttackCreatures &&
-      (card.summonedTurn < state.turn || engine.keywords.hasHaste(card));
+      canAttackCreatures && (card.summonedTurn < state.turn || engine.keywords.hasHaste(card));
 
     return {
       name: card.name,
@@ -262,8 +261,10 @@ async function resolveSelection(selectionData, state, playerIndex, deckName, mod
 
     const optionNames = candidates.map((c) => {
       const val = c.value !== undefined ? c.value : c;
-      if (val?.creature) return `${val.creature.name} ${val.creature.currentAtk}/${val.creature.currentHp}`;
-      if (val?.card) return `${val.card.name} ${val.card.currentAtk ?? val.card.atk}/${val.card.currentHp ?? val.card.hp}`;
+      if (val?.creature)
+        return `${val.creature.name} ${val.creature.currentAtk}/${val.creature.currentHp}`;
+      if (val?.card)
+        return `${val.card.name} ${val.card.currentAtk ?? val.card.atk}/${val.card.currentHp ?? val.card.hp}`;
       if (val?.name) return val.name;
       if (val?.type === 'player') return `Player ${(val.playerIndex ?? 0) + 1}`;
       return String(val);
@@ -316,8 +317,12 @@ function snapshotState(state) {
     p2hand: state.players[1].hand.length,
     p1deck: state.players[0].deck.length,
     p2deck: state.players[1].deck.length,
-    p1field: state.players[0].field.map((c) => (c ? `${c.name} ${c.currentAtk}/${c.currentHp}` : null)),
-    p2field: state.players[1].field.map((c) => (c ? `${c.name} ${c.currentAtk}/${c.currentHp}` : null)),
+    p1field: state.players[0].field.map((c) =>
+      c ? `${c.name} ${c.currentAtk}/${c.currentHp}` : null
+    ),
+    p2field: state.players[1].field.map((c) =>
+      c ? `${c.name} ${c.currentAtk}/${c.currentHp}` : null
+    ),
     phase: state.phase,
     turn: state.turn,
     activePlayer: state.activePlayerIndex,
@@ -391,7 +396,10 @@ async function executeLLMAction(controller, state, uiState, action, playerIndex,
             await resolveSelection(sel, state, playerIndex, '', model);
           }
 
-          return { success: true, description: `Play ${card.name} eating ${preyToEat.map((p) => p.name).join(', ')}` };
+          return {
+            success: true,
+            description: `Play ${card.name} eating ${preyToEat.map((p) => p.name).join(', ')}`,
+          };
         }
 
         // Resolve any pending selection
@@ -478,7 +486,8 @@ async function executeLLMAction(controller, state, uiState, action, playerIndex,
         target = { type: 'player', player: opp };
       } else {
         const defender = opp.field[action.target];
-        if (!defender) return { success: false, error: `No creature at enemy slot ${action.target}` };
+        if (!defender)
+          return { success: false, error: `No creature at enemy slot ${action.target}` };
         target = { type: 'creature', card: defender };
       }
 
@@ -494,8 +503,13 @@ async function executeLLMAction(controller, state, uiState, action, playerIndex,
         await resolveSelection(sel, state, playerIndex, '', model);
       }
 
-      const targetName = action.target === 'player' ? 'Player' : (opp.field[action.target]?.name || '?');
-      return { success: result.success, description: `${attacker.name} attacks ${targetName}`, error: result.error };
+      const targetName =
+        action.target === 'player' ? 'Player' : opp.field[action.target]?.name || '?';
+      return {
+        success: result.success,
+        description: `${attacker.name} attacks ${targetName}`,
+        error: result.error,
+      };
     }
 
     case 'advance': {
@@ -773,9 +787,13 @@ async function runGame(deck1Name, deck2Name, modelName) {
     const currentTurn = gameState.turn;
     const activeIdx = gameState.activePlayerIndex;
 
-    console.log(`\n--- Turn ${currentTurn} | Player ${activeIdx + 1} (${deckNames[activeIdx]}) | Phase: ${gameState.phase} ---`);
+    console.log(
+      `\n--- Turn ${currentTurn} | Player ${activeIdx + 1} (${deckNames[activeIdx]}) | Phase: ${gameState.phase} ---`
+    );
     console.log(`  HP: P1=${gameState.players[0].hp} P2=${gameState.players[1].hp}`);
-    console.log(`  Hands: P1=${gameState.players[0].hand.length} P2=${gameState.players[1].hand.length}`);
+    console.log(
+      `  Hands: P1=${gameState.players[0].hand.length} P2=${gameState.players[1].hand.length}`
+    );
 
     const turnLog = {
       turn: currentTurn,
@@ -814,7 +832,9 @@ async function runGame(deck1Name, deck2Name, modelName) {
           canDryDrop: true,
         };
 
-        const decision = await getDecision(qaState, activeIdx, deckNames[activeIdx], { model: modelName });
+        const decision = await getDecision(qaState, activeIdx, deckNames[activeIdx], {
+          model: modelName,
+        });
         console.log(`  [CONSUMPTION] P${activeIdx + 1}: ${JSON.stringify(decision.action)}`);
 
         if (decision.action.type === 'dryDrop' || decision.action.type === 'pass') {
@@ -897,17 +917,33 @@ async function runGame(deck1Name, deck2Name, modelName) {
         model: modelName,
       });
 
-      console.log(`  P${activeIdx + 1} [${gameState.phase}]: ${decision.action.type} ${JSON.stringify(decision.action).substring(0, 80)}`);
+      console.log(
+        `  P${activeIdx + 1} [${gameState.phase}]: ${decision.action.type} ${JSON.stringify(decision.action).substring(0, 80)}`
+      );
 
       if (decision.action.type === 'unknown') {
         console.log(`  ⚠️ Unknown action, forcing advance`);
         consecutiveErrors++;
         if (consecutiveErrors >= 3) {
           console.log(`  ❌ Too many errors, forcing end turn`);
-          await executeLLMAction(controller, gameState, uiState, { type: 'endTurn' }, activeIdx, modelName);
+          await executeLLMAction(
+            controller,
+            gameState,
+            uiState,
+            { type: 'endTurn' },
+            activeIdx,
+            modelName
+          );
           consecutiveErrors = 0;
         } else {
-          await executeLLMAction(controller, gameState, uiState, { type: 'advance' }, activeIdx, modelName);
+          await executeLLMAction(
+            controller,
+            gameState,
+            uiState,
+            { type: 'advance' },
+            activeIdx,
+            modelName
+          );
         }
         actionsThisTurn++;
         continue;
@@ -944,7 +980,11 @@ async function runGame(deck1Name, deck2Name, modelName) {
       turnLog.actions.push({
         action: decision.action,
         reasoning: decision.reasoning?.substring(0, 200),
-        result: { success: execResult.success, description: execResult.description, error: execResult.error },
+        result: {
+          success: execResult.success,
+          description: execResult.description,
+          error: execResult.error,
+        },
         diff,
         timeMs: decision.timeMs,
       });
@@ -955,13 +995,23 @@ async function runGame(deck1Name, deck2Name, modelName) {
       if (checkVictory(gameState)) break;
 
       // If action failed or didn't change state, force advance to avoid infinite loops
-      if (!execResult.success || (!diff && decision.action.type !== 'advance' && decision.action.type !== 'endTurn')) {
+      if (
+        !execResult.success ||
+        (!diff && decision.action.type !== 'advance' && decision.action.type !== 'endTurn')
+      ) {
         if (!execResult.success) {
           console.log(`  ⚠️ Action failed (${execResult.error}), forcing advance`);
         } else {
           console.log(`  ⚠️ No state change, forcing advance`);
         }
-        await executeLLMAction(controller, gameState, uiState, { type: 'advance' }, activeIdx, modelName);
+        await executeLLMAction(
+          controller,
+          gameState,
+          uiState,
+          { type: 'advance' },
+          activeIdx,
+          modelName
+        );
         actionsThisTurn++;
       }
     }
@@ -970,7 +1020,14 @@ async function runGame(deck1Name, deck2Name, modelName) {
 
     if (actionsThisTurn >= MAX_ACTIONS_PER_TURN) {
       console.log(`  ⚠️ Max actions reached, forcing end turn`);
-      await executeLLMAction(controller, gameState, uiState, { type: 'endTurn' }, activeIdx, modelName);
+      await executeLLMAction(
+        controller,
+        gameState,
+        uiState,
+        { type: 'endTurn' },
+        activeIdx,
+        modelName
+      );
     }
   }
 
@@ -997,7 +1054,9 @@ async function runGame(deck1Name, deck2Name, modelName) {
     console.log(`⏰ Game ended: ${result.reason}`);
   }
   console.log(`Final HP: P1=${result.finalHP[0]} P2=${result.finalHP[1]}`);
-  console.log(`Turns: ${result.totalTurns} | Actions: ${result.totalActions} | Time: ${(result.duration / 1000).toFixed(1)}s`);
+  console.log(
+    `Turns: ${result.totalTurns} | Actions: ${result.totalActions} | Time: ${(result.duration / 1000).toFixed(1)}s`
+  );
   console.log(`${'='.repeat(60)}\n`);
 
   // Save log

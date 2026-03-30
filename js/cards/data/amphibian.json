@@ -11,7 +11,10 @@
       "keywords": ["Immune"],
       "summons": ["token-radiated-tree-frog"],
       "effects": {
-        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-radiated-tree-frog", "token-radiated-tree-frog"] } }
+        "onPlay": {
+          "type": "summonTokens",
+          "params": { "tokenIds": ["token-radiated-tree-frog", "token-radiated-tree-frog"] }
+        }
       }
     },
     {
@@ -53,7 +56,10 @@
       "keywords": ["Poisonous"],
       "summons": ["token-empress-newt"],
       "effects": {
-        "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-empress-newt", "token-empress-newt"] } }
+        "onEnd": {
+          "type": "summonTokens",
+          "params": { "tokenIds": ["token-empress-newt", "token-empress-newt"] }
+        }
       }
     },
     {
@@ -206,7 +212,10 @@
       "nutrition": 1,
       "summons": ["token-red-tailed-knobby-newt"],
       "effects": {
-        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-red-tailed-knobby-newt", "token-red-tailed-knobby-newt"] } },
+        "onPlay": {
+          "type": "summonTokens",
+          "params": { "tokenIds": ["token-red-tailed-knobby-newt", "token-red-tailed-knobby-newt"] }
+        },
         "onDefend": { "type": "applyNeurotoxicToAttacker" }
       }
     },
@@ -276,7 +285,10 @@
       "nutrition": 2,
       "summons": ["token-froglet"],
       "effects": {
-        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["token-froglet", "token-froglet", "token-froglet"] } }
+        "onSlain": {
+          "type": "summonTokens",
+          "params": { "tokenIds": ["token-froglet", "token-froglet", "token-froglet"] }
+        }
       }
     },
     {
@@ -316,7 +328,14 @@
       "effects": {
         "onConsume": [
           { "type": "summonTokens", "params": { "tokenIds": ["token-tiger-frog"] } },
-          { "type": "selectFromGroup", "params": { "targetGroup": "all-entities", "title": "Choose a target for damage", "effect": { "damage": 1, "label": "bullfrog" } } }
+          {
+            "type": "selectFromGroup",
+            "params": {
+              "targetGroup": "all-entities",
+              "title": "Choose a target for damage",
+              "effect": { "damage": 1, "label": "bullfrog" }
+            }
+          }
         ]
       }
     },
@@ -329,7 +348,10 @@
       "hp": 3,
       "summons": ["token-american-bullfrog"],
       "effects": {
-        "onConsume": { "type": "summonTokens", "params": { "tokenIds": ["token-american-bullfrog"] } }
+        "onConsume": {
+          "type": "summonTokens",
+          "params": { "tokenIds": ["token-american-bullfrog"] }
+        }
       }
     },
     {
@@ -342,7 +364,10 @@
       "keywords": ["Edible"],
       "summons": ["token-mountain-chicken-egg"],
       "effects": {
-        "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-mountain-chicken-egg"] } }
+        "onEnd": {
+          "type": "summonTokens",
+          "params": { "tokenIds": ["token-mountain-chicken-egg"] }
+        }
       }
     },
     {
@@ -379,7 +404,10 @@
       "keywords": ["Poisonous"],
       "summons": ["token-poisonous-egg"],
       "effects": {
-        "onConsume": { "type": "summonTokens", "params": { "tokenIds": ["token-poisonous-egg", "token-poisonous-egg"] } }
+        "onConsume": {
+          "type": "summonTokens",
+          "params": { "tokenIds": ["token-poisonous-egg", "token-poisonous-egg"] }
+        }
       }
     },
     {
@@ -451,7 +479,10 @@
       "keywords": ["Lure"],
       "summons": ["token-chinese-salamander"],
       "effects": {
-        "onConsume": { "type": "summonTokens", "params": { "tokenIds": ["token-chinese-salamander"] } }
+        "onConsume": {
+          "type": "summonTokens",
+          "params": { "tokenIds": ["token-chinese-salamander"] }
+        }
       }
     },
     {
@@ -465,9 +496,21 @@
           "params": {
             "title": "Ambiguity: choose an outcome",
             "options": [
-              { "label": "Draw 3 cards", "description": "Draw 3 cards from your deck", "effect": { "type": "draw", "params": { "count": 3 } } },
-              { "label": "Heal 3", "description": "Restore 3 HP", "effect": { "type": "heal", "params": { "amount": 3 } } },
-              { "label": "Deal 3 damage to rival", "description": "Deal 3 damage to Rival", "effect": { "type": "damageRival", "params": { "amount": 3 } } }
+              {
+                "label": "Draw 3 cards",
+                "description": "Draw 3 cards from your deck",
+                "effect": { "type": "draw", "params": { "count": 3 } }
+              },
+              {
+                "label": "Heal 3",
+                "description": "Restore 3 HP",
+                "effect": { "type": "heal", "params": { "amount": 3 } }
+              },
+              {
+                "label": "Deal 3 damage to rival",
+                "description": "Deal 3 damage to Rival",
+                "effect": { "type": "damageRival", "params": { "amount": 3 } }
+              }
             ]
           }
         }
@@ -493,7 +536,10 @@
       "effects": {
         "effect": [
           { "type": "damageRival", "params": { "amount": 3 } },
-          { "type": "selectTarget", "params": { "group": "enemy-creatures", "effect": "damage", "amount": 3 } }
+          {
+            "type": "selectTarget",
+            "params": { "group": "enemy-creatures", "effect": "damage", "amount": 3 }
+          }
         ]
       }
     },
@@ -529,7 +575,10 @@
       "flavorText": "Amphibian skin secretes antimicrobial peptides now being studied as next-generation antibiotics.",
       "type": "Spell",
       "effects": {
-        "effect": { "type": "buffStats", "params": { "targetType": "all-friendly", "stats": { "attack": 2, "health": 2 } } }
+        "effect": {
+          "type": "buffStats",
+          "params": { "targetType": "all-friendly", "stats": { "attack": 2, "health": 2 } }
+        }
       }
     },
     {
@@ -603,9 +652,21 @@
           "params": {
             "title": "Slime: choose an outcome",
             "options": [
-              { "label": "Draw 1", "description": "Draw 1 card from your deck", "effect": { "type": "draw", "params": { "count": 1 } } },
-              { "label": "Heal 1", "description": "Restore 1 HP", "effect": { "type": "heal", "params": { "amount": 1 } } },
-              { "label": "Deal 1 damage to rival", "description": "Deal 1 damage to Rival", "effect": { "type": "damageRival", "params": { "amount": 1 } } }
+              {
+                "label": "Draw 1",
+                "description": "Draw 1 card from your deck",
+                "effect": { "type": "draw", "params": { "count": 1 } }
+              },
+              {
+                "label": "Heal 1",
+                "description": "Restore 1 HP",
+                "effect": { "type": "heal", "params": { "amount": 1 } }
+              },
+              {
+                "label": "Deal 1 damage to rival",
+                "description": "Deal 1 damage to Rival",
+                "effect": { "type": "damageRival", "params": { "amount": 1 } }
+              }
             ]
           }
         }

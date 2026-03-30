@@ -13,7 +13,6 @@ import { createAIController } from './AIController.js';
 import { isAIMode, isAIvsAIMode, isAnyAIMode } from '../state/selectors.js';
 import { logMessage } from '../state/gameState.js';
 
-
 // ============================================================================
 // MODULE STATE
 // ============================================================================

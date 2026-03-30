@@ -1,6 +1,6 @@
 /**
  * Generic Selection UI Handler
- * 
+ *
  * Detects and handles any selection panel that appears in the game UI.
  * Uses the LLM to make strategic choices between presented options.
  * Works for spell targets, Pistol Shrimp choices, or any card effect
@@ -61,76 +61,94 @@ async function handleSelectionUI(page, context = '', gameContext = '') {
   const panelInfo = await page.evaluate(() => {
     const panel = document.getElementById('selection-panel');
     if (!panel || panel.offsetHeight === 0) return { visible: false };
-    
+
     const items = panel.querySelectorAll('.selection-list > *, .selection-item, .card');
     const options = [];
-    
+
     for (const item of items) {
       if (item.offsetHeight === 0) continue;
       const nameEl = item.querySelector('[class*="name"], .card-name, strong');
-      const name = nameEl?.textContent?.trim() || item.textContent?.trim()?.substring(0, 40) || 'Unknown';
-      const instanceId = item.dataset?.instanceId || item.querySelector('.card')?.dataset?.instanceId;
+      const name =
+        nameEl?.textContent?.trim() || item.textContent?.trim()?.substring(0, 40) || 'Unknown';
+      const instanceId =
+        item.dataset?.instanceId || item.querySelector('.card')?.dataset?.instanceId;
       options.push({ index: options.length, name, instanceId });
     }
-    
+
     const buttons = panel.querySelectorAll('button');
-    const visibleButtons = Array.from(buttons).filter(b => b.offsetHeight > 0);
-    const title = panel.querySelector('.selection-header strong, .selection-title')?.textContent?.trim() || '';
-    
+    const visibleButtons = Array.from(buttons).filter((b) => b.offsetHeight > 0);
+    const title =
+      panel.querySelector('.selection-header strong, .selection-title')?.textContent?.trim() || '';
+
     return {
       visible: true,
       title,
       optionCount: options.length,
-      options: options.map(o => ({ index: o.index, name: o.name, instanceId: o.instanceId })),
-      hasConfirmButton: visibleButtons.some(b => b.textContent.toLowerCase().includes('confirm')),
+      options: options.map((o) => ({ index: o.index, name: o.name, instanceId: o.instanceId })),
+      hasConfirmButton: visibleButtons.some((b) => b.textContent.toLowerCase().includes('confirm')),
     };
   });
-  
+
   if (!panelInfo.visible || panelInfo.optionCount === 0) {
     return { handled: false, choice: null };
   }
-  
-  console.log(`  [SELECTION] ${context}: "${panelInfo.title}" — ${panelInfo.optionCount} options: ${panelInfo.options.map(o => o.name).join(', ')}`);
-  
+
+  console.log(
+    `  [SELECTION] ${context}: "${panelInfo.title}" — ${panelInfo.optionCount} options: ${panelInfo.options.map((o) => o.name).join(', ')}`
+  );
+
   // Ask LLM to choose
-  const chosenIndex = await askLLMChoice(panelInfo.title, panelInfo.options, gameContext || context);
-  
+  const chosenIndex = await askLLMChoice(
+    panelInfo.title,
+    panelInfo.options,
+    gameContext || context
+  );
+
   // Click the chosen item
   const clicked = await page.evaluate((targetIndex) => {
     const panel = document.getElementById('selection-panel');
     if (!panel) return false;
-    
+
     const items = panel.querySelectorAll('.selection-list > *, .selection-item');
-    const visible = Array.from(items).filter(i => i.offsetHeight > 0);
-    if (visible[targetIndex]) { visible[targetIndex].click(); return true; }
-    
+    const visible = Array.from(items).filter((i) => i.offsetHeight > 0);
+    if (visible[targetIndex]) {
+      visible[targetIndex].click();
+      return true;
+    }
+
     const cards = panel.querySelectorAll('.card');
-    const visibleCards = Array.from(cards).filter(c => c.offsetHeight > 0);
-    if (visibleCards[targetIndex]) { visibleCards[targetIndex].click(); return true; }
-    
+    const visibleCards = Array.from(cards).filter((c) => c.offsetHeight > 0);
+    if (visibleCards[targetIndex]) {
+      visibleCards[targetIndex].click();
+      return true;
+    }
+
     return false;
   }, chosenIndex);
-  
+
   if (clicked) {
     await page.waitForTimeout(500);
-    
+
     if (panelInfo.hasConfirmButton) {
       await page.evaluate(() => {
         const panel = document.getElementById('selection-panel');
         const buttons = panel?.querySelectorAll('button');
         for (const b of buttons || []) {
           if (b.textContent.toLowerCase().includes('confirm') && b.offsetHeight > 0) {
-            b.click(); return;
+            b.click();
+            return;
           }
         }
       });
       await page.waitForTimeout(300);
     }
-    
-    console.log(`  [SELECTION] LLM chose [${chosenIndex}]: ${panelInfo.options[chosenIndex]?.name}`);
+
+    console.log(
+      `  [SELECTION] LLM chose [${chosenIndex}]: ${panelInfo.options[chosenIndex]?.name}`
+    );
     return { handled: true, choice: panelInfo.options[chosenIndex]?.name };
   }
-  
+
   return { handled: false, choice: null };
 }
 
@@ -142,11 +160,11 @@ async function handleSelectionUI(page, context = '', gameContext = '') {
 async function handleTargetingMode(page, context = '', gameContext = '') {
   const targetInfo = await page.evaluate(() => {
     if (!document.body.classList.contains('targeting-active')) return { active: false };
-    
+
     // Get banner title
     const banner = document.getElementById('targeting-banner');
     const title = banner?.querySelector('span')?.textContent?.trim() || '';
-    
+
     // Find all valid targets
     const targets = document.querySelectorAll('.effect-target');
     const options = [];
@@ -154,7 +172,7 @@ async function handleTargetingMode(page, context = '', gameContext = '') {
       if (el.offsetHeight === 0) continue;
       const isCard = el.classList.contains('card');
       const isBadge = el.classList.contains('player-badge');
-      
+
       if (isCard) {
         const nameEl = el.querySelector('[class*="name"], .card-name');
         const name = nameEl?.textContent?.trim() || 'Unknown';
@@ -162,44 +180,66 @@ async function handleTargetingMode(page, context = '', gameContext = '') {
         options.push({ index: options.length, name, instanceId, type: 'creature' });
       } else if (isBadge) {
         const pIdx = el.dataset.playerIndex;
-        options.push({ index: options.length, name: `Player ${parseInt(pIdx)+1}`, type: 'player', playerIndex: pIdx });
+        options.push({
+          index: options.length,
+          name: `Player ${parseInt(pIdx) + 1}`,
+          type: 'player',
+          playerIndex: pIdx,
+        });
       }
     }
-    
+
     return { active: true, title, options };
   });
-  
+
   if (!targetInfo.active || targetInfo.options.length === 0) {
     return { handled: false };
   }
-  
-  console.log(`  [TARGETING] ${context}: "${targetInfo.title}" — ${targetInfo.options.length} targets: ${targetInfo.options.map(o => o.name).join(', ')}`);
-  
+
+  console.log(
+    `  [TARGETING] ${context}: "${targetInfo.title}" — ${targetInfo.options.length} targets: ${targetInfo.options.map((o) => o.name).join(', ')}`
+  );
+
   // Ask LLM to choose
-  const chosenIndex = await askLLMChoice(targetInfo.title, targetInfo.options, gameContext || context);
+  const chosenIndex = await askLLMChoice(
+    targetInfo.title,
+    targetInfo.options,
+    gameContext || context
+  );
   const chosen = targetInfo.options[chosenIndex];
-  
+
   // Click the chosen target
   const clicked = await page.evaluate(({ type, instanceId, playerIndex }) => {
     if (type === 'creature' && instanceId) {
       const el = document.querySelector(`.card.effect-target[data-instance-id="${instanceId}"]`);
-      if (el) { el.click(); return true; }
+      if (el) {
+        el.click();
+        return true;
+      }
     } else if (type === 'player' && playerIndex !== undefined) {
-      const el = document.querySelector(`.player-badge.effect-target[data-player-index="${playerIndex}"]`);
-      if (el) { el.click(); return true; }
+      const el = document.querySelector(
+        `.player-badge.effect-target[data-player-index="${playerIndex}"]`
+      );
+      if (el) {
+        el.click();
+        return true;
+      }
     }
     // Fallback: click first effect-target
     const first = document.querySelector('.effect-target');
-    if (first) { first.click(); return true; }
+    if (first) {
+      first.click();
+      return true;
+    }
     return false;
   }, chosen);
-  
+
   if (clicked) {
     console.log(`  [TARGETING] LLM chose [${chosenIndex}]: ${chosen.name}`);
     await page.waitForTimeout(500);
     return { handled: true, choice: chosen.name };
   }
-  
+
   return { handled: false };
 }
 

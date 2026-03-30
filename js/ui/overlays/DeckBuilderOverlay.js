@@ -586,7 +586,9 @@ let currentDropHandler = null;
 const setupDeckListDropZone = (onDrop) => {
   // Always re-query DOM elements (they may have been re-created by overlay re-render)
   const deckListCards = document.getElementById('deck-list-cards');
-  const sidebar = document.querySelector('.deck-builder-sidebar') || document.getElementById('deck-builder-sidebar');
+  const sidebar =
+    document.querySelector('.deck-builder-sidebar') ||
+    document.getElementById('deck-builder-sidebar');
 
   if (!deckListCards && !sidebar) return;
 

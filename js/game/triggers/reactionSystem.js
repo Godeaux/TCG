@@ -22,7 +22,6 @@ import { checkTrigger, TRIGGER_EVENTS, getTriggersForEvent } from './triggerRegi
 import { getTrapsFromHand, logMessage, queueVisualEffect } from '../../state/gameState.js';
 import { resolveCardEffect } from '../../cards/index.js';
 
-
 // ============================================================================
 // CONSTANTS
 // ============================================================================

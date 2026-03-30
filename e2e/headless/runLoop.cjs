@@ -196,8 +196,12 @@ async function main() {
     console.log(`  ${matchup}: P1 ${record.p1} | P2 ${record.p2} | Draws ${record.draws}`);
   }
 
-  const avgTurns = results.filter((r) => r.turns > 0).reduce((s, r) => s + r.turns, 0) / Math.max(results.filter((r) => r.turns > 0).length, 1);
-  const avgTime = results.filter((r) => r.timeS > 0).reduce((s, r) => s + r.timeS, 0) / Math.max(results.filter((r) => r.timeS > 0).length, 1);
+  const avgTurns =
+    results.filter((r) => r.turns > 0).reduce((s, r) => s + r.turns, 0) /
+    Math.max(results.filter((r) => r.turns > 0).length, 1);
+  const avgTime =
+    results.filter((r) => r.timeS > 0).reduce((s, r) => s + r.timeS, 0) /
+    Math.max(results.filter((r) => r.timeS > 0).length, 1);
 
   console.log(`\nAverages: ${avgTurns.toFixed(1)} turns | ${avgTime.toFixed(1)}s per game`);
 

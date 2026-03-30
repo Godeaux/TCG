@@ -22,7 +22,15 @@ import { GameController } from '../../js/game/controller.js';
 import { resolveEffectResult } from '../../js/game/effects.js';
 import { advancePhase, endTurn, finalizeEndPhase, startTurn } from '../../js/game/turnManager.js';
 import { drawCard, createGameState } from '../../js/state/gameState.js';
-import { areAbilitiesActive, cantAttack, getMultiStrikeValue, cantBeConsumed, KEYWORD_PRIMITIVES, KEYWORDS, PRIMITIVES } from '../../js/keywords.js';
+import {
+  areAbilitiesActive,
+  cantAttack,
+  getMultiStrikeValue,
+  cantBeConsumed,
+  KEYWORD_PRIMITIVES,
+  KEYWORDS,
+  PRIMITIVES,
+} from '../../js/keywords.js';
 
 ensureRegistryInitialized();
 
@@ -97,7 +105,7 @@ describe('§14 End-of-turn priority order', () => {
     // After cleanup, creature should be removed from field
     expect(state.players[0].field[0]).toBeNull();
     // Should go to carrion (it's a kill, not destroy)
-    expect(state.players[0].carrion.some(c => c.instanceId === 'para-1')).toBe(true);
+    expect(state.players[0].carrion.some((c) => c.instanceId === 'para-1')).toBe(true);
   });
 
   it('1c. Frozen creature thaws at end of turn (survives)', () => {
@@ -138,7 +146,7 @@ describe('§14 End-of-turn priority order', () => {
 
     // Paralysis should kill it before Frozen thaw happens
     expect(state.players[0].field[0]).toBeNull();
-    expect(state.players[0].carrion.some(c => c.instanceId === 'parafrozen-1')).toBe(true);
+    expect(state.players[0].carrion.some((c) => c.instanceId === 'parafrozen-1')).toBe(true);
   });
 
   it('1e. Regen + Paralyzed → still dies (paralysis overrides regen)', () => {
@@ -193,9 +201,9 @@ describe('§9 Kill vs Destroy', () => {
 
     // Per §9: Killed creature goes to carrion
     expect(state.players[0].field[0]).toBeNull();
-    expect(state.players[0].carrion.some(c => c.instanceId === 'kill-target-1')).toBe(true);
+    expect(state.players[0].carrion.some((c) => c.instanceId === 'kill-target-1')).toBe(true);
     // Should NOT go to exile
-    expect(state.players[0].exile.some(c => c.instanceId === 'kill-target-1')).toBeFalsy();
+    expect(state.players[0].exile.some((c) => c.instanceId === 'kill-target-1')).toBeFalsy();
   });
 
   it('2b. Destroy (destroyCreatures effect) → creature goes to exile, no onSlain', () => {
@@ -204,23 +212,30 @@ describe('§9 Kill vs Destroy', () => {
       name: 'Destroy Target',
       hp: 5,
       currentHp: 5, // Full HP - not killed via damage
-      onSlain: () => { onSlainTriggered = true; return {}; },
+      onSlain: () => {
+        onSlainTriggered = true;
+        return {};
+      },
       instanceId: 'destroy-target-1',
     });
     state.players[0].field[0] = creature;
 
     // Use destroyCreatures effect
-    resolveEffectResult(state, {
-      destroyCreatures: {
-        creatures: [creature],
-        ownerIndex: 0,
+    resolveEffectResult(
+      state,
+      {
+        destroyCreatures: {
+          creatures: [creature],
+          ownerIndex: 0,
+        },
       },
-    }, { playerIndex: 0, opponentIndex: 1 });
+      { playerIndex: 0, opponentIndex: 1 }
+    );
 
     // Per §9: Destroyed creature goes to exile, NOT carrion
     expect(state.players[0].field[0]).toBeNull();
-    expect(state.players[0].exile.some(c => c.instanceId === 'destroy-target-1')).toBe(true);
-    expect(state.players[0].carrion.some(c => c.instanceId === 'destroy-target-1')).toBeFalsy();
+    expect(state.players[0].exile.some((c) => c.instanceId === 'destroy-target-1')).toBe(true);
+    expect(state.players[0].carrion.some((c) => c.instanceId === 'destroy-target-1')).toBeFalsy();
     // onSlain should NOT have triggered
     expect(onSlainTriggered).toBe(false);
   });
@@ -247,9 +262,13 @@ describe('§7 Paralysis behavior', () => {
     state.players[0].field[0] = creature;
 
     // Apply paralysis via effect
-    resolveEffectResult(state, {
-      paralyzeCreature: { creature },
-    }, { playerIndex: 0, opponentIndex: 1 });
+    resolveEffectResult(
+      state,
+      {
+        paralyzeCreature: { creature },
+      },
+      { playerIndex: 0, opponentIndex: 1 }
+    );
 
     // Per §7: Loses ALL abilities permanently
     expect(creature.paralyzed).toBe(true);
@@ -269,9 +288,13 @@ describe('§7 Paralysis behavior', () => {
     });
     state.players[0].field[0] = creature;
 
-    resolveEffectResult(state, {
-      paralyzeCreature: { creature },
-    }, { playerIndex: 0, opponentIndex: 1 });
+    resolveEffectResult(
+      state,
+      {
+        paralyzeCreature: { creature },
+      },
+      { playerIndex: 0, opponentIndex: 1 }
+    );
 
     // Per §7: Gains Harmless
     expect(creature.keywords).toContain('Harmless');
@@ -310,7 +333,7 @@ describe('§7 Frozen behavior', () => {
     state.log = [];
   });
 
-  it('4a. Frozen creature can\'t attack (Passive via cantAttack)', () => {
+  it("4a. Frozen creature can't attack (Passive via cantAttack)", () => {
     const creature = makeCreature({
       name: 'Frozen Attacker',
       keywords: ['Frozen'],
@@ -324,7 +347,7 @@ describe('§7 Frozen behavior', () => {
     expect(cantAttack(creature)).toBe(true);
   });
 
-  it('4b. Frozen creature can\'t be eaten (Inedible)', () => {
+  it("4b. Frozen creature can't be eaten (Inedible)", () => {
     const creature = makeCreature({
       name: 'Frozen Prey',
       type: 'Prey',
@@ -407,9 +430,13 @@ describe('§6/§13 Immune keyword', () => {
     state.players[1].field[0] = immune;
 
     // Simulate spell effect damage via damageCreature
-    resolveEffectResult(state, {
-      damageCreature: { creature: immune, amount: 3, sourceLabel: 'spell' },
-    }, { playerIndex: 0, opponentIndex: 1 });
+    resolveEffectResult(
+      state,
+      {
+        damageCreature: { creature: immune, amount: 3, sourceLabel: 'spell' },
+      },
+      { playerIndex: 0, opponentIndex: 1 }
+    );
 
     // Per §13: Immune blocks spell/ability damage
     expect(immune.currentHp).toBe(5); // No damage taken
@@ -426,9 +453,13 @@ describe('§6/§13 Immune keyword', () => {
     state.players[1].field[0] = immune;
 
     // Simulate ability damage
-    resolveEffectResult(state, {
-      damageCreature: { creature: immune, amount: 2, sourceLabel: 'ability' },
-    }, { playerIndex: 0, opponentIndex: 1 });
+    resolveEffectResult(
+      state,
+      {
+        damageCreature: { creature: immune, amount: 2, sourceLabel: 'ability' },
+      },
+      { playerIndex: 0, opponentIndex: 1 }
+    );
 
     // Per §13: Immune blocks ability damage
     expect(immune.currentHp).toBe(5);
@@ -632,12 +663,16 @@ describe('§6.1/§12 Return to hand resets', () => {
     });
     state.players[0].field[0] = creature;
 
-    resolveEffectResult(state, {
-      returnToHand: { creature, playerIndex: 0 },
-    }, { playerIndex: 0, opponentIndex: 1 });
+    resolveEffectResult(
+      state,
+      {
+        returnToHand: { creature, playerIndex: 0 },
+      },
+      { playerIndex: 0, opponentIndex: 1 }
+    );
 
     // Per §6.1: Return to hand resets ALL stats and keywords to base card values
-    const returned = state.players[0].hand.find(c => c.instanceId === 'return-1');
+    const returned = state.players[0].hand.find((c) => c.instanceId === 'return-1');
     expect(returned).toBeDefined();
     expect(returned.currentAtk).toBe(2); // Reset to base
     expect(returned.currentHp).toBe(3); // Reset to base
@@ -673,16 +708,20 @@ describe('§4/§12 Stolen creature summoning sickness', () => {
     });
     state.players[1].field[0] = creature;
 
-    resolveEffectResult(state, {
-      stealCreature: {
-        creature,
-        fromIndex: 1,
-        toIndex: 0,
+    resolveEffectResult(
+      state,
+      {
+        stealCreature: {
+          creature,
+          fromIndex: 1,
+          toIndex: 0,
+        },
       },
-    }, { playerIndex: 0, opponentIndex: 1 });
+      { playerIndex: 0, opponentIndex: 1 }
+    );
 
     // Per §4/§12: Stolen creature gets summoning exhaustion
-    const stolen = state.players[0].field.find(c => c?.instanceId === 'stolen-1');
+    const stolen = state.players[0].field.find((c) => c?.instanceId === 'stolen-1');
     expect(stolen).toBeDefined();
     expect(stolen.summonedTurn).toBe(3); // Current turn
   });
@@ -942,7 +981,7 @@ describe('§2 Card limit across Main phases', () => {
     state.log = [];
   });
 
-  it('16a. Play a card in Main 1 → can\'t play in Main 2', () => {
+  it("16a. Play a card in Main 1 → can't play in Main 2", () => {
     state.phase = 'Main 1';
     state.cardPlayedThisTurn = true; // Card was played
 
@@ -974,7 +1013,7 @@ describe('§2 Free Play only while limit available', () => {
     state.log = [];
   });
 
-  it('17a. Card played this turn → Free Play card can\'t be played', () => {
+  it("17a. Card played this turn → Free Play card can't be played", () => {
     state.phase = 'Main 1';
     state.cardPlayedThisTurn = true; // Limit already used
 
@@ -1020,7 +1059,7 @@ describe('§12 Field at 3 + play creature = rejected', () => {
     state.log = [];
   });
 
-  it('18a. All 3 field slots full → can\'t play a creature', () => {
+  it("18a. All 3 field slots full → can't play a creature", () => {
     // Fill all 3 slots
     state.players[0].field[0] = makeCreature({ instanceId: 'field-1' });
     state.players[0].field[1] = makeCreature({ instanceId: 'field-2' });
@@ -1081,7 +1120,7 @@ describe('§5.3 Before-combat kills attacker → no combat', () => {
     state.log = [];
   });
 
-  it('21a. Before-combat effect kills attacker → attack doesn\'t proceed', () => {
+  it("21a. Before-combat effect kills attacker → attack doesn't proceed", () => {
     // Per §5.3: If before-combat kills attacker → attack does not proceed
     // This tests the principle — the actual implementation is in controller.js
     const attacker = makeCreature({
@@ -1131,8 +1170,8 @@ describe('§8 Trap activation from hand', () => {
     state.players[0].hand.push(trap);
 
     // Traps should be in hand initially, not on field
-    expect(state.players[0].hand.some(c => c.instanceId === 'trap-1')).toBe(true);
-    expect(state.players[0].field.every(slot => slot?.instanceId !== 'trap-1')).toBe(true);
+    expect(state.players[0].hand.some((c) => c.instanceId === 'trap-1')).toBe(true);
+    expect(state.players[0].field.every((slot) => slot?.instanceId !== 'trap-1')).toBe(true);
   });
 });
 
@@ -1158,9 +1197,13 @@ describe('§12 Both 0 HP after effect damage → draw', () => {
     state.log = [];
 
     // Simulate effect that damages both players
-    resolveEffectResult(state, {
-      damageBothPlayers: 3,
-    }, { playerIndex: 0, opponentIndex: 1 });
+    resolveEffectResult(
+      state,
+      {
+        damageBothPlayers: 3,
+      },
+      { playerIndex: 0, opponentIndex: 1 }
+    );
 
     expect(state.players[0].hp).toBe(0);
     expect(state.players[1].hp).toBe(0);

@@ -17,10 +17,13 @@ Players build decks by selecting **20 cards** from a pool of **~50 cards** in on
 **Experimental Decks:** Arachnid, Feline, Crustacean, Insect
 
 ### Win Condition
+
 Reduce your opponent from **10 HP to 0**.
 
 ### The Consumption System
+
 The core mechanic that defines the game. When playing a predator creature, you may consume up to 3 friendly prey:
+
 - Gain **+1 ATK and +1 HP per nutrition** consumed
 - If you consume at least 1 creature, the predator's **special ability activates**
 - Playing without consuming ("dry drop") gives base stats with no ability
@@ -28,22 +31,24 @@ The core mechanic that defines the game. When playing a predator creature, you m
 This creates constant tension: sacrifice your board presence for a powerful predator, or keep your creatures alive for flexibility?
 
 ### Turn Structure
+
 ```
 Start → Draw → Main 1 → Combat → Main 2 → End
 ```
+
 - Play **one card** per turn (free spells exempt)
 - **3 field slots** maximum per player
 - Creatures can attack enemy creatures immediately, but must wait one turn to attack the opponent directly (unless they have Haste)
 
 ### Card Types
 
-| Type | Description |
-|------|-------------|
-| **Prey** | Creatures with nutrition values that can be consumed by predators |
-| **Predator** | Creatures that consume prey for stat boosts and ability activation |
-| **Spell** | One-time effects (counts toward 1-card-per-turn limit) |
-| **Free Spell** | One-time effects (does NOT count toward limit) |
-| **Trap** | Set face-down during your turn, triggers on opponent's turn |
+| Type           | Description                                                        |
+| -------------- | ------------------------------------------------------------------ |
+| **Prey**       | Creatures with nutrition values that can be consumed by predators  |
+| **Predator**   | Creatures that consume prey for stat boosts and ability activation |
+| **Spell**      | One-time effects (counts toward 1-card-per-turn limit)             |
+| **Free Spell** | One-time effects (does NOT count toward limit)                     |
+| **Trap**       | Set face-down during your turn, triggers on opponent's turn        |
 
 ---
 
@@ -60,10 +65,10 @@ Start → Draw → Main 1 → Combat → Main 2 → End
 
 ## Documentation
 
-| Document | Purpose |
-|----------|---------|
-| [RULEBOOK.md](RULEBOOK.md) | Complete game rules reference |
-| [CLAUDE.md](CLAUDE.md) | Developer instructions and coding patterns |
+| Document                   | Purpose                                    |
+| -------------------------- | ------------------------------------------ |
+| [RULEBOOK.md](RULEBOOK.md) | Complete game rules reference              |
+| [CLAUDE.md](CLAUDE.md)     | Developer instructions and coding patterns |
 
 ---
 
@@ -134,6 +139,7 @@ User Input → GameController.execute() → State Change → Re-render
 ```
 
 **Key patterns:**
+
 - All game actions flow through `GameController` (single entry point)
 - State access uses selectors (never access state directly)
 - Card effects are data-driven via JSON + reusable effect primitives

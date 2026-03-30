@@ -85,6 +85,7 @@
 **When:** When playing a predator from ANY source (hand, deck, or carrion).
 
 **Valid targets:**
+
 - Friendly prey on field
 - Friendly predators with **Edible** on field
 - Carrion pile creatures (only if predator has **Scavenge**)
@@ -93,6 +94,7 @@
 **Limit:** 0–3 creatures total eaten.
 
 **Resolution order:**
+
 1. Select targets (0–3)
 2. Calculate total nutrition:
    - Prey → use printed Nutrition value (0 nutrition = +0/+0)
@@ -103,6 +105,7 @@
 6. Predator enters field with new stats
 
 **Dry drop (0 eaten):**
+
 - Predator enters with base stats
 - Ability does NOT activate
 - **Loses all keywords** (keywords array is cleared, not suppressed)
@@ -124,23 +127,23 @@
 
 ### 5.1 Attack Eligibility
 
-| Condition | Can attack creatures? | Can attack opponent? |
-|-----------|----------------------|---------------------|
-| Just played (no Haste) | ✅ YES | ❌ NO |
-| Just played (has Haste) | ✅ YES | ✅ YES |
-| Survived 1+ full turns | ✅ YES | ✅ YES |
-| Has Passive | ❌ NO | ❌ NO |
-| Has Harmless | ❌ NO | ❌ NO |
-| Is Frozen (grants Passive) | ❌ NO | ❌ NO |
-| Is Paralyzed (grants Harmless) | ❌ NO | ❌ NO |
+| Condition                      | Can attack creatures? | Can attack opponent? |
+| ------------------------------ | --------------------- | -------------------- |
+| Just played (no Haste)         | ✅ YES                | ❌ NO                |
+| Just played (has Haste)        | ✅ YES                | ✅ YES               |
+| Survived 1+ full turns         | ✅ YES                | ✅ YES               |
+| Has Passive                    | ❌ NO                 | ❌ NO                |
+| Has Harmless                   | ❌ NO                 | ❌ NO                |
+| Is Frozen (grants Passive)     | ❌ NO                 | ❌ NO                |
+| Is Paralyzed (grants Harmless) | ❌ NO                 | ❌ NO                |
 
 ### 5.2 Target Restrictions
 
-| Target has... | Can be attacked? | Can be ability-targeted? |
-|---------------|-----------------|--------------------------|
-| Hidden | ❌ NO (unless Acuity) | ✅ YES |
-| Invisible | ❌ NO (unless Acuity) | ❌ NO |
-| Lure | ✅ MUST target | ✅ MUST target |
+| Target has... | Can be attacked?      | Can be ability-targeted? |
+| ------------- | --------------------- | ------------------------ |
+| Hidden        | ❌ NO (unless Acuity) | ✅ YES                   |
+| Invisible     | ❌ NO (unless Acuity) | ❌ NO                    |
+| Lure          | ✅ MUST target        | ✅ MUST target           |
 
 **Lure rule:** If ANY enemy has Lure, that creature is the ONLY valid target for attacks AND abilities. If multiple Lure, choose among them. **Lure ALWAYS overrides Hidden and Invisible** — no exceptions, regardless of application order.
 
@@ -204,47 +207,47 @@ When a creature declares an attack, resolve in this exact order:
 
 ### Combat Keywords
 
-| Keyword | Behavior |
-|---------|----------|
-| **Haste** | Ignores summoning exhaustion. Can attack rival directly on turn played. |
-| **Ambush** | When attacking: take no counter-damage from defender. Blocks Poisonous. Does NOT apply when defending. |
-| **Passive** | Cannot declare attacks. Can still be attacked. Can be eaten. |
-| **Harmless** | Cannot attack. Deals 0 combat damage (both when attacking AND defending). |
-| **Lure** | Rival's animals MUST target this animal (attacks AND abilities). Always overrides Hidden/Invisible. |
-| **Acuity** | Can target Hidden and Invisible animals with attacks and abilities. |
+| Keyword              | Behavior                                                                                                           |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **Haste**            | Ignores summoning exhaustion. Can attack rival directly on turn played.                                            |
+| **Ambush**           | When attacking: take no counter-damage from defender. Blocks Poisonous. Does NOT apply when defending.             |
+| **Passive**          | Cannot declare attacks. Can still be attacked. Can be eaten.                                                       |
+| **Harmless**         | Cannot attack. Deals 0 combat damage (both when attacking AND defending).                                          |
+| **Lure**             | Rival's animals MUST target this animal (attacks AND abilities). Always overrides Hidden/Invisible.                |
+| **Acuity**           | Can target Hidden and Invisible animals with attacks and abilities.                                                |
 | **Multi-Strike [N]** | Can attack N times per combat phase (e.g., "Multi-Strike 3"). Each attack resolves the full combat priority order. |
 
 ### Protection Keywords
 
-| Keyword | Behavior |
-|---------|----------|
-| **Barrier** | Negates the first instance of damage taken (from any source). Then removed. Blocks Toxic and Neurotoxic when it absorbs combat damage. |
-| **Immune** | Only takes damage from direct animal attacks. Ignores spell/ability/trap damage. |
-| **Hidden** | Cannot be targeted by attacks (but CAN be targeted by spells/abilities). Overridden by Lure. |
+| Keyword       | Behavior                                                                                                                                               |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Barrier**   | Negates the first instance of damage taken (from any source). Then removed. Blocks Toxic and Neurotoxic when it absorbs combat damage.                 |
+| **Immune**    | Only takes damage from direct animal attacks. Ignores spell/ability/trap damage.                                                                       |
+| **Hidden**    | Cannot be targeted by attacks (but CAN be targeted by spells/abilities). Overridden by Lure.                                                           |
 | **Invisible** | Cannot be TARGETED by attacks OR spells/abilities. Mass effects ("all enemies", "all creatures") still affect Invisible creatures. Overridden by Lure. |
-| **Inedible** | Cannot be eaten by predators. |
+| **Inedible**  | Cannot be eaten by predators.                                                                                                                          |
 
 ### Eating Keywords
 
-| Keyword | Behavior |
-|---------|----------|
-| **Edible** | This predator can be eaten. Nutrition = current ATK (can be 0). |
-| **Scavenge** | When played, can eat from carrion pile (in addition to field). |
+| Keyword      | Behavior                                                        |
+| ------------ | --------------------------------------------------------------- |
+| **Edible**   | This predator can be eaten. Nutrition = current ATK (can be 0). |
+| **Scavenge** | When played, can eat from carrion pile (in addition to field).  |
 
 ### Damage Keywords
 
-| Keyword | Behavior |
-|---------|----------|
+| Keyword        | Behavior                                                                                                                    |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | **Neurotoxic** | After combat: enemy gains Paralysis. Triggers even if this creature dies. Does NOT apply if attack was absorbed by Barrier. |
-| **Toxic** | Kills any animal it damages in combat (regardless of remaining HP). Does NOT apply if attack was absorbed by Barrier. |
-| **Poisonous** | When defending: kills the attacker after combat. Blocked by Ambush (attacker avoids contact). |
+| **Toxic**      | Kills any animal it damages in combat (regardless of remaining HP). Does NOT apply if attack was absorbed by Barrier.       |
+| **Poisonous**  | When defending: kills the attacker after combat. Blocked by Ambush (attacker avoids contact).                               |
 
 ### Other Keywords
 
-| Keyword | Behavior |
-|---------|----------|
+| Keyword       | Behavior                                                                                               |
+| ------------- | ------------------------------------------------------------------------------------------------------ |
 | **Free Play** | Doesn't consume 1-card limit, BUT can only be played while limit is still available. Lost on dry drop. |
-| **Regen** | At end of controller's turn, restore HP to current max (see §6.1). |
+| **Regen**     | At end of controller's turn, restore HP to current max (see §6.1).                                     |
 
 ### 6.1 Creature HP Rules
 
@@ -305,13 +308,13 @@ Traps resolve BEFORE the triggering action completes.
 
 ### Trigger Windows
 
-| Trigger | When it fires |
-|---------|---------------|
-| "When rival plays a pred" | After predator declared, before eating |
-| "When rival plays a prey" | After prey declared, before onPlay effect |
-| "When attacked directly" | After direct attack declared, before damage |
-| "When target creature is defending" | After attack target chosen, before damage |
-| "When damaged indirectly" | After non-combat damage source declared, before damage |
+| Trigger                             | When it fires                                          |
+| ----------------------------------- | ------------------------------------------------------ |
+| "When rival plays a pred"           | After predator declared, before eating                 |
+| "When rival plays a prey"           | After prey declared, before onPlay effect              |
+| "When attacked directly"            | After direct attack declared, before damage            |
+| "When target creature is defending" | After attack target chosen, before damage              |
+| "When damaged indirectly"           | After non-combat damage source declared, before damage |
 
 ---
 
@@ -320,11 +323,13 @@ Traps resolve BEFORE the triggering action completes.
 ### Two types of creature removal:
 
 **Kill (HP reaches 0):**
+
 - Creature's HP reduced to 0 by combat damage, spell damage, ability damage, Toxic, Poisonous, or Paralysis
 - Creature → carrion pile
 - Triggers **onSlain** (unless abilities are cancelled)
 
 **Destroy (direct removal):**
+
 - Card effect explicitly says "destroy"
 - Creature removed from field directly (HP is NOT reduced)
 - Creature → exile pile (NOT carrion)
@@ -333,11 +338,13 @@ Traps resolve BEFORE the triggering action completes.
 ### onSlain Trigger Rules
 
 **Does NOT trigger if:**
+
 - Eaten by predator (consumption)
 - Removed by "destroy" effect
 - Abilities are cancelled (e.g., by Paralysis or trap)
 
 **DOES trigger if:**
+
 - Combat damage (HP ≤ 0)
 - Spell damage
 - Ability damage
@@ -361,11 +368,11 @@ Traps resolve BEFORE the triggering action completes.
 
 ## 11. SPELL CATEGORIES
 
-| Type | Counts toward limit? | When playable? | After use? |
-|------|---------------------|----------------|------------|
-| Spell | ✅ YES | Main Phase 1 or 2 | Exile |
-| Free Spell | ❌ NO (but only while limit available) | Main Phase 1 or 2 | Exile |
-| Trap | ❌ NO (activated from hand) | Opponent's turn (on trigger) | Exile |
+| Type       | Counts toward limit?                   | When playable?               | After use? |
+| ---------- | -------------------------------------- | ---------------------------- | ---------- |
+| Spell      | ✅ YES                                 | Main Phase 1 or 2            | Exile      |
+| Free Spell | ❌ NO (but only while limit available) | Main Phase 1 or 2            | Exile      |
+| Trap       | ❌ NO (activated from hand)            | Opponent's turn (on trigger) | Exile      |
 
 ---
 
@@ -427,17 +434,17 @@ Traps resolve BEFORE the triggering action completes.
 
 ## 13. DAMAGE/DEATH SOURCES
 
-| Source | Blocked by Immune? | Triggers onSlain? | Destination |
-|--------|-------------------|-------------------|-------------|
-| Direct animal attack | ❌ NO | ✅ YES | Carrion |
-| Spell damage | ✅ YES | ✅ YES | Carrion |
-| Ability damage | ✅ YES | ✅ YES | Carrion |
-| Trap damage | ✅ YES | ✅ YES | Carrion |
-| Toxic (combat kill) | N/A (instant kill) | ✅ YES | Carrion |
-| Poisonous (defender kills attacker) | N/A (instant kill) | ✅ YES | Carrion |
-| Paralysis death (end of turn) | N/A (not damage) | ✅ YES | Carrion |
-| Eaten by predator | N/A | ❌ NO | Carrion |
-| "Destroy" keyword effect | N/A | ❌ NO | **Exile** |
+| Source                              | Blocked by Immune? | Triggers onSlain? | Destination |
+| ----------------------------------- | ------------------ | ----------------- | ----------- |
+| Direct animal attack                | ❌ NO              | ✅ YES            | Carrion     |
+| Spell damage                        | ✅ YES             | ✅ YES            | Carrion     |
+| Ability damage                      | ✅ YES             | ✅ YES            | Carrion     |
+| Trap damage                         | ✅ YES             | ✅ YES            | Carrion     |
+| Toxic (combat kill)                 | N/A (instant kill) | ✅ YES            | Carrion     |
+| Poisonous (defender kills attacker) | N/A (instant kill) | ✅ YES            | Carrion     |
+| Paralysis death (end of turn)       | N/A (not damage)   | ✅ YES            | Carrion     |
+| Eaten by predator                   | N/A                | ❌ NO             | Carrion     |
+| "Destroy" keyword effect            | N/A                | ❌ NO             | **Exile**   |
 
 ---
 
@@ -455,6 +462,7 @@ When END_PHASE begins, resolve in this exact order:
 ```
 
 **Why this order matters:**
+
 - A creature that is both Paralyzed and Frozen: Paralysis kills at step 3, cleanup at step 4, Frozen thaw at step 5 is irrelevant (creature is already dead)
 - Regen happens before Paralysis death: a creature with Regen that is also Paralyzed still dies (Paralysis overrides Regen)
 
@@ -482,15 +490,15 @@ When a creature is played from hand, resolve in this exact order:
 
 These actions MUST prompt player selection:
 
-| Action | Selection Required |
-|--------|-------------------|
-| Play predator | Choose 0–3 targets to eat |
-| Play targeted spell | Choose target(s) |
-| Attack | Choose attacker, then choose target |
-| Effect "choose" | Modal appears with options |
-| Scavenge | Additional carrion pile selection UI |
-| Multiple traps trigger | Player chooses which trap(s) to activate |
-| Trap triggers | No selection (automatic activation, but player confirms) |
+| Action                 | Selection Required                                       |
+| ---------------------- | -------------------------------------------------------- |
+| Play predator          | Choose 0–3 targets to eat                                |
+| Play targeted spell    | Choose target(s)                                         |
+| Attack                 | Choose attacker, then choose target                      |
+| Effect "choose"        | Modal appears with options                               |
+| Scavenge               | Additional carrion pile selection UI                     |
+| Multiple traps trigger | Player chooses which trap(s) to activate                 |
+| Trap triggers          | No selection (automatic activation, but player confirms) |
 
 ### Selection Cancellation
 
@@ -503,6 +511,7 @@ These actions MUST prompt player selection:
 ## 17. NETWORK SYNC POINTS
 
 State must sync after:
+
 - Card played
 - Combat resolved
 - Effect resolved
@@ -539,31 +548,37 @@ State must sync after:
 Rulings received from the game master on 2026-03-27. Items marked ✅ RULED have definitive answers. Items marked ❓ PENDING still need clarification.
 
 ### 20.1 Stunned ✅ RULED
+
 - **Used by:** Cottonmouth, Eastern Diamondback Rattlesnake (Reptile)
 - **Ruling:** Stunned = **Passive** (cannot attack). At **dusk** (end of turn), lose Stunned.
 - **Summary:** One-turn attack suppression. Creature can still be attacked and use non-attack abilities.
 
 ### 20.2 Enraged ✅ RULED
+
 - **Used by:** Javan Chorus Frogs, Trumpeter Swan, American Bullfrogs, African Bullfrog, Tomato (via Tomato Frog)
 - **Ruling:** Enraged = **Lose abilities** + **Inedible** (cannot be consumed by predators).
 - **Summary:** Debuff that strips all abilities AND prevents consumption. **Permanent** unless another ability specifically removes it.
 
 ### 20.3 Drowning ✅ RULED
+
 - **Used by:** Orca, Whirlpool, Undertow, Cramp, Riptide (Fish)
 - **Ruling:** Drowning = **Lose abilities** + **Passive** (cannot attack). At **dusk** (end of turn), lose Drowning.
 - **Summary:** One-turn full suppression — no abilities AND no attacks. Clears at end of turn.
 
 ### 20.4 Slay vs Kill ✅ RULED
+
 - **Ruling:** Keyword "kill" has been **changed to "slay"** throughout. They are the same mechanic — just a terminology change.
 - **Summary:** All instances of "kill" in game text should read "slay." Slay = set HP to 0, goes to carrion, triggers onSlain effects.
 - **Scope:** "Slay animals" = ALL creatures (both sides, including own). "Slay enemies" = only opponent's creatures.
 
 ### 20.5 Bleed ✅ RULED
+
 - **Used by:** Scythian Arrows ("either bleed 2, discard 1, or kill target ally, slay enemies")
 - **Ruling:** Bleed = **self-inflicted PLAYER damage** (not creature damage). "Bleed 2" = the PLAYER who plays the card takes 2 damage to their HP.
 - **Summary:** Bleed is a cost/downside on the player, not on creatures. One-time on play.
 
 ### 20.6 Discard as Activated Ability ✅ RULED
+
 - **Used by:** Golden Dart Frog ("discard, add Blowgun to hand"), Spearfish Remora ("discard, target pred gains ambush"), Silver King ("discard, draw 1"), Tomato Frog ("discard, add Tomato to hand"), Resplendent Quetzal ("discard, allies gain +1/+0")
 - **Ruling:**
   - Discard = discard the card **with the discard ability from your hand** (the card itself is discarded)
@@ -572,6 +587,7 @@ Rulings received from the game master on 2026-03-27. Items marked ✅ RULED have
   - **Multiple** discard abilities can be used on the same turn
 
 ### 20.7 Sacrifice as Activated Ability ✅ RULED
+
 - **Used by:** Javelin Frog ("sacrifice, deal 1 damage to any target"), Golden Dart Frog ("sacrifice, add Golden Blowgun to hand"), Phantasmal Poison Frog ("sacrifice, add Phantasmal Blowgun to hand"), Curiosity ("sacrifice target ally, draw 3")
 - **Ruling:**
   - Sacrifice = sacrificing the card **with the sacrifice ability on the field**
@@ -582,6 +598,7 @@ Rulings received from the game master on 2026-03-27. Items marked ✅ RULED have
   - **NOT** affected by summoning sickness (can sacrifice a creature the turn it's played)
 
 ### 20.8 "Become" Transformation ✅ RULED
+
 - **Used by:** Egg tokens ("dawn, become Green Anole"), Hidden Eleuth Egg ("dawn, become Monte Iberia Eleuth")
 - **Ruling:**
   - **NO summoning sickness** — the card has been on the field since before dawn
@@ -593,10 +610,13 @@ Rulings received from the game master on 2026-03-27. Items marked ✅ RULED have
 - **Visual:** Show a card flip animation — the card changes animals and abilities but stays in place
 
 ### 20.9 "Play a spell" / "Play a carrion" Effects
+
 - **Used by:** Northern Lights ("play a carrion"), White Hart ("play a carrion it gains frozen"), Six-layered Neocortex ("play an ally from deck it gains frozen")
 - **Questions:**
   - "Play a carrion" — choose any creature from your carrion pile and put it on the field?
+
 ### 20.9 Play from Carrion/Deck ✅ RULED
+
 - **Ruling:**
   - Play from carrion can target **any** carrion card (not just own)
   - Play from deck and carrion **triggers consumption** (predators can eat prey when played from these sources)
@@ -606,4 +626,4 @@ Rulings received from the game master on 2026-03-27. Items marked ✅ RULED have
 
 ---
 
-*Last updated: 2026-03-28 — All §20 rulings complete (Bleed, Enraged, Become clarified)*
+_Last updated: 2026-03-28 — All §20 rulings complete (Bleed, Enraged, Become clarified)_

@@ -1,6 +1,6 @@
 /**
  * LLM Brain — Sends game state to a local model and gets a strategic decision
- * 
+ *
  * Calls Ollama API directly for fast local inference.
  * Each call = one game decision with full reasoning.
  */
@@ -68,7 +68,7 @@ Action commands: PLAY n, PLAY n EAT n,n,n, PLAY n DRY_DROP, ATTACK slot# slot#/P
 
 /**
  * Call the LLM for a game decision
- * 
+ *
  * @param {Object} qaState - Game state from __qa.getState()
  * @param {number} playerIndex - Which player (0 or 1)
  * @param {string} deckName - Deck name for context
@@ -78,17 +78,19 @@ Action commands: PLAY n, PLAY n EAT n,n,n, PLAY n DRY_DROP, ATTACK slot# slot#/P
 async function getDecision(qaState, playerIndex, deckName, options = {}) {
   const model = options.model || 'qwen3-coder-next:latest';
   const temperature = options.temperature ?? 0.3;
-  
+
   const statePrompt = formatStatePrompt(qaState, playerIndex, deckName);
-  const correctionContext = options.systemOverride ? `\n\n⚠️ CORRECTION:\n${options.systemOverride}` : '';
+  const correctionContext = options.systemOverride
+    ? `\n\n⚠️ CORRECTION:\n${options.systemOverride}`
+    : '';
   const fullPrompt = `${SYSTEM_PROMPT}\n\n---\n\n${statePrompt}${correctionContext}`;
-  
+
   const start = Date.now();
-  
+
   try {
     const useChatAPI = CHAT_API_MODELS.has(model);
     const url = useChatAPI ? OLLAMA_CHAT_URL : OLLAMA_GENERATE_URL;
-    
+
     const body = useChatAPI
       ? {
           model,
@@ -105,44 +107,47 @@ async function getDecision(qaState, playerIndex, deckName, options = {}) {
           keep_alive: '30m',
           options: { temperature, num_predict: 400 },
         };
-    
+
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    
+
     if (!response.ok) {
       throw new Error(`Ollama error: ${response.status} ${response.statusText}`);
     }
-    
+
     const data = await response.json();
     const timeMs = Date.now() - start;
-    const rawResponse = useChatAPI ? (data.message?.content || '') : (data.response || '');
-    const thinking = useChatAPI ? '' : (data.thinking || '');
+    const rawResponse = useChatAPI ? data.message?.content || '' : data.response || '';
+    const thinking = useChatAPI ? '' : data.thinking || '';
     const action = parseAction(rawResponse);
-    
+
     // Combine thinking + response for full reasoning log
-    const fullReasoning = thinking 
+    const fullReasoning = thinking
       ? `[Thinking] ${thinking.trim()}\n[Response] ${rawResponse.trim()}`
       : rawResponse.trim();
-    
+
     // If parse failed, retry with a short action-only prompt
     if (action.type === 'unknown') {
       const retryPrompt = `You are playing Food Chain TCG. Your previous response didn't include a valid action command.\n\nGiven this board state:\n${statePrompt}\n\nOutput ONLY one action command. Nothing else. No explanation.\nExample: PLAY 0\nExample: ATTACK 0 PLAYER\nExample: END_TURN`;
-      
+
       try {
         const retryResp = await fetch(OLLAMA_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            model, prompt: retryPrompt, stream: false, keep_alive: '30m',
+            model,
+            prompt: retryPrompt,
+            stream: false,
+            keep_alive: '30m',
             options: { temperature: 0.1, num_predict: 30 },
           }),
         });
         const retryData = await retryResp.json();
         const retryAction = parseAction(retryData.response || '');
-        
+
         if (retryAction.type !== 'unknown') {
           return {
             reasoning: fullReasoning + '\n[RETRY] ' + (retryData.response || '').trim(),
@@ -156,9 +161,11 @@ async function getDecision(qaState, playerIndex, deckName, options = {}) {
             retried: true,
           };
         }
-      } catch (e) { /* retry failed, return original */ }
+      } catch (e) {
+        /* retry failed, return original */
+      }
     }
-    
+
     return {
       reasoning: fullReasoning,
       action,
@@ -197,12 +204,39 @@ async function testBrain() {
         hp: 8,
         deckSize: 14,
         hand: [
-          { name: 'Mockingbird', type: 'Prey', atk: 1, hp: 1, currentAtk: 1, currentHp: 1, keywords: [], effectText: 'Copy abilities of target animal' },
-          { name: 'Harpy Eagle', type: 'Predator', atk: 5, hp: 5, currentAtk: 5, currentHp: 5, keywords: [], effectText: 'Add target enemy to hand' },
+          {
+            name: 'Mockingbird',
+            type: 'Prey',
+            atk: 1,
+            hp: 1,
+            currentAtk: 1,
+            currentHp: 1,
+            keywords: [],
+            effectText: 'Copy abilities of target animal',
+          },
+          {
+            name: 'Harpy Eagle',
+            type: 'Predator',
+            atk: 5,
+            hp: 5,
+            currentAtk: 5,
+            currentHp: 5,
+            keywords: [],
+            effectText: 'Add target enemy to hand',
+          },
           { name: 'Swan Song', type: 'Spell', effectText: 'Heal 9' },
         ],
         field: [
-          { name: 'Doctor Bird', type: 'Prey', currentAtk: 1, currentHp: 1, keywords: ['Free Play', 'Immune'], slot: 0, canAttack: false, canAttackPlayer: false },
+          {
+            name: 'Doctor Bird',
+            type: 'Prey',
+            currentAtk: 1,
+            currentHp: 1,
+            keywords: ['Free Play', 'Immune'],
+            slot: 0,
+            canAttack: false,
+            canAttackPlayer: false,
+          },
           null,
           null,
         ],
@@ -215,7 +249,16 @@ async function testBrain() {
         handSize: 5,
         field: [
           null,
-          { name: 'Cane Toad', type: 'Predator', currentAtk: 4, currentHp: 3, keywords: ['Poisonous'], slot: 1, canAttack: true, canAttackPlayer: true },
+          {
+            name: 'Cane Toad',
+            type: 'Predator',
+            currentAtk: 4,
+            currentHp: 3,
+            keywords: ['Poisonous'],
+            slot: 1,
+            canAttack: true,
+            canAttackPlayer: true,
+          },
           null,
         ],
         carrion: [],
@@ -225,14 +268,16 @@ async function testBrain() {
     pendingContext: null,
     ui: { isMyTurn: true },
   };
-  
+
   console.log('Testing LLM brain...');
   const decision = await getDecision(mockState, 0, 'Bird');
   console.log(`\nModel: ${decision.model}`);
-  console.log(`Time: ${decision.timeMs}ms (${decision.promptTokens} prompt + ${decision.tokensUsed} gen tokens)`);
+  console.log(
+    `Time: ${decision.timeMs}ms (${decision.promptTokens} prompt + ${decision.tokensUsed} gen tokens)`
+  );
   console.log(`\nReasoning:\n${decision.reasoning}`);
   console.log(`\nParsed action: ${JSON.stringify(decision.action)}`);
-  
+
   return decision;
 }
 

@@ -39,7 +39,14 @@
       "nutrition": 1,
       "keywords": ["Passive", "Immune"],
       "effects": {
-        "onEnd": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-prey", "title": "Choose a Rival's prey to consume", "effect": { "consume": true } } }
+        "onEnd": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "enemy-prey",
+            "title": "Choose a Rival's prey to consume",
+            "effect": { "consume": true }
+          }
+        }
       }
     },
     {
@@ -255,7 +262,14 @@
       "nutrition": 1,
       "keywords": ["Free Play"],
       "effects": {
-        "discardEffect": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-predators", "title": "Choose a predator to gain Ambush", "effect": { "keyword": "Ambush" } } }
+        "discardEffect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "friendly-predators",
+            "title": "Choose a predator to gain Ambush",
+            "effect": { "keyword": "Ambush" }
+          }
+        }
       }
     },
     {
@@ -292,7 +306,10 @@
               {
                 "label": "Grow Stronger",
                 "description": "This creature gains +2/+2",
-                "effect": { "type": "buff", "params": { "attack": 2, "health": 2, "target": "self" } }
+                "effect": {
+                  "type": "buff",
+                  "params": { "attack": 2, "health": 2, "target": "self" }
+                }
               }
             ]
           }
@@ -493,7 +510,14 @@
       "hp": 3,
       "keywords": ["Edible"],
       "effects": {
-        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-prey", "title": "Choose a prey to kill", "effect": { "kill": true } } }
+        "onConsume": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "enemy-prey",
+            "title": "Choose a prey to kill",
+            "effect": { "kill": true }
+          }
+        }
       }
     },
     {
@@ -533,7 +557,14 @@
       "hp": 4,
       "keywords": [],
       "effects": {
-        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "hand-prey", "title": "Choose a prey to play", "effect": { "play": true } } }
+        "onConsume": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "hand-prey",
+            "title": "Choose a prey to play",
+            "effect": { "play": true }
+          }
+        }
       }
     },
     {
@@ -563,7 +594,14 @@
       "hp": 4,
       "keywords": [],
       "effects": {
-        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "carrion-predators", "title": "Choose a carrion predator to copy", "effect": { "copyAbilities": true } } }
+        "onConsume": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "carrion-predators",
+            "title": "Choose a carrion predator to copy",
+            "effect": { "copyAbilities": true }
+          }
+        }
       }
     },
     {
@@ -584,7 +622,14 @@
       "hp": 5,
       "keywords": ["Acuity"],
       "effects": {
-        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to kill", "effect": { "kill": true } } }
+        "onConsume": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "enemy-creatures",
+            "title": "Choose a creature to kill",
+            "effect": { "kill": true }
+          }
+        }
       }
     },
     {
@@ -610,7 +655,14 @@
       "flavorText": "Gill nets have been used since the Stone Age — modern drift nets can stretch over 50 km long.",
       "type": "Spell",
       "effects": {
-        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-prey", "title": "Choose a prey to kill", "effect": { "kill": true } } }
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "enemy-prey",
+            "title": "Choose a prey to kill",
+            "effect": { "kill": true }
+          }
+        }
       }
     },
     {
@@ -656,9 +708,28 @@
           "params": {
             "title": "Sunken Treasure: choose an option",
             "options": [
-              { "label": "Draw 3", "description": "Draw 3 cards", "effect": { "type": "draw", "params": { "count": 3 } } },
-              { "label": "Heal 3", "description": "Heal 3 HP", "effect": { "type": "heal", "params": { "amount": 3 } } },
-              { "label": "+3/+3", "description": "Target creature gains +3/+3", "effect": { "type": "selectFromGroup", "params": { "targetGroup": "all-creatures", "title": "Choose a creature to buff", "effect": { "buff": { "attack": 3, "health": 3 } } } } }
+              {
+                "label": "Draw 3",
+                "description": "Draw 3 cards",
+                "effect": { "type": "draw", "params": { "count": 3 } }
+              },
+              {
+                "label": "Heal 3",
+                "description": "Heal 3 HP",
+                "effect": { "type": "heal", "params": { "amount": 3 } }
+              },
+              {
+                "label": "+3/+3",
+                "description": "Target creature gains +3/+3",
+                "effect": {
+                  "type": "selectFromGroup",
+                  "params": {
+                    "targetGroup": "all-creatures",
+                    "title": "Choose a creature to buff",
+                    "effect": { "buff": { "attack": 3, "health": 3 } }
+                  }
+                }
+              }
             ]
           }
         }
@@ -670,7 +741,14 @@
       "flavorText": "Toggling harpoons revolutionized whaling — the head pivots after entry, making extraction impossible.",
       "type": "Spell",
       "effects": {
-        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a Rival's creature", "effect": { "damage": 4, "steal": true } } }
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "enemy-creatures",
+            "title": "Choose a Rival's creature",
+            "effect": { "damage": 4, "steal": true }
+          }
+        }
       }
     },
     {
@@ -691,7 +769,14 @@
       "flavorText": "Trophic cascades show that removing one predator can collapse an entire ecosystem within years.",
       "type": "Free Spell",
       "effects": {
-        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "friendly-predators", "title": "Choose a predator to gain Edible", "effect": { "keyword": "Edible" } } }
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "friendly-predators",
+            "title": "Choose a predator to gain Edible",
+            "effect": { "keyword": "Edible" }
+          }
+        }
       }
     },
     {
@@ -712,7 +797,14 @@
       "flavorText": "Undertows pull at up to 8 feet per second — faster than an Olympic swimmer's sustained speed.",
       "type": "Free Spell",
       "effects": {
-        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a Rival's creature to strip abilities", "effect": { "removeAbilities": true } } }
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "enemy-creatures",
+            "title": "Choose a Rival's creature to strip abilities",
+            "effect": { "removeAbilities": true }
+          }
+        }
       }
     },
     {

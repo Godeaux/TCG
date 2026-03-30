@@ -39,8 +39,8 @@ If you want to use custom filenames, edit `js/cardImages.js`:
 
 ```javascript
 const CARD_IMAGE_MAP = {
-  "f_py1": "great_white_shark.jpg",  // Custom filename
-  "b_m1": "eagle.jpg",               // Custom filename
+  f_py1: 'great_white_shark.jpg', // Custom filename
+  b_m1: 'eagle.jpg', // Custom filename
 };
 ```
 

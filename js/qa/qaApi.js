@@ -381,21 +381,26 @@ const qaApi = {
     const player = state.players[state.activePlayerIndex];
     const card = player.hand[handIndex];
     if (!card) return false;
-    
+
     const eff = card.effects?.effect;
     if (!eff) return false;
-    
+
     // Single effect
     if (eff.type === 'selectFromGroup' || eff.type === 'selectTarget') return true;
     if (eff.params?.targetGroup) return true;
-    
+
     // Array of effects (multi-step spells)
     if (Array.isArray(eff)) {
       for (const e of eff) {
-        if (e?.type === 'selectFromGroup' || e?.type === 'selectTarget' || e?.type === 'selectAndDiscard') return true;
+        if (
+          e?.type === 'selectFromGroup' ||
+          e?.type === 'selectTarget' ||
+          e?.type === 'selectAndDiscard'
+        )
+          return true;
       }
     }
-    
+
     // Check via game controller
     if (_gameController) {
       try {
@@ -403,7 +408,7 @@ const qaApi = {
         if (sel?.type === 'selectTarget') return true;
       } catch {}
     }
-    
+
     return false;
   },
 
@@ -579,7 +584,11 @@ const qaApi = {
             type: ActionTypes.RECEIVE_SYNCED_STATE,
             payload: { state: data.game_state },
           });
-          return { success: true, turn: data.game_state.turn, activePlayer: data.game_state.activePlayerIndex };
+          return {
+            success: true,
+            turn: data.game_state.turn,
+            activePlayer: data.game_state.activePlayerIndex,
+          };
         }
         return { success: false, error: 'No game state in DB' };
       } catch (e) {

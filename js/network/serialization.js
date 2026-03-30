@@ -58,7 +58,6 @@ export const serializeCardSnapshot = (card) => {
     // Track if abilities were copied from another card (for re-applying after hydration)
     copiedFromId: card.copiedFromId ?? null,
     // Mechanic-specific state that must sync
-
   };
 };
 
@@ -140,8 +139,6 @@ export const hydrateCardSnapshot = (snapshot, fallbackTurn) => {
         : '(Copied) No effect text.';
     }
   }
-
-
 
   return instance;
 };

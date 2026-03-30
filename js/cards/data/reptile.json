@@ -66,7 +66,10 @@
       "summons": ["token-lava-lizard"],
       "effects": {
         "onPlay": [
-          { "type": "summonTokens", "params": { "tokenIds": ["token-lava-lizard", "token-lava-lizard"] } },
+          {
+            "type": "summonTokens",
+            "params": { "tokenIds": ["token-lava-lizard", "token-lava-lizard"] }
+          },
           { "type": "damageRival", "params": { "amount": 1 } }
         ]
       }
@@ -184,7 +187,14 @@
       "nutrition": 1,
       "keywords": ["Free Play"],
       "effects": {
-        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to freeze", "effect": { "keyword": "Frozen" } } }
+        "onPlay": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "enemy-creatures",
+            "title": "Choose a creature to freeze",
+            "effect": { "keyword": "Frozen" }
+          }
+        }
       }
     },
     {
@@ -197,7 +207,14 @@
       "nutrition": 1,
       "keywords": [],
       "effects": {
-        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "other-creatures", "title": "Choose a creature to copy abilities from", "effect": { "copyAbilitiesFrom": true } } }
+        "onPlay": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "other-creatures",
+            "title": "Choose a creature to copy abilities from",
+            "effect": { "copyAbilitiesFrom": true }
+          }
+        }
       }
     },
     {
@@ -210,7 +227,14 @@
       "nutrition": 2,
       "keywords": [],
       "effects": {
-        "onBeforeCombat": { "type": "selectFromGroup", "params": { "targetGroup": "all-entities", "title": "Choose a target for damage", "effect": { "damage": 2, "label": "snapping turtle" } } }
+        "onBeforeCombat": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "all-entities",
+            "title": "Choose a target for damage",
+            "effect": { "damage": 2, "label": "snapping turtle" }
+          }
+        }
       }
     },
     {
@@ -326,7 +350,14 @@
       "hp": 4,
       "keywords": [],
       "effects": {
-        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-prey", "title": "Choose a prey to kill", "effect": { "kill": true } } }
+        "onConsume": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "enemy-prey",
+            "title": "Choose a prey to kill",
+            "effect": { "kill": true }
+          }
+        }
       }
     },
     {
@@ -367,9 +398,21 @@
           "params": {
             "title": "Choose Chinese Alligator's effect",
             "options": [
-              { "label": "Draw 3", "description": "Draw 3 cards", "effect": { "type": "draw", "params": { "count": 3 } } },
-              { "label": "Heal 3", "description": "Heal 3 HP", "effect": { "type": "heal", "params": { "amount": 3 } } },
-              { "label": "Deal 3 damage", "description": "Deal 3 damage to rival", "effect": { "type": "damageRival", "params": { "amount": 3 } } }
+              {
+                "label": "Draw 3",
+                "description": "Draw 3 cards",
+                "effect": { "type": "draw", "params": { "count": 3 } }
+              },
+              {
+                "label": "Heal 3",
+                "description": "Heal 3 HP",
+                "effect": { "type": "heal", "params": { "amount": 3 } }
+              },
+              {
+                "label": "Deal 3 damage",
+                "description": "Deal 3 damage to rival",
+                "effect": { "type": "damageRival", "params": { "amount": 3 } }
+              }
             ]
           }
         }
@@ -415,7 +458,14 @@
       "hp": 4,
       "keywords": [],
       "effects": {
-        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "carrion-predators", "title": "Choose a carrion predator to copy", "effect": { "copyAbilities": true } } }
+        "onConsume": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "carrion-predators",
+            "title": "Choose a carrion predator to copy",
+            "effect": { "copyAbilities": true }
+          }
+        }
       }
     },
     {
@@ -451,7 +501,14 @@
       "hp": 5,
       "keywords": [],
       "effects": {
-        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "all-entities", "title": "Choose a target for damage", "effect": { "damage": 3, "label": "chomp" } } },
+        "onConsume": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "all-entities",
+            "title": "Choose a target for damage",
+            "effect": { "damage": 3, "label": "chomp" }
+          }
+        },
         "onSlain": { "type": "heal", "params": { "amount": 3 } }
       }
     },
@@ -464,7 +521,14 @@
       "hp": 6,
       "keywords": [],
       "effects": {
-        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to kill", "effect": { "kill": true } } }
+        "onConsume": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "enemy-creatures",
+            "title": "Choose a creature to kill",
+            "effect": { "kill": true }
+          }
+        }
       }
     },
     {
@@ -503,7 +567,14 @@
       "flavorText": "Snake neurotoxins block acetylcholine receptors at nerve-muscle junctions, causing progressive paralysis within minutes.",
       "type": "Spell",
       "effects": {
-        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a Rival's creature to paralyze", "effect": { "paralyze": true } } }
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "enemy-creatures",
+            "title": "Choose a Rival's creature to paralyze",
+            "effect": { "paralyze": true }
+          }
+        }
       }
     },
     {
@@ -512,7 +583,10 @@
       "flavorText": "Reptiles bask to reach optimal body temperature — even a few degrees can double their digestion speed and reflexes.",
       "type": "Spell",
       "effects": {
-        "effect": { "type": "buffStats", "params": { "targetType": "all-friendly", "stats": { "attack": 2, "health": 2 } } }
+        "effect": {
+          "type": "buffStats",
+          "params": { "targetType": "all-friendly", "stats": { "attack": 2, "health": 2 } }
+        }
       }
     },
     {
@@ -569,7 +643,14 @@
       "flavorText": "A striking snake accelerates its head at up to 100 m/s squared — faster than any mammalian predator's lunge.",
       "type": "Free Spell",
       "effects": {
-        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature for damage", "effect": { "damage": 2, "label": "surprise" } } }
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "enemy-creatures",
+            "title": "Choose a creature for damage",
+            "effect": { "damage": 2, "label": "surprise" }
+          }
+        }
       }
     },
     {

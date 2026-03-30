@@ -20,7 +20,7 @@ const CARD_FILES = [
   'reptile.json',
   'amphibian.json',
   'mammal.json',
-  'tokens.json'
+  'tokens.json',
 ];
 
 // ============================================
@@ -45,18 +45,20 @@ const EFFECT_PATTERNS = [
     pattern: /\bDraw (\d+)/i,
     check: (match, effects) => {
       const count = parseInt(match[1]);
-      return hasEffectWithParam(effects, 'draw', 'count', count) ||
-             hasEffectType(effects, 'drawAndRevealHand') ||
-             hasEffectType(effects, 'forceDiscardAndTutor');
+      return (
+        hasEffectWithParam(effects, 'draw', 'count', count) ||
+        hasEffectType(effects, 'drawAndRevealHand') ||
+        hasEffectType(effects, 'forceDiscardAndTutor')
+      );
     },
-    describe: (match) => `Draw ${match[1]}`
+    describe: (match) => `Draw ${match[1]}`,
   },
 
   // Heal
   {
     pattern: /\bHeal (\d+)/i,
     check: (match, effects) => hasEffectWithParam(effects, 'heal', 'amount', parseInt(match[1])),
-    describe: (match) => `Heal ${match[1]}`
+    describe: (match) => `Heal ${match[1]}`,
   },
 
   // Damage to any target
@@ -66,7 +68,7 @@ const EFFECT_PATTERNS = [
       const amount = parseInt(match[1]);
       return hasEffectWithParam(effects, 'selectTargetForDamage', 'amount', amount);
     },
-    describe: (match) => `Deal ${match[1]} damage to any target`
+    describe: (match) => `Deal ${match[1]} damage to any target`,
   },
 
   // Deal damage (general)
@@ -74,13 +76,15 @@ const EFFECT_PATTERNS = [
     pattern: /\bdeal (\d+) damage/i,
     check: (match, effects) => {
       const amount = parseInt(match[1]);
-      return hasEffectWithParam(effects, 'selectTargetForDamage', 'amount', amount) ||
-             hasEffectWithParam(effects, 'damageOpponent', 'amount', amount) ||
-             hasEffectWithParam(effects, 'damageCreature', 'amount', amount) ||
-             hasEffectType(effects, 'damageAllEnemyCreatures') ||
-             hasEffectType(effects, 'damageAllCreatures');
+      return (
+        hasEffectWithParam(effects, 'selectTargetForDamage', 'amount', amount) ||
+        hasEffectWithParam(effects, 'damageOpponent', 'amount', amount) ||
+        hasEffectWithParam(effects, 'damageCreature', 'amount', amount) ||
+        hasEffectType(effects, 'damageAllEnemyCreatures') ||
+        hasEffectType(effects, 'damageAllCreatures')
+      );
     },
-    describe: (match) => `Deal ${match[1]} damage`
+    describe: (match) => `Deal ${match[1]} damage`,
   },
 
   // Summon tokens with count - "Play N [token]"
@@ -90,14 +94,14 @@ const EFFECT_PATTERNS = [
       const count = parseInt(match[1]);
       return hasTokenCountAtLeast(effects, count);
     },
-    describe: (match) => `Play ${match[1]} tokens`
+    describe: (match) => `Play ${match[1]} tokens`,
   },
 
   // Single summon - "play [token]" without number
   {
     pattern: /\bplay ([A-Z][a-zA-Z\s'-]+?)(?:\.|,|$)/i,
     check: (match, effects) => hasEffectType(effects, 'summonTokens'),
-    describe: (match) => `Play ${match[1]}`
+    describe: (match) => `Play ${match[1]}`,
   },
 
   // Buff stats "+N/+N" or "gains +N/+N"
@@ -108,113 +112,130 @@ const EFFECT_PATTERNS = [
       const hp = parseInt(match[2]);
       return hasBuffEffect(effects, atk, hp);
     },
-    describe: (match) => `+${match[1]}/+${match[2]} buff`
+    describe: (match) => `+${match[1]}/+${match[2]} buff`,
   },
 
   // Grants keyword
   {
-    pattern: /\bgains? (Haste|Barrier|Invisible|Hidden|Ambush|Frozen|Passive|Immune|Pack|Poisonous|Venomous|Lure)/i,
+    pattern:
+      /\bgains? (Haste|Barrier|Invisible|Hidden|Ambush|Frozen|Passive|Immune|Pack|Poisonous|Venomous|Lure)/i,
     check: (match, effects) => {
       const keyword = match[1];
-      return hasEffectType(effects, 'grantKeyword') ||
-             hasEffectType(effects, 'addKeyword') ||
-             hasEffectType(effects, 'grantBarrier') ||
-             hasEffectType(effects, 'selectEnemyToFreeze') ||
-             hasEffectType(effects, 'freezeAllEnemies');
+      return (
+        hasEffectType(effects, 'grantKeyword') ||
+        hasEffectType(effects, 'addKeyword') ||
+        hasEffectType(effects, 'grantBarrier') ||
+        hasEffectType(effects, 'selectEnemyToFreeze') ||
+        hasEffectType(effects, 'freezeAllEnemies')
+      );
     },
-    describe: (match) => `Grant ${match[1]}`
+    describe: (match) => `Grant ${match[1]}`,
   },
 
   // Reveal hand
   {
     pattern: /\bRival reveals hand/i,
     check: (match, effects) => {
-      return hasEffectType(effects, 'revealHand') ||
-             hasEffectType(effects, 'revealHandAndSelectPreyToKill') ||
-             hasEffectType(effects, 'drawAndRevealHand') ||
-             hasEffectType(effects, 'revealAndTutor');
+      return (
+        hasEffectType(effects, 'revealHand') ||
+        hasEffectType(effects, 'revealHandAndSelectPreyToKill') ||
+        hasEffectType(effects, 'drawAndRevealHand') ||
+        hasEffectType(effects, 'revealAndTutor')
+      );
     },
-    describe: () => 'Reveal hand'
+    describe: () => 'Reveal hand',
   },
 
   // Kill target
   {
     pattern: /\bKill target (prey|predator|creature)/i,
     check: (match, effects) => {
-      return hasEffectType(effects, 'selectEnemyToKill') ||
-             hasEffectType(effects, 'selectEnemyPreyToKill') ||
-             hasEffectType(effects, 'revealHandAndSelectPreyToKill');
+      return (
+        hasEffectType(effects, 'selectEnemyToKill') ||
+        hasEffectType(effects, 'selectEnemyPreyToKill') ||
+        hasEffectType(effects, 'revealHandAndSelectPreyToKill')
+      );
     },
-    describe: (match) => `Kill target ${match[1]}`
+    describe: (match) => `Kill target ${match[1]}`,
   },
 
   // Discard
   {
     pattern: /\bRival discards (\d+)/i,
     check: (match, effects) => {
-      return hasEffectType(effects, 'discardCards') ||
-             hasEffectType(effects, 'forceOpponentDiscard') ||
-             hasEffectType(effects, 'forceDiscardAndTutor');
+      return (
+        hasEffectType(effects, 'discardCards') ||
+        hasEffectType(effects, 'forceOpponentDiscard') ||
+        hasEffectType(effects, 'forceDiscardAndTutor')
+      );
     },
-    describe: (match) => `Rival discards ${match[1]}`
+    describe: (match) => `Rival discards ${match[1]}`,
   },
 
   // Negate attack
   {
     pattern: /\bnegate (direct )?attack/i,
     check: (match, effects) => {
-      return hasEffectType(effects, 'negateAttack') ||
-             hasEffectType(effects, 'negateCombat') ||
-             hasEffectType(effects, 'negateAndKillAttacker') ||
-             hasEffectType(effects, 'negateAndSummon');
+      return (
+        hasEffectType(effects, 'negateAttack') ||
+        hasEffectType(effects, 'negateCombat') ||
+        hasEffectType(effects, 'negateAndKillAttacker') ||
+        hasEffectType(effects, 'negateAndSummon')
+      );
     },
-    describe: () => 'Negate attack'
+    describe: () => 'Negate attack',
   },
 
   // Revive
   {
     pattern: /\brevive/i,
     check: (match, effects) => hasEffectType(effects, 'reviveCreature'),
-    describe: () => 'Revive'
+    describe: () => 'Revive',
   },
 
   // Consume
   {
     pattern: /\bconsume target/i,
     check: (match, effects) => {
-      return hasEffectType(effects, 'selectEnemyPreyToConsume') ||
-             hasEffectType(effects, 'consumeTarget');
+      return (
+        hasEffectType(effects, 'selectEnemyPreyToConsume') ||
+        hasEffectType(effects, 'consumeTarget')
+      );
     },
-    describe: () => 'Consume target'
+    describe: () => 'Consume target',
   },
 
   // Add to hand
   {
     pattern: /\badd .+ to hand/i,
     check: (match, effects) => {
-      return hasEffectType(effects, 'addToHand') ||
-             hasEffectType(effects, 'tutorFromDeck') ||
-             hasEffectType(effects, 'selectCarrionToAddToHand');
+      return (
+        hasEffectType(effects, 'addToHand') ||
+        hasEffectType(effects, 'tutorFromDeck') ||
+        hasEffectType(effects, 'selectCarrionToAddToHand')
+      );
     },
-    describe: () => 'Add to hand'
+    describe: () => 'Add to hand',
   },
 
   // Steal
   {
     pattern: /\bsteal/i,
     check: (match, effects) => hasEffectType(effects, 'selectEnemyToSteal'),
-    describe: () => 'Steal'
+    describe: () => 'Steal',
   },
 
   // Return to hand
   {
     pattern: /\breturn .+ to .+ hand/i,
     check: (match, effects) => {
-      return hasEffectType(effects, 'returnAllEnemies') ||
-             hasEffectType(effects, 'selectEnemyToReturnToOpponentHand') ||
-             hasEffectType(effects, 'returnTriggeredToHand');
+      return (
+        hasEffectType(effects, 'returnAllEnemies') ||
+        hasEffectType(effects, 'selectEnemyToReturnToOpponentHand') ||
+        hasEffectType(effects, 'returnTriggeredToHand')
+      );
     },
-    describe: () => 'Return to hand'
+    describe: () => 'Return to hand',
   },
 ];
 
@@ -234,7 +255,7 @@ function flattenEffects(effects) {
       result.push(effect);
       // Check nested options in chooseOption
       if (effect.type === 'chooseOption' && effect.params?.options) {
-        effect.params.options.forEach(opt => {
+        effect.params.options.forEach((opt) => {
           if (opt.effect) addEffect(opt.effect);
         });
       }
@@ -250,12 +271,12 @@ function flattenEffects(effects) {
 
 function hasEffectType(effects, type) {
   const flat = flattenEffects(effects);
-  return flat.some(e => e.type === type);
+  return flat.some((e) => e.type === type);
 }
 
 function hasEffectWithParam(effects, type, paramName, value) {
   const flat = flattenEffects(effects);
-  return flat.some(e => e.type === type && e.params?.[paramName] === value);
+  return flat.some((e) => e.type === type && e.params?.[paramName] === value);
 }
 
 function hasTokenCountAtLeast(effects, count) {
@@ -274,7 +295,7 @@ function hasTokenCountAtLeast(effects, count) {
 
 function hasBuffEffect(effects, atk, hp) {
   const flat = flattenEffects(effects);
-  return flat.some(e => {
+  return flat.some((e) => {
     if (e.type === 'buff' || e.type === 'buffStats') {
       return e.params?.attack === atk && e.params?.health === hp;
     }
@@ -313,7 +334,7 @@ function auditCard(card) {
           expected: expectedTrigger,
           found: triggers.length ? triggers : 'no effects',
           text: effectText,
-          severity: 'high'
+          severity: 'high',
         });
       }
     }
@@ -329,7 +350,7 @@ function auditCard(card) {
           expected: describe(match),
           found: 'no effects object',
           text: effectText,
-          severity: 'high'
+          severity: 'high',
         });
       } else if (!check(match, effects)) {
         issues.push({
@@ -337,7 +358,7 @@ function auditCard(card) {
           expected: describe(match),
           found: JSON.stringify(effects).substring(0, 200),
           text: effectText,
-          severity: 'medium'
+          severity: 'medium',
         });
       }
     }
@@ -349,7 +370,7 @@ function auditCard(card) {
       type: 'undocumented_effect',
       expected: 'effectText describing the effect',
       found: JSON.stringify(effects).substring(0, 200),
-      severity: 'low'
+      severity: 'low',
     });
   }
 
@@ -370,7 +391,7 @@ function auditFile(filename) {
         cardId: card.id,
         cardName: card.name,
         file: filename,
-        issues
+        issues,
       });
     }
   }
@@ -447,7 +468,9 @@ function main() {
       console.log(`  Type: ${issue.type}`);
       console.log(`  Text: "${issue.text}"`);
       console.log(`  Expected: ${issue.expected}`);
-      console.log(`  Found: ${typeof issue.found === 'string' ? issue.found.substring(0, 100) + '...' : issue.found}`);
+      console.log(
+        `  Found: ${typeof issue.found === 'string' ? issue.found.substring(0, 100) + '...' : issue.found}`
+      );
       console.log('');
     }
   }
@@ -462,12 +485,19 @@ function main() {
 
   // Write JSON report
   const reportPath = join(__dirname, 'audit-report.json');
-  writeFileSync(reportPath, JSON.stringify({
-    timestamp: new Date().toISOString(),
-    totalCards,
-    cardsWithIssues,
-    issues: allIssues
-  }, null, 2));
+  writeFileSync(
+    reportPath,
+    JSON.stringify(
+      {
+        timestamp: new Date().toISOString(),
+        totalCards,
+        cardsWithIssues,
+        issues: allIssues,
+      },
+      null,
+      2
+    )
+  );
   console.log(`\nDetailed report written to: ${reportPath}`);
 }
 

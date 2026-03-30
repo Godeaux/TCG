@@ -634,7 +634,6 @@ export const renderCard = (card, options = {}) => {
     cardElement.appendChild(overlay);
   }
 
-
   // Lure - red pulsing beacon effect (field only)
   if (context === 'field' && hasLure(card) && areAbilitiesActive(card)) {
     const overlay = document.createElement('div');
@@ -656,11 +655,7 @@ export const renderCard = (card, options = {}) => {
   }
 
   // Hidden - semi-transparent ghosted shimmer effect (field only)
-  if (
-    context === 'field' &&
-    isHidden(card) &&
-    areAbilitiesActive(card)
-  ) {
+  if (context === 'field' && isHidden(card) && areAbilitiesActive(card)) {
     const overlay = document.createElement('div');
     overlay.className = 'status-overlay hidden-overlay';
     // Add heat wave distortion layers

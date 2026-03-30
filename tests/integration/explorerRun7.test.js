@@ -31,7 +31,21 @@ import {
   initializeGameRandom,
   logMessage,
 } from '../../js/state/gameState.js';
-import { hasKeyword, isHarmless, cantAttack, hasLure, isHidden, isInvisible, hasAmbush, hasToxic, hasNeurotoxic, hasPoisonous, areAbilitiesActive, getEffectiveAttack, isFreePlay } from '../../js/keywords.js';
+import {
+  hasKeyword,
+  isHarmless,
+  cantAttack,
+  hasLure,
+  isHidden,
+  isInvisible,
+  hasAmbush,
+  hasToxic,
+  hasNeurotoxic,
+  hasPoisonous,
+  areAbilitiesActive,
+  getEffectiveAttack,
+  isFreePlay,
+} from '../../js/keywords.js';
 
 ensureRegistryInitialized();
 
@@ -246,15 +260,19 @@ describe('Explorer Run 7: Bird vs Reptile Keyword Interactions', () => {
     // Per §5.3: Ambush blocks Poisonous
     const attacker = makeCreature({
       name: 'Ambush Attacker',
-      atk: 3, currentAtk: 3,
-      hp: 2, currentHp: 2,
+      atk: 3,
+      currentAtk: 3,
+      hp: 2,
+      currentHp: 2,
       keywords: ['Ambush'],
       instanceId: 'ambush-att-1',
     });
     const defender = makeCreature({
       name: 'Poisonous Defender',
-      atk: 1, currentAtk: 1,
-      hp: 1, currentHp: 1,
+      atk: 1,
+      currentAtk: 1,
+      hp: 1,
+      currentHp: 1,
       keywords: ['Poisonous'],
       instanceId: 'poison-def-1',
     });
@@ -273,15 +291,19 @@ describe('Explorer Run 7: Bird vs Reptile Keyword Interactions', () => {
     // Reptile has Golden Lancehead (Toxic) and Solomons Coral Snake (Barrier)
     const attacker = makeCreature({
       name: 'Toxic Attacker',
-      atk: 2, currentAtk: 2,
-      hp: 3, currentHp: 3,
+      atk: 2,
+      currentAtk: 2,
+      hp: 3,
+      currentHp: 3,
       keywords: ['Toxic'],
       instanceId: 'toxic-att-1',
     });
     const defender = makeCreature({
       name: 'Barrier Defender',
-      atk: 2, currentAtk: 2,
-      hp: 3, currentHp: 3,
+      atk: 2,
+      currentAtk: 2,
+      hp: 3,
+      currentHp: 3,
       keywords: ['Barrier'],
       hasBarrier: true,
       instanceId: 'barrier-def-1',
@@ -302,15 +324,19 @@ describe('Explorer Run 7: Bird vs Reptile Keyword Interactions', () => {
     // Reptile: Gaboon Viper has Hidden + Toxic
     const attacker = makeCreature({
       name: 'Normal Attacker',
-      atk: 3, currentAtk: 3,
-      hp: 3, currentHp: 3,
+      atk: 3,
+      currentAtk: 3,
+      hp: 3,
+      currentHp: 3,
       keywords: [],
       instanceId: 'norm-att-1',
     });
     const hiddenDefender = makeCreature({
       name: 'Hidden Defender',
-      atk: 2, currentAtk: 2,
-      hp: 2, currentHp: 2,
+      atk: 2,
+      currentAtk: 2,
+      hp: 2,
+      currentHp: 2,
       keywords: ['Hidden'],
       instanceId: 'hidden-def-1',
     });
@@ -327,14 +353,17 @@ describe('Explorer Run 7: Bird vs Reptile Keyword Interactions', () => {
     // Edge case: creature with both Lure and Hidden
     const attacker = makeCreature({
       name: 'Normal Attacker',
-      atk: 3, currentAtk: 3,
+      atk: 3,
+      currentAtk: 3,
       keywords: [],
       instanceId: 'norm-att-2',
     });
     const lureHidden = makeCreature({
       name: 'Lure+Hidden',
-      atk: 2, currentAtk: 2,
-      hp: 3, currentHp: 3,
+      atk: 2,
+      currentAtk: 2,
+      hp: 3,
+      currentHp: 3,
       keywords: ['Lure', 'Hidden'],
       instanceId: 'lure-hidden-1',
     });
@@ -354,14 +383,17 @@ describe('Explorer Run 7: Bird vs Reptile Keyword Interactions', () => {
   it('Lure should ALWAYS override Invisible', () => {
     const attacker = makeCreature({
       name: 'Normal Attacker',
-      atk: 3, currentAtk: 3,
+      atk: 3,
+      currentAtk: 3,
       keywords: [],
       instanceId: 'norm-att-3',
     });
     const lureInvisible = makeCreature({
       name: 'Lure+Invisible',
-      atk: 2, currentAtk: 2,
-      hp: 3, currentHp: 3,
+      atk: 2,
+      currentAtk: 2,
+      hp: 3,
+      currentHp: 3,
       keywords: ['Lure', 'Invisible'],
       instanceId: 'lure-invis-1',
     });
@@ -380,8 +412,10 @@ describe('Explorer Run 7: Bird vs Reptile Keyword Interactions', () => {
     // Bird: Pileated Woodpecker has Multi-Strike 3
     const woodpecker = makeCreature({
       name: 'Pileated Woodpecker',
-      atk: 3, currentAtk: 3,
-      hp: 1, currentHp: 1,
+      atk: 3,
+      currentAtk: 3,
+      hp: 1,
+      currentHp: 1,
       keywords: ['Multi-Strike 3'],
       instanceId: 'woodpecker-1',
     });
@@ -402,15 +436,19 @@ describe('Explorer Run 7: Bird vs Reptile Keyword Interactions', () => {
     // Bird: Kākāpō has Harmless + Invisible
     const attacker = makeCreature({
       name: 'Normal Attacker',
-      atk: 3, currentAtk: 3,
-      hp: 3, currentHp: 3,
+      atk: 3,
+      currentAtk: 3,
+      hp: 3,
+      currentHp: 3,
       keywords: [],
       instanceId: 'norm-att-4',
     });
     const harmless = makeCreature({
       name: 'Harmless Defender',
-      atk: 2, currentAtk: 2,
-      hp: 2, currentHp: 2,
+      atk: 2,
+      currentAtk: 2,
+      hp: 2,
+      currentHp: 2,
       keywords: ['Harmless'],
       instanceId: 'harmless-def-1',
     });
@@ -428,15 +466,19 @@ describe('Explorer Run 7: Bird vs Reptile Keyword Interactions', () => {
     // Reptile: Black Mamba has Ambush + Neurotoxic
     const mamba = makeCreature({
       name: 'Black Mamba',
-      atk: 3, currentAtk: 3,
-      hp: 1, currentHp: 1,
+      atk: 3,
+      currentAtk: 3,
+      hp: 1,
+      currentHp: 1,
       keywords: ['Ambush', 'Neurotoxic'],
       instanceId: 'mamba-1',
     });
     const defender = makeCreature({
       name: 'Defender',
-      atk: 4, currentAtk: 4,
-      hp: 5, currentHp: 5,
+      atk: 4,
+      currentAtk: 4,
+      hp: 5,
+      currentHp: 5,
       keywords: [],
       instanceId: 'def-mamba-1',
     });
@@ -490,7 +532,8 @@ describe('Explorer Run 7: End-of-Turn Rule Compliance', () => {
     // A creature that is both Paralyzed and Frozen should die from Paralysis
     const creature = makeCreature({
       name: 'Paralyzed+Frozen',
-      hp: 3, currentHp: 3,
+      hp: 3,
+      currentHp: 3,
       keywords: ['Harmless'], // Paralysis grants Harmless
       paralyzed: true,
       paralyzedUntilTurn: 2,
@@ -515,13 +558,15 @@ describe('Explorer Run 7: End-of-Turn Rule Compliance', () => {
     // Bug: Current code runs Frozen thaw BEFORE Paralysis death (see turnManager.js)
     const regenCreature = makeCreature({
       name: 'Regen Creature',
-      hp: 5, currentHp: 2,
+      hp: 5,
+      currentHp: 2,
       keywords: ['Regen'],
       instanceId: 'regen-1',
     });
     const paraCreature = makeCreature({
       name: 'Paralyzed Creature',
-      hp: 3, currentHp: 3,
+      hp: 3,
+      currentHp: 3,
       keywords: ['Harmless'],
       paralyzed: true,
       paralyzedUntilTurn: 2,
@@ -561,9 +606,12 @@ describe('Explorer Run 7: Controller cleanup inconsistency (Root Cause B)', () =
       id: 'test-creature',
       name: 'Test',
       type: 'Prey',
-      atk: 2, hp: 3,
-      currentAtk: 2, currentHp: 3,
-      nutrition: 1, keywords: [],
+      atk: 2,
+      hp: 3,
+      currentAtk: 2,
+      currentHp: 3,
+      nutrition: 1,
+      keywords: [],
       instanceId: `test-${Math.random().toString(36).slice(2, 8)}`,
       summonedTurn: 0,
       ...overrides,

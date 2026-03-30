@@ -29,12 +29,7 @@
  *   }
  */
 
-import {
-  isInvisible,
-  KEYWORDS,
-  hasLure,
-  hasAcuity,
-} from '../keywords.js';
+import { isInvisible, KEYWORDS, hasLure, hasAcuity } from '../keywords.js';
 import { isCreatureCard } from '../cardTypes.js';
 import { seededRandomInt } from '../state/gameState.js';
 
@@ -1053,10 +1048,7 @@ export const killAll = (targetType) => (context) => {
     targets = opponent.field.filter((c) => c);
     log(`All Rival's creatures are destroyed.`);
   } else if (targetType === 'all') {
-    targets = [
-      ...player.field.filter((c) => c),
-      ...opponent.field.filter((c) => c),
-    ];
+    targets = [...player.field.filter((c) => c), ...opponent.field.filter((c) => c)];
     log(`All creatures are destroyed.`);
   }
 
@@ -3202,8 +3194,6 @@ export const drawThenDiscard =
     };
   };
 
-
-
 // ============================================================================
 // EFFECT REGISTRY
 // ============================================================================
@@ -3342,8 +3332,6 @@ export const effectRegistry = {
   returnToHand,
   buffSelf,
   transformInto,
-
-
 };
 
 // ============================================================================

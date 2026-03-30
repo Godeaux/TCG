@@ -107,7 +107,10 @@
       "summons": ["token-golden-song-sparrow"],
       "effects": {
         "onPlay": [
-          { "type": "summonTokens", "params": { "tokenIds": ["token-golden-song-sparrow", "token-golden-song-sparrow"] } },
+          {
+            "type": "summonTokens",
+            "params": { "tokenIds": ["token-golden-song-sparrow", "token-golden-song-sparrow"] }
+          },
           { "type": "draw", "params": { "count": 1 } }
         ]
       }
@@ -121,7 +124,14 @@
       "hp": 1,
       "nutrition": 1,
       "effects": {
-        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "carrion", "title": "Choose a carrion to copy abilities from", "effect": { "copyAbilities": true } } }
+        "onPlay": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "carrion",
+            "title": "Choose a carrion to copy abilities from",
+            "effect": { "copyAbilities": true }
+          }
+        }
       }
     },
     {
@@ -133,7 +143,14 @@
       "hp": 1,
       "nutrition": 1,
       "effects": {
-        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "other-creatures", "title": "Choose a creature to copy stats from", "effect": { "copyStats": true } } }
+        "onPlay": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "other-creatures",
+            "title": "Choose a creature to copy stats from",
+            "effect": { "copyStats": true }
+          }
+        }
       }
     },
     {
@@ -145,7 +162,14 @@
       "hp": 1,
       "nutrition": 1,
       "effects": {
-        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "other-creatures", "title": "Choose a creature to copy abilities from", "effect": { "copyAbilitiesFrom": true } } }
+        "onPlay": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "other-creatures",
+            "title": "Choose a creature to copy abilities from",
+            "effect": { "copyAbilitiesFrom": true }
+          }
+        }
       }
     },
     {
@@ -161,7 +185,14 @@
         "onPlay": [
           { "type": "summonTokens", "params": { "tokenIds": ["token-oriental-magpie"] } },
           { "type": "heal", "params": { "amount": 2 } },
-          { "type": "selectFromGroup", "params": { "targetGroup": "all-creatures", "title": "Choose a creature to regenerate", "effect": { "regen": true } } }
+          {
+            "type": "selectFromGroup",
+            "params": {
+              "targetGroup": "all-creatures",
+              "title": "Choose a creature to regenerate",
+              "effect": { "regen": true }
+            }
+          }
         ]
       }
     },
@@ -174,8 +205,14 @@
       "hp": 1,
       "nutrition": 1,
       "effects": {
-        "onPlay": { "type": "buffStats", "params": { "targetType": "all-friendly", "stats": { "attack": 1, "health": 0 } } },
-        "discardEffect": { "type": "buffStats", "params": { "targetType": "all-friendly", "stats": { "attack": 1, "health": 0 } } }
+        "onPlay": {
+          "type": "buffStats",
+          "params": { "targetType": "all-friendly", "stats": { "attack": 1, "health": 0 } }
+        },
+        "discardEffect": {
+          "type": "buffStats",
+          "params": { "targetType": "all-friendly", "stats": { "attack": 1, "health": 0 } }
+        }
       }
     },
     {
@@ -187,7 +224,14 @@
       "hp": 1,
       "nutrition": 1,
       "effects": {
-        "onPlay": { "type": "selectFromGroup", "params": { "targetGroup": "carrion", "title": "Choose a carrion to copy stats from", "effect": { "copyStats": true } } }
+        "onPlay": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "carrion",
+            "title": "Choose a carrion to copy stats from",
+            "effect": { "copyStats": true }
+          }
+        }
       }
     },
     {
@@ -200,7 +244,10 @@
       "nutrition": 1,
       "summons": ["token-blue-egg"],
       "effects": {
-        "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-blue-egg", "token-blue-egg"] } }
+        "onEnd": {
+          "type": "summonTokens",
+          "params": { "tokenIds": ["token-blue-egg", "token-blue-egg"] }
+        }
       }
     },
     {
@@ -224,7 +271,14 @@
       "hp": 1,
       "nutrition": 1,
       "effects": {
-        "onEnd": { "type": "selectFromGroup", "params": { "targetGroup": "all-entities", "title": "Choose a target for damage", "effect": { "damage": 3, "label": "sonic" } } }
+        "onEnd": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "all-entities",
+            "title": "Choose a target for damage",
+            "effect": { "damage": 3, "label": "sonic" }
+          }
+        }
       }
     },
     {
@@ -236,7 +290,14 @@
       "hp": 1,
       "nutrition": 1,
       "effects": {
-        "onAfterCombat": { "type": "selectFromGroup", "params": { "targetGroup": "all-entities", "title": "Choose a target for damage", "effect": { "damage": 2, "label": "stink" } } },
+        "onAfterCombat": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "all-entities",
+            "title": "Choose a target for damage",
+            "effect": { "damage": 2, "label": "stink" }
+          }
+        },
         "onEnd": { "type": "damageRival", "params": { "amount": 2 } }
       }
     },
@@ -337,7 +398,14 @@
       "atk": 2,
       "hp": 2,
       "effects": {
-        "onConsume": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-prey", "title": "Choose a prey to kill", "effect": { "kill": true } } }
+        "onConsume": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "enemy-prey",
+            "title": "Choose a prey to kill",
+            "effect": { "kill": true }
+          }
+        }
       }
     },
     {
@@ -349,7 +417,14 @@
       "hp": 2,
       "effects": {
         "onConsume": [
-          { "type": "selectFromGroup", "params": { "targetGroup": "friendly-carrion", "title": "Choose a carrion to add to hand", "effect": { "addToHand": true } } },
+          {
+            "type": "selectFromGroup",
+            "params": {
+              "targetGroup": "friendly-carrion",
+              "title": "Choose a carrion to add to hand",
+              "effect": { "addToHand": true }
+            }
+          },
           { "type": "tutorFromDeck", "params": {} }
         ]
       }
@@ -363,7 +438,10 @@
       "hp": 2,
       "summons": ["token-toxic-snake"],
       "effects": {
-        "onConsume": { "type": "summonTokens", "params": { "tokenIds": ["token-toxic-snake", "token-toxic-snake"] } }
+        "onConsume": {
+          "type": "summonTokens",
+          "params": { "tokenIds": ["token-toxic-snake", "token-toxic-snake"] }
+        }
       }
     },
     {
@@ -438,7 +516,14 @@
       "atk": 4,
       "hp": 4,
       "effects": {
-        "onEnd": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature to kill", "effect": { "kill": true } } }
+        "onEnd": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "enemy-creatures",
+            "title": "Choose a creature to kill",
+            "effect": { "kill": true }
+          }
+        }
       }
     },
     {
@@ -467,7 +552,10 @@
       "flavorText": "Wild birds need high-fat seeds in winter; a chickadee must eat its body weight daily to survive the cold.",
       "type": "Spell",
       "effects": {
-        "effect": { "type": "buffStats", "params": { "targetType": "all-friendly", "stats": { "attack": 2, "health": 2 } } }
+        "effect": {
+          "type": "buffStats",
+          "params": { "targetType": "all-friendly", "stats": { "attack": 2, "health": 2 } }
+        }
       }
     },
     {
@@ -504,7 +592,14 @@
               {
                 "label": "Deal 6 damage to target Rival's creature",
                 "description": "Select a Rival's creature for 6 damage",
-                "effect": { "type": "selectFromGroup", "params": { "targetGroup": "enemy-creatures", "title": "Choose a creature for damage", "effect": { "damage": 6, "label": "shotgun" } } }
+                "effect": {
+                  "type": "selectFromGroup",
+                  "params": {
+                    "targetGroup": "enemy-creatures",
+                    "title": "Choose a creature for damage",
+                    "effect": { "damage": 6, "label": "shotgun" }
+                  }
+                }
               }
             ]
           }
@@ -547,7 +642,14 @@
       "flavorText": "Bird droppings are white because birds excrete uric acid instead of urea -- it saves water.",
       "type": "Free Spell",
       "effects": {
-        "effect": { "type": "selectFromGroup", "params": { "targetGroup": "all-entities", "title": "Choose a target for damage", "effect": { "damage": 1, "label": "white missile" } } }
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "all-entities",
+            "title": "Choose a target for damage",
+            "effect": { "damage": 1, "label": "white missile" }
+          }
+        }
       }
     },
     {
@@ -560,7 +662,10 @@
       "effects": {
         "effect": [
           { "type": "negateAttack", "params": {} },
-          { "type": "summonTokens", "params": { "tokenIds": ["token-bushtit", "token-bushtit", "token-bushtit"] } }
+          {
+            "type": "summonTokens",
+            "params": { "tokenIds": ["token-bushtit", "token-bushtit", "token-bushtit"] }
+          }
         ]
       }
     },

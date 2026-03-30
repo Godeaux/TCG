@@ -56,7 +56,7 @@ export default [
       'no-empty': 'warn',
 
       // Code quality
-      'eqeqeq': ['warn', 'smart'],
+      eqeqeq: ['warn', 'smart'],
       'no-var': 'error',
       'prefer-const': 'warn',
 
@@ -107,11 +107,6 @@ export default [
   },
   {
     // Ignore patterns
-    ignores: [
-      'node_modules/**',
-      'dist/**',
-      'build/**',
-      '*.min.js',
-    ],
+    ignores: ['node_modules/**', 'dist/**', 'build/**', '*.min.js'],
   },
 ];
