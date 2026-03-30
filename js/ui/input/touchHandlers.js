@@ -190,12 +190,12 @@ export const focusCardElement = (cardElement) => {
   if (!cardElement) return;
 
   // Remove focus from all other cards
-  document.querySelectorAll('.card.touch-focused').forEach((el) => {
-    el.classList.remove('touch-focused');
+  document.querySelectorAll('.card.hand-focus').forEach((el) => {
+    el.classList.remove('hand-focus');
   });
 
   // Add focus to this card
-  cardElement.classList.add('touch-focused');
+  cardElement.classList.add('hand-focus');
 
   // Notify external callback (for inspector panel updates)
   if (onCardFocus) {
