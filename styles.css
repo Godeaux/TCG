@@ -7096,6 +7096,11 @@ select.menu-input option {
 
 /* Mobile deck builder - 2 column grid with properly sized cards */
 @media (max-width: 768px) {
+  .deck-select-panel .deck-status,
+  .deck-select-panel .deck-meta {
+    display: none;
+  }
+
   .deck-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 8px;
