@@ -6442,20 +6442,20 @@ select.menu-input option {
     padding-bottom: 66%;
   }
   .deck-select-grid .deck-select-panel--bird {
-    padding-left: 50%;
-    padding-bottom: 42%;
+    padding-left: 56%;
+    padding-bottom: 30%;
   }
   .deck-select-grid .deck-select-panel--mammal {
-    padding-right: 50%;
-    padding-bottom: 42%;
+    padding-right: 56%;
+    padding-bottom: 30%;
   }
   .deck-select-grid .deck-select-panel--reptile {
-    padding-left: 35%;
-    padding-top: 35%;
+    padding-left: 38%;
+    padding-top: 48%;
   }
   .deck-select-grid .deck-select-panel--amphibian {
-    padding-right: 35%;
-    padding-top: 35%;
+    padding-right: 38%;
+    padding-top: 48%;
   }
 
   /* === WEDGE GRADIENTS (richer than flat color) === */
