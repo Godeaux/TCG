@@ -6355,6 +6355,23 @@ select.menu-input option {
   background: linear-gradient(135deg, rgba(48, 48, 48, 0.85), rgba(20, 20, 20, 0.95));
 }
 
+/* Desktop: widen deck select and use horizontal 5-across layout */
+@media (min-width: 769px) {
+  .deck-select-overlay .overlay-content.deck-select-card {
+    width: 80vw;
+    max-width: 1100px;
+  }
+
+  .deck-select-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 20px;
+  }
+
+  .deck-select-panel {
+    min-height: 120px;
+  }
+}
+
 .deck-select-panel--feline {
   background: linear-gradient(135deg, rgba(193, 154, 107, 0.85), rgba(139, 90, 43, 0.95));
 }
