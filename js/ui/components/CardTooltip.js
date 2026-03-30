@@ -278,6 +278,10 @@ const setupGlobalDismissHandler = () => {
       }
 
       hideCardTooltipImmediate();
+      // Also retract any lifted hand card (hand-focus from tap-to-inspect)
+      document.querySelectorAll('.hand-grid .card.hand-focus').forEach((el) => {
+        el.classList.remove('hand-focus');
+      });
     };
     // Use bubble phase (default) so DeckBuilder's capture-phase handler runs first
     document.addEventListener('touchstart', globalDismissHandler, { passive: true });
