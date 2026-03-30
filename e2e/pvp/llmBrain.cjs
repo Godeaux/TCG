@@ -11,7 +11,13 @@ const OLLAMA_GENERATE_URL = 'http://localhost:11434/api/generate';
 const OLLAMA_CHAT_URL = 'http://localhost:11434/api/chat';
 
 // Models that need chat API with think:false (thinking models that eat all tokens)
-const CHAT_API_MODELS = new Set(['qwen3.5:9b', 'qwen3.5:2b', 'qwen3.5:latest']);
+const CHAT_API_MODELS = new Set([
+  'qwen3.5:9b',
+  'qwen3.5:2b',
+  'qwen3.5:latest',
+  'qwen3.5:122b-a10b',
+  'qwen3.5-tuned:latest',
+]);
 
 /**
  * System prompt that teaches the LLM how to play Food Chain TCG
@@ -98,14 +104,14 @@ async function getDecision(qaState, playerIndex, deckName, options = {}) {
           stream: false,
           keep_alive: '30m',
           think: false,
-          options: { temperature, num_predict: 400 },
+          options: { temperature, num_predict: 800 },
         }
       : {
           model,
           prompt: fullPrompt,
           stream: false,
           keep_alive: '30m',
-          options: { temperature, num_predict: 400 },
+          options: { temperature, num_predict: 800 },
         };
 
     const response = await fetch(url, {

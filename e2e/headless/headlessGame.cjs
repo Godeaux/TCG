@@ -973,16 +973,14 @@ async function runGame(deck1Name, deck2Name, modelName) {
         const fieldFull = gameState.players[activeIdx].field.filter((c) => c !== null).length >= 3;
 
         const shouldAutoSkip =
-          // Card limit spent and no free spells
-          (gameState.cardPlayedThisTurn && !hasFreeSpell) ||
+          // Card limit spent — nothing can be played (Free Spells also require limit available per rules)
+          gameState.cardPlayedThisTurn ||
           // Hand is all traps (nothing playable)
           playableCards.length === 0 ||
           // Hand is empty
           activeHand.length === 0 ||
-          // Field full, card limit spent, and no spells in hand
-          (fieldFull &&
-            gameState.cardPlayedThisTurn &&
-            !activeHand.some((c) => c.type === 'Spell' || c.type === 'Free Spell'));
+          // Field full with only creatures in hand (no spells to cast)
+          (fieldFull && !activeHand.some((c) => c.type === 'Spell' || c.type === 'Free Spell'));
 
         if (shouldAutoSkip) {
           controller.execute({

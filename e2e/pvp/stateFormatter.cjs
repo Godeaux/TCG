@@ -300,8 +300,9 @@ function formatStatePrompt(qaState, playerIndex, deckName = 'Unknown') {
   lines.push('AVAILABLE ACTIONS:');
   if (qaState.phase === 'Main 1' || qaState.phase === 'Main 2') {
     if (qaState.ui?.cardPlayedThisTurn) {
-      lines.push('  ⚠️ CARD LIMIT USED — you already played a card this turn.');
-      lines.push("  You may still play FREE SPELL cards (they don't consume the limit).");
+      lines.push(
+        '  ⚠️ CARD LIMIT USED — you already played a card this turn. No more cards can be played (including Free Spells).'
+      );
       lines.push('  PASS                        — End your main phase');
     } else {
       lines.push(
