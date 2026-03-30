@@ -584,24 +584,23 @@ let currentDropHandler = null;
  * @param {Function} onDrop - Callback when a card is dropped
  */
 const setupDeckListDropZone = (onDrop) => {
-  const elements = getDeckElements();
-  const { deckListCards } = elements;
-  // Get the entire sidebar element
-  const sidebar = document.querySelector('.deck-builder-sidebar');
+  // Always re-query DOM elements (they may have been re-created by overlay re-render)
+  const deckListCards = document.getElementById('deck-list-cards');
+  const sidebar = document.querySelector('.deck-builder-sidebar') || document.getElementById('deck-builder-sidebar');
 
   if (!deckListCards && !sidebar) return;
 
-  // Store the current drop handler for use in the event
+  // Store the current drop handler
   currentDropHandler = onDrop;
 
-  // Only add listeners once
-  if (dropZoneSetup) return;
-  dropZoneSetup = true;
-
-  // Setup drop handling on the sidebar (entire right panel)
+  // Re-attach listeners every time — elements may be fresh DOM nodes after re-render.
+  // Use a data attribute to avoid double-attaching on the same element.
   const dropTargets = [sidebar, deckListCards].filter(Boolean);
 
   dropTargets.forEach((target) => {
+    if (target.dataset.dropZone) return; // Already set up on this element
+    target.dataset.dropZone = 'true';
+
     target.addEventListener('dragover', (e) => {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'copy';
@@ -610,7 +609,6 @@ const setupDeckListDropZone = (onDrop) => {
     });
 
     target.addEventListener('dragleave', (e) => {
-      // Only remove class if actually leaving the sidebar
       if (sidebar && !sidebar.contains(e.relatedTarget)) {
         sidebar.classList.remove('drag-active');
         deckListCards?.classList.remove('drag-active');
