@@ -115,6 +115,26 @@ async function callOllama(prompt, model, { numPredict = 2000, temperature = 0.3 
   return isChatModel ? data.message?.content || '' : data.response || '';
 }
 
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Execute an action and resolve any pending selections
+ */
+async function executeAndResolve(controller, action, state, playerIndex, deckName, model) {
+  const result = controller.execute(action);
+  
+  // Resolve any pending selections (including selectFromGroup effects)
+  while (_pendingSelection) {
+    const sel = _pendingSelection;
+    _pendingSelection = null;
+    await resolveSelection(sel, state, playerIndex, deckName, model);
+  }
+  
+  return result;
+}
+
 /**
  * Build a post-game reflection prompt from the game log.
  * The LLM reviews the full game for bugs, anomalies, and strategic observations.
@@ -999,11 +1019,11 @@ async function runGame(deck1Name, deck2Name, modelName) {
           });
         }
 
-        // Resolve any pending selections
+        // Resolve any pending selections (including selectFromGroup effects)
         while (_pendingSelection) {
           const sel = _pendingSelection;
           _pendingSelection = null;
-          await resolveSelection(sel, gameState, activeIdx, '', modelName);
+          await resolveSelection(sel, gameState, activeIdx, deckNames[activeIdx], modelName);
         }
 
         if (checkVictory(gameState)) break;
@@ -1135,11 +1155,11 @@ async function runGame(deck1Name, deck2Name, modelName) {
         if (checkVictory(gameState)) break;
       }
 
-      // Resolve any pending selections
+      // Resolve any pending selections (including selectFromGroup/chooseOption effects)
       while (_pendingSelection) {
         const sel = _pendingSelection;
         _pendingSelection = null;
-        await resolveSelection(sel, gameState, activeIdx, '', modelName);
+        await resolveSelection(sel, gameState, activeIdx, deckNames[activeIdx], modelName);
       }
 
       const stateAfter = snapshotState(gameState);
