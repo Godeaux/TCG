@@ -48,25 +48,31 @@ Your goal is to reduce the rival's HP to 0. Be proactive — every turn should a
 - Passing is fine when your field is full and you have no good plays. But if you CAN do something productive, do it.
 
 RESPONSE FORMAT:
-1. Think briefly (2-3 sentences). What's the best play and why?
-2. Your FINAL LINE must be ONLY the action command — nothing else on that line.
+1. THINKING PHASE (2-4 sentences): 
+   - Review the board: What's on each field? What stats matter?
+   - Calculate threats: Which creatures can attack the rival? What's the lethal math?
+   - Consider synergies: Do any card effects interact (e.g., end-of-turn triggers, predator consumption)?
+   - Plan the turn: What's the optimal sequence of actions?
+2. FINAL LINE MUST BE ONLY the action command — nothing else on that line.
 3. During Main phase: PLAY a card if you can. Only PASS if field is full and no spells to play.
 
 EXAMPLES:
 ---
-My hand has a 3/3 Prey with Ambush and my opponent has a 2/2 creature. Playing the Prey gives me board presence and Ambush means I won't take counter-damage when I attack it. New creatures CAN attack enemy creatures the same turn — only direct player attacks require waiting. I'll play the Prey now and trade into their 2/2 during combat this turn.
+THINKING: I have a 3/3 Prey with Ambush in hand and my opponent has a 2/2 creature on their field. Playing the Prey gives me board presence and Ambush means I won't take counter-damage when I attack it. New creatures CAN attack enemy creatures the same turn — only direct player attacks require waiting until the next turn. My plan is to establish a safe blocker this turn and finish the game over subsequent turns.
 PLAY 2
 ---
-I have a Haste predator in hand and a Prey on my field. If I eat the Prey, my predator becomes 5/5 with Haste and can attack the rival directly for 5 damage THIS turn. The rival is at 7 HP so this puts them in lethal range next turn. Eating prey is the key — without it, the predator dry-drops and loses Haste and all keywords.
-PLAY 0 EAT 0
+THINKING: I have a Haste predator in hand (slot 0) and a 3-nutrition Prey on my field (slot 1). If I eat the Prey, my predator gains +3/+3 and becomes 5/5 with Haste, allowing it to attack the rival directly for 5 damage THIS turn. The rival is at 7 HP, so this puts them in lethal range for next turn. The key is consuming prey first to upgrade the predator.
+PLAY 0 EAT 1
 ---
-My Gyrfalcon has Haste and the rival has no creatures. I can attack directly for 4 damage. The rival is at 6 HP so two more direct attacks wins the game. No reason to hold back.
+THINKING: My Gyrfalcon has Haste (slot 0) and the rival has no creatures. I can attack directly for 4 damage. The rival is at 6 HP, so two more direct attacks would win the game. No reason to hold back or trade — go face immediately.
 ATTACK 0 PLAYER
 ---
-I have two creatures that can attack the rival directly: a 4/2 at slot 0 and a 4/4 at slot 1. The combat math says 8 total damage and the rival is at 4 HP — that's lethal. I should attack directly with both creatures to win the game this turn. Starting with slot 0.
+THINKING: I have two creatures that can attack the rival directly: a 4/2 at slot 0 and a 4/4 at slot 1. Combat math: 4 + 4 = 8 total damage. The rival is at 4 HP, so this is lethal. I should attack with both creatures to win this turn. Starting with slot 0 first.
 ATTACK 0 PLAYER
 ---
-My field is full with three 1/1 creatures and I can't play any more cards. I should attack with what I have, trade into enemy threats, or advance if no good attacks exist. Trying to play a card when the field is full will fail.
+THINKING: My field is full with three 1/1 creatures. I have no cards that can be played (field is full, card limit spent, no Free Spells). I should attack with what I have, consider trading into enemy threats, or advance if no good attacks exist. Trying to play a card when the field is full will fail.
+PASS
+---
 ATTACK 0 0
 ---
 
