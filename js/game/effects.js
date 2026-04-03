@@ -18,6 +18,22 @@ import { endTurn } from './turnManager.js';
 
 const { DAMAGE, DEATH, SUMMON, BUFF, DEBUFF, HEAL, CHOICE, SPELL } = LOG_CATEGORIES;
 
+// Helper to validate playerIndex
+const validatePlayerIndex = (state, playerIndex, operation = 'operation') => {
+  if (
+    playerIndex === undefined ||
+    playerIndex === null ||
+    playerIndex < 0 ||
+    playerIndex >= state.players.length
+  ) {
+    console.error(
+      `[effects.js] Invalid playerIndex ${playerIndex} for ${operation}. state.players.length = ${state.players.length}`
+    );
+    return null;
+  }
+  return state.players[playerIndex];
+};
+
 const findCardOwnerIndex = (state, card) =>
   state.players.findIndex((player) =>
     player.field.some((slot) => slot?.instanceId === card.instanceId)
@@ -722,11 +738,12 @@ export const resolveEffectResult = (state, result, context) => {
     target.atk = source.atk ?? sourceAtk;
     target.currentAtk = sourceAtk;
 
-    // Copy HP
+    // Copy HP — use base HP if source is dead (carrion), current HP if alive
     const sourceHp = source.hp ?? 1;
     const sourceCurrentHp = source.currentHp ?? sourceHp;
+    const isDead = sourceCurrentHp <= 0;
     target.hp = sourceHp;
-    target.currentHp = sourceCurrentHp;
+    target.currentHp = isDead ? sourceHp : sourceCurrentHp;
 
     // Copy nutrition value (for prey creatures)
     if (source.nutrition !== undefined) {
@@ -839,6 +856,9 @@ export const resolveEffectResult = (state, result, context) => {
 
   if (result.addToHand) {
     const { playerIndex, card, fromDeck } = result.addToHand;
+    const player = validatePlayerIndex(state, playerIndex, 'addToHand');
+    if (!player) return;
+
     // Resolve card ID string to card definition if needed
     const cardData = typeof card === 'string' ? getCardDefinitionById(card) : card;
     if (!cardData) {
@@ -846,23 +866,26 @@ export const resolveEffectResult = (state, result, context) => {
       return;
     }
     if (fromDeck) {
-      const deck = state.players[playerIndex].deck;
+      const deck = player.deck;
       const index = deck.findIndex((deckCard) => deckCard.id === cardData.id);
       if (index >= 0) {
         deck.splice(index, 1);
       }
     }
-    state.players[playerIndex].hand.push({ ...cardData, instanceId: seededInstanceId() });
-    logGameAction(
-      state,
-      BUFF,
-      `${state.players[playerIndex].name} adds ${formatCardForLog(cardData)} to hand.`
-    );
+    player.hand.push({ ...cardData, instanceId: seededInstanceId() });
+    logGameAction(state, BUFF, `${player.name} adds ${formatCardForLog(cardData)} to hand.`);
   }
 
   if (result.addCarrionToHand) {
-    const { playerIndex, card } = result.addCarrionToHand;
-    const player = state.players[playerIndex];
+    // effectLibrary produces { creature, ownerIndex }, handler historically expected { card, playerIndex }
+    const playerIndex = result.addCarrionToHand.playerIndex ?? result.addCarrionToHand.ownerIndex;
+    const card = result.addCarrionToHand.card ?? result.addCarrionToHand.creature;
+    const player = validatePlayerIndex(state, playerIndex, 'addCarrionToHand');
+    if (!player) return;
+    if (!player.carrion) {
+      console.error(`[addCarrionToHand] Player ${playerIndex} has no carrion array`);
+      return;
+    }
     // Find and remove the card from carrion
     const cardIndex = player.carrion.findIndex((c) => c?.instanceId === card.instanceId);
     if (cardIndex >= 0) {
@@ -1266,8 +1289,15 @@ export const resolveEffectResult = (state, result, context) => {
   // Play a creature from carrion
   // Per CORE-RULES.md §3: Predators can eat when played from ANY source (hand, deck, carrion)
   if (result.playFromCarrion) {
-    const { playerIndex, card } = result.playFromCarrion;
-    const player = state.players[playerIndex];
+    // effectLibrary produces { creature, ownerIndex }, handler historically expected { card, playerIndex }
+    const playerIndex = result.playFromCarrion.playerIndex ?? result.playFromCarrion.ownerIndex;
+    const card = result.playFromCarrion.card ?? result.playFromCarrion.creature;
+    const player = validatePlayerIndex(state, playerIndex, 'playFromCarrion');
+    if (!player) return;
+    if (!player.carrion) {
+      console.error(`[playFromCarrion] Player ${playerIndex} has no carrion array`);
+      return;
+    }
     const carrionIndex = player.carrion.findIndex((c) => c?.instanceId === card.instanceId);
     if (carrionIndex >= 0) {
       player.carrion.splice(carrionIndex, 1);

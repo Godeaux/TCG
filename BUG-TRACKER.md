@@ -176,4 +176,42 @@ The game has two different functions that handle creature death, with different 
 
 ---
 
+## Root Cause F: copyStats copies dead creature's currentHp (0)
+
+### F1. Raven copies 0 HP from carrion creature (Major) — ✅ FIXED
+
+- **File:** `js/game/effects.js`, `copyStats` handler (~line 735)
+- **Rule:** Copying from carrion uses the card's **base HP**, not post-modification values. This is the canonical rule for copyStats from carrion.
+- **What happened:** `copyStats` copied `currentHp` from dead creature (0 or negative), giving Raven 5/0.
+- **Fix:** If `sourceCurrentHp <= 0` (dead creature), use `sourceHp` (base HP) for `currentHp`. Living creatures still copy `currentHp` (including damage).
+- **Test:** `tests/effects/copyStatsCarrion.test.js` — 2 tests covering carrion (base HP) and living (current HP).
+- **Fixed:** 2026-04-02
+
+---
+
+## Root Cause G: Dry drop doesn't suppress all effects
+
+### G1. Dry-dropped predator's onEnd effects still fire (Major) — ✅ FIXED
+
+- **File:** `js/game/controller.js`, two dry drop paths (~line 445 and ~line 900)
+- **Rule:** CORE-RULES §3 — Dry drop: ability does NOT activate. "Ability" means ALL effects (onPlay, onConsume, onEnd, onBeforeCombat, etc.)
+- **What happened:** `dryDropped = true` cleared keywords but did NOT set `abilitiesCancelled`. The engine's `resolveCardEffect` only checks `abilitiesCancelled` to skip effects. So onEnd effects (like Mountain Chicken spawning eggs) fired every turn even on dry-dropped creatures.
+- **Fix:** Added `card.abilitiesCancelled = true` to both dry drop code paths. `resolveCardEffect` already skips when this flag is set.
+- **Test:** `tests/effects/dryDropSuppressesOnEnd.test.js`
+- **Fixed:** 2026-04-02
+
+---
+
+## Root Cause H: Targeted spells can be cast with no valid targets
+
+### H1. Targeted spells resolve on empty board, wasting the card (Major) — ✅ FIXED
+
+- **File:** `js/game/controller.js`, `handlePlaySpell()` pre-validation + `js/cards/effectLibrary.js` (`buildTargetCandidates` exported)
+- **Rule:** Hearthstone-style: targeted spells with no valid targets are unplayable. Card stays in hand, card limit not consumed.
+- **Fix:** Added pre-play validation in `handlePlaySpell()` that walks the spell's effect definition. If any `selectFromGroup` or `selectTarget` effect has 0 candidates via `buildTargetCandidates`, the play is rejected with `{ success: false, error: 'No valid targets' }`. Handles composite (array) effects — if ANY sub-effect is targeting with 0 candidates, the whole spell is blocked. Mass effects (killAll, damageAllEnemies, etc.) are NOT targeting and still resolve on empty boards.
+- **Test:** `tests/effects/targetedSpellValidation.test.js` (5 tests: reject on empty, allow with targets, allow mass spells, reject composite, card limit preserved)
+- **Fixed:** 2026-04-02
+
+---
+
 _Created 2026-03-22 · Track root causes, not symptoms_

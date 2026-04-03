@@ -42,6 +42,7 @@ import {
   getTrapsFromHand,
 } from '../state/gameState.js';
 import { resolveCardEffect } from '../cards/index.js';
+import { buildTargetCandidates } from '../cards/effectLibrary.js';
 import { createCardInstance } from '../cardTypes.js';
 import { resolveEffectResult as applyEffect } from './effects.js';
 import { isFreePlay, isEdible, hasScavenge, cantBeConsumed, cantConsume } from '../keywords.js';
@@ -299,6 +300,27 @@ export class GameController {
     const playerIndex = this.state.activePlayerIndex;
     const opponentIndex = (playerIndex + 1) % 2;
 
+    // Pre-check: targeted spells require valid targets (Hearthstone-style)
+    const effectDef = card.effects?.effect;
+    if (effectDef) {
+      const context = { player, opponent, state: this.state, playerIndex, opponentIndex };
+      const needsTargets = (def) => {
+        if (Array.isArray(def)) return def.some(needsTargets);
+        if (def?.type === 'selectFromGroup' && def.params?.targetGroup) {
+          return buildTargetCandidates(def.params.targetGroup, context).length === 0;
+        }
+        if (def?.type === 'selectTarget' && def.params?.group) {
+          return buildTargetCandidates(def.params.group, context).length === 0;
+        }
+        return false;
+      };
+      if (needsTargets(effectDef)) {
+        logMessage(this.state, `${card.name} has no valid targets — cannot be played.`);
+        this.notifyStateChange();
+        return { success: false, error: 'No valid targets' };
+      }
+    }
+
     // Execute spell effect
     const result = resolveCardEffect(card, 'effect', {
       log: (message) => logMessage(this.state, message),
@@ -444,6 +466,7 @@ export class GameController {
     if (card.type === 'Predator') {
       card.dryDropped = true;
       card.keywords = [];
+      card.abilitiesCancelled = true;
       logMessage(
         this.state,
         `${card.name} has no prey to consume — dry dropped (abilities suppressed).`
@@ -895,9 +918,10 @@ export class GameController {
       return { success: false, error: 'No empty slot for dry drop' };
     }
 
-    // Mark as dry dropped
+    // Mark as dry dropped — all abilities suppressed
     predator.dryDropped = true;
     predator.keywords = [];
+    predator.abilitiesCancelled = true;
 
     return this.placeCreatureInSlot(predator, targetSlot, [], [], isFree);
   }

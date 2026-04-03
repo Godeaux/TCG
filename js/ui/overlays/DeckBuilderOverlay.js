@@ -576,7 +576,7 @@ const setupMobileDrawerToggle = () => {
 };
 
 // Track drop zone setup to avoid duplicate listeners
-let dropZoneSetup = false;
+const dropZoneSetup = false;
 let currentDropHandler = null;
 
 /**
@@ -1010,6 +1010,96 @@ const updateDeckTabs = (state) => {
 /**
  * Render deck load panel (for loading saved decks during deck building)
  */
+// ============================================================================
+// DECK CARD GRID (shared by load panel, AI mode, and multiplayer mode)
+// ============================================================================
+
+const DECK_TYPE_ICONS = {
+  fish: '🐟',
+  bird: '🐦',
+  mammal: '🦁',
+  reptile: '🦎',
+  amphibian: '🐸',
+};
+
+/**
+ * Detect deck type from card IDs
+ */
+const detectDeckType = (deckIds) => {
+  if (!deckIds || deckIds.length === 0) return 'unknown';
+  const prefix = deckIds[0]?.split('-')[0];
+  return ['fish', 'bird', 'mammal', 'reptile', 'amphibian'].includes(prefix) ? prefix : 'unknown';
+};
+
+/**
+ * Render a card-grid deck selector into a container.
+ * Shows saved decks as card-shaped tiles + "Create" and "Random" action cards.
+ *
+ * @param {HTMLElement} container - DOM element to render into
+ * @param {Object} options
+ * @param {Array} options.decks - Array of saved deck objects { id, name, deck (cardIds array) }
+ * @param {Function} options.onSelect - Called with (deck) when a saved deck is tapped
+ * @param {Function} options.onCreate - Called when "+" card is tapped
+ * @param {Function} options.onRandom - Called when "?" card is tapped
+ * @param {string|null} options.selectedDeckId - Currently selected deck ID (for highlight)
+ */
+const renderDeckCardGrid = (
+  container,
+  { decks = [], onSelect, onCreate, onRandom, selectedDeckId = null }
+) => {
+  container.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.className = 'deck-card-grid';
+
+  // Saved decks
+  decks.forEach((deck) => {
+    const deckType = detectDeckType(deck.deck);
+    const icon = DECK_TYPE_ICONS[deckType] || '🃏';
+    const isSelected = deck.id === selectedDeckId;
+
+    const card = document.createElement('div');
+    card.className = `deck-card deck-card--${deckType}${isSelected ? ' selected' : ''}`;
+    card.innerHTML = `
+      <div class="deck-card-type">${deckType}</div>
+      <div class="deck-card-icon">${icon}</div>
+      <div class="deck-card-name">${deck.name}</div>
+      <div class="deck-card-count">${(deck.deck || []).length} cards</div>
+    `;
+    card.onclick = () => onSelect?.(deck);
+    grid.appendChild(card);
+  });
+
+  // "Create new deck" card
+  if (onCreate) {
+    const createCard = document.createElement('div');
+    createCard.className = 'deck-card deck-card--create';
+    createCard.innerHTML = `
+      <div class="deck-card-type">&nbsp;</div>
+      <div class="deck-card-icon">➕</div>
+      <div class="deck-card-name">New Deck</div>
+      <div class="deck-card-count">Build from scratch</div>
+    `;
+    createCard.onclick = () => onCreate();
+    grid.appendChild(createCard);
+  }
+
+  // "Random deck" card
+  if (onRandom) {
+    const randomCard = document.createElement('div');
+    randomCard.className = 'deck-card deck-card--random';
+    randomCard.innerHTML = `
+      <div class="deck-card-type">&nbsp;</div>
+      <div class="deck-card-icon">❓</div>
+      <div class="deck-card-name">Random</div>
+      <div class="deck-card-count">Random deck</div>
+    `;
+    randomCard.onclick = () => onRandom();
+    grid.appendChild(randomCard);
+  }
+
+  container.appendChild(grid);
+};
+
 const renderDeckLoadPanel = (state, playerIndex, callbacks) => {
   const elements = getDeckElements();
   const { deckLoadList } = elements;
@@ -1020,40 +1110,20 @@ const renderDeckLoadPanel = (state, playerIndex, callbacks) => {
   ensureDecksLoaded(state);
   clearPanel(deckLoadList);
   const decks = (state.menu.decks ?? []).slice(0, 3);
-  if (decks.length === 0) {
-    const empty = document.createElement('div');
-    empty.className = 'deck-slot';
-    empty.textContent = 'No saved decks available. Build decks in Catalog.';
-    deckLoadList.appendChild(empty);
-    return;
-  }
-  decks.forEach((deck) => {
-    const slot = document.createElement('div');
-    slot.className = 'deck-slot';
-    slot.innerHTML = `
-      <div class="deck-slot-header">
-        <span>${deck.name}</span>
-        <span class="deck-slot-meta">20 cards</span>
-      </div>
-      <div class="deck-slot-meta">Multiplayer Slot</div>
-    `;
-    const actions = document.createElement('div');
-    actions.className = 'deck-slot-actions';
-    const loadButton = document.createElement('button');
-    loadButton.type = 'button';
-    loadButton.className = 'primary';
-    loadButton.textContent = 'Load Deck';
-    loadButton.onclick = () => {
+
+  renderDeckCardGrid(deckLoadList, {
+    decks,
+    selectedDeckId: null,
+    onSelect: (deck) => {
       applyDeckToBuilder(state, playerIndex, deck.deck);
       logMessage(state, `${state.players[playerIndex].name} loaded "${deck.name}".`);
       if (state.menu?.mode === 'online') {
         sendLobbyBroadcast('deck_update', buildLobbySyncPayload(state));
       }
       callbacks.onUpdate?.();
-    };
-    actions.appendChild(loadButton);
-    slot.appendChild(actions);
-    deckLoadList.appendChild(slot);
+    },
+    onCreate: null, // No create in load tab (that's the catalog tab)
+    onRandom: null, // No random in load tab
   });
 };
 
@@ -1678,74 +1748,36 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
     clearPanel(deckSelectGrid);
 
     const decks = state.menu.decks ?? [];
-    if (decks.length === 0) {
-      // Show message but DON'T return - fall through to "Create a deck" button
-      const empty = document.createElement('div');
-      empty.className = 'deck-slot';
-      empty.textContent = 'No saved decks yet. Create one below!';
-      deckSelectGrid?.appendChild(empty);
+
+    // Find currently selected deck ID
+    let selectedDeckId = null;
+    if (localSelection && state.deckBuilder.selections[localIndex]?.length > 0) {
+      const sel = state.deckBuilder.selections[localIndex];
+      selectedDeckId =
+        decks.find((d) => d.deck.every((id) => sel.some((card) => card.id === id)))?.id ?? null;
     }
 
-    // Show deck options (only if there are saved decks)
-    decks.forEach((deck) => {
-      const isSelected =
-        localSelection &&
-        state.deckBuilder.selections[localIndex]?.length > 0 &&
-        deck.deck.every(
-          (id, i) =>
-            state.deckBuilder.selections[localIndex][i]?.id === id ||
-            state.deckBuilder.selections[localIndex].some((card) => card.id === id)
-        );
-
-      const slot = document.createElement('div');
-      slot.className = 'deck-slot' + (isSelected ? ' selected' : '');
-      if (isSelected) {
-        slot.style.borderColor = 'var(--color-primary, #3b82f6)';
-        slot.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
-      }
-
-      const loadButton = document.createElement('button');
-      loadButton.type = 'button';
-      loadButton.className = isSelected ? 'btn-secondary' : 'primary';
-      loadButton.textContent = isSelected ? 'Selected' : 'Select Deck';
-      loadButton.disabled = isSelected;
-      loadButton.onclick = () => {
+    renderDeckCardGrid(deckSelectGrid, {
+      decks,
+      selectedDeckId,
+      onSelect: (deck) => {
         applyDeckToBuilder(state, localIndex, deck.deck);
-        // Don't reveal full deck name in log - just confirm deck was selected
         logMessage(state, `${localPlayer?.name || 'Player'} selected a deck.`);
         callbacks.onUpdate?.();
-      };
-      slot.innerHTML = `
-        <div class="deck-slot-header">
-          <span>${deck.name}</span>
-          <span class="deck-slot-meta">${isSelected ? '✓ Selected' : '20 cards'}</span>
-        </div>
-        <div class="deck-slot-meta">Multiplayer Slot</div>
-      `;
-      const actions = document.createElement('div');
-      actions.className = 'deck-slot-actions';
-      actions.appendChild(loadButton);
-      slot.appendChild(actions);
-      deckSelectGrid?.appendChild(slot);
+      },
+      onCreate: () => {
+        state.deckSelection.skipSavedDecks = true;
+        callbacks.onUpdate?.();
+      },
+      onRandom: () => {
+        // Generate random deck from a random category
+        const categories = ['fish', 'bird', 'mammal', 'reptile', 'amphibian'];
+        const randomCat = categories[Math.floor(Math.random() * categories.length)];
+        generateDeckForPlayer(state, localIndex, randomCat);
+        logMessage(state, `${localPlayer?.name || 'Player'} selected a random deck.`);
+        callbacks.onUpdate?.();
+      },
     });
-
-    // Add "Create a deck (Not saved)" button
-    const createDeckContainer = document.createElement('div');
-    createDeckContainer.style.cssText =
-      'margin-top: 1.5rem; text-align: center; padding-top: 1rem; border-top: 1px solid var(--color-border);';
-
-    const createDeckButton = document.createElement('button');
-    createDeckButton.type = 'button';
-    createDeckButton.className = 'btn-secondary';
-    createDeckButton.style.cssText = 'padding: 0.5rem 1rem; font-size: 0.9rem;';
-    createDeckButton.textContent = 'Create a deck (Not saved)';
-    createDeckButton.onclick = () => {
-      state.deckSelection.skipSavedDecks = true;
-      callbacks.onUpdate?.();
-    };
-
-    createDeckContainer.appendChild(createDeckButton);
-    deckSelectGrid?.appendChild(createDeckContainer);
 
     // Add confirm button if deck is selected
     if (hasSelectedDeck) {
@@ -2042,64 +2074,35 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
     const localSelection = state.deckSelection.selections[playerIndex];
     const hasSelectedDeck = Boolean(localSelection);
 
-    // Show saved deck options
-    savedDecks.forEach((deck) => {
-      const isSelected =
-        hasSelectedDeck &&
-        state.deckBuilder.selections[playerIndex]?.length > 0 &&
-        deck.deck.every((id) =>
-          state.deckBuilder.selections[playerIndex].some((card) => card.id === id)
-        );
+    // Find currently selected deck ID
+    let selectedDeckId = null;
+    if (hasSelectedDeck && state.deckBuilder.selections[playerIndex]?.length > 0) {
+      const sel = state.deckBuilder.selections[playerIndex];
+      selectedDeckId =
+        savedDecks.find((d) => d.deck.every((id) => sel.some((card) => card.id === id)))?.id ??
+        null;
+    }
 
-      const slot = document.createElement('div');
-      slot.className = 'deck-slot' + (isSelected ? ' selected' : '');
-      if (isSelected) {
-        slot.style.borderColor = 'var(--color-primary, #3b82f6)';
-        slot.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
-      }
-
-      const loadButton = document.createElement('button');
-      loadButton.type = 'button';
-      loadButton.className = isSelected ? 'btn-secondary' : 'primary';
-      loadButton.textContent = isSelected ? 'Selected' : 'Select Deck';
-      loadButton.disabled = isSelected;
-      loadButton.onclick = () => {
+    renderDeckCardGrid(deckSelectGrid, {
+      decks: savedDecks,
+      selectedDeckId,
+      onSelect: (deck) => {
         applyDeckToBuilder(state, playerIndex, deck.deck);
-        // Don't reveal full deck name in log
         logMessage(state, `${player.name} selected a deck.`);
         callbacks.onUpdate?.();
-      };
-      slot.innerHTML = `
-        <div class="deck-slot-header">
-          <span>${deck.name}</span>
-          <span class="deck-slot-meta">${isSelected ? '✓ Selected' : '20 cards'}</span>
-        </div>
-        <div class="deck-slot-meta">Saved Deck</div>
-      `;
-      const actions = document.createElement('div');
-      actions.className = 'deck-slot-actions';
-      actions.appendChild(loadButton);
-      slot.appendChild(actions);
-      deckSelectGrid?.appendChild(slot);
+      },
+      onCreate: () => {
+        state.deckSelection.skipSavedDecks = true;
+        callbacks.onUpdate?.();
+      },
+      onRandom: () => {
+        const categories = ['fish', 'bird', 'mammal', 'reptile', 'amphibian'];
+        const randomCat = categories[Math.floor(Math.random() * categories.length)];
+        generateDeckForPlayer(state, playerIndex, randomCat);
+        logMessage(state, `${player.name} selected a random deck.`);
+        callbacks.onUpdate?.();
+      },
     });
-
-    // Add "Create a deck (Not saved)" button
-    const createDeckContainer = document.createElement('div');
-    createDeckContainer.style.cssText =
-      'margin-top: 1.5rem; text-align: center; padding-top: 1rem; border-top: 1px solid var(--color-border);';
-
-    const createDeckButton = document.createElement('button');
-    createDeckButton.type = 'button';
-    createDeckButton.className = 'btn-secondary';
-    createDeckButton.style.cssText = 'padding: 0.5rem 1rem; font-size: 0.9rem;';
-    createDeckButton.textContent = 'Create a deck (Not saved)';
-    createDeckButton.onclick = () => {
-      state.deckSelection.skipSavedDecks = true;
-      callbacks.onUpdate?.();
-    };
-
-    createDeckContainer.appendChild(createDeckButton);
-    deckSelectGrid?.appendChild(createDeckContainer);
 
     // Add confirm button if deck is selected
     if (hasSelectedDeck) {

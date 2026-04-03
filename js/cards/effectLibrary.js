@@ -694,7 +694,7 @@ export const selectTarget = (selectionType, effectCallback) => (context) => {
 export const selectConsume = (cardType, count, effectCallback) => (context) => {
   const { log, player } = context;
 
-  let validCards = player.hand.filter((c) => {
+  const validCards = player.hand.filter((c) => {
     if (cardType === 'prey') {
       return c.type === 'prey';
     } else if (cardType === 'predator') {
@@ -938,7 +938,7 @@ export const revealCards =
 export const tutor =
   (cardType) =>
   ({ log, player, playerIndex }) => {
-    let validCards = player.deck.filter((c) => {
+    const validCards = player.deck.filter((c) => {
       if (cardType === 'prey') {
         return c.type === 'prey';
       } else if (cardType === 'predator') {
@@ -1462,7 +1462,7 @@ export const selectCreatureToRestore = () => (context) => {
  * @param {Object} context - Effect context with player, opponent, state
  * @returns {Array} Array of candidates with label, value, and optional card
  */
-const buildTargetCandidates = (targetGroup, context) => {
+export const buildTargetCandidates = (targetGroup, context) => {
   const { player, opponent, state, playerIndex, opponentIndex } = context;
   let candidates = [];
 

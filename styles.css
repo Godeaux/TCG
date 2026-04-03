@@ -7853,6 +7853,116 @@ select.menu-input option {
 }
 
 /* ============================================================================
+   DECK LOAD CARD GRID
+   Card-shaped deck selection (load/select deck screens)
+   ============================================================================ */
+
+.deck-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  padding: 16px;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.deck-card {
+  aspect-ratio: 2.5/3.5;
+  border-radius: 12px;
+  border: 2px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 12px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+}
+.deck-card:hover {
+  transform: scale(1.04);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+.deck-card:active {
+  transform: scale(0.98);
+}
+.deck-card.selected {
+  border-color: var(--color-primary, #3b82f6);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
+}
+
+/* Deck type backgrounds */
+.deck-card--fish { background: linear-gradient(135deg, rgba(54,108,180,0.85), rgba(18,40,72,0.95)); }
+.deck-card--bird { background: linear-gradient(135deg, rgba(200,160,40,0.8), rgba(83,52,12,0.95)); }
+.deck-card--mammal { background: linear-gradient(135deg, rgba(140,92,68,0.8), rgba(60,36,24,0.95)); }
+.deck-card--reptile { background: linear-gradient(135deg, rgba(60,142,74,0.8), rgba(22,66,35,0.95)); }
+.deck-card--amphibian { background: linear-gradient(135deg, rgba(92,180,116,0.8), rgba(26,92,54,0.95)); }
+.deck-card--unknown { background: linear-gradient(135deg, rgba(80,80,100,0.8), rgba(30,30,40,0.95)); }
+
+/* Special action cards */
+.deck-card--create {
+  background: rgba(40,100,60,0.3);
+  border: 2px dashed rgba(80,200,120,0.6);
+}
+.deck-card--create:hover {
+  border-color: rgba(80,200,120,0.9);
+  background: rgba(40,100,60,0.5);
+}
+.deck-card--random {
+  background: rgba(180,120,40,0.2);
+  border: 2px dashed rgba(220,160,60,0.6);
+}
+.deck-card--random:hover {
+  border-color: rgba(220,160,60,0.9);
+  background: rgba(180,120,40,0.4);
+}
+
+.deck-card-icon {
+  font-size: 48px;
+  opacity: 0.9;
+}
+
+.deck-card-name {
+  font-weight: 700;
+  font-size: 14px;
+  text-align: center;
+  color: var(--text-primary);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+  word-break: break-word;
+}
+
+.deck-card-type {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255,255,255,0.6);
+}
+
+.deck-card-count {
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+}
+
+@media (max-width: 400px) {
+  .deck-card-grid {
+    gap: 10px;
+    padding: 10px;
+  }
+  .deck-card {
+    padding: 12px 8px;
+  }
+  .deck-card-icon {
+    font-size: 36px;
+  }
+  .deck-card-name {
+    font-size: 12px;
+  }
+}
+
+/* ============================================================================
    DECK CATALOG HOME SCREEN
    Card-based layout for deck management
    ============================================================================ */
