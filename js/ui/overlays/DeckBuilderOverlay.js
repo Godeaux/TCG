@@ -1349,66 +1349,33 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       }
       clearPanel(deckSelectGrid);
 
-      // Create horizontal column layout container
+      // Create card grid layout container
       deckSelectGrid.className = 'deck-select-grid deck-catalog-home deck-catalog-home--horizontal';
 
-      // 1. "View All Cards" column (always first)
-      const viewAllColumn = document.createElement('div');
-      viewAllColumn.className = 'deck-column deck-column--view-all';
-      viewAllColumn.innerHTML = `
-        <div class="deck-column-header">
-          <span class="deck-column-title">View All Cards 📚</span>
-        </div>
-        <div class="deck-column-body">
-          <p class="deck-column-description">Browse the complete card catalog</p>
-        </div>
-      `;
-      viewAllColumn.onclick = () => {
-        state.catalogBuilder.stage = 'select';
-        state.catalogBuilder.viewOnly = true;
-        callbacks.onUpdate?.();
-      };
-      deckSelectGrid.appendChild(viewAllColumn);
-
-      // 2. Deck columns - only show if logged in
+      // Use card grid for deck management
       if (!state.menu.profile) {
-        // Not logged in - show login prompt column
-        const loginColumn = document.createElement('div');
-        loginColumn.className = 'deck-column deck-column--create';
-        loginColumn.innerHTML = `
-          <div class="deck-column-header">
-            <span class="deck-column-title">🔐 Log In</span>
-          </div>
-          <div class="deck-column-body">
-            <p class="deck-column-description">Log in to create and save decks for multiplayer</p>
-          </div>
+        // Not logged in
+        const loginMsg = document.createElement('div');
+        loginMsg.className = 'deck-card deck-card--unknown';
+        loginMsg.innerHTML = `
+          <div class="deck-card-type">&nbsp;</div>
+          <div class="deck-card-icon">🔐</div>
+          <div class="deck-card-name">Log In</div>
+          <div class="deck-card-count">Log in to manage decks</div>
         `;
-        deckSelectGrid.appendChild(loginColumn);
+        const grid = document.createElement('div');
+        grid.className = 'deck-card-grid';
+        grid.appendChild(loginMsg);
+        deckSelectGrid.appendChild(grid);
       } else {
-        // Logged in - show saved decks as columns with card lists
         ensureDecksLoaded(state);
         const decks = state.menu.decks ?? [];
 
-        // Render each saved deck as a column with scrollable card list
-        decks.forEach((deck) => {
-          const column = document.createElement('div');
-          column.className = 'deck-column deck-column--filled';
-
-          // Header with deck name and action buttons
-          const header = document.createElement('div');
-          header.className = 'deck-column-header';
-          header.innerHTML = `
-            <span class="deck-column-title">${deck.name} 🃏</span>
-            <div class="deck-column-actions">
-              <button type="button" class="deck-column-btn deck-column-btn--edit" title="Edit deck">✏️</button>
-              <button type="button" class="deck-column-btn deck-column-btn--delete" title="Delete deck">🗑️</button>
-            </div>
-          `;
-
-          // Edit button handler
-          const editBtn = header.querySelector('.deck-column-btn--edit');
-          editBtn.onclick = (e) => {
-            e.stopPropagation();
+        renderDeckCardGrid(deckSelectGrid, {
+          decks,
+          selectedDeckId: null,
+          onSelect: (deck) => {
+            // Clicking a deck opens it for editing
             const deckId = findDeckCatalogId(deck.deck);
             state.catalogBuilder.deckId = deckId;
             state.catalogBuilder.stage = 'build';
@@ -1422,90 +1389,35 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
             deckActiveTab = 'catalog';
             deckHighlighted = null;
             callbacks.onUpdate?.();
-          };
-
-          // Delete button handler
-          const deleteBtn = header.querySelector('.deck-column-btn--delete');
-          deleteBtn.onclick = async (e) => {
-            e.stopPropagation();
-            if (!window.confirm(`Delete "${deck.name}"?`)) {
-              return;
-            }
-            applyMenuLoading(state, true);
-            try {
-              const api = await loadSupabaseApi(state);
-              await api.deleteDeck({ deckId: deck.id, ownerId: state.menu.profile.id });
-              await ensureDecksLoaded(state, { force: true });
-            } catch (error) {
-              setMenuError(state, error.message || 'Failed to delete deck.');
-            } finally {
-              applyMenuLoading(state, false);
-              callbacks.onUpdate?.();
-            }
-          };
-
-          column.appendChild(header);
-
-          // Scrollable card list container
-          const cardsContainer = document.createElement('div');
-          cardsContainer.className = 'deck-column-cards';
-
-          // Get card objects for the deck
-          const deckCatalogId = findDeckCatalogId(deck.deck);
-          const cardObjects = mapDeckIdsToCards(deckCatalogId, deck.deck);
-
-          // Sort cards by type then name (like in deck builder)
-          const sortedCards = [...cardObjects].sort((a, b) => {
-            const typeOrderA = CARD_TYPE_ORDER[a.type] ?? 99;
-            const typeOrderB = CARD_TYPE_ORDER[b.type] ?? 99;
-            if (typeOrderA !== typeOrderB) return typeOrderA - typeOrderB;
-            return a.name.localeCompare(b.name);
-          });
-
-          // Render each card as a bordered row with type border + rarity strip
-          // Use owned rarity for coloring (white if not owned)
-          const ownedCards = state.menu?.profile?.ownedCards || null;
-          sortedCards.forEach((card) => {
-            const row = createDeckListRow(card, {
-              bordered: true,
-              disableInteraction: true,
-              ownedCards,
-            });
-            cardsContainer.appendChild(row);
-          });
-
-          column.appendChild(cardsContainer);
-
-          // Clicking the column (outside buttons) opens edit
-          column.onclick = (e) => {
-            if (e.target === editBtn || e.target === deleteBtn) return;
-            if (e.target.closest('.deck-column-btn')) return;
-            editBtn.click();
-          };
-          column.style.cursor = 'pointer';
-
-          deckSelectGrid.appendChild(column);
+          },
+          onCreate:
+            decks.length < 10
+              ? () => {
+                  state.catalogBuilder.stage = 'select';
+                  state.catalogBuilder.viewOnly = false;
+                  callbacks.onUpdate?.();
+                }
+              : null,
+          onRandom: null, // No random in manage screen
         });
 
-        // 3. "Create New Deck" column (if under 10 decks)
-        if (decks.length < 10) {
-          const createColumn = document.createElement('div');
-          createColumn.className = 'deck-column deck-column--create';
-          createColumn.innerHTML = `
-            <div class="deck-column-header">
-              <span class="deck-column-title">Create New Deck</span>
-            </div>
-            <div class="deck-column-body">
-              <button type="button" class="deck-column-create-btn">➕</button>
-              <p class="deck-column-description">Slot ${decks.length + 1} of 10</p>
-            </div>
+        // Add "View All Cards" card into the grid
+        const grid = deckSelectGrid.querySelector('.deck-card-grid');
+        if (grid) {
+          const viewAll = document.createElement('div');
+          viewAll.className = 'deck-card deck-card--unknown';
+          viewAll.innerHTML = `
+            <div class="deck-card-type">&nbsp;</div>
+            <div class="deck-card-icon">📚</div>
+            <div class="deck-card-name">View All Cards</div>
+            <div class="deck-card-count">Browse catalog</div>
           `;
-          createColumn.onclick = () => {
+          viewAll.onclick = () => {
             state.catalogBuilder.stage = 'select';
-            state.catalogBuilder.viewOnly = false;
+            state.catalogBuilder.viewOnly = true;
             callbacks.onUpdate?.();
           };
-          deckSelectGrid.appendChild(createColumn);
+          grid.insertBefore(viewAll, grid.firstChild);
         }
       }
 

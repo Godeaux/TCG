@@ -7664,7 +7664,7 @@ select.menu-input option {
     min-height: calc(100dvh - 24px);
   }
 
-  /* My Decks horizontal layout - stack vertically on mobile, fill available space */
+  /* My Decks horizontal layout - use card grid on mobile */
   .deck-catalog-home--horizontal {
     display: flex;
     flex-direction: column;
@@ -7682,6 +7682,12 @@ select.menu-input option {
     width: 100%;
     max-width: 100%;
     min-width: 100%;
+  }
+
+  /* On mobile, use the card grid inside the catalog home */
+  .deck-catalog-home--horizontal .deck-card-grid {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 100%;
   }
 
   .deck-column {
