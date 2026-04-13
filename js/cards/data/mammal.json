@@ -8,10 +8,22 @@
       "atk": 0,
       "hp": 1,
       "nutrition": 0,
-      "keywords": ["Free Play"],
-      "summons": ["token-pup"],
+      "keywords": [
+        "Free Play"
+      ],
+      "summons": [
+        "token-pup"
+      ],
       "effects": {
-        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-pup", "token-pup"] } }
+        "onPlay": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": [
+              "token-pup",
+              "token-pup"
+            ]
+          }
+        }
       }
     },
     {
@@ -22,13 +34,18 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "summons": ["token-arctic-ground-squirrel"],
+      "summons": [
+        "token-arctic-ground-squirrel"
+      ],
       "effects": {
         "onPlay": [
           {
             "type": "summonTokens",
             "params": {
-              "tokenIds": ["token-arctic-ground-squirrel", "token-arctic-ground-squirrel"]
+              "tokenIds": [
+                "token-arctic-ground-squirrel",
+                "token-arctic-ground-squirrel"
+              ]
             }
           },
           {
@@ -36,11 +53,17 @@
             "params": {
               "targetGroup": "enemy-creatures",
               "title": "Choose a creature to freeze",
-              "effect": { "keyword": "Frozen" }
+              "effect": {
+                "keyword": "Frozen"
+              }
             }
           }
         ]
-      }
+      },
+      "keywords": [
+        "Frozen",
+        "Hidden"
+      ]
     },
     {
       "id": "mammal-prey-snowshoe-hare",
@@ -50,38 +73,21 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Haste", "Hidden"],
+      "keywords": [
+        "Haste",
+        "Hidden"
+      ],
       "effects": {
         "onPlay": {
           "type": "selectFromGroup",
           "params": {
             "targetGroup": "enemy-creatures",
             "title": "Choose a creature to freeze",
-            "effect": { "keyword": "Frozen" }
-          }
-        }
-      }
-    },
-    {
-      "id": "mammal-prey-bobcat",
-      "name": "Bobcat",
-      "flavorText": "A solitary ambush hunter that can take down prey up to 8x its weight, including deer and small livestock.",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "effects": {
-        "onPlay": [
-          { "type": "revealHand", "params": {} },
-          {
-            "type": "selectFromGroup",
-            "params": {
-              "targetGroup": "all-prey",
-              "title": "Choose a prey to kill",
-              "effect": { "kill": true }
+            "effect": {
+              "keyword": "Frozen"
             }
           }
-        ]
+        }
       }
     },
     {
@@ -92,10 +98,25 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "summons": ["token-kit"],
+      "summons": [
+        "token-kit"
+      ],
       "effects": {
-        "onSlain": { "type": "heal", "params": { "amount": 1 } },
-        "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-kit", "token-kit"] } }
+        "onSlain": {
+          "type": "heal",
+          "params": {
+            "amount": 1
+          }
+        },
+        "onEnd": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": [
+              "token-kit",
+              "token-kit"
+            ]
+          }
+        }
       }
     },
     {
@@ -106,9 +127,17 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Free Play"],
+      "keywords": [
+        "Free Play",
+        "Hidden"
+      ],
       "effects": {
-        "onPlay": { "type": "draw", "params": { "count": 1 } }
+        "onPlay": {
+          "type": "draw",
+          "params": {
+            "count": 1
+          }
+        }
       }
     },
     {
@@ -125,7 +154,10 @@
           "params": {
             "targetGroup": "all-entities",
             "title": "Choose a target for damage",
-            "effect": { "damage": 3, "label": "weasel" }
+            "effect": {
+              "damage": 3,
+              "label": "weasel"
+            }
           }
         }
       }
@@ -138,12 +170,28 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "summons": ["token-pup"],
+      "summons": [
+        "token-pup"
+      ],
       "effects": {
-        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-pup", "token-pup"] } },
+        "onPlay": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": [
+              "token-pup",
+              "token-pup"
+            ]
+          }
+        },
         "onSlain": {
           "type": "summonTokens",
-          "params": { "tokenIds": ["token-pup", "token-pup", "token-pup"] }
+          "params": {
+            "tokenIds": [
+              "token-pup",
+              "token-pup",
+              "token-pup"
+            ]
+          }
         }
       }
     },
@@ -156,7 +204,9 @@
       "hp": 1,
       "nutrition": 1,
       "effects": {
-        "onSlain": { "type": "reviveCreature" }
+        "onSlain": {
+          "type": "reviveCreature"
+        }
       }
     },
     {
@@ -167,10 +217,22 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Ambush", "Hidden"],
-      "summons": ["token-joey"],
+      "keywords": [
+        "Ambush",
+        "Hidden"
+      ],
+      "summons": [
+        "token-joey"
+      ],
       "effects": {
-        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["token-joey"] } }
+        "onSlain": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": [
+              "token-joey"
+            ]
+          }
+        }
       }
     },
     {
@@ -181,12 +243,21 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Poisonous"],
-      "summons": ["token-mammal-egg"],
+      "keywords": [
+        "Poisonous"
+      ],
+      "summons": [
+        "token-mammal-egg"
+      ],
       "effects": {
         "onPlay": {
           "type": "summonTokens",
-          "params": { "tokenIds": ["token-mammal-egg", "token-mammal-egg"] }
+          "params": {
+            "tokenIds": [
+              "token-mammal-egg",
+              "token-mammal-egg"
+            ]
+          }
         }
       }
     },
@@ -200,22 +271,17 @@
       "nutrition": 1,
       "effects": {
         "onPlay": [
-          { "type": "forceOpponentDiscard", "params": { "count": 1 } },
-          { "type": "tutorFromDeck", "params": {} }
+          {
+            "type": "forceOpponentDiscard",
+            "params": {
+              "count": 1
+            }
+          },
+          {
+            "type": "tutorFromDeck",
+            "params": {}
+          }
         ]
-      }
-    },
-    {
-      "id": "mammal-prey-sable",
-      "name": "Sable",
-      "flavorText": "Its fur was once worth more than gold by weight. Sables are one of few mustelids that breed only once per year.",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "summons": ["token-sable-fur"],
-      "effects": {
-        "onSlain": { "type": "addToHand", "params": { "cardId": "token-sable-fur" } }
       }
     },
     {
@@ -232,7 +298,10 @@
           "params": {
             "targetGroup": "all-entities",
             "title": "Choose a target for damage",
-            "effect": { "damage": 2, "label": "pronghorn" }
+            "effect": {
+              "damage": 2,
+              "label": "pronghorn"
+            }
           }
         }
       }
@@ -246,51 +315,36 @@
       "hp": 2,
       "nutrition": 2,
       "effects": {
-        "onPlay": { "type": "draw", "params": { "count": 2 } }
+        "onPlay": {
+          "type": "draw",
+          "params": {
+            "count": 2
+          }
+        }
       }
     },
     {
       "id": "mammal-prey-black-springbok",
-      "name": "Black Springbok",
+      "name": "Black Springboks",
       "flavorText": "Performs 'pronking' — leaping 6 feet straight up — likely to signal fitness to predators and deter pursuit.",
       "type": "Prey",
       "atk": 1,
       "hp": 2,
-      "nutrition": 2,
-      "keywords": ["Ambush", "Haste"],
-      "summons": ["token-white-springbok"],
-      "effects": {
-        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-white-springbok"] } }
-      }
-    },
-    {
-      "id": "mammal-prey-holstein-friesian",
-      "name": "Holstein Friesian",
-      "flavorText": "The world's highest-producing dairy breed, averaging 23,000 lbs of milk per year — over 2,600 gallons annually.",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 3,
-      "nutrition": 3,
-      "summons": ["token-fresh-milk"],
-      "effects": {
-        "onEnd": { "type": "addToHand", "params": { "cardId": "token-fresh-milk" } }
-      }
-    },
-    {
-      "id": "mammal-prey-hart",
-      "name": "Hart",
-      "flavorText": "A mature male red deer. It regrows its antlers annually — up to an inch per day, the fastest bone growth in any mammal.",
-      "type": "Prey",
-      "atk": 2,
-      "hp": 2,
-      "nutrition": 2,
+      "nutrition": 1,
+      "keywords": [
+        "Ambush",
+        "Haste"
+      ],
+      "summons": [
+        "token-white-springbok"
+      ],
       "effects": {
         "onPlay": {
-          "type": "selectFromGroup",
+          "type": "summonTokens",
           "params": {
-            "targetGroup": "friendly-carrion",
-            "title": "Choose a carrion to add to hand",
-            "effect": { "addToHand": true }
+            "tokenIds": [
+              "token-white-springbok"
+            ]
           }
         }
       }
@@ -304,7 +358,9 @@
       "hp": 2,
       "nutrition": 2,
       "effects": {
-        "onPlay": { "type": "returnAllEnemies" }
+        "onPlay": {
+          "type": "returnAllEnemies"
+        }
       }
     },
     {
@@ -324,12 +380,22 @@
               {
                 "label": "Deal 2 damage",
                 "description": "Deal 2 damage to rival",
-                "effect": { "type": "damageRival", "params": { "amount": 2 } }
+                "effect": {
+                  "type": "damageRival",
+                  "params": {
+                    "amount": 2
+                  }
+                }
               },
               {
                 "label": "Heal 2",
                 "description": "Heal 2 HP",
-                "effect": { "type": "heal", "params": { "amount": 2 } }
+                "effect": {
+                  "type": "heal",
+                  "params": {
+                    "amount": 2
+                  }
+                }
               }
             ]
           }
@@ -344,9 +410,16 @@
       "atk": 2,
       "hp": 2,
       "nutrition": 2,
-      "summons": ["token-present"],
+      "summons": [
+        "token-present"
+      ],
       "effects": {
-        "onPlay": { "type": "addToHand", "params": { "cardId": "token-present" } }
+        "onPlay": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "token-present"
+          }
+        }
       }
     },
     {
@@ -357,10 +430,19 @@
       "atk": 2,
       "hp": 2,
       "nutrition": 2,
-      "keywords": ["Immune"],
-      "summons": ["token-qiviut"],
+      "keywords": [
+        "Immune"
+      ],
+      "summons": [
+        "token-qiviut"
+      ],
       "effects": {
-        "onSlain": { "type": "addToHand", "params": { "cardId": "token-qiviut" } }
+        "onSlain": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "token-qiviut"
+          }
+        }
       }
     },
     {
@@ -371,7 +453,9 @@
       "atk": 3,
       "hp": 2,
       "nutrition": 2,
-      "keywords": ["Haste"]
+      "keywords": [
+        "Haste"
+      ]
     },
     {
       "id": "mammal-prey-alaskan-moose",
@@ -381,73 +465,33 @@
       "atk": 3,
       "hp": 3,
       "nutrition": 3,
-      "keywords": ["Barrier"]
-    },
-    {
-      "id": "mammal-predator-dholes",
-      "name": "Dholes",
-      "flavorText": "Asian wild dogs that communicate with whistles instead of howls. Packs of 12+ can drive tigers off their kills.",
-      "type": "Predator",
-      "atk": 1,
-      "hp": 1,
-      "summons": ["token-dhole"],
-      "effects": {
-        "onConsume": [
-          { "type": "summonTokens", "params": { "tokenIds": ["token-dhole", "token-dhole"] } },
-          {
-            "type": "selectFromGroup",
-            "params": {
-              "targetGroup": "enemy-creatures",
-              "title": "Choose a creature to kill",
-              "effect": { "kill": true }
-            }
-          }
-        ]
-      }
+      "keywords": [
+        "Barrier"
+      ]
     },
     {
       "id": "mammal-predator-eurasian-lynx",
       "name": "Eurasian Lynx",
       "flavorText": "Europe's third-largest predator. Its tufted ears improve hearing by 20%, and it can detect a hare at 300 meters.",
       "type": "Predator",
-      "atk": 2,
+      "atk": 1,
       "hp": 1,
-      "keywords": ["Free Play"],
-      "effects": {
-        "onConsume": { "type": "revealHand", "params": { "durationMs": 5000 } }
-      }
-    },
-    {
-      "id": "mammal-predator-gray-wolf",
-      "name": "Gray Wolf",
-      "flavorText": "Packs maintain territories of 80-300 square miles. Their reintroduction to Yellowstone literally changed river courses.",
-      "type": "Predator",
-      "atk": 2,
-      "hp": 2,
-      "summons": ["mammal-predator-gray-wolf"],
+      "keywords": [
+        "Free Play",
+        "Edible"
+      ],
       "effects": {
         "onConsume": {
-          "type": "summonTokens",
-          "params": { "tokenIds": ["mammal-predator-gray-wolf"] }
+          "type": "revealHand",
+          "params": {
+            "durationMs": 5000
+          }
         }
       }
     },
     {
-      "id": "mammal-predator-black-leopards",
-      "name": "Black Leopards",
-      "flavorText": "Melanism occurs in about 11% of leopards. Their rosette markings are still visible under infrared light.",
-      "type": "Predator",
-      "atk": 3,
-      "hp": 2,
-      "keywords": ["Ambush"],
-      "summons": ["token-black-leopard"],
-      "effects": {
-        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["token-black-leopard"] } }
-      }
-    },
-    {
       "id": "mammal-predator-jaguar",
-      "name": "Jaguar",
+      "name": "Black Jaguar",
       "flavorText": "Has the strongest bite relative to size of any big cat — powerful enough to pierce turtle shells and caiman skulls.",
       "type": "Predator",
       "atk": 3,
@@ -458,14 +502,19 @@
           "params": {
             "targetGroup": "friendly-carrion",
             "title": "Choose a carrion to play",
-            "effect": { "play": true }
+            "effect": {
+              "play": true
+            }
           }
         }
-      }
+      },
+      "keywords": [
+        "Ambush"
+      ]
     },
     {
       "id": "mammal-predator-north-american-cougar",
-      "name": "North American Cougar",
+      "name": "Puma",
       "flavorText": "Holds the record for the largest range of any wild land mammal in the Americas — from Yukon to Patagonia.",
       "type": "Predator",
       "atk": 3,
@@ -473,22 +522,17 @@
       "effects": {
         "onBeforeCombat": {
           "type": "damageCreature",
-          "params": { "targetType": "target", "amount": 3, "sourceLabel": "cougar" }
+          "params": {
+            "targetType": "target",
+            "amount": 3,
+            "sourceLabel": "cougar"
+          }
         }
       }
     },
     {
-      "id": "mammal-predator-malayan-tiger",
-      "name": "Malayan Tiger",
-      "flavorText": "Fewer than 150 remain in the wild, making it the most endangered tiger subspecies. It hunts sun bears and tapirs.",
-      "type": "Predator",
-      "atk": 3,
-      "hp": 3,
-      "keywords": ["Barrier", "Immune"]
-    },
-    {
       "id": "mammal-predator-southern-african-lion",
-      "name": "Southern African Lion",
+      "name": "African Lion",
       "flavorText": "A lion's roar reaches 114 decibels, audible 5 miles away. Females do 90% of the hunting; males defend territory.",
       "type": "Predator",
       "atk": 3,
@@ -496,7 +540,13 @@
       "effects": {
         "onConsume": {
           "type": "buffStats",
-          "params": { "targetType": "all-friendly", "stats": { "attack": 1, "health": 1 } }
+          "params": {
+            "targetType": "all-friendly",
+            "stats": {
+              "attack": 1,
+              "health": 1
+            }
+          }
         }
       }
     },
@@ -513,19 +563,23 @@
           "params": {
             "targetGroup": "carrion",
             "title": "Choose a carrion to copy abilities from",
-            "effect": { "copyAbilities": true }
+            "effect": {
+              "copyAbilities": true
+            }
           }
         }
       }
     },
     {
       "id": "mammal-predator-cheetah",
-      "name": "Cheetah",
+      "name": "Cheetahs",
       "flavorText": "Reaches 70 mph in 3 seconds but overheats after 30 seconds. It succeeds in only 40-50% of hunts.",
       "type": "Predator",
-      "atk": 4,
+      "atk": 3,
       "hp": 2,
-      "keywords": ["Haste"]
+      "keywords": [
+        "Haste"
+      ]
     },
     {
       "id": "mammal-predator-grizzly-bear",
@@ -535,7 +589,9 @@
       "atk": 4,
       "hp": 4,
       "effects": {
-        "onEnd": { "type": "regenSelf" }
+        "onEnd": {
+          "type": "regenSelf"
+        }
       }
     },
     {
@@ -545,9 +601,16 @@
       "type": "Predator",
       "atk": 5,
       "hp": 5,
-      "summons": ["token-salmon"],
+      "summons": [
+        "token-salmon"
+      ],
       "effects": {
-        "onConsume": { "type": "addToHand", "params": { "cardId": "token-salmon" } }
+        "onConsume": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "token-salmon"
+          }
+        }
       }
     },
     {
@@ -555,27 +618,11 @@
       "name": "Polar Bear",
       "flavorText": "Its fur is transparent, not white — each hollow hair scatters light. Its skin underneath is jet black to absorb heat.",
       "type": "Predator",
-      "atk": 5,
-      "hp": 5,
-      "effects": {
-        "onConsume": { "type": "freezeAllEnemies" }
-      }
-    },
-    {
-      "id": "mammal-predator-hippopotamus",
-      "name": "Hippopotamus",
-      "flavorText": "Kills more humans in Africa than any other large animal. It secretes natural red sunscreen and can outrun most people.",
-      "type": "Predator",
       "atk": 6,
       "hp": 6,
       "effects": {
         "onConsume": {
-          "type": "selectFromGroup",
-          "params": {
-            "targetGroup": "enemy-creatures",
-            "title": "Choose a creature to kill",
-            "effect": { "kill": true }
-          }
+          "type": "freezeAllEnemies"
         }
       }
     },
@@ -586,9 +633,22 @@
       "type": "Spell",
       "effects": {
         "effect": [
-          { "type": "damageRival", "params": { "amount": 2 } },
-          { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } },
-          { "type": "freezeAllEnemies", "params": {} }
+          {
+            "type": "damageRival",
+            "params": {
+              "amount": 2
+            }
+          },
+          {
+            "type": "damageAllEnemyCreatures",
+            "params": {
+              "amount": 2
+            }
+          },
+          {
+            "type": "freezeAllEnemies",
+            "params": {}
+          }
         ]
       }
     },
@@ -600,22 +660,12 @@
       "effects": {
         "effect": {
           "type": "buffStats",
-          "params": { "targetType": "all-friendly", "stats": { "attack": 2, "health": 2 } }
-        }
-      }
-    },
-    {
-      "id": "mammal-spell-rifle",
-      "name": "Rifle",
-      "flavorText": "Firearms drove 2% of mammal species to extinction since 1500. Humans are the only mammal to hunt at global scale.",
-      "type": "Spell",
-      "effects": {
-        "effect": {
-          "type": "selectFromGroup",
           "params": {
-            "targetGroup": "enemy-creatures",
-            "title": "Choose a creature to kill",
-            "effect": { "kill": true }
+            "targetType": "all-friendly",
+            "stats": {
+              "attack": 2,
+              "health": 2
+            }
           }
         }
       }
@@ -626,7 +676,12 @@
       "flavorText": "Unique to mammals, this brain structure handles reasoning and language. In humans it contains 16 billion neurons.",
       "type": "Spell",
       "effects": {
-        "effect": { "type": "selectCreatureFromDeckWithKeyword", "params": { "keyword": "Frozen" } }
+        "effect": {
+          "type": "selectCreatureFromDeckWithKeyword",
+          "params": {
+            "keyword": "Frozen"
+          }
+        }
       }
     },
     {
@@ -640,7 +695,10 @@
           "params": {
             "targetGroup": "friendly-carrion",
             "title": "Choose a carrion to play",
-            "effect": { "play": true, "keyword": "Frozen" }
+            "effect": {
+              "play": true,
+              "keyword": "Frozen"
+            }
           }
         }
       }
@@ -656,7 +714,10 @@
           "params": {
             "targetGroup": "friendly-creatures",
             "title": "Choose a creature to sacrifice",
-            "effect": { "sacrifice": true, "draw": 3 }
+            "effect": {
+              "sacrifice": true,
+              "draw": 3
+            }
           }
         }
       }
@@ -672,28 +733,11 @@
           "params": {
             "targetGroup": "enemy-creatures",
             "title": "Choose a creature to freeze",
-            "effect": { "keyword": "Frozen" }
+            "effect": {
+              "keyword": "Frozen"
+            }
           }
         }
-      }
-    },
-    {
-      "id": "mammal-free-spell-warm-blood",
-      "name": "Warm Blood",
-      "flavorText": "Endothermy lets mammals stay active in any climate. Maintaining 37°C costs 10x more energy than cold-blooded life.",
-      "type": "Free Spell",
-      "effects": {
-        "effect": { "type": "removeFrozenFromFriendlies" }
-      }
-    },
-    {
-      "id": "mammal-trap-human-intervention",
-      "name": "Human Intervention",
-      "flavorText": "Wildlife management relocated 67 gray wolves to Yellowstone in 1995-96, triggering a trophic cascade across the ecosystem.",
-      "type": "Trap",
-      "trigger": "targeted",
-      "effects": {
-        "effect": { "type": "returnTargetedToHand" }
       }
     },
     {
@@ -704,8 +748,14 @@
       "trigger": "directAttack",
       "effects": {
         "effect": [
-          { "type": "negateAttack", "params": {} },
-          { "type": "freezeAllEnemies", "params": {} }
+          {
+            "type": "negateAttack",
+            "params": {}
+          },
+          {
+            "type": "freezeAllEnemies",
+            "params": {}
+          }
         ]
       }
     },
@@ -717,24 +767,288 @@
       "trigger": "indirectDamage",
       "effects": {
         "effect": [
-          { "type": "negateDamage", "params": {} },
-          { "type": "freezeAllEnemies", "params": {} }
+          {
+            "type": "negateDamage",
+            "params": {}
+          },
+          {
+            "type": "freezeAllEnemies",
+            "params": {}
+          }
         ]
       }
     },
     {
-      "id": "mammal-trap-burial-ground",
-      "name": "Burial Ground",
-      "flavorText": "Elephants revisit bones of dead relatives, gently touching them with their trunks — one of few mammals to mourn their dead.",
-      "type": "Trap",
-      "trigger": "slain",
+      "id": "mammal-prey-arctic-fox",
+      "name": "Arctic Fox",
+      "flavorText": "Arctic foxes change coat color with the seasons - white in winter, brown in summer.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "effects": {
+        "onPlay": [
+          {
+            "type": "selectFromGroup",
+            "params": {
+              "targetGroup": "enemy-creatures",
+              "title": "Choose an enemy to freeze",
+              "effect": {
+                "keyword": "Frozen"
+              }
+            }
+          },
+          {
+            "type": "addToHand",
+            "params": {
+              "cardId": "mammal-spell-northern-lights"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "mammal-spell-northern-lights",
+      "name": "Northern Lights",
+      "flavorText": "Auroras illuminate the polar night, dancing across the sky in waves of green and purple.",
+      "type": "Spell",
       "effects": {
         "effect": {
           "type": "selectFromGroup",
           "params": {
-            "targetGroup": "friendly-carrion",
+            "targetGroup": "carrion",
             "title": "Choose a carrion to play",
-            "effect": { "play": true, "keyword": "Frozen" }
+            "effect": {
+              "play": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "mammal-prey-north-american-beaver",
+      "name": "North American Beaver",
+      "flavorText": "Beavers build dams that create wetlands, benefiting countless other species.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [
+        "Barrier",
+        "Hidden"
+      ],
+      "effects": {
+        "onPlay": {
+          "type": "destroyFieldSpell",
+          "params": {
+            "target": "enemy"
+          }
+        },
+        "onDusk": {
+          "type": "addKeyword",
+          "params": {
+            "keyword": "Barrier",
+            "targetType": "self"
+          }
+        }
+      }
+    },
+    {
+      "id": "mammal-prey-eurasian-wild-boar",
+      "name": "Eurasian Wild Boar",
+      "flavorText": "Wild boars are highly adaptable omnivores found throughout Europe and Asia.",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": [
+        "Haste"
+      ],
+      "effects": {
+        "onPlay": {
+          "type": "destroyFieldSpell",
+          "params": {
+            "target": "enemy"
+          }
+        }
+      }
+    },
+    {
+      "id": "mammal-predator-arctic-wolf",
+      "name": "Arctic Wolf",
+      "flavorText": "Arctic wolves hunt in packs, taking down prey much larger than themselves.",
+      "type": "Predator",
+      "atk": 2,
+      "hp": 2,
+      "keywords": [],
+      "effects": {
+        "onPlay": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "mammal-predator-arctic-wolf"
+          }
+        },
+        "onBeforeCombat": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "enemy-creatures",
+            "title": "Choose an enemy to freeze",
+            "effect": {
+              "keyword": "Frozen"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "mammal-predator-snow-leopard",
+      "name": "Snow Leopard",
+      "flavorText": "Snow leopards are elusive mountain predators, perfectly adapted to high-altitude life.",
+      "type": "Predator",
+      "atk": 2,
+      "hp": 2,
+      "keywords": [
+        "Hidden"
+      ],
+      "effects": {
+        "onBeforeCombat": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "enemy-creatures",
+            "title": "Choose an enemy to freeze",
+            "effect": {
+              "keyword": "Frozen"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "mammal-predator-siberian-tiger",
+      "name": "Siberian Tiger",
+      "flavorText": "The largest cat species, Siberian tigers are apex predators of the Russian Far East.",
+      "type": "Predator",
+      "atk": 4,
+      "hp": 4,
+      "keywords": [
+        "Immune",
+        "Lure"
+      ],
+      "effects": {}
+    },
+    {
+      "id": "mammal-spell-hailstorm",
+      "name": "Hailstorm",
+      "flavorText": "Sudden hailstorms batter the tundra, damaging everything in their path.",
+      "type": "Spell",
+      "effects": {
+        "effect": [
+          {
+            "type": "damageAllEnemyCreatures",
+            "params": {
+              "amount": 1
+            }
+          },
+          {
+            "type": "damageRival",
+            "params": {
+              "amount": 1
+            }
+          },
+          {
+            "type": "damageAllEnemyCreatures",
+            "params": {
+              "amount": 1
+            }
+          },
+          {
+            "type": "damageRival",
+            "params": {
+              "amount": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "mammal-spell-winter-coats",
+      "name": "Winter Coats",
+      "flavorText": "As winter approaches, mammals grow thicker coats to survive the cold.",
+      "type": "Spell",
+      "effects": {
+        "effect": {
+          "type": "grantKeywordToAll",
+          "params": {
+            "targetGroup": "friendly-creatures",
+            "keyword": "Immune"
+          }
+        }
+      }
+    },
+    {
+      "id": "mammal-free-spell-hibernate",
+      "name": "Hibernate",
+      "flavorText": "Some mammals enter a state of torpor to conserve energy during harsh winters.",
+      "type": "Free Spell",
+      "effects": {
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "friendly-creatures",
+            "title": "Choose an ally to hibernate",
+            "effect": {
+              "composite": {
+                "effects": [
+                  {
+                    "type": "removeAbilities",
+                    "params": {}
+                  },
+                  {
+                    "type": "addKeyword",
+                    "params": {
+                      "keyword": "Frozen",
+                      "targetType": "self"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "mammal-field-spell-burrow",
+      "name": "Burrow",
+      "flavorText": "Underground burrows provide shelter from predators and harsh weather.",
+      "type": "Field Spell",
+      "effects": {
+        "onPlay": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "token-groundhog"
+          }
+        },
+        "onStart": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "token-groundhog"
+          }
+        }
+      }
+    },
+    {
+      "id": "mammal-trap-whiteout",
+      "name": "Whiteout",
+      "flavorText": "Blinding snowstorms make it impossible to see targets, negating attacks.",
+      "type": "Trap",
+      "trigger": "targeted",
+      "effects": {
+        "effect": {
+          "type": "negateTarget",
+          "params": {
+            "targetType": "target"
           }
         }
       }

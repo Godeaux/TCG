@@ -1,80 +1,6 @@
 {
   "cards": [
     {
-      "id": "reptile-prey-cuban-brown-anole",
-      "name": "Cuban Brown Anole",
-      "flavorText": "Native to Cuba, this anole has displaced green anoles across the U.S. Southeast since the 1940s.",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": [],
-      "summons": ["token-brown-anole"],
-      "effects": {
-        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-brown-anole"] } }
-      }
-    },
-    {
-      "id": "reptile-prey-european-glass-lizard",
-      "name": "European Glass Lizard",
-      "flavorText": "A legless lizard, not a snake. It can drop its tail into multiple wriggling pieces to distract predators.",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": [],
-      "summons": ["token-tailless"],
-      "effects": {
-        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["token-tailless"] } }
-      }
-    },
-    {
-      "id": "reptile-prey-yucatan-neotropical-rattlesnake",
-      "name": "Yucatan Neotropical Rattlesnake",
-      "flavorText": "Its venom causes neurotoxic paralysis, unlike most rattlesnakes which rely on hemotoxins.",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": ["Barrier", "Lure", "Poisonous"],
-      "effects": {
-        "onSlain": { "type": "heal", "params": { "amount": 3 } }
-      }
-    },
-    {
-      "id": "reptile-prey-frosts-iguana",
-      "name": "Frost's Iguana",
-      "flavorText": "Endemic to Central America, this iguana enters torpor in cold snaps and may fall frozen from tree branches.",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": [],
-      "effects": {
-        "onPlay": { "type": "freezeAllEnemies" }
-      }
-    },
-    {
-      "id": "reptile-prey-galapagos-lava-lizards",
-      "name": "Galápagos Lava Lizards",
-      "flavorText": "Found on every major Galapagos island, each population evolved distinct colors to match its local lava rock.",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": [],
-      "summons": ["token-lava-lizard"],
-      "effects": {
-        "onPlay": [
-          {
-            "type": "summonTokens",
-            "params": { "tokenIds": ["token-lava-lizard", "token-lava-lizard"] }
-          },
-          { "type": "damageRival", "params": { "amount": 1 } }
-        ]
-      }
-    },
-    {
       "id": "reptile-prey-green-anole",
       "name": "Green Anole",
       "flavorText": "Females lay a single egg every two weeks throughout the breeding season, totaling up to 10 eggs per year.",
@@ -83,22 +9,18 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": [],
-      "summons": ["token-carolina-anole"],
+      "summons": [
+        "token-carolina-anole"
+      ],
       "effects": {
-        "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-carolina-anole"] } }
-      }
-    },
-    {
-      "id": "reptile-prey-gold-dust-day-gecko",
-      "name": "Gold Dust Day Gecko",
-      "flavorText": "This gecko pollinates flowers and licks nectar — one of few reptiles that acts as a pollinator.",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": [],
-      "effects": {
-        "onPlay": { "type": "draw", "params": { "count": 3 } }
+        "onEnd": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": [
+              "token-carolina-anole"
+            ]
+          }
+        }
       }
     },
     {
@@ -109,9 +31,16 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Toxic"],
+      "keywords": [
+        "Toxic"
+      ],
       "effects": {
-        "onPlay": { "type": "draw", "params": { "count": 1 } }
+        "onPlay": {
+          "type": "draw",
+          "params": {
+            "count": 1
+          }
+        }
       }
     },
     {
@@ -123,11 +52,25 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": [],
-      "summons": ["token-golden-tegu-egg"],
+      "summons": [
+        "token-golden-tegu-egg"
+      ],
       "effects": {
         "onPlay": [
-          { "type": "draw", "params": { "count": 1 } },
-          { "type": "summonTokens", "params": { "tokenIds": ["token-golden-tegu-egg"] } }
+          {
+            "type": "draw",
+            "params": {
+              "count": 1
+            }
+          },
+          {
+            "type": "summonTokens",
+            "params": {
+              "tokenIds": [
+                "token-golden-tegu-egg"
+              ]
+            }
+          }
         ]
       }
     },
@@ -139,33 +82,25 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Invisible"],
+      "keywords": [
+        "Invisible"
+      ],
       "effects": {
         "onStart": [
-          { "type": "damageRival", "params": { "amount": 1 } },
-          { "type": "damageAllEnemyCreatures", "params": { "amount": 1 } }
+          {
+            "type": "damageRival",
+            "params": {
+              "amount": 1
+            }
+          },
+          {
+            "type": "damageAllEnemyCreatures",
+            "params": {
+              "amount": 1
+            }
+          }
         ]
       }
-    },
-    {
-      "id": "reptile-prey-pygmy-rock-monitor",
-      "name": "Pygmy Rock Monitor",
-      "flavorText": "At just 20 cm long, it's one of the smallest monitor lizards, hiding in rock crevices across arid Australia.",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": ["Barrier", "Invisible"]
-    },
-    {
-      "id": "reptile-prey-solomons-coral-snake",
-      "name": "Solomons Coral Snake",
-      "flavorText": "Endemic to the Solomon Islands, this burrowing elapid has some of the most potent venom per drop of any coral snake.",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": ["Barrier", "Neurotoxic"]
     },
     {
       "id": "reptile-prey-saw-scaled-viper",
@@ -175,7 +110,11 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Free Play", "Toxic"]
+      "keywords": [
+        "Free Play",
+        "Toxic",
+        "Haste"
+      ]
     },
     {
       "id": "reptile-prey-plumed-basilisk",
@@ -185,14 +124,18 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Free Play"],
+      "keywords": [
+        "Free Play"
+      ],
       "effects": {
         "onPlay": {
           "type": "selectFromGroup",
           "params": {
             "targetGroup": "enemy-creatures",
             "title": "Choose a creature to freeze",
-            "effect": { "keyword": "Frozen" }
+            "effect": {
+              "keyword": "Frozen"
+            }
           }
         }
       }
@@ -205,21 +148,25 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": [],
+      "keywords": [
+        "Hidden"
+      ],
       "effects": {
         "onPlay": {
           "type": "selectFromGroup",
           "params": {
             "targetGroup": "other-creatures",
             "title": "Choose a creature to copy abilities from",
-            "effect": { "copyAbilitiesFrom": true }
+            "effect": {
+              "copyAbilitiesFrom": true
+            }
           }
         }
       }
     },
     {
       "id": "reptile-prey-central-american-snapping-turtle",
-      "name": "Central American Snapping Turtle",
+      "name": "Common Snapping Turtle",
       "flavorText": "Its bite force exceeds 1,000 psi. Snapping turtles have been on Earth since the late Cretaceous, 80 million years.",
       "type": "Prey",
       "atk": 1,
@@ -232,22 +179,12 @@
           "params": {
             "targetGroup": "all-entities",
             "title": "Choose a target for damage",
-            "effect": { "damage": 2, "label": "snapping turtle" }
+            "effect": {
+              "damage": 2,
+              "label": "snapping turtle"
+            }
           }
         }
-      }
-    },
-    {
-      "id": "reptile-prey-south-american-snapping-turtle",
-      "name": "South American Snapping Turtle",
-      "flavorText": "Uses a worm-shaped lure on its tongue to bait fish directly into its open mouth — a rare example of reptile luring.",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 3,
-      "nutrition": 2,
-      "keywords": [],
-      "effects": {
-        "onDefend": { "type": "dealDamageToAttacker", "params": { "damage": 2 } }
       }
     },
     {
@@ -258,62 +195,34 @@
       "atk": 2,
       "hp": 2,
       "nutrition": 2,
-      "keywords": ["Hidden", "Toxic"]
-    },
-    {
-      "id": "reptile-prey-king-brown-snake",
-      "name": "King Brown Snake",
-      "flavorText": "Despite its name, it's actually an elapid, not a brown snake. It delivers the highest venom yield per bite in Australia.",
-      "type": "Prey",
-      "atk": 2,
-      "hp": 2,
-      "nutrition": 2,
-      "keywords": ["Toxic"],
-      "effects": {
-        "onPlay": { "type": "tutorFromDeck" }
-      }
+      "keywords": [
+        "Hidden",
+        "Toxic"
+      ]
     },
     {
       "id": "reptile-prey-alcedo-giant-tortoise",
-      "name": "Alcedo Giant Tortoise",
+      "name": "Alcedo Volcano Giant Tortoise",
       "flavorText": "Galapagos giant tortoises can live over 175 years and survive a full year without food or water.",
       "type": "Prey",
       "atk": 2,
-      "hp": 3,
+      "hp": 4,
       "nutrition": 3,
-      "keywords": [],
-      "summons": ["token-giant-tortoise"],
+      "keywords": [
+        "Barrier"
+      ],
+      "summons": [
+        "token-giant-tortoise"
+      ],
       "effects": {
-        "onStart": { "type": "summonTokens", "params": { "tokenIds": ["token-giant-tortoise"] } }
-      }
-    },
-    {
-      "id": "reptile-prey-darwin-volcano-giant-tortoise",
-      "name": "Darwin Volcano Giant Tortoise",
-      "flavorText": "Thought extinct until 2019 when a female was found on the active Darwin volcano after 112 years unseen.",
-      "type": "Prey",
-      "atk": 2,
-      "hp": 3,
-      "nutrition": 3,
-      "keywords": [],
-      "effects": {
-        "onPlay": [
-          { "type": "damageBothPlayers", "params": { "amount": 2 } },
-          { "type": "damageOtherCreatures", "params": { "amount": 2 } }
-        ]
-      }
-    },
-    {
-      "id": "reptile-prey-wolf-volcano-giant-tortoise",
-      "name": "Wolf Volcano Giant Tortoise",
-      "flavorText": "Hybridizes with other tortoise species on Wolf Volcano, creating genetically unique populations found nowhere else.",
-      "type": "Prey",
-      "atk": 2,
-      "hp": 3,
-      "nutrition": 3,
-      "keywords": [],
-      "effects": {
-        "onPlay": { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } }
+        "onStart": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": [
+              "token-giant-tortoise"
+            ]
+          }
+        }
       }
     },
     {
@@ -321,56 +230,13 @@
       "name": "Black Mamba",
       "flavorText": "Can slither at 20 km/h and delivers enough neurotoxin in one bite to kill 10 adults within an hour.",
       "type": "Prey",
-      "atk": 3,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": ["Ambush", "Neurotoxic"]
-    },
-    {
-      "id": "reptile-predator-papuan-monitor",
-      "name": "Papuan Monitor",
-      "flavorText": "One of the largest predators in New Guinea's highlands, it hunts birds, eggs, and small mammals in montane forests.",
-      "type": "Predator",
       "atk": 2,
-      "hp": 3,
-      "keywords": [],
-      "effects": {
-        "onConsume": [
-          { "type": "damageRival", "params": { "amount": 2 } },
-          { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } }
-        ]
-      }
-    },
-    {
-      "id": "reptile-predator-gharial",
-      "name": "Gharial",
-      "flavorText": "Its thin snout holds over 100 interlocking teeth designed exclusively for catching fish — it cannot eat larger prey.",
-      "type": "Predator",
-      "atk": 2,
-      "hp": 4,
-      "keywords": [],
-      "effects": {
-        "onConsume": {
-          "type": "selectFromGroup",
-          "params": {
-            "targetGroup": "enemy-prey",
-            "title": "Choose a prey to kill",
-            "effect": { "kill": true }
-          }
-        }
-      }
-    },
-    {
-      "id": "reptile-predator-king-cobra",
-      "name": "King Cobra",
-      "flavorText": "The world's longest venomous snake at 5.5 m. It primarily eats other snakes, including cobras and kraits.",
-      "type": "Predator",
-      "atk": 3,
       "hp": 2,
-      "keywords": ["Neurotoxic"],
-      "effects": {
-        "onSlain": { "type": "damageRival", "params": { "amount": 3 } }
-      }
+      "nutrition": 2,
+      "keywords": [
+        "Ambush",
+        "Neurotoxic"
+      ]
     },
     {
       "id": "reptile-predator-boa-constrictor",
@@ -379,9 +245,16 @@
       "type": "Predator",
       "atk": 3,
       "hp": 3,
-      "keywords": [],
+      "keywords": [
+        "Lure"
+      ],
       "effects": {
-        "onBeforeCombat": { "type": "trackAttackForRegenHeal", "params": { "healAmount": 2 } }
+        "onBeforeCombat": {
+          "type": "trackAttackForRegenHeal",
+          "params": {
+            "healAmount": 2
+          }
+        }
       }
     },
     {
@@ -401,17 +274,32 @@
               {
                 "label": "Draw 3",
                 "description": "Draw 3 cards",
-                "effect": { "type": "draw", "params": { "count": 3 } }
+                "effect": {
+                  "type": "draw",
+                  "params": {
+                    "count": 3
+                  }
+                }
               },
               {
                 "label": "Heal 3",
                 "description": "Heal 3 HP",
-                "effect": { "type": "heal", "params": { "amount": 3 } }
+                "effect": {
+                  "type": "heal",
+                  "params": {
+                    "amount": 3
+                  }
+                }
               },
               {
                 "label": "Deal 3 damage",
                 "description": "Deal 3 damage to rival",
-                "effect": { "type": "damageRival", "params": { "amount": 3 } }
+                "effect": {
+                  "type": "damageRival",
+                  "params": {
+                    "amount": 3
+                  }
+                }
               }
             ]
           }
@@ -425,10 +313,19 @@
       "type": "Predator",
       "atk": 4,
       "hp": 4,
-      "keywords": [],
-      "summons": ["token-alligator-skin"],
+      "keywords": [
+        "Hidden"
+      ],
+      "summons": [
+        "token-alligator-skin"
+      ],
       "effects": {
-        "onSlain": { "type": "addToHand", "params": { "cardId": "token-alligator-skin" } }
+        "onSlain": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "token-alligator-skin"
+          }
+        }
       }
     },
     {
@@ -438,16 +335,9 @@
       "type": "Predator",
       "atk": 4,
       "hp": 4,
-      "keywords": ["Barrier"]
-    },
-    {
-      "id": "reptile-predator-black-caiman",
-      "name": "Black Caiman",
-      "flavorText": "South America's largest predator at 5+ meters. Its dark coloring absorbs heat faster for nocturnal hunting.",
-      "type": "Predator",
-      "atk": 4,
-      "hp": 4,
-      "keywords": ["Ambush"]
+      "keywords": [
+        "Barrier"
+      ]
     },
     {
       "id": "reptile-predator-burmese-python",
@@ -463,7 +353,9 @@
           "params": {
             "targetGroup": "carrion-predators",
             "title": "Choose a carrion predator to copy",
-            "effect": { "copyAbilities": true }
+            "effect": {
+              "copyAbilities": true
+            }
           }
         }
       }
@@ -478,8 +370,16 @@
       "keywords": [],
       "effects": {
         "onConsume": [
-          { "type": "heal", "params": { "amount": 2 } },
-          { "type": "tutorFromDeck", "params": {} }
+          {
+            "type": "heal",
+            "params": {
+              "amount": 2
+            }
+          },
+          {
+            "type": "tutorFromDeck",
+            "params": {}
+          }
         ]
       }
     },
@@ -490,7 +390,10 @@
       "type": "Predator",
       "atk": 4,
       "hp": 4,
-      "keywords": ["Immune", "Toxic"]
+      "keywords": [
+        "Immune",
+        "Toxic"
+      ]
     },
     {
       "id": "reptile-predator-nile-crocodile",
@@ -506,10 +409,18 @@
           "params": {
             "targetGroup": "all-entities",
             "title": "Choose a target for damage",
-            "effect": { "damage": 3, "label": "chomp" }
+            "effect": {
+              "damage": 3,
+              "label": "chomp"
+            }
           }
         },
-        "onSlain": { "type": "heal", "params": { "amount": 3 } }
+        "onSlain": {
+          "type": "heal",
+          "params": {
+            "amount": 3
+          }
+        }
       }
     },
     {
@@ -526,7 +437,9 @@
           "params": {
             "targetGroup": "enemy-creatures",
             "title": "Choose a creature to kill",
-            "effect": { "kill": true }
+            "effect": {
+              "kill": true
+            }
           }
         }
       }
@@ -538,27 +451,17 @@
       "type": "Spell",
       "effects": {
         "effect": [
-          { "type": "selectAndDiscard", "params": { "count": 1 } },
-          { "type": "killAllEnemyCreatures", "params": {} }
+          {
+            "type": "selectAndDiscard",
+            "params": {
+              "count": 1
+            }
+          },
+          {
+            "type": "killAllEnemyCreatures",
+            "params": {}
+          }
         ]
-      }
-    },
-    {
-      "id": "reptile-spell-meteor",
-      "name": "Meteor",
-      "flavorText": "The Chicxulub asteroid wiped out 75% of species, but crocodilians, turtles, and snakes survived to diversify rapidly.",
-      "type": "Spell",
-      "effects": {
-        "effect": { "type": "killAll", "params": { "targetType": "all" } }
-      }
-    },
-    {
-      "id": "reptile-spell-snake-wine",
-      "name": "Snake Wine",
-      "flavorText": "A real Southeast Asian drink: a venomous snake steeped in rice wine. Ethanol denatures the venom proteins, making it safe.",
-      "type": "Spell",
-      "effects": {
-        "effect": { "type": "heal", "params": { "amount": 7 } }
       }
     },
     {
@@ -572,7 +475,9 @@
           "params": {
             "targetGroup": "enemy-creatures",
             "title": "Choose a Rival's creature to paralyze",
-            "effect": { "paralyze": true }
+            "effect": {
+              "paralyze": true
+            }
           }
         }
       }
@@ -585,7 +490,13 @@
       "effects": {
         "effect": {
           "type": "buffStats",
-          "params": { "targetType": "all-friendly", "stats": { "attack": 2, "health": 2 } }
+          "params": {
+            "targetType": "all-friendly",
+            "stats": {
+              "attack": 2,
+              "health": 2
+            }
+          }
         }
       }
     },
@@ -600,23 +511,9 @@
           "params": {
             "targetGroup": "all-creatures",
             "title": "Choose a creature to regen",
-            "effect": { "regen": true }
-          }
-        }
-      }
-    },
-    {
-      "id": "reptile-free-spell-vengeful",
-      "name": "Vengeful",
-      "flavorText": "Many vipers can control venom injection — 'dry bites' with no venom occur in up to 50% of defensive strikes.",
-      "type": "Free Spell",
-      "effects": {
-        "effect": {
-          "type": "selectFromGroup",
-          "params": {
-            "targetGroup": "all-creatures",
-            "title": "Choose a creature to gain Poisonous",
-            "effect": { "keyword": "Poisonous" }
+            "effect": {
+              "regen": true
+            }
           }
         }
       }
@@ -632,23 +529,12 @@
           "params": {
             "targetGroup": "all-creatures",
             "title": "Choose a creature to gain +1/+1",
-            "effect": { "buff": { "attack": 1, "health": 1 } }
-          }
-        }
-      }
-    },
-    {
-      "id": "reptile-free-spell-surprise",
-      "name": "Surprise",
-      "flavorText": "A striking snake accelerates its head at up to 100 m/s squared — faster than any mammalian predator's lunge.",
-      "type": "Free Spell",
-      "effects": {
-        "effect": {
-          "type": "selectFromGroup",
-          "params": {
-            "targetGroup": "enemy-creatures",
-            "title": "Choose a creature for damage",
-            "effect": { "damage": 2, "label": "surprise" }
+            "effect": {
+              "buff": {
+                "attack": 1,
+                "health": 1
+              }
+            }
           }
         }
       }
@@ -661,8 +547,16 @@
       "trigger": "indirectDamage",
       "effects": {
         "effect": [
-          { "type": "negateDamage", "params": {} },
-          { "type": "heal", "params": { "amount": 3 } }
+          {
+            "type": "negateDamage",
+            "params": {}
+          },
+          {
+            "type": "heal",
+            "params": {
+              "amount": 3
+            }
+          }
         ]
       }
     },
@@ -674,8 +568,18 @@
       "trigger": "rivalDraws",
       "effects": {
         "effect": [
-          { "type": "forceOpponentDiscard", "params": { "count": 1 } },
-          { "type": "draw", "params": { "count": 1 } }
+          {
+            "type": "forceOpponentDiscard",
+            "params": {
+              "count": 1
+            }
+          },
+          {
+            "type": "draw",
+            "params": {
+              "count": 1
+            }
+          }
         ]
       }
     },
@@ -685,12 +589,459 @@
       "flavorText": "Some snake species den communally — Manitoba's Narcisse pits hold up to 75,000 garter snakes in a single hibernaculum.",
       "type": "Trap",
       "trigger": "directAttack",
-      "summons": ["token-snakes"],
+      "summons": [
+        "token-snakes"
+      ],
       "effects": {
         "effect": [
-          { "type": "negateAttack", "params": {} },
-          { "type": "summonTokens", "params": { "tokenIds": ["token-snakes"] } }
+          {
+            "type": "negateAttack",
+            "params": {}
+          },
+          {
+            "type": "summonTokens",
+            "params": {
+              "tokenIds": [
+                "token-snakes"
+              ]
+            }
+          }
         ]
+      }
+    },
+    {
+      "id": "reptile-prey-asclepius-snake",
+      "name": "Asclepius Snake",
+      "flavorText": "Named after the Greek god of medicine, this snake's bite is said to heal.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "effects": {
+        "discardEffect": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "token-rod-of-asclepius"
+          }
+        },
+        "onPlay": [
+          {
+            "type": "heal",
+            "params": {
+              "amount": 2
+            }
+          },
+          {
+            "type": "selectFromGroup",
+            "params": {
+              "targetGroup": "all-creatures",
+              "title": "Choose an ally to regen",
+              "effect": {
+                "regen": true
+              }
+            }
+          },
+          {
+            "type": "addToHand",
+            "params": {
+              "cardId": "random-carrion"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "reptile-prey-black-spiny-tailed-iguana",
+      "name": "Black Spiny-tailed Iguana",
+      "flavorText": "These agile lizards can run on two legs when threatened.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [
+        "Haste",
+        "Ambush"
+      ],
+      "effects": {
+        "onBeforeCombat": {
+          "type": "damageAllEnemyCreatures",
+          "params": {
+            "amount": 1
+          }
+        }
+      }
+    },
+    {
+      "id": "reptile-prey-cottonmouth",
+      "name": "Cottonmouth",
+      "flavorText": "Also known as water moccasins, these semi-aquatic vipers defend their territory aggressively.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [
+        "Toxic"
+      ],
+      "effects": {
+        "onPlay": {
+          "type": "grantKeywordToAll",
+          "params": {
+            "targetGroup": "enemy-creatures",
+            "keyword": "Stunned"
+          }
+        }
+      }
+    },
+    {
+      "id": "reptile-prey-golden-tree-snake",
+      "name": "Golden Tree Snake",
+      "flavorText": "These arboreal snakes glide through the canopy with remarkable agility.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [
+        "Immune",
+        "Hidden"
+      ],
+      "effects": {
+        "onPlay": {
+          "type": "draw",
+          "params": {
+            "count": 1
+          }
+        }
+      }
+    },
+    {
+      "id": "reptile-prey-inland-taipan",
+      "name": "Inland Taipan",
+      "flavorText": "The most venomous snake in the world, a single bite contains enough toxin to kill 100 humans.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [
+        "Haste",
+        "Neurotoxic",
+        "Hidden"
+      ],
+      "effects": {}
+    },
+    {
+      "id": "reptile-prey-sidewinder",
+      "name": "Sidewinder",
+      "flavorText": "These desert vipers move in a characteristic sideways motion to avoid hot sand.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [
+        "Haste",
+        "Toxic",
+        "Hidden"
+      ],
+      "effects": {}
+    },
+    {
+      "id": "reptile-prey-spider-tailed-horned-viper",
+      "name": "Spider-tailed Horned Viper",
+      "flavorText": "This viper's tail mimics a spider to lure insect-eating birds within striking distance.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [
+        "Ambush",
+        "Toxic",
+        "Lure"
+      ],
+      "effects": {}
+    },
+    {
+      "id": "reptile-prey-terciopelo",
+      "name": "Terciopelo",
+      "flavorText": "This Central American pit viper's name means 'trilobed tongue' in Spanish.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [
+        "Toxic"
+      ],
+      "effects": {
+        "onDusk": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": [
+              "token-toxic-snake",
+              "token-toxic-snake"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "reptile-prey-coastal-taipan",
+      "name": "Coastal Taipan",
+      "flavorText": "The most venomous snake in Australia, highly aggressive when threatened.",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": [
+        "Haste",
+        "Neurotoxic"
+      ],
+      "effects": {}
+    },
+    {
+      "id": "reptile-prey-eastern-diamondback-rattlesnake",
+      "name": "Eastern Diamondback Rattlesnake",
+      "flavorText": "The largest rattlesnake species, with a distinctive diamond pattern on its back.",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": [
+        "Toxic"
+      ],
+      "effects": {
+        "onPlay": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "enemy-creatures",
+            "title": "Choose an enemy to stun",
+            "effect": {
+              "keyword": "Stunned"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "reptile-prey-mulga-snake",
+      "name": "Mulga Snake",
+      "flavorText": "Also known as the king brown, this Australian snake is highly venomous but rarely fatal.",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": [
+        "Immune",
+        "Toxic"
+      ],
+      "effects": {}
+    },
+    {
+      "id": "reptile-predator-crocodile-monitor",
+      "name": "Crocodile Monitor",
+      "flavorText": "The largest monitor lizard in New Guinea, reaching over 2 meters in length.",
+      "type": "Predator",
+      "atk": 2,
+      "hp": 2,
+      "keywords": [
+        "Edible"
+      ],
+      "effects": {
+        "onPlay": {
+          "type": "selectCreatureForDamage",
+          "params": {
+            "amount": 4,
+            "label": "crocodile monitor"
+          }
+        }
+      }
+    },
+    {
+      "id": "reptile-predator-alligator-snapping-turtle",
+      "name": "Alligator Snapping Turtle",
+      "flavorText": "These prehistoric turtles use a worm-like lure on their tongue to attract fish.",
+      "type": "Predator",
+      "atk": 2,
+      "hp": 4,
+      "keywords": [
+        "Lure"
+      ],
+      "effects": {
+        "onBeforeCombat": {
+          "type": "damageAllEnemyCreatures",
+          "params": {
+            "amount": 2
+          }
+        }
+      }
+    },
+    {
+      "id": "reptile-spell-dehydration",
+      "name": "Dehydration",
+      "flavorText": "In arid environments, water scarcity can be as deadly as any predator.",
+      "type": "Spell",
+      "effects": {
+        "effect": {
+          "type": "killAll",
+          "params": {
+            "targetType": "enemyPredators"
+          }
+        }
+      }
+    },
+    {
+      "id": "reptile-spell-volcanic-eruption",
+      "name": "Volcanic Eruption",
+      "flavorText": "Volcanic ash and lava reshape entire ecosystems in moments.",
+      "type": "Spell",
+      "effects": {
+        "effect": [
+          {
+            "type": "destroyFieldSpell",
+            "params": {
+              "target": "all"
+            }
+          },
+          {
+            "type": "killAll",
+            "params": {
+              "targetType": "allAnimals"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "reptile-spell-pyroclastic-flow",
+      "name": "Pyroclastic Flow",
+      "flavorText": "Superheated gas and ash race down volcanic slopes, incinerating everything in their path.",
+      "type": "Spell",
+      "effects": {
+        "effect": [
+          {
+            "type": "destroyFieldSpell",
+            "params": {
+              "target": "enemy"
+            }
+          },
+          {
+            "type": "damageRival",
+            "params": {
+              "amount": 3
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "reptile-free-spell-snake-toss",
+      "name": "Snake Toss",
+      "flavorText": "A desperate throw of a venomous snake to distract a threat.",
+      "type": "Free Spell",
+      "effects": {
+        "effect": [
+          {
+            "type": "addToHand",
+            "params": {
+              "cardId": "token-toxic-snake"
+            }
+          },
+          {
+            "type": "endTurn",
+            "params": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "reptile-free-spell-toxic",
+      "name": "Toxic",
+      "flavorText": "Venom glands are a common defense mechanism among reptiles.",
+      "type": "Free Spell",
+      "effects": {
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "friendly-creatures",
+            "title": "Choose an ally to gain Toxic",
+            "effect": {
+              "keyword": "Toxic"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "reptile-field-spell-snake-nest",
+      "name": "Snake Nest",
+      "flavorText": "A hidden nest where venomous snakes lay their eggs and raise their young.",
+      "type": "Field Spell",
+      "effects": {
+        "onDusk": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "token-toxic-snake"
+          }
+        },
+        "onStart": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "token-toxic-snake"
+          }
+        }
+      }
+    },
+    {
+      "id": "reptile-prey-yucatan-neotropical-rattlesnake",
+      "name": "Yucatan Neotropical Rattlesnake",
+      "flavorText": "This rattlesnake's venom causes severe tissue damage, and its strike is remarkably fast.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [
+        "Toxic"
+      ],
+      "effects": {
+        "onSlain": {
+          "type": "heal",
+          "params": {
+            "amount": 3
+          }
+        },
+        "onStart": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "token-neurotoxic-snake"
+          }
+        }
+      }
+    },
+    {
+      "id": "reptile-predator-king-cobra",
+      "name": "King Cobra",
+      "flavorText": "The longest venomous snake in the world, capable of standing upright to survey its territory.",
+      "type": "Predator",
+      "atk": 3,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": [
+        "Neurotoxic",
+        "Edible"
+      ],
+      "effects": {
+        "onPlay": {
+          "type": "heal",
+          "params": {
+            "amount": 3
+          }
+        },
+        "onSlain": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": [
+              "token-cobra"
+            ]
+          }
+        }
       }
     }
   ]

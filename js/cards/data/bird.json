@@ -1,20 +1,6 @@
 {
   "cards": [
     {
-      "id": "bird-prey-kakapo",
-      "name": "Kākāpō",
-      "flavorText": "The world's heaviest parrot, it can't fly. Only 250 remain, breeding once every 2-4 years.",
-      "type": "Prey",
-      "atk": 0,
-      "hp": 2,
-      "nutrition": 2,
-      "keywords": ["Harmless", "Invisible"],
-      "summons": ["token-kakapo-feathers"],
-      "effects": {
-        "onSlain": { "type": "addToHand", "params": { "cardId": "token-kakapo-feathers" } }
-      }
-    },
-    {
       "id": "bird-prey-carrier-pigeon",
       "name": "Carrier Pigeon",
       "flavorText": "Homing pigeons navigate using Earth's magnetic field, infrasound, and visual landmarks.",
@@ -24,20 +10,29 @@
       "nutrition": 1,
       "effects": {
         "onPlay": [
-          { "type": "revealHand", "params": {} },
-          { "type": "tutorFromDeck", "params": {} }
+          {
+            "type": "revealHand",
+            "params": {}
+          },
+          {
+            "type": "tutorFromDeck",
+            "params": {}
+          }
         ]
       }
     },
     {
       "id": "bird-prey-common-swift",
-      "name": "Common Swift",
+      "name": "Eurasian Swift",
       "flavorText": "Swifts can stay airborne for 10 months straight, sleeping, eating, and mating in flight.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Free Play", "Haste"]
+      "keywords": [
+        "Free Play",
+        "Haste"
+      ]
     },
     {
       "id": "bird-prey-doctor-bird",
@@ -47,53 +42,81 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Free Play"],
+      "keywords": [
+        "Free Play",
+        "Immune"
+      ],
       "effects": {
-        "onPlay": { "type": "heal", "params": { "amount": 1 } }
+        "onPlay": {
+          "type": "heal",
+          "params": {
+            "amount": 1
+          }
+        }
       }
     },
     {
       "id": "bird-prey-doves",
-      "name": "Doves",
+      "name": "Mourning Doves",
       "flavorText": "Doves produce crop milk -- a nutrient-rich secretion to feed their chicks, like mammalian lactation.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Passive"],
-      "summons": ["token-dove"],
+      "keywords": [
+        "Passive"
+      ],
+      "summons": [
+        "token-mourning-dove"
+      ],
       "effects": {
         "onPlay": [
-          { "type": "summonTokens", "params": { "tokenIds": ["token-dove"] } },
-          { "type": "heal", "params": { "amount": 3 } }
+          {
+            "type": "summonTokens",
+            "params": {
+              "tokenIds": [
+                "token-mourning-dove"
+              ]
+            }
+          },
+          {
+            "type": "heal",
+            "params": {
+              "amount": 3
+            }
+          }
         ]
       }
     },
     {
       "id": "bird-prey-eurasian-magpie",
-      "name": "Eurasian Magpie",
+      "name": "Eurasian Magpies",
       "flavorText": "One of the few non-mammals to pass the mirror test, recognizing its own reflection.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
       "effects": {
+        "onPlay": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "token-eurasian-magpie"
+          }
+        },
         "onEnd": [
-          { "type": "damageRival", "params": { "amount": 2 } },
-          { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } }
+          {
+            "type": "damageRival",
+            "params": {
+              "amount": 2
+            }
+          },
+          {
+            "type": "damageAllEnemyCreatures",
+            "params": {
+              "amount": 2
+            }
+          }
         ]
-      }
-    },
-    {
-      "id": "bird-prey-golden-headed-manakin",
-      "name": "Golden-Headed Manakin",
-      "flavorText": "Males perform a moonwalk-like slide on branches to impress females, snapping wing feathers audibly.",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "effects": {
-        "onEnd": { "type": "draw", "params": { "count": 3 } }
       }
     },
     {
@@ -104,14 +127,26 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "summons": ["token-golden-song-sparrow"],
+      "summons": [
+        "token-golden-song-sparrow"
+      ],
       "effects": {
         "onPlay": [
           {
             "type": "summonTokens",
-            "params": { "tokenIds": ["token-golden-song-sparrow", "token-golden-song-sparrow"] }
+            "params": {
+              "tokenIds": [
+                "token-golden-song-sparrow",
+                "token-golden-song-sparrow"
+              ]
+            }
           },
-          { "type": "draw", "params": { "count": 1 } }
+          {
+            "type": "draw",
+            "params": {
+              "count": 1
+            }
+          }
         ]
       }
     },
@@ -129,7 +164,9 @@
           "params": {
             "targetGroup": "carrion",
             "title": "Choose a carrion to copy abilities from",
-            "effect": { "copyAbilities": true }
+            "effect": {
+              "copyAbilities": true
+            }
           }
         }
       }
@@ -148,7 +185,9 @@
           "params": {
             "targetGroup": "other-creatures",
             "title": "Choose a creature to copy stats from",
-            "effect": { "copyStats": true }
+            "effect": {
+              "copyStats": true
+            }
           }
         }
       }
@@ -167,38 +206,16 @@
           "params": {
             "targetGroup": "other-creatures",
             "title": "Choose a creature to copy abilities from",
-            "effect": { "copyAbilitiesFrom": true }
+            "effect": {
+              "copyAbilitiesFrom": true
+            }
           }
         }
       }
     },
     {
-      "id": "bird-prey-oriental-magpies",
-      "name": "Oriental Magpies",
-      "flavorText": "Oriental magpies mate for life and hold \"funerals,\" gathering around their dead in silence.",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "summons": ["token-oriental-magpie"],
-      "effects": {
-        "onPlay": [
-          { "type": "summonTokens", "params": { "tokenIds": ["token-oriental-magpie"] } },
-          { "type": "heal", "params": { "amount": 2 } },
-          {
-            "type": "selectFromGroup",
-            "params": {
-              "targetGroup": "all-creatures",
-              "title": "Choose a creature to regenerate",
-              "effect": { "regen": true }
-            }
-          }
-        ]
-      }
-    },
-    {
       "id": "bird-prey-quetzal",
-      "name": "Quetzal",
+      "name": "Resplendent Quetzal",
       "flavorText": "Quetzals swallow avocados whole, then regurgitate the pits -- making them key seed dispersers.",
       "type": "Prey",
       "atk": 1,
@@ -207,13 +224,28 @@
       "effects": {
         "onPlay": {
           "type": "buffStats",
-          "params": { "targetType": "all-friendly", "stats": { "attack": 1, "health": 0 } }
+          "params": {
+            "targetType": "all-friendly",
+            "stats": {
+              "attack": 1,
+              "health": 0
+            }
+          }
         },
         "discardEffect": {
           "type": "buffStats",
-          "params": { "targetType": "all-friendly", "stats": { "attack": 1, "health": 0 } }
+          "params": {
+            "targetType": "all-friendly",
+            "stats": {
+              "attack": 1,
+              "health": 0
+            }
+          }
         }
-      }
+      },
+      "keywords": [
+        "Immune"
+      ]
     },
     {
       "id": "bird-prey-raven",
@@ -229,24 +261,10 @@
           "params": {
             "targetGroup": "carrion",
             "title": "Choose a carrion to copy stats from",
-            "effect": { "copyStats": true }
+            "effect": {
+              "copyStats": true
+            }
           }
-        }
-      }
-    },
-    {
-      "id": "bird-prey-robin",
-      "name": "Robin",
-      "flavorText": "Robins can see Earth's magnetic field through quantum effects in proteins in their eyes.",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "summons": ["token-blue-egg"],
-      "effects": {
-        "onEnd": {
-          "type": "summonTokens",
-          "params": { "tokenIds": ["token-blue-egg", "token-blue-egg"] }
         }
       }
     },
@@ -259,7 +277,9 @@
       "hp": 1,
       "nutrition": 1,
       "effects": {
-        "onPlay": { "type": "selectEnemyPreyToConsume" }
+        "onPlay": {
+          "type": "selectEnemyPreyToConsume"
+        }
       }
     },
     {
@@ -276,43 +296,12 @@
           "params": {
             "targetGroup": "all-entities",
             "title": "Choose a target for damage",
-            "effect": { "damage": 3, "label": "sonic" }
+            "effect": {
+              "damage": 3,
+              "label": "sonic"
+            }
           }
         }
-      }
-    },
-    {
-      "id": "bird-prey-hoatzin",
-      "name": "Hoatzin",
-      "flavorText": "The only bird that digests leaves by fermentation, like a cow. Nicknamed the \"stinkbird.\"",
-      "type": "Prey",
-      "atk": 2,
-      "hp": 1,
-      "nutrition": 1,
-      "effects": {
-        "onAfterCombat": {
-          "type": "selectFromGroup",
-          "params": {
-            "targetGroup": "all-entities",
-            "title": "Choose a target for damage",
-            "effect": { "damage": 2, "label": "stink" }
-          }
-        },
-        "onEnd": { "type": "damageRival", "params": { "amount": 2 } }
-      }
-    },
-    {
-      "id": "bird-prey-golden-goose",
-      "name": "Golden Goose",
-      "flavorText": "Domestic geese were among the first animals domesticated, over 3,000 years ago in ancient Egypt.",
-      "type": "Prey",
-      "atk": 2,
-      "hp": 2,
-      "nutrition": 2,
-      "summons": ["token-golden-egg"],
-      "effects": {
-        "onPlay": { "type": "draw", "params": { "count": 1 } },
-        "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-golden-egg"] } }
       }
     },
     {
@@ -323,23 +312,20 @@
       "atk": 2,
       "hp": 2,
       "nutrition": 2,
-      "keywords": ["Barrier", "Lure"],
-      "summons": ["token-rainbow-feathers"],
+      "keywords": [
+        "Barrier",
+        "Lure"
+      ],
+      "summons": [
+        "token-rainbow-feathers"
+      ],
       "effects": {
-        "onSlain": { "type": "addToHand", "params": { "cardId": "token-rainbow-feathers" } }
-      }
-    },
-    {
-      "id": "bird-prey-jersey-giant",
-      "name": "Jersey Giant",
-      "flavorText": "The largest chicken breed, Jersey Giants can weigh over 13 lbs and were bred to replace turkeys.",
-      "type": "Prey",
-      "atk": 2,
-      "hp": 2,
-      "nutrition": 2,
-      "summons": ["token-hen"],
-      "effects": {
-        "onSlain": { "type": "summonTokens", "params": { "tokenIds": ["token-hen"] } }
+        "onSlain": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "token-rainbow-feathers"
+          }
+        }
       }
     },
     {
@@ -347,35 +333,40 @@
       "name": "Pileated Woodpecker",
       "flavorText": "It strikes wood at 20 times per second. A spongy skull bone absorbs the shock of each impact.",
       "type": "Prey",
-      "atk": 3,
+      "atk": 2,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Multi-Strike 3"]
+      "keywords": [
+        "Hidden",
+        "Multi-Strike 2"
+      ],
+      "effects": {
+        "onPlay": {
+          "type": "destroyFieldSpell",
+          "params": {
+            "target": "enemy"
+          }
+        }
+      }
     },
     {
       "id": "bird-prey-black-swan",
       "name": "Black Swan",
       "flavorText": "Native only to Australia, black swans were once thought impossible by Europeans -- inspiring a philosophy term.",
       "type": "Prey",
-      "atk": 3,
-      "hp": 3,
-      "nutrition": 3,
-      "keywords": ["Ambush"],
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": [
+        "Ambush"
+      ],
       "effects": {
-        "onPlay": { "type": "heal", "params": { "amount": 3 } }
-      }
-    },
-    {
-      "id": "bird-prey-eastern-wild-turkey",
-      "name": "Eastern Wild Turkey",
-      "flavorText": "Wild turkeys can fly at 55 mph in bursts and roost in trees, unlike their domestic relatives.",
-      "type": "Prey",
-      "atk": 3,
-      "hp": 3,
-      "nutrition": 3,
-      "summons": ["token-feed"],
-      "effects": {
-        "onPlay": { "type": "addToHand", "params": { "cardId": "token-feed" } }
+        "onPlay": {
+          "type": "heal",
+          "params": {
+            "amount": 3
+          }
+        }
       }
     },
     {
@@ -385,25 +376,14 @@
       "type": "Predator",
       "atk": 2,
       "hp": 2,
-      "keywords": ["Ambush"],
+      "keywords": [
+        "Ambush"
+      ],
       "effects": {
-        "onAfterCombat": { "type": "heal", "params": { "amount": 2 } }
-      }
-    },
-    {
-      "id": "bird-predator-firehawk",
-      "name": "Firehawk",
-      "flavorText": "Black kites and brown falcons carry burning sticks to start new fires, flushing prey into the open.",
-      "type": "Predator",
-      "atk": 2,
-      "hp": 2,
-      "effects": {
-        "onConsume": {
-          "type": "selectFromGroup",
+        "onAfterCombat": {
+          "type": "heal",
           "params": {
-            "targetGroup": "enemy-prey",
-            "title": "Choose a prey to kill",
-            "effect": { "kill": true }
+            "amount": 2
           }
         }
       }
@@ -422,10 +402,15 @@
             "params": {
               "targetGroup": "friendly-carrion",
               "title": "Choose a carrion to add to hand",
-              "effect": { "addToHand": true }
+              "effect": {
+                "addToHand": true
+              }
             }
           },
-          { "type": "tutorFromDeck", "params": {} }
+          {
+            "type": "tutorFromDeck",
+            "params": {}
+          }
         ]
       }
     },
@@ -436,11 +421,18 @@
       "type": "Predator",
       "atk": 2,
       "hp": 2,
-      "summons": ["token-toxic-snake"],
+      "summons": [
+        "token-toxic-snake"
+      ],
       "effects": {
         "onConsume": {
           "type": "summonTokens",
-          "params": { "tokenIds": ["token-toxic-snake", "token-toxic-snake"] }
+          "params": {
+            "tokenIds": [
+              "token-toxic-snake",
+              "token-toxic-snake"
+            ]
+          }
         }
       }
     },
@@ -451,9 +443,18 @@
       "type": "Predator",
       "atk": 2,
       "hp": 2,
-      "summons": ["token-wolf-hawk"],
+      "summons": [
+        "token-wolf-hawk"
+      ],
       "effects": {
-        "onConsume": { "type": "summonTokens", "params": { "tokenIds": ["token-wolf-hawk"] } }
+        "onConsume": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": [
+              "token-wolf-hawk"
+            ]
+          }
+        }
       }
     },
     {
@@ -461,20 +462,30 @@
       "name": "Peregrine Falcon",
       "flavorText": "In a hunting stoop, it reaches 240 mph -- the fastest animal on Earth by a wide margin.",
       "type": "Predator",
-      "atk": 3,
+      "atk": 2,
       "hp": 1,
-      "keywords": ["Free Play", "Haste"]
+      "keywords": [
+        "Free Play",
+        "Haste"
+      ]
     },
     {
       "id": "bird-predator-red-tailed-hawk",
       "name": "Red-tailed Hawk",
       "flavorText": "Hollywood dubs its raspy scream over bald eagle footage -- the eagle's real call is a weak chirp.",
       "type": "Predator",
-      "atk": 3,
+      "atk": 2,
       "hp": 2,
-      "summons": ["token-red-tailfeathers"],
+      "summons": [
+        "token-red-tailfeathers"
+      ],
       "effects": {
-        "onConsume": { "type": "addToHand", "params": { "cardId": "token-red-tailfeathers" } }
+        "onConsume": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "token-red-tailfeathers"
+          }
+        }
       }
     },
     {
@@ -485,7 +496,9 @@
       "atk": 3,
       "hp": 3,
       "effects": {
-        "onConsume": { "type": "selectEnemyPreyToConsume" }
+        "onConsume": {
+          "type": "selectEnemyPreyToConsume"
+        }
       }
     },
     {
@@ -493,20 +506,11 @@
       "name": "Gyrfalcon",
       "flavorText": "The largest true falcon, gyrfalcons hunt ptarmigan in the Arctic and were worth more than gold to medieval kings.",
       "type": "Predator",
-      "atk": 4,
+      "atk": 3,
       "hp": 2,
-      "keywords": ["Haste"]
-    },
-    {
-      "id": "bird-predator-golden-eagle",
-      "name": "Golden Eagle",
-      "flavorText": "Golden eagles can spot a rabbit from two miles away. Mongolian hunters still use them to catch wolves.",
-      "type": "Predator",
-      "atk": 4,
-      "hp": 4,
-      "effects": {
-        "onConsume": { "type": "draw", "params": { "count": 4 } }
-      }
+      "keywords": [
+        "Haste"
+      ]
     },
     {
       "id": "bird-predator-martial-eagle",
@@ -521,7 +525,9 @@
           "params": {
             "targetGroup": "enemy-creatures",
             "title": "Choose a creature to kill",
-            "effect": { "kill": true }
+            "effect": {
+              "kill": true
+            }
           }
         }
       }
@@ -534,7 +540,9 @@
       "atk": 5,
       "hp": 5,
       "effects": {
-        "onConsume": { "type": "selectEnemyToReturnToOpponentHand" }
+        "onConsume": {
+          "type": "selectEnemyToReturnToOpponentHand"
+        }
       }
     },
     {
@@ -544,7 +552,9 @@
       "type": "Predator",
       "atk": 6,
       "hp": 6,
-      "keywords": ["Immune"]
+      "keywords": [
+        "Immune"
+      ]
     },
     {
       "id": "bird-spell-bird-food",
@@ -554,7 +564,13 @@
       "effects": {
         "effect": {
           "type": "buffStats",
-          "params": { "targetType": "all-friendly", "stats": { "attack": 2, "health": 2 } }
+          "params": {
+            "targetType": "all-friendly",
+            "stats": {
+              "attack": 2,
+              "health": 2
+            }
+          }
         }
       }
     },
@@ -585,8 +601,18 @@
                 "label": "Deal 2 damage to rival and creatures",
                 "description": "Deal 2 damage to Rival and Rival's creatures",
                 "effect": [
-                  { "type": "damageRival", "params": { "amount": 2 } },
-                  { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } }
+                  {
+                    "type": "damageRival",
+                    "params": {
+                      "amount": 2
+                    }
+                  },
+                  {
+                    "type": "damageAllEnemyCreatures",
+                    "params": {
+                      "amount": 2
+                    }
+                  }
                 ]
               },
               {
@@ -597,7 +623,10 @@
                   "params": {
                     "targetGroup": "enemy-creatures",
                     "title": "Choose a creature for damage",
-                    "effect": { "damage": 6, "label": "shotgun" }
+                    "effect": {
+                      "damage": 6,
+                      "label": "shotgun"
+                    }
                   }
                 }
               }
@@ -613,8 +642,16 @@
       "type": "Spell",
       "effects": {
         "effect": [
-          { "type": "heal", "params": { "amount": 3 } },
-          { "type": "grantBarrier", "params": {} }
+          {
+            "type": "heal",
+            "params": {
+              "amount": 3
+            }
+          },
+          {
+            "type": "grantBarrier",
+            "params": {}
+          }
         ]
       }
     },
@@ -624,21 +661,31 @@
       "flavorText": "Raptors see UV light and have 8x the visual acuity of humans, spotting prey from over a mile up.",
       "type": "Free Spell",
       "effects": {
-        "effect": { "type": "revealHand", "params": { "durationMs": 5000 } }
+        "effect": {
+          "type": "revealHand",
+          "params": {
+            "durationMs": 5000
+          }
+        }
       }
     },
     {
       "id": "bird-free-spell-white-feathers",
-      "name": "White Feathers",
+      "name": "White Feather",
       "flavorText": "Down feathers trap air in a 3D lattice, insulating so well that Arctic eiders survive -40 degrees.",
       "type": "Free Spell",
       "effects": {
-        "effect": { "type": "heal", "params": { "amount": 2 } }
+        "effect": {
+          "type": "heal",
+          "params": {
+            "amount": 2
+          }
+        }
       }
     },
     {
       "id": "bird-free-spell-white-missile",
-      "name": "White Missile",
+      "name": "White Missiles",
       "flavorText": "Bird droppings are white because birds excrete uric acid instead of urea -- it saves water.",
       "type": "Free Spell",
       "effects": {
@@ -647,24 +694,37 @@
           "params": {
             "targetGroup": "all-entities",
             "title": "Choose a target for damage",
-            "effect": { "damage": 1, "label": "white missile" }
+            "effect": {
+              "damage": 1,
+              "label": "white missile"
+            }
           }
         }
       }
     },
     {
       "id": "bird-trap-alleyway-mobbing",
-      "name": "Alleyway Mobbing",
+      "name": "Mobbing",
       "flavorText": "Small birds mob predators in coordinated attacks, dive-bombing owls and hawks until they flee the area.",
       "type": "Trap",
       "trigger": "directAttack",
-      "summons": ["token-bushtit"],
+      "summons": [
+        "token-bird"
+      ],
       "effects": {
         "effect": [
-          { "type": "negateAttack", "params": {} },
+          {
+            "type": "negateAttack",
+            "params": {}
+          },
           {
             "type": "summonTokens",
-            "params": { "tokenIds": ["token-bushtit", "token-bushtit", "token-bushtit"] }
+            "params": {
+              "tokenIds": [
+                "token-bird",
+                "token-bird"
+              ]
+            }
           }
         ]
       }
@@ -684,12 +744,335 @@
     },
     {
       "id": "bird-trap-icarus",
-      "name": "Icarus",
+      "name": "Phoenix",
       "flavorText": "Bird bones are hollow but reinforced with internal struts, making them lighter than mammal bones yet just as strong.",
       "type": "Trap",
       "trigger": "lifeZero",
       "effects": {
-        "effect": { "type": "heal", "params": { "amount": 1 } }
+        "effect": {
+          "type": "heal",
+          "params": {
+            "amount": 1
+          }
+        }
+      }
+    },
+    {
+      "id": "bird-prey-american-bitterns",
+      "name": "American Bitterns",
+      "flavorText": "Master of camouflage, this bittern freezes and points its bill skyward to blend with reeds.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [
+        "Hidden"
+      ],
+      "effects": {
+        "onSlain": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "token-american-bittern"
+          }
+        }
+      }
+    },
+    {
+      "id": "bird-prey-american-goldfinches",
+      "name": "American Goldfinches",
+      "flavorText": "In flock, goldfinches can spot predators faster and share food sources.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "effects": {
+        "onPlay": [
+          {
+            "type": "addToHand",
+            "params": {
+              "cardId": "token-american-goldfinch"
+            }
+          },
+          {
+            "type": "draw",
+            "params": {
+              "count": 1
+            }
+          },
+          {
+            "type": "heal",
+            "params": {
+              "amount": 1
+            }
+          }
+        ],
+        "onStart": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "token-american-goldfinch"
+          }
+        }
+      }
+    },
+    {
+      "id": "bird-prey-dark-necked-tailorbirds",
+      "name": "Dark-necked Tailorbirds",
+      "flavorText": "These tiny birds stitch leaves together with plant fibers to create concealed nests.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "effects": {
+        "onPlay": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "token-dark-necked-tailorbird"
+          }
+        }
+      },
+      "keywords": [
+        "Barrier",
+        "Hidden"
+      ]
+    },
+    {
+      "id": "bird-prey-gadwalls",
+      "name": "Gadwalls",
+      "flavorText": "Gadwalls often follow larger ducks to steal their food discoveries.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [
+        "Hidden"
+      ],
+      "effects": {
+        "onPlay": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": [
+              "token-gadwall",
+              "token-gadwall"
+            ]
+          }
+        },
+        "onStart": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": [
+              "token-gadwall",
+              "token-gadwall"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "bird-prey-golden-pheasant",
+      "name": "Golden Pheasant",
+      "flavorText": "With crimson and gold plumage, this pheasant performs elaborate displays to attract mates.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "effects": {
+        "onPlay": {
+          "type": "draw",
+          "params": {
+            "count": 1
+          }
+        },
+        "onSlain": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "token-rainbow-pheasant"
+          }
+        }
+      }
+    },
+    {
+      "id": "bird-prey-rainbow-lorikeets",
+      "name": "Rainbow Lorikeets",
+      "flavorText": "These colorful parrots feed on nectar, pollinating flowers as they move from bloom to bloom.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "effects": {
+        "onPlay": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "token-rainbow-lorikeet"
+          }
+        }
+      }
+    },
+    {
+      "id": "bird-prey-seychelles-warblers",
+      "name": "Seychelles Warblers",
+      "flavorText": "These cooperative breeders help raise siblings, increasing their indirect fitness.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "effects": {
+        "onPlay": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": [
+              "token-seychelles-warbler",
+              "token-seychelles-warbler"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "bird-prey-red-crowned-cranes",
+      "name": "Red-crowned Cranes",
+      "flavorText": "These endangered cranes perform elaborate dances to strengthen pair bonds.",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": [
+        "Immune"
+      ],
+      "effects": {
+        "onPlay": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "token-red-crowned-crane"
+          }
+        }
+      }
+    },
+    {
+      "id": "bird-prey-trumpeter-swan",
+      "name": "Trumpeter Swan",
+      "flavorText": "The loudest North American waterfowl, their bugling call carries for miles.",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "effects": {
+        "onPlay": [
+          {
+            "type": "heal",
+            "params": {
+              "amount": 3
+            }
+          },
+          {
+            "type": "grantKeywordToAll",
+            "params": {
+              "targetGroup": "enemy-creatures",
+              "keyword": "Enraged"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "bird-spell-migration",
+      "name": "Migration",
+      "flavorText": "Seasonal movements connect ecosystems across continents, transporting nutrients and energy.",
+      "type": "Spell",
+      "effects": {
+        "effect": {
+          "type": "chooseOption",
+          "params": {
+            "title": "Migration: choose an option",
+            "options": [
+              {
+                "label": "Destroy Field Spell",
+                "description": "Destroy target field spell",
+                "effect": {
+                  "type": "destroyFieldSpell",
+                  "params": {
+                    "target": "enemy"
+                  }
+                }
+              },
+              {
+                "label": "Play Ally",
+                "description": "Play a creature from your hand",
+                "effect": {
+                  "type": "selectFromGroup",
+                  "params": {
+                    "targetGroup": "hand-creatures",
+                    "title": "Choose a creature to play",
+                    "effect": {
+                      "play": true
+                    }
+                  }
+                }
+              },
+              {
+                "label": "Return Ally",
+                "description": "Return target ally to hand",
+                "effect": {
+                  "type": "selectFromGroup",
+                  "params": {
+                    "targetGroup": "friendly-creatures",
+                    "title": "Choose an ally to return",
+                    "effect": {
+                      "returnToHand": true
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "bird-free-spell-golden-feather",
+      "name": "Golden Feather",
+      "flavorText": "A single feather from a golden pheasant is said to bring good fortune.",
+      "type": "Free Spell",
+      "effects": {
+        "effect": [
+          {
+            "type": "draw",
+            "params": {
+              "count": 1
+            }
+          },
+          {
+            "type": "heal",
+            "params": {
+              "amount": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "bird-field-spell-roost",
+      "name": "Roost",
+      "flavorText": "A safe gathering place where birds rest together, watching for predators.",
+      "type": "Field Spell",
+      "effects": {
+        "onEnd": [
+          {
+            "type": "heal",
+            "params": {
+              "amount": 3
+            }
+          },
+          {
+            "type": "regenAll",
+            "params": {}
+          }
+        ],
+        "onDusk": {
+          "type": "heal",
+          "params": {
+            "amount": 3
+          }
+        }
       }
     }
   ]

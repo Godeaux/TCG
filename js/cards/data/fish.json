@@ -8,13 +8,20 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Haste"],
-      "summons": ["token-flying-fish"],
+      "keywords": [
+        "Haste"
+      ],
+      "summons": [
+        "token-flying-fish"
+      ],
       "effects": {
         "onPlay": {
           "type": "summonTokens",
           "params": {
-            "tokenIds": ["token-flying-fish", "token-flying-fish"]
+            "tokenIds": [
+              "token-flying-fish",
+              "token-flying-fish"
+            ]
           }
         }
       }
@@ -27,7 +34,10 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Free Play", "Ambush"]
+      "keywords": [
+        "Free Play",
+        "Ambush"
+      ]
     },
     {
       "id": "fish-prey-blobfish",
@@ -37,14 +47,19 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Passive", "Immune"],
+      "keywords": [
+        "Passive",
+        "Immune"
+      ],
       "effects": {
         "onEnd": {
           "type": "selectFromGroup",
           "params": {
             "targetGroup": "enemy-prey",
             "title": "Choose a Rival's prey to consume",
-            "effect": { "consume": true }
+            "effect": {
+              "consume": true
+            }
           }
         }
       }
@@ -76,81 +91,26 @@
       }
     },
     {
-      "id": "fish-prey-ghost-eel",
-      "name": "Ghost Eel",
-      "flavorText": "A white garden eel that burrows tail-first into sand and sways with the current to catch plankton.",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": ["Ambush", "Hidden"],
-      "effects": {
-        "discardEffect": { "type": "negateAttack" }
-      }
-    },
-    {
-      "id": "fish-prey-golden-angelfish",
-      "name": "Golden Angelfish",
-      "flavorText": "Angelfish form monogamous pairs and both parents fiercely guard their eggs from intruders.",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": [],
-      "effects": {
-        "onPlay": [
-          {
-            "type": "draw",
-            "params": {
-              "count": 1
-            }
-          },
-          { "type": "grantBarrier" }
-        ]
-      }
-    },
-    {
       "id": "fish-prey-leafy-seadragon",
-      "name": "Leafy Seadragon",
+      "name": "Leafy Seadragons",
       "flavorText": "Males carry the eggs on a spongy patch under their tail — females play no role after mating.",
       "type": "Prey",
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Invisible"],
-      "summons": ["token-leafy"],
+      "keywords": [
+        "Invisible"
+      ],
+      "summons": [
+        "token-leafy-seadragon"
+      ],
       "effects": {
         "onStart": {
           "type": "summonTokens",
           "params": {
-            "tokenIds": ["token-leafy"]
-          }
-        }
-      }
-    },
-    {
-      "id": "fish-prey-portuguese-man-o-war-legion",
-      "name": "Portuguese Man O' War Legion",
-      "flavorText": "Not one animal but a colony of specialized organisms called zooids, each with a unique function.",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": ["Passive"],
-      "summons": ["token-man-o-war"],
-      "effects": {
-        "onPlay": {
-          "type": "summonTokens",
-          "params": {
-            "tokenIds": ["token-man-o-war", "token-man-o-war"]
-          }
-        },
-        "onDefend": {
-          "type": "damageCreature",
-          "params": {
-            "targetType": "attacker",
-            "amount": 1,
-            "sourceLabel": "sting"
+            "tokenIds": [
+              "token-leafy-seadragon"
+            ]
           }
         }
       }
@@ -163,7 +123,10 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Ambush", "Invisible"]
+      "keywords": [
+        "Ambush",
+        "Invisible"
+      ]
     },
     {
       "id": "fish-prey-rainbow-mantis-shrimp",
@@ -186,7 +149,10 @@
           "params": {
             "targetGroup": "all-entities",
             "title": "Choose a target for damage",
-            "effect": { "damage": 3, "label": "strike" }
+            "effect": {
+              "damage": 3,
+              "label": "strike"
+            }
           }
         }
       }
@@ -200,13 +166,18 @@
       "hp": 1,
       "nutrition": 1,
       "keywords": [],
-      "summons": ["token-sardine"],
+      "summons": [
+        "token-sardine"
+      ],
       "effects": {
         "onPlay": [
           {
             "type": "summonTokens",
             "params": {
-              "tokenIds": ["token-sardine", "token-sardine"]
+              "tokenIds": [
+                "token-sardine",
+                "token-sardine"
+              ]
             }
           },
           {
@@ -219,7 +190,9 @@
         "onSlain": {
           "type": "summonTokens",
           "params": {
-            "tokenIds": ["token-sardine"]
+            "tokenIds": [
+              "token-sardine"
+            ]
           }
         }
       }
@@ -246,7 +219,9 @@
             "params": {
               "targetGroup": "all-creatures",
               "title": "Choose a creature to regen",
-              "effect": { "regen": true }
+              "effect": {
+                "regen": true
+              }
             }
           }
         ]
@@ -260,27 +235,21 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Free Play"],
+      "keywords": [
+        "Free Play"
+      ],
       "effects": {
         "discardEffect": {
           "type": "selectFromGroup",
           "params": {
             "targetGroup": "friendly-predators",
             "title": "Choose a predator to gain Ambush",
-            "effect": { "keyword": "Ambush" }
+            "effect": {
+              "keyword": "Ambush"
+            }
           }
         }
       }
-    },
-    {
-      "id": "fish-prey-blue-ringed-octopus",
-      "name": "Blue-ringed Octopus",
-      "flavorText": "Carries enough tetrodotoxin to kill 26 adults — and there is no known antidote.",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": ["Invisible", "Neurotoxic"]
     },
     {
       "id": "fish-prey-cannibal-fish",
@@ -289,9 +258,13 @@
       "type": "Prey",
       "atk": 2,
       "hp": 1,
-      "nutrition": 2,
-      "keywords": [],
-      "summons": ["token-lancetfish"],
+      "nutrition": 1,
+      "keywords": [
+        "Ambush"
+      ],
+      "summons": [
+        "token-lancetfish"
+      ],
       "effects": {
         "onPlay": {
           "type": "chooseOption",
@@ -301,14 +274,25 @@
               {
                 "label": "Summon Lancetfish",
                 "description": "Play a 2/2 Lancetfish token",
-                "effect": { "type": "summonTokens", "params": { "tokenIds": ["token-lancetfish"] } }
+                "effect": {
+                  "type": "summonTokens",
+                  "params": {
+                    "tokenIds": [
+                      "token-lancetfish"
+                    ]
+                  }
+                }
               },
               {
                 "label": "Grow Stronger",
                 "description": "This creature gains +2/+2",
                 "effect": {
                   "type": "buff",
-                  "params": { "attack": 2, "health": 2, "target": "self" }
+                  "params": {
+                    "attack": 2,
+                    "health": 2,
+                    "target": "self"
+                  }
                 }
               }
             ]
@@ -324,7 +308,9 @@
       "atk": 2,
       "hp": 2,
       "nutrition": 2,
-      "keywords": ["Ambush"],
+      "keywords": [
+        "Ambush"
+      ],
       "effects": {
         "onPlay": {
           "type": "buffStats",
@@ -334,25 +320,6 @@
               "attack": 1,
               "health": 0
             }
-          }
-        }
-      }
-    },
-    {
-      "id": "fish-prey-deep-sea-angler",
-      "name": "Deep-sea Angler",
-      "flavorText": "The male fuses permanently to the female's body, sharing her bloodstream — losing his eyes and organs.",
-      "type": "Prey",
-      "atk": 2,
-      "hp": 2,
-      "nutrition": 2,
-      "keywords": ["Lure"],
-      "summons": ["token-angler-egg"],
-      "effects": {
-        "onPlay": {
-          "type": "summonTokens",
-          "params": {
-            "tokenIds": ["token-angler-egg", "token-angler-egg"]
           }
         }
       }
@@ -372,7 +339,10 @@
           "params": {
             "targetGroup": "all-entities",
             "title": "Choose a target for damage",
-            "effect": { "damage": 2, "label": "shock" }
+            "effect": {
+              "damage": 2,
+              "label": "shock"
+            }
           }
         }
       }
@@ -404,7 +374,9 @@
       "hp": 2,
       "nutrition": 2,
       "keywords": [],
-      "summons": ["token-salmon"],
+      "summons": [
+        "token-salmon"
+      ],
       "effects": {
         "onSlain": {
           "type": "addToHand",
@@ -422,7 +394,9 @@
       "atk": 3,
       "hp": 2,
       "nutrition": 2,
-      "keywords": ["Haste"]
+      "keywords": [
+        "Haste"
+      ]
     },
     {
       "id": "fish-prey-silver-king",
@@ -437,14 +411,23 @@
         "onPlay": [
           {
             "type": "draw",
-            "params": { "count": 3 }
+            "params": {
+              "count": 3
+            }
           },
           {
             "type": "selectCardToDiscard",
-            "params": { "count": 1 }
+            "params": {
+              "count": 1
+            }
           }
         ],
-        "discardEffect": { "type": "draw", "params": { "count": 1 } }
+        "discardEffect": {
+          "type": "draw",
+          "params": {
+            "count": 1
+          }
+        }
       }
     },
     {
@@ -452,9 +435,12 @@
       "name": "Sailfish",
       "flavorText": "The fastest fish in the ocean at 110 km/h — it folds its dorsal sail flat for maximum hydrodynamics.",
       "type": "Predator",
-      "atk": 3,
+      "atk": 2,
       "hp": 1,
-      "keywords": ["Free Play", "Haste"]
+      "keywords": [
+        "Free Play",
+        "Haste"
+      ]
     },
     {
       "id": "fish-predator-wahoo",
@@ -463,25 +449,10 @@
       "type": "Predator",
       "atk": 3,
       "hp": 2,
-      "keywords": ["Haste", "Edible"]
-    },
-    {
-      "id": "fish-predator-alligator-gar",
-      "name": "Alligator Gar",
-      "flavorText": "A living fossil from the Cretaceous — its ganoid scales are so hard, Native Americans used them as arrowheads.",
-      "type": "Predator",
-      "atk": 3,
-      "hp": 3,
-      "keywords": ["Barrier"],
-      "summons": ["token-scale-arrows"],
-      "effects": {
-        "onSlain": {
-          "type": "addToHand",
-          "params": {
-            "cardId": "token-scale-arrows"
-          }
-        }
-      }
+      "keywords": [
+        "Haste",
+        "Edible"
+      ]
     },
     {
       "id": "fish-predator-atlantic-bluefin-tuna",
@@ -490,13 +461,20 @@
       "type": "Predator",
       "atk": 3,
       "hp": 3,
-      "keywords": ["Edible"],
-      "summons": ["token-tuna-egg"],
+      "keywords": [
+        "Edible"
+      ],
+      "summons": [
+        "token-tuna-egg"
+      ],
       "effects": {
         "onConsume": {
           "type": "summonTokens",
           "params": {
-            "tokenIds": ["token-tuna-egg", "token-tuna-egg"]
+            "tokenIds": [
+              "token-tuna-egg",
+              "token-tuna-egg"
+            ]
           }
         }
       }
@@ -506,16 +484,20 @@
       "name": "Goliath Grouper",
       "flavorText": "Can weigh over 360 kg and swallows prey whole using a powerful vacuum created by its massive mouth.",
       "type": "Predator",
-      "atk": 3,
-      "hp": 3,
-      "keywords": ["Edible"],
+      "atk": 2,
+      "hp": 2,
+      "keywords": [
+        "Edible"
+      ],
       "effects": {
         "onConsume": {
           "type": "selectFromGroup",
           "params": {
             "targetGroup": "enemy-prey",
             "title": "Choose a prey to kill",
-            "effect": { "kill": true }
+            "effect": {
+              "kill": true
+            }
           }
         }
       }
@@ -534,7 +516,10 @@
           "params": {
             "targetGroup": "all-entities",
             "title": "Choose a target for damage",
-            "effect": { "damage": 3, "label": "damage" }
+            "effect": {
+              "damage": 3,
+              "label": "damage"
+            }
           }
         }
       }
@@ -545,8 +530,10 @@
       "flavorText": "Uses its bill to slash through fish schools, stunning prey with lateral swipes before circling back to eat.",
       "type": "Predator",
       "atk": 4,
-      "hp": 2,
-      "keywords": ["Haste"]
+      "hp": 1,
+      "keywords": [
+        "Haste"
+      ]
     },
     {
       "id": "fish-predator-beluga-whale",
@@ -562,25 +549,9 @@
           "params": {
             "targetGroup": "hand-prey",
             "title": "Choose a prey to play",
-            "effect": { "play": true }
-          }
-        }
-      }
-    },
-    {
-      "id": "fish-predator-narwhal",
-      "name": "Narwhal",
-      "flavorText": "Its tusk is actually a left canine tooth with 10 million nerve endings — it senses temperature and salinity.",
-      "type": "Predator",
-      "atk": 4,
-      "hp": 4,
-      "keywords": [],
-      "effects": {
-        "onConsume": {
-          "type": "grantKeyword",
-          "params": {
-            "targetType": "all-friendly",
-            "keyword": "Immune"
+            "effect": {
+              "play": true
+            }
           }
         }
       }
@@ -599,7 +570,9 @@
           "params": {
             "targetGroup": "carrion-predators",
             "title": "Choose a carrion predator to copy",
-            "effect": { "copyAbilities": true }
+            "effect": {
+              "copyAbilities": true
+            }
           }
         }
       }
@@ -611,7 +584,9 @@
       "type": "Predator",
       "atk": 5,
       "hp": 3,
-      "keywords": ["Ambush"]
+      "keywords": [
+        "Ambush"
+      ]
     },
     {
       "id": "fish-predator-great-white-shark",
@@ -620,14 +595,18 @@
       "type": "Predator",
       "atk": 5,
       "hp": 5,
-      "keywords": ["Acuity"],
+      "keywords": [
+        "Ambush"
+      ],
       "effects": {
         "onConsume": {
           "type": "selectFromGroup",
           "params": {
             "targetGroup": "enemy-creatures",
             "title": "Choose a creature to kill",
-            "effect": { "kill": true }
+            "effect": {
+              "kill": true
+            }
           }
         }
       }
@@ -639,7 +618,9 @@
       "type": "Predator",
       "atk": 6,
       "hp": 6,
-      "keywords": [],
+      "keywords": [
+        "Ambush"
+      ],
       "effects": {
         "onConsume": {
           "type": "tutorFromDeck",
@@ -660,7 +641,9 @@
           "params": {
             "targetGroup": "enemy-prey",
             "title": "Choose a prey to kill",
-            "effect": { "kill": true }
+            "effect": {
+              "kill": true
+            }
           }
         }
       }
@@ -711,12 +694,22 @@
               {
                 "label": "Draw 3",
                 "description": "Draw 3 cards",
-                "effect": { "type": "draw", "params": { "count": 3 } }
+                "effect": {
+                  "type": "draw",
+                  "params": {
+                    "count": 3
+                  }
+                }
               },
               {
                 "label": "Heal 3",
                 "description": "Heal 3 HP",
-                "effect": { "type": "heal", "params": { "amount": 3 } }
+                "effect": {
+                  "type": "heal",
+                  "params": {
+                    "amount": 3
+                  }
+                }
               },
               {
                 "label": "+3/+3",
@@ -726,7 +719,12 @@
                   "params": {
                     "targetGroup": "all-creatures",
                     "title": "Choose a creature to buff",
-                    "effect": { "buff": { "attack": 3, "health": 3 } }
+                    "effect": {
+                      "buff": {
+                        "attack": 3,
+                        "health": 3
+                      }
+                    }
                   }
                 }
               }
@@ -746,21 +744,12 @@
           "params": {
             "targetGroup": "enemy-creatures",
             "title": "Choose a Rival's creature",
-            "effect": { "damage": 4, "steal": true }
+            "effect": {
+              "damage": 4,
+              "steal": true
+            }
           }
         }
-      }
-    },
-    {
-      "id": "fish-free-spell-angler",
-      "name": "Angler",
-      "flavorText": "Anglerfish lures glow via symbiotic bioluminescent bacteria that live nowhere else in nature.",
-      "type": "Free Spell",
-      "effects": {
-        "effect": [
-          { "type": "tutorFromDeck", "params": {} },
-          { "type": "endTurn", "params": {} }
-        ]
       }
     },
     {
@@ -774,35 +763,9 @@
           "params": {
             "targetGroup": "friendly-predators",
             "title": "Choose a predator to gain Edible",
-            "effect": { "keyword": "Edible" }
-          }
-        }
-      }
-    },
-    {
-      "id": "fish-spell-washout",
-      "name": "Washout",
-      "flavorText": "Storm surges can push seawater miles inland, stripping habitats bare and resetting coastal ecosystems.",
-      "type": "Spell",
-      "effects": {
-        "effect": [
-          { "type": "removeAbilitiesAll" },
-          { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } }
-        ]
-      }
-    },
-    {
-      "id": "fish-free-spell-undertow",
-      "name": "Undertow",
-      "flavorText": "Undertows pull at up to 8 feet per second — faster than an Olympic swimmer's sustained speed.",
-      "type": "Free Spell",
-      "effects": {
-        "effect": {
-          "type": "selectFromGroup",
-          "params": {
-            "targetGroup": "enemy-creatures",
-            "title": "Choose a Rival's creature to strip abilities",
-            "effect": { "removeAbilities": true }
+            "effect": {
+              "keyword": "Edible"
+            }
           }
         }
       }
@@ -814,7 +777,9 @@
       "type": "Trap",
       "trigger": "rivalPlaysPred",
       "effects": {
-        "effect": { "type": "removeTriggeredCreatureAbilities" }
+        "effect": {
+          "type": "removeTriggeredCreatureAbilities"
+        }
       }
     },
     {
@@ -824,7 +789,9 @@
       "type": "Trap",
       "trigger": "rivalPlaysPrey",
       "effects": {
-        "effect": { "type": "removeTriggeredCreatureAbilities" }
+        "effect": {
+          "type": "removeTriggeredCreatureAbilities"
+        }
       }
     },
     {
@@ -835,10 +802,306 @@
       "trigger": "directAttack",
       "effects": {
         "effect": [
-          { "type": "negateAttack" },
-          { "type": "damageAllCreatures", "params": { "amount": 2 } },
-          { "type": "damageBothPlayers", "params": { "amount": 2 } }
+          {
+            "type": "negateAttack"
+          },
+          {
+            "type": "damageAllCreatures",
+            "params": {
+              "amount": 2
+            }
+          },
+          {
+            "type": "damageBothPlayers",
+            "params": {
+              "amount": 2
+            }
+          }
         ]
+      }
+    },
+    {
+      "id": "fish-prey-black-kingfish",
+      "name": "Black Kingfish",
+      "flavorText": "A powerful ambush predator of tropical reefs, the black kingfish corrals baitfish into tight balls before striking.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [
+        "Ambush"
+      ],
+      "summons": [
+        "token-black-jack"
+      ],
+      "effects": {
+        "onPlay": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": [
+              "token-black-jack",
+              "token-black-jack"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-prey-black-sea-devil",
+      "name": "Black Sea Devil",
+      "flavorText": "A deep-sea anglerfish that lures prey with a bioluminescent appendage in the lightless abyss.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [
+        "Ambush",
+        "Lure"
+      ],
+      "summons": [
+        "token-angler-egg"
+      ],
+      "effects": {
+        "onPlay": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": [
+              "token-angler-egg",
+              "token-angler-egg"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-prey-goldentail-moray",
+      "name": "Goldentail Moray",
+      "flavorText": "A brightly colored eel that hides in reef crevices by day and hunts crustaceans by night.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [
+        "Ambush",
+        "Hidden"
+      ],
+      "effects": {
+        "onPlay": {
+          "type": "draw",
+          "params": {
+            "count": 1
+          }
+        },
+        "onStart": {
+          "type": "draw",
+          "params": {
+            "count": 1
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-prey-googly-eyed-glass-squid",
+      "name": "Googly-eyed Glass Squid",
+      "flavorText": "A transparent deep-sea squid with comically mismatched eyes — one large for spotting shadows, one small for bioluminescence.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [
+        "Invisible"
+      ],
+      "effects": {
+        "onPlay": {
+          "type": "tutorFromDeck",
+          "params": {}
+        }
+      }
+    },
+    {
+      "id": "fish-prey-mimic-octopus",
+      "name": "Mimic Octopus",
+      "flavorText": "Can impersonate over 15 species including lionfish, flatfish, and sea snakes by changing shape and color.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [],
+      "effects": {
+        "onBeforeCombat": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "other-creatures",
+            "title": "Choose a creature to copy stats from",
+            "effect": {
+              "copyStats": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-prey-roving-coral-grouper",
+      "name": "Roving Coral Grouper",
+      "flavorText": "One of the few fish known to cooperatively hunt — it signals moray eels with headshakes to flush hidden prey.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [
+        "Hidden"
+      ],
+      "summons": [
+        "token-giant-moray"
+      ],
+      "effects": {
+        "onPlay": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": [
+              "token-giant-moray"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-prey-giant-pacific-octopus",
+      "name": "Giant Pacific Octopus",
+      "flavorText": "The largest octopus species — up to 16 feet across. It can open jars, solve mazes, and squeeze through any gap larger than its beak.",
+      "type": "Prey",
+      "atk": 2,
+      "hp": 2,
+      "nutrition": 2,
+      "keywords": [
+        "Invisible",
+        "Ambush"
+      ]
+    },
+    {
+      "id": "fish-predator-giant-black-sea-bass",
+      "name": "Giant Black Sea Bass",
+      "flavorText": "Can weigh over 500 lbs and live 75 years. Once critically endangered, they are slowly recovering off the California coast.",
+      "type": "Predator",
+      "atk": 2,
+      "hp": 2,
+      "keywords": [
+        "Ambush",
+        "Hidden",
+        "Edible"
+      ]
+    },
+    {
+      "id": "fish-spell-dynamite",
+      "name": "Dynamite",
+      "flavorText": "Blast fishing kills indiscriminately — the shockwave ruptures swim bladders across a wide radius.",
+      "type": "Spell",
+      "effects": {
+        "effect": [
+          {
+            "type": "destroyFieldSpell",
+            "params": {
+              "target": "enemy"
+            }
+          },
+          {
+            "type": "addToHand",
+            "params": {
+              "cardId": "token-salmon"
+            }
+          }
+        ]
+      },
+      "summons": [
+        "token-salmon"
+      ]
+    },
+    {
+      "id": "fish-spell-whirlpool",
+      "name": "Whirlpool",
+      "flavorText": "Powerful vortexes can pull entire schools underwater, disorienting and trapping everything caught inside.",
+      "type": "Spell",
+      "effects": {
+        "effect": [
+          {
+            "type": "grantKeyword",
+            "params": {
+              "targetType": "all-enemy",
+              "keyword": "Drowning"
+            }
+          },
+          {
+            "type": "damageRival",
+            "params": {
+              "amount": 2
+            }
+          },
+          {
+            "type": "damageAllEnemyCreatures",
+            "params": {
+              "amount": 2
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "fish-free-spell-ambush",
+      "name": "Ambush",
+      "flavorText": "Predators of the deep strike without warning from the darkness below.",
+      "type": "Free Spell",
+      "effects": {
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "friendly-creatures",
+            "title": "Choose an ally to gain Ambush",
+            "effect": {
+              "keyword": "Ambush"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-free-spell-anchor",
+      "name": "Anchor",
+      "flavorText": "A heavy iron anchor smashes through reef structures, crushing whatever lies beneath.",
+      "type": "Free Spell",
+      "effects": {
+        "effect": {
+          "type": "destroyFieldSpell",
+          "params": {
+            "target": "enemy"
+          }
+        }
+      }
+    },
+    {
+      "id": "fish-field-spell-rocky-reef",
+      "name": "Rocky Reef",
+      "flavorText": "A complex underwater structure teeming with hidden life in every crack and crevice.",
+      "type": "Field Spell",
+      "summons": [
+        "token-eel"
+      ],
+      "effects": {
+        "onEnd": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": [
+              "token-eel"
+            ]
+          }
+        },
+        "onDestroyed": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": [
+              "token-eel"
+            ]
+          }
+        }
       }
     }
   ]

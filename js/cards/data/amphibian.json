@@ -8,26 +8,22 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Immune"],
-      "summons": ["token-radiated-tree-frog"],
+      "keywords": [
+        "Immune"
+      ],
+      "summons": [
+        "token-chernobyl-tree-frog"
+      ],
       "effects": {
         "onPlay": {
           "type": "summonTokens",
-          "params": { "tokenIds": ["token-radiated-tree-frog", "token-radiated-tree-frog"] }
+          "params": {
+            "tokenIds": [
+              "token-chernobyl-tree-frog",
+              "token-chernobyl-tree-frog"
+            ]
+          }
         }
-      }
-    },
-    {
-      "id": "amphibian-prey-confusing-rocket-frog",
-      "name": "Confusing Rocket Frog",
-      "flavorText": "Allobates femoralis males wrestle rivals and carry tadpoles on their backs to scattered pools.",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": ["Free Play"],
-      "effects": {
-        "onPlay": { "type": "forceOpponentDiscard", "params": { "count": 1 } }
       }
     },
     {
@@ -40,10 +36,19 @@
       "nutrition": 1,
       "effects": {
         "onPlay": [
-          { "type": "tutorFromDeck", "params": {} },
-          { "type": "playSpellFromHand", "params": {} }
+          {
+            "type": "tutorFromDeck",
+            "params": {}
+          },
+          {
+            "type": "playSpellFromHand",
+            "params": {}
+          }
         ]
-      }
+      },
+      "keywords": [
+        "Hidden"
+      ]
     },
     {
       "id": "amphibian-prey-emperor-newt",
@@ -53,12 +58,21 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Poisonous"],
-      "summons": ["token-empress-newt"],
+      "keywords": [
+        "Poisonous"
+      ],
+      "summons": [
+        "token-mandarin-newt"
+      ],
       "effects": {
         "onEnd": {
           "type": "summonTokens",
-          "params": { "tokenIds": ["token-empress-newt", "token-empress-newt"] }
+          "params": {
+            "tokenIds": [
+              "token-mandarin-newt",
+              "token-mandarin-newt"
+            ]
+          }
         }
       }
     },
@@ -70,21 +84,17 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Immune", "Poisonous"],
+      "keywords": [
+        "Immune",
+        "Poisonous"
+      ],
       "effects": {
-        "onPlay": { "type": "damageRival", "params": { "amount": 2 } }
-      }
-    },
-    {
-      "id": "amphibian-prey-frosts-toad",
-      "name": "Frost's Toad",
-      "flavorText": "Incilius cristatus lives in cloud forests above 1,800m and breeds only in cold mountain streams.",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "effects": {
-        "onPlay": { "type": "freezeAllEnemies" }
+        "onPlay": {
+          "type": "damageRival",
+          "params": {
+            "amount": 2
+          }
+        }
       }
     },
     {
@@ -95,11 +105,21 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Invisible"],
+      "keywords": [
+        "Invisible"
+      ],
       "effects": {
         "onPlay": [
-          { "type": "draw", "params": { "count": 1 } },
-          { "type": "revealHand", "params": {} }
+          {
+            "type": "draw",
+            "params": {
+              "count": 1
+            }
+          },
+          {
+            "type": "revealHand",
+            "params": {}
+          }
         ]
       }
     },
@@ -111,52 +131,54 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Poisonous"],
-      "summons": ["token-golden-mantella"],
+      "keywords": [
+        "Poisonous"
+      ],
+      "summons": [
+        "token-golden-mantella"
+      ],
       "effects": {
         "onPlay": [
-          { "type": "draw", "params": { "count": 1 } },
-          { "type": "summonTokens", "params": { "tokenIds": ["token-golden-mantella"] } }
+          {
+            "type": "draw",
+            "params": {
+              "count": 1
+            }
+          },
+          {
+            "type": "summonTokens",
+            "params": {
+              "tokenIds": [
+                "token-golden-mantella"
+              ]
+            }
+          }
         ]
       }
-    },
-    {
-      "id": "amphibian-prey-golden-poison-frog",
-      "name": "Golden Poison Frog",
-      "flavorText": "One golden poison frog holds enough batrachotoxin to kill 10 humans. It gets its toxin from its diet.",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": ["Poisonous"],
-      "summons": ["token-golden-blowdart"],
-      "effects": {
-        "onPlay": { "type": "draw", "params": { "count": 1 } },
-        "sacrificeEffect": { "type": "addToHand", "params": { "cardId": "token-golden-blowdart" } }
-      }
-    },
-    {
-      "id": "amphibian-prey-java-flying-frog",
-      "name": "Java Flying Frog",
-      "flavorText": "Rhacophorus reinwardtii glides up to 15 meters between trees using oversized webbed feet as parachutes.",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": ["Immune", "Hidden"]
     },
     {
       "id": "amphibian-prey-monte-iberia-eleuth",
       "name": "Monte Iberia Eleuth",
       "flavorText": "At just 10mm long, the Monte Iberia eleuth is one of the world's smallest tetrapods.",
       "type": "Prey",
-      "atk": 1,
+      "atk": 0,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Poisonous"],
-      "summons": ["token-hidden-eleuth-egg"],
+      "keywords": [
+        "Poisonous"
+      ],
+      "summons": [
+        "token-hidden-eleuth-egg"
+      ],
       "effects": {
-        "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-hidden-eleuth-egg"] } }
+        "onEnd": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": [
+              "token-hidden-eleuth-egg"
+            ]
+          }
+        }
       }
     },
     {
@@ -167,10 +189,28 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Poisonous"],
+      "keywords": [
+        "Poisonous"
+      ],
       "effects": {
-        "onPlay": { "type": "draw", "params": { "count": 2 } },
-        "onSlain": { "type": "draw", "params": { "count": 1 } }
+        "discardEffect": {
+          "type": "draw",
+          "params": {
+            "count": 1
+          }
+        },
+        "onPlay": {
+          "type": "draw",
+          "params": {
+            "count": 1
+          }
+        },
+        "onSlain": {
+          "type": "draw",
+          "params": {
+            "count": 2
+          }
+        }
       }
     },
     {
@@ -181,10 +221,19 @@
       "atk": 1,
       "hp": 1,
       "nutrition": 1,
-      "keywords": ["Poisonous"],
-      "summons": ["token-phantasmal-darts"],
+      "keywords": [
+        "Poisonous"
+      ],
+      "summons": [
+        "token-phantasmal-darts"
+      ],
       "effects": {
-        "sacrificeEffect": { "type": "addToHand", "params": { "cardId": "token-phantasmal-darts" } }
+        "sacrificeEffect": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "token-phantasmal-darts"
+          }
+        }
       }
     },
     {
@@ -197,26 +246,19 @@
       "nutrition": 1,
       "effects": {
         "onPlay": [
-          { "type": "damageRival", "params": { "amount": 2 } },
-          { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } }
+          {
+            "type": "damageRival",
+            "params": {
+              "amount": 2
+            }
+          },
+          {
+            "type": "damageAllEnemyCreatures",
+            "params": {
+              "amount": 2
+            }
+          }
         ]
-      }
-    },
-    {
-      "id": "amphibian-prey-red-tailed-knobby-newts",
-      "name": "Red-tailed Knobby Newts",
-      "flavorText": "These newts push sharp rib tips through their skin to inject toxin into a predator's mouth.",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "summons": ["token-red-tailed-knobby-newt"],
-      "effects": {
-        "onPlay": {
-          "type": "summonTokens",
-          "params": { "tokenIds": ["token-red-tailed-knobby-newt", "token-red-tailed-knobby-newt"] }
-        },
-        "onDefend": { "type": "applyNeurotoxicToAttacker" }
       }
     },
     {
@@ -229,25 +271,28 @@
       "nutrition": 1,
       "effects": {
         "onPlay": [
-          { "type": "damageBothPlayers", "params": { "amount": 2 } },
-          { "type": "damageAllCreatures", "params": { "amount": 2 } },
-          { "type": "freezeAllCreatures", "params": {} }
+          {
+            "type": "damageBothPlayers",
+            "params": {
+              "amount": 2
+            }
+          },
+          {
+            "type": "damageAllCreatures",
+            "params": {
+              "amount": 2
+            }
+          },
+          {
+            "type": "freezeAllCreatures",
+            "params": {}
+          }
         ]
-      }
-    },
-    {
-      "id": "amphibian-prey-turtle-frog",
-      "name": "Turtle Frog",
-      "flavorText": "Myobatrachus gouldii digs headfirst with muscular arms to reach termite nests in Australian sand.",
-      "type": "Prey",
-      "atk": 1,
-      "hp": 1,
-      "nutrition": 1,
-      "keywords": ["Free Play", "Hidden"],
-      "summons": ["token-turtle-froglet"],
-      "effects": {
-        "onPlay": { "type": "summonTokens", "params": { "tokenIds": ["token-turtle-froglet"] } }
-      }
+      },
+      "keywords": [
+        "Frozen",
+        "Hidden"
+      ]
     },
     {
       "id": "amphibian-prey-tomato-frog",
@@ -255,13 +300,25 @@
       "flavorText": "When grabbed, tomato frogs secrete a thick white glue from their skin that numbs predators' eyes.",
       "type": "Prey",
       "atk": 1,
-      "hp": 2,
+      "hp": 1,
       "nutrition": 2,
-      "summons": ["token-tomato"],
+      "summons": [
+        "token-tomato"
+      ],
       "effects": {
-        "discardEffect": { "type": "addToHand", "params": { "cardId": "token-tomato" } },
-        "onDefend": { "type": "freezeAttacker" }
-      }
+        "discardEffect": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "token-tomato"
+          }
+        },
+        "onDefend": {
+          "type": "freezeAttacker"
+        }
+      },
+      "keywords": [
+        "Poisonous"
+      ]
     },
     {
       "id": "amphibian-prey-hippo-frog",
@@ -269,10 +326,12 @@
       "flavorText": "Hemisus marmoratus headbutts into soil to burrow and can eat prey nearly as large as itself.",
       "type": "Prey",
       "atk": 1,
-      "hp": 2,
-      "nutrition": 2,
+      "hp": 1,
+      "nutrition": 1,
       "effects": {
-        "attackReplacement": { "type": "eatPreyInsteadOfAttacking" }
+        "attackReplacement": {
+          "type": "eatPreyInsteadOfAttacking"
+        }
       }
     },
     {
@@ -283,11 +342,19 @@
       "atk": 1,
       "hp": 2,
       "nutrition": 2,
-      "summons": ["token-froglet"],
+      "summons": [
+        "token-froglet"
+      ],
       "effects": {
         "onSlain": {
           "type": "summonTokens",
-          "params": { "tokenIds": ["token-froglet", "token-froglet", "token-froglet"] }
+          "params": {
+            "tokenIds": [
+              "token-froglet",
+              "token-froglet",
+              "token-froglet"
+            ]
+          }
         }
       }
     },
@@ -300,21 +367,15 @@
       "hp": 2,
       "nutrition": 2,
       "effects": {
-        "onPlay": { "type": "heal", "params": { "amount": 4 } },
-        "onEnd": { "type": "regenSelf" }
-      }
-    },
-    {
-      "id": "amphibian-prey-bigfoot-leopard-frog",
-      "name": "Bigfoot Leopard Frog",
-      "flavorText": "Discovered in 2012, Lithobates megapoda has disproportionately large hind feet for navigating rocky streams.",
-      "type": "Prey",
-      "atk": 2,
-      "hp": 2,
-      "nutrition": 2,
-      "summons": ["token-bigfoot-tadpole"],
-      "effects": {
-        "onEnd": { "type": "summonTokens", "params": { "tokenIds": ["token-bigfoot-tadpole"] } }
+        "onPlay": {
+          "type": "heal",
+          "params": {
+            "amount": 4
+          }
+        },
+        "onEnd": {
+          "type": "regenSelf"
+        }
       }
     },
     {
@@ -324,16 +385,28 @@
       "type": "Predator",
       "atk": 2,
       "hp": 2,
-      "summons": ["token-tiger-frog"],
+      "summons": [
+        "token-tiger-frog"
+      ],
       "effects": {
         "onConsume": [
-          { "type": "summonTokens", "params": { "tokenIds": ["token-tiger-frog"] } },
+          {
+            "type": "summonTokens",
+            "params": {
+              "tokenIds": [
+                "token-tiger-frog"
+              ]
+            }
+          },
           {
             "type": "selectFromGroup",
             "params": {
               "targetGroup": "all-entities",
               "title": "Choose a target for damage",
-              "effect": { "damage": 1, "label": "bullfrog" }
+              "effect": {
+                "damage": 1,
+                "label": "bullfrog"
+              }
             }
           }
         ]
@@ -346,27 +419,17 @@
       "type": "Predator",
       "atk": 3,
       "hp": 3,
-      "summons": ["token-american-bullfrog"],
+      "summons": [
+        "token-american-bullfrog"
+      ],
       "effects": {
         "onConsume": {
           "type": "summonTokens",
-          "params": { "tokenIds": ["token-american-bullfrog"] }
-        }
-      }
-    },
-    {
-      "id": "amphibian-predator-mountain-chicken",
-      "name": "Mountain Chicken",
-      "flavorText": "Named for tasting like chicken, Leptodactylus fallax is critically endangered with fewer than 8,000 left.",
-      "type": "Predator",
-      "atk": 4,
-      "hp": 4,
-      "keywords": ["Edible"],
-      "summons": ["token-mountain-chicken-egg"],
-      "effects": {
-        "onEnd": {
-          "type": "summonTokens",
-          "params": { "tokenIds": ["token-mountain-chicken-egg"] }
+          "params": {
+            "tokenIds": [
+              "token-american-bullfrog"
+            ]
+          }
         }
       }
     },
@@ -377,9 +440,16 @@
       "type": "Predator",
       "atk": 3,
       "hp": 3,
-      "summons": ["token-titicaca-water"],
+      "summons": [
+        "token-titicaca-water"
+      ],
       "effects": {
-        "onConsume": { "type": "addToHand", "params": { "cardId": "token-titicaca-water" } }
+        "onConsume": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "token-titicaca-water"
+          }
+        }
       }
     },
     {
@@ -389,9 +459,18 @@
       "type": "Predator",
       "atk": 4,
       "hp": 4,
-      "summons": ["token-pixie-frog"],
+      "summons": [
+        "token-pixie-frog"
+      ],
       "effects": {
-        "onConsume": { "type": "summonTokens", "params": { "tokenIds": ["token-pixie-frog"] } }
+        "onConsume": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": [
+              "token-pixie-frog"
+            ]
+          }
+        }
       }
     },
     {
@@ -401,12 +480,21 @@
       "type": "Predator",
       "atk": 4,
       "hp": 4,
-      "keywords": ["Poisonous"],
-      "summons": ["token-poisonous-egg"],
+      "keywords": [
+        "Poisonous"
+      ],
+      "summons": [
+        "token-poisonous-egg"
+      ],
       "effects": {
         "onConsume": {
           "type": "summonTokens",
-          "params": { "tokenIds": ["token-poisonous-egg", "token-poisonous-egg"] }
+          "params": {
+            "tokenIds": [
+              "token-poisonous-egg",
+              "token-poisonous-egg"
+            ]
+          }
         }
       }
     },
@@ -419,8 +507,16 @@
       "hp": 4,
       "effects": {
         "onConsume": [
-          { "type": "damageAllEnemyCreatures", "params": { "amount": 4 } },
-          { "type": "endTurn", "params": {} }
+          {
+            "type": "damageAllEnemyCreatures",
+            "params": {
+              "amount": 4
+            }
+          },
+          {
+            "type": "endTurn",
+            "params": {}
+          }
         ]
       }
     },
@@ -432,7 +528,12 @@
       "atk": 4,
       "hp": 4,
       "effects": {
-        "onConsume": { "type": "damageRival", "params": { "amount": 4 } }
+        "onConsume": {
+          "type": "damageRival",
+          "params": {
+            "amount": 4
+          }
+        }
       }
     },
     {
@@ -442,21 +543,9 @@
       "type": "Predator",
       "atk": 4,
       "hp": 4,
-      "keywords": ["Barrier"]
-    },
-    {
-      "id": "amphibian-predator-lake-junin-giant-frog",
-      "name": "Lake Junin Giant Frog",
-      "flavorText": "Endemic to Peru's Lake Junin at 4,080m elevation, it is one of the highest-dwelling frogs on Earth.",
-      "type": "Predator",
-      "atk": 4,
-      "hp": 4,
-      "effects": {
-        "onConsume": [
-          { "type": "regenOtherCreatures", "params": {} },
-          { "type": "heal", "params": { "amount": 4 } }
-        ]
-      }
+      "keywords": [
+        "Barrier"
+      ]
     },
     {
       "id": "amphibian-predator-japanese-giant-salamander",
@@ -466,8 +555,16 @@
       "atk": 5,
       "hp": 5,
       "effects": {
-        "onAfterCombat": { "type": "damageEnemiesAfterCombat", "params": { "damage": 2 } }
-      }
+        "onAfterCombat": {
+          "type": "damageEnemiesAfterCombat",
+          "params": {
+            "damage": 2
+          }
+        }
+      },
+      "keywords": [
+        "Poisonous"
+      ]
     },
     {
       "id": "amphibian-predator-chinese-giant-salamander",
@@ -476,12 +573,21 @@
       "type": "Predator",
       "atk": 6,
       "hp": 6,
-      "keywords": ["Lure"],
-      "summons": ["token-chinese-salamander"],
+      "keywords": [
+        "Lure",
+        "Poisonous"
+      ],
+      "summons": [
+        "token-chinese-salamander"
+      ],
       "effects": {
         "onConsume": {
           "type": "summonTokens",
-          "params": { "tokenIds": ["token-chinese-salamander"] }
+          "params": {
+            "tokenIds": [
+              "token-chinese-salamander"
+            ]
+          }
         }
       }
     },
@@ -499,17 +605,32 @@
               {
                 "label": "Draw 3 cards",
                 "description": "Draw 3 cards from your deck",
-                "effect": { "type": "draw", "params": { "count": 3 } }
+                "effect": {
+                  "type": "draw",
+                  "params": {
+                    "count": 3
+                  }
+                }
               },
               {
                 "label": "Heal 3",
                 "description": "Restore 3 HP",
-                "effect": { "type": "heal", "params": { "amount": 3 } }
+                "effect": {
+                  "type": "heal",
+                  "params": {
+                    "amount": 3
+                  }
+                }
               },
               {
                 "label": "Deal 3 damage to rival",
                 "description": "Deal 3 damage to Rival",
-                "effect": { "type": "damageRival", "params": { "amount": 3 } }
+                "effect": {
+                  "type": "damageRival",
+                  "params": {
+                    "amount": 3
+                  }
+                }
               }
             ]
           }
@@ -535,25 +656,20 @@
       "type": "Spell",
       "effects": {
         "effect": [
-          { "type": "damageRival", "params": { "amount": 3 } },
+          {
+            "type": "damageRival",
+            "params": {
+              "amount": 3
+            }
+          },
           {
             "type": "selectTarget",
-            "params": { "group": "enemy-creatures", "effect": "damage", "amount": 3 }
+            "params": {
+              "group": "enemy-creatures",
+              "effect": "damage",
+              "amount": 3
+            }
           }
-        ]
-      }
-    },
-    {
-      "id": "amphibian-spell-monsoon",
-      "name": "Monsoon",
-      "flavorText": "Tropical monsoons trigger mass amphibian breeding events with thousands spawning in a single night.",
-      "type": "Spell",
-      "summons": ["token-rainbow"],
-      "effects": {
-        "effect": [
-          { "type": "damageRival", "params": { "amount": 2 } },
-          { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } },
-          { "type": "addToHand", "params": { "cardId": "token-rainbow" } }
         ]
       }
     },
@@ -564,8 +680,18 @@
       "type": "Spell",
       "effects": {
         "effect": [
-          { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } },
-          { "type": "damageAllEnemyCreatures", "params": { "amount": 2 } }
+          {
+            "type": "damageAllEnemyCreatures",
+            "params": {
+              "amount": 2
+            }
+          },
+          {
+            "type": "damageAllEnemyCreatures",
+            "params": {
+              "amount": 2
+            }
+          }
         ]
       }
     },
@@ -577,17 +703,14 @@
       "effects": {
         "effect": {
           "type": "buffStats",
-          "params": { "targetType": "all-friendly", "stats": { "attack": 2, "health": 2 } }
+          "params": {
+            "targetType": "all-friendly",
+            "stats": {
+              "attack": 2,
+              "health": 2
+            }
+          }
         }
-      }
-    },
-    {
-      "id": "amphibian-spell-terrain-shift",
-      "name": "Terrain Shift",
-      "flavorText": "Amphibians are bioindicators: their permeable skin makes them the first to vanish when ecosystems degrade.",
-      "type": "Spell",
-      "effects": {
-        "effect": { "type": "killEnemyTokens", "params": {} }
       }
     },
     {
@@ -597,8 +720,20 @@
       "type": "Spell",
       "effects": {
         "effect": [
-          { "type": "selectTarget", "params": { "group": "any", "effect": "damage", "amount": 3 } },
-          { "type": "heal", "params": { "amount": 3 } }
+          {
+            "type": "selectTarget",
+            "params": {
+              "group": "any",
+              "effect": "damage",
+              "amount": 3
+            }
+          },
+          {
+            "type": "heal",
+            "params": {
+              "amount": 3
+            }
+          }
         ]
       }
     },
@@ -613,21 +748,12 @@
           "params": {
             "targetGroup": "all-prey",
             "title": "Choose a prey to buff",
-            "effect": { "buff": { "attack": 2, "health": 2 } }
-          }
-        }
-      }
-    },
-    {
-      "id": "amphibian-free-spell-newt",
-      "name": "Newt",
-      "flavorText": "Newts regenerate entire limbs, lens tissue, and cardiac muscle throughout their lives without tumors.",
-      "type": "Free Spell",
-      "effects": {
-        "effect": {
-          "type": "selectCreatureToTransform",
-          "params": {
-            "newCardId": "token-newt"
+            "effect": {
+              "buff": {
+                "attack": 2,
+                "health": 2
+              }
+            }
           }
         }
       }
@@ -638,7 +764,12 @@
       "flavorText": "Frog toe pads use wet adhesion: nanopillar structures and mucus create grip strong enough to climb glass.",
       "type": "Free Spell",
       "effects": {
-        "effect": { "type": "draw", "params": { "count": 2 } }
+        "effect": {
+          "type": "draw",
+          "params": {
+            "count": 2
+          }
+        }
       }
     },
     {
@@ -655,17 +786,32 @@
               {
                 "label": "Draw 1",
                 "description": "Draw 1 card from your deck",
-                "effect": { "type": "draw", "params": { "count": 1 } }
+                "effect": {
+                  "type": "draw",
+                  "params": {
+                    "count": 1
+                  }
+                }
               },
               {
                 "label": "Heal 1",
                 "description": "Restore 1 HP",
-                "effect": { "type": "heal", "params": { "amount": 1 } }
+                "effect": {
+                  "type": "heal",
+                  "params": {
+                    "amount": 1
+                  }
+                }
               },
               {
                 "label": "Deal 1 damage to rival",
                 "description": "Deal 1 damage to Rival",
-                "effect": { "type": "damageRival", "params": { "amount": 1 } }
+                "effect": {
+                  "type": "damageRival",
+                  "params": {
+                    "amount": 1
+                  }
+                }
               }
             ]
           }
@@ -680,8 +826,14 @@
       "trigger": "directAttack",
       "effects": {
         "effect": [
-          { "type": "negateAttack", "params": {} },
-          { "type": "killAttacker", "params": {} }
+          {
+            "type": "negateAttack",
+            "params": {}
+          },
+          {
+            "type": "killAttacker",
+            "params": {}
+          }
         ]
       }
     },
@@ -693,8 +845,16 @@
       "trigger": "rivalPlaysCard",
       "effects": {
         "effect": [
-          { "type": "negatePlay", "params": {} },
-          { "type": "allowReplay", "params": { "excludeNegated": true } }
+          {
+            "type": "negatePlay",
+            "params": {}
+          },
+          {
+            "type": "allowReplay",
+            "params": {
+              "excludeNegated": true
+            }
+          }
         ]
       }
     },
@@ -708,6 +868,402 @@
         "effect": {
           "type": "negateCombat",
           "params": {}
+        }
+      }
+    },
+    {
+      "id": "amphibian-prey-black-salamander",
+      "name": "Black Salamander",
+      "flavorText": "These nocturnal predators hunt insects and small invertebrates in leaf litter.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [
+        "Ambush",
+        "Poisonous"
+      ],
+      "effects": {
+        "onDusk": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": [
+              "token-black-salamander-egg",
+              "token-black-salamander-egg"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "amphibian-prey-blessed-poison-frog",
+      "name": "Blessed Poison Frog",
+      "flavorText": "These tiny frogs secrete alkaloids from their skin that deter predators.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [
+        "Poisonous"
+      ],
+      "effects": {
+        "discardEffect": {
+          "type": "heal",
+          "params": {
+            "amount": 1
+          }
+        },
+        "onPlay": {
+          "type": "heal",
+          "params": {
+            "amount": 4
+          }
+        }
+      }
+    },
+    {
+      "id": "amphibian-prey-golden-dart-frog",
+      "name": "Golden Dart Frog",
+      "flavorText": "One gram of this frog's toxin can kill 10 adult humans.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [
+        "Poisonous"
+      ],
+      "effects": {
+        "onPlay": {
+          "type": "draw",
+          "params": {
+            "count": 2
+          }
+        },
+        "discardEffect": {
+          "type": "addToHand",
+          "params": {
+            "cardId": "token-golden-blowgun"
+          }
+        }
+      }
+    },
+    {
+      "id": "amphibian-prey-golden-rocket-frog",
+      "name": "Golden Rocket Frog",
+      "flavorText": "These agile frogs can leap 10 times their body length.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [
+        "Free Play",
+        "Haste"
+      ],
+      "effects": {
+        "onPlay": {
+          "type": "draw",
+          "params": {
+            "count": 1
+          }
+        }
+      }
+    },
+    {
+      "id": "amphibian-prey-javan-chorus-frogs",
+      "name": "Javan Chorus Frogs",
+      "flavorText": "Males chorus together at night, creating a deafening symphony to attract mates.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "effects": {
+        "onPlay": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": [
+              "token-javan-chorus-frog",
+              "token-javan-chorus-frog"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "amphibian-prey-javelin-frog",
+      "name": "Javelin Frog",
+      "flavorText": "These aggressive frogs will attack anything that threatens their territory.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [
+        "Free Play",
+        "Haste"
+      ],
+      "effects": {
+        "discardEffect": {
+          "type": "damageRival",
+          "params": {
+            "amount": 1
+          }
+        },
+        "sacrificeEffect": {
+          "type": "chooseOption",
+          "params": {
+            "title": "Javelin Frog sacrifice",
+            "options": [
+              {
+                "label": "Damage Rival",
+                "description": "Deal 1 damage to rival",
+                "effect": {
+                  "type": "damageRival",
+                  "params": {
+                    "amount": 1
+                  }
+                }
+              },
+              {
+                "label": "Damage Any Target",
+                "description": "Deal 1 damage to any target",
+                "effect": {
+                  "type": "selectFromGroup",
+                  "params": {
+                    "targetGroup": "all-entities",
+                    "title": "Choose a target for damage",
+                    "effect": {
+                      "damage": 1,
+                      "label": "javelin"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "amphibian-prey-vietnamese-mossy-frogs",
+      "name": "Vietnamese Mossy Frogs",
+      "flavorText": "Their bumpy skin and cryptic coloration make them nearly invisible among moss.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "keywords": [
+        "Invisible"
+      ],
+      "effects": {
+        "onPlay": {
+          "type": "summonTokens",
+          "params": {
+            "tokenIds": [
+              "token-vietnamese-mossy-frog",
+              "token-vietnamese-mossy-frog"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "amphibian-prey-galapagos-lava-lizards",
+      "name": "Galapagos Lava Lizards",
+      "flavorText": "These agile lizards dart across volcanic rocks, defending territory with quick strikes.",
+      "type": "Prey",
+      "atk": 1,
+      "hp": 1,
+      "nutrition": 1,
+      "effects": {
+        "onPlay": [
+          {
+            "type": "summonTokens",
+            "params": {
+              "tokenIds": [
+                "token-galapagos-lava-lizard",
+                "token-galapagos-lava-lizard"
+              ]
+            }
+          },
+          {
+            "type": "selectFromGroup",
+            "params": {
+              "target": "enemy-creatures",
+              "title": "Choose an enemy to damage",
+              "effect": {
+                "damage": 1,
+                "label": "lava lizard strike"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "amphibian-predator-argentine-horned-frog",
+      "name": "Argentine Horned Frog",
+      "flavorText": "This ambush predator waits buried in leaf litter, striking at anything that moves.",
+      "type": "Predator",
+      "atk": 2,
+      "hp": 2,
+      "keywords": [],
+      "effects": {
+        "onBeforeCombat": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "enemy-creatures",
+            "title": "Choose an enemy to slay",
+            "effect": {
+              "kill": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "amphibian-spell-fog",
+      "name": "Fog",
+      "flavorText": "Morning fog blankets the forest, providing cover and moisture for amphibians.",
+      "type": "Spell",
+      "effects": {
+        "effect": [
+          {
+            "type": "heal",
+            "params": {
+              "amount": 4
+            }
+          },
+          {
+            "type": "regenAll",
+            "params": {}
+          },
+          {
+            "type": "grantKeywordToAll",
+            "params": {
+              "targetGroup": "friendly-creatures",
+              "keyword": "Barrier"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "amphibian-spell-hurricane",
+      "name": "Hurricane",
+      "flavorText": "Tropical storms reshape entire ecosystems, washing away debris and redistributing nutrients.",
+      "type": "Spell",
+      "effects": {
+        "effect": [
+          {
+            "type": "destroyFieldSpell",
+            "params": {
+              "target": "enemy"
+            }
+          },
+          {
+            "type": "damageAllEnemyCreatures",
+            "params": {
+              "amount": 2
+            }
+          },
+          {
+            "type": "damageRival",
+            "params": {
+              "amount": 2
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "amphibian-spell-spring-flood",
+      "name": "Spring Flood",
+      "flavorText": "Seasonal floods inundate lowland forests, creating temporary aquatic habitats.",
+      "type": "Spell",
+      "effects": {
+        "effect": [
+          {
+            "type": "destroyFieldSpell",
+            "params": {
+              "target": "enemy"
+            }
+          },
+          {
+            "type": "killAllTokens",
+            "params": {
+              "target": "enemy"
+            }
+          },
+          {
+            "type": "regenAll",
+            "params": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "amphibian-spell-javelin",
+      "name": "Javelin",
+      "flavorText": "Thrown spears remain one of the most effective hunting tools across human cultures.",
+      "type": "Spell",
+      "effects": {
+        "effect": [
+          {
+            "type": "killTarget",
+            "params": {
+              "target": "enemy-animal",
+              "title": "Choose an animal to slay"
+            }
+          },
+          {
+            "type": "damageRival",
+            "params": {
+              "amount": 2
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "amphibian-free-spell-poisonous",
+      "name": "Poisonous",
+      "flavorText": "Many amphibians secrete toxins through their skin as a defense mechanism.",
+      "type": "Free Spell",
+      "effects": {
+        "effect": {
+          "type": "selectFromGroup",
+          "params": {
+            "targetGroup": "all-creatures",
+            "title": "Choose a creature to gain Poisonous",
+            "effect": {
+              "keyword": "Poisonous"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "amphibian-field-spell-waterfall",
+      "name": "Waterfall",
+      "flavorText": "Cascading water creates misty microclimates where amphibians thrive.",
+      "type": "Field Spell",
+      "effects": {
+        "onPlay": {
+          "type": "damageRival",
+          "params": {
+            "amount": 2
+          }
+        },
+        "onDusk": {
+          "type": "damageRival",
+          "params": {
+            "amount": 1
+          }
+        },
+        "onStart": {
+          "type": "damageRival",
+          "params": {
+            "amount": 1
+          }
         }
       }
     }
