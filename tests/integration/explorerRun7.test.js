@@ -15,6 +15,8 @@ import { GameController } from '../../js/game/controller.js';
 import { ActionTypes } from '../../js/state/actions.js';
 import { getStarterDeck, getCardDefinitionById } from '../../js/cards/index.js';
 import { createCardInstance } from '../../js/cardTypes.js';
+import { consumePrey } from '../../js/game/consumption.js';
+import { resolveEffectResult } from '../../js/game/effects.js';
 import {
   getActivePlayer,
   getOpponentPlayer,
@@ -640,84 +642,44 @@ describe('Explorer Run 7: Controller cleanup inconsistency (Root Cause B)', () =
 });
 
 // ============================================================================
-// KNOWN BUG: Dry drop keyword suppression vs clearing
+// Regen regression: generate gains through production operations, not invented stats.
 // ============================================================================
-describe('Explorer Run 7: Regen heals to base HP instead of max HP (NEW BUG)', () => {
-  it('FAILING: Regen should heal to current max HP (base + consumption/buff gains), not just base HP', () => {
-    // Per CORE-RULES.md §6.1:
-    //   "Current max HP: Base HP + any HP gained from consumption, buffs, or effects.
-    //    This becomes the new ceiling for healing/Regen."
-    //
-    // BUG: handleRegen in turnManager.js uses `creature.hp` (base HP) as the
-    // Regen ceiling. After consumption or buffs increase currentHp above base,
-    // taking damage and then regenerating only heals back to base HP, not
-    // the consumption-boosted max.
-    //
-    // Example: Predator base 3/3, eats 2 prey (+2/+2) → now 5/5.
-    // Takes 3 damage → 5/2. Regen should heal to 5, not 3.
-    //
-    // File: js/game/turnManager.js, handleRegen()
-    //   const baseHp = creature.hp;  ← Bug: uses base HP
-    //   creature.currentHp = baseHp; ← Heals to base, not max
-
-    const state = createTestState();
-    state.activePlayerIndex = 0;
-    state.turn = 2;
-
-    // Simulate a predator that consumed prey: base 3 HP, consumed +2 nutrition → max 5 HP
-    const predator = {
-      id: 'test-pred',
-      name: 'Regen Predator',
-      type: 'Predator',
-      atk: 3,
-      hp: 3, // Base HP
-      currentAtk: 5, // 3 base + 2 consumed
-      currentHp: 2, // Took 3 damage (was 5, now 2)
-      nutrition: 0,
-      keywords: ['Regen'],
-      instanceId: 'regen-pred-1',
-      summonedTurn: 0,
-    };
-
-    state.players[0].field[0] = predator;
+describe('Explorer Run 7: Regen restores earned maximum HP', () => {
+  it('restores HP gained through consumption after taking damage', () => {
+    const state = createTestState({ activePlayerIndex: 0, turn: 2 });
+    const predator = createCardInstance(getCardDefinitionById('reptile-predator-gharial'), 0);
+    predator.keywords.push('Regen');
+    const prey = createCardInstance(getCardDefinitionById('reptile-prey-gold-dust-day-gecko'), 0);
+    state.players[0].field = [predator, prey, null];
+    consumePrey({ predator, preyList: [prey], state, playerIndex: 0 });
+    const expectedMax = predator.hp + prey.nutrition;
+    expect(predator.currentHp).toBe(expectedMax);
+    predator.currentHp = 1;
     state.phase = 'End';
     state.endOfTurnFinalized = false;
-
     finalizeEndPhase(state);
-
-    // Per §6.1: Regen should restore to current max HP (base 3 + 2 consumed = 5)
-    // BUG: handleRegen uses creature.hp (3) instead of the boosted max (5)
-    expect(state.players[0].field[0].currentHp).toBe(5);
+    expect(predator.currentHp).toBe(expectedMax);
   });
 
-  it('FAILING: Buffed creature with Regen should heal to buffed max, not base', () => {
-    // Same bug but via buffs instead of consumption
-    const state = createTestState();
-    state.activePlayerIndex = 0;
-    state.turn = 2;
-
-    const creature = {
-      id: 'test-buffed',
-      name: 'Buffed Regen',
-      type: 'Prey',
-      atk: 2,
-      hp: 2, // Base HP
-      currentAtk: 4, // Buffed +2
-      currentHp: 1, // Took 3 damage (was 4, now 1)
-      nutrition: 1,
-      keywords: ['Regen'],
-      instanceId: 'buff-regen-1',
-      summonedTurn: 0,
-    };
-
+  it('restores HP gained through an actual targeted buff after taking damage', () => {
+    const state = createTestState({ activePlayerIndex: 0, turn: 2 });
+    const creature = createCardInstance(
+      getCardDefinitionById('reptile-prey-gold-dust-day-gecko'),
+      0
+    );
+    creature.keywords.push('Regen');
     state.players[0].field[0] = creature;
+    resolveEffectResult(
+      state,
+      { buffCreature: { creature, attack: 2, health: 2 } },
+      { playerIndex: 0 }
+    );
+    expect(creature.currentHp).toBe(creature.hp + 2);
+    creature.currentHp = 1;
     state.phase = 'End';
     state.endOfTurnFinalized = false;
-
     finalizeEndPhase(state);
-
-    // Should heal to buffed max (4), not base (2)
-    expect(state.players[0].field[0].currentHp).toBe(4);
+    expect(creature.currentHp).toBe(creature.hp + 2);
   });
 });
 

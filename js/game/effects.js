@@ -516,6 +516,12 @@ export const resolveEffectResult = (state, result, context) => {
     const hpAmount = hp ?? health ?? 0;
     creature.currentAtk = (creature.currentAtk ?? creature.atk ?? 0) + atkAmount;
     creature.currentHp = (creature.currentHp ?? creature.hp ?? 0) + hpAmount;
+    // Match team buffs: positive HP gains raise the Regen ceiling.
+    if (hpAmount > 0) {
+      if (!creature.buffGains) creature.buffGains = { atk: 0, hp: 0 };
+      creature.buffGains.atk += atkAmount;
+      creature.buffGains.hp += hpAmount;
+    }
     logGameAction(state, BUFF, `${formatCardForLog(creature)} gains +${atkAmount}/+${hpAmount}.`);
   }
 

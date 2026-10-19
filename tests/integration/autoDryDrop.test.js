@@ -1,96 +1,64 @@
-/**
- * Auto Dry Drop Test — Bug G2
- *
- * Predator played with no prey on field should auto-dry-drop:
- * - dryDropped = true
- * - keywords cleared
- *
- * Found via visual debug pipeline on 2025-03-27.
- */
-
 import { describe, it, expect } from 'vitest';
-import {
-  createTestState,
-  createTestCreature,
-  ensureRegistryInitialized,
-} from '../setup/testHelpers.js';
+import { createTestState, createTestCreature, addCardToHand } from '../setup/testHelpers.js';
 import { GameController } from '../../js/game/controller.js';
-import { createCardInstance } from '../../js/cardTypes.js';
 
-ensureRegistryInitialized();
+const setup = () => {
+  const state = createTestState({ phase: 'Main 1', activePlayerIndex: 0 });
+  const uiState = { pendingConsumption: null };
+  const controller = new GameController(state, uiState, {
+    onStateChange: () => {},
+    onBroadcast: () => {},
+    onSelectionNeeded: () => {},
+  });
+  const predator = addCardToHand(state, 'reptile-predator-king-cobra');
+  return { state, uiState, controller, predator };
+};
 
-const makeController = (state) =>
-  new GameController(
-    state,
-    { pendingConsumption: null },
-    {
-      onStateChange: () => {},
-      onBroadcast: () => {},
-      onSelectionNeeded: () => {},
-    }
-  );
-
-describe('Bug G2: Auto Dry Drop — Predator with no prey', () => {
-  it('FAILING: should set dryDropped=true when predator played on empty field', () => {
-    const state = createTestState();
-    state.phase = 'Main 1';
-    state.setup = { stage: 'complete' };
-    state.activePlayerIndex = 0;
-    state.cardPlayedThisTurn = false;
-
-    // Use a real predator card — Gharial has keywords
-    const gharial = createTestCreature('reptile-predator-gharial');
-    state.players[0].hand = [gharial];
-    state.players[0].field = [null, null, null]; // Empty field — no prey
-
-    const controller = makeController(state);
+// Exercise real card instances, not the { state, creature } helper wrapper.
+describe('Predator consumption entry', () => {
+  it('places a dry-dropped predator with no keywords or abilities when no prey exists', () => {
+    const { state, uiState, controller, predator } = setup();
+    expect(predator.keywords.length).toBeGreaterThan(0);
     const result = controller.execute({
       type: 'PLAY_CARD',
-      payload: { card: gharial, slotIndex: 0, options: {} },
+      payload: { card: predator, slotIndex: 0 },
     });
-
-    // If play fails, the card might already need to be in the hand array
-    // The controller checks hand membership, so ensure it's there
-    if (!result.success) {
-      // Try with addCardToHand pattern instead
-      expect(result.error).not.toContain('Wrong phase');
-    }
-
-    // Find the placed creature (might be in slot 0 or wherever it landed)
-    const placed = state.players[0].field.find((c) => c && c.name?.includes('Gharial'));
-    if (placed) {
-      // Should be auto-dry-dropped
-      expect(placed.dryDropped).toBe(true);
-      expect(placed.keywords).toEqual([]);
-    } else {
-      // If card didn't place, at minimum verify the bug exists:
-      // playing a predator with no prey should either auto-dry-drop or fail gracefully
-      expect(true).toBe(true); // placeholder — the fix will make this pass
-    }
+    expect(result.success).toBe(true);
+    expect(state.players[0].field[0]).toMatchObject({
+      id: predator.id,
+      dryDropped: true,
+      abilitiesCancelled: true,
+      keywords: [],
+      currentAtk: predator.atk,
+      currentHp: predator.hp,
+    });
+    expect(state.players[0].hand).toHaveLength(0);
+    expect(state.cardPlayedThisTurn).toBe(true);
+    expect(uiState.pendingConsumption).toBeNull();
   });
 
-  it('should NOT auto-dry-drop when prey is available on field', () => {
-    const state = createTestState();
-    state.phase = 'Main 1';
-    state.setup = { stage: 'complete' };
-    state.activePlayerIndex = 0;
-    state.cardPlayedThisTurn = false;
-
-    // Put a prey on field
-    const gecko = createTestCreature('reptile-prey-gold-dust-day-gecko');
-    const gharial = createTestCreature('reptile-predator-gharial');
-
-    state.players[0].hand = [gharial];
-    state.players[0].field = [gecko, null, null]; // Has prey — should offer consumption
-
-    const controller = makeController(state);
+  it('waits for consumption selection without prematurely playing the predator', () => {
+    const { state, uiState, controller, predator } = setup();
+    const { creature: prey } = createTestCreature('reptile-prey-gold-dust-day-gecko', 0, 0, state);
     const result = controller.execute({
       type: 'PLAY_CARD',
-      payload: { card: gharial, slotIndex: null, options: {} },
+      payload: { card: predator, slotIndex: null },
     });
+    expect(result).toMatchObject({ success: true, needsSelection: true });
+    expect(uiState.pendingConsumption.availablePrey).toEqual([prey]);
+    expect(state.players[0].hand).toContain(predator);
+    expect(state.players[0].field).toEqual([prey, null, null]);
+    expect(predator.dryDropped).not.toBe(true);
+    expect(state.cardPlayedThisTurn).toBe(false);
+  });
 
-    // Should need selection (consumption UI)
-    expect(result.success).toBe(true);
-    expect(result.needsSelection).toBe(true);
+  it('refuses to play outside a main phase without changing hand or field', () => {
+    const { state, controller, predator } = setup();
+    state.phase = 'Combat';
+    expect(
+      controller.execute({ type: 'PLAY_CARD', payload: { card: predator, slotIndex: 0 } })
+    ).toMatchObject({ success: false, error: 'Wrong phase' });
+    expect(state.players[0].hand).toEqual([predator]);
+    expect(state.players[0].field).toEqual([null, null, null]);
   });
 });

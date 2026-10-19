@@ -43,6 +43,9 @@ export const serializeCardSnapshot = (card) => {
     instanceId: card.instanceId ?? null,
     currentAtk: card.currentAtk ?? null,
     currentHp: card.currentHp ?? null,
+    // Preserve the earned HP ceiling across sync and reconnects.
+    consumptionGains: card.consumptionGains ? { ...card.consumptionGains } : null,
+    buffGains: card.buffGains ? { ...card.buffGains } : null,
     summonedTurn: card.summonedTurn ?? null,
     hasAttacked: card.hasAttacked ?? false,
     attacksMadeThisTurn: card.attacksMadeThisTurn ?? 0,
@@ -96,6 +99,12 @@ export const hydrateCardSnapshot = (snapshot, fallbackTurn) => {
   }
   if (snapshot.summonedTurn !== null && snapshot.summonedTurn !== undefined) {
     instance.summonedTurn = snapshot.summonedTurn;
+  }
+  if (snapshot.consumptionGains) {
+    instance.consumptionGains = { ...snapshot.consumptionGains };
+  }
+  if (snapshot.buffGains) {
+    instance.buffGains = { ...snapshot.buffGains };
   }
   instance.hasAttacked = snapshot.hasAttacked ?? instance.hasAttacked;
   instance.attacksMadeThisTurn = snapshot.attacksMadeThisTurn ?? 0;
