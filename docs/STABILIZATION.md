@@ -83,6 +83,38 @@ rollout remain unverified until this branch is published and checked there.
   anonymous-auth settings and Realtime publications remain unverified; REST reads
   through a publishable key cannot see policies, and no service key exists in the
   repository to check them with.
+- Read-only MCP access to the live project is now authorized (2026-10-19), which
+  removes the last excuse for guessing at schema. The connector is
+  `https://mcp.supabase.com/mcp?project_ref=cjjkzcvfphagkwsejsoe&read_only=true&features=database,docs`,
+  OAuth, and exposes five tools: `supabase__execute_sql`, `supabase__list_tables`,
+  `supabase__list_migrations`, `supabase__list_extensions`,
+  `supabase__search_docs`. `openclaw mcp doctor supabase --probe` reports
+  `supabase: ok`. No secret key was ever pasted into chat or committed.
+  Operational note that cost several attempts: the OAuth callback binds
+  `127.0.0.1:8989` on this Mac and the login command has a fixed five-minute
+  timeout. Every earlier failure came from restarting the listener, which orphans
+  the page already clicked. One uninterrupted listener plus
+  `open -a Safari <url>` completed it immediately.
+- A read-only REST audit with the publishable key already in the repo enumerates
+  ten public tables by exploiting PostgREST `PGRST205` "perhaps you meant"
+  hints: `profiles`, `decks`, `lobbies`, `game_sessions`, `player_cards`,
+  `friendships`, `duel_invites`, `match_history`, `player_stats`, `bug_reports`
+  (plus `bug_report_votes`, seen via Realtime subscription code).
+  Rows visible to the `anon` role: `lobbies` 1836, `player_cards` 659,
+  `duel_invites` 49, `bug_reports` 30. Confirmed live columns:
+  `lobbies(id, created_at, code, status, host_id, guest_id)`,
+  `duel_invites(id, sender_id, receiver_id, lobby_code, status, created_at, expires_at)`,
+  `player_cards(id, profile_id, card_id, rarity, obtained_at)`,
+  `bug_reports(id, profile_id, title, description, category, status, created_at, updated_at)`.
+- `profiles`, `decks`, `game_sessions`, `friendships`, `match_history` and
+  `player_stats` return HTTP 200 with zero visible rows. PostgREST cannot
+  distinguish "empty" from "hidden by RLS" through this path, so the earlier
+  note that those tables "came back empty" is **not established**; the doc line
+  claiming nine clean 200s overstated what the probe could prove. Settle it with
+  `supabase__execute_sql` against `information_schema` and
+  `pg_policies`, then export real DDL and commit it.
+  Likewise, a brute-force prefix sweep that finds only one table is a false
+  negative, not evidence of an empty database.
 - No SQL migrations/schema backup are tracked in source. Schema can now be
   exported from the live project and committed instead of reconstructed.
 - Client login currently reads a stored PIN and compares it in browser code.
