@@ -34,6 +34,27 @@ let broadcastSequence = 0;
  * @param {Object} card - Card instance with runtime state
  * @returns {Object|null} Serialized snapshot
  */
+const BASE_STAT_KEYS = ['atk', 'hp', 'nutrition'];
+
+/**
+ * Collect base stats that no longer match the printed card definition.
+ * @param {Object} card - Card instance
+ * @returns {Object|null} Overrides to re-apply on hydration, or null
+ */
+const getBaseStatOverrides = (card) => {
+  const definition = getCardDefinitionById(card.id);
+  if (!definition) {
+    return null;
+  }
+  const overrides = {};
+  BASE_STAT_KEYS.forEach((key) => {
+    if (card[key] !== undefined && card[key] !== definition[key]) {
+      overrides[key] = card[key];
+    }
+  });
+  return Object.keys(overrides).length ? overrides : null;
+};
+
 export const serializeCardSnapshot = (card) => {
   if (!card) {
     return null;
@@ -43,6 +64,9 @@ export const serializeCardSnapshot = (card) => {
     instanceId: card.instanceId ?? null,
     currentAtk: card.currentAtk ?? null,
     currentHp: card.currentHp ?? null,
+    // Base stats replaced in play (e.g. copyStats). Only sent when they differ
+    // from the printed card, otherwise every sync would silently revert them.
+    baseStats: getBaseStatOverrides(card),
     // Preserve the earned HP ceiling across sync and reconnects.
     consumptionGains: card.consumptionGains ? { ...card.consumptionGains } : null,
     buffGains: card.buffGains ? { ...card.buffGains } : null,
@@ -96,6 +120,14 @@ export const hydrateCardSnapshot = (snapshot, fallbackTurn) => {
   }
   if (snapshot.currentHp !== null && snapshot.currentHp !== undefined) {
     instance.currentHp = snapshot.currentHp;
+  }
+  if (snapshot.baseStats) {
+    // Re-apply stats copied in play before currentHp is trusted.
+    if (snapshot.baseStats.atk !== undefined) instance.atk = snapshot.baseStats.atk;
+    if (snapshot.baseStats.hp !== undefined) instance.hp = snapshot.baseStats.hp;
+    if (snapshot.baseStats.nutrition !== undefined) {
+      instance.nutrition = snapshot.baseStats.nutrition;
+    }
   }
   if (snapshot.summonedTurn !== null && snapshot.summonedTurn !== undefined) {
     instance.summonedTurn = snapshot.summonedTurn;

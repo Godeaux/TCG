@@ -12,6 +12,7 @@ import {
 } from '../state/gameState.js';
 import { createCardInstance, isCreatureCard } from '../cardTypes.js';
 import { consumePrey } from './consumption.js';
+import { getMaxHp } from './creatureStats.js';
 import { isImmune, areAbilitiesActive, hasBarrier, isEdible } from '../keywords.js';
 import { getTokenById, getCardDefinitionById, resolveCardEffect } from '../cards/index.js';
 import { endTurn } from './turnManager.js';
@@ -38,6 +39,18 @@ const findCardOwnerIndex = (state, card) =>
   state.players.findIndex((player) =>
     player.field.some((slot) => slot?.instanceId === card.instanceId)
   );
+
+/**
+ * Record positive stat gains on a creature so its HP ceiling (§6.1) survives
+ * healing, regeneration and multiplayer sync. Centralised because every buff
+ * path used to track it slightly differently.
+ */
+const recordBuffGains = (creature, atkGain = 0, hpGain = 0) => {
+  if (!creature || (!atkGain && !hpGain)) return;
+  if (!creature.buffGains) creature.buffGains = { atk: 0, hp: 0 };
+  creature.buffGains.atk += atkGain;
+  creature.buffGains.hp += hpGain;
+};
 
 const findCardSlotIndex = (state, card) => {
   const ownerIndex = findCardOwnerIndex(state, card);
@@ -391,11 +404,7 @@ export const resolveEffectResult = (state, result, context) => {
         creature.currentAtk += atk;
         creature.currentHp += hp;
         // Track buff gains so Regen can heal to boosted max (CORE-RULES.md §6.1)
-        if (hp > 0) {
-          if (!creature.buffGains) creature.buffGains = { atk: 0, hp: 0 };
-          creature.buffGains.atk += atk;
-          creature.buffGains.hp += hp;
-        }
+        recordBuffGains(creature, atk, hp);
       }
     });
   }
@@ -463,6 +472,7 @@ export const resolveEffectResult = (state, result, context) => {
       if (creature) {
         creature.currentAtk = (creature.currentAtk ?? creature.atk ?? 0) + (attack || 0);
         creature.currentHp = (creature.currentHp ?? creature.hp ?? 0) + (health || 0);
+        recordBuffGains(creature, attack || 0, health || 0);
         logGameAction(
           state,
           BUFF,
@@ -516,12 +526,8 @@ export const resolveEffectResult = (state, result, context) => {
     const hpAmount = hp ?? health ?? 0;
     creature.currentAtk = (creature.currentAtk ?? creature.atk ?? 0) + atkAmount;
     creature.currentHp = (creature.currentHp ?? creature.hp ?? 0) + hpAmount;
-    // Match team buffs: positive HP gains raise the Regen ceiling.
-    if (hpAmount > 0) {
-      if (!creature.buffGains) creature.buffGains = { atk: 0, hp: 0 };
-      creature.buffGains.atk += atkAmount;
-      creature.buffGains.hp += hpAmount;
-    }
+    // Match team buffs: positive HP gains raise the Regen/heal ceiling.
+    recordBuffGains(creature, atkAmount, hpAmount);
     logGameAction(state, BUFF, `${formatCardForLog(creature)} gains +${atkAmount}/+${hpAmount}.`);
   }
 
@@ -542,8 +548,11 @@ export const resolveEffectResult = (state, result, context) => {
 
   if (result.restoreCreature) {
     const { creature } = result.restoreCreature;
-    const healAmount = creature.hp - creature.currentHp;
-    creature.currentHp = creature.hp;
+    // "Restore to full" means current max HP (base + eaten + buffs), not the
+    // printed stat — CORE-RULES.md §6.1.
+    const maxHp = getMaxHp(creature);
+    const healAmount = maxHp - creature.currentHp;
+    creature.currentHp = maxHp;
     // Queue heal visual effect
     const ownerIndex = findCardOwnerIndex(state, creature);
     if (ownerIndex >= 0 && healAmount > 0) {
@@ -564,9 +573,10 @@ export const resolveEffectResult = (state, result, context) => {
   if (result.healCreature) {
     const { creature, amount } = result.healCreature;
     if (creature) {
-      const baseHp = creature.hp || creature.currentHp || 1;
-      const healAmount = Math.min(amount, baseHp - creature.currentHp);
-      creature.currentHp = Math.min(baseHp, creature.currentHp + amount);
+      const maxHp = getMaxHp(creature) || creature.currentHp || 1;
+      const requested = Math.max(0, amount ?? 0);
+      const healAmount = Math.max(0, Math.min(requested, maxHp - creature.currentHp));
+      creature.currentHp = Math.min(maxHp, creature.currentHp + healAmount);
       // Queue heal visual effect
       const ownerIndex = findCardOwnerIndex(state, creature);
       if (ownerIndex >= 0 && healAmount > 0) {
@@ -1067,12 +1077,30 @@ export const resolveEffectResult = (state, result, context) => {
         return;
       }
 
+      // Reset all dynamic state when returning to hand
+      const originalCard = getCardDefinitionById(targetCard.id);
+
+      // Revert stats copied from other cards so the card re-enters play as printed.
+      if (originalCard) {
+        if (targetCard.atk !== undefined && originalCard.atk !== undefined) {
+          targetCard.atk = originalCard.atk;
+        }
+        if (targetCard.hp !== undefined && originalCard.hp !== undefined) {
+          targetCard.hp = originalCard.hp;
+        }
+        if (targetCard.nutrition !== undefined) {
+          targetCard.nutrition = originalCard.nutrition;
+        }
+      }
+
       // Reset currentHp/currentAtk to base values when returning to hand
       if (targetCard.hp !== undefined) targetCard.currentHp = targetCard.hp;
       if (targetCard.atk !== undefined) targetCard.currentAtk = targetCard.atk;
 
-      // Reset all dynamic state when returning to hand
-      const originalCard = getCardDefinitionById(targetCard.id);
+      // Eaten/buffed stat gains do not survive a trip back to the hand (§6.1).
+      delete targetCard.consumptionGains;
+      delete targetCard.buffGains;
+
       targetCard.keywords = Array.isArray(originalCard?.keywords) ? [...originalCard.keywords] : [];
       targetCard.frozen = false;
       targetCard.frozenDiesTurn = null;
@@ -1361,6 +1389,7 @@ export const resolveEffectResult = (state, result, context) => {
       if (creature) {
         creature.currentAtk = (creature.currentAtk ?? creature.atk ?? 0) + (attack || 0);
         creature.currentHp = (creature.currentHp ?? creature.hp ?? 0) + (health || 0);
+        recordBuffGains(creature, attack || 0, health || 0);
         if (attack || health) {
           logGameAction(
             state,
@@ -1372,13 +1401,13 @@ export const resolveEffectResult = (state, result, context) => {
     });
   }
 
-  // Regenerate a creature (restore HP to base)
+  // Regenerate a creature (restore HP to its current max, §6.1)
   if (result.regen) {
     const { creature } = result.regen;
     if (creature) {
-      const baseHp = creature.hp || 1;
-      if (creature.currentHp < baseHp) {
-        creature.currentHp = baseHp;
+      const maxHp = getMaxHp(creature) || 1;
+      if (creature.currentHp < maxHp) {
+        creature.currentHp = maxHp;
         logGameAction(state, HEAL, `${formatCardForLog(creature)} regenerates to full health.`);
       }
     }
@@ -1388,10 +1417,10 @@ export const resolveEffectResult = (state, result, context) => {
   if (result.regenCreature) {
     const creature = result.regenCreature;
     if (creature) {
-      const baseHp = creature.hp || 1;
-      if (creature.currentHp < baseHp) {
-        const healAmount = baseHp - creature.currentHp;
-        creature.currentHp = baseHp;
+      const maxHp = getMaxHp(creature) || 1;
+      if (creature.currentHp < maxHp) {
+        const healAmount = maxHp - creature.currentHp;
+        creature.currentHp = maxHp;
         const ownerIndex = findCardOwnerIndex(state, creature);
         if (ownerIndex >= 0 && healAmount > 0) {
           const slotIndex = state.players[ownerIndex].field.findIndex(
@@ -1421,10 +1450,10 @@ export const resolveEffectResult = (state, result, context) => {
       : [result.regenCreatures];
     creatures.forEach((creature) => {
       if (creature) {
-        const baseHp = creature.hp || 1;
-        if (creature.currentHp < baseHp) {
-          const healAmount = baseHp - creature.currentHp;
-          creature.currentHp = baseHp;
+        const maxHp = getMaxHp(creature) || 1;
+        if (creature.currentHp < maxHp) {
+          const healAmount = maxHp - creature.currentHp;
+          creature.currentHp = maxHp;
           const ownerIndex = findCardOwnerIndex(state, creature);
           if (ownerIndex >= 0 && healAmount > 0) {
             const slotIndex = state.players[ownerIndex].field.findIndex(
