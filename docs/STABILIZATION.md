@@ -146,14 +146,82 @@ rollout remain unverified until this branch is published and checked there.
    any recurring paid service commitment needs the owner's budget decision.
 8. Add outside-in monitoring and a tested restore/rollback runbook.
 
-## Backend inventory (live project, verified by read-only probe)
+## Backend inventory (live project, audited read-only via `mcp.supabase.com`)
 
-All nine tables the client references exist in `cjjkzcvfphagkwsejsoe`:
-`profiles`, `decks`, `lobbies`, `game_sessions`, `player_cards`, `friendships`,
-`duel_invites`, `bug_reports`, `bug_report_votes`. Supabase Auth and Realtime
-channels are additional dependencies. Live tables prove column existence only;
-policies, constraints, indexes, functions, existing users and stored decks still
-have to be exported from the dashboard before anything can be called recoverable.
+Project `cjjkzcvfphagkwsejsoe`, Postgres 17, queried through the authorized
+read-only connector. Everything below is observed state, not inferred from code.
+
+**Objects.** 11 tables, 2 views, 24 indexes, 1 function in `public`, no triggers,
+no partitions, no materialized views. Extensions installed: `plpgsql`,
+`pg_stat_statements`, `uuid-ossp`, `pgcrypto`, `supabase_vault`. **`pg_cron` is
+not installed**, so nothing in this database can clean itself up.
+
+| table                | live rows | note                                                 |
+| -------------------- | --------: | ---------------------------------------------------- |
+| `profiles`           |      1938 | plaintext `pin text`, `stats`/`matches` jsonb        |
+| `lobbies`            |      1836 | no FK on `host_id`/`guest_id`                        |
+| `game_sessions`      |      1170 | whole match in one `game_state jsonb`                |
+| `player_cards`       |       659 |                                                      |
+| `duel_invites`       |        49 | `expires_at` defaults to now + **60 s**              |
+| `bug_reports`        |        30 |                                                      |
+| `friendships`        |         9 |                                                      |
+| `decks`              |         2 | `id bigint PRIMARY KEY` with **no default/identity** |
+| `bug_report_votes`   |         1 |                                                      |
+| `match_history`      |         0 | never written by this client                         |
+| `match_cards_played` |         0 | never written by this client                         |
+
+Views `player_stats` and `player_favorite_card` aggregate `match_history` /
+`match_cards_played`. Both base tables are empty and unreferenced in `js/`
+(grep confirms zero hits), so those two features can only ever return nothing;
+the app keeps the same numbers in `profiles.stats` / `profiles.matches` jsonb.
+
+**Row counts vs. page estimates disagree** (`n_live_tup` is stale — never
+vacuumed), which is why the table above is a real `count(*)`.
+
+### RLS exposure
+
+RLS is `enabled` and `forced` on all 11 tables, but permissive policies OR
+together, and three of them are `USING (true)`, which silently disables the
+table's protection:
+
+- `duel_invites` — a policy literally named **`asd`**, `FOR ALL TO public USING
+(true) WITH CHECK (true)`. Every other `duel_invites` policy is decoration:
+  any holder of the publishable key can read, insert, update and delete all 49
+  invites, including `lobby_code`.
+- `profiles` — `Allow select for authenticated users` is `USING (true)` over a
+  table whose `pin` column is plaintext, and `Users can claim profile` is
+  `UPDATE USING (true) WITH CHECK (current_auth_id = auth.uid())`. Combined:
+  an anonymous session can `select pin from profiles where username = ...`
+  and then take over any of the 1938 profiles without knowing anything. PIN
+  checking lives only in `js/network/supabaseApi.js`, and there are no database
+  functions or triggers to enforce it. The acceptance criterion "PIN
+  verification must not rely on the client" is currently false.
+- `lobbies` — `Policy with table joins` allows `UPDATE` when
+  `guest_id IS NULL`, so any authenticated user can rewrite a waiting lobby,
+  and `SELECT` is `USING (true)` (all 1836 lobby rows and both player uuids are
+  public).
+- `bug_reports` — `Users can update any bug status` is `UPDATE USING (true)`.
+
+Table-level grants are the Supabase default `ALL` to `anon` and `authenticated`,
+which includes `TRUNCATE`, `TRIGGER`, `REFERENCES` and (PG17) `MAINTAIN`. RLS
+does not gate `TRUNCATE`. PostgREST exposes no verb for it, so this is latent
+rather than live, but any SQL-capable path (a future `SECURITY DEFINER`
+function, a direct pooler connection) would be able to wipe the schema.
+
+### Identity and integrity gaps behind the multiplayer bugs
+
+- Two id spaces, no constraint keeping them apart: policies for `lobbies`,
+  `decks` and `game_sessions` exist in both a `host_id = auth.uid()` form and a
+  newer `profiles.current_auth_id = auth.uid()` join form, while `lobbies`
+  carries **no foreign key** on `host_id`/`guest_id`. Rows written by the older
+  client and rows written by the newer one are not comparable, which is the
+  shape of the reconnect/lobby-membership failures.
+- `decks.id` has no default and no identity, so the client must invent primary
+  keys; with 2 rows today this has not collided yet.
+- Cleanup is absent by construction: 1836 lobbies and 1170 game sessions have
+  accumulated, `duel_invites` expire in 60 s and are never deleted, and there is
+  no index on `lobbies(status, created_at)` or `game_sessions(updated_at)` that a
+  sweeper could use without a sequential scan.
 
 ## Multiplayer relaunch acceptance criteria
 
