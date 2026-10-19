@@ -43,7 +43,18 @@ Both paths now preserve the Regen ceiling. Coverage includes JSON transport,
 full lobby sync, forced reconnect restoration, legacy snapshots, and object
 isolation. Existing historical failures were not simply suppressed or skipped.
 
-Verified after a fresh `npm ci`: **4,962/4,962 tests across 51 files passed**;
+A second healing defect cluster was found and fixed the same day. Healing,
+`Regenerate`/`Regenerate all`, `RestoreCreature` and regeneration at turn start
+capped HP at the printed `hp` stat, so prey consumption and +1/+1 buffs were
+erased the first time a creature was patched up. `getMaxHp()` (base +
+consumption + buff gains) now backs every restore path; buff bookkeeping moved
+into one `recordBuffGains()` helper because four call sites tracked gains four
+different ways and `buffCreature` tracked none. Returning a creature to hand
+clears earned gains and reverts copied base stats, and serialised card snapshots
+now carry base-stat overrides so `copyStats` survives a sync round trip.
+Negative heal amounts are clamped instead of being applied as damage.
+
+Verified after a fresh `npm ci`: **4,969/4,969 tests across 52 files passed**;
 formatting passed; lint had 0 errors and 246 pre-existing warnings. Node 24.21.0,
 Vitest 4.1.12. `npm audit` initially reported 19 development-dependency advisories
 (2 critical, 13 high, 4 moderate). Compatible lockfile updates without `--force`
@@ -57,10 +68,23 @@ rollout remain unverified until this branch is published and checked there.
 ## Verified service state and unknowns
 
 - Public static site and published sample assets were reachable on October 18.
-- Supabase project hostname returns NXDOMAIN. This does NOT prove deletion.
-- Supabase account project status, database contents, backups, billing, RLS,
-  anonymous-auth settings, and Realtime publication settings remain unverified.
-- No SQL migrations/schema backup were found in the inspected source.
+- **Supabase project `cjjkzcvfphagkwsejsoe` is alive.** The earlier NXDOMAIN
+  reading was a paused project, not a deleted one; the owner un-paused it and the
+  REST endpoint now answers. An initial read-only probe of all nine tables the
+  client references returned HTTP 200 for every one: `profiles`, `decks`,
+  `lobbies`, `game_sessions`, `player_cards`, `friendships`, `duel_invites`,
+  `bug_reports`, `bug_report_votes`. `lobbies`, `player_cards`, `duel_invites`,
+  `bug_reports` and `bug_report_votes` still hold rows; `profiles`, `decks` and
+  `game_sessions` came back empty. The schema therefore was never lost, and
+  recreating it from guessed client calls would have destroyed real data.
+  No writes were performed; the probe used the publishable key already in the
+  repo, which is itself the finding recorded in the next bullet.
+- Supabase backups, billing, RLS policies, grants, functions/triggers,
+  anonymous-auth settings and Realtime publications remain unverified; REST reads
+  through a publishable key cannot see policies, and no service key exists in the
+  repository to check them with.
+- No SQL migrations/schema backup are tracked in source. Schema can now be
+  exported from the live project and committed instead of reconstructed.
 - Client login currently reads a stored PIN and compares it in browser code.
   Authentication and row-level access must be reviewed before public restoration.
 - GitHub Pages API reports legacy deployment from `main`, root path. A failed
@@ -72,9 +96,12 @@ rollout remain unverified until this branch is published and checked there.
 ## Ordered next work
 
 1. Keep the baseline green; review fixes and preserve a rollback reference.
-2. Inspect the existing Supabase account/project before choosing restore versus
-   recreate. Export schema, data, RLS, grants, functions/triggers and configuration
-   if available. Never overwrite a surviving database to match guessed client calls.
+   Done for the current fixes; `3649e16` is the healing/ceiling fix on top of the
+   green baseline, branch still unpublished.
+2. ~~Inspect the existing Supabase account/project before choosing restore versus
+   recreate.~~ The project survived. Export schema, RLS, grants, functions and
+   triggers from it and commit them as versioned migrations. Never overwrite a
+   surviving database to match guessed client calls.
 3. Establish a disposable backend/staging environment with versioned migrations
    and repeatable initialization; verify authentication and authorization first.
 4. Audit action authority, hidden-information exposure, snapshot completeness,
@@ -87,12 +114,14 @@ rollout remain unverified until this branch is published and checked there.
    any recurring paid service commitment needs the owner's budget decision.
 8. Add outside-in monitoring and a tested restore/rollback runbook.
 
-## Backend inventory (from client calls, NOT an authoritative schema)
+## Backend inventory (live project, verified by read-only probe)
 
+All nine tables the client references exist in `cjjkzcvfphagkwsejsoe`:
 `profiles`, `decks`, `lobbies`, `game_sessions`, `player_cards`, `friendships`,
-`duel_invites`, `bug_reports`, `bug_report_votes`; Supabase Auth and Realtime
-channels are additional dependencies. Table names alone cannot recover policies,
-constraints, indexes, functions, existing users, or stored decks.
+`duel_invites`, `bug_reports`, `bug_report_votes`. Supabase Auth and Realtime
+channels are additional dependencies. Live tables prove column existence only;
+policies, constraints, indexes, functions, existing users and stored decks still
+have to be exported from the dashboard before anything can be called recoverable.
 
 ## Multiplayer relaunch acceptance criteria
 
