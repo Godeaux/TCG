@@ -403,9 +403,6 @@ export class ActionBus {
 
   /** @private */
   _guestDispatch(action) {
-    this._intentCounter++;
-    const intentId = `intent-${this._intentCounter}-${Date.now()}`;
-
     // Optimistic execution — apply locally for instant feedback (Hearthstone model).
     // The host will confirm or reject. On rejection, we recover via action log replay.
     // Track instanceIds so we can reconcile with host's IDs on confirmation.
@@ -415,9 +412,15 @@ export class ActionBus {
     stopTrackingInstanceIds();
 
     if (!result?.success) {
+      // Do NOT burn an intent number for an action that never reaches the host.
+      // The host tracks _nextExpectedIntent strictly; a skipped counter would
+      // stall every later intent in its out-of-order buffer forever.
       console.log(`[ActionBus] GUEST optimistic failed locally: ${action.type} — ${result?.error}`);
       return result;
     }
+
+    this._intentCounter++;
+    const intentId = `intent-${this._intentCounter}-${Date.now()}`;
 
     console.log(
       `[ActionBus] GUEST optimistic OK, sending intent: ${action.type} (${intentId})` +

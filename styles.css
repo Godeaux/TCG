@@ -6776,7 +6776,7 @@ select.menu-input option {
     max-width: 1200px;
   }
 
-  .deck-select-grid {
+  .deck-select-grid:has(> .deck-select-panel) {
     position: relative;
     display: block;
     aspect-ratio: 16 / 9;
@@ -6793,8 +6793,8 @@ select.menu-input option {
   }
 
   /* Hide back button inside the star grid */
-  .deck-select-grid .deck-select-back-btn,
-  .deck-select-grid > div:not(.deck-select-panel) {
+  .deck-select-grid:has(> .deck-select-panel) .deck-select-back-btn,
+  .deck-select-grid:has(> .deck-select-panel) > div:not(.deck-select-panel) {
     position: absolute;
     bottom: 8px;
     left: 50%;

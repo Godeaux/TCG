@@ -688,7 +688,7 @@ export const closeLobby = async ({ lobbyId, userId }) => {
   return true;
 };
 
-export const subscribeToLobby = ({ lobbyId, onUpdate }) => {
+export const subscribeToLobby = ({ lobbyId, onUpdate, onStatus }) => {
   if (!lobbyId) {
     return null;
   }
@@ -702,7 +702,7 @@ export const subscribeToLobby = ({ lobbyId, onUpdate }) => {
       }
     }
   );
-  channel.subscribe();
+  channel.subscribe(onStatus);
   return channel;
 };
 

@@ -129,8 +129,13 @@ export const hydrateCardSnapshot = (snapshot, fallbackTurn) => {
       instance.nutrition = snapshot.baseStats.nutrition;
     }
   }
-  if (snapshot.summonedTurn !== null && snapshot.summonedTurn !== undefined) {
-    instance.summonedTurn = snapshot.summonedTurn;
+  // Round-trip summonedTurn exactly. The serializer always writes the key
+  // (null for cards outside play), so an explicit null must survive hydration
+  // instead of keeping the constructor's fallback turn — otherwise a restored
+  // hand differs from the snapshot it was built from, on fields that mean
+  // "not in play".
+  if ('summonedTurn' in snapshot) {
+    instance.summonedTurn = snapshot.summonedTurn ?? null;
   }
   if (snapshot.consumptionGains) {
     instance.consumptionGains = { ...snapshot.consumptionGains };
@@ -352,13 +357,6 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
     return index === -1 ? -1 : index;
   };
 
-  if (payload.playerProfile?.name && Number.isInteger(payload.playerProfile.index)) {
-    state.players[payload.playerProfile.index].name = payload.playerProfile.name;
-    if (payload.playerProfile.nameStyle) {
-      state.players[payload.playerProfile.index].nameStyle = payload.playerProfile.nameStyle;
-    }
-  }
-
   const hasRuntimeState =
     payload?.game?.players?.some((p) => {
       if (!p) return false;
@@ -493,6 +491,22 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
       });
       cleanupDestroyed(state, { silent: true });
     }
+  }
+
+  // Profile identity is fresher than names carried in a gameplay snapshot.
+  // Apply it last, including on reconnect, and never replace our signed-in name.
+  if (
+    payload.playerProfile?.name &&
+    Number.isInteger(payload.playerProfile.index) &&
+    state.players[payload.playerProfile.index]
+  ) {
+    const player = state.players[payload.playerProfile.index];
+    player.name = payload.playerProfile.name;
+    if (payload.playerProfile.nameStyle) player.nameStyle = payload.playerProfile.nameStyle;
+  }
+  if (state.menu?.profile?.username && state.players[localIndex]) {
+    state.players[localIndex].name = state.menu.profile.username;
+    state.players[localIndex].nameStyle = state.menu.profile.name_style ?? {};
   }
 
   // Sync deck selection state

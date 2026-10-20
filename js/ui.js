@@ -4773,6 +4773,17 @@ export const renderGame = (state, callbacks = {}) => {
         clearOpponentDragPreview();
         // Flash resync button green on successful recovery
         if (entry.recovery) {
+          // A reconnecting guest sits on the multiplayer/lobby overlay until the
+          // host's authoritative snapshot has actually been applied. Only now is
+          // it safe to leave the menu — flipping earlier races the snapshot and
+          // leaves a stale board under a live overlay that eats every click.
+          if (
+            latestState?.menu?.mode === 'online' &&
+            latestState.menu.stage !== 'ready' &&
+            latestState.setup?.stage === 'complete'
+          ) {
+            latestState.menu.stage = 'ready';
+          }
           const btn = document.getElementById('field-resync-btn');
           if (btn) {
             btn.textContent = '✓';

@@ -223,6 +223,65 @@ function, a direct pooler connection) would be able to wipe the schema.
   no index on `lobbies(status, created_at)` or `game_sessions(updated_at)` that a
   sweeper could use without a sequential scan.
 
+## Reconnect recovery pass (2026-10-20)
+
+Reconnection was verified with a real two-browser harness (`e2e/multiplayer-ui.mjs`:
+two Chromium contexts, real DOM clicks/drags, a real guest tab reload and Rejoin,
+then assertions that both boards still agree). The harness, not a unit test, found
+every defect below; state assertions alone passed while the guest was still unable
+to click anything.
+
+Fixed:
+
+- **Private zones were never repaired after a rejoin.** Normal sync deliberately
+  refuses to overwrite the local player's own deck/hand/traps, which is correct
+  mid-match and wrong on rejoin: a refreshed client kept its pre-refresh deck and
+  played on it indefinitely. Replaced the initial attempt (poll for the ActionBus,
+  then call its recovery API — a timing dependency on an object built elsewhere,
+  and the rabbit hole this pass abandoned) with a one-shot latch:
+  `pendingAuthoritativeSync` arms when a guest resubscribes, the first snapshot
+  whose `senderId` is the host applies with `forceApply`, then disarms. A guest
+  that reloads now comes back at the host's deck count (observed 14/13 divergence
+  before, 14/14 after).
+- **`summonedTurn` did not round-trip.** The serializer always writes the key with
+  an explicit `null` for cards outside play; hydration tested `!== null` and treated
+  that as absent, falling back to the constructor's current turn. Every restored
+  creature silently gained a false summon turn, which feeds summoning sickness.
+  Hydration now honours an explicit `null` (`'summonedTurn' in snapshot`).
+  Independent of reconnects.
+- **A reconnecting guest was stranded behind its own overlay.** State converged but
+  `menu.stage` stayed on `lobby`, leaving a full-screen overlay that swallowed every
+  card drag. The stage now advances only after the authoritative snapshot is applied,
+  and only for a completed setup.
+- **Guest identity after reload.** `handleMenuRejoin` reloads into local mode, so the
+  guest was resolved as player zero. `menu.mode` is restored to `online` before the
+  saved snapshot is applied.
+- **Intent counters were burned by locally rejected actions.** `_guestDispatch`
+  incremented before optimistic execution, so a card played in the wrong phase
+  consumed a sequence number that never reached the host, stalling the host's
+  strictly-incrementing `_nextExpectedIntent` buffer forever. The counter now
+  advances only when the intent is actually sent.
+- **Duplicate player names.** Profile identity is applied after gameplay state
+  rather than before, and the local player's signed-in name is never overwritten
+  by a remote snapshot carrying an index collision.
+- **Rejoin information was never persisted for guests**, so the Rejoin path could
+  not be reached after a hard reload. The known lobby is now saved on subscribe
+  instead of waiting for a join event the guest cannot receive.
+
+VictoryOverlay gained local-perspective VICTORY/DEFEAT/DRAW titles and styles,
+verified in a real browser over all five host-win/guest-win/draw combinations by
+`e2e/victory-perspective.mjs`. The both-sides-see-VICTORY report is addressed.
+
+Still open, reported by the owner from live play and not yet addressed: traps that
+should have fired on one side never prompted, and the health-bar header bobbing up
+and down on the left UI. Duplicate names received a fix here but still wants a
+second live confirmation.
+
+`npm run check` green: 0 lint errors (246 pre-existing warnings), formatting clean,
+4976 tests across 55 files. Harness run: 27/27 assertions including real card plays,
+combat, and a concession agreeing on the winner on both clients. A green suite remains
+not a multiplayer certification.
+
 ## Multiplayer relaunch acceptance criteria
 
 - Two fresh browser profiles can authenticate, create/join a lobby, choose decks,

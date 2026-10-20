@@ -357,6 +357,23 @@ export const showVictoryScreen = (winner, stats = {}, options = {}) => {
   // Cancel any existing auto-restart timer
   cancelAutoRestart();
 
+  const localIndex = options.state ? getLocalPlayerIndex(options.state) : 0;
+  const hasLocalPerspective = options.isOnline || options.state?.menu?.mode === 'ai';
+  const defeated =
+    !options.isDraw && hasLocalPerspective && winner !== options.state?.players?.[localIndex];
+  const title = overlay.querySelector('.victory-title');
+  const subtitle = overlay.querySelector('.victory-subtitle');
+  const crown = overlay.querySelector('.victory-crown');
+  if (title) title.textContent = options.isDraw ? 'DRAW' : defeated ? 'DEFEAT' : 'VICTORY';
+  if (subtitle)
+    subtitle.textContent = options.isDraw
+      ? 'Neither player won this match.'
+      : defeated
+        ? 'won this match. Better luck next round!'
+        : 'has conquered the Food Chain!';
+  if (crown) crown.textContent = options.isDraw ? '🤝' : defeated ? '💀' : '👑';
+  overlay.classList.toggle('defeat', Boolean(defeated));
+
   // Set winner name (or "Draw" if no winner)
   if (winnerName) {
     if (options.isDraw) {
