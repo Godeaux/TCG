@@ -1614,6 +1614,17 @@ export const loadGameStateFromDatabase = async (state) => {
       // Apply the saved game state via callback
       callbacks.onApplySync?.(state, savedGame.game_state, { forceApply: true });
 
+      // Resume action/intent numbering from the durable record. A host that
+      // refreshed mid-match must NOT restart at seq=0: the surviving guest has
+      // already ack'd higher sequences, and re-broadcasting old ones (plus
+      // buffering every future intent behind a counter that already passed)
+      // freezes the match. Values come from our own persisted row, not a peer.
+      const sequencing = savedGame.game_state.sequencing;
+      const bus = getActionBus();
+      if (bus && sequencing) {
+        bus.restoreSequencing(sequencing);
+      }
+
       // Ensure deckBuilder stage is set if decks are already built
       if (savedGame.game_state.deckBuilder?.stage === 'complete' && state.deckBuilder) {
         state.deckBuilder.stage = 'complete';

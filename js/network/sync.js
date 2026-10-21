@@ -17,6 +17,13 @@
  */
 
 import { buildLobbySyncPayload } from './serialization.js';
+
+// Set by the ActionBus on init so every durable save carries the live
+// sequencing snapshot (avoids a circular import through actionBus.js).
+let getSequencingSnapshot = null;
+export const setSequencingSnapshotProvider = (fn) => {
+  getSequencingSnapshot = fn;
+};
 import { isOnlineMode } from '../state/selectors.js';
 import * as supabaseApi from './supabaseApi.js';
 import { enhancePayload, reliableBroadcast } from './actionSync.js';
@@ -86,8 +93,13 @@ export const broadcastSyncState = (state) => {
   const payload = enhancePayload(rawPayload, state);
   reliableBroadcast('sync_state', payload);
 
-  // Also save to database for reconnection support
-  saveGameStateToDatabase(state, payload._seq);
+  // Also save to database for reconnection support, carrying the sequencing
+  // snapshot so either side can resume numbering after a refresh.
+  saveGameStateToDatabase(
+    state,
+    payload._seq,
+    getSequencingSnapshot ? getSequencingSnapshot() : null
+  );
 };
 
 /**
@@ -105,7 +117,7 @@ export const broadcastSyncState = (state) => {
  * @param {Object} state - Game state to save
  * @param {number} [seq=0] - Action sequence number for conflict resolution
  */
-export const saveGameStateToDatabase = async (state, seq = 0) => {
+export const saveGameStateToDatabase = async (state, seq = 0, sequencing = null) => {
   if (!isOnlineMode(state) || !state.menu?.lobby?.id) {
     return;
   }
@@ -118,6 +130,12 @@ export const saveGameStateToDatabase = async (state, seq = 0) => {
     const actionLog = buildActionLogPayload();
     if (actionLog.entries.length > 0) {
       payload.actionLog = actionLog;
+    }
+    // Durable sequencing snapshot so a client that refreshes mid-match resumes
+    // action/intent numbering instead of restarting at zero (which stalls the
+    // surviving peer and lets stale messages look fresh).
+    if (sequencing) {
+      payload.sequencing = sequencing;
     }
     await supabaseApi.saveGameState({
       lobbyId: state.menu.lobby.id,

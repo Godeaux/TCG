@@ -203,13 +203,105 @@ try {
   let plays = 0,
     attacks = 0,
     done = false;
+  // Modal card/option pickers rendered outside #selection-panel intercept every
+  // click until dismissed. Returns true if a modal was handled.
+  const dismissModal = async (p) => {
+    for (const sel of ['.card-selection-overlay', '.option-selection-overlay']) {
+      const box = p.locator(`${sel}:visible`);
+      if (await box.count()) {
+        const opts = box.locator('.card, .option-selection-btn, button:not(.cancel-targeting)');
+        if (await opts.count()) {
+          console.log('MODAL_PICK', sel, await opts.first().innerText().catch(() => ''));
+          await opts.first().click({ force: true });
+        } else {
+          await box.locator('.cancel-targeting').last().click({ force: true });
+        }
+        await p.waitForTimeout(350);
+        return true;
+      }
+    }
+    return false;
+  };
   for (let step = 0; step < Number(process.env.TCG_STEPS || 60); step++) {
     const ss = await synced();
     assert(
       ss.every((s) => s.players.every((p) => p.name === `qa${stamp}${p.index}`)),
       'both player names remain correct'
     );
+    const reconnectPlayer = Number(process.env.TCG_RECONNECT_PLAYER ?? 1);
     if (step === 8 && process.env.TCG_RECONNECT !== '0') {
+      const busSnapshot = (page) =>
+        page.evaluate(async () => {
+          const { getActionBus } = await import('/js/network/actionBus.js');
+          const bus = getActionBus();
+          return {
+            seq: bus._seq,
+            nextExpectedIntent: bus._nextExpectedIntent,
+            intentCounter: bus._intentCounter,
+            queuedIntents: [...bus._intentQueue.keys()],
+            pendingIntents: [...bus._pendingIntents.keys()],
+          };
+        });
+      if (reconnectPlayer === 0) {
+        // Host refresh: reload only the host after the guest has completed at
+        // least two confirmed intents. Record sequencing counters read-only.
+        const guestIntents = await b
+          .evaluate(async () => {
+            const { getActionBus } = await import('/js/network/actionBus.js');
+            return getActionBus()._intentCounter;
+          })
+          .catch(() => -1);
+        console.log('HOST_RECONNECT_PRE guestIntentCounter=', guestIntents);
+        const countersBefore = {
+          host: await busSnapshot(a).catch(() => null),
+          guest: await busSnapshot(b).catch(() => null),
+        };
+        console.log('COUNTERS_BEFORE_RECONNECT', JSON.stringify(countersBefore));
+        const before = ss[0];
+        await a.reload();
+        await a.waitForFunction(() => !!window.__qa);
+        await a.locator('#menu-rejoin').click();
+        await a.waitForFunction(() => window.__qa.getState().players[0].hand.length > 0);
+        await a.waitForTimeout(1000);
+        const countersAfter = {
+          host: await busSnapshot(a).catch(() => null),
+          guest: await busSnapshot(b).catch(() => null),
+        };
+        console.log('COUNTERS_AFTER_RECONNECT', JSON.stringify(countersAfter));
+        const settled = await Promise.all(pages.map(state));
+        const mismatch = publicState(settled[0]) !== publicState(before);
+        console.log('HOST_RECONNECT_PUBLIC_MISMATCH', mismatch);
+        if (mismatch) {
+          console.log('HOST_AFTER_REJOIN', publicState(settled[0]));
+          console.log('GUEST_VIEW     ', publicState(settled[1]));
+        }
+        // Probe 1: can the surviving guest still get an action confirmed?
+        const guestTurn = (await state(b)).ui.isMyTurn;
+        console.log('PROBE guest_owns_turn_after_host_rejoin', guestTurn);
+        if (guestTurn) {
+          await b.locator('#field-turn-btn').click();
+          await b.waitForTimeout(5000);
+          console.log(
+            'PROBE_AFTER_GUEST_ACTION',
+            JSON.stringify({ host: await busSnapshot(a), guest: await busSnapshot(b) })
+          );
+          const ss2 = await Promise.all(pages.map(state));
+          console.log('PROBE_TURN_AFTER', ss2[0].turn, ss2[1].turn, '| host seq', (await busSnapshot(a)).seq);
+        }
+        await fs.writeFile(
+          `${out}/host-reconnect-counters.json`,
+          JSON.stringify({ countersBefore, countersAfter, guestIntents, mismatch, after: settled.map(publicState) }, null, 2)
+        );
+        await snap('host-reconnected');
+        if (!mismatch) {
+          assert(
+            JSON.stringify((await state(a)).players[0].hand) ===
+              JSON.stringify(before.players[0].hand),
+            'host refresh restores private hand'
+          );
+        }
+        continue;
+      }
       const before = ss[1];
       await b.reload();
       await b.waitForFunction(() => !!window.__qa);
@@ -254,6 +346,9 @@ try {
       await p.waitForTimeout(350);
       continue;
     }
+    // Modal card/option pickers rendered outside #selection-panel intercept
+    // every click until dismissed; handle them before anything else.
+    if (await dismissModal(p)) continue;
     await p.mouse.move(5, 500);
     await p.waitForTimeout(300);
     const modal = p.locator('#selection-panel button:visible');
@@ -310,9 +405,13 @@ try {
       }
     }
     await answerTraps();
+    // A play/trap may surface a modal picker mid-iteration that would eat the
+    // turn-button click; clear it first.
+    if (await dismissModal(p)) continue;
     if (!acted) {
       await p.mouse.move(5, 500);
       await p.waitForTimeout(400);
+      if (await dismissModal(p)) continue;
       await p.locator('#field-turn-btn').click();
     }
     await p.waitForTimeout(400);

@@ -17,7 +17,11 @@
  * guest replays from last known-good sequence to re-sync deterministically.
  */
 
-import { sendLobbyBroadcast } from './sync.js';
+import {
+  sendLobbyBroadcast,
+  saveGameStateToDatabase,
+  setSequencingSnapshotProvider,
+} from './sync.js';
 import { computeStateChecksum } from './actionSync.js';
 import { validateAction } from './actionValidator.js';
 import { serializeAction, deserializeAction } from './actionSerializer.js';
@@ -81,6 +85,11 @@ export class ActionBus {
     // the same order the guest dispatched them, even if network delivers out of order.
     this._nextExpectedIntent = 1; // Next intent counter we expect from guest
     this._intentQueue = new Map(); // intentCounter → message, for buffered out-of-order intents
+
+    // Recently processed guest intent ids. Survives reset()/rejoin so a host
+    // restart cannot re-execute a duplicate or stale intent that the surviving
+    // guest re-sends (or that arrives late from before the reload).
+    this._processedIntentIds = new Set();
 
     // One-time init log — confirms role assignment
     const role = this.isHost() ? 'HOST' : 'GUEST';
@@ -249,6 +258,75 @@ export class ActionBus {
     this._desyncCount = 0;
     this._nextExpectedIntent = 1;
     this._intentQueue.clear();
+    // A fresh game starts intent bookkeeping fresh; mid-match rejoin re-fills
+    // this set from the durable record via restoreSequencing().
+    this._processedIntentIds.clear();
+  }
+
+  /**
+   * Snapshot of sequencing state, persisted alongside the game state so a
+   * client that refreshes mid-match can resume numbering where it left off.
+   */
+  getSequencingState() {
+    return {
+      actionSequence: this._seq,
+      nextExpectedIntent: this._nextExpectedIntent,
+      lastIntentCounter: this._intentCounter,
+    };
+  }
+
+  /**
+   * Restore sequencing counters after rejoining an in-progress match.
+   *
+   * A host that refreshes mid-match comes back with _seq=0 and
+   * _nextExpectedIntent=1 while the surviving guest keeps ack'ing old
+   * sequences and sending new intents. Without restoring, the first new action
+   * re-broadcasts an old sequence and every later guest intent stalls in the
+   * ordering buffer forever. These values come ONLY from the durable game
+   * session row we ourselves persisted — never from a peer message. When no
+   * durable record exists the counters stay untouched.
+   *
+   * @param {Object} params
+   * @param {number} [params.actionSequence] - Highest durably recorded action seq
+   * @param {number} [params.nextExpectedIntent] - Host-side: next guest intent counter expected
+   * @param {number} [params.lastIntentCounter] - Highest guest intent counter durably seen/used
+   */
+  restoreSequencing({ actionSequence, nextExpectedIntent, lastIntentCounter } = {}) {
+    const seq = Number.isFinite(actionSequence) ? actionSequence : 0;
+    if (seq > this._seq) {
+      this._seq = seq;
+    }
+    if (this.isHost()) {
+      // The durable row may have been written by either side; take the most
+      // advanced view so a future guest intent can never fall into the
+      // out-of-order buffer behind a counter that already passed.
+      const last = Number.isFinite(lastIntentCounter) ? lastIntentCounter : 0;
+      const expected = Math.max(
+        Number.isFinite(nextExpectedIntent) ? nextExpectedIntent : 0,
+        last + 1
+      );
+      if (expected > this._nextExpectedIntent) {
+        this._nextExpectedIntent = expected;
+      }
+      // Pre-mark durably-seen guest intents so a duplicate delivery after the
+      // restart can never execute twice.
+      for (let n = 1; n <= last; n++) {
+        this._processedIntentIds.add(`intent-${n}-restored`);
+      }
+    } else {
+      // Guest: resume our own intent counter above anything already durably
+      // recorded, so post-reload intents never collide with processed ones.
+      const last = Number.isFinite(lastIntentCounter) ? lastIntentCounter : 0;
+      if (last > this._intentCounter) {
+        this._intentCounter = last;
+      }
+    }
+    console.log(
+      `[ActionBus] Restored sequencing: seq=${this._seq}, ` +
+        `nextExpectedIntent=${this._nextExpectedIntent}, ` +
+        `intentCounter=${this._intentCounter}, ` +
+        `knownIntents=${this._processedIntentIds.size}`
+    );
   }
 
   // ==========================================================================
@@ -294,17 +372,58 @@ export class ActionBus {
     // Broadcast confirmed action to guest (already serialized)
     this._broadcastConfirmedAction(entry);
 
+    // Persist sequencing + state so a host refresh mid-match resumes numbering
+    // instead of rewinding to a stale setup snapshot.
+    this._persistAfterAction(seq);
+
     this.onActionConfirmed(entry);
 
     return { ...result, seq, checksum };
+  }
+
+  /** @private — Re-broadcast a confirmed entry for an already-processed intent */
+  _replayConfirmedIntent(intentId) {
+    const entry = this._actionLog
+      .slice()
+      .reverse()
+      .find((e) => e.intentId === intentId);
+    if (entry) {
+      this._broadcastConfirmedAction(entry);
+    }
+  }
+
+  /** @private — Durable save after a host-confirmed action (fire and forget) */
+  _persistAfterAction(seq) {
+    try {
+      saveGameStateToDatabase(this.getState(), seq, this.getSequencingState());
+    } catch (err) {
+      console.warn('[ActionBus] Persist after action failed:', err?.message || err);
+    }
   }
 
   /** @private — Handle a guest's action intent, ensuring in-order processing */
   _handleGuestIntent(message) {
     const { intentId } = message;
 
+    // Duplicate/stale protection: a host that restarted does not remember
+    // in-memory intent state, so re-delivered intents must never execute twice.
+    if (intentId && this._processedIntentIds.has(intentId)) {
+      console.log(`[ActionBus] HOST dropping duplicate intent ${intentId}`);
+      // Still confirm it so a guest that lost the original confirmation (e.g.
+      // it survived while we reloaded) stops re-sending and stops the 15s
+      // recovery timeout from firing.
+      this._replayConfirmedIntent(intentId);
+      return;
+    }
+
     // Extract the intent counter from the intentId (format: "intent-{counter}-{timestamp}")
     const intentCounter = parseInt(intentId.split('-')[1], 10);
+
+    // Mirror the highest intent counter seen so our durable saves can restore
+    // ordering after a host-side restart. (Only ever grows.)
+    if (Number.isFinite(intentCounter) && intentCounter > this._intentCounter) {
+      this._intentCounter = intentCounter;
+    }
 
     if (intentCounter > this._nextExpectedIntent) {
       // Out of order — buffer it and wait for the missing intent(s)
@@ -316,6 +435,7 @@ export class ActionBus {
     }
 
     // Process this intent and then drain any buffered intents that are now in sequence
+    this._rememberProcessedIntent(intentId);
     this._processGuestIntent(message);
     this._nextExpectedIntent++;
 
@@ -324,8 +444,18 @@ export class ActionBus {
       const buffered = this._intentQueue.get(this._nextExpectedIntent);
       this._intentQueue.delete(this._nextExpectedIntent);
       console.log(`[ActionBus] HOST processing buffered intent ${buffered.intentId}`);
+      this._rememberProcessedIntent(buffered.intentId);
       this._processGuestIntent(buffered);
       this._nextExpectedIntent++;
+    }
+  }
+
+  /** @private — Track executed guest intent ids (bounded FIFO) */
+  _rememberProcessedIntent(intentId) {
+    if (!intentId) return;
+    this._processedIntentIds.add(intentId);
+    if (this._processedIntentIds.size > 256) {
+      this._processedIntentIds.delete(this._processedIntentIds.values().next().value);
     }
   }
 
@@ -393,6 +523,10 @@ export class ActionBus {
 
     // Broadcast confirmed action (both host and guest will have it)
     this._broadcastConfirmedAction(entry);
+
+    // Persist sequencing + state so a host refresh mid-match resumes numbering
+    // instead of rewinding to a stale setup snapshot.
+    this._persistAfterAction(seq);
 
     this.onActionConfirmed(entry);
   }
@@ -763,6 +897,9 @@ export class ActionBus {
  */
 export const initActionBus = (options) => {
   instance = new ActionBus(options);
+  // Every durable save (sync.js) carries the live sequencing snapshot so a
+  // refresh mid-match can resume action/intent numbering.
+  setSequencingSnapshotProvider(() => instance.getSequencingState());
   return instance;
 };
 
