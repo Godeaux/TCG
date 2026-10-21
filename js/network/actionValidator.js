@@ -17,6 +17,7 @@
  */
 
 import { ActionTypes } from '../state/actions.js';
+import { matchesCardIdentity } from './cardIdentity.js';
 
 // ============================================================================
 // ACTION CATEGORIES
@@ -207,7 +208,7 @@ function validateCardInHand(action, senderIndex, state) {
   }
 
   // Match by instanceId (unique per card instance)
-  const found = hand.some((c) => c.instanceId === card.instanceId || c.uid === card.uid);
+  const found = hand.some((c) => matchesCardIdentity(c, card));
   if (!found) {
     return {
       valid: false,
@@ -223,14 +224,12 @@ function validateCardInHand(action, senderIndex, state) {
  */
 function validateResolveAttack(action, senderIndex, state) {
   const { attacker } = action.payload || {};
-  if (!attacker) return { valid: true }; // Let controller handle missing data
+  if (!attacker) return { valid: false, error: 'Missing attacker card' };
 
   const player = state.players[senderIndex];
   if (!player) return { valid: false, error: 'Invalid sender' };
 
-  const onField = player.field.some(
-    (c) => c && (c.instanceId === attacker.instanceId || c.uid === attacker.uid)
-  );
+  const onField = player.field.some((c) => matchesCardIdentity(c, attacker));
   if (!onField) {
     return { valid: false, error: "Attacker not on sender's field" };
   }
@@ -243,14 +242,12 @@ function validateResolveAttack(action, senderIndex, state) {
  */
 function validateEatPreyAttack(action, senderIndex, state) {
   const { attacker } = action.payload || {};
-  if (!attacker) return { valid: true };
+  if (!attacker) return { valid: false, error: 'Missing attacker card' };
 
   const player = state.players[senderIndex];
   if (!player) return { valid: false, error: 'Invalid sender' };
 
-  const onField = player.field.some(
-    (c) => c && (c.instanceId === attacker.instanceId || c.uid === attacker.uid)
-  );
+  const onField = player.field.some((c) => matchesCardIdentity(c, attacker));
   if (!onField) {
     return { valid: false, error: "Attacker not on sender's field" };
   }
@@ -263,14 +260,12 @@ function validateEatPreyAttack(action, senderIndex, state) {
  */
 function validateCreatureOnField(action, senderIndex, state) {
   const { card } = action.payload || {};
-  if (!card) return { valid: true };
+  if (!card) return { valid: false, error: 'Missing field card' };
 
   const player = state.players[senderIndex];
   if (!player) return { valid: false, error: 'Invalid sender' };
 
-  const onField = player.field.some(
-    (c) => c && (c.instanceId === card.instanceId || c.uid === card.uid)
-  );
+  const onField = player.field.some((c) => matchesCardIdentity(c, card));
   if (!onField) {
     return { valid: false, error: `Card '${card.name || card.uid}' not on sender's field` };
   }
