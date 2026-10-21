@@ -211,7 +211,14 @@ try {
       if (await box.count()) {
         const opts = box.locator('.card, .option-selection-btn, button:not(.cancel-targeting)');
         if (await opts.count()) {
-          console.log('MODAL_PICK', sel, await opts.first().innerText().catch(() => ''));
+          console.log(
+            'MODAL_PICK',
+            sel,
+            await opts
+              .first()
+              .innerText()
+              .catch(() => '')
+          );
           await opts.first().click({ force: true });
         } else {
           await box.locator('.cancel-targeting').last().click({ force: true });
@@ -222,6 +229,76 @@ try {
     }
     return false;
   };
+  // Sequencing counters plus the count of guest intents the host actually
+  // CONFIRMED (reached a terminal outcome), which is the only honest measure
+  // of "the guest has really finished something" before a reload.
+  const busSnapshot = (page) =>
+    page.evaluate(async () => {
+      const { getActionBus } = await import('/js/network/actionBus.js');
+      const bus = getActionBus();
+      return {
+        seq: bus._seq,
+        nextExpectedIntent: bus._nextExpectedIntent,
+        lastProcessedIntent: bus._lastProcessedIntent,
+        intentCounter: bus._intentCounter,
+        confirmedGuestIntents: bus.getActionLog().filter((e) => e.intentId).length,
+        queuedIntents: [...bus._intentQueue.keys()],
+        pendingIntents: [...bus._pendingIntents.keys()],
+      };
+    });
+  // One string that pins the whole match: public board + every private card
+  // identity + the PRNG position. A reload that replayed, dropped or reordered
+  // anything — including a single random number — changes it.
+  const fingerprint = (page) =>
+    page.evaluate(async () => {
+      const { getActionBus } = await import('/js/network/actionBus.js');
+      const { getGameRandomState } = await import('/js/state/gameState.js');
+      const s = getActionBus().getState();
+      const id = (c) => (c ? [c.id, c.instanceId, c.currentAtk, c.currentHp] : null);
+      return JSON.stringify({
+        turn: s.turn,
+        phase: s.phase,
+        active: s.activePlayerIndex,
+        players: s.players.map((p) => ({
+          hp: p.hp,
+          field: p.field.map(id),
+          hand: p.hand.map((c) => [c.id, c.instanceId]),
+          deck: p.deck.map((c) => [c.id, c.instanceId]),
+          exile: p.exile.map((c) => [c.id, c.instanceId]),
+          carrion: p.carrion.map((c) => [c.id, c.instanceId]),
+        })),
+        rng: getGameRandomState(),
+      });
+    });
+  // Pass the turn until `index` owns it. Returning false means the bounded
+  // attempt ran out — callers assert on it, so a missing turn is a failure
+  // rather than a silently skipped check.
+  const passUntilTurn = async (index, limit = 12) => {
+    for (let i = 0; i < limit; i++) {
+      if (await pages[index].evaluate(() => window.__qa.isGameOver().over)) return false;
+      const s = await state(pages[index]);
+      if (s.ui.isMyTurn) return true;
+      const other = 1 - index;
+      await answerTraps();
+      if (await dismissModal(pages[other])) continue;
+      await pages[other].mouse.move(5, 500);
+      await pages[other].waitForTimeout(250);
+      if (await dismissModal(pages[other])) continue;
+      const sel = pages[other].locator('#selection-panel button:visible');
+      if (await sel.count())
+        await sel
+          .first()
+          .click()
+          .catch(() => {});
+      await pages[other]
+        .locator('#field-turn-btn')
+        .click()
+        .catch(() => {});
+      await pages[other].waitForTimeout(600);
+    }
+    return false;
+  };
+  let refreshDone = false;
   for (let step = 0; step < Number(process.env.TCG_STEPS || 60); step++) {
     const ss = await synced();
     assert(
@@ -229,94 +306,132 @@ try {
       'both player names remain correct'
     );
     const reconnectPlayer = Number(process.env.TCG_RECONNECT_PLAYER ?? 1);
-    if (step === 8 && process.env.TCG_RECONNECT !== '0') {
-      const busSnapshot = (page) =>
-        page.evaluate(async () => {
-          const { getActionBus } = await import('/js/network/actionBus.js');
-          const bus = getActionBus();
-          return {
-            seq: bus._seq,
-            nextExpectedIntent: bus._nextExpectedIntent,
-            intentCounter: bus._intentCounter,
-            queuedIntents: [...bus._intentQueue.keys()],
-            pendingIntents: [...bus._pendingIntents.keys()],
-          };
-        });
+    if (!refreshDone && process.env.TCG_RECONNECT !== '0' && step >= 8) {
       if (reconnectPlayer === 0) {
-        // Host refresh: reload only the host after the guest has completed at
-        // least two confirmed intents. Record sequencing counters read-only.
-        const guestIntents = await b
-          .evaluate(async () => {
-            const { getActionBus } = await import('/js/network/actionBus.js');
-            return getActionBus()._intentCounter;
-          })
-          .catch(() => -1);
-        console.log('HOST_RECONNECT_PRE guestIntentCounter=', guestIntents);
-        const countersBefore = {
-          host: await busSnapshot(a).catch(() => null),
-          guest: await busSnapshot(b).catch(() => null),
-        };
-        console.log('COUNTERS_BEFORE_RECONNECT', JSON.stringify(countersBefore));
-        const before = ss[0];
-        await a.reload();
-        await a.waitForFunction(() => !!window.__qa);
-        await a.locator('#menu-rejoin').click();
-        await a.waitForFunction(() => window.__qa.getState().players[0].hand.length > 0);
-        await a.waitForTimeout(1000);
-        const countersAfter = {
-          host: await busSnapshot(a).catch(() => null),
-          guest: await busSnapshot(b).catch(() => null),
-        };
-        console.log('COUNTERS_AFTER_RECONNECT', JSON.stringify(countersAfter));
-        const settled = await Promise.all(pages.map(state));
-        const mismatch = publicState(settled[0]) !== publicState(before);
-        console.log('HOST_RECONNECT_PUBLIC_MISMATCH', mismatch);
-        if (mismatch) {
-          console.log('HOST_AFTER_REJOIN', publicState(settled[0]));
-          console.log('GUEST_VIEW     ', publicState(settled[1]));
-        }
-        // Probe 1: can the surviving guest still get an action confirmed?
-        const guestTurn = (await state(b)).ui.isMyTurn;
-        console.log('PROBE guest_owns_turn_after_host_rejoin', guestTurn);
-        if (guestTurn) {
-          await b.locator('#field-turn-btn').click();
-          await b.waitForTimeout(5000);
+        // Precondition, enforced rather than assumed: the guest must already
+        // have finished >=2 CONFIRMED intents, otherwise the reload proves
+        // nothing about restored progress and the run reports a false pass.
+        const countersBefore = await busSnapshot(a);
+        console.log('HOST_RECONNECT_PRECONDITION', JSON.stringify(countersBefore));
+        if (countersBefore.confirmedGuestIntents < 2) {
           console.log(
-            'PROBE_AFTER_GUEST_ACTION',
-            JSON.stringify({ host: await busSnapshot(a), guest: await busSnapshot(b) })
+            'HOST_RECONNECT_WAITING confirmedGuestIntents=' + countersBefore.confirmedGuestIntents
           );
-          const ss2 = await Promise.all(pages.map(state));
-          console.log('PROBE_TURN_AFTER', ss2[0].turn, ss2[1].turn, '| host seq', (await busSnapshot(a)).seq);
-        }
-        await fs.writeFile(
-          `${out}/host-reconnect-counters.json`,
-          JSON.stringify({ countersBefore, countersAfter, guestIntents, mismatch, after: settled.map(publicState) }, null, 2)
-        );
-        await snap('host-reconnected');
-        if (!mismatch) {
+        } else {
+          refreshDone = true;
+          const before = { host: await fingerprint(a), guest: await fingerprint(b) };
+          const cardsBefore = await inventories();
+          const seqBefore = countersBefore.seq;
+
+          await a.reload();
+          await a.waitForFunction(() => !!window.__qa);
+          await a.locator('#menu-rejoin').click();
+          await a.waitForFunction(() => window.__qa.getState().players[0].hand.length > 0);
+          await a.waitForTimeout(1000);
+
+          const after = { host: await fingerprint(a), guest: await fingerprint(b) };
+          const countersAfter = { host: await busSnapshot(a), guest: await busSnapshot(b) };
+          console.log('COUNTERS_AFTER_RECONNECT', JSON.stringify(countersAfter));
+          const cardsAfter = await inventories();
+          await fs.writeFile(
+            `${out}/host-reconnect-counters.json`,
+            JSON.stringify({ countersBefore, countersAfter, before, after, seqBefore }, null, 2)
+          );
+          await snap('host-reconnected');
+
+          // Unconditional checks. Each client is compared against the record
+          // captured before the reload, never merely against each other, and
+          // nothing is skipped when a mismatch is observed.
           assert(
-            JSON.stringify((await state(a)).players[0].hand) ===
-              JSON.stringify(before.players[0].hand),
-            'host refresh restores private hand'
+            after.host === before.host,
+            'host refresh restores its own checkpoint exactly',
+            `\nBEFORE ${before.host}\nAFTER  ${after.host}`
           );
+          assert(
+            after.guest === before.guest,
+            'surviving guest is untouched by the host refresh',
+            `\nBEFORE ${before.guest}\nAFTER  ${after.guest}`
+          );
+          assert(
+            JSON.stringify(cardsAfter) === JSON.stringify(cardsBefore),
+            'exact hand/deck identities preserved across host refresh',
+            `\nBEFORE ${JSON.stringify(cardsBefore)}\nAFTER  ${JSON.stringify(cardsAfter)}`
+          );
+          assert(
+            countersAfter.host.seq === seqBefore,
+            `restored host resumes at actionSequence ${seqBefore}`,
+            `got ${countersAfter.host.seq}`
+          );
+          assert(
+            countersAfter.host.lastProcessedIntent >= 2,
+            'restored host resumes past the guest intents it already finished',
+            JSON.stringify(countersAfter.host)
+          );
+          assert(
+            countersAfter.host.queuedIntents.length === 0,
+            'no intent stranded in the buffer by the refresh',
+            JSON.stringify(countersAfter.host)
+          );
+
+          // Post-rejoin proof, both directions. Reaching the required turn is
+          // earned by passing legally; failure is a bounded timeout, not a skip.
+          assert(
+            await passUntilTurn(1),
+            'reached the guest turn after the host refresh (bounded pass limit)'
+          );
+          const guestSeqBefore = (await busSnapshot(a)).seq;
+          await b.locator('#field-turn-btn').click();
+          await b.waitForTimeout(3000);
+          const afterGuest = await busSnapshot(a);
+          console.log('POST_RELOAD_GUEST_ACTION', JSON.stringify({ guestSeqBefore, afterGuest }));
+          assert(
+            afterGuest.seq === guestSeqBefore + 1,
+            'post-reload guest action is confirmed by the restored host',
+            `host seq ${guestSeqBefore} -> ${afterGuest.seq}`
+          );
+          assert(
+            (await busSnapshot(b)).pendingIntents.length === 0,
+            'guest is not left pending after its post-reload action'
+          );
+
+          assert(
+            await passUntilTurn(0),
+            'reached the host turn after the host refresh (bounded pass limit)'
+          );
+          const hostSeqBefore = (await busSnapshot(a)).seq;
+          await a.locator('#field-turn-btn').click();
+          await a.waitForTimeout(3000);
+          const afterHost = await busSnapshot(a);
+          console.log('POST_RELOAD_HOST_ACTION', JSON.stringify({ hostSeqBefore, afterHost }));
+          assert(
+            afterHost.seq === hostSeqBefore + 1,
+            'the refreshed host can still confirm its own action',
+            `seq ${hostSeqBefore} -> ${afterHost.seq}`
+          );
+          await synced();
+          continue;
         }
-        continue;
+      } else {
+        refreshDone = true;
+        const before = ss[1];
+        await b.reload();
+        await b.waitForFunction(() => !!window.__qa);
+        await b.locator('#menu-rejoin').click();
+        await b.waitForFunction(() => window.__qa.getState().players[0].hand.length > 0);
+        const recovered = (await synced())[1];
+        assert(
+          publicState(recovered) === publicState(before),
+          'guest refresh restores public state'
+        );
+        const handBefore = JSON.stringify(before.players[0].hand, null, 1);
+        const handAfter = JSON.stringify(recovered.players[0].hand, null, 1);
+        assert(
+          handAfter === handBefore,
+          'guest refresh restores private hand',
+          `before=${before.players[0].hand?.length} after=${recovered.players[0].hand?.length}\nBEFORE ${handBefore}\nAFTER ${handAfter}`
+        );
+        await snap('reconnected');
       }
-      const before = ss[1];
-      await b.reload();
-      await b.waitForFunction(() => !!window.__qa);
-      await b.locator('#menu-rejoin').click();
-      await b.waitForFunction(() => window.__qa.getState().players[0].hand.length > 0);
-      const recovered = (await synced())[1];
-      assert(publicState(recovered) === publicState(before), 'guest refresh restores public state');
-      const handBefore = JSON.stringify(before.players[0].hand, null, 1);
-      const handAfter = JSON.stringify(recovered.players[0].hand, null, 1);
-      assert(
-        handAfter === handBefore,
-        'guest refresh restores private hand',
-        `before=${before.players[0].hand?.length} after=${recovered.players[0].hand?.length}\nBEFORE ${handBefore}\nAFTER ${handAfter}`
-      );
-      await snap('reconnected');
     }
     const win = await a.evaluate(() => window.__qa.isGameOver());
     if (win.over) {

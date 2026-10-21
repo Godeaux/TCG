@@ -67,6 +67,10 @@ describe('Durable sequencing snapshot after a confirmed action', () => {
 });
 
 describe('Sequencing restore after a host refresh', () => {
+  // A lobby that identifies both peers, so validateAction resolves real
+  // player indices. Without host_id/guest_id every intent was refused with
+  // "Unknown sender", which made the duplicate-refusal assertions below pass
+  // without ever exercising deduplication.
   const hostOpts = (state, onExecute) => ({
     getState: () => state,
     getProfileId: () => 'host',
@@ -77,10 +81,17 @@ describe('Sequencing restore after a host refresh', () => {
     },
   });
 
+  const onlineHostState = () => {
+    const state = createTestState({ phase: 'Main 1', activePlayerIndex: 1 });
+    state.menu.mode = 'online';
+    state.menu.lobby = { id: 1, host_id: 'host', guest_id: 'guest' };
+    state.menu.profile = { id: 'host' };
+    return state;
+  };
+
   it('never rewinds or invents counters when the durable record is absent', () => {
     send.mockClear();
-    const state = createTestState({ phase: 'Main 1', activePlayerIndex: 0 });
-    state.menu.mode = 'online';
+    const state = onlineHostState();
     const executions = { current: 0 };
     const bus = new ActionBus(hostOpts(state, executions));
     try {
@@ -95,26 +106,45 @@ describe('Sequencing restore after a host refresh', () => {
 
   it('resumes numbering from the durable record and refuses a duplicate intent', () => {
     send.mockClear();
-    const state = createTestState({ phase: 'Main 1', activePlayerIndex: 0 });
-    state.menu.mode = 'online';
+    const state = onlineHostState();
     const executions = { current: 0 };
     const bus = new ActionBus(hostOpts(state, executions));
     try {
       // Fresh bus = seq 0 / expects intent 1; the durable row says otherwise.
-      bus.restoreSequencing({ actionSequence: 14, nextExpectedIntent: 9, lastIntentCounter: 8 });
+      bus.restoreSequencing({ actionSequence: 14, lastProcessedIntent: 8, lastSentIntent: 8 });
       expect(bus.getSequence()).toBe(14);
+      expect(bus._nextExpectedIntent).toBe(9);
 
       // A re-delivered intent the host already ran must not execute again.
+      // senderId 'guest' is a real lobby player, so this refusal comes from
+      // the processed-intent watermark, not from sender validation.
       bus._handleGuestIntent({
         intentId: 'intent-5-111',
         senderId: 'guest',
-        action: { type: 'END_TURN' },
+        action: { type: 'ADVANCE_PHASE', payload: {} },
       });
       expect(executions.current).toBe(0);
+      expect(state.phase).toBe('Main 1');
+      expect(bus.getSequence()).toBe(14);
+
+      // Control: a fresh intent above the watermark does execute, proving the
+      // refusal above is deduplication rather than an inert fixture.
+      bus._handleGuestIntent({
+        intentId: 'intent-9-222',
+        senderId: 'guest',
+        action: { type: 'ADVANCE_PHASE', payload: {} },
+      });
+      // (executeAction is a stub here, so it counts calls rather than moving
+      // the board — tests/network/intentRestoration.test.js covers the real
+      // controller path where the phase actually advances.)
+      expect(executions.current).toBe(1);
+      expect(state.phase).toBe('Main 1');
+      expect(bus.getSequence()).toBe(15);
 
       // A stale/duplicate restore must never lower what we already restored.
-      bus.restoreSequencing({ actionSequence: 3, nextExpectedIntent: 2, lastIntentCounter: 1 });
-      expect(bus.getSequence()).toBe(14);
+      bus.restoreSequencing({ actionSequence: 3, lastProcessedIntent: 1, lastSentIntent: 1 });
+      expect(bus.getSequence()).toBe(15);
+      expect(bus._nextExpectedIntent).toBe(10);
     } finally {
       bus.reset();
     }
