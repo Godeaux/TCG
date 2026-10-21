@@ -285,6 +285,13 @@ export const buildLobbySyncPayload = (state) => ({
     visualEffects: Array.isArray(state.visualEffects) ? [...state.visualEffects] : [],
     pendingTrapDecision: state.pendingTrapDecision ? { ...state.pendingTrapDecision } : null,
     pendingReaction: state.pendingReaction ? { ...state.pendingReaction } : null,
+    // End-of-turn work still owed. The queue is re-derived from the field, but
+    // the field also holds creatures that already resolved this End phase, so
+    // re-deriving after a refresh would replay them. Persist what remains.
+    endOfTurnQueue: Array.isArray(state.endOfTurnQueue)
+      ? state.endOfTurnQueue.map((creature) => creature?.instanceId ?? null).filter(Boolean)
+      : [],
+    endOfTurnFinalized: state.endOfTurnFinalized === true,
     // Include attack negation flags for multiplayer trap sync
     _lastReactionNegatedAttack: state._lastReactionNegatedAttack ?? undefined,
     _lastReactionNegatedBy: state._lastReactionNegatedBy ?? undefined,
@@ -502,6 +509,28 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
         }
       });
       cleanupDestroyed(state, { silent: true });
+
+      // Rebuild outstanding end-of-turn work against the live field objects.
+      // The resolver mutates those identities (it clears endOfTurnSummon once
+      // spent), so rehydrated clones would resolve to nothing and the effect
+      // would be skipped silently. A creature that died during the same End
+      // phase is already gone from the field and correctly drops out here.
+      if (Array.isArray(payload.game.endOfTurnQueue)) {
+        const fieldByIdentity = new Map();
+        state.players.forEach((p) =>
+          (p?.field ?? []).forEach((creature) => {
+            if (creature?.instanceId) {
+              fieldByIdentity.set(creature.instanceId, creature);
+            }
+          })
+        );
+        state.endOfTurnQueue = payload.game.endOfTurnQueue
+          .map((instanceId) => fieldByIdentity.get(instanceId))
+          .filter(Boolean);
+      }
+      if (typeof payload.game.endOfTurnFinalized === 'boolean') {
+        state.endOfTurnFinalized = payload.game.endOfTurnFinalized;
+      }
     }
   }
 
