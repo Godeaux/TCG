@@ -353,6 +353,56 @@ reloads, refresh while decisions are pending, rematch/mobile, and the backend se
 acceptance checklist below. Reptile card art is missing locally; tooltip info panels
 can obstruct automation until the pointer is moved away. Neither is silently certified.
 
+## Host-refresh continuity (2026-10-20 late)
+
+The scoped task in `docs/NEXT-LOCAL-TASK.md` was the host reloading mid-match, where
+the lead was concrete but unproven: the host owns ordering, so its restart can
+invalidate the surviving guest's intent sequence. **Reproduced three consecutive runs,
+then fixed.** Chain, read off both clients' counters, not inferred:
+
+1. Host reload restores the `game_sessions` row last written at setup
+   (`setup.stage: rolling`), so the host silently rewinds ~13 confirmed actions while
+   the guest keeps playing.
+2. The new `ActionBus` starts `_seq = 0` / `_nextExpectedIntent = 1`; the host's first
+   post-reload action re-broadcasts `seq=1` to a guest that already ack'd `seq=14`.
+3. The guest's next intent (`intent-9`) queues behind an expected counter of 1, so the
+   ordering buffer holds it forever and no confirmation ever arrives.
+4. The overlay latch cleared only on `entry.recovery`, so a reload that never escalated
+   to desync recovery left `menu.stage = 'lobby'`: a live-looking board under an
+   overlay that swallowed every click.
+
+Fix, bounded to the reconnect path (no forced peer application, no dropped guards):
+
+- `sync.js` + `actionBus.js`: durable saves carry a sequencing snapshot
+  (`actionSequence`, `nextExpectedIntent`, `lastIntentCounter`) via a provider hook,
+  avoiding a circular import.
+- `lobbyManager.js`: `restoreSequencing()` resumes numbering from **our own** persisted
+  row, monotonically — a stale or duplicate record cannot lower a counter, and no
+  record means no change, so first-run behaviour is untouched.
+- `actionBus.js`: the host remembers executed guest intent ids and answers a
+  re-delivery by replaying the confirmation instead of executing twice.
+- `ui.js`: any confirmed action clears the menu overlay once setup is complete.
+
+Evidence (live Supabase, two real Chrome clients, `TCG_RECONNECT_PLAYER=0`):
+`/tmp/tcg-hostfix-2.log` — counters before reload `{seq:14, nextExpectedIntent:7}`;
+after reload the host restores `seq=14/next=7` instead of `0/1`, the next guest intent
+confirms at `seq=15`, play continues to a conceded match with both clients agreeing on
+the winner (43 PASS, 0 FAIL). Guest-refresh regression still green:
+`/tmp/tcg-guestreg-1.log` restores `seq=11`, 0 FAIL. Two harness defects were in the
+way and are fixed: a mid-iteration `.card-selection-overlay` modal ate the turn-button
+click (`dismissModal()` now runs before that click too), and `TCG_CHROME` needs the
+`chrome-mac-arm64` path segment.
+
+Tests: **4982 across 56 files** (was 4979). The three additions are refusal-shaped —
+restore never invents or rewinds counters, a duplicate intent cannot execute twice,
+a confirmed action persists the sequencing snapshot.
+
+Still not certified here: simultaneous reloads, host loss mid-action, refresh while a
+trap/targeting decision is pending, rematch/mobile. Trap activation coverage was
+explicitly **not required** for this focused run (`TCG_REQUIRE_TRAPS=0`). If ordering
+needs provable safety across arbitrary message interleavings, that is an
+epoch/checkpoint handshake — a design change, not part of this repair.
+
 ## Multiplayer relaunch acceptance criteria
 
 - Two fresh browser profiles can authenticate, create/join a lobby, choose decks,
