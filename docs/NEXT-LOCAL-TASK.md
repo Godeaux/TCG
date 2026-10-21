@@ -1,57 +1,47 @@
-# Next local task: host refresh without losing the match
+# Next local task: repair intent restoration and its acceptance tests
 
-Starting point: `d5c0c1d` on `stabilize/multiplayer-foundation`.
-Read AGENTS.md and docs/STABILIZATION.md. No UI overhaul or broad auth rewrite.
+Start at reviewed HEAD 7d1bdc5 plus review-doc commit. Read AGENTS.md,
+docs/HOST-REFRESH-REVIEW.md and docs/STABILIZATION.md. This supersedes the
+previous host-refresh task; do not repeat its exploratory investigation.
 
-## Why this next
+## Evidence already established — reproduce once, then fix
 
-Guest reload now has live evidence. Host reload does not. The host owns action
-ordering, so a host refreshing can invalidate the still-connected guest's intent
-sequence even if the board looks right. This is a concrete lead, NOT a confirmed bug.
+Copy the two exact regressions in HOST-REFRESH-REVIEW.md into the network tests.
+They use the real GameController and valid host/guest identities. Both fail now:
+- stale intent5 executes after restore expects9;
+- buffered but unprocessed intent2 makes restore expect3 rather than1.
+The existing duplicate test passes for the wrong reason (Unknown sender).
 
-Code evidence to inspect:
-- js/network/actionBus.js constructor/reset starts `_seq = 0` and
-  `_nextExpectedIntent = 1`. The surviving guest may already have sent many intents.
-- js/network/lobbyManager.js only arms `pendingAuthoritativeSync` for guests.
-- Database restoration and ordinary sync have different private-zone protection.
-Do NOT simply force-apply any guest snapshot to the host or remove sequence guards.
+## Deliverable: one focused commit
 
-## Bounded reproduction first (20 minutes)
+1. Define checkpoint fields precisely: last CONFIRMED action revision; contiguous
+   consumed/processed guest-intent high-water mark; guest-local sent counter is not
+   proof of host execution. Do not derive processed progress from highest received.
+   Rejections need a defined terminal response too; never strand their retries.
+2. Refuse stale counters before executing game mutations. Remove synthetic restored
+   IDs as a dedup guarantee. For already-consumed retries, replay a known outcome or
+   trigger explicit authoritative recovery when outcome history is unavailable.
+   Do not silently drop a retry and leave the guest pending forever.
+3. Capture coherent progress after a terminal intent outcome, with matching board
+   and RNG. Test out-of-order2-before1, duplicates before/after reconstructing the bus,
+   and retries of rejected actions. Preserve normal ordered progress and unchanged
+   state for refused duplicates. Include a valid fresh intent to prove fixture works.
+4. Tighten the host-refresh harness: require >=2 CONFIRMED guest intents before reload,
+   assert unchanged pre/post checkpoint state (not just agreement between clients),
+   exact hand/deck identities, and require a post-rejoin guest action and host action
+   to confirm. Do not skip checks when mismatch is true or when it is the wrong turn;
+   progress legally until the required turn or fail on a bounded timeout.
+5. npm run check (baseline 4982/56, 246 existing warnings), then real isolated-context
+   host AND guest reload runs. Report actual exit status, not grep-for-FAIL counts.
+   Trap coverage may be explicitly optional for these focused runs. Commit complete
+   notes including remaining persistence blocker; capture counters/evidence.
 
-1. Extend e2e/multiplayer-ui.mjs with a reconnect-player option (default guest;
-   host for this case), preserving separate contexts and real DOM actions.
-2. Ensure the guest has completed at least two confirmed actions BEFORE reloading
-   host. Record seq and intent counters read-only. Do not reload guest.
-3. Reload host, click Rejoin, then continue through a guest action, host action and
-   at least two subsequent draws. Compare exact card IDs/instance IDs in hands/decks,
-   field, HP, turn, phase, names, and PRNG cursor after settled actions.
-4. Capture first failing action and both logs. If it passes, record that result and
-   stop this task; do not invent a fix or expand into every reconnect scenario.
+## Bounds
 
-## If reproduced
-
-Add a failing regression for that exact failure, then make the smallest coherent
-repair to reconnect/session sequencing and authoritative restoration. Preserve
-rejection of duplicate/stale actions; do not blindly reset a counter on each message.
-Test a delayed/duplicate pre-rejoin message cannot execute twice. If the design needs
-an epoch/checkpoint handshake, explain the evidence and narrow proposal before a
-large rewrite. Never accept unverified peer state merely to satisfy a test.
-
-## Completion
-
-- Live host-refresh run: real actions after rejoin, subsequent draws agree, no hidden
-  recovery loop or buffered-intent stall; winner/loser agree at match end.
-- Existing guest-refresh regression still passes.
-- npm run check green (baseline 4979 tests / 56 files; 246 pre-existing lint warnings).
-- Commit with exact reproduction, fix, validation and remaining limits in
-  docs/STABILIZATION.md. Capture video if practical.
-- Random trap coverage is a separate requirement: TCG_REQUIRE_TRAPS=0 is acceptable
-  for this focused reconnect run, but explicitly report it as not required.
-
-## Keep it bounded
-
-Send concise updates every few steps. After 20 minutes, report the exact failure or
-passing evidence and next concrete action. If no new evidence after another 20
-minutes, stop and document the blocker instead of rereading the same files.
-No simultaneous reload, pending trap reload, rematch, mobile or backend migrations
-in this task. Plaintext PIN/RLS issues remain release blockers, separately tracked.
+20-minute checkpoint: new regressions reproduced, state the chosen invariant.
+If no new evidence for 20 more minutes, crystallize the blocker rather than loop.
+No UI overhaul, rematch, simultaneous reloads, pending-trap reload, auth migrations
+or broad epoch protocol in this task. Do NOT claim crash-safe persistence afterward:
+unconditional multi-writer upserts and mixed revision namespaces remain a separate
+high-priority follow-up, detailed in HOST-REFRESH-REVIEW.md. If the minimal intent fix
+requires changing that contract, stop with the exact dependency and proposed scope.
