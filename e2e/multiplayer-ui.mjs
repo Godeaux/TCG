@@ -12,6 +12,8 @@ const browser = await chromium.launch(
 );
 const pages = [],
   contexts = [];
+let trapRequests = 0;
+const trapEvidence = [];
 const stamp = Date.now().toString(36).slice(-7);
 const state = (p) => p.evaluate(() => window.__qa.getState());
 const snap = async (label) => {
@@ -30,6 +32,28 @@ try {
     const ctx = await browser.newContext({
       viewport: { width: 1440, height: 1000 },
       recordVideo: { dir: out, size: { width: 1440, height: 1000 } },
+    });
+    await ctx.addInitScript(() => {
+      window.__headerSamples = [];
+      setInterval(() => {
+        if (
+          !window.__qa ||
+          window.__qa.act.menu.getMenuState().stage !== 'ready' ||
+          window.__qa.getState().phase === 'Setup'
+        )
+          return;
+        const header = document.querySelector('#scoreboard-row');
+        if (!header) return;
+        const ancestors = [];
+        for (let el = header.parentElement; el; el = el.parentElement) {
+          if (el.scrollTop) ancestors.push({ name: el.className || el.tagName, top: el.scrollTop });
+        }
+        window.__headerSamples.push({
+          time: Date.now(),
+          y: header.getBoundingClientRect().y,
+          ancestors,
+        });
+      }, 100);
     });
     contexts.push(ctx);
     const p = await ctx.newPage();
@@ -116,15 +140,61 @@ try {
         }))
         .sort((x, y) => x.index - y.index),
     });
+  async function answerTraps() {
+    for (let i = 0; i < pages.length; i++) {
+      const p = pages[i];
+      const activate = p
+        .locator('#reaction-overlay.active')
+        .getByRole('button', { name: 'Activate', exact: true });
+      if (await activate.count()) {
+        const before = await state(p);
+        const title = await p.locator('#reaction-title').innerText();
+        const name = title.replace(/^Activate /, '').replace(/\?$/, '');
+        console.log('TRAP_ACTIVATE', i, name);
+        await activate.click();
+        trapRequests++;
+        trapEvidence.push({
+          player: i,
+          name,
+          before: before.players[0].hand.filter((c) => c.type === 'Trap').map((c) => c.instanceId),
+        });
+        await p.waitForTimeout(250);
+      }
+    }
+  }
+  const inventories = () =>
+    Promise.all(
+      pages.map((page) =>
+        page.evaluate(async () => {
+          const { getActionBus } = await import('/js/network/actionBus.js');
+          return getActionBus()
+            .getState()
+            .players.map((player) => ({
+              hand: player.hand.map((c) => ({ id: c.id, instanceId: c.instanceId })),
+              deck: player.deck.map((c) => ({ id: c.id, instanceId: c.instanceId })),
+            }));
+        })
+      )
+    );
   async function synced() {
     for (let retry = 0; retry < 30; retry++) {
+      await answerTraps();
       const ss = await Promise.all(pages.map(state));
-      if (publicState(ss[0]) === publicState(ss[1])) return ss;
+      const cards = await inventories();
+      if (
+        publicState(ss[0]) === publicState(ss[1]) &&
+        JSON.stringify(cards[0]) === JSON.stringify(cards[1])
+      )
+        return ss;
       await a.waitForTimeout(200);
     }
     const ss = await Promise.all(pages.map(state));
+    await fs.writeFile(
+      `${out}/diverged-inventories.json`,
+      JSON.stringify(await inventories(), null, 2)
+    );
     throw new Error(
-      'Public game states diverged\n--- P1 ---\n' +
+      'Game states or private card identities diverged\n--- P1 ---\n' +
         publicState(ss[0]) +
         '\n--- P2 ---\n' +
         publicState(ss[1])
@@ -176,11 +246,28 @@ try {
       s.phase,
       s.players.map((p) => p.hp)
     );
+    const targeting = p.locator('#targeting-banner:visible');
+    if (await targeting.count()) {
+      const targets = p.locator('.effect-target:visible');
+      if (await targets.count()) await targets.first().click();
+      else await targeting.locator('.skip-targeting').click();
+      await p.waitForTimeout(350);
+      continue;
+    }
+    await p.mouse.move(5, 500);
+    await p.waitForTimeout(300);
     const modal = p.locator('#selection-panel button:visible');
     if (await modal.count()) {
       const dry = p.getByRole('button', { name: 'Dry drop', exact: true });
       if (await dry.isVisible()) await dry.click();
-      else await modal.last().click();
+      else {
+        const choices = p.locator('#selection-panel .selection-list button:visible:enabled');
+        const choice = (await choices.count())
+          ? choices.first()
+          : modal.filter({ hasNotText: /^(Hide|Show)$/ }).last();
+        console.log('SELECTION', await choice.innerText());
+        await choice.click();
+      }
       await p.waitForTimeout(350);
       continue;
     }
@@ -222,6 +309,7 @@ try {
         }
       }
     }
+    await answerTraps();
     if (!acted) {
       await p.mouse.move(5, 500);
       await p.waitForTimeout(400);
@@ -240,6 +328,31 @@ try {
     done = true;
     console.log('END_REASON concession after bounded gameplay smoke test');
   }
+  const finalStates = await Promise.all(pages.map(state));
+  const activatedTraps = trapEvidence.filter(
+    (t) =>
+      finalStates.every((s) =>
+        s.players.find((player) => player.index === t.player).exile.includes(t.name)
+      ) &&
+      !finalStates[t.player].players[0].hand.some(
+        (card) => t.before.includes(card.instanceId) && card.name === t.name
+      )
+  );
+  if (process.env.TCG_REQUIRE_TRAPS === '0') console.log('NOT REQUIRED: trap activation coverage');
+  else
+    assert(activatedTraps.length > 0, 'activated traps leave hand and reach exile on both clients');
+  for (let i = 0; i < pages.length; i++) {
+    const winner = await pages[i].evaluate(() => window.__qa.isGameOver().winner);
+    assert(
+      (await pages[i].locator('.victory-title').innerText()) ===
+        (winner === finalStates[i].localPlayer ? 'VICTORY' : 'DEFEAT'),
+      'correct local victory/defeat title'
+    );
+  }
+  await fs.writeFile(
+    `${out}/traps.json`,
+    JSON.stringify({ trapRequests, trapEvidence, activatedTraps }, null, 2)
+  );
   await snap('final');
   assert(plays >= 2, 'multiple real card plays');
   assert(attacks >= 1, 'combat changes synchronized state');
@@ -251,6 +364,17 @@ try {
   process.exitCode = 1;
 } finally {
   for (let i = 0; i < contexts.length; i++) {
+    const samples = await pages[i].evaluate(() => window.__headerSamples || []);
+    await fs.writeFile(`${out}/header-p${i + 1}.json`, JSON.stringify(samples));
+    if (samples.length) {
+      const min = Math.min(...samples.map((s) => s.y));
+      const max = Math.max(...samples.map((s) => s.y));
+      console.log('HEADER_RANGE', i, min, max);
+      if (max - min > 1) {
+        console.error('FAIL header moved during gameplay', i, max - min);
+        process.exitCode = 1;
+      }
+    }
     await contexts[i].close();
     await pages[i].video().saveAs(`${out}/player-${i + 1}.webm`);
   }

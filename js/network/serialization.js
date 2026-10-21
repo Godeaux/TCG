@@ -19,7 +19,13 @@ import { createCardInstance } from '../cardTypes.js';
 import { getLocalPlayerIndex } from '../state/selectors.js';
 import { stripAbilities } from '../game/effects.js';
 import { cleanupDestroyed } from '../game/combat.js';
-import { logMessage, initializeGameRandom, getGameSeed } from '../state/gameState.js';
+import {
+  logMessage,
+  initializeGameRandom,
+  getGameSeed,
+  getGameRandomState,
+  restoreGameRandom,
+} from '../state/gameState.js';
 
 // Monotonic sequence counter to ensure unique broadcast ordering
 // This prevents timestamp collisions when multiple broadcasts occur in the same millisecond
@@ -271,6 +277,7 @@ export const buildLobbySyncPayload = (state) => ({
     phase: state.phase,
     turn: state.turn,
     randomSeed: state.randomSeed ?? getGameSeed(), // Sync PRNG seed for deterministic random
+    randomState: getGameRandomState(),
     cardPlayedThisTurn: state.cardPlayedThisTurn,
     passPending: state.passPending,
     extendedConsumption: state.extendedConsumption ? { ...state.extendedConsumption } : null,
@@ -381,10 +388,15 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
     if (payload.game.turn !== undefined && payload.game.turn !== null) {
       state.turn = payload.game.turn;
     }
-    // Initialize PRNG with synced seed (only if we don't have one yet)
-    if (payload.game.randomSeed && !state.randomSeed) {
+    // Restore the cursor with an authoritative snapshot. Ordinary broadcasts must
+    // not rewind an initialized client that has already replayed those actions.
+    if (payload.game.randomSeed != null && (forceApply || state.randomSeed == null)) {
       state.randomSeed = payload.game.randomSeed;
-      initializeGameRandom(payload.game.randomSeed);
+      if (Number.isInteger(payload.game.randomState)) {
+        restoreGameRandom(payload.game.randomSeed, payload.game.randomState);
+      } else {
+        initializeGameRandom(payload.game.randomSeed);
+      }
     }
     if (payload.game.cardPlayedThisTurn !== undefined) {
       state.cardPlayedThisTurn = payload.game.cardPlayedThisTurn;

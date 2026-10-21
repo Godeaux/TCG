@@ -272,15 +272,86 @@ VictoryOverlay gained local-perspective VICTORY/DEFEAT/DRAW titles and styles,
 verified in a real browser over all five host-win/guest-win/draw combinations by
 `e2e/victory-perspective.mjs`. The both-sides-see-VICTORY report is addressed.
 
-Still open, reported by the owner from live play and not yet addressed: traps that
-should have fired on one side never prompted, and the health-bar header bobbing up
-and down on the left UI. Duplicate names received a fix here but still wants a
-second live confirmation.
+Follow-up below addresses the reported header motion and tests active trap responses.
+Correction to the initial report: reaction prompts DID appear; the old automation
+ignored them until timeout. No missing-prompt engine defect was established.
+Duplicate names received a fix here and were subsequently checked in live matches.
 
 `npm run check` green: 0 lint errors (246 pre-existing warnings), formatting clean,
 4976 tests across 55 files. Harness run: 27/27 assertions including real card plays,
 combat, and a concession agreeing on the winner on both clients. A green suite remains
 not a multiplayer certification.
+
+## Live-watch follow-up and random continuation (2026-10-20 evening)
+
+Scope: finish the three observed playtest problems, validate existing identity fixes,
+and retain evidence. No UI overhaul, seat-index rewrite, or speculative animation fix.
+Baseline on entry: 4976 tests / 55 files green; prior commit `1ca2d6a` already
+contained victory perspective and duplicate-name fixes.
+
+- **Header bobbing reproduced and fixed.** Live header coordinates moved 32–34px.
+  The eight-card component probe reproduced a 27px displacement: `overflow:hidden`
+  made `.battlefield-layout` programmatically scrollable when a card was scrolled
+  into view for dragging. `overflow:clip` prevents that scroll; probe and subsequent
+  live matches measured 0px displacement. This was not `name-wave` or turn animation.
+  Regression: `e2e/measure-header-drift.mjs`.
+- **Traps actively tested, not silently passed.** Harness now clicks Activate on
+  either client's reaction overlay and verifies removal from hand and exile on
+  both clients. A natural lethal match activated Maelstrom; a post-fix match with
+  guest reload activated Riptide. These are observed examples, NOT all-trap coverage.
+- **Victory and duplicate names verified.** Existing victory component passed all
+  five host/guest/draw perspective cases. Live lethal matches showed one VICTORY
+  and one DEFEAT, with distinct correct names throughout. No new identity-engine
+  change was needed in this follow-up.
+- **New reconnect defect found and fixed: lost PRNG cursor.** The prior rejoin
+  check proved counts/current board, not subsequent draws. A real reload reproduced
+  the host drawing Scales while the guest drew Saltwater Crocodile; the host then
+  rejected the guest's unknown card reference. Snapshots had the original seed but
+  not the current Mulberry32 state. Snapshots now include `randomState`; authoritative
+  recovery restores that cursor even if a seed already exists. Ordinary broadcasts
+  must not rewind a client. Legacy snapshots without a cursor remain readable but
+  cannot reconstruct historical random progression; a live updated host snapshot
+  is needed. `tests/network/reconnectRandom.test.js` reproduces the actual subsequent
+  draw mismatch through JSON round-trip (including seed zero) and guards normal sync.
+- **Harness strengthened.** Separate browser contexts/accounts, real DOM actions,
+  card-ID plus instance-ID comparisons for BOTH hands and decks at each settled
+  step, targeted choices, reaction responses, header samples, screenshots and video.
+  Read-only state inspection is instrumentation, not gameplay injection. The older
+  API-only harness is not acceptance evidence. Random deals do not guarantee traps:
+  default requires activation; `TCG_REQUIRE_TRAPS=0` explicitly reports untested trap
+  coverage and is for focused reconnect runs. Do not count missing coverage as a pass.
+
+Evidence on this machine (temporary artifacts; regenerate rather than depend on /tmp):
+
+- `/tmp/tcg-evening-before`: natural lethal match, 7 plays / 5 attacks, Maelstrom,
+  correct victory titles; header still moved (before CSS fix).
+- `/tmp/tcg-identity-audit/hand-identity-step-9.json`: exact divergent card identities
+  after guest reload, before PRNG repair.
+- `/tmp/tcg-rng-fixed`: natural lethal match after guest reload, 7 plays / 10 attacks,
+  Riptide in exile on both clients, distinct names, correct victory/defeat, zero header
+  movement. Trap requirement was disabled for this focused run but activation evidence
+  was still recorded in `traps.json`. Side-by-side final 35-second video delivered to
+  Discord (message `1562266132730089602`).
+- `/tmp/tcg-final-audit`: stricter hand/deck identity checks held for 50 steps including
+  reload, zero header motion, concession agreed. Overall run FAILED its mandatory trap
+  coverage assertion because no trap activated. Its selection bot also repeatedly
+  pressed a confirmation instead of choosing an option; selection handling was then
+  improved. This is not reported as a passing full gameplay test.
+
+- `/tmp/tcg-identity-final`: focused run PASSED: guest reload, exact hand/deck
+  identities throughout 35 steps, 9 play attempts / 9 attacks, Riptide activation
+  recorded on both clients, distinct names, correct concession winner/titles, 0px
+  header movement. It ended by the harness's bounded concession, not natural lethal.
+  Trap coverage was optional in this run, but `traps.json` records one verified activation.
+
+Final contract: `npm run check` green, **4979 tests across 56 files**, formatting clean,
+0 lint errors / 246 pre-existing warnings. Component header regression passes; live
+records above distinguish actual lethal matches, bounded concessions and coverage failure.
+
+Known scope limits remain: all-trap/targeting combinations, host loss, simultaneous
+reloads, refresh while decisions are pending, rematch/mobile, and the backend security
+acceptance checklist below. Reptile card art is missing locally; tooltip info panels
+can obstruct automation until the pointer is moved away. Neither is silently certified.
 
 ## Multiplayer relaunch acceptance criteria
 

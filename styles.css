@@ -8978,7 +8978,9 @@ select.menu-input option {
 
   .battlefield-layout {
     min-height: 0;
-    overflow: hidden;
+    /* hidden still creates a programmatically scrollable box. Drag/focus can
+       scroll the whole board to reveal a hand card, moving the health bars. */
+    overflow: clip;
   }
 
   .piles-section {
