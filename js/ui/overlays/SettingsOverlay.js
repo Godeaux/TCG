@@ -16,6 +16,64 @@ import { SoundManager } from '../../audio/soundManager.js';
 // ============================================================================
 
 let overlayElement = null;
+let escHandler = null; // one lifecycle-managed Escape listener
+let lastFocusedBeforeOpen = null;
+
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+const getFocusable = () => {
+  if (!overlayElement) return [];
+  return Array.from(overlayElement.querySelectorAll(FOCUSABLE_SELECTOR)).filter(
+    (el) => el.offsetParent !== null || el === document.activeElement
+  );
+};
+
+// Tab/Shift-Tab containment and background keyboard isolation while open.
+const handleOverlayKeydown = (e) => {
+  if (e.key !== 'Tab') return;
+  const focusable = getFocusable();
+  if (focusable.length === 0) {
+    e.preventDefault();
+    return;
+  }
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  const active = document.activeElement;
+
+  if (e.shiftKey) {
+    if (active === first || !overlayElement.contains(active)) {
+      e.preventDefault();
+      last.focus();
+    }
+  } else if (active === last || !overlayElement.contains(active)) {
+    e.preventDefault();
+    first.focus();
+  }
+};
+
+const attachModalLifecycle = () => {
+  if (escHandler) return; // never stack listeners across opens
+  escHandler = (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      hideSettingsOverlay();
+    }
+  };
+  document.addEventListener('keydown', escHandler, true);
+  overlayElement.addEventListener('keydown', handleOverlayKeydown);
+};
+
+const detachModalLifecycle = () => {
+  if (escHandler) {
+    document.removeEventListener('keydown', escHandler, true);
+    escHandler = null;
+  }
+  if (overlayElement) {
+    overlayElement.removeEventListener('keydown', handleOverlayKeydown);
+  }
+};
 
 // ============================================================================
 // OVERLAY HTML TEMPLATE
@@ -47,7 +105,7 @@ const createOverlayHTML = () => {
     .join('');
 
   return `
-  <div class="overlay-content settings-overlay-card">
+  <div class="overlay-content settings-overlay-card" role="document">
     <div class="settings-overlay-header">
       <h2>Settings</h2>
       <button class="settings-overlay-close" id="settings-overlay-close" aria-label="Close">&#10005;</button>
@@ -142,6 +200,9 @@ export const showSettingsOverlay = () => {
     overlayElement.id = 'settings-floating-overlay';
     overlayElement.className = 'overlay settings-floating-overlay';
     overlayElement.setAttribute('aria-hidden', 'true');
+    overlayElement.setAttribute('role', 'dialog');
+    overlayElement.setAttribute('aria-modal', 'true');
+    overlayElement.setAttribute('aria-label', 'Settings');
     overlayElement.innerHTML = createOverlayHTML();
 
     // Append to body to escape stacking contexts
@@ -174,6 +235,12 @@ export const showSettingsOverlay = () => {
   const elements = getElements();
   if (!elements.overlay) return;
 
+  // Remember the real opener so focus can return to it on close.
+  if (!elements.overlay.classList.contains('active')) {
+    const active = document.activeElement;
+    lastFocusedBeforeOpen = active && active !== document.body ? active : lastFocusedBeforeOpen;
+  }
+
   // Sync volume display with current state
   updateVolumeDisplay();
 
@@ -181,14 +248,19 @@ export const showSettingsOverlay = () => {
   elements.overlay.classList.add('active');
   elements.overlay.setAttribute('aria-hidden', 'false');
 
-  // Close on escape
-  const escHandler = (e) => {
-    if (e.key === 'Escape') {
-      hideSettingsOverlay();
-      document.removeEventListener('keydown', escHandler);
+  // Keyboard modal lifecycle: one Escape listener, focus containment, initial focus.
+  attachModalLifecycle();
+
+  const focusable = getFocusable();
+  const target =
+    elements.overlay.querySelector('#settings-overlay-volume') || focusable[0] || elements.overlay;
+  if (target) {
+    target.focus();
+    // If focus did not land inside, force it (overlay may not be visible yet in tests).
+    if (!elements.overlay.contains(document.activeElement) && focusable[0]) {
+      focusable[0].focus();
     }
-  };
-  document.addEventListener('keydown', escHandler);
+  }
 };
 
 /**
@@ -197,9 +269,24 @@ export const showSettingsOverlay = () => {
 export const hideSettingsOverlay = () => {
   const elements = getElements();
   if (!elements.overlay) return;
+  if (!elements.overlay.classList.contains('active')) return;
 
   elements.overlay.classList.remove('active');
   elements.overlay.setAttribute('aria-hidden', 'true');
+
+  detachModalLifecycle();
+
+  // Restore focus to the actual opener, if it is still in the document.
+  const opener = lastFocusedBeforeOpen;
+  lastFocusedBeforeOpen = null;
+  if (opener && document.contains(opener)) {
+    opener.focus();
+  } else if (elements.overlay.contains(document.activeElement)) {
+    document.body.focus?.();
+    if (document.activeElement && elements.overlay.contains(document.activeElement)) {
+      document.activeElement.blur?.();
+    }
+  }
 };
 
 /**
