@@ -189,7 +189,10 @@ export const startTurn = (state) => {
   }
 
   runStartOfTurnEffects(state);
-  cleanupDestroyed(state, { silent: true }); // Silent: endTurn broadcasts final state
+  // Silent = presentation only (endTurn broadcasts the final state). Deaths
+  // caused by start-of-turn effects are real gameplay and still grant onSlain.
+  const pendingUI = cleanupDestroyed(state, { silent: true });
+  return pendingUI;
 };
 
 export const advancePhase = (state) => {
@@ -398,7 +401,9 @@ export const finalizeEndPhase = (state) => {
   // CORE-RULES.md §14 order: Regen → Paralysis death → cleanup → Frozen thaw
   handleRegen(state);
   handleParalysisDeath(state); // Kill paralyzed creatures (per CORE-RULES.md §7)
-  cleanupDestroyed(state, { silent: true }); // Remove dead creatures before thaw
+  // Silent = presentation only. A paralysis death is a real death and still
+  // grants onSlain (CORE-RULES §8); the returned UI work is handled by the caller.
+  const pendingUI = cleanupDestroyed(state, { silent: true }); // Remove dead creatures before thaw
   handleFrozenThaw(state); // Thaw frozen creatures last (they survive)
 
   const player = state.players[state.activePlayerIndex];
@@ -409,6 +414,7 @@ export const finalizeEndPhase = (state) => {
   );
   state.endOfTurnFinalized = true;
   // Note: Don't broadcast here - endTurn() will broadcast the final state after all transitions
+  return pendingUI;
 };
 
 export const cardLimitAvailable = (state) => !state.cardPlayedThisTurn;

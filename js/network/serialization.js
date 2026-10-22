@@ -531,7 +531,10 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
           player.traps = hydrateZoneSnapshots(playerSnapshot.traps, null, state.turn);
         }
       });
-      cleanupDestroyed(state, { silent: true });
+      // Reconstructing a state, not advancing it: the deaths this cleanup files
+      // away already resolved their onSlain on the authoritative peer. Replaying
+      // them here would duplicate hand cards, tokens and carrion entries.
+      cleanupDestroyed(state, { silent: true, skipOnSlain: true });
 
       // Rebuild outstanding end-of-turn work against the live field objects.
       // The resolver mutates those identities (it clears endOfTurnSummon once

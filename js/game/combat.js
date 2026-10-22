@@ -365,7 +365,21 @@ export const resolveDirectAttack = (state, attacker, opponent, attackerOwnerInde
   return effectiveAtk;
 };
 
-export const cleanupDestroyed = (state, { silent = false } = {}) => {
+/**
+ * Move creatures at HP <= 0 off the field: clear slots, run onSlain, file carrion.
+ *
+ * Two INDEPENDENT flags — do not conflate them:
+ *  - `silent`: presentation only. Suppresses logs and the broadcast for callers
+ *    that emit their own final state (end-of-turn, turn start).
+ *  - `skipOnSlain`: gameplay. Suppresses the onSlain trigger entirely. Only for
+ *    callers that are *reconstructing* a state rather than advancing it (applying
+ *    a remote snapshot), where replaying an already-resolved death would duplicate
+ *    cards in hand, tokens on field and carrion.
+ *
+ * A start-of-turn kill (Gecko killing a damaged Kākāpō) is real gameplay and must
+ * grant onSlain even though it happens inside a silent cleanup (CORE-RULES §8).
+ */
+export const cleanupDestroyed = (state, { silent = false, skipOnSlain = false } = {}) => {
   const destroyedCreatures = [];
   const pendingUI = [];
 
@@ -399,8 +413,10 @@ export const cleanupDestroyed = (state, { silent = false } = {}) => {
     // Check for onSlain effect (either function or object-based)
     // Triggers when HP <= 0 regardless of cause (combat, effect damage, etc.)
     const hasOnSlainEffect = card.onSlain || card.effects?.onSlain;
-    if (!silent && hasOnSlainEffect && !card.abilitiesCancelled) {
-      logGameAction(state, DEATH, `${formatCardForLog(card)} onSlain effect triggers...`);
+    if (!skipOnSlain && hasOnSlainEffect && !card.abilitiesCancelled) {
+      if (!silent) {
+        logGameAction(state, DEATH, `${formatCardForLog(card)} onSlain effect triggers...`);
+      }
 
       let result;
       if (card.onSlain) {
