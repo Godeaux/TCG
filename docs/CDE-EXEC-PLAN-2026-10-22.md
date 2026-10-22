@@ -77,17 +77,18 @@ effect result directly, not a `selectTarget` prompt. Test helpers must handle bo
   `token-kakapo-feathers`. Cause: `cleanupDestroyed(state, { silent: true })` makes
   `silent` suppress **gameplay** (onSlain, `js/game/combat.js:402`) as well as
   presentation (logs, `:446`, `:453`, `:458`, broadcast `:462`).
-- [ ] Split the flag: `{ silent }` = presentation only; add e.g.
-      `{ resolveOnSlain = true }` (or `skipOnSlain`) for callers that must not trigger.
-- [ ] Callers to audit against the new split:
-      `turnManager.js:192` (startTurn), `turnManager.js:401` (finalizeEndPhase),
-      `serialization.js:511` (snapshot apply — must **not** replay),
-      `js/ui.js:2012`, `js/ui.js:2138`, all `controller.js` cleanup call sites.
-- [ ] `cleanupDestroyed` returns `pendingUI` (selectTarget/selectOption from onSlain);
-      startTurn/finalizeEndPhase currently discard it. Handle or document.
-- [ ] Tests: start-phase death grants onSlain exactly once to the correct owner
-      (hand-add + token-summon variants); consumed / `abilitiesCancelled` creatures do
-      **not** trigger; JSON apply does not replay.
+- [x] Split the flag: `silent` = presentation only (logs + broadcast); new
+      `skipOnSlain` suppresses the trigger. `cleanupDestroyed(state, { silent, skipOnSlain })`.
+- [x] Callers audited: startTurn + finalizeEndPhase pass neither blanket flag; only
+      `applyLobbySyncPayload` passes `skipOnSlain` (state reconstruction must not replay).
+- [x] `startTurn`/`finalizeEndPhase` now return the `pendingUI` they used to discard.
+      No shipped onSlain is interactive today (all 22 are addToHand/draw/heal/
+      summonTokens/damageRival/reviveCreature), so nothing is lost either way.
+- [x] Tests: `tests/integration/startOfTurnOnSlain.test.js` — start-phase death grants
+      onSlain exactly once to the owner (hand-add + token-summon), flags independent in
+      both directions, `abilitiesCancelled` stays cancelled, restoring peer does not replay.
+
+**D DONE 2026-10-22 13:10 PDT** — commit `3b8acae`.
 
 ## E — in-flight End-phase choice lost on snapshot
 
@@ -98,14 +99,27 @@ effect result directly, not a `selectTarget` prompt. Test helpers must handle bo
   `:518` rebuilds them against live field objects.
 - Review doc forbids blanket peek-then-shift: `resolveEffectChain` applies immediate
   effects before interactive ones, so a naive replay duplicates work.
-- [ ] Make `handleProcessEndPhase` re-entrant: do not remove the queue entry until the
-      effect resolves without a pending prompt. Keep it data-only so it serializes
-      (no callbacks).
-- [ ] Persist pending-choice continuation state in the snapshot payload + restore.
-- [ ] No finalization while a prompt is open (`endOfTurnFinalized` guard).
-- [ ] Tests: missing/invalid mandatory target refuses before mutation; durable choice
-      resumes exactly once; both seats; cancellation policy; reentrancy while prompt
-      open; nested/sequential effects; board + PRNG continuity across refresh.
+- [x] `handleProcessEndPhase` re-entrant: head entry moves to `state.endOfTurnPending`
+      **before** the effect runs; refused (zero mutation) when a mandatory prompt has no
+      answer. Data-only (a live creature reference, rehydrated by `instanceId`).
+- [x] `endOfTurnPending` persists in the snapshot + rehydrates against live field ids.
+      New `RESOLVE_END_PHASE_CHOICE` action (creator + validator + phase gate) answers it.
+- [x] No finalization while pending is non-null — guard in both the action and `endTurn()`.
+- [x] Tests: `tests/integration/endPhaseChoice.test.js`, 12 cases — refuse-before-mutation,
+      invalid answer stays pending, re-entrant PROCESS re-offers without advancing, END_TURN
+      refused, no empty-queue finalize while owed, snapshot round trip incl. frozen creature,
+      restore resumes exactly once, both seats, sequential order behind a refusal,
+      non-interactive path unregressed, cancel reopens then forces.
+
+**E DONE 2026-10-22 16:06 PDT** — commit `695d00f`. Design: `docs/CDE-E-DESIGN-2026-10-22.md`.
+Cancellation policy: mandatory prompts reopen, bounded at 2 declines per `instanceId`,
+after which the UI sends `force` and the engine takes its non-interactive fallback.
+
+## C / D / E COMPLETE
+
+All three landed on `fix/rule-gates-CDE-2026-10-21`: C `dae2ce2`, D `3b8acae`,
+E `695d00f`. `npm run check` green at E: **63 files / 5,119 tests** (baseline 60/5,086).
+Stop condition reached — no further hunting. Push/merge only when 0 says so.
 
 ## Verification before "done"
 
