@@ -12,6 +12,8 @@
  * Phase 5 of the multiplayer authority refactor.
  */
 
+import { matchesCardIdentity } from './cardIdentity.js';
+
 // ============================================================================
 // CARD REFERENCE MARKERS
 // ============================================================================
@@ -26,8 +28,9 @@ function toCardRef(card, zone = 'unknown') {
   if (!card || card._cardRef) return card; // Already a ref or null
   return {
     _cardRef: true,
-    instanceId: card.instanceId || null,
-    uid: card.uid || null,
+    // Preserve malformed supplied identities so resolution can reject them.
+    instanceId: card.instanceId ?? null,
+    uid: card.uid ?? null,
     id: card.id || null,
     name: card.name || null,
     zone,
@@ -359,12 +362,12 @@ export function deserializeAction(action, state) {
  * @param {Object} ref - Card ref { _cardRef, instanceId, uid, id, zone }
  * @param {Object} state - Game state
  * @param {string} zoneHint - Expected zone ('hand', 'field', 'carrion', 'unknown')
- * @returns {Object} Real card object, or the ref if not found
+ * @returns {Object|null} Real card object, or null if not found
  */
 function resolveCardRef(ref, state, zoneHint) {
   if (!ref || !ref._cardRef) return ref; // Not a ref, return as-is
 
-  const { instanceId, uid, id } = ref;
+  const { instanceId, uid } = ref;
 
   // Search all players' zones for the card
   for (const player of state.players) {
@@ -380,8 +383,7 @@ function resolveCardRef(ref, state, zoneHint) {
       if (!Array.isArray(zone)) continue;
       for (const card of zone) {
         if (!card) continue;
-        if (instanceId && card.instanceId === instanceId) return card;
-        if (uid && card.uid === uid) return card;
+        if (matchesCardIdentity(card, ref)) return card;
       }
     }
   }

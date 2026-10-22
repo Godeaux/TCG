@@ -34,6 +34,13 @@ const clearPanel = (panel) => {
   panel.innerHTML = '';
 };
 
+// Minimize state is per logical prompt. A new prompt (different title, or after
+// clearSelectionPanel) always starts expanded; re-rendering the same prompt keeps
+// whatever state the user chose. This prevents a hidden prompt from leaking its
+// minimized class and stale Hide/Show label into the next mandatory choice.
+let currentPromptKey = null;
+let isMinimized = false;
+
 /**
  * Render the selection panel with choices
  *
@@ -52,6 +59,13 @@ export const renderSelectionPanel = ({ title, items, onConfirm, confirmLabel = '
     return;
   }
 
+  // New logical prompt (or first render after a clear) resets to expanded.
+  if (currentPromptKey !== title) {
+    currentPromptKey = title;
+    isMinimized = false;
+  }
+  selectionPanel.classList.toggle('minimized', isMinimized);
+
   // Add header with title and hide button
   const header = document.createElement('div');
   header.className = 'selection-header';
@@ -62,10 +76,13 @@ export const renderSelectionPanel = ({ title, items, onConfirm, confirmLabel = '
 
   const hideButton = document.createElement('button');
   hideButton.className = 'hide-panel-btn';
-  hideButton.textContent = 'Hide';
+  hideButton.setAttribute('aria-expanded', String(!isMinimized));
+  hideButton.textContent = isMinimized ? 'Show' : 'Hide';
   hideButton.onclick = () => {
-    selectionPanel.classList.toggle('minimized');
-    hideButton.textContent = selectionPanel.classList.contains('minimized') ? 'Show' : 'Hide';
+    isMinimized = !isMinimized;
+    selectionPanel.classList.toggle('minimized', isMinimized);
+    hideButton.textContent = isMinimized ? 'Show' : 'Hide';
+    hideButton.setAttribute('aria-expanded', String(!isMinimized));
   };
   header.appendChild(hideButton);
 
@@ -102,6 +119,9 @@ export const clearSelectionPanel = () => {
   const { selectionPanel, actionBar } = getSelectionElements();
 
   clearPanel(selectionPanel);
+  selectionPanel?.classList.remove('minimized');
+  currentPromptKey = null;
+  isMinimized = false;
   actionBar?.classList.remove('has-selection');
 };
 

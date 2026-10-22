@@ -8,6 +8,7 @@ import {
 } from '../state/gameState.js';
 import { cleanupDestroyed } from './combat.js';
 import { resolveEffectResult } from './effects.js';
+import { getMaxHp } from './creatureStats.js';
 import { logPlainMessage } from './historyLog.js';
 import { resolveCardEffect } from '../cards/index.js';
 import { isOnlineMode } from '../state/selectors.js';
@@ -155,9 +156,7 @@ const handleRegen = (state) => {
   activePlayer.field.forEach((creature) => {
     if (creature && creature.keywords?.includes('Regen')) {
       // Calculate actual max HP including consumption and buff gains
-      const consumptionHp = creature.consumptionGains?.hp ?? 0;
-      const buffHp = creature.buffGains?.hp ?? 0;
-      const maxHp = creature.hp + consumptionHp + buffHp;
+      const maxHp = getMaxHp(creature);
       if (creature.currentHp < maxHp) {
         const healAmount = maxHp - creature.currentHp;
         creature.currentHp = maxHp;

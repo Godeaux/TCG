@@ -1,5 +1,21 @@
 # Bug Tracker — Root Cause Analysis
 
+## 2026-10-18 stabilization update
+
+This document includes historical findings, not a current list of reproduced bugs.
+Current status and release gates: [STABILIZATION.md](docs/STABILIZATION.md).
+
+- Consumption entry regression tests now use actual card instances and cannot
+  pass without placement; the previous fixture misused the helper return value.
+- H1 follow-up: targeted buffs now record HP gains, matching existing team buffs.
+  Actual consumption/buff operations replace fabricated boosted-stat fixtures.
+- Multiplayer snapshots now preserve consumption/buff gains through hydration,
+  preventing the Regen ceiling from dropping after sync/reconnect.
+- Regression coverage: `tests/integration/autoDryDrop.test.js`,
+  `tests/integration/explorerRun7.test.js`, `tests/network/regenSnapshot.test.js`.
+- O1 end-of-turn ordering was already corrected in published source; the historical
+  section below describes the old behavior, not a newly reproduced ordering defect.
+
 ## Root Cause A: Neurotoxic doesn't gate on "damage actually dealt"
 
 The Neurotoxic keyword should only apply Paralysis when combat damage is actually dealt. The code skips this check in multiple ways.

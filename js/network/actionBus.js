@@ -17,7 +17,11 @@
  * guest replays from last known-good sequence to re-sync deterministically.
  */
 
-import { sendLobbyBroadcast } from './sync.js';
+import {
+  sendLobbyBroadcast,
+  saveGameStateToDatabase,
+  setSequencingSnapshotProvider,
+} from './sync.js';
 import { computeStateChecksum } from './actionSync.js';
 import { validateAction } from './actionValidator.js';
 import { serializeAction, deserializeAction } from './actionSerializer.js';
@@ -81,6 +85,19 @@ export class ActionBus {
     // the same order the guest dispatched them, even if network delivers out of order.
     this._nextExpectedIntent = 1; // Next intent counter we expect from guest
     this._intentQueue = new Map(); // intentCounter → message, for buffered out-of-order intents
+
+    // HIGH-WATER MARK OF FINISHED WORK — the highest guest intent counter that
+    // has reached a terminal outcome on this host (confirmed, rejected or
+    // stale-dropped). It advances only when that intent's outcome is decided,
+    // never when it merely arrives, so a buffered out-of-order intent is not
+    // mistaken for processed work. This is the value that gets checkpointed;
+    // see getSequencingState() for the full contract.
+    this._lastProcessedIntent = 0;
+
+    // Recently processed guest intent ids. Survives reset()/rejoin so a host
+    // restart cannot re-execute a duplicate or stale intent that the surviving
+    // guest re-sends (or that arrives late from before the reload).
+    this._processedIntentIds = new Set();
 
     // One-time init log — confirms role assignment
     const role = this.isHost() ? 'HOST' : 'GUEST';
@@ -248,7 +265,100 @@ export class ActionBus {
     this._recovering = false;
     this._desyncCount = 0;
     this._nextExpectedIntent = 1;
+    this._lastProcessedIntent = 0;
     this._intentQueue.clear();
+    // A fresh game starts intent bookkeeping fresh; mid-match rejoin re-fills
+    // this set from the durable record via restoreSequencing().
+    this._processedIntentIds.clear();
+  }
+
+  /**
+   * Snapshot of sequencing state, persisted alongside the game state so a
+   * client that refreshes mid-match can resume numbering where it left off.
+   *
+   * FIELD CONTRACT — read before changing anything here:
+   * - actionSequence: highest action seq durably applied to the board in this
+   *   same snapshot. Board, RNG and this counter are captured together, so a
+   *   restored client never sees a board ahead of its counter or vice versa.
+   * - lastProcessedIntent: host-only high-water mark of CONTIGUOUS guest
+   *   intents that reached a terminal outcome (confirmed, rejected or
+   *   stale-dropped). It is the only proof of consumed guest work.
+   * - nextExpectedIntent: always lastProcessedIntent + 1. Kept as a separate
+   *   field purely for readability of the durable row; it is never derived
+   *   from anything else on restore.
+   * - lastSentIntent: guest-local counter of intents this client has SENT.
+   *   It is collision-avoidance for the sender and is explicitly NOT proof of
+   *   host execution — receiving is never processing, so it must never be used
+   *   to advance host-side progress.
+   */
+  getSequencingState() {
+    return {
+      actionSequence: this._seq,
+      lastProcessedIntent: this._lastProcessedIntent,
+      nextExpectedIntent: this._lastProcessedIntent + 1,
+      lastSentIntent: this._intentCounter,
+      // Legacy alias kept for rows written before the watermark existed and
+      // for any reader that still asks for the old name. Never restored from.
+      lastIntentCounter: this._intentCounter,
+    };
+  }
+
+  /**
+   * Restore sequencing counters after rejoining an in-progress match.
+   *
+   * A host that refreshes mid-match comes back with _seq=0 and
+   * _nextExpectedIntent=1 while the surviving guest keeps ack'ing old
+   * sequences and sending new intents. Without restoring, the first new action
+   * re-broadcasts an old sequence and every later guest intent stalls in the
+   * ordering buffer forever. These values come ONLY from the durable game
+   * session row we ourselves persisted — never from a peer message. When no
+   * durable record exists the counters stay untouched.
+   *
+   * Restore sequencing counters after rejoining an in-progress match.
+   *
+   * Host restore is derived from ONE number: lastProcessedIntent. Everything
+   * else is either the action seq captured in the same snapshot or the guest's
+   * own send counter, which proves nothing about what the host finished. There
+   * is deliberately no Math.max() across those unlike counters — taking the
+   * most advanced view of "highest counter ever seen" is exactly how a merely
+   * received-but-unprocessed intent used to make a fresh host skip work.
+   *
+   * @param {Object} params
+   * @param {number} [params.actionSequence] - Highest durably recorded action seq
+   * @param {number} [params.lastProcessedIntent] - Highest contiguous processed guest intent
+   * @param {number} [params.lastSentIntent] - Guest-local: intents this client already sent
+   */
+  restoreSequencing({ actionSequence, lastProcessedIntent, lastSentIntent } = {}) {
+    const seq = Number.isFinite(actionSequence) ? actionSequence : 0;
+    if (seq > this._seq) {
+      this._seq = seq;
+    }
+    if (this.isHost()) {
+      // Only finished work moves the watermark, and it never rewinds.
+      const processed = Number.isFinite(lastProcessedIntent) ? lastProcessedIntent : 0;
+      if (processed > this._lastProcessedIntent) {
+        this._lastProcessedIntent = processed;
+      }
+      this._nextExpectedIntent = this._lastProcessedIntent + 1;
+      // No synthetic intent ids are pre-marked. The watermark itself is the
+      // dedup guarantee: any counter at or below it is refused before it can
+      // touch the game, regardless of the id string it arrives with.
+    } else {
+      // Guest: resume our own intent counter above anything already durably
+      // recorded, so post-reload intents never collide with sent ones. This is
+      // collision-avoidance only; it says nothing about host execution.
+      const sent = Number.isFinite(lastSentIntent) ? lastSentIntent : 0;
+      if (sent > this._intentCounter) {
+        this._intentCounter = sent;
+      }
+    }
+    console.log(
+      `[ActionBus] Restored sequencing: seq=${this._seq}, ` +
+        `lastProcessedIntent=${this._lastProcessedIntent}, ` +
+        `nextExpectedIntent=${this._nextExpectedIntent}, ` +
+        `intentCounter=${this._intentCounter}, ` +
+        `knownIntents=${this._processedIntentIds.size}`
+    );
   }
 
   // ==========================================================================
@@ -294,20 +404,69 @@ export class ActionBus {
     // Broadcast confirmed action to guest (already serialized)
     this._broadcastConfirmedAction(entry);
 
+    // Persist sequencing + state so a host refresh mid-match resumes numbering
+    // instead of rewinding to a stale setup snapshot.
+    this._persistAfterAction(seq);
+
     this.onActionConfirmed(entry);
 
     return { ...result, seq, checksum };
+  }
+
+  /** @private — Re-broadcast a confirmed entry for an already-processed intent */
+  _replayConfirmedIntent(intentId) {
+    const entry = this._actionLog
+      .slice()
+      .reverse()
+      .find((e) => e.intentId === intentId);
+    if (entry) {
+      this._broadcastConfirmedAction(entry);
+    }
+  }
+
+  /** @private — Durable save after a host-confirmed action (fire and forget) */
+  _persistAfterAction(seq) {
+    try {
+      saveGameStateToDatabase(this.getState(), seq, this.getSequencingState());
+    } catch (err) {
+      console.warn('[ActionBus] Persist after action failed:', err?.message || err);
+    }
   }
 
   /** @private — Handle a guest's action intent, ensuring in-order processing */
   _handleGuestIntent(message) {
     const { intentId } = message;
 
-    // Extract the intent counter from the intentId (format: "intent-{counter}-{timestamp}")
-    const intentCounter = parseInt(intentId.split('-')[1], 10);
+    // Extract the intent counter from the intentId (format: "intent-{counter}-{timestamp}").
+    // An unparseable counter is treated as the next in line, matching the
+    // historical behaviour for hand-built messages.
+    const parsed = parseInt(String(intentId ?? '').split('-')[1], 10);
+    const intentCounter = Number.isFinite(parsed) ? parsed : this._nextExpectedIntent;
+
+    // STALE / ALREADY-CONSUMED: refuse BEFORE any game mutation. This is the
+    // watermark, not the id set, that carries the guarantee — so it survives a
+    // host refresh where the in-memory id set is gone.
+    if (intentCounter <= this._lastProcessedIntent) {
+      console.log(
+        `[ActionBus] HOST refusing stale intent ${intentId} ` +
+          `(already processed through ${this._lastProcessedIntent})`
+      );
+      this._resolveConsumedIntent(intentId);
+      return;
+    }
+
+    // Exact-id duplicate that has already reached a terminal outcome in this
+    // session but sits above the watermark (e.g. drained out of order).
+    if (intentId && this._processedIntentIds.has(intentId)) {
+      console.log(`[ActionBus] HOST dropping duplicate intent ${intentId}`);
+      this._resolveConsumedIntent(intentId);
+      return;
+    }
 
     if (intentCounter > this._nextExpectedIntent) {
-      // Out of order — buffer it and wait for the missing intent(s)
+      // Out of order — buffer it and wait for the missing intent(s).
+      // RECEIVING IS NOT PROCESSING: the watermark does not move here, or a
+      // fresh host would restore past work it never did.
       console.log(
         `[ActionBus] HOST buffering out-of-order intent ${intentId} (expecting ${this._nextExpectedIntent})`
       );
@@ -315,17 +474,70 @@ export class ActionBus {
       return;
     }
 
-    // Process this intent and then drain any buffered intents that are now in sequence
+    // Terminal outcome first, then one contiguous watermark step and one
+    // coherent checkpoint capturing board + counters together.
+    this._rememberProcessedIntent(intentId);
     this._processGuestIntent(message);
-    this._nextExpectedIntent++;
+    this._advanceProcessedIntent(intentCounter);
 
     // Drain buffered intents in order
-    while (this._intentQueue.has(this._nextExpectedIntent)) {
-      const buffered = this._intentQueue.get(this._nextExpectedIntent);
-      this._intentQueue.delete(this._nextExpectedIntent);
+    while (this._intentQueue.has(this._lastProcessedIntent + 1)) {
+      const counter = this._lastProcessedIntent + 1;
+      const buffered = this._intentQueue.get(counter);
+      this._intentQueue.delete(counter);
       console.log(`[ActionBus] HOST processing buffered intent ${buffered.intentId}`);
+      this._rememberProcessedIntent(buffered.intentId);
       this._processGuestIntent(buffered);
-      this._nextExpectedIntent++;
+      this._advanceProcessedIntent(counter);
+    }
+  }
+
+  /**
+   * @private — Move the watermark of finished guest work and checkpoint it.
+   *
+   * Called ONLY after an intent reached a terminal outcome (confirmed, rejected
+   * or stale-dropped). Both counters move together so the durable row can never
+   * show a board ahead of its progress markers or vice versa.
+   */
+  _advanceProcessedIntent(intentCounter) {
+    if (intentCounter > this._lastProcessedIntent) {
+      this._lastProcessedIntent = intentCounter;
+    }
+    this._nextExpectedIntent = this._lastProcessedIntent + 1;
+    this._persistAfterAction(this._seq);
+  }
+
+  /**
+   * @private — Answer the sender about an intent we already consumed.
+   *
+   * A refused retry must never strand its sender: replay the recorded outcome
+   * if we still have it, otherwise issue an explicit rejection so the guest
+   * clears its pending intent and pulls the authoritative state instead of
+   * waiting out the 15s recovery timeout.
+   */
+  _resolveConsumedIntent(intentId) {
+    const entry = this._actionLog
+      .slice()
+      .reverse()
+      .find((e) => e.intentId === intentId);
+    if (entry) {
+      this._broadcastConfirmedAction(entry);
+      return;
+    }
+    sendLobbyBroadcast('game_action', {
+      type: 'action_rejected',
+      intentId,
+      reason: 'Intent already processed before this host restarted — resynchronising',
+      senderId: this.getProfileId(),
+    });
+  }
+
+  /** @private — Track executed guest intent ids (bounded FIFO) */
+  _rememberProcessedIntent(intentId) {
+    if (!intentId) return;
+    this._processedIntentIds.add(intentId);
+    if (this._processedIntentIds.size > 256) {
+      this._processedIntentIds.delete(this._processedIntentIds.values().next().value);
     }
   }
 
@@ -394,6 +606,10 @@ export class ActionBus {
     // Broadcast confirmed action (both host and guest will have it)
     this._broadcastConfirmedAction(entry);
 
+    // Persisting happens in _advanceProcessedIntent, which owns the coherent
+    // board+counter checkpoint. Persisting here would write a snapshot one
+    // intent behind the board, making the just-run intent look fresh.
+
     this.onActionConfirmed(entry);
   }
 
@@ -403,9 +619,6 @@ export class ActionBus {
 
   /** @private */
   _guestDispatch(action) {
-    this._intentCounter++;
-    const intentId = `intent-${this._intentCounter}-${Date.now()}`;
-
     // Optimistic execution — apply locally for instant feedback (Hearthstone model).
     // The host will confirm or reject. On rejection, we recover via action log replay.
     // Track instanceIds so we can reconcile with host's IDs on confirmation.
@@ -415,9 +628,15 @@ export class ActionBus {
     stopTrackingInstanceIds();
 
     if (!result?.success) {
+      // Do NOT burn an intent number for an action that never reaches the host.
+      // The host tracks _nextExpectedIntent strictly; a skipped counter would
+      // stall every later intent in its out-of-order buffer forever.
       console.log(`[ActionBus] GUEST optimistic failed locally: ${action.type} — ${result?.error}`);
       return result;
     }
+
+    this._intentCounter++;
+    const intentId = `intent-${this._intentCounter}-${Date.now()}`;
 
     console.log(
       `[ActionBus] GUEST optimistic OK, sending intent: ${action.type} (${intentId})` +
@@ -760,6 +979,9 @@ export class ActionBus {
  */
 export const initActionBus = (options) => {
   instance = new ActionBus(options);
+  // Every durable save (sync.js) carries the live sequencing snapshot so a
+  // refresh mid-match can resume action/intent numbering.
+  setSequencingSnapshotProvider(() => instance.getSequencingState());
   return instance;
 };
 

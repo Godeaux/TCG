@@ -542,44 +542,63 @@ const handleTouchEnd = (e) => {
   touchedCardElement = null;
   isDragging = false;
   touchedCardHandIndex = -1;
+  touchedFromField = false;
   touchStartTime = 0;
+  frozenCardZones = [];
+};
+
+/**
+ * Shared gesture teardown used by every end/cancel path.
+ * Removes drag visuals AND inspection (hand-focus) styling so an interrupted
+ * gesture never leaves a card enlarged, and clears the frozen zone snapshot.
+ * Never executes a play/attack/consumption action.
+ */
+const resetTouchSession = () => {
+  if (touchedCardElement) {
+    touchedCardElement.classList.remove('dragging');
+  }
+  // Clear inspection/lift styling anywhere it may be applied.
+  document.querySelectorAll('.card.hand-focus').forEach((el) => {
+    el.classList.remove('hand-focus');
+  });
+  clearDragVisuals();
+
+  // Remove drag preview
+  removeDragPreview(dragPreview);
+  dragPreview = null;
+
+  // Remove is-dragging class from containers
+  removeDraggingClasses();
+
+  // Reset state
+  touchedCard = null;
+  touchedCardElement = null;
+  touchedCardHandIndex = -1;
+  touchedFromField = false;
+  isDragging = false;
+  touchStartTime = 0;
+  frozenCardZones = [];
 };
 
 /**
  * Handle touch cancel - clean up without executing action
  */
 const handleTouchCancel = (e) => {
-  if (touchedCardElement) {
-    // Broadcast drag end to opponent if was dragging
-    if (isDragging) {
-      const state = getLatestState();
-      if (state && touchedCardHandIndex >= 0) {
-        broadcastHandDrag(state, {
-          cardIndex: touchedCardHandIndex,
-          position: null,
-          isDragging: false,
-        });
-      }
+  if (!touchedCardElement) return;
+
+  // Broadcast drag end to opponent if was dragging
+  if (isDragging) {
+    const state = getLatestState();
+    if (state && touchedCardHandIndex >= 0) {
+      broadcastHandDrag(state, {
+        cardIndex: touchedCardHandIndex,
+        position: null,
+        isDragging: false,
+      });
     }
-
-    touchedCardElement.classList.remove('dragging');
-    clearDragVisuals();
-
-    // Remove drag preview
-    removeDragPreview(dragPreview);
-    dragPreview = null;
-
-    // Remove is-dragging class from containers
-    removeDraggingClasses();
-
-    // Reset state
-    touchedCard = null;
-    touchedCardElement = null;
-    touchedCardHandIndex = -1;
-    touchedFromField = false;
-    isDragging = false;
-    touchStartTime = 0;
   }
+
+  resetTouchSession();
 };
 
 // ============================================================================
@@ -691,6 +710,10 @@ const handleFieldTouchEnd = (e) => {
     removeDragPreview(dragPreview);
     dragPreview = null;
     removeDraggingClasses();
+    // release-to-return: a field creature must not stay lifted after release
+    document.querySelectorAll('.card.hand-focus').forEach((el) => {
+      el.classList.remove('hand-focus');
+    });
   }
 
   // Reset state
@@ -699,26 +722,18 @@ const handleFieldTouchEnd = (e) => {
   touchedFromField = false;
   isDragging = false;
   touchedCardHandIndex = -1;
+  frozenCardZones = [];
 };
 
 /**
  * Handle touch cancel on player field
  */
 const handleFieldTouchCancel = (e) => {
-  if (touchedCardElement && touchedFromField) {
-    touchedCardElement.classList.remove('dragging');
-    clearDragVisuals();
-    removeDragPreview(dragPreview);
-    dragPreview = null;
-    removeDraggingClasses();
-  }
+  if (!touchedCardElement || !touchedFromField) return;
 
-  // Reset state
-  touchedCard = null;
-  touchedCardElement = null;
-  touchedFromField = false;
-  isDragging = false;
-  touchedCardHandIndex = -1;
+  // Same teardown as the hand path: clears drag visuals, the drag preview and
+  // any lingering inspection/lift styling, without ever executing an attack.
+  resetTouchSession();
 };
 
 // ============================================================================

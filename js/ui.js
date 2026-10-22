@@ -4771,6 +4771,20 @@ export const renderGame = (state, callbacks = {}) => {
       executeAction: (action) => gameController.execute(action),
       onActionConfirmed: (entry) => {
         clearOpponentDragPreview();
+        // A client sitting on the multiplayer/lobby overlay while its peer
+        // reloaded must leave the menu once actions are confirmed to flow
+        // again — the first confirmed action after the reload proves the host
+        // resumed sequencing, so keep the board interactive. Flipping earlier
+        // races the snapshot; only do it once a confirm lands. (Previously this
+        // only fired for entry.recovery, so a host refresh that never triggered
+        // desync recovery left the guest frozen behind the overlay forever.)
+        if (
+          latestState?.menu?.mode === 'online' &&
+          latestState.menu.stage !== 'ready' &&
+          latestState.setup?.stage === 'complete'
+        ) {
+          latestState.menu.stage = 'ready';
+        }
         // Flash resync button green on successful recovery
         if (entry.recovery) {
           const btn = document.getElementById('field-resync-btn');

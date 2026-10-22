@@ -44,6 +44,13 @@ let activeLobbyId = null;
 let lobbyRefreshTimeout = null;
 let lobbyRefreshInFlight = false;
 
+// After a rejoin the local player's private zones (deck/hand/traps) can be
+// stale, and the normal sync path deliberately refuses to overwrite them.
+// This flag lets the FIRST snapshot from the host land completely, so a
+// refreshed client converges on the authoritative board instead of keeping a
+// corrupted deck and playing on it.
+let pendingAuthoritativeSync = false;
+
 // Profile/deck loading state
 let profileLoaded = false;
 let decksLoaded = false;
@@ -912,6 +919,9 @@ export const handleMenuRejoin = async (state) => {
       return { success: false };
     }
 
+    // Reload starts in local mode. Restore online identity before applying any
+    // saved snapshot; otherwise the guest is treated as player zero.
+    state.menu.mode = 'online';
     // Go directly to lobby (don't set existingLobby to avoid showing rejoin button)
     state.menu.lobby = lobby;
     state.menu.existingLobby = null; // Clear to prevent "Rejoin Lobby" button from showing
@@ -1297,10 +1307,28 @@ export const updateLobbySubscription = (state, { force = false } = {}) => {
     callbacks.onUpdate?.();
   };
 
+  // The guest joins an already-full row before subscribing, so its own join
+  // event may never arrive. Persist the known lobby immediately as well.
+  const currentLobby = state.menu.lobby;
+  const profileId = state.menu.profile?.id;
+  if (currentLobby?.host_id && currentLobby?.guest_id && profileId) {
+    const otherId =
+      currentLobby.host_id === profileId ? currentLobby.guest_id : currentLobby.host_id;
+    saveRejoinInfo(currentLobby.code, otherId);
+  }
+
+  // Do not request recovery until the realtime receiver is actually joined.
+  let resolveSubscribed;
+  const subscribed = new Promise((resolve) => {
+    resolveSubscribed = resolve;
+  });
   // Subscribe to lobby updates
   lobbyChannel = supabaseApi.subscribeToLobby({
     lobbyId,
     onUpdate: applyLobbyUpdate,
+    onStatus: (status) => {
+      if (status === 'SUBSCRIBED') resolveSubscribed();
+    },
   });
   setLobbyChannel(lobbyChannel);
 
@@ -1326,7 +1354,25 @@ export const updateLobbySubscription = (state, { force = false } = {}) => {
       return;
     }
 
-    callbacks.onApplySync?.(state, payload);
+    // Only a snapshot from the host may repair our own private zones, and only
+    // once, immediately after a rejoin.
+    const isFromHost =
+      !!state.menu?.lobby?.host_id && payload?.senderId === state.menu.lobby.host_id;
+    const forceThisSync = pendingAuthoritativeSync && isFromHost;
+    if (forceThisSync) {
+      pendingAuthoritativeSync = false;
+      console.log('[lobby] Applying authoritative host snapshot after rejoin');
+    }
+
+    callbacks.onApplySync?.(state, payload, forceThisSync ? { forceApply: true } : undefined);
+
+    // The reconnecting guest lands on the lobby overlay. Leave it once the
+    // authoritative snapshot has actually been applied — flipping the stage
+    // before this point renders a stale board, and leaving it flipped forever
+    // leaves an invisible overlay that swallows every card drag.
+    if (forceThisSync && state.setup?.stage === 'complete' && state.menu?.stage === 'lobby') {
+      state.menu.stage = 'ready';
+    }
     callbacks.onUpdate?.();
 
     // Send ACK to confirm receipt
@@ -1469,6 +1515,24 @@ export const updateLobbySubscription = (state, { force = false } = {}) => {
     } catch (error) {
       console.error('Failed to load game state during subscription:', error);
     }
+    await subscribed;
+    // A guest that just came back needs the host's COMPLETE snapshot, including
+    // its own deck/hand — which a normal sync refuses to touch. Arm the
+    // force-apply latch before asking, so whichever host snapshot arrives next
+    // (sync_state reply, or the recovery response) repairs private zones too.
+    const isGuestRejoin =
+      !!state.menu?.lobby?.host_id && state.menu.profile?.id !== state.menu.lobby.host_id;
+    console.log('[lobby] DEBUG post-DB-load rejoin check', {
+      isGuestRejoin,
+      gameInProgress: state.menu?.gameInProgress,
+      setupStage: state.setup?.stage,
+      hostId: state.menu?.lobby?.host_id,
+      profileId: state.menu?.profile?.id,
+      deckSizes: state.players?.map((p) => p?.deck?.length),
+    });
+    if (isGuestRejoin) {
+      pendingAuthoritativeSync = true;
+    }
     // After DB load, request sync to get any changes since last save
     sendLobbyBroadcast('sync_request', {
       senderId: state.menu?.profile?.id ?? null,
@@ -1550,6 +1614,17 @@ export const loadGameStateFromDatabase = async (state) => {
       // Apply the saved game state via callback
       callbacks.onApplySync?.(state, savedGame.game_state, { forceApply: true });
 
+      // Resume action/intent numbering from the durable record. A host that
+      // refreshed mid-match must NOT restart at seq=0: the surviving guest has
+      // already ack'd higher sequences, and re-broadcasting old ones (plus
+      // buffering every future intent behind a counter that already passed)
+      // freezes the match. Values come from our own persisted row, not a peer.
+      const sequencing = savedGame.game_state.sequencing;
+      const bus = getActionBus();
+      if (bus && sequencing) {
+        bus.restoreSequencing(sequencing);
+      }
+
       // Ensure deckBuilder stage is set if decks are already built
       if (savedGame.game_state.deckBuilder?.stage === 'complete' && state.deckBuilder) {
         state.deckBuilder.stage = 'complete';
@@ -1594,6 +1669,7 @@ export const cleanup = () => {
   }
   activeLobbyId = null;
   lobbyRefreshInFlight = false;
+  pendingAuthoritativeSync = false;
 
   // Reset action sync state (sequence counters, pending ACKs)
   resetActionSync();

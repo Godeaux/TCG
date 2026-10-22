@@ -19,7 +19,13 @@ import { createCardInstance } from '../cardTypes.js';
 import { getLocalPlayerIndex } from '../state/selectors.js';
 import { stripAbilities } from '../game/effects.js';
 import { cleanupDestroyed } from '../game/combat.js';
-import { logMessage, initializeGameRandom, getGameSeed } from '../state/gameState.js';
+import {
+  logMessage,
+  initializeGameRandom,
+  getGameSeed,
+  getGameRandomState,
+  restoreGameRandom,
+} from '../state/gameState.js';
 
 // Monotonic sequence counter to ensure unique broadcast ordering
 // This prevents timestamp collisions when multiple broadcasts occur in the same millisecond
@@ -34,6 +40,27 @@ let broadcastSequence = 0;
  * @param {Object} card - Card instance with runtime state
  * @returns {Object|null} Serialized snapshot
  */
+const BASE_STAT_KEYS = ['atk', 'hp', 'nutrition'];
+
+/**
+ * Collect base stats that no longer match the printed card definition.
+ * @param {Object} card - Card instance
+ * @returns {Object|null} Overrides to re-apply on hydration, or null
+ */
+const getBaseStatOverrides = (card) => {
+  const definition = getCardDefinitionById(card.id);
+  if (!definition) {
+    return null;
+  }
+  const overrides = {};
+  BASE_STAT_KEYS.forEach((key) => {
+    if (card[key] !== undefined && card[key] !== definition[key]) {
+      overrides[key] = card[key];
+    }
+  });
+  return Object.keys(overrides).length ? overrides : null;
+};
+
 export const serializeCardSnapshot = (card) => {
   if (!card) {
     return null;
@@ -43,6 +70,12 @@ export const serializeCardSnapshot = (card) => {
     instanceId: card.instanceId ?? null,
     currentAtk: card.currentAtk ?? null,
     currentHp: card.currentHp ?? null,
+    // Base stats replaced in play (e.g. copyStats). Only sent when they differ
+    // from the printed card, otherwise every sync would silently revert them.
+    baseStats: getBaseStatOverrides(card),
+    // Preserve the earned HP ceiling across sync and reconnects.
+    consumptionGains: card.consumptionGains ? { ...card.consumptionGains } : null,
+    buffGains: card.buffGains ? { ...card.buffGains } : null,
     summonedTurn: card.summonedTurn ?? null,
     hasAttacked: card.hasAttacked ?? false,
     attacksMadeThisTurn: card.attacksMadeThisTurn ?? 0,
@@ -94,8 +127,27 @@ export const hydrateCardSnapshot = (snapshot, fallbackTurn) => {
   if (snapshot.currentHp !== null && snapshot.currentHp !== undefined) {
     instance.currentHp = snapshot.currentHp;
   }
-  if (snapshot.summonedTurn !== null && snapshot.summonedTurn !== undefined) {
-    instance.summonedTurn = snapshot.summonedTurn;
+  if (snapshot.baseStats) {
+    // Re-apply stats copied in play before currentHp is trusted.
+    if (snapshot.baseStats.atk !== undefined) instance.atk = snapshot.baseStats.atk;
+    if (snapshot.baseStats.hp !== undefined) instance.hp = snapshot.baseStats.hp;
+    if (snapshot.baseStats.nutrition !== undefined) {
+      instance.nutrition = snapshot.baseStats.nutrition;
+    }
+  }
+  // Round-trip summonedTurn exactly. The serializer always writes the key
+  // (null for cards outside play), so an explicit null must survive hydration
+  // instead of keeping the constructor's fallback turn — otherwise a restored
+  // hand differs from the snapshot it was built from, on fields that mean
+  // "not in play".
+  if ('summonedTurn' in snapshot) {
+    instance.summonedTurn = snapshot.summonedTurn ?? null;
+  }
+  if (snapshot.consumptionGains) {
+    instance.consumptionGains = { ...snapshot.consumptionGains };
+  }
+  if (snapshot.buffGains) {
+    instance.buffGains = { ...snapshot.buffGains };
   }
   instance.hasAttacked = snapshot.hasAttacked ?? instance.hasAttacked;
   instance.attacksMadeThisTurn = snapshot.attacksMadeThisTurn ?? 0;
@@ -225,6 +277,7 @@ export const buildLobbySyncPayload = (state) => ({
     phase: state.phase,
     turn: state.turn,
     randomSeed: state.randomSeed ?? getGameSeed(), // Sync PRNG seed for deterministic random
+    randomState: getGameRandomState(),
     cardPlayedThisTurn: state.cardPlayedThisTurn,
     passPending: state.passPending,
     extendedConsumption: state.extendedConsumption ? { ...state.extendedConsumption } : null,
@@ -232,6 +285,13 @@ export const buildLobbySyncPayload = (state) => ({
     visualEffects: Array.isArray(state.visualEffects) ? [...state.visualEffects] : [],
     pendingTrapDecision: state.pendingTrapDecision ? { ...state.pendingTrapDecision } : null,
     pendingReaction: state.pendingReaction ? { ...state.pendingReaction } : null,
+    // End-of-turn work still owed. The queue is re-derived from the field, but
+    // the field also holds creatures that already resolved this End phase, so
+    // re-deriving after a refresh would replay them. Persist what remains.
+    endOfTurnQueue: Array.isArray(state.endOfTurnQueue)
+      ? state.endOfTurnQueue.map((creature) => creature?.instanceId ?? null).filter(Boolean)
+      : [],
+    endOfTurnFinalized: state.endOfTurnFinalized === true,
     // Include attack negation flags for multiplayer trap sync
     _lastReactionNegatedAttack: state._lastReactionNegatedAttack ?? undefined,
     _lastReactionNegatedBy: state._lastReactionNegatedBy ?? undefined,
@@ -311,13 +371,6 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
     return index === -1 ? -1 : index;
   };
 
-  if (payload.playerProfile?.name && Number.isInteger(payload.playerProfile.index)) {
-    state.players[payload.playerProfile.index].name = payload.playerProfile.name;
-    if (payload.playerProfile.nameStyle) {
-      state.players[payload.playerProfile.index].nameStyle = payload.playerProfile.nameStyle;
-    }
-  }
-
   const hasRuntimeState =
     payload?.game?.players?.some((p) => {
       if (!p) return false;
@@ -342,10 +395,15 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
     if (payload.game.turn !== undefined && payload.game.turn !== null) {
       state.turn = payload.game.turn;
     }
-    // Initialize PRNG with synced seed (only if we don't have one yet)
-    if (payload.game.randomSeed && !state.randomSeed) {
+    // Restore the cursor with an authoritative snapshot. Ordinary broadcasts must
+    // not rewind an initialized client that has already replayed those actions.
+    if (payload.game.randomSeed != null && (forceApply || state.randomSeed == null)) {
       state.randomSeed = payload.game.randomSeed;
-      initializeGameRandom(payload.game.randomSeed);
+      if (Number.isInteger(payload.game.randomState)) {
+        restoreGameRandom(payload.game.randomSeed, payload.game.randomState);
+      } else {
+        initializeGameRandom(payload.game.randomSeed);
+      }
     }
     if (payload.game.cardPlayedThisTurn !== undefined) {
       state.cardPlayedThisTurn = payload.game.cardPlayedThisTurn;
@@ -451,7 +509,45 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
         }
       });
       cleanupDestroyed(state, { silent: true });
+
+      // Rebuild outstanding end-of-turn work against the live field objects.
+      // The resolver mutates those identities (it clears endOfTurnSummon once
+      // spent), so rehydrated clones would resolve to nothing and the effect
+      // would be skipped silently. A creature that died during the same End
+      // phase is already gone from the field and correctly drops out here.
+      if (Array.isArray(payload.game.endOfTurnQueue)) {
+        const fieldByIdentity = new Map();
+        state.players.forEach((p) =>
+          (p?.field ?? []).forEach((creature) => {
+            if (creature?.instanceId) {
+              fieldByIdentity.set(creature.instanceId, creature);
+            }
+          })
+        );
+        state.endOfTurnQueue = payload.game.endOfTurnQueue
+          .map((instanceId) => fieldByIdentity.get(instanceId))
+          .filter(Boolean);
+      }
+      if (typeof payload.game.endOfTurnFinalized === 'boolean') {
+        state.endOfTurnFinalized = payload.game.endOfTurnFinalized;
+      }
     }
+  }
+
+  // Profile identity is fresher than names carried in a gameplay snapshot.
+  // Apply it last, including on reconnect, and never replace our signed-in name.
+  if (
+    payload.playerProfile?.name &&
+    Number.isInteger(payload.playerProfile.index) &&
+    state.players[payload.playerProfile.index]
+  ) {
+    const player = state.players[payload.playerProfile.index];
+    player.name = payload.playerProfile.name;
+    if (payload.playerProfile.nameStyle) player.nameStyle = payload.playerProfile.nameStyle;
+  }
+  if (state.menu?.profile?.username && state.players[localIndex]) {
+    state.players[localIndex].name = state.menu.profile.username;
+    state.players[localIndex].nameStyle = state.menu.profile.name_style ?? {};
   }
 
   // Sync deck selection state

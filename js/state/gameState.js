@@ -21,13 +21,15 @@ export {
  */
 const createSeededRandom = (seed) => {
   let state = seed >>> 0; // Ensure unsigned 32-bit integer
-  return () => {
+  const random = () => {
     state = (state + 0x6d2b79f5) >>> 0;
     let t = state;
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+  random.getState = () => state;
+  return random;
 };
 
 // Global PRNG instance - initialized when game starts
@@ -49,6 +51,13 @@ export const initializeGameRandom = (seed) => {
  * @returns {number|null} The current seed
  */
 export const getGameSeed = () => currentSeed;
+
+// A seed alone restarts the sequence. Rejoin/recovery needs its current cursor.
+export const getGameRandomState = () => gameRandom?.getState() ?? null;
+export const restoreGameRandom = (seed, cursor) => {
+  currentSeed = seed;
+  gameRandom = createSeededRandom(cursor);
+};
 
 /**
  * Get a random number [0, 1) using the seeded PRNG.
