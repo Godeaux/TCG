@@ -49,23 +49,27 @@ only a progress ledger so a compacted context can resume without re-deriving sta
       preference to the printed `copiedFromId` definition. `stripAbilities` is
       re-applied **after** copy re-hydration so a cancelled snapshot cannot hand
       abilities back. `copiedFromId` stays as display + legacy fallback.
-- [ ] **Tests (the remaining C work — write `tests/integration/copiedAbilities.test.js`,
-      real card ids + real controller ops, assert observable state):**
-      1. cockatoo/copier copies Hoatzin → bounce → hand copy is printed
-         (`atk/hp/keywords/effectText/effects`, no `(Copied)` text, no borrowed `onEnd`).
-      2. copy-of-copy survives JSON: Mockingbird←Hoatzin → dies → Mexican Violetear
-         copies that carrion → `serializeCardSnapshot` → `JSON.parse(JSON.stringify())`
-         → `hydrateCardSnapshot` keeps Hoatzin `onEnd`/`onAfterCombat`, not Mockingbird's.
-      3. no registry mutation: after a copy + effect resolution, the registry
-         definition's `effects` object identity/deep value is unchanged; copier and
-         source do not share nested objects (`toBe` must differ).
-      4. copy onto an `abilitiesCancelled` creature stays cancelled.
-      5. reset-policy cases: `hasAttacked`/`attacksMadeThisTurn`, `dryDropped`,
-         frozen/paralyzed, token → exile not hand (both routes).
-      Use `createTestState`, `createTestCreature`, `addCardToCarrion`,
-      `createEffectContext`, `resolveEffectResult`, `new GameController(...)`
-      (see `tests/integration/cleanupUnified.test.js` for the controller harness).
-      Add the new file to the Makefile/package test list if one is enumerated.
+- [x] **Tests — `tests/integration/copiedAbilities.test.js`, 11 cases, all green.**
+      1. Cockatoo copies Hoatzin → `returnToHand` → hand copy is printed (no borrowed
+         `onEnd`/`onAfterCombat`, no `(Copied)` text, copy tracking wiped).
+      2. `RETURN_TO_HAND` action resets a stat-copy (Mockingbird←Hoatzin) to printed 1/1.
+      3. Reset policy clears spent runtime fields (`hasAttacked`, `attacksMadeThisTurn`,
+         `dryDropped`, frozen, paralyzed, consumption/buff gains).
+      4. Tokens are exiled, not bounced — asserted through **both** routes.
+      5. Copy-of-copy over JSON: Hoatzin → Cockatoo copies it → Cockatoo dies to carrion
+         → Violetear copies that carrion → serialize → `JSON.parse(JSON.stringify())` →
+         hydrate keeps Hoatzin's `onEnd`/`onAfterCombat`, not the printed Cockatoo.
+      6. Cancellation is terminal across hydration even with a `copiedSnapshot`.
+         NOTE: cancellation is a **flag gate** (`resolveCardEffect` returns null before
+         reading `effects`); it does NOT wipe `effects` data. Do not assert `effects` is
+         emptied — assert `resolveCardEffect(...) === null` and cleared handler props.
+      7. No shared objects: copier vs source vs registry definition identity + deep value.
+      No Makefile; `npm test` = `vitest run` globs `tests/`, so no list to update.
+
+**C DONE 2026-10-22 12:25 PDT** — commit `dae2ce2`. `npm run check` green:
+61 files / 5,097 tests. Lesson for D/E: `selectFromGroup` **auto-selects** when there
+is exactly one candidate and the effect has no `copyAbilities` flag — it returns the
+effect result directly, not a `selectTarget` prompt. Test helpers must handle both shapes.
 
 ## D — start-of-turn cleanup drops onSlain
 
