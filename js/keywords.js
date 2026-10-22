@@ -308,6 +308,27 @@ export const getRemainingAttacks = (card) => {
 };
 
 /**
+ * CORE-RULES.md §7 — the turn on which a paralysis death resolves.
+ *
+ * Paralysis lasts "until end of its controller's turn", so the deadline is the
+ * End phase of the turn controlled by the paralyzed creature's owner. When the
+ * creature belongs to the ACTIVE player, that turn is the one already in
+ * progress — the deadline is the current turn number, NOT `state.turn + 1`
+ * (which skips a controller and lets the creature survive past its own End).
+ *
+ * Single source of truth: every paralysis application (combat Neurotoxic,
+ * spells/effects, future sources) must compute the deadline here so the rule
+ * cannot drift between modules.
+ *
+ * @param {number} ownerIndex Controller index of the paralyzed creature (-1 if unknown)
+ * @param {number} activePlayerIndex Player whose turn is running
+ * @param {number} turn Current turn number
+ * @returns {number} Turn number whose End phase resolves the paralysis
+ */
+export const paralysisDeadlineTurn = (ownerIndex, activePlayerIndex, turn) =>
+  ownerIndex === activePlayerIndex ? turn : turn + 1;
+
+/**
  * Check if a creature can still attack this turn.
  * @param {Object} card - The creature card
  * @returns {boolean} True if creature has attacks remaining

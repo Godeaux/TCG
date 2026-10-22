@@ -13,7 +13,13 @@ import {
 import { createCardInstance, isCreatureCard } from '../cardTypes.js';
 import { consumePrey } from './consumption.js';
 import { getMaxHp } from './creatureStats.js';
-import { isImmune, areAbilitiesActive, hasBarrier, isEdible } from '../keywords.js';
+import {
+  isImmune,
+  areAbilitiesActive,
+  hasBarrier,
+  isEdible,
+  paralysisDeadlineTurn,
+} from '../keywords.js';
 import { getTokenById, getCardDefinitionById, resolveCardEffect } from '../cards/index.js';
 import { endTurn } from './turnManager.js';
 
@@ -35,9 +41,9 @@ const validatePlayerIndex = (state, playerIndex, operation = 'operation') => {
   return state.players[playerIndex];
 };
 
-const findCardOwnerIndex = (state, card) =>
+export const findCardOwnerIndex = (state, card) =>
   state.players.findIndex((player) =>
-    player.field.some((slot) => slot?.instanceId === card.instanceId)
+    player.field.some((slot) => slot?.instanceId === card?.instanceId)
   );
 
 /**
@@ -1282,7 +1288,13 @@ export const resolveEffectResult = (state, result, context) => {
     stripAbilities(creature);
     creature.keywords = ['Harmless']; // Grant Harmless (can't attack, deals 0 combat damage)
     creature.paralyzed = true;
-    creature.paralyzedUntilTurn = state.turn + 1;
+    // §7: "until end of its controller's turn" — a creature paralyzed by a
+    // spell during its own controller's turn dies at that same End, not next turn.
+    creature.paralyzedUntilTurn = paralysisDeadlineTurn(
+      findCardOwnerIndex(state, creature),
+      state.activePlayerIndex,
+      state.turn
+    );
     logGameAction(
       state,
       DEBUFF,

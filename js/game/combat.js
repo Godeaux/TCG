@@ -6,6 +6,7 @@ import {
   hasAcuity,
   isPassive,
   hasNeurotoxic,
+  paralysisDeadlineTurn,
   hasAmbush,
   areAbilitiesActive,
   hasToxic,
@@ -199,7 +200,12 @@ export const resolveCreatureCombat = (
     stripAbilities(defender);
     defender.keywords = ['Harmless'];
     defender.paralyzed = true;
-    defender.paralyzedUntilTurn = state.turn + 1;
+    // §7: dies at the end of its controller's turn, computed in one place.
+    defender.paralyzedUntilTurn = paralysisDeadlineTurn(
+      defenderOwnerIndex,
+      state.activePlayerIndex,
+      state.turn
+    );
     logGameAction(
       state,
       DEBUFF,
@@ -218,7 +224,12 @@ export const resolveCreatureCombat = (
     stripAbilities(attacker);
     attacker.keywords = ['Harmless'];
     attacker.paralyzed = true;
-    attacker.paralyzedUntilTurn = state.turn + 1;
+    // §7: dies at the end of its controller's turn, computed in one place.
+    attacker.paralyzedUntilTurn = paralysisDeadlineTurn(
+      attackerOwnerIndex,
+      state.activePlayerIndex,
+      state.turn
+    );
     logGameAction(
       state,
       DEBUFF,

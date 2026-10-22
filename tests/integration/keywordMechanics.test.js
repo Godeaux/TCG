@@ -558,9 +558,12 @@ describe('Neurotoxic Keyword', () => {
 
       resolveCreatureCombat(state, attacker, defender, 0, 1);
 
-      // Attacker should be paralyzed from counter-attack
+      // Attacker should be paralyzed from counter-attack.
+      // §7: the attacker belongs to the ACTIVE player (player 0 here), so the
+      // deadline is the current End of turn — not next turn. Paralysis kills
+      // at the end of the paralyzed creature's controller's turn.
       expect(attacker.paralyzed).toBe(true);
-      expect(attacker.paralyzedUntilTurn).toBe(state.turn + 1);
+      expect(attacker.paralyzedUntilTurn).toBe(state.turn);
     });
 
     it('Neurotoxic applies even with 0 ATK (no damage needed)', () => {
