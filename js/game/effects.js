@@ -10,7 +10,7 @@ import {
   formatCardForLog,
   seededInstanceId,
 } from '../state/gameState.js';
-import { createCardInstance, isCreatureCard } from '../cardTypes.js';
+import { createCardInstance, cloneAbilityData, isCreatureCard } from '../cardTypes.js';
 import { consumePrey } from './consumption.js';
 import { getMaxHp } from './creatureStats.js';
 import {
@@ -187,6 +187,99 @@ const placeCreatureOnField = (state, playerIndex, cardData) => {
   player.field[emptySlot] = instance;
   logGameAction(state, SUMMON, `${player.name} plays ${formatCardForLog(instance)}.`);
   return instance;
+};
+
+/**
+ * Capture the abilities a copier actually has in force, as plain JSON.
+ *
+ * The snapshot is what survives a network round trip: hydration restores these
+ * exact abilities instead of re-reading the printed definition of `copiedFromId`,
+ * which is wrong for a copy of a copy. Functions are never stored — card ability
+ * payloads are data by contract, so anything non-cloneable degrades to a
+ * keyword-only snapshot rather than corrupting the payload.
+ */
+export const buildCopiedSnapshot = (source) => {
+  if (!source || typeof source !== 'object') {
+    return null;
+  }
+  const definition = source.id ? getCardDefinitionById(source.id) : null;
+  const effects =
+    source.effects && Object.keys(source.effects).length > 0
+      ? source.effects
+      : (definition?.effects ?? null);
+  const effect = source.effect ?? definition?.effect ?? null;
+  const effectText = source.effectText ?? definition?.effectText ?? null;
+  const keywords = Array.isArray(source.keywords) ? [...source.keywords] : [];
+  if (keywords.length === 0 && !effects && !effect && !effectText) {
+    return null;
+  }
+  return cloneAbilityData({ keywords, effects, effect, effectText });
+};
+
+/**
+ * Reset an instance to its printed card state (CORE-RULES §6.1).
+ *
+ * Single reset policy for anything that leaves play and returns to hand, so the
+ * effect path and the direct RETURN_TO_HAND action cannot drift apart. Reverts
+ * stats copied in play, clears earned/earned-up counters and temporary status,
+ * and drops borrowed abilities. The instance id is preserved so callers can
+ * still track the physical card across zones.
+ */
+export const resetCardToPrinted = (card) => {
+  const originalCard = card?.id ? getCardDefinitionById(card.id) : null;
+
+  if (originalCard) {
+    if (card.atk !== undefined && originalCard.atk !== undefined) {
+      card.atk = originalCard.atk;
+    }
+    if (card.hp !== undefined && originalCard.hp !== undefined) {
+      card.hp = originalCard.hp;
+    }
+    if (card.nutrition !== undefined) {
+      card.nutrition = originalCard.nutrition;
+    }
+  }
+
+  card.currentAtk = card.atk;
+  card.currentHp = card.hp;
+
+  delete card.consumptionGains;
+  delete card.buffGains;
+
+  card.keywords = Array.isArray(originalCard?.keywords) ? [...originalCard.keywords] : [];
+  card.frozen = false;
+  card.frozenDiesTurn = null;
+  card.paralyzed = false;
+  card.paralyzedUntilTurn = null;
+  card.hasBarrier = originalCard?.keywords?.includes('Barrier') || false;
+  card.abilitiesCancelled = false;
+  card.hasAttacked = false;
+  card.attacksMadeThisTurn = 0;
+  card.summonedTurn = null;
+
+  // A dry drop is a property of the trip onto the field, not of the card: the
+  // 🍂 marker and the keyword strip it applied go away with the trip (§6.1).
+  card.dryDropped = false;
+
+  // Borrowed abilities and any pending delayed work do not survive a trip to hand.
+  card.effects = cloneAbilityData(originalCard?.effects) ?? {};
+  card.effect = cloneAbilityData(originalCard?.effect) ?? null;
+  card.effectText = originalCard?.effectText ?? null;
+  card.copiedFromId = null;
+  card.copiedSnapshot = null;
+  card.endOfTurnSummon = null;
+  card.transformOnStart = originalCard?.transformOnStart ?? null;
+  card.onPlay = originalCard?.onPlay ?? null;
+  card.onConsume = originalCard?.onConsume ?? null;
+  card.onSlain = originalCard?.onSlain ?? null;
+  card.onStart = originalCard?.onStart ?? null;
+  card.onEnd = originalCard?.onEnd ?? null;
+  card.onBeforeCombat = originalCard?.onBeforeCombat ?? null;
+  card.onDefend = originalCard?.onDefend ?? null;
+  card.onTargeted = originalCard?.onTargeted ?? null;
+  delete card.playedVia;
+
+  return card;
 };
 
 export const stripAbilities = (card) => {
@@ -674,9 +767,12 @@ export const resolveEffectResult = (state, result, context) => {
         target.hasBarrier = true;
       }
 
-      // Copy effects object (for onPlay, onConsume, onSlain, and other triggered abilities)
+      // Copy effects object (for onPlay, onConsume, onSlain, and other triggered abilities).
+      // MUST be a deep copy: a shallow spread makes the copier and the source share the
+      // nested payload objects, so any later mutation of one writes through to the other
+      // (and to the registry definition behind both).
       if (source.effects) {
-        target.effects = { ...source.effects };
+        target.effects = cloneAbilityData(source.effects);
       }
 
       // Also copy direct function properties if they exist (for backwards compatibility)
@@ -690,7 +786,7 @@ export const resolveEffectResult = (state, result, context) => {
       target.onTargeted = source.onTargeted || null;
 
       // Copy the effect property as well (for cards using the single 'effect' property)
-      target.effect = source.effect || null;
+      target.effect = cloneAbilityData(source.effect) || null;
 
       // Update effect text to show copied abilities
       // Fall back to registry definition if the carrion instance lost its effectText
@@ -705,8 +801,13 @@ export const resolveEffectResult = (state, result, context) => {
         target.effectText = '(Copied) No abilities.';
       }
 
-      // Track the source ID for multiplayer sync re-hydration
-      target.copiedFromId = source.id;
+      // Track the source ID for display/telemetry, and capture the *effective*
+      // abilities as plain data. copiedFromId alone cannot round trip a copy of a
+      // copy (Mockingbird copies Hoatzin, dies, Mexican Violetear replays that
+      // carrion): re-hydrating from the printed source would hand back Mockingbird's
+      // printed abilities instead of the Hoatzin abilities actually in force.
+      target.copiedFromId = source.id || null;
+      target.copiedSnapshot = buildCopiedSnapshot(source);
 
       const keywordsList =
         sourceKeywords.length > 0 ? formatKeywordList(sourceKeywords) : 'no keywords';
@@ -1083,39 +1184,8 @@ export const resolveEffectResult = (state, result, context) => {
         return;
       }
 
-      // Reset all dynamic state when returning to hand
-      const originalCard = getCardDefinitionById(targetCard.id);
-
-      // Revert stats copied from other cards so the card re-enters play as printed.
-      if (originalCard) {
-        if (targetCard.atk !== undefined && originalCard.atk !== undefined) {
-          targetCard.atk = originalCard.atk;
-        }
-        if (targetCard.hp !== undefined && originalCard.hp !== undefined) {
-          targetCard.hp = originalCard.hp;
-        }
-        if (targetCard.nutrition !== undefined) {
-          targetCard.nutrition = originalCard.nutrition;
-        }
-      }
-
-      // Reset currentHp/currentAtk to base values when returning to hand
-      if (targetCard.hp !== undefined) targetCard.currentHp = targetCard.hp;
-      if (targetCard.atk !== undefined) targetCard.currentAtk = targetCard.atk;
-
-      // Eaten/buffed stat gains do not survive a trip back to the hand (§6.1).
-      delete targetCard.consumptionGains;
-      delete targetCard.buffGains;
-
-      targetCard.keywords = Array.isArray(originalCard?.keywords) ? [...originalCard.keywords] : [];
-      targetCard.frozen = false;
-      targetCard.frozenDiesTurn = null;
-      targetCard.paralyzed = false;
-      targetCard.paralyzedUntilTurn = null;
-      targetCard.hasBarrier = originalCard?.keywords?.includes('Barrier') || false;
-      targetCard.abilitiesCancelled = false;
-      targetCard.hasAttacked = false;
-      targetCard.summonedTurn = null;
+      // Single reset policy: printed stats/abilities, spent runtime fields cleared.
+      resetCardToPrinted(targetCard);
 
       state.players[returnToIndex].hand.push(targetCard);
       logGameAction(

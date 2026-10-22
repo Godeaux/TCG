@@ -44,7 +44,7 @@ import {
 import { resolveCardEffect } from '../cards/index.js';
 import { buildTargetCandidates } from '../cards/effectLibrary.js';
 import { createCardInstance } from '../cardTypes.js';
-import { resolveEffectResult as applyEffect } from './effects.js';
+import { resolveEffectResult as applyEffect, resetCardToPrinted } from './effects.js';
 import { isFreePlay, isEdible, hasScavenge, cantBeConsumed, cantConsume } from '../keywords.js';
 import { advancePhase, endTurn, finalizeEndPhase, getPositionEvaluator } from './turnManager.js';
 import { consumePrey } from './consumption.js';
@@ -1353,7 +1353,18 @@ export class GameController {
     }
 
     player.field[slotIndex] = null;
-    delete card.playedVia;
+
+    // Tokens cannot return to hand — same rule as the returnToHand effect.
+    if (card.isToken) {
+      player.exile.push(card);
+      logMessage(this.state, `${card.name} is destroyed (tokens cannot return to hand).`);
+      this.notifyStateChange();
+      this.broadcast();
+      return { success: true, destroyed: true };
+    }
+
+    // One reset policy for every route back to hand (CORE-RULES §6.1).
+    resetCardToPrinted(card);
     player.hand.push(card);
 
     logMessage(this.state, `${card.name} returns to ${player.name}'s hand.`);

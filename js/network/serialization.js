@@ -15,7 +15,7 @@
  */
 
 import { getCardDefinitionById } from '../cards/registry.js';
-import { createCardInstance } from '../cardTypes.js';
+import { createCardInstance, cloneAbilityData } from '../cardTypes.js';
 import { getLocalPlayerIndex } from '../state/selectors.js';
 import { stripAbilities } from '../game/effects.js';
 import { cleanupDestroyed } from '../game/combat.js';
@@ -88,8 +88,11 @@ export const serializeCardSnapshot = (card) => {
     isToken: card.isToken ?? false,
     abilitiesCancelled: card.abilitiesCancelled ?? false,
     keywords: Array.isArray(card.keywords) ? [...card.keywords] : null,
-    // Track if abilities were copied from another card (for re-applying after hydration)
+    // Track if abilities were copied from another card (for display / legacy sync)
     copiedFromId: card.copiedFromId ?? null,
+    // The abilities actually in force at copy time. Restored verbatim on hydrate
+    // so a copy of a copy does not revert to the first source's printed card.
+    copiedSnapshot: card.copiedSnapshot ? cloneAbilityData(card.copiedSnapshot) : null,
     // Mechanic-specific state that must sync
   };
 };
@@ -165,8 +168,22 @@ export const hydrateCardSnapshot = (snapshot, fallbackTurn) => {
     stripAbilities(instance);
   }
 
-  // Re-apply copied abilities if this card copied from another
-  if (snapshot.copiedFromId) {
+  // Re-apply copied abilities.
+  //
+  // Prefer the captured copiedSnapshot: it holds the abilities actually in force
+  // at copy time, which is the only correct answer for a copy of a copy. The
+  // printed definition of copiedFromId is a legacy fallback for snapshots written
+  // before copiedSnapshot existed.
+  if (snapshot.copiedSnapshot) {
+    const copied = snapshot.copiedSnapshot;
+    instance.copiedFromId = snapshot.copiedFromId ?? null;
+    instance.copiedSnapshot = cloneAbilityData(copied) ?? null;
+    instance.keywords = Array.isArray(copied.keywords) ? [...copied.keywords] : [];
+    instance.hasBarrier = instance.keywords.includes('Barrier');
+    instance.effects = cloneAbilityData(copied.effects) ?? {};
+    instance.effect = cloneAbilityData(copied.effect) ?? null;
+    instance.effectText = copied.effectText ?? '(Copied) No effect text.';
+  } else if (snapshot.copiedFromId) {
     const sourceDefinition = getCardDefinitionById(snapshot.copiedFromId);
     if (sourceDefinition) {
       instance.copiedFromId = snapshot.copiedFromId;
@@ -184,12 +201,18 @@ export const hydrateCardSnapshot = (snapshot, fallbackTurn) => {
 
       // Copy from source definition
       if (sourceDefinition.effects) {
-        instance.effects = { ...sourceDefinition.effects };
+        instance.effects = cloneAbilityData(sourceDefinition.effects);
       }
       instance.effectText = sourceDefinition.effectText
         ? `(Copied) ${sourceDefinition.effectText}`
         : '(Copied) No effect text.';
     }
+  }
+
+  // Cancellation is terminal: re-apply it AFTER any copy re-hydration so a
+  // snapshot carrying both flags can never hand abilities back.
+  if (snapshot.abilitiesCancelled) {
+    stripAbilities(instance);
   }
 
   return instance;
