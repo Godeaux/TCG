@@ -1,4 +1,7 @@
-# Next local task — section B (paralysis timing)
+# Next local task — section C (copied abilities / return-to-hand)
+
+Section B is complete (2026-10-21): see `docs/PARALYSIS-TIMING-FIX-2026-10-21.md`.
+Next when resuming: section C in the ordered queue below.
 
 Section A is complete: see `docs/OWNERSHIP-FIX-2026-10-21.md`. Full contract
 passes 5,074 tests / 59 files. The section-A assignment below is retained as
