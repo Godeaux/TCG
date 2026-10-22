@@ -172,6 +172,7 @@ export function serializeAction(action) {
     case 'END_TURN':
     case 'DRAW_CARD':
     case 'PROCESS_END_PHASE':
+    case 'RESOLVE_END_PHASE_CHOICE':
     case 'ROLL_SETUP_DIE':
     case 'CHOOSE_FIRST_PLAYER':
     case 'TRIGGER_EFFECT':

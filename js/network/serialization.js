@@ -314,6 +314,10 @@ export const buildLobbySyncPayload = (state) => ({
     endOfTurnQueue: Array.isArray(state.endOfTurnQueue)
       ? state.endOfTurnQueue.map((creature) => creature?.instanceId ?? null).filter(Boolean)
       : [],
+    // The creature whose End-phase effect is waiting on a choice. Persisted as
+    // an instanceId for the same reason as the queue: without it a refresh
+    // restores an empty queue and finalizes with no choice and no damage.
+    endOfTurnPending: state.endOfTurnPending?.instanceId ?? null,
     endOfTurnFinalized: state.endOfTurnFinalized === true,
     // Include attack negation flags for multiplayer trap sync
     _lastReactionNegatedAttack: state._lastReactionNegatedAttack ?? undefined,
@@ -553,6 +557,11 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
         state.endOfTurnQueue = payload.game.endOfTurnQueue
           .map((instanceId) => fieldByIdentity.get(instanceId))
           .filter(Boolean);
+        // Same identity rule for the owed choice: point it at the live creature
+        // so answering it mutates the real board, not a hydrating clone.
+        state.endOfTurnPending = payload.game.endOfTurnPending
+          ? (fieldByIdentity.get(payload.game.endOfTurnPending) ?? null)
+          : null;
       }
       if (typeof payload.game.endOfTurnFinalized === 'boolean') {
         state.endOfTurnFinalized = payload.game.endOfTurnFinalized;

@@ -191,6 +191,7 @@ export const createGameState = () => {
     beforeCombatQueue: [],
     beforeCombatProcessing: false,
     endOfTurnQueue: [],
+    endOfTurnPending: null,
     endOfTurnProcessing: false,
     endOfTurnFinalized: false,
     visualEffects: [],

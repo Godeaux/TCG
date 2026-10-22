@@ -22,6 +22,7 @@ import {
   resolveAttack as resolveAttackAction,
   eatPreyAttack as eatPreyAttackAction,
   processEndPhase as processEndPhaseAction,
+  resolveEndPhaseChoice as resolveEndPhaseChoiceAction,
 } from './state/actions.js';
 import {
   deckCatalogs,
@@ -389,6 +390,7 @@ const _TURN_GATED = new Set([
   'RETURN_TO_HAND',
   'ACTIVATE_DISCARD_EFFECT',
   'PROCESS_END_PHASE',
+  'RESOLVE_END_PHASE_CHOICE',
   'SELECT_CONSUMPTION_TARGETS',
   'DRY_DROP',
   'EXTEND_CONSUMPTION',
@@ -3611,6 +3613,70 @@ const navigateToPage = (pageIndex) => {
 // initNavigation moved to ./ui/input/inputRouter.js
 // Now initialized via initializeInput() from ./ui/input/index.js
 
+/**
+ * Ask the local player for the target/option an End-phase effect needs.
+ * Returns the `effectTargets` payload, or [] when cancelled — End-phase effects
+ * are mandatory, so a cancelled prompt falls back to the non-interactive path
+ * (empty targets) exactly as before, never to a skipped effect.
+ */
+const collectEndPhaseTargets = async (creature, selection) => {
+  if (selection?.type === 'selectTarget' && selection.candidates?.length) {
+    try {
+      const selected = await enterTargetingMode({
+        title: `${creature.name}: ${selection.title}`,
+        candidates: selection.candidates,
+        sourceCard: creature,
+      });
+      return selected ? [toEffectTarget(selected)] : [];
+    } catch {
+      return []; // Cancelled — mandatory effect proceeds without a target
+    }
+  }
+  if (selection?.type === 'selectOption') {
+    try {
+      const chosen = await enterOptionMode({
+        title: selection.title || `Choose ${creature.name}'s effect`,
+        options: selection.options,
+        sourceCard: creature,
+      });
+      return chosen ? [{ type: 'option', label: chosen.label }] : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
+/**
+ * End-phase effects are mandatory, so a cancelled prompt reopens rather than
+ * skipping the effect. It must not reopen forever, though: after
+ * MAX_END_PHASE_PROMPT_CANCELS declines for the same creature, the seat's refusal
+ * is read as "you pick" and the action goes out with `force`, which runs the
+ * engine's non-interactive fallback instead of re-asking. Keyed by instanceId so
+ * a different creature gets a fresh allowance.
+ */
+const MAX_END_PHASE_PROMPT_CANCELS = 2;
+const endPhasePromptCancels = new Map();
+
+const noteEndPhasePromptCancel = (instanceId) => {
+  const declines = (endPhasePromptCancels.get(instanceId) ?? 0) + 1;
+  endPhasePromptCancels.set(instanceId, declines);
+  return declines;
+};
+
+/**
+ * Render a refusal the controller returned from PROCESS_END_PHASE. The creature
+ * is already parked in state.endOfTurnPending; this only collects the answer.
+ */
+const promptEndPhaseChoice = async (state, pendingChoice) => {
+  if (!pendingChoice) return [];
+  const source =
+    state.players
+      ?.flatMap((p) => p?.field ?? [])
+      .find((c) => c?.instanceId === pendingChoice.instanceId) ?? null;
+  return collectEndPhaseTargets(source ?? { name: pendingChoice.cardName }, pendingChoice);
+};
+
 const processEndOfTurnQueue = async (state, onUpdate, onEndTurn) => {
   if (state.phase !== 'End') {
     return;
@@ -3644,42 +3710,57 @@ const processEndOfTurnQueue = async (state, onUpdate, onEndTurn) => {
     return;
   }
 
-  // Probe the next creature in the queue for targeting needs
+  // A creature parked by the controller is owed a choice; it is answered
+  // through RESOLVE_END_PHASE_CHOICE rather than by probing the queue head.
+  const pending = state.endOfTurnPending ?? null;
+
+  // Probe the creature about to run for targeting needs
   let effectTargets = [];
-  const nextCreature = state.endOfTurnQueue?.[0];
+  const nextCreature = pending ?? state.endOfTurnQueue?.[0];
   if (nextCreature && isLocalPlayersTurn(state)) {
     const selection = gameController.getEffectSelections(nextCreature, 'onEnd');
-    if (selection?.type === 'selectTarget' && selection.candidates?.length) {
-      try {
-        const selected = await enterTargetingMode({
-          title: `${nextCreature.name}: ${selection.title}`,
-          candidates: selection.candidates,
-          sourceCard: nextCreature,
-        });
-        if (selected) effectTargets = [toEffectTarget(selected)];
-      } catch (e) {
-        // Cancelled — can't cancel end phase effects, so proceed without target
-        // (resolveEffectChain will fall through to onSelectionNeeded)
-      }
-    } else if (selection?.type === 'selectOption') {
-      try {
-        const chosen = await enterOptionMode({
-          title: selection.title || `Choose ${nextCreature.name}'s effect`,
-          options: selection.options,
-          sourceCard: nextCreature,
-        });
-        if (chosen) effectTargets = [{ type: 'option', label: chosen.label }];
-      } catch (e) {
-        // Cancelled — proceed without choice
-      }
-    }
+    effectTargets = await collectEndPhaseTargets(nextCreature, selection);
   }
 
-  const result = dispatchAction(processEndPhaseAction(effectTargets));
+  const result = pending
+    ? dispatchAction(resolveEndPhaseChoiceAction(effectTargets))
+    : dispatchAction(processEndPhaseAction(effectTargets));
+
   if (result?.finalized) {
     onEndTurn?.(); // Auto-end turn after finalization
     return;
   }
+
+  // The controller refused to mutate: the creature is parked in
+  // state.endOfTurnPending and waits for an answer. Ask for it, then resolve.
+  if (result?.needsChoice) {
+    if (!isLocalPlayersTurn(state)) return; // Owner answers on their own seat
+    const answered = await promptEndPhaseChoice(state, result.pendingChoice);
+    const instanceId = result.pendingChoice?.instanceId ?? null;
+
+    // Empty answer = the seat cancelled. Reopen once, then hand the choice to the
+    // engine rather than cycling the prompt.
+    let force = false;
+    if (instanceId) {
+      if (answered.length === 0) {
+        force = noteEndPhasePromptCancel(instanceId) >= MAX_END_PHASE_PROMPT_CANCELS;
+      } else {
+        endPhasePromptCancels.delete(instanceId);
+      }
+    }
+
+    const resolveResult = dispatchAction(resolveEndPhaseChoiceAction(answered, { force }));
+    if (resolveResult?.finalized) {
+      if (instanceId) endPhasePromptCancels.delete(instanceId);
+      onEndTurn?.();
+      return;
+    }
+    if (resolveResult?.needsChoice || resolveResult?.moreInQueue) {
+      setTimeout(() => processEndOfTurnQueue(state, onUpdate, onEndTurn), 0);
+    }
+    return;
+  }
+
   if (result?.moreInQueue) {
     // Continue processing remaining creatures in the queue
     // Use setTimeout to avoid deep recursion and allow UI to update between creatures

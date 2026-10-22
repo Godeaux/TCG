@@ -175,6 +175,9 @@ export class GameController {
         case ActionTypes.PROCESS_END_PHASE:
           return this.handleProcessEndPhase(action.payload);
 
+        case ActionTypes.RESOLVE_END_PHASE_CHOICE:
+          return this.handleResolveEndPhaseChoice(action.payload);
+
         case ActionTypes.ACTIVATE_DISCARD_EFFECT:
           return this.handleActivateDiscardEffect(action.payload);
 
@@ -1724,10 +1727,52 @@ export class GameController {
   // PROCESS END PHASE HANDLER
   // ==========================================================================
 
-  handleProcessEndPhase() {
+  /**
+   * Describe the outstanding End-phase choice for the caller (UI / AI).
+   * Selection objects carry live card references — never serialize this.
+   * @private
+   */
+  _describePendingChoice(creature, selection) {
+    return {
+      instanceId: creature?.instanceId ?? null,
+      cardName: creature?.name ?? null,
+      ...selection,
+    };
+  }
+
+  /**
+   * Does the pre-resolved target queue already answer this selection?
+   * A match is consumed by resolveEffectChain, so this only peeks.
+   * @private
+   */
+  _pendingTargetAnswers(selection) {
+    const targets = this._effectTargets;
+    if (!Array.isArray(targets) || targets.length === 0) return false;
+    const head = targets[0];
+    if (!head) return false;
+
+    if (selection.type === 'selectOption') {
+      return !!head.label && (selection.options ?? []).some((o) => o.label === head.label);
+    }
+    return (selection.candidates ?? []).some((c) => this._matchEffectTarget(c, head));
+  }
+
+  /**
+   * PROCESS_END_PHASE — re-entrant by design (see docs/CDE-E-DESIGN-2026-10-22.md).
+   *
+   * The head creature is **probed** before it leaves the queue. If its effect
+   * needs a choice and no valid answer arrived with this action, the action
+   * refuses: state is untouched apart from moving the creature to
+   * `endOfTurnPending`, and the caller gets `needsChoice` + the selection to
+   * render. That is the spec's "missing/invalid mandatory targets refuse before
+   * mutation" — a refresh can then restore the owed choice instead of silently
+   * finalizing without it.
+   */
+  handleProcessEndPhase(payload = {}) {
     if (this.state.phase !== 'End') {
       return { success: false, error: 'Not in End phase' };
     }
+    const force = payload?.force === true;
 
     if (this.state.endOfTurnFinalized) {
       return { success: false, error: 'Already finalized' };
@@ -1737,6 +1782,12 @@ export class GameController {
       return { success: false, error: 'Already processing' };
     }
 
+    // A creature is already owed a choice. Re-offer it rather than advancing —
+    // this is what a refreshed seat hits, and it must stay a no-op.
+    if (this.state.endOfTurnPending) {
+      return this.handleResolveEndPhaseChoice(payload);
+    }
+
     if (this.state.endOfTurnQueue.length === 0) {
       finalizeEndPhase(this.state);
       this.notifyStateChange();
@@ -1744,14 +1795,83 @@ export class GameController {
       return { success: true, finalized: true };
     }
 
-    const creature = this.state.endOfTurnQueue.shift();
+    // PEEK — the entry only leaves the queue once we know it can complete.
+    const creature = this.state.endOfTurnQueue[0];
     if (!creature) {
-      finalizeEndPhase(this.state);
-      this.notifyStateChange();
-      this.broadcast();
-      return { success: true, finalized: true };
+      this.state.endOfTurnQueue.shift();
+      return { success: true, moreInQueue: this.state.endOfTurnQueue.length > 0 };
     }
 
+    const selection = this._endPhaseSelection(creature);
+    if (selection && !force && !this._pendingTargetAnswers(selection)) {
+      this.state.endOfTurnQueue.shift();
+      this.state.endOfTurnPending = creature;
+      this.notifyStateChange();
+      this.broadcast();
+      return {
+        success: true,
+        needsChoice: true,
+        pendingChoice: this._describePendingChoice(creature, selection),
+        moreInQueue: this.state.endOfTurnQueue.length > 0,
+      };
+    }
+
+    this.state.endOfTurnQueue.shift();
+    return this._runEndPhaseCreature(creature);
+  }
+
+  /**
+   * RESOLVE_END_PHASE_CHOICE — answer the creature held in `endOfTurnPending`.
+   * An invalid or missing answer refuses again and keeps the entry pending, so
+   * the choice can never be consumed twice or lost.
+   */
+  handleResolveEndPhaseChoice(payload = {}) {
+    if (this.state.phase !== 'End') {
+      return { success: false, error: 'Not in End phase' };
+    }
+    const force = payload?.force === true;
+    if (this.state.endOfTurnFinalized) {
+      return { success: false, error: 'Already finalized' };
+    }
+    if (this.state.endOfTurnProcessing) {
+      return { success: false, error: 'Already processing' };
+    }
+
+    const creature = this.state.endOfTurnPending;
+    if (!creature) {
+      return { success: false, error: 'No pending end-of-turn choice' };
+    }
+
+    const selection = this._endPhaseSelection(creature);
+    if (selection && !force && !this._pendingTargetAnswers(selection)) {
+      return {
+        success: true,
+        needsChoice: true,
+        pendingChoice: this._describePendingChoice(creature, selection),
+        moreInQueue: this.state.endOfTurnQueue.length > 0,
+      };
+    }
+
+    return this._runEndPhaseCreature(creature, { fromPending: true });
+  }
+
+  /**
+   * Probe a queued creature's onEnd for a user choice. Returns null when the
+   * effect resolves on its own (including selectFromGroup auto-select, which
+   * returns a result rather than a prompt).
+   * @private
+   */
+  _endPhaseSelection(creature) {
+    if (!creature || (!creature.onEnd && !creature.effects?.onEnd)) return null;
+    return this.getEffectSelections(creature, 'onEnd');
+  }
+
+  /**
+   * Run one queued creature's End-phase effect to completion.
+   * @private
+   */
+  _runEndPhaseCreature(creature, { fromPending = false } = {}) {
+    this.state.endOfTurnPending = creature;
     this.state.endOfTurnProcessing = true;
     const playerIndex = this.state.activePlayerIndex;
     const opponentIndex = (playerIndex + 1) % 2;
@@ -1767,9 +1887,11 @@ export class GameController {
       }
       this.cleanupDestroyed();
       this.state.endOfTurnProcessing = false;
+      if (this.state.endOfTurnPending === creature) {
+        this.state.endOfTurnPending = null;
+      }
       this.notifyStateChange();
       this.broadcast();
-      // Continue processing queue (recursive via callback)
     };
 
     if (!creature.onEnd && !creature.effects?.onEnd) {

@@ -114,6 +114,10 @@ const queueEndOfTurnEffects = (state) => {
     (creature) => creature?.onEnd || creature?.effects?.onEnd || creature?.endOfTurnSummon
   );
 
+  // Re-deriving the queue is for a *fresh* End phase, so any choice still owed
+  // from a previous one is dropped with it. A refresh does not re-enter here —
+  // it hydrates endOfTurnPending directly (see network/serialization.js).
+  state.endOfTurnPending = null;
   state.endOfTurnProcessing = false;
   state.endOfTurnFinalized = false;
 };
@@ -328,7 +332,7 @@ export const endTurn = (state) => {
   if (
     state.phase === 'End' &&
     !state.endOfTurnFinalized &&
-    (state.endOfTurnProcessing || state.endOfTurnQueue.length > 0)
+    (state.endOfTurnProcessing || state.endOfTurnPending || (state.endOfTurnQueue?.length ?? 0) > 0)
   ) {
     logMessage(state, 'Resolve end-of-turn effects before ending the turn.');
     return;
@@ -343,6 +347,11 @@ export const endTurn = (state) => {
     logPlainMessage(state, `━━━ PHASE: END ━━━`);
     finalizeEndPhase(state);
   }
+
+  // Past the End-phase gate: nothing is owed any more, so a choice that was
+  // never answered (e.g. a forced turn hand-off) is cleared rather than leaking
+  // into the next player's turn.
+  state.endOfTurnPending = null;
 
   const previousPlayer = state.players[state.activePlayerIndex].name;
   state.activePlayerIndex = (state.activePlayerIndex + 1) % 2;
