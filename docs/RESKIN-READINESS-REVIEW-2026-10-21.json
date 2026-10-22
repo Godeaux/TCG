@@ -1,0 +1,83 @@
+{
+  "paralysis": {
+    "afterCombat": {
+      "success": true,
+      "hp": 1,
+      "paralyzed": true,
+      "deadline": 5,
+      "turn": 4
+    },
+    "atEnd": {
+      "phase": "End",
+      "finalized": true,
+      "stillOnField": true,
+      "hp": 1
+    }
+  },
+  "bounceCopied": {
+    "inHand": true,
+    "copiedFromId": "bird-prey-hoatzin",
+    "hasPrintedOnPlay": false,
+    "hasCopiedOnEnd": true,
+    "expectedPrintedOnPlay": true
+  },
+  "copyOfCopy": {
+    "beforeOnEnd": {
+      "type": "damageRival",
+      "params": {
+        "amount": 2
+      }
+    },
+    "afterOnEnd": null,
+    "copiedFromId": "bird-prey-mockingbird"
+  },
+  "inflightEnd": {
+    "promptOpened": true,
+    "restoredQueue": 0,
+    "result": {
+      "success": true,
+      "finalized": true
+    },
+    "reopened": false
+  },
+  "opponentAttacker": {
+    "validation": {
+      "valid": true
+    },
+    "execution": {
+      "success": true
+    },
+    "hostHpBefore": 10,
+    "hostHpAfter": 8,
+    "attackerOwner": 0,
+    "senderSeat": 1
+  },
+  "startPhaseDeath": {
+    "transition": {
+      "success": true
+    },
+    "active": 0,
+    "phase": "Main 1",
+    "kakapoInCarrion": true,
+    "feathersInHand": 0
+  },
+  "fieldRelease": {
+    "focusedOnStart": true,
+    "focusedAfterRelease": true
+  },
+  "settingsNativeTab": {
+    "allInside": true,
+    "distinctFocusedElements": [
+      "settings-overlay-music",
+      "settings-overlay-sfx",
+      "settings-overlay-voice",
+      "settings-overlay-done",
+      "settings-overlay-close",
+      "settings-overlay-volume"
+    ]
+  },
+  "settingsEscapedFocus": {
+    "modalOpen": true,
+    "backgroundActivations": 1
+  }
+}

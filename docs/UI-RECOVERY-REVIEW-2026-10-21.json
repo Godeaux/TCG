@@ -1,0 +1,34 @@
+{
+  "queueIdentity": true,
+  "restoredHoatzinDamage": 2,
+  "interruptedSelection": {
+    "selectionOpened": true,
+    "sourceQueue": 0,
+    "sourceProcessing": true,
+    "restoredQueue": 0,
+    "restoredProcessing": false,
+    "result": {
+      "success": true,
+      "finalized": true
+    },
+    "selectionReopened": false
+  },
+  "nextSelection": {
+    "minimized": true,
+    "button": "Hide",
+    "contentDisplay": "none"
+  },
+  "settingsFocus": {
+    "activeElement": "review-behind",
+    "insideDialog": false,
+    "dialogRole": null
+  },
+  "grantedSummon": {
+    "uninterruptedTokens": 1,
+    "restoredTokens": 0
+  },
+  "touchCancel": {
+    "focusedBefore": true,
+    "focusedAfter": true
+  }
+}

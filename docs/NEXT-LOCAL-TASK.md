@@ -1,47 +1,44 @@
-# Next local task: repair intent restoration and its acceptance tests
+# Next local task — section B (paralysis timing)
 
-Start at reviewed HEAD 7d1bdc5 plus review-doc commit. Read AGENTS.md,
-docs/HOST-REFRESH-REVIEW.md and docs/STABILIZATION.md. This supersedes the
-previous host-refresh task; do not repeat its exploratory investigation.
+Section A is complete: see `docs/OWNERSHIP-FIX-2026-10-21.md`. Full contract
+passes 5,074 tests / 59 files. The section-A assignment below is retained as
+history; do not redo it. Continue with section B only when resuming the backlog.
 
-## Evidence already established — reproduce once, then fix
+Reviewed baseline: `5e9795d`. Read `AGENTS.md` and
+`docs/RESKIN-READINESS-REVIEW-2026-10-21.md` first. That review supersedes the morning
+ordering, preserving the earlier review as evidence. Production baseline is green:
+4,996 tests / 58 files, 246 existing warnings; interface-regression.mjs passes.
 
-Copy the two exact regressions in HOST-REFRESH-REVIEW.md into the network tests.
-They use the real GameController and valid host/guest identities. Both fail now:
-- stale intent5 executes after restore expects9;
-- buffered but unprocessed intent2 makes restore expect3 rather than1.
-The existing duplicate test passes for the wrong reason (Unknown sender).
+## Completed assignment: section A (historical acceptance criteria)
 
-## Deliverable: one focused commit
+Fix the reproduced card-ownership bypass in js/network/actionValidator.js.
+Normal cards have no uid, so `c.uid === card.uid` erroneously matches unrelated
+cards. The diagnostic serialized/deserialized a guest attack using the host's
+Hoatzin; validation accepted it and host HP fell 10→8.
 
-1. Define checkpoint fields precisely: last CONFIRMED action revision; contiguous
-   consumed/processed guest-intent high-water mark; guest-local sent counter is not
-   proof of host execution. Do not derive processed progress from highest received.
-   Rejections need a defined terminal response too; never strand their retries.
-2. Refuse stale counters before executing game mutations. Remove synthetic restored
-   IDs as a dedup guarantee. For already-consumed retries, replay a known outcome or
-   trigger explicit authoritative recovery when outcome history is unavailable.
-   Do not silently drop a retry and leave the guest pending forever.
-3. Capture coherent progress after a terminal intent outcome, with matching board
-   and RNG. Test out-of-order2-before1, duplicates before/after reconstructing the bus,
-   and retries of rejected actions. Preserve normal ordered progress and unchanged
-   state for refused duplicates. Include a valid fresh intent to prove fixture works.
-4. Tighten the host-refresh harness: require >=2 CONFIRMED guest intents before reload,
-   assert unchanged pre/post checkpoint state (not just agreement between clients),
-   exact hand/deck identities, and require a post-rejoin guest action and host action
-   to confirm. Do not skip checks when mismatch is true or when it is the wrong turn;
-   progress legally until the required turn or fail on a bounded timeout.
-5. npm run check (baseline 4982/56, 246 existing warnings), then real isolated-context
-   host AND guest reload runs. Report actual exit status, not grep-for-FAIL counts.
-   Trap coverage may be explicitly optional for these focused runs. Commit complete
-   notes including remaining persistence blocker; capture counters/evidence.
+1. Read the exact section-A reproduction and acceptance list. Add failing
+   production-path refusal tests with real cards, lobby identities and controller;
+   mock transport/storage only. Do not just test a copied identity helper.
+2. Make all four affected ownership checks fail closed. Test missing/empty IDs,
+   conflicting modern/legacy identity, wrong owner/zone, removed refs, and legitimate
+   own-card actions. Preserve defined legacy support rather than silently guessing.
+3. Run targeted tests and npm run check. Commit only this implementation + its tests
+   and a short status note with exact results. Do not sweep untracked review artifacts
+   into the implementation commit. No push, merge, live backend changes or reskin.
+4. Report what changed, tests/exit status, commit SHA, and next backlog item.
+   At 15 minutes, checkpoint actual evidence/blocker; do not loop reading/planning.
 
-## Bounds
+## Remaining ordered queue (do not attempt all in one run)
 
-20-minute checkpoint: new regressions reproduced, state the chosen invariant.
-If no new evidence for 20 more minutes, crystallize the blocker rather than loop.
-No UI overhaul, rematch, simultaneous reloads, pending-trap reload, auth migrations
-or broad epoch protocol in this task. Do NOT claim crash-safe persistence afterward:
-unconditional multi-writer upserts and mixed revision namespaces remain a separate
-high-priority follow-up, detailed in HOST-REFRESH-REVIEW.md. If the minimal intent fix
-requires changing that contract, stop with the exact dependency and proposed scope.
+B. Paralysis timing when active attacker is paralyzed by defender.
+C. Return-to-hand reset and copying already-copied abilities across snapshots.
+D. Start-of-turn deaths suppressing onSlain.
+E. Atomic/durable mandatory End decisions (announced fix not present at baseline).
+F. Authoritative monotonic checkpoints; stage backend work if required, no live deploy.
+G. Field release cleanup; robust Settings focus and genuine native-input regressions.
+H. Bounded desktop/portrait and two-client acceptance matrix; report remaining gates.
+
+The linked review has exact evidence, file locations and acceptance criteria for
+all tasks, plus the separate auth/RLS production-release blockers. Finish one
+bounded task at a time, keep tests meaningful, and do not call the game crash-safe
+or fully ready merely because the existing suite is green.
