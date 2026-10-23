@@ -983,6 +983,12 @@ const updateIndicators = (state, controlsLocked) => {
 
 const updatePlayerStats = (state, index, role, onUpdate = null) => {
   const player = state.players[index];
+  // Keep the seat marker on each identity strip truthful for the resolver
+  // (rival strip = 'player2' role slot, own strip = 'player1' role slot).
+  if (role === 'player1' || role === 'player2') {
+    const stripEl = document.getElementById(role === 'player2' ? 'rival-strip' : 'own-strip');
+    if (stripEl) stripEl.dataset.playerIndex = String(index);
+  }
   const nameEl = document.getElementById(`${role}-name`);
   const hpEl = document.getElementById(`${role}-hp`);
   const deckEl = document.getElementById(`${role}-deck`);
@@ -5019,8 +5025,10 @@ export const renderGame = (state, callbacks = {}) => {
       endOfTurnPending ||
       (!isLocalTurn && isOnline)
   );
-  updatePlayerStats(state, 0, 'player1');
-  updatePlayerStats(state, 1, 'player2', callbacks.onUpdate);
+  // CP01 seat-synced strips: rival slot shows the actual opponent of the local
+  // viewpoint seat, own slot shows the local seat. Never hardcoded to player 1.
+  updatePlayerStats(state, opponentIndex, 'player2', callbacks.onUpdate);
+  updatePlayerStats(state, activeIndex, 'player1');
   // Update pile counts from viewing player's perspective
   updatePlayerStats(state, activeIndex, 'active');
   // Pre-cache spell effect targets BEFORE rendering (needed for multiplayer sync)

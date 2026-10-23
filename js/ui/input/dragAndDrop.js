@@ -1208,11 +1208,14 @@ const handleDrop = (event) => {
   ) {
     handlePlayerDrop(card, dropTarget);
   } else if (dropTarget?.classList.contains('scoreboard-row')) {
-    // Treat entire scoreboard row as attack on opponent
-    const localIndex = getLocalPlayerIndex(latestState);
-    const opponentIndex = (localIndex + 1) % 2;
-    // Create a fake target with opponent's player index for handlePlayerDrop
-    const fakeTarget = { dataset: { playerIndex: String(opponentIndex) } };
+    // Treat entire scoreboard row as attack on the seat that row displays.
+    // CP01: strips carry seat-synced data-player-index (kept truthful by the
+    // render pass), so dropping on a row attacks exactly that player.
+    const stripOnRow = dropTarget.querySelector('.player-badge[data-player-index]');
+    const rowIndex =
+      stripOnRow?.dataset?.playerIndex ?? String((getLocalPlayerIndex(latestState) + 1) % 2);
+    // Create a fake target with that player index for handlePlayerDrop
+    const fakeTarget = { dataset: { playerIndex: rowIndex } };
     handlePlayerDrop(card, fakeTarget);
   } else if (dropTarget?.classList.contains('card')) {
     const targetCard = getCardFromInstanceId(dropTarget.dataset.instanceId, latestState);
