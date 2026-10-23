@@ -6,13 +6,15 @@
 - **Spec:** [UI-OVERHAUL-SPEC.md](UI-OVERHAUL-SPEC.md), version 1.0, authoritative.
 - **Repo:** `/Users/nut/.openclaw/workspace/food-chain-tcg`.
 - **Branch:** `ui/overhaul-2026-10-22`; gameplay base `0b84588`.
-- **Current checkpoint:** CP00 NOT_STARTED. Design/handoff only is complete.
-- **Last completed:** design approval + nutrition correction, not production code.
-- **Next exact action:** git status/log; read AGENTS.md and spec §§0–2,7–9; run
-  npm run check and record baseline; inspect approved reference images and production
-  layout. Then implement CP01. Read history §§3–6 before CP03.
-- **Known baseline:** 63 Vitest files / 5,119 tests, format clean, lint 244 warnings /
-  zero errors; remeasure on your checkout. Baseline receipt to be filled at CP00.
+- **Current checkpoint:** CP00 PASS (receipt below). Next: CP01 IN_PROGRESS.
+- **Last completed:** CP00 baseline/reference freeze at `c008a0d` on branch
+  `ui/overhaul-2026-10-22`; evidence in `docs/ui-overhaul/evidence/CP00/`.
+- **Next exact action:** implement CP01 (production layout shell/tokens) against
+  spec §§1–2 and 7–9: `index.html` structure + `styles.css` layout tokens, then
+  re-run `npm run check` and re-shoot the same viewports into
+  `docs/ui-overhaul/evidence/CP01/`. Read history §§3–6 before CP03.
+- **Known baseline:** measured on this checkout 2026-10-22: `npm run check` exit 0,
+  63 Vitest files / 5,119 tests, format clean, lint 244 warnings / zero errors.
 - **Current failing command/assertion:** none in design handoff.
 - **Owner decisions pending:** none. Face strip and merged A are approved, NUT fixed.
 - **Blocker:** none to local implementation. Live relaunch/auth/backend gates remain
@@ -29,8 +31,8 @@
 Use NOT_STARTED / IN_PROGRESS / PASS / BLOCKED. PASS requires a receipt below.
 Only one checkpoint IN_PROGRESS. Sub-checkpoints are independently committable.
 
-- CP00 — baseline/reference freeze: NOT_STARTED
-- CP01 — production layout shell/tokens: NOT_STARTED
+- CP00 — baseline/reference freeze: PASS
+- CP01 — production layout shell/tokens: IN_PROGRESS
 - CP02 — cards/hand/inspection/statuses: NOT_STARTED
 - CP03 — history schema, first vertical slice, reconciliation: NOT_STARTED
 - CP04a — combat/player event capture: NOT_STARTED
@@ -57,6 +59,51 @@ Evidence: <repo-relative screenshot/log/json paths>
 Decisions: <schema/API/interaction choices with reason>
 Remaining: <specific cases not covered; never hide skips>
 Next exact step: <one path/function/assertion to start with>
+```
+
+## Receipts
+
+```text
+Checkpoint: CP00 — PASS
+Commit: on branch ui/overhaul-2026-10-22 at base c008a0d; this ledger edit + new
+  docs/ui-overhaul/evidence/CP00/*.png are the only changes (no production code touched).
+Implemented: Recorded the baseline contract and froze real-app reference screenshots
+  of the CURRENT production UI at the approved viewports, captured by driving the
+  actual Play-vs-AI flow in Chromium (not mockups).
+Files/symbols: docs/ui-overhaul/evidence/CP00/{phone-393-board,phone-393-menu,
+  phone-375-board,desktop-1440-board,desktop-1440-menu}.png;
+  docs/ui-overhaul/evidence/CP00/capture.mjs (reusable capture script);
+  docs/UI-OVERHAUL-EXECUTION.md (resume block + this receipt).
+Baseline: `npm run check` — exit 0. format: clean. lint: 244 warnings / 0 errors
+  (pre-existing). vitest run: 63 files / 5,119 tests passed, 0 failures.
+Focused checks: `vitest run` — exit 0, 63 files / 5,119 tests passed (full suite;
+  no filtering).
+Contract: npm run check — exit 0; 63 files / 5,119 tests; lint 0 errors / 244 warnings.
+Browser: Real Chromium (Playwright chromium-1228, "Google Chrome for Testing"),
+  http://127.0.0.1:8123 served from the repo. Flow clicked through per viewport:
+  menu → Other → AI → Random deck → category panel → deck builder (Random) →
+  Confirm → setup rolls → live board (state read back as
+  "T1 Setup | You(10hp d:15 h:5) | Rival(10hp d:15 h:5)", then T1 Main 1 with a
+  5-card hand). Viewports: 393x852 touch, 375x812 touch, 1440x900 desktop. No
+  horizontal overflow (documentElement.scrollWidth === innerWidth at 1440). Menu
+  load: zero failed network requests (>=400) on networkidle.
+Evidence: docs/ui-overhaul/evidence/CP00/ (5 PNGs above + capture.mjs).
+Decisions:
+  - Capture via the production UI flow rather than __qa fixtures, so CP01+ diffs are
+    the same pixels a player sees.
+  - Deck-select category panels animate and overlap; the capture script waits
+    ~1.2s then force-clicks the first panel. Needed for deterministic re-shoots.
+  - Frozen the 393x852 (approved reference), 375x812, and 1440x900 viewports as the
+    standing comparison set for every later checkpoint.
+Remaining: No history-drawer screenshot yet — the current build exposes game history
+  inline in the side panel and has no #history-toggle/[data-action="toggle-history"]
+  control at these viewports; the CP03+ face/history work is what introduces it, so
+  the "before" state for that region is the inline panel visible in
+  phone-393-board.png / desktop-1440-board.png. Online/PvP and profile/pack overlays
+  are not captured (auth-gated; out of scope per the no-live-services constraint).
+Next exact step: CP01 — read spec §§1–2 and 7–9, then edit index.html + styles.css
+  for the approved layout shell/design tokens; re-run npm run check; re-shoot the
+  same three viewports into docs/ui-overhaul/evidence/CP01/ with capture.mjs.
 ```
 
 ## Coverage tracker — populate during CP03–04
