@@ -6,13 +6,20 @@
 - **Spec:** [UI-OVERHAUL-SPEC.md](UI-OVERHAUL-SPEC.md), version 1.0, authoritative.
 - **Repo:** `/Users/nut/.openclaw/workspace/food-chain-tcg`.
 - **Branch:** `ui/overhaul-2026-10-22`; gameplay base `0b84588`.
-- **Current checkpoint:** CP00 PASS (receipt below). Next: CP01 IN_PROGRESS.
-- **Last completed:** CP00 baseline/reference freeze at `c008a0d` on branch
-  `ui/overhaul-2026-10-22`; evidence in `docs/ui-overhaul/evidence/CP00/`.
-- **Next exact action:** implement CP01 (production layout shell/tokens) against
-  spec §§1–2 and 7–9: `index.html` structure + `styles.css` layout tokens, then
-  re-run `npm run check` and re-shoot the same viewports into
-  `docs/ui-overhaul/evidence/CP01/`. Read history §§3–6 before CP03.
+- **Current checkpoint:** CP01 PASS (receipt below). Next: CP02 NOT_STARTED.
+- **Last completed:** CP01 production layout shell at (this commit) on branch
+  `ui/overhaul-2026-10-22`; evidence in `docs/ui-overhaul/evidence/CP01/`.
+- **Next exact action:** implement CP02 (real cards, hand, inspection, status
+  visuals) against spec §3 + card rendering paths; re-run `npm run check`;
+  re-shoot viewports into `docs/ui-overhaul/evidence/CP02/`. Read history
+  §§3–6 before CP03.
+- **CP01 facts CP02+ must know:** strips are `#rival-strip`/`#own-strip` with
+  seat-truthful `data-player-index` (updated in `updatePlayerStats`); drop-on-row
+  attack reads that attribute; emote bubbles anchor via
+  `.player-badge[data-player-index]`. History shell = existing `.game-log-panel`
+  opened on phone by `#field-history-btn` (utility bar), docked right on desktop.
+  Piles/advantage live inside `.own-control-row` — legacy full-width sidebar CSS
+  is overridden by `.own-control-row .piles-section` compact rules.
 - **Known baseline:** measured on this checkout 2026-10-22: `npm run check` exit 0,
   63 Vitest files / 5,119 tests, format clean, lint 244 warnings / zero errors.
 - **Current failing command/assertion:** none in design handoff.
@@ -32,7 +39,7 @@ Use NOT_STARTED / IN_PROGRESS / PASS / BLOCKED. PASS requires a receipt below.
 Only one checkpoint IN_PROGRESS. Sub-checkpoints are independently committable.
 
 - CP00 — baseline/reference freeze: PASS
-- CP01 — production layout shell/tokens: IN_PROGRESS
+- CP01 — production layout shell/tokens: PASS
 - CP02 — cards/hand/inspection/statuses: NOT_STARTED
 - CP03 — history schema, first vertical slice, reconciliation: NOT_STARTED
 - CP04a — combat/player event capture: NOT_STARTED
@@ -104,6 +111,51 @@ Remaining: No history-drawer screenshot yet — the current build exposes game h
 Next exact step: CP01 — read spec §§1–2 and 7–9, then edit index.html + styles.css
   for the approved layout shell/design tokens; re-run npm run check; re-shoot the
   same three viewports into docs/ui-overhaul/evidence/CP01/ with capture.mjs.
+```
+
+```text
+Checkpoint: CP01 — PASS
+Commit: b13140b (branch ui/overhaul-2026-10-22)
+Implemented: Battlefield re-composed into the spec order: top utility bar
+  (nav arrows + history button) → rival identity strip sharing a row with the
+  face-down rival hand → enemy field → phase divider → own field → own identity
+  strip + compact pile/advantage band → hand. Identity strips are seat-synced
+  (data-player-index from real opponent/local seat, not hardcoded); emote
+  bubbles and drop-to-attack now resolve through that attribute. History shell
+  reuses legacy log: phone opens it via the utility-bar 📜 (overlay w/ ✕),
+  desktop docks it right. Piles moved from sidebar into own-control row as a
+  compact band. No controls removed; no hidden hardcoded board.
+Files/symbols: index.html (.top-utilities, .rival-strip-row, #rival-strip,
+  #own-strip, .own-control-row); styles.css (CP01 section at EOF +
+  .battlefield-layout grid rows in 3 breakpoints); js/ui.js (updatePlayerStats
+  strip seat sync, renderGame passes opponentIndex); EmoteBubble.js
+  (data-player-index anchor); dragAndDrop.js handleDrop (row-drop reads strip).
+Baseline: npm run check exit 0 pre-change (CP00 baseline note holds).
+Focused checks: full suite 63 files / 5,119 tests pass; Playwright flow scripts
+  in evidence dir exercise menu→AI match→board, history open/close, resize.
+Contract: npm run check — exit 0; 63 files/5119 tests; lint 0 errors/244
+  warnings (all pre-existing); prettier clean (dragAndDrop.js reformatted).
+Browser: real app via Playwright Chromium: 393×852 and 1440×900 full AI match;
+  zone order phone 28<82<155<271<327<440<594, desktop 0<20<92<270<298<472<582;
+  no h-overflow either viewport (sh==cw); live 1440→393 resize preserves order,
+  seats, HP positions; history panel opens 0→369×788 and closes on phone, 12–15
+  log entries after one play. Zero app pageerrors/console errors.
+Evidence: docs/ui-overhaul/evidence/CP01/ (5 PNGs, audit-notes.md, 3 capture
+  scripts). Screenshots posted to #food-chain-tcg.
+Decisions:
+  - Strips keep legacy .scoreboard-player classes so every existing selector
+    still matches; new structure via additive classes only.
+  - Seat truthfulness lives in updatePlayerStats (single render funnel);
+    consumers (drop attack, emotes) read data-player-index instead of sides.
+  - Legacy portrait rules that display:none'd nav arrows are re-enabled only
+    inside .top-utilities; field divider keeps surrender/resync on desktop,
+    phone retains legacy tap-name surrender affordance.
+  - CP01 evidence dir is docs/ui-overhaul/evidence/CP01 (lowercase, matches CP00).
+Remaining: 375×812 + safe-area notch shots (CP08 sweep); emote toggles only
+  visible online (unchanged gate); field-divider copyright text removed per
+  approved design; two-seat PvP live verification is a CP08/09 external gate.
+Next exact step: CP02 — spec §3 card geometry/text/status; re-shoot into
+  docs/ui-overhaul/evidence/CP02/.
 ```
 
 ## Coverage tracker — populate during CP03–04
