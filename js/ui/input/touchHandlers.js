@@ -259,6 +259,14 @@ const handleTouchStart = (e) => {
   const touch = e.touches[0];
   const state = getLatestState();
 
+  // CP02: full effect text may overflow its area on small cards; when the
+  // touch starts inside a scrollable .card-effect-text, let the browser pan
+  // it natively instead of starting the focus/drag interaction.
+  const effectArea = e.target?.closest?.('.card-effect-text');
+  if (effectArea && effectArea.scrollHeight > effectArea.clientHeight + 1) {
+    return;
+  }
+
   // Use unified card detection - handles z-index, transforms, overlapping cards
   const touched = getTouchedCard(touch.clientX, touch.clientY, state);
 

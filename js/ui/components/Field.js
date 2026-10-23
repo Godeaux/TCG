@@ -13,7 +13,7 @@
  */
 
 import { renderCard } from './Card.js';
-import { cantAttack as cantAttackPrimitive } from '../../keywords.js';
+import { cantAttack as cantAttackPrimitive, hasKeyword } from '../../keywords.js';
 import { isLocalPlayersTurn } from '../../state/selectors.js';
 import { showCardTooltip, hideCardTooltip, hideCardTooltipImmediate } from './CardTooltip.js';
 
@@ -33,6 +33,8 @@ import { showCardTooltip, hideCardTooltip, hideCardTooltipImmediate } from './Ca
  * @param {Function} options.onReturnToHand - Return to Hand callback (card) => void
  * @param {Function} options.onSacrifice - Sacrifice callback (card) => void
  */
+const hasHaste = (card) => hasKeyword(card, 'Haste');
+
 export const renderField = (state, playerIndex, isOpponent, options = {}) => {
   const { onAttack, onInspect, onReturnToHand, onSacrifice } = options;
 
@@ -60,6 +62,11 @@ export const renderField = (state, playerIndex, isOpponent, options = {}) => {
     }
 
     const isCreature = card.type === 'Predator' || card.type === 'Prey';
+
+    // CP02: summoning sickness / spent attacks get a resting visual so the
+    // board state is legible without reading rules text.
+    const summonedThisTurn = isCreature && card.summonedTurn === state.turn;
+    const exhausted = isCreature && (card.hasAttacked || (summonedThisTurn && !hasHaste(card)));
 
     // Determine if creature can attack
     const canAttack =
@@ -96,6 +103,10 @@ export const renderField = (state, playerIndex, isOpponent, options = {}) => {
       onReturnToHand,
       onSacrifice,
     });
+
+    if (exhausted) {
+      cardElement.classList.add('exhausted-state');
+    }
 
     // Add hover tooltip listeners (Hearthstone-style)
     cardElement.addEventListener('mouseenter', () => {

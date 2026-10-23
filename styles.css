@@ -619,7 +619,7 @@ button {
 .field-slot .card .card-image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain; /* CP02: field art uncropped like hand */
 }
 
 .field-slot .card .card-stats-row {
@@ -1788,7 +1788,7 @@ button {
 .inspector-card-image-img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain; /* CP02: inspection uncropped; only history covers */
   border-radius: calc(var(--card-radius) - 2px);
 }
 
@@ -2917,8 +2917,9 @@ button {
   font-size: var(--font-sm);
   text-align: center;
   overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  /* CP02: long names wrap instead of hiding identity behind an ellipsis */
+  white-space: normal;
+  overflow-wrap: break-word;
   padding: 2cqi 3cqi;
   background: rgba(0, 0, 0, 0.4);
   flex: 0 0 auto;
@@ -3030,23 +3031,41 @@ button {
 
 /* HTML text elements - scaled via CSS container query (cqi) units */
 .card-name-text {
-  font-size: clamp(8px, 7cqi, 20px);
+  /* CP02: names stay fully visible; wrap to multiple lines, never ellipsize */
+  font-size: clamp(7px, 6cqi, 18px);
   font-weight: 600;
   text-align: center;
+  line-height: 1.08;
+  overflow-wrap: break-word;
+  max-height: 100%;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .card-effect-text {
-  font-size: clamp(7px, 6cqi, 16px);
+  /* CP02: complete effect text — no clamp/ellipsis. If a card's text cannot
+     fit its area, the text area scrolls instead of text being hidden. */
+  font-size: clamp(6px, 5.2cqi, 16px);
   color: rgba(255, 255, 255, 0.92);
   text-align: center;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
+  line-height: 1.25;
+  overflow: hidden auto;
+  overflow-wrap: break-word;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
+
+.card-effect-text::-webkit-scrollbar {
+  width: 3px;
+}
+
+.card-effect-text::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 2px;
+}
+
+/* CP02 art policy: normal board/hand/inspect art is uncropped (contain).
+   History art uses cover as an explicit approved exception (CP03 markup),
+   and spell/trap reveal art keeps its own cover rules. Never stretch. */
 
 .card-stats-text {
   font-size: clamp(7px, 5.5cqi, 16px);
@@ -3096,7 +3115,7 @@ button {
 
 /* Image container: ~50% of card height */
 .card-image-container {
-  flex: 0 0 50%;
+  flex: 0 0 46%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3108,7 +3127,7 @@ button {
 .card-image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain; /* CP02: uncropped on board/hand; never stretch */
 }
 
 .card-image-placeholder {
@@ -3192,7 +3211,7 @@ button {
 
 /* Content area: ~42% of card height (stats + keywords + effect) */
 .card-content-area {
-  flex: 0 0 42%;
+  flex: 0 0 46%;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -3268,6 +3287,16 @@ button {
   place-items: center;
   font-size: var(--font-sm);
   color: var(--text-muted);
+}
+
+/* CP02 exhaustion (attacked / summoning sick) reads as dim + slight tilt,
+   distinct from the Frozen/Paralysis/Barrier overlays layered on top. */
+.card.exhausted-state .card-inner {
+  filter: saturate(0.55) brightness(0.72);
+}
+
+.field-slot .card.exhausted-state {
+  transform: rotate(4deg) scale(0.97);
 }
 
 .card-status {

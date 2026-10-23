@@ -386,6 +386,13 @@ export const getStatusIndicators = (card) => {
   if (card.isToken) {
     indicators.push('⚪');
   }
+  // CP02: status causes read distinctly from base stats
+  if (card.paralyzed) {
+    indicators.push('⚡');
+  }
+  if (card.frozenDiesTurn) {
+    indicators.push('💀');
+  }
   return indicators.join(' ');
 };
 
@@ -408,9 +415,10 @@ export const renderCardInnerHtml = (
   const hasNut = hasNutrition(card);
 
   const effectSummary = showEffectSummary ? getCardEffectSummary(card) : '';
-  // Use HTML text with CSS container query units for scaling
+  // CP02: complete effect text always lives in the DOM (no clamp/ellipsis);
+  // the text area itself scrolls when a long description outgrows the card.
   const effectRow = effectSummary
-    ? `<div class="card-effect"><div class="card-effect-text">${effectSummary}</div></div>`
+    ? `<div class="card-effect"><div class="card-effect-text" data-full-text="true">${effectSummary}</div></div>`
     : '';
 
   // Check if card has an image (and hasn't failed to load before)
@@ -570,6 +578,8 @@ export const renderCard = (card, options = {}) => {
     const indicator = document.createElement('div');
     indicator.className = 'card-status';
     indicator.textContent = status;
+    // CP02: machine-checkable status set for evidence/tests
+    indicator.dataset.statuses = status;
     cardElement.appendChild(indicator);
   }
 

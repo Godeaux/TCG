@@ -6,13 +6,15 @@
 - **Spec:** [UI-OVERHAUL-SPEC.md](UI-OVERHAUL-SPEC.md), version 1.0, authoritative.
 - **Repo:** `/Users/nut/.openclaw/workspace/food-chain-tcg`.
 - **Branch:** `ui/overhaul-2026-10-22`; gameplay base `0b84588`.
-- **Current checkpoint:** CP01 PASS (receipt below). Next: CP02 NOT_STARTED.
-- **Last completed:** CP01 production layout shell at (this commit) on branch
-  `ui/overhaul-2026-10-22`; evidence in `docs/ui-overhaul/evidence/CP01/`.
-- **Next exact action:** implement CP02 (real cards, hand, inspection, status
-  visuals) against spec §3 + card rendering paths; re-run `npm run check`;
-  re-shoot viewports into `docs/ui-overhaul/evidence/CP02/`. Read history
-  §§3–6 before CP03.
+- **Current checkpoint:** CP02 PASS (receipt below). Next: CP03 NOT_STARTED.
+- **Last completed:** CP02 real cards/hand/inspection/status visuals at (this
+  commit) on branch `ui/overhaul-2026-10-22`; evidence in
+  `docs/ui-overhaul/evidence/CP02/`.
+- **Next exact action:** read history §§3–6 (state/history/event model) fully,
+  then CP03 — freeze the history schema + reconciliation contract into
+  `docs/ui-overhaul/HISTORY-CONTRACT.md` and build projection/formatter
+  primitives plus ONE production vertical slice (a single attack). No restyling
+  detour. Start from `js/state/` reducers and `js/network/serialization.js`.
 - **CP01 facts CP02+ must know:** strips are `#rival-strip`/`#own-strip` with
   seat-truthful `data-player-index` (updated in `updatePlayerStats`); drop-on-row
   attack reads that attribute; emote bubbles anchor via
@@ -40,7 +42,7 @@ Only one checkpoint IN_PROGRESS. Sub-checkpoints are independently committable.
 
 - CP00 — baseline/reference freeze: PASS
 - CP01 — production layout shell/tokens: PASS
-- CP02 — cards/hand/inspection/statuses: NOT_STARTED
+- CP02 — cards/hand/inspection/statuses: PASS
 - CP03 — history schema, first vertical slice, reconciliation: NOT_STARTED
 - CP04a — combat/player event capture: NOT_STARTED
 - CP04b — play/consume/summon/zone capture: NOT_STARTED
@@ -156,6 +158,74 @@ Remaining: 375×812 + safe-area notch shots (CP08 sweep); emote toggles only
   approved design; two-seat PvP live verification is a CP08/09 external gate.
 Next exact step: CP02 — spec §3 card geometry/text/status; re-shoot into
   docs/ui-overhaul/evidence/CP02/.
+```
+
+```text
+Checkpoint: CP02 — PASS
+Commit: on branch ui/overhaul-2026-10-22 (this ledger edit + evidence dir).
+Implemented: Spec §3 card/hand/inspection/status work on the production render
+  paths (no prototype reuse):
+  - Card.js: creature names wrap instead of `text-overflow: ellipsis`; stat row
+    never clipped; effect text keeps the COMPLETE string in the DOM with
+    `data-full-text="true"` and scrolls on overflow instead of truncating;
+    `getStatusIndicators()` adds paralyzed ⚡ and frozen-dies 💀 and emits
+    `data-statuses` on `.card-status`; zero ATK / zero NUT render (not dropped)
+    — `⚔ 0 ❤ 2 🍖 0` verified in DOM.
+  - Field.js: exhausted creatures (attacked / summoning-sick, Haste-aware) get
+    `.exhausted-state` so the dim+tilt has a real trigger from engine state.
+  - touchHandlers.js: a touch that starts inside a scrollable
+    `.card-effect-text` pans the text instead of being hijacked by
+    focus/drag capture.
+  - styles.css: geometry gates — name wrap, always-visible wrapping stats,
+    scrollable effect area, `object-fit: contain` art (no crop, no letterbox
+    hacks), exhaustion `saturate(.55) brightness(.72)` + slot tilt.
+Files/symbols: js/ui/components/Card.js (renderCard, renderCardStats,
+  getStatusIndicators), js/ui/components/Field.js (exhaustion class),
+  js/ui/input/touchHandlers.js (scroll-region guard), styles.css.
+Baseline: `npm run check` after the change — exit 0; format clean; lint
+  0 errors / pre-existing warnings; vitest 63 files / 5,119 tests passed.
+Contract: npm run check — exit 0; 63 files / 5,119 tests.
+Browser: Real Chromium (Playwright chromium-1228) at 393×852 touch and
+  1440×900 desktop through the production AI flow. Measured, not asserted:
+  - all hand cards ellipsis=false, clipHeight=0, art fit=contain, and
+    documentElement.scrollWidth === innerWidth (no horizontal scroll) on both
+    viewports;
+  - 4 real `__qa.act.playCard` plays → 3 field creatures, 2 carry
+    `.exhausted-state` (summoning sick), the Haste one does not;
+  - status grid through real renderCard: 🛡️ / ❄️ / ⚡ / 💀 / 🍂 / 🚫 / ⚪ with
+    `data-statuses`; strength buff shows ⚔ 5 effective; long description keeps
+    `textComplete=true` and cardClips=0; "Extremely Verbose Velvetfish"
+    nameOverflow=0;
+  - hand counts 0/1/5/9 via production renderHand: all rendered, widths
+    141→154px, overflowX negative, hScroll=0, vScroll=0;
+  - touch (hasTouch 393×852): tap, 8-step CDP touch drag toward the field,
+    800 ms hold, and a swipe all left `{hand:5,field:0,hp:10}` byte-identical;
+    `recentLog` set-diff across the gestures contained only `[Easy AI]` lines,
+    i.e. zero player-side actions fired accidentally;
+  - exhausted visual proven in DOM (`filter: saturate(.55) brightness(.72)`,
+    rotate+scale matrix on the slot).
+Evidence: docs/ui-overhaul/evidence/CP02/ — audit-notes.md + tcg-cp02{,b,c,d,e}.mjs
+  + PNGs (phone-393-board, desktop-1440-board, exhausted, inspect, status grid,
+  hand counts, zero-stats, tap/drag-cancel). Screenshots posted to
+  #food-chain-tcg.
+Decisions:
+  - "No truncation" is implemented as complete-DOM-text + scroll, verified by
+    `scrollWidth/scrollHeight` measurement, not by CSS inspection.
+  - Exhaustion is a state-derived class (Field.js), so CP04 history/animation
+    work can reuse the same truth source instead of a second flag.
+  - Evidence scripts import production modules directly for synthetic states
+    (statuses, zero stats) because no engine fixture can reach those states in
+    one turn; every gameplay-shaped shot goes through `__qa.act`.
+Remaining / known:
+  - Pre-existing 404 `images/cards/reptile-prey-alcedo-giant-tortoise.jpg`
+    (missing art in the registry predates CP02); 🎨 placeholder fallback renders
+    correctly. `synth.jpg` 404s are probe-only.
+  - Representative five-faction deck, max-retention hand, 3-slot full field with
+    field spells in ONE deliberate deck → CP08 fixture.
+  - Native iOS/Safari, keyboard matrix, two-seat live PvP → CP08/09 gates.
+Next exact step: CP03 — read spec/history §§3–6, freeze the history schema and
+  reconciliation contract into docs/ui-overhaul/HISTORY-CONTRACT.md, then build
+  projection/formatter primitives + one production vertical slice (single attack).
 ```
 
 ## Coverage tracker — populate during CP03–04
