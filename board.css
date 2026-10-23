@@ -1,0 +1,731 @@
+/* Approved v7 board composition. Only gameplay surfaces are scoped here;
+   deck builder, collection, dialogs and history event cards keep their own styles. */
+.game-container {
+  --board-card-width: 194px;
+  --board-card-height: clamp(185px, calc((100dvh - 238px) / 3), 264px);
+  --board-copy: 13px;
+  --board-title: 14px;
+  --board-stat: 16px;
+  --board-art: 56%;
+  font-family: system-ui, sans-serif;
+  color: #e4eeea;
+  background: radial-gradient(ellipse at 45% 45%, #24464b, #0b2029 85%);
+  padding: calc(48px + env(safe-area-inset-top, 0px)) 18px env(safe-area-inset-bottom, 0px) 24px;
+}
+.game-container .top-bar {
+  display: none;
+}
+.game-container .page.active {
+  transform: none;
+}
+.game-container .pages-container {
+  padding: 0;
+  min-height: 0;
+}
+.game-container .battlefield-layout-two-column {
+  grid-template-columns: minmax(0, 1fr) clamp(290px, 23vw, 360px);
+  gap: 18px;
+  min-height: 0;
+}
+.game-container .battlefield-center-column {
+  overflow: auto;
+  gap: 0;
+}
+.game-container .battlefield-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  justify-content: space-between;
+  overflow: visible;
+  min-height: 770px;
+}
+.game-container .top-utilities {
+  display: flex;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: calc(48px + env(safe-area-inset-top, 0px));
+  padding: env(safe-area-inset-top, 0px) 110px 0 24px;
+  gap: 24px;
+  align-items: center;
+  justify-content: flex-end;
+  background: #0c2029;
+  border-bottom: 1px solid #81978a33;
+  z-index: 20;
+}
+.board-brand {
+  margin-right: auto;
+  font-size: 11px;
+  letter-spacing: 2px;
+  font-weight: 700;
+  color: #b8ccc2;
+}
+.game-container .util-history-btn {
+  display: block;
+  width: auto;
+  height: 44px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 13px;
+  color: #e4eeea;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.game-container .scoreboard-row {
+  margin: 0;
+  padding: 0;
+  min-height: 44px;
+  background: none;
+  border: 0;
+}
+.game-container .player-badge {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: none;
+  min-height: 44px;
+  padding: 0 8px;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  flex: 1;
+}
+.game-container .player-name {
+  font:
+    650 14px/1.2 system-ui,
+    sans-serif;
+  text-transform: none;
+  color: #e4eeea;
+  max-width: 36%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.game-container .scoreboard-stats {
+  display: contents;
+}
+.game-container [id$='-deck'] {
+  order: 1;
+  color: #adbfbb;
+  font-size: 12px;
+}
+.game-container [id$='-hp'] {
+  order: 4;
+  margin-left: auto;
+  color: #ecc2bc;
+  font-size: 24px;
+  font-weight: 700;
+}
+.game-container .opponent-hand-cards {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: auto;
+  flex: none;
+  gap: 3px;
+  height: 28px;
+  justify-content: center;
+}
+.game-container .opponent-hand-cards .card-back {
+  width: 20px;
+  height: 28px;
+  margin: 0;
+  font-size: 0;
+  border: 1px solid #81998c;
+  background: repeating-linear-gradient(55deg, #28434b, #28434b 4px, #344d52 5px, #344d52 6px);
+  border-radius: 3px;
+  box-shadow: none;
+}
+.game-container .opponent-hand-cards .card-back > * {
+  opacity: 0;
+}
+.game-container .emote-toggle {
+  order: 5;
+}
+.game-container .battlefield-region {
+  flex: none;
+}
+.game-container .battlefield {
+  gap: 6px;
+}
+.game-container .field-row {
+  flex: none;
+  height: var(--board-card-height);
+  gap: 22px;
+  padding: 0 12px;
+}
+.game-container .field-slot {
+  padding: 0;
+  border: 1px solid #81998c30;
+  background: #28494b22;
+  border-radius: 16px;
+}
+.game-container .empty-field-slot {
+  font-size: 0;
+}
+.game-container .empty-field-slot::after {
+  content: '◇';
+  font-size: 38px;
+  color: #78938740;
+}
+.game-container .field-divider {
+  min-height: 32px;
+  height: 32px;
+  padding: 0;
+  border-block: 1px solid #81998c33;
+  justify-content: center;
+}
+.game-container .field-divider-text {
+  display: none;
+}
+.game-container .field-controls {
+  position: static;
+  transform: none;
+  gap: 10px;
+}
+.game-container .field-turn-btn {
+  border: 1px solid #a9b790;
+  background: #63776088;
+  border-radius: 7px;
+  padding: 5px 14px;
+  height: 30px;
+  font:
+    500 12px system-ui,
+    sans-serif;
+  box-shadow: none;
+  color: #edf1e7;
+}
+.game-container .field-turn-number,
+.game-container .field-phase-label {
+  font: inherit;
+}
+.game-container .field-resync-btn,
+.game-container .field-surrender-btn {
+  width: 28px;
+  height: 28px;
+  font-size: 15px;
+}
+.game-container .own-control-row {
+  min-height: 44px;
+  gap: 0;
+  flex-wrap: nowrap;
+  position: relative;
+}
+.game-container .own-control-row .piles-section {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 3px;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: none;
+  width: auto;
+  margin: 0;
+  min-height: 0;
+}
+.game-container .piles-grid {
+  display: flex;
+  gap: 4px;
+}
+.game-container .own-control-row .pile-item {
+  min-width: 0;
+  padding: 6px;
+  gap: 4px;
+  font:
+    11px system-ui,
+    sans-serif;
+  background: #18343b;
+  border: 1px solid #81998c55;
+  border-radius: 7px;
+}
+.game-container .own-control-row .piles-grid {
+  display: flex;
+  width: auto;
+}
+.game-container .own-control-row .pile-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+.game-container .pile-item > span {
+  font: inherit;
+}
+.game-container .pile-item strong {
+  font-size: 12px;
+}
+.board-diagnostics {
+  position: relative;
+}
+.board-diagnostics summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 8px;
+}
+.game-container .board-diagnostics .advantage-display {
+  display: flex;
+  position: absolute;
+  z-index: 30;
+  bottom: 35px;
+  right: 0;
+  width: 190px;
+  min-height: 70px;
+  background: #16313a;
+  border: 1px solid #81998c;
+  padding: 12px;
+}
+.game-container .board-diagnostics .advantage-graph-container {
+  position: absolute;
+  bottom: 105px;
+  right: 0;
+  z-index: 30;
+  background: #16313a;
+}
+.game-container .hand-panel {
+  flex: none;
+  height: calc(var(--board-card-height) + 30px);
+  min-height: 0;
+  padding: 8px 20px 20px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: none;
+}
+.game-container .hand-container {
+  min-height: 0;
+}
+.game-container .hand-grid {
+  align-items: flex-start;
+  padding: 0;
+  gap: 4px;
+}
+.game-container :is(.field-slot, .hand-grid) .card {
+  width: var(--board-card-width);
+  height: var(--board-card-height);
+  min-height: var(--board-card-height);
+  max-height: none;
+  max-width: 100%;
+  aspect-ratio: auto;
+  border: 2px solid #82968a;
+  border-radius: 10px;
+  background: #28434d;
+  box-shadow: 0 4px 9px #0005;
+  animation: none;
+}
+.game-container .hand-grid .card {
+  transform: translateY(var(--card-offset-y, 0px)) rotate(var(--card-rotation, 0deg));
+}
+.game-container .hand-grid .card.hand-focus {
+  transform: translateY(-35px) scale(1.15) rotate(0deg);
+}
+.game-container :is(.field-slot, .hand-grid) .card::before {
+  display: none;
+}
+.game-container :is(.field-slot, .hand-grid) .card-inner {
+  display: flex;
+  height: 100%;
+  padding: 0;
+}
+.game-container :is(.field-slot, .hand-grid) .card-name {
+  flex: 0 0 auto;
+  padding: 4px 2px;
+  min-height: 23px;
+  background: #193640;
+  color: #e4eeea;
+  text-shadow: none;
+}
+.game-container :is(.field-slot, .hand-grid) .card-name-text {
+  font:
+    650 var(--board-title)/1.1 system-ui,
+    sans-serif;
+  max-height: none;
+}
+.game-container :is(.field-slot, .hand-grid) .card-image-container {
+  flex: 0 0 var(--board-art);
+  min-height: 38px;
+  background: #102b33;
+}
+.game-container :is(.field-slot, .hand-grid) .card-image {
+  object-fit: contain;
+}
+.game-container :is(.field-slot, .hand-grid) .card-content-area {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.game-container :is(.field-slot, .hand-grid) .card-stats-row {
+  flex: 0 0 23px;
+  min-height: 23px;
+  max-height: none;
+  background: #19343e;
+  border-block: 1px solid #8ca69b22;
+}
+.game-container :is(.field-slot, .hand-grid) .card-stats-text {
+  font:
+    700 var(--board-stat)/1.2 system-ui,
+    sans-serif;
+}
+.game-container :is(.field-slot, .hand-grid) .stat-atk {
+  color: #e4d8ad;
+  order: 0;
+}
+.game-container :is(.field-slot, .hand-grid) .stat-nut {
+  color: #bdd4a4;
+  order: 1;
+}
+.game-container :is(.field-slot, .hand-grid) .stat-hp {
+  color: #e7c5c4;
+  order: 2;
+}
+.game-container :is(.field-slot, .hand-grid) .hp-buffed {
+  color: #7ee89d;
+}
+.game-container :is(.field-slot, .hand-grid) .hp-damaged {
+  color: #ff8884;
+}
+.game-container :is(.field-slot, .hand-grid) .card-keywords:empty {
+  display: none;
+}
+.game-container :is(.field-slot, .hand-grid) .card-keywords-text {
+  font:
+    650 var(--board-copy)/1.2 system-ui,
+    sans-serif;
+}
+.game-container :is(.field-slot, .hand-grid) .card-effect {
+  flex: 1 1 auto;
+  height: auto;
+  align-items: flex-start;
+  padding: 4px 5px;
+}
+.game-container :is(.field-slot, .hand-grid) .card-effect-text {
+  font:
+    400 var(--board-copy)/1.2 system-ui,
+    sans-serif;
+  max-height: 100%;
+  width: 100%;
+}
+.game-container :is(.field-slot, .hand-grid) .card-status {
+  font-size: 14px;
+}
+.game-container .game-log-panel {
+  background: #102730;
+  border: 1px solid #73877455;
+  box-shadow: none;
+  border-radius: 10px;
+  padding: 12px;
+}
+.game-container .log-header h3 {
+  font:
+    500 14px system-ui,
+    sans-serif;
+  color: #bbccc3;
+}
+.game-container .log-entry {
+  background: #27414a66;
+  border-color: #82968a;
+}
+.game-container .mobile-panel-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.game-container .battlefield-right-column {
+  padding-top: 8px;
+}
+.game-container .battlefield-layout-two-column.history-hidden {
+  grid-template-columns: minmax(0, 1fr);
+}
+.game-container .history-hidden .battlefield-right-column {
+  display: none;
+}
+/* The existing settings menu now occupies the approved top utility position. */
+.settings-button-container {
+  top: env(safe-area-inset-top, 0px);
+  right: 18px;
+  bottom: auto;
+  flex-direction: column-reverse;
+}
+.settings-fab {
+  width: auto;
+  height: 46px;
+  gap: 7px;
+  padding: 0 10px;
+  font:
+    13px system-ui,
+    sans-serif;
+  color: #e4eeea;
+  background: none;
+  box-shadow: none;
+  border-radius: 4px;
+}
+.settings-fab-icon {
+  font-size: 18px;
+}
+.settings-fab.active,
+.settings-fab:hover {
+  transform: none;
+  box-shadow: none;
+  background: #34534b;
+}
+.settings-menu {
+  padding: 8px;
+  background: #102730;
+  border: 1px solid #73877455;
+  border-radius: 8px;
+}
+@media (min-width: 768px) {
+  .game-container .own-control-row .piles-section {
+    position: fixed;
+    left: auto;
+    right: 130px;
+    top: env(safe-area-inset-top, 0px);
+    height: 48px;
+    transform: none;
+    z-index: 25;
+  }
+  .game-container .top-utilities {
+    padding-right: 365px;
+  }
+  .game-container .board-diagnostics .advantage-display {
+    top: 45px;
+    bottom: auto;
+  }
+  .game-container .board-diagnostics .advantage-graph-container {
+    top: 115px;
+    bottom: auto;
+  }
+}
+@media (max-width: 767px) and (orientation: portrait) {
+  .game-container {
+    --board-card-width: calc((100vw - 36px) / 3);
+    --board-card-height: 185px;
+    --board-copy: 10.5px;
+    --board-title: 10.5px;
+    --board-stat: 14px;
+    --board-art: 45%;
+    padding: calc(44px + env(safe-area-inset-top, 0px)) 9px
+      max(8px, env(safe-area-inset-bottom, 0px));
+  }
+  .game-container .battlefield-layout-two-column {
+    display: block;
+    overflow: visible;
+  }
+  .game-container .battlefield-layout {
+    min-height: 704px;
+    height: 100%;
+    gap: 6px;
+    justify-content: space-between;
+  }
+  .game-container .battlefield-center-column {
+    height: 100%;
+    overflow: auto;
+  }
+  .game-container .top-utilities {
+    height: calc(44px + env(safe-area-inset-top, 0px));
+    padding-inline: 9px 105px;
+    justify-content: flex-start;
+  }
+  .board-brand {
+    display: none;
+  }
+  .game-container .util-history-btn {
+    font-size: 14px;
+  }
+  .game-container .player-badge {
+    padding: 0 3px;
+    gap: 4px;
+  }
+  .game-container .player-name {
+    font-size: 12px;
+    max-width: 29%;
+  }
+  .game-container [id$='-deck'] {
+    font-size: 10px;
+  }
+  .game-container [id$='-hp'] {
+    font-size: 20px;
+  }
+  .game-container .opponent-hand-cards {
+    gap: 2px;
+  }
+  .game-container .opponent-hand-cards .card-back {
+    width: 12px;
+    height: 19px;
+  }
+  .game-container .field-row {
+    gap: 8px;
+    padding: 0;
+  }
+  .game-container .field-slot {
+    border-radius: 10px;
+  }
+  .game-container .field-divider {
+    margin-block: 12px;
+    justify-content: flex-end;
+  }
+  .game-container .field-controls {
+    gap: 4px;
+  }
+  .game-container .own-control-row .pile-item {
+    padding: 6px 4px;
+    font-size: 10px;
+  }
+  .game-container .hand-panel {
+    height: calc(var(--board-card-height) + 28px);
+    padding: 2px 0 10px;
+  }
+  .game-container .hand-grid {
+    flex: none;
+    height: 100%;
+    width: 100%;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 0;
+    padding: 6px 4px 12px;
+    overflow: auto hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #788f81 #102b34;
+  }
+  .game-container .hand-grid .card {
+    margin: 0 0 0 -10px;
+    flex: 0 0 var(--board-card-width);
+    transform: translateY(var(--card-offset-y, 0px)) rotate(calc(var(--card-rotation, 0deg) * 0.5));
+  }
+  .game-container .hand-grid .card:first-child {
+    margin-left: 0;
+  }
+  .game-container .hand-grid .card:hover:not(.hand-focus) {
+    transform: translateY(var(--card-offset-y, 0px)) rotate(calc(var(--card-rotation, 0deg) * 0.5));
+  }
+  .game-container .hand-grid .card.hand-focus:not(.dragging) {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    width: min(72vw, 280px);
+    height: 430px;
+    max-width: none;
+    transform: translate(-50%, -50%);
+    z-index: 2000;
+    --board-copy: 16px;
+    --board-title: 17px;
+    --board-stat: 20px;
+    box-shadow: 0 15px 80px #000b;
+  }
+  .game-container .battlefield-right-column {
+    display: none;
+    position: fixed;
+    left: auto;
+    right: 0;
+    top: calc(44px + env(safe-area-inset-top, 0px));
+    width: min(324px, calc(100vw - 32px));
+    height: calc(100dvh - 44px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    background: #102730;
+    padding: 0;
+    z-index: 3000;
+  }
+  .game-container .show-history .battlefield-right-column {
+    display: flex;
+  }
+  .game-container .game-log-panel {
+    border-radius: 8px 0 0 8px;
+  }
+  .settings-button-container {
+    right: 8px;
+  }
+  .settings-fab {
+    height: 44px;
+    font-size: 14px;
+  }
+}
+
+/* Readable state decoration, without the legacy all-over yellow wash. */
+.game-container .player-badge.is-active {
+  box-shadow: none;
+  animation: none;
+}
+.game-container .player-badge.is-active .player-name {
+  animation: none;
+}
+.game-container .field-turn-btn {
+  animation: none;
+}
+.game-container :is(.field-slot, .hand-grid) .barrier-overlay {
+  border: 2px solid #efd48c;
+  border-radius: 9px;
+  background: radial-gradient(ellipse at 30% 5%, #fff6c730, transparent 40%);
+  box-shadow: inset 0 0 13px #f6d37788;
+  animation: none;
+}
+.game-container :is(.field-slot, .hand-grid) .barrier-overlay::before,
+.game-container :is(.field-slot, .hand-grid) .barrier-overlay::after {
+  display: none;
+}
+.game-container :is(.field-slot, .hand-grid) .card-status {
+  top: 26px;
+  right: 3px;
+}
+.card-stat-icon {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.1em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.game-container .field-divider-text {
+  display: block;
+  color: #c4d6c7;
+  font:
+    12px system-ui,
+    sans-serif;
+}
+.game-container .field-divider {
+  gap: 24px;
+}
+.game-container .field-controls {
+  right: auto;
+  top: auto;
+}
+@media (max-width: 767px) and (orientation: portrait) {
+  .game-container .field-divider {
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .game-container .field-divider-text {
+    font-size: 11px;
+  }
+}
+
+.game-container .field-divider-text {
+  flex: 0 1 auto;
+  width: auto;
+  margin: 0;
+}
+.game-container .field-controls {
+  flex: 0 0 auto;
+}
+.game-container .field-turn-btn {
+  white-space: nowrap;
+}
+.game-container .hand-panel:has(.hand-focus) {
+  position: relative;
+  z-index: 100;
+}
+.game-container :is(.field-slot, .hand-grid) .long-copy .card-image-container {
+  flex-shrink: 1;
+}
+.game-container :is(.field-slot, .hand-grid) .long-copy .card-content-area {
+  min-height: calc(var(--board-copy) * 8.5);
+}

@@ -29,6 +29,14 @@ import { getLocalPlayerIndex, isAnyAIMode, canCardBePlayed } from '../../state/s
  */
 export const updateHandOverlap = (handGrid) => {
   const cards = Array.from(handGrid.querySelectorAll('.card'));
+  // Portrait hand scrolls at full size, with a modest fan instead of fit-to-screen compression.
+  if (window.matchMedia('(max-width: 767px) and (orientation: portrait)').matches) {
+    handGrid.style.setProperty('--hand-overlap', '10px');
+    handGrid.style.setProperty('--mobile-card-scale', '1');
+    handGrid.style.overflow = 'auto hidden';
+    return;
+  }
+
   if (cards.length === 0) {
     handGrid.style.setProperty('--hand-overlap', '0px');
     handGrid.style.setProperty('--mobile-card-scale', '1');
@@ -120,7 +128,8 @@ export const updateHandOverlap = (handGrid) => {
  * This prevents cards from being cut off
  */
 const setOverflowVisible = (handGrid) => {
-  handGrid.style.overflow = 'visible';
+  const portrait = window.matchMedia('(max-width: 767px) and (orientation: portrait)').matches;
+  handGrid.style.overflow = portrait ? 'auto hidden' : 'visible';
 
   const handPanel = handGrid.closest('.hand-panel');
   if (handPanel) {

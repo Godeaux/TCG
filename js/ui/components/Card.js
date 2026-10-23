@@ -81,8 +81,18 @@ const renderNameHtml = (name) => {
  */
 const renderStatsHtml = (stats) => {
   if (!stats || stats.length === 0) return '';
+  const paths = {
+    atk: 'M4 3l13 13M3 3l1 5 4-4-5-1M13 15l3-3M15 17l2-2M4 17L17 4M3 17l5-1-4-4-1 5M13 5l3 3',
+    hp: 'M10 17S2 12 2 6a4 4 0 018-1 4 4 0 018 1c0 6-8 11-8 11Z',
+    nut: 'M4 16C1 5 10 2 17 2c1 8-3 14-11 13M4 18l9-11',
+  };
+  const labels = { atk: 'Attack', hp: 'Health', nut: 'Nutrition' };
   const spans = stats
-    .map((stat) => `<span class="stat-${stat.className}">${stat.emoji} ${stat.value}</span>`)
+    .map((stat) => {
+      const kind = stat.className.split(' ')[0];
+      const icon = `<svg class="card-stat-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="${paths[kind]}"></path></svg>`;
+      return `<span class="stat-${stat.className}" aria-label="${labels[kind]} ${stat.value}">${icon} ${stat.value}</span>`;
+    })
     .join(' ');
   return `<div class="card-stats-text">${spans}</div>`;
 };
@@ -530,6 +540,12 @@ export const renderCard = (card, options = {}) => {
     ownerIndex,
     context,
   });
+
+  // Dense real cards trade some art height for readable, scrollable copy.
+  const copyLength = inner.querySelector('.card-effect-text')?.textContent.length ?? 0;
+  if (copyLength > 90 || (card.name?.length ?? 0) > 22 || (card.keywords?.length ?? 0) > 2) {
+    cardElement.classList.add('long-copy');
+  }
 
   // Add action buttons if needed
   if (showPlay || showAttack || showDiscard || showReturnToHand || showSacrifice) {

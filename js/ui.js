@@ -869,6 +869,10 @@ const setupLogCardLinks = () => {
 };
 
 const updateIndicators = (state, controlsLocked) => {
+  const phaseSummary = document.querySelector('.field-divider-text');
+  if (phaseSummary) {
+    phaseSummary.textContent = `${isLocalPlayersTurn(state) ? 'Your turn' : 'Rival’s turn'} · ${state.phase}`;
+  }
   // Original turn badge (hidden but kept for compatibility)
   const turnNumber = document.getElementById('turn-number');
   const phaseLabel = document.getElementById('phase-label');
@@ -1050,10 +1054,10 @@ const updatePlayerStats = (state, index, role, onUpdate = null) => {
     }
   }
   if (hpEl) {
-    hpEl.textContent = `❤️: ${player.hp}`;
+    hpEl.textContent = `♡ ${player.hp}`;
   }
   if (deckEl) {
-    deckEl.textContent = `🃏: ${player.deck.length}`;
+    deckEl.textContent = `▣ ${player.deck.length}`;
   }
 
   if (role === 'active') {
@@ -3940,6 +3944,14 @@ const setupMobileNavigation = () => {
     document.querySelector('.battlefield-layout-two-column');
 
   if (!battlefieldLayout) return;
+  const toggleHistory = () => {
+    if (window.matchMedia('(max-width: 767px)').matches) {
+      battlefieldLayout.classList.toggle('show-history');
+    } else {
+      battlefieldLayout.classList.toggle('history-hidden');
+    }
+    battlefieldLayout.classList.remove('show-inspector');
+  };
 
   if (navLeft) {
     navLeft.addEventListener('click', () => {
@@ -3950,16 +3962,14 @@ const setupMobileNavigation = () => {
 
   if (navRight) {
     navRight.addEventListener('click', () => {
-      battlefieldLayout.classList.toggle('show-history');
-      battlefieldLayout.classList.remove('show-inspector');
+      toggleHistory();
     });
   }
 
   // History button in field controls (mobile)
   if (historyBtn) {
     historyBtn.addEventListener('click', () => {
-      battlefieldLayout.classList.toggle('show-history');
-      battlefieldLayout.classList.remove('show-inspector');
+      toggleHistory();
     });
   }
 
@@ -3972,6 +3982,7 @@ const setupMobileNavigation = () => {
 
   if (closeHistory) {
     closeHistory.addEventListener('click', () => {
+      battlefieldLayout.classList.add('history-hidden');
       battlefieldLayout.classList.remove('show-history');
     });
   }

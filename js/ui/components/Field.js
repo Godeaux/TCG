@@ -61,6 +61,8 @@ export const renderField = (state, playerIndex, isOpponent, options = {}) => {
       return;
     }
 
+    slot.classList.remove('empty-field-slot');
+
     const isCreature = card.type === 'Predator' || card.type === 'Prey';
 
     // CP02: summoning sickness / spent attacks get a resting visual so the

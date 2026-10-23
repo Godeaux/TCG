@@ -67,7 +67,9 @@ Prototype interaction checks do NOT prove the production app works.
   launch requirement. Do not regress existing functioning landscape gratuitously.
 - Phone order: safe-area/top utilities → rival identity strip/hidden hand count →
   enemy 3-slot field → compact phase/action control → own 3-slot field → own identity
-  and pile control → horizontally scrolling, unfanned hand → bottom safe area.
+  and pile control → horizontally scrolling hand with slight fan/overlap → bottom safe area.
+  **Owner correction, 2026-10-23:** retain a little fan/overlap on phone; never
+  compress the whole hand to fit. This supersedes the original “unfanned” wording.
 - Desktop: top utilities; arena plus docked right history; rival strip above enemy
   row, phase control between fields, own identity above the fanned hand. Use the v7
   desktop spacing/sizing, not a stretched phone view. History toggle can hide panel.

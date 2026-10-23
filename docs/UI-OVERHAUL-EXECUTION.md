@@ -6,15 +6,16 @@
 - **Spec:** [UI-OVERHAUL-SPEC.md](UI-OVERHAUL-SPEC.md), version 1.0, authoritative.
 - **Repo:** `/Users/nut/.openclaw/workspace/food-chain-tcg`.
 - **Branch:** `ui/overhaul-2026-10-22`; gameplay base `0b84588`.
-- **Current checkpoint:** CP02 PASS (receipt below). Next: CP03 NOT_STARTED.
-- **Last completed:** CP02 real cards/hand/inspection/status visuals at (this
-  commit) on branch `ui/overhaul-2026-10-22`; evidence in
-  `docs/ui-overhaul/evidence/CP02/`.
+- **Current checkpoint:** CP01/02 visual correction PASS (2026-10-23 receipt below).
+  CP03 has unfinished working-tree code, NOT a completed checkpoint.
+- **Last completed:** owner-requested screenshot comparison and production board/card
+  corrections. Read `docs/UI-OVERHAUL-VISUAL-REVIEW.md`; final screenshots and executable
+  browser assertions are in `docs/ui-overhaul/evidence/visual-review/`. Earlier CP02
+  receipts overstated visual fidelity; they are historical, not the current acceptance evidence.
 - **Next exact action:** read history §§3–6 (state/history/event model) fully,
-  then CP03 — freeze the history schema + reconciliation contract into
+  preserve `board.css` and the owner’s slight phone fan correction, then CP03 — freeze the history schema + reconciliation contract into
   `docs/ui-overhaul/HISTORY-CONTRACT.md` and build projection/formatter
-  primitives plus ONE production vertical slice (a single attack). No restyling
-  detour. Start from `js/state/` reducers and `js/network/serialization.js`.
+  primitives plus ONE production vertical slice (a single attack). The latest board correction is complete; do not restore the old fan compression. Start from `js/state/` reducers and `js/network/serialization.js`.
 - **CP01 facts CP02+ must know:** strips are `#rival-strip`/`#own-strip` with
   seat-truthful `data-player-index` (updated in `updatePlayerStats`); drop-on-row
   attack reads that attribute; emote bubbles anchor via
@@ -26,6 +27,8 @@
   63 Vitest files / 5,119 tests, format clean, lint 244 warnings / zero errors.
 - **Current failing command/assertion:** none in design handoff.
 - **Owner decisions pending:** none. Face strip and merged A are approved, NUT fixed.
+  Latest phone correction: slight fan/10px overlap plus horizontal scrolling; do NOT
+  return to either a flat hand or squeezing every card into the viewport.
 - **Blocker:** none to local implementation. Live relaunch/auth/backend gates remain
   separate; no permission to modify live services or run account-creating E2Es.
 - **Do not redo:** C/D/E fixes; A/B/C history exploration; choose a new visual design.
@@ -270,3 +273,34 @@ Use PASS / FAIL / BLOCKED / UNVERIFIED; never silently omit a row.
 At CP09 create `docs/UI-OVERHAUL-REVIEW.md` using spec §7. Include commit range,
 commands/evidence, known failures and blocked external gates. Do not claim production
 release readiness. The stronger model will review the implementation afterward.
+
+
+```text
+Checkpoint: CP01/CP02 visual correction — PASS (2026-10-23)
+Commit: see git log, "fix(ui): align board and cards with approved visual references"
+Implemented: teal production board; full-width identities; same-size field/hand cards;
+  legible type and stats; compact piles/diagnostics; top Menu; slight phone fan with
+  independent scrolling; hold/release/cancel; restrained Barrier; desktop hand fits.
+  Removed superseded CP01 tail overrides from styles.css; board.css owns this layout.
+Baseline: npm run check EXIT 1 at formatting in pre-existing unfinished
+  js/game/historyEvents.js and js/ui/history/describeEvent.js. Separate npm test:
+  63 files / 5,119 PASS. Both files subsequently Prettier-only normalized, no semantic
+  history changes. Existing serialization.js/gameState.js edits preserved.
+Browser: node docs/ui-overhaul/evidence/visual-review/capture.mjs EXIT 0.
+  Real app setup flow, then real registry/card-instance comparison fixtures rendered
+  via renderGame. Phone 393x852 + 375x812, native desktop 1440x900, short 375x667.
+  Scroll 96px; hold actual card to 280px width; hold/release/cancel/scroll leave
+  gameplay byte-identical; upward drag actually plays Electric Eel into empty slot;
+  desktop hover, History show/hide, mobile Menu and overlay geometry PASS.
+  12 longest real descriptions retain >=10.5px copy and 42–58px scrollable text area.
+  Desktop hand lowest pixel 886.65 < 900. Zero uncaught page errors.
+Contract: npm run check — EXIT 0, 63 files / 5,119 tests, format clean,
+  0 lint errors / 244 existing warnings. git diff --check clean.
+Evidence: docs/ui-overhaul/evidence/visual-review/{capture.mjs,browser-results.json,*.png}.
+Remaining: visual before/after history is NOT implemented by this correction. CP03–09
+  are still pending; do not fabricate snapshots from legacy English log strings.
+  Existing missing artwork/audio requests recorded in browser-results.json. No live
+  multiplayer, account creation, push, merge, backend change, or deployment.
+Next exact step: audit unfinished CP03 historyEvents.js/describeEvent.js and network
+  changes against spec; freeze contract and prove a real single-attack vertical slice.
+```

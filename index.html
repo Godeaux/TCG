@@ -8,6 +8,7 @@
     />
     <title>Food Chain TCG Prototype</title>
     <link rel="stylesheet" href="styles.css?v=2.0" />
+    <link rel="stylesheet" href="board.css" />
     <link
       href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Bebas+Neue&family=Orbitron:wght@400;500&family=Cinzel:wght@400;500&family=Righteous&family=Russo+One&display=swap"
       rel="stylesheet"
@@ -750,17 +751,8 @@
             <div class="battlefield-center-column">
               <div class="battlefield-layout">
                 <div class="top-utilities">
-                  <button class="mobile-nav-left" id="mobile-nav-left" aria-label="View Card Inspector">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polyline points="15 18 9 12 15 6"></polyline>
-                    </svg>
-                  </button>
-                  <button class="field-history-btn util-history-btn" id="field-history-btn" title="Game History" aria-label="Game History">📜</button>
-                  <button class="mobile-nav-right" id="mobile-nav-right" aria-label="View Game History">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
-                  </button>
+                  <span class="board-brand">FOOD CHAIN</span>
+                  <button class="field-history-btn util-history-btn" id="field-history-btn" title="Game History" aria-label="Game History">↶ History</button>
                 </div>
 
                 <!-- Rival identity strip: explicit data-marked face target (seat synced at runtime) -->
@@ -771,13 +763,14 @@
                       <span id="player2-hp">❤️: 10</span>
                       <span id="player2-deck">🃏: 20</span>
                     </div>
+                  <div class="opponent-hand-cards" id="opponent-hand-cards">
+                    <!-- Card backs will be rendered here by JavaScript -->
+                  </div>
                     <button class="emote-toggle" id="emote-toggle-right" title="Quick Chat" aria-label="Quick Chat">
                       <span class="emote-toggle-icon">💬</span>
                     </button>
                   </div>
-                  <div class="opponent-hand-cards" id="opponent-hand-cards">
-                    <!-- Card backs will be rendered here by JavaScript -->
-                  </div>
+
                 </div>
 
                 <div class="battlefield-region">
@@ -788,7 +781,7 @@
                       <div class="field-slot" data-slot="2"></div>
                     </div>
                     <div class="field-divider">
-                      <p class="field-divider-text" aria-hidden="true"></p>
+                      <p class="field-divider-text"></p>
                       <div class="field-controls">
                         <button class="field-turn-btn" id="field-turn-btn" type="button" aria-label="Advance phase">
                           <span class="field-turn-number" id="field-turn-number">Turn 1</span>
@@ -830,6 +823,7 @@
                         <strong id="active-exile">0</strong>
                       </div>
                     </div>
+                    <details class="board-diagnostics"><summary title="Match diagnostics">⋯</summary>
                     <div class="advantage-display diagnostics" id="advantage-display">
                       <div class="advantage-header">
                         <span>Advantage</span>
@@ -841,6 +835,7 @@
                     <div class="advantage-graph-container diagnostics" id="advantage-graph-container" style="display: none;">
                       <canvas id="advantage-graph" width="200" height="80"></canvas>
                     </div>
+                    </details>
                   </div>
                 </div>
 

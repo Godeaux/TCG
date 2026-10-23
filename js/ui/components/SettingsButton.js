@@ -61,8 +61,8 @@ export const initSettingsButton = (callbacks = {}) => {
       </button>
       ${simStatsOption}
     </div>
-    <button class="settings-fab" id="settings-fab" title="Settings">
-      <span class="settings-fab-icon">⚙️</span>
+    <button class="settings-fab" id="settings-fab" title="Menu" aria-label="Menu" aria-expanded="false">
+      <span class="settings-fab-icon">☰</span><span>Menu</span>
     </button>
   `;
 
@@ -129,6 +129,7 @@ export const showSettingsMenu = () => {
   }
   if (fab) {
     fab.classList.add('active');
+    fab.setAttribute('aria-expanded', 'true');
   }
 };
 
@@ -144,6 +145,7 @@ export const hideSettingsMenu = () => {
   }
   if (fab) {
     fab.classList.remove('active');
+    fab.setAttribute('aria-expanded', 'false');
   }
 };
 
