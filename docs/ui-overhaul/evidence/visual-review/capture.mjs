@@ -202,10 +202,7 @@ for (let step = 1; step <= 8; step++) {
 }
 await touch('touchEnd');
 const scrolled = await page.locator('#active-hand').evaluate((el) => el.scrollLeft);
-assert.ok(
-  scrolled > 50,
-  'Phone hand actually scrolls, rather than just highlighting adjacent cards'
-);
+assert.ok(scrolled === 0, 'Owner correction: complete phone fan fits without horizontal scrolling');
 assert.equal(await gameSnapshot(), baseline, 'Horizontal browsing must not play a card');
 await page.locator('#active-hand').evaluate((el) => (el.scrollLeft = 0));
 rect = await page.locator('#active-hand .card').nth(1).boundingBox();

@@ -13,9 +13,9 @@
   browser assertions are in `docs/ui-overhaul/evidence/visual-review/`. Earlier CP02
   receipts overstated visual fidelity; they are historical, not the current acceptance evidence.
 - **Next exact action:** read history §§3–6 (state/history/event model) fully,
-  preserve `board.css` and the owner’s slight phone fan correction, then CP03 — freeze the history schema + reconciliation contract into
+  preserve `board.css` and the owner’s latest full-hand-fit correction, then CP03 — freeze the history schema + reconciliation contract into
   `docs/ui-overhaul/HISTORY-CONTRACT.md` and build projection/formatter
-  primitives plus ONE production vertical slice (a single attack). The latest board correction is complete; do not restore the old fan compression. Start from `js/state/` reducers and `js/network/serialization.js`.
+  primitives plus ONE production vertical slice (a single attack). The latest board correction is complete; keep full-size cards with adaptive overlap, not horizontal overflow. Start from `js/state/` reducers and `js/network/serialization.js`.
 - **CP01 facts CP02+ must know:** strips are `#rival-strip`/`#own-strip` with
   seat-truthful `data-player-index` (updated in `updatePlayerStats`); drop-on-row
   attack reads that attribute; emote bubbles anchor via
@@ -27,8 +27,9 @@
   63 Vitest files / 5,119 tests, format clean, lint 244 warnings / zero errors.
 - **Current failing command/assertion:** none in design handoff.
 - **Owner decisions pending:** none. Face strip and merged A are approved, NUT fixed.
-  Latest phone correction: slight fan/10px overlap plus horizontal scrolling; do NOT
-  return to either a flat hand or squeezing every card into the viewport.
+  Latest phone correction (19:30): increase overlap to fit ALL cards in view without
+  horizontal overflow. Keep full card/text size; hold preview also stays within screen.
+  Latest evidence: `docs/ui-overhaul/evidence/mobile-fit/` (supersedes carousel tests).
 - **Blocker:** none to local implementation. Live relaunch/auth/backend gates remain
   separate; no permission to modify live services or run account-creating E2Es.
 - **Do not redo:** C/D/E fixes; A/B/C history exploration; choose a new visual design.
@@ -304,3 +305,18 @@ Remaining: visual before/after history is NOT implemented by this correction. CP
 Next exact step: audit unfinished CP03 historyEvents.js/describeEvent.js and network
   changes against spec; freeze contract and prove a real single-attack vertical slice.
 ```
+
+
+## Phone hand fit correction — 2026-10-23 19:30
+
+Owner requested all phone cards fit, plus a thumb-held screenshot. Reproduced the
+right-edge overflow with a failing real-browser assertion before changing code.
+`Hand.updateHandOverlap` now calculates overlap from actual card widths, hand width,
+count and padding; `board.css` centers the full-size fan with rotated-corner clearance.
+Inspection margins reset so the expanded card is centered and entirely on-screen.
+Own control row explicitly uses flex to keep piles above the hand.
+Evidence/test: `node docs/ui-overhaul/evidence/mobile-fit/capture.mjs`.
+Covers 375/393px, 0/1/3/5/9/12-card hands, hold/release with unchanged game state,
+and a successful upward drag through production controller. Contact oval in held
+screenshot is a presentation-only annotation of the actual emulated touch location.
+Earlier visual-review carousel requirement superseded; capture assertion updated.

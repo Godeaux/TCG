@@ -67,9 +67,11 @@ Prototype interaction checks do NOT prove the production app works.
   launch requirement. Do not regress existing functioning landscape gratuitously.
 - Phone order: safe-area/top utilities → rival identity strip/hidden hand count →
   enemy 3-slot field → compact phase/action control → own 3-slot field → own identity
-  and pile control → horizontally scrolling hand with slight fan/overlap → bottom safe area.
-  **Owner correction, 2026-10-23:** retain a little fan/overlap on phone; never
-  compress the whole hand to fit. This supersedes the original “unfanned” wording.
+  and pile control → full hand fitted with adaptive fan/overlap → bottom safe area.
+  **Latest owner correction, 2026-10-23 19:30:** increase overlap until ALL phone
+  hand cards fit without overflow. Keep card/text size; adjust overlap to hand count
+  and viewport width. Hold enlarges the selected card entirely within the screen.
+  This supersedes the earlier slight-overlap horizontal carousel and “unfanned” wording.
 - Desktop: top utilities; arena plus docked right history; rival strip above enemy
   row, phase control between fields, own identity above the fanned hand. Use the v7
   desktop spacing/sizing, not a stretched phone view. History toggle can hide panel.
@@ -87,7 +89,7 @@ Prototype interaction checks do NOT prove the production app works.
   neon glow everywhere, ornamental headings, or replacement stock illustrations.
 - Use real `env(safe-area-inset-*)` and dynamic viewport sizing. Fake island mode is
   reference-only. Widths 375/393 portrait must not horizontally scroll the whole page.
-  Hand scrolls independently. If short height genuinely cannot fit, permit deliberate
+  Phone hand fits by overlap, not horizontal scrolling. If short height genuinely cannot fit, permit deliberate
   vertical arena scrolling rather than cutting off cards or shrinking text to nothing.
 - Prefer scoped CSS variables and components. Do not paste the prototype's layered
   historical CSS overrides into styles.css; translate final computed layout once.
@@ -116,7 +118,7 @@ Prototype interaction checks do NOT prove the production app works.
   Hidden/Invisible, cancelled abilities and dry drops remain distinguishable. Reuse
   current state/keyword checks. Do not remove effects just to simplify card rendering.
 - Phone hold enlarges the actual card, not an inspector drawer. Release/cancel clears
-  enlargement/focus and never plays/attacks. Horizontal hand scrolling cancels hold;
+  enlargement/focus and never plays/attacks. Horizontal hand movement cancels pending hold;
   drag intent cancels hold; ensure one gesture cannot both inspect and execute.
 - Desktop hover/focus can enlarge; fan cards lift without clipping or losing hit targets.
   Keyboard/click alternatives remain available; no functionality becomes drag-only.
