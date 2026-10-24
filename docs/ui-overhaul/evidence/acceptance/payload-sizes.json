@@ -1,0 +1,20 @@
+[
+  {
+    "operations": 100,
+    "retained": 100,
+    "historyBytes": 98595,
+    "snapshotBytes": 106183
+  },
+  {
+    "operations": 2000,
+    "retained": 2000,
+    "historyBytes": 2001014,
+    "snapshotBytes": 2126411
+  },
+  {
+    "operations": 2001,
+    "retained": 2000,
+    "historyBytes": 2001044,
+    "snapshotBytes": 2126441
+  }
+]

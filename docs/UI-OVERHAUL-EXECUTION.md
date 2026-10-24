@@ -6,16 +6,22 @@
 - **Spec:** [UI-OVERHAUL-SPEC.md](UI-OVERHAUL-SPEC.md), version 1.0, authoritative.
 - **Repo:** `/Users/nut/.openclaw/workspace/food-chain-tcg`.
 - **Branch:** `ui/overhaul-2026-10-22`; gameplay base `0b84588`.
-- **Current checkpoint:** CP01/02 visual correction PASS (2026-10-23 receipt below).
-  CP03 has unfinished working-tree code, NOT a completed checkpoint.
-- **Last completed:** owner-requested screenshot comparison and production board/card
-  corrections. Read `docs/UI-OVERHAUL-VISUAL-REVIEW.md`; final screenshots and executable
-  browser assertions are in `docs/ui-overhaul/evidence/visual-review/`. Earlier CP02
-  receipts overstated visual fidelity; they are historical, not the current acceptance evidence.
-- **Next exact action:** read history §§3–6 (state/history/event model) fully,
-  preserve `board.css` and the owner’s latest full-hand-fit correction, then CP03 — freeze the history schema + reconciliation contract into
-  `docs/ui-overhaul/HISTORY-CONTRACT.md` and build projection/formatter
-  primitives plus ONE production vertical slice (a single attack). The latest board correction is complete; keep full-size cards with adaptive overlap, not horizontal overflow. Start from `js/state/` reducers and `js/network/serialization.js`.
+- **Current checkpoint:** local implementation/browser checkpoint saved; full CP04–09 acceptance is NOT complete.
+- **Last completed:** `99143b7` semantic capture, `e15417f` HistoryPanel/input + browser gate.
+- **Next exact action:** finish the uncovered CP04 semantic/recovery assertions listed
+  in `UI-OVERHAUL-REVIEW.md`, then full-match/rematch/pile and native input acceptance.
+  Preserve the adaptive phone fan and current approved visual design.
+- **Verified:** `npm run check` exit 0, 65 files / 5,145 tests, 244 lint warnings,
+  zero errors; `TCG_CHROME=<installed Chrome> npm run test:ui` exit 0.
+- **Evidence:** `docs/ui-overhaul/evidence/acceptance/`; includes actual reload/next
+  operation, both seat mapping, native hold/release/cancel and successful drag-to-play.
+  Screenshots use production rendering with controlled real-card positions; they
+  are NOT evidence of a full online match.
+- **Findings repaired:** 85px multi-target tiles, blocked mandatory selection behind
+  History, missing summon source (`creature` vs `card` context), missing summon badge.
+  Obsolete synthetic touch fixture replaced with native production-renderer checks.
+- **Remaining:** full coverage and full-match gates below; live backend and native
+  Safari are unverified. CI browser job configured but not run remotely.
 - **CP01 facts CP02+ must know:** strips are `#rival-strip`/`#own-strip` with
   seat-truthful `data-player-index` (updated in `updatePlayerStats`); drop-on-row
   attack reads that attribute; emote bubbles anchor via
@@ -47,8 +53,8 @@ Only one checkpoint IN_PROGRESS. Sub-checkpoints are independently committable.
 - CP00 — baseline/reference freeze: PASS
 - CP01 — production layout shell/tokens: PASS
 - CP02 — cards/hand/inspection/statuses: PASS
-- CP03 — history schema, first vertical slice, reconciliation: NOT_STARTED
-- CP04a — combat/player event capture: NOT_STARTED
+- CP03 — history schema, first vertical slice, reconciliation: PASS
+- CP04a — combat/player event capture: IN_PROGRESS
 - CP04b — play/consume/summon/zone capture: NOT_STARTED
 - CP04c — effects/turn/reaction coverage: NOT_STARTED
 - CP05 — shared face input resolver: NOT_STARTED
@@ -56,6 +62,11 @@ Only one checkpoint IN_PROGRESS. Sub-checkpoints are independently committable.
 - CP07 — overlay/accessibility/control integration: NOT_STARTED
 - CP08 — browser/acceptance/CI gate: NOT_STARTED
 - CP09 — final reviewer handoff: NOT_STARTED
+
+Implementation for CP04–08 now exists and has bounded checks below. The remaining
+NOT_STARTED labels refer to **formal complete acceptance**, not absence of code.
+Do not promote them from representative tests alone. The review file is a partial
+checkpoint report, not a completed CP09 signoff.
 
 ## Receipt template (append one per completed or blocked checkpoint)
 
@@ -333,3 +344,39 @@ Frozen contract: docs/ui-overhaul/HISTORY-CONTRACT.md. Full check currently runn
 /tmp/tcg-cp03-check.log. No visual HistoryPanel yet; CP04–09 remain unfinished.
 Next: inspect check result, commit CP03, then semantic capture at consumption/placement,
 effects/turn/reaction mutation sites with production-path tests; no log-string parsing.
+
+## 2026-10-24 bounded continuation receipt
+
+Commits: `99143b7`, `e15417f` (on top of CP03 `0c84227`).
+Entry contract: EXIT 1 from inherited formatting in four unfinished files; separate
+suite 5,133 PASS. Fixed formatting, added twelve production-path cases: final
+5,145 PASS / 65 files, 244 warnings (same as original pre-history baseline).
+
+Browser gate: EXIT 0, `npm run test:ui` with installed Chromium 1228.
+- 375×812 / 393×852 real attack, consume, summon details; 324px drawer, no page overflow.
+- 1280×800 / 1440×900 / 1920×1080 docked history screenshots.
+- Multi-consume Before/After: >=130px tiles, linked horizontal scrolling.
+- Native Tab/Shift-Tab/Escape focus wrap and return; mandatory selection dismisses
+  History with no answer and no stranded inert nodes; Settings native keyboard checks.
+- Desktop hover restores pinned event; real new effect preserves pin.
+- Two independent clients receive identical JSON history; actual tab reload with
+  authoritative restore plus subsequent real damage retains equality.
+- Absolute seat 0/1 maps to correct own/rival strip targets; outside/control refuses.
+- Native CDP touch: hand counts 0/1/3/5/9/12 fit at both phone widths; hold/release,
+  hold/cancel, drag/cancel and a fresh hold after cancel leave players unchanged;
+  positive upward drag plays exactly the one held card through the production UI.
+- No uncaught page errors. Existing resource 404s remain, including missing
+  token-lancetfish art; they are recorded, NOT silently called zero console errors.
+
+Coverage added: player damage/cap heal both seats, destroy/exile with retained HP,
+private draw/public discard, 2000 retention/immutability, trap decline vs activation
+through restored pending snapshot, sacrifice, simultaneous lethal, Toxic/Poisonous/
+Neurotoxic, Edible predator current-ATK nutrition, real summon source.
+See tests/integration/historyEvents.test.js and tests/network/historyRecovery.test.js.
+
+Payload measurement: 100 real buff events = 98,595 history bytes / 106,183 snapshot
+bytes; 2,000 = 2,001,014 / 2,126,411. The 2,001st operation evicts the first event.
+Transport budgets remain unverified; do not equate retention bound with safe bandwidth.
+
+Remaining assertions are explicitly enumerated in UI-OVERHAUL-REVIEW.md. No backend
+changes, new accounts, native Safari run, push, merge or deployment.

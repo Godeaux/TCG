@@ -1,0 +1,108 @@
+{
+  "results": [
+    {
+      "width": 393,
+      "panel": {
+        "x": 69,
+        "y": 44,
+        "width": 324,
+        "height": 808,
+        "top": 44,
+        "right": 393,
+        "bottom": 852,
+        "left": 69
+      },
+      "detail": {
+        "x": 70,
+        "y": 445.03125,
+        "width": 322,
+        "height": 405.953125,
+        "top": 445.03125,
+        "right": 392,
+        "bottom": 850.984375,
+        "left": 70
+      },
+      "overflow": false
+    },
+    {
+      "width": 375,
+      "panel": {
+        "x": 51,
+        "y": 44,
+        "width": 324,
+        "height": 768,
+        "top": 44,
+        "right": 375,
+        "bottom": 812,
+        "left": 51
+      },
+      "detail": {
+        "x": 52,
+        "y": 425.4375,
+        "width": 322,
+        "height": 385.546875,
+        "top": 425.4375,
+        "right": 374,
+        "bottom": 810.984375,
+        "left": 52
+      },
+      "overflow": false
+    },
+    {
+      "multi": [
+        {
+          "width": 292,
+          "scroll": 426,
+          "tiles": [
+            130,
+            130,
+            130
+          ]
+        },
+        {
+          "width": 292,
+          "scroll": 426,
+          "tiles": [
+            130,
+            130,
+            130
+          ]
+        }
+      ]
+    },
+    {
+      "inside": "rival-strip",
+      "outside": null,
+      "control": null
+    },
+    {
+      "snapshotAndNextOperation": "identical",
+      "pinnedSelection": "preserved",
+      "playerTiles": "HP only"
+    },
+    {
+      "actualReloadAndSubsequentEffect": "identical history"
+    },
+    {
+      "seat": 0,
+      "mapping": {
+        "own": 0,
+        "rival": 1
+      }
+    },
+    {
+      "seat": 1,
+      "mapping": {
+        "own": 1,
+        "rival": 0
+      }
+    }
+  ],
+  "errors": [
+    "phone CONSOLE Failed to load resource: the server responded with a status of 404 (File not found)",
+    "phone HTTP 404 http://127.0.0.1:8141/images/cards/token-lancetfish.jpg",
+    "phone CONSOLE Failed to load resource: the server responded with a status of 404 (File not found)",
+    "phone CONSOLE Failed to load resource: the server responded with a status of 404 (File not found)",
+    "desktop CONSOLE Failed to load resource: the server responded with a status of 404 (File not found)"
+  ]
+}
