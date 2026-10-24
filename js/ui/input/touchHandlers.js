@@ -1,3 +1,4 @@
+import { resolveDropTarget } from './targetResolver.js';
 /**
  * Touch Input Handlers Module
  *
@@ -510,12 +511,14 @@ const handleTouchEnd = (e) => {
       const isSpell = touchedCard.type === 'Spell' || touchedCard.type === 'Free Spell';
 
       // For spells, also check for player-field container (more forgiving drop zone)
-      const dropTarget = isSpell
-        ? elementBelow.closest('.field-slot, .player-badge, .card, .player-field')
-        : elementBelow.closest('.field-slot, .player-badge, .card');
+      const dropTarget = resolveDropTarget(elementBelow, { allowField: isSpell });
 
       // Handle spell drop on player field area (any part of it) - Hearthstone style
-      if (isSpell && dropTarget?.classList.contains('player-field')) {
+      if (
+        isSpell &&
+        dropTarget?.classList.contains('player-field') &&
+        !getSpellTargetingInfo(touchedCard)?.requiresTarget
+      ) {
         const callbacks = getLatestCallbacks();
         handlePlayCard(state, touchedCard, callbacks?.onUpdate);
       } else if (dropTarget?.classList.contains('field-slot')) {
@@ -738,7 +741,7 @@ const handleFieldTouchEnd = (e) => {
 
     // Handle drop based on target
     if (elementBelow && touchedCard) {
-      const dropTarget = elementBelow.closest('.player-badge, .card');
+      const dropTarget = resolveDropTarget(elementBelow);
 
       if (dropTarget?.classList.contains('player-badge')) {
         // Attack player directly

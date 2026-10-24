@@ -29,3 +29,13 @@ jobs:
         run: npm ci
       - name: Verify release candidate
         run: npm run check
+      - name: Install managed Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Verify production UI
+        run: npm run test:ui
+      - name: Retain UI evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-overhaul-evidence
+          path: docs/ui-overhaul/evidence/acceptance/

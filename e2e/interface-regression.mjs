@@ -24,9 +24,8 @@ try {
     };
 
     // ---------- 2. SelectionPanel minimize leak ----------
-    const { renderSelectionPanel, clearSelectionPanel } = await import(
-      '/js/ui/components/SelectionPanel.js'
-    );
+    const { renderSelectionPanel, clearSelectionPanel } =
+      await import('/js/ui/components/SelectionPanel.js');
     const panel = () => document.querySelector('#selection-panel');
     const hideBtn = () => document.querySelector('#selection-panel .hide-panel-btn');
     const contentVisible = () =>
@@ -62,83 +61,13 @@ try {
     ok('hide button focusable', document.activeElement === hideBtn());
     clearSelectionPanel();
 
-    // ---------- 3. Touch cancellation cleanup ----------
-    const { updateDragState } = await import('/js/ui/input/dragAndDrop.js');
-    const { initTouchHandlers } = await import('/js/ui/input/touchHandlers.js');
-    const { createGameState } = await import('/js/state/gameState.js');
-    const { createCardInstance } = await import('/js/cardTypes.js');
-    const { getCardDefinitionById } = await import('/js/cards/registry.js');
-
-    const s = createGameState();
-    s.phase = 'Main 1';
-    s.setup.stage = 'complete';
-    s.deckSelection.stage = 'complete';
-    const hand = createCardInstance(getCardDefinitionById('amphibian-prey-axolotl'), 1);
-    s.players[0].hand = [hand];
-    updateDragState(s);
-    // Reuse the app's real hand grid (initTouchHandlers binds by id) and give it
-    // a deterministic, hit-testable geometry at 390x844.
-    const grid = document.getElementById('active-hand');
-    grid.innerHTML = '';
-    grid.style.cssText =
-      'position:fixed;left:0;top:0;width:390px;height:400px;z-index:99999;background:#000';
-    grid.innerHTML =
-      '<div class="card" style="position:absolute;left:30px;top:30px;width:100px;height:150px" data-instance-id="' +
-      hand.instanceId +
-      '">Axolotl</div>';
-    if (!document.querySelector('.player-field')) {
-      document.body.insertAdjacentHTML('beforeend', '<div class="player-field"></div>');
-    }
-    initTouchHandlers();
-    const el = grid.querySelector('.card');
-    const touchAt = (type, target, x, y) => {
-      const t = new Touch({ identifier: 1, target, clientX: x, clientY: y });
-      target.dispatchEvent(
-        new TouchEvent(type, {
-          bubbles: true,
-          cancelable: true,
-          touches: type === 'touchend' || type === 'touchcancel' ? [] : [t],
-          changedTouches: [t],
-        })
-      );
-    };
-    const fieldHpBefore = s.players[1].hp;
-    const handCountBefore = s.players[0].hand.length;
-
-    // Cancel before dragging: inspection UI must clear, nothing plays.
-    touchAt('touchstart', el, 80, 80);
-    const focusedOnStart = el.classList.contains('hand-focus');
-    touchAt('touchcancel', el, 80, 80);
-    ok('touchstart focuses card', focusedOnStart);
-    ok('cancel clears hand-focus', !el.classList.contains('hand-focus'));
-
-    // Cancel during dragging: preview gone, no dragging classes, no card played.
-    touchAt('touchstart', el, 80, 80);
-    touchAt('touchmove', el, 80, 20); // past VERTICAL_DRAG_THRESHOLD
-    const draggingStarted = el.classList.contains('dragging');
-    const previewExisted = !!document.querySelector('.mobile-drag-preview');
-    touchAt('touchcancel', el, 80, 20);
-    ok('drag actually started', draggingStarted && previewExisted);
-    ok(
-      'cancel removes dragging class',
-      !el.classList.contains('dragging') && !document.querySelector('.card.dragging')
-    );
-    ok('cancel removes preview', !document.querySelector('.mobile-drag-preview'));
-    ok('cancel clears hand-focus after drag', !el.classList.contains('hand-focus'));
-    ok('cancel removes container drag classes', !grid.classList.contains('is-dragging'));
-    ok('cancel played no card', s.players[0].hand.length === handCountBefore);
-    ok('cancel dealt no damage', s.players[1].hp === fieldHpBefore);
-
-    // Fresh gesture after cancellation works normally.
-    touchAt('touchstart', el, 80, 80);
-    const refocused = el.classList.contains('hand-focus');
-    touchAt('touchend', el, 80, 80);
-    ok('fresh gesture focuses after cancel', refocused);
+    // Touch cancellation now runs with native CDP input against the production
+    // renderer in e2e/mobile-hand.mjs; synthetic hand DOM no longer represents
+    // the delayed-hold layout and produced timing-dependent false failures.
 
     // ---------- 4. Settings keyboard modal ----------
-    const { showSettingsOverlay, hideSettingsOverlay, isSettingsOverlayVisible } = await import(
-      '/js/ui/overlays/SettingsOverlay.js'
-    );
+    const { showSettingsOverlay, hideSettingsOverlay, isSettingsOverlayVisible } =
+      await import('/js/ui/overlays/SettingsOverlay.js');
     const opener = document.createElement('button');
     opener.id = 'regression-opener';
     document.body.append(opener);
@@ -188,12 +117,30 @@ try {
     ok('still closed after stray Escape', !isSettingsOverlayVisible());
     hideSettingsOverlay(); // idempotent when already closed
 
-    grid.innerHTML = '';
-    grid.style.cssText = '';
     opener.remove();
     return { fail, pass: true };
   });
 
+  // Real browser keyboard navigation, in addition to handler-level checks above.
+  await page.evaluate(async () => {
+    (await import('/js/ui/overlays/SettingsOverlay.js')).showSettingsOverlay();
+  });
+  for (const key of ['Tab', 'Tab', 'Shift+Tab', 'Shift+Tab']) {
+    await page.keyboard.press(key);
+    if (
+      !(await page.evaluate(() =>
+        document.querySelector('#settings-floating-overlay').contains(document.activeElement)
+      ))
+    )
+      failures.push('native keyboard escaped Settings');
+  }
+  await page.keyboard.press('Escape');
+  if (
+    await page.evaluate(async () =>
+      (await import('/js/ui/overlays/SettingsOverlay.js')).isSettingsOverlayVisible()
+    )
+  )
+    failures.push('native Escape did not close Settings');
   if (results.fail.length > 0) {
     for (const f of results.fail) failures.push(f);
   }
@@ -206,4 +153,6 @@ if (failures.length > 0) {
   for (const f of failures) console.error(`  ✗ ${f}`);
   process.exit(1);
 }
-console.log('PASS — SelectionPanel, touch-cancel and Settings modal regressions all hold.');
+console.log(
+  'PASS — SelectionPanel and Settings modal regressions hold (native touch: mobile-hand.mjs).'
+);

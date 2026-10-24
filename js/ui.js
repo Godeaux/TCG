@@ -1,3 +1,5 @@
+import { resolveDropTarget } from './ui/input/targetResolver.js';
+import { renderHistoryPanel, toggleHistoryPanel } from './ui/components/HistoryPanel.js';
 import {
   getActivePlayer,
   getOpponentPlayer,
@@ -271,7 +273,6 @@ preloadAllCardImages();
 const selectionPanel = document.getElementById('selection-panel');
 const actionBar = document.getElementById('action-bar');
 const actionPanel = document.getElementById('action-panel');
-const gameHistoryLog = document.getElementById('game-history-log');
 const pagesContainer = document.getElementById('pages-container');
 const pageDots = document.getElementById('page-dots');
 const navLeft = document.getElementById('nav-left');
@@ -286,38 +287,6 @@ const lobbyError = document.getElementById('lobby-error');
 let inspectedCardId = null;
 const deckHighlighted = null;
 
-// AI thinking ellipsis animation state
-let aiThinkingEllipsisFrame = 0;
-let aiThinkingEllipsisInterval = null;
-
-/**
- * Start the animated ellipsis for "Still thinking" indicator
- * @param {HTMLElement} element - The element to update with animated text
- */
-function startAIThinkingEllipsisAnimation(element) {
-  if (aiThinkingEllipsisInterval) return; // Already running
-
-  // Update immediately
-  aiThinkingEllipsisFrame = 0;
-  element.textContent = 'Still thinking';
-
-  aiThinkingEllipsisInterval = setInterval(() => {
-    aiThinkingEllipsisFrame = (aiThinkingEllipsisFrame + 1) % 4;
-    const dots = '.'.repeat(aiThinkingEllipsisFrame);
-    element.textContent = `Still thinking${dots}`;
-  }, 400);
-}
-
-/**
- * Stop the animated ellipsis animation
- */
-function stopAIThinkingEllipsisAnimation() {
-  if (aiThinkingEllipsisInterval) {
-    clearInterval(aiThinkingEllipsisInterval);
-    aiThinkingEllipsisInterval = null;
-    aiThinkingEllipsisFrame = 0;
-  }
-}
 let currentPage = 0;
 let deckActiveTab = 'catalog';
 let latestState = null;
@@ -686,188 +655,6 @@ const updateActionPanel = (state, callbacks = {}) => {
   actionBar.classList.add('has-actions');
 };
 
-// Cache for card name lookup (built once, used for log parsing)
-let cardNameMap = null;
-let cardNameRegex = null;
-
-/**
- * Build the card name lookup map and regex for efficient log parsing
- */
-const buildCardNameLookup = () => {
-  if (cardNameMap !== null) return;
-
-  cardNameMap = new Map();
-  const allCards = getAllCards();
-
-  // Build map of lowercase name -> card definition
-  allCards.forEach((card) => {
-    if (card.name) {
-      cardNameMap.set(card.name.toLowerCase(), card);
-    }
-  });
-
-  // Build regex to match any card name (sorted by length descending to match longer names first)
-  const sortedNames = Array.from(cardNameMap.keys())
-    .sort((a, b) => b.length - a.length)
-    .map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')); // Escape regex special chars
-
-  if (sortedNames.length > 0) {
-    cardNameRegex = new RegExp(`\\b(${sortedNames.join('|')})\\b`, 'gi');
-  }
-};
-
-/**
- * Escape HTML special characters for safe rendering
- */
-const escapeHtml = (text) => {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-};
-
-/**
- * Make card names in a log entry clickable
- * Supports two formats:
- * 1. {{name|id|rarity}} - explicit format with rarity metadata
- * 2. Plain card names - matched via cardNameRegex for backward compatibility
- */
-const linkifyCardNames = (entry) => {
-  // First escape HTML
-  let result = escapeHtml(entry);
-
-  // Check if entry uses explicit format (contains {{ markers)
-  const hasExplicitFormat = entry.includes('{{');
-
-  if (hasExplicitFormat) {
-    // Parse explicit card format: {{name|id|rarity}} or {{name|id}}
-    // Only do this replacement, skip legacy to avoid breaking generated HTML
-    result = result.replace(
-      /\{\{([^|]+)\|([^|}]+)(?:\|([^}]+))?\}\}/g,
-      (match, name, id, rarity) => {
-        const rarityClass = rarity ? ` rarity-${rarity}` : '';
-        return `<span class="log-card-link${rarityClass}" data-card-id="${id}">${name}</span>`;
-      }
-    );
-  } else if (cardNameRegex) {
-    // Legacy card name matching (only for entries without explicit format)
-    result = result.replace(cardNameRegex, (match) => {
-      const card = cardNameMap.get(match.toLowerCase());
-      if (card) {
-        return `<span class="log-card-link" data-card-id="${card.id}">${match}</span>`;
-      }
-      return match;
-    });
-  }
-
-  return result;
-};
-
-const appendLog = (state) => {
-  if (!gameHistoryLog) {
-    return;
-  }
-
-  // Build card name lookup on first use
-  buildCardNameLookup();
-
-  // Check if user is near the top (viewing newest entries)
-  // New entries are added at the TOP, so scrollTop=0 means viewing newest
-  // If user scrolls down past threshold, they want to read history and we preserve position
-  const scrollThreshold = 30; // pixels from top to consider "following" newest entries
-  const wasAtTop = gameHistoryLog.scrollTop < scrollThreshold;
-
-  // Store distance from bottom - this is stable when new content is added at top
-  const previousScrollBottom = gameHistoryLog.scrollHeight - gameHistoryLog.scrollTop;
-
-  gameHistoryLog.innerHTML = state.log
-    .map((entry) => {
-      // Handle different log entry types
-      if (typeof entry === 'object' && entry !== null) {
-        // Bug log entry
-        if (entry.type === 'bug') {
-          return `<div class="log-entry log-bug"><span class="log-action">[BUG] ${escapeHtml(entry.message)}</span></div>`;
-        }
-        // AI thinking log entry - apply different styles based on content
-        if (entry.type === 'ai-thinking') {
-          let logClass = 'log-ai-thinking';
-          const msg = entry.message || '';
-
-          // Detect message type for appropriate styling
-          if (msg.includes('DANGER') || msg.includes('Caution:')) {
-            logClass = 'log-ai-danger';
-          } else if (
-            msg.includes('LETHAL') ||
-            msg.includes('Lethal detected') ||
-            msg.includes('Going for the win')
-          ) {
-            logClass = 'log-ai-lethal';
-          } else if (msg.includes('Priority target:') || msg.includes('threat')) {
-            logClass = 'log-ai-strategic';
-          } else if (entry.isDecision || msg.includes('Playing') || msg.includes('attacks')) {
-            logClass = 'log-ai-decision';
-          }
-
-          return `<div class="log-entry ${logClass}"><span class="log-action">${escapeHtml(msg)}</span></div>`;
-        }
-        // Unknown object type - try to stringify
-        return `<div class="log-entry"><span class="log-action">${escapeHtml(JSON.stringify(entry))}</span></div>`;
-      }
-      // Normal string entry
-      return `<div class="log-entry"><span class="log-action">${linkifyCardNames(entry)}</span></div>`;
-    })
-    .join('');
-
-  // Restore scroll position based on where user was reading
-  if (wasAtTop) {
-    // User was following newest entries - keep them at top
-    gameHistoryLog.scrollTop = 0;
-  } else {
-    // User scrolled down to read history - preserve their position relative to content
-    // Since new content is added at top, we restore based on distance from bottom
-    gameHistoryLog.scrollTop = gameHistoryLog.scrollHeight - previousScrollBottom;
-  }
-};
-
-/**
- * Set up hover handlers for card links in the history log (event delegation)
- */
-const setupLogCardLinks = () => {
-  if (!gameHistoryLog) return;
-
-  // Get the game log panel for consistent tooltip anchoring
-  const gameLogPanel = document.querySelector('.game-log-panel');
-
-  // Log card links - show tooltip on hover
-  gameHistoryLog.addEventListener(
-    'mouseenter',
-    (e) => {
-      const cardLink = e.target.closest('.log-card-link');
-      if (cardLink) {
-        const cardId = cardLink.dataset.cardId;
-        if (cardId) {
-          const cardDef = getCardDefinitionById(cardId);
-          if (cardDef) {
-            // Show tooltip anchored to the left of the game log panel
-            showCardTooltip(cardDef, cardLink, { anchorRight: gameLogPanel });
-          }
-        }
-      }
-    },
-    true
-  ); // Use capture to handle dynamically added elements
-
-  gameHistoryLog.addEventListener(
-    'mouseleave',
-    (e) => {
-      const cardLink = e.target.closest('.log-card-link');
-      if (cardLink) {
-        hideCardTooltip();
-      }
-    },
-    true
-  );
-};
-
 const updateIndicators = (state, controlsLocked) => {
   const phaseSummary = document.querySelector('.field-divider-text');
   if (phaseSummary) {
@@ -949,7 +736,6 @@ const updateIndicators = (state, controlsLocked) => {
     // Show AI thinking indicator when deep search is running
     if (state._aiIsSearching) {
       fieldPhaseLabel.classList.add('ai-thinking');
-      stopAIThinkingEllipsisAnimation();
 
       const nodes = state._aiSearchStats?.nodes || 0;
       if (nodes > 0) {
@@ -961,7 +747,6 @@ const updateIndicators = (state, controlsLocked) => {
       }
     } else {
       // Not searching - show normal phase
-      stopAIThinkingEllipsisAnimation();
       fieldPhaseLabel.textContent = state.phase;
       fieldPhaseLabel.classList.remove('ai-thinking');
     }
@@ -2283,11 +2068,6 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
 // Local isSelectionActive that also checks for pending reactions
 const isSelectionActive = () => isSelectionActiveFromModule();
 
-const findCardByInstanceId = (state, instanceId) =>
-  state.players
-    .flatMap((player) => player.field.concat(player.hand, player.carrion, player.exile))
-    .find((card) => card?.instanceId === instanceId);
-
 const resolveAttack = (
   state,
   attacker,
@@ -2391,8 +2171,9 @@ const enterTargetingMode = ({ title, candidates, sourceCard }) => {
 
     // Click handler for field cards
     const handleTargetClick = (e) => {
-      const cardEl = e.target.closest('.card.effect-target');
-      const badgeEl = e.target.closest('.player-badge.effect-target');
+      const hit = resolveDropTarget(e.target);
+      const cardEl = hit?.matches('.card.effect-target') ? hit : null;
+      const badgeEl = hit?.matches('.player-badge.effect-target') ? hit : null;
 
       if (cardEl) {
         const iid = cardEl.dataset.instanceId;
@@ -3937,21 +3718,13 @@ const setupMobileNavigation = () => {
   const navRight = document.getElementById('mobile-nav-right');
   const historyBtn = document.getElementById('field-history-btn');
   const closeInspector = document.getElementById('close-inspector');
-  const closeHistory = document.getElementById('close-history');
   // Support both two-column and three-column layouts
   const battlefieldLayout =
     document.querySelector('.battlefield-layout-three-column') ||
     document.querySelector('.battlefield-layout-two-column');
 
   if (!battlefieldLayout) return;
-  const toggleHistory = () => {
-    if (window.matchMedia('(max-width: 767px)').matches) {
-      battlefieldLayout.classList.toggle('show-history');
-    } else {
-      battlefieldLayout.classList.toggle('history-hidden');
-    }
-    battlefieldLayout.classList.remove('show-inspector');
-  };
+  const toggleHistory = toggleHistoryPanel;
 
   if (navLeft) {
     navLeft.addEventListener('click', () => {
@@ -3977,13 +3750,6 @@ const setupMobileNavigation = () => {
   if (closeInspector) {
     closeInspector.addEventListener('click', () => {
       battlefieldLayout.classList.remove('show-inspector');
-    });
-  }
-
-  if (closeHistory) {
-    closeHistory.addEventListener('click', () => {
-      battlefieldLayout.classList.add('history-hidden');
-      battlefieldLayout.classList.remove('show-history');
     });
   }
 };
@@ -4228,7 +3994,6 @@ if (typeof window !== 'undefined') {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       setupMobileNavigation();
-      setupLogCardLinks();
       setupSurrenderButton();
       setupResyncButton();
       setupClickAwayHandler();
@@ -4237,7 +4002,6 @@ if (typeof window !== 'undefined') {
     });
   } else {
     setupMobileNavigation();
-    setupLogCardLinks();
     setupSurrenderButton();
     setupResyncButton();
     setupClickAwayHandler();
@@ -5108,7 +4872,7 @@ export const renderGame = (state, callbacks = {}) => {
     callbacks.onNextPhase?.();
   };
   updateActionBar(handleNextPhase, state);
-  appendLog(state);
+  renderHistoryPanel(state);
   if (shouldProcessQueues) {
     processEndOfTurnQueue(state, callbacks.onUpdate, callbacks.onEndTurn);
   }
