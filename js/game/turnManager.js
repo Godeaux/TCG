@@ -1,3 +1,4 @@
+import { beginPublicMutation, projectPlayerEntity, recordHistoryEvent } from './historyEvents.js';
 import {
   drawCard,
   logMessage,
@@ -128,6 +129,10 @@ const handleFrozenThaw = (state) => {
   player.field.forEach((creature, slot) => {
     // Thaw creatures that are frozen but NOT by Neurotoxic (no frozenDiesTurn)
     if (creature?.frozen && !creature.frozenDiesTurn) {
+      const finishHistory = beginPublicMutation(state, [creature], {
+        kind: 'status',
+        cause: 'turn',
+      });
       creature.frozen = false;
       creature.thawing = true; // Trigger thaw dissipation animation in UI (cleared at next turn start)
       // Remove Frozen keyword if present
@@ -137,6 +142,7 @@ const handleFrozenThaw = (state) => {
           creature.keywords.splice(frozenIndex, 1);
         }
       }
+      finishHistory();
       logGameAction(state, BUFF, `${creature.name} thaws out.`);
     }
   });
@@ -147,7 +153,13 @@ const handleParalysisDeath = (state) => {
   const player = state.players[state.activePlayerIndex];
   player.field.forEach((creature) => {
     if (creature?.paralyzed && creature.paralyzedUntilTurn <= state.turn) {
+      const finishHistory = beginPublicMutation(state, [creature], {
+        kind: 'destroy',
+        cause: 'paralysis',
+        terminal: 'paralysis',
+      });
       creature.currentHp = 0;
+      finishHistory();
       logGameAction(state, DEATH, `${creature.name} dies from paralysis.`);
     }
   });
@@ -162,8 +174,13 @@ const handleRegen = (state) => {
       // Calculate actual max HP including consumption and buff gains
       const maxHp = getMaxHp(creature);
       if (creature.currentHp < maxHp) {
+        const finishHistory = beginPublicMutation(state, [creature], {
+          kind: 'heal',
+          cause: 'turn',
+        });
         const healAmount = maxHp - creature.currentHp;
         creature.currentHp = maxHp;
+        finishHistory();
         logGameAction(
           state,
           HEAL,
@@ -175,6 +192,17 @@ const handleRegen = (state) => {
 };
 
 export const startTurn = (state) => {
+  const playerEntity = projectPlayerEntity(state, state.activePlayerIndex);
+  recordHistoryEvent(state, {
+    kind: 'turn',
+    cause: 'turn',
+    actorIndex: state.activePlayerIndex,
+    sourceIds: [playerEntity.identity],
+    targetIds: [],
+    before: [playerEntity],
+    after: [playerEntity],
+    facts: [],
+  });
   state.cardPlayedThisTurn = false;
   state.extendedConsumption = null; // Clear extended consumption window on turn start
   state.recentlyDrawnCards = []; // Clear recently drawn tracking for new turn

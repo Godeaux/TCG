@@ -9,7 +9,11 @@ export {
   formatCardForLog,
 } from '../game/historyLog.js';
 
-import { resetHistoryStream } from '../game/historyEvents.js';
+import {
+  resetHistoryStream,
+  projectPlayerEntity,
+  recordHistoryEvent,
+} from '../game/historyEvents.js';
 
 // ============================================================================
 // SEEDED PRNG - Mulberry32 algorithm for deterministic random numbers
@@ -266,6 +270,17 @@ export const drawCard = (state, playerIndex) => {
     card.instanceId = seededInstanceId();
   }
   player.hand.push(card);
+  const entity = projectPlayerEntity(state, playerIndex);
+  recordHistoryEvent(state, {
+    kind: 'draw',
+    cause: 'effect',
+    actorIndex: playerIndex,
+    sourceIds: [entity.identity],
+    targetIds: [],
+    before: [entity],
+    after: [entity],
+    facts: [{ entity: entity.identity, count: 1 }],
+  });
   return card;
 };
 

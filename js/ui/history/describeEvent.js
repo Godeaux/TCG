@@ -29,7 +29,7 @@ const signed = (n) => `${n > 0 ? '+' : ''}${n}`;
 const entityLines = (event, identity) => {
   const before = findEntity(event.before, identity);
   const after = findEntity(event.after, identity);
-  const fact = (event.facts || []).find((f) => f.entity === identity) || {};
+  const facts = (event.facts || []).filter((f) => f.entity === identity);
   const lines = [];
   const name = entityName(after) || entityName(before);
   if (!name) return { name: null, lines };
@@ -56,34 +56,46 @@ const entityLines = (event, identity) => {
     }
   }
 
-  // Damage facts (distinct from net HP loss: Barrier/overkill/Immune differ)
-  if (typeof fact.damage === 'number' && fact.damage > 0) {
-    const preventedNote = fact.prevented === true ? ' (prevented)' : '';
-    const overkill =
-      typeof fact.hpFrom === 'number' && fact.damage > fact.hpFrom
-        ? ` (overkill ${fact.damage - fact.hpFrom})`
-        : '';
-    lines.push(`Took ${fact.damage} damage${overkill}${preventedNote}`);
+  for (const fact of facts) {
+    // Damage facts (distinct from net HP loss: Barrier/overkill/Immune differ)
+    if (typeof fact.damage === 'number' && fact.damage > 0) {
+      const preventedNote = fact.prevented === true ? ' (prevented)' : '';
+      const overkill =
+        typeof (before?.currentHp ?? before?.hp) === 'number' &&
+        fact.damage > (before.currentHp ?? before.hp)
+          ? ` (overkill ${fact.damage - (before.currentHp ?? before.hp)})`
+          : '';
+      lines.push(`Took ${fact.damage} damage${overkill}${preventedNote}`);
+    }
+
+    // Status transitions
+    if (fact.barrierRemoved === true) lines.push('Lost Barrier');
+    if (fact.barrierGained === true) lines.push('Gained Barrier');
+    if (typeof fact.statusRemoved === 'string')
+      lines.push(`Lost ${humanStatus(fact.statusRemoved)}`);
+    if (typeof fact.statusGained === 'string')
+      lines.push(`Gained ${humanStatus(fact.statusGained)}`);
+
+    // Zone / terminal facts — cause is explicit, never inferred from absence
+    if (typeof fact.terminal === 'string') {
+      lines.push(`${terminalVerb(fact.terminal)}${fact.zoneTo ? ` → ${fact.zoneTo}` : ''}`);
+    } else if (
+      typeof fact.zoneFrom === 'string' &&
+      typeof fact.zoneTo === 'string' &&
+      fact.zoneFrom !== fact.zoneTo
+    ) {
+      lines.push(`${fact.zoneFrom} → ${fact.zoneTo}`);
+    }
+
+    if (fact.negated === true) lines.push('Negated');
+    if (fact.prevented === true) lines.push('Damage prevented');
+    if (fact.keywordGained) lines.push(`Gained ${fact.keywordGained}`);
+    if (fact.keywordRemoved) lines.push(`Lost ${fact.keywordRemoved}`);
+    if (fact.copiedFrom) lines.push(`Copied abilities from ${fact.copiedFrom}`);
+    if (typeof fact.nutrition === 'number') lines.push(`${fact.nutrition} nutrition consumed`);
+    if (typeof fact.ownerTo === 'number')
+      lines.push(`Now controlled by Player ${fact.ownerTo + 1}`);
   }
-
-  // Status transitions
-  if (fact.barrierRemoved === true) lines.push('Lost Barrier');
-  if (fact.barrierGained === true) lines.push('Gained Barrier');
-  if (typeof fact.statusRemoved === 'string') lines.push(`Lost ${humanStatus(fact.statusRemoved)}`);
-  if (typeof fact.statusGained === 'string') lines.push(`Gained ${humanStatus(fact.statusGained)}`);
-
-  // Zone / terminal facts — cause is explicit, never inferred from absence
-  if (typeof fact.terminal === 'string') {
-    lines.push(`${terminalVerb(fact.terminal)}${fact.zoneTo ? ` → ${fact.zoneTo}` : ''}`);
-  } else if (
-    typeof fact.zoneFrom === 'string' &&
-    typeof fact.zoneTo === 'string' &&
-    fact.zoneFrom !== fact.zoneTo
-  ) {
-    lines.push(`${fact.zoneFrom} → ${fact.zoneTo}`);
-  }
-
-  if (fact.negated === true) lines.push('Negated');
 
   return { name, lines };
 };
@@ -189,6 +201,10 @@ export const describeEventHeadline = (event) => {
       return primaryTarget ? `${primaryTarget} was exiled.` : `A card was exiled.`;
     case 'transform':
       return primaryTarget ? `${primaryTarget} was transformed.` : `A card transformed.`;
+    case 'draw':
+      return `${actor} drew a card.`;
+    case 'discard':
+      return primaryTarget ? `${actor} discarded ${primaryTarget}.` : `${actor} discarded a card.`;
     case 'turn':
       return `${actor}'s turn.`;
     case 'reaction':

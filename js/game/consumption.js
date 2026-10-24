@@ -1,3 +1,4 @@
+import { knownEntity, recordHistoryEvent } from './historyEvents.js';
 import {
   logMessage,
   queueVisualEffect,
@@ -27,6 +28,11 @@ export const consumePrey = ({
     return;
   }
 
+  const consumed = [...preyList, ...carrionList];
+  const before = [
+    knownEntity(state, predator, playerIndex),
+    ...consumed.map((card) => knownEntity(state, card, playerIndex)),
+  ];
   const totalNutrition = [...preyList, ...carrionList].reduce(
     (sum, prey) => sum + getNutritionValue(prey),
     0
@@ -79,5 +85,38 @@ export const consumePrey = ({
     BUFF,
     `${predator.name} consumes ${preyNames} for +${totalNutrition}/+${totalNutrition}.`
   );
+  const after = [
+    knownEntity(state, predator, playerIndex),
+    ...consumed.map((card, i) => ({
+      ...before[i + 1],
+      zone: carrionList.includes(card) || before[i + 1].isToken ? 'void' : 'carrion',
+      slotIndex: null,
+    })),
+  ];
+  recordHistoryEvent(state, {
+    kind: 'consume',
+    cause: 'consume',
+    actorIndex: before[0].ownerIndex,
+    sourceIds: [predator.instanceId],
+    targetIds: consumed.map((card) => card.instanceId),
+    before,
+    after,
+    facts: [
+      {
+        entity: predator.instanceId,
+        hpFrom: before[0].currentHp,
+        hpTo: after[0].currentHp,
+        atkFrom: before[0].currentAtk,
+        atkTo: after[0].currentAtk,
+      },
+      ...consumed.map((card, i) => ({
+        entity: card.instanceId,
+        terminal: 'consume',
+        zoneFrom: before[i + 1].zone,
+        zoneTo: after[i + 1].zone,
+        nutrition: getNutritionValue(card),
+      })),
+    ],
+  });
   onBroadcast?.(state);
 };

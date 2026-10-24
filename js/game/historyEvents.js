@@ -41,6 +41,8 @@ export const HISTORY_EVENT_KINDS = new Set([
   'transform',
   'turn',
   'reaction',
+  'draw',
+  'discard',
 ]);
 
 export const HISTORY_CAUSES = new Set([
@@ -281,6 +283,12 @@ const validateOutcome = (o) => {
       'negated',
       'nutrition',
       'cause',
+      'keywordGained',
+      'keywordRemoved',
+      'ownerFrom',
+      'ownerTo',
+      'count',
+      'copiedFrom',
     ])
   )
     return 'unknown fact field';
@@ -294,6 +302,11 @@ const validateOutcome = (o) => {
   )
     return 'invalid fact value';
   const hasChange =
+    typeof o.keywordGained === 'string' ||
+    typeof o.keywordRemoved === 'string' ||
+    typeof o.ownerFrom === 'number' ||
+    typeof o.count === 'number' ||
+    typeof o.copiedFrom === 'string' ||
     typeof o.hpFrom === 'number' ||
     typeof o.atkFrom === 'number' ||
     o.barrierRemoved === true ||
@@ -615,3 +628,128 @@ export const fieldEntity = (state, card, ownerIndex) =>
     zone: 'field',
     slotIndex: state.players[ownerIndex]?.field.indexOf(card) ?? null,
   });
+
+/** A public arrival is recorded before any onPlay effects can kill/transform it. */
+export const recordArrival = (state, card, ownerIndex, kind = 'summon', source = null) => {
+  const sourceEntity =
+    source && source.instanceId !== card.instanceId ? knownEntity(state, source, ownerIndex) : null;
+  const entity = fieldEntity(state, card, ownerIndex);
+  recordHistoryEvent(state, {
+    kind,
+    cause: 'effect',
+    actorIndex: ownerIndex,
+    sourceIds: sourceEntity ? [sourceEntity.identity] : [],
+    targetIds: [card.instanceId],
+    before: sourceEntity ? [sourceEntity, emptyEntity()] : [emptyEntity()],
+    after: sourceEntity ? [sourceEntity, entity] : [entity],
+    facts: [{ entity: card.instanceId, zoneFrom: 'stack', zoneTo: 'field' }],
+  });
+};
+
+/** Capture a named, already public card without enumerating any private card data. */
+export const knownEntity = (state, card, fallbackOwner = state.activePlayerIndex) => {
+  for (let ownerIndex = 0; ownerIndex < state.players.length; ownerIndex++) {
+    for (const zone of ['field', 'carrion', 'exile', 'hand']) {
+      const slot = state.players[ownerIndex][zone]?.findIndex(
+        (c) => c?.instanceId === card.instanceId
+      );
+      if (slot >= 0)
+        return projectCardEntity(state.players[ownerIndex][zone][slot], {
+          ownerIndex,
+          zone,
+          slotIndex: zone === 'field' ? slot : null,
+        });
+    }
+  }
+  return projectCardEntity(card, { ownerIndex: fallbackOwner, zone: 'stack' });
+};
+
+/** One explicitly named semantic mutation, never a whole-action/whole-board diff. */
+export const beginPublicMutation = (
+  state,
+  cards,
+  { kind, cause = 'effect', actorIndex = state.activePlayerIndex, terminal = null } = {}
+) => {
+  const unique = [...new Set(cards.filter(Boolean))];
+  const before = unique.map((card) =>
+    state.players.includes(card)
+      ? projectPlayerEntity(state, state.players.indexOf(card))
+      : knownEntity(state, card)
+  );
+  return (extraFacts = []) => {
+    const after = unique.map((card) =>
+      state.players.includes(card)
+        ? projectPlayerEntity(state, state.players.indexOf(card))
+        : knownEntity(state, card)
+    );
+    const facts = [...extraFacts];
+    for (let i = 0; i < before.length; i++) {
+      const b = before[i],
+        a = after[i];
+      const entity = b.identity;
+      const hpKey = b.kind === 'player' ? 'hp' : 'currentHp';
+      if (b[hpKey] !== a[hpKey]) facts.push({ entity, hpFrom: b[hpKey], hpTo: a[hpKey] });
+      if (b.currentAtk !== a.currentAtk)
+        facts.push({ entity, atkFrom: b.currentAtk, atkTo: a.currentAtk });
+      for (const flag of HISTORY_STATUS_FLAGS) {
+        if (!!b.statusFlags?.[flag] !== !!a.statusFlags?.[flag])
+          facts.push({ entity, [a.statusFlags?.[flag] ? 'statusGained' : 'statusRemoved']: flag });
+      }
+      for (const keyword of b.keywords || [])
+        if (!a.keywords.includes(keyword)) facts.push({ entity, keywordRemoved: keyword });
+      for (const keyword of a.keywords || [])
+        if (!b.keywords.includes(keyword)) facts.push({ entity, keywordGained: keyword });
+      if (b.zone !== a.zone) facts.push({ entity, zoneFrom: b.zone, zoneTo: a.zone });
+      if (b.ownerIndex !== a.ownerIndex)
+        facts.push({ entity, ownerFrom: b.ownerIndex, ownerTo: a.ownerIndex });
+      if (terminal && a.currentHp <= 0) {
+        a.zone = a.isToken ? 'void' : 'carrion';
+        a.slotIndex = null;
+        facts.push({ entity, terminal, zoneFrom: b.zone, zoneTo: a.zone });
+      }
+    }
+    if (!facts.length) return;
+    recordHistoryEvent(state, {
+      kind,
+      cause,
+      actorIndex,
+      sourceIds: [],
+      targetIds: before.map((e) => e.identity),
+      before,
+      after,
+      facts,
+    });
+  };
+};
+
+/** A revealed card leaving a private zone: empty before, public after only. */
+export const recordReveal = (state, card, ownerIndex, zone, kind = 'spell') => {
+  recordHistoryEvent(state, {
+    kind,
+    cause: kind === 'reaction' ? 'trap' : 'effect',
+    actorIndex: ownerIndex,
+    sourceIds: [],
+    targetIds: [card.instanceId],
+    before: [emptyEntity('unrevealed')],
+    after: [projectCardEntity(card, { ownerIndex, zone })],
+    facts: [{ entity: card.instanceId, zoneFrom: 'hand', zoneTo: zone }],
+  });
+};
+
+export const recordTransformation = (state, beforeCard, replacement, ownerIndex, slotIndex) => {
+  const before = projectCardEntity(beforeCard, { ownerIndex, zone: 'field', slotIndex });
+  const after = projectCardEntity(replacement, { ownerIndex, zone: 'field', slotIndex });
+  recordHistoryEvent(state, {
+    kind: 'transform',
+    cause: 'effect',
+    actorIndex: ownerIndex,
+    sourceIds: [before.identity],
+    targetIds: [after.identity],
+    before: [before, emptyEntity()],
+    after: [{ ...before, zone: 'void', slotIndex: null }, after],
+    facts: [
+      { entity: before.identity, zoneFrom: 'field', zoneTo: 'void' },
+      { entity: after.identity, zoneFrom: 'void', zoneTo: 'field' },
+    ],
+  });
+};

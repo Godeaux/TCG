@@ -1,3 +1,12 @@
+import {
+  recordArrival,
+  beginPublicMutation,
+  fieldEntity,
+  projectPlayerEntity,
+  recordHistoryEvent,
+  recordReveal,
+  knownEntity,
+} from './historyEvents.js';
 /**
  * Game Controller
  *
@@ -361,6 +370,7 @@ export class GameController {
       this.cleanupDestroyed();
 
       player.exile.push(card);
+      recordReveal(this.state, card, playerIndex, 'exile', 'spell');
 
       player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
 
@@ -531,6 +541,7 @@ export class GameController {
 
     // Place on field
     player.field[finalSlot] = creatureInstance;
+    recordArrival(this.state, creatureInstance, playerIndex, 'play');
 
     // Queue card play visual effect for slam sound
     queueVisualEffect(this.state, {
@@ -738,6 +749,7 @@ export class GameController {
           (c) => c.instanceId !== reaction.instanceId
         );
         reactingPlayer.exile.push(reaction.card);
+        recordReveal(this.state, reaction.card, reactingPlayerIndex, 'exile', 'reaction');
 
         logMessage(this.state, `${reactingPlayer.name}'s ${reaction.card.name} trap activates!`);
 
@@ -1234,6 +1246,7 @@ export class GameController {
       // Remove trap from hand and move to exile
       opponent.hand = opponent.hand.filter((card) => card.instanceId !== trap.instanceId);
       opponent.exile.push(trap);
+      recordReveal(this.state, trap, opponentIndex, 'exile', 'reaction');
     });
   }
 
@@ -1322,11 +1335,29 @@ export class GameController {
     });
 
     const finalizeSacrifice = () => {
+      const before = knownEntity(this.state, card, playerIndex);
       player.field[slotIndex] = null;
       // Tokens don't go to carrion
       if (!card.isToken && !card.id?.startsWith('token-')) {
         player.carrion.push(card);
       }
+      const after = {
+        ...before,
+        zone: card.isToken || card.id?.startsWith('token-') ? 'void' : 'carrion',
+        slotIndex: null,
+      };
+      recordHistoryEvent(this.state, {
+        kind: 'sacrifice',
+        cause: 'sacrifice',
+        actorIndex: playerIndex,
+        sourceIds: [],
+        targetIds: [card.instanceId],
+        before: [before],
+        after: [after],
+        facts: [
+          { entity: card.instanceId, terminal: 'sacrifice', zoneFrom: 'field', zoneTo: after.zone },
+        ],
+      });
       this.cleanupDestroyed();
       this.notifyStateChange();
       this.broadcast();
@@ -1355,11 +1386,13 @@ export class GameController {
       return { success: false, error: 'Card not found in slot' };
     }
 
+    const finishHistory = beginPublicMutation(this.state, [card], { kind: 'return' });
     player.field[slotIndex] = null;
 
     // Tokens cannot return to hand — same rule as the returnToHand effect.
     if (card.isToken) {
       player.exile.push(card);
+      finishHistory();
       logMessage(this.state, `${card.name} is destroyed (tokens cannot return to hand).`);
       this.notifyStateChange();
       this.broadcast();
@@ -1369,6 +1402,7 @@ export class GameController {
     // One reset policy for every route back to hand (CORE-RULES §6.1).
     resetCardToPrinted(card);
     player.hand.push(card);
+    finishHistory();
 
     logMessage(this.state, `${card.name} returns to ${player.name}'s hand.`);
 
@@ -1385,6 +1419,24 @@ export class GameController {
 
   handleResolveAttack({ attacker, target, negateAttack = false, negatedBy = null }) {
     if (negateAttack) {
+      const owner = this.state.players.findIndex((p) => p.field.includes(attacker));
+      const other = 1 - owner;
+      const before = [
+        fieldEntity(this.state, attacker, owner),
+        target.type === 'creature'
+          ? fieldEntity(this.state, target.card, other)
+          : projectPlayerEntity(this.state, other),
+      ];
+      recordHistoryEvent(this.state, {
+        kind: 'attack',
+        cause: 'negation',
+        actorIndex: owner,
+        sourceIds: [attacker.instanceId],
+        targetIds: [before[1].identity],
+        before,
+        after: before,
+        facts: [{ entity: before[1].identity, negated: true }],
+      });
       const targetName = target.type === 'creature' ? target.card.name : 'the player';
       const sourceText = negatedBy ? ` by ${negatedBy}` : '';
       logMessage(
@@ -1663,6 +1715,13 @@ export class GameController {
       player.exile.push(card);
     }
 
+    recordReveal(
+      this.state,
+      card,
+      playerIndex,
+      card.type === 'Prey' || card.type === 'Predator' ? 'carrion' : 'exile',
+      'discard'
+    );
     logMessage(this.state, `${player.name} discards ${card.name}.`);
     this.state.pendingChoice = null;
 
