@@ -320,3 +320,16 @@ Covers 375/393px, 0/1/3/5/9/12-card hands, hold/release with unchanged game stat
 and a successful upward drag through production controller. Contact oval in held
 screenshot is a presentation-only annotation of the actual emulated touch location.
 Earlier visual-review carousel requirement superseded; capture assertion updated.
+
+## Resume 2026-10-23 — CP03 in progress
+
+Baseline npm run check green (5,119 tests, 244 existing lint warnings).
+Audited the unfinished history prototypes; preserved earlier visual/mobile-fit commits.
+Implemented real combat/direct-attack capture, immutable validated snapshot replacement,
+legacy reset and optimistic public-ID remapping. New production recovery tests first
+failed without events, then reproduced duplicate confirmation executing combat twice.
+ActionBus now ignores old/duplicate confirmations and recovers on sequence gaps.
+Frozen contract: docs/ui-overhaul/HISTORY-CONTRACT.md. Full check currently running:
+/tmp/tcg-cp03-check.log. No visual HistoryPanel yet; CP04–09 remain unfinished.
+Next: inspect check result, commit CP03, then semantic capture at consumption/placement,
+effects/turn/reaction mutation sites with production-path tests; no log-string parsing.

@@ -1,3 +1,4 @@
+import { fieldEntity, projectPlayerEntity, recordHistoryEvent } from './historyEvents.js';
 import {
   hasHaste,
   hasLure,
@@ -105,6 +106,12 @@ export const resolveCreatureCombat = (
   attackerOwnerIndex,
   defenderOwnerIndex
 ) => {
+  const before = [
+    fieldEntity(state, attacker, attackerOwnerIndex),
+    fieldEntity(state, defender, defenderOwnerIndex),
+  ];
+  let attackerCause = 'retaliation';
+  let defenderCause = 'combat';
   // Calculate effective attack values
   const attackerEffectiveAtk = getEffectiveAttack(attacker, state, attackerOwnerIndex);
   const defenderEffectiveAtk = getEffectiveAttack(defender, state, defenderOwnerIndex);
@@ -174,6 +181,7 @@ export const resolveCreatureCombat = (
   if (hasToxic(attacker) && attackerDealtDamage && defender.currentHp > 0) {
     queueKeywordEffect(state, attacker, 'Toxic', attackerOwnerIndex);
     defender.currentHp = 0;
+    defenderCause = 'toxic';
     logGameAction(
       state,
       DEATH,
@@ -185,6 +193,7 @@ export const resolveCreatureCombat = (
   if (hasToxic(defender) && defenderDealtDamage && attacker.currentHp > 0) {
     queueKeywordEffect(state, defender, 'Toxic', defenderOwnerIndex);
     attacker.currentHp = 0;
+    attackerCause = 'toxic';
     logGameAction(
       state,
       DEATH,
@@ -282,6 +291,7 @@ export const resolveCreatureCombat = (
   ) {
     queueKeywordEffect(state, defender, 'Poisonous', defenderOwnerIndex);
     attacker.currentHp = 0;
+    attackerCause = 'poisonous';
     attacker.diedInCombat = true;
     attacker.slainBy = {
       instanceId: defender.instanceId,
@@ -297,6 +307,43 @@ export const resolveCreatureCombat = (
     );
   }
 
+  const after = [
+    fieldEntity(state, attacker, attackerOwnerIndex),
+    fieldEntity(state, defender, defenderOwnerIndex),
+  ];
+  const facts = [attackerResult, defenderResult].map((result, i) => {
+    const fact = {
+      entity: before[i].identity,
+      damage: result.damage,
+      hpFrom: before[i].currentHp,
+      hpTo: after[i].currentHp,
+      cause: i === 0 ? attackerCause : defenderCause,
+    };
+    if (result.barrierBlocked) {
+      fact.barrierRemoved = true;
+      fact.prevented = true;
+    }
+    if (after[i].statusFlags.paralyzed && !before[i].statusFlags.paralyzed)
+      fact.statusGained = 'paralyzed';
+    if (after[i].currentHp <= 0) {
+      fact.terminal = i === 0 ? attackerCause : defenderCause;
+      fact.zoneFrom = 'field';
+      fact.zoneTo = after[i].isToken ? 'void' : 'carrion';
+      after[i].zone = fact.zoneTo;
+      after[i].slotIndex = null;
+    }
+    return fact;
+  });
+  recordHistoryEvent(state, {
+    kind: 'attack',
+    cause: 'combat',
+    actorIndex: attackerOwnerIndex,
+    sourceIds: [attacker.instanceId],
+    targetIds: [defender.instanceId],
+    before,
+    after,
+    facts,
+  });
   return { attackerDamage, defenderDamage };
 };
 
@@ -355,6 +402,11 @@ export const initiateCombat = (
 
 export const resolveDirectAttack = (state, attacker, opponent, attackerOwnerIndex) => {
   const effectiveAtk = getEffectiveAttack(attacker, state, attackerOwnerIndex);
+  const targetIndex = state.players.indexOf(opponent);
+  const before = [
+    fieldEntity(state, attacker, attackerOwnerIndex),
+    projectPlayerEntity(state, targetIndex),
+  ];
   const previousHp = opponent.hp;
   opponent.hp -= effectiveAtk;
   logGameAction(
@@ -362,6 +414,26 @@ export const resolveDirectAttack = (state, attacker, opponent, attackerOwnerInde
     COMBAT,
     `DIRECT ATTACK: ${formatCardForLog(attacker)} hits ${opponent.name} for ${effectiveAtk} damage! (${previousHp} → ${opponent.hp} HP)`
   );
+  recordHistoryEvent(state, {
+    kind: 'attack',
+    cause: 'combat',
+    actorIndex: attackerOwnerIndex,
+    sourceIds: [attacker.instanceId],
+    targetIds: [`player:${targetIndex}`],
+    before,
+    after: [
+      fieldEntity(state, attacker, attackerOwnerIndex),
+      projectPlayerEntity(state, targetIndex),
+    ],
+    facts: [
+      {
+        entity: `player:${targetIndex}`,
+        damage: effectiveAtk,
+        hpFrom: Math.max(0, previousHp),
+        hpTo: Math.max(0, opponent.hp),
+      },
+    ],
+  });
   return effectiveAtk;
 };
 

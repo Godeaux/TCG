@@ -20,6 +20,11 @@ import { getLocalPlayerIndex } from '../state/selectors.js';
 import { stripAbilities } from '../game/effects.js';
 import { cleanupDestroyed } from '../game/combat.js';
 import {
+  getHistoryStream,
+  reconcileHistoryStream,
+  resetHistoryStream,
+} from '../game/historyEvents.js';
+import {
   logMessage,
   initializeGameRandom,
   getGameSeed,
@@ -305,6 +310,18 @@ export const buildLobbySyncPayload = (state) => ({
     passPending: state.passPending,
     extendedConsumption: state.extendedConsumption ? { ...state.extendedConsumption } : null,
     log: Array.isArray(state.log) ? [...state.log] : [],
+    // Public history event stream (CP03). Presentation metadata; validated and
+    // REPLACE-applied on the receiving side. Deep-copied so frozen events can
+    // never be mutated in transit.
+    historyEvents: (() => {
+      const stream = getHistoryStream(state);
+      return {
+        version: stream.version,
+        matchGeneration: stream.matchGeneration,
+        sequence: stream.sequence,
+        events: JSON.parse(JSON.stringify(stream.events)),
+      };
+    })(),
     visualEffects: Array.isArray(state.visualEffects) ? [...state.visualEffects] : [],
     pendingTrapDecision: state.pendingTrapDecision ? { ...state.pendingTrapDecision } : null,
     pendingReaction: state.pendingReaction ? { ...state.pendingReaction } : null,
@@ -446,6 +463,11 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
     if (Array.isArray(payload.game.log)) {
       state.log = [...payload.game.log];
     }
+    // History stream: authoritative REPLACE, never blind append. A legacy
+    // payload without history resets the stream (no stale prior-match events);
+    // malformed/foreign events are dropped by reconcile, never trusted.
+    const { stream: historyStream } = reconcileHistoryStream(payload.game.historyEvents);
+    state.historyEvents = historyStream ?? resetHistoryStream();
     if (Array.isArray(payload.game.visualEffects)) {
       state.visualEffects = payload.game.visualEffects.map((effect) => ({ ...effect }));
     }

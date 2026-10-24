@@ -1,3 +1,4 @@
+import { reconcileHistoryIdentities } from '../game/historyEvents.js';
 /**
  * ActionBus — Action-Based Network Layer
  *
@@ -677,6 +678,13 @@ export class ActionBus {
   /** @private — Handle confirmed action from host */
   _handleConfirmedAction(message) {
     const { seq, action: serializedAction, checksum, intentId, createdIds } = message;
+    // Confirmation is delivery, not a new action. Refuse duplicates and recover
+    // across gaps rather than replaying an action against the wrong board.
+    if (!Number.isSafeInteger(seq) || seq <= this._seq || this._recovering) return;
+    if (seq !== this._seq + 1) {
+      this._requestRecovery();
+      return;
+    }
 
     // Check if this confirms an optimistically-applied local action
     const pendingIntent = intentId ? this._pendingIntents.get(intentId) : null;
@@ -963,6 +971,8 @@ export class ActionBus {
         }
       }
     }
+
+    reconcileHistoryIdentities(state, idMap);
 
     console.log(`[ActionBus] Reconciled ${patched} instanceId(s) to match host`);
   }

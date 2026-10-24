@@ -9,6 +9,8 @@ export {
   formatCardForLog,
 } from '../game/historyLog.js';
 
+import { resetHistoryStream } from '../game/historyEvents.js';
+
 // ============================================================================
 // SEEDED PRNG - Mulberry32 algorithm for deterministic random numbers
 // Both clients use the same seed to get identical random sequences
@@ -238,6 +240,9 @@ export const createGameState = () => {
       editingDeckName: null,
     },
     log: [],
+    // Public history event stream (CP03 contract). Presentation metadata only:
+    // never read by rules code, never part of the gameplay checksum.
+    historyEvents: resetHistoryStream(1),
     advantageHistory: [], // Tracks position advantage over time for graphing
     combat: {
       declaredAttacks: [],
