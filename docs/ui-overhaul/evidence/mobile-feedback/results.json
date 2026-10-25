@@ -1,0 +1,501 @@
+{
+  "results": [
+    {
+      "name": "viewport 393x660",
+      "ok": true,
+      "data": {
+        "height": 660,
+        "doc": 660,
+        "items": [
+          {
+            "cls": "battlefield-center-column",
+            "top": 44,
+            "bottom": 652,
+            "client": 608,
+            "scroll": 608,
+            "overflow": "visible"
+          },
+          {
+            "cls": "battlefield-layout",
+            "top": 44,
+            "bottom": 652,
+            "client": 608,
+            "scroll": 608,
+            "overflow": "visible"
+          },
+          {
+            "cls": "hand-panel",
+            "top": 481.34375,
+            "bottom": 652,
+            "client": 171,
+            "scroll": 171,
+            "overflow": "visible"
+          },
+          {
+            "cls": "card type-prey draggable-card playable-pulse",
+            "top": 488.9599609375,
+            "bottom": 644.427734375,
+            "client": 149,
+            "scroll": 149,
+            "overflow": "hidden"
+          },
+          {
+            "cls": "card type-predator draggable-card playable-pulse",
+            "top": 486.64080810546875,
+            "bottom": 640.7139282226562,
+            "client": 149,
+            "scroll": 149,
+            "overflow": "hidden"
+          },
+          {
+            "cls": "card type-prey long-copy draggable-card playable-pulse",
+            "top": 486.34375,
+            "bottom": 639,
+            "client": 149,
+            "scroll": 149,
+            "overflow": "hidden"
+          },
+          {
+            "cls": "card type-prey draggable-card playable-pulse",
+            "top": 486.64080810546875,
+            "bottom": 640.7139282226562,
+            "client": 149,
+            "scroll": 149,
+            "overflow": "hidden"
+          },
+          {
+            "cls": "card type-prey draggable-card playable-pulse",
+            "top": 488.9599609375,
+            "bottom": 644.427734375,
+            "client": 149,
+            "scroll": 149,
+            "overflow": "hidden"
+          }
+        ]
+      }
+    },
+    {
+      "name": "viewport 375x600",
+      "ok": true,
+      "data": {
+        "height": 600,
+        "doc": 600,
+        "items": [
+          {
+            "cls": "battlefield-center-column",
+            "top": 44,
+            "bottom": 592,
+            "client": 548,
+            "scroll": 548,
+            "overflow": "visible"
+          },
+          {
+            "cls": "battlefield-layout",
+            "top": 44,
+            "bottom": 592,
+            "client": 548,
+            "scroll": 548,
+            "overflow": "visible"
+          },
+          {
+            "cls": "hand-panel",
+            "top": 441.34375,
+            "bottom": 592,
+            "client": 151,
+            "scroll": 151,
+            "overflow": "visible"
+          },
+          {
+            "cls": "card type-prey draggable-card playable-pulse",
+            "top": 449.02618408203125,
+            "bottom": 584.3557739257812,
+            "client": 129,
+            "scroll": 129,
+            "overflow": "hidden"
+          },
+          {
+            "cls": "card type-predator draggable-card playable-pulse",
+            "top": 446.67535400390625,
+            "bottom": 580.6779174804688,
+            "client": 129,
+            "scroll": 129,
+            "overflow": "hidden"
+          },
+          {
+            "cls": "card type-prey long-copy draggable-card playable-pulse",
+            "top": 446.34375,
+            "bottom": 579,
+            "client": 129,
+            "scroll": 129,
+            "overflow": "hidden"
+          },
+          {
+            "cls": "card type-prey draggable-card playable-pulse",
+            "top": 446.67535400390625,
+            "bottom": 580.6779174804688,
+            "client": 129,
+            "scroll": 129,
+            "overflow": "hidden"
+          },
+          {
+            "cls": "card type-prey draggable-card playable-pulse",
+            "top": 449.02618408203125,
+            "bottom": 584.3557739257812,
+            "client": 129,
+            "scroll": 129,
+            "overflow": "hidden"
+          }
+        ]
+      }
+    },
+    {
+      "name": "viewport 393x740",
+      "ok": true,
+      "data": {
+        "height": 740,
+        "doc": 740,
+        "items": [
+          {
+            "cls": "battlefield-center-column",
+            "top": 44,
+            "bottom": 732,
+            "client": 688,
+            "scroll": 688,
+            "overflow": "visible"
+          },
+          {
+            "cls": "battlefield-layout",
+            "top": 44,
+            "bottom": 732,
+            "client": 688,
+            "scroll": 688,
+            "overflow": "visible"
+          },
+          {
+            "cls": "hand-panel",
+            "top": 534.671875,
+            "bottom": 732,
+            "client": 197,
+            "scroll": 197,
+            "overflow": "visible"
+          },
+          {
+            "cls": "card type-prey draggable-card playable-pulse",
+            "top": 542.2957763671875,
+            "bottom": 724.427734375,
+            "client": 175,
+            "scroll": 175,
+            "overflow": "hidden"
+          },
+          {
+            "cls": "card type-predator draggable-card playable-pulse",
+            "top": 539.9708251953125,
+            "bottom": 720.7139282226562,
+            "client": 175,
+            "scroll": 175,
+            "overflow": "hidden"
+          },
+          {
+            "cls": "card type-prey long-copy draggable-card playable-pulse",
+            "top": 539.671875,
+            "bottom": 719,
+            "client": 175,
+            "scroll": 175,
+            "overflow": "hidden"
+          },
+          {
+            "cls": "card type-prey draggable-card playable-pulse",
+            "top": 539.9708251953125,
+            "bottom": 720.7139282226562,
+            "client": 175,
+            "scroll": 175,
+            "overflow": "hidden"
+          },
+          {
+            "cls": "card type-prey draggable-card playable-pulse",
+            "top": 542.2957763671875,
+            "bottom": 724.427734375,
+            "client": 175,
+            "scroll": 175,
+            "overflow": "hidden"
+          }
+        ]
+      }
+    },
+    {
+      "name": "viewport 393x852",
+      "ok": true,
+      "data": {
+        "height": 852,
+        "doc": 852,
+        "items": [
+          {
+            "cls": "battlefield-center-column",
+            "top": 44,
+            "bottom": 844,
+            "client": 800,
+            "scroll": 800,
+            "overflow": "visible"
+          },
+          {
+            "cls": "battlefield-layout",
+            "top": 44,
+            "bottom": 844,
+            "client": 800,
+            "scroll": 800,
+            "overflow": "visible"
+          },
+          {
+            "cls": "hand-panel",
+            "top": 609.34375,
+            "bottom": 844,
+            "client": 235,
+            "scroll": 235,
+            "overflow": "visible"
+          },
+          {
+            "cls": "card type-prey draggable-card playable-pulse",
+            "top": 616.9783935546875,
+            "bottom": 836.427734375,
+            "client": 213,
+            "scroll": 213,
+            "overflow": "hidden"
+          },
+          {
+            "cls": "card type-predator draggable-card playable-pulse",
+            "top": 614.6453857421875,
+            "bottom": 832.7139282226562,
+            "client": 213,
+            "scroll": 213,
+            "overflow": "hidden"
+          },
+          {
+            "cls": "card type-prey long-copy draggable-card playable-pulse",
+            "top": 614.34375,
+            "bottom": 831,
+            "client": 213,
+            "scroll": 213,
+            "overflow": "hidden"
+          },
+          {
+            "cls": "card type-prey draggable-card playable-pulse",
+            "top": 614.6453857421875,
+            "bottom": 832.7139282226562,
+            "client": 213,
+            "scroll": 213,
+            "overflow": "hidden"
+          },
+          {
+            "cls": "card type-prey draggable-card playable-pulse",
+            "top": 616.9783935546875,
+            "bottom": 836.427734375,
+            "client": 213,
+            "scroll": 213,
+            "overflow": "hidden"
+          }
+        ]
+      }
+    },
+    {
+      "name": "viewport 1440x800",
+      "ok": true,
+      "data": {
+        "height": 800,
+        "doc": 800,
+        "items": [
+          {
+            "cls": "battlefield-center-column",
+            "top": 48,
+            "bottom": 800,
+            "client": 752,
+            "scroll": 752,
+            "overflow": "visible"
+          },
+          {
+            "cls": "battlefield-layout",
+            "top": 48,
+            "bottom": 800,
+            "client": 752,
+            "scroll": 752,
+            "overflow": "visible"
+          },
+          {
+            "cls": "hand-panel",
+            "top": 582.671875,
+            "bottom": 800,
+            "client": 217,
+            "scroll": 217,
+            "overflow": "visible"
+          },
+          {
+            "cls": "card type-prey draggable-card playable-pulse",
+            "top": 587.2398071289062,
+            "bottom": 795.6624755859375,
+            "client": 195,
+            "scroll": 195,
+            "overflow": "hidden"
+          },
+          {
+            "cls": "card type-predator draggable-card playable-pulse",
+            "top": 586.3975830078125,
+            "bottom": 790.3319091796875,
+            "client": 195,
+            "scroll": 195,
+            "overflow": "hidden"
+          },
+          {
+            "cls": "card type-prey long-copy draggable-card playable-pulse",
+            "top": 587.671875,
+            "bottom": 787,
+            "client": 195,
+            "scroll": 195,
+            "overflow": "hidden"
+          },
+          {
+            "cls": "card type-prey draggable-card playable-pulse",
+            "top": 586.3975830078125,
+            "bottom": 790.3319091796875,
+            "client": 195,
+            "scroll": 195,
+            "overflow": "hidden"
+          },
+          {
+            "cls": "card type-prey draggable-card playable-pulse",
+            "top": 587.2398071289062,
+            "bottom": 795.6624755859375,
+            "client": 195,
+            "scroll": 195,
+            "overflow": "hidden"
+          }
+        ]
+      }
+    },
+    {
+      "name": "exhaustion tilt preserved",
+      "ok": true
+    },
+    {
+      "name": "type banners restored",
+      "ok": true
+    },
+    {
+      "name": "single modern inspection with side info",
+      "ok": true
+    },
+    {
+      "name": "reverse browse card 4 stays on screen",
+      "ok": true,
+      "data": [
+        {
+          "id": "9ba11332-0ffb-4dcd-9a31-a62d078cfea1",
+          "left": 157.0684356689453,
+          "right": 383.1684265136719
+        }
+      ]
+    },
+    {
+      "name": "reverse browse card 3 stays on screen",
+      "ok": true,
+      "data": [
+        {
+          "id": "c831cba6-f2d4-4bf0-a1ba-bfc9f0c3dbec",
+          "left": 142.45001220703125,
+          "right": 368.54998779296875
+        }
+      ]
+    },
+    {
+      "name": "reverse browse card 2 stays on screen",
+      "ok": true,
+      "data": [
+        {
+          "id": "bb306db4-6122-475c-8355-5546afa85608",
+          "left": 83.45000457763672,
+          "right": 309.5499801635742
+        }
+      ]
+    },
+    {
+      "name": "reverse browse card 1 stays on screen",
+      "ok": true,
+      "data": [
+        {
+          "id": "25d9ba87-3f11-4ba4-9df4-a983ba4dbb07",
+          "left": 24.45000457763672,
+          "right": 250.54998016357422
+        }
+      ]
+    },
+    {
+      "name": "reverse browse card 0 stays on screen",
+      "ok": true,
+      "data": [
+        {
+          "id": "3e5b78cc-11bc-41a1-bbf7-13be9a3c9cad",
+          "left": 9.831573486328125,
+          "right": 235.9315643310547
+        }
+      ]
+    },
+    {
+      "name": "rapid reversal keeps edge card inside viewport",
+      "ok": true
+    },
+    {
+      "name": "reverse thumb selects each card",
+      "ok": true,
+      "data": [
+        "9ba11332-0ffb-4dcd-9a31-a62d078cfea1",
+        "c831cba6-f2d4-4bf0-a1ba-bfc9f0c3dbec",
+        "bb306db4-6122-475c-8355-5546afa85608",
+        "25d9ba87-3f11-4ba4-9df4-a983ba4dbb07",
+        "3e5b78cc-11bc-41a1-bbf7-13be9a3c9cad"
+      ]
+    },
+    {
+      "name": "continuous thumb selects each card",
+      "ok": true,
+      "data": [
+        "3e5b78cc-11bc-41a1-bbf7-13be9a3c9cad",
+        "25d9ba87-3f11-4ba4-9df4-a983ba4dbb07",
+        "bb306db4-6122-475c-8355-5546afa85608",
+        "c831cba6-f2d4-4bf0-a1ba-bfc9f0c3dbec",
+        "9ba11332-0ffb-4dcd-9a31-a62d078cfea1"
+      ]
+    },
+    {
+      "name": "browse release never plays",
+      "ok": true
+    },
+    {
+      "name": "inspector for hand card 0",
+      "ok": true
+    },
+    {
+      "name": "inspector for hand card 1",
+      "ok": true
+    },
+    {
+      "name": "inspector for hand card 2",
+      "ok": true
+    },
+    {
+      "name": "inspector for hand card 3",
+      "ok": true
+    },
+    {
+      "name": "inspector for hand card 4",
+      "ok": true
+    },
+    {
+      "name": "native history upper list scrolls",
+      "ok": true,
+      "data": {
+        "top": 267,
+        "height": 296,
+        "total": 3304
+      }
+    }
+  ],
+  "failures": []
+}

@@ -7,7 +7,7 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:ui": "node e2e/ui-overhaul.mjs && node e2e/mobile-hand.mjs && node e2e/history-lifecycle.mjs && node e2e/local-transport-match.mjs && node e2e/attack-input.mjs",
+    "test:ui": "node e2e/ui-overhaul.mjs && node e2e/mobile-hand.mjs && node e2e/history-lifecycle.mjs && node e2e/local-transport-match.mjs && node e2e/attack-input.mjs && node e2e/mobile-feedback.mjs",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint js/",
     "lint:fix": "eslint js/ --fix",

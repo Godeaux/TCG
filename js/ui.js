@@ -1402,7 +1402,9 @@ const initHandPreview = () => {
       handlePointer(event);
     }
   });
-  handGrid.addEventListener('pointerleave', clearFocus);
+  handGrid.addEventListener('pointerleave', (event) => {
+    if (event.pointerType !== 'touch' && window.matchMedia('(hover: hover)').matches) clearFocus();
+  });
   window.addEventListener('resize', () => updateHandOverlap(handGrid));
 };
 

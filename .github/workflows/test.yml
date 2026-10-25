@@ -38,4 +38,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ui-overhaul-evidence
-          path: docs/ui-overhaul/evidence/acceptance/
+          path: |
+            docs/ui-overhaul/evidence/acceptance/
+            docs/ui-overhaul/evidence/mobile-feedback/

@@ -310,7 +310,7 @@
   padding: 0;
   gap: 4px;
 }
-.game-container :is(.field-slot, .hand-grid) .card {
+:is(.game-container .field-slot, .game-container .hand-grid, .modern-inspector) .card {
   width: var(--board-card-width);
   height: var(--board-card-height);
   min-height: var(--board-card-height);
@@ -329,15 +329,16 @@
 .game-container .hand-grid .card.hand-focus {
   transform: translateY(-35px) scale(1.15) rotate(0deg);
 }
-.game-container :is(.field-slot, .hand-grid) .card::before {
-  display: none;
+:is(.game-container .field-slot, .game-container .hand-grid, .modern-inspector) .card::before {
+  display: block;
+  z-index: 3;
 }
-.game-container :is(.field-slot, .hand-grid) .card-inner {
+:is(.game-container .field-slot, .game-container .hand-grid, .modern-inspector) .card-inner {
   display: flex;
   height: 100%;
   padding: 0;
 }
-.game-container :is(.field-slot, .hand-grid) .card-name {
+:is(.game-container .field-slot, .game-container .hand-grid, .modern-inspector) .card-name {
   flex: 0 0 auto;
   padding: 4px 2px;
   min-height: 23px;
@@ -345,77 +346,77 @@
   color: #e4eeea;
   text-shadow: none;
 }
-.game-container :is(.field-slot, .hand-grid) .card-name-text {
+:is(.game-container .field-slot, .game-container .hand-grid, .modern-inspector) .card-name-text {
   font:
     650 var(--board-title)/1.1 system-ui,
     sans-serif;
   max-height: none;
 }
-.game-container :is(.field-slot, .hand-grid) .card-image-container {
+:is(.game-container .field-slot, .game-container .hand-grid, .modern-inspector) .card-image-container {
   flex: 0 0 var(--board-art);
   min-height: 38px;
   background: #102b33;
 }
-.game-container :is(.field-slot, .hand-grid) .card-image {
+:is(.game-container .field-slot, .game-container .hand-grid, .modern-inspector) .card-image {
   object-fit: contain;
 }
-.game-container :is(.field-slot, .hand-grid) .card-content-area {
+:is(.game-container .field-slot, .game-container .hand-grid, .modern-inspector) .card-content-area {
   flex: 1 1 0;
   min-height: 0;
   overflow: hidden;
 }
-.game-container :is(.field-slot, .hand-grid) .card-stats-row {
+:is(.game-container .field-slot, .game-container .hand-grid, .modern-inspector) .card-stats-row {
   flex: 0 0 23px;
   min-height: 23px;
   max-height: none;
   background: #19343e;
   border-block: 1px solid #8ca69b22;
 }
-.game-container :is(.field-slot, .hand-grid) .card-stats-text {
+:is(.game-container .field-slot, .game-container .hand-grid, .modern-inspector) .card-stats-text {
   font:
     700 var(--board-stat)/1.2 system-ui,
     sans-serif;
 }
-.game-container :is(.field-slot, .hand-grid) .stat-atk {
+:is(.game-container .field-slot, .game-container .hand-grid, .modern-inspector) .stat-atk {
   color: #e4d8ad;
   order: 0;
 }
-.game-container :is(.field-slot, .hand-grid) .stat-nut {
+:is(.game-container .field-slot, .game-container .hand-grid, .modern-inspector) .stat-nut {
   color: #bdd4a4;
   order: 1;
 }
-.game-container :is(.field-slot, .hand-grid) .stat-hp {
+:is(.game-container .field-slot, .game-container .hand-grid, .modern-inspector) .stat-hp {
   color: #e7c5c4;
   order: 2;
 }
-.game-container :is(.field-slot, .hand-grid) .hp-buffed {
+:is(.game-container .field-slot, .game-container .hand-grid, .modern-inspector) .hp-buffed {
   color: #7ee89d;
 }
-.game-container :is(.field-slot, .hand-grid) .hp-damaged {
+:is(.game-container .field-slot, .game-container .hand-grid, .modern-inspector) .hp-damaged {
   color: #ff8884;
 }
-.game-container :is(.field-slot, .hand-grid) .card-keywords:empty {
+:is(.game-container .field-slot, .game-container .hand-grid, .modern-inspector) .card-keywords:empty {
   display: none;
 }
-.game-container :is(.field-slot, .hand-grid) .card-keywords-text {
+:is(.game-container .field-slot, .game-container .hand-grid, .modern-inspector) .card-keywords-text {
   font:
     650 var(--board-copy)/1.2 system-ui,
     sans-serif;
 }
-.game-container :is(.field-slot, .hand-grid) .card-effect {
+:is(.game-container .field-slot, .game-container .hand-grid, .modern-inspector) .card-effect {
   flex: 1 1 auto;
   height: auto;
   align-items: flex-start;
   padding: 4px 5px;
 }
-.game-container :is(.field-slot, .hand-grid) .card-effect-text {
+:is(.game-container .field-slot, .game-container .hand-grid, .modern-inspector) .card-effect-text {
   font:
     400 var(--board-copy)/1.2 system-ui,
     sans-serif;
   max-height: 100%;
   width: 100%;
 }
-.game-container :is(.field-slot, .hand-grid) .card-status {
+:is(.game-container .field-slot, .game-container .hand-grid, .modern-inspector) .card-status {
   font-size: 14px;
 }
 .game-container .game-log-panel {
@@ -660,18 +661,18 @@
 .game-container .field-turn-btn {
   animation: none;
 }
-.game-container :is(.field-slot, .hand-grid) .barrier-overlay {
+:is(.game-container .field-slot, .game-container .hand-grid, .modern-inspector) .barrier-overlay {
   border: 2px solid #efd48c;
   border-radius: 9px;
   background: radial-gradient(ellipse at 30% 5%, #fff6c730, transparent 40%);
   box-shadow: inset 0 0 13px #f6d37788;
   animation: none;
 }
-.game-container :is(.field-slot, .hand-grid) .barrier-overlay::before,
-.game-container :is(.field-slot, .hand-grid) .barrier-overlay::after {
+:is(.game-container .field-slot, .game-container .hand-grid, .modern-inspector) .barrier-overlay::before,
+:is(.game-container .field-slot, .game-container .hand-grid, .modern-inspector) .barrier-overlay::after {
   display: none;
 }
-.game-container :is(.field-slot, .hand-grid) .card-status {
+:is(.game-container .field-slot, .game-container .hand-grid, .modern-inspector) .card-status {
   top: 26px;
   right: 3px;
 }
@@ -725,10 +726,10 @@
   position: relative;
   z-index: 100;
 }
-.game-container :is(.field-slot, .hand-grid) .long-copy .card-image-container {
+:is(.game-container .field-slot, .game-container .hand-grid, .modern-inspector) .long-copy .card-image-container {
   flex-shrink: 1;
 }
-.game-container :is(.field-slot, .hand-grid) .long-copy .card-content-area {
+:is(.game-container .field-slot, .game-container .hand-grid, .modern-inspector) .long-copy .card-content-area {
   min-height: calc(var(--board-copy) * 8.5);
 }
 
@@ -1059,3 +1060,62 @@
 .history-dense .history-tile .history-portrait { height:calc(100% - 43px); }
 .history-dense .history-stats { height:43px; flex-wrap:wrap; column-gap:8px; align-content:center; }
 .history-dense .history-terminal { bottom:43px; }
+
+/* Browser-content height is the budget, including visible Safari bars (dvh).
+   Only card text, inspector details and history panes scroll, never the arena. */
+.game-container {
+  --board-card-height: clamp(90px, calc((100dvh - 202px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) / 3), 264px);
+}
+.game-container .battlefield-center-column { overflow: visible; }
+.game-container .battlefield-layout { min-height: 0; height: 100%; gap: 4px; }
+.game-container .scoreboard-row, .game-container .own-control-row { min-height: 36px; height: 36px; flex: 0 0 36px; }
+.game-container .player-badge { min-height: 36px; }
+.game-container .battlefield-region { flex: 1 1 0; min-height: 0; }
+.game-container .battlefield { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) 30px minmax(0, 1fr); gap: 4px; }
+.game-container .field-row { height: 100%; min-height: 0; }
+.game-container .field-slot { min-height: 0; }
+.game-container .field-slot .card { height: 100%; min-height: 0; max-height: 100%; }
+.game-container .field-divider { margin: 0; height: 30px; min-height: 30px; }
+.game-container .hand-panel { height: calc(var(--board-card-height) + 18px); min-height: 0; flex: 0 0 calc(var(--board-card-height) + 18px); padding: 0; }
+.game-container .hand-container { height: 100%; min-height: 0; }
+.game-container .hand-grid { padding-top: 5px; padding-bottom: 8px; min-height: 0; }
+.game-container .field-slot .card-name { padding-top: 6px; }
+/* Explicit scrolling tracks avoid Safari min-content grid expansion. */
+.game-container #game-history-log.visual-history { grid-template-rows: minmax(0, 46fr) minmax(0, 54fr); flex: 1 1 0; }
+.game-container .game-log-panel { min-height: 0; max-height: 100%; }
+.history-events, .history-detail { min-height: 0; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
+.history-event { flex-shrink: 0; touch-action: pan-y; }
+@media (max-width: 767px) and (orientation: portrait) {
+  .game-container .hand-grid .card.hand-focus:not(.dragging) {
+    position: relative; left: auto; top: auto;
+    margin: 0 0 0 calc(-1 * var(--hand-overlap, 10px));
+    width: var(--board-card-width); height: var(--board-card-height);
+    transform: translate(var(--focus-shift-x, 0px), -38px) scale(1.9);
+    transform-origin: center bottom;
+    --board-copy: 10.5px; --board-title: 10.5px; --board-stat: 14px;
+    transition: transform 90ms ease-out;
+  }
+  .game-container .hand-grid .card.hand-focus:first-child { margin-left: 0; }
+  .game-container #active-hand { touch-action: none; }
+  .game-container #game-history-log.visual-history { grid-template-rows: minmax(0, 49fr) minmax(0, 51fr); }
+}
+/* One modern card preview plus a separate scrollable explanation column. */
+.modern-inspector {
+  --board-card-width: 260px; --board-card-height: min(430px, 75dvh);
+  --board-art: 45%; --board-copy: 14px; --board-title: 16px; --board-stat: 18px;
+  font-family: system-ui, sans-serif; gap: 10px; max-height: calc(100dvh - 32px);
+}
+.modern-inspector .tooltip-card-preview { width: var(--board-card-width); }
+.modern-inspector .tooltip-card-preview .card { aspect-ratio: auto; height: var(--board-card-height); pointer-events: none; }
+.modern-inspector .tooltip-info-boxes { width: 190px; min-width: 0; max-width: none; max-height: var(--board-card-height); flex-flow: column nowrap; justify-content: flex-start; touch-action: pan-y; }
+.modern-inspector .tooltip-info-box { min-width: 0; max-width: none; width: 100%; padding: 9px; background: #18343b; border: 1px solid #82968a; border-left: 3px solid #b3c69b; border-radius: 7px; box-shadow: none; }
+.modern-inspector .tooltip-info-box-title, .modern-inspector .tooltip-token-header { font: 650 12px/1.3 system-ui; color: #dce8d6; }
+.modern-inspector .tooltip-info-box-description { font: 12px/1.4 system-ui; color: #d0dfda; }
+.modern-inspector .tooltip-token-preview { margin: 0; transform: none; padding: 0; }
+.modern-inspector .tooltip-token-preview .card { width: 100%; height: 220px; min-height: 220px; transform: none; margin: 0; --board-copy: 12px; --board-title: 12px; --board-stat: 14px; }
+@media (max-width: 767px) {
+  .card-hover-tooltip.modern-inspector { left: 8px !important; top: 50% !important; transform: translateY(-50%); flex-direction: row; align-items: center; width: calc(100vw - 16px); max-width: none; gap: 8px; --board-card-width: min(56vw, 260px); --board-card-height: min(420px, calc(100dvh - 100px)); }
+  .modern-inspector .tooltip-info-boxes { flex: 1; width: 0; }
+}
+
+.modern-inspector.visible .tooltip-card-preview .card { pointer-events: auto; }

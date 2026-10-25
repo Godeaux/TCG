@@ -112,9 +112,11 @@ export const renderField = (state, playerIndex, isOpponent, options = {}) => {
 
     // Add hover tooltip listeners (Hearthstone-style)
     cardElement.addEventListener('mouseenter', () => {
+      if (!window.matchMedia('(hover: hover)').matches) return;
       showCardTooltip(card, cardElement);
     });
     cardElement.addEventListener('mouseleave', () => {
+      if (!window.matchMedia('(hover: hover)').matches) return;
       hideCardTooltip();
     });
 

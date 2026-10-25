@@ -50,9 +50,7 @@ let touchStartTime = 0; // Track when touch started for tap detection
 
 // Frozen card zones — snapshotted at touchstart, used throughout the touch session.
 // Prevents layout-shift flicker when focused cards lift/scale and shift neighbor positions.
-let portraitHandScroll = false;
-let handScrollStart = 0;
-let handHoldTimer = null;
+let handBrowseLocked = false;
 const isPortraitHand = () =>
   window.matchMedia('(max-width: 767px) and (orientation: portrait)').matches;
 let frozenCardZones = []; // Array of { element, centerX, card }
@@ -204,7 +202,15 @@ export const focusCardElement = (cardElement, { showTooltip = false } = {}) => {
     el.classList.remove('hand-focus');
   });
 
-  // Add focus to this card (visual lift only — no tooltip unless explicitly requested)
+  if (isPortraitHand()) {
+    const r = cardElement.getBoundingClientRect();
+    const center =
+      frozenCardZones.find((zone) => zone.element === cardElement)?.visualCenterX ??
+      r.left + r.width / 2;
+    const half = (cardElement.offsetWidth * 1.9) / 2;
+    const clamped = Math.max(half + 8, Math.min(window.innerWidth - half - 8, center));
+    cardElement.style.setProperty('--focus-shift-x', `${clamped - center}px`);
+  }
   cardElement.classList.add('hand-focus');
 
   // Only show tooltip on explicit request (tap, not hold/drag)
@@ -265,14 +271,6 @@ const handleTouchStart = (e) => {
   const touch = e.touches[0];
   const state = getLatestState();
 
-  // CP02: full effect text may overflow its area on small cards; when the
-  // touch starts inside a scrollable .card-effect-text, let the browser pan
-  // it natively instead of starting the focus/drag interaction.
-  const effectArea = e.target?.closest?.('.card-effect-text');
-  if (effectArea && effectArea.scrollHeight > effectArea.clientHeight + 1) {
-    return;
-  }
-
   // Use unified card detection - handles z-index, transforms, overlapping cards
   const touched = getTouchedCard(touch.clientX, touch.clientY, state);
 
@@ -307,26 +305,24 @@ const handleTouchStart = (e) => {
       frozenCardZones.push({
         element: card,
         centerX: rect.left + rect.width / 2,
+        visualCenterX: rect.left + rect.width / 2,
         card: cardData,
       });
     }
   }
 
+  frozenCardZones.forEach((zone, i) => {
+    const r = zone.element.getBoundingClientRect();
+    const next = frozenCardZones[i + 1]?.element.getBoundingClientRect();
+    zone.leftX = r.left;
+    zone.rightX = next ? Math.min(r.right, next.left) : r.right;
+    zone.centerX = (zone.leftX + zone.rightX) / 2;
+  });
+
   // Dismiss any existing tooltip from a previous tap
   hideCardTooltipImmediate();
 
-  portraitHandScroll = false;
-  handScrollStart = handGrid?.scrollLeft ?? 0;
-  clearTimeout(handHoldTimer);
-  if (isPortraitHand()) {
-    handHoldTimer = setTimeout(() => {
-      if (touchedCardElement && !portraitHandScroll && !isDragging)
-        focusCardElement(touchedCardElement);
-    }, 350);
-    e.preventDefault();
-    return;
-  }
-
+  handBrowseLocked = false;
   // Immediately elevate (focus) the touched card - this is the card that will be dragged
   // The hand-focus class makes it visually elevated and is used to determine what to drag
   focusCardElement(touched.element);
@@ -356,25 +352,11 @@ const handleTouchMove = (e) => {
 
   const dy = currentTouchPos.y - touchStartPos.y;
   const dx = currentTouchPos.x - touchStartPos.x;
-  if (isPortraitHand() && !isDragging) {
-    if (portraitHandScroll || (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy))) {
-      portraitHandScroll = true;
-      clearTimeout(handHoldTimer);
-      touchedCardElement.classList.remove('hand-focus');
-      const hand = document.getElementById('active-hand');
-      if (hand) hand.scrollLeft = handScrollStart - dx;
-      return; // Once browsing, this gesture cannot become a play.
-    }
-    if (dy < -VERTICAL_DRAG_THRESHOLD) {
-      clearTimeout(handHoldTimer);
-      focusCardElement(touchedCardElement);
-    } else {
-      return;
-    }
-  }
+  // A horizontal browse locks this gesture out of playing until release.
+  if (!isDragging && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) handBrowseLocked = true;
 
   // Check if moving vertically upward past threshold - start drag to play
-  if (!isDragging && dy < -VERTICAL_DRAG_THRESHOLD) {
+  if (!isDragging && !handBrowseLocked && dy < -VERTICAL_DRAG_THRESHOLD) {
     // CRITICAL: Find the elevated (focused) card and drag THAT, not whatever is under finger
     // This ensures the visually elevated card is always what gets dragged
     const handGrid = document.getElementById('active-hand');
@@ -430,8 +412,10 @@ const handleTouchMove = (e) => {
     // These positions never change during the touch, so no layout-shift flicker.
     if (frozenCardZones.length === 0) return;
 
-    let closestZone = null;
-    let closestDist = Infinity;
+    let closestZone = frozenCardZones.find(
+      (zone) => currentTouchPos.x >= zone.leftX && currentTouchPos.x < zone.rightX
+    );
+    let closestDist = closestZone ? 0 : Infinity;
 
     for (const zone of frozenCardZones) {
       const dist = Math.abs(currentTouchPos.x - zone.centerX);
@@ -479,9 +463,8 @@ const handleTouchMove = (e) => {
  * Handle touch end - execute drop action or clean up
  */
 const handleTouchEnd = (e) => {
-  clearTimeout(handHoldTimer);
-  if (portraitHandScroll) {
-    portraitHandScroll = false;
+  if (handBrowseLocked) {
+    handBrowseLocked = false;
     resetTouchSession();
     return;
   }
@@ -578,8 +561,10 @@ const handleTouchEnd = (e) => {
     const wasQuickTap = touchDuration < TAP_MAX_DURATION_MS && touchMovement < TAP_MAX_MOVEMENT_PX;
 
     if (wasQuickTap && touchedCard && touchedCardElement) {
-      // Quick tap on card - show tooltip AND keep card focused (lifted)
-      focusCardElement(touchedCardElement, { showTooltip: true });
+      // One inspection surface: retract the hand card, then show its styled
+      // preview and explanations. Never stack two enlarged copies.
+      touchedCardElement.classList.remove('hand-focus');
+      onCardFocus?.(touchedCard, touchedCardElement);
     } else {
       // Hold/slide released - retract the card back to resting position
       document.querySelectorAll('.card.hand-focus').forEach((el) => {
@@ -605,8 +590,7 @@ const handleTouchEnd = (e) => {
  * Never executes a play/attack/consumption action.
  */
 const resetTouchSession = () => {
-  clearTimeout(handHoldTimer);
-  portraitHandScroll = false;
+  handBrowseLocked = false;
   if (touchedCardElement) {
     touchedCardElement.classList.remove('dragging');
   }
