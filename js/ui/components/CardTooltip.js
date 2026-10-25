@@ -270,7 +270,7 @@ const setupGlobalDismissHandler = () => {
       // Check if touch/click is inside the scrollable info boxes area
       // If so, allow the interaction (for scrolling) - don't dismiss
       if (infoBoxesElement && e.target) {
-        const isInsideInfoBoxes = infoBoxesElement.contains(e.target);
+        const isInsideInfoBoxes = tooltipElement.contains(e.target);
         if (isInsideInfoBoxes) {
           // Allow scrolling - don't dismiss
           return;
@@ -376,6 +376,9 @@ export const showCardTooltip = (card, targetElement, options = {}) => {
   }
 
   if (!tooltipElement || !card) return;
+
+  const gameplay = context === 'gameplay';
+  tooltipElement.classList.toggle('modern-inspector', gameplay);
 
   // Clear any pending hide
   clearTimeout(hideTimeout);
@@ -574,6 +577,10 @@ const renderInfoBoxes = (card, context = 'gameplay') => {
   if (!infoBoxesElement) return;
 
   infoBoxesElement.innerHTML = '';
+  if (context === 'gameplay') {
+    const text = [card.type, card.faction].filter(Boolean).join(' · ');
+    infoBoxesElement.appendChild(createInfoBox('Card', text, 'card'));
+  }
 
   // Add keyword boxes (suppressed for dry-dropped predators)
   if (Array.isArray(card.keywords) && card.keywords.length > 0 && areAbilitiesActive(card)) {
@@ -706,6 +713,14 @@ const positionTooltip = (targetElement, options = {}) => {
   const { showPreview = true, anchorRight = null } = options;
 
   if (!tooltipElement || !targetElement) return;
+
+  if (tooltipElement.classList.contains('modern-inspector') && window.innerWidth <= 767) {
+    tooltipElement.style.left = '8px';
+    tooltipElement.style.top = '50%';
+    tooltipElement.classList.remove('position-left');
+    tooltipElement.classList.add('position-right');
+    return;
+  }
 
   const targetRect = targetElement.getBoundingClientRect();
   const viewportWidth = window.innerWidth;
