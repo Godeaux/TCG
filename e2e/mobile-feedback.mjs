@@ -195,6 +195,19 @@ try {
       focused
     );
   }
+  // Reverse while transforms are still animating; clamp against resting geometry.
+  for (const i of [1, 0, 1, 0, 4, 3, 4]) {
+    await touch('touchMove', boxes[i].x + 12, boxes[0].y + 35);
+    await p.waitForTimeout(25);
+  }
+  await p.waitForTimeout(120);
+  check(
+    'rapid reversal keeps edge card inside viewport',
+    await p.locator('#active-hand .hand-focus').evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return r.left >= -1 && r.right <= innerWidth + 1;
+    })
+  );
   await touch('touchMove', boxes[0].x + 12, boxes[0].y - 80);
   await touch('touchEnd');
   check(

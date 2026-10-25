@@ -387,7 +387,7 @@
       "ok": true,
       "data": [
         {
-          "id": "a338b6ac-497c-4506-86c1-88ec82a578f8",
+          "id": "9ba11332-0ffb-4dcd-9a31-a62d078cfea1",
           "left": 157.0684356689453,
           "right": 383.1684265136719
         }
@@ -398,7 +398,7 @@
       "ok": true,
       "data": [
         {
-          "id": "3aa3c041-a987-47a0-b77d-1e27ae6c3fd1",
+          "id": "c831cba6-f2d4-4bf0-a1ba-bfc9f0c3dbec",
           "left": 142.45001220703125,
           "right": 368.54998779296875
         }
@@ -409,7 +409,7 @@
       "ok": true,
       "data": [
         {
-          "id": "140f313c-00e8-4c93-9dcd-4a727bf80d2a",
+          "id": "bb306db4-6122-475c-8355-5546afa85608",
           "left": 83.45000457763672,
           "right": 309.5499801635742
         }
@@ -420,7 +420,7 @@
       "ok": true,
       "data": [
         {
-          "id": "f808da6d-69bc-41b2-beeb-7968c269e700",
+          "id": "25d9ba87-3f11-4ba4-9df4-a983ba4dbb07",
           "left": 24.45000457763672,
           "right": 250.54998016357422
         }
@@ -431,32 +431,36 @@
       "ok": true,
       "data": [
         {
-          "id": "c944a79b-ee14-4e7d-853f-95c992cb55a2",
+          "id": "3e5b78cc-11bc-41a1-bbf7-13be9a3c9cad",
           "left": 9.831573486328125,
           "right": 235.9315643310547
         }
       ]
     },
     {
+      "name": "rapid reversal keeps edge card inside viewport",
+      "ok": true
+    },
+    {
       "name": "reverse thumb selects each card",
       "ok": true,
       "data": [
-        "a338b6ac-497c-4506-86c1-88ec82a578f8",
-        "3aa3c041-a987-47a0-b77d-1e27ae6c3fd1",
-        "140f313c-00e8-4c93-9dcd-4a727bf80d2a",
-        "f808da6d-69bc-41b2-beeb-7968c269e700",
-        "c944a79b-ee14-4e7d-853f-95c992cb55a2"
+        "9ba11332-0ffb-4dcd-9a31-a62d078cfea1",
+        "c831cba6-f2d4-4bf0-a1ba-bfc9f0c3dbec",
+        "bb306db4-6122-475c-8355-5546afa85608",
+        "25d9ba87-3f11-4ba4-9df4-a983ba4dbb07",
+        "3e5b78cc-11bc-41a1-bbf7-13be9a3c9cad"
       ]
     },
     {
       "name": "continuous thumb selects each card",
       "ok": true,
       "data": [
-        "c944a79b-ee14-4e7d-853f-95c992cb55a2",
-        "f808da6d-69bc-41b2-beeb-7968c269e700",
-        "140f313c-00e8-4c93-9dcd-4a727bf80d2a",
-        "3aa3c041-a987-47a0-b77d-1e27ae6c3fd1",
-        "a338b6ac-497c-4506-86c1-88ec82a578f8"
+        "3e5b78cc-11bc-41a1-bbf7-13be9a3c9cad",
+        "25d9ba87-3f11-4ba4-9df4-a983ba4dbb07",
+        "bb306db4-6122-475c-8355-5546afa85608",
+        "c831cba6-f2d4-4bf0-a1ba-bfc9f0c3dbec",
+        "9ba11332-0ffb-4dcd-9a31-a62d078cfea1"
       ]
     },
     {
@@ -487,7 +491,7 @@
       "name": "native history upper list scrolls",
       "ok": true,
       "data": {
-        "top": 262,
+        "top": 267,
         "height": 296,
         "total": 3304
       }

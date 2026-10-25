@@ -204,7 +204,9 @@ export const focusCardElement = (cardElement, { showTooltip = false } = {}) => {
 
   if (isPortraitHand()) {
     const r = cardElement.getBoundingClientRect();
-    const center = r.left + r.width / 2;
+    const center =
+      frozenCardZones.find((zone) => zone.element === cardElement)?.visualCenterX ??
+      r.left + r.width / 2;
     const half = (cardElement.offsetWidth * 1.9) / 2;
     const clamped = Math.max(half + 8, Math.min(window.innerWidth - half - 8, center));
     cardElement.style.setProperty('--focus-shift-x', `${clamped - center}px`);
@@ -303,6 +305,7 @@ const handleTouchStart = (e) => {
       frozenCardZones.push({
         element: card,
         centerX: rect.left + rect.width / 2,
+        visualCenterX: rect.left + rect.width / 2,
         card: cardData,
       });
     }
