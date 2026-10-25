@@ -15,10 +15,15 @@
  */
 
 import { getCardDefinitionById } from '../cards/registry.js';
-import { createCardInstance } from '../cardTypes.js';
+import { createCardInstance, cloneAbilityData } from '../cardTypes.js';
 import { getLocalPlayerIndex } from '../state/selectors.js';
 import { stripAbilities } from '../game/effects.js';
 import { cleanupDestroyed } from '../game/combat.js';
+import {
+  getHistoryStream,
+  reconcileHistoryStream,
+  resetHistoryStream,
+} from '../game/historyEvents.js';
 import {
   logMessage,
   initializeGameRandom,
@@ -88,8 +93,11 @@ export const serializeCardSnapshot = (card) => {
     isToken: card.isToken ?? false,
     abilitiesCancelled: card.abilitiesCancelled ?? false,
     keywords: Array.isArray(card.keywords) ? [...card.keywords] : null,
-    // Track if abilities were copied from another card (for re-applying after hydration)
+    // Track if abilities were copied from another card (for display / legacy sync)
     copiedFromId: card.copiedFromId ?? null,
+    // The abilities actually in force at copy time. Restored verbatim on hydrate
+    // so a copy of a copy does not revert to the first source's printed card.
+    copiedSnapshot: card.copiedSnapshot ? cloneAbilityData(card.copiedSnapshot) : null,
     // Mechanic-specific state that must sync
   };
 };
@@ -165,8 +173,22 @@ export const hydrateCardSnapshot = (snapshot, fallbackTurn) => {
     stripAbilities(instance);
   }
 
-  // Re-apply copied abilities if this card copied from another
-  if (snapshot.copiedFromId) {
+  // Re-apply copied abilities.
+  //
+  // Prefer the captured copiedSnapshot: it holds the abilities actually in force
+  // at copy time, which is the only correct answer for a copy of a copy. The
+  // printed definition of copiedFromId is a legacy fallback for snapshots written
+  // before copiedSnapshot existed.
+  if (snapshot.copiedSnapshot) {
+    const copied = snapshot.copiedSnapshot;
+    instance.copiedFromId = snapshot.copiedFromId ?? null;
+    instance.copiedSnapshot = cloneAbilityData(copied) ?? null;
+    instance.keywords = Array.isArray(copied.keywords) ? [...copied.keywords] : [];
+    instance.hasBarrier = instance.keywords.includes('Barrier');
+    instance.effects = cloneAbilityData(copied.effects) ?? {};
+    instance.effect = cloneAbilityData(copied.effect) ?? null;
+    instance.effectText = copied.effectText ?? '(Copied) No effect text.';
+  } else if (snapshot.copiedFromId) {
     const sourceDefinition = getCardDefinitionById(snapshot.copiedFromId);
     if (sourceDefinition) {
       instance.copiedFromId = snapshot.copiedFromId;
@@ -184,12 +206,18 @@ export const hydrateCardSnapshot = (snapshot, fallbackTurn) => {
 
       // Copy from source definition
       if (sourceDefinition.effects) {
-        instance.effects = { ...sourceDefinition.effects };
+        instance.effects = cloneAbilityData(sourceDefinition.effects);
       }
       instance.effectText = sourceDefinition.effectText
         ? `(Copied) ${sourceDefinition.effectText}`
         : '(Copied) No effect text.';
     }
+  }
+
+  // Cancellation is terminal: re-apply it AFTER any copy re-hydration so a
+  // snapshot carrying both flags can never hand abilities back.
+  if (snapshot.abilitiesCancelled) {
+    stripAbilities(instance);
   }
 
   return instance;
@@ -282,6 +310,18 @@ export const buildLobbySyncPayload = (state) => ({
     passPending: state.passPending,
     extendedConsumption: state.extendedConsumption ? { ...state.extendedConsumption } : null,
     log: Array.isArray(state.log) ? [...state.log] : [],
+    // Public history event stream (CP03). Presentation metadata; validated and
+    // REPLACE-applied on the receiving side. Deep-copied so frozen events can
+    // never be mutated in transit.
+    historyEvents: (() => {
+      const stream = getHistoryStream(state);
+      return {
+        version: stream.version,
+        matchGeneration: stream.matchGeneration,
+        sequence: stream.sequence,
+        events: JSON.parse(JSON.stringify(stream.events)),
+      };
+    })(),
     visualEffects: Array.isArray(state.visualEffects) ? [...state.visualEffects] : [],
     pendingTrapDecision: state.pendingTrapDecision ? { ...state.pendingTrapDecision } : null,
     pendingReaction: state.pendingReaction ? { ...state.pendingReaction } : null,
@@ -291,6 +331,10 @@ export const buildLobbySyncPayload = (state) => ({
     endOfTurnQueue: Array.isArray(state.endOfTurnQueue)
       ? state.endOfTurnQueue.map((creature) => creature?.instanceId ?? null).filter(Boolean)
       : [],
+    // The creature whose End-phase effect is waiting on a choice. Persisted as
+    // an instanceId for the same reason as the queue: without it a refresh
+    // restores an empty queue and finalizes with no choice and no damage.
+    endOfTurnPending: state.endOfTurnPending?.instanceId ?? null,
     endOfTurnFinalized: state.endOfTurnFinalized === true,
     // Include attack negation flags for multiplayer trap sync
     _lastReactionNegatedAttack: state._lastReactionNegatedAttack ?? undefined,
@@ -419,6 +463,11 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
     if (Array.isArray(payload.game.log)) {
       state.log = [...payload.game.log];
     }
+    // History stream: authoritative REPLACE, never blind append. A legacy
+    // payload without history resets the stream (no stale prior-match events);
+    // malformed/foreign events are dropped by reconcile, never trusted.
+    const { stream: historyStream } = reconcileHistoryStream(payload.game.historyEvents);
+    state.historyEvents = historyStream ?? resetHistoryStream();
     if (Array.isArray(payload.game.visualEffects)) {
       state.visualEffects = payload.game.visualEffects.map((effect) => ({ ...effect }));
     }
@@ -508,7 +557,10 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
           player.traps = hydrateZoneSnapshots(playerSnapshot.traps, null, state.turn);
         }
       });
-      cleanupDestroyed(state, { silent: true });
+      // Reconstructing a state, not advancing it: the deaths this cleanup files
+      // away already resolved their onSlain on the authoritative peer. Replaying
+      // them here would duplicate hand cards, tokens and carrion entries.
+      cleanupDestroyed(state, { silent: true, skipOnSlain: true });
 
       // Rebuild outstanding end-of-turn work against the live field objects.
       // The resolver mutates those identities (it clears endOfTurnSummon once
@@ -527,6 +579,11 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
         state.endOfTurnQueue = payload.game.endOfTurnQueue
           .map((instanceId) => fieldByIdentity.get(instanceId))
           .filter(Boolean);
+        // Same identity rule for the owed choice: point it at the live creature
+        // so answering it mutates the real board, not a hydrating clone.
+        state.endOfTurnPending = payload.game.endOfTurnPending
+          ? (fieldByIdentity.get(payload.game.endOfTurnPending) ?? null)
+          : null;
       }
       if (typeof payload.game.endOfTurnFinalized === 'boolean') {
         state.endOfTurnFinalized = payload.game.endOfTurnFinalized;

@@ -1,0 +1,154 @@
+{
+  "gestures": {
+    "scrollPixels": 96,
+    "holdWidth": 280.1240463256836,
+    "upwardDragPlayed": true,
+    "stateUnchanged": true
+  },
+  "desktop": {
+    "bottom": 886.6538696289062,
+    "height": 900
+  },
+  "longText": [
+    {
+      "name": "Maelstrom",
+      "font": 10.5,
+      "height": 58,
+      "scrollHeight": 101,
+      "overflow": "auto",
+      "statsBottom": 763.7982788085938,
+      "cardBottom": 832.0765380859375,
+      "nameHeight": 23
+    },
+    {
+      "name": "Shotgun",
+      "font": 10.5,
+      "height": 58,
+      "scrollHeight": 88,
+      "overflow": "auto",
+      "statsBottom": 761.4363403320312,
+      "cardBottom": 829.715576171875,
+      "nameHeight": 23
+    },
+    {
+      "name": "Blizzard",
+      "font": 10.5,
+      "height": 46,
+      "scrollHeight": 76,
+      "overflow": "auto",
+      "statsBottom": 772.1580810546875,
+      "cardBottom": 827.7513427734375,
+      "nameHeight": 23
+    },
+    {
+      "name": "Siberian Salamander",
+      "font": 10.5,
+      "height": 46,
+      "scrollHeight": 76,
+      "overflow": "auto",
+      "statsBottom": 770.596435546875,
+      "cardBottom": 826.1837158203125,
+      "nameHeight": 23
+    },
+    {
+      "name": "Pitfall",
+      "font": 10.5,
+      "height": 46,
+      "scrollHeight": 76,
+      "overflow": "auto",
+      "statsBottom": 769.4337158203125,
+      "cardBottom": 825.0126953125,
+      "nameHeight": 23
+    },
+    {
+      "name": "Monsoon",
+      "font": 10.5,
+      "height": 46,
+      "scrollHeight": 63,
+      "overflow": "auto",
+      "statsBottom": 768.6697998046875,
+      "cardBottom": 824.2384033203125,
+      "nameHeight": 23
+    },
+    {
+      "name": "Snow Squall",
+      "font": 10.5,
+      "height": 46,
+      "scrollHeight": 63,
+      "overflow": "auto",
+      "statsBottom": 768.6697998046875,
+      "cardBottom": 824.2384033203125,
+      "nameHeight": 23
+    },
+    {
+      "name": "Hoatzin",
+      "font": 10.5,
+      "height": 46,
+      "scrollHeight": 63,
+      "overflow": "auto",
+      "statsBottom": 769.4337158203125,
+      "cardBottom": 825.0126953125,
+      "nameHeight": 23
+    },
+    {
+      "name": "Phantastic Leaf-tailed Gecko",
+      "font": 10.5,
+      "height": 42,
+      "scrollHeight": 50,
+      "overflow": "auto",
+      "statsBottom": 757.9105224609375,
+      "cardBottom": 826.1837158203125,
+      "nameHeight": 33
+    },
+    {
+      "name": "Alleyway Mobbing",
+      "font": 10.5,
+      "height": 46,
+      "scrollHeight": 63,
+      "overflow": "auto",
+      "statsBottom": 772.1580810546875,
+      "cardBottom": 827.7513427734375,
+      "nameHeight": 23
+    },
+    {
+      "name": "Blowdart",
+      "font": 10.5,
+      "height": 46,
+      "scrollHeight": 50,
+      "overflow": "auto",
+      "statsBottom": 774.11865234375,
+      "cardBottom": 829.715576171875,
+      "nameHeight": 23
+    },
+    {
+      "name": "Eurasian Magpie",
+      "font": 10.5,
+      "height": 46,
+      "scrollHeight": 50,
+      "overflow": "auto",
+      "statsBottom": 776.4780883789062,
+      "cardBottom": 832.0765380859375,
+      "nameHeight": 23
+    }
+  ],
+  "errors": [
+    "review REQFAIL http://127.0.0.1:8137/audio/impact-heavy.wav",
+    "review CONSOLE Failed to load resource: the server responded with a status of 404 (File not found)",
+    "gestures REQFAIL http://127.0.0.1:8137/audio/impact-heavy.wav",
+    "gestures CONSOLE Failed to load resource: the server responded with a status of 404 (File not found)",
+    "gestures HTTP 404 http://127.0.0.1:8137/images/cards/bird-spell-shotgun.jpg",
+    "gestures CONSOLE Failed to load resource: the server responded with a status of 404 (File not found)",
+    "gestures HTTP 404 http://127.0.0.1:8137/images/cards/mammal-spell-blizzard.jpg",
+    "gestures CONSOLE Failed to load resource: the server responded with a status of 404 (File not found)",
+    "gestures HTTP 404 http://127.0.0.1:8137/images/cards/mammal-trap-pitfall.jpg",
+    "gestures CONSOLE Failed to load resource: the server responded with a status of 404 (File not found)",
+    "gestures HTTP 404 http://127.0.0.1:8137/images/cards/mammal-trap-snow-squall.jpg",
+    "gestures CONSOLE Failed to load resource: the server responded with a status of 404 (File not found)",
+    "gestures HTTP 404 http://127.0.0.1:8137/images/cards/reptile-prey-phantastic-leaf-tailed-gecko.jpg",
+    "gestures CONSOLE Failed to load resource: the server responded with a status of 404 (File not found)",
+    "gestures HTTP 404 http://127.0.0.1:8137/images/cards/bird-trap-alleyway-mobbing.jpg",
+    "gestures CONSOLE Failed to load resource: the server responded with a status of 404 (File not found)",
+    "gestures HTTP 404 http://127.0.0.1:8137/images/cards/amphibian-trap-blowdart.jpg",
+    "gestures CONSOLE Failed to load resource: the server responded with a status of 404 (File not found)"
+  ]
+}

@@ -1,4 +1,10 @@
 import {
+  beginPublicMutation,
+  recordArrival,
+  recordReveal,
+  recordTransformation,
+} from './historyEvents.js';
+import {
   drawCard,
   logMessage,
   queueVisualEffect,
@@ -10,7 +16,7 @@ import {
   formatCardForLog,
   seededInstanceId,
 } from '../state/gameState.js';
-import { createCardInstance, isCreatureCard } from '../cardTypes.js';
+import { createCardInstance, cloneAbilityData, isCreatureCard } from '../cardTypes.js';
 import { consumePrey } from './consumption.js';
 import { getMaxHp } from './creatureStats.js';
 import {
@@ -115,12 +121,18 @@ const applyEffectDamage = (state, creature, amount, sourceLabel = 'effect') => {
   if (!creature || amount <= 0) {
     return;
   }
+  const finishHistory = beginPublicMutation(state, [creature], {
+    kind: 'spell',
+    terminal: 'effect',
+  });
   if (isImmune(creature)) {
+    finishHistory([{ entity: creature.instanceId, damage: 0, prevented: true }]);
     logGameAction(state, BUFF, `${formatCardForLog(creature)} is immune to ${sourceLabel} damage.`);
     return;
   }
   if (creature.hasBarrier && areAbilitiesActive(creature)) {
     creature.hasBarrier = false;
+    finishHistory([{ entity: creature.instanceId, damage: 0, prevented: true }]);
     // Queue barrier visual effect
     const { ownerIndex, slotIndex } = findCardSlotIndex(state, creature);
     if (ownerIndex >= 0) {
@@ -140,6 +152,7 @@ const applyEffectDamage = (state, creature, amount, sourceLabel = 'effect') => {
     return;
   }
   creature.currentHp -= amount;
+  finishHistory([{ entity: creature.instanceId, damage: amount }]);
   // Queue damage visual effect
   const { ownerIndex, slotIndex } = findCardSlotIndex(state, creature);
   if (ownerIndex >= 0) {
@@ -158,11 +171,16 @@ const killCreature = (state, creature, sourceLabel = 'effect') => {
   if (!creature) {
     return false;
   }
+  const finishHistory = beginPublicMutation(state, [creature], {
+    kind: 'destroy',
+    terminal: 'effect',
+  });
   creature.currentHp = 0;
+  finishHistory();
   return true;
 };
 
-const placeToken = (state, playerIndex, tokenData) => {
+const placeToken = (state, playerIndex, tokenData, source = null) => {
   const player = state.players[playerIndex];
   const emptySlot = player.field.findIndex((slot) => slot === null);
   if (emptySlot === -1) {
@@ -172,6 +190,7 @@ const placeToken = (state, playerIndex, tokenData) => {
   const token = createCardInstance({ ...tokenData, isToken: true }, state.turn);
   token.isToken = true;
   player.field[emptySlot] = token;
+  recordArrival(state, token, playerIndex, 'summon', source);
   logGameAction(state, SUMMON, `${player.name} summons ${formatCardForLog(token)}.`);
   return token;
 };
@@ -185,8 +204,102 @@ const placeCreatureOnField = (state, playerIndex, cardData) => {
   }
   const instance = createCardInstance(cardData, state.turn);
   player.field[emptySlot] = instance;
+  recordArrival(state, instance, playerIndex);
   logGameAction(state, SUMMON, `${player.name} plays ${formatCardForLog(instance)}.`);
   return instance;
+};
+
+/**
+ * Capture the abilities a copier actually has in force, as plain JSON.
+ *
+ * The snapshot is what survives a network round trip: hydration restores these
+ * exact abilities instead of re-reading the printed definition of `copiedFromId`,
+ * which is wrong for a copy of a copy. Functions are never stored — card ability
+ * payloads are data by contract, so anything non-cloneable degrades to a
+ * keyword-only snapshot rather than corrupting the payload.
+ */
+export const buildCopiedSnapshot = (source) => {
+  if (!source || typeof source !== 'object') {
+    return null;
+  }
+  const definition = source.id ? getCardDefinitionById(source.id) : null;
+  const effects =
+    source.effects && Object.keys(source.effects).length > 0
+      ? source.effects
+      : (definition?.effects ?? null);
+  const effect = source.effect ?? definition?.effect ?? null;
+  const effectText = source.effectText ?? definition?.effectText ?? null;
+  const keywords = Array.isArray(source.keywords) ? [...source.keywords] : [];
+  if (keywords.length === 0 && !effects && !effect && !effectText) {
+    return null;
+  }
+  return cloneAbilityData({ keywords, effects, effect, effectText });
+};
+
+/**
+ * Reset an instance to its printed card state (CORE-RULES §6.1).
+ *
+ * Single reset policy for anything that leaves play and returns to hand, so the
+ * effect path and the direct RETURN_TO_HAND action cannot drift apart. Reverts
+ * stats copied in play, clears earned/earned-up counters and temporary status,
+ * and drops borrowed abilities. The instance id is preserved so callers can
+ * still track the physical card across zones.
+ */
+export const resetCardToPrinted = (card) => {
+  const originalCard = card?.id ? getCardDefinitionById(card.id) : null;
+
+  if (originalCard) {
+    if (card.atk !== undefined && originalCard.atk !== undefined) {
+      card.atk = originalCard.atk;
+    }
+    if (card.hp !== undefined && originalCard.hp !== undefined) {
+      card.hp = originalCard.hp;
+    }
+    if (card.nutrition !== undefined) {
+      card.nutrition = originalCard.nutrition;
+    }
+  }
+
+  card.currentAtk = card.atk;
+  card.currentHp = card.hp;
+
+  delete card.consumptionGains;
+  delete card.buffGains;
+
+  card.keywords = Array.isArray(originalCard?.keywords) ? [...originalCard.keywords] : [];
+  card.frozen = false;
+  card.frozenDiesTurn = null;
+  card.paralyzed = false;
+  card.paralyzedUntilTurn = null;
+  card.hasBarrier = originalCard?.keywords?.includes('Barrier') || false;
+  card.abilitiesCancelled = false;
+  card.hasAttacked = false;
+  card.attacksMadeThisTurn = 0;
+  card.summonedTurn = null;
+
+  // A dry drop is a property of the trip onto the field, not of the card: the
+  // 🍂 marker and the keyword strip it applied go away with the trip (§6.1).
+  card.dryDropped = false;
+
+  // Borrowed abilities and any pending delayed work do not survive a trip to hand.
+  card.effects = cloneAbilityData(originalCard?.effects) ?? {};
+  card.effect = cloneAbilityData(originalCard?.effect) ?? null;
+  card.effectText = originalCard?.effectText ?? null;
+  card.copiedFromId = null;
+  card.copiedSnapshot = null;
+  card.endOfTurnSummon = null;
+  card.transformOnStart = originalCard?.transformOnStart ?? null;
+  card.onPlay = originalCard?.onPlay ?? null;
+  card.onConsume = originalCard?.onConsume ?? null;
+  card.onSlain = originalCard?.onSlain ?? null;
+  card.onStart = originalCard?.onStart ?? null;
+  card.onEnd = originalCard?.onEnd ?? null;
+  card.onBeforeCombat = originalCard?.onBeforeCombat ?? null;
+  card.onDefend = originalCard?.onDefend ?? null;
+  card.onTargeted = originalCard?.onTargeted ?? null;
+  delete card.playedVia;
+
+  return card;
 };
 
 export const stripAbilities = (card) => {
@@ -231,54 +344,87 @@ export const resolveEffectResult = (state, result, context) => {
   }
 
   if (result.heal) {
-    if (typeof result.heal === 'number') {
-      const player = state.players[context.playerIndex];
-      const actualHeal = Math.min(result.heal, 10 - player.hp);
-      player.hp = Math.min(10, player.hp + result.heal);
-      logGameAction(state, HEAL, `${player.name} heals ${actualHeal} HP.`);
-    } else {
-      const { player, amount } = result.heal;
-      const actualHeal = Math.min(amount, 10 - player.hp);
-      player.hp = Math.min(10, player.hp + amount);
-      logGameAction(state, HEAL, `${player.name} heals ${actualHeal} HP.`);
+    const finishHistory = beginPublicMutation(
+      state,
+      typeof result.heal === 'number' ? [state.players[context.playerIndex]] : [result.heal.player],
+      { kind: 'heal', actorIndex: context.playerIndex }
+    );
+    try {
+      if (typeof result.heal === 'number') {
+        const player = state.players[context.playerIndex];
+        const actualHeal = Math.min(result.heal, 10 - player.hp);
+        player.hp = Math.min(10, player.hp + result.heal);
+        logGameAction(state, HEAL, `${player.name} heals ${actualHeal} HP.`);
+      } else {
+        const { player, amount } = result.heal;
+        const actualHeal = Math.min(amount, 10 - player.hp);
+        player.hp = Math.min(10, player.hp + amount);
+        logGameAction(state, HEAL, `${player.name} heals ${actualHeal} HP.`);
+      }
+    } finally {
+      finishHistory();
     }
   }
 
   if (result.gainHp) {
-    const player = state.players[context.playerIndex];
-    const actualGain = Math.min(result.gainHp, 10 - player.hp);
-    player.hp = Math.min(10, player.hp + result.gainHp);
-    logGameAction(state, HEAL, `${player.name} gains ${actualGain} HP.`);
+    const finishHistory = beginPublicMutation(state, [state.players[context.playerIndex]], {
+      kind: 'heal',
+      actorIndex: context.playerIndex,
+    });
+    try {
+      const player = state.players[context.playerIndex];
+      const actualGain = Math.min(result.gainHp, 10 - player.hp);
+      player.hp = Math.min(10, player.hp + result.gainHp);
+      logGameAction(state, HEAL, `${player.name} gains ${actualGain} HP.`);
+    } finally {
+      finishHistory();
+    }
   }
 
   if (result.damageOpponent) {
-    state.players[context.opponentIndex].hp -= result.damageOpponent;
-    // Queue player damage visual effect
-    queueVisualEffect(state, {
-      type: 'playerDamage',
-      playerIndex: context.opponentIndex,
-      amount: result.damageOpponent,
+    const finishHistory = beginPublicMutation(state, [state.players[context.opponentIndex]], {
+      kind: 'spell',
+      actorIndex: context.playerIndex,
     });
-    logGameAction(
-      state,
-      DAMAGE,
-      `${state.players[context.opponentIndex].name} takes ${result.damageOpponent} damage.`
-    );
+    try {
+      state.players[context.opponentIndex].hp -= result.damageOpponent;
+      // Queue player damage visual effect
+      queueVisualEffect(state, {
+        type: 'playerDamage',
+        playerIndex: context.opponentIndex,
+        amount: result.damageOpponent,
+      });
+      logGameAction(
+        state,
+        DAMAGE,
+        `${state.players[context.opponentIndex].name} takes ${result.damageOpponent} damage.`
+      );
+    } finally {
+      finishHistory();
+    }
   }
 
   if (result.damagePlayer) {
-    const { player, amount } = result.damagePlayer;
-    player.hp -= amount;
-    // Queue player damage visual effect
-    const playerIndex = state.players.findIndex((p) => p === player);
-    if (playerIndex >= 0) {
-      queueVisualEffect(state, {
-        type: 'playerDamage',
-        playerIndex,
-        amount,
-      });
+    const finishHistory = beginPublicMutation(state, [result.damagePlayer.player], {
+      kind: 'spell',
+      actorIndex: context.playerIndex,
+    });
+    try {
+      const { player, amount } = result.damagePlayer;
+      player.hp -= amount;
+      // Queue player damage visual effect
+      const playerIndex = state.players.findIndex((p) => p === player);
+      if (playerIndex >= 0) {
+        queueVisualEffect(state, {
+          type: 'playerDamage',
+          playerIndex,
+          amount,
+        });
+      }
+      logGameAction(state, DAMAGE, `${player.name} takes ${amount} damage.`);
+    } finally {
+      finishHistory();
     }
-    logGameAction(state, DAMAGE, `${player.name} takes ${amount} damage.`);
   }
 
   if (result.damageCreature) {
@@ -318,16 +464,24 @@ export const resolveEffectResult = (state, result, context) => {
   }
 
   if (result.damageBothPlayers) {
-    state.players.forEach((player, playerIndex) => {
-      player.hp -= result.damageBothPlayers;
-      // Queue player damage visual effect
-      queueVisualEffect(state, {
-        type: 'playerDamage',
-        playerIndex,
-        amount: result.damageBothPlayers,
-      });
-      logGameAction(state, DAMAGE, `${player.name} takes ${result.damageBothPlayers} damage.`);
+    const finishHistory = beginPublicMutation(state, state.players, {
+      kind: 'spell',
+      actorIndex: context.playerIndex,
     });
+    try {
+      state.players.forEach((player, playerIndex) => {
+        player.hp -= result.damageBothPlayers;
+        // Queue player damage visual effect
+        queueVisualEffect(state, {
+          type: 'playerDamage',
+          playerIndex,
+          amount: result.damageBothPlayers,
+        });
+        logGameAction(state, DAMAGE, `${player.name} takes ${result.damageBothPlayers} damage.`);
+      });
+    } finally {
+      finishHistory();
+    }
   }
 
   if (result.killTargets) {
@@ -371,121 +525,177 @@ export const resolveEffectResult = (state, result, context) => {
 
   // Destroy creatures - removes from field WITHOUT reducing HP to 0 (bypasses onSlain)
   if (result.destroyCreatures) {
-    const { creatures, ownerIndex } = result.destroyCreatures;
-    const owner = state.players[ownerIndex];
-    creatures.forEach((creature) => {
-      if (creature) {
-        // Find and remove from field directly (not via HP reduction)
-        const slotIndex = owner.field.findIndex((c) => c?.instanceId === creature.instanceId);
-        if (slotIndex >= 0) {
-          owner.field[slotIndex] = null;
-          // Move to exile instead of carrion since it wasn't "killed"
-          owner.exile.push(creature);
-          logGameAction(state, DEATH, `${formatCardForLog(creature)} is destroyed (exiled).`);
-        }
-      }
+    const finishHistory = beginPublicMutation(state, result.destroyCreatures.creatures, {
+      kind: 'destroy',
+      actorIndex: context.playerIndex,
     });
+    try {
+      const { creatures, ownerIndex } = result.destroyCreatures;
+      const owner = state.players[ownerIndex];
+      creatures.forEach((creature) => {
+        if (creature) {
+          // Find and remove from field directly (not via HP reduction)
+          const slotIndex = owner.field.findIndex((c) => c?.instanceId === creature.instanceId);
+          if (slotIndex >= 0) {
+            owner.field[slotIndex] = null;
+            // Move to exile instead of carrion since it wasn't "killed"
+            owner.exile.push(creature);
+            logGameAction(state, DEATH, `${formatCardForLog(creature)} is destroyed (exiled).`);
+          }
+        }
+      });
+    } finally {
+      finishHistory();
+    }
   }
 
   // Handle destroy for opponent side (for allCreatures)
   if (result.destroyCreaturesOpponent) {
-    const { creatures, ownerIndex } = result.destroyCreaturesOpponent;
-    const owner = state.players[ownerIndex];
-    creatures.forEach((creature) => {
-      if (creature) {
-        const slotIndex = owner.field.findIndex((c) => c?.instanceId === creature.instanceId);
-        if (slotIndex >= 0) {
-          owner.field[slotIndex] = null;
-          owner.exile.push(creature);
-          logGameAction(state, DEATH, `${formatCardForLog(creature)} is destroyed (exiled).`);
-        }
-      }
+    const finishHistory = beginPublicMutation(state, result.destroyCreaturesOpponent.creatures, {
+      kind: 'destroy',
+      actorIndex: context.playerIndex,
     });
+    try {
+      const { creatures, ownerIndex } = result.destroyCreaturesOpponent;
+      const owner = state.players[ownerIndex];
+      creatures.forEach((creature) => {
+        if (creature) {
+          const slotIndex = owner.field.findIndex((c) => c?.instanceId === creature.instanceId);
+          if (slotIndex >= 0) {
+            owner.field[slotIndex] = null;
+            owner.exile.push(creature);
+            logGameAction(state, DEATH, `${formatCardForLog(creature)} is destroyed (exiled).`);
+          }
+        }
+      });
+    } finally {
+      finishHistory();
+    }
   }
 
   if (result.teamBuff) {
-    const { player, atk, hp } = result.teamBuff;
-    player.field.forEach((creature) => {
-      if (creature && (creature.type === 'Predator' || creature.type === 'Prey')) {
-        creature.currentAtk += atk;
-        creature.currentHp += hp;
-        // Track buff gains so Regen can heal to boosted max (CORE-RULES.md §6.1)
-        recordBuffGains(creature, atk, hp);
-      }
+    const finishHistory = beginPublicMutation(state, result.teamBuff.player.field, {
+      kind: 'buff',
+      actorIndex: context.playerIndex,
     });
+    try {
+      const { player, atk, hp } = result.teamBuff;
+      player.field.forEach((creature) => {
+        if (creature && (creature.type === 'Predator' || creature.type === 'Prey')) {
+          creature.currentAtk += atk;
+          creature.currentHp += hp;
+          // Track buff gains so Regen can heal to boosted max (CORE-RULES.md §6.1)
+          recordBuffGains(creature, atk, hp);
+        }
+      });
+    } finally {
+      finishHistory();
+    }
   }
 
   if (result.teamAddKeyword) {
-    const { player, keyword } = result.teamAddKeyword;
-    player.field.forEach((creature) => {
-      if (creature && !creature.keywords.includes(keyword)) {
-        creature.keywords.push(keyword);
-      }
-      if (creature && keyword === 'Barrier') {
-        creature.hasBarrier = true;
-      }
+    const finishHistory = beginPublicMutation(state, result.teamAddKeyword.player.field, {
+      kind: 'status',
+      actorIndex: context.playerIndex,
     });
+    try {
+      const { player, keyword } = result.teamAddKeyword;
+      player.field.forEach((creature) => {
+        if (creature && !creature.keywords.includes(keyword)) {
+          creature.keywords.push(keyword);
+        }
+        if (creature && keyword === 'Barrier') {
+          creature.hasBarrier = true;
+        }
+      });
+    } finally {
+      finishHistory();
+    }
   }
 
   if (result.grantKeywordToAll) {
-    const { creatures, keyword } = result.grantKeywordToAll;
-    creatures.forEach((creature) => {
-      if (creature && !creature.keywords.includes(keyword)) {
-        creature.keywords.push(keyword);
-        logGameAction(
-          state,
-          BUFF,
-          `${formatCardForLog(creature)} gains ${formatKeyword(keyword)}.`
-        );
-      }
-      if (creature && keyword === 'Barrier') {
-        creature.hasBarrier = true;
-      }
-      // Only set frozen flag - frozenDiesTurn is ONLY set by Neurotoxic in combat.js
-      if (creature && keyword === 'Frozen') {
-        creature.frozen = true;
-      }
+    const finishHistory = beginPublicMutation(state, result.grantKeywordToAll.creatures, {
+      kind: 'status',
+      actorIndex: context.playerIndex,
     });
+    try {
+      const { creatures, keyword } = result.grantKeywordToAll;
+      creatures.forEach((creature) => {
+        if (creature && !creature.keywords.includes(keyword)) {
+          creature.keywords.push(keyword);
+          logGameAction(
+            state,
+            BUFF,
+            `${formatCardForLog(creature)} gains ${formatKeyword(keyword)}.`
+          );
+        }
+        if (creature && keyword === 'Barrier') {
+          creature.hasBarrier = true;
+        }
+        // Only set frozen flag - frozenDiesTurn is ONLY set by Neurotoxic in combat.js
+        if (creature && keyword === 'Frozen') {
+          creature.frozen = true;
+        }
+      });
+    } finally {
+      finishHistory();
+    }
   }
 
   if (result.removeKeywordFromAll) {
-    const { creatures, keyword } = result.removeKeywordFromAll;
-    creatures.forEach((creature) => {
-      if (creature && creature.keywords) {
-        const keywordIndex = creature.keywords.indexOf(keyword);
-        if (keywordIndex >= 0) {
-          creature.keywords.splice(keywordIndex, 1);
-          logGameAction(
-            state,
-            DEBUFF,
-            `${formatCardForLog(creature)} loses ${formatKeyword(keyword)}.`
-          );
-        }
-        if (keyword === 'Barrier') {
-          creature.hasBarrier = false;
-        }
-        if (keyword === 'Frozen') {
-          creature.frozen = false;
-          creature.frozenDiesTurn = null;
-        }
-      }
+    const finishHistory = beginPublicMutation(state, result.removeKeywordFromAll.creatures, {
+      kind: 'status',
+      actorIndex: context.playerIndex,
     });
+    try {
+      const { creatures, keyword } = result.removeKeywordFromAll;
+      creatures.forEach((creature) => {
+        if (creature && creature.keywords) {
+          const keywordIndex = creature.keywords.indexOf(keyword);
+          if (keywordIndex >= 0) {
+            creature.keywords.splice(keywordIndex, 1);
+            logGameAction(
+              state,
+              DEBUFF,
+              `${formatCardForLog(creature)} loses ${formatKeyword(keyword)}.`
+            );
+          }
+          if (keyword === 'Barrier') {
+            creature.hasBarrier = false;
+          }
+          if (keyword === 'Frozen') {
+            creature.frozen = false;
+            creature.frozenDiesTurn = null;
+          }
+        }
+      });
+    } finally {
+      finishHistory();
+    }
   }
 
   if (result.buffAllCreatures) {
-    const { creatures, attack, health } = result.buffAllCreatures;
-    creatures.forEach((creature) => {
-      if (creature) {
-        creature.currentAtk = (creature.currentAtk ?? creature.atk ?? 0) + (attack || 0);
-        creature.currentHp = (creature.currentHp ?? creature.hp ?? 0) + (health || 0);
-        recordBuffGains(creature, attack || 0, health || 0);
-        logGameAction(
-          state,
-          BUFF,
-          `${formatCardForLog(creature)} gains +${attack || 0}/+${health || 0}.`
-        );
-      }
+    const finishHistory = beginPublicMutation(state, result.buffAllCreatures.creatures, {
+      kind: 'buff',
+      actorIndex: context.playerIndex,
     });
+    try {
+      const { creatures, attack, health } = result.buffAllCreatures;
+      creatures.forEach((creature) => {
+        if (creature) {
+          creature.currentAtk = (creature.currentAtk ?? creature.atk ?? 0) + (attack || 0);
+          creature.currentHp = (creature.currentHp ?? creature.hp ?? 0) + (health || 0);
+          recordBuffGains(creature, attack || 0, health || 0);
+          logGameAction(
+            state,
+            BUFF,
+            `${formatCardForLog(creature)} gains +${attack || 0}/+${health || 0}.`
+          );
+        }
+      });
+    } finally {
+      finishHistory();
+    }
   }
 
   if (result.consumeEnemyPrey) {
@@ -499,90 +709,103 @@ export const resolveEffectResult = (state, result, context) => {
   }
 
   if (result.grantBarrier) {
-    const { player } = result.grantBarrier;
-    player.field.forEach((creature) => {
-      if (creature) {
-        creature.hasBarrier = true;
-        if (!creature.keywords.includes('Barrier')) {
-          creature.keywords.push('Barrier');
-        }
-        logGameAction(
-          state,
-          BUFF,
-          `${formatCardForLog(creature)} gains ${formatKeyword('Barrier')}.`
-        );
-      }
+    const finishHistory = beginPublicMutation(state, result.grantBarrier.player.field, {
+      kind: 'status',
+      actorIndex: context.playerIndex,
     });
+    try {
+      const { player } = result.grantBarrier;
+      player.field.forEach((creature) => {
+        if (creature) {
+          creature.hasBarrier = true;
+          if (!creature.keywords.includes('Barrier')) {
+            creature.keywords.push('Barrier');
+          }
+          logGameAction(
+            state,
+            BUFF,
+            `${formatCardForLog(creature)} gains ${formatKeyword('Barrier')}.`
+          );
+        }
+      });
+    } finally {
+      finishHistory();
+    }
   }
 
   if (result.tempBuff && context.card) {
-    context.card.currentAtk += result.tempBuff.atk;
-    context.card.currentHp += result.tempBuff.hp;
-    logGameAction(
-      state,
-      BUFF,
-      `${formatCardForLog(context.card)} gains +${result.tempBuff.atk}/+${result.tempBuff.hp}.`
-    );
+    const finishHistory = beginPublicMutation(state, [context.card], {
+      kind: 'buff',
+      actorIndex: context.playerIndex,
+    });
+    try {
+      context.card.currentAtk += result.tempBuff.atk;
+      context.card.currentHp += result.tempBuff.hp;
+      logGameAction(
+        state,
+        BUFF,
+        `${formatCardForLog(context.card)} gains +${result.tempBuff.atk}/+${result.tempBuff.hp}.`
+      );
+    } finally {
+      finishHistory();
+    }
   }
 
   if (result.buffCreature) {
-    const { creature, atk, hp, attack, health } = result.buffCreature;
-    // Support both property naming conventions (atk/hp and attack/health)
-    const atkAmount = atk ?? attack ?? 0;
-    const hpAmount = hp ?? health ?? 0;
-    creature.currentAtk = (creature.currentAtk ?? creature.atk ?? 0) + atkAmount;
-    creature.currentHp = (creature.currentHp ?? creature.hp ?? 0) + hpAmount;
-    // Match team buffs: positive HP gains raise the Regen/heal ceiling.
-    recordBuffGains(creature, atkAmount, hpAmount);
-    logGameAction(state, BUFF, `${formatCardForLog(creature)} gains +${atkAmount}/+${hpAmount}.`);
+    const finishHistory = beginPublicMutation(state, [result.buffCreature.creature], {
+      kind: 'buff',
+      actorIndex: context.playerIndex,
+    });
+    try {
+      const { creature, atk, hp, attack, health } = result.buffCreature;
+      // Support both property naming conventions (atk/hp and attack/health)
+      const atkAmount = atk ?? attack ?? 0;
+      const hpAmount = hp ?? health ?? 0;
+      creature.currentAtk = (creature.currentAtk ?? creature.atk ?? 0) + atkAmount;
+      creature.currentHp = (creature.currentHp ?? creature.hp ?? 0) + hpAmount;
+      // Match team buffs: positive HP gains raise the Regen/heal ceiling.
+      recordBuffGains(creature, atkAmount, hpAmount);
+      logGameAction(state, BUFF, `${formatCardForLog(creature)} gains +${atkAmount}/+${hpAmount}.`);
+    } finally {
+      finishHistory();
+    }
   }
 
   if (result.grantKeyword) {
-    // Handler for single creature keyword grant (mirrors addKeyword)
-    const { creature, keyword } = result.grantKeyword;
-    if (creature && !creature.keywords.includes(keyword)) {
-      creature.keywords.push(keyword);
-    }
-    if (creature && keyword === 'Barrier') {
-      creature.hasBarrier = true;
-    }
-    // Only set frozen flag - frozenDiesTurn is ONLY set by Neurotoxic in combat.js
-    if (creature && keyword === 'Frozen') {
-      creature.frozen = true;
+    const finishHistory = beginPublicMutation(state, [result.grantKeyword.creature], {
+      kind: 'status',
+      actorIndex: context.playerIndex,
+    });
+    try {
+      // Handler for single creature keyword grant (mirrors addKeyword)
+      const { creature, keyword } = result.grantKeyword;
+      if (creature && !creature.keywords.includes(keyword)) {
+        creature.keywords.push(keyword);
+      }
+      if (creature && keyword === 'Barrier') {
+        creature.hasBarrier = true;
+      }
+      // Only set frozen flag - frozenDiesTurn is ONLY set by Neurotoxic in combat.js
+      if (creature && keyword === 'Frozen') {
+        creature.frozen = true;
+      }
+    } finally {
+      finishHistory();
     }
   }
 
   if (result.restoreCreature) {
-    const { creature } = result.restoreCreature;
-    // "Restore to full" means current max HP (base + eaten + buffs), not the
-    // printed stat — CORE-RULES.md §6.1.
-    const maxHp = getMaxHp(creature);
-    const healAmount = maxHp - creature.currentHp;
-    creature.currentHp = maxHp;
-    // Queue heal visual effect
-    const ownerIndex = findCardOwnerIndex(state, creature);
-    if (ownerIndex >= 0 && healAmount > 0) {
-      const slotIndex = state.players[ownerIndex].field.findIndex(
-        (c) => c?.instanceId === creature.instanceId
-      );
-      queueVisualEffect(state, {
-        type: 'heal',
-        cardId: creature.instanceId,
-        ownerIndex,
-        slotIndex,
-        amount: healAmount,
-      });
-    }
-    logGameAction(state, HEAL, `${formatCardForLog(creature)} is regenerated.`);
-  }
-
-  if (result.healCreature) {
-    const { creature, amount } = result.healCreature;
-    if (creature) {
-      const maxHp = getMaxHp(creature) || creature.currentHp || 1;
-      const requested = Math.max(0, amount ?? 0);
-      const healAmount = Math.max(0, Math.min(requested, maxHp - creature.currentHp));
-      creature.currentHp = Math.min(maxHp, creature.currentHp + healAmount);
+    const finishHistory = beginPublicMutation(state, [result.restoreCreature.creature], {
+      kind: 'heal',
+      actorIndex: context.playerIndex,
+    });
+    try {
+      const { creature } = result.restoreCreature;
+      // "Restore to full" means current max HP (base + eaten + buffs), not the
+      // printed stat — CORE-RULES.md §6.1.
+      const maxHp = getMaxHp(creature);
+      const healAmount = maxHp - creature.currentHp;
+      creature.currentHp = maxHp;
       // Queue heal visual effect
       const ownerIndex = findCardOwnerIndex(state, creature);
       if (ownerIndex >= 0 && healAmount > 0) {
@@ -597,21 +820,64 @@ export const resolveEffectResult = (state, result, context) => {
           amount: healAmount,
         });
       }
-      logGameAction(state, HEAL, `${formatCardForLog(creature)} heals ${healAmount} HP.`);
+      logGameAction(state, HEAL, `${formatCardForLog(creature)} is regenerated.`);
+    } finally {
+      finishHistory();
+    }
+  }
+
+  if (result.healCreature) {
+    const finishHistory = beginPublicMutation(state, [result.healCreature.creature], {
+      kind: 'heal',
+      actorIndex: context.playerIndex,
+    });
+    try {
+      const { creature, amount } = result.healCreature;
+      if (creature) {
+        const maxHp = getMaxHp(creature) || creature.currentHp || 1;
+        const requested = Math.max(0, amount ?? 0);
+        const healAmount = Math.max(0, Math.min(requested, maxHp - creature.currentHp));
+        creature.currentHp = Math.min(maxHp, creature.currentHp + healAmount);
+        // Queue heal visual effect
+        const ownerIndex = findCardOwnerIndex(state, creature);
+        if (ownerIndex >= 0 && healAmount > 0) {
+          const slotIndex = state.players[ownerIndex].field.findIndex(
+            (c) => c?.instanceId === creature.instanceId
+          );
+          queueVisualEffect(state, {
+            type: 'heal',
+            cardId: creature.instanceId,
+            ownerIndex,
+            slotIndex,
+            amount: healAmount,
+          });
+        }
+        logGameAction(state, HEAL, `${formatCardForLog(creature)} heals ${healAmount} HP.`);
+      }
+    } finally {
+      finishHistory();
     }
   }
 
   if (result.addKeyword) {
-    const { creature, keyword } = result.addKeyword;
-    if (!creature.keywords.includes(keyword)) {
-      creature.keywords.push(keyword);
-    }
-    if (keyword === 'Barrier') {
-      creature.hasBarrier = true;
-    }
-    // Only set frozen flag - frozenDiesTurn is ONLY set by Neurotoxic in combat.js
-    if (keyword === 'Frozen') {
-      creature.frozen = true;
+    const finishHistory = beginPublicMutation(state, [result.addKeyword.creature], {
+      kind: 'status',
+      actorIndex: context.playerIndex,
+    });
+    try {
+      const { creature, keyword } = result.addKeyword;
+      if (!creature.keywords.includes(keyword)) {
+        creature.keywords.push(keyword);
+      }
+      if (keyword === 'Barrier') {
+        creature.hasBarrier = true;
+      }
+      // Only set frozen flag - frozenDiesTurn is ONLY set by Neurotoxic in combat.js
+      if (keyword === 'Frozen') {
+        creature.frozen = true;
+      }
+    } finally {
+      finishHistory();
     }
   }
 
@@ -647,6 +913,10 @@ export const resolveEffectResult = (state, result, context) => {
       logGameAction(state, DEBUFF, `Copy abilities failed: target no longer exists.`);
       // Continue processing other results
     } else {
+      const finishHistory = beginPublicMutation(state, [target], {
+        kind: 'status',
+        actorIndex: context.playerIndex,
+      });
       // Check if source has onPlay effect that should be triggered (before we clear target)
       const sourceHasOnPlay = source.effects?.onPlay || source.onPlay;
 
@@ -674,9 +944,12 @@ export const resolveEffectResult = (state, result, context) => {
         target.hasBarrier = true;
       }
 
-      // Copy effects object (for onPlay, onConsume, onSlain, and other triggered abilities)
+      // Copy effects object (for onPlay, onConsume, onSlain, and other triggered abilities).
+      // MUST be a deep copy: a shallow spread makes the copier and the source share the
+      // nested payload objects, so any later mutation of one writes through to the other
+      // (and to the registry definition behind both).
       if (source.effects) {
-        target.effects = { ...source.effects };
+        target.effects = cloneAbilityData(source.effects);
       }
 
       // Also copy direct function properties if they exist (for backwards compatibility)
@@ -690,7 +963,7 @@ export const resolveEffectResult = (state, result, context) => {
       target.onTargeted = source.onTargeted || null;
 
       // Copy the effect property as well (for cards using the single 'effect' property)
-      target.effect = source.effect || null;
+      target.effect = cloneAbilityData(source.effect) || null;
 
       // Update effect text to show copied abilities
       // Fall back to registry definition if the carrion instance lost its effectText
@@ -705,8 +978,13 @@ export const resolveEffectResult = (state, result, context) => {
         target.effectText = '(Copied) No abilities.';
       }
 
-      // Track the source ID for multiplayer sync re-hydration
-      target.copiedFromId = source.id;
+      // Track the source ID for display/telemetry, and capture the *effective*
+      // abilities as plain data. copiedFromId alone cannot round trip a copy of a
+      // copy (Mockingbird copies Hoatzin, dies, Mexican Violetear replays that
+      // carrion): re-hydrating from the printed source would hand back Mockingbird's
+      // printed abilities instead of the Hoatzin abilities actually in force.
+      target.copiedFromId = source.id || null;
+      target.copiedSnapshot = buildCopiedSnapshot(source);
 
       const keywordsList =
         sourceKeywords.length > 0 ? formatKeywordList(sourceKeywords) : 'no keywords';
@@ -722,6 +1000,7 @@ export const resolveEffectResult = (state, result, context) => {
         `${formatCardForLog(target)} copies ${formatCardForLog(source)}'s abilities (replacing original): ${abilitiesDesc}.`
       );
 
+      finishHistory([{ entity: target.instanceId, copiedFrom: source.name }]);
       // Queue the copied onPlay for sequential resolution (if source had one)
       // This ensures onPlay effects are resolved AFTER copyAbilities completes,
       // preventing race conditions with user selection UI
@@ -742,65 +1021,59 @@ export const resolveEffectResult = (state, result, context) => {
   }
 
   if (result.copyStats) {
-    const { target: staleTarget, source } = result.copyStats;
+    const finishHistory = beginPublicMutation(state, [result.copyStats.target], {
+      kind: 'buff',
+      actorIndex: context.playerIndex,
+    });
+    try {
+      const { target: staleTarget, source } = result.copyStats;
 
-    // Refresh target reference to avoid stale object from multiplayer sync.
-    // When user selection is pending, sync can replace field objects, leaving
-    // context.creature pointing to an orphaned object instead of the actual card.
-    const targetOwnerIndex = findCardOwnerIndex(state, staleTarget);
-    const target =
-      targetOwnerIndex >= 0
-        ? (state.players[targetOwnerIndex].field.find(
-            (c) => c?.instanceId === staleTarget.instanceId
-          ) ?? staleTarget)
-        : staleTarget;
+      // Refresh target reference to avoid stale object from multiplayer sync.
+      // When user selection is pending, sync can replace field objects, leaving
+      // context.creature pointing to an orphaned object instead of the actual card.
+      const targetOwnerIndex = findCardOwnerIndex(state, staleTarget);
+      const target =
+        targetOwnerIndex >= 0
+          ? (state.players[targetOwnerIndex].field.find(
+              (c) => c?.instanceId === staleTarget.instanceId
+            ) ?? staleTarget)
+          : staleTarget;
 
-    // Copy ATK (use current if available, otherwise base)
-    const sourceAtk = source.currentAtk ?? source.atk ?? 0;
-    target.atk = source.atk ?? sourceAtk;
-    target.currentAtk = sourceAtk;
+      // Copy ATK (use current if available, otherwise base)
+      const sourceAtk = source.currentAtk ?? source.atk ?? 0;
+      target.atk = source.atk ?? sourceAtk;
+      target.currentAtk = sourceAtk;
 
-    // Copy HP — use base HP if source is dead (carrion), current HP if alive
-    const sourceHp = source.hp ?? 1;
-    const sourceCurrentHp = source.currentHp ?? sourceHp;
-    const isDead = sourceCurrentHp <= 0;
-    target.hp = sourceHp;
-    target.currentHp = isDead ? sourceHp : sourceCurrentHp;
+      // Copy HP — use base HP if source is dead (carrion), current HP if alive
+      const sourceHp = source.hp ?? 1;
+      const sourceCurrentHp = source.currentHp ?? sourceHp;
+      const isDead = sourceCurrentHp <= 0;
+      target.hp = sourceHp;
+      target.currentHp = isDead ? sourceHp : sourceCurrentHp;
 
-    // Copy nutrition value (for prey creatures)
-    if (source.nutrition !== undefined) {
-      target.nutrition = source.nutrition;
+      // Copy nutrition value (for prey creatures)
+      if (source.nutrition !== undefined) {
+        target.nutrition = source.nutrition;
+      }
+
+      logGameAction(
+        state,
+        BUFF,
+        `${formatCardForLog(target)} copies ${formatCardForLog(source)}'s stats: ` +
+          `${sourceAtk}/${sourceCurrentHp}${source.nutrition !== undefined ? ` (Nut: ${source.nutrition})` : ''}.`
+      );
+    } finally {
+      finishHistory();
     }
-
-    logGameAction(
-      state,
-      BUFF,
-      `${formatCardForLog(target)} copies ${formatCardForLog(source)}'s stats: ` +
-        `${sourceAtk}/${sourceCurrentHp}${source.nutrition !== undefined ? ` (Nut: ${source.nutrition})` : ''}.`
-    );
   }
 
   if (result.removeAbilities) {
-    const creature = result.removeAbilities;
-    stripAbilities(creature);
-    logGameAction(state, DEBUFF, `${formatCardForLog(creature)} loses all abilities.`);
-    // Queue visual effect for ability removal (cancel emoji)
-    const ownerIndex = findCardOwnerIndex(state, creature);
-    if (ownerIndex >= 0) {
-      const slotIndex = state.players[ownerIndex].field.findIndex(
-        (c) => c?.instanceId === creature.instanceId
-      );
-      queueVisualEffect(state, {
-        type: 'ability-cancel',
-        cardId: creature.instanceId,
-        ownerIndex,
-        slotIndex,
-      });
-    }
-  }
-
-  if (result.removeAbilitiesAll) {
-    result.removeAbilitiesAll.forEach((creature) => {
+    const finishHistory = beginPublicMutation(state, [result.removeAbilities], {
+      kind: 'status',
+      actorIndex: context.playerIndex,
+    });
+    try {
+      const creature = result.removeAbilities;
       stripAbilities(creature);
       logGameAction(state, DEBUFF, `${formatCardForLog(creature)} loses all abilities.`);
       // Queue visual effect for ability removal (cancel emoji)
@@ -816,7 +1089,37 @@ export const resolveEffectResult = (state, result, context) => {
           slotIndex,
         });
       }
+    } finally {
+      finishHistory();
+    }
+  }
+
+  if (result.removeAbilitiesAll) {
+    const finishHistory = beginPublicMutation(state, result.removeAbilitiesAll, {
+      kind: 'status',
+      actorIndex: context.playerIndex,
     });
+    try {
+      result.removeAbilitiesAll.forEach((creature) => {
+        stripAbilities(creature);
+        logGameAction(state, DEBUFF, `${formatCardForLog(creature)} loses all abilities.`);
+        // Queue visual effect for ability removal (cancel emoji)
+        const ownerIndex = findCardOwnerIndex(state, creature);
+        if (ownerIndex >= 0) {
+          const slotIndex = state.players[ownerIndex].field.findIndex(
+            (c) => c?.instanceId === creature.instanceId
+          );
+          queueVisualEffect(state, {
+            type: 'ability-cancel',
+            cardId: creature.instanceId,
+            ownerIndex,
+            slotIndex,
+          });
+        }
+      });
+    } finally {
+      finishHistory();
+    }
   }
 
   if (result.summonTokens) {
@@ -837,7 +1140,12 @@ export const resolveEffectResult = (state, result, context) => {
         return;
       }
 
-      const summoned = placeToken(state, playerIndex, tokenData);
+      const summoned = placeToken(
+        state,
+        playerIndex,
+        tokenData,
+        context.card || context.creature || context.spellCard
+      );
 
       // Directly resolve token onPlay effects when summoned
       // This ensures they trigger regardless of code path (controller or turnManager)
@@ -1044,6 +1352,13 @@ export const resolveEffectResult = (state, result, context) => {
       } else {
         player.exile.push(card);
       }
+      recordReveal(
+        state,
+        card,
+        playerIndex,
+        card.type === 'Prey' || card.type === 'Predator' ? 'carrion' : 'exile',
+        'discard'
+      );
       logGameAction(state, DEBUFF, `${player.name} discards ${formatCardForLog(card)}.`);
     });
     // Clear recently drawn tracking after discard selection completes
@@ -1051,97 +1366,86 @@ export const resolveEffectResult = (state, result, context) => {
   }
 
   if (result.returnToHand) {
-    // Support 'creatures' (array), 'card', or 'creature' property names
-    const { card, creature, creatures, playerIndex } = result.returnToHand;
+    const finishHistory = beginPublicMutation(
+      state,
+      result.returnToHand.creatures || [result.returnToHand.card || result.returnToHand.creature],
+      { kind: 'return', actorIndex: context.playerIndex }
+    );
+    try {
+      // Support 'creatures' (array), 'card', or 'creature' property names
+      const { card, creature, creatures, playerIndex } = result.returnToHand;
 
-    // Build array of cards to return
-    const cardsToReturn = creatures || (card ? [card] : creature ? [creature] : []);
+      // Build array of cards to return
+      const cardsToReturn = creatures || (card ? [card] : creature ? [creature] : []);
 
-    cardsToReturn.forEach((targetCard) => {
-      if (!targetCard) return;
+      cardsToReturn.forEach((targetCard) => {
+        if (!targetCard) return;
 
-      // Find who actually controls this card on the battlefield
-      const controllerIndex = findCardOwnerIndex(state, targetCard);
-      // Use the battlefield controller if found, otherwise fall back to passed playerIndex
-      const returnToIndex = controllerIndex >= 0 ? controllerIndex : playerIndex;
+        // Find who actually controls this card on the battlefield
+        const controllerIndex = findCardOwnerIndex(state, targetCard);
+        // Use the battlefield controller if found, otherwise fall back to passed playerIndex
+        const returnToIndex = controllerIndex >= 0 ? controllerIndex : playerIndex;
 
-      if (returnToIndex === undefined || returnToIndex < 0) {
-        console.warn(`[returnToHand] Could not determine owner for ${targetCard.name}`);
-        return;
-      }
+        if (returnToIndex === undefined || returnToIndex < 0) {
+          console.warn(`[returnToHand] Could not determine owner for ${targetCard.name}`);
+          return;
+        }
 
-      removeCardFromField(state, targetCard);
+        removeCardFromField(state, targetCard);
 
-      // Tokens cannot return to hand - destroy them instead
-      if (targetCard.isToken) {
-        state.players[returnToIndex].exile.push(targetCard);
+        // Tokens cannot return to hand - destroy them instead
+        if (targetCard.isToken) {
+          state.players[returnToIndex].exile.push(targetCard);
+          logGameAction(
+            state,
+            DEATH,
+            `${formatCardForLog(targetCard)} is destroyed (tokens cannot return to hand).`
+          );
+          return;
+        }
+
+        // Single reset policy: printed stats/abilities, spent runtime fields cleared.
+        resetCardToPrinted(targetCard);
+
+        state.players[returnToIndex].hand.push(targetCard);
         logGameAction(
           state,
-          DEATH,
-          `${formatCardForLog(targetCard)} is destroyed (tokens cannot return to hand).`
+          BUFF,
+          `${formatCardForLog(targetCard)} returns to ${state.players[returnToIndex].name}'s hand.`
         );
-        return;
-      }
-
-      // Reset all dynamic state when returning to hand
-      const originalCard = getCardDefinitionById(targetCard.id);
-
-      // Revert stats copied from other cards so the card re-enters play as printed.
-      if (originalCard) {
-        if (targetCard.atk !== undefined && originalCard.atk !== undefined) {
-          targetCard.atk = originalCard.atk;
-        }
-        if (targetCard.hp !== undefined && originalCard.hp !== undefined) {
-          targetCard.hp = originalCard.hp;
-        }
-        if (targetCard.nutrition !== undefined) {
-          targetCard.nutrition = originalCard.nutrition;
-        }
-      }
-
-      // Reset currentHp/currentAtk to base values when returning to hand
-      if (targetCard.hp !== undefined) targetCard.currentHp = targetCard.hp;
-      if (targetCard.atk !== undefined) targetCard.currentAtk = targetCard.atk;
-
-      // Eaten/buffed stat gains do not survive a trip back to the hand (§6.1).
-      delete targetCard.consumptionGains;
-      delete targetCard.buffGains;
-
-      targetCard.keywords = Array.isArray(originalCard?.keywords) ? [...originalCard.keywords] : [];
-      targetCard.frozen = false;
-      targetCard.frozenDiesTurn = null;
-      targetCard.paralyzed = false;
-      targetCard.paralyzedUntilTurn = null;
-      targetCard.hasBarrier = originalCard?.keywords?.includes('Barrier') || false;
-      targetCard.abilitiesCancelled = false;
-      targetCard.hasAttacked = false;
-      targetCard.summonedTurn = null;
-
-      state.players[returnToIndex].hand.push(targetCard);
-      logGameAction(
-        state,
-        BUFF,
-        `${formatCardForLog(targetCard)} returns to ${state.players[returnToIndex].name}'s hand.`
-      );
-    });
+      });
+    } finally {
+      finishHistory();
+    }
   }
 
   if (result.stealCreature) {
-    const { creature, fromIndex, toIndex } = result.stealCreature;
-    if (creature.currentHp <= 0) {
-      return;
+    const finishHistory = beginPublicMutation(state, [result.stealCreature.creature], {
+      kind: 'status',
+      actorIndex: context.playerIndex,
+    });
+    try {
+      const { creature, fromIndex, toIndex } = result.stealCreature;
+      if (creature.currentHp <= 0) {
+        return;
+      }
+      const destination = state.players[toIndex];
+      const emptySlot = destination.field.findIndex((slot) => slot === null);
+      if (emptySlot === -1) {
+        logMessage(
+          state,
+          `${destination.name} has no room to steal ${formatCardForLog(creature)}.`
+        );
+        return;
+      }
+      removeCardFromField(state, creature);
+      destination.field[emptySlot] = creature;
+      // Reset summonedTurn to give summoning sickness to stolen creatures
+      creature.summonedTurn = state.turn;
+      logGameAction(state, CHOICE, `${destination.name} steals ${formatCardForLog(creature)}.`);
+    } finally {
+      finishHistory();
     }
-    const destination = state.players[toIndex];
-    const emptySlot = destination.field.findIndex((slot) => slot === null);
-    if (emptySlot === -1) {
-      logMessage(state, `${destination.name} has no room to steal ${formatCardForLog(creature)}.`);
-      return;
-    }
-    removeCardFromField(state, creature);
-    destination.field[emptySlot] = creature;
-    // Reset summonedTurn to give summoning sickness to stolen creatures
-    creature.summonedTurn = state.turn;
-    logGameAction(state, CHOICE, `${destination.name} steals ${formatCardForLog(creature)}.`);
   }
 
   if (result.copyCreature) {
@@ -1156,6 +1460,7 @@ export const resolveEffectResult = (state, result, context) => {
     const copy = createCardInstance({ ...target, isToken: true }, state.turn);
     copy.isToken = true;
     player.field[emptySlot] = copy;
+    recordArrival(state, copy, playerIndex);
     logGameAction(state, SUMMON, `${player.name} summons a copy of ${formatCardForLog(target)}.`);
 
     // Trigger onPlay for the copy (both Prey and Predator)
@@ -1225,6 +1530,7 @@ export const resolveEffectResult = (state, result, context) => {
     const replacement = createCardInstance({ ...resolvedCardData, isToken: true }, state.turn);
     replacement.isToken = true;
     owner.field[slotIndex] = replacement;
+    recordTransformation(state, card, replacement, ownerIndex, slotIndex);
     logGameAction(
       state,
       SUMMON,
@@ -1251,6 +1557,7 @@ export const resolveEffectResult = (state, result, context) => {
       const replacement = createCardInstance({ ...resolvedCardData, isToken: true }, state.turn);
       replacement.isToken = true;
       owner.field[slotIndex] = replacement;
+      recordTransformation(state, card, replacement, ownerIndex, slotIndex);
       logGameAction(
         state,
         SUMMON,
@@ -1260,76 +1567,116 @@ export const resolveEffectResult = (state, result, context) => {
   }
 
   if (result.freezeCreature) {
-    const { creature } = result.freezeCreature;
-    creature.frozen = true;
-    // Regular Frozen does NOT set frozenDiesTurn - creatures thaw at end of owner's turn
-    // Only Neurotoxic (from combat.js) sets frozenDiesTurn to kill frozen creatures
-    logGameAction(state, DEBUFF, `${formatCardForLog(creature)} is ${formatKeyword('Frozen')}.`);
+    const finishHistory = beginPublicMutation(state, [result.freezeCreature.creature], {
+      kind: 'status',
+      actorIndex: context.playerIndex,
+    });
+    try {
+      const { creature } = result.freezeCreature;
+      creature.frozen = true;
+      // Regular Frozen does NOT set frozenDiesTurn - creatures thaw at end of owner's turn
+      // Only Neurotoxic (from combat.js) sets frozenDiesTurn to kill frozen creatures
+      logGameAction(state, DEBUFF, `${formatCardForLog(creature)} is ${formatKeyword('Frozen')}.`);
+    } finally {
+      finishHistory();
+    }
   }
 
   if (result.freezeEnemyCreatures) {
-    const enemy = state.players[context.opponentIndex];
-    enemy.field.forEach((creature) => {
-      if (creature && (creature.type === 'Predator' || creature.type === 'Prey')) {
-        creature.frozen = true;
-        // Regular Frozen does NOT set frozenDiesTurn - creatures thaw at end of owner's turn
-        logGameAction(
-          state,
-          DEBUFF,
-          `${formatCardForLog(creature)} is ${formatKeyword('Frozen')}.`
-        );
-      }
+    const finishHistory = beginPublicMutation(state, state.players[context.opponentIndex].field, {
+      kind: 'status',
+      actorIndex: context.playerIndex,
     });
+    try {
+      const enemy = state.players[context.opponentIndex];
+      enemy.field.forEach((creature) => {
+        if (creature && (creature.type === 'Predator' || creature.type === 'Prey')) {
+          creature.frozen = true;
+          // Regular Frozen does NOT set frozenDiesTurn - creatures thaw at end of owner's turn
+          logGameAction(
+            state,
+            DEBUFF,
+            `${formatCardForLog(creature)} is ${formatKeyword('Frozen')}.`
+          );
+        }
+      });
+    } finally {
+      finishHistory();
+    }
   }
 
   if (result.paralyzeCreature) {
-    const { creature } = result.paralyzeCreature;
-    // Per CORE-RULES.md §7: Paralysis strips all abilities (permanent) and grants Harmless
-    stripAbilities(creature);
-    creature.keywords = ['Harmless']; // Grant Harmless (can't attack, deals 0 combat damage)
-    creature.paralyzed = true;
-    // §7: "until end of its controller's turn" — a creature paralyzed by a
-    // spell during its own controller's turn dies at that same End, not next turn.
-    creature.paralyzedUntilTurn = paralysisDeadlineTurn(
-      findCardOwnerIndex(state, creature),
-      state.activePlayerIndex,
-      state.turn
-    );
-    logGameAction(
-      state,
-      DEBUFF,
-      `${formatCardForLog(creature)} is paralyzed! (loses all abilities, gains Harmless)`
-    );
+    const finishHistory = beginPublicMutation(state, [result.paralyzeCreature.creature], {
+      kind: 'status',
+      actorIndex: context.playerIndex,
+    });
+    try {
+      const { creature } = result.paralyzeCreature;
+      // Per CORE-RULES.md §7: Paralysis strips all abilities (permanent) and grants Harmless
+      stripAbilities(creature);
+      creature.keywords = ['Harmless']; // Grant Harmless (can't attack, deals 0 combat damage)
+      creature.paralyzed = true;
+      // §7: "until end of its controller's turn" — a creature paralyzed by a
+      // spell during its own controller's turn dies at that same End, not next turn.
+      creature.paralyzedUntilTurn = paralysisDeadlineTurn(
+        findCardOwnerIndex(state, creature),
+        state.activePlayerIndex,
+        state.turn
+      );
+      logGameAction(
+        state,
+        DEBUFF,
+        `${formatCardForLog(creature)} is paralyzed! (loses all abilities, gains Harmless)`
+      );
+    } finally {
+      finishHistory();
+    }
   }
 
   // Freeze multiple creatures
   if (result.freezeCreatures) {
-    result.freezeCreatures.forEach((creature) => {
-      if (creature) {
-        creature.frozen = true;
-        // Regular Frozen does NOT set frozenDiesTurn - creatures thaw at end of owner's turn
-        logGameAction(
-          state,
-          DEBUFF,
-          `${formatCardForLog(creature)} is ${formatKeyword('Frozen')}.`
-        );
-      }
+    const finishHistory = beginPublicMutation(state, result.freezeCreatures, {
+      kind: 'status',
+      actorIndex: context.playerIndex,
     });
+    try {
+      result.freezeCreatures.forEach((creature) => {
+        if (creature) {
+          creature.frozen = true;
+          // Regular Frozen does NOT set frozenDiesTurn - creatures thaw at end of owner's turn
+          logGameAction(
+            state,
+            DEBUFF,
+            `${formatCardForLog(creature)} is ${formatKeyword('Frozen')}.`
+          );
+        }
+      });
+    } finally {
+      finishHistory();
+    }
   }
 
   // Remove frozen from creatures
   if (result.removeFrozen) {
-    result.removeFrozen.forEach((creature) => {
-      if (creature && creature.keywords) {
-        const frozenIndex = creature.keywords.indexOf('Frozen');
-        if (frozenIndex >= 0) {
-          creature.keywords.splice(frozenIndex, 1);
-        }
-        creature.frozen = false;
-        creature.frozenDiesTurn = null;
-        logGameAction(state, BUFF, `${formatCardForLog(creature)} thaws out.`);
-      }
+    const finishHistory = beginPublicMutation(state, result.removeFrozen, {
+      kind: 'status',
+      actorIndex: context.playerIndex,
     });
+    try {
+      result.removeFrozen.forEach((creature) => {
+        if (creature && creature.keywords) {
+          const frozenIndex = creature.keywords.indexOf('Frozen');
+          if (frozenIndex >= 0) {
+            creature.keywords.splice(frozenIndex, 1);
+          }
+          creature.frozen = false;
+          creature.frozenDiesTurn = null;
+          logGameAction(state, BUFF, `${formatCardForLog(creature)} thaws out.`);
+        }
+      });
+    } finally {
+      finishHistory();
+    }
   }
 
   // Play a creature from carrion
@@ -1369,6 +1716,7 @@ export const resolveEffectResult = (state, result, context) => {
         }
 
         player.field[emptySlot] = instance;
+        recordArrival(state, instance, playerIndex);
         state._lastPlayedCreature = instance;
         logGameAction(state, SUMMON, `${formatCardForLog(card)} returns from the carrion.`);
       } else {
@@ -1379,88 +1727,85 @@ export const resolveEffectResult = (state, result, context) => {
 
   // Add keyword to the most recently played creature
   if (result.addKeywordToPlayed) {
-    const { keyword } = result.addKeywordToPlayed;
-    const creature = state._lastPlayedCreature;
-    if (creature) {
-      if (!creature.keywords) {
-        creature.keywords = [];
+    const finishHistory = beginPublicMutation(state, [state._lastPlayedCreature], {
+      kind: 'status',
+      actorIndex: context.playerIndex,
+    });
+    try {
+      const { keyword } = result.addKeywordToPlayed;
+      const creature = state._lastPlayedCreature;
+      if (creature) {
+        if (!creature.keywords) {
+          creature.keywords = [];
+        }
+        if (!creature.keywords.includes(keyword)) {
+          creature.keywords.push(keyword);
+        }
+        // Only set frozen flag - frozenDiesTurn is ONLY set by Neurotoxic in combat.js
+        if (keyword === 'Frozen') {
+          creature.frozen = true;
+        }
       }
-      if (!creature.keywords.includes(keyword)) {
-        creature.keywords.push(keyword);
-      }
-      // Only set frozen flag - frozenDiesTurn is ONLY set by Neurotoxic in combat.js
-      if (keyword === 'Frozen') {
-        creature.frozen = true;
-      }
+    } finally {
+      finishHistory();
     }
   }
 
   // Buff multiple creatures
   if (result.buffCreatures) {
-    result.buffCreatures.forEach(({ creature, attack, health }) => {
-      if (creature) {
-        creature.currentAtk = (creature.currentAtk ?? creature.atk ?? 0) + (attack || 0);
-        creature.currentHp = (creature.currentHp ?? creature.hp ?? 0) + (health || 0);
-        recordBuffGains(creature, attack || 0, health || 0);
-        if (attack || health) {
-          logGameAction(
-            state,
-            BUFF,
-            `${formatCardForLog(creature)} gains +${attack || 0}/+${health || 0}.`
-          );
+    const finishHistory = beginPublicMutation(
+      state,
+      result.buffCreatures.map((x) => x.creature),
+      { kind: 'buff', actorIndex: context.playerIndex }
+    );
+    try {
+      result.buffCreatures.forEach(({ creature, attack, health }) => {
+        if (creature) {
+          creature.currentAtk = (creature.currentAtk ?? creature.atk ?? 0) + (attack || 0);
+          creature.currentHp = (creature.currentHp ?? creature.hp ?? 0) + (health || 0);
+          recordBuffGains(creature, attack || 0, health || 0);
+          if (attack || health) {
+            logGameAction(
+              state,
+              BUFF,
+              `${formatCardForLog(creature)} gains +${attack || 0}/+${health || 0}.`
+            );
+          }
         }
-      }
-    });
+      });
+    } finally {
+      finishHistory();
+    }
   }
 
   // Regenerate a creature (restore HP to its current max, §6.1)
   if (result.regen) {
-    const { creature } = result.regen;
-    if (creature) {
-      const maxHp = getMaxHp(creature) || 1;
-      if (creature.currentHp < maxHp) {
-        creature.currentHp = maxHp;
-        logGameAction(state, HEAL, `${formatCardForLog(creature)} regenerates to full health.`);
+    const finishHistory = beginPublicMutation(state, [result.regen.creature], {
+      kind: 'heal',
+      actorIndex: context.playerIndex,
+    });
+    try {
+      const { creature } = result.regen;
+      if (creature) {
+        const maxHp = getMaxHp(creature) || 1;
+        if (creature.currentHp < maxHp) {
+          creature.currentHp = maxHp;
+          logGameAction(state, HEAL, `${formatCardForLog(creature)} regenerates to full health.`);
+        }
       }
+    } finally {
+      finishHistory();
     }
   }
 
   // Regenerate a single creature (from effectLibrary)
   if (result.regenCreature) {
-    const creature = result.regenCreature;
-    if (creature) {
-      const maxHp = getMaxHp(creature) || 1;
-      if (creature.currentHp < maxHp) {
-        const healAmount = maxHp - creature.currentHp;
-        creature.currentHp = maxHp;
-        const ownerIndex = findCardOwnerIndex(state, creature);
-        if (ownerIndex >= 0 && healAmount > 0) {
-          const slotIndex = state.players[ownerIndex].field.findIndex(
-            (c) => c?.instanceId === creature.instanceId
-          );
-          queueVisualEffect(state, {
-            type: 'heal',
-            cardId: creature.instanceId,
-            ownerIndex,
-            slotIndex,
-            amount: healAmount,
-          });
-        }
-        logGameAction(
-          state,
-          HEAL,
-          `${formatCardForLog(creature)} regenerates to full health (+${healAmount} HP).`
-        );
-      }
-    }
-  }
-
-  // Regenerate multiple creatures (from effectLibrary)
-  if (result.regenCreatures) {
-    const creatures = Array.isArray(result.regenCreatures)
-      ? result.regenCreatures
-      : [result.regenCreatures];
-    creatures.forEach((creature) => {
+    const finishHistory = beginPublicMutation(state, [result.regenCreature], {
+      kind: 'heal',
+      actorIndex: context.playerIndex,
+    });
+    try {
+      const creature = result.regenCreature;
       if (creature) {
         const maxHp = getMaxHp(creature) || 1;
         if (creature.currentHp < maxHp) {
@@ -1486,7 +1831,52 @@ export const resolveEffectResult = (state, result, context) => {
           );
         }
       }
-    });
+    } finally {
+      finishHistory();
+    }
+  }
+
+  // Regenerate multiple creatures (from effectLibrary)
+  if (result.regenCreatures) {
+    const finishHistory = beginPublicMutation(
+      state,
+      Array.isArray(result.regenCreatures) ? result.regenCreatures : [result.regenCreatures],
+      { kind: 'heal', actorIndex: context.playerIndex }
+    );
+    try {
+      const creatures = Array.isArray(result.regenCreatures)
+        ? result.regenCreatures
+        : [result.regenCreatures];
+      creatures.forEach((creature) => {
+        if (creature) {
+          const maxHp = getMaxHp(creature) || 1;
+          if (creature.currentHp < maxHp) {
+            const healAmount = maxHp - creature.currentHp;
+            creature.currentHp = maxHp;
+            const ownerIndex = findCardOwnerIndex(state, creature);
+            if (ownerIndex >= 0 && healAmount > 0) {
+              const slotIndex = state.players[ownerIndex].field.findIndex(
+                (c) => c?.instanceId === creature.instanceId
+              );
+              queueVisualEffect(state, {
+                type: 'heal',
+                cardId: creature.instanceId,
+                ownerIndex,
+                slotIndex,
+                amount: healAmount,
+              });
+            }
+            logGameAction(
+              state,
+              HEAL,
+              `${formatCardForLog(creature)} regenerates to full health (+${healAmount} HP).`
+            );
+          }
+        }
+      });
+    } finally {
+      finishHistory();
+    }
   }
 
   // Revive a creature (resurrect it to the field)
@@ -1503,6 +1893,7 @@ export const resolveEffectResult = (state, result, context) => {
         creature.diedInCombat = false;
         creature.slainBy = null;
         player.field[emptySlot] = creature;
+        recordArrival(state, creature, playerIndex);
         logGameAction(state, SUMMON, `${formatCardForLog(creature)} revives!`);
       }
     }

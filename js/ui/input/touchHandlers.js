@@ -1,3 +1,4 @@
+import { resolveDropTarget } from './targetResolver.js';
 /**
  * Touch Input Handlers Module
  *
@@ -49,6 +50,11 @@ let touchStartTime = 0; // Track when touch started for tap detection
 
 // Frozen card zones — snapshotted at touchstart, used throughout the touch session.
 // Prevents layout-shift flicker when focused cards lift/scale and shift neighbor positions.
+let portraitHandScroll = false;
+let handScrollStart = 0;
+let handHoldTimer = null;
+const isPortraitHand = () =>
+  window.matchMedia('(max-width: 767px) and (orientation: portrait)').matches;
 let frozenCardZones = []; // Array of { element, centerX, card }
 
 // Tap detection config
@@ -259,6 +265,14 @@ const handleTouchStart = (e) => {
   const touch = e.touches[0];
   const state = getLatestState();
 
+  // CP02: full effect text may overflow its area on small cards; when the
+  // touch starts inside a scrollable .card-effect-text, let the browser pan
+  // it natively instead of starting the focus/drag interaction.
+  const effectArea = e.target?.closest?.('.card-effect-text');
+  if (effectArea && effectArea.scrollHeight > effectArea.clientHeight + 1) {
+    return;
+  }
+
   // Use unified card detection - handles z-index, transforms, overlapping cards
   const touched = getTouchedCard(touch.clientX, touch.clientY, state);
 
@@ -301,6 +315,18 @@ const handleTouchStart = (e) => {
   // Dismiss any existing tooltip from a previous tap
   hideCardTooltipImmediate();
 
+  portraitHandScroll = false;
+  handScrollStart = handGrid?.scrollLeft ?? 0;
+  clearTimeout(handHoldTimer);
+  if (isPortraitHand()) {
+    handHoldTimer = setTimeout(() => {
+      if (touchedCardElement && !portraitHandScroll && !isDragging)
+        focusCardElement(touchedCardElement);
+    }, 350);
+    e.preventDefault();
+    return;
+  }
+
   // Immediately elevate (focus) the touched card - this is the card that will be dragged
   // The hand-focus class makes it visually elevated and is used to determine what to drag
   focusCardElement(touched.element);
@@ -329,6 +355,23 @@ const handleTouchMove = (e) => {
   };
 
   const dy = currentTouchPos.y - touchStartPos.y;
+  const dx = currentTouchPos.x - touchStartPos.x;
+  if (isPortraitHand() && !isDragging) {
+    if (portraitHandScroll || (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy))) {
+      portraitHandScroll = true;
+      clearTimeout(handHoldTimer);
+      touchedCardElement.classList.remove('hand-focus');
+      const hand = document.getElementById('active-hand');
+      if (hand) hand.scrollLeft = handScrollStart - dx;
+      return; // Once browsing, this gesture cannot become a play.
+    }
+    if (dy < -VERTICAL_DRAG_THRESHOLD) {
+      clearTimeout(handHoldTimer);
+      focusCardElement(touchedCardElement);
+    } else {
+      return;
+    }
+  }
 
   // Check if moving vertically upward past threshold - start drag to play
   if (!isDragging && dy < -VERTICAL_DRAG_THRESHOLD) {
@@ -436,6 +479,12 @@ const handleTouchMove = (e) => {
  * Handle touch end - execute drop action or clean up
  */
 const handleTouchEnd = (e) => {
+  clearTimeout(handHoldTimer);
+  if (portraitHandScroll) {
+    portraitHandScroll = false;
+    resetTouchSession();
+    return;
+  }
   if (!touchedCardElement) return;
 
   const touch = e.changedTouches[0];
@@ -462,12 +511,14 @@ const handleTouchEnd = (e) => {
       const isSpell = touchedCard.type === 'Spell' || touchedCard.type === 'Free Spell';
 
       // For spells, also check for player-field container (more forgiving drop zone)
-      const dropTarget = isSpell
-        ? elementBelow.closest('.field-slot, .player-badge, .card, .player-field')
-        : elementBelow.closest('.field-slot, .player-badge, .card');
+      const dropTarget = resolveDropTarget(elementBelow, { allowField: isSpell });
 
       // Handle spell drop on player field area (any part of it) - Hearthstone style
-      if (isSpell && dropTarget?.classList.contains('player-field')) {
+      if (
+        isSpell &&
+        dropTarget?.classList.contains('player-field') &&
+        !getSpellTargetingInfo(touchedCard)?.requiresTarget
+      ) {
         const callbacks = getLatestCallbacks();
         handlePlayCard(state, touchedCard, callbacks?.onUpdate);
       } else if (dropTarget?.classList.contains('field-slot')) {
@@ -554,6 +605,8 @@ const handleTouchEnd = (e) => {
  * Never executes a play/attack/consumption action.
  */
 const resetTouchSession = () => {
+  clearTimeout(handHoldTimer);
+  portraitHandScroll = false;
   if (touchedCardElement) {
     touchedCardElement.classList.remove('dragging');
   }
@@ -688,7 +741,7 @@ const handleFieldTouchEnd = (e) => {
 
     // Handle drop based on target
     if (elementBelow && touchedCard) {
-      const dropTarget = elementBelow.closest('.player-badge, .card');
+      const dropTarget = resolveDropTarget(elementBelow);
 
       if (dropTarget?.classList.contains('player-badge')) {
         // Attack player directly

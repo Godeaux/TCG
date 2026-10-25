@@ -26,15 +26,11 @@ export const showEmoteBubble = (emoteId, playerIndex) => {
     return;
   }
 
-  // Find the player badge to anchor the bubble
-  // In scoreboard row: player 0 (local) is on right, player 1 (enemy) is on left
-  const badgeSelector =
-    playerIndex === 0
-      ? '.scoreboard-right .scoreboard-player'
-      : '.scoreboard-left .scoreboard-player';
-  let badge = document.querySelector(badgeSelector);
+  // CP01: anchor on the seat-synced identity strip for the actual player index
+  // (strips carry data-player-index kept truthful by the render pass).
+  let badge = document.querySelector(`.player-badge[data-player-index="${playerIndex}"]`);
 
-  // Fallback to old selector for compatibility
+  // Fallback to legacy side selectors for compatibility
   if (!badge) {
     const fallbackSelector = playerIndex === 0 ? '.player-left' : '.player-right';
     badge = document.querySelector(fallbackSelector);

@@ -1,3 +1,4 @@
+import { beginPublicMutation, projectPlayerEntity, recordHistoryEvent } from './historyEvents.js';
 import {
   drawCard,
   logMessage,
@@ -114,6 +115,10 @@ const queueEndOfTurnEffects = (state) => {
     (creature) => creature?.onEnd || creature?.effects?.onEnd || creature?.endOfTurnSummon
   );
 
+  // Re-deriving the queue is for a *fresh* End phase, so any choice still owed
+  // from a previous one is dropped with it. A refresh does not re-enter here —
+  // it hydrates endOfTurnPending directly (see network/serialization.js).
+  state.endOfTurnPending = null;
   state.endOfTurnProcessing = false;
   state.endOfTurnFinalized = false;
 };
@@ -124,6 +129,10 @@ const handleFrozenThaw = (state) => {
   player.field.forEach((creature, slot) => {
     // Thaw creatures that are frozen but NOT by Neurotoxic (no frozenDiesTurn)
     if (creature?.frozen && !creature.frozenDiesTurn) {
+      const finishHistory = beginPublicMutation(state, [creature], {
+        kind: 'status',
+        cause: 'turn',
+      });
       creature.frozen = false;
       creature.thawing = true; // Trigger thaw dissipation animation in UI (cleared at next turn start)
       // Remove Frozen keyword if present
@@ -133,6 +142,7 @@ const handleFrozenThaw = (state) => {
           creature.keywords.splice(frozenIndex, 1);
         }
       }
+      finishHistory();
       logGameAction(state, BUFF, `${creature.name} thaws out.`);
     }
   });
@@ -143,7 +153,13 @@ const handleParalysisDeath = (state) => {
   const player = state.players[state.activePlayerIndex];
   player.field.forEach((creature) => {
     if (creature?.paralyzed && creature.paralyzedUntilTurn <= state.turn) {
+      const finishHistory = beginPublicMutation(state, [creature], {
+        kind: 'destroy',
+        cause: 'paralysis',
+        terminal: 'paralysis',
+      });
       creature.currentHp = 0;
+      finishHistory();
       logGameAction(state, DEATH, `${creature.name} dies from paralysis.`);
     }
   });
@@ -158,8 +174,13 @@ const handleRegen = (state) => {
       // Calculate actual max HP including consumption and buff gains
       const maxHp = getMaxHp(creature);
       if (creature.currentHp < maxHp) {
+        const finishHistory = beginPublicMutation(state, [creature], {
+          kind: 'heal',
+          cause: 'turn',
+        });
         const healAmount = maxHp - creature.currentHp;
         creature.currentHp = maxHp;
+        finishHistory();
         logGameAction(
           state,
           HEAL,
@@ -171,6 +192,17 @@ const handleRegen = (state) => {
 };
 
 export const startTurn = (state) => {
+  const playerEntity = projectPlayerEntity(state, state.activePlayerIndex);
+  recordHistoryEvent(state, {
+    kind: 'turn',
+    cause: 'turn',
+    actorIndex: state.activePlayerIndex,
+    sourceIds: [playerEntity.identity],
+    targetIds: [],
+    before: [playerEntity],
+    after: [playerEntity],
+    facts: [],
+  });
   state.cardPlayedThisTurn = false;
   state.extendedConsumption = null; // Clear extended consumption window on turn start
   state.recentlyDrawnCards = []; // Clear recently drawn tracking for new turn
@@ -189,7 +221,10 @@ export const startTurn = (state) => {
   }
 
   runStartOfTurnEffects(state);
-  cleanupDestroyed(state, { silent: true }); // Silent: endTurn broadcasts final state
+  // Silent = presentation only (endTurn broadcasts the final state). Deaths
+  // caused by start-of-turn effects are real gameplay and still grant onSlain.
+  const pendingUI = cleanupDestroyed(state, { silent: true });
+  return pendingUI;
 };
 
 export const advancePhase = (state) => {
@@ -325,7 +360,7 @@ export const endTurn = (state) => {
   if (
     state.phase === 'End' &&
     !state.endOfTurnFinalized &&
-    (state.endOfTurnProcessing || state.endOfTurnQueue.length > 0)
+    (state.endOfTurnProcessing || state.endOfTurnPending || (state.endOfTurnQueue?.length ?? 0) > 0)
   ) {
     logMessage(state, 'Resolve end-of-turn effects before ending the turn.');
     return;
@@ -340,6 +375,11 @@ export const endTurn = (state) => {
     logPlainMessage(state, `━━━ PHASE: END ━━━`);
     finalizeEndPhase(state);
   }
+
+  // Past the End-phase gate: nothing is owed any more, so a choice that was
+  // never answered (e.g. a forced turn hand-off) is cleared rather than leaking
+  // into the next player's turn.
+  state.endOfTurnPending = null;
 
   const previousPlayer = state.players[state.activePlayerIndex].name;
   state.activePlayerIndex = (state.activePlayerIndex + 1) % 2;
@@ -398,7 +438,9 @@ export const finalizeEndPhase = (state) => {
   // CORE-RULES.md §14 order: Regen → Paralysis death → cleanup → Frozen thaw
   handleRegen(state);
   handleParalysisDeath(state); // Kill paralyzed creatures (per CORE-RULES.md §7)
-  cleanupDestroyed(state, { silent: true }); // Remove dead creatures before thaw
+  // Silent = presentation only. A paralysis death is a real death and still
+  // grants onSlain (CORE-RULES §8); the returned UI work is handled by the caller.
+  const pendingUI = cleanupDestroyed(state, { silent: true }); // Remove dead creatures before thaw
   handleFrozenThaw(state); // Thaw frozen creatures last (they survive)
 
   const player = state.players[state.activePlayerIndex];
@@ -409,6 +451,7 @@ export const finalizeEndPhase = (state) => {
   );
   state.endOfTurnFinalized = true;
   // Note: Don't broadcast here - endTurn() will broadcast the final state after all transitions
+  return pendingUI;
 };
 
 export const cardLimitAvailable = (state) => !state.cardPlayedThisTurn;

@@ -1,3 +1,15 @@
+import {
+  withHistoryResolution,
+  bindHistoryResolution,
+  currentHistoryResolution,
+  recordArrival,
+  beginPublicMutation,
+  fieldEntity,
+  projectPlayerEntity,
+  recordHistoryEvent,
+  recordReveal,
+  knownEntity,
+} from './historyEvents.js';
 /**
  * Game Controller
  *
@@ -44,7 +56,7 @@ import {
 import { resolveCardEffect } from '../cards/index.js';
 import { buildTargetCandidates } from '../cards/effectLibrary.js';
 import { createCardInstance } from '../cardTypes.js';
-import { resolveEffectResult as applyEffect } from './effects.js';
+import { resolveEffectResult as applyEffect, resetCardToPrinted } from './effects.js';
 import { isFreePlay, isEdible, hasScavenge, cantBeConsumed, cantConsume } from '../keywords.js';
 import { advancePhase, endTurn, finalizeEndPhase, getPositionEvaluator } from './turnManager.js';
 import { consumePrey } from './consumption.js';
@@ -77,7 +89,12 @@ export class GameController {
     this.uiState = uiState;
     this.onStateChange = options.onStateChange || (() => {});
     this.onBroadcast = options.onBroadcast || (() => {});
-    this.onSelectionNeeded = options.onSelectionNeeded || (() => {});
+    this.onSelectionNeeded = (selection) =>
+      (options.onSelectionNeeded || (() => {}))({
+        ...selection,
+        onSelect: bindHistoryResolution(this.state, selection.onSelect),
+        onCancel: bindHistoryResolution(this.state, selection.onCancel),
+      });
     this.onSelectionComplete = options.onSelectionComplete || (() => {});
   }
 
@@ -93,6 +110,15 @@ export class GameController {
    * @returns {Object} Result object { success, error?, data? }
    */
   execute(action) {
+    const ref =
+      action?.type === ActionTypes.RESOLVE_PLAY_TRAP
+        ? this.state.pendingReaction?.historyActionRef
+        : null;
+    const scope = typeof ref === 'string' && /^m\d+:e\d+$/.test(ref) ? { ref } : null;
+    return withHistoryResolution(this.state, () => this._execute(action), scope);
+  }
+
+  _execute(action) {
     if (!action || !action.type) {
       return { success: false, error: 'Invalid action' };
     }
@@ -174,6 +200,9 @@ export class GameController {
 
         case ActionTypes.PROCESS_END_PHASE:
           return this.handleProcessEndPhase(action.payload);
+
+        case ActionTypes.RESOLVE_END_PHASE_CHOICE:
+          return this.handleResolveEndPhaseChoice(action.payload);
 
         case ActionTypes.ACTIVATE_DISCARD_EFFECT:
           return this.handleActivateDiscardEffect(action.payload);
@@ -358,6 +387,7 @@ export class GameController {
       this.cleanupDestroyed();
 
       player.exile.push(card);
+      recordReveal(this.state, card, playerIndex, 'exile', 'spell');
 
       player.hand = player.hand.filter((item) => item.instanceId !== card.instanceId);
 
@@ -528,6 +558,7 @@ export class GameController {
 
     // Place on field
     player.field[finalSlot] = creatureInstance;
+    recordArrival(this.state, creatureInstance, playerIndex, 'play');
 
     // Queue card play visual effect for slam sound
     queueVisualEffect(this.state, {
@@ -601,10 +632,11 @@ export class GameController {
       // The UI renders the reaction overlay, defender dispatches RESOLVE_PLAY_TRAP.
       this.state.pendingReaction = {
         event: TRIGGER_EVENTS.CARD_PLAYED,
+        historyActionRef: currentHistoryResolution(this.state),
         reactingPlayerIndex,
         triggeringPlayerIndex: playerIndex,
         reactions,
-        eventContext: { card: creatureInstance },
+        eventContext: { card: creatureInstance, consumed: allConsumed },
         timerStart: Date.now(),
       };
 
@@ -724,6 +756,20 @@ export class GameController {
     const { reactingPlayerIndex, triggeringPlayerIndex, reactions, eventContext, event } = pending;
     const reactingPlayer = this.state.players[reactingPlayerIndex];
 
+    // A refreshed controller has no local continuation closure. Restore only the
+    // declared public play, using the live field instance (never a transport clone).
+    if (!this._pendingPostTrap && event === TRIGGER_EVENTS.CARD_PLAYED) {
+      const creatureInstance = this.state.players[triggeringPlayerIndex]?.field.find(
+        (card) => card?.instanceId === eventContext?.card?.instanceId
+      );
+      if (creatureInstance)
+        this._pendingPostTrap = {
+          creatureInstance,
+          allConsumed: Array.isArray(eventContext?.consumed) ? eventContext.consumed : [],
+          playerIndex: triggeringPlayerIndex,
+        };
+    }
+
     // Clear pending reaction
     this.state.pendingReaction = null;
 
@@ -735,6 +781,7 @@ export class GameController {
           (c) => c.instanceId !== reaction.instanceId
         );
         reactingPlayer.exile.push(reaction.card);
+        recordReveal(this.state, reaction.card, reactingPlayerIndex, 'exile', 'reaction');
 
         logMessage(this.state, `${reactingPlayer.name}'s ${reaction.card.name} trap activates!`);
 
@@ -1231,6 +1278,7 @@ export class GameController {
       // Remove trap from hand and move to exile
       opponent.hand = opponent.hand.filter((card) => card.instanceId !== trap.instanceId);
       opponent.exile.push(trap);
+      recordReveal(this.state, trap, opponentIndex, 'exile', 'reaction');
     });
   }
 
@@ -1319,11 +1367,29 @@ export class GameController {
     });
 
     const finalizeSacrifice = () => {
+      const before = knownEntity(this.state, card, playerIndex);
       player.field[slotIndex] = null;
       // Tokens don't go to carrion
       if (!card.isToken && !card.id?.startsWith('token-')) {
         player.carrion.push(card);
       }
+      const after = {
+        ...before,
+        zone: card.isToken || card.id?.startsWith('token-') ? 'void' : 'carrion',
+        slotIndex: null,
+      };
+      recordHistoryEvent(this.state, {
+        kind: 'sacrifice',
+        cause: 'sacrifice',
+        actorIndex: playerIndex,
+        sourceIds: [],
+        targetIds: [card.instanceId],
+        before: [before],
+        after: [after],
+        facts: [
+          { entity: card.instanceId, terminal: 'sacrifice', zoneFrom: 'field', zoneTo: after.zone },
+        ],
+      });
       this.cleanupDestroyed();
       this.notifyStateChange();
       this.broadcast();
@@ -1352,9 +1418,23 @@ export class GameController {
       return { success: false, error: 'Card not found in slot' };
     }
 
+    const finishHistory = beginPublicMutation(this.state, [card], { kind: 'return' });
     player.field[slotIndex] = null;
-    delete card.playedVia;
+
+    // Tokens cannot return to hand — same rule as the returnToHand effect.
+    if (card.isToken) {
+      player.exile.push(card);
+      finishHistory();
+      logMessage(this.state, `${card.name} is destroyed (tokens cannot return to hand).`);
+      this.notifyStateChange();
+      this.broadcast();
+      return { success: true, destroyed: true };
+    }
+
+    // One reset policy for every route back to hand (CORE-RULES §6.1).
+    resetCardToPrinted(card);
     player.hand.push(card);
+    finishHistory();
 
     logMessage(this.state, `${card.name} returns to ${player.name}'s hand.`);
 
@@ -1371,6 +1451,24 @@ export class GameController {
 
   handleResolveAttack({ attacker, target, negateAttack = false, negatedBy = null }) {
     if (negateAttack) {
+      const owner = this.state.players.findIndex((p) => p.field.includes(attacker));
+      const other = 1 - owner;
+      const before = [
+        fieldEntity(this.state, attacker, owner),
+        target.type === 'creature'
+          ? fieldEntity(this.state, target.card, other)
+          : projectPlayerEntity(this.state, other),
+      ];
+      recordHistoryEvent(this.state, {
+        kind: 'attack',
+        cause: 'negation',
+        actorIndex: owner,
+        sourceIds: [attacker.instanceId],
+        targetIds: [before[1].identity],
+        before,
+        after: before,
+        facts: [{ entity: before[1].identity, negated: true }],
+      });
       const targetName = target.type === 'creature' ? target.card.name : 'the player';
       const sourceText = negatedBy ? ` by ${negatedBy}` : '';
       logMessage(
@@ -1649,6 +1747,13 @@ export class GameController {
       player.exile.push(card);
     }
 
+    recordReveal(
+      this.state,
+      card,
+      playerIndex,
+      card.type === 'Prey' || card.type === 'Predator' ? 'carrion' : 'exile',
+      'discard'
+    );
     logMessage(this.state, `${player.name} discards ${card.name}.`);
     this.state.pendingChoice = null;
 
@@ -1713,10 +1818,52 @@ export class GameController {
   // PROCESS END PHASE HANDLER
   // ==========================================================================
 
-  handleProcessEndPhase() {
+  /**
+   * Describe the outstanding End-phase choice for the caller (UI / AI).
+   * Selection objects carry live card references — never serialize this.
+   * @private
+   */
+  _describePendingChoice(creature, selection) {
+    return {
+      instanceId: creature?.instanceId ?? null,
+      cardName: creature?.name ?? null,
+      ...selection,
+    };
+  }
+
+  /**
+   * Does the pre-resolved target queue already answer this selection?
+   * A match is consumed by resolveEffectChain, so this only peeks.
+   * @private
+   */
+  _pendingTargetAnswers(selection) {
+    const targets = this._effectTargets;
+    if (!Array.isArray(targets) || targets.length === 0) return false;
+    const head = targets[0];
+    if (!head) return false;
+
+    if (selection.type === 'selectOption') {
+      return !!head.label && (selection.options ?? []).some((o) => o.label === head.label);
+    }
+    return (selection.candidates ?? []).some((c) => this._matchEffectTarget(c, head));
+  }
+
+  /**
+   * PROCESS_END_PHASE — re-entrant by design (see docs/CDE-E-DESIGN-2026-10-22.md).
+   *
+   * The head creature is **probed** before it leaves the queue. If its effect
+   * needs a choice and no valid answer arrived with this action, the action
+   * refuses: state is untouched apart from moving the creature to
+   * `endOfTurnPending`, and the caller gets `needsChoice` + the selection to
+   * render. That is the spec's "missing/invalid mandatory targets refuse before
+   * mutation" — a refresh can then restore the owed choice instead of silently
+   * finalizing without it.
+   */
+  handleProcessEndPhase(payload = {}) {
     if (this.state.phase !== 'End') {
       return { success: false, error: 'Not in End phase' };
     }
+    const force = payload?.force === true;
 
     if (this.state.endOfTurnFinalized) {
       return { success: false, error: 'Already finalized' };
@@ -1726,6 +1873,12 @@ export class GameController {
       return { success: false, error: 'Already processing' };
     }
 
+    // A creature is already owed a choice. Re-offer it rather than advancing —
+    // this is what a refreshed seat hits, and it must stay a no-op.
+    if (this.state.endOfTurnPending) {
+      return this.handleResolveEndPhaseChoice(payload);
+    }
+
     if (this.state.endOfTurnQueue.length === 0) {
       finalizeEndPhase(this.state);
       this.notifyStateChange();
@@ -1733,14 +1886,83 @@ export class GameController {
       return { success: true, finalized: true };
     }
 
-    const creature = this.state.endOfTurnQueue.shift();
+    // PEEK — the entry only leaves the queue once we know it can complete.
+    const creature = this.state.endOfTurnQueue[0];
     if (!creature) {
-      finalizeEndPhase(this.state);
-      this.notifyStateChange();
-      this.broadcast();
-      return { success: true, finalized: true };
+      this.state.endOfTurnQueue.shift();
+      return { success: true, moreInQueue: this.state.endOfTurnQueue.length > 0 };
     }
 
+    const selection = this._endPhaseSelection(creature);
+    if (selection && !force && !this._pendingTargetAnswers(selection)) {
+      this.state.endOfTurnQueue.shift();
+      this.state.endOfTurnPending = creature;
+      this.notifyStateChange();
+      this.broadcast();
+      return {
+        success: true,
+        needsChoice: true,
+        pendingChoice: this._describePendingChoice(creature, selection),
+        moreInQueue: this.state.endOfTurnQueue.length > 0,
+      };
+    }
+
+    this.state.endOfTurnQueue.shift();
+    return this._runEndPhaseCreature(creature);
+  }
+
+  /**
+   * RESOLVE_END_PHASE_CHOICE — answer the creature held in `endOfTurnPending`.
+   * An invalid or missing answer refuses again and keeps the entry pending, so
+   * the choice can never be consumed twice or lost.
+   */
+  handleResolveEndPhaseChoice(payload = {}) {
+    if (this.state.phase !== 'End') {
+      return { success: false, error: 'Not in End phase' };
+    }
+    const force = payload?.force === true;
+    if (this.state.endOfTurnFinalized) {
+      return { success: false, error: 'Already finalized' };
+    }
+    if (this.state.endOfTurnProcessing) {
+      return { success: false, error: 'Already processing' };
+    }
+
+    const creature = this.state.endOfTurnPending;
+    if (!creature) {
+      return { success: false, error: 'No pending end-of-turn choice' };
+    }
+
+    const selection = this._endPhaseSelection(creature);
+    if (selection && !force && !this._pendingTargetAnswers(selection)) {
+      return {
+        success: true,
+        needsChoice: true,
+        pendingChoice: this._describePendingChoice(creature, selection),
+        moreInQueue: this.state.endOfTurnQueue.length > 0,
+      };
+    }
+
+    return this._runEndPhaseCreature(creature, { fromPending: true });
+  }
+
+  /**
+   * Probe a queued creature's onEnd for a user choice. Returns null when the
+   * effect resolves on its own (including selectFromGroup auto-select, which
+   * returns a result rather than a prompt).
+   * @private
+   */
+  _endPhaseSelection(creature) {
+    if (!creature || (!creature.onEnd && !creature.effects?.onEnd)) return null;
+    return this.getEffectSelections(creature, 'onEnd');
+  }
+
+  /**
+   * Run one queued creature's End-phase effect to completion.
+   * @private
+   */
+  _runEndPhaseCreature(creature, { fromPending = false } = {}) {
+    this.state.endOfTurnPending = creature;
     this.state.endOfTurnProcessing = true;
     const playerIndex = this.state.activePlayerIndex;
     const opponentIndex = (playerIndex + 1) % 2;
@@ -1756,9 +1978,11 @@ export class GameController {
       }
       this.cleanupDestroyed();
       this.state.endOfTurnProcessing = false;
+      if (this.state.endOfTurnPending === creature) {
+        this.state.endOfTurnPending = null;
+      }
       this.notifyStateChange();
       this.broadcast();
-      // Continue processing queue (recursive via callback)
     };
 
     if (!creature.onEnd && !creature.effects?.onEnd) {

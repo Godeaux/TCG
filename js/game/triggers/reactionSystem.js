@@ -1,3 +1,4 @@
+import { recordReveal } from '../historyEvents.js';
 /**
  * Reaction System - Centralized reaction window handling
  *
@@ -217,6 +218,7 @@ export const resolveReaction = ({
     // Remove trap from hand and move to exile
     reactingPlayer.hand = reactingPlayer.hand.filter((c) => c.instanceId !== reaction.instanceId);
     reactingPlayer.exile.push(reaction.card);
+    recordReveal(state, reaction.card, reactingPlayerIndex, 'exile', 'reaction');
 
     logMessage(state, `${reactingPlayer.name}'s ${reaction.card.name} trap activates!`);
 

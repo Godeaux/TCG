@@ -8,6 +8,7 @@
     />
     <title>Food Chain TCG Prototype</title>
     <link rel="stylesheet" href="styles.css?v=2.0" />
+    <link rel="stylesheet" href="board.css" />
     <link
       href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Bebas+Neue&family=Orbitron:wght@400;500&family=Cinzel:wght@400;500&family=Righteous&family=Russo+One&display=swap"
       rel="stylesheet"
@@ -746,46 +747,32 @@
       <div class="pages-container" id="pages-container">
         <section class="page page-battlefield active" data-page="0">
           <div class="battlefield-layout-two-column">
-            <!-- Main Column: Battlefield and Hand -->
+            <!-- CP01 arena: utilities → rival strip → enemy field → phase control → own field → own strip/piles → hand -->
             <div class="battlefield-center-column">
               <div class="battlefield-layout">
-                <!-- Scoreboard Row (player info + opponent hand cards) -->
-                <div class="scoreboard-row" id="scoreboard-row">
-                  <!-- LEFT: Enemy info -->
-                  <div class="scoreboard-left">
-                    <div class="scoreboard-player player-badge" data-player-index="1">
-                      <span class="player-name" id="player2-name">Rival</span>
-                      <div class="scoreboard-stats">
-                        <span id="player2-hp">❤️: 10</span>
-                        <span id="player2-deck">🃏: 20</span>
-                      </div>
-                      <button class="emote-toggle" id="emote-toggle-right" title="Quick Chat" aria-label="Quick Chat">
-                        <span class="emote-toggle-icon">💬</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <!-- CENTER: Enemy hand cards (unchanged centered position) -->
-                  <div class="scoreboard-center">
-                    <div class="opponent-hand-cards" id="opponent-hand-cards">
-                      <!-- Card backs will be rendered here by JavaScript -->
-                    </div>
-                  </div>
-
-                  <!-- RIGHT: Your info -->
-                  <div class="scoreboard-right">
-                    <div class="scoreboard-player player-badge" data-player-index="0">
-                      <span class="player-name" id="player1-name">You</span>
-                      <div class="scoreboard-stats">
-                        <span id="player1-hp">❤️: 10</span>
-                        <span id="player1-deck">🃏: 20</span>
-                      </div>
-                      <button class="emote-toggle" id="emote-toggle-left" title="Quick Chat" aria-label="Quick Chat">
-                        <span class="emote-toggle-icon">💬</span>
-                      </button>
-                    </div>
-                  </div>
+                <div class="top-utilities">
+                  <span class="board-brand">FOOD CHAIN</span>
+                  <button class="field-history-btn util-history-btn" id="field-history-btn" title="Game History" aria-label="Game History">↶ History</button>
                 </div>
+
+                <!-- Rival identity strip: explicit data-marked face target (seat synced at runtime) -->
+                <div class="scoreboard-row rival-strip-row" id="scoreboard-row">
+                  <div class="scoreboard-player player-badge rival-identity-strip" id="rival-strip" data-strip="rival" data-player-index="1">
+                    <span class="player-name" id="player2-name">Rival</span>
+                    <div class="strip-stats scoreboard-stats">
+                      <span id="player2-hp">❤️: 10</span>
+                      <span id="player2-deck">🃏: 20</span>
+                    </div>
+                  <div class="opponent-hand-cards" id="opponent-hand-cards">
+                    <!-- Card backs will be rendered here by JavaScript -->
+                  </div>
+                    <button class="emote-toggle" id="emote-toggle-right" title="Quick Chat" aria-label="Quick Chat">
+                      <span class="emote-toggle-icon">💬</span>
+                    </button>
+                  </div>
+
+                </div>
+
                 <div class="battlefield-region">
                   <div class="battlefield">
                     <div class="field-row opponent-field">
@@ -794,14 +781,7 @@
                       <div class="field-slot" data-slot="2"></div>
                     </div>
                     <div class="field-divider">
-                      <button class="mobile-nav-left" id="mobile-nav-left" aria-label="View Card Inspector">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <polyline points="15 18 9 12 15 6"></polyline>
-                        </svg>
-                      </button>
-                      <p class="field-divider-text">
-                        Food Chain™ (C) Food Chain TCG. All rights reserved.
-                      </p>
+                      <p class="field-divider-text"></p>
                       <div class="field-controls">
                         <button class="field-turn-btn" id="field-turn-btn" type="button" aria-label="Advance phase">
                           <span class="field-turn-number" id="field-turn-number">Turn 1</span>
@@ -809,13 +789,7 @@
                         </button>
                         <button class="field-resync-btn" id="field-resync-btn" title="Request Resync" aria-label="Request Resync">📶</button>
                         <button class="field-surrender-btn" id="field-surrender-btn" title="Surrender" aria-label="Surrender">🏳️</button>
-                        <button class="field-history-btn" id="field-history-btn" title="Game History" aria-label="Game History">📜</button>
                       </div>
-                      <button class="mobile-nav-right" id="mobile-nav-right" aria-label="View Game History">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                      </button>
                     </div>
                     <div class="field-row player-field">
                       <div class="field-slot" data-slot="0"></div>
@@ -825,11 +799,48 @@
                   </div>
                   <div class="battle-effects" id="battle-effects" aria-hidden="true"></div>
                 </div>
+
+                <!-- Own identity + compact pile control (v7 placement) -->
+                <div class="own-control-row">
+                  <div class="scoreboard-player player-badge own-identity-strip" id="own-strip" data-strip="own" data-player-index="0">
+                    <span class="player-name" id="player1-name">You</span>
+                    <div class="strip-stats scoreboard-stats">
+                      <span id="player1-hp">❤️: 10</span>
+                      <span id="player1-deck">🃏: 20</span>
+                    </div>
+                    <button class="emote-toggle" id="emote-toggle-left" title="Quick Chat" aria-label="Quick Chat">
+                      <span class="emote-toggle-icon">💬</span>
+                    </button>
+                  </div>
+                  <div class="piles-section">
+                    <div class="piles-grid">
+                      <div class="pile-item" id="carrion-pile-container">
+                        <span>Carrion</span>
+                        <strong id="active-carrion">0</strong>
+                      </div>
+                      <div class="pile-item" id="exile-pile-container">
+                        <span>Exile</span>
+                        <strong id="active-exile">0</strong>
+                      </div>
+                    </div>
+                    <details class="board-diagnostics"><summary title="Match diagnostics">⋯</summary>
+                    <div class="advantage-display diagnostics" id="advantage-display">
+                      <div class="advantage-header">
+                        <span>Advantage</span>
+                        <button class="graph-toggle" id="graph-toggle" title="Toggle graph">📊</button>
+                      </div>
+                      <div class="advantage-value" id="advantage-value">+0</div>
+                      <div class="advantage-description" id="advantage-description">Even</div>
+                    </div>
+                    <div class="advantage-graph-container diagnostics" id="advantage-graph-container" style="display: none;">
+                      <canvas id="advantage-graph" width="200" height="80"></canvas>
+                    </div>
+                    </details>
+                  </div>
+                </div>
+
                 <div class="hand-panel">
                   <div class="hand-container">
-                    <div class="hand-header">
-                      <h3 class="hand-title">Your Hand</h3>
-                    </div>
                     <div class="hand-grid" id="active-hand"></div>
                   </div>
                 </div>
@@ -850,35 +861,6 @@
                 </div>
                 <div class="log-content" id="game-history-log">
                   <!-- Game log entries will be populated here -->
-                </div>
-              </div>
-              <!-- Piles Information - anchored to bottom -->
-              <div class="piles-section">
-                <!-- Advantage Display -->
-                <div class="advantage-display" id="advantage-display">
-                  <div class="advantage-header">
-                    <span>Advantage</span>
-                    <button class="graph-toggle" id="graph-toggle" title="Toggle graph">📊</button>
-                  </div>
-                  <div class="advantage-value" id="advantage-value">+0</div>
-                  <div class="advantage-description" id="advantage-description">Even</div>
-                </div>
-
-                <!-- Collapsible Graph -->
-                <div class="advantage-graph-container" id="advantage-graph-container" style="display: none;">
-                  <canvas id="advantage-graph" width="200" height="80"></canvas>
-                </div>
-
-                <!-- Existing Piles -->
-                <div class="piles-grid">
-                  <div class="pile-item" id="carrion-pile-container">
-                    <span>Carrion</span>
-                    <strong id="active-carrion">0</strong>
-                  </div>
-                  <div class="pile-item" id="exile-pile-container">
-                    <span>Exile</span>
-                    <strong id="active-exile">0</strong>
-                  </div>
                 </div>
               </div>
             </div>

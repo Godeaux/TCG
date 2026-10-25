@@ -39,6 +39,7 @@ const TURN_GATED_ACTIONS = new Set([
   ActionTypes.RETURN_TO_HAND,
   ActionTypes.ACTIVATE_DISCARD_EFFECT,
   ActionTypes.PROCESS_END_PHASE,
+  ActionTypes.RESOLVE_END_PHASE_CHOICE,
   ActionTypes.SELECT_CONSUMPTION_TARGETS,
   ActionTypes.DRY_DROP,
   ActionTypes.EXTEND_CONSUMPTION,
@@ -71,6 +72,7 @@ const PHASE_REQUIREMENTS = {
   [ActionTypes.RESOLVE_ATTACK]: ['Combat'],
   [ActionTypes.EAT_PREY_ATTACK]: ['Combat'],
   [ActionTypes.PROCESS_END_PHASE]: ['End'],
+  [ActionTypes.RESOLVE_END_PHASE_CHOICE]: ['End'],
 };
 
 // ============================================================================

@@ -9,6 +9,12 @@ export {
   formatCardForLog,
 } from '../game/historyLog.js';
 
+import {
+  resetHistoryStream,
+  projectPlayerEntity,
+  recordHistoryEvent,
+} from '../game/historyEvents.js';
+
 // ============================================================================
 // SEEDED PRNG - Mulberry32 algorithm for deterministic random numbers
 // Both clients use the same seed to get identical random sequences
@@ -191,6 +197,7 @@ export const createGameState = () => {
     beforeCombatQueue: [],
     beforeCombatProcessing: false,
     endOfTurnQueue: [],
+    endOfTurnPending: null,
     endOfTurnProcessing: false,
     endOfTurnFinalized: false,
     visualEffects: [],
@@ -237,6 +244,9 @@ export const createGameState = () => {
       editingDeckName: null,
     },
     log: [],
+    // Public history event stream (CP03 contract). Presentation metadata only:
+    // never read by rules code, never part of the gameplay checksum.
+    historyEvents: resetHistoryStream(1),
     advantageHistory: [], // Tracks position advantage over time for graphing
     combat: {
       declaredAttacks: [],
@@ -260,6 +270,17 @@ export const drawCard = (state, playerIndex) => {
     card.instanceId = seededInstanceId();
   }
   player.hand.push(card);
+  const entity = projectPlayerEntity(state, playerIndex);
+  recordHistoryEvent(state, {
+    kind: 'draw',
+    cause: 'effect',
+    actorIndex: playerIndex,
+    sourceIds: [entity.identity],
+    targetIds: [],
+    before: [entity],
+    after: [entity],
+    facts: [{ entity: entity.identity, count: 1 }],
+  });
   return card;
 };
 

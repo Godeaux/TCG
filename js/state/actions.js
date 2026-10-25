@@ -112,6 +112,9 @@ export const ActionTypes = {
   /** Process end-of-turn effect queue */
   PROCESS_END_PHASE: 'PROCESS_END_PHASE',
 
+  /** Answer the end-of-turn effect currently awaiting a choice */
+  RESOLVE_END_PHASE_CHOICE: 'RESOLVE_END_PHASE_CHOICE',
+
   // ==========================================================================
   // CONSUMPTION ACTIONS
   // ==========================================================================
@@ -368,9 +371,18 @@ export const resolveDiscard = (playerIndex, card) => ({
   payload: { playerIndex, card },
 });
 
-export const processEndPhase = (effectTargets = []) => ({
+export const processEndPhase = (effectTargets = [], { force = false } = {}) => ({
   type: ActionTypes.PROCESS_END_PHASE,
-  payload: { effectTargets },
+  payload: { effectTargets, force },
+});
+
+/**
+ * Answer the choice held by the creature in `state.endOfTurnPending`.
+ * Sent when PROCESS_END_PHASE refuses (needsChoice) rather than mutating.
+ */
+export const resolveEndPhaseChoice = (effectTargets = [], { force = false } = {}) => ({
+  type: ActionTypes.RESOLVE_END_PHASE_CHOICE,
+  payload: { effectTargets, force },
 });
 
 // ============================================================================

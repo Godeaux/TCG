@@ -1,0 +1,252 @@
+{
+  "steps": [
+    {
+      "label": "controlled opening",
+      "turn": 1,
+      "phase": "Main 1",
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "label": "host mouse play",
+      "turn": 1,
+      "phase": "Main 1",
+      "hp": [
+        10,
+        10
+      ],
+      "events": 1
+    },
+    {
+      "label": "END_TURN",
+      "turn": 2,
+      "phase": "Main 1",
+      "hp": [
+        10,
+        10
+      ],
+      "events": 3
+    },
+    {
+      "label": "guest optimistic mouse play",
+      "turn": 2,
+      "phase": "Main 1",
+      "hp": [
+        10,
+        10
+      ],
+      "events": 4
+    },
+    {
+      "label": "END_TURN",
+      "turn": 3,
+      "phase": "Main 1",
+      "hp": [
+        10,
+        10
+      ],
+      "events": 6
+    },
+    {
+      "label": "predator drop consumes prey",
+      "turn": 3,
+      "phase": "Main 1",
+      "hp": [
+        10,
+        10
+      ],
+      "events": 8
+    },
+    {
+      "label": "ADVANCE_PHASE",
+      "turn": 3,
+      "phase": "Combat",
+      "hp": [
+        10,
+        10
+      ],
+      "events": 8
+    },
+    {
+      "label": "host direct face attack",
+      "turn": 3,
+      "phase": "Combat",
+      "hp": [
+        10,
+        5
+      ],
+      "events": 9
+    },
+    {
+      "label": "guest reload authoritative restore",
+      "turn": 3,
+      "phase": "Combat",
+      "hp": [
+        10,
+        5
+      ],
+      "events": 9
+    },
+    {
+      "label": "END_TURN",
+      "turn": 4,
+      "phase": "Main 1",
+      "hp": [
+        10,
+        5
+      ],
+      "events": 11
+    },
+    {
+      "label": "ADVANCE_PHASE",
+      "turn": 4,
+      "phase": "Combat",
+      "hp": [
+        10,
+        5
+      ],
+      "events": 11
+    },
+    {
+      "label": "guest creature combat after reload",
+      "turn": 4,
+      "phase": "Combat",
+      "hp": [
+        10,
+        5
+      ],
+      "events": 12
+    },
+    {
+      "label": "both seats inspect Carrion and Exile without mutation",
+      "turn": 4,
+      "phase": "Combat",
+      "hp": [
+        10,
+        5
+      ],
+      "events": 12
+    },
+    {
+      "label": "END_TURN",
+      "turn": 5,
+      "phase": "Main 1",
+      "hp": [
+        10,
+        5
+      ],
+      "events": 14
+    },
+    {
+      "label": "ADVANCE_PHASE",
+      "turn": 5,
+      "phase": "Combat",
+      "hp": [
+        10,
+        5
+      ],
+      "events": 14
+    },
+    {
+      "label": "lethal direct attack",
+      "turn": 5,
+      "phase": "Combat",
+      "hp": [
+        10,
+        0
+      ],
+      "events": 15
+    }
+  ],
+  "messages": [
+    {
+      "from": 0,
+      "type": "action_confirmed",
+      "seq": 1
+    },
+    {
+      "from": 0,
+      "type": "action_confirmed",
+      "seq": 2
+    },
+    {
+      "from": 1,
+      "type": "action_intent"
+    },
+    {
+      "from": 0,
+      "type": "action_confirmed",
+      "seq": 3
+    },
+    {
+      "from": 1,
+      "type": "action_intent"
+    },
+    {
+      "from": 0,
+      "type": "action_confirmed",
+      "seq": 4
+    },
+    {
+      "from": 0,
+      "type": "action_confirmed",
+      "seq": 5
+    },
+    {
+      "from": 0,
+      "type": "action_confirmed",
+      "seq": 6
+    },
+    {
+      "from": 0,
+      "type": "action_confirmed",
+      "seq": 7
+    },
+    {
+      "from": 0,
+      "type": "action_confirmed",
+      "seq": 8
+    },
+    {
+      "from": 1,
+      "type": "action_intent"
+    },
+    {
+      "from": 0,
+      "type": "action_confirmed",
+      "seq": 9
+    },
+    {
+      "from": 1,
+      "type": "action_intent"
+    },
+    {
+      "from": 0,
+      "type": "action_confirmed",
+      "seq": 10
+    },
+    {
+      "from": 1,
+      "type": "action_intent"
+    },
+    {
+      "from": 0,
+      "type": "action_confirmed",
+      "seq": 11
+    },
+    {
+      "from": 0,
+      "type": "action_confirmed",
+      "seq": 12
+    },
+    {
+      "from": 0,
+      "type": "action_confirmed",
+      "seq": 13
+    }
+  ],
+  "errors": []
+}

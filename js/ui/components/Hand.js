@@ -29,6 +29,24 @@ import { getLocalPlayerIndex, isAnyAIMode, canCardBePlayed } from '../../state/s
  */
 export const updateHandOverlap = (handGrid) => {
   const cards = Array.from(handGrid.querySelectorAll('.card'));
+  // Fit the complete portrait fan by overlapping, never shrinking card text.
+  if (window.matchMedia('(max-width: 767px) and (orientation: portrait)').matches) {
+    // Inspection temporarily takes a card out of flow; keep the resting fan stable.
+    if (cards.some((card) => card.classList.contains('hand-focus'))) return;
+    const style = getComputedStyle(handGrid);
+    const available = Math.max(
+      0,
+      handGrid.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)
+    );
+    const total = cards.reduce((width, card) => width + card.offsetWidth, 0);
+    const overlap = cards.length > 1 ? Math.max(10, (total - available) / (cards.length - 1)) : 0;
+    handGrid.style.setProperty('--hand-overlap', `${overlap}px`);
+    handGrid.style.setProperty('--mobile-card-scale', '1');
+    handGrid.style.overflow = 'visible';
+    handGrid.scrollLeft = 0;
+    return;
+  }
+
   if (cards.length === 0) {
     handGrid.style.setProperty('--hand-overlap', '0px');
     handGrid.style.setProperty('--mobile-card-scale', '1');

@@ -1,3 +1,6 @@
+import { resetHistoryStream } from './game/historyEvents.js';
+import { resolveDropTarget } from './ui/input/targetResolver.js';
+import { renderHistoryPanel, toggleHistoryPanel } from './ui/components/HistoryPanel.js';
 import {
   getActivePlayer,
   getOpponentPlayer,
@@ -22,6 +25,7 @@ import {
   resolveAttack as resolveAttackAction,
   eatPreyAttack as eatPreyAttackAction,
   processEndPhase as processEndPhaseAction,
+  resolveEndPhaseChoice as resolveEndPhaseChoiceAction,
 } from './state/actions.js';
 import {
   deckCatalogs,
@@ -270,7 +274,6 @@ preloadAllCardImages();
 const selectionPanel = document.getElementById('selection-panel');
 const actionBar = document.getElementById('action-bar');
 const actionPanel = document.getElementById('action-panel');
-const gameHistoryLog = document.getElementById('game-history-log');
 const pagesContainer = document.getElementById('pages-container');
 const pageDots = document.getElementById('page-dots');
 const navLeft = document.getElementById('nav-left');
@@ -285,38 +288,6 @@ const lobbyError = document.getElementById('lobby-error');
 let inspectedCardId = null;
 const deckHighlighted = null;
 
-// AI thinking ellipsis animation state
-let aiThinkingEllipsisFrame = 0;
-let aiThinkingEllipsisInterval = null;
-
-/**
- * Start the animated ellipsis for "Still thinking" indicator
- * @param {HTMLElement} element - The element to update with animated text
- */
-function startAIThinkingEllipsisAnimation(element) {
-  if (aiThinkingEllipsisInterval) return; // Already running
-
-  // Update immediately
-  aiThinkingEllipsisFrame = 0;
-  element.textContent = 'Still thinking';
-
-  aiThinkingEllipsisInterval = setInterval(() => {
-    aiThinkingEllipsisFrame = (aiThinkingEllipsisFrame + 1) % 4;
-    const dots = '.'.repeat(aiThinkingEllipsisFrame);
-    element.textContent = `Still thinking${dots}`;
-  }, 400);
-}
-
-/**
- * Stop the animated ellipsis animation
- */
-function stopAIThinkingEllipsisAnimation() {
-  if (aiThinkingEllipsisInterval) {
-    clearInterval(aiThinkingEllipsisInterval);
-    aiThinkingEllipsisInterval = null;
-    aiThinkingEllipsisFrame = 0;
-  }
-}
 let currentPage = 0;
 let deckActiveTab = 'catalog';
 let latestState = null;
@@ -389,6 +360,7 @@ const _TURN_GATED = new Set([
   'RETURN_TO_HAND',
   'ACTIVATE_DISCARD_EFFECT',
   'PROCESS_END_PHASE',
+  'RESOLVE_END_PHASE_CHOICE',
   'SELECT_CONSUMPTION_TARGETS',
   'DRY_DROP',
   'EXTEND_CONSUMPTION',
@@ -684,189 +656,11 @@ const updateActionPanel = (state, callbacks = {}) => {
   actionBar.classList.add('has-actions');
 };
 
-// Cache for card name lookup (built once, used for log parsing)
-let cardNameMap = null;
-let cardNameRegex = null;
-
-/**
- * Build the card name lookup map and regex for efficient log parsing
- */
-const buildCardNameLookup = () => {
-  if (cardNameMap !== null) return;
-
-  cardNameMap = new Map();
-  const allCards = getAllCards();
-
-  // Build map of lowercase name -> card definition
-  allCards.forEach((card) => {
-    if (card.name) {
-      cardNameMap.set(card.name.toLowerCase(), card);
-    }
-  });
-
-  // Build regex to match any card name (sorted by length descending to match longer names first)
-  const sortedNames = Array.from(cardNameMap.keys())
-    .sort((a, b) => b.length - a.length)
-    .map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')); // Escape regex special chars
-
-  if (sortedNames.length > 0) {
-    cardNameRegex = new RegExp(`\\b(${sortedNames.join('|')})\\b`, 'gi');
-  }
-};
-
-/**
- * Escape HTML special characters for safe rendering
- */
-const escapeHtml = (text) => {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-};
-
-/**
- * Make card names in a log entry clickable
- * Supports two formats:
- * 1. {{name|id|rarity}} - explicit format with rarity metadata
- * 2. Plain card names - matched via cardNameRegex for backward compatibility
- */
-const linkifyCardNames = (entry) => {
-  // First escape HTML
-  let result = escapeHtml(entry);
-
-  // Check if entry uses explicit format (contains {{ markers)
-  const hasExplicitFormat = entry.includes('{{');
-
-  if (hasExplicitFormat) {
-    // Parse explicit card format: {{name|id|rarity}} or {{name|id}}
-    // Only do this replacement, skip legacy to avoid breaking generated HTML
-    result = result.replace(
-      /\{\{([^|]+)\|([^|}]+)(?:\|([^}]+))?\}\}/g,
-      (match, name, id, rarity) => {
-        const rarityClass = rarity ? ` rarity-${rarity}` : '';
-        return `<span class="log-card-link${rarityClass}" data-card-id="${id}">${name}</span>`;
-      }
-    );
-  } else if (cardNameRegex) {
-    // Legacy card name matching (only for entries without explicit format)
-    result = result.replace(cardNameRegex, (match) => {
-      const card = cardNameMap.get(match.toLowerCase());
-      if (card) {
-        return `<span class="log-card-link" data-card-id="${card.id}">${match}</span>`;
-      }
-      return match;
-    });
-  }
-
-  return result;
-};
-
-const appendLog = (state) => {
-  if (!gameHistoryLog) {
-    return;
-  }
-
-  // Build card name lookup on first use
-  buildCardNameLookup();
-
-  // Check if user is near the top (viewing newest entries)
-  // New entries are added at the TOP, so scrollTop=0 means viewing newest
-  // If user scrolls down past threshold, they want to read history and we preserve position
-  const scrollThreshold = 30; // pixels from top to consider "following" newest entries
-  const wasAtTop = gameHistoryLog.scrollTop < scrollThreshold;
-
-  // Store distance from bottom - this is stable when new content is added at top
-  const previousScrollBottom = gameHistoryLog.scrollHeight - gameHistoryLog.scrollTop;
-
-  gameHistoryLog.innerHTML = state.log
-    .map((entry) => {
-      // Handle different log entry types
-      if (typeof entry === 'object' && entry !== null) {
-        // Bug log entry
-        if (entry.type === 'bug') {
-          return `<div class="log-entry log-bug"><span class="log-action">[BUG] ${escapeHtml(entry.message)}</span></div>`;
-        }
-        // AI thinking log entry - apply different styles based on content
-        if (entry.type === 'ai-thinking') {
-          let logClass = 'log-ai-thinking';
-          const msg = entry.message || '';
-
-          // Detect message type for appropriate styling
-          if (msg.includes('DANGER') || msg.includes('Caution:')) {
-            logClass = 'log-ai-danger';
-          } else if (
-            msg.includes('LETHAL') ||
-            msg.includes('Lethal detected') ||
-            msg.includes('Going for the win')
-          ) {
-            logClass = 'log-ai-lethal';
-          } else if (msg.includes('Priority target:') || msg.includes('threat')) {
-            logClass = 'log-ai-strategic';
-          } else if (entry.isDecision || msg.includes('Playing') || msg.includes('attacks')) {
-            logClass = 'log-ai-decision';
-          }
-
-          return `<div class="log-entry ${logClass}"><span class="log-action">${escapeHtml(msg)}</span></div>`;
-        }
-        // Unknown object type - try to stringify
-        return `<div class="log-entry"><span class="log-action">${escapeHtml(JSON.stringify(entry))}</span></div>`;
-      }
-      // Normal string entry
-      return `<div class="log-entry"><span class="log-action">${linkifyCardNames(entry)}</span></div>`;
-    })
-    .join('');
-
-  // Restore scroll position based on where user was reading
-  if (wasAtTop) {
-    // User was following newest entries - keep them at top
-    gameHistoryLog.scrollTop = 0;
-  } else {
-    // User scrolled down to read history - preserve their position relative to content
-    // Since new content is added at top, we restore based on distance from bottom
-    gameHistoryLog.scrollTop = gameHistoryLog.scrollHeight - previousScrollBottom;
-  }
-};
-
-/**
- * Set up hover handlers for card links in the history log (event delegation)
- */
-const setupLogCardLinks = () => {
-  if (!gameHistoryLog) return;
-
-  // Get the game log panel for consistent tooltip anchoring
-  const gameLogPanel = document.querySelector('.game-log-panel');
-
-  // Log card links - show tooltip on hover
-  gameHistoryLog.addEventListener(
-    'mouseenter',
-    (e) => {
-      const cardLink = e.target.closest('.log-card-link');
-      if (cardLink) {
-        const cardId = cardLink.dataset.cardId;
-        if (cardId) {
-          const cardDef = getCardDefinitionById(cardId);
-          if (cardDef) {
-            // Show tooltip anchored to the left of the game log panel
-            showCardTooltip(cardDef, cardLink, { anchorRight: gameLogPanel });
-          }
-        }
-      }
-    },
-    true
-  ); // Use capture to handle dynamically added elements
-
-  gameHistoryLog.addEventListener(
-    'mouseleave',
-    (e) => {
-      const cardLink = e.target.closest('.log-card-link');
-      if (cardLink) {
-        hideCardTooltip();
-      }
-    },
-    true
-  );
-};
-
 const updateIndicators = (state, controlsLocked) => {
+  const phaseSummary = document.querySelector('.field-divider-text');
+  if (phaseSummary) {
+    phaseSummary.textContent = `${isLocalPlayersTurn(state) ? 'Your turn' : 'Rival’s turn'} · ${state.phase}`;
+  }
   // Original turn badge (hidden but kept for compatibility)
   const turnNumber = document.getElementById('turn-number');
   const phaseLabel = document.getElementById('phase-label');
@@ -943,7 +737,6 @@ const updateIndicators = (state, controlsLocked) => {
     // Show AI thinking indicator when deep search is running
     if (state._aiIsSearching) {
       fieldPhaseLabel.classList.add('ai-thinking');
-      stopAIThinkingEllipsisAnimation();
 
       const nodes = state._aiSearchStats?.nodes || 0;
       if (nodes > 0) {
@@ -955,7 +748,6 @@ const updateIndicators = (state, controlsLocked) => {
       }
     } else {
       // Not searching - show normal phase
-      stopAIThinkingEllipsisAnimation();
       fieldPhaseLabel.textContent = state.phase;
       fieldPhaseLabel.classList.remove('ai-thinking');
     }
@@ -981,6 +773,12 @@ const updateIndicators = (state, controlsLocked) => {
 
 const updatePlayerStats = (state, index, role, onUpdate = null) => {
   const player = state.players[index];
+  // Keep the seat marker on each identity strip truthful for the resolver
+  // (rival strip = 'player2' role slot, own strip = 'player1' role slot).
+  if (role === 'player1' || role === 'player2') {
+    const stripEl = document.getElementById(role === 'player2' ? 'rival-strip' : 'own-strip');
+    if (stripEl) stripEl.dataset.playerIndex = String(index);
+  }
   const nameEl = document.getElementById(`${role}-name`);
   const hpEl = document.getElementById(`${role}-hp`);
   const deckEl = document.getElementById(`${role}-deck`);
@@ -1042,10 +840,10 @@ const updatePlayerStats = (state, index, role, onUpdate = null) => {
     }
   }
   if (hpEl) {
-    hpEl.textContent = `❤️: ${player.hp}`;
+    hpEl.textContent = `♡ ${player.hp}`;
   }
   if (deckEl) {
-    deckEl.textContent = `🃏: ${player.deck.length}`;
+    deckEl.textContent = `▣ ${player.deck.length}`;
   }
 
   if (role === 'active') {
@@ -2271,11 +2069,6 @@ const resolveEffectChain = (state, result, context, onUpdate, onComplete, onCanc
 // Local isSelectionActive that also checks for pending reactions
 const isSelectionActive = () => isSelectionActiveFromModule();
 
-const findCardByInstanceId = (state, instanceId) =>
-  state.players
-    .flatMap((player) => player.field.concat(player.hand, player.carrion, player.exile))
-    .find((card) => card?.instanceId === instanceId);
-
 const resolveAttack = (
   state,
   attacker,
@@ -2379,8 +2172,9 @@ const enterTargetingMode = ({ title, candidates, sourceCard }) => {
 
     // Click handler for field cards
     const handleTargetClick = (e) => {
-      const cardEl = e.target.closest('.card.effect-target');
-      const badgeEl = e.target.closest('.player-badge.effect-target');
+      const hit = resolveDropTarget(e.target);
+      const cardEl = hit?.matches('.card.effect-target') ? hit : null;
+      const badgeEl = hit?.matches('.player-badge.effect-target') ? hit : null;
 
       if (cardEl) {
         const iid = cardEl.dataset.instanceId;
@@ -3611,6 +3405,70 @@ const navigateToPage = (pageIndex) => {
 // initNavigation moved to ./ui/input/inputRouter.js
 // Now initialized via initializeInput() from ./ui/input/index.js
 
+/**
+ * Ask the local player for the target/option an End-phase effect needs.
+ * Returns the `effectTargets` payload, or [] when cancelled — End-phase effects
+ * are mandatory, so a cancelled prompt falls back to the non-interactive path
+ * (empty targets) exactly as before, never to a skipped effect.
+ */
+const collectEndPhaseTargets = async (creature, selection) => {
+  if (selection?.type === 'selectTarget' && selection.candidates?.length) {
+    try {
+      const selected = await enterTargetingMode({
+        title: `${creature.name}: ${selection.title}`,
+        candidates: selection.candidates,
+        sourceCard: creature,
+      });
+      return selected ? [toEffectTarget(selected)] : [];
+    } catch {
+      return []; // Cancelled — mandatory effect proceeds without a target
+    }
+  }
+  if (selection?.type === 'selectOption') {
+    try {
+      const chosen = await enterOptionMode({
+        title: selection.title || `Choose ${creature.name}'s effect`,
+        options: selection.options,
+        sourceCard: creature,
+      });
+      return chosen ? [{ type: 'option', label: chosen.label }] : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
+/**
+ * End-phase effects are mandatory, so a cancelled prompt reopens rather than
+ * skipping the effect. It must not reopen forever, though: after
+ * MAX_END_PHASE_PROMPT_CANCELS declines for the same creature, the seat's refusal
+ * is read as "you pick" and the action goes out with `force`, which runs the
+ * engine's non-interactive fallback instead of re-asking. Keyed by instanceId so
+ * a different creature gets a fresh allowance.
+ */
+const MAX_END_PHASE_PROMPT_CANCELS = 2;
+const endPhasePromptCancels = new Map();
+
+const noteEndPhasePromptCancel = (instanceId) => {
+  const declines = (endPhasePromptCancels.get(instanceId) ?? 0) + 1;
+  endPhasePromptCancels.set(instanceId, declines);
+  return declines;
+};
+
+/**
+ * Render a refusal the controller returned from PROCESS_END_PHASE. The creature
+ * is already parked in state.endOfTurnPending; this only collects the answer.
+ */
+const promptEndPhaseChoice = async (state, pendingChoice) => {
+  if (!pendingChoice) return [];
+  const source =
+    state.players
+      ?.flatMap((p) => p?.field ?? [])
+      .find((c) => c?.instanceId === pendingChoice.instanceId) ?? null;
+  return collectEndPhaseTargets(source ?? { name: pendingChoice.cardName }, pendingChoice);
+};
+
 const processEndOfTurnQueue = async (state, onUpdate, onEndTurn) => {
   if (state.phase !== 'End') {
     return;
@@ -3644,42 +3502,57 @@ const processEndOfTurnQueue = async (state, onUpdate, onEndTurn) => {
     return;
   }
 
-  // Probe the next creature in the queue for targeting needs
+  // A creature parked by the controller is owed a choice; it is answered
+  // through RESOLVE_END_PHASE_CHOICE rather than by probing the queue head.
+  const pending = state.endOfTurnPending ?? null;
+
+  // Probe the creature about to run for targeting needs
   let effectTargets = [];
-  const nextCreature = state.endOfTurnQueue?.[0];
+  const nextCreature = pending ?? state.endOfTurnQueue?.[0];
   if (nextCreature && isLocalPlayersTurn(state)) {
     const selection = gameController.getEffectSelections(nextCreature, 'onEnd');
-    if (selection?.type === 'selectTarget' && selection.candidates?.length) {
-      try {
-        const selected = await enterTargetingMode({
-          title: `${nextCreature.name}: ${selection.title}`,
-          candidates: selection.candidates,
-          sourceCard: nextCreature,
-        });
-        if (selected) effectTargets = [toEffectTarget(selected)];
-      } catch (e) {
-        // Cancelled — can't cancel end phase effects, so proceed without target
-        // (resolveEffectChain will fall through to onSelectionNeeded)
-      }
-    } else if (selection?.type === 'selectOption') {
-      try {
-        const chosen = await enterOptionMode({
-          title: selection.title || `Choose ${nextCreature.name}'s effect`,
-          options: selection.options,
-          sourceCard: nextCreature,
-        });
-        if (chosen) effectTargets = [{ type: 'option', label: chosen.label }];
-      } catch (e) {
-        // Cancelled — proceed without choice
-      }
-    }
+    effectTargets = await collectEndPhaseTargets(nextCreature, selection);
   }
 
-  const result = dispatchAction(processEndPhaseAction(effectTargets));
+  const result = pending
+    ? dispatchAction(resolveEndPhaseChoiceAction(effectTargets))
+    : dispatchAction(processEndPhaseAction(effectTargets));
+
   if (result?.finalized) {
     onEndTurn?.(); // Auto-end turn after finalization
     return;
   }
+
+  // The controller refused to mutate: the creature is parked in
+  // state.endOfTurnPending and waits for an answer. Ask for it, then resolve.
+  if (result?.needsChoice) {
+    if (!isLocalPlayersTurn(state)) return; // Owner answers on their own seat
+    const answered = await promptEndPhaseChoice(state, result.pendingChoice);
+    const instanceId = result.pendingChoice?.instanceId ?? null;
+
+    // Empty answer = the seat cancelled. Reopen once, then hand the choice to the
+    // engine rather than cycling the prompt.
+    let force = false;
+    if (instanceId) {
+      if (answered.length === 0) {
+        force = noteEndPhasePromptCancel(instanceId) >= MAX_END_PHASE_PROMPT_CANCELS;
+      } else {
+        endPhasePromptCancels.delete(instanceId);
+      }
+    }
+
+    const resolveResult = dispatchAction(resolveEndPhaseChoiceAction(answered, { force }));
+    if (resolveResult?.finalized) {
+      if (instanceId) endPhasePromptCancels.delete(instanceId);
+      onEndTurn?.();
+      return;
+    }
+    if (resolveResult?.needsChoice || resolveResult?.moreInQueue) {
+      setTimeout(() => processEndOfTurnQueue(state, onUpdate, onEndTurn), 0);
+    }
+    return;
+  }
+
   if (result?.moreInQueue) {
     // Continue processing remaining creatures in the queue
     // Use setTimeout to avoid deep recursion and allow UI to update between creatures
@@ -3846,13 +3719,13 @@ const setupMobileNavigation = () => {
   const navRight = document.getElementById('mobile-nav-right');
   const historyBtn = document.getElementById('field-history-btn');
   const closeInspector = document.getElementById('close-inspector');
-  const closeHistory = document.getElementById('close-history');
   // Support both two-column and three-column layouts
   const battlefieldLayout =
     document.querySelector('.battlefield-layout-three-column') ||
     document.querySelector('.battlefield-layout-two-column');
 
   if (!battlefieldLayout) return;
+  const toggleHistory = toggleHistoryPanel;
 
   if (navLeft) {
     navLeft.addEventListener('click', () => {
@@ -3863,16 +3736,14 @@ const setupMobileNavigation = () => {
 
   if (navRight) {
     navRight.addEventListener('click', () => {
-      battlefieldLayout.classList.toggle('show-history');
-      battlefieldLayout.classList.remove('show-inspector');
+      toggleHistory();
     });
   }
 
   // History button in field controls (mobile)
   if (historyBtn) {
     historyBtn.addEventListener('click', () => {
-      battlefieldLayout.classList.toggle('show-history');
-      battlefieldLayout.classList.remove('show-inspector');
+      toggleHistory();
     });
   }
 
@@ -3880,12 +3751,6 @@ const setupMobileNavigation = () => {
   if (closeInspector) {
     closeInspector.addEventListener('click', () => {
       battlefieldLayout.classList.remove('show-inspector');
-    });
-  }
-
-  if (closeHistory) {
-    closeHistory.addEventListener('click', () => {
-      battlefieldLayout.classList.remove('show-history');
     });
   }
 };
@@ -4130,7 +3995,6 @@ if (typeof window !== 'undefined') {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       setupMobileNavigation();
-      setupLogCardLinks();
       setupSurrenderButton();
       setupResyncButton();
       setupClickAwayHandler();
@@ -4139,7 +4003,6 @@ if (typeof window !== 'undefined') {
     });
   } else {
     setupMobileNavigation();
-    setupLogCardLinks();
     setupSurrenderButton();
     setupResyncButton();
     setupClickAwayHandler();
@@ -4224,6 +4087,7 @@ export const renderGame = (state, callbacks = {}) => {
       catalogOrder: [[], []],
     };
     state.log = [];
+    state.historyEvents = resetHistoryStream((state.historyEvents?.matchGeneration ?? 0) + 1);
     state.combat = { declaredAttacks: [] };
     state.victoryProcessed = false;
 
@@ -4308,6 +4172,7 @@ export const renderGame = (state, callbacks = {}) => {
       catalogOrder: [[], []],
     };
     state.log = [];
+    state.historyEvents = resetHistoryStream((state.historyEvents?.matchGeneration ?? 0) + 1);
     state.combat = { declaredAttacks: [] };
     state.victoryProcessed = false;
 
@@ -4398,6 +4263,7 @@ export const renderGame = (state, callbacks = {}) => {
       catalogOrder: [[], []],
     };
     state.log = [];
+    state.historyEvents = resetHistoryStream((state.historyEvents?.matchGeneration ?? 0) + 1);
     state.combat = { declaredAttacks: [] };
     state.victoryProcessed = false;
     state.rematch = null;
@@ -4486,6 +4352,7 @@ export const renderGame = (state, callbacks = {}) => {
       catalogOrder: [[], []],
     };
     state.log = [];
+    state.historyEvents = resetHistoryStream((state.historyEvents?.matchGeneration ?? 0) + 1);
     state.combat = { declaredAttacks: [] };
     state.victoryProcessed = false;
     state.rematch = null;
@@ -4938,8 +4805,10 @@ export const renderGame = (state, callbacks = {}) => {
       endOfTurnPending ||
       (!isLocalTurn && isOnline)
   );
-  updatePlayerStats(state, 0, 'player1');
-  updatePlayerStats(state, 1, 'player2', callbacks.onUpdate);
+  // CP01 seat-synced strips: rival slot shows the actual opponent of the local
+  // viewpoint seat, own slot shows the local seat. Never hardcoded to player 1.
+  updatePlayerStats(state, opponentIndex, 'player2', callbacks.onUpdate);
+  updatePlayerStats(state, activeIndex, 'player1');
   // Update pile counts from viewing player's perspective
   updatePlayerStats(state, activeIndex, 'active');
   // Pre-cache spell effect targets BEFORE rendering (needed for multiplayer sync)
@@ -5008,7 +4877,7 @@ export const renderGame = (state, callbacks = {}) => {
     callbacks.onNextPhase?.();
   };
   updateActionBar(handleNextPhase, state);
-  appendLog(state);
+  renderHistoryPanel(state);
   if (shouldProcessQueues) {
     processEndOfTurnQueue(state, callbacks.onUpdate, callbacks.onEndTurn);
   }

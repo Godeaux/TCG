@@ -1,0 +1,50 @@
+[
+  {
+    "width": 393,
+    "event": "attack",
+    "height": 378,
+    "content": 378,
+    "broken": 0,
+    "text": "Turn 3 · Attack\nBEFORE\nTiger Shark\n⚔ 4\n♥ 5\n⚔\nElectric Eel\n⚔ 2\n2\n♥ 3\nAFTER\nTiger Shark\n⚔ 4\n♥ 3(-2)\n⚔\nElectric Eel\n☠\n⚔ 2\n2\n♥ 0(-3)\n\nTiger Shark attacked Electric Eel.\n\nTiger Shark lost 2 HP. Electric Eel lost 3 HP and was slain."
+  },
+  {
+    "width": 393,
+    "event": "consume",
+    "height": 378,
+    "content": 378,
+    "broken": 0,
+    "text": "Turn 3 · Consume\nBEFORE\nTiger Shark\n⚔ 2\n♥ 2\n←\nCannibal Fish\n⚔ 1\n2\n♥ 1\nAFTER\nTiger Shark\n⚔ 4(+2)\n♥ 4(+2)\n←\nCannibal Fish\nCONSUMED → CARRION\n⚔ 1\n2\n♥ 1\n\nTiger Shark consumed Cannibal Fish.\n\nTiger Shark gained 2 ATK and gained 2 HP. Cannibal Fish moved to Carrion."
+  },
+  {
+    "width": 393,
+    "event": "summon",
+    "height": 378,
+    "content": 378,
+    "broken": 0,
+    "text": "Turn 3 · Summon\nBEFORE\nMan O’ War Legion\n⚔ 1\n1\n♥ 1\n→\n◇\nEmpty slot\nAFTER\nMan O’ War Legion\n⚔ 1\n1\n♥ 1\n→\nMan O’ War\nSUMMONED\n⚔ 1\n1\n♥ 1\n\nMan O’ War Legion summoned Man O’ War.\n\nMan O’ War entered the field."
+  },
+  {
+    "width": 375,
+    "event": "attack",
+    "height": 358,
+    "content": 358,
+    "broken": 0,
+    "text": "Turn 3 · Attack\nBEFORE\nTiger Shark\n⚔ 4\n♥ 5\n⚔\nElectric Eel\n⚔ 2\n2\n♥ 3\nAFTER\nTiger Shark\n⚔ 4\n♥ 3(-2)\n⚔\nElectric Eel\n☠\n⚔ 2\n2\n♥ 0(-3)\n\nTiger Shark attacked Electric Eel.\n\nTiger Shark lost 2 HP. Electric Eel lost 3 HP and was slain."
+  },
+  {
+    "width": 375,
+    "event": "consume",
+    "height": 358,
+    "content": 358,
+    "broken": 0,
+    "text": "Turn 3 · Consume\nBEFORE\nTiger Shark\n⚔ 2\n♥ 2\n←\nCannibal Fish\n⚔ 1\n2\n♥ 1\nAFTER\nTiger Shark\n⚔ 4(+2)\n♥ 4(+2)\n←\nCannibal Fish\nCONSUMED → CARRION\n⚔ 1\n2\n♥ 1\n\nTiger Shark consumed Cannibal Fish.\n\nTiger Shark gained 2 ATK and gained 2 HP. Cannibal Fish moved to Carrion."
+  },
+  {
+    "width": 375,
+    "event": "summon",
+    "height": 358,
+    "content": 358,
+    "broken": 0,
+    "text": "Turn 3 · Summon\nBEFORE\nMan O’ War Legion\n⚔ 1\n1\n♥ 1\n→\n◇\nEmpty slot\nAFTER\nMan O’ War Legion\n⚔ 1\n1\n♥ 1\n→\nMan O’ War\nSUMMONED\n⚔ 1\n1\n♥ 1\n\nMan O’ War Legion summoned Man O’ War.\n\nMan O’ War entered the field."
+  }
+]
