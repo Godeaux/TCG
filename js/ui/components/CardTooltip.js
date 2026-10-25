@@ -270,7 +270,7 @@ const setupGlobalDismissHandler = () => {
       // Check if touch/click is inside the scrollable info boxes area
       // If so, allow the interaction (for scrolling) - don't dismiss
       if (infoBoxesElement && e.target) {
-        const isInsideInfoBoxes = tooltipElement.contains(e.target);
+        const isInsideInfoBoxes = infoBoxesElement.contains(e.target);
         if (isInsideInfoBoxes) {
           // Allow scrolling - don't dismiss
           return;

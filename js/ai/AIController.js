@@ -44,6 +44,7 @@ import {
 } from './aiVisuals.js';
 import { resolveCardEffect } from '../cards/index.js';
 import { resolveEffectResult } from '../game/effects.js';
+import { GameController } from '../game/controller.js';
 import { createReactionWindow, TRIGGER_EVENTS } from '../game/triggers/index.js';
 import { isAIvsAIMode, markCreatureAttacked, hasCreatureAttacked } from '../state/selectors.js';
 
@@ -819,48 +820,36 @@ export class AIController {
    * Actually modifies game state to play the card
    */
   async executeCardPlay(state, card, slotIndex, callbacks) {
-    const player = this.getAIPlayer(state);
-    const opponent = this.getOpponentPlayer(state);
-    const playerIndex = this.playerIndex;
-    const opponentIndex = 1 - this.playerIndex;
-    const isFree = card.type === 'Free Spell' || card.type === 'Trap' || isFreePlay(card);
-
-    // Bug detection removed (simulation system stripped)
-
-    // Handle spells
+    // Spells share the player controller's legality checks, public history and
+    // reveal queue. Only the selection policy differs for the AI.
     if (card.type === 'Spell' || card.type === 'Free Spell') {
-      logMessage(state, `${player.name} casts ${card.name}.`);
-
-      // Execute spell effect
-      const result = resolveCardEffect(card, 'effect', {
-        log: (message) => logMessage(state, message),
-        player,
-        opponent,
+      if (state.activePlayerIndex !== this.playerIndex) {
+        return { success: false, error: 'Not this AI player’s turn' };
+      }
+      const controller = new GameController(
         state,
-        playerIndex,
-        opponentIndex,
-      });
-
-      // Handle selection results (AI auto-selects targets)
-      if (result) {
-        this.handleEffectResult(result, state);
-      }
-
-      // Remove from hand and exile
-      player.hand = player.hand.filter((c) => c.instanceId !== card.instanceId);
-      player.exile.push(card);
-
-      if (!isFree) {
-        state.cardPlayedThisTurn = true;
-      }
-
-      cleanupDestroyed(state);
-
-      // Bug detection: check after action
-      // Bug detection removed (simulation system stripped)
-
-      callbacks.onPlayCard?.(card, slotIndex);
-      return { success: true };
+        {},
+        {
+          onSelectionNeeded: ({ selectTarget, selectOption, onSelect, onCancel }) => {
+            if (selectTarget) {
+              const candidates =
+                typeof selectTarget.candidates === 'function'
+                  ? selectTarget.candidates()
+                  : selectTarget.candidates;
+              const choice = this.selectBestTarget(candidates, state);
+              if (choice) onSelect(choice.value !== undefined ? choice.value : choice);
+              else onCancel();
+            } else if (selectOption) {
+              const choice = this.selectBestOption(selectOption.options || [], state);
+              if (choice) onSelect(choice);
+              else onCancel();
+            }
+          },
+        }
+      );
+      const result = controller.execute({ type: 'PLAY_CARD', payload: { card, slotIndex } });
+      if (result.success) callbacks.onPlayCard?.(card, slotIndex);
+      return result;
     }
 
     // Handle traps (AI doesn't play traps, they trigger automatically)

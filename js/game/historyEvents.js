@@ -696,8 +696,15 @@ export const knownEntity = (state, card, fallbackOwner = state.activePlayerIndex
 export const beginPublicMutation = (
   state,
   cards,
-  { kind, cause = 'effect', actorIndex = state.activePlayerIndex, terminal = null } = {}
+  {
+    kind,
+    cause = 'effect',
+    actorIndex = state.activePlayerIndex,
+    terminal = null,
+    source = null,
+  } = {}
 ) => {
+  const sourceEntity = source ? knownEntity(state, source, actorIndex) : null;
   const unique = [...new Set(cards.filter(Boolean))];
   const before = unique.map((card) =>
     state.players.includes(card)
@@ -741,10 +748,10 @@ export const beginPublicMutation = (
       kind,
       cause,
       actorIndex,
-      sourceIds: [],
+      sourceIds: sourceEntity ? [sourceEntity.identity] : [],
       targetIds: before.map((e) => e.identity),
-      before,
-      after,
+      before: sourceEntity ? [sourceEntity, ...before] : before,
+      after: sourceEntity ? [sourceEntity, ...after] : after,
       facts,
     });
   };

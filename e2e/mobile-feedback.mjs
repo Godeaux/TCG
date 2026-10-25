@@ -152,6 +152,18 @@ try {
     )
   );
   await p.screenshot({ path: out + '/tap-silver-king.png' });
+  await p.locator('#tooltip-info-boxes').tap();
+  check(
+    'tapping explanation area keeps inspector open',
+    await p.locator('#card-hover-tooltip').evaluate((el) => el.classList.contains('visible'))
+  );
+  await p.locator('#tooltip-card-preview .card').tap();
+  await p.waitForTimeout(250);
+  check(
+    'tapping expanded card dismisses inspector',
+    await p.locator('#card-hover-tooltip').evaluate((el) => !el.classList.contains('visible'))
+  );
+
   await touch('touchStart', 5, 70);
   await touch('touchEnd');
   await fixture();
@@ -261,6 +273,44 @@ try {
     .evaluate((e) => ({ top: e.scrollTop, height: e.clientHeight, total: e.scrollHeight }));
   check('native history upper list scrolls', scroll.top > 30, scroll);
   await p.screenshot({ path: out + '/history-scrolled.png' });
+
+  await p.locator('#close-history').click();
+  await fixture();
+  await p.evaluate(async () => {
+    const s = window.feedbackState;
+    s.activePlayerIndex = 1;
+    const { createCardInstance } = await import('/js/cardTypes.js');
+    const { getCardDefinitionById } = await import('/js/cards/index.js');
+    const spell = createCardInstance(getCardDefinitionById('fish-spell-flood'), s.turn);
+    s.players[1].hand = [spell];
+    const { AIController } = await import('/js/ai/AIController.js');
+    await new AIController({ playerIndex: 1 }).executeCardPlay(s, spell, null, {});
+    (await import('/js/ui.js')).renderGame(s);
+  });
+  await p.locator('.spell-card-reveal .spell-reveal-card-wrapper.flipped').waitFor();
+  check(
+    'AI Flood visibly flips with readable name and effect',
+    await p
+      .locator('.spell-card-reveal')
+      .evaluate(
+        (el) =>
+          el.textContent.includes('Flood') &&
+          el.querySelector('.spell-reveal-effect').textContent.length > 0
+      )
+  );
+  await p.waitForTimeout(600);
+  await p.screenshot({ path: out + '/ai-flood-reveal.png' });
+  await p.locator('.spell-card-reveal').waitFor({ state: 'detached' });
+  await p.locator('#field-history-btn').click();
+  await p.getByRole('button', { name: /Platypus was destroyed by Flood/ }).click();
+  check(
+    'destruction history visibly names responsible spell',
+    await p
+      .locator('.history-detail')
+      .evaluate((el) => el.textContent.includes('Platypus was destroyed by Flood'))
+  );
+  await p.screenshot({ path: out + '/ai-flood-history.png' });
+
   fs.writeFileSync(out + '/results.json', JSON.stringify({ results, failures }, null, 2));
   console.log(JSON.stringify({ results, failures }));
   assert.deepEqual(failures, []);
