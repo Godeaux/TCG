@@ -485,9 +485,32 @@ export const nextHistoryId = (state) => {
  *   sourceIds, targetIds, before, after, facts, turn?, phase?}
  * @returns {{event: Object|null, problem: string|null}}
  */
+// Scoped presentation context, never serialized into rules state or checksums.
+// IDs are allocated lazily by the first real event, so a prompt/refusal burns none.
+const resolutionScopes = new WeakMap();
+export const withHistoryResolution = (state, run, scope = null) => {
+  const previous = resolutionScopes.get(state);
+  resolutionScopes.set(state, scope || previous || { ref: null });
+  try {
+    return run();
+  } finally {
+    if (previous) resolutionScopes.set(state, previous);
+    else resolutionScopes.delete(state);
+  }
+};
+export const currentHistoryResolution = (state) => resolutionScopes.get(state)?.ref ?? null;
+export const bindHistoryResolution = (state, callback) => {
+  if (typeof callback !== 'function') return callback;
+  const scope = resolutionScopes.get(state);
+  return (...args) => withHistoryResolution(state, () => callback(...args), scope);
+};
+
 export const recordHistoryEvent = (state, spec) => {
   if (!state || typeof state !== 'object') return { event: null, problem: 'no state' };
   const { id } = nextHistoryId(state);
+  const scope = resolutionScopes.get(state);
+  const actionRef = spec.actionRef ?? scope?.ref ?? id;
+  const previousChild = getHistoryStream(state).events.findLast((e) => e.actionRef === actionRef);
   const event = {
     version: HISTORY_EVENT_VERSION,
     id,
@@ -496,8 +519,12 @@ export const recordHistoryEvent = (state, spec) => {
     actorIndex: Number.isInteger(spec.actorIndex) ? spec.actorIndex : null,
     kind: spec.kind,
     cause: typeof spec.cause === 'string' ? spec.cause : 'effect',
-    actionRef: typeof spec.actionRef === 'string' ? spec.actionRef : id,
-    ordinal: Number.isInteger(spec.ordinal) ? spec.ordinal : 0,
+    actionRef,
+    ordinal: Number.isInteger(spec.ordinal)
+      ? spec.ordinal
+      : previousChild
+        ? previousChild.ordinal + 1
+        : 0,
     sourceIds: [...(spec.sourceIds || [])],
     targetIds: [...(spec.targetIds || [])],
     before: [...(spec.before || [])],
@@ -510,6 +537,7 @@ export const recordHistoryEvent = (state, spec) => {
     console.warn(`[history] rejected event ${id}: ${problem}`);
     return { event: null, problem };
   }
+  if (scope && !scope.ref) scope.ref = actionRef;
   const frozen = freezeEvent(event);
   state.historyEvents = appendHistoryEvent(state, frozen);
   return { event: frozen, problem: null };

@@ -1,0 +1,234 @@
+{
+  "results": [
+    {
+      "twoDigitStats": [
+        {
+          "scroll": 135,
+          "width": 135
+        },
+        {
+          "scroll": 135,
+          "width": 135
+        },
+        {
+          "scroll": 135,
+          "width": 135
+        },
+        {
+          "scroll": 135,
+          "width": 135
+        }
+      ]
+    },
+    {
+      "targeting": "native play, History refused without stealing choice, target resolved"
+    },
+    {
+      "viewport": [
+        600,
+        600
+      ],
+      "geometry": {
+        "width": 600,
+        "scroll": 600,
+        "controls": [
+          {
+            "id": "field-history-btn",
+            "x": 9,
+            "y": -0.5,
+            "w": 82.21875,
+            "h": 44,
+            "visible": true
+          },
+          {
+            "id": "field-turn-btn",
+            "x": 471.90625,
+            "y": 314,
+            "w": 119.09375,
+            "h": 30,
+            "visible": true
+          },
+          {
+            "id": "carrion-pile-container",
+            "x": 202.265625,
+            "y": 557.125,
+            "w": 87.140625,
+            "h": 37.75,
+            "visible": true
+          },
+          {
+            "id": "exile-pile-container",
+            "x": 293.40625,
+            "y": 557.125,
+            "w": 70.4375,
+            "h": 37.75,
+            "visible": true
+          }
+        ]
+      },
+      "hand": {
+        "x": 14.587811470031738,
+        "y": 388.7976379394531,
+        "width": 192.3851194381714,
+        "height": 189.45797729492188
+      }
+    },
+    {
+      "viewport": [
+        767,
+        600
+      ],
+      "geometry": {
+        "width": 767,
+        "scroll": 767,
+        "controls": [
+          {
+            "id": "field-history-btn",
+            "x": 578.71875,
+            "y": 1.5,
+            "w": 78.28125,
+            "h": 44,
+            "visible": true
+          },
+          {
+            "id": "field-turn-btn",
+            "x": 370.171875,
+            "y": 94.328125,
+            "w": 119.09375,
+            "h": 30,
+            "visible": true
+          },
+          {
+            "id": "carrion-pile-container",
+            "x": 281.203125,
+            "y": 331.796875,
+            "w": 95.578125,
+            "h": 37.75,
+            "visible": true
+          },
+          {
+            "id": "exile-pile-container",
+            "x": 380.78125,
+            "y": 331.796875,
+            "w": 77.125,
+            "h": 37.75,
+            "visible": true
+          }
+        ]
+      },
+      "hand": {
+        "x": 48.86075210571289,
+        "y": 392.5591735839844,
+        "width": 202.65253829956055,
+        "height": 194.09469604492188
+      }
+    },
+    {
+      "viewport": [
+        768,
+        600
+      ],
+      "geometry": {
+        "width": 768,
+        "scroll": 768,
+        "controls": [
+          {
+            "id": "field-history-btn",
+            "x": 324.71875,
+            "y": 1.5,
+            "w": 78.28125,
+            "h": 44,
+            "visible": true
+          },
+          {
+            "id": "field-turn-btn",
+            "x": 370.671875,
+            "y": 94.328125,
+            "w": 119.09375,
+            "h": 30,
+            "visible": true
+          },
+          {
+            "id": "carrion-pile-container",
+            "x": 427.40625,
+            "y": 0,
+            "w": 95.578125,
+            "h": 48,
+            "visible": true
+          },
+          {
+            "id": "exile-pile-container",
+            "x": 526.984375,
+            "y": 0,
+            "w": 77.125,
+            "h": 48,
+            "visible": true
+          }
+        ]
+      },
+      "hand": {
+        "x": 48.86075210571289,
+        "y": 392.5591735839844,
+        "width": 202.65253829956055,
+        "height": 194.09469604492188
+      }
+    },
+    {
+      "viewport": [
+        900,
+        600
+      ],
+      "geometry": {
+        "width": 900,
+        "scroll": 900,
+        "controls": [
+          {
+            "id": "field-history-btn",
+            "x": 456.71875,
+            "y": 1.5,
+            "w": 78.28125,
+            "h": 44,
+            "visible": true
+          },
+          {
+            "id": "field-turn-btn",
+            "x": 436.671875,
+            "y": 94.328125,
+            "w": 119.09375,
+            "h": 30,
+            "visible": true
+          },
+          {
+            "id": "carrion-pile-container",
+            "x": 559.40625,
+            "y": 0,
+            "w": 95.578125,
+            "h": 48,
+            "visible": true
+          },
+          {
+            "id": "exile-pile-container",
+            "x": 658.984375,
+            "y": 0,
+            "w": 77.125,
+            "h": 48,
+            "visible": true
+          }
+        ]
+      },
+      "hand": {
+        "x": 48.86075210571289,
+        "y": 392.5591735839844,
+        "width": 202.65253829956055,
+        "height": 194.09469604492188
+      }
+    },
+    {
+      "escaping": "literal text",
+      "retention": 2000,
+      "eviction": "explicit notice and valid selection",
+      "freshMatch": "cleared"
+    }
+  ],
+  "errors": []
+}

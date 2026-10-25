@@ -118,7 +118,8 @@ const tile = (entity, before, event, isAfter) => {
 };
 
 let panel, list, detail, layout, backdrop, trigger, closeButton;
-let currentStream,
+let currentState,
+  currentStream,
   selectedId = null,
   pinnedId = null,
   lastEvent = null;
@@ -155,6 +156,14 @@ const showDetail = (id) => {
     ]) {
       detail.append(el('h4', 'history-time-label', label));
       const grid = el('div', 'history-duel');
+      if (
+        event.after.some(
+          (e) =>
+            e.kind === 'card' &&
+            [e.currentAtk, e.currentHp, e.nutrition].some((n) => Math.abs(n) >= 10)
+        )
+      )
+        grid.classList.add('history-dense');
       grid.style.setProperty('--entities', group.length);
       if (group.length > 2) {
         grid.classList.add('history-multi');
@@ -303,13 +312,16 @@ export const renderHistoryPanel = (state) => {
   currentStream = stream;
   if (
     !prior ||
+    state !== currentState ||
     stream.sequence < prior.sequence ||
     stream.matchGeneration !== prior.matchGeneration
   ) {
     selectedId = null;
     pinnedId = null;
     lastEvent = null;
+    list.scrollTop = 0;
   }
+  currentState = state;
   const following = list.scrollTop < 30 && !pinnedId;
   const oldHeight = list.scrollHeight,
     oldTop = list.scrollTop;
@@ -366,7 +378,17 @@ export const renderHistoryPanel = (state) => {
     }
   }
   list.scrollTop = following ? 0 : oldTop + list.scrollHeight - oldHeight;
-  if (pinnedId && !ids.has(pinnedId)) pinnedId = null;
+  const evicted = pinnedId && !ids.has(pinnedId);
+  if (evicted) pinnedId = null;
   if (following || !ids.has(selectedId)) showDetail(stream.events.at(-1).id);
   else showDetail(selectedId);
+  if (evicted) {
+    const notice = el(
+      'p',
+      'history-selection-notice',
+      'The selected event is no longer retained. Showing the latest event.'
+    );
+    notice.setAttribute('role', 'status');
+    detail.prepend(notice);
+  }
 };

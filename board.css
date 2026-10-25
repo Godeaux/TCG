@@ -1053,3 +1053,9 @@
   top: 30px;
   color: #edd897;
 }
+
+/* Two-digit values/deltas wrap as complete stat groups, never clip or shrink type. */
+.history-dense .history-tile { height:124px; }
+.history-dense .history-tile .history-portrait { height:calc(100% - 43px); }
+.history-dense .history-stats { height:43px; flex-wrap:wrap; column-gap:8px; align-content:center; }
+.history-dense .history-terminal { bottom:43px; }

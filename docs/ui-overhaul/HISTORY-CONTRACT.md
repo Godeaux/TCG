@@ -9,8 +9,15 @@ rules never consult the stream. `computeStateChecksum` remains unchanged.
 Events use `m<generation>:e<sequence>`, increasing only when an event is recorded.
 No RNG, timestamp or card-ID allocation. Each fresh game starts an empty stream;
 identity is scoped to that game, not globally unique. Retain the last 2000 events.
-`actionRef` defaults to the event ID; `ordinal` defaults to zero. Capture sites may
-explicitly correlate child resolutions; never use local network intent timestamps.
+A controller action lazily takes its first recorded event ID as `actionRef`;
+subsequent nested events share it with increasing `ordinal`. Independent strikes
+remain independent actions. Bound selection callbacks preserve that scope; pending
+play-trap snapshots persist `historyActionRef` and public consumed-card context so
+refresh resumes the real onPlay on the live field instance, exactly once. A pending
+End decision records nothing until resolved. Refusals/prompts allocate no group ID.
+Standalone effect captures still default to their own event ID. No correlation uses
+local network intent timestamps. All four UI restart paths clear history and advance
+matchGeneration; recovery adopts the authoritative generation.
 Pending prompts are not events. Resolved partial effects are recorded immediately,
 so the existing pending-operation snapshot preserves them without replay.
 

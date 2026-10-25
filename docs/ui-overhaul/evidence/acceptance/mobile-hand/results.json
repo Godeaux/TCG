@@ -697,6 +697,7 @@
   ],
   "holdReleaseUnchanged": true,
   "errors": [
+    "phone REQFAIL http://127.0.0.1:8139/audio/impact-heavy.wav",
     "phone CONSOLE Failed to load resource: the server responded with a status of 404 (File not found)",
     "phone HTTP 404 http://127.0.0.1:8139/images/cards/token-lancetfish.jpg",
     "phone CONSOLE Failed to load resource: the server responded with a status of 404 (File not found)",

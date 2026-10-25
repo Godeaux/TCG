@@ -1,0 +1,401 @@
+{
+  "results": [
+    {
+      "mode": "mouse",
+      "seat": 0,
+      "kind": "legal",
+      "calls": 1,
+      "hp": [
+        10,
+        7
+      ],
+      "events": 1
+    },
+    {
+      "mode": "mouse",
+      "seat": 0,
+      "kind": "exhausted",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "mouse",
+      "seat": 0,
+      "kind": "Passive",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "mouse",
+      "seat": 0,
+      "kind": "Harmless",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "mouse",
+      "seat": 0,
+      "kind": "Lure",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "mouse",
+      "seat": 0,
+      "kind": "own-face",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "mouse",
+      "seat": 0,
+      "kind": "control",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "mouse",
+      "seat": 0,
+      "kind": "outside-strip",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "mouse",
+      "seat": 0,
+      "kind": "empty-slot",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "mouse",
+      "seat": 1,
+      "kind": "legal",
+      "calls": 1,
+      "hp": [
+        7,
+        10
+      ],
+      "events": 1
+    },
+    {
+      "mode": "mouse",
+      "seat": 1,
+      "kind": "exhausted",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "mouse",
+      "seat": 1,
+      "kind": "Passive",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "mouse",
+      "seat": 1,
+      "kind": "Harmless",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "mouse",
+      "seat": 1,
+      "kind": "Lure",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "mouse",
+      "seat": 1,
+      "kind": "own-face",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "mouse",
+      "seat": 1,
+      "kind": "control",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "mouse",
+      "seat": 1,
+      "kind": "outside-strip",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "mouse",
+      "seat": 1,
+      "kind": "empty-slot",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "touch",
+      "seat": 0,
+      "kind": "legal",
+      "calls": 1,
+      "hp": [
+        10,
+        7
+      ],
+      "events": 1
+    },
+    {
+      "mode": "touch",
+      "seat": 0,
+      "kind": "exhausted",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "touch",
+      "seat": 0,
+      "kind": "Passive",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "touch",
+      "seat": 0,
+      "kind": "Harmless",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "touch",
+      "seat": 0,
+      "kind": "Lure",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "touch",
+      "seat": 0,
+      "kind": "own-face",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "touch",
+      "seat": 0,
+      "kind": "control",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "touch",
+      "seat": 0,
+      "kind": "outside-strip",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "touch",
+      "seat": 0,
+      "kind": "empty-slot",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "touch",
+      "seat": 1,
+      "kind": "legal",
+      "calls": 1,
+      "hp": [
+        7,
+        10
+      ],
+      "events": 1
+    },
+    {
+      "mode": "touch",
+      "seat": 1,
+      "kind": "exhausted",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "touch",
+      "seat": 1,
+      "kind": "Passive",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "touch",
+      "seat": 1,
+      "kind": "Harmless",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "touch",
+      "seat": 1,
+      "kind": "Lure",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "touch",
+      "seat": 1,
+      "kind": "own-face",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "touch",
+      "seat": 1,
+      "kind": "control",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "touch",
+      "seat": 1,
+      "kind": "outside-strip",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    },
+    {
+      "mode": "touch",
+      "seat": 1,
+      "kind": "empty-slot",
+      "calls": 0,
+      "hp": [
+        10,
+        10
+      ],
+      "events": 0
+    }
+  ],
+  "errors": []
+}

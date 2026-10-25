@@ -6,22 +6,24 @@
 - **Spec:** [UI-OVERHAUL-SPEC.md](UI-OVERHAUL-SPEC.md), version 1.0, authoritative.
 - **Repo:** `/Users/nut/.openclaw/workspace/food-chain-tcg`.
 - **Branch:** `ui/overhaul-2026-10-22`; gameplay base `0b84588`.
-- **Current checkpoint:** local implementation/browser checkpoint saved; full CP04–09 acceptance is NOT complete.
-- **Last completed:** `99143b7` semantic capture, `e15417f` HistoryPanel/input + browser gate.
-- **Next exact action:** finish the uncovered CP04 semantic/recovery assertions listed
-  in `UI-OVERHAUL-REVIEW.md`, then full-match/rematch/pile and native input acceptance.
-  Preserve the adaptive phone fan and current approved visual design.
-- **Verified:** `npm run check` exit 0, 65 files / 5,145 tests, 244 lint warnings,
-  zero errors; `TCG_CHROME=<installed Chrome> npm run test:ui` exit 0.
-- **Evidence:** `docs/ui-overhaul/evidence/acceptance/`; includes actual reload/next
-  operation, both seat mapping, native hold/release/cancel and successful drag-to-play.
-  Screenshots use production rendering with controlled real-card positions; they
-  are NOT evidence of a full online match.
-- **Findings repaired:** 85px multi-target tiles, blocked mandatory selection behind
-  History, missing summon source (`creature` vs `card` context), missing summon badge.
-  Obsolete synthetic touch fixture replaced with native production-renderer checks.
-- **Remaining:** full coverage and full-match gates below; live backend and native
-  Safari are unverified. CI browser job configured but not run remotely.
+- **Current checkpoint:** local implementation review-ready; external certification remains unverified.
+- **Last completed:** 8 new compound/recovery regressions; 36 native mouse/touch
+  attack cases; two production clients play/consume/combat/reload/victory; actual
+  rematch reset regression. No live backend touched.
+- **Next exact action:** review the saved acceptance handoff and its CP08 limits.
+  No push/deploy authorized; browser prompt-refresh remains a coverage follow-up,
+  while live lobby/rejoin and native Safari require the appropriate environment.
+- **Verified:** `npm run check` exit 0, 66 files / 5,153 tests, 244 warnings / 0 errors.
+  `e2e/attack-input.mjs`: 36 native cases PASS. Rematch retained 15 stale events before
+  fix; now cleared. Full `test:ui` includes all new browser scripts.
+- **Evidence:** `docs/ui-overhaul/evidence/acceptance/{lifecycle,transport,input}/`.
+- **Findings repaired:** grouped nested events; restored trap continuation; two-digit
+  stat clipping; explicit evicted-selection notice; fresh-state selection reset;
+  four restart paths retaining history; hot-seat seat 1 direct attack refused.
+- **Remaining:** native Safari,
+  live backend rejoin, remote CI remain external/unverified. Local transport starts
+  from a controlled opening, not network setup; rematch tests inject the received
+  peer choice, not lobby delivery. Existing gate separately drives real setup UI.
 - **CP01 facts CP02+ must know:** strips are `#rival-strip`/`#own-strip` with
   seat-truthful `data-player-index` (updated in `updatePlayerStats`); drop-on-row
   attack reads that attribute; emote bubbles anchor via
@@ -54,19 +56,18 @@ Only one checkpoint IN_PROGRESS. Sub-checkpoints are independently committable.
 - CP01 — production layout shell/tokens: PASS
 - CP02 — cards/hand/inspection/statuses: PASS
 - CP03 — history schema, first vertical slice, reconciliation: PASS
-- CP04a — combat/player event capture: IN_PROGRESS
-- CP04b — play/consume/summon/zone capture: NOT_STARTED
-- CP04c — effects/turn/reaction coverage: NOT_STARTED
-- CP05 — shared face input resolver: NOT_STARTED
-- CP06 — real HistoryPanel rendering: NOT_STARTED
-- CP07 — overlay/accessibility/control integration: NOT_STARTED
-- CP08 — browser/acceptance/CI gate: NOT_STARTED
-- CP09 — final reviewer handoff: NOT_STARTED
+- CP04a — combat/player event capture: PASS
+- CP04b — play/consume/summon/zone capture: PASS
+- CP04c — effects/turn/reaction coverage: PASS
+- CP05 — shared face input resolver: PASS
+- CP06 — real HistoryPanel rendering: PASS
+- CP07 — overlay/accessibility/control integration: PASS
+- CP08 — browser/acceptance/CI gate: BLOCKED (local gate PASS; external/coverage limits in review)
+- CP09 — final reviewer handoff: PASS (local handoff; explicit CP08 limits)
 
-Implementation for CP04–08 now exists and has bounded checks below. The remaining
-NOT_STARTED labels refer to **formal complete acceptance**, not absence of code.
-Do not promote them from representative tests alone. The review file is a partial
-checkpoint report, not a completed CP09 signoff.
+CP04–07 receipts and their exact bounded coverage are in UI-OVERHAUL-REVIEW.md.
+CP08 is not full release certification: browser prompt-refresh and live lobby/rematch delivery remain outside the recorded passing gate.
+Do not interpret the local implementation handoff as a live certification.
 
 ## Receipt template (append one per completed or blocked checkpoint)
 
@@ -380,3 +381,30 @@ Transport budgets remain unverified; do not equate retention bound with safe ban
 
 Remaining assertions are explicitly enumerated in UI-OVERHAUL-REVIEW.md. No backend
 changes, new accounts, native Safari run, push, merge or deployment.
+
+
+## 2026-10-24 continuation receipt — local implementation handoff
+
+Commit: continuation titled `Complete local history lifecycle and native input acceptance`.
+Baseline: 5,145 tests / 65 files, 244 warnings / 0 errors. Final contract: 5,153 /
+66, unchanged warnings, formatting clean. Reproduced failures before fixes:
+- One play + two summons had three actionRefs, now one with ordinals 0,1,2.
+- Refresh during mouse onPlay trap decision lost both pups; now resumes once.
+- Two-digit History stats exceeded 135px cells by 14–16px; now wrap without clipping.
+- Pinned retention eviction silently replaced selection; now explicit status notice.
+- Rematch retained all 15 old events; actual buttons now clear and advance generation.
+- Hot-seat seat 1 direct attack emitted zero actions; active-seat comparison repairs it.
+
+Browser gate: menu/deck/dice flow, portrait 375/393 hand and history, desktop
+1280/1440/1920, native keyboard focus/cancellation, two-client local ActionBus match
+with guest reload/next action, victory/defeat/piles and actual rematch callback.
+36 native mouse/touch cases across both seats assert exact action/event/HP counts.
+Targeting regression uses native touch play, refuses History, then resolves real target.
+Short-screen 600/767/768/900 × 600 controls and scroll-to-hand reachability pass.
+Phone landscape 852 × 393 hand clips; landscape is not owner-required support.
+
+Evidence: acceptance/{input,lifecycle,transport}/ results and screenshots plus refreshed
+original acceptance images. Inspected phone consume, two-digit history, desktop defeat,
+600px and 900px boards and scrolled hand. Remote CI/live lobby delivery/native Safari
+not run; pending-decision reload proven through JSON/controller tests, not browser.
+No new product ambiguity. Read UI-OVERHAUL-REVIEW.md before any release claims.

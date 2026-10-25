@@ -1,4 +1,7 @@
 import {
+  withHistoryResolution,
+  bindHistoryResolution,
+  currentHistoryResolution,
   recordArrival,
   beginPublicMutation,
   fieldEntity,
@@ -86,7 +89,12 @@ export class GameController {
     this.uiState = uiState;
     this.onStateChange = options.onStateChange || (() => {});
     this.onBroadcast = options.onBroadcast || (() => {});
-    this.onSelectionNeeded = options.onSelectionNeeded || (() => {});
+    this.onSelectionNeeded = (selection) =>
+      (options.onSelectionNeeded || (() => {}))({
+        ...selection,
+        onSelect: bindHistoryResolution(this.state, selection.onSelect),
+        onCancel: bindHistoryResolution(this.state, selection.onCancel),
+      });
     this.onSelectionComplete = options.onSelectionComplete || (() => {});
   }
 
@@ -102,6 +110,15 @@ export class GameController {
    * @returns {Object} Result object { success, error?, data? }
    */
   execute(action) {
+    const ref =
+      action?.type === ActionTypes.RESOLVE_PLAY_TRAP
+        ? this.state.pendingReaction?.historyActionRef
+        : null;
+    const scope = typeof ref === 'string' && /^m\d+:e\d+$/.test(ref) ? { ref } : null;
+    return withHistoryResolution(this.state, () => this._execute(action), scope);
+  }
+
+  _execute(action) {
     if (!action || !action.type) {
       return { success: false, error: 'Invalid action' };
     }
@@ -615,10 +632,11 @@ export class GameController {
       // The UI renders the reaction overlay, defender dispatches RESOLVE_PLAY_TRAP.
       this.state.pendingReaction = {
         event: TRIGGER_EVENTS.CARD_PLAYED,
+        historyActionRef: currentHistoryResolution(this.state),
         reactingPlayerIndex,
         triggeringPlayerIndex: playerIndex,
         reactions,
-        eventContext: { card: creatureInstance },
+        eventContext: { card: creatureInstance, consumed: allConsumed },
         timerStart: Date.now(),
       };
 
@@ -737,6 +755,20 @@ export class GameController {
 
     const { reactingPlayerIndex, triggeringPlayerIndex, reactions, eventContext, event } = pending;
     const reactingPlayer = this.state.players[reactingPlayerIndex];
+
+    // A refreshed controller has no local continuation closure. Restore only the
+    // declared public play, using the live field instance (never a transport clone).
+    if (!this._pendingPostTrap && event === TRIGGER_EVENTS.CARD_PLAYED) {
+      const creatureInstance = this.state.players[triggeringPlayerIndex]?.field.find(
+        (card) => card?.instanceId === eventContext?.card?.instanceId
+      );
+      if (creatureInstance)
+        this._pendingPostTrap = {
+          creatureInstance,
+          allConsumed: Array.isArray(eventContext?.consumed) ? eventContext.consumed : [],
+          playerIndex: triggeringPlayerIndex,
+        };
+    }
 
     // Clear pending reaction
     this.state.pendingReaction = null;

@@ -592,8 +592,7 @@ const handlePlayerDrop = (card, playerBadge) => {
   const isCardOnOurField = activePlayer.field.includes(card);
 
   // Check if target is the opponent (we want to attack the opponent, not ourselves)
-  const localIndex = getLocalPlayerIndex(latestState);
-  const isTargetOpponent = playerIndex !== localIndex;
+  const isTargetOpponent = playerIndex !== latestState.activePlayerIndex;
 
   const isCreature = card.type === 'Predator' || card.type === 'Prey';
 

@@ -1,3 +1,4 @@
+import { resetHistoryStream } from './game/historyEvents.js';
 import { resolveDropTarget } from './ui/input/targetResolver.js';
 import { renderHistoryPanel, toggleHistoryPanel } from './ui/components/HistoryPanel.js';
 import {
@@ -4086,6 +4087,7 @@ export const renderGame = (state, callbacks = {}) => {
       catalogOrder: [[], []],
     };
     state.log = [];
+    state.historyEvents = resetHistoryStream((state.historyEvents?.matchGeneration ?? 0) + 1);
     state.combat = { declaredAttacks: [] };
     state.victoryProcessed = false;
 
@@ -4170,6 +4172,7 @@ export const renderGame = (state, callbacks = {}) => {
       catalogOrder: [[], []],
     };
     state.log = [];
+    state.historyEvents = resetHistoryStream((state.historyEvents?.matchGeneration ?? 0) + 1);
     state.combat = { declaredAttacks: [] };
     state.victoryProcessed = false;
 
@@ -4260,6 +4263,7 @@ export const renderGame = (state, callbacks = {}) => {
       catalogOrder: [[], []],
     };
     state.log = [];
+    state.historyEvents = resetHistoryStream((state.historyEvents?.matchGeneration ?? 0) + 1);
     state.combat = { declaredAttacks: [] };
     state.victoryProcessed = false;
     state.rematch = null;
@@ -4348,6 +4352,7 @@ export const renderGame = (state, callbacks = {}) => {
       catalogOrder: [[], []],
     };
     state.log = [];
+    state.historyEvents = resetHistoryStream((state.historyEvents?.matchGeneration ?? 0) + 1);
     state.combat = { declaredAttacks: [] };
     state.victoryProcessed = false;
     state.rematch = null;
