@@ -117,13 +117,14 @@ const removeCardFromField = (state, card) => {
   return ownerIndex;
 };
 
-const applyEffectDamage = (state, creature, amount, sourceLabel = 'effect') => {
+const applyEffectDamage = (state, creature, amount, sourceLabel = 'effect', source = null) => {
   if (!creature || amount <= 0) {
     return;
   }
   const finishHistory = beginPublicMutation(state, [creature], {
     kind: 'spell',
-    terminal: 'effect',
+    terminal: source ? 'spell' : 'effect',
+    source,
   });
   if (isImmune(creature)) {
     finishHistory([{ entity: creature.instanceId, damage: 0, prevented: true }]);
@@ -167,13 +168,14 @@ const applyEffectDamage = (state, creature, amount, sourceLabel = 'effect') => {
   logGameAction(state, DAMAGE, `${formatCardForLog(creature)} takes ${amount} damage.`);
 };
 
-const killCreature = (state, creature, sourceLabel = 'effect') => {
+const killCreature = (state, creature, sourceLabel = 'effect', source = null) => {
   if (!creature) {
     return false;
   }
   const finishHistory = beginPublicMutation(state, [creature], {
     kind: 'destroy',
-    terminal: 'effect',
+    terminal: source ? 'spell' : 'effect',
+    source,
   });
   creature.currentHp = 0;
   finishHistory();
@@ -324,6 +326,8 @@ export const resolveEffectResult = (state, result, context) => {
     return;
   }
 
+  const source = context.spellCard || null;
+
   if (result.draw) {
     const player = state.players[context.playerIndex];
     const handBefore = new Set(player.hand.map((c) => c.instanceId));
@@ -429,14 +433,14 @@ export const resolveEffectResult = (state, result, context) => {
 
   if (result.damageCreature) {
     const { creature, amount, sourceLabel } = result.damageCreature;
-    applyEffectDamage(state, creature, amount, sourceLabel);
+    applyEffectDamage(state, creature, amount, sourceLabel, source);
   }
 
   if (result.damageAllCreatures) {
     state.players.forEach((player) => {
       player.field.forEach((creature) => {
         if (creature && (creature.type === 'Predator' || creature.type === 'Prey')) {
-          applyEffectDamage(state, creature, result.damageAllCreatures, 'maelstrom');
+          applyEffectDamage(state, creature, result.damageAllCreatures, 'maelstrom', source);
         }
       });
     });
@@ -446,7 +450,7 @@ export const resolveEffectResult = (state, result, context) => {
     const enemy = state.players[context.opponentIndex];
     enemy.field.forEach((creature) => {
       if (creature && (creature.type === 'Predator' || creature.type === 'Prey')) {
-        applyEffectDamage(state, creature, result.damageEnemyCreatures, 'effect');
+        applyEffectDamage(state, creature, result.damageEnemyCreatures, 'effect', source);
       }
     });
   }
@@ -457,7 +461,7 @@ export const resolveEffectResult = (state, result, context) => {
     if (creatures && Array.isArray(creatures)) {
       creatures.forEach((creature) => {
         if (creature && (creature.type === 'Predator' || creature.type === 'Prey')) {
-          applyEffectDamage(state, creature, amount, 'volcanic');
+          applyEffectDamage(state, creature, amount, 'volcanic', source);
         }
       });
     }
@@ -486,7 +490,7 @@ export const resolveEffectResult = (state, result, context) => {
 
   if (result.killTargets) {
     result.killTargets.forEach((creature) => {
-      const killed = killCreature(state, creature, result.killSourceLabel);
+      const killed = killCreature(state, creature, result.killSourceLabel, source);
       if (killed) {
         logGameAction(state, DEATH, `${formatCardForLog(creature)} is destroyed.`);
       }
@@ -496,7 +500,7 @@ export const resolveEffectResult = (state, result, context) => {
   if (result.killCreature) {
     // Single creature kill (from applyEffectToSelection)
     const creature = result.killCreature;
-    const killed = killCreature(state, creature, 'effect');
+    const killed = killCreature(state, creature, 'effect', source);
     if (killed) {
       logGameAction(state, DEATH, `${formatCardForLog(creature)} is destroyed.`);
     }
@@ -506,7 +510,7 @@ export const resolveEffectResult = (state, result, context) => {
     state.players.forEach((player) => {
       player.field.forEach((creature) => {
         if (creature && (creature.type === 'Predator' || creature.type === 'Prey')) {
-          killCreature(state, creature, result.killSourceLabel);
+          killCreature(state, creature, result.killSourceLabel, source);
         }
       });
     });
@@ -517,7 +521,7 @@ export const resolveEffectResult = (state, result, context) => {
     const enemy = state.players[result.killEnemyCreatures];
     enemy.field.forEach((creature) => {
       if (creature && (creature.type === 'Predator' || creature.type === 'Prey')) {
-        killCreature(state, creature, result.killSourceLabel);
+        killCreature(state, creature, result.killSourceLabel, source);
       }
     });
     logGameAction(state, DEATH, `${enemy.name}'s creatures are destroyed.`);

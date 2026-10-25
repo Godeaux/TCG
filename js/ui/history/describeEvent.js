@@ -78,7 +78,9 @@ const entityLines = (event, identity) => {
 
     // Zone / terminal facts — cause is explicit, never inferred from absence
     if (typeof fact.terminal === 'string') {
-      lines.push(`${terminalVerb(fact.terminal)}${fact.zoneTo ? ` → ${fact.zoneTo}` : ''}`);
+      lines.push(
+        `${terminalVerb(fact.terminal)}${fact.zoneTo ? ` → ${fact.zoneTo === 'void' ? 'removed from game (token)' : fact.zoneTo}` : ''}`
+      );
     } else if (
       typeof fact.zoneFrom === 'string' &&
       typeof fact.zoneTo === 'string' &&
@@ -178,8 +180,11 @@ export const describeEventHeadline = (event) => {
         ? `${actor} consumed ${primaryTarget}${more}.`
         : `${actor} consumed prey.`;
     case 'spell':
+      if ((event.facts || []).some((f) => f.zoneFrom === 'hand' && f.zoneTo === 'exile')) {
+        return `${actor} cast ${primaryTarget || 'a spell'}.`;
+      }
       return primaryTarget
-        ? `Spell hit ${primaryTarget}${more}.`
+        ? `${sources[0] || 'Spell'} hit ${primaryTarget}${more}.`
         : `A spell resolved${actor ? ` from ${actor}` : ''}.`;
     case 'buff':
       return primaryTarget ? `${primaryTarget} was buffed.` : `Buff applied.`;
@@ -190,7 +195,9 @@ export const describeEventHeadline = (event) => {
     case 'status':
       return primaryTarget ? `${primaryTarget}'s status changed.` : `Status changed.`;
     case 'destroy':
-      return primaryTarget ? `${primaryTarget} was destroyed${more}.` : `A card was destroyed.`;
+      return primaryTarget
+        ? `${primaryTarget} was destroyed${more}${sources[0] ? ` by ${sources[0]}` : ''}.`
+        : `A card was destroyed.`;
     case 'sacrifice':
       return primaryTarget
         ? `${actor} sacrificed ${primaryTarget}${more}.`
