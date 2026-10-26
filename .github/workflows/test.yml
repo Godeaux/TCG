@@ -41,3 +41,4 @@ jobs:
           path: |
             docs/ui-overhaul/evidence/acceptance/
             docs/ui-overhaul/evidence/mobile-feedback/
+            docs/ui-overhaul/evidence/spell-presentation/

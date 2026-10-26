@@ -72,6 +72,11 @@ describe('AI spell feedback uses the public controller path', () => {
     const spell = addCardToHand(state, 'fish-spell-harpoon', 1);
     expect((await ai.executeCardPlay(state, spell, null, {})).success).toBe(true);
     expect(state.players[0].field).not.toContain(victim);
+    expect(state.visualEffects.find((e) => e.type === 'spell')).toMatchObject({
+      targetCardId: victim.instanceId,
+      targetOwnerIndex: 0,
+      targetSlotIndex: 0,
+    });
     expect(state.players[1].exile).toContain(spell);
     expect(state.players[1].hand).not.toContain(spell);
   });
