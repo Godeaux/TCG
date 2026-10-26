@@ -350,6 +350,35 @@ export class GameController {
       }
     }
 
+    // Resolve target geometry before mutation, but reveal only once the choice
+    // is complete. This also covers synchronous AI and network selections.
+    const spellVisual = {
+      type: 'spell',
+      spellId: card.id,
+      spellName: card.name,
+      sourceInstanceId: card.instanceId,
+      casterIndex: playerIndex,
+      fieldTargets: this.state.players.flatMap((player, ownerIndex) =>
+        player.field.flatMap((card, slotIndex) =>
+          card
+            ? [{ ownerIndex, slotIndex, instanceId: card.instanceId, isToken: !!card.isToken }]
+            : []
+        )
+      ),
+    };
+    const onTargetResolved = (value) => {
+      const target = value?.creature || value?.card || value;
+      if (target?.instanceId) {
+        spellVisual.targetCardId = target.instanceId;
+        spellVisual.targetOwnerIndex = this.findCardOwnerIndex(target.instanceId);
+        spellVisual.targetSlotIndex = this.findCardSlotIndex(target.instanceId)?.slotIndex;
+      } else if (target?.type === 'player') {
+        spellVisual.targetPlayerIndex =
+          target.playerIndex ??
+          (target.player ? this.state.players.indexOf(target.player) : opponentIndex);
+      }
+    };
+
     // Execute spell effect
     const result = resolveCardEffect(card, 'effect', {
       log: (message) => logMessage(this.state, message),
@@ -358,6 +387,7 @@ export class GameController {
       state: this.state,
       playerIndex,
       opponentIndex,
+      onTargetResolved,
     });
 
     if (!result) {
@@ -365,25 +395,9 @@ export class GameController {
       return { success: false, error: 'Spell had no effect' };
     }
 
-    // Queue spell visual effect
-    const queueSpellVisual = (targetValue) => {
-      queueVisualEffect(this.state, {
-        type: 'spell',
-        spellId: card.id,
-        spellName: card.name,
-        casterIndex: playerIndex,
-        targetCardId: targetValue?.instanceId,
-        targetOwnerIndex: targetValue?.instanceId
-          ? this.findCardOwnerIndex(targetValue.instanceId)
-          : undefined,
-        targetSlotIndex: targetValue?.instanceId
-          ? this.findCardSlotIndex(targetValue.instanceId)?.slotIndex
-          : undefined,
-      });
-    };
-
     // Finalize spell play
     const finalizePlay = () => {
+      queueVisualEffect(this.state, spellVisual);
       this.cleanupDestroyed();
 
       player.exile.push(card);
@@ -401,15 +415,11 @@ export class GameController {
 
     // Log spell cast and queue visual
     logMessage(this.state, `${player.name} casts ${card.name}.`);
-    if (result.selectTarget && this._effectTargets.length > 0) {
-      const targetRef = this._effectTargets[0];
-      queueSpellVisual(targetRef.instanceId ? { instanceId: targetRef.instanceId } : undefined);
-    } else {
-      queueSpellVisual();
-    }
-
-    // Resolve effect chain (may show targeting UI via onSelectionNeeded)
-    this.resolveEffectChain(result, { playerIndex, opponentIndex, spellCard: card }, finalizePlay);
+    this.resolveEffectChain(
+      result,
+      { playerIndex, opponentIndex, spellCard: card, onTargetResolved },
+      finalizePlay
+    );
 
     return { success: true };
   }
@@ -1064,6 +1074,7 @@ export class GameController {
           typeof candidatesInput === 'function' ? candidatesInput() : candidatesInput;
         const match = candidates?.find((c) => this._matchEffectTarget(c, preResolved));
         if (match) {
+          context.onTargetResolved?.(match.value !== undefined ? match.value : match);
           const followUp = onSelect(match.value !== undefined ? match.value : match);
           this.resolveEffectChain(followUp, context, wrappedComplete);
           return;
@@ -1078,6 +1089,7 @@ export class GameController {
       this.onSelectionNeeded({
         selectTarget,
         onSelect: (value) => {
+          context.onTargetResolved?.(value);
           const followUp = selectTarget.onSelect(value);
           this.resolveEffectChain(followUp, context, wrappedComplete);
         },

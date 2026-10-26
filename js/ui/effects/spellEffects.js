@@ -24,6 +24,11 @@ import {
 import { getCardDefinitionById } from '../../cards/index.js';
 import { getCardImagePath, hasCardImage } from '../../cardImages.js';
 import { getCardEffectSummary } from '../components/Card.js';
+import {
+  captureSpellScene,
+  playSpellPresentation,
+  reducedSpellMotion,
+} from './spellPresentation.js';
 
 // ============================================================================
 // MODULE-LEVEL STATE
@@ -35,6 +40,7 @@ let getLocalPlayerIndex = null;
 // Pre-cached target positions for spell effects (needed for multiplayer sync)
 // Key: effect ID, Value: cached target info
 const preCachedTargets = new Map();
+const sceneSnapshots = new Map();
 const PRECACHE_TTL_MS = 10000; // Clean up old entries after 10 seconds
 
 // ============================================================================
@@ -75,9 +81,18 @@ export const preCacheSpellEffectTargets = (state) => {
     }
   });
 
+  sceneSnapshots.forEach((entry, id) => {
+    if (now - entry.time > PRECACHE_TTL_MS) sceneSnapshots.delete(id);
+  });
+
   // Cache targets for spell effects that haven't been cached yet
   state.visualEffects.forEach((effect) => {
-    if (effect?.type !== 'spell' || !effect.id) return;
+    if (!['spell', 'trap'].includes(effect?.type) || !effect.id) return;
+    if (!sceneSnapshots.has(effect.id))
+      sceneSnapshots.set(effect.id, {
+        time: now,
+        scene: captureSpellScene(state, effect, battleEffectsLayer, getLocalPlayerIndex),
+      });
     if (preCachedTargets.has(effect.id)) return;
 
     const { targetCardId, targetOwnerIndex, targetSlotIndex } = effect;
@@ -377,6 +392,11 @@ export const SPELL_VISUAL_EFFECTS = {
     type: 'projectile',
     projectile: 'water-bolt',
     description: 'Water bolt strikes and heals',
+  },
+  'amphibian-free-spell-metamorphosis': {
+    type: 'buff',
+    effect: 'metamorphosis',
+    description: 'Iridescent growth on the chosen prey',
   },
   'amphibian-free-spell-newt': {
     type: 'utility',
@@ -5178,12 +5198,20 @@ export const playTrapEffect = async (effect, state) => {
 
   const { trapId, casterIndex } = effect;
 
+  const scene =
+    sceneSnapshots.get(effect.id)?.scene ||
+    captureSpellScene(state, effect, battleEffectsLayer, getLocalPlayerIndex);
+  sceneSnapshots.delete(effect.id);
   // Show the trap card reveal animation first
   await showTrapCardReveal(trapId, casterIndex);
 
   // Get configuration for additional effect animation
   const config = SPELL_VISUAL_EFFECTS[trapId];
   if (!config) return;
+  if (config.type === 'trap') {
+    await playSpellPresentation(effect, state, config, scene, battleEffectsLayer);
+    return;
+  }
 
   const tribe = getTribeFromCardId(trapId);
   const theme = TRIBE_THEMES[tribe];
@@ -5255,7 +5283,7 @@ const showSpellCardReveal = (spellId, casterIndex) => {
     const hasImage = hasCardImage(spellId);
     const imageHtml = hasImage
       ? `<img src="${getCardImagePath(spellId)}" alt="${spellCard.name}" class="spell-reveal-image" draggable="false">`
-      : `<div class="spell-reveal-image-placeholder">${getSpellEmoji(spellId)}</div>`;
+      : `<div class="spell-reveal-image-placeholder">◇</div>`;
 
     // Get the effect text for the spell
     const effectText = getCardEffectSummary(spellCard) || spellCard.effectText || '';
@@ -5300,35 +5328,15 @@ const showSpellCardReveal = (spellId, casterIndex) => {
       revealContainer.classList.add('exiting');
 
       // Clean up after exit animation completes
-      setTimeout(() => {
-        revealContainer.remove();
-        resolve();
-      }, 500);
-    }, 1800);
+      setTimeout(
+        () => {
+          revealContainer.remove();
+          resolve();
+        },
+        reducedSpellMotion() ? 0 : 280
+      );
+    }, 1600);
   });
-};
-
-/**
- * Get an emoji icon for a spell based on its type/tribe
- */
-const getSpellEmoji = (spellId) => {
-  const config = SPELL_VISUAL_EFFECTS[spellId];
-  if (!config) return '✨';
-
-  // Map effect types to emojis
-  const typeEmojis = {
-    projectile: '🎯',
-    aoe: '💥',
-    buff: '⬆️',
-    heal: '💚',
-    bounce: '↩️',
-    summon: '✨',
-    status: '🔮',
-    utility: '🔍',
-    trap: '🪤',
-  };
-
-  return typeEmojis[config.type] || '✨';
 };
 
 // ============================================================================
@@ -5471,6 +5479,10 @@ export const playSpellEffect = async (effect, state) => {
     id: effectId,
   } = effect;
   const config = SPELL_VISUAL_EFFECTS[spellId];
+  const scene =
+    sceneSnapshots.get(effectId)?.scene ||
+    captureSpellScene(state, effect, battleEffectsLayer, getLocalPlayerIndex);
+  sceneSnapshots.delete(effectId);
 
   // IMPORTANT: Cache target positions BEFORE the reveal animation
   // Check pre-cached targets first (set before render for multiplayer sync)
@@ -5493,6 +5505,16 @@ export const playSpellEffect = async (effect, state) => {
 
   // Show the spell card reveal animation first
   await showSpellCardReveal(spellId, casterIndex);
+
+  if (
+    !config ||
+    ['projectile', 'aoe', 'buff', 'heal', 'bounce', 'summon', 'status', 'utility'].includes(
+      config.type
+    )
+  ) {
+    await playSpellPresentation(effect, state, config, scene, battleEffectsLayer);
+    return;
+  }
 
   if (!config) {
     // Unknown spell - play generic effect

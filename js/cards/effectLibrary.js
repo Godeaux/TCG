@@ -1757,6 +1757,7 @@ export const selectFromGroup = (params) => (context) => {
  * @param {Object} context - Effect context
  */
 const applyEffectToSelection = (selection, effectDef, context) => {
+  context.onTargetResolved?.(selection);
   const { log } = context;
   const result = {};
 
