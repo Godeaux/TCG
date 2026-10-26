@@ -65,8 +65,8 @@ export const captureSpellScene = (state, effect, layer, localPlayer) => {
     }
   const badges = [0, 1].map((i) => rectOf(getPlayerBadgeByIndex(i), origin));
   const target =
-    slots.find((r) => effect.targetCardId && r.id === effect.targetCardId) ||
     slots.find((r) => r.owner === effect.targetOwnerIndex && r.slot === effect.targetSlotIndex) ||
+    slots.find((r) => effect.targetCardId && r.id === effect.targetCardId) ||
     badges[effect.targetPlayerIndex] ||
     null;
   return {
@@ -89,6 +89,7 @@ const ENEMY = new Set([
   'double-strike',
   'bounce-all',
   'quake',
+  'freeze-trap',
 ]);
 const MATERIAL = {
   flood: 'water',
@@ -291,9 +292,11 @@ export const playSpellPresentation = (effect, state, config, geometry, layer) =>
       .flatMap((e) => e.facts.filter((f) => f.terminal).map((f) => f.entity))
   );
   const remnants = new Map();
+  const washesAway = ['flood', 'wave', 'maelstrom'].includes(motif);
   if (!reduced)
     for (const r of geometry.slots.filter(
-      (r) => lethal.has(r.id) && !state.players[r.owner].field[r.slot]
+      (r) =>
+        lethal.has(r.id) && !state.players.some((p) => p.field.some((c) => c?.instanceId === r.id))
     )) {
       const remnant = node(
         'remnant',
@@ -301,15 +304,30 @@ export const playSpellPresentation = (effect, state, config, geometry, layer) =>
         r.y,
         r.w,
         r.h,
-        [
-          { opacity: 0.72, transform: 'scale(1)' },
-          { opacity: 0.72, offset: 0.55, transform: 'scale(1)' },
-          { opacity: 0, transform: 'translateY(9px) scale(.96)' },
-        ],
-        1250
+        washesAway
+          ? [
+              { opacity: 0.85, transform: 'translate(0,0) rotate(0deg)' },
+              { opacity: 0.85, offset: 0.24, transform: 'translate(0,-5px) rotate(-3deg)' },
+              {
+                opacity: 0.65,
+                offset: 0.56,
+                transform: `translate(${r.w * 0.65}px,-30px) rotate(9deg)`,
+              },
+              {
+                opacity: 0,
+                transform: `translate(${geometry.width - r.x + r.w}px,-90px) rotate(22deg) scale(.8)`,
+              },
+            ]
+          : [
+              { opacity: 0.8, transform: 'scale(1)' },
+              { opacity: 0.8, offset: 0.65, transform: 'scale(1)' },
+              { opacity: 0, transform: 'translateY(9px) scale(.96)' },
+            ],
+        1400
       );
       if (remnant) {
         remnants.set(r.id, remnant);
+        remnant.dataset.departure = washesAway ? 'wash-away' : 'dissolve';
         if (r.art)
           remnant.style.backgroundImage = `linear-gradient(0deg,#10272d 4%,transparent 55%),url("${r.art}")`;
         remnant.textContent = r.name;
@@ -366,6 +384,99 @@ export const playSpellPresentation = (effect, state, config, geometry, layer) =>
       delay
     );
     ring({ ...r, cy: r.y + r.h - 4 }, delay + 275, 1.06);
+  };
+  const liveCard = (r) =>
+    [...document.querySelectorAll('.field-slot .card')].find(
+      (el) => el.dataset.instanceId === r.id
+    );
+  const cardMotion = (card, frames, duration, delay, id, fill = 'none') => {
+    if (!card) return;
+    cardImpacts.get(card)?.cancel();
+    const a = card.animate(frames, {
+      duration,
+      delay,
+      easing: 'cubic-bezier(.2,.7,.25,1)',
+      composite: 'add',
+      fill,
+    });
+    a.id = id;
+    cardImpacts.set(card, a);
+    animations.push(a);
+    end = Math.max(end, duration + delay);
+  };
+  const cold = (r, delay = 0) => {
+    frame(r, delay, 'frost');
+    node(
+      'rime',
+      r.x + 2,
+      r.y + 2,
+      r.w - 4,
+      r.h - 4,
+      [
+        { opacity: 0, transform: 'scaleY(.05)' },
+        { opacity: 0.85, offset: 0.48, transform: 'scaleY(1)' },
+        { opacity: 0.7, offset: 0.8, transform: 'scaleY(1)' },
+        { opacity: 0, transform: 'scaleY(1)' },
+      ],
+      1100,
+      delay
+    );
+    for (let i = 0; i < 2; i++)
+      node(
+        'cold-wisp',
+        r.x - 6,
+        r.y + r.h * (0.55 + i * 0.2),
+        r.w + 12,
+        24,
+        [
+          { opacity: 0, transform: 'translateX(8px) scale(.8)' },
+          { opacity: 0.65, offset: 0.35 },
+          { opacity: 0, transform: `translate(${-15 - i * 9}px,-35px) scale(1.2)` },
+        ],
+        1000,
+        delay + i * 90
+      );
+  };
+  const pull = (r, delay) => {
+    // Animate a transfer only when the resolved board really contains the same
+    // creature on the caster's side. A lethal or blocked steal never crosses sides.
+    const transferred =
+      r.owner !== owner && state.players[owner].field.some((c) => c?.instanceId === r.id);
+    const card = liveCard(r);
+    if (!transferred || !card) return false;
+    const dest = rectOf(card, layer.getBoundingClientRect());
+    const dx = r.cx - dest.cx,
+      dy = r.cy - dest.cy;
+    cardMotion(
+      card,
+      [
+        { offset: 0, transform: `translate(${dx}px,${dy}px) rotate(-3deg)` },
+        { offset: 0.2, transform: `translate(${dx * 1.03}px,${dy * 1.03}px) rotate(-5deg)` },
+        { offset: 0.72, transform: 'translate(0,8px) rotate(3deg)' },
+        { offset: 1, transform: 'translate(0,0) rotate(0deg)' },
+      ],
+      680,
+      delay,
+      'spell-card-pull',
+      'backwards'
+    );
+    const angle = (Math.atan2(r.cy - dest.cy, r.cx - dest.cx) * 180) / Math.PI;
+    node(
+      'filament',
+      dest.cx,
+      dest.cy,
+      Math.hypot(dx, dy),
+      2,
+      [
+        { opacity: 0.8, transform: `rotate(${angle}deg) scaleX(1)` },
+        { opacity: 1, offset: 0.2, transform: `rotate(${angle}deg) scaleX(1.03)` },
+        { opacity: 0, transform: `rotate(${angle}deg) scaleX(0)` },
+      ],
+      680,
+      delay
+    );
+    ring({ ...dest, cy: dest.y + dest.h }, delay + 490, 0.9);
+    return true;
   };
   if (reduced) {
     for (const r of (targets.length ? targets : [origin]).filter(Boolean))
@@ -438,12 +549,14 @@ export const playSpellPresentation = (effect, state, config, geometry, layer) =>
         390,
         delay + 190
       );
-      impact(r, delay + 470, motif === 'harpoon' || motif === 'rifle' ? 1 : 0.6);
+      if (motif === 'harpoon') {
+        if (!pull(r, delay + 470)) impact(r, delay + 470, 0.85);
+      } else if (motif !== 'dart') impact(r, delay + 470, motif === 'rifle' ? 1 : 0.6);
       ring(r, delay + 490, 0.75);
       if (motif === 'net')
         node('net', r.x, r.y, r.w, r.h, fade('scale(1.18)', 'scale(.8)'), 560, delay + 470);
       else if (motif === 'dart') {
-        frame(r, delay + 500, 'frost');
+        cold(r, delay + 470);
         motes(r, 'shard', 4, delay + 470);
       } else motes(r, material === 'metal' ? 'shard' : 'mote', 4, delay + 490);
     }
@@ -470,7 +583,19 @@ export const playSpellPresentation = (effect, state, config, geometry, layer) =>
         motes(r, 'droplet', 5, i * 160 + 270);
       });
       affected.forEach((r, i) => {
-        impact(r, 260 + i * 45, 0.65);
+        if (!remnants.has(r.id))
+          cardMotion(
+            liveCard(r),
+            [
+              { transform: 'translate(0,0) rotate(0deg)' },
+              { offset: 0.3, transform: 'translate(8px,-5px) rotate(3deg)' },
+              { offset: 0.65, transform: 'translate(-3px,0) rotate(-1deg)' },
+              { transform: 'translate(0,0) rotate(0deg)' },
+            ],
+            700,
+            260 + i * 45,
+            'spell-card-current'
+          );
         ring(r, 330 + i * 45, 0.9);
       });
     } else if (['blizzard', 'monsoon', 'arrows'].includes(motif)) {
@@ -495,9 +620,11 @@ export const playSpellPresentation = (effect, state, config, geometry, layer) =>
         }
       });
       affected.forEach((r, i) => {
-        impact(r, 300 + i * 50, 0.35);
-        if (motif === 'blizzard') frame(r, 300 + i * 50, 'frost');
-        else ring(r, 300 + i * 50, 0.75);
+        if (motif === 'blizzard') cold(r, 200 + i * 50);
+        else {
+          impact(r, 300 + i * 50, 0.35);
+          ring(r, 300 + i * 50, 0.75);
+        }
       });
     } else {
       // Meteor and earth effects carry weight through staggered pressure rings,
@@ -581,6 +708,11 @@ export const playSpellPresentation = (effect, state, config, geometry, layer) =>
         i * 70
       );
     });
+  } else if (motif === 'freeze-trap') {
+    const frozen = affected.filter((r) =>
+      state.players[r.owner].field.some((c) => c?.instanceId === r.id && c.frozen)
+    );
+    (target ? [target] : frozen).forEach((r, i) => cold(r, i * 60));
   } else if (type === 'status' || (type === 'utility' && target)) {
     if (target) {
       frame(target);

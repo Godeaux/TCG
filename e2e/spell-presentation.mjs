@@ -289,6 +289,113 @@ try {
     await p.setViewportSize({ width: size.width, height: size.height - 1 });
     await p.waitForTimeout(100);
     await expect(p.locator('.spell-scene')).toHaveCount(0);
+    // Exercise actual resolutions, not a synthetic claim that a creature moved.
+    for (const scenario of ['flood', 'harpoon-pull', 'harpoon-kill', 'harpoon-full', 'freeze']) {
+      const resolved = await p.evaluate(async (scenario) => {
+        const { GameController } = await import('/js/game/controller.js');
+        const { createCardInstance } = await import('/js/cardTypes.js');
+        const { getCardDefinitionById } = await import('/js/cards/index.js');
+        const c = (id) => createCardInstance(getCardDefinitionById(id), 1);
+        const s = window.fxState;
+        window.fx.cancelSpellScenes();
+        s.cardPlayedThisTurn = false;
+        s.activePlayerIndex = 0;
+        s.phase = 'Main 1';
+        s.visualEffects = [];
+        for (const player of s.players) {
+          player.hp = 10;
+          player.deck = [c('fish-prey-electric-eel')];
+          player.hand = [];
+          player.field = [
+            'fish-prey-electric-eel',
+            'fish-predator-great-white-shark',
+            'fish-predator-atlantic-bluefin-tuna',
+          ].map(c);
+        }
+        if (scenario === 'harpoon-pull' || scenario === 'harpoon-kill')
+          s.players[0].field[1] = null;
+        if (scenario === 'harpoon-kill') s.players[1].field[1] = c('fish-prey-electric-eel');
+        const victim = s.players[1].field[1];
+        const id =
+          scenario === 'flood'
+            ? 'fish-spell-flood'
+            : scenario === 'freeze'
+              ? 'mammal-spell-blizzard'
+              : 'fish-spell-harpoon';
+        const spell = c(id);
+        s.players[0].hand = [spell];
+        (await import('/js/ui.js')).renderGame(s);
+        const result = new GameController(s, {}).execute({
+          type: 'PLAY_CARD',
+          payload: { card: spell, effectTargets: [{ instanceId: victim.instanceId }] },
+        });
+        const effect = s.visualEffects.findLast((e) => e.type === 'spell');
+        window.spells.preCacheSpellEffectTargets(s);
+        (await import('/js/ui.js')).renderGame(s);
+        const geo = window.fx.captureSpellScene(
+          s,
+          effect,
+          document.querySelector('#battle-effects'),
+          () => 0
+        );
+        return {
+          success: result.success,
+          transferred: s.players[0].field.some((c) => c?.instanceId === victim.instanceId),
+          targetOwner: geo.target?.owner,
+          targetSlot: geo.target?.slot,
+        };
+      }, scenario);
+      assert(resolved.success, scenario);
+      await p.locator('.spell-card-reveal').waitFor({ state: 'visible' });
+      await p.locator('.spell-card-reveal').waitFor({ state: 'detached' });
+      await p.waitForFunction(() => document.querySelector('.spell-scene'));
+      const scene = await p.evaluate(() => {
+        const root = document.querySelector('.spell-scene');
+        const animations = document
+          .getAnimations()
+          .filter((a) => a.id.startsWith('spell-card-') || a.effect.target.closest('.spell-scene'));
+        const pull = animations.find((a) => a.id === 'spell-card-pull');
+        const wash = root.querySelector('[data-departure="wash-away"]');
+        for (const a of animations) {
+          a.pause();
+          a.currentTime = 800;
+        }
+        return {
+          pull: !!pull,
+          remnants: root.querySelectorAll('.spell-fx--remnant').length,
+          recoil: animations.some((a) => a.id === 'spell-card-impact'),
+          washes: root.querySelectorAll('[data-departure="wash-away"]').length,
+          washTransform: wash?.getAnimations()[0].effect.getKeyframes().at(-1).transform,
+          rime: root.querySelectorAll('.spell-fx--rime').length,
+        };
+      });
+      if (scenario === 'flood') {
+        assert.equal(scene.washes, 6);
+        assert(scene.washTransform.includes('rotate(22deg)'));
+        assert(!scene.recoil);
+      }
+      if (scenario === 'freeze') {
+        assert(scene.rime > 0);
+        assert(!scene.recoil);
+      }
+      if (scenario === 'harpoon-pull') {
+        assert(resolved.transferred && scene.pull);
+        assert.equal(scene.remnants, 0);
+        assert.equal(resolved.targetOwner, 1);
+        assert.equal(resolved.targetSlot, 1);
+      }
+      if (scenario === 'harpoon-kill' || scenario === 'harpoon-full')
+        assert(!resolved.transferred && !scene.pull);
+      await p.screenshot({ path: `${out}/${size.width}-${scenario}-outcome.png` });
+      results.push({ scenario, resolved, scene });
+      await p.waitForTimeout(1900);
+      assert.equal(
+        await p.evaluate(
+          () => document.getAnimations().filter((a) => a.id.startsWith('spell-card-')).length
+        ),
+        0
+      );
+    }
     await ctx.close();
   }
   assert.deepEqual(errors, []);

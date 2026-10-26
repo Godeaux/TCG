@@ -396,3 +396,22 @@
   border-radius: 50%;
   background: radial-gradient(ellipse, #07191dcc, #07191d55 48%, transparent 72%);
 }
+
+.spell-fx--rime {
+  transform-origin: center bottom;
+  border-radius: 12px;
+  border: 1px solid #d4f5ffb0;
+  background:
+    linear-gradient(0deg, #d2f2ff9c, #94cae73d 42%, transparent 80%),
+    repeating-conic-gradient(
+      from 20deg at 10% 90%,
+      transparent 0 16deg,
+      #c9eeff70 17deg 18deg,
+      transparent 19deg 38deg
+    );
+}
+.spell-fx--cold-wisp {
+  border-radius: 50%;
+  background: radial-gradient(ellipse, #d9f6ff55, #a4d8ee28 40%, transparent 70%);
+  border-top: 1px solid #d3f4ff55;
+}
