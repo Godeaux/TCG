@@ -390,3 +390,28 @@
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='none' stroke='%23e8b579' stroke-width='1.2' stroke-linecap='round'%3E%3Cpath d='M48 50L29 39 22 21M29 39L12 41M51 49L66 30 64 14M66 30L81 28M52 53L74 65 87 60M74 65L78 82M47 53L31 71 15 76M31 71L33 91'/%3E%3C/g%3E%3Ccircle cx='50' cy='51' r='13' fill='%238d543426'/%3E%3C/svg%3E")
     center/100% 100% no-repeat;
 }
+
+/* Ground contact compresses at the landing beat; no animated blur. */
+.spell-fx--contact {
+  border-radius: 50%;
+  background: radial-gradient(ellipse, #07191dcc, #07191d55 48%, transparent 72%);
+}
+
+.spell-fx--rime {
+  transform-origin: center bottom;
+  border-radius: 12px;
+  border: 1px solid #d4f5ffb0;
+  background:
+    linear-gradient(0deg, #d2f2ff9c, #94cae73d 42%, transparent 80%),
+    repeating-conic-gradient(
+      from 20deg at 10% 90%,
+      transparent 0 16deg,
+      #c9eeff70 17deg 18deg,
+      transparent 19deg 38deg
+    );
+}
+.spell-fx--cold-wisp {
+  border-radius: 50%;
+  background: radial-gradient(ellipse, #d9f6ff55, #a4d8ee28 40%, transparent 70%);
+  border-top: 1px solid #d3f4ff55;
+}
