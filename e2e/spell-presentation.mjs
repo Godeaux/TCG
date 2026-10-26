@@ -129,6 +129,33 @@ try {
       JSON.stringify(audit.rows.filter((r) => !r.nodes || !r.safe))
     );
     results.push({ size, audit });
+    const recoil = await p.evaluate(() => {
+      window.startFx('reptile-spell-meteor');
+      const hits = document.getAnimations().filter((a) => a.id === 'spell-card-impact');
+      const first = hits[0],
+        card = first?.effect.target;
+      const style = card?.getAttribute('style');
+      card.classList.add('exhausted-state');
+      first?.pause();
+      if (first) first.currentTime = first.effect.getTiming().delay + 150;
+      const lifted = card && getComputedStyle(card).transform;
+      window.fx.cancelSpellScenes();
+      const settled = getComputedStyle(card).transform;
+      card.classList.remove('exhausted-state');
+      return {
+        settled,
+        count: hits.length,
+        additive: hits.every((a) => a.effect.composite === 'add'),
+        lifted,
+        styleRestored: card?.getAttribute('style') === style,
+        remaining: document.getAnimations().filter((a) => a.id === 'spell-card-impact').length,
+      };
+    });
+    assert.equal(recoil.count, 6);
+    assert(recoil.additive && recoil.lifted !== 'none' && recoil.styleRestored);
+    assert(recoil.settled !== 'none' && recoil.settled !== recoil.lifted);
+    assert.equal(recoil.remaining, 0);
+    results.push({ recoil });
     for (const [id, time] of [
       ['fish-spell-flood', 540],
       ['fish-spell-harpoon', 500],
@@ -142,8 +169,8 @@ try {
       await p.evaluate(
         (t) =>
           document
-            .querySelector('.spell-scene')
-            .getAnimations({ subtree: true })
+            .getAnimations()
+            .filter((a) => a.id === 'spell-card-impact' || a.effect.target.closest('.spell-scene'))
             .forEach((a) => {
               a.pause();
               a.currentTime = t;
@@ -230,6 +257,12 @@ try {
       )
     );
     assert(reduced);
+    assert.equal(
+      await p.evaluate(
+        () => document.getAnimations().filter((a) => a.id === 'spell-card-impact').length
+      ),
+      0
+    );
     await p.waitForTimeout(300);
     assert.equal(await p.locator('.spell-scene').count(), 0);
     await p.emulateMedia({ reducedMotion: 'no-preference' });

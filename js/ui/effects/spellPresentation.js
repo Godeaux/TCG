@@ -6,6 +6,7 @@ import { getCardImagePath, hasCardImage } from '../../cardImages.js';
 
 export const SPELL_FX_LIMITS = Object.freeze({ scenes: 2, nodes: 48, lifetimeMs: 1800 });
 const activeScenes = new Set();
+const cardImpacts = new WeakMap();
 export const reducedSpellMotion = () =>
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const rectOf = (el, origin) => {
@@ -289,6 +290,7 @@ export const playSpellPresentation = (effect, state, config, geometry, layer) =>
       .filter((e) => effect.sourceInstanceId && e.sourceIds.includes(effect.sourceInstanceId))
       .flatMap((e) => e.facts.filter((f) => f.terminal).map((f) => f.entity))
   );
+  const remnants = new Map();
   if (!reduced)
     for (const r of geometry.slots.filter(
       (r) => lethal.has(r.id) && !state.players[r.owner].field[r.slot]
@@ -304,14 +306,67 @@ export const playSpellPresentation = (effect, state, config, geometry, layer) =>
           { opacity: 0.72, offset: 0.55, transform: 'scale(1)' },
           { opacity: 0, transform: 'translateY(9px) scale(.96)' },
         ],
-        820
+        1250
       );
       if (remnant) {
+        remnants.set(r.id, remnant);
         if (r.art)
           remnant.style.backgroundImage = `linear-gradient(0deg,#10272d 4%,transparent 55%),url("${r.art}")`;
         remnant.textContent = r.name;
       }
     }
+  // Additive transforms preserve exhaustion tilt and never write card styles.
+  // A short airborne hold, sharp landing, then diminishing rebounds give weight
+  // without shaking the board or blocking input. Each new hit replaces its own
+  // previous recoil rather than stacking transforms on the same card.
+  const impact = (r, delay = 0, weight = 1) => {
+    const card =
+      remnants.get(r.id) ||
+      [...document.querySelectorAll('.card')].find((el) => el.dataset.instanceId === r.id);
+    if (!card) return;
+    const lift = Math.min(19, r.h * 0.085) * weight;
+    const lean = (r.slot % 2 ? -1 : 1) * 2.2 * weight;
+    cardImpacts.get(card)?.cancel();
+    const anim = card.animate(
+      [
+        { offset: 0, transform: 'translateY(0) rotate(0deg) scale(1)' },
+        { offset: 0.18, transform: `translateY(${-lift}px) rotate(${lean}deg) scale(1.045)` },
+        { offset: 0.3, transform: `translateY(${-lift}px) rotate(${lean}deg) scale(1.045)` },
+        {
+          offset: 0.43,
+          transform: `translateY(${3 * weight}px) rotate(${-lean * 0.25}deg) scale(1.025,.965)`,
+        },
+        {
+          offset: 0.61,
+          transform: `translateY(${-lift * 0.25}px) rotate(${lean * 0.3}deg) scale(1.012)`,
+        },
+        { offset: 0.76, transform: 'translateY(1px) rotate(-.3deg) scale(1,.99)' },
+        { offset: 0.89, transform: 'translateY(-1px) rotate(.15deg) scale(1)' },
+        { offset: 1, transform: 'translateY(0) rotate(0deg) scale(1)' },
+      ],
+      { duration: 640, delay, easing: 'linear', composite: 'add', fill: 'none' }
+    );
+    anim.id = 'spell-card-impact';
+    cardImpacts.set(card, anim);
+    animations.push(anim);
+    end = Math.max(end, delay + 640);
+    node(
+      'contact',
+      r.x + 6,
+      r.y + r.h - 12,
+      r.w - 12,
+      24,
+      [
+        { opacity: 0, transform: 'scale(.65)' },
+        { opacity: 0.32, offset: 0.3, transform: 'scale(.75)' },
+        { opacity: 0.65, offset: 0.43, transform: 'scale(1.08)' },
+        { opacity: 0, transform: 'scale(1.25)' },
+      ],
+      640,
+      delay
+    );
+    ring({ ...r, cy: r.y + r.h - 4 }, delay + 275, 1.06);
+  };
   if (reduced) {
     for (const r of (targets.length ? targets : [origin]).filter(Boolean))
       node('edge', r.x + 3, r.y + 3, r.w - 6, r.h - 6, [{ opacity: 0.45 }, { opacity: 0 }], 180);
@@ -383,6 +438,7 @@ export const playSpellPresentation = (effect, state, config, geometry, layer) =>
         390,
         delay + 190
       );
+      impact(r, delay + 470, motif === 'harpoon' || motif === 'rifle' ? 1 : 0.6);
       ring(r, delay + 490, 0.75);
       if (motif === 'net')
         node('net', r.x, r.y, r.w, r.h, fade('scale(1.18)', 'scale(.8)'), 560, delay + 470);
@@ -413,7 +469,10 @@ export const playSpellPresentation = (effect, state, config, geometry, layer) =>
           );
         motes(r, 'droplet', 5, i * 160 + 270);
       });
-      affected.forEach((r, i) => ring(r, 330 + i * 45, 0.9));
+      affected.forEach((r, i) => {
+        impact(r, 260 + i * 45, 0.65);
+        ring(r, 330 + i * 45, 0.9);
+      });
     } else if (['blizzard', 'monsoon', 'arrows'].includes(motif)) {
       areas.filter(Boolean).forEach((r) => {
         for (let i = 0; i < 9; i++) {
@@ -436,6 +495,7 @@ export const playSpellPresentation = (effect, state, config, geometry, layer) =>
         }
       });
       affected.forEach((r, i) => {
+        impact(r, 300 + i * 50, 0.35);
         if (motif === 'blizzard') frame(r, 300 + i * 50, 'frost');
         else ring(r, 300 + i * 50, 0.75);
       });
@@ -460,6 +520,7 @@ export const playSpellPresentation = (effect, state, config, geometry, layer) =>
           );
       }
       affected.forEach((r, i) => {
+        impact(r, 410 + i * 35, motif === 'meteor' ? 1.25 : 1);
         if (motif === 'meteor')
           node(
             'fracture',
