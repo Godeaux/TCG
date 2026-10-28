@@ -818,16 +818,17 @@
                   </div>
                   <div class="piles-section">
                     <div class="piles-grid">
-                      <div class="pile-item" id="carrion-pile-container">
+                      <button type="button" class="pile-item" id="carrion-pile-container">
                         <span>Carrion</span>
                         <strong id="active-carrion">0</strong>
-                      </div>
-                      <div class="pile-item" id="exile-pile-container">
+                      </button>
+                      <button type="button" class="pile-item" id="exile-pile-container">
                         <span>Exile</span>
                         <strong id="active-exile">0</strong>
-                      </div>
+                      </button>
                     </div>
-                    <details class="board-diagnostics"><summary title="Match diagnostics">⋯</summary>
+                    <details class="board-diagnostics"><summary title="Match tools" aria-label="Match tools">⋯</summary>
+                    <div class="board-tools-panel">
                     <div class="advantage-display diagnostics" id="advantage-display">
                       <div class="advantage-header">
                         <span>Advantage</span>
@@ -838,6 +839,7 @@
                     </div>
                     <div class="advantage-graph-container diagnostics" id="advantage-graph-container" style="display: none;">
                       <canvas id="advantage-graph" width="200" height="80"></canvas>
+                    </div>
                     </div>
                     </details>
                   </div>

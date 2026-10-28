@@ -1191,3 +1191,63 @@
 @media(max-width:767px) and (orientation:portrait) {
  .game-container #rival-strip::before { top:calc(-40px - env(safe-area-inset-top, 0px)); }
 }
+
+/* Compact mobile match tools; desktop keeps its visible pile controls. */
+.game-container .field-surrender-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+}
+.board-diagnostics summary::-webkit-details-marker { display: none; }
+@media (max-width: 767px) {
+  .game-container .board-diagnostics summary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid #81998c55;
+    border-radius: 7px;
+    background: #18343b;
+    font-size: 22px;
+  }
+  .game-container .board-tools-panel {
+    position: absolute;
+    z-index: 40;
+    bottom: 48px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 224px;
+    padding: 12px;
+    border: 1px solid #81998c;
+    border-radius: 10px;
+    background: #102730;
+    box-shadow: 0 8px 24px #0008;
+  }
+  .game-container .own-control-row .board-tools-panel .piles-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .game-container .own-control-row .board-tools-panel .pile-item {
+    justify-content: space-between;
+    min-height: 44px;
+    padding: 10px 12px;
+    color: #edf1e7;
+    font-size: 15px;
+  }
+  .game-container .board-tools-panel .pile-item strong { font-size: 14px; }
+  .game-container .board-diagnostics .advantage-display,
+  .game-container .board-diagnostics .advantage-graph-container {
+    position: static;
+    width: 100%;
+    min-height: 0;
+    border: 0;
+    padding: 0;
+    background: transparent;
+  }
+}

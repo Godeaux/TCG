@@ -149,6 +149,8 @@ try {
   });
   // Short viewports around both responsive cutovers: controls remain reachable.
   for (const [width, height] of [
+    [375, 812],
+    [393, 852],
     [600, 600],
     [767, 600],
     [768, 600],
@@ -170,6 +172,23 @@ try {
       assert.equal(await page.locator('#history-panel').isVisible(), true);
       await page.locator('.history-detail').press('Escape');
       assert.equal(await page.locator('#history-panel').isVisible(), true);
+    }
+    if (width < 768) {
+      assert.equal(await page.locator('#carrion-pile-container').isVisible(), false);
+      for (const [id, title] of [
+        ['carrion', 'Carrion Piles'],
+        ['exile', 'Exile Piles'],
+      ]) {
+        await page.locator('.board-diagnostics summary').click();
+        await page.locator(`#${id}-pile-container`).click();
+        assert.equal(await page.locator('.board-diagnostics').getAttribute('open'), null);
+        assert((await page.locator('#selection-panel').innerText()).includes(title));
+        await page.getByRole('button', { name: 'OK', exact: true }).click();
+      }
+      await page.locator('.board-diagnostics summary').click();
+      await page.keyboard.press('Escape');
+      assert.equal(await page.locator('#carrion-pile-container').isVisible(), false);
+      await page.locator('.board-diagnostics summary').click();
     }
     const geometry = await page.evaluate(() => ({
       width: innerWidth,
@@ -202,6 +221,7 @@ try {
     for (const id of [...(width < 768 ? ['field-history-btn'] : []), 'carrion-pile-container'])
       await page.locator('#' + id).scrollIntoViewIfNeeded();
     await page.screenshot({ path: OUT + `/board-${width}x${height}.png` });
+    if (width < 768) await page.keyboard.press('Escape');
     await page.locator('#active-hand .card').first().scrollIntoViewIfNeeded();
     const hand = await page.locator('#active-hand .card').first().boundingBox();
     assert(

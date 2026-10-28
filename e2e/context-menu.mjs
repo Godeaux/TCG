@@ -90,6 +90,9 @@ try {
   await expect(p.locator('.overlay.active')).toHaveCount(0);
   await p.evaluate(async () => (await import('/js/ai/AIGameManager.js')).cleanupAI());
   await capture('board', 'game');
+  await p.locator('.board-diagnostics summary').click();
+  await p.screenshot({ path: `${out}/phone-board-tools.png` });
+  await p.keyboard.press('Escape');
   const hit = await p.evaluate(() => {
     const r = document.querySelector('#rival-strip').getBoundingClientRect();
     return Boolean(document.elementFromPoint((r.left + r.right) / 2, 20)?.closest('#rival-strip'));

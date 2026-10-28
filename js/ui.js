@@ -121,6 +121,7 @@ import {
   isCardLike,
 } from './ui/components/Card.js';
 import { renderField } from './ui/components/Field.js';
+import { initBoardTools } from './ui/components/BoardTools.js';
 import { renderHand, updateHandOverlap } from './ui/components/Hand.js';
 import {
   renderSelectionPanel,
@@ -5182,6 +5183,8 @@ export const renderGame = (state, callbacks = {}) => {
       callbacks.onUpdate?.();
     },
   });
+
+  initBoardTools();
 
   // Setup carrion pile click handler (on container for full area click)
   const carrionContainer = document.getElementById('carrion-pile-container');

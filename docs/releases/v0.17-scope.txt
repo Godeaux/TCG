@@ -35,3 +35,5 @@ e2e/consumption-choice-regression.mjs
 e2e/selection-lifecycle.mjs
 e2e/stale-target-panel.mjs
 e2e/input-affordance-regression.mjs
+
+js/ui/components/BoardTools.js
