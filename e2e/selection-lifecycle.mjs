@@ -224,6 +224,7 @@ try {
         for (const cancel of ['button', 'escape']) {
           await invoke(1);
           await p.locator('.option-selection-btn').filter({ hasText: '+3/+3' }).click();
+          await p.locator('.cancel-targeting').waitFor({ state: 'visible' });
           assert.equal(
             await p.locator('.cancel-targeting').count(),
             1,

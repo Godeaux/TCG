@@ -2049,7 +2049,9 @@ export class GameController {
     // effects during the probe, which would corrupt state if run on the original.
     let probeState;
     try {
-      probeState = structuredClone(this.state);
+      // The UI attaches a transport callback, not game data. Never clone or
+      // invoke it during an uncommitted effect probe.
+      probeState = structuredClone({ ...this.state, broadcast: undefined });
     } catch {
       if (optionLabels.length) return null; // Tentative choices must never mutate live state.
       // Fallback: use real state (legacy behavior) — may mutate

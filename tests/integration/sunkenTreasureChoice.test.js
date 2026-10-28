@@ -23,6 +23,9 @@ describe('Sunken Treasure explicit creature choice', () => {
       const state = createTestState({ phase: 'Main 1' });
       const spell = addCardToHand(state, 'fish-spell-sunken-treasure');
       const target = createTestCreature('fish-prey-blobfish', owner, 0, state).creature;
+      state.broadcast = () => {
+        throw Error('A tentative choice must not broadcast');
+      };
       const before = JSON.stringify(state);
       const choice = controllerFor(state).getEffectSelections(spell, 'effect', {
         optionLabels: ['+3/+3'],
