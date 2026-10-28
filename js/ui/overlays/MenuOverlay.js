@@ -381,6 +381,9 @@ export const renderMenuOverlays = (state, callbacks) => {
   }
   if (elements.menuProfile) {
     elements.menuProfile.disabled = state.menu.loading;
+    const accountLabel = state.menu.profile?.id ? 'View profile' : 'Log in';
+    elements.menuProfile.setAttribute('aria-label', accountLabel);
+    elements.menuProfile.title = accountLabel;
   }
   if (elements.menuOther) {
     elements.menuOther.disabled = state.menu.loading;
@@ -420,10 +423,13 @@ const renderMultiplayerScreen = (state, elements) => {
   const isLobbyClosed = lobby?.status === 'closed';
   const isHost = Boolean(lobby?.host_id && lobby.host_id === localProfileId);
 
-  // A successful join replaces the code-entry form with the room controls.
-  if (hasLobby) {
-    elements.lobbyJoinForm?.classList.remove('active');
-  }
+  // Friends exposes create and code entry together, without opening a second screen.
+  const friendsEntry = hideMainFindMatch && !hasLobby && !matchmaking;
+  elements.multiplayerOverlay?.classList.toggle('friends-entry', friendsEntry);
+  const title = document.getElementById('multiplayer-title');
+  if (title) title.textContent = hideMainFindMatch ? 'Play with Friends' : 'Play Online';
+  if (friendsEntry) elements.lobbyJoinForm?.classList.add('active');
+  else if (hasLobby) elements.lobbyJoinForm?.classList.remove('active');
 
   // Get player names
   const hostName = state.players?.[0]?.name || 'Host';
@@ -503,7 +509,7 @@ const renderMultiplayerScreen = (state, elements) => {
 
   // Join as Guest: show when not in a lobby and not matchmaking
   if (elements.lobbyJoin) {
-    elements.lobbyJoin.style.display = !hasLobby && !matchmaking ? '' : 'none';
+    elements.lobbyJoin.style.display = !hasLobby && !matchmaking && !friendsEntry ? '' : 'none';
     elements.lobbyJoin.disabled = loading;
   }
 

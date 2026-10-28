@@ -135,7 +135,6 @@
 
     <div class="overlay menu-overlay" id="menu-overlay" aria-hidden="true">
       <div class="overlay-content menu-card">
-        <div class="menu-splash-text" id="menu-splash-text"></div>
         <div class="menu-header">
 
           <div>
@@ -143,9 +142,13 @@
             <p class="muted" id="game-version">v0.17</p>
           </div>
         </div>
+        <button id="menu-profile" class="home-profile-button" aria-label="Log in" title="Log in">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg>
+        </button>
         <div class="menu-status" id="menu-status"></div>
 
         <div class="menu-actions-grid">
+          <div class="home-play-row">
           <div class="menu-find-match-container">
             <button class="menu-find-game" id="menu-find-match">
               <span>Play Online</span>
@@ -156,12 +159,17 @@
             </button>
           </div>
 
+          <button class="btn-secondary home-friends-button" id="other-multiplayer">Play with<br />Friends</button>
+          </div>
           <div class="menu-right-stack">
-            <button class="btn-secondary" id="menu-decks">My decks</button>
-            <button class="btn-secondary" id="menu-profile">Profile</button>
-            <button class="btn-secondary" id="menu-other">Other</button>
+            <button class="btn-secondary" id="menu-other">Practice</button>
+            <button class="btn-secondary" id="menu-decks">My Decks</button>
           </div>
         </div>
+        <footer class="home-footer">
+          <div class="menu-splash-text" id="menu-splash-text"></div>
+          <button class="home-how-to-play" id="other-tutorial">How to Play</button>
+        </footer>
       </div>
     </div>
 
@@ -170,13 +178,11 @@
         <div class="menu-header">
           <div class="menu-icon">⚙️</div>
           <div>
-            <h2>Other Options</h2>
+            <h2>Practice</h2>
           </div>
         </div>
         <div class="menu-actions">
           <button class="btn-primary" id="other-ai">Play vs. AI</button>
-          <button class="btn-secondary" id="other-multiplayer">Multiplayer</button>
-          <button class="btn-secondary" id="other-tutorial">Tutorial</button>
           <button class="btn-secondary" id="other-options">Options</button>
           <button class="btn-secondary" id="other-credits">Credits</button>
           <button class="btn-secondary" id="other-back">Back</button>
@@ -548,7 +554,7 @@
         <div class="menu-header">
           <div class="menu-icon">🌐</div>
           <div>
-            <h2>Play online</h2>
+            <h2 id="multiplayer-title">Play Online</h2>
             <p class="muted" id="multiplayer-status" aria-live="polite"></p>
           </div>
         </div>
@@ -563,7 +569,7 @@
           <button class="btn-secondary" id="lobby-leave" style="display: none;">New Code</button>
         </div>
         <form class="menu-form" id="lobby-join-form">
-          <label class="menu-label" for="lobby-code">Enter Lobby Code</label>
+          <label class="menu-label" for="lobby-code">Join with Code</label>
           <input
             class="menu-input"
             id="lobby-code"

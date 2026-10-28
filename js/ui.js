@@ -4053,8 +4053,8 @@ const setupClickAwayHandler = () => {
 };
 
 /**
- * Set up the settings button (floating action button in bottom-right)
- * Provides quick access to Settings, Bug Report, and Known Bugs from anywhere
+ * Set up the contextual menu button
+ * Provides quick access to sound/settings and bug reporting
  * @param {boolean} includeSimStats - Whether to include the simulation stats option
  */
 const setupSettingsButton = () => {
@@ -4065,10 +4065,6 @@ const setupSettingsButton = () => {
     onReportBug: () => {
       const profileId = latestState?.menu?.profile?.id;
       showBugReportOverlay({ profileId, tab: 'report' });
-    },
-    onViewBugs: () => {
-      const profileId = latestState?.menu?.profile?.id;
-      showBugReportOverlay({ profileId, tab: 'list' });
     },
   });
 };

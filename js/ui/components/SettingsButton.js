@@ -63,7 +63,6 @@ const schedulePlacement = () => {
  * @param {Object} callbacks
  * @param {Function} callbacks.onSettings - Called when "Settings" is clicked
  * @param {Function} callbacks.onReportBug - Called when "Report Bug" is clicked
- * @param {Function} callbacks.onViewBugs - Called when "View Known Bugs" is clicked
  * @param {Function} callbacks.onSimulationStats - Called when "Simulation Stats" is clicked (AI vs AI mode)
  */
 export const initSettingsButton = (callbacks = {}) => {
@@ -75,6 +74,9 @@ export const initSettingsButton = (callbacks = {}) => {
   isMenuOpen = false;
   // Remove existing container if re-initializing
   if (containerElement) {
+    for (const button of containerElement.querySelectorAll('.home-menu-item, #menu-profile')) {
+      document.getElementById('menu-overlay')?.appendChild(button);
+    }
     containerElement.remove();
   }
 
@@ -102,15 +104,11 @@ export const initSettingsButton = (callbacks = {}) => {
     <div class="settings-menu" id="settings-menu">
       <button class="settings-menu-item" id="settings-menu-settings">
         <span class="settings-menu-icon">⚙️</span>
-        <span>Settings</span>
+        <span>Sound & Settings</span>
       </button>
       <button class="settings-menu-item" id="settings-menu-report">
         <span class="settings-menu-icon">📝</span>
         <span>Report Bug</span>
-      </button>
-      <button class="settings-menu-item" id="settings-menu-view">
-        <span class="settings-menu-icon">📋</span>
-        <span>Known Bugs</span>
       </button>
       ${simStatsOption}
     </div>
@@ -119,10 +117,22 @@ export const initSettingsButton = (callbacks = {}) => {
     </button>
   `;
 
+  // Reuse the real navigation controls and their input-router bindings.
+  const menu = containerElement.querySelector('#settings-menu');
+  for (const id of ['other-credits']) {
+    const button = document.getElementById(id);
+    if (!button) continue;
+    button.className = 'settings-menu-item home-menu-item';
+    menu.appendChild(button);
+    button.addEventListener('click', hideSettingsMenu, { signal: listeners.signal });
+  }
+  const profile = document.getElementById('menu-profile');
+  if (profile)
+    containerElement.insertBefore(profile, containerElement.querySelector('#settings-fab'));
+
   const fab = containerElement.querySelector('#settings-fab');
   const settingsBtn = containerElement.querySelector('#settings-menu-settings');
   const reportBtn = containerElement.querySelector('#settings-menu-report');
-  const viewBtn = containerElement.querySelector('#settings-menu-view');
   const simStatsBtn = containerElement.querySelector('#settings-menu-sim-stats');
 
   // Toggle menu on FAB click
@@ -141,12 +151,6 @@ export const initSettingsButton = (callbacks = {}) => {
   reportBtn?.addEventListener('click', () => {
     hideSettingsMenu();
     callbacks.onReportBug?.();
-  });
-
-  // View known bugs action
-  viewBtn?.addEventListener('click', () => {
-    hideSettingsMenu();
-    callbacks.onViewBugs?.();
   });
 
   // Simulation stats action (AI vs AI only)

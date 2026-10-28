@@ -504,17 +504,8 @@ const initNavigation = () => {
     latestCallbacks.onUpdate?.();
   });
 
-  // Main menu: Other (opens Other submenu)
-  elements.menuOther?.addEventListener('click', () => {
-    if (!latestState) {
-      return;
-    }
-    setMenuStage(latestState, 'other');
-    latestCallbacks.onUpdate?.();
-  });
-
-  // Other submenu: Play vs. AI
-  elements.otherAI?.addEventListener('click', () => {
+  // Practice goes straight to the existing AI setup; no intermediate utility menu.
+  const openPractice = () => {
     if (!latestState) {
       return;
     }
@@ -528,7 +519,9 @@ const initNavigation = () => {
     elements.aiSavedDecks.style.display = 'none';
     setMenuStage(latestState, 'ai-setup');
     latestCallbacks.onUpdate?.();
-  });
+  };
+  elements.menuOther?.addEventListener('click', openPractice);
+  elements.otherAI?.addEventListener('click', openPractice);
 
   // Other submenu: Multiplayer (without Find Match)
   elements.otherMultiplayer?.addEventListener('click', () => {
@@ -604,7 +597,7 @@ const initNavigation = () => {
     if (!latestState) {
       return;
     }
-    setMenuStage(latestState, 'other');
+    setMenuStage(latestState, 'main');
     latestCallbacks.onUpdate?.();
   });
 
@@ -668,11 +661,11 @@ const initNavigation = () => {
     if (!latestState) {
       return;
     }
-    // Create profile if it doesn't exist
-    if (!latestState.menu.profile) {
-      latestState.menu.profile = {
-        username: 'Guest Player',
-      };
+    // The home account control opens authentication until a real account exists.
+    if (!latestState.menu.profile?.id) {
+      setMenuStage(latestState, 'login');
+      latestCallbacks.onUpdate?.();
+      return;
     }
     // Ensure profile has all required properties
     const profile = latestState.menu.profile;

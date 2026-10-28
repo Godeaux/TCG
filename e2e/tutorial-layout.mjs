@@ -25,7 +25,6 @@ try {
   ]) {
     await p.setViewportSize({ width, height });
     await p.goto(process.env.TCG_BASE || 'http://127.0.0.1:8163');
-    await p.locator('#menu-other').click();
     await p.locator('#other-tutorial').click();
     const count = Number((await p.locator('.tutorial-nav-counter').innerText()).split('/')[1]);
     for (let i = 0; i < count; i++) {
