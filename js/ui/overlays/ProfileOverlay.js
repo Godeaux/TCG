@@ -242,8 +242,8 @@ const renderCollectionGrid = (elements, ownedCards, filter, onCardClick) => {
     const empty = document.createElement('div');
     empty.className = 'collection-empty';
     empty.textContent =
-      filter === 'owned'
-        ? 'No cards owned yet. Open packs to get started!'
+      filter === 'owned' || filter === 'rarity'
+        ? 'No cards owned yet.'
         : 'No cards found in this category.';
     collectionGrid.appendChild(empty);
   }
@@ -924,6 +924,7 @@ export const renderProfileOverlay = (state, callbacks = {}) => {
 
     // Update packs button state (use 'disabled' class when no packs)
     elements.profilePacksBtn.classList.toggle('disabled', profileData.packs === 0);
+    elements.profilePacksBtn.disabled = profileData.packs === 0;
   }
 
   // Filter dropdown

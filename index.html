@@ -344,14 +344,13 @@
               </div>
 
               <!-- Packs -->
-              <div class="profile-packs" id="profile-packs-btn">
-                <div class="profile-packs-label">Packs</div>
-                <div class="profile-packs-count">
+              <button type="button" class="profile-packs" id="profile-packs-btn">
+                <span class="profile-packs-label">Packs</span>
+                <span class="profile-packs-count">
                   <span id="profile-packs-count">0</span>
-                  <span class="profile-packs-icon">📦</span>
-                </div>
-                <div class="profile-packs-hint">Click to open</div>
-              </div>
+                  <span class="profile-packs-icon" aria-hidden="true">↗</span>
+                </span>
+              </button>
             </div>
 
             <!-- Friends Tab Content -->
@@ -471,13 +470,12 @@
       <div class="overlay-content">
         <!-- Unopened pack phase -->
         <div class="pack-unopened-phase" id="pack-unopened-phase">
-          <h2 class="pack-opening-title">Open Your Pack</h2>
-          <p class="pack-opening-subtitle">Hold down to open!</p>
-          <div class="pack-unopened" id="pack-unopened">
+          <h2 class="pack-opening-title">Open pack</h2>
+          <div class="pack-unopened" id="pack-unopened" role="button" tabindex="0" aria-label="Hold to open pack">
             <div class="pack-unopened-glow"></div>
             <div class="pack-unopened-box">
-              <div class="pack-unopened-icon">📦</div>
-              <div class="pack-unopened-label">PACK</div>
+              <div class="pack-unopened-icon" aria-hidden="true">FC</div>
+              <div class="pack-unopened-label">FOOD CHAIN</div>
             </div>
             <div class="pack-progress-ring" id="pack-progress-ring">
               <svg viewBox="0 0 100 100">
@@ -490,12 +488,11 @@
         </div>
         <!-- Cards reveal phase -->
         <div class="pack-cards-phase" id="pack-cards-phase" style="display: none;">
-          <h2 class="pack-opening-title">Your Cards!</h2>
-          <p class="pack-opening-subtitle">Click cards to reveal, or reveal all at once!</p>
+          <h2 class="pack-opening-title">Your cards</h2>
           <div class="pack-cards-container" id="pack-cards-container">
             <!-- Pack cards populated by JavaScript -->
           </div>
-          <div class="pack-save-status" id="pack-save-status"></div>
+          <div class="pack-save-status" id="pack-save-status" role="status" aria-live="polite"></div>
           <div class="pack-opening-actions">
             <button class="pack-reveal-all-btn" id="pack-reveal-all">Reveal All</button>
             <button class="pack-done-btn" id="pack-done">Done</button>
