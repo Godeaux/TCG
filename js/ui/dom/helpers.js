@@ -35,7 +35,12 @@ export const getFieldSlotElement = (state, ownerIndex, slotIndex, getLocalPlayer
   }
   const localIndex = getLocalPlayerIndex?.(state) ?? 0;
   const isOpponent = ownerIndex !== localIndex;
-  const row = document.querySelector(isOpponent ? '.opponent-field' : '.player-field');
+  // The rendered row owns the geometry. Local hot-seat views can rotate,
+  // while the network-local seat remains 0; use explicit DOM ownership first.
+  const row =
+    document.querySelector(
+      `.player-field[data-player-index="${ownerIndex}"], .opponent-field[data-player-index="${ownerIndex}"]`
+    ) || document.querySelector(isOpponent ? '.opponent-field' : '.player-field');
   if (!row) {
     return null;
   }

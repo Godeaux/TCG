@@ -5221,7 +5221,7 @@ export const renderGame = (state, callbacks = {}) => {
 export const setupInitialDraw = (state, count) => {
   state.players.forEach((player, index) => {
     for (let i = 0; i < count; i += 1) {
-      drawCard(state, index);
+      drawCard(state, index, { openingHand: true });
     }
   });
 };

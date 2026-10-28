@@ -240,11 +240,14 @@ describe('Amphibian Spell Cards', () => {
       // Should be an array of primitives
       expect(Array.isArray(effects)).toBe(true);
 
-      // Should have selectTarget primitive for damage
+      // Uses the same target selection schema as other targeted damage spells
       expect(effects).toContainEqual(
         expect.objectContaining({
-          type: 'selectTarget',
-          params: expect.objectContaining({ group: 'any', effect: 'damage', amount: 3 }),
+          type: 'selectFromGroup',
+          params: expect.objectContaining({
+            targetGroup: 'all-entities',
+            effect: { damage: 3, label: 'whitewater' },
+          }),
         })
       );
 

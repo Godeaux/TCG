@@ -47,6 +47,7 @@ export const renderField = (state, playerIndex, isOpponent, options = {}) => {
     return;
   }
 
+  fieldRow.dataset.playerIndex = String(playerIndex);
   const slots = Array.from(fieldRow.querySelectorAll('.field-slot'));
   const player = state.players[playerIndex];
 

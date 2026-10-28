@@ -257,7 +257,7 @@ export const createGameState = () => {
   };
 };
 
-export const drawCard = (state, playerIndex) => {
+export const drawCard = (state, playerIndex, { openingHand = false } = {}) => {
   const player = state.players[playerIndex];
   if (player.deck.length === 0) {
     return null;
@@ -270,6 +270,8 @@ export const drawCard = (state, playerIndex) => {
     card.instanceId = seededInstanceId();
   }
   player.hand.push(card);
+  // Dealing the opening hand is setup, not a player action. Keep normal draws.
+  if (openingHand) return card;
   const entity = projectPlayerEntity(state, playerIndex);
   recordHistoryEvent(state, {
     kind: 'draw',
