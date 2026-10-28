@@ -35,7 +35,6 @@ async function toBoard(ctxOpts, tag) {
   await page.waitForFunction(() => !!window.__qa);
   await page.locator('#menu-other').click();
   await page.waitForTimeout(300);
-  await page.locator('#other-ai').click();
   await page.waitForTimeout(200);
   await page.locator('#ai-deck-random').click();
   await page.waitForTimeout(1200);

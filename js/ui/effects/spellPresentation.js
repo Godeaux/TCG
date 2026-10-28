@@ -3,6 +3,7 @@
  * particle/lifetime budget, and can be cancelled on navigation or resize. */
 import { getFieldSlotElement, getPlayerBadgeByIndex } from '../dom/helpers.js';
 import { getCardImagePath, hasCardImage } from '../../cardImages.js';
+import { paintSpellSignature } from './spellSignatures.js';
 
 export const SPELL_FX_LIMITS = Object.freeze({ scenes: 2, nodes: 48, lifetimeMs: 1800 });
 const activeScenes = new Set();
@@ -36,7 +37,8 @@ export const captureSpellScene = (state, effect, layer, localPlayer) => {
       const prior = effect.fieldTargets?.find(
         (c) => c.ownerIndex === owner && c.slotIndex === slot
       );
-      const id = prior?.instanceId || card?.dataset.instanceId;
+      const current = state.players[owner].field[slot];
+      const id = prior?.instanceId || card?.dataset.instanceId || current?.instanceId;
       const instance = state.players[owner].field.find((c) => c?.instanceId === id);
       const historical =
         !instance &&
@@ -48,7 +50,11 @@ export const captureSpellScene = (state, effect, layer, localPlayer) => {
         ...rect,
         owner,
         slot,
-        occupied: !!card || !!prior,
+        occupied: !!card || !!prior || !!current,
+        arrived:
+          !!effect.fieldTargets &&
+          !!current &&
+          !effect.fieldTargets.some((c) => c.instanceId === current.instanceId),
         id,
         token: !!(prior?.isToken || instance?.isToken || historical?.isToken),
         name:
@@ -80,9 +86,12 @@ export const captureSpellScene = (state, effect, layer, localPlayer) => {
   };
 };
 
-const ALL = new Set(['flood', 'meteor', 'maelstrom']);
+const ALL = new Set(['flood', 'meteor', 'maelstrom', 'lake-deluge']);
 const ENEMY = new Set([
   'wave',
+  'washout',
+  'scale-volley',
+  'spectral-darts',
   'blizzard',
   'arrows',
   'monsoon',
@@ -92,6 +101,21 @@ const ENEMY = new Set([
   'freeze-trap',
 ]);
 const MATERIAL = {
+  washout: 'water',
+  'lake-deluge': 'water',
+  'scale-volley': 'metal',
+  'spectral-darts': 'ice',
+  'golden-dart': 'gold',
+  'tomato-freeze': 'ember',
+  'scale-shield': 'venom',
+  'feather-veil': 'feather',
+  'prismatic-feather': 'feather',
+  'scarlet-plume': 'ember',
+  'milk-pour': 'pearl',
+  'wool-guard': 'pearl',
+  'fur-mantle': 'earth',
+  'rainbow-regen': 'water',
+  'seed-feed': 'earth',
   flood: 'water',
   wave: 'water',
   maelstrom: 'water',
@@ -278,6 +302,7 @@ export const playSpellPresentation = (effect, state, config, geometry, layer) =>
   // Empty slots receive environmental motion, never a fabricated hit marker.
   const affected = fields.filter((r) => r.occupied && (motif !== 'quake' || r.token));
   const areas = scope === 'all' ? rows : [rows[scope === 'enemy' ? 1 - owner : owner]];
+  const arrivals = geometry.slots.filter((r) => r.owner === owner && r.arrived);
   const targets = target
     ? [target]
     : ['aoe', 'buff', 'bounce', 'summon'].includes(type)
@@ -478,6 +503,25 @@ export const playSpellPresentation = (effect, state, config, geometry, layer) =>
     ring({ ...dest, cy: dest.y + dest.h }, delay + 490, 0.9);
     return true;
   };
+  if (!reduced) {
+    // Unique readable silhouettes supplement, not replace, target choreography.
+    const anchors =
+      type === 'summon'
+        ? arrivals.length
+          ? arrivals
+          : [origin]
+        : target
+          ? [target]
+          : ['buff', 'summon', 'status'].includes(type)
+            ? affected
+            : ['aoe', 'bounce'].includes(type)
+              ? areas
+              : [origin];
+    anchors
+      .filter(Boolean)
+      .slice(0, 3)
+      .forEach((r, i) => paintSpellSignature(motif, r, node, i * 80));
+  }
   if (reduced) {
     for (const r of (targets.length ? targets : [origin]).filter(Boolean))
       node('edge', r.x + 3, r.y + 3, r.w - 6, r.h - 6, [{ opacity: 0.45 }, { opacity: 0 }], 180);
@@ -562,7 +606,46 @@ export const playSpellPresentation = (effect, state, config, geometry, layer) =>
     }
     if (!destinations.length && origin) ring(origin, 0, 0.5);
   } else if (type === 'aoe' || (type === 'trap' && motif === 'maelstrom')) {
-    if (['flood', 'wave', 'maelstrom'].includes(motif)) {
+    if (motif === 'washout') {
+      // A horizontal foam front erases ability sigils, then hits the enemy row.
+      areas.filter(Boolean).forEach((r) => {
+        for (let i = 0; i < 3; i++)
+          node(
+            'wash-front',
+            r.x,
+            r.y,
+            Math.max(35, r.w * 0.18),
+            r.h,
+            [
+              { opacity: 0, transform: 'translateX(-25px) skewX(-12deg)' },
+              { opacity: 0.95, offset: 0.2 },
+              { opacity: 0.85, offset: 0.7 },
+              { opacity: 0, transform: `translateX(${r.w}px) skewX(-12deg)` },
+            ],
+            1050,
+            i * 95
+          );
+      });
+      affected.forEach((r, i) => {
+        const delay = 150 + i * 150;
+        node(
+          'stripped-sigil',
+          r.cx - 22,
+          r.cy - 22,
+          44,
+          44,
+          [
+            { opacity: 0.9, transform: 'scale(1)' },
+            { opacity: 0.8, offset: 0.4 },
+            { opacity: 0, transform: 'translate(35px,-30px) rotate(65deg) scale(.15)' },
+          ],
+          750,
+          delay
+        );
+        motes(r, 'droplet', 3, delay + 120);
+        impact(r, delay + 200, 0.65);
+      });
+    } else if (['flood', 'wave', 'maelstrom', 'lake-deluge'].includes(motif)) {
       areas.filter(Boolean).forEach((r, i) => {
         for (let j = 0; j < 3; j++)
           node(
@@ -598,7 +681,9 @@ export const playSpellPresentation = (effect, state, config, geometry, layer) =>
           );
         ring(r, 330 + i * 45, 0.9);
       });
-    } else if (['blizzard', 'monsoon', 'arrows'].includes(motif)) {
+    } else if (
+      ['blizzard', 'monsoon', 'arrows', 'scale-volley', 'spectral-darts'].includes(motif)
+    ) {
       areas.filter(Boolean).forEach((r) => {
         for (let i = 0; i < 9; i++) {
           const x = r.x + r.w * ((i + 0.5) / 9),
@@ -627,6 +712,23 @@ export const playSpellPresentation = (effect, state, config, geometry, layer) =>
         }
       });
     } else {
+      if (motif === 'quake') {
+        // A cast still shifts the ground when no enemy tokens are present;
+        // only actual tokens below receive card-hit animation.
+        areas
+          .filter(Boolean)
+          .forEach((r) =>
+            node(
+              'fracture',
+              r.x + r.w * 0.15,
+              r.cy - 28,
+              r.w * 0.7,
+              56,
+              fade('scaleX(.2) scaleY(.4)', 'scaleX(1) scaleY(1)'),
+              950
+            )
+          );
+      }
       // Meteor and earth effects carry weight through staggered pressure rings,
       // not screen displacement. Two beats for Pounce Plummet, one for Meteor.
       if (motif === 'meteor') {
@@ -668,9 +770,11 @@ export const playSpellPresentation = (effect, state, config, geometry, layer) =>
     const receivers =
       type === 'heal'
         ? [origin, ...(motif === 'feathers-heal' ? affected : [])].filter(Boolean)
-        : target
-          ? [target]
-          : affected;
+        : type === 'summon'
+          ? arrivals
+          : target
+            ? [target]
+            : affected;
     receivers.forEach((r, i) => {
       frame(r, i * 60, type === 'summon' ? 'frost' : 'edge');
       ring({ ...r, cy: r.y + r.h * 0.82 }, i * 60);
@@ -716,6 +820,7 @@ export const playSpellPresentation = (effect, state, config, geometry, layer) =>
   } else if (type === 'status' || (type === 'utility' && target)) {
     if (target) {
       frame(target);
+      if (motif === 'tomato-freeze') cold(target, 220);
       if (['paralyze', 'poison', 'strip'].includes(motif))
         for (let i = 0; i < 3; i++)
           node(

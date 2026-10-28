@@ -597,7 +597,14 @@
       "type": "Spell",
       "effects": {
         "effect": [
-          { "type": "selectTarget", "params": { "group": "any", "effect": "damage", "amount": 3 } },
+          {
+            "type": "selectFromGroup",
+            "params": {
+              "targetGroup": "all-entities",
+              "title": "Choose a target for Whitewater",
+              "effect": { "damage": 3, "label": "whitewater" }
+            }
+          },
           { "type": "heal", "params": { "amount": 3 } }
         ]
       }

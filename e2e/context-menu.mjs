@@ -72,7 +72,6 @@ try {
   p.on('pageerror', (e) => errors.push(e.message));
   await p.goto(process.env.TCG_BASE || 'http://127.0.0.1:8162');
   await p.locator('#menu-other').click();
-  await p.locator('#other-ai').click();
   await capture('setup', null);
   await p.locator('#ai-deck-random').click();
   await p.locator('.deck-select-panel--fish').click();

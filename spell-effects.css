@@ -415,3 +415,22 @@
   background: radial-gradient(ellipse, #d9f6ff55, #a4d8ee28 40%, transparent 70%);
   border-top: 1px solid #d3f4ff55;
 }
+
+/* Distinct motifs for generated and utility spells; no downloaded assets. */
+.spell-fx--signature { color: var(--fx-light); filter: drop-shadow(0 2px 3px var(--fx-deep)); }
+.spell-fx--signature svg { display: block; width: 100%; height: 100%; }
+.spell-scene[data-motif="rainbow-regen"] .spell-fx--signature,
+.spell-scene[data-motif="prismatic-feather"] .spell-fx--signature {
+  color: #dfc9ff; filter: drop-shadow(-3px 0 2px #72d9dc) drop-shadow(3px 0 2px #e8bb73);
+}
+.spell-fx--wash-front {
+  border-right: 5px solid #e5fffa;
+  border-radius: 40% 55% 45% 30%;
+  background: linear-gradient(90deg,transparent,#2489a578 40%,#83e4e7d9 90%,#effff8);
+  box-shadow: 8px 0 14px #baf8ee66;
+}
+.spell-fx--stripped-sigil {
+  border: 2px solid #c3e9dd;
+  border-radius: 50%;
+  background: linear-gradient(135deg,transparent 46%,#d9fff1 47% 53%,transparent 54%);
+}

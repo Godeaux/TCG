@@ -66,7 +66,6 @@ try {
     p.on('pageerror', (e) => console.log('PAGEERROR', i, e.message));
     await p.goto(process.env.TCG_BASE || 'http://127.0.0.1:8123');
     await p.waitForFunction(() => !!window.__qa);
-    await p.locator('#menu-other').click();
     await p.locator('#other-multiplayer').click();
     await p.locator('#multiplayer-auth').click();
     await p.locator('#login-username').fill(`qa${stamp}${i}`);
@@ -81,7 +80,6 @@ try {
   // Authentication returns to multiplayer on this client.
   for (const p of pages) {
     if (await p.locator('#menu-overlay').evaluate((el) => el.classList.contains('active'))) {
-      await p.locator('#menu-other').click();
       await p.locator('#other-multiplayer').click();
     }
   }
@@ -91,7 +89,7 @@ try {
   );
   const code = (await a.locator('#lobby-code-display').innerText()).trim();
   console.log('LOBBY', code);
-  await b.locator('#lobby-join').click();
+  await b.locator('#lobby-code').waitFor();
   await b.locator('#lobby-code').fill(code);
   await b.locator('#lobby-join-form button[type=submit]').click();
   for (const p of pages) await p.locator('#lobby-continue').click();

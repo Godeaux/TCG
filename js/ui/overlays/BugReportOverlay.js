@@ -48,7 +48,6 @@ const createOverlayHTML = () => `
     <!-- Tabs -->
     <div class="bug-tabs">
       <button class="bug-tab active" id="bug-tab-report">Report Bug</button>
-      <button class="bug-tab" id="bug-tab-list">Known Bugs</button>
     </div>
 
     <!-- Report Bug Tab -->

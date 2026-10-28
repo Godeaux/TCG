@@ -79,8 +79,6 @@ async function createPlayer(browser, index, deckName) {
 // ============================================================================
 
 async function loginPlayer(page, username, pin) {
-  await page.click('#menu-other', { force: true });
-  await page.waitForTimeout(300);
   await page.click('#other-multiplayer', { force: true });
   await page.waitForTimeout(300);
   await page.click('#multiplayer-auth', { force: true });
@@ -96,8 +94,6 @@ async function loginPlayer(page, username, pin) {
 }
 
 async function createLobby(page) {
-  await page.click('#menu-other', { force: true });
-  await page.waitForTimeout(300);
   await page.click('#other-multiplayer', { force: true });
   await page.waitForTimeout(300);
   await page.click('#lobby-create', { force: true });
@@ -106,11 +102,8 @@ async function createLobby(page) {
 }
 
 async function joinLobby(page, code) {
-  await page.click('#menu-other', { force: true });
-  await page.waitForTimeout(300);
   await page.click('#other-multiplayer', { force: true });
   await page.waitForTimeout(300);
-  await page.click('#lobby-join', { force: true });
   await page.waitForTimeout(1000);
   // Fill code and submit the join form
   await page.evaluate(

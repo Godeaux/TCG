@@ -524,10 +524,10 @@ const renderPackCard = (cardData, index, onClick) => {
   shine.className = 'pack-card-shine';
   front.appendChild(shine);
 
-  // Question mark logo
+  // Shared pack monogram
   const logo = document.createElement('div');
   logo.className = 'pack-card-logo';
-  logo.textContent = '?';
+  logo.textContent = 'FC';
   front.appendChild(logo);
 
   // Card back (revealed) - use actual card rendering
@@ -816,6 +816,20 @@ const setupHoldListeners = () => {
   pack.onmouseleave = null;
   pack.ontouchstart = null;
   pack.ontouchend = null;
+
+  pack.onkeydown = (event) => {
+    if ((event.key === ' ' || event.key === 'Enter') && !event.repeat) {
+      event.preventDefault();
+      startHold();
+    }
+  };
+  pack.onkeyup = (event) => {
+    if (event.key === ' ' || event.key === 'Enter') {
+      event.preventDefault();
+      stopHold();
+    }
+  };
+  pack.onblur = stopHold;
 
   // Mouse events
   pack.onmousedown = (e) => {

@@ -202,8 +202,8 @@ export const SPELL_VISUAL_EFFECTS = {
   },
   'fish-spell-washout': {
     type: 'aoe',
-    effect: 'wave',
-    description: 'Current sweeps across enemy field',
+    effect: 'washout',
+    description: 'Foaming cross-current strips enemy abilities, then strikes the row',
   },
   'fish-spell-sunken-treasure': {
     type: 'utility',
@@ -413,6 +413,24 @@ export const SPELL_VISUAL_EFFECTS = {
     effect: 'choose-small',
     description: 'Slime blob reveals choice',
   },
+
+  // Generated spells are playable cards too, not generic draw effects.
+  'token-hand-egg': { type: 'summon', effect: 'hatch' },
+  'token-alligator-skin': { type: 'status', effect: 'scale-shield' },
+  'token-scale-arrows': { type: 'aoe', effect: 'scale-volley' },
+  'token-golden-blowdart': { type: 'projectile', projectile: 'golden-dart' },
+  'token-phantasmal-darts': { type: 'aoe', effect: 'spectral-darts' },
+  'token-tomato': { type: 'status', effect: 'tomato-freeze' },
+  'token-titicaca-water': { type: 'aoe', effect: 'lake-deluge' },
+  'token-rainbow': { type: 'buff', effect: 'rainbow-regen' },
+  'token-kakapo-feathers': { type: 'status', effect: 'feather-veil' },
+  'token-rainbow-feathers': { type: 'utility', effect: 'prismatic-feather' },
+  'token-feed': { type: 'buff', effect: 'seed-feed' },
+  'token-red-tailfeathers': { type: 'utility', effect: 'scarlet-plume' },
+  'token-fresh-milk': { type: 'buff', effect: 'milk-pour' },
+  'token-present': { type: 'utility', effect: 'gift' },
+  'token-qiviut': { type: 'status', effect: 'wool-guard' },
+  'token-sable-fur': { type: 'utility', effect: 'fur-mantle' },
 
   // ==================== TRAPS (all tribes) ====================
   // Traps use simpler trigger effects
