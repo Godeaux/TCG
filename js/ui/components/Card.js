@@ -71,7 +71,8 @@ export const isCardLike = (value) =>
 const renderNameHtml = (name) => {
   if (!name) return '';
   const escaped = name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  return `<div class="card-name-text">${escaped}</div>`;
+  const titleSize = name.length <= 12 ? 'short' : name.length <= 18 ? 'medium' : 'long';
+  return `<div class="card-name-text" data-title-size="${titleSize}">${escaped}</div>`;
 };
 
 /**
@@ -522,7 +523,7 @@ export const renderCard = (card, options = {}) => {
 
   // Build card class with optional rarity
   const rarityClass = card.rarity ? ` rarity-${card.rarity}` : '';
-  cardElement.className = `card ${cardTypeClass(card)}${isSelected ? ' card-selected' : ''}${rarityClass}`;
+  cardElement.className = `card canonical-card ${cardTypeClass(card)}${isSelected ? ' card-selected' : ''}${rarityClass}`;
   if (card.instanceId) {
     cardElement.dataset.instanceId = card.instanceId;
   }
@@ -541,7 +542,7 @@ export const renderCard = (card, options = {}) => {
     context,
   });
 
-  // Dense real cards trade some art height for readable, scrollable copy.
+  // Density metadata never changes the shared art window or font scale.
   const copyLength = inner.querySelector('.card-effect-text')?.textContent.length ?? 0;
   if (copyLength > 90 || (card.name?.length ?? 0) > 22 || (card.keywords?.length ?? 0) > 2) {
     cardElement.classList.add('long-copy');

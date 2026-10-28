@@ -4,6 +4,16 @@ All notable changes to Food Chain TCG.
 
 ---
 
+## v0.17 — Unified interface and card presentation
+
+- Redesigned home, saved-deck previews, editor, and art-backed category choices for phone and desktop.
+- Consistent full-card proportions, artwork crops, readable text, and slightly larger short titles.
+- Clearer deck counts, save feedback, selectors, dialogs, and contextual Menu controls.
+- Improved combat history, rival targeting space, mobile hand layout, and tutorial presentation.
+- Fixed cancellation/selection edge cases and lobby player-name assignment.
+
+This is a UI update, not the 1.0 multiplayer/security release. Known missing artwork and audio remain in progress.
+
 ## v0.16 — Host-authoritative multiplayer, interactive tutorial, and audio channels
 
 ### Multiplayer Overhaul

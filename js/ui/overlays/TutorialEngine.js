@@ -172,6 +172,11 @@ function goToScene(index) {
     <div class="tutorial-scene-text">${scene.text}</div>
   `;
 
+  stageEl.style.setProperty(
+    '--tutorial-slot-count',
+    String(Math.max(1, scene.demo?.setup?.length || 0))
+  );
+
   // Place cards in slots
   if (scene.demo?.setup) {
     for (const { slot, card } of scene.demo.setup) {

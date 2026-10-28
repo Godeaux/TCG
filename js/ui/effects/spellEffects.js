@@ -22,8 +22,8 @@ import {
 } from '../dom/helpers.js';
 
 import { getCardDefinitionById } from '../../cards/index.js';
-import { getCardImagePath, hasCardImage } from '../../cardImages.js';
-import { getCardEffectSummary } from '../components/Card.js';
+import { getCardImagePath } from '../../cardImages.js';
+import { renderCard } from '../components/Card.js';
 import {
   captureSpellScene,
   playSpellPresentation,
@@ -5273,34 +5273,13 @@ const showSpellCardReveal = (spellId, casterIndex) => {
       <div class="card-back-logo">?</div>
     `;
 
-    // Card front (the actual spell)
-    const cardFront = document.createElement('div');
-    cardFront.className = 'spell-reveal-card-front';
+    // Full reveal faces use the same renderer as hand, editor and inspector.
+    const cardFront = renderCard(spellCard, { showEffectSummary: true });
+    cardFront.classList.add('spell-reveal-card-front');
     cardFront.style.setProperty('--spell-theme-color', theme.primary);
     cardFront.style.setProperty('--spell-theme-glow', theme.glow);
-
-    // Build card front content
-    const hasImage = hasCardImage(spellId);
-    const imageHtml = hasImage
-      ? `<img src="${getCardImagePath(spellId)}" alt="${spellCard.name}" class="spell-reveal-image" draggable="false">`
-      : `<div class="spell-reveal-image-placeholder">◇</div>`;
-
-    // Get the effect text for the spell
-    const effectText = getCardEffectSummary(spellCard) || spellCard.effectText || '';
-
-    cardFront.innerHTML = `
-      <div class="spell-reveal-header">
-        <span class="spell-reveal-name">${spellCard.name}</span>
-      </div>
-      <div class="spell-reveal-image-container">
-        ${imageHtml}
-      </div>
-      <div class="spell-reveal-effect">${effectText}</div>
-      <div class="spell-reveal-footer">
-        <span class="spell-reveal-type">SPELL</span>
-        <span class="spell-reveal-tribe">${tribe.toUpperCase()}</span>
-      </div>
-    `;
+    cardFront.querySelector('.card-name-text')?.classList.add('spell-reveal-name');
+    cardFront.querySelector('.card-effect-text')?.classList.add('spell-reveal-effect');
 
     cardWrapper.appendChild(cardBack);
     cardWrapper.appendChild(cardFront);
@@ -5385,34 +5364,13 @@ const showTrapCardReveal = (trapId, casterIndex) => {
       <div class="trap-back-icon">⚠</div>
     `;
 
-    // Card front (the actual trap)
-    const cardFront = document.createElement('div');
-    cardFront.className = 'trap-reveal-card-front';
+    // Full reveal faces use the same renderer as hand, editor and inspector.
+    const cardFront = renderCard(trapCard, { showEffectSummary: true });
+    cardFront.classList.add('trap-reveal-card-front');
     cardFront.style.setProperty('--trap-theme-color', theme.primary);
     cardFront.style.setProperty('--trap-theme-glow', theme.glow);
-
-    // Build card front content
-    const hasImage = hasCardImage(trapId);
-    const imageHtml = hasImage
-      ? `<img src="${getCardImagePath(trapId)}" alt="${trapCard.name}" class="trap-reveal-image" draggable="false">`
-      : `<div class="trap-reveal-image-placeholder">🪤</div>`;
-
-    // Get the effect text for the trap
-    const effectText = getCardEffectSummary(trapCard) || trapCard.effectText || '';
-
-    cardFront.innerHTML = `
-      <div class="trap-reveal-header">
-        <span class="trap-reveal-name">${trapCard.name}</span>
-      </div>
-      <div class="trap-reveal-image-container">
-        ${imageHtml}
-      </div>
-      <div class="trap-reveal-effect">${effectText}</div>
-      <div class="trap-reveal-footer">
-        <span class="trap-reveal-type">TRAP</span>
-        <span class="trap-reveal-tribe">${tribe.toUpperCase()}</span>
-      </div>
-    `;
+    cardFront.querySelector('.card-name-text')?.classList.add('trap-reveal-name');
+    cardFront.querySelector('.card-effect-text')?.classList.add('trap-reveal-effect');
 
     cardWrapper.appendChild(cardBack);
     cardWrapper.appendChild(cardFront);

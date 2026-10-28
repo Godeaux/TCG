@@ -1119,3 +1119,75 @@
 }
 
 .modern-inspector.visible .tooltip-card-preview .card { pointer-events: auto; }
+
+/* Give the rival a real landing area in the formerly unused utility band.
+   The transparent utility wrapper never intercepts attacks; its buttons do. */
+.game-container .top-utilities { background: none; border: 0; pointer-events: none; justify-content: flex-start; }
+.game-container .top-utilities > button { pointer-events: auto; }
+.game-container .board-brand { display: none; }
+.game-container #rival-strip { background: none; border-radius: 0; }
+.game-container #rival-strip::before {
+  content: ''; position: absolute; left: 84px; right: 94px;
+  top: calc(-48px - env(safe-area-inset-top, 0px)); bottom: 0;
+  background: #28494b; border: 1px solid #82998b55; border-bottom: 0;
+  border-radius: 0; pointer-events: auto;
+}
+.game-container #rival-strip > * { z-index: 1; }
+.game-container #rival-strip .scoreboard-stats > span { position: relative; z-index: 1; }
+.game-container #rival-strip .opponent-hand-cards { top: 0; transform: translate(-50%, -65%); height: 38px; }
+.game-container #rival-strip .card-back { width: 25px; height: 35px; }
+@media (max-width: 767px) and (orientation: portrait) {
+  .game-container #rival-strip::before { top: calc(-44px - env(safe-area-inset-top, 0px)); }
+  .game-container #rival-strip .card-back { width: 18px; height: 26px; }
+}
+/* Historical cards retain their own recorded stats; deltas live below the face. */
+.history-card-face { display: none; }
+@media (min-width: 768px) {
+  .game-container #game-history-log.visual-history { grid-template-rows: minmax(0, 34fr) minmax(0, 66fr); }
+  .history-duel { gap: 10px; align-items: start; }
+  .history-full-card.history-tile { height: auto; border: 0; border-radius: 8px; overflow: visible; }
+  .history-full-card > .history-portrait, .history-full-card > .history-name { display: none; }
+  .history-full-card > .history-card-face { display: block; width: 100%; max-width: 240px; margin-inline: auto; }
+  .history-full-card .history-terminal { position: static; font-size: 11px; }
+  .history-full-card .history-stats { height: auto; min-height: 30px; flex-wrap: wrap; gap: 4px; padding: 5px 2px; }
+  .history-duel:not(.history-multi) .history-tile:only-child { width: min(100%, 240px); justify-self: center; }
+}
+
+.game-container .rival-strip-row,
+.game-container .pages-container,
+.game-container .page-battlefield.active,
+.game-container .battlefield-layout-two-column { overflow: visible; }
+@media (min-width: 768px) {
+  .history-detail.history-single {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 10px; align-content: start;
+  }
+  .history-single > .history-moment,
+  .history-single > .history-headline,
+  .history-single > .history-description { grid-column: 1 / -1; }
+  .history-single > .history-time-label:nth-of-type(1) { grid-column: 1; grid-row: 2; }
+  .history-single > .history-time-label:nth-of-type(2) { grid-column: 2; grid-row: 2; }
+  .history-single > .history-duel:nth-of-type(1) { grid-column: 1; grid-row: 3; }
+  .history-single > .history-duel:nth-of-type(2) { grid-column: 2; grid-row: 3; }
+  .history-card-face { border: 2px solid #82968a; border-radius: 10px; box-shadow: 0 4px 9px #0005; }
+  .history-card-face .stat-atk, .history-card-face .stat-hp, .history-card-face .stat-nut { color: #e4eeea; }
+}
+
+/* Desktop history is a permanent rail, not a dismissible panel. */
+@media (min-width: 768px) {
+  .game-container #field-history-btn, .game-container #close-history { display: none; }
+  .game-container .battlefield-layout-two-column.history-hidden {
+    grid-template-columns: minmax(0, 1fr) clamp(290px, 23vw, 360px);
+  }
+  .game-container .history-hidden .battlefield-right-column { display: flex; }
+  .game-container #rival-strip::before { left: 84px; right: 94px; }
+}
+
+/* v0.17: separate the rival target from utilities, HP and the field. */
+.game-container #rival-strip::before {
+ left:94px; right:104px; top:calc(-44px - env(safe-area-inset-top, 0px)); bottom:8px;
+ border:1px solid #82998b55; border-radius:8px;
+}
+@media(max-width:767px) and (orientation:portrait) {
+ .game-container #rival-strip::before { top:calc(-40px - env(safe-area-inset-top, 0px)); }
+}

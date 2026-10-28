@@ -164,11 +164,18 @@ try {
       (await import('/js/ui.js')).renderGame(window.probe);
     });
     await page.waitForTimeout(350);
+    if (width >= 768) {
+      assert.equal(await page.locator('#field-history-btn').isVisible(), false);
+      assert.equal(await page.locator('#close-history').isVisible(), false);
+      assert.equal(await page.locator('#history-panel').isVisible(), true);
+      await page.locator('.history-detail').press('Escape');
+      assert.equal(await page.locator('#history-panel').isVisible(), true);
+    }
     const geometry = await page.evaluate(() => ({
       width: innerWidth,
       scroll: document.documentElement.scrollWidth,
       controls: [
-        'field-history-btn',
+        ...(innerWidth < 768 ? ['field-history-btn'] : []),
         'field-turn-btn',
         'carrion-pile-container',
         'exile-pile-container',
@@ -192,7 +199,7 @@ try {
       ),
       JSON.stringify(geometry)
     );
-    for (const id of ['field-history-btn', 'carrion-pile-container'])
+    for (const id of [...(width < 768 ? ['field-history-btn'] : []), 'carrion-pile-container'])
       await page.locator('#' + id).scrollIntoViewIfNeeded();
     await page.screenshot({ path: OUT + `/board-${width}x${height}.png` });
     await page.locator('#active-hand .card').first().scrollIntoViewIfNeeded();

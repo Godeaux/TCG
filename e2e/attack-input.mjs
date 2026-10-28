@@ -31,6 +31,7 @@ try {
       const cdp = await ctx.newCDPSession(p);
       for (const kind of [
         'legal',
+        'upper-face',
         'exhausted',
         'Passive',
         'Harmless',
@@ -98,19 +99,19 @@ try {
             : kind === 'own-face'
               ? p.locator('#own-strip .player-name')
               : kind === 'control'
-                ? p.locator('#field-history-btn')
+                ? p.locator(mode === 'touch' ? '#field-history-btn' : '.settings-fab')
                 : p.locator('#rival-strip .player-name');
         {
           const a = await source.boundingBox(),
             b =
-              kind === 'outside-strip'
+              ['outside-strip', 'upper-face'].includes(kind)
                 ? await p.locator('#rival-strip').boundingBox()
                 : await target.boundingBox();
           assert(a && b, `${mode} seat${seat} ${kind} missing bounds`);
           const x = a.x + a.width / 2,
             y = a.y + a.height / 2,
             tx = kind === 'outside-strip' ? b.x + b.width + 3 : b.x + b.width / 2,
-            ty = b.y + b.height / 2;
+            ty = kind === 'upper-face' ? 18 : b.y + b.height / 2;
           if (mode === 'touch') {
             const touch = (type, x, y) =>
               cdp.send('Input.dispatchTouchEvent', {
@@ -140,11 +141,11 @@ try {
         }));
         assert.equal(
           actual.calls,
-          kind === 'legal' ? 1 : 0,
+          ['legal', 'upper-face'].includes(kind) ? 1 : 0,
           `${mode} seat${seat} ${kind}: ${JSON.stringify(actual)}`
         );
-        assert.equal(actual.events, kind === 'legal' ? 1 : 0);
-        assert.equal(actual.hp[1 - seat], kind === 'legal' ? 7 : 10);
+        assert.equal(actual.events, ['legal', 'upper-face'].includes(kind) ? 1 : 0);
+        assert.equal(actual.hp[1 - seat], ['legal', 'upper-face'].includes(kind) ? 7 : 10);
         results.push({ mode, seat, kind, ...actual });
       }
       await ctx.close();

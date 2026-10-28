@@ -1,0 +1,226 @@
+/* Shared popup family. No gameplay rules or hidden-information changes. */
+/* Library previews retain their layout; deck actions live beside the name. */
+.deck-preview-heading { display:flex; align-items:center; gap:4px; min-width:0; }
+.deck-preview-heading .deck-preview-name { min-width:0; flex:1; }
+.deck-preview .deck-preview-manage { flex:none; width:44px; height:44px; font:700 28px/1 system-ui,sans-serif; border-radius:8px; }
+.deck-preview .deck-preview-manage:hover { background:#ffffff18; }
+.menu-dialog .menu-dialog-choices { flex-direction:column; }
+.menu-dialog-choices button:first-child { order:1; }
+.menu-dialog h2 { overflow-wrap:anywhere; }
+.menu-dialog {
+  box-sizing:border-box; width:min(440px,calc(100vw - 32px));
+  max-height:calc(100dvh - 32px); margin:auto; padding:28px;
+  background:var(--popup-surface); color:var(--popup-ink);
+  border:1px solid var(--popup-edge); border-radius:14px;
+  box-shadow:0 16px 48px #0008; overflow:auto;
+}
+.menu-dialog::backdrop { background:#03151ecc; }
+.menu-dialog form { display:flex; flex-direction:column; gap:20px; }
+.menu-dialog h2 { margin:0; font:650 28px/1.2 system-ui,sans-serif; }
+.menu-dialog p { margin:0; font:400 18px/1.45 system-ui,sans-serif; overflow-wrap:anywhere; }
+.menu-dialog label { display:flex; flex-direction:column; gap:8px; font:500 16px/1.3 system-ui,sans-serif; }
+.menu-dialog input { box-sizing:border-box; width:100%; min-width:0; padding:12px; border:1px solid var(--popup-edge); border-radius:8px; background:#071c25; color:var(--popup-ink); font:400 20px/1.3 system-ui,sans-serif; }
+.menu-dialog-actions { display:flex; gap:12px; justify-content:flex-end; }
+.menu-dialog button { min-height:48px; padding:12px 20px; font:600 18px/1.25 system-ui,sans-serif; text-transform:none; letter-spacing:0; border:1px solid var(--popup-edge); border-radius:8px; background:transparent; color:var(--popup-ink); }
+.menu-dialog button.primary { background:var(--popup-accent); color:#13313a; }
+.menu-dialog button.danger { background:#713c3c; border-color:#ae7777; }
+.menu-dialog button:disabled { opacity:.45; }
+.menu-dialog :focus-visible { outline:3px solid var(--popup-accent); outline-offset:3px; }
+@media(max-width:600px) { .menu-dialog { padding:22px; } .menu-dialog-actions button { flex:1; } }
+:root { --popup-surface:#0c2530; --popup-edge:#54727a; --popup-ink:#edf3ed; --popup-accent:#e5d3a2; }
+#action-bar.has-selection {
+  width:min(580px,calc(100vw - 32px)); max-width:calc(100vw - 32px);
+  max-height: min(620px,72dvh); bottom:calc(16px + var(--safe-bottom,0px));
+  padding:20px; background:var(--popup-surface); color:var(--popup-ink);
+  border:1px solid var(--popup-edge); border-radius:14px;
+  box-shadow:0 16px 48px #0008; overflow:hidden;
+}
+#action-bar.has-selection:has(.selection-card) { width:min(820px,calc(100vw - 32px)); }
+#selection-panel:not(:empty) { border:0; padding:0; gap:14px; min-height:0; align-items:stretch; }
+#selection-panel .selection-header { margin:0; flex:none; gap:16px; }
+#selection-panel .selection-header strong { font:650 24px/1.2 system-ui,sans-serif; color:var(--popup-ink); }
+#selection-panel .selection-content { min-height:0; gap:16px; overflow:hidden; }
+#selection-panel .selection-list { min-height:0; overflow-y:auto; overscroll-behavior:contain; padding:3px; gap:10px; }
+#selection-panel .selection-item { background:transparent; border:0; padding:0; min-width:0; }
+#selection-panel button {
+  font:600 18px/1.25 system-ui,sans-serif; min-height:48px; padding:12px 18px;
+  border:1px solid var(--popup-edge); border-radius:8px; color:var(--popup-ink); background:#173944;
+  text-transform:none; letter-spacing:0;
+}
+#selection-panel button:hover { border-color:var(--popup-accent); background:#214854; }
+#selection-panel button:focus-visible { outline:3px solid var(--popup-accent); outline-offset:2px; }
+#selection-panel .selection-item>button { width:100%; text-align:left; }
+#selection-panel .hide-panel-btn { font-size:15px; min-height:44px; padding:8px 12px; background:transparent; }
+#selection-panel .selection-content>button { flex:none; align-self:center; min-width:150px; background:transparent; }
+#selection-panel .selection-list:has(.selection-card) { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,220px)); justify-content:center; gap:16px; }
+#selection-panel .selection-list:has(.selection-card)>.selection-item:not(.selection-card) { grid-column:1/-1; }
+#selection-panel .selection-item.selection-card { width:100%; max-width:none; padding:4px; gap:8px; }
+#selection-panel .selection-item.selection-card .card { width:100%; max-width:none; flex-shrink:0; }
+#selection-panel .selection-item.selection-card:has(input:checked) { outline:2px solid var(--popup-accent); outline-offset:-2px; border-radius:8px; }
+#selection-panel input[type=checkbox] { width:22px; height:22px; accent-color:var(--popup-accent); flex-shrink:0; }
+#selection-panel .recently-drawn::before { position:static; align-self:flex-start; background:#365e50; color:#edf3ed; }
+#selection-panel .option-bubble-btn { box-shadow:none; align-items:flex-start; gap:8px; min-width:0; transform:none; }
+#selection-panel .option-label { font-size:20px; color:var(--popup-ink); text-align:left; }
+#selection-panel .option-description { font:400 16px/1.4 system-ui,sans-serif; color:#c0d0d3; text-align:left; }
+#selection-panel .selection-list:has(.option-bubble) { flex-direction:column; flex-wrap:nowrap; }
+#reaction-overlay .reaction-card, .duel-invite-popup, #friend-profile-modal .modal-content {
+  background:var(--popup-surface); color:var(--popup-ink); border:1px solid var(--popup-edge);
+  border-radius:14px; padding:28px; box-shadow:0 16px 48px #0008;
+}
+#reaction-overlay .reaction-card { width:min(580px,calc(100vw - 32px)); max-height:calc(100dvh - 32px); overflow-y:auto; gap:18px; }
+#reaction-overlay .reaction-icon { display:none; }
+#reaction-overlay h2, .duel-invite-header h3 { font:650 28px/1.2 system-ui,sans-serif; letter-spacing:0; margin:0; color:var(--popup-ink); }
+#reaction-subtitle { margin:0; font:400 17px/1.45 system-ui,sans-serif; color:#c0d0d3; }
+#reaction-overlay .reaction-effect-text { font:400 17px/1.45 system-ui,sans-serif; border:0; background:none; padding:0; margin-top:10px; color:var(--popup-ink); }
+#reaction-overlay .reaction-card-preview .card { width:190px; }
+#reaction-overlay .reaction-timer { font:600 17px/1.2 system-ui,sans-serif; }
+#reaction-overlay .timer-icon { display:none; }
+#reaction-overlay .timer-value::after { content:'s'; }
+#reaction-overlay .reaction-actions { flex-direction:row; flex-wrap:wrap; justify-content:center; gap:12px; }
+#reaction-overlay .reaction-actions button, .duel-invite-actions button {
+  min-height:52px; padding:12px 20px; font:650 20px/1.2 system-ui,sans-serif;
+  border:1px solid var(--popup-edge); border-radius:8px; background:transparent; color:var(--popup-ink);
+}
+#reaction-overlay .reaction-actions button.primary, .duel-invite-actions .duel-invite-accept { background:var(--popup-accent); border-color:var(--popup-accent); color:#13313a; }
+@media(min-width:1200px) {
+  #action-bar.has-selection:not(:has(.selection-card)) { left:auto; right:20px; transform:none; width:340px; }
+}
+@media(max-width:600px) {
+  #action-bar.has-selection { bottom:var(--safe-bottom,0px); padding:16px; max-height:68dvh; border-radius:14px 14px 0 0; }
+  #selection-panel .selection-header strong { font-size:21px; }
+  #selection-panel .selection-list:has(.selection-card) { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  #reaction-overlay .reaction-card { padding:20px; gap:14px; }
+  #reaction-overlay h2 { font-size:24px; }
+  #reaction-overlay .reaction-actions { flex-direction:column; }
+}
+/* Controller-driven card/option selectors share the same family as legacy prompts. */
+.card-selection-overlay, .option-selection-overlay {
+  position:fixed; left:50%; right:auto; top:auto; bottom:16px; transform:translateX(-50%);
+  width:min(860px,calc(100vw - 32px)); max-height:76dvh; min-width:0;
+  padding:20px; gap:16px; border:1px solid var(--popup-edge); border-radius:14px;
+  background:var(--popup-surface); color:var(--popup-ink); box-shadow:0 16px 48px #0008; overflow:hidden;
+}
+.card-selection-overlay-header { position:static; background:none; padding:0; margin:0; gap:12px; flex:none; color:var(--popup-ink); justify-content:flex-start; }
+.card-selection-overlay-header strong { flex:1; font:650 24px/1.2 system-ui,sans-serif; }
+.card-selection-overlay button, .option-selection-overlay button {
+  min-height:44px; padding:10px 14px; border:1px solid var(--popup-edge); border-radius:8px;
+  font:600 18px/1.25 system-ui,sans-serif; background:#173944; color:var(--popup-ink);
+}
+.card-selection-overlay-grid { min-height:0; grid-template-columns:repeat(auto-fit,minmax(180px,220px)); justify-content:center; gap:16px; padding:5px; overscroll-behavior:contain; }
+.card-selection-overlay-grid .selection-item { padding:0; background:none; display:flex; flex-direction:column; }
+.card-selection-overlay-grid .card:hover { transform:none; box-shadow:0 0 0 3px var(--popup-accent); }
+.card-selection-overlay-grid .recently-drawn::before { position:static; align-self:flex-start; }
+.option-selection-overlay { width:min(480px,calc(100vw - 32px)); }
+.option-selection-header { font:650 24px/1.2 system-ui,sans-serif; color:var(--popup-ink); }
+.option-selection-list { min-height:0; overflow-y:auto; gap:12px; }
+.option-selection-overlay .option-selection-btn { padding:16px; align-items:flex-start; gap:6px; text-align:left; }
+.option-selection-overlay .option-description { font:400 16px/1.4 system-ui,sans-serif; color:#c0d0d3; }
+.option-selection-overlay .cancel-targeting { background:transparent; min-width:140px; flex:none; }
+@media(max-width:600px) {
+  .card-selection-overlay,.option-selection-overlay { padding:16px; bottom:var(--safe-bottom,0px); max-height:72dvh; border-radius:14px 14px 0 0; }
+  .card-selection-overlay-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+  .card-selection-overlay-header { flex-wrap:wrap; }
+  .card-selection-overlay-header strong { flex-basis:100%; font-size:21px; }
+  .card-selection-overlay-header button { flex:1; }
+}
+/* Utility screens: same family, natural-width actions and simple settings rows. */
+:is(#other-menu-overlay,#options-overlay,#credits-overlay,#changelog-overlay) .menu-card,
+.settings-overlay-card, #surrender-overlay .surrender-dialog {
+  width:min(560px,calc(100vw - 32px)); max-width:560px; max-height:calc(100dvh - 32px);
+  padding:28px; border:1px solid var(--popup-edge); border-radius:14px;
+  background:var(--popup-surface); color:var(--popup-ink); box-shadow:0 16px 48px #0008;
+  overflow-y:auto;
+}
+:is(#other-menu-overlay,#options-overlay,#credits-overlay,#changelog-overlay) .menu-header { justify-content:center; text-align:center; margin:0 0 20px; }
+:is(#other-menu-overlay,#options-overlay,#credits-overlay,#changelog-overlay) .menu-icon { display:none; }
+:is(#other-menu-overlay,#options-overlay,#credits-overlay,#changelog-overlay) h2,
+.settings-overlay-header h2, #surrender-overlay .surrender-title {
+  font:650 30px/1.2 system-ui,sans-serif; letter-spacing:0; color:var(--popup-ink); margin:0;
+}
+:is(#other-menu-overlay,#options-overlay,#credits-overlay,#changelog-overlay) button,
+.settings-overlay-card button, #surrender-overlay button {
+  min-height:50px; padding:12px 22px; font:650 20px/1.2 system-ui,sans-serif;
+  background:#173944; border:1px solid var(--popup-edge); border-radius:8px; color:var(--popup-ink);
+  letter-spacing:0; text-transform:none;
+}
+#other-menu-overlay .menu-actions { display:flex; flex-direction:column; align-items:center; gap:12px; }
+#other-menu-overlay .menu-actions button { width:min(340px,100%); }
+#other-menu-overlay #other-ai { background:var(--popup-accent); color:#13313a; border-color:var(--popup-accent); }
+#other-menu-overlay #other-back { width:auto; min-width:140px; margin-top:16px; background:transparent; }
+:is(#options-overlay,#credits-overlay) .menu-actions, .settings-overlay-footer { display:flex; justify-content:center; padding:20px 0 0; border:0; }
+:is(#options-overlay,#credits-overlay) .menu-actions button,.settings-overlay-footer button { min-width:150px; background:transparent; }
+#options-overlay .options-section, .settings-overlay-body .settings-section { background:none; border:0; border-bottom:1px solid #54727a66; border-radius:0; padding:0 0 18px; margin:0 0 18px; gap:10px; }
+#options-overlay .options-label,.settings-overlay-body .settings-label { font:600 18px/1.3 system-ui,sans-serif; color:var(--popup-ink); }
+#options-overlay .options-value,.settings-overlay-body .settings-value { font:600 17px/1.3 system-ui,sans-serif; color:var(--popup-accent); min-width:48px; }
+#options-overlay .options-slider,.settings-overlay-body .settings-slider { min-width:0; background:#54727a; }
+#options-overlay .options-slider::-webkit-slider-thumb,.settings-overlay-body .settings-slider::-webkit-slider-thumb { width:24px; height:24px; background:var(--popup-accent); border:0; }
+#options-overlay .options-slider::-moz-range-thumb,.settings-overlay-body .settings-slider::-moz-range-thumb { width:24px; height:24px; background:var(--popup-accent); border:0; }
+.settings-overlay-card .settings-overlay-header { background:none; padding:0 0 22px; border:0; }
+.settings-overlay-card .settings-overlay-body { padding:0; }
+.settings-overlay-card .settings-label-icon { display:none; }
+.settings-overlay-card .settings-overlay-close { padding:8px 12px; min-height:44px; background:transparent; }
+#credits-overlay .credits-title { color:#b9cbd0; font:500 16px/1.4 system-ui,sans-serif; letter-spacing:0; text-transform:none; }
+#credits-overlay .credits-name { color:var(--popup-ink); font:650 24px/1.4 system-ui,sans-serif; }
+#credits-overlay .credits-list { font:400 18px/1.6 system-ui,sans-serif; color:var(--popup-ink); }
+#surrender-overlay .surrender-message { font:400 18px/1.5 system-ui,sans-serif; color:#c0d0d3; margin:16px 0 24px; }
+#surrender-overlay .surrender-actions { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; }
+#surrender-overlay .surrender-btn-no { background:var(--popup-accent); color:#13313a; border-color:var(--popup-accent); }
+#surrender-overlay .surrender-btn-yes { color:#ffbcb5; border-color:#ad756e; background:transparent; }
+@media(max-width:600px) {
+ :is(#other-menu-overlay,#options-overlay,#credits-overlay,#changelog-overlay) .menu-card,.settings-overlay-card,#surrender-overlay .surrender-dialog { padding:22px; }
+ :is(#other-menu-overlay,#options-overlay,#credits-overlay,#changelog-overlay) h2,.settings-overlay-header h2,#surrender-overlay .surrender-title { font-size:26px; }
+}
+:is(#options-overlay,#credits-overlay) .menu-actions button { flex:none; width:150px; }
+:is(#options-overlay,#credits-overlay) .menu-actions { align-items:center; }
+#surrender-overlay button { box-shadow:none; }
+#options-overlay .options-card { gap:14px; }
+#options-overlay .options-section { margin-bottom:4px; }
+/* Match result: quiet outcome, truthful summary, obvious next action. */
+#victory-overlay { background:#041820ed; }
+#victory-overlay .victory-bg,#victory-overlay .victory-crown,#victory-overlay .victory-subtitle { display:none; }
+#victory-overlay .victory-content {
+  width:min(820px,calc(100vw - 32px)); max-width:820px; max-height:calc(100dvh - 32px);
+  padding:36px; background:var(--popup-surface); border:1px solid var(--popup-edge); border-radius:14px;
+  display:grid; grid-template-columns:1fr 1fr; column-gap:36px; align-items:center;
+  text-align:left; box-shadow:0 16px 48px #0008; transition:opacity .2s;
+}
+#victory-overlay .victory-title { grid-column:1; font:700 44px/1.1 system-ui,sans-serif; letter-spacing:0; background:none; -webkit-text-fill-color:var(--popup-accent); color:var(--popup-accent); text-shadow:none; animation:none; filter:none; margin:0 0 16px; }
+#victory-overlay.defeat .victory-title { -webkit-text-fill-color:#ffbcb5; color:#ffbcb5; }
+#victory-overlay .victory-winner { grid-column:1; font:600 23px/1.3 system-ui,sans-serif; color:var(--popup-ink); text-shadow:none; margin:0; overflow-wrap:anywhere; }
+#victory-overlay .victory-stats { grid-column:1; justify-content:flex-start; margin:20px 0 0; gap:0; transition:none; }
+/* Legacy counts infer plays/kills from current piles, so don't present them as match statistics. */
+#victory-overlay .stat-item:not(:first-child) { display:none; }
+#victory-overlay .stat-item { flex-direction:row; gap:12px; border:0; padding:0; background:none; backdrop-filter:none; min-width:0; }
+#victory-overlay .stat-label { font:400 17px/1.3 system-ui,sans-serif; text-transform:none; letter-spacing:0; margin:0; color:#c0d0d3; }
+#victory-overlay .stat-value { font:650 20px/1.3 system-ui,sans-serif; color:var(--popup-ink); }
+#victory-overlay .victory-actions { grid-column:2; grid-row:1/5; display:flex; flex-direction:column; gap:16px; margin:0; transition:none; }
+#victory-overlay .victory-rematch-options { flex-direction:column; gap:12px; width:100%; }
+#victory-overlay .victory-actions button { width:100%; min-height:54px; padding:14px 18px; border-radius:8px; font:650 20px/1.2 system-ui,sans-serif; text-transform:none; letter-spacing:0; background:transparent; border:1px solid var(--popup-edge); color:var(--popup-ink); box-shadow:none; transform:none; }
+#victory-overlay :is(.victory-menu,.victory-rematch) { background:var(--popup-accent)!important; color:#13313a!important; border-color:var(--popup-accent)!important; }
+#victory-overlay button::before { display:none; }
+#victory-overlay button:disabled { opacity:.55; cursor:default; }
+#victory-overlay button.selected { outline:2px solid var(--popup-accent); outline-offset:3px; }
+#victory-overlay .victory-opponent-status { font:400 17px/1.4 system-ui,sans-serif; padding:0; background:none; border:0; }
+#victory-overlay .victory-reward { grid-column:1; padding:10px 0; background:none; box-shadow:none; border:0; font-size:18px; animation:none; }
+@media(max-width:600px) {
+ #victory-overlay .victory-content { display:flex; flex-direction:column; text-align:center; padding:28px 22px; gap:18px; }
+ #victory-overlay .victory-title { font-size:38px; margin:0; }
+ #victory-overlay .victory-stats { margin:0; }
+ #victory-overlay .victory-actions { width:100%; margin-top:8px; }
+}
+#victory-overlay .victory-background { display:none; }
+#victory-overlay .stat-value { text-shadow:none; }
+#victory-overlay .victory-reward { margin:16px 0 0; min-height:0; text-align:left; }
+#victory-overlay .victory-reward-icon { display:none; }
+#victory-overlay .victory-reward-text { font:600 18px/1.3 system-ui,sans-serif; text-transform:none; letter-spacing:0; color:var(--popup-accent); }
+@media(max-width:600px) { #victory-overlay .victory-reward { margin:0; text-align:center; } }
+
+/* Tutorial demos size to their actual occupied slots, not three invisible cards. */
+#tutorial-overlay .tutorial-stage-slot:empty { display: none; }
+#tutorial-overlay .tutorial-stage-slot {
+  height: min(55cqh, calc(90cqw / var(--tutorial-slot-count, 3) * 7 / 5));
+}
+#tutorial-overlay .tutorial-stage-slot .card { width: 100%!important; }
+@media (max-width: 768px) {
+  #tutorial-overlay .tutorial-stage { flex: 0 0 clamp(200px, 38dvh, 320px); min-height: 0; }
+}

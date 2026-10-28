@@ -1,0 +1,191 @@
+/* Shared menu/editor presentation. Gameplay board geometry is intentionally untouched. */
+:root { --menu-card-title: 16px; --menu-card-copy: 14px; --menu-card-stat: 18px; }
+#deck-overlay .deck-builder { width:min(1500px,100%); height:100%; max-height:100%; background:#0c2530; padding:24px; }
+#deck-overlay .deck-builder-main { flex:1; }
+#deck-overlay .deck-builder-sidebar { flex:0 0 290px; max-width:290px; background:#102d38; }
+#deck-overlay .deck-grid { grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:22px; padding:4px 12px 20px 4px; }
+#deck-overlay .deck-catalog-item { min-width:0; }
+#deck-overlay .deck-grid .card { width:100%; height:auto; min-height:0; aspect-ratio:5/7; overflow:hidden; background:#12303c; border-radius:9px; transform:none; }
+#deck-overlay .deck-grid .card-inner { display:flex; flex-direction:column; height:100%; padding:0; }
+#deck-overlay .deck-grid .card-name { flex:0 0 48px; min-height:48px; padding:5px 8px; display:grid; place-items:center; }
+#deck-overlay .deck-grid .card-name-text { font:650 var(--menu-card-title)/1.15 system-ui,sans-serif; max-height:none; overflow:visible; color:#edf3ed; }
+#deck-overlay .deck-grid .card-image-container { flex:0 0 42%; height:auto; min-height:0; }
+#deck-overlay .deck-grid .card.long-copy .card-image-container { flex-basis:30%; }
+#deck-overlay .deck-grid .card-image { width:100%; height:100%; object-fit:cover; }
+#deck-overlay .deck-grid .card-content-area { flex:1; min-height:0; padding:0 8px 8px; display:flex; flex-direction:column; overflow:hidden; }
+#deck-overlay .deck-grid .card-stats-row { flex:0 0 28px; min-height:28px; }
+#deck-overlay .deck-grid .card-stats-text { font:700 var(--menu-card-stat)/1.2 system-ui,sans-serif; }
+#deck-overlay .deck-grid .card-keywords-text { font:650 var(--menu-card-copy)/1.25 system-ui,sans-serif; }
+#deck-overlay .deck-grid .card-effect { flex:1; height:auto; min-height:0; padding:4px 0; align-items:flex-start; overflow:auto; }
+#deck-overlay .deck-grid .card-effect-text { font:400 var(--menu-card-copy)/1.3 system-ui,sans-serif; max-height:none; overflow:visible; }
+.deck-card-add { width:100%; min-height:44px; margin-top:8px; border:1px solid #54727a; border-radius:5px; background:#25434e; color:#edf3ed; font:600 14px system-ui,sans-serif; cursor:pointer; }
+.deck-row-remove { position:relative; z-index:3; margin-left:auto; flex:0 0 44px; height:44px; border:0; background:#102832aa; color:#fff; font-size:24px; cursor:pointer; }
+#deck-overlay .deck-header h2 { font:650 22px system-ui,sans-serif; letter-spacing:0; }
+.card-hover-tooltip.deck-inspector { left:50%!important; top:50%!important; transform:translate(-50%,-50%)!important; width:auto!important; max-width:calc(100vw - 48px)!important; gap:24px!important; align-items:flex-start!important; --board-card-width:300px; --board-card-height:420px; --board-art:45%; --board-title:var(--menu-card-title); --board-copy:var(--menu-card-copy); --board-stat:var(--menu-card-stat); }
+.deck-inspector .tooltip-card-preview { width:var(--board-card-width)!important; flex:0 0 var(--board-card-width); }
+.deck-inspector .tooltip-card-preview .card,.deck-inspector .tooltip-token-preview .card { width:100%!important; height:auto!important; min-height:0!important; aspect-ratio:5/7!important; }
+.deck-inspector .tooltip-card-preview .card.long-copy { --board-art:25%; }
+.deck-inspector .tooltip-info-boxes { width:220px!important; flex:0 0 220px!important; max-height:var(--board-card-height)!important; overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; padding-right:5px; }
+@media(max-width:768px) {
+ :root { --menu-card-title:14px; --menu-card-copy:13px; --menu-card-stat:15px; }
+ #deck-overlay { padding:0; }
+ #deck-overlay .deck-builder { padding:16px; border-radius:0; }
+ #deck-overlay .deck-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px 12px; padding:0 0 72px; }
+ #deck-overlay .deck-grid .card-name { flex-basis:43px; min-height:43px; padding:4px; }
+ #deck-overlay .deck-grid .card-image-container { flex-basis:35%; }
+ #deck-overlay .deck-grid .card.long-copy .card-image-container { flex-basis:21%; }
+ #deck-overlay .deck-grid .card-content-area { padding:0 5px 5px; }
+ #deck-overlay .deck-grid .card-stats-row { flex-basis:23px; min-height:23px; }
+ #deck-overlay .deck-grid .card-effect-text { line-height:1.2; }
+ .card-hover-tooltip.deck-inspector { width:calc(100vw - 40px)!important; max-width:none!important; gap:14px!important; --board-card-width:calc((100vw - 54px)*.57); --board-card-height:calc((100vw - 54px)*.57*1.4); }
+ .deck-inspector .tooltip-info-boxes { width:0!important; flex:1 1 0!important; padding-right:3px; }
+ .deck-inspector .tooltip-info-box { padding:8px; }
+ .deck-inspector .tooltip-info-box-description { font-size:12px; line-height:1.4; }
+}
+/* Approved home composition: full artwork, concise controls, grounded tip. */
+#menu-overlay { padding:0; background:linear-gradient(90deg,#031923dd,transparent 80%),linear-gradient(0deg,#041a26ef,transparent 85%),url('images/cards/fish-predator-orca.jpg') center 42%/cover no-repeat; }
+#menu-overlay .menu-card { width:100%; height:100%; max-width:none; max-height:none; padding:40px 56px; border:0; border-radius:0; background:transparent; box-shadow:none; display:flex; flex-direction:column; align-items:flex-start; }
+#menu-overlay .menu-header { margin:0; }
+#menu-overlay .menu-header h2 { font:800 34px/1.05 system-ui,sans-serif; text-transform:uppercase; letter-spacing:1px; }
+#menu-overlay #game-version { font:12px system-ui,sans-serif; }
+#menu-overlay .menu-actions-grid { width:365px; display:flex; flex-direction:column; gap:14px; margin-top:auto; margin-bottom:112px; }
+#menu-overlay .menu-right-stack { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+#menu-overlay .menu-right-stack #menu-other { grid-column:1/-1; }
+#menu-overlay button { min-height:52px; border-radius:7px; font:600 20px system-ui,sans-serif; }
+#menu-overlay .menu-find-game { width:100%; min-height:76px; background:#e5d3a2; color:#13313a; border:1px solid #e5d3a2; font-size:30px; }
+#menu-overlay .online-count { font:400 12px system-ui,sans-serif; color:#294956; }
+#menu-overlay .menu-right-stack button { background:#0a293bdd; border:1px solid #68848c; }
+#menu-overlay .menu-splash-text { position:absolute; top:auto; left:56px; right:auto; bottom:24px; width:365px; height:auto; min-height:56px; padding:10px 14px; transform:none; background:#092733df; border:1px solid #66808a; border-radius:5px; }
+#menu-overlay .menu-splash-text span { max-width:none; animation:none; font:400 14px/1.45 system-ui,sans-serif; color:#e8eeee; text-shadow:none; text-align:left; }
+/* Real saved decks: cover is separate from the 4-row × 5-column preview. */
+#deck-select-overlay:has(.deck-catalog-home) .deck-select-card { width:min(1400px,100%); }
+.deck-card-grid:has(.deck-preview) { display:grid; grid-template-columns:repeat(auto-fit,minmax(330px,1fr)); gap:20px; width:100%; }
+.deck-card.deck-preview { display:grid; grid-template-columns:110px minmax(0,1fr); height:220px; min-height:220px; padding:0; border:1px solid #659dc2; border-radius:8px; background:#102e39; overflow:hidden; cursor:default; }
+.deck-card.deck-preview.deck-card--bird { border-color:#d9bc50; }.deck-card.deck-preview.deck-card--mammal { border-color:#b58564; }.deck-card.deck-preview.deck-card--reptile { border-color:#6baa71; }.deck-card.deck-preview.deck-card--amphibian { border-color:#9b91c7; }
+.deck-preview.selected { outline:2px solid #e5d3a2; outline-offset:3px; }
+.deck-preview button { padding:0; min-width:0; border:0; background:transparent; color:#edf3ed; cursor:pointer; }
+.deck-preview-cover { position:relative; height:100%; overflow:hidden; }
+.deck-preview-cover>img { width:100%; height:100%; object-fit:cover; }
+.cover-pencil { position:absolute; bottom:8px; right:8px; width:32px; height:32px; background:#092733dd; border-radius:4px; display:grid; place-items:center; font-size:22px; }
+.deck-preview-content { min-width:0; padding:12px; display:flex; flex-direction:column; gap:10px; }
+.deck-preview-name { width:100%; text-align:left; display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:34px; font:650 18px/1.2 system-ui,sans-serif; }
+.deck-preview-name>span { font-size:22px; }
+.deck-preview-thumbnails { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); grid-template-rows:repeat(4,minmax(0,1fr)); gap:4px; flex:1; min-height:0; }
+.deck-preview-thumbnails>button { overflow:hidden; border:1px solid #68838a; border-radius:3px; background:#25424c; font-size:10px; }
+.deck-preview-thumbnails img { width:100%; height:100%; object-fit:cover; display:block; }
+.deck-cover-picker { background:#102e39; color:#edf3ed; border:1px solid #68838a; border-radius:10px; width:min(520px,calc(100vw - 32px)); max-height:85svh; padding:20px; }
+.deck-cover-picker::backdrop { background:#02121bba; }.deck-cover-picker>button { margin-top:15px; min-height:44px; }
+.deck-cover-choices { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-top:15px; }.deck-cover-choices button { padding:0; aspect-ratio:1; overflow:hidden; }.deck-cover-choices img { width:100%; height:100%; object-fit:cover; }
+@media(max-width:768px) {
+ #menu-overlay .menu-card { padding:28px 24px; }
+ #menu-overlay .menu-header h2 { font-size:25px; }
+ #menu-overlay .menu-actions-grid { width:100%; margin-bottom:100px; }
+ #menu-overlay .menu-splash-text { left:24px; right:24px; width:auto; bottom:16px; }
+ .deck-card-grid:has(.deck-preview) { grid-template-columns:1fr; gap:16px; }
+ .deck-card.deck-preview { grid-template-columns:100px minmax(0,1fr); height:216px; min-height:216px; }
+ .deck-preview-content { padding:10px; }
+ .deck-preview-name { font-size:17px; }
+}
+.deck-card-grid:has(.deck-preview) { max-width:none; }
+.deck-card.deck-preview { aspect-ratio:auto; }
+/* Online entry: primary choices above quiet, stacked navigation. */
+#multiplayer-overlay { background:linear-gradient(110deg,#041c29,#102e39); padding:24px; }
+#multiplayer-overlay .menu-card { width:min(740px,100%); max-width:740px; padding:36px; border:1px solid #54727a; border-radius:14px; background:#0c2530; display:flex; flex-direction:column; align-items:center; gap:24px; text-align:center; }
+#multiplayer-overlay .menu-header { display:block; width:100%; margin:0; text-align:center; }
+#multiplayer-overlay .menu-icon { display:none; }
+#multiplayer-overlay h2 { font:700 40px/1.15 system-ui,sans-serif; letter-spacing:0; }
+#multiplayer-status:empty,#lobby-error:empty { display:none; }
+#multiplayer-status { margin-top:12px; font:400 18px/1.4 system-ui,sans-serif; }
+#multiplayer-actions { display:flex; flex-direction:row; flex-wrap:wrap; justify-content:center; gap:14px; width:min(480px,100%); margin:0; }
+#multiplayer-overlay button { min-height:60px; padding:14px 20px; border-radius:9px; font:650 24px/1.2 system-ui,sans-serif; text-transform:none; letter-spacing:0; }
+#multiplayer-actions>button { flex:1 1 200px; max-width:100%; }
+#multiplayer-overlay .btn-primary { background:#e5d3a2; border:1px solid #e5d3a2; color:#13313a; }
+#multiplayer-overlay .btn-secondary { background:#193b48; border:1px solid #68848c; color:#edf3ed; }
+#multiplayer-actions #lobby-find-match { flex:0 0 min(360px,100%); min-height:80px; margin:0 48px 8px; font-size:28px; }
+#multiplayer-overlay .lobby-code { width:min(420px,100%); margin:0; padding:20px; border:1px solid #68848c; background:#153744; color:#e5d3a2; font:700 36px/1.2 ui-monospace,monospace; text-align:center; letter-spacing:5px; }
+#lobby-code-display[hidden] { display:none; }
+#multiplayer-overlay #lobby-join-form { width:min(420px,100%); margin:0; padding:20px; background:#153744; border:1px solid #54727a; border-radius:8px; text-align:left; }
+#multiplayer-overlay .menu-input { min-width:0; width:100%; font:600 22px system-ui,sans-serif; }
+#multiplayer-overlay .multiplayer-footer { display:flex; flex-direction:column; align-items:center; gap:8px; margin-top:20px; width:100%; }
+#multiplayer-overlay .multiplayer-footer button { width:180px; min-height:48px; padding:10px 16px; font-size:20px; background:transparent; border-color:transparent; }
+#multiplayer-overlay .multiplayer-footer button:hover { background:#193b48; border-color:#68848c; }
+@media(max-width:768px) {
+ #multiplayer-overlay { padding:16px; }
+ #multiplayer-overlay .menu-card { padding:26px 20px; gap:20px; }
+ #multiplayer-overlay h2 { font-size:34px; }
+ #multiplayer-overlay button { font-size:22px; }
+ #multiplayer-actions>button { flex-basis:100%; }
+ #multiplayer-actions #lobby-find-match { flex-basis:100%; margin:0 0 4px; font-size:27px; }
+ #multiplayer-overlay .multiplayer-footer { margin-top:12px; }
+}
+/* Keep legacy action tiles and the preview on the same library rhythm. */
+.deck-catalog-home .deck-card-grid { max-width:none; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); align-content:start; }
+.deck-catalog-home .deck-card:not(.deck-preview) { aspect-ratio:auto; height:220px; min-height:0; justify-content:center; gap:14px; background:#153744; border:1px solid #54727a; }
+.deck-catalog-home .deck-card-type,.deck-catalog-home .deck-card-count { display:none; }
+.deck-catalog-home .deck-card-name { font:600 17px system-ui,sans-serif; }
+.deck-card.deck-preview { grid-template-rows:minmax(0,1fr); align-items:stretch; }
+.deck-preview-content { min-height:0; height:100%; }
+.deck-preview-thumbnails>button { min-height:0; }
+.deck-preview:hover,.deck-preview:active { transform:none; }
+@media(max-width:768px) {
+ .deck-catalog-home .deck-card-grid { grid-template-columns:1fr; padding:0; }
+ .deck-catalog-home .deck-card:not(.deck-preview) { height:84px; flex-direction:row; }
+}
+/* Mobile deck access belongs in the toolbar, never over card text. */
+@media(max-width:768px) {
+ #deck-overlay .deck-tabs { flex-wrap:wrap; }
+ #deck-overlay .deck-drawer-toggle { position:static; inset:auto; z-index:auto; flex:1 0 auto; width:auto; height:44px; min-height:44px; padding:0 12px; gap:8px; border:1px solid #68848c; border-radius:6px; background:#193b48; color:#edf3ed; box-shadow:none; font:600 14px/1.2 system-ui,sans-serif; transform:none; }
+ #deck-overlay .deck-tab { min-height:44px; }
+ #deck-overlay .deck-drawer-toggle:hover,#deck-overlay .deck-drawer-toggle:active { transform:none; box-shadow:none; background:#25434e; }
+ #deck-drawer-count { font-variant-numeric:tabular-nums; color:#e5d3a2; }
+}
+
+/* Restore full-width artwork slices; removal no longer masks the art edge. */
+#deck-overlay .deck-builder-sidebar { flex-basis:360px; max-width:360px; }
+#deck-overlay .deck-list-row { height:44px; padding:0 10px 0 0; }
+#deck-overlay .deck-list-row::after { width:100%; background-position:right 42%; }
+#deck-overlay .deck-list-row::before { background:linear-gradient(90deg,#0b202bf5 0%,#0b202bd9 42%,#0b202b55 68%,transparent 90%); }
+#deck-overlay .deck-list-row-name { flex:1; min-width:0; font:600 15px/1.2 system-ui,sans-serif; text-shadow:0 1px 3px #000,0 0 8px #000; }
+#deck-overlay .deck-row-remove { order:-1; margin:0 4px 0 0; background:#10283288; }
+@media(max-width:768px) {
+ #deck-overlay .deck-builder-sidebar { width:min(340px,86vw); max-width:86vw; }
+}
+@media(max-width:768px) {
+ #deck-overlay .deck-list-header { padding-right:80px; }
+}
+
+/* Saved-deck library: page layout matching the approved preview, not utility tiles. */
+#deck-select-overlay:has(.deck-catalog-home) { background:#071e28; padding:0; }
+#deck-select-overlay:has(.deck-catalog-home) .deck-select-card {
+ width:min(1180px,calc(100% - 64px)); max-width:none; height:100dvh; max-height:none;
+ padding:24px 0; border:0; border-radius:0; background:transparent; box-shadow:none; gap:0;
+}
+#deck-select-overlay:has(.deck-catalog-home) .deck-select-header { display:none; }
+#deck-select-overlay:has(.deck-catalog-home) .deck-catalog-back-container {
+ order:-1; margin:0 0 32px; padding:0 0 20px; justify-content:flex-start; border:0; border-bottom:1px solid #54727a55; background:none;
+}
+#deck-select-overlay:has(.deck-catalog-home) .deck-catalog-back-btn {
+ padding:8px 0; font:600 16px/1.3 system-ui,sans-serif; border:0; background:none; min-height:44px;
+}
+#deck-select-overlay .deck-catalog-home { display:flex; flex-direction:column; gap:20px; padding:0; overflow-y:auto; overflow-x:hidden; align-items:stretch; justify-content:flex-start; flex:1; min-height:0; }
+.library-toolbar { display:flex; justify-content:space-between; align-items:center; gap:16px; flex:none; }
+.library-toolbar h2 { margin:0; font:650 28px/1.2 system-ui,sans-serif; text-transform:none; letter-spacing:0; color:#edf3ed; }
+.library-actions { display:flex; gap:12px; align-items:center; }
+.library-actions button { min-height:46px; padding:12px 16px; border:1px solid #54727a; border-radius:4px; background:none; color:#edf3ed; font:600 16px/1.25 system-ui,sans-serif; }
+.library-actions button.primary { background:#e5d3a2; color:#13313a; border-color:#e5d3a2; }
+.library-search { box-sizing:border-box; width:min(420px,100%); min-height:44px; flex:none; padding:12px; border:1px solid #54727a; border-radius:4px; background:#12313d; color:#edf3ed; font:400 16px/1.3 system-ui,sans-serif; }
+#deck-select-overlay .deck-catalog-home .deck-card-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; padding:0; flex:none; }
+#deck-select-overlay .deck-catalog-home .deck-preview { width:100%; height:282px; min-height:282px; grid-template-columns:100px minmax(0,1fr); }
+#deck-select-overlay .deck-catalog-home .deck-preview[hidden] { display:none; }
+.library-empty { margin:0; color:#b3c6cb; font:400 18px/1.4 system-ui,sans-serif; }
+@media(max-width:1100px) { #deck-select-overlay .deck-catalog-home .deck-card-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:700px) {
+ #deck-select-overlay:has(.deck-catalog-home) .deck-select-card { width:calc(100% - 32px); padding:16px 0; }
+ #deck-select-overlay:has(.deck-catalog-home) .deck-catalog-back-container { margin-bottom:24px; padding-bottom:12px; }
+ #deck-select-overlay .deck-catalog-home .deck-card-grid { grid-template-columns:1fr; }
+ .library-toolbar { flex-wrap:wrap; gap:12px; }
+ .library-toolbar h2 { font-size:26px; }
+ .library-actions { gap:8px; }
+ .library-actions button { font-size:15px; padding:10px 12px; }
+ #deck-select-overlay .deck-catalog-home .deck-preview { height:270px; min-height:270px; grid-template-columns:94px minmax(0,1fr); }
+}

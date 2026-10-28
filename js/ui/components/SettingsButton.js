@@ -1,14 +1,62 @@
-/**
- * Settings Button Component
- *
- * A floating action button for quick access to settings and bug reporting.
- * Shows a small popup menu with "Settings", "Report Bug", and "View Known Bugs" options.
- *
- * Dynamically appends to document.body to ensure it renders above all overlays.
- */
+/** Contextual utilities: dock in the current screen, never float over dialogs. */
 
 let isMenuOpen = false;
 let containerElement = null;
+let placementObserver = null;
+let listeners = null;
+let placementFrame = null;
+
+const placeSettingsButton = () => {
+  if (!containerElement) return;
+  const visible = (el) =>
+    el && el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().height > 0;
+  const overlays = [...document.querySelectorAll('.overlay.active')].filter(visible);
+  const blocked = document.querySelector(
+    'dialog[open], .card-hover-tooltip.visible.deck-inspector'
+  );
+  let anchor = null;
+  let location = '';
+  if (!blocked && overlays.length === 1) {
+    const overlay = overlays[0];
+    if (overlay.id === 'menu-overlay') {
+      anchor = overlay.querySelector('.menu-header');
+      location = 'home';
+    }
+    if (overlay.id === 'deck-overlay') {
+      anchor = overlay.querySelector('.deck-header');
+      location = 'editor';
+    }
+    if (overlay.id === 'deck-select-overlay' && overlay.querySelector('.deck-catalog-home')) {
+      anchor = overlay.querySelector('.deck-catalog-back-container');
+      location = 'library';
+    }
+  } else if (!blocked && overlays.length === 0) {
+    anchor = document.querySelector(
+      window.matchMedia('(min-width:768px)').matches
+        ? '.game-container .piles-section'
+        : '.game-container .top-utilities'
+    );
+    location = 'game';
+  }
+  const hidden = !anchor || !visible(anchor);
+  if (containerElement.hidden !== hidden) containerElement.hidden = hidden;
+  if (hidden) {
+    if (isMenuOpen) hideSettingsMenu();
+    return;
+  }
+  if (containerElement.parentElement !== anchor) {
+    hideSettingsMenu();
+    anchor.appendChild(containerElement);
+  }
+  if (containerElement.dataset.location !== location) containerElement.dataset.location = location;
+};
+const schedulePlacement = () => {
+  if (placementFrame !== null) return;
+  placementFrame = requestAnimationFrame(() => {
+    placementFrame = null;
+    placeSettingsButton();
+  });
+};
 
 /**
  * Initialize the settings button and its menu
@@ -19,21 +67,26 @@ let containerElement = null;
  * @param {Function} callbacks.onSimulationStats - Called when "Simulation Stats" is clicked (AI vs AI mode)
  */
 export const initSettingsButton = (callbacks = {}) => {
+  placementObserver?.disconnect();
+  listeners?.abort();
+  listeners = new window.AbortController();
+  if (placementFrame !== null) cancelAnimationFrame(placementFrame);
+  placementFrame = null;
+  isMenuOpen = false;
   // Remove existing container if re-initializing
   if (containerElement) {
     containerElement.remove();
   }
 
-  // Create container dynamically and append to body for maximum z-index control
+  // Create once, then dock into the active screen after rendering.
   containerElement = document.createElement('div');
   containerElement.id = 'settings-button-container';
   containerElement.className = 'settings-button-container';
 
-  // Append to body to escape any stacking contexts
+  // Temporary home until the current screen anchor is ready.
   document.body.appendChild(containerElement);
 
-  // Set extremely high z-index via JS to ensure it's above everything
-  containerElement.style.zIndex = '100000';
+  containerElement.hidden = true;
 
   // Include simulation stats option if callback is provided (AI vs AI mode)
   const simStatsOption = callbacks.onSimulationStats
@@ -61,7 +114,7 @@ export const initSettingsButton = (callbacks = {}) => {
       </button>
       ${simStatsOption}
     </div>
-    <button class="settings-fab" id="settings-fab" title="Menu" aria-label="Menu" aria-expanded="false">
+    <button class="settings-fab" id="settings-fab" title="Menu" aria-label="Menu" aria-expanded="false" aria-controls="settings-menu">
       <span class="settings-fab-icon">☰</span><span>Menu</span>
     </button>
   `;
@@ -103,18 +156,36 @@ export const initSettingsButton = (callbacks = {}) => {
   });
 
   // Close menu when clicking outside
-  document.addEventListener('click', (e) => {
-    if (isMenuOpen && containerElement && !containerElement.contains(e.target)) {
-      hideSettingsMenu();
-    }
-  });
+  document.addEventListener(
+    'click',
+    (e) => {
+      if (isMenuOpen && containerElement && !containerElement.contains(e.target)) {
+        hideSettingsMenu();
+      }
+    },
+    { signal: listeners.signal }
+  );
 
   // Close on escape key
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && isMenuOpen) {
-      hideSettingsMenu();
-    }
+  document.addEventListener(
+    'keydown',
+    (e) => {
+      if (e.key === 'Escape' && isMenuOpen) {
+        hideSettingsMenu();
+        fab?.focus();
+      }
+    },
+    { signal: listeners.signal }
+  );
+  window.addEventListener('resize', schedulePlacement, { signal: listeners.signal });
+  placementObserver = new MutationObserver(schedulePlacement);
+  placementObserver.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['class', 'open'],
   });
+  schedulePlacement();
 };
 
 /**

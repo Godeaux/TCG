@@ -3,6 +3,7 @@ import { createTestState } from '../setup/testHelpers.js';
 import { getLocalPlayerIndex } from '../../js/state/selectors.js';
 
 const api = vi.hoisted(() => ({
+  createLobby: vi.fn(),
   findLobbyByCode: vi.fn(),
   fetchLobbyById: vi.fn(),
   fetchProfilesByIds: vi.fn(async () => []),
@@ -45,6 +46,8 @@ import {
   getRejoinInfo,
   saveRejoinInfo,
   handleMenuRejoin,
+  handleCreateLobby,
+  updateLobbyPlayerNames,
 } from '../../js/network/lobbyManager.js';
 const lobby = { id: 42, code: 'ABC123', host_id: 'host', guest_id: 'guest', status: 'full' };
 
@@ -77,4 +80,34 @@ describe('Guest rejoin through real lobby operations', () => {
     expect(getLocalPlayerIndex(state)).toBe(1);
     expect(state.menu.lobby).toEqual(lobby);
   });
+});
+
+describe('Lobby identity before Continue switches to online mode', () => {
+  it.each(['host', 'guest'])(
+    'assigns absolute seats for the %s, not local-mode player zero',
+    async (id) => {
+      api.fetchProfilesByIds.mockResolvedValue([
+        { id: 'host', username: 'Alpha' },
+        { id: 'guest', username: 'Beta' },
+      ]);
+      const state = createTestState();
+      state.menu = { mode: 'local', profile: { id }, lobby };
+      await updateLobbyPlayerNames(state);
+      expect(state.players.map((p) => p.name)).toEqual(['Alpha', 'Beta']);
+    }
+  );
+});
+
+it('failed room creation releases loading and offers a connection retry without creating a lobby', async () => {
+  const state = createTestState();
+  state.menu = { mode: 'online', stage: 'multiplayer', profile: { id: 'host' }, lobby: null };
+  await loadSupabaseApi(state);
+  api.createLobby.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+  const result = await handleCreateLobby(state);
+  expect(result.success).toBe(false);
+  expect(state.menu.loading).toBe(false);
+  expect(state.menu.lobby).toBeNull();
+  expect(state.menu.stage).toBe('multiplayer');
+  expect(state.menu.error).toBe("Couldn't connect. Check your connection and try again.");
+  expect(result.error).toBe(state.menu.error);
 });

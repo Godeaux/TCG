@@ -118,7 +118,9 @@ export const getApi = () => supabaseApi;
  * Set error message on menu state
  */
 const setMenuError = (state, message) => {
-  state.menu.error = message;
+  state.menu.error = /failed to fetch|networkerror|load failed/i.test(message || '')
+    ? "Couldn't connect. Check your connection and try again."
+    : message;
 };
 
 /**
@@ -493,33 +495,15 @@ export const updateLobbyPlayerNames = async (state, lobby = state.menu?.lobby) =
     const profiles = await api.fetchProfilesByIds(playerIds);
     const profileMap = new Map(profiles.map((profile) => [profile.id, profile]));
 
-    // Use perspective-aware assignment: local player sees themselves at their calculated index
-    const localIndex = getLocalPlayerIndex(state);
-    const remoteIndex = (localIndex + 1) % 2;
-    const localProfileId = state.menu?.profile?.id;
-
-    // Determine which profile is local vs remote
-    let localProfile = null;
-    let remoteProfile = null;
-
-    if (lobby.host_id === localProfileId) {
-      // I am the host
-      localProfile = profileMap.get(lobby.host_id);
-      remoteProfile = profileMap.get(lobby.guest_id);
-    } else if (lobby.guest_id === localProfileId) {
-      // I am the guest
-      localProfile = profileMap.get(lobby.guest_id);
-      remoteProfile = profileMap.get(lobby.host_id);
-    }
-
-    if (localProfile) {
-      state.players[localIndex].name = localProfile.username;
-      state.players[localIndex].nameStyle = localProfile.name_style || {};
-    }
-    if (remoteProfile) {
-      state.players[remoteIndex].name = remoteProfile.username;
-      state.players[remoteIndex].nameStyle = remoteProfile.name_style || {};
-    }
+    // Player arrays use absolute seats even while the lobby menu is still in
+    // local mode: host = 0, guest = 1. Viewpoint selectors are not seat assignment.
+    [lobby.host_id, lobby.guest_id].forEach((id, index) => {
+      const profile = profileMap.get(id);
+      if (profile) {
+        state.players[index].name = profile.username;
+        state.players[index].nameStyle = profile.name_style || {};
+      }
+    });
     callbacks.onUpdate?.();
   } catch (error) {
     setMenuError(state, error.message || 'Unable to load lobby profiles.');
@@ -571,7 +555,7 @@ export const handleLoginSubmit = async (state, username, pin) => {
   } catch (error) {
     const message = error.message || 'Login failed.';
     setMenuError(state, message);
-    return { success: false, error: message };
+    return { success: false, error: state.menu.error };
   } finally {
     applyMenuLoading(state, false);
     callbacks.onUpdate?.();
@@ -617,7 +601,7 @@ export const handleCreateAccount = async (state, username, pin) => {
   } catch (error) {
     const message = error.message || 'Account creation failed.';
     setMenuError(state, message);
-    return { success: false, error: message };
+    return { success: false, error: state.menu.error };
   } finally {
     applyMenuLoading(state, false);
     callbacks.onUpdate?.();
@@ -664,7 +648,7 @@ export const handleLogout = async (state) => {
   } catch (error) {
     const message = error.message || 'Logout failed.';
     setMenuError(state, message);
-    return { success: false, error: message };
+    return { success: false, error: state.menu.error };
   } finally {
     applyMenuLoading(state, false);
     callbacks.onUpdate?.();
@@ -1031,7 +1015,7 @@ export const handleCreateLobby = async (state) => {
   } catch (error) {
     const message = error.message || 'Failed to create lobby.';
     setMenuError(state, message);
-    return { success: false, error: message };
+    return { success: false, error: state.menu.error };
   } finally {
     applyMenuLoading(state, false);
     callbacks.onUpdate?.();
@@ -1065,7 +1049,7 @@ export const handleJoinLobby = async (state, code) => {
   } catch (error) {
     const message = error.message || 'Failed to join lobby.';
     setMenuError(state, message);
-    return { success: false, error: message };
+    return { success: false, error: state.menu.error };
   } finally {
     applyMenuLoading(state, false);
     callbacks.onUpdate?.();

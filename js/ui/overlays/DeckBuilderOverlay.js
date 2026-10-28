@@ -25,106 +25,14 @@ import { getLocalPlayerIndex, isAIMode, isAIvsAIMode } from '../../state/selecto
 import { renderDeckCard, renderCardStats, getCardEffectSummary } from '../components/Card.js';
 import { showCardTooltip, hideCardTooltip } from '../components/CardTooltip.js';
 import { KEYWORD_DESCRIPTIONS } from '../../keywords.js';
-import { getCardImagePath } from '../../cardImages.js';
+import { getCardImagePath, hasCardImage } from '../../cardImages.js';
+import { showMenuDialog } from '../components/MenuDialog.js';
 
 // ============================================================================
 // MODULE-LEVEL STATE
 // ============================================================================
 
-// Mobile touch detection
-const TAP_MAX_MOVEMENT_PX = 15; // Max pixels moved to count as tap
-const HOLD_PREVIEW_DURATION_MS = 200; // How long to hold for preview
-
-// Check if device supports touch (mobile)
-const isTouchDevice = () => 'ontouchstart' in window || window.navigator.maxTouchPoints > 0;
-
-/**
- * Setup mobile touch handlers for deck cards
- * - Tap (quick release < 200ms) → adds card to deck
- * - Hold (200ms+) → shows expanded card preview
- * - Tap anywhere dismisses preview (handled by CardTooltip global handler)
- *
- * @param {HTMLElement} cardElement - The card DOM element
- * @param {Object} card - The card data object
- * @param {Function} addCardToDeck - Callback to add the card to deck
- */
-const setupMobileTouchHandlers = (cardElement, card, addCardToDeck) => {
-  let touchStartPos = { x: 0, y: 0 };
-  let holdTimer = null;
-  let previewShown = false;
-
-  const clearHoldTimer = () => {
-    if (holdTimer) {
-      clearTimeout(holdTimer);
-      holdTimer = null;
-    }
-  };
-
-  cardElement.addEventListener(
-    'touchstart',
-    (e) => {
-      if (e.touches.length !== 1) return;
-
-      const touch = e.touches[0];
-      touchStartPos = { x: touch.clientX, y: touch.clientY };
-      previewShown = false;
-
-      // Start hold timer for preview
-      clearHoldTimer();
-      holdTimer = setTimeout(() => {
-        previewShown = true;
-        showExpandedCard(card, cardElement);
-      }, HOLD_PREVIEW_DURATION_MS);
-    },
-    { passive: true }
-  );
-
-  cardElement.addEventListener(
-    'touchmove',
-    (e) => {
-      if (e.touches.length !== 1) return;
-
-      const touch = e.touches[0];
-      const dx = touch.clientX - touchStartPos.x;
-      const dy = touch.clientY - touchStartPos.y;
-      const movement = Math.sqrt(dx * dx + dy * dy);
-
-      // Cancel hold if finger moved (scrolling)
-      if (movement > TAP_MAX_MOVEMENT_PX) {
-        clearHoldTimer();
-      }
-    },
-    { passive: true }
-  );
-
-  cardElement.addEventListener('touchend', (e) => {
-    clearHoldTimer();
-
-    // If preview was shown, don't add card - just let global handler dismiss
-    if (previewShown) {
-      previewShown = false;
-      return;
-    }
-
-    if (e.changedTouches.length !== 1) return;
-
-    const touch = e.changedTouches[0];
-    const dx = touch.clientX - touchStartPos.x;
-    const dy = touch.clientY - touchStartPos.y;
-    const movement = Math.sqrt(dx * dx + dy * dy);
-
-    // Quick tap with no movement = add card to deck
-    if (movement < TAP_MAX_MOVEMENT_PX) {
-      e.preventDefault();
-      addCardToDeck(card);
-    }
-  });
-
-  cardElement.addEventListener('touchcancel', () => {
-    clearHoldTimer();
-    previewShown = false;
-  });
-};
+let librarySearch = '';
 
 // Deck options available for selection
 const DECK_OPTIONS = [
@@ -453,17 +361,21 @@ const createDeckListRow = (card, options = {}) => {
   row.appendChild(banner);
   row.appendChild(name);
 
-  // Hover to show expanded tooltip
-  row.addEventListener('mouseenter', () => {
-    showCardTooltip(card, row, { showPreview: true });
-  });
-  row.addEventListener('mouseleave', () => {
-    hideCardTooltip();
-  });
-
   // Only add click/drag handlers if interaction is enabled
   if (!disableInteraction) {
-    // Click to remove
+    if (onRemove) {
+      const remove = document.createElement('button');
+      remove.className = 'deck-row-remove';
+      remove.type = 'button';
+      remove.textContent = '−';
+      remove.setAttribute('aria-label', `Remove ${card.name}`);
+      remove.onclick = (event) => {
+        event.stopPropagation();
+        onRemove(card);
+      };
+      row.appendChild(remove);
+    }
+    // Inspect the row; removal has a separate explicit control.
     row.addEventListener('click', (e) => {
       e.stopPropagation();
       if (onClick) onClick(card);
@@ -634,45 +546,46 @@ const setupDeckListDropZone = (onDrop) => {
   });
 };
 
-// Track expanded card state for dismiss handler
-let expandedCardElement = null;
-
-/**
- * Show expanded card preview using the tooltip system
- * @param {Object} card - Card data
- * @param {HTMLElement} sourceElement - Element that triggered the preview
- */
+// Use the same inspector and dismissal behavior as cards on the board.
 const showExpandedCard = (card, sourceElement) => {
-  showCardTooltip(card, sourceElement, { showPreview: true, context: 'catalog' });
-  expandedCardElement = sourceElement;
+  showCardTooltip(card, sourceElement, { context: 'gameplay' });
+  document.getElementById('card-hover-tooltip')?.classList.add('deck-inspector');
 };
+const hideExpandedCard = () => hideCardTooltip();
 
-/**
- * Hide expanded card preview
- */
-const hideExpandedCard = () => {
-  hideCardTooltip();
-  expandedCardElement = null;
+const appendCatalogCard = (container, card, onAdd) => {
+  const item = document.createElement('div');
+  item.className = 'deck-catalog-item';
+  const face = renderDeckCard(card, { useBaseStats: true });
+  face.dataset.cardId = card.id;
+  face.tabIndex = 0;
+  face.setAttribute('role', 'button');
+  face.setAttribute('aria-label', `Inspect ${card.name}`);
+  face.addEventListener('click', () => showExpandedCard(card, face));
+  face.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      showExpandedCard(card, face);
+    }
+  });
+  face.draggable = true;
+  face.addEventListener('dragstart', (event) => {
+    event.dataTransfer.setData(
+      'text/plain',
+      JSON.stringify({ cardId: card.id, source: 'catalog' })
+    );
+    event.dataTransfer.effectAllowed = 'copy';
+    hideExpandedCard();
+  });
+  const add = document.createElement('button');
+  add.className = 'deck-card-add';
+  add.type = 'button';
+  add.textContent = 'Add to deck';
+  add.setAttribute('aria-label', `Add ${card.name} to deck`);
+  add.onclick = () => onAdd(card);
+  item.append(face, add);
+  container.appendChild(item);
 };
-
-/**
- * Setup click handler to dismiss expanded card on any tap
- * Uses capture phase to ensure it runs before other handlers
- */
-const setupExpandedCardDismiss = () => {
-  document.addEventListener(
-    'click',
-    () => {
-      if (expandedCardElement) {
-        hideExpandedCard();
-      }
-    },
-    true
-  );
-};
-
-// Initialize dismiss handler once
-let dismissHandlerSetup = false;
 
 /**
  * Apply menu loading state
@@ -1014,14 +927,6 @@ const updateDeckTabs = (state) => {
 // DECK CARD GRID (shared by load panel, AI mode, and multiplayer mode)
 // ============================================================================
 
-const DECK_TYPE_ICONS = {
-  fish: '🐟',
-  bird: '🐦',
-  mammal: '🦁',
-  reptile: '🦎',
-  amphibian: '🐸',
-};
-
 /**
  * Detect deck type from card IDs
  */
@@ -1045,7 +950,7 @@ const detectDeckType = (deckIds) => {
  */
 const renderDeckCardGrid = (
   container,
-  { decks = [], onSelect, onCreate, onRandom, selectedDeckId = null }
+  { decks = [], onSelect, onCreate, onRandom, onManage, selectedDeckId = null }
 ) => {
   container.innerHTML = '';
   const grid = document.createElement('div');
@@ -1054,18 +959,123 @@ const renderDeckCardGrid = (
   // Saved decks
   decks.forEach((deck) => {
     const deckType = detectDeckType(deck.deck);
-    const icon = DECK_TYPE_ICONS[deckType] || '🃏';
     const isSelected = deck.id === selectedDeckId;
-
+    const entries = (deck.deck || []).map(getCardDefinitionById).filter(Boolean);
     const card = document.createElement('div');
-    card.className = `deck-card deck-card--${deckType}${isSelected ? ' selected' : ''}`;
-    card.innerHTML = `
-      <div class="deck-card-type">${deckType}</div>
-      <div class="deck-card-icon">${icon}</div>
-      <div class="deck-card-name">${deck.name}</div>
-      <div class="deck-card-count">${(deck.deck || []).length} cards</div>
-    `;
-    card.onclick = () => onSelect?.(deck);
+    card.className = `deck-card deck-preview deck-card--${deckType}${isSelected ? ' selected' : ''}`;
+    card.setAttribute('aria-label', `${deck.name}, ${deckType}, ${entries.length} cards`);
+    const cover = document.createElement('button');
+    cover.type = 'button';
+    cover.className = 'deck-preview-cover';
+    cover.setAttribute('aria-label', `Change cover for ${deck.name}`);
+    const coverKey = `tcg-deck-cover:${deck.id}`;
+    let coverId;
+    try {
+      coverId = localStorage.getItem(coverKey);
+    } catch {
+      /* Storage can be disabled. */
+    }
+    const setCover = (entry) => {
+      cover.replaceChildren();
+      if (entry && hasCardImage(entry.id)) {
+        const image = document.createElement('img');
+        image.src = getCardImagePath(entry.id);
+        image.alt = entry.name;
+        cover.appendChild(image);
+      }
+      const pencil = document.createElement('span');
+      pencil.textContent = '✎';
+      pencil.className = 'cover-pencil';
+      cover.appendChild(pencil);
+    };
+    setCover(entries.find((c) => c.id === coverId) || entries.find((c) => hasCardImage(c.id)));
+    cover.onclick = (event) => {
+      event.stopPropagation();
+      const dialog = document.createElement('dialog');
+      dialog.className = 'deck-cover-picker';
+      const title = document.createElement('h2');
+      title.textContent = 'Deck cover';
+      const choices = document.createElement('div');
+      choices.className = 'deck-cover-choices';
+      entries
+        .filter((c) => hasCardImage(c.id))
+        .forEach((entry) => {
+          const choice = document.createElement('button');
+          choice.type = 'button';
+          choice.setAttribute('aria-label', entry.name);
+          const image = document.createElement('img');
+          image.src = getCardImagePath(entry.id);
+          image.alt = entry.name;
+          choice.appendChild(image);
+          choice.onclick = () => {
+            try {
+              localStorage.setItem(coverKey, entry.id);
+            } catch {
+              /* Keep current-session choice. */
+            }
+            setCover(entry);
+            dialog.close();
+          };
+          choices.appendChild(choice);
+        });
+      const close = document.createElement('button');
+      close.textContent = 'Close';
+      close.onclick = () => dialog.close();
+      dialog.append(title, choices, close);
+      dialog.addEventListener('close', () => {
+        dialog.remove();
+        cover.focus();
+      });
+      document.body.appendChild(dialog);
+      dialog.showModal();
+    };
+    const content = document.createElement('div');
+    content.className = 'deck-preview-content';
+    const name = document.createElement('button');
+    name.type = 'button';
+    name.className = 'deck-preview-name';
+    name.textContent = deck.name;
+    name.setAttribute('aria-label', `Open ${deck.name}`);
+    name.onclick = () => onSelect?.(deck);
+    const pencil = document.createElement('span');
+    pencil.textContent = '✎';
+    pencil.setAttribute('aria-hidden', 'true');
+    name.appendChild(pencil);
+    const thumbnails = document.createElement('div');
+    thumbnails.className = 'deck-preview-thumbnails';
+    entries.forEach((entry) => {
+      const thumb = document.createElement('button');
+      thumb.type = 'button';
+      thumb.setAttribute('aria-label', `Inspect ${entry.name}`);
+      if (hasCardImage(entry.id)) {
+        const image = document.createElement('img');
+        image.src = getCardImagePath(entry.id);
+        image.alt = '';
+        thumb.appendChild(image);
+      } else {
+        thumb.textContent = entry.name
+          .split(' ')
+          .map((w) => w[0])
+          .slice(0, 3)
+          .join('');
+      }
+      thumb.onclick = () => showExpandedCard(entry, thumb);
+      thumbnails.appendChild(thumb);
+    });
+    const heading = document.createElement('div');
+    heading.className = 'deck-preview-heading';
+    heading.append(name);
+    if (onManage) {
+      const manage = document.createElement('button');
+      manage.type = 'button';
+      manage.className = 'deck-preview-manage';
+      manage.textContent = '⋯';
+      manage.setAttribute('aria-label', `Manage ${deck.name}`);
+      manage.onclick = () => onManage(deck);
+      heading.append(manage);
+    }
+    content.append(heading, thumbnails);
+    card.append(cover, content);
     grid.appendChild(card);
   });
 
@@ -1134,6 +1144,56 @@ const renderDeckLoadPanel = (state, playerIndex, callbacks) => {
 /**
  * Render deck manage panel (for catalog builder)
  */
+const renameSavedDeck = async (state, deck, callbacks) => {
+  const name = await showMenuDialog({
+    title: 'Rename deck',
+    value: deck.name,
+    confirmLabel: 'Save',
+  });
+  if (!name) {
+    return;
+  }
+  applyMenuLoading(state, true);
+  try {
+    const api = await loadSupabaseApi(state);
+    await api.updateDeck({
+      deckId: deck.id,
+      ownerId: state.menu.profile.id,
+      name,
+    });
+    await ensureDecksLoaded(state, { force: true });
+  } catch (error) {
+    setMenuError(state, error.message || 'Failed to rename deck.');
+  } finally {
+    applyMenuLoading(state, false);
+    callbacks.onUpdate?.();
+  }
+};
+
+const deleteSavedDeck = async (state, deck, callbacks) => {
+  if (
+    !(await showMenuDialog({
+      title: 'Delete deck?',
+      message: `“${deck.name}” will be deleted.`,
+      confirmLabel: 'Delete',
+      destructive: true,
+    }))
+  ) {
+    return;
+  }
+  applyMenuLoading(state, true);
+  try {
+    const api = await loadSupabaseApi(state);
+    await api.deleteDeck({ deckId: deck.id, ownerId: state.menu.profile.id });
+    await ensureDecksLoaded(state, { force: true });
+  } catch (error) {
+    setMenuError(state, error.message || 'Failed to delete deck.');
+  } finally {
+    applyMenuLoading(state, false);
+    callbacks.onUpdate?.();
+  }
+};
+
 const renderDeckManagePanel = (state, callbacks) => {
   const elements = getDeckElements();
   const { deckManageList } = elements;
@@ -1151,12 +1211,13 @@ const renderDeckManagePanel = (state, callbacks) => {
   }
   ensureDecksLoaded(state);
   const decks = state.menu.decks ?? [];
-  const slots = Array.from({ length: 10 }, (_, index) => decks[index] ?? null);
+  const slots = decks;
 
   const newDeckButton = document.createElement('button');
   newDeckButton.type = 'button';
   newDeckButton.className = 'primary';
-  newDeckButton.textContent = 'Start New Deck';
+  newDeckButton.textContent = 'New deck';
+  newDeckButton.disabled = decks.length >= 10;
   newDeckButton.onclick = () => {
     state.catalogBuilder.stage = 'select';
     state.catalogBuilder.deckId = null;
@@ -1175,10 +1236,10 @@ const renderDeckManagePanel = (state, callbacks) => {
   newDeckSlot.className = 'deck-slot';
   newDeckSlot.innerHTML = `
     <div class="deck-slot-header">
-      <span>Deck Slots</span>
+      <span>Saved decks</span>
       <span class="deck-slot-meta">${decks.length}/10 used</span>
     </div>
-    <div class="deck-slot-meta">Save up to ten decks per account.</div>
+
   `;
   const newDeckActions = document.createElement('div');
   newDeckActions.className = 'deck-slot-actions';
@@ -1186,27 +1247,16 @@ const renderDeckManagePanel = (state, callbacks) => {
   newDeckSlot.appendChild(newDeckActions);
   deckManageList.appendChild(newDeckSlot);
 
-  slots.forEach((deck, index) => {
+  slots.forEach((deck) => {
     const slot = document.createElement('div');
     slot.className = 'deck-slot';
-    if (!deck) {
-      slot.innerHTML = `
-        <div class="deck-slot-header">
-          <span>Empty Slot ${index + 1}</span>
-          <span class="deck-slot-meta">Available</span>
-        </div>
-        <div class="deck-slot-meta">Build and save a deck to fill this slot.</div>
-      `;
-      deckManageList.appendChild(slot);
-      return;
-    }
-    slot.innerHTML = `
-      <div class="deck-slot-header">
-        <span>${deck.name}</span>
-        <span class="deck-slot-meta">Slot ${index + 1}</span>
-      </div>
-      <div class="deck-slot-meta">20 cards</div>
-    `;
+    const heading = document.createElement('div');
+    heading.className = 'deck-slot-header';
+    heading.textContent = deck.name;
+    const count = document.createElement('div');
+    count.className = 'deck-slot-meta';
+    count.textContent = `${deck.deck.length} cards`;
+    slot.append(heading, count);
     const actions = document.createElement('div');
     actions.className = 'deck-slot-actions';
     const editButton = document.createElement('button');
@@ -1231,47 +1281,12 @@ const renderDeckManagePanel = (state, callbacks) => {
     const renameButton = document.createElement('button');
     renameButton.type = 'button';
     renameButton.textContent = 'Rename';
-    renameButton.onclick = async () => {
-      const name = window.prompt('New deck name:', deck.name);
-      if (!name) {
-        return;
-      }
-      applyMenuLoading(state, true);
-      try {
-        const api = await loadSupabaseApi(state);
-        await api.updateDeck({
-          deckId: deck.id,
-          ownerId: state.menu.profile.id,
-          name,
-        });
-        await ensureDecksLoaded(state, { force: true });
-      } catch (error) {
-        setMenuError(state, error.message || 'Failed to rename deck.');
-      } finally {
-        applyMenuLoading(state, false);
-        callbacks.onUpdate?.();
-      }
-    };
+    renameButton.onclick = () => renameSavedDeck(state, deck, callbacks);
     const deleteButton = document.createElement('button');
     deleteButton.type = 'button';
     deleteButton.className = 'danger';
     deleteButton.textContent = 'Delete';
-    deleteButton.onclick = async () => {
-      if (!window.confirm(`Delete "${deck.name}"?`)) {
-        return;
-      }
-      applyMenuLoading(state, true);
-      try {
-        const api = await loadSupabaseApi(state);
-        await api.deleteDeck({ deckId: deck.id, ownerId: state.menu.profile.id });
-        await ensureDecksLoaded(state, { force: true });
-      } catch (error) {
-        setMenuError(state, error.message || 'Failed to delete deck.');
-      } finally {
-        applyMenuLoading(state, false);
-        callbacks.onUpdate?.();
-      }
-    };
+    deleteButton.onclick = () => deleteSavedDeck(state, deck, callbacks);
     actions.appendChild(editButton);
     actions.appendChild(renameButton);
     actions.appendChild(deleteButton);
@@ -1345,7 +1360,7 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
         deckSelectTitle.textContent = 'My Decks';
       }
       if (deckSelectSubtitle) {
-        deckSelectSubtitle.textContent = 'Manage your deck collection';
+        deckSelectSubtitle.textContent = '';
       }
       clearPanel(deckSelectGrid);
 
@@ -1373,6 +1388,17 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
 
         renderDeckCardGrid(deckSelectGrid, {
           decks,
+          onManage: async (deck) => {
+            const action = await showMenuDialog({
+              title: deck.name,
+              choices: [
+                { label: 'Rename', value: 'rename' },
+                { label: 'Delete', value: 'delete', destructive: true },
+              ],
+            });
+            if (action === 'rename') await renameSavedDeck(state, deck, callbacks);
+            if (action === 'delete') await deleteSavedDeck(state, deck, callbacks);
+          },
           selectedDeckId: null,
           onSelect: (deck) => {
             // Clicking a deck opens it for editing
@@ -1401,24 +1427,58 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
           onRandom: null, // No random in manage screen
         });
 
-        // Add "View All Cards" card into the grid
         const grid = deckSelectGrid.querySelector('.deck-card-grid');
-        if (grid) {
-          const viewAll = document.createElement('div');
-          viewAll.className = 'deck-card deck-card--unknown';
-          viewAll.innerHTML = `
-            <div class="deck-card-type">&nbsp;</div>
-            <div class="deck-card-icon">📚</div>
-            <div class="deck-card-name">View All Cards</div>
-            <div class="deck-card-count">Browse catalog</div>
-          `;
-          viewAll.onclick = () => {
-            state.catalogBuilder.stage = 'select';
-            state.catalogBuilder.viewOnly = true;
-            callbacks.onUpdate?.();
-          };
-          grid.insertBefore(viewAll, grid.firstChild);
+        const toolbar = document.createElement('div');
+        toolbar.className = 'library-toolbar';
+        const title = document.createElement('h2');
+        title.textContent = 'My decks';
+        const actions = document.createElement('div');
+        actions.className = 'library-actions';
+        const browse = document.createElement('button');
+        browse.type = 'button';
+        browse.textContent = 'Browse cards';
+        browse.onclick = () => {
+          state.catalogBuilder.stage = 'select';
+          state.catalogBuilder.viewOnly = true;
+          callbacks.onUpdate?.();
+        };
+        actions.append(browse);
+        const createTile = grid.querySelector('.deck-card--create');
+        if (createTile) {
+          const create = document.createElement('button');
+          create.type = 'button';
+          create.className = 'primary';
+          create.textContent = 'New deck';
+          create.onclick = createTile.onclick;
+          actions.append(create);
+          createTile.remove();
         }
+        toolbar.append(title, actions);
+        const search = document.createElement('input');
+        search.type = 'search';
+        search.className = 'library-search';
+        search.placeholder = 'Search decks';
+        search.setAttribute('aria-label', 'Search decks');
+        search.value = librarySearch;
+        const empty = document.createElement('p');
+        empty.className = 'library-empty';
+        empty.setAttribute('role', 'status');
+        search.oninput = () => {
+          librarySearch = search.value;
+          let visible = 0;
+          [...grid.querySelectorAll('.deck-preview')].forEach((preview, index) => {
+            const match = decks[index].name
+              .toLowerCase()
+              .includes(librarySearch.trim().toLowerCase());
+            preview.hidden = !match;
+            if (match) visible++;
+          });
+          empty.hidden = visible > 0;
+          empty.textContent = decks.length ? 'No matching decks.' : 'No saved decks yet.';
+        };
+        deckSelectGrid.prepend(toolbar, search);
+        deckSelectGrid.append(empty);
+        search.oninput();
       }
 
       // Back button container - fixed at bottom of the card, outside scroll area
@@ -1432,7 +1492,7 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
       const backBtn = document.createElement('button');
       backBtn.type = 'button';
       backBtn.className = 'deck-catalog-back-btn';
-      backBtn.textContent = 'Back to Menu';
+      backBtn.textContent = 'Home';
       backBtn.onclick = () => {
         state.menu.stage = 'main';
         state.catalogBuilder.stage = null;
@@ -2126,13 +2186,15 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
   const catalogOrder = state.catalogBuilder.catalogOrder ?? [];
   const predatorCount = selected.filter((card) => card.type === 'Predator').length;
   const preyCount = selected.filter((card) => card.type === 'Prey').length;
+  const spellCount = selected.filter((card) => ['Spell', 'Free Spell'].includes(card.type)).length;
+  const trapCount = selected.filter((card) => card.type === 'Trap').length;
   const totalCount = selected.length;
   const hasValidCount = totalCount === 20;
   const preyRuleValid = preyCount > predatorCount;
 
   deckOverlay.classList.add('active');
   deckOverlay.setAttribute('aria-hidden', 'false');
-  deckTitle.textContent = 'Deck Catalog Builder';
+  deckTitle.textContent = state.catalogBuilder.viewOnly ? 'Cards' : 'Edit deck';
 
   // Set default deck name for new decks if not already set
   if (!state.catalogBuilder.editingDeckName) {
@@ -2148,12 +2210,13 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
       <input type="text" id="deck-name-input" class="deck-name-input" value="${state.catalogBuilder.editingDeckName || 'New Deck'}" maxlength="30" placeholder="Deck name" />
     </div>
     <div class="deck-status-item">Cards selected: <strong>${totalCount}/20</strong></div>
-    <div class="deck-status-item ${preyRuleValid ? '' : 'invalid'}">
-      Prey: <strong>${preyCount}</strong> • Predators: <strong>${predatorCount}</strong>
+    <div class="deck-status-item deck-type-counts ${preyRuleValid ? '' : 'invalid'}">
+      <span>Prey: <strong>${preyCount}</strong></span> <span>Predator: <strong>${predatorCount}</strong></span>
+      <span>Spell: <strong>${spellCount}</strong></span> <span>Trap: <strong>${trapCount}</strong></span>
     </div>
   `;
   if (state.menu?.success) {
-    statusHtml += `<div class="deck-status-item deck-status-success">${state.menu.success}</div>`;
+    statusHtml += `<div class="deck-status-item deck-status-success" role="status" aria-live="polite">${state.menu.success}</div>`;
   }
   if (state.menu?.error) {
     statusHtml += `<div class="deck-status-item deck-status-error">${state.menu.error}</div>`;
@@ -2180,12 +2243,6 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
 
   // Bind filter input events
   bindFilterEvents(callbacks);
-
-  // Setup click-outside dismiss handler (once)
-  if (!dismissHandlerSetup) {
-    setupExpandedCardDismiss();
-    dismissHandlerSetup = true;
-  }
 
   // Helper to add card to deck
   const addCardToDeck = (card) => {
@@ -2216,51 +2273,7 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
   // Apply filter to available cards
   const filteredAvailable = filterCards(available);
 
-  // Render catalog cards with hover tooltip + double-click/drag to add
-  filteredAvailable.forEach((card) => {
-    const isInDeck = selected.some((c) => c.id === card.id);
-    const cardElement = renderDeckCard(card, {
-      highlighted: false,
-      selected: isInDeck,
-      onDoubleClick: () => {
-        // Double click: add to deck
-        addCardToDeck(card);
-      },
-    });
-
-    // Hover to show expanded tooltip (desktop)
-    cardElement.addEventListener('mouseenter', () => {
-      showExpandedCard(card, cardElement);
-    });
-    cardElement.addEventListener('mouseleave', () => {
-      hideExpandedCard();
-    });
-
-    // Mobile: Hearthstone-style (long-press for preview, double-tap to add, no drag)
-    // Desktop: drag-and-drop enabled
-    if (isTouchDevice()) {
-      setupMobileTouchHandlers(cardElement, card, addCardToDeck);
-      // Disable drag on mobile for deck building
-      cardElement.draggable = false;
-    } else {
-      // Desktop: Make card draggable
-      cardElement.draggable = true;
-      cardElement.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData(
-          'text/plain',
-          JSON.stringify({ cardId: card.id, source: 'catalog' })
-        );
-        e.dataTransfer.effectAllowed = 'copy';
-        cardElement.classList.add('dragging');
-        hideExpandedCard(); // Hide tooltip when dragging starts
-      });
-      cardElement.addEventListener('dragend', () => {
-        cardElement.classList.remove('dragging');
-      });
-    }
-
-    deckFullRow.appendChild(cardElement);
-  });
+  filteredAvailable.forEach((card) => appendCatalogCard(deckFullRow, card, addCardToDeck));
 
   // Setup deck list drop zone (for drag-drop to add)
   setupDeckListDropZone((cardId) => {
@@ -2272,10 +2285,7 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
   renderDeckListSidebar(selected, {
     catalogOrder,
     onRemove: removeCardFromDeck,
-    onCardClick: (card) => {
-      // Click on deck list row: remove the card
-      removeCardFromDeck(card);
-    },
+    onCardClick: (card) => showExpandedCard(card, document.getElementById('deck-list-cards')),
   });
 
   // Setup mobile drawer toggle (only on first render)
@@ -2286,7 +2296,14 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
   if (deckSave) {
     const isSaveTab = deckActiveTab === 'catalog';
     deckSave.classList.toggle('hidden', !state.menu.profile);
-    deckSave.textContent = state.catalogBuilder.editingDeckId ? 'Update Deck' : 'Save Deck';
+    deckSave.textContent = state.menu.loading
+      ? 'Saving…'
+      : state.menu.success
+        ? 'Saved ✓'
+        : state.catalogBuilder.editingDeckId
+          ? 'Update Deck'
+          : 'Save Deck';
+    deckSave.setAttribute('aria-busy', String(Boolean(state.menu.loading)));
     deckSave.disabled = !hasValidCount || !preyRuleValid || !isSaveTab || state.menu.loading;
     deckSave.onclick = async () => {
       if (!hasValidCount || !preyRuleValid || !isSaveTab) {
@@ -2302,6 +2319,7 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
         callbacks.onUpdate?.();
         return;
       }
+      state.menu.success = null;
       applyMenuLoading(state, true);
       setMenuError(state, null);
       callbacks.onUpdate?.();
@@ -2479,6 +2497,8 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
   const catalogOrder = state.deckBuilder.catalogOrder[playerIndex] ?? [];
   const predatorCount = selected.filter((card) => card.type === 'Predator').length;
   const preyCount = selected.filter((card) => card.type === 'Prey').length;
+  const spellCount = selected.filter((card) => ['Spell', 'Free Spell'].includes(card.type)).length;
+  const trapCount = selected.filter((card) => card.type === 'Trap').length;
   const totalCount = selected.length;
   const hasValidCount = totalCount === 20;
   const preyRuleValid = preyCount > predatorCount;
@@ -2488,8 +2508,9 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
   deckTitle.textContent = `${player.name} Deck Builder`;
   deckStatus.innerHTML = `
     <div class="deck-status-item">Cards selected: <strong>${totalCount}/20</strong></div>
-    <div class="deck-status-item ${preyRuleValid ? '' : 'invalid'}">
-      Prey: <strong>${preyCount}</strong> • Predators: <strong>${predatorCount}</strong>
+    <div class="deck-status-item deck-type-counts ${preyRuleValid ? '' : 'invalid'}">
+      <span>Prey: <strong>${preyCount}</strong></span> <span>Predator: <strong>${predatorCount}</strong></span>
+      <span>Spell: <strong>${spellCount}</strong></span> <span>Trap: <strong>${trapCount}</strong></span>
     </div>
   `;
 
@@ -2498,12 +2519,6 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
 
   // Bind filter input events
   bindFilterEvents(callbacks);
-
-  // Setup click-outside dismiss handler (once)
-  if (!dismissHandlerSetup) {
-    setupExpandedCardDismiss();
-    dismissHandlerSetup = true;
-  }
 
   // Helper to add card to deck
   const addCardToDeck = (card) => {
@@ -2534,51 +2549,7 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
   // Apply filter to available cards
   const filteredAvailable = filterCards(available);
 
-  // Render catalog cards with hover tooltip + double-click/drag to add
-  filteredAvailable.forEach((card) => {
-    const isInDeck = selected.some((c) => c.id === card.id);
-    const cardElement = renderDeckCard(card, {
-      highlighted: false,
-      selected: isInDeck,
-      onDoubleClick: () => {
-        // Double click: add to deck
-        addCardToDeck(card);
-      },
-    });
-
-    // Hover to show expanded tooltip (desktop)
-    cardElement.addEventListener('mouseenter', () => {
-      showExpandedCard(card, cardElement);
-    });
-    cardElement.addEventListener('mouseleave', () => {
-      hideExpandedCard();
-    });
-
-    // Mobile: Hearthstone-style (long-press for preview, double-tap to add, no drag)
-    // Desktop: drag-and-drop enabled
-    if (isTouchDevice()) {
-      setupMobileTouchHandlers(cardElement, card, addCardToDeck);
-      // Disable drag on mobile for deck building
-      cardElement.draggable = false;
-    } else {
-      // Desktop: Make card draggable
-      cardElement.draggable = true;
-      cardElement.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData(
-          'text/plain',
-          JSON.stringify({ cardId: card.id, source: 'catalog' })
-        );
-        e.dataTransfer.effectAllowed = 'copy';
-        cardElement.classList.add('dragging');
-        hideExpandedCard(); // Hide tooltip when dragging starts
-      });
-      cardElement.addEventListener('dragend', () => {
-        cardElement.classList.remove('dragging');
-      });
-    }
-
-    deckFullRow.appendChild(cardElement);
-  });
+  filteredAvailable.forEach((card) => appendCatalogCard(deckFullRow, card, addCardToDeck));
 
   // Setup deck list drop zone (for drag-drop to add)
   setupDeckListDropZone((cardId) => {
@@ -2590,10 +2561,7 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
   renderDeckListSidebar(selected, {
     catalogOrder,
     onRemove: removeCardFromDeck,
-    onCardClick: (card) => {
-      // Click on deck list row: remove the card
-      removeCardFromDeck(card);
-    },
+    onCardClick: (card) => showExpandedCard(card, document.getElementById('deck-list-cards')),
   });
 
   // Setup mobile drawer toggle

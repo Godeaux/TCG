@@ -125,6 +125,7 @@ import { renderHand, updateHandOverlap } from './ui/components/Hand.js';
 import {
   renderSelectionPanel,
   clearSelectionPanel,
+  refreshSelectionPanel,
   isSelectionActive as isSelectionActiveFromModule,
   createSelectionItem,
   createCardSelectionItem,
@@ -2102,7 +2103,7 @@ const resolveAttack = (
  * @param {Object} [options.sourceCard] - The card triggering the effect (optional, for visual)
  * @returns {Promise<Object>} Resolves with the selected candidate's value
  */
-const enterTargetingMode = ({ title, candidates, sourceCard }) => {
+const enterTargetingMode = ({ title, candidates, sourceCard, allowSkip = true }) => {
   return new Promise((resolve, reject) => {
     // Clean up any existing targeting mode
     if (targetingMode) exitTargetingMode();
@@ -2125,7 +2126,7 @@ const enterTargetingMode = ({ title, candidates, sourceCard }) => {
       exitTargetingMode();
       resolve(null);
     };
-    banner.appendChild(skipBtn);
+    if (allowSkip) banner.appendChild(skipBtn);
     const cancelBtn = document.createElement('button');
     cancelBtn.className = 'cancel-targeting';
     cancelBtn.textContent = 'Cancel';
@@ -2662,6 +2663,11 @@ const handleAttackSelection = (state, attacker, onUpdate) => {
 
   const opponent = getOpponentPlayer(state);
   const validTargets = getValidTargets(state, attacker, opponent);
+  if (!validTargets.player && validTargets.creatures.length === 0) {
+    logMessage(state, `${attacker.name} has no legal attack targets.`);
+    onUpdate?.();
+    return;
+  }
 
   const items = [];
   validTargets.creatures.forEach((creature) => {
@@ -2697,8 +2703,19 @@ const handleAttackSelection = (state, attacker, onUpdate) => {
     items.push(item);
   }
 
+  const promptTurn = state.turn;
   renderSelectionPanel({
     title: `Select target for ${attacker.name}`,
+    isValid: (renderedState = state) =>
+      renderedState === state &&
+      !state.winner &&
+      latestState === state &&
+      state.turn === promptTurn &&
+      state.phase === 'Combat' &&
+      isLocalPlayersTurn(state) &&
+      getActivePlayer(state).field.some(
+        (card) => card?.instanceId === attacker.instanceId && !card.hasAttacked
+      ),
     items,
     onConfirm: clearSelectionPanel,
     confirmLabel: 'Cancel',
@@ -2748,7 +2765,7 @@ const handleEatPreyAttack = (state, attacker, onUpdate) => {
   });
 };
 
-export const handlePlayCard = async (
+const performPlayCard = async (
   state,
   card,
   onUpdate,
@@ -2830,6 +2847,38 @@ export const handlePlayCard = async (
             sourceCard: card,
           });
           if (chosen) effectTargets = [{ type: 'option', label: chosen.label }];
+          // A modal spell option can itself need a target. Collect that target
+          // before dispatch so Cancel cannot spend the spell or its turn allowance.
+          if (
+            chosen?.effect?.type === 'selectFromGroup' &&
+            chosen.effect.params?.requireSelection
+          ) {
+            const targetChoice = gameController.getEffectSelections(card, trigger, {
+              optionLabels: [chosen.label],
+            });
+            if (targetChoice?.type === 'selectTarget') {
+              if (!targetChoice.candidates.length) {
+                logMessage(state, `No creatures available — ${card.name} stays in hand.`);
+                onUpdate?.();
+                return;
+              }
+              const selected = await enterTargetingMode({
+                title: `${card.name}: ${targetChoice.title}`,
+                candidates: targetChoice.candidates,
+                sourceCard: card,
+                allowSkip: false,
+              });
+              if (!selected) {
+                onUpdate?.();
+                return;
+              }
+              effectTargets.push(toEffectTarget(selected));
+            } else {
+              // Required target could not be prepared; never commit a partial choice.
+              onUpdate?.();
+              return;
+            }
+          }
         } catch (e) {
           // Cancelled — don't play the card
           onUpdate?.();
@@ -2849,17 +2898,17 @@ export const handlePlayCard = async (
         const val = c.value ?? c;
         return val?.type === 'creature' || val?.type === 'player';
       });
-      if (isFieldTargeting) {
-        try {
-          const selected = await enterTargetingMode({
-            title: `${card.name}: ${consumeSelection.title}`,
-            candidates: consumeSelection.candidates,
-            sourceCard: card,
-          });
-          if (selected) effectTargets.push(toEffectTarget(selected));
-        } catch (e) {
-          // Cancelled — proceed without onConsume target (falls through to onSelectionNeeded)
-        }
+      try {
+        const selected = await (isFieldTargeting ? enterTargetingMode : enterCardSelectionMode)({
+          title: `${card.name}: ${consumeSelection.title}`,
+          candidates: consumeSelection.candidates,
+          sourceCard: card,
+        });
+        if (selected) effectTargets.push(toEffectTarget(selected));
+      } catch (e) {
+        // No action has been committed: cancellation must not spend the card.
+        onUpdate?.();
+        return;
       }
     } else if (consumeSelection?.type === 'selectOption') {
       try {
@@ -2870,7 +2919,8 @@ export const handlePlayCard = async (
         });
         if (chosen) effectTargets.push({ type: 'option', label: chosen.label });
       } catch (e) {
-        // Cancelled — proceed without choice
+        onUpdate?.();
+        return;
       }
     }
   }
@@ -2907,6 +2957,20 @@ export const handlePlayCard = async (
   }
 
   onUpdate?.();
+};
+
+// A play can await a private choice before dispatch. Pointer/drag retries must not
+// start a second operation against the same hand while that choice is unresolved.
+let playCardInFlight = false;
+export const handlePlayCard = async (...args) => {
+  if (playCardInFlight) return;
+  playCardInFlight = true;
+  try {
+    return await performPlayCard(...args);
+  } finally {
+    // Includes Cancel/Escape and errors: the next intentional play must work.
+    playCardInFlight = false;
+  }
 };
 
 /**
@@ -2970,14 +3034,21 @@ const renderConsumptionSelection = (state, pending, onUpdate) => {
           const selection = gameController?.getEffectSelections(predator, 'onConsume');
           if (selection?.type === 'selectTarget' && selection.candidates?.length) {
             try {
-              const selected = await enterTargetingMode({
+              const selectMode = selection.candidates.some((c) => {
+                const value = c.value ?? c;
+                return value?.type === 'creature' || value?.type === 'player';
+              })
+                ? enterTargetingMode
+                : enterCardSelectionMode;
+              const selected = await selectMode({
                 title: `${predator.name}: ${selection.title}`,
                 candidates: selection.candidates,
                 sourceCard: predator,
               });
               if (selected) effectTargets = [toEffectTarget(selected)];
             } catch (e) {
-              // Cancelled — proceed without target (falls through to onSelectionNeeded)
+              showConsumptionCheckboxes();
+              return;
             }
           } else if (selection?.type === 'selectOption') {
             try {
@@ -2988,7 +3059,8 @@ const renderConsumptionSelection = (state, pending, onUpdate) => {
               });
               if (chosen) effectTargets = [{ type: 'option', label: chosen.label }];
             } catch (e) {
-              // Cancelled — proceed without choice
+              showConsumptionCheckboxes();
+              return;
             }
           }
         }
@@ -3093,14 +3165,21 @@ const renderAdditionalConsumptionSelection = (state, pending, onUpdate) => {
         const selection = gameController?.getEffectSelections(creatureInstance, 'onConsume');
         if (selection?.type === 'selectTarget' && selection.candidates?.length) {
           try {
-            const selected = await enterTargetingMode({
+            const selectMode = selection.candidates.some((c) => {
+              const value = c.value ?? c;
+              return value?.type === 'creature' || value?.type === 'player';
+            })
+              ? enterTargetingMode
+              : enterCardSelectionMode;
+            const selected = await selectMode({
               title: `${creatureInstance.name}: ${selection.title}`,
               candidates: selection.candidates,
               sourceCard: creatureInstance,
             });
             if (selected) effectTargets = [toEffectTarget(selected)];
           } catch (e) {
-            // Cancelled — proceed without target (falls through to onSelectionNeeded)
+            renderAdditionalConsumptionSelection(state, pending, onUpdate);
+            return;
           }
         } else if (selection?.type === 'selectOption') {
           try {
@@ -3111,7 +3190,8 @@ const renderAdditionalConsumptionSelection = (state, pending, onUpdate) => {
             });
             if (chosen) effectTargets = [{ type: 'option', label: chosen.label }];
           } catch (e) {
-            // Cancelled — proceed without choice
+            renderAdditionalConsumptionSelection(state, pending, onUpdate);
+            return;
           }
         }
       }
@@ -4014,6 +4094,7 @@ if (typeof window !== 'undefined') {
 }
 
 export const renderGame = (state, callbacks = {}) => {
+  refreshSelectionPanel(state);
   // Check for victory before rendering anything (uses extracted VictoryOverlay module)
   if (checkForVictory(state)) {
     return; // Don't render the game if it's over
