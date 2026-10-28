@@ -86,6 +86,9 @@ const referenceFixture = async () => {
   state.players[1].name = 'Rival';
   state.players[0].field = [card('fish-prey-electric-eel'), card('fish-prey-cannibal-fish'), null];
   state.players[1].field = [card('mammal-prey-alaskan-moose'), null, null];
+  // This geometry/history fixture must not inherit random reaction cards from AI setup.
+  state.players[1].hand = [];
+  state.players[1].traps = [];
   state.players[0].hand = [
     'fish-predator-tiger-shark',
     'fish-prey-cannibal-fish',
@@ -300,7 +303,7 @@ try {
     .locator('.history-event[aria-pressed="true"]')
     .getAttribute('data-event-id');
   await desktop.locator('.history-event').first().hover();
-  await desktop.locator('.top-utilities').hover();
+  await desktop.locator('#own-strip .player-name').hover();
   assert.equal(
     await desktop.locator('.history-event[aria-pressed="true"]').getAttribute('data-event-id'),
     pinned

@@ -2038,7 +2038,7 @@ export class GameController {
    * Dry-run a card's effect for a given trigger to discover what selections it needs.
    * Returns { type: 'selectTarget'|'selectOption', title, candidates|options } or null.
    */
-  getEffectSelections(card, trigger, { playerIndex, opponentIndex } = {}) {
+  getEffectSelections(card, trigger, { playerIndex, opponentIndex, optionLabels = [] } = {}) {
     if (playerIndex === undefined) {
       playerIndex = this.state.activePlayerIndex;
       opponentIndex = (playerIndex + 1) % 2;
@@ -2049,13 +2049,16 @@ export class GameController {
     // effects during the probe, which would corrupt state if run on the original.
     let probeState;
     try {
-      probeState = structuredClone(this.state);
+      // The UI attaches a transport callback, not game data. Never clone or
+      // invoke it during an uncommitted effect probe.
+      probeState = structuredClone({ ...this.state, broadcast: undefined });
     } catch {
+      if (optionLabels.length) return null; // Tentative choices must never mutate live state.
       // Fallback: use real state (legacy behavior) — may mutate
       probeState = this.state;
     }
 
-    const result = resolveCardEffect(card, trigger, {
+    let result = resolveCardEffect(card, trigger, {
       log: () => {},
       player: probeState.players[playerIndex],
       opponent: probeState.players[opponentIndex],
@@ -2065,11 +2068,18 @@ export class GameController {
       opponentIndex,
     });
 
+    // Follow tentative options only in the cloned probe, before committing a play.
+    for (const label of optionLabels) {
+      const option = result?.selectOption?.options.find((item) => item.label === label);
+      if (!option) return null;
+      result = result.selectOption.onSelect(option);
+    }
+
     if (result?.selectTarget) {
       const { title, candidates: candidatesInput, renderCards } = result.selectTarget;
       const candidates =
         typeof candidatesInput === 'function' ? candidatesInput() : candidatesInput;
-      if (!Array.isArray(candidates) || candidates.length === 0) return null;
+      if (!Array.isArray(candidates)) return null;
 
       // Validate candidates exist in real state. If they only exist in the cloned
       // probe (created by side-effects like draw), this selection must happen post-play

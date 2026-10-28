@@ -726,6 +726,7 @@
                   "params": {
                     "targetGroup": "all-creatures",
                     "title": "Choose a creature to buff",
+                    "requireSelection": true,
                     "effect": { "buff": { "attack": 3, "health": 3 } }
                   }
                 }

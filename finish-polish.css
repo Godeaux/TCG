@@ -1,0 +1,716 @@
+/* Final consistency pass: existing layouts and card-face geometry stay intact. */
+#menu-overlay .menu-find-match-container {
+  min-height: 0;
+}
+#menu-overlay .menu-find-game {
+  min-height: 88px;
+  padding: 16px;
+}
+#menu-overlay .menu-status:empty {
+  display: none;
+}
+#menu-overlay .menu-status {
+  max-width: 365px;
+  margin-top: 16px;
+  padding: 10px 14px;
+  background: #092733e8;
+  border: 1px solid #54727a;
+  color: #edf3ed;
+  font:
+    400 16px/1.4 system-ui,
+    sans-serif;
+}
+
+/* Account and AI setup use the same quiet panel and readable controls. */
+:is(#login-overlay, #ai-setup-overlay, #ai-vs-ai-deck-overlay) .menu-card {
+  width: min(620px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  padding: 28px;
+  border: 1px solid var(--popup-edge);
+  border-radius: 14px;
+  background: var(--popup-surface);
+  color: var(--popup-ink);
+  overflow-y: auto;
+}
+#login-overlay .menu-card {
+  width: min(480px, calc(100vw - 32px));
+}
+:is(#login-overlay, #ai-setup-overlay, #ai-vs-ai-deck-overlay) .menu-icon {
+  display: none;
+}
+:is(#login-overlay, #ai-setup-overlay, #ai-vs-ai-deck-overlay) h2 {
+  font:
+    650 30px/1.2 system-ui,
+    sans-serif;
+  letter-spacing: 0;
+  margin: 0;
+  text-transform: none;
+}
+:is(#login-overlay, #ai-setup-overlay, #ai-vs-ai-deck-overlay) .menu-header {
+  justify-content: center;
+  text-align: center;
+  margin-bottom: 24px;
+}
+#login-subtitle {
+  display: none;
+}
+#login-overlay .menu-form {
+  gap: 10px;
+}
+#login-overlay .menu-label {
+  font:
+    500 17px/1.4 system-ui,
+    sans-serif;
+  color: #c0d0d3;
+}
+#login-overlay .menu-input {
+  min-height: 48px;
+  padding: 12px;
+  font:
+    400 20px/1.3 system-ui,
+    sans-serif;
+  background: #15333e;
+  color: var(--popup-ink);
+  border: 1px solid var(--popup-edge);
+  border-radius: 7px;
+}
+#login-overlay .menu-actions {
+  gap: 12px;
+  align-items: center;
+  margin-top: 12px;
+}
+:is(#login-overlay, #ai-setup-overlay, #ai-vs-ai-deck-overlay) button {
+  min-height: 48px;
+  padding: 12px 18px;
+  font:
+    600 18px/1.25 system-ui,
+    sans-serif;
+  text-transform: none;
+  letter-spacing: 0;
+  border: 1px solid var(--popup-edge);
+  border-radius: 8px;
+  background: #173944;
+  color: var(--popup-ink);
+}
+#login-overlay #login-submit {
+  background: var(--popup-accent);
+  color: #13313a;
+  border-color: var(--popup-accent);
+  width: 100%;
+}
+#login-overlay #login-create {
+  width: 100%;
+}
+#login-overlay #login-cancel,
+#ai-setup-overlay #ai-setup-back {
+  align-self: center;
+  flex: none;
+  width: 150px;
+  background: transparent;
+}
+#ai-setup-overlay .menu-actions {
+  align-items: center;
+}
+#ai-setup-overlay .ai-difficulty-label {
+  font:
+    600 16px/1.4 system-ui,
+    sans-serif;
+  text-transform: none;
+  color: #c0d0d3;
+}
+#ai-setup-overlay .difficulty-name {
+  font:
+    600 19px/1.3 system-ui,
+    sans-serif;
+}
+#ai-setup-overlay .difficulty-note {
+  font:
+    400 14px/1.4 system-ui,
+    sans-serif;
+  color: #c0d0d3;
+  margin-top: 6px;
+}
+#ai-setup-overlay .btn-difficulty.active {
+  background: #29434b;
+  border-color: var(--popup-accent);
+}
+#ai-setup-overlay .ai-deck-options {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+#ai-setup-overlay .ai-deck-options button {
+  flex: 1 1 155px;
+}
+
+/* Join is a focused step, not a second set of actions inside the first. */
+#multiplayer-overlay:has(#lobby-join-form.active) #multiplayer-actions {
+  display: none;
+}
+#multiplayer-overlay .menu-error {
+  color: #ffbcb5;
+  font:
+    500 16px/1.4 system-ui,
+    sans-serif;
+}
+#multiplayer-overlay #lobby-join-form .menu-label {
+  color: #c0d0d3;
+  font:
+    500 17px/1.4 system-ui,
+    sans-serif;
+}
+#multiplayer-overlay .menu-card {
+  overflow-y: auto;
+}
+
+/* Saved-deck cover selection is a centered dialog, like Rename/Delete. */
+.deck-cover-picker {
+  margin: auto;
+  padding: 24px;
+  border-radius: 14px;
+  border-color: var(--popup-edge);
+  background: var(--popup-surface);
+  max-height: calc(100dvh - 32px);
+}
+.deck-cover-picker h3 {
+  font:
+    650 26px/1.2 system-ui,
+    sans-serif;
+  margin: 0 0 16px;
+}
+.deck-cover-picker > button {
+  display: block;
+  margin: 20px auto 0;
+  padding: 10px 22px;
+  min-height: 48px;
+  font:
+    600 18px/1.3 system-ui,
+    sans-serif;
+  color: var(--popup-ink);
+  background: #173944;
+  border: 1px solid var(--popup-edge);
+  border-radius: 8px;
+}
+.deck-cover-choices button {
+  border: 1px solid var(--popup-edge);
+  border-radius: 5px;
+}
+
+/* Editor: simplify redundant navigation, not the cards. */
+#deck-overlay .deck-actions button {
+  min-height: 48px;
+  font:
+    600 18px/1.25 system-ui,
+    sans-serif;
+  padding: 10px 16px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+#deck-overlay .deck-card-add {
+  font:
+    600 16px/1.3 system-ui,
+    sans-serif;
+}
+#deck-overlay .deck-status {
+  font:
+    400 15px/1.5 system-ui,
+    sans-serif;
+}
+#deck-overlay #deck-name-input {
+  font:
+    400 17px/1.3 system-ui,
+    sans-serif;
+  min-height: 40px;
+}
+#deck-overlay .deck-list-title {
+  font:
+    650 20px/1.3 system-ui,
+    sans-serif;
+  color: var(--popup-ink);
+}
+#deck-overlay .deck-list-header {
+  background: #173944;
+}
+#deck-overlay .deck-tabs:not(:has(.deck-tab:not(.hidden):not([data-tab='catalog']))) .deck-tab {
+  display: none;
+}
+@media (min-width: 769px) {
+  #deck-overlay .deck-tabs:not(:has(.deck-tab:not(.hidden):not([data-tab='catalog']))) {
+    display: none;
+  }
+}
+body:has(.card-hover-tooltip.visible.deck-inspector)::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: #03151ed9;
+  z-index: 99999;
+  pointer-events: none;
+}
+
+/* Existing profile columns and tabs retained; typography/surfaces unified. */
+#profile-overlay {
+  background: #041820;
+}
+#profile-overlay > .overlay-content {
+  border: 1px solid var(--popup-edge);
+  border-radius: 14px;
+  overflow: hidden;
+}
+#profile-overlay .profile-left-panel,
+#profile-overlay .profile-right-panel {
+  background: var(--popup-surface);
+  border-color: var(--popup-edge);
+}
+#profile-overlay .profile-left-panel {
+  padding: 24px;
+}
+#profile-overlay .profile-header {
+  border-color: #54727a66;
+}
+#profile-overlay .profile-avatar {
+  background: #25434e;
+  flex-shrink: 0;
+}
+#profile-overlay .profile-username {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+#profile-overlay
+  :is(
+    .profile-tab,
+    .profile-back-btn,
+    .friends-add-btn,
+    .friends-add-input,
+    .collection-filter-select
+  ) {
+  min-height: 44px;
+  font:
+    500 16px/1.3 system-ui,
+    sans-serif;
+  border-radius: 7px;
+}
+#profile-overlay
+  :is(.profile-tab, .profile-back-btn, .friends-add-input, .collection-filter-select) {
+  background: #15333e;
+  border-color: var(--popup-edge);
+  color: var(--popup-ink);
+}
+#profile-overlay .profile-tab.active {
+  background: #29434b;
+  border-color: var(--popup-accent);
+  color: var(--popup-accent);
+}
+#profile-overlay .friends-add-btn {
+  background: var(--popup-accent);
+  color: #13313a;
+}
+#profile-overlay :is(.profile-stats, .profile-match-history, .style-section, .friends-section) {
+  background: #12303b;
+  border-color: #54727a77;
+}
+#profile-overlay
+  :is(
+    .profile-stats-title,
+    .profile-match-history-title,
+    .friends-section-title,
+    .collection-title,
+    .style-section-title
+  ) {
+  font:
+    650 18px/1.3 system-ui,
+    sans-serif;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--popup-ink);
+}
+#profile-overlay
+  :is(
+    .profile-stat-label,
+    .profile-stat-value,
+    .profile-match-players,
+    .friends-empty,
+    .collection-empty
+  ) {
+  font-size: 16px;
+  line-height: 1.5;
+  color: #c0d0d3;
+}
+#profile-overlay .profile-stat-row {
+  padding: 8px 0;
+  gap: 12px;
+}
+#profile-overlay .collection-header {
+  background: #173944;
+  border-color: #54727a66;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+#profile-overlay .style-options button {
+  min-height: 44px;
+  font-size: 16px;
+  border-color: var(--popup-edge);
+}
+
+/* Tutorial keeps its demonstrations, while headings/navigation match the app. */
+#tutorial-overlay .tutorial-card {
+  border: 1px solid var(--popup-edge);
+  border-radius: 14px;
+  background: var(--popup-surface);
+  padding: 28px;
+}
+#tutorial-overlay .tutorial-eyebrow {
+  display: none;
+}
+#tutorial-overlay .tutorial-header h2 {
+  font:
+    650 28px/1.2 system-ui,
+    sans-serif;
+  margin: 0;
+}
+#tutorial-overlay .tutorial-scene-title {
+  font:
+    650 24px/1.3 system-ui,
+    sans-serif;
+  text-transform: none;
+}
+#tutorial-overlay .tutorial-scene-text {
+  font:
+    400 18px/1.55 system-ui,
+    sans-serif;
+  color: #c0d0d3;
+}
+#tutorial-overlay .tutorial-stage {
+  background: #081e28;
+  border-color: #54727a77;
+}
+#tutorial-overlay :is(#tutorial-close, .tutorial-nav-btn) {
+  min-width: 48px;
+  min-height: 44px;
+  padding: 10px 14px;
+  font:
+    600 18px/1.2 system-ui,
+    sans-serif;
+  border: 1px solid var(--popup-edge);
+  border-radius: 8px;
+  background: #173944;
+  color: var(--popup-ink);
+}
+#tutorial-overlay .tutorial-stage-label {
+  white-space: normal;
+  text-align: center;
+  max-width: calc(100% - 24px);
+  font:
+    600 16px/1.3 system-ui,
+    sans-serif;
+  background: #0c2530ee;
+  border-color: var(--popup-edge);
+}
+#tutorial-overlay .tutorial-text-panel {
+  flex: 2;
+}
+
+/* Category heading and navigation shared with the library. */
+#deck-select-overlay:not(:has(.deck-catalog-home)) .deck-select-card {
+  background: var(--popup-surface);
+  border-color: var(--popup-edge);
+}
+#deck-select-overlay:not(:has(.deck-catalog-home)) #deck-select-title {
+  font:
+    650 28px/1.2 system-ui,
+    sans-serif;
+  text-transform: none;
+}
+#deck-select-overlay:not(:has(.deck-catalog-home)) .deck-select-icon {
+  display: none;
+}
+#deck-select-overlay:not(:has(.deck-catalog-home)) .deck-catalog-back-container {
+  display: none;
+}
+#deck-select-overlay:not(:has(.deck-catalog-home)) .deck-select-back-btn {
+  min-height: 44px;
+  font:
+    600 18px/1.3 system-ui,
+    sans-serif;
+}
+@media (max-width: 768px) {
+  :is(#login-overlay, #ai-setup-overlay, #ai-vs-ai-deck-overlay) .menu-card {
+    padding: 22px;
+  }
+  #deck-overlay .deck-builder {
+    padding-top: 44px;
+  }
+  #deck-overlay .deck-actions {
+    gap: 8px;
+  }
+  #deck-overlay .deck-actions button {
+    font-size: 16px;
+    padding: 10px 8px;
+    min-width: 0;
+    white-space: nowrap;
+  }
+  #deck-overlay .deck-actions #deck-confirm {
+    flex: 1.4;
+  }
+  #deck-overlay .deck-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  #deck-overlay .deck-header h2 {
+    margin: 0;
+  }
+  #deck-overlay .deck-status {
+    gap: 2px;
+  }
+  #deck-overlay #deck-name-input {
+    max-width: none;
+    min-width: 0;
+  }
+  #profile-overlay > .overlay-content {
+    width: calc(100vw - 32px);
+    max-height: calc(100dvh - 64px);
+  }
+  #profile-overlay .profile-left-panel {
+    padding: 20px;
+  }
+  #tutorial-overlay .tutorial-card {
+    padding: 44px 16px 16px;
+  }
+  #tutorial-overlay .tutorial-header h2 {
+    font-size: 24px;
+  }
+  #tutorial-overlay .tutorial-scene-title {
+    font-size: 22px;
+  }
+  #tutorial-overlay .tutorial-scene-text {
+    font-size: 17px;
+  }
+  #tutorial-overlay .tutorial-text-content {
+    justify-content: flex-start;
+  }
+  #tutorial-overlay .tutorial-header {
+    gap: 12px;
+  }
+}
+@media (max-height: 650px) {
+  #menu-overlay .menu-card {
+    overflow-y: auto;
+  }
+  #menu-overlay .menu-actions-grid {
+    margin-top: 24px;
+    margin-bottom: 16px;
+    flex-shrink: 0;
+  }
+  #menu-overlay .menu-splash-text {
+    position: static;
+    order: 3;
+    flex-shrink: 0;
+    margin-top: 16px;
+    width: 100%;
+  }
+}
+
+@media (min-width: 769px) {
+  #tutorial-overlay .tutorial-card {
+    padding-top: 44px;
+  }
+}
+
+@media (max-height: 650px) {
+  #ai-setup-overlay .menu-card {
+    gap: 12px;
+    padding: 20px;
+  }
+  #ai-setup-overlay .menu-header {
+    margin-bottom: 0;
+  }
+  #ai-setup-overlay .ai-setup-section {
+    margin-bottom: 0;
+  }
+  #ai-setup-overlay .menu-actions {
+    margin-top: 0;
+  }
+}
+/* A short phone must not collapse Career/Style into a few pixels. */
+@media (max-width: 768px) {
+  #profile-overlay .profile-container {
+    display: block;
+    min-height: 0;
+    height: auto;
+    overflow-y: auto;
+  }
+  #profile-overlay .profile-left-panel {
+    overflow: visible;
+  }
+  #profile-overlay .profile-tab-content {
+    flex: none;
+    overflow: visible;
+  }
+  #profile-overlay .profile-right-panel {
+    min-height: 280px;
+    overflow: visible;
+  }
+  #profile-overlay .collection-grid {
+    overflow: visible;
+  }
+}
+
+/* Category artwork uses existing game assets; the missing Reptile art is a quiet fallback. */
+#deck-select-overlay:not(:has(.deck-catalog-home)) .deck-select-card {
+  height: auto;
+  max-height: calc(100dvh - 64px);
+  padding: 28px;
+  overflow-y: auto;
+}
+#deck-select-overlay .deck-select-grid:has(> .deck-select-panel) {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+  aspect-ratio: auto;
+  flex: none;
+  overflow: visible;
+  border-radius: 0;
+  background: none;
+}
+#deck-select-overlay .deck-select-grid > .deck-select-panel {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  height: 320px;
+  min-height: 0;
+  padding: 20px 12px;
+  clip-path: none;
+  -webkit-clip-path: none;
+  border: 1px solid #54727a;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0;
+  background-image:
+    linear-gradient(0deg, #041820f5, transparent 65%),
+    var(--category-art, linear-gradient(135deg, #315742, #122e28));
+  background-size: cover;
+  background-position: center;
+  opacity: 1;
+}
+#deck-select-overlay .deck-select-panel--fish {
+  --category-art: url('images/cards/fish-predator-orca.jpg');
+}
+#deck-select-overlay .deck-select-panel--bird {
+  --category-art: url('images/cards/bird-prey-raven.jpg');
+}
+#deck-select-overlay .deck-select-panel--mammal {
+  --category-art: url('images/cards/mammal-predator-sumatran-tiger.jpg');
+}
+#deck-select-overlay .deck-select-panel--amphibian {
+  --category-art: url('images/cards/amphibian-prey-golden-poison-frog.jpg');
+}
+#deck-select-overlay .deck-select-grid > .deck-select-panel::after {
+  display: none;
+}
+#deck-select-overlay
+  .deck-select-panel
+  :is(.deck-emoji, .deck-status, .deck-meta, .deck-experimental-badge) {
+  display: none;
+}
+#deck-select-overlay .deck-select-panel .deck-name {
+  position: static;
+  transform: none;
+  margin: 0;
+  font:
+    650 23px/1.2 system-ui,
+    sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #fff;
+  text-shadow: 0 2px 8px #000;
+}
+#deck-select-overlay .deck-select-grid > .deck-select-back-btn {
+  position: static;
+  transform: none;
+  grid-column: 1/-1;
+  order: 2;
+  justify-self: center;
+  width: 140px;
+  height: 48px;
+  min-height: 48px;
+  margin: 10px 0 0;
+  padding: 10px;
+  background: #173944;
+  border: 1px solid #54727a;
+}
+#deck-select-overlay .deck-select-panel:hover {
+  filter: brightness(1.12);
+  border-color: var(--popup-accent);
+}
+#deck-select-overlay .deck-select-panel:focus-visible {
+  outline: 3px solid var(--popup-accent);
+  outline-offset: 3px;
+}
+#deck-overlay .deck-type-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+#deck-overlay .deck-type-counts span {
+  white-space: nowrap;
+}
+@media (max-width: 768px) {
+  #deck-select-overlay:not(:has(.deck-catalog-home)) .deck-select-card {
+    padding: 24px 20px;
+  }
+  #deck-select-overlay .deck-select-grid:has(> .deck-select-panel) {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  #deck-select-overlay .deck-select-grid > .deck-select-panel {
+    height: 100px;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 20px;
+    background-image:
+      linear-gradient(90deg, #041820db, transparent 85%),
+      var(--category-art, linear-gradient(135deg, #315742, #122e28));
+  }
+}
+
+#deck-overlay .deck-status-success {
+  color: #bdecc5;
+  background: #153e32;
+}
+
+/* Contextual Menu: a real header/utility control, not a viewport overlay. */
+#settings-button-container { position:relative; inset:auto; z-index:40; flex:none; margin-left:auto; gap:0; pointer-events:auto; }
+#settings-button-container[hidden] { display:none!important; }
+#settings-button-container .settings-fab { min-width:80px; min-height:44px; height:44px; padding:0 12px; border:1px solid #54727a; border-radius:8px; background:#15333ee8; color:#edf3ed; font:600 15px/1.2 system-ui,sans-serif; box-shadow:none; }
+#settings-button-container .settings-fab:hover, #settings-button-container .settings-fab.active { background:#294955; border-color:#e5d3a2; transform:none; }
+#settings-button-container .settings-fab:focus-visible { outline:2px solid #e5d3a2; outline-offset:3px; }
+#settings-button-container .settings-menu { position:absolute; top:calc(100% + 8px); right:0; min-width:210px; padding:8px; background:#0c2530; border:1px solid #54727a; box-shadow:0 12px 30px #0006; }
+#settings-button-container .settings-menu:not(.active) { visibility:hidden; }
+#settings-button-container .settings-menu-item { border:0; border-radius:5px; min-height:44px; padding:12px; font:500 16px/1.3 system-ui,sans-serif; background:transparent; }
+#settings-button-container .settings-menu-item:hover { transform:none; background:#25434e; }
+#settings-button-container .settings-menu-icon { display:none; }
+#menu-overlay .menu-header { width:100%; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+#deck-overlay .deck-header { display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:16px; }
+#deck-overlay .deck-header h2 { grid-column:1; grid-row:1; }
+#deck-overlay .deck-header .deck-status { grid-column:2; grid-row:1; }
+#deck-overlay .deck-header #settings-button-container { grid-column:3; grid-row:1; align-self:start; }
+#deck-select-overlay .deck-catalog-back-container { align-items:center; }
+@media(min-width:768px) {
+ .game-container .own-control-row .piles-section { right:18px; gap:8px; align-items:center; }
+ .game-container #settings-button-container .settings-fab { height:44px; }
+}
+@media(max-width:768px) {
+ #menu-overlay .menu-header h2 { font-size:22px; }
+ #menu-overlay .menu-header { gap:12px; }
+ #deck-overlay .deck-builder { padding-top:16px; }
+ #deck-overlay .deck-header { grid-template-columns:1fr auto; gap:10px; }
+ #deck-overlay .deck-header .deck-status { grid-column:1/-1; grid-row:2; }
+ #deck-overlay .deck-header #settings-button-container { grid-column:2; }
+}
+@media(max-width:767px) {
+ .game-container .top-utilities { padding-inline:9px; gap:8px; }
+ .game-container .util-history-btn { min-height:40px; height:40px; border:1px solid #54727a; border-radius:8px; background:#15333ee8; }
+ .game-container #settings-button-container .settings-fab { min-width:78px; min-height:40px; height:40px; }
+}

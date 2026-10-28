@@ -513,6 +513,14 @@ const handleExtendedConsumption = (predator, prey) => {
  * Handle dropping card on field slot (play card)
  */
 const handleFieldDrop = (card, fieldSlot) => {
+  // A slot index is relative to its row; never map a rival slot onto our field.
+  if (!fieldSlot.closest('.player-field')) {
+    logMessage(latestState, 'Play cards on your own field.');
+    revertCardToOriginalPosition();
+    latestCallbacks.onUpdate?.();
+    return;
+  }
+
   const activePlayer = getActivePlayer(latestState);
   if (!activePlayer.hand.includes(card)) {
     revertCardToOriginalPosition();
@@ -1014,7 +1022,7 @@ const handleDragOver = (event) => {
       if (playerField) {
         playerField.classList.add('spell-drop-zone');
       }
-    } else if (!hasCard && draggedCard.type !== 'Trap') {
+    } else if (!hasCard && draggedCard.type !== 'Trap' && target.closest('.player-field')) {
       target.classList.add('valid-drop-zone');
     } else {
       target.classList.add('invalid-target');
@@ -1380,7 +1388,7 @@ export const updateDropTargetVisuals = (elementBelow, card, cardElement) => {
       if (playerField) {
         playerField.classList.add('spell-drop-zone');
       }
-    } else if (!hasCard && card.type !== 'Trap') {
+    } else if (!hasCard && card.type !== 'Trap' && target.closest('.player-field')) {
       target.classList.add('valid-drop-zone');
     } else {
       target.classList.add('invalid-target');

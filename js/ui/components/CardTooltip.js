@@ -229,9 +229,15 @@ export const initCardTooltip = () => {
     return;
   }
 
-  // Note: We don't add a click handler directly on the tooltip here
-  // because it would interfere with DeckBuilder's tap-to-add functionality.
-  // Dismissal is handled by the global dismiss handler instead.
+  // Consume a card-face dismiss gesture so its synthetic click cannot reopen
+  // the catalog card underneath. Side information remains independently scrollable.
+  const dismissPreview = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    hideCardTooltipImmediate();
+  };
+  cardPreviewElement?.addEventListener('touchstart', dismissPreview, { passive: false });
+  cardPreviewElement?.addEventListener('click', dismissPreview);
 
   // Add mouse handlers on info boxes for desktop scroll support
   // When mouse enters info boxes, keep tooltip visible (cancel pending hide)
@@ -377,6 +383,7 @@ export const showCardTooltip = (card, targetElement, options = {}) => {
 
   if (!tooltipElement || !card) return;
 
+  tooltipElement.classList.remove('deck-inspector');
   const gameplay = context === 'gameplay';
   tooltipElement.classList.toggle('modern-inspector', gameplay);
 

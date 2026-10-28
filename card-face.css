@@ -1,0 +1,82 @@
+/* One full-card face. Surfaces choose width, never internal proportions.
+   Important declarations intentionally supersede legacy per-surface selectors.
+   Art strips, card backs, and deck thumbnails do not use canonical-card. */
+.card.canonical-card {
+  container-type:inline-size;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  aspect-ratio:5/7!important;
+  padding:0!important;
+  overflow:hidden;
+}
+.game-container :is(.field-slot,.hand-grid) .canonical-card {
+  width:min(var(--board-card-width),calc(var(--board-card-height) * 5 / 7))!important;
+}
+.canonical-card>.card-inner {
+  container-type:normal!important;
+  display:grid!important;
+  grid-template-rows:10% 46% minmax(0,44%)!important;
+  height:100%!important;
+  padding:0!important;
+  gap:0!important;
+  overflow:hidden;
+}
+.card.canonical-card .card-inner .card-name {
+  display:flex!important; align-items:center!important; justify-content:center!important;
+  min-height:0!important; height:auto!important; padding:0 3cqw!important;
+  background:#193640; color:#edf3ed;
+}
+.card.canonical-card .card-inner .card-name-text {
+  font:650 6cqw/1.1 system-ui,sans-serif!important;
+  max-height:none!important; margin:0!important; padding:0!important;
+  overflow:visible!important; text-align:center;
+}
+.card.canonical-card .card-inner .card-image-container {
+  height:100%!important; min-height:0!important; max-height:none!important;
+  padding:0!important; margin:0!important; overflow:hidden!important;
+}
+.card.canonical-card .card-inner .card-image {
+  display:block; width:100%!important; height:100%!important;
+  object-fit:cover!important; object-position:50% 50%!important;
+}
+.card.canonical-card .card-inner .card-content-area {
+  display:flex!important; flex-direction:column!important;
+  height:auto!important; min-height:0!important; padding:0 2cqw 2cqw!important;
+  gap:0!important; overflow:hidden!important; background:#12303c;
+}
+.card.canonical-card .card-inner .card-stats-row {
+  flex:0 0 10cqw!important; height:10cqw!important; min-height:0!important; max-height:none!important;
+  padding:0!important; margin:0!important;
+}
+.card.canonical-card .card-inner .card-stats-text { font:700 7cqw/1.2 system-ui,sans-serif!important; }
+.card.canonical-card .card-inner .card-keywords {
+  flex:0 0 auto!important; min-height:0!important; padding:1cqw 0!important; gap:0!important;
+}
+.card.canonical-card .card-inner .card-keywords-text { font:650 6.4cqw/1.2 system-ui,sans-serif!important; }
+.card.canonical-card .card-inner .card-effect {
+  flex:1 1 0!important; height:auto!important; min-height:0!important;
+  padding:1cqw 0!important; align-items:flex-start!important; overflow:hidden!important;
+  overscroll-behavior:contain;
+}
+.card.canonical-card .card-inner .card-effect-text {
+  font:400 6.4cqw/1.25 system-ui,sans-serif!important;
+  max-height:none!important; min-height:0!important; display:block!important; flex:none!important; overflow:visible!important; padding:0!important;
+}
+/* Legacy mobile fan flex-basis must not override the height-budgeted width. */
+.game-container .hand-grid .card.canonical-card { flex:0 0 auto!important; min-width:0!important; }
+/* Flex children need an explicit inline budget outside board/inspector scopes. */
+.card.canonical-card .card-inner .card-effect-text {
+  width:100%!important; max-width:100%!important; min-width:0!important; white-space:normal!important;
+}
+
+/* The hand has a separate height budget: it is not a fourth field column. */
+@media (max-width: 767px) and (orientation: portrait) {
+  .game-container .hand-grid .card.canonical-card {
+    width: calc(var(--board-card-height) * 5 / 7)!important;
+  }
+}
+
+/* Small, bounded title tiers are shared across every full-card surface. */
+.card.canonical-card .card-inner .card-name-text[data-title-size="short"] { font-size:7cqw!important; }
+.card.canonical-card .card-inner .card-name-text[data-title-size="medium"] { font-size:6.5cqw!important; }

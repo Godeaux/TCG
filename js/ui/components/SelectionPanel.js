@@ -40,6 +40,8 @@ const clearPanel = (panel) => {
 // minimized class and stale Hide/Show label into the next mandatory choice.
 let currentPromptKey = null;
 let isMinimized = false;
+let promptRevision = 0;
+let promptValidator = null;
 
 /**
  * Render the selection panel with choices
@@ -50,7 +52,13 @@ let isMinimized = false;
  * @param {Function} options.onConfirm - Confirm callback
  * @param {string} options.confirmLabel - Confirm button label (default: "Confirm")
  */
-export const renderSelectionPanel = ({ title, items, onConfirm, confirmLabel = 'Confirm' }) => {
+export const renderSelectionPanel = ({
+  title,
+  items,
+  onConfirm,
+  confirmLabel = 'Confirm',
+  isValid = null,
+}) => {
   const { selectionPanel, actionBar } = getSelectionElements();
 
   clearPanel(selectionPanel);
@@ -58,6 +66,9 @@ export const renderSelectionPanel = ({ title, items, onConfirm, confirmLabel = '
   if (!selectionPanel) {
     return;
   }
+
+  const revision = ++promptRevision;
+  promptValidator = isValid;
 
   // New logical prompt (or first render after a clear) resets to expanded.
   if (currentPromptKey !== title) {
@@ -106,6 +117,19 @@ export const renderSelectionPanel = ({ title, items, onConfirm, confirmLabel = '
     content.appendChild(confirmButton);
   }
 
+  // Old DOM references must not dispatch once their prompt is replaced/expired.
+  content.querySelectorAll('button').forEach((button) => {
+    const handler = button.onclick;
+    if (!handler) return;
+    button.onclick = (event) => {
+      if (revision !== promptRevision) return;
+      if (isValid && !isValid()) {
+        clearSelectionPanel();
+        return;
+      }
+      handler.call(button, event);
+    };
+  });
   selectionPanel.appendChild(content);
 
   // Mark action bar as having selection
@@ -116,6 +140,8 @@ export const renderSelectionPanel = ({ title, items, onConfirm, confirmLabel = '
  * Clear the selection panel
  */
 export const clearSelectionPanel = () => {
+  promptRevision++;
+  promptValidator = null;
   const { selectionPanel, actionBar } = getSelectionElements();
 
   clearPanel(selectionPanel);
@@ -182,4 +208,9 @@ export const createCardSelectionItem = (card, onClick, renderCardFn) => {
 
   item.appendChild(button);
   return item;
+};
+
+/** Invalidate state-bound prompts before rendering phase controls. */
+export const refreshSelectionPanel = (state) => {
+  if (promptValidator && !promptValidator(state)) clearSelectionPanel();
 };

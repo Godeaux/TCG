@@ -13,6 +13,7 @@
  */
 
 import { renderCard } from './Card.js';
+import { getValidTargets } from '../../game/combat.js';
 import { cantAttack as cantAttackPrimitive, hasKeyword } from '../../keywords.js';
 import { isLocalPlayersTurn } from '../../state/selectors.js';
 import { showCardTooltip, hideCardTooltip, hideCardTooltipImmediate } from './CardTooltip.js';
@@ -71,13 +72,21 @@ export const renderField = (state, playerIndex, isOpponent, options = {}) => {
     const exhausted = isCreature && (card.hasAttacked || (summonedThisTurn && !hasHaste(card)));
 
     // Determine if creature can attack
-    const canAttack =
+    let canAttack =
       !isOpponent &&
       isLocalPlayersTurn(state) &&
       state.phase === 'Combat' &&
       !card.hasAttacked &&
       !cantAttackPrimitive(card) && // Use primitive - covers Frozen, Passive, Harmless
       isCreature;
+
+    // Attack replacements have their own target rules (e.g. Hippo Frog eating).
+    // Normal attacks use the same legal targets as the actual combat chooser.
+    const attackReplacement = card.attackReplacement || card.effects?.attackReplacement;
+    if (canAttack && !attackReplacement) {
+      const targets = getValidTargets(state, card, state.players[1 - playerIndex]);
+      canAttack = targets.player || targets.creatures.length > 0;
+    }
 
     // Determine if creature can be returned to hand (played via effect, not from hand)
     const isMainPhase = state.phase === 'Main 1' || state.phase === 'Main 2';

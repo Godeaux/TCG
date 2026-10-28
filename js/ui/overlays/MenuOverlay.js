@@ -44,7 +44,7 @@ const SPLASH_TIPS = [
   'Barrier eats one hit and pops.',
   'Attack a Poisonous creature and your attacker dies.',
   'Immune creatures ignore any source of damage other than a direct animal attack.',
-  "Regen restores to base HP only. Consumed stats don't count!",
+  'Regen heals to maximum HP, including health gained from consuming prey and buffs.',
   'You get two Main phases. Use both!',
 ];
 
@@ -196,10 +196,10 @@ const updateMenuStatus = (state, elements) => {
     return;
   }
   if (state.menu.profile?.username) {
-    menuStatus.textContent = `Logged in as ${state.menu.profile.username}.`;
+    menuStatus.textContent = state.menu.profile.username;
     return;
   }
-  menuStatus.textContent = 'Not logged in yet. Login to save decks or join lobbies.';
+  menuStatus.textContent = '';
 };
 
 /**
@@ -420,6 +420,11 @@ const renderMultiplayerScreen = (state, elements) => {
   const isLobbyClosed = lobby?.status === 'closed';
   const isHost = Boolean(lobby?.host_id && lobby.host_id === localProfileId);
 
+  // A successful join replaces the code-entry form with the room controls.
+  if (hasLobby) {
+    elements.lobbyJoinForm?.classList.remove('active');
+  }
+
   // Get player names
   const hostName = state.players?.[0]?.name || 'Host';
   const guestName = state.players?.[1]?.name || 'Guest';
@@ -444,15 +449,15 @@ const renderMultiplayerScreen = (state, elements) => {
         : `Joined ${hostName}'s lobby. Waiting...`;
     } else if (hasExistingLobby) {
       elements.multiplayerStatus.textContent = 'You have an existing lobby. Rejoin or create new.';
-    } else if (hideMainFindMatch) {
-      elements.multiplayerStatus.textContent = 'Create or join a private lobby.';
     } else {
-      elements.multiplayerStatus.textContent = 'Find a match or create a private lobby.';
+      elements.multiplayerStatus.textContent = '';
     }
   }
 
   // Update lobby code display
   if (elements.lobbyCodeDisplay) {
+    elements.lobbyCodeDisplay.hidden =
+      (!hasLobby && !hasExistingLobby) || Boolean(matchmaking && !isLobbyFull);
     // Hide code during matchmaking (not relevant)
     if (matchmaking && !isLobbyFull) {
       elements.lobbyCodeDisplay.textContent = '...';

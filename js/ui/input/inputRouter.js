@@ -115,7 +115,7 @@ let deckActiveTab = null;
 let deckHighlighted = null;
 
 // AI game setup functions (set during initialization)
-let startAIGameHandler = null;
+const startAIGameHandler = null;
 
 // AI vs AI deck selection state
 let aiVsAiSelectedDecks = { left: null, right: null };
@@ -461,13 +461,10 @@ const initNavigation = () => {
     if (!latestState) {
       return;
     }
-    // Require login for Find Match
-    if (!latestState.menu.profile) {
-      setMenuStage(latestState, 'login');
-      latestCallbacks.onUpdate?.();
-      return;
-    }
-    handleFindMatch(latestState);
+    // Show the real online choices before starting matchmaking.
+    latestState.menu.hideMultiplayerFindMatch = false;
+    setMenuStage(latestState, 'multiplayer');
+    latestCallbacks.onUpdate?.();
   });
 
   // Main menu: Rejoin Game (rejoins previous lobby)

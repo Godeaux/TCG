@@ -1,5 +1,7 @@
 import { getHistoryStream } from '../../game/historyEvents.js';
 import { describeEvent } from '../history/describeEvent.js';
+import { renderCard } from './Card.js';
+import { getCardDefinitionById } from '../../cards/index.js';
 
 const el = (tag, className, text) => {
   const node = document.createElement(tag);
@@ -92,6 +94,24 @@ const stats = (entity, before) => {
 const tile = (entity, before, event, isAfter) => {
   const box = el('div', 'history-tile');
   box.append(portrait(entity), el('div', 'history-name', name(entity)));
+  // Use only a public historical identity, never a live card instance. The
+  // catalogue supplies printed rules; recorded stats/keywords remain authoritative.
+  const definition = entity.kind === 'card' && getCardDefinitionById(entity.cardId);
+  if (definition) {
+    const preview = renderCard(
+      {
+        ...definition,
+        ...entity,
+        id: entity.cardId,
+        abilitiesCancelled: entity.statusFlags?.abilitiesCancelled === true,
+      },
+      { showEffectSummary: true }
+    );
+    preview.classList.add('history-card-face');
+    box.classList.add('history-full-card');
+    box.prepend(preview);
+  }
+
   if (entity?.kind === 'card' || entity?.kind === 'player') box.append(stats(entity, before));
   if (entity?.statusFlags?.barrier) box.classList.add('history-barrier');
   const terminal = isAfter && event.facts.find((f) => f.entity === entity.identity && f.terminal);
@@ -137,6 +157,10 @@ const showDetail = (id) => {
   if (lastEvent === event) return;
   lastEvent = event;
   detail.replaceChildren();
+  detail.classList.toggle(
+    'history-single',
+    event.before.length === 1 && event.after.length === 1 && !['turn', 'draw'].includes(event.kind)
+  );
   detail.append(
     el(
       'p',
@@ -186,6 +210,7 @@ const showDetail = (id) => {
   const text = el('div', 'history-description');
   for (const line of copy.details) text.append(el('p', '', `${line.name}: ${line.line}`));
   detail.append(text);
+  detail.scrollTop = 0;
 };
 const restoreInert = () => {
   for (const [node, old] of inerted) node.inert = old;
@@ -194,13 +219,13 @@ const restoreInert = () => {
 const close = (restoreFocus = true) => {
   if (!panel) return;
   layout.classList.remove('show-history');
-  layout.classList.add('history-hidden');
+  layout.classList.toggle('history-hidden', mobile());
   panel.removeAttribute('aria-modal');
   panel.setAttribute('role', 'region');
   backdrop.hidden = true;
   modal = false;
   restoreInert();
-  trigger?.setAttribute('aria-expanded', 'false');
+  trigger?.setAttribute('aria-expanded', String(!mobile()));
   if (restoreFocus && focusBefore?.isConnected) focusBefore.focus({ preventScroll: true });
   focusBefore = null;
 };
@@ -234,9 +259,8 @@ const open = () => {
 export const toggleHistoryPanel = () => {
   initializeHistory();
   if (!panel) return;
-  const visible = mobile()
-    ? layout.classList.contains('show-history')
-    : !layout.classList.contains('history-hidden');
+  if (!mobile()) return;
+  const visible = layout.classList.contains('show-history');
   if (visible) close();
   else open();
 };
@@ -332,6 +356,8 @@ export const renderHistoryPanel = (state) => {
       rows.delete(id);
     }
   if (!stream.events.length) {
+    detail.classList.remove('history-single');
+    detail.scrollTop = 0;
     list.replaceChildren();
     detail.replaceChildren(el('p', 'history-empty', 'Select an event to see what changed.'));
     const legacy = (state.log || []).filter(

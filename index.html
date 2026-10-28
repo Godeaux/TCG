@@ -6,10 +6,14 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, minimum-scale=0.5, maximum-scale=5.0, viewport-fit=cover"
     />
-    <title>Food Chain TCG Prototype</title>
+    <title>Food Chain TCG</title>
     <link rel="stylesheet" href="styles.css?v=2.0" />
     <link rel="stylesheet" href="board.css" />
     <link rel="stylesheet" href="spell-effects.css" />
+    <link rel="stylesheet" href="menu-polish.css" />
+    <link rel="stylesheet" href="card-face.css" />
+    <link rel="stylesheet" href="popup-polish.css" />
+    <link rel="stylesheet" href="finish-polish.css" />
     <link
       href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Bebas+Neue&family=Orbitron:wght@400;500&family=Cinzel:wght@400;500&family=Righteous&family=Russo+One&display=swap"
       rel="stylesheet"
@@ -47,6 +51,9 @@
               <button class="deck-tab active" data-tab="catalog">Catalog</button>
               <button class="deck-tab" data-tab="load">Load Deck</button>
               <button class="deck-tab" data-tab="manage">Manage Decks</button>
+              <button class="deck-drawer-toggle" id="deck-drawer-toggle" type="button" aria-controls="deck-builder-sidebar">
+                Your deck <span id="deck-drawer-count">0/20</span>
+              </button>
             </div>
             <div class="deck-content">
               <div class="deck-panel deck-catalog-panel active">
@@ -75,10 +82,7 @@
             </div>
             <div class="deck-list-cards" id="deck-list-cards"></div>
           </div>
-          <!-- Mobile drawer toggle and backdrop -->
-          <button class="deck-drawer-toggle" id="deck-drawer-toggle" type="button">
-            <span id="deck-drawer-count">0/20</span>
-          </button>
+          <!-- Mobile drawer backdrop -->
           <div class="deck-drawer-backdrop" id="deck-drawer-backdrop"></div>
         </div>
       </div>
@@ -133,10 +137,10 @@
       <div class="overlay-content menu-card">
         <div class="menu-splash-text" id="menu-splash-text"></div>
         <div class="menu-header">
-          <div class="menu-icon">🍽️</div>
+
           <div>
             <h2>Food Chain TCG</h2>
-            <p class="muted" id="game-version">v0.16</p>
+            <p class="muted" id="game-version">v0.17</p>
           </div>
         </div>
         <div class="menu-status" id="menu-status"></div>
@@ -144,7 +148,7 @@
         <div class="menu-actions-grid">
           <div class="menu-find-match-container">
             <button class="menu-find-game" id="menu-find-match">
-              <span>Find Game</span>
+              <span>Play Online</span>
               <span class="online-count" id="menu-online-count">Click to log in</span>
             </button>
             <button class="menu-rejoin-game" id="menu-rejoin" style="display: none;">
@@ -153,7 +157,7 @@
           </div>
 
           <div class="menu-right-stack">
-            <button class="btn-secondary" id="menu-decks">Decks</button>
+            <button class="btn-secondary" id="menu-decks">My decks</button>
             <button class="btn-secondary" id="menu-profile">Profile</button>
             <button class="btn-secondary" id="menu-other">Other</button>
           </div>
@@ -167,7 +171,6 @@
           <div class="menu-icon">⚙️</div>
           <div>
             <h2>Other Options</h2>
-            <p class="muted">Additional game modes and settings.</p>
           </div>
         </div>
         <div class="menu-actions">
@@ -187,7 +190,6 @@
           <div class="menu-icon">🎬</div>
           <div>
             <h2>Credits</h2>
-            <p class="muted">The team behind Food Chain TCG.</p>
           </div>
         </div>
         <div class="credits-content">
@@ -239,7 +241,6 @@
           <div class="menu-icon">🔊</div>
           <div>
             <h2>Options</h2>
-            <p class="muted">Adjust your game settings.</p>
           </div>
         </div>
         <div class="options-section">
@@ -250,21 +251,21 @@
           </div>
         </div>
         <div class="options-section">
-          <label class="options-label" for="options-music-volume">🎵 Music</label>
+          <label class="options-label" for="options-music-volume">Music</label>
           <div class="options-slider-row">
             <input type="range" id="options-music-volume" class="options-slider options-channel-slider" min="0" max="100" value="40" data-channel="music">
             <span class="options-value" id="options-music-value">40%</span>
           </div>
         </div>
         <div class="options-section">
-          <label class="options-label" for="options-sfx-volume">🔊 Sound Effects</label>
+          <label class="options-label" for="options-sfx-volume">Sound Effects</label>
           <div class="options-slider-row">
             <input type="range" id="options-sfx-volume" class="options-slider options-channel-slider" min="0" max="100" value="80" data-channel="sfx">
             <span class="options-value" id="options-sfx-value">80%</span>
           </div>
         </div>
         <div class="options-section">
-          <label class="options-label" for="options-voice-volume">🗣️ Voice / Creature</label>
+          <label class="options-label" for="options-voice-volume">Voice / Creature</label>
           <div class="options-slider-row">
             <input type="range" id="options-voice-volume" class="options-slider options-channel-slider" min="0" max="100" value="70" data-channel="voice">
             <span class="options-value" id="options-voice-value">70%</span>
@@ -550,21 +551,19 @@
         <div class="menu-header">
           <div class="menu-icon">🌐</div>
           <div>
-            <h2>Multiplayer</h2>
-            <p class="muted" id="multiplayer-status">Create or join a lobby with a friend.</p>
+            <h2>Play online</h2>
+            <p class="muted" id="multiplayer-status" aria-live="polite"></p>
           </div>
         </div>
         <div class="lobby-code" id="lobby-code-display">----</div>
         <div class="menu-actions" id="multiplayer-actions">
           <button class="btn-primary" id="lobby-find-match">Find Match</button>
           <button class="btn-secondary" id="lobby-find-cancel" style="display: none;">Cancel</button>
-          <button class="btn-primary" id="lobby-create">Create Lobby</button>
+          <button class="btn-primary" id="lobby-create">Create room</button>
           <button class="btn-primary" id="lobby-rejoin" style="display: none;">Rejoin Lobby</button>
           <button class="btn-primary" id="lobby-continue" style="display: none;">Continue to Game</button>
-          <button class="btn-secondary" id="lobby-join">Join as Guest</button>
+          <button class="btn-secondary" id="lobby-join">Join room</button>
           <button class="btn-secondary" id="lobby-leave" style="display: none;">New Code</button>
-          <button class="btn-secondary" id="multiplayer-back">Back</button>
-          <button class="btn-secondary" id="multiplayer-auth">Log In</button>
         </div>
         <form class="menu-form" id="lobby-join-form">
           <label class="menu-label" for="lobby-code">Enter Lobby Code</label>
@@ -581,6 +580,10 @@
           </div>
         </form>
         <div class="menu-error" id="lobby-error" role="alert"></div>
+        <div class="multiplayer-footer">
+          <button class="btn-secondary" id="multiplayer-back">Back</button>
+          <button class="btn-secondary" id="multiplayer-auth">Log In</button>
+        </div>
       </div>
     </div>
 
@@ -603,7 +606,7 @@
             </button>
             <button class="btn-difficulty" data-difficulty="trueSim" title="Deep search AI">
               <span class="difficulty-name">True Sim</span>
-              <span class="difficulty-note">(Known to cause performance drops while processing decisions.)</span>
+              <span class="difficulty-note">May slow the game while thinking.</span>
             </button>
           </div>
         </div>
@@ -701,7 +704,7 @@
             <!-- Multiplayer rematch options (hidden by default) -->
             <div class="victory-rematch-options" id="victory-rematch-options" style="display: none;">
               <button class="btn-primary victory-rematch" id="victory-rematch">Rematch</button>
-              <button class="btn-secondary victory-rematch-deck" id="victory-rematch-deck">Rematch (Deck Selection)</button>
+              <button class="btn-secondary victory-rematch-deck" id="victory-rematch-deck">Change deck</button>
               <button class="btn-tertiary victory-main-menu" id="victory-main-menu">Main Menu</button>
             </div>
 
@@ -715,11 +718,11 @@
     <!-- Surrender Confirmation Overlay -->
     <div class="overlay surrender-overlay" id="surrender-overlay" aria-hidden="true">
       <div class="surrender-dialog">
-        <div class="surrender-title">🏳️ Surrender?</div>
-        <div class="surrender-message">Are you sure you want to surrender?</div>
+        <div class="surrender-title">Surrender?</div>
+        <div class="surrender-message">This ends the match as a loss.</div>
         <div class="surrender-actions">
-          <button class="surrender-btn-yes" id="surrender-yes">Yes</button>
-          <button class="surrender-btn-no" id="surrender-no">No</button>
+          <button class="surrender-btn-yes" id="surrender-yes">Surrender</button>
+          <button class="surrender-btn-no" id="surrender-no">Keep playing</button>
         </div>
       </div>
     </div>
@@ -815,16 +818,17 @@
                   </div>
                   <div class="piles-section">
                     <div class="piles-grid">
-                      <div class="pile-item" id="carrion-pile-container">
+                      <button type="button" class="pile-item" id="carrion-pile-container">
                         <span>Carrion</span>
                         <strong id="active-carrion">0</strong>
-                      </div>
-                      <div class="pile-item" id="exile-pile-container">
+                      </button>
+                      <button type="button" class="pile-item" id="exile-pile-container">
                         <span>Exile</span>
                         <strong id="active-exile">0</strong>
-                      </div>
+                      </button>
                     </div>
-                    <details class="board-diagnostics"><summary title="Match diagnostics">⋯</summary>
+                    <details class="board-diagnostics"><summary title="Match tools" aria-label="Match tools">⋯</summary>
+                    <div class="board-tools-panel">
                     <div class="advantage-display diagnostics" id="advantage-display">
                       <div class="advantage-header">
                         <span>Advantage</span>
@@ -835,6 +839,7 @@
                     </div>
                     <div class="advantage-graph-container diagnostics" id="advantage-graph-container" style="display: none;">
                       <canvas id="advantage-graph" width="200" height="80"></canvas>
+                    </div>
                     </div>
                     </details>
                   </div>

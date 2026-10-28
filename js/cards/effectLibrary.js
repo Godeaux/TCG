@@ -1708,21 +1708,22 @@ export const buildTargetCandidates = (targetGroup, context) => {
  * @param {string} params.title - Selection prompt title
  * @param {Object} params.effect - Effect to apply to selected target (resolved via resolveEffect)
  * @param {boolean} params.renderCards - Whether to render card previews (default: true for creatures)
+ * @param {boolean} params.requireSelection - Keep an explicit choice even for a sole target
  */
 export const selectFromGroup = (params) => (context) => {
   const { log, player, opponent, state } = context;
-  const { targetGroup, title, effect, renderCards = true } = params;
+  const { targetGroup, title, effect, renderCards = true, requireSelection = false } = params;
 
   const candidates = buildTargetCandidates(targetGroup, context);
 
-  if (candidates.length === 0) {
+  if (candidates.length === 0 && !requireSelection) {
     log(`No valid targets available.`);
     return {};
   }
 
   // If only one candidate, auto-select it (unless effect copies abilities —
   // the player should always see what they're copying)
-  if (candidates.length === 1 && !effect.copyAbilities) {
+  if (candidates.length === 1 && !effect.copyAbilities && !requireSelection) {
     const selection = candidates[0].value;
     return applyEffectToSelection(selection, effect, context);
   }
