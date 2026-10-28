@@ -12,7 +12,7 @@
 const CARDS = {
   // Generic defenders/attackers
   salmon: {
-    id: 'fish-prey-salmon',
+    id: 'fish-prey-king-salmon',
     name: 'Salmon',
     type: 'Prey',
     atk: 2,
@@ -291,22 +291,23 @@ export const TUTORIAL_SCENES = [
 <p>You can play <strong>one</strong> non-free-spell card per turn, in either Main phase.</p>
 <p class="tutorial-note">Main 2 is only available if you didn't play a card in Main 1.</p>`,
     demo: {
-      setup: [{ slot: 'center', card: CARDS.salmon }],
+      setup: [],
+      flow: ['Start', 'Draw', 'Main 1', 'Before Combat', 'Combat', 'Main 2', 'End'],
       steps: [
-        { type: 'label', text: '① Start Phase' },
+        { type: 'label', text: '① Start Phase', node: 0 },
         { type: 'wait', duration: 1000 },
-        { type: 'label', text: '② Draw Phase' },
+        { type: 'label', text: '② Draw Phase', node: 1 },
         { type: 'wait', duration: 1000 },
-        { type: 'label', text: '③ Main Phase 1 — play a card!' },
+        { type: 'label', text: '③ Main Phase 1 — play a card!', node: 2 },
         { type: 'fadeIn', target: 'center', duration: 500 },
         { type: 'wait', duration: 1000 },
-        { type: 'label', text: '④ Before Combat' },
+        { type: 'label', text: '④ Before Combat', node: 3 },
         { type: 'wait', duration: 1000 },
-        { type: 'label', text: '⑤ Combat Phase' },
+        { type: 'label', text: '⑤ Combat Phase', node: 4 },
         { type: 'wait', duration: 1000 },
-        { type: 'label', text: '⑥ Main Phase 2' },
+        { type: 'label', text: '⑥ Main Phase 2', node: 5 },
         { type: 'wait', duration: 1000 },
-        { type: 'label', text: '⑦ End Phase' },
+        { type: 'label', text: '⑦ End Phase', node: 6 },
         { type: 'wait', duration: 1500 },
         { type: 'clearLabel' },
         { type: 'wait', duration: 1000 },
@@ -762,12 +763,13 @@ export const TUTORIAL_SCENES = [
     text: `<p><strong>Scavenge</strong> lets a predator consume from the <strong>Carrion pile</strong> instead of the field.</p>
 <p>This means you can get value from creatures that already died — no setup required!</p>`,
     demo: {
-      setup: [{ slot: 'center', card: CARDS.isopod }],
+      setup: [],
+      flow: ['Prey in Carrion', 'Predator gains NUT'],
       steps: [
-        { type: 'label', text: 'Giant Isopod has Scavenge' },
+        { type: 'label', text: 'Scavenge starts with prey in Carrion', node: 0 },
         { type: 'fadeIn', target: 'center', duration: 500 },
         { type: 'wait', duration: 600 },
-        { type: 'label', text: 'Consumes from Carrion — no live prey needed!' },
+        { type: 'label', text: 'Consumes from Carrion — no live prey needed!', node: 1 },
         { type: 'highlight', target: 'center', duration: 1500 },
         { type: 'buffPop', target: 'center', text: '+NUT from Carrion', duration: 1000 },
         { type: 'label', text: 'Recycle your dead creatures for value!' },

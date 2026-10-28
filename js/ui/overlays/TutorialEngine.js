@@ -77,7 +77,9 @@ function buildLayout() {
   const wrapper = document.createElement('div');
   wrapper.className = 'tutorial-engine';
 
-  // Stage (left)
+  // Demo and its caption have separate space, so labels cannot cover cards.
+  const demoPanel = document.createElement('div');
+  demoPanel.className = 'tutorial-demo';
   stageEl = document.createElement('div');
   stageEl.className = 'tutorial-stage';
 
@@ -91,24 +93,25 @@ function buildLayout() {
 
   labelEl = document.createElement('div');
   labelEl.className = 'tutorial-stage-label';
-  stageEl.appendChild(labelEl);
+  demoPanel.appendChild(stageEl);
+  demoPanel.appendChild(labelEl);
 
-  // Text panel (right) — nav lives at top of this column
+  // Text panel (right on desktop); navigation spans the bottom of the pane.
   textPanelEl = document.createElement('div');
   textPanelEl.className = 'tutorial-text-panel';
 
   navEl = document.createElement('div');
   navEl.className = 'tutorial-nav';
   buildNav();
-  textPanelEl.appendChild(navEl);
 
   // Text content area (title + description go here)
   textContentEl = document.createElement('div');
   textContentEl.className = 'tutorial-text-content';
   textPanelEl.appendChild(textContentEl);
 
-  wrapper.appendChild(stageEl);
+  wrapper.appendChild(demoPanel);
   wrapper.appendChild(textPanelEl);
+  wrapper.appendChild(navEl);
   containerEl.appendChild(wrapper);
 }
 
@@ -119,7 +122,8 @@ function buildNav() {
   // Prev button
   const prevBtn = document.createElement('button');
   prevBtn.className = 'tutorial-nav-btn';
-  prevBtn.textContent = '←';
+  prevBtn.textContent = '← Back';
+  prevBtn.setAttribute('aria-label', 'Previous lesson');
   prevBtn.onclick = () => goToScene(currentSceneIndex - 1);
   navEl.appendChild(prevBtn);
 
@@ -132,8 +136,12 @@ function buildNav() {
   // Next button
   const nextBtn = document.createElement('button');
   nextBtn.className = 'tutorial-nav-btn';
-  nextBtn.textContent = '→';
-  nextBtn.onclick = () => goToScene(currentSceneIndex + 1);
+  nextBtn.textContent = 'Next →';
+  nextBtn.onclick = () => {
+    if (currentSceneIndex === TUTORIAL_SCENES.length - 1) {
+      document.getElementById('tutorial-close')?.click();
+    } else goToScene(currentSceneIndex + 1);
+  };
   navEl.appendChild(nextBtn);
 }
 
@@ -141,6 +149,13 @@ function updateNav() {
   if (!navEl) return;
   const counter = navEl.querySelector('.tutorial-nav-counter');
   if (counter) counter.textContent = `${currentSceneIndex + 1} / ${TUTORIAL_SCENES.length}`;
+  const [previous, next] = navEl.querySelectorAll('button');
+  previous.disabled = currentSceneIndex === 0;
+  next.textContent = currentSceneIndex === TUTORIAL_SCENES.length - 1 ? 'Done' : 'Next →';
+  next.setAttribute(
+    'aria-label',
+    currentSceneIndex === TUTORIAL_SCENES.length - 1 ? 'Finish tutorial' : 'Next lesson'
+  );
 }
 
 // ============================================================================
@@ -155,6 +170,8 @@ function goToScene(index) {
   const scene = TUTORIAL_SCENES[index];
   if (!scene) return;
 
+  stageEl.querySelector('.tutorial-flow-grid')?.remove();
+
   // Clear stage
   for (const slot of Object.values(slotElements)) {
     slot.innerHTML = '';
@@ -168,7 +185,7 @@ function goToScene(index) {
 
   // Render text content
   textContentEl.innerHTML = `
-    <h3 class="tutorial-scene-title">${scene.title}</h3>
+    <h3 class="tutorial-scene-title">${scene.title.replace(/^\d+\.\s*/, '')}</h3>
     <div class="tutorial-scene-text">${scene.text}</div>
   `;
 
@@ -176,6 +193,19 @@ function goToScene(index) {
     '--tutorial-slot-count',
     String(Math.max(1, scene.demo?.setup?.length || 0))
   );
+
+  if (scene.demo?.flow) {
+    const flow = document.createElement('div');
+    flow.className = 'tutorial-flow-grid';
+    flow.style.setProperty('--flow-columns', String(scene.demo.flow.length === 2 ? 2 : 3));
+    scene.demo.flow.forEach((text, index) => {
+      const item = document.createElement('div');
+      item.className = 'tutorial-flow-step';
+      item.textContent = `${index + 1}. ${text}`;
+      flow.appendChild(item);
+    });
+    stageEl.appendChild(flow);
+  }
 
   // Place cards in slots
   if (scene.demo?.setup) {
@@ -200,6 +230,7 @@ function goToScene(index) {
 // ============================================================================
 
 function stopDemo() {
+  stageEl?.querySelectorAll('.tutorial-attack-ghost').forEach((ghost) => ghost.remove());
   if (loopAbort) {
     loopAbort.abort();
     loopAbort = null;
@@ -367,7 +398,7 @@ async function handleArrow(step, signal) {
   const to = { x: toRect.left + toRect.width / 2, y: toRect.top + toRect.height / 2 };
 
   arrowSvg = createArrowSvg(from, to, step.color);
-  document.body.appendChild(arrowSvg);
+  stageEl.appendChild(arrowSvg);
   requestAnimationFrame(() => arrowSvg?.classList.add('visible'));
 
   await wait(step.duration || 600, signal);
@@ -396,7 +427,7 @@ async function handleArrowFizzle(step, signal) {
   };
 
   arrowSvg = createArrowSvg(from, to, 'red');
-  document.body.appendChild(arrowSvg);
+  stageEl.appendChild(arrowSvg);
   requestAnimationFrame(() => arrowSvg?.classList.add('visible'));
 
   await wait(400, signal);
@@ -410,13 +441,16 @@ async function handleArrowFizzle(step, signal) {
 }
 
 function createArrowSvg(from, to, color) {
+  const bounds = stageEl.getBoundingClientRect();
+  from = { x: from.x - bounds.left, y: from.y - bounds.top };
+  to = { x: to.x - bounds.left, y: to.y - bounds.top };
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.classList.add('ai-attack-arrow', 'tutorial-arrow');
   svg.setAttribute('width', '100%');
   svg.setAttribute('height', '100%');
   svg.style.cssText = `
-    position: fixed; top: 0; left: 0;
-    width: 100vw; height: 100vh;
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
     pointer-events: none; z-index: 1000; overflow: visible;
   `;
 
@@ -497,6 +531,9 @@ function removeArrow() {
 // -- label / clearLabel --
 function handleLabel(step) {
   labelEl.textContent = step.text;
+  stageEl.querySelectorAll('.tutorial-flow-step').forEach((item, index) => {
+    item.classList.toggle('is-current', index === step.node);
+  });
   labelEl.style.transition = 'opacity 0.3s ease-out';
   labelEl.style.opacity = '1';
 }
@@ -526,21 +563,29 @@ async function handleAttack(step, signal) {
   if (!fromCard) return;
 
   const fromRect = fromCard.getBoundingClientRect();
-  const toRect = toSlot.getBoundingClientRect();
+  const bounds = stageEl.getBoundingClientRect();
+  const toRect = toSlot.children.length
+    ? toSlot.getBoundingClientRect()
+    : {
+        left: bounds.left + bounds.width * 0.85,
+        top: fromRect.top + fromRect.height / 2,
+        width: 0,
+        height: 0,
+      };
 
   const ghost = fromCard.cloneNode(true);
   ghost.classList.add('tutorial-attack-ghost');
   ghost.style.cssText = `
-    position: fixed;
+    position: absolute;
     width: ${fromRect.width}px;
     height: ${fromRect.height}px;
-    left: ${fromRect.left + fromRect.width / 2}px;
-    top: ${fromRect.top + fromRect.height / 2}px;
+    left: ${fromRect.left - bounds.left + fromRect.width / 2}px;
+    top: ${fromRect.top - bounds.top + fromRect.height / 2}px;
     z-index: 1001;
     pointer-events: none;
     transform: translate(-50%, -50%);
   `;
-  document.body.appendChild(ghost);
+  stageEl.appendChild(ghost);
   removeArrow();
 
   const deltaX = toRect.left + toRect.width / 2 - (fromRect.left + fromRect.width / 2);
@@ -735,22 +780,24 @@ async function handleConsumeInto(step, signal) {
   const preyCard = preySlot.querySelector('.card');
   if (!preyCard) return;
 
+  const bounds = stageEl.getBoundingClientRect();
   const preyRect = preyCard.getBoundingClientRect();
   const predRect = predSlot.getBoundingClientRect();
 
   // Create ghost of prey
   const ghost = preyCard.cloneNode(true);
+  ghost.classList.add('tutorial-attack-ghost');
   ghost.style.cssText = `
-    position: fixed;
+    position: absolute;
     width: ${preyRect.width}px;
     height: ${preyRect.height}px;
-    left: ${preyRect.left + preyRect.width / 2}px;
-    top: ${preyRect.top + preyRect.height / 2}px;
+    left: ${preyRect.left - bounds.left + preyRect.width / 2}px;
+    top: ${preyRect.top - bounds.top + preyRect.height / 2}px;
     z-index: 1001;
     pointer-events: none;
     transform: translate(-50%, -50%);
   `;
-  document.body.appendChild(ghost);
+  stageEl.appendChild(ghost);
 
   // Hide original
   preySlot.style.opacity = '0';
