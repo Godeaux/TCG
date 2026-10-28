@@ -24,7 +24,7 @@ const actionBus = fs
   .replace("from './sync.js'", "from '/__local_transport.js'");
 async function client(seat) {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-  await ctx.route('**/js/network/actionBus.js', (r) =>
+  await ctx.route((url) => url.pathname === '/js/network/actionBus.js', (r) =>
     r.fulfill({ contentType: 'text/javascript', body: actionBus })
   );
   await ctx.route('**/__local_transport.js', (r) =>
