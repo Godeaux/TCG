@@ -282,3 +282,10 @@ initQaApi({
 });
 
 refresh();
+
+// Only reveal the board behind overlays once the initial Home render is complete.
+// Keep the static menu inert until its real input handlers have been installed.
+document.body.removeAttribute('data-loading');
+const initialMenu = document.getElementById('menu-overlay');
+initialMenu?.removeAttribute('inert');
+initialMenu?.removeAttribute('aria-busy');
