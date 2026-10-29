@@ -39,6 +39,7 @@ import {
  */
 
 import { ActionTypes } from '../state/actions.js';
+import { matchesCardIdentity } from '../network/cardIdentity.js';
 import {
   getActivePlayer,
   getOpponentPlayer,
@@ -1752,7 +1753,16 @@ export class GameController {
       return { success: false, error: 'Invalid player index' };
     }
 
-    player.hand = player.hand.filter((c) => c.instanceId !== card.instanceId);
+    const choice = this.state.pendingChoice;
+    if (choice?.type !== 'discard' || choice.forPlayer !== playerIndex) {
+      return { success: false, error: 'No pending discard choice for this player' };
+    }
+    const handIndex = player.hand.findIndex((owned) => matchesCardIdentity(owned, card));
+    if (handIndex === -1) {
+      return { success: false, error: 'Discard card is not in player hand' };
+    }
+    // Never grant a caller-supplied card object or reuse an already discarded card.
+    [card] = player.hand.splice(handIndex, 1);
     if (card.type === 'Predator' || card.type === 'Prey') {
       player.carrion.push(card);
     } else {

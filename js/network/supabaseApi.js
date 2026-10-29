@@ -1,4 +1,19 @@
 import { supabase } from './supabaseClient.js';
+import { createServerEconomy } from './serverEconomy.js';
+import { getAllCards } from '../cards/index.js';
+
+let serverEconomy;
+export const getServerEconomyClient = () => {
+  if (!serverEconomy) {
+    serverEconomy = createServerEconomy({
+      rpc: (name, args) => supabase.rpc(name, args),
+      storage: globalThis.localStorage,
+      randomUUID: () => crypto.randomUUID(),
+      getCards: getAllCards,
+    });
+  }
+  return serverEconomy;
+};
 
 const LOBBY_CODE_LENGTH = 6;
 const LOBBY_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';

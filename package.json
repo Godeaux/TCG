@@ -7,17 +7,18 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:ui": "node e2e/startup-home.mjs && node e2e/asset-upgrade.mjs && node e2e/card-face.mjs && node e2e/ui-overhaul.mjs && node e2e/mobile-hand.mjs && node e2e/history-lifecycle.mjs && node e2e/history-detail.mjs && node e2e/tutorial-layout.mjs && node e2e/tutorial-motion.mjs && node e2e/menu-dialog.mjs && node e2e/local-transport-match.mjs && node e2e/consumption-choice-regression.mjs && node e2e/selection-lifecycle.mjs && node e2e/stale-target-panel.mjs && node e2e/input-affordance-regression.mjs && node e2e/attack-input.mjs && node e2e/mobile-feedback.mjs && node e2e/spell-presentation.mjs && node e2e/spell-cast-coverage.mjs && node e2e/pack-viewport.mjs && node e2e/home-navigation.mjs && node e2e/player-experience.mjs && node e2e/rarity-finish.mjs && node e2e/practice-decks.mjs",
+    "test:ui": "node e2e/startup-home.mjs && node e2e/asset-upgrade.mjs && node e2e/card-face.mjs && node e2e/ui-overhaul.mjs && node e2e/mobile-hand.mjs && node e2e/history-lifecycle.mjs && node e2e/history-detail.mjs && node e2e/tutorial-layout.mjs && node e2e/tutorial-motion.mjs && node e2e/menu-dialog.mjs && node e2e/local-transport-match.mjs && node e2e/consumption-choice-regression.mjs && node e2e/selection-lifecycle.mjs && node e2e/stale-target-panel.mjs && node e2e/input-affordance-regression.mjs && node e2e/attack-input.mjs && node e2e/mobile-feedback.mjs && node e2e/spell-presentation.mjs && node e2e/spell-cast-coverage.mjs && node e2e/pack-viewport.mjs && node e2e/home-navigation.mjs && node e2e/player-experience.mjs && node e2e/rarity-finish.mjs && node e2e/practice-decks.mjs && node e2e/inspector-polish.mjs && node e2e/profile-text-safety.mjs && node e2e/server-pack-opening.mjs",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint js/",
     "lint:fix": "eslint js/ --fix",
     "format": "prettier --write \"js/**/*.js\" \"tests/**/*.js\"",
     "format:check": "prettier --check \"js/**/*.js\" \"tests/**/*.js\"",
     "prepare": "husky",
-    "check": "npm run check:art && npm run check:assets && npm run lint && npm run format:check && npm test",
+    "check": "npm run check:art && npm run check:assets && npm run lint && npm run format:check && npm test && npm run check:db-staging",
     "version:assets": "node scripts/version-assets.mjs",
     "check:assets": "node scripts/version-assets.mjs --check",
-    "check:art": "node scripts/build-card-art-index.mjs --check"
+    "check:art": "node scripts/build-card-art-index.mjs --check",
+    "check:db-staging": "node docs/release-1.0-staging/validate-foundation.mjs && node docs/release-1.0-staging/validate-reward-settlement.mjs && node docs/release-1.0-staging/validate-pack-opening.mjs && node docs/release-1.0-staging/validate-authenticated-packs.mjs"
   },
   "repository": {
     "type": "git",
@@ -40,6 +41,7 @@
     ]
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.13",
     "@eslint/js": "^9.39.2",
     "@playwright/test": "^1.58.2",
     "@vitest/coverage-v8": "^4.0.17",

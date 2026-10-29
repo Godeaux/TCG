@@ -33,10 +33,9 @@ try {
     expect(Math.abs(proportions[0] - 5 / 7)).toBeLessThan(0.006);
     expect(Math.abs(proportions[1] - 0.1)).toBeLessThan(0.005);
     await page.locator('.pe-grid .pe-tile').click();
-    if (width <= 700) {
-      await expect(page.locator('.pe-mobile-inspection')).toBeVisible();
-      await page.locator('[data-pe="close-inspect"]').click();
-    }
+    await expect(page.locator('#card-hover-tooltip')).toHaveClass(/inspection-modal/);
+    await page.locator('#tooltip-card-preview').click();
+    await expect(page.locator('#card-hover-tooltip')).not.toHaveClass(/visible/);
     await expect(page.locator('#pe-search')).toHaveValue('orca');
     await page.locator('#pe-search').fill('no such creature');
     await expect(page.locator('.pe-grid .pe-tile')).toHaveCount(0);

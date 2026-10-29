@@ -1,3 +1,4 @@
+import { applyServerEconomy } from './serverEconomy.js';
 /**
  * Lobby Manager Module
  *
@@ -331,7 +332,17 @@ export const ensurePlayerCardsLoaded = async (state) => {
 
   try {
     const api = await loadSupabaseApi(state);
-    const cards = await api.fetchPlayerCards({ profileId: state.menu.profile.id });
+    const profile = state.menu.profile;
+    const economy = await api.getServerEconomyClient().read();
+    if (state.menu.profile !== profile) return;
+    if (economy) {
+      applyServerEconomy(profile, economy);
+      profile.pendingPackOpening = api.getServerEconomyClient().hasPending(profile.id);
+      cardsLoaded = true;
+      return;
+    }
+    const cards = await api.fetchPlayerCards({ profileId: profile.id });
+    if (state.menu.profile !== profile) return;
 
     // Initialize ownedCards Map if it doesn't exist
     if (!state.menu.profile.ownedCards) {

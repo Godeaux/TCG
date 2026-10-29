@@ -1,0 +1,155 @@
+{
+  "tier": "production UI (real clicks/keyboard) + production lobbyManager/ui.js; DB IO stubbed via routing; supabase.co aborted",
+  "expected": "pack opens + card grants only when the debit durably commits; client and server balances converge on failure",
+  "serverPackRowFinal": 0,
+  "packWritesAttempted": [
+    {
+      "packs": 0,
+      "mode": "preCommitReject"
+    },
+    {
+      "packs": 0,
+      "mode": "preCommitReject"
+    },
+    {
+      "packs": 0,
+      "mode": "committedAckLost"
+    },
+    {
+      "packs": 0,
+      "mode": "healthy"
+    }
+  ],
+  "debitFailures": 3,
+  "grantCallsTotal": 4,
+  "iterations": [
+    {
+      "round": 0,
+      "fixture": "preCommitReject",
+      "serverPacksBefore": 1,
+      "serverPacksAfter": 1,
+      "localPacksAfter": 1,
+      "openedPackDespiteFailedDebit": true,
+      "revealedCards": 5,
+      "grantCountDelta": 1,
+      "grantedCards": [
+        {
+          "cardId": "amphibian-prey-frosts-toad",
+          "rarity": "common"
+        },
+        {
+          "cardId": "bird-trap-fly-off",
+          "rarity": "common"
+        },
+        {
+          "cardId": "bird-predator-monkey-eating-eagle",
+          "rarity": "common"
+        },
+        {
+          "cardId": "amphibian-prey-chernobyl-tree-frogs",
+          "rarity": "common"
+        },
+        {
+          "cardId": "reptile-prey-wolf-volcano-giant-tortoise",
+          "rarity": "rare"
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "fixture": "preCommitReject",
+      "serverPacksBefore": 1,
+      "serverPacksAfter": 1,
+      "localPacksAfter": 1,
+      "openedPackDespiteFailedDebit": true,
+      "revealedCards": 5,
+      "grantCountDelta": 1,
+      "grantedCards": [
+        {
+          "cardId": "fish-trap-riptide",
+          "rarity": "common"
+        },
+        {
+          "cardId": "amphibian-prey-hippo-frog",
+          "rarity": "common"
+        },
+        {
+          "cardId": "reptile-spell-sunshine",
+          "rarity": "common"
+        },
+        {
+          "cardId": "bird-predator-black-and-white-hawk-eagle",
+          "rarity": "common"
+        },
+        {
+          "cardId": "bird-predator-firehawk",
+          "rarity": "uncommon"
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "fixture": "committedAckLost",
+      "serverPacksBefore": 1,
+      "serverPacksAfter": 0,
+      "localPacksAfter": 1,
+      "openedPackDespiteFailedDebit": true,
+      "revealedCards": 5,
+      "grantCountDelta": 1,
+      "grantedCards": [
+        {
+          "cardId": "bird-predator-golden-eagle",
+          "rarity": "common"
+        },
+        {
+          "cardId": "bird-prey-doctor-bird",
+          "rarity": "common"
+        },
+        {
+          "cardId": "bird-prey-eurasian-magpie",
+          "rarity": "common"
+        },
+        {
+          "cardId": "mammal-trap-burial-ground",
+          "rarity": "common"
+        },
+        {
+          "cardId": "reptile-prey-golden-lancehead",
+          "rarity": "uncommon"
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "fixture": "healthy",
+      "serverPacksBefore": 0,
+      "serverPacksAfter": 0,
+      "localPacksAfter": 0,
+      "openedPackDespiteFailedDebit": true,
+      "revealedCards": 5,
+      "grantCountDelta": 1,
+      "grantedCards": [
+        {
+          "cardId": "mammal-prey-florida-white-rabbit",
+          "rarity": "common"
+        },
+        {
+          "cardId": "reptile-prey-galapagos-lava-lizards",
+          "rarity": "common"
+        },
+        {
+          "cardId": "bird-prey-carrier-pigeon",
+          "rarity": "common"
+        },
+        {
+          "cardId": "amphibian-prey-java-flying-frog",
+          "rarity": "common"
+        },
+        {
+          "cardId": "bird-prey-eastern-wild-turkey",
+          "rarity": "rare"
+        }
+      ]
+    }
+  ]
+}

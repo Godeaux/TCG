@@ -1,0 +1,25 @@
+{
+  "test": "real Supabase authenticated overlapping HTTP requests",
+  "distinctOpeningStatuses": [
+    400,
+    200
+  ],
+  "successfulDebits": 1,
+  "refused": 1,
+  "retries": 5,
+  "balance": 0,
+  "receiptStable": true,
+  "unauthenticated_rpc_statuses": [
+    401,
+    401
+  ],
+  "unenrolled_guest_open_status": 403,
+  "receipt_rows_before_cleanup": 1,
+  "cleanup": {
+    "owners": 0,
+    "economy_accounts": 0,
+    "pack_receipts": 0,
+    "synthetic_auth_user": 0
+  },
+  "scope": "Synthetic QA owner only; no player account migration, no verified-email registration claim, no live gameplay certification"
+}

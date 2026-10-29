@@ -133,6 +133,21 @@ export function validateAction(action, senderId, state) {
 
   // Action-specific validation
   switch (action.type) {
+    case ActionTypes.RESOLVE_DISCARD: {
+      const { playerIndex, card } = action.payload ?? {};
+      const choice = state.pendingChoice;
+      if (
+        playerIndex !== senderIndex ||
+        choice?.type !== 'discard' ||
+        choice.forPlayer !== senderIndex
+      ) {
+        return { valid: false, error: 'No discard choice for this sender' };
+      }
+      if (!state.players[senderIndex]?.hand.some((owned) => matchesCardIdentity(owned, card))) {
+        return { valid: false, error: 'Discard card is not in sender hand' };
+      }
+      return { valid: true };
+    }
     case ActionTypes.RESOLVE_ATTACK:
       return validateResolveAttack(action, senderIndex, state);
     case ActionTypes.EAT_PREY_ATTACK:

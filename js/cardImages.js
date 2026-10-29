@@ -18,8 +18,11 @@
  * │   └── a_f1.jpg      # Amphibian cards
  */
 
+import { CARD_ART_IDS } from './cardArtIds.js';
+
 // Card image mapping - you can add custom mappings here if needed
 const CARD_IMAGE_MAP = {
+  'amphibian-spell-ambiguity': 'amphibian-spell-ambiguity.JPG',
   // Example custom mappings (optional):
   // "f_py1": "great_white_shark.jpg",  // Custom filename
   // "b_m1": "eagle.jpg",               // Custom filename
@@ -51,10 +54,7 @@ export function getCardImagePath(cardId, preferredFormat = 'jpg') {
  * @returns {boolean} - True if image exists
  */
 export function hasCardImage(cardId) {
-  const path = getCardImagePath(cardId);
-  // In a real implementation, you might want to check if the file exists
-  // For now, we'll assume the image exists if the path is constructed
-  return path !== null;
+  return Boolean(CARD_IMAGE_MAP[cardId]) || CARD_ART_IDS.has(cardId);
 }
 
 /**
@@ -84,6 +84,10 @@ export const FALLBACK_CARD_IMAGE = 'images/cards/fallback.jpg';
 export function preloadCardImages(cardIds) {
   cardIds.forEach((cardId) => {
     if (!IMAGE_CACHE.has(cardId)) {
+      if (!hasCardImage(cardId)) {
+        IMAGE_CACHE.set(cardId, null);
+        return;
+      }
       const img = new Image();
       const path = getCardImagePath(cardId);
 

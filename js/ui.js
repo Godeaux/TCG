@@ -1,3 +1,4 @@
+import { applyServerEconomy } from './network/serverEconomy.js';
 import { resetHistoryStream } from './game/historyEvents.js';
 import { resolveDropTarget } from './ui/input/targetResolver.js';
 import { renderHistoryPanel, toggleHistoryPanel } from './ui/components/HistoryPanel.js';
@@ -4995,13 +4996,38 @@ export const renderGame = (state, callbacks = {}) => {
       callbacks.onUpdate?.();
     },
     onOpenPack: async () => {
-      if ((state.menu?.profile?.packs || 0) > 0) {
-        // Decrement pack count and sync to database
-        await updatePackCount(state, -1);
-        setMenuStage(state, 'pack-opening');
-        startPackOpening({
-          onCardRevealed: (card) => {},
-        });
+      if (!state.menu?.profile?.id || state.menu.packOpeningPending) return;
+      const profile = state.menu.profile;
+      state.menu.packOpeningPending = true;
+      try {
+        const api = await loadSupabaseApi(state);
+        const economyClient = api.getServerEconomyClient();
+        const economy = await economyClient.read();
+        if (state.menu.profile !== profile) return;
+        if (economy) {
+          applyServerEconomy(profile, economy);
+          // Do not block recovery at zero packs: the intent may already be paid.
+          const opened = await economyClient.open(profile.id);
+          if (state.menu.profile !== profile) return;
+          applyServerEconomy(profile, opened.economy);
+          profile.pendingPackOpening = true;
+          state.menu.serverPackReceipt = opened.receipt;
+          setMenuStage(state, 'pack-opening');
+          startPackOpening({}, opened.cards);
+        } else if ((profile.packs || 0) > 0) {
+          // Transitional legacy accounts only. RPC errors never fall back here.
+          state.menu.serverPackReceipt = null;
+          const before = profile.packs;
+          const after = await updatePackCount(state, -1);
+          if (state.menu.profile !== profile) return;
+          if (after !== before - 1) throw new Error('Pack debit failed. Please retry.');
+          setMenuStage(state, 'pack-opening');
+          startPackOpening();
+        }
+      } catch (error) {
+        setMenuError(state, error.message || 'Unable to open pack. Please retry.');
+      } finally {
+        state.menu.packOpeningPending = false;
         callbacks.onUpdate?.();
       }
     },
@@ -5180,6 +5206,9 @@ export const renderGame = (state, callbacks = {}) => {
   // Pack opening overlay
   renderPackOpeningOverlay(state, {
     onSaveCards: async (packCards) => {
+      if (state.menu.serverPackReceipt) {
+        return { success: true, message: 'Cards saved to your collection.' };
+      }
       // Save cards to database (this also updates local state)
       try {
         const savedCards = await savePlayerCardsToDatabase(state, packCards);
@@ -5195,6 +5224,13 @@ export const renderGame = (state, callbacks = {}) => {
       }
     },
     onDone: (packCards) => {
+      const receipt = state.menu.serverPackReceipt;
+      if (receipt) {
+        getLobbyApi().getServerEconomyClient().finish(receipt.profile_id, receipt.opening_id);
+        state.menu.serverPackReceipt = null;
+        if (state.menu.profile?.id === receipt.profile_id)
+          state.menu.profile.pendingPackOpening = false;
+      }
       // Packs belong to the collection workspace.
       setMenuStage(state, 'collection');
       callbacks.onUpdate?.();

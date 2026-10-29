@@ -1,6 +1,7 @@
 import { CARD_ART_IDS } from '../../cardArtIds.js';
 import { getAllCards } from '../../cards/index.js';
 import { renderCard } from '../components/Card.js';
+import { showCardTooltip } from '../components/CardTooltip.js';
 import {
   renderStyledName,
   NAME_EFFECTS,
@@ -258,7 +259,7 @@ function collection() {
   const readOnly = publicCollection;
   const unloaded = signed && !readOnly && own().ownedCards === undefined;
   return `<div class="pe-heading"><div><h1>${readOnly ? `${esc(publicProfile.username)}’s collection` : 'My Cards'}</h1></div>${readOnly ? btn('public-back', '← Profile', 'pe-quiet') : `<nav class="pe-tabs">${btn('decks', 'Decks', 'pe-quiet')}${btn('collection', 'Collection', 'selected pe-quiet')}</nav>`}</div>
-  <div class="pe-collection"><section class="pe-browser"><div class="pe-tools"><input id="pe-search" type="search" aria-label="Search cards or keywords" placeholder="Search cards or keywords" value="${esc(filters.query)}">${!readOnly ? btn(signed ? 'packs' : 'login', signed ? `Packs <b>${Number(own().packs) || 0}</b>` : 'Log in', '', signed && !(own().packs > 0) ? 'disabled' : '') : ''}</div>
+  <div class="pe-collection"><section class="pe-browser"><div class="pe-tools"><input id="pe-search" type="search" aria-label="Search cards or keywords" placeholder="Search cards or keywords" value="${esc(filters.query)}">${!readOnly ? btn(signed ? 'packs' : 'login', signed ? `Packs <b>${Number(own().packs) || 0}</b>` : 'Log in', '', signed && !(own().packs > 0) && !own().pendingPackOpening ? 'disabled' : '') : ''}</div>
   <div class="pe-filters"><select id="pe-ownership" aria-label="Ownership">${options(
     [
       ['owned', 'Owned'],
@@ -512,6 +513,28 @@ function artPicker(field) {
   pickerPage = 0;
   paintPicker();
 }
+function inspectSelectedCard() {
+  const list = filterCollection(catalog(), ownership(), filters);
+  const index = list.findIndex((card) => card.id === selectedId);
+  const card = list[index];
+  const anchor = [...root.querySelectorAll('[data-card]')].find(
+    (el) => el.dataset.card === selectedId
+  );
+  if (!card || !anchor) return;
+  const change = (delta) => {
+    const next = (index + delta + list.length) % list.length;
+    selectedId = list[next].id;
+    filters.page = Math.floor(next / pageSize());
+    draw();
+    inspectSelectedCard();
+  };
+  showCardTooltip({ ...card, rarity: ownership().get(card.id) }, anchor, {
+    context: 'collection',
+    modal: true,
+    onPrevious: list.length > 1 ? () => change(-1) : null,
+    onNext: list.length > 1 ? () => change(1) : null,
+  });
+}
 async function handleClick(event) {
   const tileNode = event.target.closest('[data-card]');
   if (tileNode) {
@@ -523,8 +546,9 @@ async function handleClick(event) {
     } else if (state.menu.stage === 'profile') {
       go('collection');
     }
-    inspected = true;
+    inspected = false;
     draw();
+    inspectSelectedCard();
     return;
   }
   const button = event.target.closest('[data-pe]');

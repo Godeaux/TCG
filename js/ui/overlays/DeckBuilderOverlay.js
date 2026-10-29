@@ -2213,7 +2213,7 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
   let statusHtml = `
     <div class="deck-status-item deck-name-row">
       <label for="deck-name-input">${deckNameLabel}</label>
-      <input type="text" id="deck-name-input" class="deck-name-input" value="${state.catalogBuilder.editingDeckName || 'New Deck'}" maxlength="30" placeholder="Deck name" />
+      <input type="text" id="deck-name-input" class="deck-name-input" maxlength="30" placeholder="Deck name" />
     </div>
     <div class="deck-status-item">Cards selected: <strong>${totalCount}/20</strong></div>
     <div class="deck-status-item deck-type-counts ${preyRuleValid ? '' : 'invalid'}">
@@ -2222,16 +2222,22 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
     </div>
   `;
   if (state.menu?.success) {
-    statusHtml += `<div class="deck-status-item deck-status-success" role="status" aria-live="polite">${state.menu.success}</div>`;
+    statusHtml += `<div class="deck-status-item deck-status-success" role="status" aria-live="polite"></div>`;
   }
   if (state.menu?.error) {
-    statusHtml += `<div class="deck-status-item deck-status-error">${state.menu.error}</div>`;
+    statusHtml += `<div class="deck-status-item deck-status-error"></div>`;
   }
   deckStatus.innerHTML = statusHtml;
+  const successMessage = deckStatus.querySelector('.deck-status-success');
+  const errorMessage = deckStatus.querySelector('.deck-status-error');
+  if (successMessage) successMessage.textContent = state.menu.success;
+  if (errorMessage) errorMessage.textContent = state.menu.error;
 
   // Bind deck name input change handler
   const deckNameInput = document.getElementById('deck-name-input');
   if (deckNameInput) {
+    // User names are text, never part of an HTML attribute.
+    deckNameInput.value = state.catalogBuilder.editingDeckName || 'New Deck';
     deckNameInput.oninput = (e) => {
       state.catalogBuilder.editingDeckName = e.target.value;
     };
