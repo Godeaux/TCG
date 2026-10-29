@@ -14,6 +14,9 @@ proof. Do not silently preserve unverified balances as trusted progression.
 - Authenticated ownership-derived pack RPC, server randomness, current-balance
   reads and retry recovery at zero balance. No browser-supplied draws.
 - Browser EXECUTE removed from internal RLS event hook; automatic RLS retested.
+- Owner bindings and accepted-action identities are now append-only even for the
+  gameplay service; service UPDATE/DELETE/TRUNCATE are denied, INSERT retained.
+  Six new service refusal checks are included in the normal foundation contract.
 - Stats/favorite-card views changed to security-invoker. Before-change test
   reproduced unrelated-identity access to synthetic rows; after-change tests
   retain owner access and refuse the unrelated identity. Synthetic rows rolled

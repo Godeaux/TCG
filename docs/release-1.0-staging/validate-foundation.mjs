@@ -16,6 +16,7 @@ try {
     insert into public.profiles values ('00000000-0000-4000-8000-000000000002');
     insert into public.lobbies values (1);`);
   await db.exec(schema);
+  await db.exec(await readFile(new URL('./007-append-only-evidence.sql', import.meta.url), 'utf8'));
   let refused = 0;
   for (const role of ['anon', 'authenticated']) {
     await db.exec(`set role ${role}`);
@@ -36,6 +37,15 @@ try {
        '00000000-0000-4000-8000-000000000001',1);`);
   await assert.rejects(db.exec(`insert into tcg_private.accepted_actions
     select * from tcg_private.accepted_actions`), /duplicate key/);
+  for (const table of ['profile_owners', 'accepted_actions']) {
+    for (const statement of [`delete from tcg_private.${table}`, `truncate tcg_private.${table}`]) {
+      await assert.rejects(db.exec(statement), /permission denied/);
+      refused++;
+    }
+  }
+  await assert.rejects(db.exec('update tcg_private.profile_owners set verified_at=now()'), /permission denied/);
+  await assert.rejects(db.exec('update tcg_private.accepted_actions set accepted_revision=99'), /permission denied/);
+  refused += 2;
   await db.exec('reset role');
   await assert.rejects(db.exec(rollback), /Refusing rollback/);
   await db.exec('rollback');
@@ -45,5 +55,5 @@ try {
     delete from tcg_private.match_checkpoints; delete from tcg_private.profile_owners;`);
   await db.exec(rollback);
   assert.equal((await db.query("select count(*)::int as n from pg_namespace where nspname='tcg_private'")).rows[0].n, 0);
-  console.log(`PASS: candidate applies; ${refused} browser-role reads/deletes refused; service writes succeed; duplicate action refused; populated rollback refuses and preserves rows; empty rollback succeeds.`);
+  console.log(`PASS: candidate applies; ${refused} browser/service forbidden operations refused; service append succeeds; duplicate action refused; populated rollback refuses and preserves rows; empty rollback succeeds.`);
 } finally { await db.close(); }
