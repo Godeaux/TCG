@@ -1074,3 +1074,41 @@ body:has(.card-hover-tooltip.visible.deck-inspector)::after {
 .practice-advanced button { width: 100%; }
 .library-guest-intro .muted { color: #c0d0d3; }
 #bug-report-overlay .bug-report-header { background: transparent; padding: 0 0 16px; }
+
+/* Practice: explain the tradeoff before asking for a deck. */
+#ai-setup-overlay .menu-card { width: min(680px, calc(100vw - 32px)); }
+#ai-setup-overlay .menu-header { text-align: left; justify-content: flex-start; margin-bottom: 20px; }
+#ai-setup-overlay .menu-header .muted { color: #c0d0d3; font: 400 16px/1.45 system-ui, sans-serif; margin: 10px 0 0; }
+#ai-setup-overlay .ai-difficulty-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+#ai-setup-overlay .btn-difficulty { text-align: left; align-items: flex-start; padding: 16px; gap: 8px; }
+#ai-setup-overlay .difficulty-name { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+#ai-setup-overlay .difficulty-name small { font: 500 11px/1.4 system-ui, sans-serif; color: #dce8ca; border: 1px solid #70866a; border-radius: 4px; padding: 2px 5px; }
+#ai-setup-overlay .difficulty-note { font: 400 15px/1.45 system-ui, sans-serif; margin: 0; }
+#ai-setup-overlay #ai-deck-section { margin: 22px 0 0; }
+#ai-setup-overlay #ai-deck-random { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; width: 100%; padding: 16px; background: var(--popup-accent); color: #13313a; border-color: var(--popup-accent); }
+#ai-setup-overlay .deck-option-note { font: 400 14px/1.4 system-ui, sans-serif; text-align: left; }
+#ai-setup-overlay .practice-next { margin: 10px 0 0; color: #c0d0d3; font: 400 14px/1.4 system-ui, sans-serif; }
+#ai-setup-overlay .practice-advanced { margin-top: 18px; padding-top: 6px; }
+#ai-setup-overlay .menu-actions { margin-top: 16px; }
+/* Guest library: real catalog previews, browsing first, account as a separate action. */
+.library-guest-intro { width: min(1000px, 100%); display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 28px; padding: 28px; text-align: left; }
+.library-eyebrow { font: 600 13px/1.4 system-ui, sans-serif; color: #c7d7c0; text-transform: uppercase; letter-spacing: .08em; }
+.library-guest-intro h3 { font-size: clamp(30px, 3vw, 42px); margin: 12px 0; }
+.library-guest-intro p { color: #c0d0d3; margin: 0 0 20px; }
+.library-guest-preview { display: flex; justify-content: center; gap: 12px; min-width: 0; }
+.library-guest-preview .deck-catalog-item { width: min(45%, 180px); min-width: 0; padding: 0; }
+.library-guest-preview .card { width: 100%; }
+.library-guest-account { grid-column: 1/-1; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 24px; background: #13313c; border: 1px solid #54727a; border-radius: 12px; }
+.library-guest-account h4 { margin: 0 0 8px; font: 600 21px/1.3 system-ui, sans-serif; }
+.library-guest-account p { margin: 0; font-size: 16px; }
+#library-login { flex: none; min-height: 48px; padding: 12px 24px; border: 1px solid var(--popup-edge); border-radius: 8px; background: transparent; color: var(--popup-ink); font: 600 17px/1.3 system-ui, sans-serif; }
+@media (max-width: 600px) {
+  #ai-setup-overlay .menu-card { padding: 20px; }
+  #ai-setup-overlay .ai-difficulty-options { grid-template-columns: 1fr; gap: 10px; }
+  #ai-setup-overlay .btn-difficulty { padding: 12px 14px; gap: 6px; }
+  #ai-setup-overlay #ai-deck-random { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .library-guest-intro { grid-template-columns: 1fr; padding: 20px 4px; gap: 24px; }
+  .library-guest-intro p { font-size: 17px; }
+  .library-guest-preview .deck-catalog-item { width: min(45%, 155px); }
+  .library-guest-account { flex-direction: column; align-items: stretch; gap: 16px; padding: 20px; }
+}

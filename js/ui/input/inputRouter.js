@@ -516,7 +516,7 @@ const initNavigation = () => {
         selectedDeckId: null,
       };
     }
-    elements.aiSavedDecks.style.display = 'none';
+    if (elements.aiSavedDecks) elements.aiSavedDecks.style.display = 'none';
     setMenuStage(latestState, 'ai-setup');
     latestCallbacks.onUpdate?.();
   };
@@ -747,8 +747,10 @@ const initNavigation = () => {
     // Update UI - remove active from all, add to clicked
     difficultyOptions.querySelectorAll('.btn-difficulty').forEach((b) => {
       b.classList.remove('active');
+      b.setAttribute('aria-pressed', 'false');
     });
     btn.classList.add('active');
+    btn.setAttribute('aria-pressed', 'true');
 
     // Store in state
     if (latestState) {

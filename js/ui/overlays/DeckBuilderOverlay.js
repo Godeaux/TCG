@@ -568,7 +568,7 @@ const appendCatalogCard = (container, card, onAdd) => {
       showExpandedCard(card, face);
     }
   });
-  face.draggable = true;
+  face.draggable = Boolean(onAdd);
   face.addEventListener('dragstart', (event) => {
     event.dataTransfer.setData(
       'text/plain',
@@ -577,6 +577,11 @@ const appendCatalogCard = (container, card, onAdd) => {
     event.dataTransfer.effectAllowed = 'copy';
     hideExpandedCard();
   });
+  if (!onAdd) {
+    item.appendChild(face);
+    container.appendChild(item);
+    return;
+  }
   const add = document.createElement('button');
   add.className = 'deck-card-add';
   add.type = 'button';
@@ -1372,9 +1377,16 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
         const intro = document.createElement('section');
         intro.className = 'library-guest-intro';
         intro.innerHTML = `
-          <h3>Explore the Food Chain</h3>
-          <p>Browse every card and discover creatures, spells, and traps. No account needed.</p>
-          <p class="muted">Sign in from Home to save decks and track your collection. You can still play Practice as a guest.</p>
+          <div class="library-guest-copy">
+            <span class="library-eyebrow">Your library starts here</span>
+            <h3>Discover your next deck.</h3>
+            <p>Explore creatures, spells, and traps from every domain. Every card is free to browse.</p>
+            <div class="library-browse-action"></div>
+          </div>
+          <div class="library-guest-preview" aria-label="Sample cards from the catalog"></div>
+          <div class="library-guest-account">
+            <div><h4>Make it your collection</h4><p>Sign in to save decks and keep your collection across visits.</p></div>
+          </div>
         `;
         deckSelectGrid.appendChild(intro);
         const browse = document.createElement('button');
@@ -1384,7 +1396,22 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
           state.menu.stage = 'collection';
           callbacks.onUpdate?.();
         };
-        intro.appendChild(browse);
+        intro.querySelector('.library-browse-action').appendChild(browse);
+        const previews = intro.querySelector('.library-guest-preview');
+        const samples = [
+          getCardDefinitionById('fish-predator-orca'),
+          getCardDefinitionById('amphibian-predator-african-bullfrog'),
+        ].filter(Boolean);
+        samples.forEach((card) => appendCatalogCard(previews, card));
+        const login = document.createElement('button');
+        login.id = 'library-login';
+        login.textContent = 'Sign in';
+        login.onclick = () => {
+          state.menu.mode = null;
+          state.menu.stage = 'login';
+          callbacks.onUpdate?.();
+        };
+        intro.querySelector('.library-guest-account').appendChild(login);
       } else {
         ensureDecksLoaded(state);
         const decks = state.menu.decks ?? [];

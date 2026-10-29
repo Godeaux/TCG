@@ -53,6 +53,15 @@ try {
     await p.reload();
     await p.locator('#menu-other').click();
     await expect(p.locator('#ai-setup-overlay')).toHaveClass(/active/);
+    await expect(p.locator('[data-difficulty="easy"] .difficulty-note')).toContainText('rules-based');
+    await expect(p.locator('[data-difficulty="trueSim"] .difficulty-note')).toContainText('on your device');
+    await p.locator('[data-difficulty="trueSim"]').click();
+    await expect(p.locator('[data-difficulty="trueSim"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(p.locator('[data-difficulty="easy"]')).toHaveAttribute('aria-pressed', 'false');
+    await p.locator('[data-difficulty="easy"]').click();
+    const note = p.locator('#ai-deck-random .deck-option-note');
+    await expect(note).toHaveText('20 cards · 1 random domain');
+    expect(await note.evaluate(el => el.getBoundingClientRect().height <= parseFloat(getComputedStyle(el).lineHeight) + 1)).toBe(true);
     await expect(p.locator('#ai-vs-ai')).toBeHidden();
     await p.locator('.practice-advanced summary').click();
     await expect(p.locator('#ai-vs-ai')).toBeVisible();
@@ -102,12 +111,18 @@ try {
     await expect(p.locator('.deck-catalog-home')).toBeVisible();
     await expect(p.locator('#menu-profile')).toBeHidden();
     await expect(p.locator('.library-guest-intro')).toBeVisible();
+    await expect(p.locator('.library-guest-preview .canonical-card')).toHaveCount(2);
+    await expect(p.locator('.library-guest-preview .deck-card-add')).toHaveCount(0);
     await expect(p.locator('#deck-select-overlay')).toHaveCSS('opacity', '1');
     await expect(p.locator('#menu-overlay')).toHaveCSS('opacity', '0');
     await p.screenshot({ path: `docs/home-navigation/${width}-library.png` });
     await p.locator('#settings-fab').click();
     await expect(p.locator('#other-credits')).toBeHidden();
     await p.keyboard.press('Escape');
+    await p.locator('#library-login').click();
+    await expect(p.locator('#login-overlay')).toHaveClass(/active/);
+    await p.locator('#login-cancel').click();
+    await p.locator('#menu-decks').click();
     await p.locator('#library-collection').click();
     await expect(p.locator('#player-experience h1')).toHaveText('My Cards');
     console.log(
