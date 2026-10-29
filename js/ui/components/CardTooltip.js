@@ -584,10 +584,6 @@ const renderInfoBoxes = (card, context = 'gameplay') => {
   if (!infoBoxesElement) return;
 
   infoBoxesElement.innerHTML = '';
-  if (context === 'gameplay') {
-    const text = [card.type, card.faction].filter(Boolean).join(' · ');
-    infoBoxesElement.appendChild(createInfoBox('Card', text, 'card'));
-  }
 
   // Add keyword boxes (suppressed for dry-dropped predators)
   if (Array.isArray(card.keywords) && card.keywords.length > 0 && areAbilitiesActive(card)) {

@@ -16,10 +16,15 @@ try {
    await expect(page.locator('#menu-overlay')).toHaveCSS('opacity','1');
    await expect(page.locator('.game-container')).toBeHidden();
    await expect(page.locator('#menu-overlay')).toHaveAttribute('inert','');
+   // Slow imports get recovery too, then hide it when initialization finishes.
    await page.waitForTimeout(400);
+   if(width===430) {
+    await expect(page.locator('#startup-recovery')).toBeVisible({timeout:15000});
+   }
    await page.screenshot({path:`docs/startup-home/${width}-loading.png`});
   } finally {release();}
   await page.waitForFunction(()=>!document.body.hasAttribute('data-loading'));
+  await expect(page.locator('#startup-recovery')).toBeHidden();
   await expect(page.locator('#menu-overlay')).toHaveClass(/active/);
   await expect(page.locator('#menu-overlay')).not.toHaveAttribute('inert','');
   // Observe the rendered surface across the transition, not just the final class.
@@ -43,5 +48,11 @@ try {
  await p.goto('http://127.0.0.1:8178');
  await expect(p.locator('#menu-overlay')).toHaveCSS('opacity','1');
  await expect(p.locator('.game-container')).toBeHidden();
- console.log('PASS: failed startup does not expose the battle board');
+ await expect(p.locator('#startup-recovery')).toBeVisible();
+ await p.unroute('**/js/main.js*');
+ await p.locator('#startup-retry').click();
+ await p.waitForFunction(()=>!document.body.hasAttribute('data-loading'));
+ await expect(p.locator('#startup-recovery')).toBeHidden();
+ await expect(p.locator('#menu-overlay')).not.toHaveAttribute('inert','');
+ console.log('PASS: failed startup keeps board hidden and retry restores Home');
 } finally {await browser.close();server.kill();}

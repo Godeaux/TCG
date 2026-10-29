@@ -1038,3 +1038,96 @@ body:has(.card-hover-tooltip.visible.deck-inspector)::after {
 @container tutorial-stage (max-height: 220px) {
   #tutorial-overlay .tutorial-slot-role { font-size: 10px; letter-spacing: 0; }
 }
+
+/* Release readiness: legacy dialogs and guest entry points. */
+#startup-recovery[hidden] { display: none; }
+#startup-recovery {
+  position: fixed; z-index: 100000; left: 50%; bottom: max(24px, env(safe-area-inset-bottom));
+  transform: translateX(-50%); box-sizing: border-box; width: min(480px, calc(100vw - 32px));
+  padding: 24px; border: 1px solid #89b9ac; border-radius: 14px;
+  background: #102e39; color: #edf3ed; box-shadow: 0 12px 48px #0009;
+  font: 400 17px/1.5 system-ui, sans-serif;
+}
+#startup-retry { min-height: 48px; padding: 12px 18px; background: #c7e4ba; color: #13313a; border: 0; border-radius: 8px; font: inherit; cursor: pointer; }
+#bug-report-overlay .bug-report-card, #setup-overlay .setup-card {
+  box-sizing: border-box; width: min(580px, calc(100vw - 32px)); max-height: calc(100dvh - 32px);
+  overflow-y: auto; padding: 24px; border: 1px solid var(--popup-edge); border-radius: 14px;
+  background: var(--popup-surface); color: var(--popup-ink);
+}
+#bug-report-overlay .bug-tabs[hidden] { display: none; }
+#bug-report-overlay h2, #setup-overlay h2 { font: 650 28px/1.2 system-ui, sans-serif; letter-spacing: 0; color: var(--popup-ink); }
+#bug-report-overlay .bug-form-title, #setup-subtitle, #setup-rolls { font: 400 17px/1.5 system-ui, sans-serif; color: #c0d0d3; }
+#bug-report-overlay .bug-label { font: 500 17px/1.4 system-ui, sans-serif; color: var(--popup-ink); }
+#bug-report-overlay .menu-input { box-sizing: border-box; font: 400 17px/1.4 system-ui, sans-serif; min-height: 48px; background: #15333e; color: var(--popup-ink); border: 1px solid var(--popup-edge); }
+#bug-report-overlay button, #setup-actions button, :is(#deck-exit, #deck-save, #deck-random, #deck-load, #deck-confirm), #library-collection {
+  min-height: 48px; padding: 12px 18px; font: 600 17px/1.3 system-ui, sans-serif;
+  border: 1px solid var(--popup-edge); border-radius: 8px; background: #173944; color: var(--popup-ink);
+  text-transform: none; letter-spacing: 0;
+}
+#bug-report-overlay #bug-submit-btn, #deck-confirm, #library-collection { background: var(--popup-accent); color: #13313a; }
+#setup-overlay .setup-icon { display: none; }
+.library-guest-intro { box-sizing: border-box; width: min(560px, 100%); margin: auto; padding: 24px; text-align: center; }
+.library-guest-intro h3 { font: 650 28px/1.2 system-ui, sans-serif; }
+.library-guest-intro p { font: 400 18px/1.5 system-ui, sans-serif; }
+.practice-advanced { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--popup-edge); font: 400 17px/1.4 system-ui, sans-serif; }
+.practice-advanced summary { cursor: pointer; padding: 12px 0; }
+.practice-advanced button { width: 100%; }
+.library-guest-intro .muted { color: #c0d0d3; }
+#bug-report-overlay .bug-report-header { background: transparent; padding: 0 0 16px; }
+
+/* Practice: explain the tradeoff before asking for a deck. */
+#ai-setup-overlay .menu-card { width: min(680px, calc(100vw - 32px)); gap: 20px; }
+#ai-setup-overlay .menu-header { text-align: left; justify-content: flex-start; margin-bottom: 0; }
+#ai-setup-overlay .menu-header .muted { color: #c0d0d3; font: 400 16px/1.45 system-ui, sans-serif; margin: 10px 0 0; }
+#ai-setup-overlay .ai-difficulty-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+#ai-setup-overlay .btn-difficulty { text-align: left; align-items: flex-start; padding: 16px; gap: 8px; }
+#ai-setup-overlay .difficulty-name { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+#ai-setup-overlay .difficulty-name small { font: 500 11px/1.4 system-ui, sans-serif; color: #dce8ca; border: 1px solid #70866a; border-radius: 4px; padding: 2px 5px; }
+#ai-setup-overlay .difficulty-note { font: 400 15px/1.45 system-ui, sans-serif; margin: 0; }
+#ai-setup-overlay #ai-deck-section { margin: 0; }
+#ai-setup-overlay .ai-setup-section { margin: 0; }
+#ai-setup-overlay .deck-option-note { font: 400 14px/1.4 system-ui, sans-serif; text-align: left; }
+#ai-setup-overlay .practice-advanced { margin-top: 0; padding-top: 6px; }
+#ai-setup-overlay .menu-actions { margin-top: 0; }
+/* Guest library: real catalog previews, browsing first, account as a separate action. */
+.library-guest-intro { width: min(1000px, 100%); display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 28px; padding: 28px; text-align: left; }
+.library-eyebrow { font: 600 13px/1.4 system-ui, sans-serif; color: #c7d7c0; text-transform: uppercase; letter-spacing: .08em; }
+.library-guest-intro h3 { font-size: clamp(30px, 3vw, 42px); margin: 12px 0; }
+.library-guest-intro p { color: #c0d0d3; margin: 0 0 20px; }
+.library-guest-preview { display: flex; justify-content: center; gap: 12px; min-width: 0; }
+.library-guest-preview .deck-catalog-item { width: min(45%, 180px); min-width: 0; padding: 0; }
+.library-guest-preview .card { width: 100%; }
+.library-guest-account { grid-column: 1/-1; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 24px; background: #13313c; border: 1px solid #54727a; border-radius: 12px; }
+.library-guest-account h4 { margin: 0 0 8px; font: 600 21px/1.3 system-ui, sans-serif; }
+.library-guest-account p { margin: 0; font-size: 16px; }
+#library-login { flex: none; min-height: 48px; padding: 12px 24px; border: 1px solid var(--popup-edge); border-radius: 8px; background: transparent; color: var(--popup-ink); font: 600 17px/1.3 system-ui, sans-serif; }
+@media (max-width: 600px) {
+  #ai-setup-overlay .menu-card { padding: 20px; }
+  #ai-setup-overlay .ai-difficulty-options { grid-template-columns: 1fr; gap: 10px; }
+  #ai-setup-overlay .btn-difficulty { padding: 12px 14px; gap: 6px; }
+  .library-guest-intro { grid-template-columns: 1fr; padding: 20px 4px; gap: 24px; }
+  .library-guest-intro p { font-size: 17px; }
+  .library-guest-preview .deck-catalog-item { width: min(45%, 155px); }
+  .library-guest-account { flex-direction: column; align-items: stretch; gap: 16px; padding: 20px; }
+}
+.library-guest-preview figure { width: min(45%, 180px); margin: 0; min-width: 0; }
+.library-guest-preview figure .deck-catalog-item { width: 100%; }
+.library-guest-preview figcaption { margin-top: 10px; text-align: center; font: 600 14px/1.4 system-ui, sans-serif; color: #c0d0d3; }
+@media (max-width: 600px) { .library-guest-preview figure { width: min(45%, 155px); } }
+
+/* One shared two-seat setup for Practice and Spectate. */
+:is(#ai-setup-overlay, #ai-vs-ai-deck-overlay) .practice-deck-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 22px; }
+.practice-deck-seat { min-width: 0; padding: 16px; background: #15333e; border: 1px solid var(--popup-edge); border-radius: 10px; }
+.practice-deck-seat label { display: block; margin-bottom: 12px; font: 650 20px/1.3 system-ui, sans-serif; color: var(--popup-ink); }
+.practice-deck-seat select { box-sizing: border-box; width: 100%; min-height: 48px; padding: 10px 8px; border: 1px solid #78919a; border-radius: 7px; background: #0b2631; color: #edf3ed; font: 500 16px/1.3 system-ui, sans-serif; text-overflow: ellipsis; }
+:is(#ai-setup-overlay, #ai-vs-ai-deck-overlay) .deck-option-note { min-height: 20px; margin: 10px 0 0; font: 400 14px/1.45 system-ui, sans-serif; color: #c0d0d3; }
+.practice-saved-note { margin: 0; color: #c0d0d3; font: 400 14px/1.4 system-ui, sans-serif; }
+.practice-error { color: #ffbcb5; font: 400 16px/1.4 system-ui, sans-serif; }
+.practice-error:empty { display: none; }
+#ai-setup-overlay #ai-start-game, #ai-vs-ai-deck-overlay #ai-vs-ai-start { width: 100%; background: var(--popup-accent); color: #13313a; border-color: var(--popup-accent); }
+#ai-vs-ai-deck-overlay .menu-actions { display: flex; flex-direction: column; gap: 12px; }
+#ai-vs-ai-deck-overlay .menu-header .muted { font: 400 16px/1.4 system-ui, sans-serif; color: #c0d0d3; }
+@media(max-width: 600px) { :is(#ai-setup-overlay, #ai-vs-ai-deck-overlay) .practice-deck-pair { grid-template-columns: 1fr; gap: 10px; } .practice-deck-seat { padding: 12px; } }
+/* History cards open the same shared inspector as battlefield cards. */
+.history-tile[role="button"] { cursor: pointer; }
+.history-tile[role="button"]:focus-visible { outline: 3px solid var(--popup-accent); outline-offset: 2px; }

@@ -1,7 +1,7 @@
 import { mkdirSync } from 'node:fs';
 mkdirSync(new URL('../docs/ui-phase2/', import.meta.url), { recursive: true });
 // Real history capture operations, checked through the production panel.
-import { chromium, webkit } from '@playwright/test';
+import { chromium, webkit, expect } from '@playwright/test';
 import { spawn } from 'node:child_process';
 import assert from 'node:assert/strict';
 const root = new URL('..', import.meta.url).pathname;
@@ -18,7 +18,7 @@ const browser =
       });
 const failures = [];
 try {
-  const p = await browser.newPage();
+  const p = await browser.newPage({ hasTouch: true });
   await p.goto('http://127.0.0.1:8161');
   await p.waitForFunction(() => window.__qa);
   const ids = await p.evaluate(async () => {
@@ -39,6 +39,10 @@ try {
     s.activePlayerIndex = 0;
     const ids = {};
     const remember = (k) => (ids[k] = s.historyEvents.events.at(-1).id);
+    const leopard = card('mammal-predator-black-leopards');
+    s.players[0].field = [leopard, null, null];
+    resolveEffectResult(s, { buffCreature: { creature: leopard, atk: 1, hp: 1 } }, { playerIndex: 0 });
+    remember('ambush');
     const pred = card('fish-predator-tiger-shark'),
       a = card('fish-prey-cannibal-fish'),
       b = card('fish-prey-electric-eel');
@@ -81,8 +85,30 @@ try {
     await p.waitForTimeout(100);
     if (width < 768 && !(await p.locator('#history-panel').isVisible()))
       await p.locator('#field-history-btn').click();
-    for (const kind of ['single', 'multi', 'destroy', 'player', 'draw']) {
+    for (const kind of ['ambush', 'single', 'multi', 'destroy', 'player', 'draw']) {
       await p.locator(`[data-event-id="${ids[kind]}"]`).click();
+      if (kind === 'ambush') {
+        const card = p.locator('.history-detail .history-tile').first();
+        if (width < 768) await card.tap(); else await card.click();
+        await expect(p.locator('#card-hover-tooltip.visible')).toBeVisible();
+        await expect(p.locator('#card-hover-tooltip.visible')).toContainText('Ambush');
+        await expect(p.locator('#tooltip-info-boxes')).toContainText('When attacking');
+        await expect(p.locator('#card-hover-tooltip')).toHaveClass(/modern-inspector/);
+        expect(await p.locator('#card-hover-tooltip').evaluate((el) => el.inert)).toBe(false);
+        expect(await p.locator('#history-card-inspection').count()).toBe(0);
+        await expect(p.locator('#tooltip-info-boxes .card-box')).toHaveCount(0);
+        await p.screenshot({ path: `docs/ui-phase2/${width}-history-inspection.png` });
+        // The shared inspector keeps its existing card-face tap/click dismissal.
+        const preview = p.locator('#tooltip-card-preview .card').first();
+        if (width < 768) await preview.tap(); else await preview.click();
+        await expect(p.locator('#card-hover-tooltip.visible')).toBeHidden();
+        await expect(p.locator('#history-panel')).toBeVisible();
+        if (width < 768) await card.tap(); else await card.click();
+        await expect(p.locator('#card-hover-tooltip.visible')).toBeVisible();
+        await p.keyboard.press('Escape');
+        await expect(p.locator('#card-hover-tooltip.visible')).toBeHidden();
+        await expect(p.locator('#history-panel')).toBeVisible();
+      }
       const report = await p.locator('.history-detail').evaluate((el) => ({
         width: el.clientWidth,
         scroll: el.scrollWidth,
@@ -169,7 +195,7 @@ try {
   console.log(JSON.stringify({ failures }));
   assert.deepEqual(failures, []);
   console.log(
-    'PASS history detail: 25 viewport/event combinations, privacy, snapshots, overflow, scroll/reset'
+    'PASS history detail: 30 viewport/event combinations, privacy, snapshots, overflow, scroll/reset'
   );
 } finally {
   await browser.close();
