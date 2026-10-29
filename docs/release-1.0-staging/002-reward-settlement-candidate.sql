@@ -1,4 +1,4 @@
--- STAGING ONLY: requires001. Does not secure legacy public economy writes.
+-- Applied 2026-10-29; requires001. Does not secure legacy public economy writes.
 -- Trusted service MUST validate gameplay and permanent ownership before recording
 -- seats/results. No browser may choose winners, eligibility, balances or rewards.
 begin;

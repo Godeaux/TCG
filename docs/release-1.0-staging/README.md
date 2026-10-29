@@ -1,9 +1,22 @@
-# 1.0 foundation cutover — staged, NOT deployed
+# 1.0 foundation cutover — private DB installed, client cutover pending
 
 Updated 2026-10-29. Frontend PR #126 is independent of this package.
 This is a reviewable implementation boundary, not a claim of backend readiness.
-The SQL below is an additive staging candidate, not an executable full cutover.
-No production schema, accounts, or gameplay data were changed in this pass.
+The SQL below is additive infrastructure, not a completed game cutover.
+On October 29 the owner authorized applying it in the real Supabase project.
+Migrations 20261029142531 (foundation), 20261029142536 (reward settlement) and
+20261029142542 (pack opening) are now applied. The reviewed 241-card non-token
+catalog is seeded. Existing player balances, policies and client paths are unchanged.
+
+`verify-live-reward-smoke.sql` passed on real Supabase: service settlement retries,
+pack retries at zero balance, single debit, maximum rarity, insufficient funds,
+and anonymous/authenticated invocation refusal. Synthetic account/game fixtures
+were rolled back; post-check owners/reward receipts/opening receipts were all zero.
+This is real-database transaction evidence, not real-input gameplay or concurrency
+certification. Function ACLs separately confirm service-only EXECUTE. All ten new
+tables have RLS and no browser DML grants. The advisor reports ten expected
+RLS-with-no-policy notices: deny-by-default private tables, not missing browser access.
+Existing public-schema security findings remain open; do not call the project hardened.
 
 ## Current evidence
 
@@ -124,17 +137,39 @@ Private functions must not be wrapped in a permissive public RPC. Legacy public
 profile/inventory writes remain unchanged until the coordinated cutover.
 
 New accounts start at zero. Do not backfill unverified legacy owners or balances.
-Receipt balances are historical, not the current account balance. Pack opening
-still needs atomic debit/server-selected contents/inventory delivery with durable
-retry identity. Real multi-connection contention, authenticated REST refusal,
+Receipt balances are historical, not the current account balance. The pack-opening candidate below adds the corresponding debit/delivery transaction;
+server RNG and authenticated integration remain outstanding. Real multi-connection contention, authenticated REST refusal,
 validated service integration and replacement of legacy write grants/policies
 remain release gates. Reward eligibility (including concession farming) must be
 an explicit server policy, not inferred from exactly-once settlement.
 
+## Pack-opening candidate (October 29)
+
+`003-pack-opening-candidate.sql` adds a deployment-owned non-token card catalog,
+private best-rarity inventory and immutable opening receipts. `open_pack` uses the
+same account lock as reward settlement. One transaction debits one pack, grants
+five server-selected cards, preserves the better owned rarity and saves the
+receipt. A retry returns the original contents even at zero balance. An opening
+ID is scoped to its owner; another account cannot reuse its receipt.
+
+The server, not the browser, must generate draws using the approved distribution
+and authenticate profile ownership. The function only accepts service calls;
+**do not forward browser-supplied cards to it**. Catalog/shape/rank/guaranteed-rarity
+validation is not proof of fair randomness. Seed the catalog from reviewed
+production non-token IDs before use; SQL tests intentionally use fixture IDs.
+An empty catalog fails closed. Same opening ID means same user intent across
+retries; new IDs are distinct purchases, not free rerolls. Deliver cards durably
+before animation, and recover the receipt on reload rather than rolling again.
+
+Pack tests cover rejected/malformed draws, unknown cards, negative balance
+prevention, repeated receipts, stale lower-rarity updates, browser and service
+write refusal, and an injected failure that rolls back debit AND new inventory.
+This candidate does not yet change the live pack animation or grant endpoints.
+
 ## Local SQL validation (October 29)
 
 PGlite 0.5.13 is pinned as a development-only dependency. The normal check contract
-now runs both foundation and settlement SQL checks:
+now runs foundation, settlement and pack-opening SQL checks:
 
 ```sh
 npm ci
@@ -148,7 +183,7 @@ Settlement adds 65 checks for immutable results/receipts, retries, distinct seat
 and rematches, no-result refusal, injected receipt failure rolling back balance
 and stats, browser-role refusal and rollback preservation. Twenty queued requests
 use a single embedded connection; they are **not** a parallel contention test.
-The full staging-branch contract passes 5,247 unit tests plus these SQL checks.
+The pack candidate adds 62 SQL checks. The staging-branch unit baseline is 5,247 tests.
 Minimal FK fixtures do not certify live Supabase policy, email or service behavior.
 
 For an existing shared node_modules checkout, an alternate installed PGlite can
@@ -158,7 +193,8 @@ be selected without mutating that shared dependency directory:
 TCG_PGLITE_MODULE=/tmp/tcg-foundation-qa/node_modules/@electric-sql/pglite/dist/index.js npm run check:db-staging
 ```
 
-Empty-only teardown runs `002-rollback-empty-rewards.sql` before the foundation
+Empty-only teardown runs `003-rollback-empty-packs.sql`, then
+`002-rollback-empty-rewards.sql` before the foundation
 rollback. The reward rollback locks all reward tables before checking emptiness;
 it refuses to remove any populated ledger. Never use test fixture DELETEs as
 production cleanup or roll back to client-writable rewards.

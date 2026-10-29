@@ -1,4 +1,4 @@
--- STAGING CANDIDATE ONLY. Validated in isolated PGlite; NOT applied to Supabase.
+-- Applied as additive private infrastructure 2026-10-29; client cutover pending.
 -- No existing profiles are reassigned. No legacy policies are changed here.
 -- This is infrastructure, not an authorization/game-validation implementation.
 begin;
