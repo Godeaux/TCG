@@ -141,7 +141,14 @@ try {
   await page.locator('#targeting-banner').waitFor({ state: 'visible' });
   await page.locator('#field-history-btn').click();
   assert.equal(await page.locator('#history-panel').getAttribute('aria-modal'), null);
-  assert.equal(await page.evaluate(() => document.querySelectorAll('[inert]').length), 0);
+  // The hidden player-experience screen is intentionally inert. History must
+  // release everything else, and must not accidentally reactivate that screen.
+  assert.deepEqual(
+    await page.evaluate(() => [...document.querySelectorAll('[inert]')].map(el => ({
+      id: el.id, hidden: el.getAttribute('aria-hidden'), active: el.classList.contains('active')
+    }))),
+    [{ id: 'player-experience', hidden: 'true', active: false }]
+  );
   await page.locator('.opponent-field .field-slot .card').first().click();
   await page.locator('#targeting-banner').waitFor({ state: 'detached' });
   results.push({

@@ -1,0 +1,69 @@
+{
+  "rows": [
+    {
+      "rarity": "common",
+      "ratio": 0.7143054595715272,
+      "art": 0.45997338562823925,
+      "seal": "common rarity",
+      "marks": 1,
+      "foil": "0",
+      "ink": "rgb(237, 243, 237)",
+      "animation": "none",
+      "inside": true,
+      "pointer": "none"
+    },
+    {
+      "rarity": "uncommon",
+      "ratio": 0.7143054595715272,
+      "art": 0.45997338562823925,
+      "seal": "uncommon rarity",
+      "marks": 2,
+      "foil": "0.2",
+      "ink": "rgb(237, 243, 237)",
+      "animation": "none",
+      "inside": true,
+      "pointer": "none"
+    },
+    {
+      "rarity": "rare",
+      "ratio": 0.7143054595715272,
+      "art": 0.45997338562823925,
+      "seal": "rare rarity",
+      "marks": 3,
+      "foil": "0.5",
+      "ink": "rgb(237, 243, 237)",
+      "animation": "none",
+      "inside": true,
+      "pointer": "none"
+    },
+    {
+      "rarity": "legendary",
+      "ratio": 0.7143054595715272,
+      "art": 0.45997338562823925,
+      "seal": "legendary rarity",
+      "marks": 4,
+      "foil": "0.65",
+      "ink": "rgb(237, 243, 237)",
+      "animation": "none",
+      "inside": true,
+      "pointer": "none"
+    },
+    {
+      "rarity": "pristine",
+      "ratio": 0.7143054595715272,
+      "art": 0.45997338562823925,
+      "seal": "pristine rarity",
+      "marks": 5,
+      "foil": "0.8",
+      "ink": "rgb(25, 34, 55)",
+      "animation": "none",
+      "inside": true,
+      "pointer": "none"
+    }
+  ],
+  "noLeak": true,
+  "noOwnedSeal": true,
+  "unchanged": true,
+  "selectedBorder": "rgb(212, 168, 83)",
+  "attackAnimation": "can-attack-pulse"
+}

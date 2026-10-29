@@ -236,7 +236,7 @@ function footer(message = '') {
 }
 function tile(card, rarity, chosen = false) {
   const color = RARITY_COLORS[rarity] || '#54727a';
-  return `<button type="button" class="pe-tile ${chosen ? 'selected' : ''} ${rarity ? '' : 'unowned'}" data-card="${esc(card.id)}" aria-label="Inspect ${esc(card.name)}" style="--rarity:${color}"><span class="pe-card" data-render="${esc(card.id)}"></span><span class="pe-rarity"><i></i>${esc(RARITY_LABELS[rarity] || 'Not collected')}</span></button>`;
+  return `<button type="button" class="pe-tile ${chosen ? 'selected' : ''} ${rarity ? '' : 'unowned'}" data-card="${esc(card.id)}" aria-label="Inspect ${esc(card.name)}" style="--rarity:${color}"><span class="pe-card" data-render="${esc(card.id)}" data-finish="${esc(rarity || '')}"></span><span class="pe-rarity"><i></i>${esc(RARITY_LABELS[rarity] || 'Not collected')}</span></button>`;
 }
 function options(values, chosen) {
   return values
@@ -288,7 +288,7 @@ function collection() {
   ${inspected && selected ? `<section class="pe-mobile-inspection"><div class="pe-inspection-top">${btn('close-inspect', '← Collection', 'pe-quiet')}<span>${esc(RARITY_LABELS[owned.get(selected.id)] || 'Not collected')}</span></div>${inspector(selected, owned.get(selected.id))}<div class="pe-inspect-nav">${btn('prev-card', '← Previous', 'pe-quiet')}${btn('next-card', 'Next →', 'pe-quiet')}</div></section>` : ''}`;
 }
 function inspector(card, rarity) {
-  return `<div class="pe-full-card" style="--rarity:${RARITY_COLORS[rarity] || '#54727a'}" data-render="${esc(card.id)}"></div><div class="pe-card-detail"><h2>${esc(card.name)}</h2><p>Best owned rarity · ${esc(RARITY_LABELS[rarity] || 'Not collected')}</p><p>${esc(card.flavorText || '')}</p></div>`;
+  return `<div class="pe-full-card" style="--rarity:${RARITY_COLORS[rarity] || '#54727a'}" data-render="${esc(card.id)}" data-finish="${esc(rarity || '')}"></div><div class="pe-card-detail"><h2>${esc(card.name)}</h2><p>Best owned rarity · ${esc(RARITY_LABELS[rarity] || 'Not collected')}</p><p>${esc(card.flavorText || '')}</p></div>`;
 }
 function relation(id) {
   return [...friends.accepted, ...friends.incoming, ...friends.outgoing].find(
@@ -359,7 +359,12 @@ function draw() {
   page.querySelectorAll('[data-render]').forEach((el) => {
     const card = catalog().find((c) => c.id === el.dataset.render);
     if (!card) return;
-    el.append(renderCard(card, { showEffectSummary: true, useBaseStats: true }));
+    el.append(
+      renderCard(
+        { ...card, rarity: el.dataset.finish || undefined },
+        { showEffectSummary: true, useBaseStats: true }
+      )
+    );
   });
   const name = page.querySelector('[data-styled-name]');
   if (name)

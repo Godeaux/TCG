@@ -27,6 +27,16 @@ try {
   await p.locator('#pack-reveal-all').click();
   await expect(p.locator('#pack-done')).toBeVisible();
   await p.waitForTimeout(1800);
+  const finishes = await p.locator('.pack-card').evaluateAll(wrappers => wrappers.map(wrapper => {
+    const card = wrapper.querySelector('.canonical-card');
+    return { awarded: wrapper.dataset.rarity, rendered: card?.dataset.rarity,
+      seal: card?.querySelector('.card-rarity-seal')?.getAttribute('aria-label') };
+  }));
+  expect(finishes).toHaveLength(5);
+  for (const finish of finishes) {
+    expect(finish.rendered).toBe(finish.awarded);
+    expect(finish.seal).toBe(`${finish.awarded} rarity`);
+  }
   for (const [width, height] of [
     [320, 568],
     [375, 600],

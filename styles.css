@@ -10577,7 +10577,6 @@ select.menu-input option {
 .card.rarity-legendary {
   border-color: #fb923c;
   box-shadow: 0 0 12px rgba(251, 146, 60, 0.4);
-  animation: card-legendary-pulse 2s ease-in-out infinite;
 }
 
 @keyframes card-legendary-pulse {
@@ -10595,7 +10594,6 @@ select.menu-input option {
   box-shadow:
     0 0 15px rgba(255, 255, 255, 0.3),
     0 0 30px rgba(192, 132, 252, 0.15);
-  animation: card-pristine-border 3s linear infinite;
 }
 
 @keyframes card-pristine-border {
@@ -11613,7 +11611,6 @@ select.menu-input option {
 .collection-card.rarity-legendary {
   border-color: #fb923c;
   box-shadow: 0 0 16px rgba(251, 146, 60, 0.5);
-  animation: legendary-border-pulse 2s ease-in-out infinite;
 }
 
 @keyframes legendary-border-pulse {
@@ -11631,7 +11628,6 @@ select.menu-input option {
   box-shadow:
     0 0 20px rgba(255, 255, 255, 0.4),
     0 0 40px rgba(192, 132, 252, 0.2);
-  animation: pristine-border 3s linear infinite;
 }
 
 @keyframes pristine-border {

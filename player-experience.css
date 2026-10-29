@@ -243,8 +243,6 @@
   width: 100% !important;
   max-width: none !important;
   margin: 0 !important;
-  border: 2px solid var(--rarity) !important;
-  border-radius: 7px !important;
   transform: none !important;
   box-shadow: 0 4px 12px #0003 !important;
 }
@@ -307,8 +305,6 @@
 .pe-full-card .card.canonical-card {
   width: 100% !important;
   max-width: 300px !important;
-  border: 2px solid var(--rarity) !important;
-  border-radius: 9px !important;
   transform: none !important;
   box-shadow: 0 10px 24px #0004 !important;
 }

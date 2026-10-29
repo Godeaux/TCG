@@ -451,6 +451,7 @@ export const renderCardInnerHtml = (
     <div class="card-name${nameRarityClass}">${renderNameHtml(card.name)}</div>
     <div class="card-image-container">
       ${imageHtml}
+      <span class="card-opal-foil" aria-hidden="true"></span>
     </div>
     <div class="card-content-area">
       <div class="card-stats-row${!hasNut && stats.length > 0 ? ' two-stats' : ''}">${renderStatsHtml(stats)}</div>
@@ -746,6 +747,25 @@ export const renderCard = (card, options = {}) => {
   }
 
   cardElement.appendChild(inner);
+
+  // Cosmetic only: unknown/unowned cards do not claim a collectible rarity.
+  const rarityTier = ['common', 'uncommon', 'rare', 'legendary', 'pristine'].indexOf(card.rarity);
+  if (rarityTier >= 0) {
+    const edge = document.createElement('span');
+    edge.className = 'card-opal-edge';
+    edge.setAttribute('aria-hidden', 'true');
+    cardElement.appendChild(edge);
+    const seal = document.createElement('span');
+    seal.className = 'card-rarity-seal';
+    seal.setAttribute('role', 'img');
+    seal.setAttribute('aria-label', `${card.rarity} rarity`);
+    const marks = Array.from(
+      { length: rarityTier + 1 },
+      (_, i) => `<circle cx="${12 + (i - rarityTier / 2) * 4}" cy="19" r=".8" fill="currentColor"/>`
+    ).join('');
+    seal.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 1 10 6v10l-10 6-10-6V7Zm0 0v22M2 7l20 10M22 7 2 17"/>${marks}</svg>`;
+    cardElement.appendChild(seal);
+  }
 
   // Add drag and drop functionality if requested
   if (draggable && !showBack && card.instanceId) {
