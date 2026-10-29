@@ -1,6 +1,6 @@
 # 1.0 foundation cutover — staged, NOT deployed
 
-Updated 2026-10-28. Frontend PR #126 is independent of this package.
+Updated 2026-10-29. Frontend PR #126 is independent of this package.
 This is a reviewable implementation boundary, not a claim of backend readiness.
 The SQL below is an additive staging candidate, not an executable full cutover.
 No production schema, accounts, or gameplay data were changed in this pass.
@@ -108,21 +108,60 @@ to online rematch broadcasts. Large-art responsive derivatives and check-depende
 Pages deployment remain follow-ups. Missing artwork/audio are owner-managed and
 not release blockers. Pristine animation stays deferred.
 
-## Local SQL validation (October 28)
+## Reward settlement candidate (October 29)
 
-PGlite 0.5.13 (PostgreSQL WASM) passed: candidate applies, 12 browser-role
-read/delete attempts refused, service writes succeed, duplicate action refused,
-populated rollback refuses and retains owner/game rows, empty rollback succeeds.
-This exercises SQL semantics with minimal FK dependencies, NOT the live policies,
-provider email, complete schema, authoritative reducer, or atomic commit service.
+`002-reward-settlement-candidate.sql` adds private match seats, immutable validated
+results, economy accounts and reward receipts. `settle_reward` locks the account
+and credits balance, game stats and the receipt in one transaction. Replaying a
+completed match returns the same receipt; a rematch requires a fresh match ID.
+Browser roles cannot call it or access its tables. The service can insert results,
+but cannot rewrite results, balances or receipts directly.
 
-Reproduce without adding a game dependency:
+This is **not a live exploit fix yet**. The trusted service must independently
+validate terminal gameplay and eligibility before recording results. The accepted
+revision FK proves an action exists, not that a supplied winner is correct.
+Private functions must not be wrapped in a permissive public RPC. Legacy public
+profile/inventory writes remain unchanged until the coordinated cutover.
+
+New accounts start at zero. Do not backfill unverified legacy owners or balances.
+Receipt balances are historical, not the current account balance. Pack opening
+still needs atomic debit/server-selected contents/inventory delivery with durable
+retry identity. Real multi-connection contention, authenticated REST refusal,
+validated service integration and replacement of legacy write grants/policies
+remain release gates. Reward eligibility (including concession farming) must be
+an explicit server policy, not inferred from exactly-once settlement.
+
+## Local SQL validation (October 29)
+
+PGlite 0.5.13 is pinned as a development-only dependency. The normal check contract
+now runs both foundation and settlement SQL checks:
 
 ```sh
-npm install --prefix /tmp/tcg-foundation-qa --no-audit --no-fund @electric-sql/pglite@0.5.13
-TCG_PGLITE_MODULE=/tmp/tcg-foundation-qa/node_modules/@electric-sql/pglite/dist/index.js \
-  node docs/release-1.0-staging/validate-foundation.mjs
+npm ci
+npm run check:db-staging
+npm run check
 ```
+
+Foundation checks cover candidate application, 12 browser-role read/delete
+refusals, service writes, duplicate actions and safe empty-only rollback.
+Settlement adds 65 checks for immutable results/receipts, retries, distinct seats
+and rematches, no-result refusal, injected receipt failure rolling back balance
+and stats, browser-role refusal and rollback preservation. Twenty queued requests
+use a single embedded connection; they are **not** a parallel contention test.
+The full staging-branch contract passes 5,247 unit tests plus these SQL checks.
+Minimal FK fixtures do not certify live Supabase policy, email or service behavior.
+
+For an existing shared node_modules checkout, an alternate installed PGlite can
+be selected without mutating that shared dependency directory:
+
+```sh
+TCG_PGLITE_MODULE=/tmp/tcg-foundation-qa/node_modules/@electric-sql/pglite/dist/index.js npm run check:db-staging
+```
+
+Empty-only teardown runs `002-rollback-empty-rewards.sql` before the foundation
+rollback. The reward rollback locks all reward tables before checking emptiness;
+it refuses to remove any populated ledger. Never use test fixture DELETEs as
+production cleanup or roll back to client-writable rewards.
 
 ## Email delivery prerequisite
 

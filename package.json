@@ -14,10 +14,11 @@
     "format": "prettier --write \"js/**/*.js\" \"tests/**/*.js\"",
     "format:check": "prettier --check \"js/**/*.js\" \"tests/**/*.js\"",
     "prepare": "husky",
-    "check": "npm run check:art && npm run check:assets && npm run lint && npm run format:check && npm test",
+    "check": "npm run check:art && npm run check:assets && npm run lint && npm run format:check && npm test && npm run check:db-staging",
     "version:assets": "node scripts/version-assets.mjs",
     "check:assets": "node scripts/version-assets.mjs --check",
-    "check:art": "node scripts/build-card-art-index.mjs --check"
+    "check:art": "node scripts/build-card-art-index.mjs --check",
+    "check:db-staging": "node docs/release-1.0-staging/validate-foundation.mjs && node docs/release-1.0-staging/validate-reward-settlement.mjs"
   },
   "repository": {
     "type": "git",
@@ -40,6 +41,7 @@
     ]
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.13",
     "@eslint/js": "^9.39.2",
     "@playwright/test": "^1.58.2",
     "@vitest/coverage-v8": "^4.0.17",
