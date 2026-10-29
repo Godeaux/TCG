@@ -47,8 +47,17 @@ try {
     expect(logBox.x + logBox.width).toBeLessThanOrEqual(width);
     await changelog.click();
     await expect(p.locator('#changelog-overlay')).toHaveClass(/active/);
-    await expect(p.locator('#changelog-content li')).toHaveCount(3);
-    await expect(p.locator('#changelog-content h2')).toContainText('v0.19');
+    await expect(p.locator('#changelog-content h2').first()).toContainText('v0.19');
+    await expect(p.locator('#changelog-content')).toContainText('v0.11');
+    const sections = await p.locator('#changelog-content h2').evaluateAll((headings) => headings.map((heading) => ({
+      title: heading.textContent,
+      bullets: heading.nextElementSibling?.querySelectorAll('li').length || 0,
+    })));
+    expect(sections.length).toBeGreaterThanOrEqual(9);
+    for (const section of sections) {
+      expect(section.bullets).toBeGreaterThan(0);
+      expect(section.bullets).toBeLessThanOrEqual(3);
+    }
     await p.locator('#changelog-back').click();
     await expect(p.locator('#menu-overlay')).toHaveClass(/active/);
     const tip = await p.locator('#menu-splash-text').boundingBox();
