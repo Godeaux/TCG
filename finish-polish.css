@@ -820,7 +820,7 @@ body:has(.card-hover-tooltip.visible.deck-inspector)::after {
 #menu-overlay .menu-header h2 { white-space: nowrap; }
 @media(max-width: 767px) {
   #menu-overlay .menu-header { gap: 6px; }
-  #menu-overlay .menu-header h2 { font-size: clamp(14px, calc(10vw - 18px), 22px); letter-spacing: .4px; }
+  #menu-overlay .menu-header h2 { font-size: clamp(13px, calc(7vw - 10px), 19px); letter-spacing: 0; }
   #menu-overlay #settings-button-container { gap: 6px; }
   #menu-overlay .settings-fab { min-width: 72px; padding-inline: 8px; }
 }
