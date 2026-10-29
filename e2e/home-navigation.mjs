@@ -12,6 +12,7 @@ const browser = await chromium.launch(
 await fs.mkdir('docs/home-navigation', { recursive: true });
 try {
   const p = await browser.newPage();
+  p.setDefaultTimeout(15000);
   const errors = [];
   p.on('pageerror', (e) => errors.push(e.message));
   for (const [width, height] of [
@@ -21,6 +22,7 @@ try {
     [320, 568],
   ]) {
     await p.setViewportSize({ width, height });
+    await p.mouse.move(0, 0);
     await p.goto(process.env.TCG_BASE || 'http://127.0.0.1:8174');
     await expect(p.locator('#settings-button-container')).toHaveAttribute('data-location', 'home');
     await expect(p.locator('.menu-actions-grid button:visible')).toHaveCount(4);
@@ -40,7 +42,7 @@ try {
     expect(height - help.y - help.height).toBeLessThanOrEqual(35);
     const tip = await p.locator('#menu-splash-text').boundingBox();
     expect(tip.y + tip.height).toBeLessThanOrEqual(help.y);
-    await p.screenshot({ path: `docs/home-navigation/${width}-home.png` });
+    await p.screenshot({ animations: 'disabled', path: `docs/home-navigation/${width}-home.png` });
     await p.locator('#menu-profile').click();
     await expect(p.locator('#login-overlay')).toHaveClass(/active/);
     expect(
@@ -51,7 +53,13 @@ try {
     await p.reload();
     await p.locator('#menu-other').click();
     await expect(p.locator('#ai-setup-overlay')).toHaveClass(/active/);
-    await p.locator('#ai-setup-back').click();
+    await expect(p.locator('#ai-vs-ai')).toBeHidden();
+    await p.locator('.practice-advanced summary').click();
+    await expect(p.locator('#ai-vs-ai')).toBeVisible();
+    await p.screenshot({ animations: 'disabled', path: `docs/home-navigation/${width}-practice.png` });
+    await p.locator('#ai-vs-ai').click();
+    await expect(p.locator('#ai-vs-ai-deck-overlay')).toHaveClass(/active/);
+    await p.reload();
     await p.locator('#settings-fab').click();
     await expect(p.locator('#settings-menu-view')).toHaveCount(0);
     await expect(p.locator('#other-credits')).toBeVisible();
@@ -59,7 +67,7 @@ try {
     expect(box.x).toBeGreaterThanOrEqual(0);
     expect(box.y + box.height).toBeLessThanOrEqual(height);
     await p.waitForTimeout(350);
-    await p.screenshot({ path: `docs/home-navigation/${width}-menu.png` });
+    await p.screenshot({ animations: 'disabled', path: `docs/home-navigation/${width}-menu.png` });
     await p.keyboard.press('Escape');
     await expect(p.locator('#settings-fab')).toBeFocused();
     await p.locator('#settings-fab').click();
@@ -78,6 +86,7 @@ try {
     await p.locator('#settings-menu-report').click();
     await expect(p.locator('#bug-title-input')).toBeVisible();
     await expect(p.locator('#bug-tab-list')).toHaveCount(0);
+    await p.screenshot({ animations: 'disabled', path: `docs/home-navigation/${width}-report.png` });
     await p.locator('#bug-overlay-close').click();
     await p.locator('#other-multiplayer').click();
     await expect(p.locator('#player-experience h1')).toHaveText('Play with Friends');
@@ -92,8 +101,15 @@ try {
     await p.locator('#menu-decks').click();
     await expect(p.locator('.deck-catalog-home')).toBeVisible();
     await expect(p.locator('#menu-profile')).toBeHidden();
+    await expect(p.locator('.library-guest-intro')).toBeVisible();
+    await expect(p.locator('#deck-select-overlay')).toHaveCSS('opacity', '1');
+    await expect(p.locator('#menu-overlay')).toHaveCSS('opacity', '0');
+    await p.screenshot({ path: `docs/home-navigation/${width}-library.png` });
     await p.locator('#settings-fab').click();
     await expect(p.locator('#other-credits')).toBeHidden();
+    await p.keyboard.press('Escape');
+    await p.locator('#library-collection').click();
+    await expect(p.locator('#player-experience h1')).toHaveText('My Cards');
     console.log(
       `PASS ${width}x${height}: home composition, login, practice, decks, credits, tutorial, sound/settings, bug report and Escape`
     );

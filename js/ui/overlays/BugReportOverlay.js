@@ -41,18 +41,18 @@ let currentCallbacks = {};
 const createOverlayHTML = () => `
   <div class="overlay-content bug-report-card">
     <div class="bug-report-header">
-      <h2>Bug Tracker</h2>
+      <h2>Report a bug</h2>
       <button class="bug-overlay-close" id="bug-overlay-close" aria-label="Close">&#10005;</button>
     </div>
 
     <!-- Tabs -->
-    <div class="bug-tabs">
+    <div class="bug-tabs" hidden>
       <button class="bug-tab active" id="bug-tab-report">Report Bug</button>
     </div>
 
     <!-- Report Bug Tab -->
     <div class="bug-report-content" id="bug-report-content">
-      <h3 class="bug-form-title" id="bug-form-title">Report a Bug</h3>
+      <p class="bug-form-title" id="bug-form-title">Tell us what happened and how to reproduce it.</p>
       <div class="bug-form">
         <label class="bug-label" for="bug-title-input">Title *</label>
         <input
@@ -396,7 +396,8 @@ const stopEditing = () => {
   if (elements.titleInput) elements.titleInput.value = '';
   if (elements.descriptionInput) elements.descriptionInput.value = '';
   if (elements.categorySelect) elements.categorySelect.value = 'gameplay';
-  if (elements.formTitle) elements.formTitle.textContent = 'Report a Bug';
+  if (elements.formTitle)
+    elements.formTitle.textContent = 'Tell us what happened and how to reproduce it.';
   if (elements.submitBtn) elements.submitBtn.textContent = 'Submit Report';
   if (elements.cancelBtn) elements.cancelBtn.style.display = 'none';
 

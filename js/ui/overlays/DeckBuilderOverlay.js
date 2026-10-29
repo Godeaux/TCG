@@ -1369,27 +1369,22 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
 
       // Use card grid for deck management
       if (!state.menu.profile) {
-        // Not logged in
-        const loginMsg = document.createElement('div');
-        loginMsg.className = 'deck-card deck-card--unknown';
-        loginMsg.innerHTML = `
-          <div class="deck-card-type">&nbsp;</div>
-          <div class="deck-card-icon">🔐</div>
-          <div class="deck-card-name">Log In</div>
-          <div class="deck-card-count">Log in to manage decks</div>
+        const intro = document.createElement('section');
+        intro.className = 'library-guest-intro';
+        intro.innerHTML = `
+          <h3>Explore the Food Chain</h3>
+          <p>Browse every card and discover creatures, spells, and traps. No account needed.</p>
+          <p class="muted">Sign in from Home to save decks and track your collection. You can still play Practice as a guest.</p>
         `;
-        const grid = document.createElement('div');
-        grid.className = 'deck-card-grid';
-        grid.appendChild(loginMsg);
-        deckSelectGrid.appendChild(grid);
+        deckSelectGrid.appendChild(intro);
         const browse = document.createElement('button');
         browse.id = 'library-collection';
-        browse.textContent = 'Browse collection';
+        browse.textContent = 'Browse all cards';
         browse.onclick = () => {
           state.menu.stage = 'collection';
           callbacks.onUpdate?.();
         };
-        deckSelectGrid.prepend(browse);
+        intro.appendChild(browse);
       } else {
         ensureDecksLoaded(state);
         const decks = state.menu.decks ?? [];
@@ -2581,7 +2576,12 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
   renderDeckLoadPanel(state, playerIndex, callbacks);
 
   deckConfirm.disabled = !(hasValidCount && preyRuleValid);
-  deckConfirm.textContent = isPlayerOne ? 'Confirm Player 1 Deck' : 'Confirm Player 2 Deck';
+  deckConfirm.textContent =
+    isAIMode(state) || isOnlineMode(state)
+      ? 'Confirm your deck'
+      : isPlayerOne
+        ? 'Confirm Player 1 Deck'
+        : 'Confirm Player 2 Deck';
   deckConfirm.classList.remove('hidden');
   deckConfirm.onclick = () => {
     if (!hasValidCount || !preyRuleValid) {

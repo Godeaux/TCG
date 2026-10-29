@@ -381,7 +381,7 @@ export const showVictoryScreen = (winner, stats = {}, options = {}) => {
     } else if (options.stalemateWin) {
       winnerName.textContent = `${winner?.name || 'Unknown'} wins by HP!`;
     } else {
-      winnerName.textContent = winner?.name || 'Unknown Champion';
+      winnerName.textContent = `${winner?.name || 'Unknown player'} won the match`;
     }
   }
 
