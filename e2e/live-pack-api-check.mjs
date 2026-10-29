@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 if(process.env.TCG_LIVE_PACK_QA!=='1'||!process.env.TCG_QA_SESSION)throw Error('Explicit live QA fixture required');
 const c=JSON.parse(await readFile(process.env.TCG_QA_SESSION,'utf8'));
 const call=async(name,body={})=>{
-  const r=await fetch(`${c.base}/rest/v1/rpc/${name}`,{method:'POST',headers:{apikey:c.key,Authorization:`Bearer ${c.token}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const r=await fetch(`${c.base}/rest/v1/rpc/${name}`,{method:'POST',headers:{apikey:c.key,Authorization:`Bearer ${c.token}`,'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(15000)});
   return {status:r.status,data:await r.json()};
 };
 const before=await call('tcg_economy');

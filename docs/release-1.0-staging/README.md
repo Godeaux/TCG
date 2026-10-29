@@ -67,7 +67,10 @@ was previously a callable reward exploit. Existing public-schema findings remain
 `006-stat-view-permissions.sql` also makes the two legacy aggregate views respect
 base-table RLS. A live synthetic before/after test reproduced cross-user reads
 and then verified owner access with unrelated-user refusal; fixtures rolled back.
-The current game does not query these views. See `HARDENING-TRACKER.md` for the
+The current game does not query these views. Migration `20261029144749` records
+this change. Migration `20261029145812` makes private owner bindings and accepted
+actions append-only for the gameplay service (INSERT retained; UPDATE/DELETE/
+TRUNCATE denied); six service-refusal checks run in the foundation suite. See `HARDENING-TRACKER.md` for the
 remaining work and the explicit no-wipe-until-final-cutover direction.
 
 The shared local node_modules lacked PGlite before this change (5,247 unit tests
