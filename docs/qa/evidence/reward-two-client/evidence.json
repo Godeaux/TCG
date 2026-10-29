@@ -1,0 +1,95 @@
+{
+  "evidence": {
+    "tier": "two production browser clients; production ui.js/lobbyManager callbacks; shared Node-side ledger replaces only getSupabaseApi; supabase.co aborted",
+    "expected": "one server pack permits one open + one grant total across clients",
+    "initialServerPacks": 1,
+    "clientA": {
+      "opened": true,
+      "revealed": 5,
+      "localPacks": 0
+    },
+    "ledgerAfterA": {
+      "packs": 0,
+      "grantCount": 1
+    },
+    "clientB": {
+      "opened": true,
+      "revealed": 5,
+      "localPacks": 0
+    },
+    "finalLedger": {
+      "packs": 0,
+      "grantCount": 2,
+      "totalCardsGranted": 10,
+      "packWrites": [
+        0,
+        0
+      ]
+    }
+  },
+  "ledger": {
+    "packs": 0,
+    "packWrites": [
+      {
+        "packs": 0,
+        "at": 1793284594906
+      },
+      {
+        "packs": 0,
+        "at": 1793284600367
+      }
+    ],
+    "grants": [
+      {
+        "count": 5,
+        "cards": [
+          {
+            "cardId": "reptile-predator-boa-constrictor",
+            "rarity": "common"
+          },
+          {
+            "cardId": "bird-prey-pileated-woodpecker",
+            "rarity": "common"
+          },
+          {
+            "cardId": "amphibian-predator-cane-toad",
+            "rarity": "common"
+          },
+          {
+            "cardId": "bird-predator-red-tailed-hawk",
+            "rarity": "common"
+          },
+          {
+            "cardId": "mammal-prey-hart",
+            "rarity": "uncommon"
+          }
+        ]
+      },
+      {
+        "count": 5,
+        "cards": [
+          {
+            "cardId": "bird-predator-pacific-sea-eagle",
+            "rarity": "common"
+          },
+          {
+            "cardId": "bird-spell-swan-song",
+            "rarity": "common"
+          },
+          {
+            "cardId": "amphibian-predator-american-bullfrogs",
+            "rarity": "common"
+          },
+          {
+            "cardId": "mammal-spell-milk",
+            "rarity": "common"
+          },
+          {
+            "cardId": "amphibian-predator-lake-junin-giant-frog",
+            "rarity": "uncommon"
+          }
+        ]
+      }
+    ]
+  }
+}
