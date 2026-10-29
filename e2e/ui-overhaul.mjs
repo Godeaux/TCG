@@ -36,7 +36,8 @@ async function toBoard(ctxOpts, tag) {
   await page.locator('#menu-other').click();
   await page.waitForTimeout(300);
   await page.waitForTimeout(200);
-  await page.locator('#ai-deck-random').click();
+  await page.locator('#practice-player-deck').selectOption('build');
+  await page.locator('#ai-start-game').click();
   await page.waitForTimeout(1200);
   await page.locator('.deck-select-panel--fish .deck-name').click();
   await page.waitForTimeout(800);

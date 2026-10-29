@@ -14,6 +14,12 @@
  */
 
 import { deckCatalogs, getCardDefinitionById } from '../../cards/index.js';
+import {
+  buildRandomDeck,
+  resolvePracticeDeck,
+  installPracticeDeck,
+  preparePracticeDecks,
+} from '../../game/practiceDecks.js';
 import { logMessage } from '../../state/gameState.js';
 import {
   buildLobbySyncPayload,
@@ -607,18 +613,6 @@ const loadSupabaseApi = async (state) => {
 };
 
 /**
- * Shuffle an array
- */
-const shuffle = (items) => {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-};
-
-/**
  * Clone a deck catalog
  */
 const cloneDeckCatalog = (deck) => deck.map((card) => ({ ...card }));
@@ -685,34 +679,6 @@ const initCatalogBuilder = (builder) => {
 };
 
 /**
- * Build a random deck from available cards
- */
-const buildRandomDeck = ({ available, selected, catalogOrder }) => {
-  available.push(...selected.splice(0, selected.length));
-  available.sort((a, b) => catalogOrder.indexOf(a.id) - catalogOrder.indexOf(b.id));
-
-  const picks = [];
-  const takeCards = (filterFn, count) => {
-    const candidates = shuffle(available.filter(filterFn)).slice(0, count);
-    candidates.forEach((card) => {
-      const index = available.findIndex((entry) => entry.id === card.id);
-      if (index >= 0) {
-        available.splice(index, 1);
-      }
-      picks.push(card);
-    });
-  };
-
-  takeCards((card) => card.type === 'Predator', 6);
-  takeCards((card) => card.type === 'Prey', 7);
-  takeCards((card) => card.type === 'Spell', 4);
-  takeCards((card) => card.type === 'Free Spell', 2);
-  takeCards((card) => card.type === 'Trap', 1);
-
-  selected.push(...picks);
-};
-
-/**
  * Generate a random deck for a player
  * Uses one of the available deck catalogs
  * @param {Object} state - Game state
@@ -755,7 +721,12 @@ const generateDeckForPlayer = (state, playerIndex, specificDeckId = null) => {
  * Generate a random deck for AI player (backwards compatibility)
  */
 const generateAIDeck = (state) => {
-  return generateDeckForPlayer(state, 1);
+  if (state.menu.practiceDecks && state.deckBuilder.selections[1]?.length === 20) {
+    return state.deckBuilder.selections[1];
+  }
+  const resolved = resolvePracticeDeck(state, state.menu.practiceDecks?.opponent ?? 'random');
+  installPracticeDeck(state, 1, resolved);
+  return resolved.cards;
 };
 
 /**
@@ -765,13 +736,8 @@ export const generateAIvsAIDecks = (state) => {
   const deck1Type = state.menu?.aiVsAiDecks?.player1 || state.aiVsAi?.deck1Type;
   const deck2Type = state.menu?.aiVsAiDecks?.player2 || state.aiVsAi?.deck2Type;
 
-  // Generate deck for AI player 1 (bottom/watching perspective)
-  generateDeckForPlayer(state, 0, deck1Type);
-
-  // Generate deck for AI player 2 (top/opponent)
-  generateDeckForPlayer(state, 1, deck2Type);
-
-  logMessage(state, `AI vs AI: ${deck1Type} vs ${deck2Type}`);
+  preparePracticeDecks(state, [deck1Type || 'random', deck2Type || 'random']);
+  logMessage(state, 'AI vs AI decks ready.');
 
   return state.deckBuilder.selections;
 };
@@ -1380,12 +1346,12 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
           <div class="library-guest-copy">
             <span class="library-eyebrow">Your library starts here</span>
             <h3>Discover your next deck.</h3>
-            <p>Explore creatures, spells, and traps from every domain. Every card is free to browse.</p>
+            <p>All cards are unlocked. Explore every domain and build the deck you want.</p>
             <div class="library-browse-action"></div>
           </div>
           <div class="library-guest-preview" aria-label="Sample cards from the catalog"></div>
           <div class="library-guest-account">
-            <div><h4>Make it your collection</h4><p>Sign in to save decks and keep your collection across visits.</p></div>
+            <div><h4>Make it your collection</h4><p>Create an account to collect cosmetic rarities and save your decks.</p></div>
           </div>
         `;
         deckSelectGrid.appendChild(intro);
@@ -1399,10 +1365,17 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
         intro.querySelector('.library-browse-action').appendChild(browse);
         const previews = intro.querySelector('.library-guest-preview');
         const samples = [
-          getCardDefinitionById('fish-predator-orca'),
-          getCardDefinitionById('amphibian-predator-african-bullfrog'),
+          { ...getCardDefinitionById('fish-predator-orca'), rarity: 'uncommon' },
+          { ...getCardDefinitionById('amphibian-predator-african-bullfrog'), rarity: 'legendary' },
         ].filter(Boolean);
-        samples.forEach((card) => appendCatalogCard(previews, card));
+        samples.forEach((card) => {
+          const sample = document.createElement('figure');
+          appendCatalogCard(sample, card);
+          const label = document.createElement('figcaption');
+          label.textContent = card.rarity === 'uncommon' ? 'Uncommon' : 'Legendary';
+          sample.appendChild(label);
+          previews.appendChild(sample);
+        });
         const login = document.createElement('button');
         login.id = 'library-login';
         login.textContent = 'Sign in';

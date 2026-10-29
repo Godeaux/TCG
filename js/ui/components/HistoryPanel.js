@@ -2,6 +2,7 @@ import { getHistoryStream } from '../../game/historyEvents.js';
 import { describeEvent } from '../history/describeEvent.js';
 import { renderCard } from './Card.js';
 import { getCardDefinitionById } from '../../cards/index.js';
+import { KEYWORD_DESCRIPTIONS } from '../../keywords.js';
 
 const el = (tag, className, text) => {
   const node = document.createElement(tag);
@@ -98,15 +99,23 @@ const tile = (entity, before, event, isAfter) => {
   // catalogue supplies printed rules; recorded stats/keywords remain authoritative.
   const definition = entity.kind === 'card' && getCardDefinitionById(entity.cardId);
   if (definition) {
-    const preview = renderCard(
-      {
-        ...definition,
-        ...entity,
-        id: entity.cardId,
-        abilitiesCancelled: entity.statusFlags?.abilitiesCancelled === true,
-      },
-      { showEffectSummary: true }
-    );
+    const historicalCard = {
+      ...definition,
+      ...entity,
+      id: entity.cardId,
+      abilitiesCancelled: entity.statusFlags?.abilitiesCancelled === true,
+    };
+    const preview = renderCard(historicalCard, { showEffectSummary: true });
+    box.tabIndex = 0;
+    box.setAttribute('role', 'button');
+    box.setAttribute('aria-label', `Inspect ${name(entity)} from history`);
+    box.addEventListener('click', () => inspectHistoricalCard(historicalCard));
+    box.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        inspectHistoricalCard(historicalCard);
+      }
+    });
     preview.classList.add('history-card-face');
     box.classList.add('history-full-card');
     box.prepend(preview);
@@ -137,7 +146,48 @@ const tile = (entity, before, event, isAfter) => {
   return box;
 };
 
-let panel, list, detail, layout, backdrop, trigger, closeButton;
+let panel, list, detail, layout, backdrop, trigger, closeButton, inspection;
+const inspectHistoricalCard = (card) => {
+  if (!inspection) {
+    inspection = el('dialog', 'history-card-inspection');
+    inspection.id = 'history-card-inspection';
+    inspection.setAttribute('aria-label', 'Historical card details');
+    panel.appendChild(inspection);
+    inspection.addEventListener('click', (event) => {
+      if (event.target === inspection) {
+        const box = inspection.getBoundingClientRect();
+        if (
+          event.clientX < box.left ||
+          event.clientX > box.right ||
+          event.clientY < box.top ||
+          event.clientY > box.bottom
+        )
+          inspection.close();
+      }
+    });
+  }
+  inspection.replaceChildren();
+  const header = el('div', 'history-inspect-header');
+  header.append(el('strong', '', 'Card details · History'));
+  const close = el('button', '', 'Close');
+  close.type = 'button';
+  close.addEventListener('click', () => inspection.close());
+  header.append(close);
+  const body = el('div', 'history-inspect-body');
+  body.append(renderCard(card, { showEffectSummary: true }));
+  const rules = el('section', 'history-inspect-rules');
+  rules.append(el('p', '', 'Stats and keywords shown as recorded at this moment.'));
+  for (const keyword of card.keywords || []) {
+    const description = KEYWORD_DESCRIPTIONS[keyword];
+    if (!description) continue;
+    rules.append(el('h3', '', keyword), el('p', 'history-keyword-definition', description));
+  }
+  if (card.abilitiesCancelled)
+    rules.append(el('p', '', 'Abilities were cancelled at this moment.'));
+  body.append(rules);
+  inspection.append(header, body);
+  inspection.showModal();
+};
 let currentState,
   currentStream,
   selectedId = null,
@@ -218,6 +268,7 @@ const restoreInert = () => {
 };
 const close = (restoreFocus = true) => {
   if (!panel) return;
+  inspection?.close();
   layout.classList.remove('show-history');
   layout.classList.toggle('history-hidden', mobile());
   panel.removeAttribute('aria-modal');
@@ -292,6 +343,7 @@ const initializeHistory = () => {
   closeButton.addEventListener('click', () => close());
   backdrop.addEventListener('click', () => close());
   panel.addEventListener('keydown', (event) => {
+    if (inspection?.open) return; // The nested native dialog owns focus and Escape.
     if (event.key === 'Escape') {
       event.preventDefault();
       close();
@@ -340,6 +392,7 @@ export const renderHistoryPanel = (state) => {
     stream.sequence < prior.sequence ||
     stream.matchGeneration !== prior.matchGeneration
   ) {
+    inspection?.close();
     selectedId = null;
     pinnedId = null;
     lastEvent = null;

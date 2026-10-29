@@ -59,9 +59,11 @@ try {
     await expect(p.locator('[data-difficulty="trueSim"]')).toHaveAttribute('aria-pressed', 'true');
     await expect(p.locator('[data-difficulty="easy"]')).toHaveAttribute('aria-pressed', 'false');
     await p.locator('[data-difficulty="easy"]').click();
-    const note = p.locator('#ai-deck-random .deck-option-note');
+    const note = p.locator('#practice-player-note');
     await expect(note).toHaveText('20 cards · 1 random domain');
     expect(await note.evaluate(el => el.getBoundingClientRect().height <= parseFloat(getComputedStyle(el).lineHeight) + 1)).toBe(true);
+    await expect(p.locator('#practice-player-deck')).toHaveValue('random');
+    await expect(p.locator('#practice-ai-deck')).toHaveValue('random');
     await expect(p.locator('#ai-vs-ai')).toBeHidden();
     await p.locator('.practice-advanced summary').click();
     await expect(p.locator('#ai-vs-ai')).toBeVisible();
@@ -113,6 +115,9 @@ try {
     await expect(p.locator('.library-guest-intro')).toBeVisible();
     await expect(p.locator('.library-guest-preview .canonical-card')).toHaveCount(2);
     await expect(p.locator('.library-guest-preview .deck-card-add')).toHaveCount(0);
+    await expect(p.locator('.library-guest-preview [data-rarity=uncommon]')).toHaveCount(1);
+    await expect(p.locator('.library-guest-preview [data-rarity=legendary]')).toHaveCount(1);
+    await expect(p.locator('.library-guest-copy')).toContainText('All cards are unlocked');
     await expect(p.locator('#deck-select-overlay')).toHaveCSS('opacity', '1');
     await expect(p.locator('#menu-overlay')).toHaveCSS('opacity', '0');
     await p.screenshot({ path: `docs/home-navigation/${width}-library.png` });

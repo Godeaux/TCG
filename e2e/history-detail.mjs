@@ -1,7 +1,7 @@
 import { mkdirSync } from 'node:fs';
 mkdirSync(new URL('../docs/ui-phase2/', import.meta.url), { recursive: true });
 // Real history capture operations, checked through the production panel.
-import { chromium, webkit } from '@playwright/test';
+import { chromium, webkit, expect } from '@playwright/test';
 import { spawn } from 'node:child_process';
 import assert from 'node:assert/strict';
 const root = new URL('..', import.meta.url).pathname;
@@ -18,7 +18,7 @@ const browser =
       });
 const failures = [];
 try {
-  const p = await browser.newPage();
+  const p = await browser.newPage({ hasTouch: true });
   await p.goto('http://127.0.0.1:8161');
   await p.waitForFunction(() => window.__qa);
   const ids = await p.evaluate(async () => {
@@ -39,6 +39,10 @@ try {
     s.activePlayerIndex = 0;
     const ids = {};
     const remember = (k) => (ids[k] = s.historyEvents.events.at(-1).id);
+    const leopard = card('mammal-predator-black-leopards');
+    s.players[0].field = [leopard, null, null];
+    resolveEffectResult(s, { buffCreature: { creature: leopard, atk: 1, hp: 1 } }, { playerIndex: 0 });
+    remember('ambush');
     const pred = card('fish-predator-tiger-shark'),
       a = card('fish-prey-cannibal-fish'),
       b = card('fish-prey-electric-eel');
@@ -81,8 +85,19 @@ try {
     await p.waitForTimeout(100);
     if (width < 768 && !(await p.locator('#history-panel').isVisible()))
       await p.locator('#field-history-btn').click();
-    for (const kind of ['single', 'multi', 'destroy', 'player', 'draw']) {
+    for (const kind of ['ambush', 'single', 'multi', 'destroy', 'player', 'draw']) {
       await p.locator(`[data-event-id="${ids[kind]}"]`).click();
+      if (kind === 'ambush') {
+        const card = p.locator('.history-detail .history-tile').first();
+        if (width < 768) await card.tap(); else await card.click();
+        await expect(p.locator('#history-card-inspection')).toBeVisible();
+        await expect(p.locator('#history-card-inspection')).toContainText('Ambush');
+        await expect(p.locator('#history-card-inspection .history-keyword-definition')).not.toBeEmpty();
+        await p.screenshot({ path: `docs/ui-phase2/${width}-history-inspection.png` });
+        await p.keyboard.press('Escape');
+        await expect(p.locator('#history-card-inspection')).toBeHidden();
+        await expect(p.locator('#history-panel')).toBeVisible();
+      }
       const report = await p.locator('.history-detail').evaluate((el) => ({
         width: el.clientWidth,
         scroll: el.scrollWidth,
@@ -169,7 +184,7 @@ try {
   console.log(JSON.stringify({ failures }));
   assert.deepEqual(failures, []);
   console.log(
-    'PASS history detail: 25 viewport/event combinations, privacy, snapshots, overflow, scroll/reset'
+    'PASS history detail: 30 viewport/event combinations, privacy, snapshots, overflow, scroll/reset'
   );
 } finally {
   await browser.close();
