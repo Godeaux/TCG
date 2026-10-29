@@ -1033,3 +1033,8 @@ body:has(.card-hover-tooltip.visible.deck-inspector)::after {
   #tutorial-overlay .tutorial-diagram-trap .tutorial-zone strong { font-size: 10px; line-height: 1.2; }
   #tutorial-overlay .tutorial-diagram-trap .tutorial-zone span { font-size: 11px; line-height: 1.2; }
 }
+
+/* Linux/browser fallback fonts need breathing room in short landscape demos. */
+@container tutorial-stage (max-height: 220px) {
+  #tutorial-overlay .tutorial-slot-role { font-size: 10px; letter-spacing: 0; }
+}
