@@ -52,3 +52,15 @@ TCG_DRYDROP_SCENARIOS=consume TCG_DRYDROP_OUT=/absolute/evidence/path node e2e/d
 The soak preserves initial decks, timestamped state changes, end/failure screenshots,
 failed traces and a running/completed/failed summary with source SHA. It stops after
 three consecutive failures so a broken startup does not generate hours of noise.
+
+## Follow-up: Deep Thinking snapshot crash
+
+The frozen `fb2ffc5` campaign reproduced an uncaught DataCloneError during
+UI-started Deep Thinking matches. Trace: external overnight evidence,
+`continuous/spectate/match-3-trace.zip`; SelectionEnumerator used structuredClone
+on live state containing a broadcast callback. A failing production-enumerator
+regression reproduced the same exception before replacing the local unsafe clone
+with the existing shared AI snapshot helper. Coverage checks playable moves,
+live-state isolation, unused live callback and JSON-recovered state parity.
+Contract after repair: 5,264 tests / 76 files pass. Browser campaign verification
+of this follow-up is separate from the original frozen candidate.

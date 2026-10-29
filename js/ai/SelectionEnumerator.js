@@ -17,8 +17,7 @@
  */
 
 import { GameController } from '../game/controller.js';
-// Deep clone utility (replaces deleted simulation/stateSnapshot.js)
-const createSnapshot = (state) => structuredClone(state);
+import { createSnapshot } from './stateUtils.js';
 import { ActionTypes } from '../state/actions.js';
 
 // ============================================================================
