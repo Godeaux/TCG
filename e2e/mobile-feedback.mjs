@@ -249,7 +249,7 @@ try {
           r.right <= innerWidth &&
           r.top >= 0 &&
           r.bottom <= innerHeight &&
-          document.querySelector('#tooltip-info-boxes').textContent.includes('Card')
+          !document.querySelector('#tooltip-info-boxes .card-box')
         );
       })
     );

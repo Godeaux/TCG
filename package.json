@@ -1,6 +1,6 @@
 {
   "name": "TCG",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "description": "A web-based two-player trading card game featuring a unique consumption mechanic where predator creatures gain power by consuming prey.",
   "main": "index.js",
   "type": "module",

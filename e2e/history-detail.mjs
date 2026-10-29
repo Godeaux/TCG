@@ -96,6 +96,7 @@ try {
         await expect(p.locator('#card-hover-tooltip')).toHaveClass(/modern-inspector/);
         expect(await p.locator('#card-hover-tooltip').evaluate((el) => el.inert)).toBe(false);
         expect(await p.locator('#history-card-inspection').count()).toBe(0);
+        await expect(p.locator('#tooltip-info-boxes .card-box')).toHaveCount(0);
         await p.screenshot({ path: `docs/ui-phase2/${width}-history-inspection.png` });
         // The shared inspector keeps its existing card-face tap/click dismissal.
         const preview = p.locator('#tooltip-card-preview .card').first();
