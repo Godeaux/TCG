@@ -217,12 +217,14 @@ try {
   );
   await page.screenshot({ path: `${OUT}/phone-375-multi-consume.png` });
   results.push({ multi });
-  // Native focus cycle: backwards from Close must wrap to detail, never the board.
+  // Native focus cycle: backwards from Close wraps to the last inspectable
+  // historical card, never to the board.
   await page.locator('#close-history').focus();
   await page.keyboard.press('Shift+Tab');
   assert.equal(
-    await page.evaluate(() => document.activeElement.className),
-    'history-duel history-multi'
+    await page.locator('.history-duel').last().locator('.history-tile').last()
+      .evaluate((card) => document.activeElement === card && card.getAttribute('role') === 'button'),
+    true
   );
   await page.keyboard.press('Tab');
   assert.equal(await page.evaluate(() => document.activeElement.id), 'close-history');
