@@ -4,7 +4,7 @@ import { spawn } from 'node:child_process';
 import assert from 'node:assert/strict';
 const server=spawn('python3',['-m','http.server','8231','--bind','127.0.0.1'],{stdio:'ignore'});
 await new Promise(r=>setTimeout(r,300));
-const browser=await chromium.launch({executablePath:process.env.TCG_CHROME||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});
+const browser=await chromium.launch(process.env.TCG_CHROME ? {executablePath:process.env.TCG_CHROME} : {});
 try {
   const context=await browser.newContext();
   await context.route('**/*.supabase.co/**',r=>r.abort());
