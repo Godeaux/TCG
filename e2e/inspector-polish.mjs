@@ -71,6 +71,25 @@ try {
   if (await page.locator('#card-hover-tooltip').evaluate((el) => el.classList.contains('visible')))
     failures.push('Escape does not dismiss');
   assert.deepEqual(failures, []);
+  // With no close button or navigation, the dialog itself retains keyboard focus.
+  await page.evaluate(async () => {
+    const { getCardDefinitionById } = await import('/js/cards/index.js');
+    const { showCardTooltip } = await import('/js/ui/components/CardTooltip.js');
+    showCardTooltip(
+      getCardDefinitionById('fish-predator-great-white-shark'),
+      document.querySelector('#menu-other'),
+      { modal: true }
+    );
+  });
+  await expect(page.locator('.inspection-close')).toHaveCount(0);
+  await expect(page.locator('#card-hover-tooltip')).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.locator('#card-hover-tooltip')).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(page.locator('#card-hover-tooltip')).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#card-hover-tooltip')).not.toHaveClass(/visible/);
+
   for (const [width, height] of [
     [1440, 900],
     [393, 852],
@@ -99,7 +118,7 @@ try {
     });
     assert.equal(layout.fits, true, JSON.stringify(layout));
     assert.equal(layout.background, 'rgba(0, 0, 0, 0)');
-    assert.equal(layout.blur, 'blur(6px)');
+    assert.equal(layout.blur, 'blur(3px)');
     assert.equal(layout.inert, true);
     await tip.locator('.tooltip-token-link').click();
     await expect(tip).toHaveAttribute('aria-label', 'Inspect Black Leopard');
@@ -112,7 +131,8 @@ try {
     await expect(tile).toBeFocused();
     assert.equal(await page.locator('#player-experience').evaluate((el) => el.inert), false);
     await tile.click();
-    await page.locator('.inspection-close').click();
+    await expect(page.locator('.inspection-close')).toHaveCount(0);
+    await tip.locator('.tooltip-card-preview').click();
     await expect(tip).not.toHaveClass(/visible/);
     await expect(page.locator('#pe-search')).toHaveValue('Black Leopards');
   }
@@ -143,7 +163,8 @@ try {
   const firstName = await touch.locator('#card-hover-tooltip').getAttribute('aria-label');
   await touch.getByRole('button', { name: 'Next →', exact: true }).tap();
   assert.notEqual(await touch.locator('#card-hover-tooltip').getAttribute('aria-label'), firstName);
-  await touch.locator('.inspection-close').tap();
+  await expect(touch.locator('.inspection-close')).toHaveCount(0);
+  await touch.touchscreen.tap(3, 3);
   assert.equal(await touch.locator('#player-experience').evaluate((el) => el.inert), false);
   await touch.close();
   assert.deepEqual(errors, []);

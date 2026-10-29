@@ -272,7 +272,10 @@ export const initCardTooltip = () => {
         ];
         const index = controls.indexOf(document.activeElement);
         event.preventDefault();
-        controls[(index + (event.shiftKey ? controls.length - 1 : 1)) % controls.length]?.focus();
+        if (!controls.length) tooltipElement.focus();
+        else if (index < 0) controls[event.shiftKey ? controls.length - 1 : 0].focus();
+        else
+          controls[(index + (event.shiftKey ? controls.length - 1 : 1)) % controls.length].focus();
         return;
       }
       if (event.key !== 'Escape') return;
@@ -496,11 +499,10 @@ const closeModalInspection = () => {
   modalBackdrop = null;
   tooltipElement.classList.remove('inspection-modal');
   tooltipElement.removeAttribute('aria-modal');
+  tooltipElement.removeAttribute('tabindex');
   tooltipElement.removeAttribute('aria-label');
   tooltipElement.setAttribute('role', 'tooltip');
-  tooltipElement
-    .querySelectorAll('.inspection-close, .inspection-navigation')
-    .forEach((el) => el.remove());
+  tooltipElement.querySelectorAll('.inspection-navigation').forEach((el) => el.remove());
   inertElements.forEach(([element, previous]) => {
     element.inert = previous;
   });
@@ -527,13 +529,7 @@ const openModalInspection = (card, trigger, options) => {
   tooltipElement.setAttribute('role', 'dialog');
   tooltipElement.setAttribute('aria-modal', 'true');
   tooltipElement.setAttribute('aria-label', `Inspect ${card.name}`);
-  const close = document.createElement('button');
-  close.type = 'button';
-  close.className = 'inspection-close';
-  close.textContent = '×';
-  close.setAttribute('aria-label', 'Close card inspection');
-  close.addEventListener('click', dismiss);
-  tooltipElement.append(close);
+  tooltipElement.tabIndex = -1;
   if (options.onPrevious || options.onNext || options.onBack) {
     const navigation = document.createElement('nav');
     navigation.className = 'inspection-navigation';
@@ -558,7 +554,7 @@ const openModalInspection = (card, trigger, options) => {
   inertElements.forEach(([element]) => {
     element.inert = true;
   });
-  close.focus({ preventScroll: true });
+  tooltipElement.focus({ preventScroll: true });
 };
 
 // ============================================================================
