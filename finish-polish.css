@@ -815,9 +815,14 @@ body:has(.card-hover-tooltip.visible.deck-inspector)::after {
 #settings-button-container #menu-profile:focus-visible { outline: 2px solid #e5d3a2; outline-offset: 3px; }
 #settings-button-container:not([data-location="home"]) #menu-profile { display: none; }
 #other-options { display: none; }
+#menu-overlay .menu-header { align-items: center; flex-wrap: nowrap; }
+#menu-overlay .menu-header > div:first-child { min-width: 0; }
+#menu-overlay .menu-header h2 { white-space: nowrap; }
 @media(max-width: 767px) {
-  #menu-overlay .menu-header { flex-wrap: wrap; }
-  #menu-overlay #settings-button-container { order: -1; width: 100%; justify-content: flex-end; }
+  #menu-overlay .menu-header { gap: 6px; }
+  #menu-overlay .menu-header h2 { font-size: clamp(13px, calc(7vw - 10px), 19px); letter-spacing: 0; }
+  #menu-overlay #settings-button-container { gap: 6px; }
+  #menu-overlay .settings-fab { min-width: 72px; padding-inline: 8px; }
 }
 
 /* Direct play choices and a grounded, tappable homepage footer. */

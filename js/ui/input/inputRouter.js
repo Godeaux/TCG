@@ -524,12 +524,15 @@ const initNavigation = () => {
       const response = await fetch('CHANGELOG.md', { cache: 'no-cache' });
       if (!response.ok) throw new Error('Changelog unavailable');
       const markdown = await response.text();
-      const latest = markdown.split(/^## /m)[1] || '';
-      const highlights = latest
-        .split('\n')
-        .filter((line) => line.startsWith('- '))
-        .slice(0, 3);
-      const summary = `## ${latest.split('\n')[0]}\n${highlights.join('\n')}`;
+      const summary = markdown
+        .split(/^## /m)
+        .slice(1)
+        .map((section) => {
+          const lines = section.split('\n');
+          const bullets = lines.filter((line) => line.startsWith('- ')).slice(0, 3);
+          return `## ${lines[0]}\n${bullets.join('\n')}`;
+        })
+        .join('\n\n');
       if (elements.changelogContent) {
         elements.changelogContent.innerHTML = parseChangelogMarkdown(summary);
       }
