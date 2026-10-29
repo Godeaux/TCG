@@ -18,7 +18,7 @@
     "version:assets": "node scripts/version-assets.mjs",
     "check:assets": "node scripts/version-assets.mjs --check",
     "check:art": "node scripts/build-card-art-index.mjs --check",
-    "check:db-staging": "node docs/release-1.0-staging/validate-foundation.mjs && node docs/release-1.0-staging/validate-reward-settlement.mjs && node docs/release-1.0-staging/validate-pack-opening.mjs && node docs/release-1.0-staging/validate-authenticated-packs.mjs"
+    "check:db-staging": "node docs/release-1.0-staging/validate-foundation.mjs && node docs/release-1.0-staging/validate-reward-settlement.mjs && node docs/release-1.0-staging/validate-pack-opening.mjs && node docs/release-1.0-staging/validate-authenticated-packs.mjs && node docs/release-1.0-staging/validate-match-commit.mjs"
   },
   "repository": {
     "type": "git",

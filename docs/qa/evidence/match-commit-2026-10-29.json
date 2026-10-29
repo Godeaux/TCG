@@ -1,0 +1,9 @@
+{
+  "migration": "20261029164157",
+  "localSqlChecks": 40,
+  "realSupabaseSmoke": "passed, transaction rolled back",
+  "sqlToolOverlap": "not established; not counted as concurrency evidence",
+  "localPostgres": {"version":"18.4","independentConnections":true,"observedLockWaits":2,"staleContender":"40001","acceptedActions":2,"terminalRevision":2,"freshConnectionRetry":true},
+  "cleanup": {"liveCheckpoints":0,"liveAcceptedActions":0,"liveSeats":0,"syntheticAuthUser":0,"localServerStopped":true},
+  "scope": "Persistence boundary only. Trusted reducer, identity endpoint, private projections and legacy-client cutover remain incomplete."
+}

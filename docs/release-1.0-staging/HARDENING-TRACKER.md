@@ -22,7 +22,7 @@ proof. Do not silently preserve unverified balances as trusted progression.
   retain owner access and refuse the unrelated identity. Synthetic rows rolled
   back inside migration. Current game code does not query either view.
 
-## Implemented locally, not published
+## Published in main — PR #128, 80e463d
 
 - Real collection/open/reveal/Done UI consumes server-committed pack contents for
   enrolled profiles. Pending intent survives reload and lost responses.
@@ -40,7 +40,8 @@ proof. Do not silently preserve unverified balances as trusted progression.
   reran scripts 22–27. No earlier browser checks weakened or skipped. The opt-in
   live-profile script was syntax-checked, not run (no real-player login).
   Logs: /tmp/tcg-integration-ui.log and /tmp/tcg-integration-ui-tail.log.
-  Foundation-only branch remains separate. Neither frontend branch is published.
+  These changes shipped through PR #128. Both PR CI and post-merge main CI passed.
+  Pages deployed; live files matched the release and desktop/mobile smoke checks passed.
 
 ## Additional authority regression — October 29
 
@@ -54,10 +55,36 @@ proof. Do not silently preserve unverified balances as trusted progression.
 - All five regression tests pass; full contract passes 5,277 tests / 79 files plus
   all SQL suites using the documented isolated PGlite dependency. Relevant browser
   match/reconnect and selection lifecycle checks rerun after the change: both pass.
-- These changes remain LOCAL, not published. Host validation is defense in depth,
+- These changes shipped in PR #128. Host validation is defense in depth,
   not a substitute for authenticated server authority or private seat projections.
 - The separate five-minute local review timed out without a report or executed
   tests. It is not counted as independent certification; no local tester is active.
+
+## Atomic match persistence — October 29 follow-up
+
+- Migration `20261029164157` / `008-atomic-match-commit.sql` is installed in real
+  Supabase. The private service-only function locks the checkpoint, checks the
+  permanently mapped participant, binds the action ID to actor/revision/request,
+  compares the expected revision, and commits checkpoint + both projections +
+  receipt together. Finished matches refuse new actions; old retries still work.
+- Service direct checkpoint UPDATE/DELETE/TRUNCATE and accepted-action INSERT
+  are revoked; existing service bootstrap INSERT remains. This is a persistence
+  boundary, NOT an authenticated gameplay endpoint or a game-rules validator.
+- 40 local SQL checks pass, including forced late receipt failure rolling back
+  the checkpoint, stale/foreign/browser refusal, finished retries and ACLs.
+- `verify-live-match-commit.sql` passed on real Supabase; fixtures rolled back.
+  The separate attempted multi-call SQL-tool test did not demonstrate observable
+  connection overlap. Its synthetic fixtures were explicitly removed; private
+  checkpoint/action/seat counts and the QA auth-user count returned to zero.
+- Independent local PostgreSQL 18.4 connections then demonstrated TWO actual
+  lock waits: competing IDs produced one accepted revision and one SQLSTATE40001;
+  duplicate requests returned one receipt. Closing the writer and retrying on a
+  fresh connection recovered the terminal receipt. Exactly two actions/revision2
+  remained after one normal and one terminal action. Temporary server stopped.
+- Reproducer: `validate-match-contention.mjs` (opt-in isolated local PostgreSQL).
+  Needs a fresh database `tcg_atomic_qa`, superuser `tcg_qa`, loopback port55439;
+  `TCG_PG_MODULE` may point to an isolated `pg/lib/index.js`. No repo dependency
+  or background service was added. This is not live gameplay certification.
 
 ## Still required — do not call the live game hardened
 

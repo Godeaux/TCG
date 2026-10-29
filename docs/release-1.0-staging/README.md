@@ -29,7 +29,7 @@ last-card uncommon guarantee. The account lock covers lookup, draw and commit.
 An existing receipt is returned before checking funds/catalog availability;
 responses include the CURRENT balance as well as the historical receipt.
 
-The local frontend candidate routes independently enrolled profiles through this
+The frontend published in PR #128 routes independently enrolled profiles through this
 API and reveals the committed cards without another inventory write. A durable
 opening ID survives failed responses/reload until Done. Storage failure refuses
 before debit; unknown card definitions retain the receipt for a refreshed client.
@@ -37,12 +37,26 @@ Collection refresh uses private inventory for enrolled accounts. API errors neve
 silently fall back to a legacy debit. Unenrolled accounts remain on the old path;
 the local candidate additionally refuses animation after a failed legacy debit.
 
-**Not a public cutover:** the frontend is not published; owner mappings remain
-empty; no existing PIN accounts were migrated; reward validation still requires
-the authoritative gameplay service. The foundation source branch predates later overnight frontend improvements.
-The combined candidate in food-chain-server-integration now merges those latest
-changes with this adapter and passes 5,272 unit tests plus SQL/browser checks;
-it remains unpublished.
+**Not a full security cutover:** the frontend was published in PR #128 (`80e463d`);
+owner mappings remain empty; no existing PIN accounts were migrated. Reward
+validation still requires the authoritative gameplay service. The combined release
+passed 5,277 unit tests, SQL checks and all 27 browser scripts on GitHub; post-merge
+main CI and Pages deployment also succeeded.
+
+## Atomic service match commit
+
+Migration `20261029164157` (`008-atomic-match-commit.sql`) is installed. It provides
+compare-and-swap checkpoint revision updates, request-bound idempotency and atomic
+checkpoint/projection/receipt persistence. Only the trusted service can execute
+it; browser access remains denied. The service must still authenticate the caller,
+run GameController, validate legal actions and redact private seat projections.
+The function does not certify those responsibilities or issue rewards itself.
+
+`npm run check:db-staging` includes 40 refusal/retry/rollback checks.
+`verify-live-match-commit.sql` passed with rolled-back fixtures. Independent local
+PostgreSQL connections observed actual lock waits and proved stale contender
+refusal, identical retry receipts and recovery on a fresh connection. See
+`HARDENING-TRACKER.md` for exact scope and opt-in reproduction setup.
 No accounts have been wiped. The owner prefers considering ONE reset only after
 hardening is complete, and accepts verified migration as an alternative.
 
