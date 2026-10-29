@@ -27,8 +27,11 @@ proof. Do not silently preserve unverified balances as trusted progression.
 - Failed legacy debit no longer opens a pack in the local candidate.
 - 7 unit tests, 43 authenticated SQL checks, production browser refusal/recovery
   regression. Full check passes with documented isolated PGlite dependency.
-- Active worktree: food-chain-foundation-staging. Must integrate onto current
-  frontend branch; this older foundation branch is NOT a wholesale deployment.
+- Active combined worktree: food-chain-server-integration on
+  harden/server-economy-2026-10-29. It merges foundation 513efd8 with the latest
+  overnight frontend 825252c (including no-X/half-blur). Combined contract:
+  5,272 tests / 78 files plus all SQL checks; production pack UI regression passes.
+  Foundation-only branch remains separate. Neither frontend branch is published.
 
 ## Still required — do not call the live game hardened
 
@@ -66,8 +69,17 @@ proof. Do not silently preserve unverified balances as trusted progression.
 
 - Empty verified owner/economy ledgers after QA; existing users not switched.
 - Legacy published reward path remains vulnerable until coordinated cutover.
-- SQL role tests are not real JWT browser authentication certification.
-- Single PGlite connection is not concurrent database testing.
+- Real JWT API test now passed on Supabase: unenrolled guest gets null economy
+  and HTTP 403 pack refusal. A single explicitly synthetic QA owner with one
+  pack then received two overlapping HTTP purchase requests: one 200, one 400,
+  one receipt/debit, zero remaining packs. Five simultaneous retries returned
+  the identical receipt with no extra debit. QA session logged out; exact QA
+  ledger/profile/auth rows removed; local bearer-token file cleared.
+  Test script: e2e/live-pack-api-check.mjs (explicit opt-in, never normal CI).
+  Synthetic owner mapping bypassed real registration for test setup only; this
+  does NOT certify verified-email enrollment or two-browser full gameplay.
+- Single PGlite connection still is not concurrent database testing; the HTTP
+  test above is separate evidence, not proof of every database interleaving.
 - Local eight-hour run ended with an error/no delivered final report. Recovered
   its committed report/probes at food-chain-reward-audit f6183ab and independently
   reran both: failed debit grants cards; two stale production clients spend one
@@ -80,3 +92,10 @@ proof. Do not silently preserve unverified balances as trusted progression.
 - Security advisor warnings for the two authenticated economy RPCs are expected
   definer entrypoints: identity checks + restricted privileges are deliberate.
   Ten private-table no-policy notices are intentional deny-by-default.
+
+## Testing delegation preference
+
+Owner explicitly permits local testing agents for future work. Only ONE local
+tester/model workload at a time fits the Mac Studio. Prefer frozen snapshots or
+untouched subsystems; avoid auditing moving targets the parent is actively fixing.
+Review runnable evidence; source claims alone are not confirmed defects.

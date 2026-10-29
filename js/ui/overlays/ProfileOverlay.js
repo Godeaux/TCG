@@ -314,23 +314,27 @@ const updateMatchHistory = (elements, matches) => {
     const item = document.createElement('div');
     item.className = `profile-match-item ${match.won ? 'win' : 'loss'}`;
 
-    // Format HP display: player HP colored based on win/loss, opponent HP plain
-    const playerHp = match.playerHp ?? 0;
-    const opponentHp = match.opponentHp ?? 0;
-    const playerHpClass = match.won ? 'hp-win' : 'hp-loss';
-    const hpDisplay = `<span class="${playerHpClass}">${playerHp}</span> - ${opponentHp}`;
-
-    // Format opponent with deck
-    const deckDisplay = match.opponentDeck
-      ? ` <span class="match-deck">(${match.opponentDeck})</span>`
-      : '';
-
-    item.innerHTML = `
-      <span class="profile-match-result">${match.won ? 'W' : 'L'}</span>
-      <span class="profile-match-hp">${hpDisplay}</span>
-      <span class="profile-match-opponent">vs ${match.opponent || 'Unknown'}${deckDisplay}</span>
-      <span class="profile-match-date">${formatMatchDate(match.date)}</span>
-    `;
+    const span = (className, text) => {
+      const element = document.createElement('span');
+      element.className = className;
+      element.textContent = text;
+      return element;
+    };
+    const hp = span('profile-match-hp', '');
+    hp.append(
+      span(match.won ? 'hp-win' : 'hp-loss', match.playerHp ?? 0),
+      document.createTextNode(` - ${match.opponentHp ?? 0}`)
+    );
+    const opponent = span('profile-match-opponent', `vs ${match.opponent || 'Unknown'}`);
+    if (match.opponentDeck) {
+      opponent.append(document.createTextNode(' '), span('match-deck', `(${match.opponentDeck})`));
+    }
+    item.append(
+      span('profile-match-result', match.won ? 'W' : 'L'),
+      hp,
+      opponent,
+      span('profile-match-date', formatMatchDate(match.date))
+    );
     profileMatchList.appendChild(item);
   });
 };

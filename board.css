@@ -1251,3 +1251,35 @@
     background: transparent;
   }
 }
+
+/* Click-open inspection: no enclosing panel, just a light veil behind the content. */
+.inspection-backdrop {
+  position: fixed; inset: 0; z-index: 99999;
+  background: rgba(2, 12, 18, 0.3);
+  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+}
+.card-hover-tooltip.inspection-modal {
+  left: 50% !important; top: 50% !important; transform: translate(-50%, -50%);
+  width: min(650px, calc(100vw - 32px)); max-height: calc(100dvh - 32px);
+  padding: 8px; box-sizing: border-box; gap: 20px;
+  flex-direction: row; align-items: flex-start; overflow-y: auto;
+  background: transparent; border: 0; box-shadow: none; pointer-events: auto;
+}
+.inspection-modal:has(.inspection-navigation) { padding-top: 42px; }
+.inspection-modal .tooltip-info-boxes { flex: 1; width: auto; max-height: none; overflow: visible; }
+@media (max-width: 767px) {
+  .card-hover-tooltip.inspection-modal {
+    flex-direction: column; align-items: center; --board-card-width: min(230px, 65vw);
+    --board-card-height: 340px; gap: 16px;
+  }
+  .inspection-modal .tooltip-info-boxes { flex: none; width: 100%; }
+}
+@supports not (backdrop-filter: blur(3px)) {
+  .inspection-backdrop { background: rgba(2, 12, 18, 0.65); }
+}
+
+.inspection-navigation { position: absolute; left: 8px; top: 0; display: flex; gap: 8px; }
+.inspection-navigation button { background: #18343b; border: 1px solid #82968a; color: #edf4f1; border-radius: 6px; padding: 8px; cursor: pointer; }
+
+.modern-inspector .tooltip-token-link { color: #e5d598; font: 600 12px/1.5 system-ui; text-align: left; cursor: pointer; }
+.tooltip-token-link:focus-visible, .inspection-navigation button:focus-visible { outline: 2px solid #f0cb84; outline-offset: 2px; }

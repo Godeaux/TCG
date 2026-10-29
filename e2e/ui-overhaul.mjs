@@ -36,7 +36,8 @@ async function toBoard(ctxOpts, tag) {
   await page.locator('#menu-other').click();
   await page.waitForTimeout(300);
   await page.waitForTimeout(200);
-  await page.locator('#ai-deck-random').click();
+  await page.locator('#practice-player-deck').selectOption('build');
+  await page.locator('#ai-start-game').click();
   await page.waitForTimeout(1200);
   await page.locator('.deck-select-panel--fish .deck-name').click();
   await page.waitForTimeout(800);
@@ -216,12 +217,14 @@ try {
   );
   await page.screenshot({ path: `${OUT}/phone-375-multi-consume.png` });
   results.push({ multi });
-  // Native focus cycle: backwards from Close must wrap to detail, never the board.
+  // Native focus cycle: backwards from Close wraps to the last inspectable
+  // historical card, never to the board.
   await page.locator('#close-history').focus();
   await page.keyboard.press('Shift+Tab');
   assert.equal(
-    await page.evaluate(() => document.activeElement.className),
-    'history-duel history-multi'
+    await page.locator('.history-duel').last().locator('.history-tile').last()
+      .evaluate((card) => document.activeElement === card && card.getAttribute('role') === 'button'),
+    true
   );
   await page.keyboard.press('Tab');
   assert.equal(await page.evaluate(() => document.activeElement.id), 'close-history');

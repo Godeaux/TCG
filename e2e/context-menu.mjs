@@ -73,7 +73,8 @@ try {
   await p.goto(process.env.TCG_BASE || 'http://127.0.0.1:8162');
   await p.locator('#menu-other').click();
   await capture('setup', null);
-  await p.locator('#ai-deck-random').click();
+  await p.locator('#practice-player-deck').selectOption('build');
+  await p.locator('#ai-start-game').click();
   await p.locator('.deck-select-panel--fish').click();
   await p.locator('#deck-random').click();
   await p.evaluate(async () => {

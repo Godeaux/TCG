@@ -14,6 +14,12 @@
  */
 
 import { deckCatalogs, getCardDefinitionById } from '../../cards/index.js';
+import {
+  buildRandomDeck,
+  resolvePracticeDeck,
+  installPracticeDeck,
+  preparePracticeDecks,
+} from '../../game/practiceDecks.js';
 import { logMessage } from '../../state/gameState.js';
 import {
   buildLobbySyncPayload,
@@ -568,7 +574,7 @@ const appendCatalogCard = (container, card, onAdd) => {
       showExpandedCard(card, face);
     }
   });
-  face.draggable = true;
+  face.draggable = Boolean(onAdd);
   face.addEventListener('dragstart', (event) => {
     event.dataTransfer.setData(
       'text/plain',
@@ -577,6 +583,11 @@ const appendCatalogCard = (container, card, onAdd) => {
     event.dataTransfer.effectAllowed = 'copy';
     hideExpandedCard();
   });
+  if (!onAdd) {
+    item.appendChild(face);
+    container.appendChild(item);
+    return;
+  }
   const add = document.createElement('button');
   add.className = 'deck-card-add';
   add.type = 'button';
@@ -599,18 +610,6 @@ const applyMenuLoading = (state, isLoading) => {
  */
 const loadSupabaseApi = async (state) => {
   return getSupabaseApi((message) => setMenuError(state, message));
-};
-
-/**
- * Shuffle an array
- */
-const shuffle = (items) => {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
 };
 
 /**
@@ -680,34 +679,6 @@ const initCatalogBuilder = (builder) => {
 };
 
 /**
- * Build a random deck from available cards
- */
-const buildRandomDeck = ({ available, selected, catalogOrder }) => {
-  available.push(...selected.splice(0, selected.length));
-  available.sort((a, b) => catalogOrder.indexOf(a.id) - catalogOrder.indexOf(b.id));
-
-  const picks = [];
-  const takeCards = (filterFn, count) => {
-    const candidates = shuffle(available.filter(filterFn)).slice(0, count);
-    candidates.forEach((card) => {
-      const index = available.findIndex((entry) => entry.id === card.id);
-      if (index >= 0) {
-        available.splice(index, 1);
-      }
-      picks.push(card);
-    });
-  };
-
-  takeCards((card) => card.type === 'Predator', 6);
-  takeCards((card) => card.type === 'Prey', 7);
-  takeCards((card) => card.type === 'Spell', 4);
-  takeCards((card) => card.type === 'Free Spell', 2);
-  takeCards((card) => card.type === 'Trap', 1);
-
-  selected.push(...picks);
-};
-
-/**
  * Generate a random deck for a player
  * Uses one of the available deck catalogs
  * @param {Object} state - Game state
@@ -750,7 +721,12 @@ const generateDeckForPlayer = (state, playerIndex, specificDeckId = null) => {
  * Generate a random deck for AI player (backwards compatibility)
  */
 const generateAIDeck = (state) => {
-  return generateDeckForPlayer(state, 1);
+  if (state.menu.practiceDecks && state.deckBuilder.selections[1]?.length === 20) {
+    return state.deckBuilder.selections[1];
+  }
+  const resolved = resolvePracticeDeck(state, state.menu.practiceDecks?.opponent ?? 'random');
+  installPracticeDeck(state, 1, resolved);
+  return resolved.cards;
 };
 
 /**
@@ -760,13 +736,8 @@ export const generateAIvsAIDecks = (state) => {
   const deck1Type = state.menu?.aiVsAiDecks?.player1 || state.aiVsAi?.deck1Type;
   const deck2Type = state.menu?.aiVsAiDecks?.player2 || state.aiVsAi?.deck2Type;
 
-  // Generate deck for AI player 1 (bottom/watching perspective)
-  generateDeckForPlayer(state, 0, deck1Type);
-
-  // Generate deck for AI player 2 (top/opponent)
-  generateDeckForPlayer(state, 1, deck2Type);
-
-  logMessage(state, `AI vs AI: ${deck1Type} vs ${deck2Type}`);
+  preparePracticeDecks(state, [deck1Type || 'random', deck2Type || 'random']);
+  logMessage(state, 'AI vs AI decks ready.');
 
   return state.deckBuilder.selections;
 };
@@ -1369,27 +1340,51 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
 
       // Use card grid for deck management
       if (!state.menu.profile) {
-        // Not logged in
-        const loginMsg = document.createElement('div');
-        loginMsg.className = 'deck-card deck-card--unknown';
-        loginMsg.innerHTML = `
-          <div class="deck-card-type">&nbsp;</div>
-          <div class="deck-card-icon">🔐</div>
-          <div class="deck-card-name">Log In</div>
-          <div class="deck-card-count">Log in to manage decks</div>
+        const intro = document.createElement('section');
+        intro.className = 'library-guest-intro';
+        intro.innerHTML = `
+          <div class="library-guest-copy">
+            <span class="library-eyebrow">Your library starts here</span>
+            <h3>Discover your next deck.</h3>
+            <p>All cards are unlocked. Explore every domain and build the deck you want.</p>
+            <div class="library-browse-action"></div>
+          </div>
+          <div class="library-guest-preview" aria-label="Sample cards from the catalog"></div>
+          <div class="library-guest-account">
+            <div><h4>Make it your collection</h4><p>Create an account to collect cosmetic rarities and save your decks.</p></div>
+          </div>
         `;
-        const grid = document.createElement('div');
-        grid.className = 'deck-card-grid';
-        grid.appendChild(loginMsg);
-        deckSelectGrid.appendChild(grid);
+        deckSelectGrid.appendChild(intro);
         const browse = document.createElement('button');
         browse.id = 'library-collection';
-        browse.textContent = 'Browse collection';
+        browse.textContent = 'Browse all cards';
         browse.onclick = () => {
           state.menu.stage = 'collection';
           callbacks.onUpdate?.();
         };
-        deckSelectGrid.prepend(browse);
+        intro.querySelector('.library-browse-action').appendChild(browse);
+        const previews = intro.querySelector('.library-guest-preview');
+        const samples = [
+          { ...getCardDefinitionById('fish-predator-orca'), rarity: 'uncommon' },
+          { ...getCardDefinitionById('amphibian-predator-african-bullfrog'), rarity: 'legendary' },
+        ].filter(Boolean);
+        samples.forEach((card) => {
+          const sample = document.createElement('figure');
+          appendCatalogCard(sample, card);
+          const label = document.createElement('figcaption');
+          label.textContent = card.rarity === 'uncommon' ? 'Uncommon' : 'Legendary';
+          sample.appendChild(label);
+          previews.appendChild(sample);
+        });
+        const login = document.createElement('button');
+        login.id = 'library-login';
+        login.textContent = 'Sign in';
+        login.onclick = () => {
+          state.menu.mode = null;
+          state.menu.stage = 'login';
+          callbacks.onUpdate?.();
+        };
+        intro.querySelector('.library-guest-account').appendChild(login);
       } else {
         ensureDecksLoaded(state);
         const decks = state.menu.decks ?? [];
@@ -2218,7 +2213,7 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
   let statusHtml = `
     <div class="deck-status-item deck-name-row">
       <label for="deck-name-input">${deckNameLabel}</label>
-      <input type="text" id="deck-name-input" class="deck-name-input" value="${state.catalogBuilder.editingDeckName || 'New Deck'}" maxlength="30" placeholder="Deck name" />
+      <input type="text" id="deck-name-input" class="deck-name-input" maxlength="30" placeholder="Deck name" />
     </div>
     <div class="deck-status-item">Cards selected: <strong>${totalCount}/20</strong></div>
     <div class="deck-status-item deck-type-counts ${preyRuleValid ? '' : 'invalid'}">
@@ -2227,16 +2222,22 @@ export const renderCatalogBuilderOverlay = (state, callbacks) => {
     </div>
   `;
   if (state.menu?.success) {
-    statusHtml += `<div class="deck-status-item deck-status-success" role="status" aria-live="polite">${state.menu.success}</div>`;
+    statusHtml += `<div class="deck-status-item deck-status-success" role="status" aria-live="polite"></div>`;
   }
   if (state.menu?.error) {
-    statusHtml += `<div class="deck-status-item deck-status-error">${state.menu.error}</div>`;
+    statusHtml += `<div class="deck-status-item deck-status-error"></div>`;
   }
   deckStatus.innerHTML = statusHtml;
+  const successMessage = deckStatus.querySelector('.deck-status-success');
+  const errorMessage = deckStatus.querySelector('.deck-status-error');
+  if (successMessage) successMessage.textContent = state.menu.success;
+  if (errorMessage) errorMessage.textContent = state.menu.error;
 
   // Bind deck name input change handler
   const deckNameInput = document.getElementById('deck-name-input');
   if (deckNameInput) {
+    // User names are text, never part of an HTML attribute.
+    deckNameInput.value = state.catalogBuilder.editingDeckName || 'New Deck';
     deckNameInput.oninput = (e) => {
       state.catalogBuilder.editingDeckName = e.target.value;
     };
@@ -2581,7 +2582,12 @@ export const renderDeckBuilderOverlay = (state, callbacks) => {
   renderDeckLoadPanel(state, playerIndex, callbacks);
 
   deckConfirm.disabled = !(hasValidCount && preyRuleValid);
-  deckConfirm.textContent = isPlayerOne ? 'Confirm Player 1 Deck' : 'Confirm Player 2 Deck';
+  deckConfirm.textContent =
+    isAIMode(state) || isOnlineMode(state)
+      ? 'Confirm your deck'
+      : isPlayerOne
+        ? 'Confirm Player 1 Deck'
+        : 'Confirm Player 2 Deck';
   deckConfirm.classList.remove('hidden');
   deckConfirm.onclick = () => {
     if (!hasValidCount || !preyRuleValid) {

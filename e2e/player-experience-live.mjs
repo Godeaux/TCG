@@ -83,12 +83,10 @@ try {
     await p.locator('#pe-search').fill('orca');
     await expect(p.locator('.pe-grid .pe-tile')).toHaveCount(1);
     await p.locator('.pe-grid .pe-tile').click();
-    if (width <= 700) {
-      await expect(p.locator('.pe-mobile-inspection')).toBeVisible();
-      await screenshot(`${tag}-inspect`);
-      await p.locator('[data-pe="close-inspect"]').click();
-      await expect(p.locator('#pe-search')).toHaveValue('orca');
-    }
+    await expect(p.locator('#card-hover-tooltip')).toHaveClass(/inspection-modal/);
+    await screenshot(`${tag}-inspect`);
+    await p.locator('.inspection-close').click();
+    await expect(p.locator('#pe-search')).toHaveValue('orca');
     await p.locator('#pe-search').fill('');
     await p.locator('#pe-animal').selectOption('all');
     await screenshot(`${tag}-collection`);

@@ -39,8 +39,10 @@ the local candidate additionally refuses animation after a failed legacy debit.
 
 **Not a public cutover:** the frontend is not published; owner mappings remain
 empty; no existing PIN accounts were migrated; reward validation still requires
-the authoritative gameplay service. The source branch predates later overnight
-frontend improvements and must be integrated, not deployed wholesale over them.
+the authoritative gameplay service. The foundation source branch predates later overnight frontend improvements.
+The combined candidate in food-chain-server-integration now merges those latest
+changes with this adapter and passes 5,272 unit tests plus SQL/browser checks;
+it remains unpublished.
 No accounts have been wiped. The owner prefers considering ONE reset only after
 hardening is complete, and accepts verified migration as an alternative.
 
@@ -50,7 +52,11 @@ with ONLY Supabase IO mocked (refusal, lost response, same intent at zero balanc
 server cards, acknowledgment and failed legacy debit). Real Supabase transactional
 smoke `verify-live-authenticated-packs.sql` passed with all synthetic rows rolled
 back. Both public RPCs reject unauthenticated REST calls with HTTP 401 / 42501.
-These are not concurrent multi-connection or full live authenticated browser tests.
+A subsequent opt-in authenticated live API test sent two overlapping HTTP pack
+purchases against one synthetic pack: one success, one refusal, one receipt.
+Five overlapping retries returned that receipt unchanged at zero balance. The
+QA session was logged out and its exact ledger/profile/auth rows removed.
+This does not certify verified-email registration or full two-client gameplay.
 
 Migration `20261029144227` (`005-internal-trigger-acl.sql`) also removes browser
 EXECUTE from the internal `rls_auto_enable` event hook. It verifies the existing

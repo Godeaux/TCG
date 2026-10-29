@@ -182,13 +182,11 @@ export const updateRematchStatus = (state) => {
   if (opponentChoice) {
     opponentStatus.style.display = 'block';
 
-    if (opponentChoice === 'menu') {
-      // Red X for rejection/leaving
-      opponentStatus.innerHTML = `<span class="status-rejected">&#x274C; ${opponentName} left</span>`;
-    } else {
-      // Green checkmark for rematch options
-      opponentStatus.innerHTML = `<span class="status-accepted">&#x2705; ${opponentName} wants to play again</span>`;
-    }
+    const status = document.createElement('span');
+    const left = opponentChoice === 'menu';
+    status.className = left ? 'status-rejected' : 'status-accepted';
+    status.textContent = `${left ? '❌' : '✅'} ${opponentName} ${left ? 'left' : 'wants to play again'}`;
+    opponentStatus.replaceChildren(status);
   }
 };
 
@@ -381,7 +379,7 @@ export const showVictoryScreen = (winner, stats = {}, options = {}) => {
     } else if (options.stalemateWin) {
       winnerName.textContent = `${winner?.name || 'Unknown'} wins by HP!`;
     } else {
-      winnerName.textContent = winner?.name || 'Unknown Champion';
+      winnerName.textContent = `${winner?.name || 'Unknown player'} won the match`;
     }
   }
 
