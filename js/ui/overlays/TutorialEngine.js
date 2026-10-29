@@ -77,7 +77,9 @@ function buildLayout() {
   const wrapper = document.createElement('div');
   wrapper.className = 'tutorial-engine';
 
-  // Stage (left)
+  // Demo and its caption have separate space, so labels cannot cover cards.
+  const demoPanel = document.createElement('div');
+  demoPanel.className = 'tutorial-demo';
   stageEl = document.createElement('div');
   stageEl.className = 'tutorial-stage';
 
@@ -91,24 +93,37 @@ function buildLayout() {
 
   labelEl = document.createElement('div');
   labelEl.className = 'tutorial-stage-label';
-  stageEl.appendChild(labelEl);
+  const toolbar = document.createElement('div');
+  toolbar.className = 'tutorial-demo-toolbar';
+  const eyebrow = document.createElement('span');
+  eyebrow.textContent = 'WORKED EXAMPLE';
+  const replay = document.createElement('button');
+  replay.type = 'button';
+  replay.className = 'tutorial-replay';
+  replay.textContent = '↻ Replay';
+  replay.setAttribute('aria-label', 'Replay this demonstration');
+  replay.onclick = () => goToScene(currentSceneIndex);
+  toolbar.append(eyebrow, replay);
+  demoPanel.appendChild(toolbar);
+  demoPanel.appendChild(stageEl);
+  demoPanel.appendChild(labelEl);
 
-  // Text panel (right) — nav lives at top of this column
+  // Text panel (right on desktop); navigation spans the bottom of the pane.
   textPanelEl = document.createElement('div');
   textPanelEl.className = 'tutorial-text-panel';
 
   navEl = document.createElement('div');
   navEl.className = 'tutorial-nav';
   buildNav();
-  textPanelEl.appendChild(navEl);
 
   // Text content area (title + description go here)
   textContentEl = document.createElement('div');
   textContentEl.className = 'tutorial-text-content';
   textPanelEl.appendChild(textContentEl);
 
-  wrapper.appendChild(stageEl);
+  wrapper.appendChild(demoPanel);
   wrapper.appendChild(textPanelEl);
+  wrapper.appendChild(navEl);
   containerEl.appendChild(wrapper);
 }
 
@@ -119,7 +134,8 @@ function buildNav() {
   // Prev button
   const prevBtn = document.createElement('button');
   prevBtn.className = 'tutorial-nav-btn';
-  prevBtn.textContent = '←';
+  prevBtn.textContent = '← Back';
+  prevBtn.setAttribute('aria-label', 'Previous lesson');
   prevBtn.onclick = () => goToScene(currentSceneIndex - 1);
   navEl.appendChild(prevBtn);
 
@@ -132,8 +148,12 @@ function buildNav() {
   // Next button
   const nextBtn = document.createElement('button');
   nextBtn.className = 'tutorial-nav-btn';
-  nextBtn.textContent = '→';
-  nextBtn.onclick = () => goToScene(currentSceneIndex + 1);
+  nextBtn.textContent = 'Next →';
+  nextBtn.onclick = () => {
+    if (currentSceneIndex === TUTORIAL_SCENES.length - 1) {
+      document.getElementById('tutorial-close')?.click();
+    } else goToScene(currentSceneIndex + 1);
+  };
   navEl.appendChild(nextBtn);
 }
 
@@ -141,6 +161,13 @@ function updateNav() {
   if (!navEl) return;
   const counter = navEl.querySelector('.tutorial-nav-counter');
   if (counter) counter.textContent = `${currentSceneIndex + 1} / ${TUTORIAL_SCENES.length}`;
+  const [previous, next] = navEl.querySelectorAll('button');
+  previous.disabled = currentSceneIndex === 0;
+  next.textContent = currentSceneIndex === TUTORIAL_SCENES.length - 1 ? 'Done' : 'Next →';
+  next.setAttribute(
+    'aria-label',
+    currentSceneIndex === TUTORIAL_SCENES.length - 1 ? 'Finish tutorial' : 'Next lesson'
+  );
 }
 
 // ============================================================================
@@ -155,6 +182,10 @@ function goToScene(index) {
   const scene = TUTORIAL_SCENES[index];
   if (!scene) return;
 
+  stageEl.querySelector('.tutorial-flow-grid')?.remove();
+  stageEl.querySelector('.tutorial-diagram')?.remove();
+  stageEl.dataset.scene = scene.id;
+
   // Clear stage
   for (const slot of Object.values(slotElements)) {
     slot.innerHTML = '';
@@ -168,7 +199,7 @@ function goToScene(index) {
 
   // Render text content
   textContentEl.innerHTML = `
-    <h3 class="tutorial-scene-title">${scene.title}</h3>
+    <h3 class="tutorial-scene-title">${scene.title.replace(/^\d+\.\s*/, '')}</h3>
     <div class="tutorial-scene-text">${scene.text}</div>
   `;
 
@@ -177,19 +208,57 @@ function goToScene(index) {
     String(Math.max(1, scene.demo?.setup?.length || 0))
   );
 
-  // Place cards in slots
-  if (scene.demo?.setup) {
-    for (const { slot, card } of scene.demo.setup) {
-      const el = slotElements[slot];
-      if (!el) continue;
-      const cardEl = renderCard(card, {
-        showEffectSummary: true,
-        useBaseStats: true,
-        context: 'tooltip',
-      });
-      el.appendChild(cardEl);
-      el.style.opacity = '0';
+  if (scene.demo?.flow) {
+    const flow = document.createElement('div');
+    flow.className = 'tutorial-flow-grid';
+    const isTurn = scene.id === 'turn-flow';
+    if (isTurn) {
+      flow.classList.add('tutorial-turn-sequence');
+      flow.innerHTML =
+        '<div class="tutorial-phase-eyebrow">YOUR TURN</div><div class="tutorial-phase-name"></div><div class="tutorial-phase-position"></div><div class="tutorial-phase-track" role="list" aria-label="Turn phases"></div>';
     }
+    flow.style.setProperty('--flow-columns', String(scene.demo.flow.length === 2 ? 2 : 3));
+    scene.demo.flow.forEach((text, index) => {
+      const item = document.createElement('div');
+      item.className = 'tutorial-flow-step';
+      item.textContent = isTurn ? String(index + 1) : `${index + 1}. ${text}`;
+      if (isTurn) {
+        item.setAttribute('role', 'listitem');
+        item.setAttribute('aria-label', `${index + 1}. ${text}`);
+        item.dataset.phase = text;
+      }
+      (flow.querySelector('.tutorial-phase-track') || flow).appendChild(item);
+    });
+    stageEl.appendChild(flow);
+  }
+
+  if (scene.demo.diagram) {
+    const diagram = document.createElement('div');
+    diagram.className = `tutorial-diagram tutorial-diagram-${scene.demo.diagram}`;
+    const zones =
+      scene.demo.diagram === 'zones'
+        ? [
+            ['field', 'FIELD', '3 creature slots'],
+            ['hand', 'HAND', 'Private · no limit'],
+            ['carrion', 'CARRION', 'Slain / eaten'],
+            ['exile', 'EXILE', 'Used / removed'],
+          ]
+        : [
+            ['hand', 'IN YOUR HAND', 'Wait for a trigger'],
+            ['trigger', 'RIVAL ACTION', 'Response window'],
+            ['resolve', 'YOUR CHOICE', 'Activate and resolve'],
+            ['exile', 'EXILE', 'Used trap leaves hand'],
+          ];
+    zones.forEach(([id, title, detail]) => {
+      const zone = document.createElement('div');
+      zone.className = 'tutorial-zone';
+      zone.dataset.zone = id;
+      zone.innerHTML = `<strong>${title}</strong><span>${detail}</span>`;
+      if (id === 'field')
+        zone.innerHTML += '<div class="tutorial-field-spaces"><i></i><i></i><i></i></div>';
+      diagram.appendChild(zone);
+    });
+    stageEl.appendChild(diagram);
   }
 
   startDemo(scene.demo);
@@ -200,6 +269,8 @@ function goToScene(index) {
 // ============================================================================
 
 function stopDemo() {
+  stageEl?.getAnimations({ subtree: true }).forEach((animation) => animation.cancel());
+  stageEl?.querySelectorAll('.tutorial-attack-ghost').forEach((ghost) => ghost.remove());
   if (loopAbort) {
     loopAbort.abort();
     loopAbort = null;
@@ -223,7 +294,41 @@ async function startDemo(demo) {
   }
 }
 
-function resetStage() {
+function resetStage(demo) {
+  for (const slot of Object.values(slotElements)) {
+    slot.innerHTML = '';
+    slot.className = `tutorial-stage-slot tutorial-slot-${slot.dataset.slot}`;
+    delete slot.dataset.hp;
+    delete slot.dataset.atk;
+    delete slot.dataset.nut;
+    delete slot.dataset.focusStat;
+  }
+  for (const item of demo.setup) {
+    const slot = slotElements[item.slot];
+    if (item.card) {
+      slot.appendChild(renderCard(item.card, { showEffectSummary: true, context: 'tooltip' }));
+      if (item.card.hp !== undefined) slot.dataset.hp = String(item.card.hp);
+      if (item.card.atk !== undefined) slot.dataset.atk = String(item.card.atk);
+      if (item.card.nutrition !== undefined) slot.dataset.nut = String(item.card.nutrition);
+    } else if (item.entity) {
+      const box = document.createElement('div');
+      box.className = 'tutorial-entity';
+      box.innerHTML = `<span class="tutorial-entity-title">${item.entity.title}</span><strong class="tutorial-entity-value">${item.entity.value}</strong><span class="tutorial-entity-detail">${item.entity.detail}</span>`;
+      slot.appendChild(box);
+      if (item.entity.title === 'RIVAL') slot.dataset.hp = item.entity.value;
+    }
+    if (item.role) {
+      const role = document.createElement('div');
+      role.className = 'tutorial-slot-role';
+      role.textContent = item.role;
+      slot.appendChild(role);
+    }
+    const note = document.createElement('div');
+    note.className = 'tutorial-slot-note';
+    slot.appendChild(note);
+  }
+  stageEl.dataset.cycle = String(Number(stageEl.dataset.cycle || 0) + 1);
+
   for (const slot of Object.values(slotElements)) {
     slot.style.opacity = '0';
     slot.style.transform = '';
@@ -250,7 +355,8 @@ function resetStage() {
 }
 
 async function runSteps(steps, signal) {
-  for (const step of steps) {
+  for (const [index, step] of steps.entries()) {
+    stageEl.dataset.step = String(index);
     if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
     await executeStep(step, signal);
   }
@@ -262,8 +368,58 @@ async function runSteps(steps, signal) {
 
 async function executeStep(step, signal) {
   switch (step.type) {
+    case 'parallel':
+      return Promise.all(step.steps.map((child) => executeStep(child, signal)));
+    case 'note':
+      return handleNote(step);
+    case 'entityValue': {
+      const slot = slotElements[step.target];
+      slot.querySelector('.tutorial-entity-value').textContent = step.text;
+      if (step.detail) slot.querySelector('.tutorial-entity-detail').textContent = step.detail;
+      return;
+    }
+    case 'dim':
+      slotElements[step.target].classList.add('tutorial-unavailable');
+      return;
+    case 'depart':
+      removeArrow();
+      slotElements[step.target].classList.add('tutorial-departed');
+      slotElements[step.target].style.opacity = '1';
+      return handleNote({ ...step, text: `→ ${step.destination}` });
+    case 'focusStat':
+      stageEl
+        .querySelectorAll('[data-focus-stat]')
+        .forEach((slot) => delete slot.dataset.focusStat);
+      slotElements[step.target].dataset.focusStat = step.stat;
+      return;
+    case 'keyword': {
+      const card = slotElements[step.target].querySelector('.card');
+      const tags = card.querySelector('.card-keywords-text');
+      if (step.remove) {
+        tags?.querySelectorAll('.keyword-tag').forEach((tag) => {
+          if (tag.textContent.trim() === step.keyword) tag.remove();
+        });
+      } else {
+        const tag = document.createElement('span');
+        tag.className = 'keyword-tag';
+        tag.textContent = step.keyword;
+        if (tags) tags.appendChild(tag);
+        else {
+          const row = document.createElement('div');
+          row.className = 'card-keywords-text';
+          row.appendChild(tag);
+          card.querySelector('.card-stats-row')?.after(row);
+        }
+      }
+      return;
+    }
+    case 'zone':
+      stageEl
+        .querySelectorAll('.tutorial-zone')
+        .forEach((zone) => zone.classList.toggle('is-current', zone.dataset.zone === step.target));
+      return;
     case 'fadeIn':
-      return handleFadeIn(step);
+      return handleFadeIn(step, signal);
     case 'wait':
       return wait(step.duration, signal);
     case 'highlightAttacker':
@@ -275,7 +431,8 @@ async function executeStep(step, signal) {
     case 'arrow':
       return handleArrow(step, signal);
     case 'label':
-      return handleLabel(step);
+      handleLabel(step);
+      return step.duration ? wait(step.duration, signal) : undefined;
     case 'clearLabel':
       return handleClearLabel();
     case 'keywordFlash':
@@ -310,7 +467,7 @@ async function executeStep(step, signal) {
 }
 
 // -- fadeIn --
-function handleFadeIn(step) {
+function handleFadeIn(step, signal) {
   const targets = step.target === 'all' ? Object.values(slotElements) : [slotElements[step.target]];
   for (const slot of targets) {
     if (slot && slot.children.length > 0) {
@@ -318,22 +475,41 @@ function handleFadeIn(step) {
       slot.style.opacity = '1';
     }
   }
-  return wait(step.duration || 400);
+  return wait(step.duration || 400, signal);
 }
 
 // -- wait --
 function wait(ms, signal) {
   return new Promise((resolve, reject) => {
-    const id = setTimeout(resolve, ms);
-    signal?.addEventListener(
-      'abort',
-      () => {
-        clearTimeout(id);
-        reject(new DOMException('Aborted', 'AbortError'));
-      },
-      { once: true }
-    );
+    const onAbort = () => {
+      clearTimeout(id);
+      reject(new DOMException('Aborted', 'AbortError'));
+    };
+    const id = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    if (signal?.aborted) onAbort();
+    else signal?.addEventListener('abort', onAbort, { once: true });
   });
+}
+
+function handleNote(step) {
+  const slot = slotElements[step.target];
+  slot.querySelector('.tutorial-slot-note').textContent = step.text;
+}
+
+function setStat(slot, stat, value) {
+  slot.dataset[stat] = String(value);
+  const node = slot.querySelector(`.stat-${stat}`);
+  if (node) {
+    node.lastChild.textContent = ` ${value}`;
+    node.setAttribute('aria-label', `${stat === 'hp' ? 'Health' : 'Attack'} ${value}`);
+    node.classList.add('tutorial-stat-changed');
+  }
+  if (stat === 'hp' && slot.querySelector('.tutorial-entity-value')) {
+    slot.querySelector('.tutorial-entity-value').textContent = String(value);
+  }
 }
 
 // -- highlightAttacker / highlightTarget --
@@ -367,7 +543,7 @@ async function handleArrow(step, signal) {
   const to = { x: toRect.left + toRect.width / 2, y: toRect.top + toRect.height / 2 };
 
   arrowSvg = createArrowSvg(from, to, step.color);
-  document.body.appendChild(arrowSvg);
+  stageEl.appendChild(arrowSvg);
   requestAnimationFrame(() => arrowSvg?.classList.add('visible'));
 
   await wait(step.duration || 600, signal);
@@ -396,7 +572,7 @@ async function handleArrowFizzle(step, signal) {
   };
 
   arrowSvg = createArrowSvg(from, to, 'red');
-  document.body.appendChild(arrowSvg);
+  stageEl.appendChild(arrowSvg);
   requestAnimationFrame(() => arrowSvg?.classList.add('visible'));
 
   await wait(400, signal);
@@ -410,13 +586,16 @@ async function handleArrowFizzle(step, signal) {
 }
 
 function createArrowSvg(from, to, color) {
+  const bounds = stageEl.getBoundingClientRect();
+  from = { x: from.x - bounds.left, y: from.y - bounds.top };
+  to = { x: to.x - bounds.left, y: to.y - bounds.top };
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.classList.add('ai-attack-arrow', 'tutorial-arrow');
   svg.setAttribute('width', '100%');
   svg.setAttribute('height', '100%');
   svg.style.cssText = `
-    position: fixed; top: 0; left: 0;
-    width: 100vw; height: 100vh;
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
     pointer-events: none; z-index: 1000; overflow: visible;
   `;
 
@@ -497,6 +676,24 @@ function removeArrow() {
 // -- label / clearLabel --
 function handleLabel(step) {
   labelEl.textContent = step.text;
+  stageEl.querySelectorAll('.tutorial-flow-step').forEach((item, index) => {
+    item.classList.toggle('is-current', index === step.node);
+    item.classList.toggle('is-complete', index < step.node);
+    if (index === step.node && item.dataset.phase) {
+      stageEl.querySelector('.tutorial-phase-name').textContent = item.dataset.phase;
+      stageEl.querySelector('.tutorial-phase-position').textContent =
+        `PHASE ${index + 1} OF ${stageEl.querySelectorAll('.tutorial-flow-step').length}`;
+      stageEl
+        .querySelector('.tutorial-phase-track')
+        .style.setProperty(
+          '--phase-progress',
+          String(index / (stageEl.querySelectorAll('.tutorial-flow-step').length - 1))
+        );
+      item.setAttribute('aria-current', 'step');
+    } else {
+      item.removeAttribute('aria-current');
+    }
+  });
   labelEl.style.transition = 'opacity 0.3s ease-out';
   labelEl.style.opacity = '1';
 }
@@ -526,39 +723,59 @@ async function handleAttack(step, signal) {
   if (!fromCard) return;
 
   const fromRect = fromCard.getBoundingClientRect();
-  const toRect = toSlot.getBoundingClientRect();
+  const bounds = stageEl.getBoundingClientRect();
+  const toRect = toSlot.children.length
+    ? toSlot.getBoundingClientRect()
+    : {
+        left: bounds.left + bounds.width * 0.85,
+        top: fromRect.top + fromRect.height / 2,
+        width: 0,
+        height: 0,
+      };
 
   const ghost = fromCard.cloneNode(true);
   ghost.classList.add('tutorial-attack-ghost');
+  ghost.setAttribute('aria-hidden', 'true');
   ghost.style.cssText = `
-    position: fixed;
+    position: absolute;
     width: ${fromRect.width}px;
     height: ${fromRect.height}px;
-    left: ${fromRect.left + fromRect.width / 2}px;
-    top: ${fromRect.top + fromRect.height / 2}px;
+    left: ${fromRect.left - bounds.left + fromRect.width / 2}px;
+    top: ${fromRect.top - bounds.top + fromRect.height / 2}px;
     z-index: 1001;
     pointer-events: none;
     transform: translate(-50%, -50%);
   `;
-  document.body.appendChild(ghost);
+  stageEl.appendChild(ghost);
   removeArrow();
 
-  const deltaX = toRect.left + toRect.width / 2 - (fromRect.left + fromRect.width / 2);
-  const deltaY = toRect.top + toRect.height / 2 - (fromRect.top + fromRect.height / 2);
+  const deltaX = (toRect.left + toRect.width / 2 - (fromRect.left + fromRect.width / 2)) * 0.35;
+  const deltaY = (toRect.top + toRect.height / 2 - (fromRect.top + fromRect.height / 2)) * 0.35;
 
   const animation = ghost.animate(
     [
       { transform: 'translate(-50%, -50%) scale(1)', opacity: 0.95 },
-      { transform: 'translate(-50%, -50%) scale(1.08)', opacity: 1, offset: 0.7 },
+      { transform: 'translate(-50%, -50%) scale(1.02)', opacity: 1, offset: 0.7 },
       {
         transform: `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(0.95)`,
         opacity: 0.2,
       },
     ],
-    { duration: step.duration || 420, easing: 'cubic-bezier(0.2, 0.85, 0.35, 1)' }
+    {
+      duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 1
+        : step.duration || 420,
+      easing: 'cubic-bezier(0.2, 0.85, 0.35, 1)',
+    }
   );
-  await animation.finished;
-  ghost.remove();
+  const cancel = () => animation.cancel();
+  signal?.addEventListener('abort', cancel, { once: true });
+  try {
+    await animation.finished;
+  } finally {
+    signal?.removeEventListener('abort', cancel);
+    ghost.remove();
+  }
 }
 
 // -- damagePop --
@@ -566,6 +783,8 @@ async function handleDamagePop(step, signal) {
   const slot = slotElements[step.target];
   if (!slot) return;
 
+  if (slot.dataset.hp !== undefined)
+    setStat(slot, 'hp', Math.max(0, Number(slot.dataset.hp) - step.amount));
   const pop = document.createElement('div');
   pop.className = 'tutorial-damage-pop';
   pop.textContent = `-${step.amount}`;
@@ -606,6 +825,8 @@ async function handleBuffPop(step, signal) {
   const slot = slotElements[step.target];
   if (!slot) return;
 
+  if (step.atk !== undefined) setStat(slot, 'atk', Number(slot.dataset.atk) + step.atk);
+  if (step.hp !== undefined) setStat(slot, 'hp', Number(slot.dataset.hp) + step.hp);
   const pop = document.createElement('div');
   pop.className = 'tutorial-buff-pop';
   pop.textContent = step.text || `+${step.atk}/${step.hp}`;
@@ -642,6 +863,10 @@ function handleApplyStatus(step) {
 
   switch (step.status) {
     case 'paralysis':
+      setStat(slot, 'atk', 0);
+      cardEl.querySelector('.card-keywords').innerHTML =
+        '<div class="card-keywords-text"><span class="keyword-tag">Harmless</span></div>';
+      cardEl.querySelector('.card-effect')?.remove();
       for (let i = 0; i < 4; i++) {
         const spark = document.createElement('div');
         spark.className = `electric-spark spark-${i + 1}`;
@@ -735,25 +960,29 @@ async function handleConsumeInto(step, signal) {
   const preyCard = preySlot.querySelector('.card');
   if (!preyCard) return;
 
+  const bounds = stageEl.getBoundingClientRect();
   const preyRect = preyCard.getBoundingClientRect();
   const predRect = predSlot.getBoundingClientRect();
 
   // Create ghost of prey
   const ghost = preyCard.cloneNode(true);
+  ghost.classList.add('tutorial-attack-ghost');
+  ghost.setAttribute('aria-hidden', 'true');
   ghost.style.cssText = `
-    position: fixed;
+    position: absolute;
     width: ${preyRect.width}px;
     height: ${preyRect.height}px;
-    left: ${preyRect.left + preyRect.width / 2}px;
-    top: ${preyRect.top + preyRect.height / 2}px;
+    left: ${preyRect.left - bounds.left + preyRect.width / 2}px;
+    top: ${preyRect.top - bounds.top + preyRect.height / 2}px;
     z-index: 1001;
     pointer-events: none;
     transform: translate(-50%, -50%);
   `;
-  document.body.appendChild(ghost);
+  stageEl.appendChild(ghost);
 
-  // Hide original
-  preySlot.style.opacity = '0';
+  removeArrow();
+  // Keep the source position visible as a labelled destination after consumption.
+  preySlot.classList.add('tutorial-departed');
 
   const deltaX = predRect.left + predRect.width / 2 - (preyRect.left + preyRect.width / 2);
   const deltaY = predRect.top + predRect.height / 2 - (preyRect.top + preyRect.height / 2);
@@ -773,11 +1002,22 @@ async function handleConsumeInto(step, signal) {
         filter: 'brightness(0.5)',
       },
     ],
-    { duration: step.duration || 600, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' }
+    {
+      duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 1
+        : step.duration || 600,
+      easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+    }
   );
 
-  await animation.finished;
-  ghost.remove();
+  const cancel = () => animation.cancel();
+  signal?.addEventListener('abort', cancel, { once: true });
+  try {
+    await animation.finished;
+  } finally {
+    signal?.removeEventListener('abort', cancel);
+    ghost.remove();
+  }
 }
 
 // -- highlight (glow ring around a specific element) --

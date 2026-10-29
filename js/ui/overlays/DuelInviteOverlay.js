@@ -27,6 +27,7 @@ let awaitingCountdownInterval = null;
  * @param {Function} callbacks.onDecline - Called when user declines
  */
 export const showDuelInvitePopup = (invite, senderName, callbacks = {}) => {
+  document.dispatchEvent(new Event('duel-invite-received'));
   // Remove any existing popup
   hideDuelInvitePopup();
 
@@ -182,10 +183,18 @@ export const showAwaitingResponse = (receiverName, callbacks = {}) => {
   const cancelBtn = overlay.querySelector('.duel-invite-cancel');
   const timerEl = overlay.querySelector('.duel-invite-timer');
 
-  cancelBtn.onclick = () => {
-    hideAwaitingResponse();
-    callbacks.onCancel?.();
+  const finish = async (callback) => {
+    cancelBtn.disabled = true;
+    try {
+      await callback?.();
+      hideAwaitingResponse();
+    } catch (error) {
+      cancelBtn.disabled = false;
+      timerEl.textContent = 'Could not cancel. Please try again.';
+      console.error('Invite cancellation failed:', error);
+    }
   };
+  cancelBtn.onclick = () => finish(callbacks.onCancel);
 
   // Start countdown
   awaitingCountdownInterval = setInterval(() => {
@@ -194,8 +203,9 @@ export const showAwaitingResponse = (receiverName, callbacks = {}) => {
       timerEl.textContent = `${timeRemaining}s`;
     }
     if (timeRemaining <= 0) {
-      hideAwaitingResponse();
-      callbacks.onTimeout?.();
+      clearInterval(awaitingCountdownInterval);
+      awaitingCountdownInterval = null;
+      finish(callbacks.onTimeout);
     }
   }, 1000);
 

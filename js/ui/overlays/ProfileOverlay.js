@@ -1,3 +1,4 @@
+import { resetPlayerExperience } from './PlayerExperience.js';
 /**
  * Profile Overlay Module
  *
@@ -1005,6 +1006,7 @@ export const hideProfileOverlay = () => {
  * This ensures a clean slate when switching accounts
  */
 export const resetProfileState = () => {
+  resetPlayerExperience();
   // Reset name style state
   currentNameStyle = { effect: null, font: null, color: null };
 

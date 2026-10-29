@@ -226,7 +226,14 @@ try {
   await page.keyboard.press('Tab');
   assert.equal(await page.evaluate(() => document.activeElement.id), 'close-history');
   await page.keyboard.press('Escape');
-  assert.equal(await page.evaluate(() => document.querySelectorAll('[inert]').length), 0);
+  // The hidden player-experience screen is intentionally inert. History must
+  // release everything else, and must not accidentally reactivate that screen.
+  assert.deepEqual(
+    await page.evaluate(() => [...document.querySelectorAll('[inert]')].map(el => ({
+      id: el.id, hidden: el.getAttribute('aria-hidden'), active: el.classList.contains('active')
+    }))),
+    [{ id: 'player-experience', hidden: 'true', active: false }]
+  );
   assert.equal(await page.evaluate(() => document.activeElement.id), 'field-history-btn');
   await page.screenshot({ path: `OUT/unused.png`.replace('OUT', OUT) });
   // Incoming mandatory selection closes History without answering it.
@@ -242,7 +249,14 @@ try {
   });
   await page.waitForTimeout(100);
   assert.equal(await page.locator('#history-panel').getAttribute('aria-modal'), null);
-  assert.equal(await page.evaluate(() => document.querySelectorAll('[inert]').length), 0);
+  // The hidden player-experience screen is intentionally inert. History must
+  // release everything else, and must not accidentally reactivate that screen.
+  assert.deepEqual(
+    await page.evaluate(() => [...document.querySelectorAll('[inert]')].map(el => ({
+      id: el.id, hidden: el.getAttribute('aria-hidden'), active: el.classList.contains('active')
+    }))),
+    [{ id: 'player-experience', hidden: 'true', active: false }]
+  );
   assert.equal(await page.evaluate(() => window.historyPromptAnswered), false);
   await page.evaluate(async () =>
     (await import('/js/ui/components/SelectionPanel.js')).clearSelectionPanel()

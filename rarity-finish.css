@@ -1,0 +1,133 @@
+/* Approved Set 3 / Black Opal. No art motion, card geometry or gameplay changes.
+   Finish effects never capture input; action/status styles retain priority. */
+.card.canonical-card {
+  --opal-accent: #79b69c;
+  --opal-foil: 0;
+  position: relative;
+  overflow: visible;
+  border-radius: 11px;
+}
+.card.canonical-card.rarity-uncommon {
+  --opal-accent: #79bbef;
+  --opal-foil: 0.2;
+}
+.card.canonical-card.rarity-rare {
+  --opal-accent: #b69be4;
+  --opal-foil: 0.5;
+}
+.card.canonical-card.rarity-legendary {
+  --opal-accent: #e6b56a;
+  --opal-foil: 0.65;
+}
+.card.canonical-card.rarity-pristine {
+  --opal-accent: #e9f5f3;
+  --opal-foil: 0.8;
+}
+.card.canonical-card:not(.card-selected) {
+  border: 3px solid color-mix(in srgb, var(--opal-accent), #1c2639 45%);
+}
+.card.canonical-card:not(.card-selected):not(.can-attack-pulse):not(.hand-focus) {
+  box-shadow: 0 4px 12px #0003;
+}
+.card.canonical-card > .card-inner {
+  border-radius: 7px;
+}
+.card.canonical-card .card-inner .card-name {
+  background: #191d30;
+  color: #edf3ed;
+  -webkit-text-fill-color: currentColor;
+  background-clip: border-box;
+  text-shadow: none;
+  filter: none;
+  animation: none;
+}
+.card.canonical-card .card-inner .card-content-area {
+  background: linear-gradient(140deg, #202638, #101f2e);
+}
+.card.canonical-card:is(.rarity-rare, .rarity-legendary, .rarity-pristine)
+  .card-inner
+  .card-content-area {
+  background:
+    linear-gradient(145deg, transparent 48%, #b3a2ff15 49%, transparent 58%),
+    linear-gradient(38deg, #76ddcf12, transparent 40%), linear-gradient(140deg, #222437, #121d2c);
+}
+.card.canonical-card.rarity-legendary .card-inner .card-name {
+  background: linear-gradient(115deg, #372a3f, #59412a, #25394b);
+}
+.card.canonical-card.rarity-pristine .card-inner .card-name {
+  background: linear-gradient(115deg, #a3c9c7, #cebedf, #efe6b9, #a5c5db);
+  color: #192237;
+}
+.card.canonical-card .card-image-container {
+  position: relative;
+  isolation: isolate;
+}
+.card-opal-foil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: var(--opal-foil, 0);
+  background: repeating-linear-gradient(
+    130deg,
+    #5fffcf32 0,
+    #8c9cff32 22%,
+    #ef8af52e 40%,
+    transparent 54%,
+    #f9dc8b30 73%,
+    #79def332 100%
+  );
+  mix-blend-mode: color-dodge;
+}
+/* A separate edge layer leaves CSS outlines available for focus/targeting. */
+.card.canonical-card:is(.rarity-uncommon, .rarity-rare, .rarity-legendary, .rarity-pristine)
+  > .card-opal-edge {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border: 1px solid var(--opal-accent);
+  border-radius: 13px;
+  pointer-events: none;
+}
+.card-rarity-seal {
+  position: absolute;
+  z-index: 2;
+  width: 12cqw;
+  height: 12cqw;
+  left: 50%;
+  bottom: -6cqw;
+  transform: translateX(-50%);
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  color: var(--opal-accent);
+  background: #192437;
+  clip-path: polygon(50% 0, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%);
+}
+.card-rarity-seal svg {
+  width: 86%;
+  height: 86%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+}
+.rarity-common > .card-rarity-seal {
+  width: 9cqw;
+  height: 9cqw;
+  bottom: -4cqw;
+}
+:is(.rarity-legendary, .rarity-pristine) > .card-rarity-seal {
+  width: 14cqw;
+  height: 14cqw;
+  bottom: -7cqw;
+}
+/* Reserve room below collectible faces without shrinking their art or text. */
+.pe-rarity {
+  margin-top: 18px;
+}
+/* Selection is gameplay state, and must beat every collectible rarity. */
+.card.canonical-card.card-selected {
+  border: 3px solid var(--gold);
+  box-shadow:
+    0 0 20px rgba(212, 168, 83, 0.8),
+    0 6px 16px rgba(0, 0, 0, 0.35);
+}

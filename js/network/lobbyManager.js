@@ -327,6 +327,7 @@ export const ensurePlayerCardsLoaded = async (state) => {
     return;
   }
   cardsLoading = true;
+  state.menu.collectionError = null;
 
   try {
     const api = await loadSupabaseApi(state);
@@ -344,6 +345,7 @@ export const ensurePlayerCardsLoaded = async (state) => {
     cardsLoaded = true;
   } catch (error) {
     console.error('Failed to load player cards:', error);
+    state.menu.collectionError = error.message || 'Unable to load your collection.';
   } finally {
     cardsLoading = false;
     callbacks.onUpdate?.();

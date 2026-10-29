@@ -1,897 +1,485 @@
 /**
- * Tutorial Scene Definitions
- *
- * Each scene has a declarative demo descriptor with card setup and animation timeline.
- * The TutorialEngine interprets these and runs them as looping visual demonstrations.
+ * Focused teaching vignettes. Named examples use the shipped card definitions;
+ * abstract entities are explicitly labelled rather than invented card faces.
+ * Each loop holds its result before resetting. No gameplay state is modified.
  */
+import fish from '../../cards/data/fish.json' with { type: 'json' };
+import mammal from '../../cards/data/mammal.json' with { type: 'json' };
+import { generateCardEffectText } from '../../cards/effectTextGenerator.js';
 
-// ============================================================================
-// REUSABLE CARD DEFINITIONS
-// ============================================================================
-
-const CARDS = {
-  // Generic defenders/attackers
-  salmon: {
-    id: 'fish-prey-salmon',
-    name: 'Salmon',
-    type: 'Prey',
-    atk: 2,
-    hp: 2,
-    nutrition: 2,
-    keywords: [],
-    rarity: 'common',
-  },
-  mako: {
-    id: 'fish-predator-shortfin-mako',
-    name: 'Shortfin Mako',
-    type: 'Predator',
-    atk: 3,
-    hp: 3,
-    keywords: [],
-    rarity: 'common',
-  },
-
-  // Keyword showcase cards
-  blackSwan: {
-    id: 'bird-prey-black-swan',
-    name: 'Black Swan',
-    type: 'Prey',
-    atk: 3,
-    hp: 3,
-    nutrition: 3,
-    keywords: ['Ambush'],
-    rarity: 'uncommon',
-  },
-  flyingFish: {
-    id: 'token-flying-fish',
-    name: 'Flying Fish',
-    type: 'Prey',
-    atk: 1,
-    hp: 1,
-    nutrition: 1,
-    keywords: ['Haste'],
-    rarity: 'common',
-  },
-  angler: {
-    id: 'fish-prey-deep-sea-angler',
-    name: 'Deep-sea Angler',
-    type: 'Prey',
-    atk: 2,
-    hp: 2,
-    nutrition: 2,
-    keywords: ['Lure'],
-    rarity: 'common',
-  },
-  catfish: {
-    id: 'token-catfish',
-    name: 'Catfish',
-    type: 'Prey',
-    atk: 1,
-    hp: 1,
-    nutrition: 1,
-    keywords: ['Barrier'],
-    rarity: 'common',
-  },
-  manOWar: {
-    id: 'token-man-o-war',
-    name: "Portuguese Man O' War",
-    type: 'Prey',
-    atk: 1,
-    hp: 1,
-    nutrition: 1,
-    keywords: ['Passive'],
-    rarity: 'common',
-  },
-  kakapo: {
-    id: 'bird-prey-kakapo',
-    name: 'Kākāpō',
-    type: 'Prey',
-    atk: 0,
-    hp: 2,
-    nutrition: 2,
-    keywords: ['Invisible'],
-    rarity: 'rare',
-  },
-  lancehead: {
-    id: 'reptile-prey-golden-lancehead',
-    name: 'Golden Lancehead',
-    type: 'Prey',
-    atk: 1,
-    hp: 1,
-    nutrition: 1,
-    keywords: ['Toxic'],
-    rarity: 'common',
-  },
-  mamba: {
-    id: 'reptile-prey-black-mamba',
-    name: 'Black Mamba',
-    type: 'Prey',
-    atk: 3,
-    hp: 1,
-    nutrition: 1,
-    keywords: ['Ambush', 'Neurotoxic'],
-    rarity: 'rare',
-  },
-  wahoo: {
-    id: 'fish-predator-wahoo',
-    name: 'Wahoo',
-    type: 'Predator',
-    atk: 3,
-    hp: 2,
-    keywords: ['Haste', 'Edible'],
-    rarity: 'common',
-  },
-  hawk: {
-    id: 'bird-predator-red-tailed-hawk',
-    name: 'Red-tailed Hawk',
-    type: 'Predator',
-    atk: 4,
-    hp: 5,
-    keywords: ['Scavenge'],
-    rarity: 'rare',
-  },
-  chameleon: {
-    id: 'reptile-prey-chameleon',
-    name: 'Chameleon',
-    type: 'Prey',
-    atk: 2,
-    hp: 2,
-    nutrition: 2,
-    keywords: ['Acuity'],
-    rarity: 'common',
-  },
-  snowshoeHare: {
-    id: 'mammal-prey-snowshoe-hare',
-    name: 'Snowshoe Hare',
-    type: 'Prey',
-    atk: 1,
-    hp: 1,
-    nutrition: 1,
-    keywords: ['Haste', 'Hidden'],
-    rarity: 'common',
-  },
-  treeFrog: {
-    id: 'token-radiated-tree-frog',
-    name: 'Radiated Tree Frog',
-    type: 'Prey',
-    atk: 1,
-    hp: 1,
-    nutrition: 1,
-    keywords: ['Immune'],
-    rarity: 'common',
-  },
-
-  // Hidden card (for demo)
-  hiddenPrey: {
-    id: 'token-leafy',
-    name: 'Leafy',
-    type: 'Prey',
-    atk: 0,
-    hp: 1,
-    nutrition: 0,
-    keywords: ['Hidden'],
-    rarity: 'common',
-  },
-
-  // Spell/trap examples
-  spell: {
-    id: 'fish-spell-harpoon',
-    name: 'Harpoon',
-    type: 'Spell',
-    atk: 0,
-    hp: 0,
-    keywords: [],
-    rarity: 'common',
-    effectText: 'Deal 3 damage to target creature',
-  },
-  freeSpell: {
-    id: 'token-alligator-skin',
-    name: 'Alligator Skin',
-    type: 'Free Spell',
-    atk: 0,
-    hp: 0,
-    keywords: [],
-    rarity: 'common',
-    effectText: 'Grant Barrier to a creature',
-  },
-  trap: {
-    id: 'fish-trap-fish-net',
-    name: 'Fish Net',
-    type: 'Trap',
-    atk: 0,
-    hp: 0,
-    keywords: [],
-    rarity: 'common',
-    effectText: 'Web attacker, negate attack',
-  },
+const definitions = [...fish.cards, ...mammal.cards];
+const card = (id) => {
+  const definition = definitions.find((c) => c.id === id);
+  if (!definition) throw new Error(`Missing tutorial card: ${id}`);
+  return { ...definition, effectText: generateCardEffectText(definition) };
 };
-
-// ============================================================================
-// SCENES
-// ============================================================================
+const C = {
+  salmon: card('fish-prey-king-salmon'),
+  mako: card('fish-predator-shortfin-mako'),
+  haste: card('fish-prey-kingfish'),
+  free: card('fish-prey-black-mullet'),
+  hidden: card('fish-prey-ghost-eel'),
+  invisible: card('fish-prey-leafy-seadragon'),
+  lure: card('fish-prey-deep-sea-angler'),
+  immune: card('mammal-prey-muskox'),
+  barrier: card('mammal-prey-alaskan-moose'),
+  passive: card('fish-prey-blobfish'),
+  edible: card('fish-predator-wahoo'),
+  acuity: card('fish-predator-great-white-shark'),
+  neurotoxic: card('fish-prey-blue-ringed-octopus'),
+  spell: card('fish-spell-harpoon'),
+  freeSpell: card('fish-free-spell-edible'),
+};
+const at = (slot, c, role) => ({ slot, card: c, role });
+const entity = (slot, title, value, detail) => ({ slot, entity: { title, value, detail } });
+const say = (text, duration = 1600) => ({ type: 'label', text, duration });
+const show = (target = 'all') => ({ type: 'fadeIn', target, duration: 350 });
+const aim = (from, to) => ({ type: 'arrow', from, to, duration: 650 });
+const blocked = (from, to) => ({ type: 'arrowFizzle', from, to });
+const attack = (from, to) => ({ type: 'attack', from, to, duration: 420 });
+const damage = (target, amount) => ({ type: 'damagePop', target, amount, duration: 700 });
+const status = (target, name) => ({ type: 'applyStatus', target, status: name });
+const unstatus = (target, name) => ({ type: 'removeStatus', target, status: name });
+const note = (target, text) => ({ type: 'note', target, text });
+const value = (target, text, detail) => ({ type: 'entityValue', target, text, detail });
+const gone = (target, destination = 'Carrion') => ({ type: 'depart', target, destination });
+const together = (...steps) => ({ type: 'parallel', steps });
+const result = (text) => say(text, 2600);
+const scene = (id, title, text, setup, steps, extra = {}) => ({
+  id,
+  title,
+  text,
+  demo: { setup, steps, ...extra },
+});
+const rival = () => entity('right', 'RIVAL', '10', 'HP · no defenders');
 
 export const TUTORIAL_SCENES = [
-  // =========================================================================
-  // CORE MECHANICS (1-11)
-  // =========================================================================
-  {
-    id: 'goal',
-    title: '1. The Goal',
-    text: `<p>Reduce your rival from <strong>10 HP</strong> to <strong>0 HP</strong> using creatures, spells, and clever consumption combos.</p>
-<p>Your creatures attack your rival directly — unless they have defenders blocking the way.</p>`,
-    demo: {
-      setup: [{ slot: 'left', card: CARDS.mako }],
-      steps: [
-        { type: 'fadeIn', target: 'left', duration: 500 },
-        { type: 'wait', duration: 400 },
-        { type: 'highlightAttacker', target: 'left' },
-        { type: 'label', text: 'Your creature attacks the rival!' },
-        { type: 'wait', duration: 800 },
-        { type: 'attack', from: 'left', to: 'right', duration: 420 },
-        { type: 'label', text: 'Rival HP: 10 → 7' },
-        { type: 'wait', duration: 1500 },
-        { type: 'clearHighlights' },
-        { type: 'wait', duration: 1500 },
-      ],
-    },
-  },
+  scene(
+    'goal',
+    'The Goal',
+    `<p>Bring your rival from <strong>10 HP to 0</strong> to win.</p><p>Choose an attacker, then a legal target. With no defenders in the way, you can attack the rival directly.</p>`,
+    [at('left', C.mako, 'YOUR ATTACKER'), rival()],
+    [
+      show(),
+      say('No defenders — the rival is a legal target.'),
+      aim('left', 'right'),
+      attack('left', 'right'),
+      damage('right', 3),
+      result('3 ATK deals 3 damage. Rival: 10 → 7 HP.'),
+    ]
+  ),
 
-  {
-    id: 'card-anatomy',
-    title: '2. Card Anatomy',
-    text: `<p>Creatures have <strong>⚔ ATK</strong> (damage dealt) and <strong>❤ HP</strong> (how much they can take).</p>
-<p>Prey also have <strong>🍖 NUT</strong> (nutrition) — this determines how much power a predator gains when it consumes them.</p>
-<p class="tutorial-note">Higher nutrition = bigger predator swing when consumed.</p>`,
-    demo: {
-      setup: [{ slot: 'center', card: CARDS.salmon }],
-      steps: [
-        { type: 'fadeIn', target: 'center', duration: 500 },
-        { type: 'wait', duration: 400 },
-        { type: 'highlight', target: 'center', duration: 1200 },
-        { type: 'label', text: '⚔ ATK  ·  ❤ HP  ·  🍖 NUT' },
-        { type: 'pulsestat', target: 'center', duration: 2000 },
-        { type: 'wait', duration: 1500 },
-        { type: 'clearLabel' },
-        { type: 'wait', duration: 1000 },
-      ],
-    },
-  },
+  scene(
+    'card-anatomy',
+    'Card Anatomy',
+    `<p><strong>ATK</strong> is damage dealt. <strong>HP</strong> is damage the creature can take.</p><p><strong>NUT</strong> is a prey’s nutrition: each point gives a consuming predator <strong>+1 ATK and +1 HP</strong>.</p>`,
+    [at('center', C.salmon, 'READ THE STATS')],
+    [
+      show(),
+      { type: 'focusStat', target: 'center', stat: 'atk' },
+      say('ATK 2 — deals 2 combat damage.'),
+      { type: 'focusStat', target: 'center', stat: 'hp' },
+      say('HP 2 — slain when HP reaches 0.'),
+      { type: 'focusStat', target: 'center', stat: 'nut' },
+      result('NUT 2 — gives a predator +2 ATK / +2 HP.'),
+    ]
+  ),
 
-  {
-    id: 'board-zones',
-    title: '3. Board Zones',
-    text: `<p><strong>Hand</strong> — Your private cards. No size limit.</p>
-<p><strong>Field</strong> — Up to 3 creatures. This is where combat happens.</p>
-<p><strong>Carrion</strong> — Where destroyed creatures go. Some cards can scavenge from here.</p>
-<p><strong>Exile</strong> — Used spells are exiled (removed from game).</p>`,
-    demo: {
-      setup: [
-        { slot: 'left', card: CARDS.salmon },
-        { slot: 'center', card: CARDS.mako },
-        { slot: 'right', card: CARDS.flyingFish },
-      ],
-      steps: [
-        { type: 'fadeIn', target: 'all', duration: 500 },
-        { type: 'label', text: 'Field — up to 3 creatures' },
-        { type: 'wait', duration: 1500 },
-        { type: 'label', text: 'Destroyed creatures go to Carrion' },
-        { type: 'death', target: 'right', duration: 700 },
-        { type: 'wait', duration: 1500 },
-        { type: 'clearLabel' },
-        { type: 'wait', duration: 1500 },
-      ],
-    },
-  },
+  scene(
+    'board-zones',
+    'Board Zones',
+    `<p><strong>Hand:</strong> private cards, no hand limit.<br><strong>Field:</strong> up to 3 creatures.</p><p><strong>Carrion:</strong> slain or eaten non-token creatures.<br><strong>Exile:</strong> used spells and cards removed by destroy effects.</p><p class="tutorial-note">Tokens leave the game instead of entering Carrion.</p>`,
+    [],
+    [
+      { type: 'zone', target: 'hand' },
+      say('Your hand is private.'),
+      { type: 'zone', target: 'field' },
+      say('Three spaces for your creatures.'),
+      { type: 'zone', target: 'carrion' },
+      say('Slain or eaten creatures go to Carrion.'),
+      { type: 'zone', target: 'exile' },
+      result('Used spells and destroyed cards go to Exile.'),
+    ],
+    { diagram: 'zones' }
+  ),
 
-  {
-    id: 'turn-flow',
-    title: '4. Turn Flow',
-    text: `<p>Each turn follows 7 phases in order:</p>
-<p><strong>Start</strong> → <strong>Draw</strong> → <strong>Main 1</strong> → <strong>Before Combat</strong> → <strong>Combat</strong> → <strong>Main 2</strong> → <strong>End</strong></p>
-<p>You can play <strong>one</strong> non-free-spell card per turn, in either Main phase.</p>
-<p class="tutorial-note">Main 2 is only available if you didn't play a card in Main 1.</p>`,
-    demo: {
-      setup: [{ slot: 'center', card: CARDS.salmon }],
-      steps: [
-        { type: 'label', text: '① Start Phase' },
-        { type: 'wait', duration: 1000 },
-        { type: 'label', text: '② Draw Phase' },
-        { type: 'wait', duration: 1000 },
-        { type: 'label', text: '③ Main Phase 1 — play a card!' },
-        { type: 'fadeIn', target: 'center', duration: 500 },
-        { type: 'wait', duration: 1000 },
-        { type: 'label', text: '④ Before Combat' },
-        { type: 'wait', duration: 1000 },
-        { type: 'label', text: '⑤ Combat Phase' },
-        { type: 'wait', duration: 1000 },
-        { type: 'label', text: '⑥ Main Phase 2' },
-        { type: 'wait', duration: 1000 },
-        { type: 'label', text: '⑦ End Phase' },
-        { type: 'wait', duration: 1500 },
-        { type: 'clearLabel' },
-        { type: 'wait', duration: 1000 },
-      ],
-    },
-  },
+  scene(
+    'turn-flow',
+    'Turn Flow',
+    `<p>Each turn follows <strong>6 phases</strong>:</p><p><strong>Start → Draw → Main 1 → Combat → Main 2 → End</strong></p><p>Play one regular card in either Main phase. The allowance is shared across both.</p><p class="tutorial-note">“Before combat” effects resolve during each attack, not in a separate turn phase.</p>`,
+    [],
+    [
+      { ...say('Ready your creatures; resolve start-of-turn effects.'), node: 0 },
+      { ...say('Draw one card. First player skips the opening draw.'), node: 1 },
+      { ...say('Play a card now, or save the play for Main 2.'), node: 2 },
+      { ...say('Choose your attacks and resolve them.'), node: 3 },
+      { ...say('Use your card play here if it is still available.'), node: 4 },
+      { ...result('Resolve end-of-turn effects, then pass the turn.'), node: 5 },
+    ],
+    { flow: ['Start', 'Draw', 'Main 1', 'Combat', 'Main 2', 'End'] }
+  ),
 
-  {
-    id: 'combat',
-    title: '5. Combat',
-    text: `<p>During combat, your creatures attack simultaneously with your rival's creatures.</p>
-<p>Both deal their <strong>ATK</strong> as damage to each other's <strong>HP</strong>. If HP drops to 0 or below, the creature is destroyed and goes to Carrion.</p>
-<p>If you have no defenders, the enemy attacks your HP directly!</p>`,
-    demo: {
-      setup: [
-        { slot: 'left', card: { ...CARDS.mako, name: 'Your Mako', atk: 3, hp: 3 } },
-        { slot: 'right', card: { ...CARDS.salmon, name: 'Enemy Salmon', atk: 2, hp: 2 } },
-      ],
-      steps: [
-        { type: 'fadeIn', target: 'all', duration: 500 },
-        { type: 'wait', duration: 400 },
-        { type: 'highlightAttacker', target: 'left' },
-        { type: 'arrow', from: 'left', to: 'right', duration: 600 },
-        { type: 'highlightTarget', target: 'right' },
-        { type: 'wait', duration: 500 },
-        { type: 'label', text: 'Simultaneous damage!' },
-        { type: 'attack', from: 'left', to: 'right', duration: 420 },
-        { type: 'damagePop', target: 'right', amount: 3, duration: 500 },
-        { type: 'damagePop', target: 'left', amount: 2, duration: 500 },
-        { type: 'label', text: 'Salmon is destroyed! Mako survives at 1 HP.' },
-        { type: 'death', target: 'right', duration: 700 },
-        { type: 'clearHighlights' },
-        { type: 'wait', duration: 2000 },
-      ],
-    },
-  },
+  scene(
+    'combat',
+    'Combat',
+    `<p>You choose attacks <strong>one at a time</strong>. In each fight, attacker and defender deal their ATK to each other.</p><p>Damage lowers HP. A creature at <strong>0 HP or less</strong> is slain and leaves the field.</p>`,
+    [at('left', C.mako, 'YOUR ATTACKER'), at('right', C.salmon, 'RIVAL DEFENDER')],
+    [
+      show(),
+      say('Mako: 3 ATK. King Salmon: 2 ATK.'),
+      aim('left', 'right'),
+      attack('left', 'right'),
+      together(damage('right', 3), damage('left', 2)),
+      gone('right'),
+      note('left', 'SURVIVES · 1 HP'),
+      result('Salmon is slain. Mako survives at 1 HP.'),
+    ]
+  ),
 
-  {
-    id: 'consumption',
-    title: '6. Consumption',
-    text: `<p>Predators may <strong>consume 0-3 friendly prey</strong> when played. Each nutrition point grants <strong>+1 ATK / +1 HP</strong> and activates the predator's consume effect.</p>
-<p><strong>Dry drop</strong> = playing a predator without consuming. Base stats only, no ability triggers.</p>
-<p class="tutorial-note">Consumed prey are destroyed and sent to Carrion.</p>`,
-    demo: {
-      setup: [
-        { slot: 'left', card: CARDS.salmon },
-        { slot: 'right', card: CARDS.mako },
-      ],
-      steps: [
-        { type: 'fadeIn', target: 'left', duration: 500 },
-        { type: 'wait', duration: 400 },
-        { type: 'label', text: 'Prey on field (NUT 2)' },
-        { type: 'pulsestat', target: 'left', duration: 1200 },
-        { type: 'fadeIn', target: 'right', duration: 500 },
-        { type: 'label', text: 'Predator consumes the prey!' },
-        { type: 'arrow', from: 'left', to: 'right', duration: 500 },
-        { type: 'consumeInto', from: 'left', to: 'right', duration: 600 },
-        { type: 'buffPop', target: 'right', text: '+2/+2', duration: 800 },
-        { type: 'label', text: 'Mako is now 5/5! (3+2 / 3+2)' },
-        { type: 'wait', duration: 2000 },
-        { type: 'clearHighlights' },
-        { type: 'wait', duration: 1500 },
-      ],
-    },
-  },
+  scene(
+    'consumption',
+    'Consumption',
+    `<p>When playing a predator, you may consume <strong>0–3 friendly prey</strong>. Each nutrition point adds <strong>+1 ATK / +1 HP</strong>.</p><p>Eating also triggers consume abilities. Eaten non-token creatures go to Carrion.</p><p class="tutorial-note">A dry drop eats nothing: base stats, no consume ability, and no keywords.</p>`,
+    [at('left', C.salmon, 'YOUR PREY'), at('right', C.mako, 'INCOMING PREDATOR')],
+    [
+      show(),
+      say('King Salmon provides 2 nutrition.'),
+      aim('left', 'right'),
+      { type: 'consumeInto', from: 'left', to: 'right', duration: 650 },
+      gone('left'),
+      { type: 'buffPop', target: 'right', atk: 2, hp: 2 },
+      note('right', '3 / 3 → 5 / 5'),
+      result('Nutrition adds +2/+2. Mako’s consume ability also triggers.'),
+    ]
+  ),
 
-  {
-    id: 'spells',
-    title: '7. Spells',
-    text: `<p><strong>Spells</strong> are one-time effects that count toward your 1-card-per-turn limit. They go to Exile after use.</p>
-<p>Spells can deal damage, buff creatures, draw cards, and more.</p>`,
-    demo: {
-      setup: [
-        { slot: 'left', card: CARDS.spell },
-        { slot: 'right', card: CARDS.salmon },
-      ],
-      steps: [
-        { type: 'fadeIn', target: 'right', duration: 500 },
-        { type: 'wait', duration: 400 },
-        { type: 'label', text: 'Play a spell targeting enemy creature' },
-        { type: 'fadeIn', target: 'left', duration: 400 },
-        { type: 'arrow', from: 'left', to: 'right', duration: 600 },
-        { type: 'wait', duration: 300 },
-        { type: 'spellEffect', target: 'right', style: 'damage', duration: 500 },
-        { type: 'damagePop', target: 'right', amount: 3, duration: 500 },
-        { type: 'label', text: 'Harpoon deals 3 damage!' },
-        { type: 'death', target: 'right', duration: 700 },
-        { type: 'label', text: 'Spell goes to Exile' },
-        { type: 'death', target: 'left', duration: 500 },
-        { type: 'clearHighlights' },
-        { type: 'wait', duration: 1500 },
-      ],
-    },
-  },
+  scene(
+    'spells',
+    'Spells',
+    `<p><strong>Spells</strong> use your regular card play and go to <strong>Exile</strong> after resolving.</p><p>Read the whole effect: Harpoon deals <strong>4 damage</strong> and steals the target if it survives.</p>`,
+    [at('left', C.spell, 'YOUR SPELL'), at('right', C.salmon, 'RIVAL TARGET')],
+    [
+      show(),
+      say('Harpoon targets the rival’s King Salmon.'),
+      aim('left', 'right'),
+      damage('right', 4),
+      gone('right'),
+      gone('left', 'Exile'),
+      result('Salmon is slain, so nothing is stolen. Harpoon is exiled.'),
+    ]
+  ),
 
-  {
-    id: 'free-spells',
-    title: '8. Free Spells',
-    text: `<p><strong>Free Spells</strong> do NOT count toward the 1-card limit. You can play as many as you want per turn!</p>
-<p>They're typically weaker than regular spells to compensate.</p>`,
-    demo: {
-      setup: [
-        { slot: 'left', card: CARDS.freeSpell },
-        { slot: 'right', card: CARDS.salmon },
-      ],
-      steps: [
-        { type: 'fadeIn', target: 'right', duration: 500 },
-        { type: 'wait', duration: 400 },
-        { type: 'label', text: "Play a Free Spell — doesn't use your card play!" },
-        { type: 'fadeIn', target: 'left', duration: 400 },
-        { type: 'arrow', from: 'left', to: 'right', duration: 600 },
-        { type: 'applyStatus', target: 'right', status: 'barrier' },
-        { type: 'label', text: 'Barrier granted! And you can still play a card.' },
-        { type: 'wait', duration: 2000 },
-        { type: 'clearHighlights' },
-        { type: 'wait', duration: 1500 },
-      ],
-    },
-  },
+  scene(
+    'free-spells',
+    'Free Spells',
+    `<p><strong>Free Spells</strong> do not spend your regular card play, but must be used <strong>before that allowance is spent</strong>.</p><p>Here, Edible gives your predator the Edible keyword. You can still play a regular card afterward.</p>`,
+    [at('left', C.freeSpell, 'FREE SPELL'), at('right', C.mako, 'YOUR PREDATOR')],
+    [
+      show(),
+      say('Regular card play: still available.'),
+      aim('left', 'right'),
+      { type: 'keyword', target: 'right', keyword: 'Edible' },
+      note('right', 'EDIBLE GRANTED'),
+      gone('left', 'Exile'),
+      result('Keyword granted. Your regular card play is still available.'),
+    ]
+  ),
 
-  {
-    id: 'traps',
-    title: '9. Traps',
-    text: `<p><strong>Traps</strong> are played face-down during your Main phase. They trigger automatically on your rival's turn when their condition is met.</p>
-<p>Your rival can't see what trap you've set!</p>`,
-    demo: {
-      setup: [
-        { slot: 'left', card: CARDS.trap },
-        { slot: 'right', card: CARDS.mako },
-      ],
-      steps: [
-        { type: 'label', text: 'Set a trap face-down...' },
-        { type: 'fadeIn', target: 'left', duration: 500 },
-        { type: 'wait', duration: 1000 },
-        { type: 'label', text: 'Rival attacks!' },
-        { type: 'fadeIn', target: 'right', duration: 400 },
-        { type: 'arrow', from: 'right', to: 'left', duration: 500 },
-        { type: 'wait', duration: 400 },
-        { type: 'label', text: '💥 Trap triggers! Silk Trap webs attacker!' },
-        { type: 'keywordFlash', target: 'left', keyword: 'ambush', duration: 500 },
-        { type: 'applyStatus', target: 'right', status: 'webbed' },
-        { type: 'wait', duration: 2000 },
-        { type: 'clearHighlights' },
-        { type: 'wait', duration: 1500 },
-      ],
-    },
-  },
+  scene(
+    'traps',
+    'Traps',
+    `<p>Traps stay <strong>in your hand</strong>. On your rival’s turn, a matching event gives you a chance to activate one.</p><p>Resolve the trap <strong>before</strong> the triggering action continues. Used traps go to Exile, without using your card play.</p>`,
+    [],
+    [
+      { type: 'zone', target: 'hand' },
+      say('Keep the trap in hand — do not set it on the field.'),
+      { type: 'zone', target: 'trigger' },
+      say('A matching rival action opens a response window.'),
+      { type: 'zone', target: 'resolve' },
+      say('Choose to activate the trap. Its effect resolves first.'),
+      { type: 'zone', target: 'exile' },
+      result('Exile the used trap; continue any action it did not stop.'),
+    ],
+    { diagram: 'trap' }
+  ),
 
-  {
-    id: 'summoning-exhaustion',
-    title: '10. Summoning Exhaustion',
-    text: `<p>Creatures <strong>can't attack your rival directly</strong> on the turn they're played. This is called <strong>Summoning Exhaustion</strong>.</p>
-<p>They CAN still block and fight defenders, just not hit the rival's HP.</p>
-<p class="tutorial-note">The keyword <strong>Haste</strong> bypasses summoning exhaustion!</p>`,
-    demo: {
-      setup: [{ slot: 'center', card: CARDS.salmon }],
-      steps: [
-        { type: 'label', text: 'Creature played this turn' },
-        { type: 'fadeIn', target: 'center', duration: 500 },
-        { type: 'wait', duration: 800 },
-        { type: 'label', text: "😴 Summoning Exhaustion — can't attack rival yet!" },
-        { type: 'highlight', target: 'center', duration: 1500 },
-        { type: 'label', text: 'Next turn: ready to attack!' },
-        { type: 'highlightAttacker', target: 'center' },
-        { type: 'wait', duration: 2000 },
-        { type: 'clearHighlights' },
-        { type: 'wait', duration: 1500 },
-      ],
-    },
-  },
+  scene(
+    'summoning-exhaustion',
+    'Summoning Exhaustion',
+    `<p>A newly played creature <strong>cannot attack your rival directly</strong> until your next turn.</p><p>It can still attack creatures right away and defend normally. <strong>Haste</strong> bypasses this restriction.</p>`,
+    [at('left', C.salmon, 'PLAYED THIS TURN'), rival()],
+    [
+      show(),
+      note('left', 'EXHAUSTED'),
+      say('This turn: creature targets are allowed, the rival is not.'),
+      blocked('left', 'right'),
+      say('At the start of your next turn, exhaustion clears.'),
+      note('left', 'READY NEXT TURN'),
+      aim('left', 'right'),
+      attack('left', 'right'),
+      damage('right', 2),
+      result('Next turn: a direct attack deals 2 damage.'),
+    ]
+  ),
 
-  {
-    id: 'card-limit',
-    title: '11. Card Limit',
-    text: `<p>You may play <strong>one non-free-spell card</strong> per turn across both Main phases.</p>
-<p>This includes creatures, predators, spells, and traps. Only <strong>Free Spells</strong> and cards with <strong>Free Play</strong> bypass this limit.</p>
-<p class="tutorial-note">Choose wisely — do you play prey now to set up a predator later, or a spell to deal with a threat?</p>`,
-    demo: {
-      setup: [
-        { slot: 'left', card: CARDS.salmon },
-        { slot: 'right', card: CARDS.mako },
-      ],
-      steps: [
-        { type: 'label', text: 'Play one card...' },
-        { type: 'fadeIn', target: 'left', duration: 500 },
-        { type: 'wait', duration: 800 },
-        { type: 'label', text: "🚫 Can't play another this turn!" },
-        { type: 'fadeIn', target: 'right', duration: 300 },
-        { type: 'wait', duration: 200 },
-        { type: 'death', target: 'right', duration: 500 },
-        { type: 'wait', duration: 1000 },
-        { type: 'label', text: 'One card per turn. Choose wisely!' },
-        { type: 'wait', duration: 2000 },
-        { type: 'clearLabel' },
-        { type: 'wait', duration: 1000 },
-      ],
-    },
-  },
+  scene(
+    'card-limit',
+    'One Card Play',
+    `<p>You get <strong>one regular card play per turn</strong>, shared between Main 1 and Main 2.</p><p>Free Play and Free Spells do not spend it, but must come first. Traps are separate responses on the rival’s turn.</p>`,
+    [at('left', C.salmon, 'ON YOUR FIELD'), at('right', C.mako, 'STILL IN YOUR HAND')],
+    [
+      show(),
+      note('left', 'PLAY USED · 0 LEFT'),
+      say('Playing King Salmon spends your card allowance.'),
+      note('right', 'PLAY UNAVAILABLE'),
+      { type: 'dim', target: 'right' },
+      result('Mako stays in hand. It is not played or destroyed.'),
+    ]
+  ),
 
-  // =========================================================================
-  // KEYWORD DEMOS (12-25)
-  // =========================================================================
-  {
-    id: 'haste',
-    title: '12. Haste',
-    text: `<p><strong>Haste</strong> lets a creature attack your rival directly on the turn it's played, bypassing Summoning Exhaustion.</p>
-<p>Haste creatures are great for surprise damage and closing out games.</p>`,
-    demo: {
-      setup: [{ slot: 'center', card: CARDS.flyingFish }],
-      steps: [
-        { type: 'label', text: 'Haste creature enters the field' },
-        { type: 'fadeIn', target: 'center', duration: 500 },
-        { type: 'keywordFlash', target: 'center', keyword: 'haste', duration: 400 },
-        { type: 'wait', duration: 400 },
-        { type: 'label', text: '⚡ No exhaustion! Attacks immediately!' },
-        { type: 'highlightAttacker', target: 'center' },
-        { type: 'wait', duration: 600 },
-        { type: 'attack', from: 'center', to: 'right', duration: 420 },
-        { type: 'label', text: 'Direct rival damage on the same turn!' },
-        { type: 'wait', duration: 2000 },
-        { type: 'clearHighlights' },
-        { type: 'wait', duration: 1500 },
-      ],
-    },
-  },
+  scene(
+    'haste',
+    'Haste',
+    `<p><strong>Haste</strong> bypasses summoning exhaustion, allowing a direct attack on the turn the creature enters.</p><p>You still need a legal target and an unused attack.</p>`,
+    [at('left', C.haste, 'PLAYED THIS TURN'), rival()],
+    [
+      show(),
+      note('left', 'HASTE · READY NOW'),
+      say('Kingfish can attack the rival immediately.'),
+      aim('left', 'right'),
+      attack('left', 'right'),
+      damage('right', 3),
+      result('No waiting a turn: 3 damage to the rival.'),
+    ]
+  ),
 
-  {
-    id: 'free-play',
-    title: '13. Free Play',
-    text: `<p><strong>Free Play</strong> means the card doesn't count toward your 1-card-per-turn limit.</p>
-<p>You can play a Free Play card AND a regular card in the same turn!</p>`,
-    demo: {
-      setup: [
-        {
-          slot: 'left',
-          card: { ...CARDS.flyingFish, keywords: ['Free Play'], name: 'Token (Free Play)' },
-        },
-        { slot: 'right', card: CARDS.salmon },
-      ],
-      steps: [
-        { type: 'label', text: 'Free Play card enters...' },
-        { type: 'fadeIn', target: 'left', duration: 500 },
-        { type: 'wait', duration: 600 },
-        { type: 'label', text: '...and you can STILL play another card!' },
-        { type: 'fadeIn', target: 'right', duration: 500 },
-        { type: 'wait', duration: 1000 },
-        { type: 'label', text: '✅ Both cards played in one turn!' },
-        { type: 'highlight', target: 'left', duration: 800 },
-        { type: 'highlight', target: 'right', duration: 800 },
-        { type: 'wait', duration: 1500 },
-        { type: 'clearLabel' },
-        { type: 'wait', duration: 1000 },
-      ],
-    },
-  },
+  scene(
+    'free-play',
+    'Free Play',
+    `<p><strong>Free Play</strong> does not spend your regular card allowance.</p><p>Play Free Play cards <strong>before</strong> your regular card. They cannot bypass an allowance you have already used.</p>`,
+    [at('left', C.free, 'FIRST · FREE PLAY'), at('right', C.salmon, 'THEN · REGULAR PLAY')],
+    [
+      show('left'),
+      note('left', '1 PLAY STILL LEFT'),
+      say('Black Mullet enters without spending the allowance.'),
+      show('right'),
+      note('right', 'NOW 0 PLAYS LEFT'),
+      result('King Salmon uses the regular play. Order matters.'),
+    ]
+  ),
 
-  {
-    id: 'hidden',
-    title: '14. Hidden',
-    text: `<p><strong>Hidden</strong> creatures can't be targeted by enemy attacks. Enemies must attack other targets or hit your HP directly.</p>
-<p>Hidden is removed if the creature attacks or is revealed by <strong>Acuity</strong>.</p>`,
-    demo: {
-      setup: [
-        { slot: 'left', card: CARDS.mako },
-        { slot: 'right', card: CARDS.hiddenPrey },
-      ],
-      steps: [
-        { type: 'fadeIn', target: 'all', duration: 500 },
-        { type: 'wait', duration: 400 },
-        { type: 'applyStatus', target: 'right', status: 'hidden' },
-        { type: 'label', text: "Hidden — can't be targeted by attacks" },
-        { type: 'wait', duration: 800 },
-        { type: 'highlightAttacker', target: 'left' },
-        { type: 'arrowFizzle', from: 'left', to: 'right', duration: 700 },
-        { type: 'label', text: "❌ Attack can't reach Hidden creature!" },
-        { type: 'wait', duration: 2000 },
-        { type: 'clearHighlights' },
-        { type: 'wait', duration: 1500 },
-      ],
-    },
-  },
+  scene(
+    'hidden',
+    'Hidden',
+    `<p><strong>Hidden</strong> blocks enemy attack targeting. It does <strong>not</strong> block spells or abilities.</p><p><strong>Acuity</strong> can target Hidden creatures. <strong>Lure</strong> also overrides Hidden.</p>`,
+    [at('left', C.mako, 'RIVAL ATTACKER'), at('right', C.hidden, 'YOUR HIDDEN CREATURE')],
+    [
+      show(),
+      status('right', 'hidden'),
+      say('An ordinary attacker cannot select Ghost Eel.'),
+      blocked('left', 'right'),
+      note('right', 'ATTACK TARGET BLOCKED'),
+      result('No attack happens. Spells and abilities may still target it.'),
+    ]
+  ),
 
-  {
-    id: 'invisible',
-    title: '15. Invisible',
-    text: `<p><strong>Invisible</strong> is like Hidden, but even stronger — the creature can't be targeted by attacks <em>or</em> spells.</p>
-<p>Only AoE (area of effect) abilities and <strong>Acuity</strong> can interact with Invisible creatures.</p>`,
-    demo: {
-      setup: [
-        { slot: 'left', card: CARDS.mako },
-        { slot: 'right', card: CARDS.kakapo },
-      ],
-      steps: [
-        { type: 'fadeIn', target: 'all', duration: 500 },
-        { type: 'applyStatus', target: 'right', status: 'invisible' },
-        { type: 'label', text: 'Invisible — untargetable by attacks AND spells' },
-        { type: 'wait', duration: 800 },
-        { type: 'highlightAttacker', target: 'left' },
-        { type: 'arrowFizzle', from: 'left', to: 'right', duration: 700 },
-        { type: 'label', text: '❌ Attack deflected!' },
-        { type: 'wait', duration: 1000 },
-        { type: 'arrowFizzle', from: 'left', to: 'right', duration: 700 },
-        { type: 'label', text: '❌ Spell deflected too!' },
-        { type: 'wait', duration: 2000 },
-        { type: 'clearHighlights' },
-        { type: 'wait', duration: 1500 },
-      ],
-    },
-  },
+  scene(
+    'invisible',
+    'Invisible',
+    `<p><strong>Invisible</strong> blocks targeting by attacks, spells, and abilities.</p><p>Untargeted effects can still affect it. <strong>Acuity</strong> can target it, and <strong>Lure</strong> overrides the protection.</p>`,
+    [
+      entity('left', 'TARGETING', '×', 'Attack / spell / ability'),
+      at('right', C.invisible, 'INVISIBLE CREATURE'),
+    ],
+    [
+      show(),
+      status('right', 'invisible'),
+      say('Targeted actions cannot select Leafy Seadragon.'),
+      blocked('left', 'right'),
+      note('right', 'TARGET UNAVAILABLE'),
+      result('Invisible is target protection, not damage immunity.'),
+    ]
+  ),
 
-  {
-    id: 'lure',
-    title: '16. Lure',
-    text: `<p><strong>Lure</strong> forces all enemy attacks to target this creature. It acts as a tank, protecting your other creatures and your HP.</p>
-<p>Enemies <em>must</em> attack the Lure creature if they attack at all.</p>`,
-    demo: {
-      setup: [
-        { slot: 'left', card: CARDS.mako },
-        { slot: 'center', card: CARDS.salmon },
-        { slot: 'right', card: CARDS.angler },
-      ],
-      steps: [
-        { type: 'fadeIn', target: 'all', duration: 500 },
-        { type: 'applyStatus', target: 'right', status: 'lure' },
-        { type: 'label', text: 'Lure active — all attacks forced here!' },
-        { type: 'wait', duration: 600 },
-        { type: 'highlightAttacker', target: 'left' },
-        { type: 'arrowFizzle', from: 'left', to: 'center', duration: 600 },
-        { type: 'label', text: "Can't attack Salmon..." },
-        { type: 'wait', duration: 600 },
-        { type: 'arrow', from: 'left', to: 'right', duration: 600 },
-        { type: 'highlightTarget', target: 'right' },
-        { type: 'label', text: '↪ Redirected to Lure creature!' },
-        { type: 'attack', from: 'left', to: 'right', duration: 420 },
-        { type: 'damagePop', target: 'right', amount: 3, duration: 500 },
-        { type: 'wait', duration: 1500 },
-        { type: 'clearHighlights' },
-        { type: 'wait', duration: 1500 },
-      ],
-    },
-  },
+  scene(
+    'lure',
+    'Lure',
+    `<p><strong>Lure</strong> makes the creature the required enemy target for attacks and targeted abilities.</p><p>It overrides Hidden and Invisible. If several creatures have Lure, choose among them.</p>`,
+    [
+      at('left', C.mako, 'ATTACKER'),
+      at('center', C.salmon, 'PROTECTED'),
+      at('right', C.lure, 'MUST TARGET'),
+    ],
+    [
+      show(),
+      status('right', 'lure'),
+      say('King Salmon cannot be selected while Lure is present.'),
+      blocked('left', 'center'),
+      aim('left', 'right'),
+      note('right', 'LEGAL TARGET'),
+      result('Choose Deep-sea Angler instead. The attack is optional.'),
+    ]
+  ),
 
-  {
-    id: 'immune',
-    title: '17. Immune',
-    text: `<p><strong>Immune</strong> creatures only take damage from direct creature attacks. Spells, effects, and abilities can't damage them.</p>
-<p>The only way to remove an Immune creature is through combat.</p>`,
-    demo: {
-      setup: [
-        { slot: 'left', card: CARDS.spell },
-        { slot: 'right', card: CARDS.treeFrog },
-      ],
-      steps: [
-        { type: 'fadeIn', target: 'right', duration: 500 },
-        { type: 'wait', duration: 400 },
-        { type: 'label', text: 'Spell targets Immune creature...' },
-        { type: 'fadeIn', target: 'left', duration: 400 },
-        { type: 'arrowFizzle', from: 'left', to: 'right', duration: 700 },
-        { type: 'label', text: '🛡️ Immune! Spell has no effect.' },
-        { type: 'wait', duration: 1500 },
-        { type: 'label', text: 'Only direct creature attacks can damage it.' },
-        { type: 'wait', duration: 2000 },
-        { type: 'clearHighlights' },
-        { type: 'wait', duration: 1500 },
-      ],
-    },
-  },
+  scene(
+    'immune',
+    'Immune',
+    `<p><strong>Immune</strong> prevents damage from spells, traps, and abilities. Direct creature attacks can still damage it.</p><p>It can still be targeted. Non-damage effects, such as removal or stealing, are not stopped by Immune.</p>`,
+    [
+      entity('left', 'SPELL DAMAGE', '3', 'Indirect damage'),
+      at('right', C.immune, 'IMMUNE TARGET'),
+    ],
+    [
+      show(),
+      say('The target is legal, but spell damage is prevented.'),
+      aim('left', 'right'),
+      note('right', '0 DAMAGE · 2 HP'),
+      result('Muskox keeps its 2 HP. Immune is not untargetable.'),
+    ]
+  ),
 
-  {
-    id: 'barrier',
-    title: '18. Barrier',
-    text: `<p><strong>Barrier</strong> blocks the first instance of damage, then breaks. Think of it as a one-hit shield.</p>
-<p>After Barrier absorbs a hit, the creature takes damage normally from subsequent attacks.</p>`,
-    demo: {
-      setup: [
-        { slot: 'left', card: CARDS.mako },
-        { slot: 'right', card: CARDS.catfish },
-      ],
-      steps: [
-        { type: 'fadeIn', target: 'all', duration: 500 },
-        { type: 'applyStatus', target: 'right', status: 'barrier' },
-        { type: 'label', text: 'Barrier active — one-hit shield!' },
-        { type: 'wait', duration: 600 },
-        { type: 'highlightAttacker', target: 'left' },
-        { type: 'arrow', from: 'left', to: 'right', duration: 600 },
-        { type: 'attack', from: 'left', to: 'right', duration: 420 },
-        { type: 'keywordFlash', target: 'right', keyword: 'barrier', duration: 600 },
-        { type: 'label', text: '🛡️ Barrier absorbs the hit!' },
-        { type: 'removeStatus', target: 'right', status: 'barrier' },
-        { type: 'wait', duration: 1000 },
-        { type: 'label', text: 'Barrier broken — next hit goes through!' },
-        { type: 'arrow', from: 'left', to: 'right', duration: 500 },
-        { type: 'attack', from: 'left', to: 'right', duration: 420 },
-        { type: 'damagePop', target: 'right', amount: 3, duration: 500 },
-        { type: 'death', target: 'right', duration: 700 },
-        { type: 'clearHighlights' },
-        { type: 'wait', duration: 2000 },
-      ],
-    },
-  },
+  scene(
+    'barrier',
+    'Barrier',
+    `<p><strong>Barrier</strong> absorbs one instance of damage, then is removed.</p><p>Further damage hits HP normally. The shield is used up even if the first hit is small.</p>`,
+    [entity('left', 'INCOMING DAMAGE', '1', 'First hit'), at('right', C.barrier, 'YOUR CREATURE')],
+    [
+      show(),
+      status('right', 'barrier'),
+      say('The first hit meets the shield.'),
+      aim('left', 'right'),
+      unstatus('right', 'barrier'),
+      { type: 'keyword', target: 'right', keyword: 'Barrier', remove: true },
+      note('right', 'BLOCKED · STILL 3 HP'),
+      say('Barrier is spent. No HP lost.'),
+      value('left', '1', 'A later hit'),
+      aim('left', 'right'),
+      damage('right', 1),
+      note('right', 'NO SHIELD · 2 HP'),
+      result('The next hit removes 1 HP: 3 → 2.'),
+    ]
+  ),
 
-  {
-    id: 'passive',
-    title: '19. Passive',
-    text: `<p><strong>Passive</strong> creatures cannot attack. They exist purely for their effects, nutrition value, or defensive abilities.</p>
-<p>They can still block incoming attacks and be consumed by predators.</p>`,
-    demo: {
-      setup: [{ slot: 'center', card: CARDS.manOWar }],
-      steps: [
-        { type: 'fadeIn', target: 'center', duration: 500 },
-        { type: 'wait', duration: 400 },
-        { type: 'label', text: 'Passive — this creature cannot attack' },
-        { type: 'highlight', target: 'center', duration: 1500 },
-        { type: 'label', text: 'But it can block and use its abilities!' },
-        { type: 'wait', duration: 2000 },
-        { type: 'clearLabel' },
-        { type: 'wait', duration: 1500 },
-      ],
-    },
-  },
+  scene(
+    'passive',
+    'Passive',
+    `<p><strong>Passive</strong> creatures cannot declare attacks.</p><p>They remain on the field, can be attacked, and may still use their abilities or be eaten by your predators.</p>`,
+    [at('left', C.passive, 'YOUR PASSIVE CREATURE'), rival()],
+    [
+      show(),
+      note('left', 'CANNOT ATTACK'),
+      say('Blobfish cannot declare an attack.'),
+      blocked('left', 'right'),
+      result('It stays on your field; Passive does not disable its abilities.'),
+    ]
+  ),
 
-  {
-    id: 'edible',
-    title: '20. Edible',
-    text: `<p><strong>Edible</strong> means a predator can be consumed by another predator, as if it were prey.</p>
-<p>This enables powerful multi-consumption chains where predators eat predators!</p>`,
-    demo: {
-      setup: [
-        { slot: 'left', card: CARDS.wahoo },
-        { slot: 'right', card: CARDS.mako },
-      ],
-      steps: [
-        { type: 'fadeIn', target: 'left', duration: 500 },
-        { type: 'wait', duration: 400 },
-        { type: 'label', text: 'Wahoo has Edible — a predator that can be consumed!' },
-        { type: 'highlight', target: 'left', duration: 1200 },
-        { type: 'fadeIn', target: 'right', duration: 500 },
-        { type: 'label', text: 'Another predator consumes it!' },
-        { type: 'arrow', from: 'left', to: 'right', duration: 500 },
-        { type: 'consumeInto', from: 'left', to: 'right', duration: 600 },
-        { type: 'buffPop', target: 'right', text: '+3/+2', duration: 800 },
-        { type: 'label', text: "Predator chain! Mako gains Wahoo's stats." },
-        { type: 'wait', duration: 2000 },
-        { type: 'clearHighlights' },
-        { type: 'wait', duration: 1500 },
-      ],
-    },
-  },
+  scene(
+    'edible',
+    'Edible',
+    `<p><strong>Edible</strong> lets a predator be consumed like prey.</p><p>Its nutrition equals its <strong>current ATK</strong>—not its HP. Wahoo’s 3 ATK gives a consuming predator <strong>+3 ATK / +3 HP</strong>.</p>`,
+    [at('left', C.edible, 'YOUR EDIBLE PREDATOR'), at('right', C.mako, 'INCOMING PREDATOR')],
+    [
+      show(),
+      say('Wahoo’s current ATK is 3: that is its nutrition.'),
+      aim('left', 'right'),
+      { type: 'consumeInto', from: 'left', to: 'right', duration: 650 },
+      gone('left'),
+      { type: 'buffPop', target: 'right', atk: 3, hp: 3 },
+      note('right', '3 / 3 → 6 / 6'),
+      result('Mako gains +3/+3, not +3/+2. Its consume ability also triggers.'),
+    ]
+  ),
 
-  {
-    id: 'scavenge',
-    title: '21. Scavenge',
-    text: `<p><strong>Scavenge</strong> lets a predator consume from the <strong>Carrion pile</strong> instead of the field.</p>
-<p>This means you can get value from creatures that already died — no setup required!</p>`,
-    demo: {
-      setup: [{ slot: 'center', card: CARDS.isopod }],
-      steps: [
-        { type: 'label', text: 'Giant Isopod has Scavenge' },
-        { type: 'fadeIn', target: 'center', duration: 500 },
-        { type: 'wait', duration: 600 },
-        { type: 'label', text: 'Consumes from Carrion — no live prey needed!' },
-        { type: 'highlight', target: 'center', duration: 1500 },
-        { type: 'buffPop', target: 'center', text: '+NUT from Carrion', duration: 1000 },
-        { type: 'label', text: 'Recycle your dead creatures for value!' },
-        { type: 'wait', duration: 2000 },
-        { type: 'clearLabel' },
-        { type: 'wait', duration: 1500 },
-      ],
-    },
-  },
+  scene(
+    'scavenge',
+    'Scavenge',
+    `<p><strong>Scavenge</strong> allows a predator to consume from <strong>Carrion</strong> as well as your field.</p><p>The same nutrition math applies, and the total limit remains <strong>3 creatures</strong>.</p><p class="tutorial-note">This is a keyword example, not a named card.</p>`,
+    [
+      at('left', C.salmon, 'IN CARRION · NUT 2'),
+      entity('right', 'SCAVENGE PREDATOR', '3 / 3', 'ATK / HP · before eating'),
+    ],
+    [
+      show(),
+      say('The meal comes from Carrion, not a live field slot.'),
+      aim('left', 'right'),
+      { type: 'consumeInto', from: 'left', to: 'right', duration: 650 },
+      note('left', 'CONSUMED'),
+      value('right', '5 / 5', '+2 ATK / +2 HP'),
+      result('2 nutrition adds +2/+2 to the incoming predator.'),
+    ]
+  ),
 
-  {
-    id: 'acuity',
-    title: '22. Acuity',
-    text: `<p><strong>Acuity</strong> lets a creature target <strong>Hidden</strong> and <strong>Invisible</strong> creatures that would normally be untargetable.</p>
-<p>It's the hard counter to stealth-based strategies.</p>`,
-    demo: {
-      setup: [
-        { slot: 'left', card: CARDS.chameleon },
-        { slot: 'right', card: CARDS.hiddenPrey },
-      ],
-      steps: [
-        { type: 'fadeIn', target: 'all', duration: 500 },
-        { type: 'applyStatus', target: 'right', status: 'hidden' },
-        { type: 'label', text: 'Hidden creature — normally untargetable' },
-        { type: 'wait', duration: 800 },
-        { type: 'label', text: '🎯 Acuity sees through Hidden!' },
-        { type: 'highlightAttacker', target: 'left' },
-        { type: 'arrow', from: 'left', to: 'right', duration: 600 },
-        { type: 'highlightTarget', target: 'right' },
-        { type: 'attack', from: 'left', to: 'right', duration: 420 },
-        { type: 'damagePop', target: 'right', amount: 2, duration: 500 },
-        { type: 'label', text: 'Target locked and hit!' },
-        { type: 'death', target: 'right', duration: 700 },
-        { type: 'clearHighlights' },
-        { type: 'wait', duration: 2000 },
-      ],
-    },
-  },
+  scene(
+    'acuity',
+    'Acuity',
+    `<p><strong>Acuity</strong> allows targeting of Hidden and Invisible creatures.</p><p>It does not remove their keywords; it lets this creature see through their protection.</p>`,
+    [at('left', C.acuity, 'ACUITY ATTACKER'), at('right', C.hidden, 'HIDDEN DEFENDER')],
+    [
+      show(),
+      status('right', 'hidden'),
+      say('Great White Shark can select this Hidden target.'),
+      aim('left', 'right'),
+      attack('left', 'right'),
+      together(damage('right', 5), damage('left', 1)),
+      gone('right'),
+      note('left', 'SURVIVES · 4 HP'),
+      result('Acuity permits the attack. Combat damage resolves normally.'),
+    ]
+  ),
 
-  {
-    id: 'neurotoxic',
-    title: '23. Neurotoxic',
-    text: `<p><strong>Neurotoxic</strong> paralyzes any creature it damages in combat. The paralyzed creature <strong>dies at end of turn</strong>.</p>
-<p>Neurotoxic doesn't need to kill — even 1 damage triggers the paralysis.</p>
-<p class="tutorial-note">Neurotoxic strips all abilities from the paralyzed creature.</p>`,
-    demo: {
-      setup: [
-        { slot: 'left', card: CARDS.mamba },
-        { slot: 'right', card: CARDS.salmon },
-      ],
-      steps: [
-        { type: 'fadeIn', target: 'all', duration: 500 },
-        { type: 'wait', duration: 400 },
-        { type: 'highlightAttacker', target: 'left' },
-        { type: 'arrow', from: 'left', to: 'right', duration: 600 },
-        { type: 'highlightTarget', target: 'right' },
-        { type: 'wait', duration: 500 },
-        { type: 'label', text: '☠️ Neurotoxic — paralyzes on hit!' },
-        { type: 'keywordFlash', target: 'left', keyword: 'neurotoxic', duration: 700 },
-        { type: 'attack', from: 'left', to: 'right', duration: 420 },
-        { type: 'damagePop', target: 'right', amount: 3, duration: 500 },
-        { type: 'applyStatus', target: 'right', status: 'paralysis' },
-        { type: 'label', text: '⚡ Paralyzed! Dies at end of turn.' },
-        { type: 'wait', duration: 1500 },
-        { type: 'death', target: 'right', duration: 700 },
-        { type: 'clearHighlights' },
-        { type: 'wait', duration: 2000 },
-      ],
-    },
-  },
+  scene(
+    'neurotoxic',
+    'Neurotoxic',
+    `<p>Combat damage from <strong>Neurotoxic</strong> applies Paralysis, even if the Neurotoxic creature dies.</p><p>Paralysis strips abilities and prevents attacking. The victim dies at the end of <strong>its controller’s turn</strong>.</p><p class="tutorial-note">Barrier prevents Neurotoxic if it absorbs the damage.</p>`,
+    [at('left', C.neurotoxic, 'ATTACKER'), at('right', C.mako, 'RIVAL DEFENDER')],
+    [
+      show(),
+      say('Octopus deals 1 damage; Mako deals 3 back.'),
+      aim('left', 'right'),
+      attack('left', 'right'),
+      together(damage('right', 1), damage('left', 3)),
+      gone('left'),
+      status('right', 'paralysis'),
+      note('right', 'PARALYZED · 2 HP'),
+      say('Mako survives the damage but is paralyzed.', 2000),
+      say('At the end of Mako’s controller’s turn…'),
+      gone('right'),
+      result('Paralysis kills Mako, even with HP remaining.'),
+    ]
+  ),
 
-  {
-    id: 'ambush',
-    title: '24. Ambush',
-    text: `<p><strong>Ambush</strong> grants <em>first strike</em> — the creature deals its damage before the defender can hit back.</p>
-<p>If the Ambush creature kills the defender, the defender never gets to retaliate.</p>
-<p class="tutorial-note">Ambush doesn't protect from <strong>Toxic</strong> — contact damage still applies even if the Toxic creature dies.</p>`,
-    demo: {
-      setup: [
-        { slot: 'left', card: CARDS.blackSwan },
-        { slot: 'right', card: CARDS.salmon },
-      ],
-      steps: [
-        { type: 'fadeIn', target: 'all', duration: 500 },
-        { type: 'wait', duration: 400 },
-        { type: 'highlightAttacker', target: 'left' },
-        { type: 'wait', duration: 500 },
-        { type: 'arrow', from: 'left', to: 'right', duration: 600 },
-        { type: 'highlightTarget', target: 'right' },
-        { type: 'wait', duration: 600 },
-        { type: 'label', text: '🎯 Ambush — strikes first!' },
-        { type: 'keywordFlash', target: 'left', keyword: 'ambush', duration: 500 },
-        { type: 'attack', from: 'left', to: 'right', duration: 420 },
-        { type: 'damagePop', target: 'right', amount: 3, duration: 500 },
-        { type: 'wait', duration: 400 },
-        { type: 'label', text: 'Defender is slain before it can retaliate!' },
-        { type: 'death', target: 'right', duration: 700 },
-        { type: 'clearHighlights' },
-        { type: 'wait', duration: 2000 },
-      ],
-    },
-  },
+  scene(
+    'ambush',
+    'Ambush',
+    `<p>When attacking, <strong>Ambush takes no counter-damage</strong>—even if the defender survives.</p><p>This also avoids Poisonous contact. Ambush offers no protection when the creature is defending.</p>`,
+    [at('left', C.free, 'AMBUSH ATTACKER'), at('right', C.mako, 'RIVAL DEFENDER')],
+    [
+      show(),
+      say('Black Mullet attacks the larger Mako.'),
+      aim('left', 'right'),
+      attack('left', 'right'),
+      damage('right', 1),
+      note('left', 'NO COUNTER-DAMAGE'),
+      note('right', 'SURVIVES · 2 HP'),
+      result('Both survive. Mullet keeps its 1 HP despite Mako’s 3 ATK.'),
+    ]
+  ),
 
-  {
-    id: 'frozen',
-    title: '25. Frozen',
-    text: `<p><strong>Frozen</strong> creatures can't attack, can't be consumed, and <strong>die at end of turn</strong> (their controller's turn).</p>
-<p>Some spells and effects can freeze enemy creatures, effectively removing them for a turn.</p>
-<p class="tutorial-note">Frozen thaws naturally at end of the controller's turn — but the creature is destroyed in the process.</p>`,
-    demo: {
-      setup: [{ slot: 'center', card: CARDS.salmon }],
-      steps: [
-        { type: 'fadeIn', target: 'center', duration: 500 },
-        { type: 'wait', duration: 400 },
-        { type: 'label', text: '❄️ Creature gets frozen!' },
-        { type: 'applyStatus', target: 'center', status: 'frozen' },
-        { type: 'wait', duration: 1000 },
-        { type: 'label', text: "Can't attack. Can't be consumed." },
-        { type: 'wait', duration: 1500 },
-        { type: 'label', text: 'End of turn — frozen creature dies!' },
-        { type: 'wait', duration: 800 },
-        { type: 'death', target: 'center', duration: 700 },
-        { type: 'wait', duration: 2000 },
-      ],
-    },
-  },
-];
+  scene(
+    'frozen',
+    'Frozen',
+    `<p><strong>Frozen</strong> creatures cannot attack or be consumed.</p><p>At the end of their controller’s turn, they <strong>thaw and survive</strong>. Frozen is not Paralysis.</p>`,
+    [at('center', C.salmon, 'YOUR CREATURE')],
+    [
+      show(),
+      status('center', 'frozen'),
+      note('center', 'FROZEN'),
+      say('Cannot attack. Cannot be eaten.'),
+      say('At the end of its controller’s turn…'),
+      unstatus('center', 'frozen'),
+      note('center', 'THAWED · STILL 2 HP'),
+      result('The ice clears. King Salmon stays on the field.'),
+    ]
+  ),
+].map((entry, index) => ({ ...entry, title: `${index + 1}. ${entry.title}` }));
