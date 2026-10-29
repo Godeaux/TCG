@@ -922,3 +922,22 @@ body:has(.card-hover-tooltip.visible.deck-inspector)::after {
   #tutorial-overlay .tutorial-flow-step { font-size: 13px; padding: 5px; }
   #tutorial-overlay .tutorial-nav-btn { height: 44px; }
 }
+
+/* A single focal phase above a continuous, left-to-right turn track. */
+#tutorial-overlay .tutorial-turn-sequence { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 4cqh, 24px); max-width: 480px; }
+#tutorial-overlay .tutorial-phase-eyebrow { color: #a3babd; font: 600 12px/1.2 system-ui,sans-serif; letter-spacing: .22em; }
+#tutorial-overlay .tutorial-phase-name { color: #eddbad; font: 650 clamp(24px, 8cqw, 48px)/1.1 system-ui,sans-serif; text-align: center; letter-spacing: -.025em; }
+#tutorial-overlay .tutorial-phase-position { color: #a3babd; font: 600 11px/1.2 system-ui,sans-serif; letter-spacing: .15em; }
+#tutorial-overlay .tutorial-phase-track { position: relative; isolation: isolate; display: flex; justify-content: space-between; width: 100%; margin-top: clamp(2px, 3cqh, 20px); }
+#tutorial-overlay .tutorial-phase-track::before, #tutorial-overlay .tutorial-phase-track::after { content: ''; position: absolute; z-index: -1; top: 50%; left: 16px; right: 16px; height: 2px; background: #41616a; }
+#tutorial-overlay .tutorial-phase-track::after { background: #e5d3a2; transform: scaleX(var(--phase-progress, 0)); transform-origin: left; transition: transform .35s ease; }
+#tutorial-overlay .tutorial-turn-sequence .tutorial-flow-step { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border-radius: 50%; flex-shrink: 0; font: 600 13px/1 system-ui,sans-serif; background: #102c36; border-color: #54727a; }
+#tutorial-overlay .tutorial-turn-sequence .tutorial-flow-step.is-complete { border-color: #e5d3a2; color: #e5d3a2; }
+#tutorial-overlay .tutorial-turn-sequence .tutorial-flow-step.is-current { background: #e5d3a2; color: #13313a; border-color: #e5d3a2; box-shadow: 0 0 0 5px #e5d3a218; }
+@container (max-height: 160px) {
+  #tutorial-overlay .tutorial-turn-sequence { gap: 5px; }
+  #tutorial-overlay .tutorial-phase-name { font-size: 24px; }
+  #tutorial-overlay .tutorial-phase-eyebrow { display: none; }
+  #tutorial-overlay .tutorial-phase-track { margin-top: 4px; }
+}
+@media(prefers-reduced-motion: reduce) { #tutorial-overlay .tutorial-phase-track::after { transition: none; } }

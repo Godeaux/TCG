@@ -100,6 +100,20 @@ try {
     await expect(p.locator('#menu-overlay')).toHaveClass(/active/);
     console.log(`CHECKED ${TUTORIAL_SCENES.length} panes at ${width}x${height}`);
   }
+  // Observe the real phase sequence at the smallest supported phone size.
+  await p.setViewportSize({ width: 320, height: 568 });
+  await p.locator('#other-tutorial').click();
+  for (let i = 0; i < 3; i++) await p.locator('.tutorial-nav-btn').last().click();
+  for (const phase of TUTORIAL_SCENES[3].demo.flow) {
+    await expect(p.locator('.tutorial-phase-name')).toHaveText(phase);
+    const stage = await p.locator('.tutorial-stage').boundingBox();
+    const title = await p.locator('.tutorial-phase-name').boundingBox();
+    const track = await p.locator('.tutorial-phase-track').boundingBox();
+    assert.ok(title.x >= stage.x && title.x + title.width <= stage.x + stage.width);
+    assert.ok(title.y >= stage.y && track.y + track.height <= stage.y + stage.height);
+    assert.equal(await p.locator('.tutorial-phase-track [aria-current="step"]').getAttribute('data-phase'), phase);
+  }
+  await p.locator('#tutorial-close').click();
   // Real looping attack must remain inside its stage and disappear on navigation.
   await p.setViewportSize({ width: 393, height: 852 });
   await p.locator('#other-tutorial').click();

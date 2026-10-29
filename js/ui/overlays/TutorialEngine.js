@@ -197,12 +197,23 @@ function goToScene(index) {
   if (scene.demo?.flow) {
     const flow = document.createElement('div');
     flow.className = 'tutorial-flow-grid';
+    const isTurn = scene.id === 'turn-flow';
+    if (isTurn) {
+      flow.classList.add('tutorial-turn-sequence');
+      flow.innerHTML =
+        '<div class="tutorial-phase-eyebrow">YOUR TURN</div><div class="tutorial-phase-name"></div><div class="tutorial-phase-position"></div><div class="tutorial-phase-track" role="list" aria-label="Turn phases"></div>';
+    }
     flow.style.setProperty('--flow-columns', String(scene.demo.flow.length === 2 ? 2 : 3));
     scene.demo.flow.forEach((text, index) => {
       const item = document.createElement('div');
       item.className = 'tutorial-flow-step';
-      item.textContent = `${index + 1}. ${text}`;
-      flow.appendChild(item);
+      item.textContent = isTurn ? String(index + 1) : `${index + 1}. ${text}`;
+      if (isTurn) {
+        item.setAttribute('role', 'listitem');
+        item.setAttribute('aria-label', `${index + 1}. ${text}`);
+        item.dataset.phase = text;
+      }
+      (flow.querySelector('.tutorial-phase-track') || flow).appendChild(item);
     });
     stageEl.appendChild(flow);
   }
@@ -533,6 +544,17 @@ function handleLabel(step) {
   labelEl.textContent = step.text;
   stageEl.querySelectorAll('.tutorial-flow-step').forEach((item, index) => {
     item.classList.toggle('is-current', index === step.node);
+    item.classList.toggle('is-complete', index < step.node);
+    if (index === step.node && item.dataset.phase) {
+      stageEl.querySelector('.tutorial-phase-name').textContent = item.dataset.phase;
+      stageEl.querySelector('.tutorial-phase-position').textContent = `PHASE ${index + 1} OF 7`;
+      stageEl
+        .querySelector('.tutorial-phase-track')
+        .style.setProperty('--phase-progress', String(index / 6));
+      item.setAttribute('aria-current', 'step');
+    } else {
+      item.removeAttribute('aria-current');
+    }
   });
   labelEl.style.transition = 'opacity 0.3s ease-out';
   labelEl.style.opacity = '1';
