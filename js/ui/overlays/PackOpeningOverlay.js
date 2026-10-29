@@ -752,11 +752,13 @@ export const renderPackOpeningOverlay = (state, callbacks = {}) => {
  * @param {Object} callbacks - Event callbacks
  * @returns {Array} The generated pack cards
  */
-export const startPackOpening = (callbacks = {}) => {
+export const startPackOpening = (callbacks = {}, committedCards = null) => {
   const elements = getPackElements();
 
   // Generate new pack
-  currentPackCards = generatePackContents();
+  currentPackCards = committedCards
+    ? committedCards.map((card) => ({ ...card, revealed: false }))
+    : generatePackContents();
   revealedCount = 0;
   currentCallbacks = callbacks;
   holdProgress = 0;

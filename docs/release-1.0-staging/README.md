@@ -18,6 +18,57 @@ tables have RLS and no browser DML grants. The advisor reports ten expected
 RLS-with-no-policy notices: deny-by-default private tables, not missing browser access.
 Existing public-schema security findings remain open; do not call the project hardened.
 
+## Authenticated pack integration — October 29 follow-up
+
+Migration `20261029144019` (`004-authenticated-packs.sql`) is installed in real
+Supabase. Authenticated `tcg_economy()` and `tcg_open_pack(opening_id)` derive the
+owner from `auth.uid()` plus the private permanent mapping. The caller cannot
+supply a profile, cards, rarity or balance. Server RNG uses random UUID v4 bits
+with rejection sampling; rarity weights match `packConfig.js`, including the
+last-card uncommon guarantee. The account lock covers lookup, draw and commit.
+An existing receipt is returned before checking funds/catalog availability;
+responses include the CURRENT balance as well as the historical receipt.
+
+The local frontend candidate routes independently enrolled profiles through this
+API and reveals the committed cards without another inventory write. A durable
+opening ID survives failed responses/reload until Done. Storage failure refuses
+before debit; unknown card definitions retain the receipt for a refreshed client.
+Collection refresh uses private inventory for enrolled accounts. API errors never
+silently fall back to a legacy debit. Unenrolled accounts remain on the old path;
+the local candidate additionally refuses animation after a failed legacy debit.
+
+**Not a public cutover:** the frontend is not published; owner mappings remain
+empty; no existing PIN accounts were migrated; reward validation still requires
+the authoritative gameplay service. The source branch predates later overnight
+frontend improvements and must be integrated, not deployed wholesale over them.
+No accounts have been wiped. The owner prefers considering ONE reset only after
+hardening is complete, and accepts verified migration as an alternative.
+
+Evidence: 43 authenticated SQL checks in the normal contract; 7 client unit tests;
+`e2e/server-pack-opening.mjs` drives the production collection/open/reveal/Done UI
+with ONLY Supabase IO mocked (refusal, lost response, same intent at zero balance,
+server cards, acknowledgment and failed legacy debit). Real Supabase transactional
+smoke `verify-live-authenticated-packs.sql` passed with all synthetic rows rolled
+back. Both public RPCs reject unauthenticated REST calls with HTTP 401 / 42501.
+These are not concurrent multi-connection or full live authenticated browser tests.
+
+Migration `20261029144227` (`005-internal-trigger-acl.sql`) also removes browser
+EXECUTE from the internal `rls_auto_enable` event hook. It verifies the existing
+DDL trigger still enables RLS on a transactional QA table before removing that
+table. This is least-privilege cleanup, not a claim that an event-trigger function
+was previously a callable reward exploit. Existing public-schema findings remain.
+
+`006-stat-view-permissions.sql` also makes the two legacy aggregate views respect
+base-table RLS. A live synthetic before/after test reproduced cross-user reads
+and then verified owner access with unrelated-user refusal; fixtures rolled back.
+The current game does not query these views. See `HARDENING-TRACKER.md` for the
+remaining work and the explicit no-wipe-until-final-cutover direction.
+
+The shared local node_modules lacked PGlite before this change (5,247 unit tests
+passed but the default full contract stopped at the missing dependency). Using
+the documented isolated PGlite path makes the full contract pass without changing
+shared dependencies. Fresh `npm ci` installs the already-pinned dependency.
+
 ## Current evidence
 
 Read-only live metadata captured October 28 confirms RLS enabled on all 11 public

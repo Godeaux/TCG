@@ -258,7 +258,7 @@ function collection() {
   const readOnly = publicCollection;
   const unloaded = signed && !readOnly && own().ownedCards === undefined;
   return `<div class="pe-heading"><div><h1>${readOnly ? `${esc(publicProfile.username)}’s collection` : 'My Cards'}</h1></div>${readOnly ? btn('public-back', '← Profile', 'pe-quiet') : `<nav class="pe-tabs">${btn('decks', 'Decks', 'pe-quiet')}${btn('collection', 'Collection', 'selected pe-quiet')}</nav>`}</div>
-  <div class="pe-collection"><section class="pe-browser"><div class="pe-tools"><input id="pe-search" type="search" aria-label="Search cards or keywords" placeholder="Search cards or keywords" value="${esc(filters.query)}">${!readOnly ? btn(signed ? 'packs' : 'login', signed ? `Packs <b>${Number(own().packs) || 0}</b>` : 'Log in', '', signed && !(own().packs > 0) ? 'disabled' : '') : ''}</div>
+  <div class="pe-collection"><section class="pe-browser"><div class="pe-tools"><input id="pe-search" type="search" aria-label="Search cards or keywords" placeholder="Search cards or keywords" value="${esc(filters.query)}">${!readOnly ? btn(signed ? 'packs' : 'login', signed ? `Packs <b>${Number(own().packs) || 0}</b>` : 'Log in', '', signed && !(own().packs > 0) && !own().pendingPackOpening ? 'disabled' : '') : ''}</div>
   <div class="pe-filters"><select id="pe-ownership" aria-label="Ownership">${options(
     [
       ['owned', 'Owned'],
