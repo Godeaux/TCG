@@ -80,6 +80,8 @@ try {
     await expect(p.locator('#bug-tab-list')).toHaveCount(0);
     await p.locator('#bug-overlay-close').click();
     await p.locator('#other-multiplayer').click();
+    await expect(p.locator('#player-experience h1')).toHaveText('Play with Friends');
+    await p.locator('[data-pe="room-code"]').click();
     await expect(p.locator('#lobby-create')).toBeVisible();
     await expect(p.locator('#lobby-code')).toBeVisible();
     await expect(p.locator('#multiplayer-overlay')).toHaveClass(/active/);

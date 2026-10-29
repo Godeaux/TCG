@@ -1164,8 +1164,8 @@ export const fetchFriendships = async ({ profileId }) => {
       addressee_id,
       created_at,
       updated_at,
-      requester:profiles!friendships_requester_id_fkey(id, username),
-      addressee:profiles!friendships_addressee_id_fkey(id, username)
+      requester:profiles!friendships_requester_id_fkey(id, username, name_style),
+      addressee:profiles!friendships_addressee_id_fkey(id, username, name_style)
     `
     )
     .or(`requester_id.eq.${profileId},addressee_id.eq.${profileId}`);
@@ -1190,6 +1190,7 @@ export const fetchFriendships = async ({ profileId }) => {
       status: friendship.status,
       friendId: friend.id,
       friendUsername: friend.username,
+      friendStyle: friend.name_style || {},
       isRequester,
       createdAt: friendship.created_at,
       updatedAt: friendship.updated_at,
@@ -1228,7 +1229,7 @@ export const fetchPublicProfile = async ({ profileId }) => {
   // Fetch profile with stats
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('id, username, stats, matches')
+    .select('id, username, stats, matches, name_style')
     .eq('id', profileId)
     .single();
 
@@ -1249,6 +1250,7 @@ export const fetchPublicProfile = async ({ profileId }) => {
   return {
     id: profile.id,
     username: profile.username,
+    name_style: profile.name_style || {},
     stats: profile.stats ?? {},
     matches: profile.matches ?? [],
     ownedCards: cards ?? [],
@@ -1353,6 +1355,16 @@ export const sendDuelInvite = async ({ senderId, receiverId, lobbyCode }) => {
  * @param {string} params.response - 'accepted' or 'declined'
  * @returns {Promise<Object>} Updated invite
  */
+export const cancelDuelInvite = async ({ inviteId, senderId }) => {
+  const { error } = await supabase
+    .from('duel_invites')
+    .update({ status: 'cancelled' })
+    .eq('id', inviteId)
+    .eq('sender_id', senderId)
+    .eq('status', 'pending');
+  if (error) throw error;
+};
+
 export const respondToDuelInvite = async ({ inviteId, response }) => {
   const { data, error } = await supabase
     .from('duel_invites')

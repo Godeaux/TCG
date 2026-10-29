@@ -86,7 +86,8 @@ import { renderSetupOverlay, resetSetupAIState } from './ui/overlays/SetupOverla
 import { renderReactionOverlay, resetReactionAIState } from './ui/overlays/ReactionOverlay.js';
 
 // Profile overlay (extracted module)
-import { renderProfileOverlay, setupDuelInviteListener } from './ui/overlays/ProfileOverlay.js';
+import { setupDuelInviteListener } from './ui/overlays/ProfileOverlay.js';
+import { renderPlayerExperience } from './ui/overlays/PlayerExperience.js';
 
 // Pack opening overlay (extracted module)
 import { renderPackOpeningOverlay, startPackOpening } from './ui/overlays/PackOpeningOverlay.js';
@@ -217,6 +218,7 @@ import {
   mapDeckIdsToCards,
   ensureProfileLoaded,
   ensureDecksLoaded,
+  ensurePlayerCardsLoaded,
   handleLoginSubmit as lobbyHandleLoginSubmit,
   handleCreateAccount as lobbyHandleCreateAccount,
   handleLogout as lobbyHandleLogout,
@@ -4975,7 +4977,19 @@ export const renderGame = (state, callbacks = {}) => {
   // No need to call updateLobbySubscription here - it's set up when entering a lobby
 
   // Profile overlay
-  renderProfileOverlay(state, {
+  renderPlayerExperience(state, {
+    onReloadCollection: () => ensurePlayerCardsLoaded(state),
+    onNavigate: (stage) => {
+      setMenuStage(state, stage);
+      callbacks.onUpdate?.();
+    },
+    onDecks: () => document.getElementById('menu-decks')?.click(),
+    onRoomCode: () => {
+      state.menu.hideMultiplayerFindMatch = true;
+      setMenuStage(state, 'multiplayer');
+      callbacks.onUpdate?.();
+    },
+    onLogout: () => lobbyHandleLogout(state),
     onBack: () => {
       setMenuStage(state, 'main');
       callbacks.onUpdate?.();
@@ -5009,12 +5023,15 @@ export const renderGame = (state, callbacks = {}) => {
       // Create a fresh lobby and send duel invite
       try {
         const { handleCreateDuelLobby } = await import('./network/lobbyManager.js');
-        const { sendDuelInvite, closeLobby } = await import('./network/supabaseApi.js');
+        const { sendDuelInvite, cancelDuelInvite, closeLobby } =
+          await import('./network/supabaseApi.js');
         const { showAwaitingResponse } = await import('./ui/overlays/DuelInviteOverlay.js');
 
         const lobbyResult = await handleCreateDuelLobby(state);
+        if (!lobbyResult.success || !state.menu?.lobby?.code)
+          throw new Error(lobbyResult.error || 'Unable to create an invitation.');
         if (lobbyResult.success && state.menu?.lobby?.code) {
-          await sendDuelInvite({
+          const invite = await sendDuelInvite({
             senderId: state.menu.profile.id,
             receiverId: friendId,
             lobbyCode: state.menu.lobby.code,
@@ -5022,6 +5039,7 @@ export const renderGame = (state, callbacks = {}) => {
 
           // Store the challenged friend's name for callbacks
           state.menu.pendingChallenge = {
+            inviteId: invite.id,
             friendId,
             friendUsername,
             lobbyCode: state.menu.lobby.code,
@@ -5030,6 +5048,7 @@ export const renderGame = (state, callbacks = {}) => {
           // Show awaiting response popup (stay on current screen)
           showAwaitingResponse(friendUsername, {
             onCancel: async () => {
+              await cancelDuelInvite({ inviteId: invite.id, senderId: state.menu.profile.id });
               // Close the lobby we created
               if (state.menu?.lobby?.id) {
                 try {
@@ -5044,6 +5063,7 @@ export const renderGame = (state, callbacks = {}) => {
               callbacks.onUpdate?.();
             },
             onTimeout: async () => {
+              await cancelDuelInvite({ inviteId: invite.id, senderId: state.menu.profile.id });
               // Invite timed out - close the lobby
               if (state.menu?.lobby?.id) {
                 try {
@@ -5063,6 +5083,7 @@ export const renderGame = (state, callbacks = {}) => {
         }
       } catch (e) {
         console.error('Failed to send challenge:', e);
+        throw e;
       }
     },
     onAcceptChallenge: async (lobbyCode) => {
@@ -5174,8 +5195,8 @@ export const renderGame = (state, callbacks = {}) => {
       }
     },
     onDone: (packCards) => {
-      // Go back to profile
-      setMenuStage(state, 'profile');
+      // Packs belong to the collection workspace.
+      setMenuStage(state, 'collection');
       callbacks.onUpdate?.();
     },
   });

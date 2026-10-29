@@ -1382,6 +1382,14 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
         grid.className = 'deck-card-grid';
         grid.appendChild(loginMsg);
         deckSelectGrid.appendChild(grid);
+        const browse = document.createElement('button');
+        browse.id = 'library-collection';
+        browse.textContent = 'Browse collection';
+        browse.onclick = () => {
+          state.menu.stage = 'collection';
+          callbacks.onUpdate?.();
+        };
+        deckSelectGrid.prepend(browse);
       } else {
         ensureDecksLoaded(state);
         const decks = state.menu.decks ?? [];
@@ -1431,18 +1439,21 @@ export const renderDeckSelectionOverlay = (state, callbacks) => {
         const toolbar = document.createElement('div');
         toolbar.className = 'library-toolbar';
         const title = document.createElement('h2');
-        title.textContent = 'My decks';
+        title.textContent = 'My Cards';
         const actions = document.createElement('div');
         actions.className = 'library-actions';
         const browse = document.createElement('button');
         browse.type = 'button';
-        browse.textContent = 'Browse cards';
+        browse.textContent = 'Collection';
+        browse.id = 'library-collection';
         browse.onclick = () => {
-          state.catalogBuilder.stage = 'select';
-          state.catalogBuilder.viewOnly = true;
+          state.menu.stage = 'collection';
           callbacks.onUpdate?.();
         };
-        actions.append(browse);
+        const decksTab = document.createElement('span');
+        decksTab.textContent = 'Decks';
+        decksTab.className = 'library-active-tab';
+        actions.append(decksTab, browse);
         const createTile = grid.querySelector('.deck-card--create');
         if (createTile) {
           const create = document.createElement('button');

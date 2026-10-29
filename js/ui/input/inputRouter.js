@@ -530,7 +530,7 @@ const initNavigation = () => {
     }
     // Set flag to hide Find Match in multiplayer overlay
     latestState.menu.hideMultiplayerFindMatch = true;
-    setMenuStage(latestState, 'multiplayer');
+    setMenuStage(latestState, 'friends');
     latestCallbacks.onUpdate?.();
   });
 
