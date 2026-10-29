@@ -934,6 +934,11 @@ export class AIController {
       // Dry drop - play without consumption
       player.field[slotIndex] = creature;
       creature.dryDropped = true;
+      // Match the player controller: dry drop removes keywords and suppresses
+      // every effect trigger, including delayed onEnd/onSlain effects.
+      creature.keywords = [];
+      creature.abilitiesCancelled = true;
+      creature.hasBarrier = false;
       logMessage(state, `${player.name} plays ${creature.name} (dry drop - no prey to consume).`);
 
       // Dry-dropped predators lose Free Play, so recalculate isFree

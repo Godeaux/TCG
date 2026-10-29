@@ -76,6 +76,12 @@ const STATUS_DESCRIPTIONS = {
     name: 'Frozen',
     description: "Cannot attack, be consumed, or consume prey. Thaws at end of owner's turn.",
   },
+  paralyzed: {
+    emoji: '⚡',
+    name: 'Paralyzed',
+    description:
+      'Loses all other abilities permanently and gains Harmless. Dies at the end of its controller’s turn.',
+  },
   isToken: {
     emoji: '⚪',
     name: 'Token',
@@ -205,8 +211,12 @@ let cardPreviewElement = null;
 let infoBoxesElement = null;
 let hideTimeout = null;
 let isInitialized = false;
+let dismissSetupTimeout = null;
 let globalDismissHandler = null; // Track global tap-to-dismiss handler
 let currentTargetElement = null; // Track element for wheel handler
+let modalBackdrop = null;
+let modalTrigger = null;
+let inertElements = [];
 let wheelHandler = null; // Track wheel handler for cleanup
 
 // ============================================================================
@@ -247,9 +257,31 @@ export const initCardTooltip = () => {
       clearTimeout(hideTimeout);
     });
     infoBoxesElement.addEventListener('mouseleave', () => {
+      if (modalBackdrop) return;
       hideCardTooltip();
     });
   }
+
+  document.addEventListener(
+    'keydown',
+    (event) => {
+      if (!tooltipElement?.classList.contains('visible')) return;
+      if (event.key === 'Tab' && modalBackdrop) {
+        const controls = [
+          ...tooltipElement.querySelectorAll('button:not([disabled]), [tabindex="0"]'),
+        ];
+        const index = controls.indexOf(document.activeElement);
+        event.preventDefault();
+        controls[(index + (event.shiftKey ? controls.length - 1 : 1)) % controls.length]?.focus();
+        return;
+      }
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      hideCardTooltipImmediate();
+    },
+    true
+  );
 
   isInitialized = true;
 };
@@ -267,7 +299,9 @@ const setupGlobalDismissHandler = () => {
   removeGlobalDismissHandler();
 
   // Add handler after a short delay to avoid the tap that opened the tooltip
-  setTimeout(() => {
+  dismissSetupTimeout = setTimeout(() => {
+    dismissSetupTimeout = null;
+    if (!tooltipElement?.classList.contains('visible')) return;
     globalDismissHandler = (e) => {
       // If DeckBuilder handled a tap-to-add, it uses stopPropagation
       // so this won't run in that case
@@ -299,6 +333,8 @@ const setupGlobalDismissHandler = () => {
  * Remove global tap-to-dismiss handler.
  */
 const removeGlobalDismissHandler = () => {
+  clearTimeout(dismissSetupTimeout);
+  dismissSetupTimeout = null;
   if (globalDismissHandler) {
     document.removeEventListener('touchstart', globalDismissHandler);
     document.removeEventListener('click', globalDismissHandler);
@@ -374,7 +410,7 @@ const removeWheelHandler = () => {
  * @param {string} options.context - Display context: 'collection', 'catalog', or 'gameplay' (default: 'gameplay')
  */
 export const showCardTooltip = (card, targetElement, options = {}) => {
-  const { showPreview = true, anchorRight = null, context = 'gameplay' } = options;
+  const { showPreview = true, anchorRight = null, context = 'gameplay', modal = false } = options;
 
   // Lazy init if needed
   if (!isInitialized) {
@@ -383,9 +419,10 @@ export const showCardTooltip = (card, targetElement, options = {}) => {
 
   if (!tooltipElement || !card) return;
 
+  closeModalInspection();
   tooltipElement.classList.remove('deck-inspector');
   const gameplay = context === 'gameplay';
-  tooltipElement.classList.toggle('modern-inspector', gameplay);
+  tooltipElement.classList.toggle('modern-inspector', gameplay || modal);
 
   // Clear any pending hide
   clearTimeout(hideTimeout);
@@ -401,7 +438,7 @@ export const showCardTooltip = (card, targetElement, options = {}) => {
     cardPreviewElement.style.display = 'none';
     tooltipElement.classList.add('info-only');
   }
-  renderInfoBoxes(card, context);
+  renderInfoBoxes(card, context, options, targetElement);
 
   // Position and show
   positionTooltip(targetElement, { showPreview, anchorRight });
@@ -413,7 +450,8 @@ export const showCardTooltip = (card, targetElement, options = {}) => {
   tooltipElement.setAttribute('aria-hidden', 'false');
 
   // Set up tap-to-dismiss (for mobile)
-  setupGlobalDismissHandler();
+  if (modal) openModalInspection(card, targetElement, options);
+  else setupGlobalDismissHandler();
 
   // Set up wheel handler for PC tooltip scrolling
   setupWheelHandler(targetElement);
@@ -425,6 +463,7 @@ export const showCardTooltip = (card, targetElement, options = {}) => {
  * info boxes (for scrolling) without the tooltip disappearing.
  */
 export const hideCardTooltip = () => {
+  if (modalBackdrop) return;
   clearTimeout(hideTimeout);
   removeGlobalDismissHandler();
   removeWheelHandler();
@@ -440,6 +479,7 @@ export const hideCardTooltip = () => {
  * Immediately hide the tooltip without delay.
  */
 export const hideCardTooltipImmediate = () => {
+  closeModalInspection();
   clearTimeout(hideTimeout);
   removeGlobalDismissHandler();
   removeWheelHandler();
@@ -447,6 +487,78 @@ export const hideCardTooltipImmediate = () => {
     tooltipElement.classList.remove('visible');
     tooltipElement.setAttribute('aria-hidden', 'true');
   }
+};
+
+// Explicit inspection is modal; hover inspection remains non-modal and unobscured.
+const closeModalInspection = () => {
+  if (!modalBackdrop) return;
+  modalBackdrop.remove();
+  modalBackdrop = null;
+  tooltipElement.classList.remove('inspection-modal');
+  tooltipElement.removeAttribute('aria-modal');
+  tooltipElement.removeAttribute('aria-label');
+  tooltipElement.setAttribute('role', 'tooltip');
+  tooltipElement
+    .querySelectorAll('.inspection-close, .inspection-navigation')
+    .forEach((el) => el.remove());
+  inertElements.forEach(([element, previous]) => {
+    element.inert = previous;
+  });
+  inertElements = [];
+  if (modalTrigger?.isConnected) modalTrigger.focus({ preventScroll: true });
+  modalTrigger = null;
+};
+
+const openModalInspection = (card, trigger, options) => {
+  removeGlobalDismissHandler();
+  modalTrigger = trigger;
+  modalBackdrop = document.createElement('div');
+  modalBackdrop.className = 'inspection-backdrop';
+  modalBackdrop.setAttribute('aria-hidden', 'true');
+  const dismiss = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    hideCardTooltipImmediate();
+  };
+  modalBackdrop.addEventListener('touchstart', dismiss, { passive: false });
+  modalBackdrop.addEventListener('click', dismiss);
+  document.body.insertBefore(modalBackdrop, tooltipElement);
+  tooltipElement.classList.add('inspection-modal');
+  tooltipElement.setAttribute('role', 'dialog');
+  tooltipElement.setAttribute('aria-modal', 'true');
+  tooltipElement.setAttribute('aria-label', `Inspect ${card.name}`);
+  const close = document.createElement('button');
+  close.type = 'button';
+  close.className = 'inspection-close';
+  close.textContent = '×';
+  close.setAttribute('aria-label', 'Close card inspection');
+  close.addEventListener('click', dismiss);
+  tooltipElement.append(close);
+  if (options.onPrevious || options.onNext || options.onBack) {
+    const navigation = document.createElement('nav');
+    navigation.className = 'inspection-navigation';
+    navigation.setAttribute('aria-label', 'Browse collection');
+    for (const [label, action] of [
+      ['← Back', options.onBack],
+      ['← Previous', options.onPrevious],
+      ['Next →', options.onNext],
+    ]) {
+      if (!action) continue;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = label;
+      button.addEventListener('click', action);
+      navigation.append(button);
+    }
+    tooltipElement.append(navigation);
+  }
+  inertElements = [...document.body.children]
+    .filter((element) => element !== tooltipElement && element !== modalBackdrop)
+    .map((element) => [element, element.inert]);
+  inertElements.forEach(([element]) => {
+    element.inert = true;
+  });
+  close.focus({ preventScroll: true });
 };
 
 // ============================================================================
@@ -560,27 +672,23 @@ const extractTokenIds = (card) => {
  * @param {Object} token - Token card data
  * @returns {HTMLElement}
  */
-const createTokenPreview = (token) => {
-  const container = document.createElement('div');
-  container.className = 'tooltip-token-preview';
-
-  // Create a mini version of the card
-  const cardElement = renderCard(token, {
-    showEffectSummary: true,
-    draggable: false,
-    context: 'tooltip',
+const createTokenPreview = (token, inspect) => {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'tooltip-token-link tooltip-info-box';
+  button.textContent = `${token.name} · Inspect token →`;
+  button.addEventListener('click', (event) => {
+    event.stopPropagation();
+    inspect();
   });
-  cardElement.classList.add('tooltip-token-card');
-
-  container.appendChild(cardElement);
-  return container;
+  return button;
 };
 
 /**
  * Render keyword and status info boxes.
  * @param {Object} card - Card data
  */
-const renderInfoBoxes = (card, context = 'gameplay') => {
+const renderInfoBoxes = (card, context = 'gameplay', options = {}, targetElement) => {
   if (!infoBoxesElement) return;
 
   infoBoxesElement.innerHTML = '';
@@ -588,9 +696,21 @@ const renderInfoBoxes = (card, context = 'gameplay') => {
   // Add keyword boxes (suppressed for dry-dropped predators)
   if (Array.isArray(card.keywords) && card.keywords.length > 0 && areAbilitiesActive(card)) {
     card.keywords.forEach((keyword) => {
+      // Active status explanations already describe these keywords below.
+      if ((keyword === 'Barrier' && card.hasBarrier) || (keyword === 'Frozen' && card.frozen))
+        return;
       const description = KEYWORD_DESCRIPTIONS[keyword];
       if (description) {
-        infoBoxesElement.appendChild(createInfoBox(keyword, description, 'keyword'));
+        const spentBarrier = keyword === 'Barrier' && card.hasBarrier === false;
+        infoBoxesElement.appendChild(
+          createInfoBox(
+            spentBarrier ? 'Barrier (spent)' : keyword,
+            spentBarrier
+              ? 'This creature’s Barrier has already been used. It will not block the next damage.'
+              : description,
+            'keyword'
+          )
+        );
       }
     });
   }
@@ -632,6 +752,16 @@ const renderInfoBoxes = (card, context = 'gameplay') => {
     );
   }
 
+  if (card.paralyzed) {
+    const info = STATUS_DESCRIPTIONS.paralyzed;
+    const deadline = Number.isInteger(card.paralyzedUntilTurn)
+      ? ` Death resolves at the end of turn ${card.paralyzedUntilTurn}.`
+      : '';
+    infoBoxesElement.appendChild(
+      createInfoBox(`${info.emoji} ${info.name}`, info.description + deadline, 'status')
+    );
+  }
+
   if (card.webbed) {
     const info = STATUS_DESCRIPTIONS.webbed;
     infoBoxesElement.appendChild(
@@ -670,7 +800,15 @@ const renderInfoBoxes = (card, context = 'gameplay') => {
 
       const token = getTokenById(tokenId);
       if (token) {
-        infoBoxesElement.appendChild(createTokenPreview(token));
+        infoBoxesElement.appendChild(
+          createTokenPreview(token, () => {
+            showCardTooltip(token, targetElement, {
+              context,
+              modal: true,
+              onBack: () => showCardTooltip(card, targetElement, options),
+            });
+          })
+        );
       }
     });
   }
