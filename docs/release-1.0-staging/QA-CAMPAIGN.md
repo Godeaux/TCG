@@ -17,6 +17,35 @@ regressions for confirmed defects; no runtime changes, deployment, production
 backend writes or additional paid inference. Parent reviews all findings.
 This is one audit, not the multi-day campaign itself.
 
+## Required evidence distinction (owner clarification)
+
+For release-quality gameplay acceptance, the primary evidence must be actual
+interface-driven play: real browser input → production UI handlers → production
+rules/transport → visible outcome. Use genuine taps/clicks/drags, deck setup,
+choices and turn controls. Do not replace handlers with direct controller calls,
+DOM-dispatched synthetic shortcuts, a separate simulator, or preconstructed board
+state and label that an end-to-end played match. Read-only internal state checks
+after real UI actions are useful and allowed.
+
+Label every result explicitly:
+
+- **Engine-only:** direct production rule/controller/effect calls. Useful for
+  fast isolation and regression coverage; does not certify UI interaction.
+- **UI component/fixture:** real rendering/input against an injected scenario.
+  Useful targeted evidence; does not prove startup-to-match gameplay.
+- **UI-played match:** actual startup/deck setup and gameplay through visible
+  controls, with input trace and observed results. Covers event wiring and rules.
+- **Two-client transport:** actual clients and real configured transport, not a
+  mocked network; record environment and reconnect/consistency evidence.
+- **Native/human:** actual device/browser and human review, recorded separately
+  from desktop Chromium touch emulation.
+
+Confirmed player-facing rule fixes require UI replay as well as targeted engine
+regressions. Include tap and drag variants where both are supported. Never hide
+untested layers behind a passing test total or claim automation is identical to
+physical-device/human play in every capacity. Zero bugs is an aspiration, not a
+certification produced by any finite test campaign.
+
 ## Execution matrix
 
 Keep a ledger per build, seed, scenario and mode. Separate automated matches,
