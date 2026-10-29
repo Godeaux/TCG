@@ -1,3 +1,5 @@
+// HISTORICAL BUG REPRODUCTION: run against baseline 36b1db1, not release acceptance.
+// Current regression: e2e/server-pack-opening.mjs. See the audit report caveats.
 // R-03 failed-debit probe: real renderGame callbacks + actual button clicks.
 // Only database IO is replaced (getSupabaseApi in /js/network/index.js routed
 // to an in-page stub; all *.supabase.co aborted). No live writes, no credentials.

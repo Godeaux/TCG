@@ -1,3 +1,5 @@
+// HISTORICAL BUG REPRODUCTION: run against baseline 36b1db1, not release acceptance.
+// Current regression: e2e/server-pack-opening.mjs. See the audit report caveats.
 // R-03/R-01 two-client double-spend: two real browser pages (independent UI
 // state), production updatePackCount/save callbacks, ONE shared Node-side mock
 // IO ledger, ONE server pack, two openings. Only DB IO is replaced; all

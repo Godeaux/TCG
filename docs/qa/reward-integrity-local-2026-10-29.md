@@ -1,5 +1,14 @@
 # Reward Integrity Audit — local, 2026-10-29
 
+> Historical baseline evidence, not current-release certification. Parent independently
+> reran the two IO-mocked UI probes on the audit baseline. Source-only assertions
+> (including alternate grant routes) were not independently certified. The suggested
+> browser-chosen delta RPC below was REJECTED: callers must never choose reward
+> amounts. Current implementation uses ownership-derived atomic pack operations;
+> see `../release-1.0-staging/HARDENING-TRACKER.md`. These reproduction scripts
+> intentionally assert the old bugs on baseline `36b1db1`; they are not release
+> acceptance tests. Use `e2e/server-pack-opening.mjs` for the current regression.
+
 Branch `audit/reward-integrity-local-2026-10-29` @ baseline `36b1db1`. Start 06:53 PDT. Final checkpoint 07:4x PDT.
 Scope: pack-opening grant/concurrency, debit/credit retries, profile balance writes,
 alternate grant routes. Completed-match rejoin/settlement replay owned by parent
