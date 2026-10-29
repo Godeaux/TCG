@@ -49,7 +49,7 @@ try {
           label.textContent = caption;
           const nodes = [
             ...document.querySelectorAll(
-              '#tutorial-overlay .tutorial-card, #tutorial-overlay .tutorial-header, .tutorial-demo, .tutorial-stage, .tutorial-text-content, .tutorial-nav, .tutorial-nav-btn, .tutorial-scene-title, .tutorial-scene-text p, .tutorial-flow-step, .tutorial-stage-label'
+              '#tutorial-overlay .tutorial-card, #tutorial-overlay .tutorial-header, .tutorial-demo, .tutorial-stage, .tutorial-text-content, .tutorial-nav, .tutorial-nav-btn, .tutorial-scene-title, .tutorial-scene-text p, .tutorial-flow-step, .tutorial-stage-label, .tutorial-diagram, .tutorial-zone, .tutorial-slot-role, .tutorial-slot-note, .tutorial-entity, .tutorial-entity-title, .tutorial-entity-value, .tutorial-entity-detail, .tutorial-phase-name'
             ),
           ];
           const result = nodes.map((el) => {
@@ -82,8 +82,12 @@ try {
           m.sw > m.w + 1
         )
           failures.push({ width, height, scene: scene.title, ...m });
-      const cardCount = await p.locator('.tutorial-stage-slot .card').count();
-      assert.equal(cardCount, scene.demo.setup.length, `Missing card in ${scene.title}`);
+      const cardCount = await p.locator('.tutorial-stage-slot > .card').count();
+      assert.equal(
+        cardCount,
+        scene.demo.setup.filter((item) => item.card).length,
+        `Missing card in ${scene.title}`
+      );
       for (const b of await p.locator('.tutorial-nav-btn').all())
         assert.ok(
           (await b.boundingBox()).height >= 43.9,
@@ -111,8 +115,18 @@ try {
     const track = await p.locator('.tutorial-phase-track').boundingBox();
     assert.ok(title.x >= stage.x && title.x + title.width <= stage.x + stage.width);
     assert.ok(title.y >= stage.y && track.y + track.height <= stage.y + stage.height);
-    assert.equal(await p.locator('.tutorial-phase-track [aria-current="step"]').getAttribute('data-phase'), phase);
+    assert.equal(
+      await p.locator('.tutorial-phase-track [aria-current="step"]').getAttribute('data-phase'),
+      phase
+    );
   }
+  await p.locator('#tutorial-close').click();
+  // A highlighted anatomy stat must not leak into the next lesson.
+  await p.locator('#other-tutorial').click();
+  await p.locator('.tutorial-nav-btn').last().click();
+  await p.locator('[data-focus-stat]').waitFor();
+  await p.locator('.tutorial-nav-btn').last().click();
+  assert.equal(await p.locator('[data-focus-stat]').count(), 0);
   await p.locator('#tutorial-close').click();
   // Real looping attack must remain inside its stage and disappear on navigation.
   await p.setViewportSize({ width: 393, height: 852 });

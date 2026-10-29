@@ -93,6 +93,18 @@ function buildLayout() {
 
   labelEl = document.createElement('div');
   labelEl.className = 'tutorial-stage-label';
+  const toolbar = document.createElement('div');
+  toolbar.className = 'tutorial-demo-toolbar';
+  const eyebrow = document.createElement('span');
+  eyebrow.textContent = 'WORKED EXAMPLE';
+  const replay = document.createElement('button');
+  replay.type = 'button';
+  replay.className = 'tutorial-replay';
+  replay.textContent = '↻ Replay';
+  replay.setAttribute('aria-label', 'Replay this demonstration');
+  replay.onclick = () => goToScene(currentSceneIndex);
+  toolbar.append(eyebrow, replay);
+  demoPanel.appendChild(toolbar);
   demoPanel.appendChild(stageEl);
   demoPanel.appendChild(labelEl);
 
@@ -171,6 +183,8 @@ function goToScene(index) {
   if (!scene) return;
 
   stageEl.querySelector('.tutorial-flow-grid')?.remove();
+  stageEl.querySelector('.tutorial-diagram')?.remove();
+  stageEl.dataset.scene = scene.id;
 
   // Clear stage
   for (const slot of Object.values(slotElements)) {
@@ -218,19 +232,33 @@ function goToScene(index) {
     stageEl.appendChild(flow);
   }
 
-  // Place cards in slots
-  if (scene.demo?.setup) {
-    for (const { slot, card } of scene.demo.setup) {
-      const el = slotElements[slot];
-      if (!el) continue;
-      const cardEl = renderCard(card, {
-        showEffectSummary: true,
-        useBaseStats: true,
-        context: 'tooltip',
-      });
-      el.appendChild(cardEl);
-      el.style.opacity = '0';
-    }
+  if (scene.demo.diagram) {
+    const diagram = document.createElement('div');
+    diagram.className = `tutorial-diagram tutorial-diagram-${scene.demo.diagram}`;
+    const zones =
+      scene.demo.diagram === 'zones'
+        ? [
+            ['field', 'FIELD', '3 creature slots'],
+            ['hand', 'HAND', 'Private · no limit'],
+            ['carrion', 'CARRION', 'Slain / eaten'],
+            ['exile', 'EXILE', 'Used / removed'],
+          ]
+        : [
+            ['hand', 'IN YOUR HAND', 'Wait for a trigger'],
+            ['trigger', 'RIVAL ACTION', 'Response window'],
+            ['resolve', 'YOUR CHOICE', 'Activate and resolve'],
+            ['exile', 'EXILE', 'Used trap leaves hand'],
+          ];
+    zones.forEach(([id, title, detail]) => {
+      const zone = document.createElement('div');
+      zone.className = 'tutorial-zone';
+      zone.dataset.zone = id;
+      zone.innerHTML = `<strong>${title}</strong><span>${detail}</span>`;
+      if (id === 'field')
+        zone.innerHTML += '<div class="tutorial-field-spaces"><i></i><i></i><i></i></div>';
+      diagram.appendChild(zone);
+    });
+    stageEl.appendChild(diagram);
   }
 
   startDemo(scene.demo);
@@ -241,6 +269,7 @@ function goToScene(index) {
 // ============================================================================
 
 function stopDemo() {
+  stageEl?.getAnimations({ subtree: true }).forEach((animation) => animation.cancel());
   stageEl?.querySelectorAll('.tutorial-attack-ghost').forEach((ghost) => ghost.remove());
   if (loopAbort) {
     loopAbort.abort();
@@ -265,7 +294,41 @@ async function startDemo(demo) {
   }
 }
 
-function resetStage() {
+function resetStage(demo) {
+  for (const slot of Object.values(slotElements)) {
+    slot.innerHTML = '';
+    slot.className = `tutorial-stage-slot tutorial-slot-${slot.dataset.slot}`;
+    delete slot.dataset.hp;
+    delete slot.dataset.atk;
+    delete slot.dataset.nut;
+    delete slot.dataset.focusStat;
+  }
+  for (const item of demo.setup) {
+    const slot = slotElements[item.slot];
+    if (item.card) {
+      slot.appendChild(renderCard(item.card, { showEffectSummary: true, context: 'tooltip' }));
+      if (item.card.hp !== undefined) slot.dataset.hp = String(item.card.hp);
+      if (item.card.atk !== undefined) slot.dataset.atk = String(item.card.atk);
+      if (item.card.nutrition !== undefined) slot.dataset.nut = String(item.card.nutrition);
+    } else if (item.entity) {
+      const box = document.createElement('div');
+      box.className = 'tutorial-entity';
+      box.innerHTML = `<span class="tutorial-entity-title">${item.entity.title}</span><strong class="tutorial-entity-value">${item.entity.value}</strong><span class="tutorial-entity-detail">${item.entity.detail}</span>`;
+      slot.appendChild(box);
+      if (item.entity.title === 'RIVAL') slot.dataset.hp = item.entity.value;
+    }
+    if (item.role) {
+      const role = document.createElement('div');
+      role.className = 'tutorial-slot-role';
+      role.textContent = item.role;
+      slot.appendChild(role);
+    }
+    const note = document.createElement('div');
+    note.className = 'tutorial-slot-note';
+    slot.appendChild(note);
+  }
+  stageEl.dataset.cycle = String(Number(stageEl.dataset.cycle || 0) + 1);
+
   for (const slot of Object.values(slotElements)) {
     slot.style.opacity = '0';
     slot.style.transform = '';
@@ -292,7 +355,8 @@ function resetStage() {
 }
 
 async function runSteps(steps, signal) {
-  for (const step of steps) {
+  for (const [index, step] of steps.entries()) {
+    stageEl.dataset.step = String(index);
     if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
     await executeStep(step, signal);
   }
@@ -304,8 +368,58 @@ async function runSteps(steps, signal) {
 
 async function executeStep(step, signal) {
   switch (step.type) {
+    case 'parallel':
+      return Promise.all(step.steps.map((child) => executeStep(child, signal)));
+    case 'note':
+      return handleNote(step);
+    case 'entityValue': {
+      const slot = slotElements[step.target];
+      slot.querySelector('.tutorial-entity-value').textContent = step.text;
+      if (step.detail) slot.querySelector('.tutorial-entity-detail').textContent = step.detail;
+      return;
+    }
+    case 'dim':
+      slotElements[step.target].classList.add('tutorial-unavailable');
+      return;
+    case 'depart':
+      removeArrow();
+      slotElements[step.target].classList.add('tutorial-departed');
+      slotElements[step.target].style.opacity = '1';
+      return handleNote({ ...step, text: `→ ${step.destination}` });
+    case 'focusStat':
+      stageEl
+        .querySelectorAll('[data-focus-stat]')
+        .forEach((slot) => delete slot.dataset.focusStat);
+      slotElements[step.target].dataset.focusStat = step.stat;
+      return;
+    case 'keyword': {
+      const card = slotElements[step.target].querySelector('.card');
+      const tags = card.querySelector('.card-keywords-text');
+      if (step.remove) {
+        tags?.querySelectorAll('.keyword-tag').forEach((tag) => {
+          if (tag.textContent.trim() === step.keyword) tag.remove();
+        });
+      } else {
+        const tag = document.createElement('span');
+        tag.className = 'keyword-tag';
+        tag.textContent = step.keyword;
+        if (tags) tags.appendChild(tag);
+        else {
+          const row = document.createElement('div');
+          row.className = 'card-keywords-text';
+          row.appendChild(tag);
+          card.querySelector('.card-stats-row')?.after(row);
+        }
+      }
+      return;
+    }
+    case 'zone':
+      stageEl
+        .querySelectorAll('.tutorial-zone')
+        .forEach((zone) => zone.classList.toggle('is-current', zone.dataset.zone === step.target));
+      return;
     case 'fadeIn':
-      return handleFadeIn(step);
+      return handleFadeIn(step, signal);
     case 'wait':
       return wait(step.duration, signal);
     case 'highlightAttacker':
@@ -317,7 +431,8 @@ async function executeStep(step, signal) {
     case 'arrow':
       return handleArrow(step, signal);
     case 'label':
-      return handleLabel(step);
+      handleLabel(step);
+      return step.duration ? wait(step.duration, signal) : undefined;
     case 'clearLabel':
       return handleClearLabel();
     case 'keywordFlash':
@@ -352,7 +467,7 @@ async function executeStep(step, signal) {
 }
 
 // -- fadeIn --
-function handleFadeIn(step) {
+function handleFadeIn(step, signal) {
   const targets = step.target === 'all' ? Object.values(slotElements) : [slotElements[step.target]];
   for (const slot of targets) {
     if (slot && slot.children.length > 0) {
@@ -360,22 +475,41 @@ function handleFadeIn(step) {
       slot.style.opacity = '1';
     }
   }
-  return wait(step.duration || 400);
+  return wait(step.duration || 400, signal);
 }
 
 // -- wait --
 function wait(ms, signal) {
   return new Promise((resolve, reject) => {
-    const id = setTimeout(resolve, ms);
-    signal?.addEventListener(
-      'abort',
-      () => {
-        clearTimeout(id);
-        reject(new DOMException('Aborted', 'AbortError'));
-      },
-      { once: true }
-    );
+    const onAbort = () => {
+      clearTimeout(id);
+      reject(new DOMException('Aborted', 'AbortError'));
+    };
+    const id = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    if (signal?.aborted) onAbort();
+    else signal?.addEventListener('abort', onAbort, { once: true });
   });
+}
+
+function handleNote(step) {
+  const slot = slotElements[step.target];
+  slot.querySelector('.tutorial-slot-note').textContent = step.text;
+}
+
+function setStat(slot, stat, value) {
+  slot.dataset[stat] = String(value);
+  const node = slot.querySelector(`.stat-${stat}`);
+  if (node) {
+    node.lastChild.textContent = ` ${value}`;
+    node.setAttribute('aria-label', `${stat === 'hp' ? 'Health' : 'Attack'} ${value}`);
+    node.classList.add('tutorial-stat-changed');
+  }
+  if (stat === 'hp' && slot.querySelector('.tutorial-entity-value')) {
+    slot.querySelector('.tutorial-entity-value').textContent = String(value);
+  }
 }
 
 // -- highlightAttacker / highlightTarget --
@@ -547,10 +681,14 @@ function handleLabel(step) {
     item.classList.toggle('is-complete', index < step.node);
     if (index === step.node && item.dataset.phase) {
       stageEl.querySelector('.tutorial-phase-name').textContent = item.dataset.phase;
-      stageEl.querySelector('.tutorial-phase-position').textContent = `PHASE ${index + 1} OF 7`;
+      stageEl.querySelector('.tutorial-phase-position').textContent =
+        `PHASE ${index + 1} OF ${stageEl.querySelectorAll('.tutorial-flow-step').length}`;
       stageEl
         .querySelector('.tutorial-phase-track')
-        .style.setProperty('--phase-progress', String(index / 6));
+        .style.setProperty(
+          '--phase-progress',
+          String(index / (stageEl.querySelectorAll('.tutorial-flow-step').length - 1))
+        );
       item.setAttribute('aria-current', 'step');
     } else {
       item.removeAttribute('aria-current');
@@ -597,6 +735,7 @@ async function handleAttack(step, signal) {
 
   const ghost = fromCard.cloneNode(true);
   ghost.classList.add('tutorial-attack-ghost');
+  ghost.setAttribute('aria-hidden', 'true');
   ghost.style.cssText = `
     position: absolute;
     width: ${fromRect.width}px;
@@ -610,22 +749,33 @@ async function handleAttack(step, signal) {
   stageEl.appendChild(ghost);
   removeArrow();
 
-  const deltaX = toRect.left + toRect.width / 2 - (fromRect.left + fromRect.width / 2);
-  const deltaY = toRect.top + toRect.height / 2 - (fromRect.top + fromRect.height / 2);
+  const deltaX = (toRect.left + toRect.width / 2 - (fromRect.left + fromRect.width / 2)) * 0.35;
+  const deltaY = (toRect.top + toRect.height / 2 - (fromRect.top + fromRect.height / 2)) * 0.35;
 
   const animation = ghost.animate(
     [
       { transform: 'translate(-50%, -50%) scale(1)', opacity: 0.95 },
-      { transform: 'translate(-50%, -50%) scale(1.08)', opacity: 1, offset: 0.7 },
+      { transform: 'translate(-50%, -50%) scale(1.02)', opacity: 1, offset: 0.7 },
       {
         transform: `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px)) scale(0.95)`,
         opacity: 0.2,
       },
     ],
-    { duration: step.duration || 420, easing: 'cubic-bezier(0.2, 0.85, 0.35, 1)' }
+    {
+      duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 1
+        : step.duration || 420,
+      easing: 'cubic-bezier(0.2, 0.85, 0.35, 1)',
+    }
   );
-  await animation.finished;
-  ghost.remove();
+  const cancel = () => animation.cancel();
+  signal?.addEventListener('abort', cancel, { once: true });
+  try {
+    await animation.finished;
+  } finally {
+    signal?.removeEventListener('abort', cancel);
+    ghost.remove();
+  }
 }
 
 // -- damagePop --
@@ -633,6 +783,8 @@ async function handleDamagePop(step, signal) {
   const slot = slotElements[step.target];
   if (!slot) return;
 
+  if (slot.dataset.hp !== undefined)
+    setStat(slot, 'hp', Math.max(0, Number(slot.dataset.hp) - step.amount));
   const pop = document.createElement('div');
   pop.className = 'tutorial-damage-pop';
   pop.textContent = `-${step.amount}`;
@@ -673,6 +825,8 @@ async function handleBuffPop(step, signal) {
   const slot = slotElements[step.target];
   if (!slot) return;
 
+  if (step.atk !== undefined) setStat(slot, 'atk', Number(slot.dataset.atk) + step.atk);
+  if (step.hp !== undefined) setStat(slot, 'hp', Number(slot.dataset.hp) + step.hp);
   const pop = document.createElement('div');
   pop.className = 'tutorial-buff-pop';
   pop.textContent = step.text || `+${step.atk}/${step.hp}`;
@@ -709,6 +863,10 @@ function handleApplyStatus(step) {
 
   switch (step.status) {
     case 'paralysis':
+      setStat(slot, 'atk', 0);
+      cardEl.querySelector('.card-keywords').innerHTML =
+        '<div class="card-keywords-text"><span class="keyword-tag">Harmless</span></div>';
+      cardEl.querySelector('.card-effect')?.remove();
       for (let i = 0; i < 4; i++) {
         const spark = document.createElement('div');
         spark.className = `electric-spark spark-${i + 1}`;
@@ -809,6 +967,7 @@ async function handleConsumeInto(step, signal) {
   // Create ghost of prey
   const ghost = preyCard.cloneNode(true);
   ghost.classList.add('tutorial-attack-ghost');
+  ghost.setAttribute('aria-hidden', 'true');
   ghost.style.cssText = `
     position: absolute;
     width: ${preyRect.width}px;
@@ -821,8 +980,9 @@ async function handleConsumeInto(step, signal) {
   `;
   stageEl.appendChild(ghost);
 
-  // Hide original
-  preySlot.style.opacity = '0';
+  removeArrow();
+  // Keep the source position visible as a labelled destination after consumption.
+  preySlot.classList.add('tutorial-departed');
 
   const deltaX = predRect.left + predRect.width / 2 - (preyRect.left + preyRect.width / 2);
   const deltaY = predRect.top + predRect.height / 2 - (preyRect.top + preyRect.height / 2);
@@ -842,11 +1002,22 @@ async function handleConsumeInto(step, signal) {
         filter: 'brightness(0.5)',
       },
     ],
-    { duration: step.duration || 600, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' }
+    {
+      duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 1
+        : step.duration || 600,
+      easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+    }
   );
 
-  await animation.finished;
-  ghost.remove();
+  const cancel = () => animation.cancel();
+  signal?.addEventListener('abort', cancel, { once: true });
+  try {
+    await animation.finished;
+  } finally {
+    signal?.removeEventListener('abort', cancel);
+    ghost.remove();
+  }
 }
 
 // -- highlight (glow ring around a specific element) --

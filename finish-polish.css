@@ -941,3 +941,95 @@ body:has(.card-hover-tooltip.visible.deck-inspector)::after {
   #tutorial-overlay .tutorial-phase-track { margin-top: 4px; }
 }
 @media(prefers-reduced-motion: reduce) { #tutorial-overlay .tutorial-phase-track::after { transition: none; } }
+
+/* Tutorial vignettes: quiet framing, explicit roles, persistent outcomes. */
+#tutorial-overlay .tutorial-demo { grid-template-rows: 44px minmax(0, 1fr) 60px; }
+#tutorial-overlay .tutorial-demo-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 0 12px; color: #a3babd; font: 600 10px/1.2 system-ui,sans-serif; letter-spacing: .16em; border-bottom: 1px solid #54727a33; }
+#tutorial-overlay .tutorial-replay { min-height: 44px; min-width: 76px; border: 0; background: none; color: #e5d3a2; font: 600 13px/1 system-ui,sans-serif; cursor: pointer; }
+#tutorial-overlay .tutorial-replay:focus-visible { outline: 2px solid #e5d3a2; outline-offset: -4px; border-radius: 6px; }
+#tutorial-overlay .tutorial-stage { gap: 6%; background: radial-gradient(ellipse at center, #15333e55, transparent 70%), #081e28; }
+#tutorial-overlay .tutorial-stage-slot { height: min(62cqh, calc(80cqw / var(--tutorial-slot-count, 3) * 7 / 5), 360px); }
+#tutorial-overlay .tutorial-stage-slot > .card { width: 100%; height: 100%; transition: opacity .35s, filter .35s; }
+#tutorial-overlay .tutorial-stage-label { font-size: 15px; font-weight: 500; color: #d4e2e3; padding: 6px 12px; white-space: normal; }
+#tutorial-overlay .tutorial-slot-role, #tutorial-overlay .tutorial-slot-note { position: absolute; left: -8%; width: 116%; text-align: center; font: 600 11px/1.3 system-ui,sans-serif; }
+#tutorial-overlay .tutorial-slot-role { bottom: calc(100% + 12px); color: #9fbabe; letter-spacing: .05em; }
+#tutorial-overlay .tutorial-slot-note { top: calc(100% + 12px); color: #e5d3a2; }
+#tutorial-overlay .tutorial-stage-slot.tutorial-departed > .card { opacity: .16; filter: grayscale(1); }
+#tutorial-overlay .tutorial-stage-slot.tutorial-unavailable > .card { opacity: .4; filter: grayscale(.8); }
+#tutorial-overlay .tutorial-entity { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 14px; text-align: center; padding: 10px; border: 1px solid #54727a88; border-radius: 12px; background: #102e39; }
+#tutorial-overlay .tutorial-entity-title { font: 600 11px/1.3 system-ui,sans-serif; color: #a3babd; letter-spacing: .08em; }
+#tutorial-overlay .tutorial-entity-value { font: 650 clamp(28px, 7cqw, 52px)/1 system-ui,sans-serif; color: #e5d3a2; }
+#tutorial-overlay .tutorial-entity-detail { font: 500 13px/1.3 system-ui,sans-serif; color: #bad0d3; }
+#tutorial-overlay .tutorial-arrow { opacity: .85; }
+#tutorial-overlay .tutorial-arrow path, #tutorial-overlay .tutorial-arrow polygon { filter: none !important; }
+#tutorial-overlay .tutorial-arrow .ai-arrow-path { stroke: #d5c08e; stroke-width: 2; }
+#tutorial-overlay .tutorial-arrow .ai-arrow-head { fill: #d5c08e; }
+#tutorial-overlay .tutorial-stat-changed { color: #e5d3a2; }
+#tutorial-overlay [data-focus-stat="atk"] .stat-atk,
+#tutorial-overlay [data-focus-stat="hp"] .stat-hp,
+#tutorial-overlay [data-focus-stat="nut"] .stat-nut { color: #fff1c7; outline: 2px solid #e5d3a2; border-radius: 4px; background: #e5d3a222; }
+#tutorial-overlay .tutorial-diagram { width: min(100%, 450px); display: grid; gap: 14px; font-family: system-ui,sans-serif; }
+#tutorial-overlay .tutorial-zone { border: 1px solid #54727a77; border-radius: 10px; padding: 16px; color: #aac2c6; display: flex; flex-direction: column; gap: 6px; transition: border-color .25s, background .25s, color .25s; }
+#tutorial-overlay .tutorial-zone strong { font-size: 13px; letter-spacing: .08em; }
+#tutorial-overlay .tutorial-zone span { font-size: 14px; }
+#tutorial-overlay .tutorial-zone.is-current { border-color: #e5d3a2; background: #e5d3a211; color: #eddbad; }
+#tutorial-overlay .tutorial-diagram-zones { grid-template-columns: 1fr 1fr; }
+#tutorial-overlay .tutorial-diagram-zones [data-zone="field"], #tutorial-overlay .tutorial-diagram-zones [data-zone="hand"] { grid-column: 1 / -1; }
+#tutorial-overlay .tutorial-field-spaces { display: flex; gap: 10px; margin-top: 4px; }
+#tutorial-overlay .tutorial-field-spaces i { display: block; width: 30%; height: clamp(24px, 10cqh, 70px); border: 1px dashed #8aa7ae; border-radius: 4px; }
+#tutorial-overlay .tutorial-diagram-trap { gap: 0; padding-left: 16px; border-left: 2px solid #54727a77; }
+#tutorial-overlay .tutorial-diagram-trap .tutorial-zone { border: 0; border-radius: 0 8px 8px 0; position: relative; margin: 4px 0; }
+#tutorial-overlay .tutorial-diagram-trap .tutorial-zone::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #54727a; position: absolute; left: -21px; top: 24px; }
+#tutorial-overlay .tutorial-diagram-trap .tutorial-zone.is-current::before { background: #e5d3a2; box-shadow: 0 0 0 4px #e5d3a218; }
+@container tutorial-stage (max-height: 300px) {
+  #tutorial-overlay .tutorial-diagram { gap: 6px; }
+  #tutorial-overlay .tutorial-zone { padding: 7px 10px; gap: 3px; }
+  #tutorial-overlay .tutorial-zone strong { font-size: 11px; }
+  #tutorial-overlay .tutorial-zone span { font-size: 12px; }
+  #tutorial-overlay .tutorial-diagram-trap { gap: 0; }
+  #tutorial-overlay .tutorial-diagram-trap .tutorial-zone { margin: 0; }
+  #tutorial-overlay .tutorial-diagram-trap .tutorial-zone::before { top: 17px; }
+  #tutorial-overlay .tutorial-field-spaces i { height: 20px; }
+  #tutorial-overlay .tutorial-entity { gap: 6px; padding: 6px; }
+  #tutorial-overlay .tutorial-entity-value { font-size: 26px; }
+  #tutorial-overlay .tutorial-entity-title { font-size: 10px; }
+  #tutorial-overlay .tutorial-entity-detail { font-size: 11px; }
+}
+@media(max-width:768px) {
+  #tutorial-overlay .tutorial-stage-slot { height: min(62cqh, calc(80cqw / var(--tutorial-slot-count, 3) * 7 / 5), 310px); }
+  #tutorial-overlay .tutorial-slot-role, #tutorial-overlay .tutorial-slot-note { font-size: 10px; }
+  #tutorial-overlay .tutorial-stage-label { font-size: 14px; }
+}
+@media(max-height:650px) {
+  #tutorial-overlay .tutorial-demo { grid-template-rows: 44px minmax(0,1fr) 48px; }
+  #tutorial-overlay .tutorial-demo-toolbar { padding-right: 5px; }
+  #tutorial-overlay .tutorial-replay { min-height: 44px; }
+  #tutorial-overlay .tutorial-stage-label { font-size: 12px; }
+  #tutorial-overlay .tutorial-slot-role { bottom: calc(100% + 5px); }
+  #tutorial-overlay .tutorial-slot-note { top: calc(100% + 5px); }
+}
+@media(prefers-reduced-motion: reduce) {
+  #tutorial-overlay *, #tutorial-overlay *::before, #tutorial-overlay *::after { animation: none !important; transition: none !important; }
+}
+#tutorial-overlay .tutorial-entity-value { line-height: 1.2; }
+#tutorial-overlay .tutorial-stage-slot:has(> .tutorial-entity) { min-height: 120px; }
+@container tutorial-stage (max-height: 380px) {
+  #tutorial-overlay .tutorial-diagram-trap .tutorial-zone { padding: 7px 10px; margin: 0; gap: 3px; }
+  #tutorial-overlay .tutorial-diagram-trap .tutorial-zone strong { font-size: 11px; }
+  #tutorial-overlay .tutorial-diagram-trap .tutorial-zone span { font-size: 12px; }
+}
+@container tutorial-stage (max-height: 220px) {
+  #tutorial-overlay .tutorial-diagram-zones { grid-template-columns: 1fr 1fr; gap: 6px; }
+  #tutorial-overlay .tutorial-diagram-zones [data-zone] { grid-column: auto; }
+  #tutorial-overlay .tutorial-field-spaces { display: none; }
+  #tutorial-overlay .tutorial-zone { padding: 7px 8px; }
+  #tutorial-overlay .tutorial-diagram-trap .tutorial-zone { padding: 4px 8px; gap: 2px; }
+  #tutorial-overlay .tutorial-entity { gap: 3px; }
+  #tutorial-overlay .tutorial-entity-title { letter-spacing: .02em; }
+}
+
+@container tutorial-stage (max-height: 220px) {
+  #tutorial-overlay .tutorial-diagram-trap .tutorial-zone { padding: 2px 8px; gap: 1px; }
+  #tutorial-overlay .tutorial-diagram-trap .tutorial-zone strong { font-size: 10px; line-height: 1.2; }
+  #tutorial-overlay .tutorial-diagram-trap .tutorial-zone span { font-size: 11px; line-height: 1.2; }
+}
