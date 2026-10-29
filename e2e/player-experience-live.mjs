@@ -85,7 +85,8 @@ try {
     await p.locator('.pe-grid .pe-tile').click();
     await expect(p.locator('#card-hover-tooltip')).toHaveClass(/inspection-modal/);
     await screenshot(`${tag}-inspect`);
-    await p.locator('.inspection-close').click();
+    await p.locator('#tooltip-card-preview').click();
+    await expect(p.locator('#card-hover-tooltip')).not.toHaveClass(/visible/);
     await expect(p.locator('#pe-search')).toHaveValue('orca');
     await p.locator('#pe-search').fill('');
     await p.locator('#pe-animal').selectOption('all');

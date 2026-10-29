@@ -34,7 +34,8 @@ try {
     expect(Math.abs(proportions[1] - 0.1)).toBeLessThan(0.005);
     await page.locator('.pe-grid .pe-tile').click();
     await expect(page.locator('#card-hover-tooltip')).toHaveClass(/inspection-modal/);
-    await page.locator('.inspection-close').click();
+    await page.locator('#tooltip-card-preview').click();
+    await expect(page.locator('#card-hover-tooltip')).not.toHaveClass(/visible/);
     await expect(page.locator('#pe-search')).toHaveValue('orca');
     await page.locator('#pe-search').fill('no such creature');
     await expect(page.locator('.pe-grid .pe-tile')).toHaveCount(0);

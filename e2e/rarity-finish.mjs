@@ -85,7 +85,8 @@ try {
     await expect(page.locator('#tooltip-card-preview .canonical-card')).toHaveAttribute('data-rarity',rarity);
     await expect(page.locator('#tooltip-card-preview .card-rarity-seal')).toHaveAttribute('aria-label',`${rarity} rarity`);
     if (rarity === 'pristine') await page.screenshot({path:`${out}/phone-inspector-fixture.png`});
-    await page.locator('.inspection-close').click();
+    await page.locator('#tooltip-card-preview').click();
+    await expect(page.locator('#card-hover-tooltip')).not.toHaveClass(/visible/);
   }
   await page.emulateMedia({reducedMotion:'reduce'});
   expect(await page.locator('.card-opal-foil').evaluateAll(els=>els.every(el=>getComputedStyle(el).animationName==='none'))).toBe(true);

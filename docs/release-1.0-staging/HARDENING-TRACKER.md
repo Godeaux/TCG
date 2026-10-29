@@ -33,7 +33,13 @@ proof. Do not silently preserve unverified balances as trusted progression.
 - Active combined worktree: food-chain-server-integration on
   harden/server-economy-2026-10-29. It merges foundation 513efd8 with the latest
   overnight frontend 825252c (including no-X/half-blur). Combined contract:
-  5,272 tests / 78 files plus all SQL checks; production pack UI regression passes.
+  5,272 tests / 78 files plus all SQL checks; all 27 browser scripts passed across
+  the initial run and a resumed tail. Initial script 22 stopped on a preexisting
+  .inspection-close selector after the owner-requested X removal. Corrected three
+  affected tests to click the actual card preview and assert dismissal, then
+  reran scripts 22–27. No earlier browser checks weakened or skipped. The opt-in
+  live-profile script was syntax-checked, not run (no real-player login).
+  Logs: /tmp/tcg-integration-ui.log and /tmp/tcg-integration-ui-tail.log.
   Foundation-only branch remains separate. Neither frontend branch is published.
 
 ## Still required — do not call the live game hardened
