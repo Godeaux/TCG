@@ -123,3 +123,13 @@ npm install --prefix /tmp/tcg-foundation-qa --no-audit --no-fund @electric-sql/p
 TCG_PGLITE_MODULE=/tmp/tcg-foundation-qa/node_modules/@electric-sql/pglite/dist/index.js \
   node docs/release-1.0-staging/validate-foundation.mjs
 ```
+
+## Email delivery prerequisite
+
+Supabase's current [SMTP documentation](https://supabase.com/docs/guides/auth/auth-smtp)
+was checked October 28: the default sender only delivers to organization team
+addresses and is not a production sender. Public email-code login therefore
+requires configured custom SMTP (or an appropriate Auth send hook). Whether this
+project already has custom delivery configured is unverified. Do not promise
+public signup on the default sender, purchase a service, or weaken verification
+to get around delivery limits. Configure and test delivery before account cutover.
