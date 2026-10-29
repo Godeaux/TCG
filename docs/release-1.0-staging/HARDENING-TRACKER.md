@@ -42,6 +42,23 @@ proof. Do not silently preserve unverified balances as trusted progression.
   Logs: /tmp/tcg-integration-ui.log and /tmp/tcg-integration-ui-tail.log.
   Foundation-only branch remains separate. Neither frontend branch is published.
 
+## Additional authority regression — October 29
+
+- Parent reproduced five failures before the fix in the actual ActionBus,
+  controller and JSON snapshot restore (not a replacement game implementation).
+- RESOLVE_DISCARD now requires the sender's own outstanding discard choice and
+  an actual card in that seat's hand. Controller independently validates the
+  choice and consumes the canonical hand object, refusing replay/foreign cards.
+- Pending discard choices survive full JSON snapshot restoration and completion
+  clears the choice on the receiving state. Legitimate out-of-turn discard passes.
+- All five regression tests pass; full contract passes 5,277 tests / 79 files plus
+  all SQL suites using the documented isolated PGlite dependency. Relevant browser
+  match/reconnect and selection lifecycle checks rerun after the change: both pass.
+- These changes remain LOCAL, not published. Host validation is defense in depth,
+  not a substitute for authenticated server authority or private seat projections.
+- The separate five-minute local review timed out without a report or executed
+  tests. It is not counted as independent certification; no local tester is active.
+
 ## Still required — do not call the live game hardened
 
 1. **Account ownership:** provider-backed login and verified registration;

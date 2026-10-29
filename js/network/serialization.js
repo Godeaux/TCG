@@ -323,6 +323,7 @@ export const buildLobbySyncPayload = (state) => ({
       };
     })(),
     visualEffects: Array.isArray(state.visualEffects) ? [...state.visualEffects] : [],
+    pendingChoice: state.pendingChoice ? { ...state.pendingChoice } : null,
     pendingTrapDecision: state.pendingTrapDecision ? { ...state.pendingTrapDecision } : null,
     pendingReaction: state.pendingReaction ? { ...state.pendingReaction } : null,
     // End-of-turn work still owed. The queue is re-derived from the field, but
@@ -471,6 +472,8 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
     if (Array.isArray(payload.game.visualEffects)) {
       state.visualEffects = payload.game.visualEffects.map((effect) => ({ ...effect }));
     }
+    // Missing in legacy snapshots: fail closed rather than retain an old choice.
+    state.pendingChoice = payload.game.pendingChoice ? { ...payload.game.pendingChoice } : null;
     if (payload.game.pendingTrapDecision !== undefined) {
       state.pendingTrapDecision = payload.game.pendingTrapDecision
         ? { ...payload.game.pendingTrapDecision }
