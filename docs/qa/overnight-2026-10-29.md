@@ -64,3 +64,14 @@ with the existing shared AI snapshot helper. Coverage checks playable moves,
 live-state isolation, unused live callback and JSON-recovered state parity.
 Contract after repair: 5,264 tests / 76 files pass. Browser campaign verification
 of this follow-up is separate from the original frozen candidate.
+
+## Follow-up: opponent names are text
+
+Additional INPUT-01 scope: rematch status and legacy profile match history parsed
+opponent/deck names as HTML. A harmless `<b data-audit>` fixture reproduced both
+through exported production renderers. They now build DOM nodes and assign
+textContent, including profile HP fields. `e2e/profile-text-safety.mjs` checks all
+three rematch choices plus history with markup, quotes, Unicode and ampersands;
+registered in the normal UI suite. Component evidence only, no account/network
+writes or claim of demonstrated cross-account script execution. Contract remains
+5,264/76 passing; focused browser regression passed.
