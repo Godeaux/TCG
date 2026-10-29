@@ -90,12 +90,22 @@ try {
       if (kind === 'ambush') {
         const card = p.locator('.history-detail .history-tile').first();
         if (width < 768) await card.tap(); else await card.click();
-        await expect(p.locator('#history-card-inspection')).toBeVisible();
-        await expect(p.locator('#history-card-inspection')).toContainText('Ambush');
-        await expect(p.locator('#history-card-inspection .history-keyword-definition')).not.toBeEmpty();
+        await expect(p.locator('#card-hover-tooltip.visible')).toBeVisible();
+        await expect(p.locator('#card-hover-tooltip.visible')).toContainText('Ambush');
+        await expect(p.locator('#tooltip-info-boxes')).toContainText('When attacking');
+        await expect(p.locator('#card-hover-tooltip')).toHaveClass(/modern-inspector/);
+        expect(await p.locator('#card-hover-tooltip').evaluate((el) => el.inert)).toBe(false);
+        expect(await p.locator('#history-card-inspection').count()).toBe(0);
         await p.screenshot({ path: `docs/ui-phase2/${width}-history-inspection.png` });
+        // The shared inspector keeps its existing card-face tap/click dismissal.
+        const preview = p.locator('#tooltip-card-preview .card').first();
+        if (width < 768) await preview.tap(); else await preview.click();
+        await expect(p.locator('#card-hover-tooltip.visible')).toBeHidden();
+        await expect(p.locator('#history-panel')).toBeVisible();
+        if (width < 768) await card.tap(); else await card.click();
+        await expect(p.locator('#card-hover-tooltip.visible')).toBeVisible();
         await p.keyboard.press('Escape');
-        await expect(p.locator('#history-card-inspection')).toBeHidden();
+        await expect(p.locator('#card-hover-tooltip.visible')).toBeHidden();
         await expect(p.locator('#history-panel')).toBeVisible();
       }
       const report = await p.locator('.history-detail').evaluate((el) => ({
