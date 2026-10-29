@@ -75,3 +75,19 @@ three rematch choices plus history with markup, quotes, Unicode and ampersands;
 registered in the normal UI suite. Component evidence only, no account/network
 writes or claim of demonstrated cross-account script execution. Contract remains
 5,264/76 passing; focused browser regression passed.
+
+## Follow-up: measured loading and missing artwork requests
+
+Six fresh-context, unthrottled localhost Chromium runs observed roughly160–164
+resource requests and5.7–6.7MB transferred through Home→Collection. These are
+local measurements under concurrent QA load, not mobile/WAN latency promises.
+Four first-page card JPG requests returned404 and then hid behind placeholders.
+The helper incorrectly reported that every card had art. It now consults the
+verified shipped-art index; preload skips known-missing art. Exact-filename
+regression across all registered cards also caught Ambiguity's uppercase `.JPG`
+(the old lowercase URL works on macOS but not case-sensitive Pages); an explicit
+mapping preserves that shipped filename. Follow-up Collection probes observed
+zero HTTP errors and no failed rendered images, without inventing missing art.
+Contract:5,265 tests/77files. Measurements in external overnight evidence under
+performance, performance-detail and performance-after. Optional reproducible
+measurement script: e2e/cold-start-measure.mjs.
