@@ -4,6 +4,12 @@ All notable changes to Food Chain TCG.
 
 ---
 
+## v0.19 — Reliability and polish
+
+- Clearer card inspection with lighter background blur.
+- More reliable discard choices and reconnect recovery.
+- Safer pack-opening handling and groundwork for server-validated rewards.
+
 ## v0.17 — Unified interface and card presentation
 
 - Redesigned home, saved-deck previews, editor, and art-backed category choices for phone and desktop.

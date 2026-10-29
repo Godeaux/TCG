@@ -40,6 +40,17 @@ try {
     const help = await p.locator('#other-tutorial').boundingBox();
     expect(help.height).toBeGreaterThanOrEqual(44);
     expect(height - help.y - help.height).toBeLessThanOrEqual(35);
+    const changelog = p.locator('#home-changelog');
+    const logBox = await changelog.boundingBox();
+    expect(logBox.x).toBeGreaterThanOrEqual(help.x + help.width);
+    expect(Math.abs(logBox.y + logBox.height / 2 - help.y - help.height / 2)).toBeLessThan(2);
+    expect(logBox.x + logBox.width).toBeLessThanOrEqual(width);
+    await changelog.click();
+    await expect(p.locator('#changelog-overlay')).toHaveClass(/active/);
+    await expect(p.locator('#changelog-content li')).toHaveCount(3);
+    await expect(p.locator('#changelog-content h2')).toContainText('v0.19');
+    await p.locator('#changelog-back').click();
+    await expect(p.locator('#menu-overlay')).toHaveClass(/active/);
     const tip = await p.locator('#menu-splash-text').boundingBox();
     expect(tip.y + tip.height).toBeLessThanOrEqual(help.y);
     await p.screenshot({ animations: 'disabled', path: `docs/home-navigation/${width}-home.png` });

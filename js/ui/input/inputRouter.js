@@ -267,6 +267,7 @@ const getNavigationElements = () => ({
 
   // Changelog overlay elements
   gameVersion: document.getElementById('game-version'),
+  homeChangelog: document.getElementById('home-changelog'),
   changelogContent: document.getElementById('changelog-content'),
   changelogBack: document.getElementById('changelog-back'),
 
@@ -514,16 +515,23 @@ const initNavigation = () => {
   });
 
   // Version text: Open changelog
-  elements.gameVersion?.addEventListener('click', async () => {
+  const openChangelog = async () => {
     if (!latestState) {
       return;
     }
     // Load and render changelog
     try {
-      const response = await fetch('CHANGELOG.md');
+      const response = await fetch('CHANGELOG.md', { cache: 'no-cache' });
+      if (!response.ok) throw new Error('Changelog unavailable');
       const markdown = await response.text();
+      const latest = markdown.split(/^## /m)[1] || '';
+      const highlights = latest
+        .split('\n')
+        .filter((line) => line.startsWith('- '))
+        .slice(0, 3);
+      const summary = `## ${latest.split('\n')[0]}\n${highlights.join('\n')}`;
       if (elements.changelogContent) {
-        elements.changelogContent.innerHTML = parseChangelogMarkdown(markdown);
+        elements.changelogContent.innerHTML = parseChangelogMarkdown(summary);
       }
     } catch (err) {
       if (elements.changelogContent) {
@@ -532,7 +540,9 @@ const initNavigation = () => {
     }
     setMenuStage(latestState, 'changelog');
     latestCallbacks.onUpdate?.();
-  });
+  };
+  elements.gameVersion?.addEventListener('click', openChangelog);
+  elements.homeChangelog?.addEventListener('click', openChangelog);
 
   // Changelog: Back button
   elements.changelogBack?.addEventListener('click', () => {
