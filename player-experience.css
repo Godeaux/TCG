@@ -1084,6 +1084,10 @@
   display:block; position:absolute; inset:0; width:100%; height:100%;
   object-fit:cover; object-position:center; border-radius:inherit;
 }
+/* Keep the canonical type-color banner above artwork, even at minimum scale. */
+.pe-density-grid[data-art-only="true"] .canonical-card::before {
+  z-index:1; height:calc(3px / var(--collection-scale)); pointer-events:none;
+}
 .pe-density-grid[data-art-only="true"] .pe-card { outline:1px solid var(--rarity); border-radius:4px; }
 .pe-density-grid[data-art-only="true"] .selected .pe-card { outline:2px solid #e5d3a2; }
 .pe-thumbnail-image { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; border-radius:inherit; }
