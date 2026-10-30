@@ -28,8 +28,11 @@ export function createCollectionDensity() {
   const layout = (grid, nav) => {
     if (!grid || !nav) return;
     const count = rows();
-    const height = Math.max(count * 52, window.innerHeight - grid.getBoundingClientRect().top - 86);
-    const cardHeight = Math.floor((height - 12 - (count - 1) * 12) / count - 22);
+    const height = Math.max(count * 44, window.innerHeight - grid.getBoundingClientRect().top - 86);
+    const cardHeight = Math.floor((height - 8 - (count - 1) * 6) / count - 20);
+    grid.dataset.artOnly = String(cardHeight / 1.4 < 180);
+    grid.dataset.readableName = String(cardHeight / 1.4 >= 80);
+    grid.style.setProperty('--collection-slot-width', `${Math.max(44, cardHeight / 1.4)}px`);
     grid.style.setProperty('--collection-rows', count);
     grid.style.setProperty('--collection-card-height', `${cardHeight}px`);
     grid.style.setProperty('--collection-card-width', `${cardHeight / 1.4}px`);

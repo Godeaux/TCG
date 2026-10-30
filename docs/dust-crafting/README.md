@@ -7,8 +7,13 @@ Status: local implementation, not deployed. No player reset performed.
 - Mobile: three rows by default/minimum, up to five. Desktop: two through six.
 - Controls: minus (smaller cards), plus (larger), previous, next. Horizontal scroll.
 - Remember separate mobile/desktop density preferences and preserve the visible card.
-- Gallery shows the highest owned finish and its count. Details use the existing
-  card inspector; Craft uses a contained native modal with the actual card renderer.
+- Gallery shows the highest owned finish and its count. Below a readable full-face
+  size, text is removed and actual artwork fills the same 5:7 card silhouette.
+  Counts remain 11px and tile hit areas remain at least 44px. Missing artwork uses
+  the real card name when it fits, otherwise the existing artwork placeholder.
+- Mobile filters open from a single funnel button into full-width readable controls.
+  Large balances/counts use compact visible notation with exact accessible labels.
+- Details use the existing card inspector; Craft uses a contained native modal with the actual card renderer.
 - Only missing finishes can be crafted. No extra rules explanation in crafting.
 - Common/Uncommon/Rare/Legendary/Pristine cost 4/16/64/256/1024 dust.
 - Copies recycle for 1/4/16/64/256 dust. One action recycles all extras, keeping one

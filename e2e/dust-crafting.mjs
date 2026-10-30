@@ -32,18 +32,29 @@ const prepare=async()=>{
  const {createGameState}=await import('/js/state/gameState.js');const {renderGame}=await import('/js/ui.js');const {applyServerEconomy}=await import('/js/network/serverEconomy.js');
  const state=createGameState();state.menu.stage='collection';state.menu.profile={id:profileId,username:'QA',packs:0,ownedCards:new Map()};
  applyServerEconomy(state.menu.profile,(await window.dustRPC('tcg_economy')).data);window.dustState=state;renderGame(state,{onUpdate:()=>renderGame(state)});
- },id(1));await page.locator('#pe-ownership').selectOption('all');
+ },id(1));
+ if(await page.locator('[data-pe="toggle-filters"]').isVisible())await page.locator('[data-pe="toggle-filters"]').click();
+ await page.locator('#pe-ownership').selectOption('all');
+ if(await page.locator('[data-pe="toggle-filters"]').isVisible())await page.locator('[data-pe="toggle-filters"]').click();
 };
-for(const [width,height,min,max] of [[393,852,3,5],[1440,900,2,6],[320,568,3,5]]){
+for(const [width,height,min,max] of [[393,852,3,5],[1440,900,2,6],[1920,1080,2,6],[320,568,3,5]]){
  await page.setViewportSize({width,height});await prepare();
  const defaultRows=width===320?5:min; // persisted mobile preference from prior viewport.
  await expect(page.locator('[data-rows]')).toHaveText(`${defaultRows} rows`);
  for(let rows=defaultRows;rows<max;rows++)await page.locator('[data-pe="smaller-cards"]').click();
  await expect(page.locator('[data-pe="smaller-cards"]')).toBeDisabled();
  const fit=await page.locator('.pe-pagination').evaluate(e=>e.getBoundingClientRect().bottom<=innerHeight);expect(fit).toBe(true);
+ const thumbs = await page.locator('.pe-density-grid .pe-tile').evaluateAll(tiles => tiles.map(tile => {
+   const face=tile.querySelector('.canonical-card'),box=face.getBoundingClientRect(),hit=tile.getBoundingClientRect();
+   return {ratio:box.width/box.height,hitWidth:hit.width,hitHeight:hit.height,hidden:getComputedStyle(face.querySelector('.card-inner')).visibility,art:getComputedStyle(face.querySelector('.pe-art-face')).display,count:parseFloat(getComputedStyle(tile.querySelector('.pe-rarity')).fontSize)};
+ }));
+ for(const t of thumbs){expect(Math.abs(t.ratio-5/7)).toBeLessThan(.006);expect(t.hitWidth).toBeGreaterThanOrEqual(44);expect(t.hitHeight).toBeGreaterThanOrEqual(44);expect(t.hidden).toBe('hidden');expect(t.art).toBe('block');expect(t.count).toBeGreaterThanOrEqual(11);}
  await page.screenshot({animations:'disabled',path:`docs/dust-crafting/${width}-dense.png`});
  for(let rows=max;rows>min;rows--)await page.locator('[data-pe="larger-cards"]').click();
  await expect(page.locator('[data-pe="larger-cards"]')).toBeDisabled();
+ if(width===1920)await expect(page.locator('.pe-density-grid')).toHaveAttribute('data-art-only','false');
+ await page.screenshot({animations:'disabled',path:`docs/dust-crafting/${width}-default.png`});
+ if(width<=700){await page.locator('[data-pe="toggle-filters"]').click();await page.screenshot({animations:'disabled',path:`docs/dust-crafting/${width}-filters.png`});await page.keyboard.press('Escape');}
  await page.locator('[data-pe="next-page"]').click();await page.waitForTimeout(500);
  const anchor=await page.locator('.pe-density-grid').evaluate(g=>[...g.querySelectorAll('[data-card]')].find(e=>e.getBoundingClientRect().left>=g.getBoundingClientRect().left-1)?.dataset.card);
  await page.locator('[data-pe="smaller-cards"]').click();
@@ -56,9 +67,20 @@ for(const [width,height,min,max] of [[393,852,3,5],[1440,900,2,6],[320,568,3,5]]
  await expect(page.locator('.pe-crafting-dialog')).toBeVisible();await expect(page.locator('[data-pe="craft-finish"][data-rank="0"]')).toHaveCount(0);
  await expect(page.locator('[data-pe="craft-finish"][data-rank="4"]')).toBeDisabled();
  await page.screenshot({animations:'disabled',path:`docs/dust-crafting/${width}-craft.png`});
+ await page.locator('[data-pe="craft-finish"][data-rank="4"]').scrollIntoViewIfNeeded();
+ expect(await page.locator('.pe-crafting-dialog').evaluate(e=>e.scrollWidth<=e.clientWidth+1)).toBe(true);
+ expect(await page.locator('.pe-crafting-dialog [data-pe="close-dialog"]').evaluate(e=>{const r=e.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight})).toBe(true);
+ await page.screenshot({animations:'disabled',path:`docs/dust-crafting/${width}-craft-bottom.png`});
  await page.keyboard.press('Escape');await expect(page.locator('.pe-crafting-dialog')).not.toBeVisible();await expect(page.locator('.pe-density-grid .pe-tile')).toBeFocused();
+ if(width>700)await page.locator('[data-pe="larger-cards"]').click();
  if(width===393){for(let rows=min+1;rows<max;rows++)await page.locator('[data-pe="smaller-cards"]').click();}
 }
+// Presentation stress only: large values must fit; reload authoritative SQL before spending.
+await page.evaluate(async()=>{dustState.menu.profile.dust=123456789;dustState.menu.profile.cardFinishes[0].quantity=98765;(await import('/js/ui.js')).renderGame(dustState)});
+await expect(page.locator('.pe-dust')).toHaveText('✧ 123M');
+expect(await page.locator('.pe-craft-toolbar').evaluate(e=>[...e.querySelectorAll('button,span')].every(n=>n.getBoundingClientRect().right<=innerWidth))).toBe(true);
+await page.screenshot({animations:'disabled',path:'docs/dust-crafting/320-large-balances.png'});
+await prepare();await page.locator('#pe-search').fill('Atlantic Flying Fish');await page.locator('[data-pe="craft-tab"]').click();
 // Commit, lose response, reload, recover: no second debit, ownership refreshes.
 await page.locator('.pe-density-grid .pe-tile').click();lose=true;
 await page.locator('[data-pe="craft-finish"][data-rank="1"]').click();

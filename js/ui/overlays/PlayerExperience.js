@@ -37,6 +37,10 @@ const esc = (value) =>
     /[&<>"']/g,
     (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]
   );
+const displayCount = (value) =>
+  Number(value) > 9999
+    ? new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 0 }).format(value)
+    : String(value);
 const icon = (path) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${path}"/></svg>`;
 const swords = icon(
   'M4 3l16 17M3 3l1 6 5-5-6-1m11 13 4-4m-2 8 4-4M20 3 4 19m17-16-1 6-5-5 6-1M10 16l-4-4m2 8-4-4'
@@ -45,6 +49,8 @@ const hammer = icon('M14 3l7 7-4 4-3-3-8 10-3-3 10-8-3-3 4-4');
 const recycleIcon = icon('M5 8a8 8 0 0 1 14-2l2 3M21 3v6h-6M19 16a8 8 0 0 1-14 2l-2-3M3 21v-6h6');
 const density = createCollectionDensity();
 let crafting = false;
+let filtersOpen = false;
+const filterIcon = icon('M3 5h18l-7 8v6l-4 2v-8L3 5');
 let craftCard = null;
 const person = icon('M16 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0M4 21v-2a8 8 0 0 1 16 0v2');
 const defaults = () => ({
@@ -120,6 +126,7 @@ export function resetPlayerExperience() {
   filters = defaults();
   density.reset();
   crafting = false;
+  filtersOpen = false;
   craftCard = null;
   selectedId = null;
   inspected = false;
@@ -210,6 +217,12 @@ export function renderPlayerExperience(nextState, nextCallbacks = {}) {
     });
     document.addEventListener('keydown', (e) => {
       if (!visible() || e.key !== 'Escape' || dialog?.open) return;
+      if (filtersOpen) {
+        filtersOpen = false;
+        draw();
+        root.querySelector('[data-pe="toggle-filters"]')?.focus();
+        return;
+      }
       if (inspected) {
         inspected = false;
         draw();
@@ -251,7 +264,7 @@ function tile(card, rarity, chosen = false, compact = false) {
   const count =
     target()?.cardFinishes?.find((f) => f.card_id === card.id && RARITIES[f.rarity_rank] === rarity)
       ?.quantity ?? (rarity ? 1 : 0);
-  return `<button type="button" class="pe-tile ${chosen ? 'selected' : ''} ${rarity ? '' : 'unowned'}" data-card="${esc(card.id)}" aria-label="Inspect ${esc(card.name)}${compact ? `, ${esc(RARITY_LABELS[rarity] || 'not collected')}, ${count} owned` : ''}" style="--rarity:${color}"><span class="pe-card" data-render="${esc(card.id)}" data-finish="${esc(rarity || '')}"></span><span class="pe-rarity"><i></i>${compact ? count : esc(RARITY_LABELS[rarity] || 'Not collected')}</span></button>`;
+  return `<button type="button" class="pe-tile ${chosen ? 'selected' : ''} ${rarity ? '' : 'unowned'}" data-card="${esc(card.id)}" aria-label="Inspect ${esc(card.name)}${compact ? `, ${esc(RARITY_LABELS[rarity] || 'not collected')}, ${count} owned` : ''}" style="--rarity:${color}"><span class="pe-card" data-render="${esc(card.id)}" data-finish="${esc(rarity || '')}"></span><span class="pe-rarity"><i></i>${compact ? displayCount(count) : esc(RARITY_LABELS[rarity] || 'Not collected')}</span></button>`;
 }
 function options(values, chosen) {
   return values
@@ -271,8 +284,8 @@ function collection() {
   const readOnly = publicCollection;
   const unloaded = signed && !readOnly && own().ownedCards === undefined;
   return `<div class="pe-heading"><div><h1>${readOnly ? `${esc(publicProfile.username)}’s collection` : 'My Cards'}</h1></div>${readOnly ? btn('public-back', '← Profile', 'pe-quiet') : `<nav class="pe-tabs">${btn('decks', 'Decks', 'pe-quiet')}${btn('collection', 'Collection', 'selected pe-quiet')}</nav>`}</div>
-  <div class="pe-collection pe-dense-collection"><section class="pe-browser">${!readOnly ? craftingToolbar() : ''}<div class="pe-tools"><input id="pe-search" type="search" aria-label="Search cards or keywords" placeholder="Search cards or keywords" value="${esc(filters.query)}">${!readOnly ? btn(signed ? 'packs' : 'login', signed ? `Packs <b>${Number(own().packs) || 0}</b>` : 'Log in', '', signed && !(own().packs > 0) && !own().pendingPackOpening ? 'disabled' : '') : ''}</div>
-  <div class="pe-filters"><select id="pe-ownership" aria-label="Ownership">${options(
+  <div class="pe-collection pe-dense-collection"><section class="pe-browser">${!readOnly ? craftingToolbar() : ''}<div class="pe-tools"><input id="pe-search" type="search" aria-label="Search cards or keywords" placeholder="Search cards" value="${esc(filters.query)}">${btn('toggle-filters', filterIcon, 'pe-filter-toggle pe-icon', `aria-label="Filter cards" aria-expanded="${filtersOpen}" aria-controls="pe-filter-options"`)}${!readOnly ? btn(signed ? 'packs' : 'login', signed ? `Packs <b>${Number(own().packs) || 0}</b>` : 'Log in', '', signed && !(own().packs > 0) && !own().pendingPackOpening ? 'disabled' : '') : ''}</div>
+  <div id="pe-filter-options" class="pe-filters ${filtersOpen ? 'is-open' : ''}"><select id="pe-ownership" aria-label="Ownership">${options(
     [
       ['owned', 'Owned'],
       ['all', 'All cards'],
@@ -308,7 +321,7 @@ function craftingToolbar() {
   } catch {
     /* surfaced on action */
   }
-  return `<div class="pe-craft-toolbar"><div>${btn('browse-tab', 'Browse', crafting ? '' : 'selected')}${btn('craft-tab', hammer + ' Craft', crafting ? 'selected' : '', enabled ? '' : 'disabled title="Crafting requires a server-verified collection"')}</div><div><span class="pe-dust" aria-label="Dust balance">✧ ${Number(own()?.dust) || 0}</span>${btn('recycle-extras', recycleIcon + ` +${extras}`, 'pe-recycle', `aria-label="Recycle extras for ${extras} dust" title="Recycle extras — keep one of every finish" ${!enabled || busy || !extras || pending ? 'disabled' : ''}`)}${pending ? btn('recover-dust', 'Retry', '', busy ? 'disabled' : '') : ''}</div></div>`;
+  return `<div class="pe-craft-toolbar"><div>${btn('browse-tab', 'Browse', crafting ? '' : 'selected')}${btn('craft-tab', hammer + ' Craft', crafting ? 'selected' : '', enabled ? '' : 'disabled title="Crafting requires a server-verified collection"')}</div><div><span class="pe-dust" aria-label="Dust balance: ${Number(own()?.dust) || 0}" title="${Number(own()?.dust) || 0} dust">✧ ${displayCount(Number(own()?.dust) || 0)}</span>${btn('recycle-extras', recycleIcon + ` +${displayCount(extras)}`, 'pe-recycle', `aria-label="Recycle extras for ${extras} dust" title="Recycle extras — keep one of every finish" ${!enabled || busy || !extras || pending ? 'disabled' : ''}`)}${pending ? btn('recover-dust', 'Retry', '', busy ? 'disabled' : '') : ''}</div></div>`;
 }
 function openCraft(id, rank) {
   craftCard = id;
@@ -325,7 +338,7 @@ function openCraft(id, rank) {
     );
   showDialog(
     card.name,
-    `<div class="pe-craft-content"><div class="pe-craft-preview"></div><div class="pe-craft-finishes"><div class="pe-craft-labels"><span>Finish</span><span>Owned</span><span>✧ ${own().dust}</span></div>${RARITIES.map((r, i) => `<div class="pe-craft-row">${btn('preview-finish', `<i style="background:${RARITY_COLORS[r]}"></i>${RARITY_LABELS[r]}`, 'pe-finish-name', `data-rank="${i}" aria-pressed="${rank === i}"`)}<span>${counts[i]}</span>${counts[i] ? '<span class="pe-finish-owned">✓ Owned</span>' : btn('craft-finish', hammer + craftCost(i), 'pe-craft-price', `data-rank="${i}" aria-label="Craft ${RARITY_LABELS[r]} for ${craftCost(i)} dust" ${busy || own().dust < craftCost(i) ? 'disabled' : ''}`)}</div>`).join('')}</div></div>`
+    `<div class="pe-craft-content"><div class="pe-craft-preview"></div><div class="pe-craft-finishes"><div class="pe-craft-labels"><span>Finish</span><span>Owned</span><span title="${own().dust} dust">✧ ${displayCount(own().dust)}</span></div>${RARITIES.map((r, i) => `<div class="pe-craft-row">${btn('preview-finish', `<i style="background:${RARITY_COLORS[r]}"></i>${RARITY_LABELS[r]}`, 'pe-finish-name', `data-rank="${i}" aria-pressed="${rank === i}"`)}<span title="${counts[i]} owned">${displayCount(counts[i])}</span>${counts[i] ? '<span class="pe-finish-owned">✓ Owned</span>' : btn('craft-finish', hammer + craftCost(i), 'pe-craft-price', `data-rank="${i}" aria-label="Craft ${RARITY_LABELS[r]} for ${craftCost(i)} dust" ${busy || own().dust < craftCost(i) ? 'disabled' : ''}`)}</div>`).join('')}</div></div>`
   );
   dialog.classList.add('pe-crafting-dialog');
   dialog
@@ -454,6 +467,32 @@ function draw() {
       )
     );
   });
+  page.querySelectorAll('.pe-density-grid .canonical-card').forEach((card) => {
+    const source =
+      card.querySelector('.card-image') || card.querySelector('.card-image-placeholder');
+    if (!source) return;
+    const art = document.createElement('div');
+    art.className = 'pe-art-face';
+    art.setAttribute('aria-hidden', 'true');
+    const label = card.querySelector('.card-name')?.textContent || '';
+    art.innerHTML = `<div class="pe-missing-content"><span class="pe-missing-symbol">🎨</span><span class="pe-missing-name">${esc(label)}</span></div>`;
+    if (source.tagName === 'IMG') {
+      const photo = source.cloneNode(true);
+      photo.className = 'pe-thumbnail-image';
+      photo.removeAttribute('style');
+      photo.removeAttribute('onerror');
+      photo.addEventListener('error', () => photo.remove());
+      art.append(photo);
+    }
+    card.append(art);
+  });
+  const toolsRow = page.querySelector('.pe-tools');
+  const filterPanel = page.querySelector('.pe-filters');
+  if (toolsRow && filterPanel)
+    filterPanel.style.setProperty(
+      '--filter-top',
+      `${toolsRow.offsetTop + toolsRow.offsetHeight + 6}px`
+    );
   density.layout(page.querySelector('.pe-density-grid'), page.querySelector('.pe-pagination'));
   const name = page.querySelector('[data-styled-name]');
   if (name)
@@ -634,6 +673,11 @@ function inspectSelectedCard() {
   });
 }
 async function handleClick(event) {
+  if (filtersOpen && !event.target.closest('.pe-filters, [data-pe="toggle-filters"]')) {
+    filtersOpen = false;
+    root.querySelector('.pe-filters')?.classList.remove('is-open');
+    root.querySelector('[data-pe="toggle-filters"]')?.setAttribute('aria-expanded', 'false');
+  }
   const tileNode = event.target.closest('[data-card]');
   if (tileNode) {
     selectedId = tileNode.dataset.card;
@@ -653,6 +697,13 @@ async function handleClick(event) {
   const button = event.target.closest('[data-pe]');
   if (!button || button.disabled) return;
   const action = button.dataset.pe;
+  if (action === 'toggle-filters') {
+    filtersOpen = !filtersOpen;
+    draw();
+    if (filtersOpen) root.querySelector('#pe-ownership')?.focus();
+    else root.querySelector('[data-pe="toggle-filters"]')?.focus();
+    return;
+  }
   const id = button.dataset.friend;
   const rel = relation(id);
   if (['home', 'profile', 'friends', 'collection'].includes(action)) {

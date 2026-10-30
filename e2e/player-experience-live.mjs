@@ -78,8 +78,10 @@ try {
     await screenshot(`${tag}-appearance`);
     await p.locator('[data-pe="close-dialog"]').click();
     await p.locator('[data-pe="collection"]').click();
+    if (width <= 700) await p.locator('[data-pe="toggle-filters"]').click();
     await p.locator('#pe-ownership').selectOption('all');
     await p.locator('#pe-animal').selectOption('fish');
+    if (width <= 700) await p.locator('[data-pe="toggle-filters"]').click();
     await p.locator('#pe-search').fill('orca');
     await expect(p.locator('.pe-grid .pe-tile')).toHaveCount(1);
     await p.locator('.pe-grid .pe-tile').click();
@@ -89,7 +91,9 @@ try {
     await expect(p.locator('#card-hover-tooltip')).not.toHaveClass(/visible/);
     await expect(p.locator('#pe-search')).toHaveValue('orca');
     await p.locator('#pe-search').fill('');
+    if (width <= 700) await p.locator('[data-pe="toggle-filters"]').click();
     await p.locator('#pe-animal').selectOption('all');
+    if (width <= 700) await p.locator('[data-pe="toggle-filters"]').click();
     await screenshot(`${tag}-collection`);
     const geometry = await p.locator('.pe-grid .canonical-card').evaluateAll((els) =>
       els.map((el) => {
