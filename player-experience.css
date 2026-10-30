@@ -991,3 +991,57 @@
   padding: 12px 4px;
   border-bottom: 2px solid #e5d3a2;
 }
+
+/* Counted collection: fixed-height rows, horizontal browsing, no side inspector. */
+.pe-dense-collection { display:flex; }
+.pe-dense-collection .pe-browser { width:100%; }
+.pe-density-grid {
+  display:grid; grid-auto-flow:column; grid-template-columns:none;
+  grid-template-rows:repeat(var(--collection-rows,3),calc(var(--collection-card-height,90px) + 22px));
+  grid-auto-columns:var(--collection-card-width,64px); gap:12px;
+  flex:none; overflow-x:auto; overflow-y:hidden; padding:4px;
+  scroll-snap-type:x proximity;
+}
+.pe-density-grid .pe-tile { width:var(--collection-card-width); scroll-snap-align:start; }
+.pe-density-grid .pe-card { position:relative; width:var(--collection-card-width); height:var(--collection-card-height); }
+.pe-density-grid .pe-card .card.canonical-card {
+  position:absolute; top:0; left:0; width:210px!important; height:294px!important;
+  transform:scale(var(--collection-scale))!important; transform-origin:top left;
+}
+.pe-density-grid .pe-rarity { height:18px; margin:4px 0 0; justify-content:center; font-variant-numeric:tabular-nums; }
+.pe-density-grid .pe-empty { grid-column:1 / span 3; }
+.pe-craft-toolbar,.pe-craft-toolbar>div { display:flex; align-items:center; gap:8px; }
+.pe-craft-toolbar { justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; }
+.pe-craft-toolbar .selected { background:#dcca91!important; color:#142e35!important; }
+.pe-craft-toolbar svg,.pe-craft-price svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.7; }
+.pe-craft-toolbar button,.pe-craft-price { display:inline-flex; align-items:center; gap:6px; }
+.pe-dust { color:#e5d3a2; font-variant-numeric:tabular-nums; }
+.pe-crafting-dialog { width:min(750px,calc(100vw - 24px)); }
+.pe-craft-content { display:grid; grid-template-columns:230px minmax(0,1fr); gap:24px; align-items:center; }
+.pe-craft-preview .card.canonical-card { width:230px!important; height:322px!important; margin:0!important; }
+.pe-craft-row,.pe-craft-labels { display:grid; grid-template-columns:minmax(0,1fr) 44px 102px; gap:6px; align-items:center; }
+.pe-craft-row { min-height:54px; border-top:1px solid #38565f77; }
+.pe-craft-row>span,.pe-craft-labels>span:nth-child(2) { text-align:center; font-variant-numeric:tabular-nums; }
+.pe-craft-labels { font-size:11px; color:#99b1bb; padding-bottom:10px; }
+.pe-craft-labels>span:last-child { text-align:right; }
+.pe-crafting-dialog .pe-finish-name { border:0; background:transparent; padding:6px 0; display:flex; gap:8px; align-items:center; font-size:12px; }
+.pe-finish-name i { width:7px; height:7px; transform:rotate(45deg); flex:none; }
+.pe-finish-name[aria-pressed="true"] { color:#e5d3a2; }
+.pe-crafting-dialog .pe-craft-price { justify-content:space-between; font-variant-numeric:tabular-nums; }
+.pe-finish-owned { color:#95b5aa; font-size:12px; }
+@media(max-width:700px) {
+  .pe-craft-toolbar { gap:6px; margin-bottom:8px; }
+  #player-experience .pe-craft-toolbar button { padding:6px 8px; font-size:12px; }
+  .pe-craft-toolbar>div { gap:5px; }
+  .pe-dust { font-size:12px; }
+  .pe-craft-content { display:flex; flex-direction:column; gap:12px; }
+  .pe-craft-preview .card.canonical-card { width:145px!important; height:203px!important; }
+  .pe-craft-finishes { width:100%; }
+  .pe-crafting-dialog { padding:14px; max-height:calc(100dvh - 24px); }
+}
+@media (max-width:700px) and (max-height:650px) {
+  #player-experience:has(.pe-dense-collection) .pe-top { height:44px; min-height:44px; }
+  #player-experience:has(.pe-dense-collection) .pe-page { padding-top:4px; }
+  #player-experience:has(.pe-dense-collection) .pe-heading { margin-bottom:4px; }
+  #player-experience:has(.pe-dense-collection) .pe-brand small { display:none; }
+}

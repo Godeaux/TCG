@@ -60,6 +60,8 @@ export const createServerEconomy = ({ rpc, storage, randomUUID, getCards }) => {
 
 export const applyServerEconomy = (profile, economy) => {
   if (!profile || profile.id !== economy?.profile_id) throw new Error('Economy account mismatch');
+  profile.dust = economy.dust ?? 0;
+  profile.cardFinishes = economy.finishes;
   profile.packs = economy.packs;
   profile.ownedCards = new Map(economy.inventory.map((c) => [c.card_id, RARITIES[c.rarity_rank]]));
 };
