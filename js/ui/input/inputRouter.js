@@ -47,7 +47,10 @@ const parseChangelogMarkdown = (markdown) => {
         html += '</ul>';
         inList = false;
       }
-      html += `<h2>${trimmed.slice(3)}</h2>`;
+      const heading = trimmed.slice(3);
+      const isEraMarker = heading.startsWith('Base-set reset —');
+      if (isEraMarker) html += '<hr class="changelog-era-divider">';
+      html += `<h2${isEraMarker ? ' class="changelog-era-heading"' : ''}>${heading}</h2>`;
       continue;
     }
 

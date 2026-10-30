@@ -59,6 +59,11 @@ try {
       title: heading.textContent,
       bullets: heading.nextElementSibling?.querySelectorAll('li').length || 0,
     })));
+    await expect(p.locator('#changelog-content .changelog-era-divider')).toHaveCount(1);
+    const resetIndex = sections.findIndex((section) => section.title.startsWith('Base-set reset'));
+    expect(sections[resetIndex - 1].title).toContain('v0.17');
+    expect(sections[resetIndex + 1].title).toContain('v0.16');
+    await expect(p.locator('#changelog-content')).toContainText('Fish, Reptile, Amphibian, Bird and Mammal');
     expect(sections.length).toBeGreaterThanOrEqual(9);
     for (const section of sections) {
       expect(section.bullets).toBeGreaterThan(0);

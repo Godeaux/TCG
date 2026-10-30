@@ -5888,6 +5888,19 @@ button {
   border-bottom: 1px solid var(--border);
 }
 
+.changelog-content .changelog-era-divider {
+  border: 0;
+  border-top: 1px solid var(--border-gold);
+  margin: 24px 0 12px;
+}
+
+#changelog-content h2.changelog-era-heading {
+  font-size: 14px;
+  color: var(--text-secondary);
+  border-bottom: 0;
+  margin-top: 0;
+}
+
 .changelog-content h2:first-child {
   margin-top: 0;
 }
