@@ -18,6 +18,11 @@
 - More consistent card artwork, proportions and readable text.
 - Improved mobile hands, tutorials, targeting and selection controls.
 
+## Base-set reset — March 2026
+
+- Returned to the five base decks: Fish, Reptile, Amphibian, Bird and Mammal.
+- Older notes below include retired experimental decks, such as Crustacean and Insect.
+
 ## v0.16 — Multiplayer and tutorials
 
 - Host-validated actions, synchronized matches and reconnect recovery.
