@@ -1,7 +1,18 @@
+import { createDustEconomy } from './dustEconomy.js';
 import { supabase } from './supabaseClient.js';
 import { createServerEconomy } from './serverEconomy.js';
 import { getAllCards } from '../cards/index.js';
 
+let dustEconomy;
+export const getDustEconomyClient = () => {
+  if (!dustEconomy)
+    dustEconomy = createDustEconomy({
+      rpc: (name, args) => supabase.rpc(name, args),
+      storage: window.localStorage,
+      randomUUID: () => crypto.randomUUID(),
+    });
+  return dustEconomy;
+};
 let serverEconomy;
 export const getServerEconomyClient = () => {
   if (!serverEconomy) {
