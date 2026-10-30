@@ -1045,3 +1045,10 @@
   #player-experience:has(.pe-dense-collection) .pe-heading { margin-bottom:4px; }
   #player-experience:has(.pe-dense-collection) .pe-brand small { display:none; }
 }
+.pe-density-grid:has(.pe-empty) {
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:8px;
+}
+.pe-density-grid .pe-empty { max-width:100%; }
