@@ -1,0 +1,442 @@
+[
+  {
+    "cardId": "bird-predator-peregrine-falcon",
+    "name": "Peregrine Falcon",
+    "artist": "Kytabu",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "",
+    "source": "https://commons.wikimedia.org/wiki/File:Peregrine_falcon_(Falco_peregrinus)_in_flight,_Cape_Baily,_Kamay_Botany_Bay_NSW_Jun_2022.jpg"
+  },
+  {
+    "cardId": "bird-predator-red-tailed-hawk",
+    "name": "Red-tailed Hawk",
+    "artist": "Peter K Burian",
+    "license": "CC BY 4.0",
+    "licenseUrl": "",
+    "source": "https://commons.wikimedia.org/wiki/File:Red-tailed_hawk_landing.jpg"
+  },
+  {
+    "cardId": "bird-predator-great-gray-owl",
+    "name": "Great Gray Owl",
+    "artist": "Arne List",
+    "license": "CC BY-SA 2.0",
+    "licenseUrl": "",
+    "source": "https://commons.wikimedia.org/wiki/File:Strix_nebulosa_in_flight.jpg"
+  },
+  {
+    "cardId": "bird-prey-black-swan",
+    "name": "Black Swan",
+    "artist": "Karora",
+    "license": "Public domain",
+    "licenseUrl": "",
+    "source": "https://commons.wikimedia.org/wiki/File:Cygnus_atratus_in_flight-1.jpg"
+  },
+  {
+    "cardId": "reptile-predator-american-alligator",
+    "name": "",
+    "artist": "R. Cammauf / NPS",
+    "license": "Public domain",
+    "licenseUrl": "",
+    "source": "https://commons.wikimedia.org/wiki/File:Alligator_Walking,_NPSPhoto,_R._Cammauf_(9099204053).jpg"
+  },
+  {
+    "cardId": "reptile-predator-komodo-dragon",
+    "name": "Komodo Dragon",
+    "artist": "Viglianti",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "",
+    "source": "https://commons.wikimedia.org/wiki/File:Komodo_dragon_walking.JPG"
+  },
+  {
+    "cardId": "reptile-prey-green-anole",
+    "name": "Green Anole",
+    "artist": "Cowenby",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "",
+    "source": "https://commons.wikimedia.org/wiki/File:Anolis_carolinensis_extended_dewlap.jpg"
+  },
+  {
+    "cardId": "reptile-prey-gold-dust-day-gecko",
+    "name": "Gold Dust Day Gecko",
+    "artist": "Charles J. Sharp",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "",
+    "source": "https://commons.wikimedia.org/wiki/File:Gold_dust_day_gecko_(Phelsuma_laticauda)_Moorea.jpg"
+  },
+  {
+    "cardId": "reptile-prey-plumed-basilisk",
+    "name": "Plumed Basilisk",
+    "artist": "\nHans Hillewaert",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "",
+    "source": "https://commons.wikimedia.org/wiki/File:Basiliscus_plumifrons_(Ca%C3%B1o_Negro).jpg"
+  },
+  {
+    "cardId": "reptile-prey-veiled-chameleon",
+    "name": "Veiled Chameleon",
+    "artist": "\nOrchi",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "",
+    "source": "https://commons.wikimedia.org/wiki/File:Chamaeleo_calyptratus_Orchi_97.jpg"
+  },
+  {
+    "cardId": "reptile-predator-gharial",
+    "name": "Gharial",
+    "artist": "Charles J. Sharp",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "",
+    "source": "https://commons.wikimedia.org/wiki/File:Gharial_(Gavialis_gangeticus)_male.jpg"
+  },
+  {
+    "cardId": "reptile-predator-king-cobra",
+    "name": "King Cobra",
+    "artist": "Rushenb",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "",
+    "source": "https://commons.wikimedia.org/wiki/File:Ophiophagus-hannah-kaeng-krachan-national-park.jpg"
+  },
+  {
+    "cardId": "reptile-predator-boa-constrictor",
+    "name": "Boa Constrictor",
+    "artist": "Gustavo Sandres",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "",
+    "source": "https://commons.wikimedia.org/wiki/File:Boa_constrictor_334994710.jpg"
+  },
+  {
+    "cardId": "reptile-prey-gaboon-viper",
+    "name": "Gaboon Viper",
+    "artist": "Marius Burger",
+    "license": "CC0",
+    "licenseUrl": "",
+    "source": "https://commons.wikimedia.org/wiki/File:Bitis_gabonica.jpg"
+  },
+  {
+    "cardId": "reptile-prey-phantastic-leaf-tailed-gecko",
+    "name": "Phantastic Leaf-tailed Gecko",
+    "artist": "Charles J. Sharp",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "",
+    "source": "https://commons.wikimedia.org/wiki/File:Satanic_leaf-tailed_gecko_(Uroplatus_phantasticus)_Ranomafana_2.jpg"
+  },
+  {
+    "cardId": "reptile-prey-cuban-brown-anole",
+    "name": "Cuban Brown Anole",
+    "artist": "Zygy",
+    "license": "CC0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:Anolis_sagrei_113636350.jpg"
+  },
+  {
+    "cardId": "reptile-prey-european-glass-lizard",
+    "name": "European Glass Lizard",
+    "artist": "Alexander A. Fomichev",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Pseudopus_apodus_Dzhudabulok.jpg"
+  },
+  {
+    "cardId": "bird-predator-golden-eagle",
+    "name": "Golden Eagle",
+    "artist": "Juan lacruz",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Chrysaetos_La_Ca%C3%B1ada_20120114_1.jpg"
+  },
+  {
+    "cardId": "bird-prey-eastern-wild-turkey",
+    "name": "Eastern Wild Turkey",
+    "artist": "Paul Danese",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:20260428_wild_turkey_tom_matthaei_botanical_cargens_PD08953.jpg"
+  },
+  {
+    "cardId": "bird-prey-indian-peacock",
+    "name": "Indian Peacock",
+    "artist": "Diego Delso",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Pavo_real_com%C3%BAn_(Pavo_cristatus),_Tierpark_Hellabrunn,_M%C3%BAnich,_Alemania,_2012-06-17,_DD_01.JPG"
+  },
+  {
+    "cardId": "bird-predator-pacific-sea-eagle",
+    "name": "Pacific Sea Eagle",
+    "artist": "Saschathegerman",
+    "license": "CC BY-SA 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Haliaeetus_pelagicus_with_fish.jpg"
+  },
+  {
+    "cardId": "bird-predator-gyrfalcon",
+    "name": "Gyrfalcon",
+    "artist": "\u00d3mar Run\u00f3lfsson",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Gyr_falcon_-_Falco_rusticolus_-_F%C3%A1lki_8.jpg"
+  },
+  {
+    "cardId": "bird-predator-martial-eagle",
+    "name": "Martial Eagle",
+    "artist": "Thomas Fuhrmann",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Serengeti_National_Park_2021-09_-_Polemaetus_bellicosus_-_martial_eagle.jpg"
+  },
+  {
+    "cardId": "bird-predator-harpy-eagle",
+    "name": "Harpy Eagle",
+    "artist": "Jiang Chunsheng",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Harpia_chega_ao_ninho_com_um_macaco-prego.jpg"
+  },
+  {
+    "cardId": "reptile-predator-saltwater-crocodile",
+    "name": "Saltwater Crocodile",
+    "artist": "Ganjarmustika1904",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:BUAYA_MUARA.jpg"
+  },
+  {
+    "cardId": "reptile-predator-black-caiman",
+    "name": "Black Caiman",
+    "artist": "Bernard DUPONT from FRANCE",
+    "license": "CC BY-SA 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Black_Caiman_(Melanosuchus_niger)_(Captive_specimen)_(38731128190).jpg"
+  },
+  {
+    "cardId": "reptile-predator-chinese-alligator",
+    "name": "Chinese Alligator",
+    "artist": "Greg Hume",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:ChineseAlligator.jpg"
+  },
+  {
+    "cardId": "reptile-predator-american-crocodile",
+    "name": "American Crocodile",
+    "artist": "q phia",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:2017,_cuba,_jardines_aggressor,_all_the_teeths_(37521060992).jpg"
+  },
+  {
+    "cardId": "reptile-predator-nile-crocodile",
+    "name": "Nile Crocodile",
+    "artist": "Bernard DUPONT from FRANCE",
+    "license": "CC BY-SA 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Day_25_Nile_Crocodile_(Crocodylus_niloticus)_big_male_eating_an_African_Spoonbill_(Platalea_alba)_(53260300594).jpg"
+  },
+  {
+    "cardId": "reptile-prey-black-mamba",
+    "name": "Black Mamba",
+    "artist": "TimVickers",
+    "license": "Public domain",
+    "licenseUrl": "",
+    "source": "https://commons.wikimedia.org/wiki/File:Dendroaspis_polylepis_head.jpg"
+  },
+  {
+    "cardId": "reptile-predator-burmese-python",
+    "name": "Burmese Python",
+    "artist": "Everglades NPS from Homestead, Florida, United States",
+    "license": "Public domain",
+    "licenseUrl": "",
+    "source": "https://commons.wikimedia.org/wiki/File:Burmese_Python_(13),_NPSPhoto,_R._Cammauf_(9101584016).jpg"
+  },
+  {
+    "cardId": "reptile-predator-green-anaconda",
+    "name": "Green Anaconda",
+    "artist": "Daniel10ortegaven",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Anaconda_al_acecho.JPG"
+  },
+  {
+    "cardId": "reptile-predator-papuan-monitor",
+    "name": "Papuan Monitor",
+    "artist": "Vassil",
+    "license": "CC0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:Varanus_Salvadorii_K%C3%B6ln_Zoo_31122014_2.jpg"
+  },
+  {
+    "cardId": "reptile-prey-saw-scaled-viper",
+    "name": "Saw-scaled Viper",
+    "artist": "Mvshreeram",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Echis_carinatus_sochureki_2_-_Shreeram_M_V_-_Tal_Chhapar_Rajasthan_India.jpg"
+  },
+  {
+    "cardId": "bird-prey-golden-headed-manakin",
+    "name": "Golden-Headed Manakin",
+    "artist": "Mike &amp; Chris",
+    "license": "CC BY-SA 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Pipra_erythrocephala_1_(cropped).jpg"
+  },
+  {
+    "cardId": "bird-prey-oriental-magpies",
+    "name": "Oriental Magpies",
+    "artist": "Yoo Chung",
+    "license": "CC BY-SA 2.5",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.5",
+    "source": "https://commons.wikimedia.org/wiki/File:Korean_magpie_in_Daejeon_(side_profile).jpg"
+  },
+  {
+    "cardId": "bird-prey-pileated-woodpecker",
+    "name": "Pileated Woodpecker",
+    "artist": "Cephas",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Dryocopus_pileatus_UL_05.jpg"
+  },
+  {
+    "cardId": "bird-predator-short-toed-snake-eagle",
+    "name": "Short-toed Snake Eagle",
+    "artist": "Vaibhavcho",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Short_Toed_Snake_Eagle_In_Flight.jpg"
+  },
+  {
+    "cardId": "bird-predator-black-and-white-hawk-eagle",
+    "name": "Black-and-white Hawk-eagle",
+    "artist": "Nayeryouakim",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Spizaetus_melanoleucus.jpg"
+  },
+  {
+    "cardId": "reptile-prey-golden-lancehead",
+    "name": "Golden Lancehead",
+    "artist": "Miguelrangeljr",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Bothrops_insularis_Instituto_Butant%C3%A3_(2).jpg"
+  },
+  {
+    "cardId": "reptile-prey-king-brown-snake",
+    "name": "King Brown Snake",
+    "artist": "Max Tibby",
+    "license": "CC0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:Pseudechis_australis_444196534.jpg"
+  },
+  {
+    "cardId": "reptile-prey-central-american-snapping-turtle",
+    "name": "Central American Snapping Turtle",
+    "artist": "Eugenio Padilla",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Chelydra_rossignonii.jpg"
+  },
+  {
+    "cardId": "reptile-prey-galapagos-lava-lizards",
+    "name": "Gal\u00e1pagos Lava Lizards",
+    "artist": "Andrew Meeds",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Microlophus_albemarlensis_231149707_(cropped).jpg"
+  },
+  {
+    "cardId": "reptile-prey-yucatan-neotropical-rattlesnake",
+    "name": "Yucatan Neotropical Rattlesnake",
+    "artist": "RatioTile",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Yucat%C3%A1n_neotropical_rattlesnake.jpg"
+  },
+  {
+    "cardId": "bird-prey-golden-goose",
+    "name": "Golden Goose",
+    "artist": "Wilfredor",
+    "license": "CC0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:Domesticated_goose_head,_Chaguaramal,_Venezuela.jpg"
+  },
+  {
+    "cardId": "bird-prey-jersey-giant",
+    "name": "Jersey Giant",
+    "artist": "DanielPenfield",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:OntarioCountyFair2018JerseyGiantCockerel.jpg"
+  },
+  {
+    "cardId": "bird-predator-firehawk",
+    "name": "Firehawk",
+    "artist": "Prasan Shrestha",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Black_kite_impersonating_an_osprey.jpg"
+  },
+  {
+    "cardId": "bird-predator-wolf-hawk",
+    "name": "Wolf Hawk",
+    "artist": "Michael G\u00e4bler",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Harris%27s_Hawk_Parabuteo_unicinctus_(Temminck_1824).jpg"
+  },
+  {
+    "cardId": "bird-predator-monkey-eating-eagle",
+    "name": "Monkey-eating Eagle",
+    "artist": "Sinisa Djordje Majetic",
+    "license": "CC BY-SA 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Philippine_Eagle_an_Endangered_Species.jpg"
+  },
+  {
+    "cardId": "reptile-prey-alcedo-giant-tortoise",
+    "name": "Alcedo Giant Tortoise",
+    "artist": "(c) Carrie Seltzer, some rights reserved (CC BY)",
+    "license": "cc-by",
+    "licenseUrl": "",
+    "source": "https://www.inaturalist.org/observations/20268417"
+  },
+  {
+    "cardId": "reptile-prey-darwin-volcano-giant-tortoise",
+    "name": "Darwin Volcano Giant Tortoise",
+    "artist": "RatioTile",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Volc%C3%A1n_Darwin_giant_tortoise.jpg"
+  },
+  {
+    "cardId": "reptile-prey-wolf-volcano-giant-tortoise",
+    "name": "Wolf Volcano Giant Tortoise",
+    "artist": "Adam aran",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Chelonoidis_becky.jpg"
+  },
+  {
+    "cardId": "reptile-prey-south-american-snapping-turtle",
+    "name": "South American Snapping Turtle",
+    "artist": "Wouter Koch",
+    "license": "CC0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:Chelydra_acutirostris_5722719.jpg"
+  },
+  {
+    "cardId": "reptile-prey-frosts-iguana",
+    "name": "Frost\u2019s Iguana",
+    "artist": "iNaturalist user: thibaudaronson",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Microlophus_koepckeorum.jpg"
+  },
+  {
+    "cardId": "reptile-prey-cryptic-golden-tegu",
+    "name": "Cryptic Golden Tegu",
+    "artist": "Paul Prior",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Tupinambis_cryptus_251372173.jpg"
+  }
+]
