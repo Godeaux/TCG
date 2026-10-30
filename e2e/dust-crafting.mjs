@@ -48,6 +48,9 @@ for(const [width,height,min,max] of [[393,852,3,5],[1440,900,2,6],[320,568,3,5]]
  const anchor=await page.locator('.pe-density-grid').evaluate(g=>[...g.querySelectorAll('[data-card]')].find(e=>e.getBoundingClientRect().left>=g.getBoundingClientRect().left-1)?.dataset.card);
  await page.locator('[data-pe="smaller-cards"]').click();
  await expect.poll(()=>page.locator(`[data-card="${anchor}"]`).evaluate(e=>{const r=e.getBoundingClientRect(),g=e.parentElement.getBoundingClientRect();return r.left>=g.left-1&&r.right<=g.right+1})).toBe(true);
+ await page.locator('#pe-search').fill('no matching card here');
+ await expect(page.locator('.pe-density-grid .pe-empty')).toBeVisible();
+ expect(await page.locator('.pe-density-grid .pe-empty').evaluate(e=>{const r=e.getBoundingClientRect(),g=e.parentElement.getBoundingClientRect();return r.right<=g.right+1&&r.bottom<=g.bottom+1})).toBe(true);
  await page.locator('#pe-search').fill('Atlantic Flying Fish');await expect(page.locator('[data-pe="next-page"]')).toBeDisabled();
  await page.locator('[data-pe="craft-tab"]').click();await page.locator('.pe-density-grid .pe-tile').click();
  await expect(page.locator('.pe-crafting-dialog')).toBeVisible();await expect(page.locator('[data-pe="craft-finish"][data-rank="0"]')).toHaveCount(0);
