@@ -70,3 +70,33 @@ Deploy backend first, verify the extended economy response, then publish the
 matching frontend/assets. Older clients remain compatible with highest-rarity
 inventory. If frontend rollout fails, keep committed receipts/counts/dust intact;
 roll forward. Never undo real purchases by deleting this populated ledger.
+
+## October 30 cutover authorization and preparation
+
+The owner explicitly authorized deleting **all legacy accounts**, including Pnut,
+and requiring every returning player to register anew. This supersedes any need
+to preserve legacy ownership mappings; it does not make old PIN claims verified.
+No accounts have been deleted. This candidate is local only.
+
+Prepared from current published main (`26cf8d4`) in
+`release/account-dust-cutover-2026-10-30`, preserving the approved creature art.
+The candidate passes 5,284 unit tests, the SQL contracts (including 39 dust checks),
+and `e2e/dust-crafting.mjs` against real migrated local SQL. These are not evidence
+of email delivery, new-account enrollment or trusted live game rewards.
+
+The live read-only check confirmed zero verified owner mappings/economy accounts/
+pack receipts, and no dust/craft RPCs. Email-provider configuration/access has been
+requested from the owner; no SMTP credentials are available in the protected store.
+
+Before execution, export and restore-test the affected data/schema privately,
+then freeze legacy writes and refresh the backup. `duel_invites` has non-cascading
+sender/receiver profile FKs and must be handled explicitly before profile deletion.
+Player cards/friendships/votes/match records cascade; bug reports retain their text
+but lose profile attribution. Deck/session/lobby references need explicit cleanup
+because not all are enforced profile FKs. Do not delete unrelated bug reports or
+Auth users indiscriminately. Revoke legacy claim/write policies at the coordinated
+cutover, not merely rows: otherwise stale clients can recreate the old system.
+
+Proceed only with tested new provider login, permanent enrollment, trusted economy
+and reward paths, and verified two-account/refusal/retry behavior. Publishing the
+UI alone still does not release a usable dusting system.
