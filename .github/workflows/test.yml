@@ -29,10 +29,12 @@ jobs:
         run: npm ci
       - name: Verify release candidate
         run: npm run check
-      - name: Install managed Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install managed Chromium and WebKit
+        run: npx playwright install --with-deps chromium webkit
       - name: Verify production UI
         run: npm run test:ui
+      - name: Verify Safari collection geometry
+        run: TCG_BROWSER=webkit node e2e/mobile-collection.mjs
       - name: Retain UI evidence
         if: always()
         uses: actions/upload-artifact@v4
