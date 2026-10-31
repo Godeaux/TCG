@@ -1,3 +1,4 @@
+import { createUsernameAccount } from './usernameAccount.js';
 import { createDustEconomy } from './dustEconomy.js';
 import { supabase } from './supabaseClient.js';
 import { createServerEconomy } from './serverEconomy.js';
@@ -82,7 +83,7 @@ export const checkUsernameExists = async (username) => {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, current_auth_id')
+    .select('id, username')
     .eq('username', trimmed)
     .maybeSingle();
 
@@ -92,201 +93,18 @@ export const checkUsernameExists = async (username) => {
   return data ?? null;
 };
 
-/**
- * Create a new account with username and PIN
- * @param {string} username - Username for the account
- * @param {string} pin - 4-6 digit PIN
- * @returns {Promise<Object>} The created profile
- */
-export const createAccountWithPin = async (username, pin) => {
-  if (!username || typeof username !== 'string') {
-    throw new Error('Enter a valid username.');
-  }
-  const trimmedUsername = username.trim();
-  if (!trimmedUsername) {
-    throw new Error('Enter a valid username.');
-  }
-  if (!pin || typeof pin !== 'string' || !/^\d{4,6}$/.test(pin)) {
-    throw new Error('PIN must be 4-6 digits.');
-  }
-
-  // Check if username already exists
-  const existing = await checkUsernameExists(trimmedUsername);
-  if (existing) {
-    throw new Error('Username already taken. Try logging in instead.');
-  }
-
-  const session = await ensureSession();
-  const authUserId = session.user.id;
-
-  // Generate a new UUID for the profile (separate from auth user ID)
-  const profileId = crypto.randomUUID();
-
-  const { data, error } = await supabase
-    .from('profiles')
-    .insert({
-      id: profileId,
-      username: trimmedUsername,
-      pin: pin,
-      current_auth_id: authUserId,
-    })
-    .select('id, username')
-    .single();
-
-  if (error) {
-    throw error;
-  }
-
-  return data;
-};
-
-/**
- * Login to an existing account with username and PIN
- * @param {string} username - Username of the account
- * @param {string} pin - The account's PIN
- * @returns {Promise<Object>} The profile
- */
-export const loginWithPin = async (username, pin) => {
-  if (!username || typeof username !== 'string') {
-    throw new Error('Enter a valid username.');
-  }
-  const trimmedUsername = username.trim();
-  if (!trimmedUsername) {
-    throw new Error('Enter a valid username.');
-  }
-  if (!pin || typeof pin !== 'string') {
-    throw new Error('Enter your PIN.');
-  }
-
-  // Ensure we have an authenticated session before querying
-  // (needed for RLS policies on new browsers/devices)
-  await ensureSession();
-
-  // Find the profile by username (include all profile fields for complete data)
-  const { data: profile, error: fetchError } = await supabase
-    .from('profiles')
-    .select('id, username, pin, current_auth_id, packs, stats, matches, name_style')
-    .eq('username', trimmedUsername)
-    .maybeSingle();
-
-  if (fetchError) {
-    throw fetchError;
-  }
-  if (!profile) {
-    throw new Error('Username not found. Create a new account?');
-  }
-
-  // Verify PIN
-  if (profile.pin !== pin) {
-    throw new Error('Incorrect PIN.');
-  }
-
-  // Claim the profile with our auth session (force-claim, kicking any existing session)
-  const session = await ensureSession();
-  const authUserId = session.user.id;
-
-  // Update current_auth_id to claim this profile
-  const { error: updateError } = await supabase
-    .from('profiles')
-    .update({ current_auth_id: authUserId })
-    .eq('id', profile.id);
-
-  if (updateError) {
-    throw updateError;
-  }
-
-  // Return the complete profile data (excluding sensitive fields)
-  return {
-    id: profile.id,
-    username: profile.username,
-    packs: profile.packs,
-    stats: profile.stats,
-    matches: profile.matches,
-    name_style: profile.name_style,
-  };
-};
-
-/**
- * Log out of the current profile (clears current_auth_id)
- * @returns {Promise<boolean>} True if logout succeeded
- */
-export const logoutProfile = async () => {
-  const { data: sessionData } = await supabase.auth.getSession();
-  if (!sessionData?.session?.user) {
-    return false;
-  }
-
-  const authUserId = sessionData.session.user.id;
-
-  const { error } = await supabase
-    .from('profiles')
-    .update({ current_auth_id: null })
-    .eq('current_auth_id', authUserId);
-
-  if (error) {
-    throw error;
-  }
-
-  return true;
-};
-
-/**
- * Validate that the current session still owns the profile
- * Returns false if another device has claimed the profile (logged in elsewhere)
- * @param {string} profileId - The profile ID to validate
- * @returns {Promise<boolean>} True if session is still valid, false if kicked
- */
-export const validateSession = async (profileId) => {
-  if (!profileId) {
-    return false;
-  }
-
-  const { data: sessionData } = await supabase.auth.getSession();
-  if (!sessionData?.session?.user) {
-    return false;
-  }
-
-  const currentAuthId = sessionData.session.user.id;
-
-  // Check if our auth ID still matches the profile's current_auth_id
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('current_auth_id')
-    .eq('id', profileId)
-    .maybeSingle();
-
-  if (error || !profile) {
-    return false;
-  }
-
-  // If current_auth_id doesn't match, we've been kicked by another login
-  return profile.current_auth_id === currentAuthId;
-};
-
-/**
- * Legacy function - now just an alias for reference
- * @deprecated Use createAccountWithPin or loginWithPin instead
- */
-export const signInWithUsername = async (username) => {
-  throw new Error('Use createAccountWithPin or loginWithPin instead.');
-};
-
-export const fetchProfile = async () => {
-  const { data: sessionData } = await supabase.auth.getSession();
-  if (!sessionData?.session?.user) {
-    return null;
-  }
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id, username, packs, stats, matches, name_style')
-    .eq('current_auth_id', sessionData.session.user.id)
-    .maybeSingle();
-
-  if (error) {
-    throw error;
-  }
-  return data ?? null;
-};
+const usernameAccount = createUsernameAccount({
+  auth: supabase.auth,
+  invoke: (name, options) => supabase.functions.invoke(name, options),
+  rpc: (name, args) => supabase.rpc(name, args),
+});
+export const createAccountWithPassword = (username, password) =>
+  usernameAccount.signup(username, password);
+export const loginWithPassword = (username, password) => usernameAccount.login(username, password);
+export const logoutProfile = () => usernameAccount.logout();
+export const fetchProfile = () => usernameAccount.profile();
+export const validateSession = async (profileId) =>
+  Boolean(profileId && (await fetchProfile())?.id === profileId);
 
 /**
  * Update the pack count for a profile

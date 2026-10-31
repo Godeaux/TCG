@@ -123,3 +123,10 @@ UI alone still does not release a usable dusting system.
   Delivery was not verified. Email testing is no longer a rollout prerequisite.
 - Still required: username account integration, policy replacement, trusted
   progression/reward path, live account acceptance, coordinated reset/deployment.
+
+### Username implementation follow-up
+
+Username/password client and provider gateway are now implemented and real-provider
+tested. Migration 010 is deployed; 011/012 remain unapplied. Public registration
+stays disabled. See `../account-cutover/README.md` for exact evidence and the pending
+host-run-versus-server-run progression scope choice. No legacy reset occurred.

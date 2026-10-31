@@ -532,7 +532,7 @@ export const updateLobbyPlayerNames = async (state, lobby = state.menu?.lobby) =
  * Handle login form submission (existing account)
  * @param {Object} state - Game state
  * @param {string} username - Username to login with
- * @param {string} pin - PIN for the account
+ * @param {string} pin - Password for the account
  */
 export const handleLoginSubmit = async (state, username, pin) => {
   applyMenuLoading(state, true);
@@ -541,7 +541,7 @@ export const handleLoginSubmit = async (state, username, pin) => {
 
   try {
     const api = await loadSupabaseApi(state);
-    const profile = await api.loginWithPin(username, pin);
+    const profile = await api.loginWithPassword(username, pin);
 
     // Reset all user-specific state before loading new user data
     decksLoaded = false;
@@ -579,7 +579,7 @@ export const handleLoginSubmit = async (state, username, pin) => {
  * Handle creating a new account
  * @param {Object} state - Game state
  * @param {string} username - Username for new account
- * @param {string} pin - PIN for new account (4-6 digits)
+ * @param {string} pin - Password for new account (8–128 characters)
  */
 export const handleCreateAccount = async (state, username, pin) => {
   applyMenuLoading(state, true);
@@ -588,7 +588,7 @@ export const handleCreateAccount = async (state, username, pin) => {
 
   try {
     const api = await loadSupabaseApi(state);
-    const profile = await api.createAccountWithPin(username, pin);
+    const profile = await api.createAccountWithPassword(username, pin);
 
     // Reset all user-specific state before loading new user data
     decksLoaded = false;
