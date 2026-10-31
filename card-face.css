@@ -85,3 +85,11 @@
 .card.canonical-card .card-inner .card-image:is([src*="reptile-prey-galapagos-lava-lizards.jpg"], [src*="bird-prey-jersey-giant.jpg"]) {
   object-position: 50% 0%!important;
 }
+/* Safari does not reliably resolve a percentage inner height from aspect-ratio.
+   Anchor the face to the border's inner box so it cannot cover the bottom finish. */
+.card.canonical-card > .card-inner {
+  position: absolute !important;
+  inset: 0;
+  width: auto !important;
+  height: auto !important;
+}

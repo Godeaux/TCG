@@ -47,13 +47,6 @@ export function createCollectionDensity() {
     nav.querySelector('[data-rows]').textContent = `${count} rows`;
     nav.querySelector('[data-pe="smaller-cards"]').disabled = count === limits().max;
     nav.querySelector('[data-pe="larger-cards"]').disabled = count === limits().min;
-    const update = () => {
-      nav.querySelector('[data-pe="prev-page"]').disabled = grid.scrollLeft <= 1;
-      nav.querySelector('[data-pe="next-page"]').disabled =
-        grid.scrollLeft + grid.clientWidth >= grid.scrollWidth - 1;
-    };
-    grid.onscroll = update;
-    update();
   };
   const change = (delta) => {
     const l = limits();

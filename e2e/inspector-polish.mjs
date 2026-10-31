@@ -160,9 +160,7 @@ try {
   await expect(touch.locator('#pe-search')).toHaveValue('Black Leopards');
   await touch.locator('#pe-search').fill('');
   await touch.locator('.pe-grid .pe-tile').first().tap();
-  const firstName = await touch.locator('#card-hover-tooltip').getAttribute('aria-label');
-  await touch.getByRole('button', { name: 'Next →', exact: true }).tap();
-  assert.notEqual(await touch.locator('#card-hover-tooltip').getAttribute('aria-label'), firstName);
+  await expect(touch.getByRole('button', { name: /Previous|Next →/ })).toHaveCount(0);
   await expect(touch.locator('.inspection-close')).toHaveCount(0);
   await touch.touchscreen.tap(3, 3);
   assert.equal(await touch.locator('#player-experience').evaluate((el) => el.inert), false);

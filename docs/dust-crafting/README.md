@@ -1,11 +1,12 @@
 # Dust crafting — pre-release implementation
 
-Status: local implementation, not deployed. No player reset performed.
+Status: server migration 009 deployed and live transactional smoke passed; frontend
+remains local. No player reset performed.
 
 ## Product contract
 
 - Mobile: three rows by default/minimum, up to five. Desktop: two through six.
-- Controls: minus (smaller cards), plus (larger), previous, next. Horizontal scroll.
+- Controls: minus (smaller cards), plus (larger). Native horizontal swipe/scroll; no paging arrows.
 - Remember separate mobile/desktop density preferences and preserve the visible card.
 - Gallery shows the highest owned finish and its count. Below a readable full-face
   size, text is removed and actual artwork fills the same 5:7 card silhouette.
@@ -49,14 +50,14 @@ clears the intent. No optimistic debit or client-side fallback grants.
 ## Remaining release gates
 
 Live read-only inspection on October 30 found zero verified owners, zero economy
-accounts and zero pack receipts. The new migration is not installed live.
+accounts and zero pack receipts. Migration 009 was subsequently installed and verified live.
 Ordinary players still use the legacy account/economy path. A UI deployment alone
 would NOT make crafting available to them.
 
 1. Complete verified account enrollment and the approved legacy-account cutover.
    Never infer ownership from mutable `current_auth_id` or plaintext PIN claims.
-   Verified-email delivery requires configured/tested SMTP or an Auth send hook;
-   public delivery is not yet verified. Do not wipe or fabricate trusted balances.
+   Owner changed the requirement at 18:01: username/password, no email required.
+   Use provider/server-side verification. Do not wipe or fabricate trusted balances.
 2. Complete the trusted progression/reward integration tracked in
    `../release-1.0-staging/HARDENING-TRACKER.md`; do not import browser-minted packs
    or inventory into the trusted economy as an expedient substitute.
@@ -100,3 +101,25 @@ cutover, not merely rows: otherwise stale clients can recreate the old system.
 Proceed only with tested new provider login, permanent enrollment, trusted economy
 and reward paths, and verified two-account/refusal/retry behavior. Publishing the
 UI alone still does not release a usable dusting system.
+
+## October 30 implementation update, before username cutover
+
+- User confirms SMTP configured, but then explicitly rejects email signup.
+  Superseded email client/enrollment candidate was archived outside the repo;
+  it was never deployed. Username/password replacement is not implemented yet.
+- Main mobile fixes integrated locally, including no paging/inspector arrows,
+  token Back and background dismissal. Small scaled cards use CSS zoom to avoid
+  a reproduced WebKit unscaled-overflow defect. Chromium and WebKit five-viewport
+  gallery checks pass; dust UI + migrated local SQL also passes.
+- Migration 009 applied live. Recycle, craft and idempotent retries verified in
+  a transaction with isolated fixtures, then rolled back. Zero owners and zero
+  dust receipts remain; all 2,066 legacy profiles remain intact.
+- Private preflight backup: all 11 public application tables and schema metadata,
+  including 1,237 game sessions and 659 owned-card rows. Restored to local PGlite,
+  compared exact records independent of row order, and restored public constraints.
+  This is not an atomic cutover snapshot, Auth backup or provider-config backup.
+  Freeze writes and refresh immediately before any reset.
+- Test email request returned HTTP 200, but inbox OAuth returned invalid_grant.
+  Delivery was not verified. Email testing is no longer a rollout prerequisite.
+- Still required: username account integration, policy replacement, trusted
+  progression/reward path, live account acceptance, coordinated reset/deployment.

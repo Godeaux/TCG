@@ -308,8 +308,8 @@ function collection() {
     ],
     filters.sort
   )}</select></div>
-  ${unloaded ? empty(state.menu.collectionError || 'Loading your collection…') + (state.menu.collectionError ? btn('retry-collection', 'Retry') : '') : ''}<div class="pe-grid pe-density-grid">${!unloaded && slice.length ? slice.map((c) => tile(c, owned.get(c.id), c.id === selectedId, true)).join('') : !unloaded ? empty('No cards match. Try All cards or reset the filters.') + btn('reset-filters', 'Reset filters', 'pe-quiet') : ''}</div>
-  <div class="pe-pagination"><span data-rows>${density.rows()} rows</span><div>${btn('smaller-cards', '−', 'pe-icon', 'aria-label="Smaller cards"')}${btn('larger-cards', '+', 'pe-icon', 'aria-label="Larger cards"')}${btn('prev-page', '←', 'pe-icon', 'aria-label="Previous cards"')}${btn('next-page', '→', 'pe-icon', 'aria-label="Next cards"')}</div></div></section></div>${footer(readOnly ? 'Read-only collection' : !signed ? 'Log in to save a collection.' : '')}
+  ${unloaded ? empty(state.menu.collectionError || 'Loading your collection…') + (state.menu.collectionError ? btn('retry-collection', 'Retry') : '') : ''}<div class="pe-grid pe-density-grid" tabindex="0" role="region" aria-label="Cards — scroll horizontally">${!unloaded && slice.length ? slice.map((c) => tile(c, owned.get(c.id), c.id === selectedId, true)).join('') : !unloaded ? empty('No cards match. Try All cards or reset the filters.') + btn('reset-filters', 'Reset filters', 'pe-quiet') : ''}</div>
+  <div class="pe-pagination"><span data-rows>${density.rows()} rows</span><div>${btn('smaller-cards', '−', 'pe-icon', 'aria-label="Smaller cards"')}${btn('larger-cards', '+', 'pe-icon', 'aria-label="Larger cards"')}<span class="pe-scroll-hint">Swipe to browse →</span></div></div></section></div>${footer(readOnly ? 'Read-only collection' : !signed ? 'Log in to save a collection.' : '')}
   ${inspected && selected ? `<section class="pe-mobile-inspection"><div class="pe-inspection-top">${btn('close-inspect', '← Collection', 'pe-quiet')}<span>${esc(RARITY_LABELS[owned.get(selected.id)] || 'Not collected')}</span></div>${inspector(selected, owned.get(selected.id))}<div class="pe-inspect-nav">${btn('prev-card', '← Previous', 'pe-quiet')}${btn('next-card', 'Next →', 'pe-quiet')}</div></section>` : ''}`;
 }
 function craftingToolbar() {
@@ -658,18 +658,9 @@ function inspectSelectedCard() {
     (el) => el.dataset.card === selectedId
   );
   if (!card || !anchor) return;
-  const change = (delta) => {
-    const next = (index + delta + list.length) % list.length;
-    selectedId = list[next].id;
-    draw();
-    if (crafting && !publicCollection && Array.isArray(own()?.cardFinishes)) openCraft(selectedId);
-    else inspectSelectedCard();
-  };
   showCardTooltip({ ...card, rarity: ownership().get(card.id) }, anchor, {
     context: 'collection',
     modal: true,
-    onPrevious: list.length > 1 ? () => change(-1) : null,
-    onNext: list.length > 1 ? () => change(1) : null,
   });
 }
 async function handleClick(event) {
@@ -753,14 +744,6 @@ async function handleClick(event) {
   if (action === 'reset-filters') {
     filters = { ...defaults(), ownership: 'all' };
     draw();
-    return;
-  }
-  if (action === 'prev-page' || action === 'next-page') {
-    const grid = page.querySelector('.pe-density-grid');
-    grid.scrollBy({
-      left: grid.clientWidth * (action === 'prev-page' ? -1 : 1),
-      behavior: 'smooth',
-    });
     return;
   }
   if (action === 'smaller-cards' || action === 'larger-cards') {
@@ -963,7 +946,6 @@ function handleInput(event) {
     page.querySelector('.pe-density-grid')?.scrollTo(0, 0);
     density.reset();
     filters.query = event.target.value;
-    filters.page = 0;
     draw();
   }
   if (event.target.id === 'pe-art-search') {
@@ -983,7 +965,6 @@ function handleChange(event) {
     page.querySelector('.pe-density-grid')?.scrollTo(0, 0);
     density.reset();
     filters[keys[event.target.id]] = event.target.value;
-    filters.page = 0;
     draw();
   }
   if (event.target.dataset.style && artDraft)

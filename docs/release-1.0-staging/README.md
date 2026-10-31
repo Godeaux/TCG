@@ -114,8 +114,10 @@ Realtime authorization and Auth/provider configuration must also be exported.
 
 ## Account contract
 
-- Supabase provider-verified emailed code for persistent accounts; anonymous Auth
-  for guests. No custom PIN storage or browser credential verification.
+- **October 30, 18:01 owner change:** no email address required for signup.
+  Username + password with provider/server-side credential verification.
+  Anonymous Auth remains for guests. No plaintext PIN storage or browser
+  credential verification. This supersedes the prior emailed-code requirement.
 - Profile IDs remain stable so decks, friends and cosmetics retain references.
 - Permanent account ownership lives separately from session presence. Logout
   signs out; it must never make a profile claimable.
@@ -273,7 +275,10 @@ rollback. The reward rollback locks all reward tables before checking emptiness;
 it refuses to remove any populated ledger. Never use test fixture DELETEs as
 production cleanup or roll back to client-writable rewards.
 
-## Email delivery prerequisite
+## Superseded email delivery prerequisite
+
+Email signup was explicitly rejected by the owner on October 30 at 18:01.
+The following is historical, not a release gate for username signup.
 
 Supabase's current [SMTP documentation](https://supabase.com/docs/guides/auth/auth-smtp)
 was checked October 28: the default sender only delivers to organization team

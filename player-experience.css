@@ -1006,7 +1006,7 @@
 .pe-density-grid .pe-card { position:relative; width:var(--collection-card-width); height:var(--collection-card-height); }
 .pe-density-grid .pe-card .card.canonical-card {
   position:absolute; top:0; left:0; width:210px!important; height:294px!important;
-  transform:scale(var(--collection-scale))!important; transform-origin:top left;
+  zoom:var(--collection-scale); transform:none!important; transform-origin:top left;
 }
 .pe-density-grid .pe-rarity { height:18px; margin:4px 0 0; justify-content:center; font-variant-numeric:tabular-nums; }
 .pe-density-grid .pe-empty { grid-column:1 / span 3; }
@@ -1097,3 +1097,46 @@
 .pe-density-grid[data-readable-name="true"] .pe-missing-name { display:block; }
 .pe-density-grid[data-readable-name="true"] .pe-missing-symbol { display:none; }
 .pe-crafting-dialog .pe-dialog-head { position:sticky; top:0; z-index:2; background:inherit; }
+/* The collection is a height-fitted native horizontal gallery, not paged rows. */
+#player-experience { height: 100dvh; }
+.pe-horizontal-gallery {
+  grid-auto-flow: column;
+  grid-template-columns: none;
+  grid-template-rows: repeat(var(--gallery-rows, 2), max-content);
+  grid-auto-columns: var(--gallery-width, 120px);
+  gap: 18px 18px;
+  padding: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior: contain;
+  touch-action: pan-x;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 10px;
+}
+.pe-horizontal-gallery .pe-tile { width: var(--gallery-width); scroll-snap-align: start; }
+.pe-horizontal-gallery .pe-rarity { margin-top: 18px; height: 18px; white-space: nowrap; }
+.pe-horizontal-gallery .pe-empty { grid-row: 1 / -1; width: min(260px, 70vw); }
+.pe-pagination { flex-shrink: 0; }
+/* A generic button rule must not clip the decorative seal and bottom finish. */
+#player-experience .pe-tile { overflow: visible; }
+#player-experience .pe-card .card.canonical-card { overflow: visible; }
+@media (max-height: 600px) {
+  #player-experience:has(.pe-horizontal-gallery) .pe-top { height: 48px; }
+  #player-experience:has(.pe-horizontal-gallery) .pe-page { padding-top: 4px; }
+  #player-experience:has(.pe-horizontal-gallery) .pe-heading { margin-bottom: 4px; }
+}
+/* Generic UI icons are 20px; rarity artwork must scale with its own seal. */
+#player-experience .card-rarity-seal svg { width: 86%; height: 86%; stroke-width: 1.2; }
+/* iOS native select chrome ignores the shared control height. */
+#player-experience .pe-filters select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 20px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='m2 2 4 4 4-4' fill='none' stroke='%23a9bec3' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-size: 10px 7px;
+  background-repeat: no-repeat;
+  background-position: right 5px center;
+}
+
+.pe-density-grid { touch-action:pan-x; overscroll-behavior:contain; }
+.pe-scroll-hint { font-size:11px; color:#a9bec3; }
