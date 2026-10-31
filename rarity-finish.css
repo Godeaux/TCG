@@ -76,7 +76,8 @@
     #f9dc8b30 73%,
     #79def332 100%
   );
-  mix-blend-mode: color-dodge;
+  /* Normal alpha compositing avoids Safari color-dodge overexposure. */
+  mix-blend-mode: normal;
 }
 /* A separate edge layer leaves CSS outlines available for focus/targeting. */
 .card.canonical-card:is(.rarity-uncommon, .rarity-rare, .rarity-legendary, .rarity-pristine)

@@ -86,7 +86,8 @@ const image = (id) => `images/cards/${encodeURIComponent(id)}.jpg`;
 const own = () => state?.menu?.profile;
 const target = () => publicProfile || own();
 const ownership = () => collectionOwnership(target()?.ownedCards);
-const pageSize = () => (window.innerWidth <= 700 ? (window.innerHeight < 740 ? 6 : 9) : 12);
+let collectionScroll = 0;
+let galleryObserver;
 const btn = (action, label, cls = '', extra = '') =>
   `<button type="button" class="${cls}" data-pe="${action}" ${extra}>${label}</button>`;
 const empty = (text) => `<p class="pe-empty" role="status">${esc(text)}</p>`;
@@ -111,6 +112,7 @@ export function resetPlayerExperience() {
   stage = null;
   filters = defaults();
   selectedId = null;
+  collectionScroll = 0;
   inspected = false;
   busy = false;
   profileLoading = false;
@@ -194,7 +196,6 @@ export function renderPlayerExperience(nextState, nextCallbacks = {}) {
     root.addEventListener('input', handleInput);
     root.addEventListener('change', handleChange);
     window.addEventListener('resize', () => {
-      filters.page = 0;
       redraw();
     });
     document.addEventListener('keydown', (e) => {
@@ -250,11 +251,9 @@ function options(values, chosen) {
 function collection() {
   const owned = ownership();
   const list = filterCollection(catalog(), owned, filters);
-  const total = Math.max(1, Math.ceil(list.length / pageSize()));
-  filters.page = Math.min(filters.page, total - 1);
   const selected = list.find((c) => c.id === selectedId) || list[0];
   selectedId = selected?.id || null;
-  const slice = list.slice(filters.page * pageSize(), (filters.page + 1) * pageSize());
+  const slice = list;
   const signed = Boolean(own()?.id);
   const readOnly = publicCollection;
   const unloaded = signed && !readOnly && own().ownedCards === undefined;
@@ -283,8 +282,8 @@ function collection() {
     ],
     filters.sort
   )}</select></div>
-  ${unloaded ? empty(state.menu.collectionError || 'Loading your collection…') + (state.menu.collectionError ? btn('retry-collection', 'Retry') : '') : ''}<div class="pe-grid">${!unloaded && slice.length ? slice.map((c) => tile(c, owned.get(c.id), c.id === selectedId)).join('') : !unloaded ? empty('No cards match. Try All cards or reset the filters.') + btn('reset-filters', 'Reset filters', 'pe-quiet') : ''}</div>
-  <div class="pe-pagination"><span>${list.length} cards · tap to inspect</span><div>${btn('prev-page', '‹', 'pe-icon', filters.page === 0 ? 'disabled aria-label="Previous page"' : 'aria-label="Previous page"')}<span>${filters.page + 1} / ${total}</span>${btn('next-page', '›', 'pe-icon', filters.page + 1 >= total ? 'disabled aria-label="Next page"' : 'aria-label="Next page"')}</div></div></section>
+  ${unloaded ? empty(state.menu.collectionError || 'Loading your collection…') + (state.menu.collectionError ? btn('retry-collection', 'Retry') : '') : ''}<div class="pe-grid pe-horizontal-gallery" tabindex="0" role="region" aria-label="Cards — scroll horizontally">${!unloaded && slice.length ? slice.map((c) => tile(c, owned.get(c.id), c.id === selectedId)).join('') : !unloaded ? empty('No cards match. Try All cards or reset the filters.') + btn('reset-filters', 'Reset filters', 'pe-quiet') : ''}</div>
+  <div class="pe-pagination"><span>${list.length} cards · tap to inspect</span><span>Swipe to browse →</span></div></section>
   ${selected ? `<aside class="pe-inspector">${inspector(selected, owned.get(selected.id))}</aside>` : ''}</div>${footer(readOnly ? 'Read-only collection' : !signed ? 'Log in to save a collection.' : '')}
   ${inspected && selected ? `<section class="pe-mobile-inspection"><div class="pe-inspection-top">${btn('close-inspect', '← Collection', 'pe-quiet')}<span>${esc(RARITY_LABELS[owned.get(selected.id)] || 'Not collected')}</span></div>${inspector(selected, owned.get(selected.id))}<div class="pe-inspect-nav">${btn('prev-card', '← Previous', 'pe-quiet')}${btn('next-card', 'Next →', 'pe-quiet')}</div></section>` : ''}`;
 }
@@ -341,6 +340,9 @@ function friendsScreen() {
 }
 function draw() {
   if (!root || !visible()) return;
+  const oldGrid = root.querySelector('.pe-horizontal-gallery');
+  if (oldGrid) collectionScroll = oldGrid.scrollLeft;
+  galleryObserver?.disconnect();
   const focus = root.contains(document.activeElement) ? document.activeElement : null;
   const focusId = focus?.id;
   const start = focus?.selectionStart,
@@ -367,6 +369,28 @@ function draw() {
       )
     );
   });
+  const grid = page.querySelector('.pe-horizontal-gallery');
+  if (grid) {
+    const fit = () => {
+      const height = grid.clientHeight - 20;
+      const rows = height >= 340 ? 2 : 1;
+      // Budget for the seal, rarity caption, focus ring and scrollbar in every row.
+      const cardHeight = Math.min(294, (height - (rows - 1) * 18) / rows - 36);
+      grid.style.setProperty('--gallery-rows', rows);
+      grid.style.setProperty('--gallery-width', `${Math.max(44, (cardHeight * 5) / 7)}px`);
+      grid.scrollLeft = collectionScroll;
+    };
+    fit();
+    galleryObserver = new ResizeObserver(fit);
+    galleryObserver.observe(grid);
+    grid.addEventListener(
+      'scroll',
+      () => {
+        collectionScroll = grid.scrollLeft;
+      },
+      { passive: true }
+    );
+  }
   const name = page.querySelector('[data-styled-name]');
   if (name)
     name.append(renderStyledName(target()?.username || 'Player', target()?.name_style || {}));
@@ -521,18 +545,9 @@ function inspectSelectedCard() {
     (el) => el.dataset.card === selectedId
   );
   if (!card || !anchor) return;
-  const change = (delta) => {
-    const next = (index + delta + list.length) % list.length;
-    selectedId = list[next].id;
-    filters.page = Math.floor(next / pageSize());
-    draw();
-    inspectSelectedCard();
-  };
   showCardTooltip({ ...card, rarity: ownership().get(card.id) }, anchor, {
     context: 'collection',
     modal: true,
-    onPrevious: list.length > 1 ? () => change(-1) : null,
-    onNext: list.length > 1 ? () => change(1) : null,
   });
 }
 async function handleClick(event) {
@@ -789,7 +804,8 @@ async function handleClick(event) {
 function handleInput(event) {
   if (event.target.id === 'pe-search') {
     filters.query = event.target.value;
-    filters.page = 0;
+    collectionScroll = 0;
+    root.querySelector('.pe-horizontal-gallery')?.scrollTo(0, 0);
     draw();
   }
   if (event.target.id === 'pe-art-search') {
@@ -807,7 +823,8 @@ function handleChange(event) {
   };
   if (keys[event.target.id]) {
     filters[keys[event.target.id]] = event.target.value;
-    filters.page = 0;
+    collectionScroll = 0;
+    root.querySelector('.pe-horizontal-gallery')?.scrollTo(0, 0);
     draw();
   }
   if (event.target.dataset.style && artDraft)

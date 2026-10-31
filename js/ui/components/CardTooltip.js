@@ -248,6 +248,16 @@ export const initCardTooltip = () => {
   };
   cardPreviewElement?.addEventListener('touchstart', dismissPreview, { passive: false });
   cardPreviewElement?.addEventListener('click', dismissPreview);
+  // Empty space inside the dialog is background too. Let actual controls act,
+  // and use click (not touchstart) so dragging the information never dismisses.
+  tooltipElement.addEventListener('click', (event) => {
+    if (
+      !modalBackdrop ||
+      event.target.closest('button, a, input, select, textarea, [role="button"]')
+    )
+      return;
+    dismissPreview(event);
+  });
 
   // Add mouse handlers on info boxes for desktop scroll support
   // When mouse enters info boxes, keep tooltip visible (cancel pending hide)
