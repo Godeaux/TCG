@@ -14,7 +14,7 @@
  * - checkForVictory: Check game state for victory condition
  */
 
-import { updatePackCount, updateProfileStats } from '../../network/lobbyManager.js';
+import { recordMatchResult } from '../../network/lobbyManager.js';
 import { getLocalPlayerIndex } from '../../state/selectors.js';
 import { broadcastRematchChoice } from '../../network/sync.js';
 
@@ -398,12 +398,12 @@ export const showVictoryScreen = (winner, stats = {}, options = {}) => {
   if (reward) {
     if (options.awardPack) {
       reward.style.display = '';
+      const label = reward.querySelector('.victory-reward-text');
+      if (label)
+        label.textContent = options.state?.menu?.profile
+          ? 'Saving pack reward…'
+          : 'Sign in to save rewards';
       reward.classList.add('animate');
-
-      // Actually award the pack to the player's profile and sync to database
-      if (options.state?.menu?.profile) {
-        updatePackCount(options.state, 1);
-      }
     } else {
       reward.style.display = 'none';
       reward.classList.remove('animate');
@@ -728,21 +728,7 @@ const updateProfileStatsOnVictory = (state, winner, loser) => {
   const opponentPlayer = state.players[(localPlayerIndex + 1) % 2];
   const didWin = winner === localPlayer;
 
-  // Initialize stats if missing
-  if (!profile.stats) {
-    profile.stats = { gamesPlayed: 0, gamesWon: 0, favoriteCard: '-' };
-  }
-  if (!profile.matches) {
-    profile.matches = [];
-  }
-
-  // Update stats for AI and online modes (not local practice)
   if (gameMode === 'ai' || gameMode === 'online') {
-    profile.stats.gamesPlayed = (profile.stats.gamesPlayed || 0) + 1;
-    if (didWin) {
-      profile.stats.gamesWon = (profile.stats.gamesWon || 0) + 1;
-    }
-
     // Get deck info (capitalize first letter)
     const opponentDeckId =
       state.deckSelection?.selections?.[(localPlayerIndex + 1) % 2] || 'unknown';
@@ -764,35 +750,14 @@ const updateProfileStatsOnVictory = (state, winner, loser) => {
       turns: state.turn || 1,
       deckCards: playerDeckCards, // Track cards used for favorite calculation
     };
-    profile.matches.unshift(matchEntry);
-
-    // Keep only last 20 matches
-    if (profile.matches.length > 20) {
-      profile.matches = profile.matches.slice(0, 20);
-    }
-
-    // Calculate favorite card (most frequently used across all matches)
-    const cardCounts = {};
-    profile.matches.forEach((match) => {
-      if (match.deckCards && Array.isArray(match.deckCards)) {
-        match.deckCards.forEach((cardName) => {
-          cardCounts[cardName] = (cardCounts[cardName] || 0) + 1;
-        });
-      }
+    const gameId = state.matchRunId;
+    recordMatchResult(state, matchEntry).then(() => {
+      if (state.matchRunId !== gameId || state.menu?.profile !== profile) return;
+      const label = getVictoryElements().reward?.querySelector('.victory-reward-text');
+      if (label)
+        label.textContent = state.menu.rewardError
+          ? 'Reward pending — retry in My Cards'
+          : '+1 Pack Earned!';
     });
-
-    // Find the most used card
-    let favoriteCard = '-';
-    let maxCount = 0;
-    for (const [cardName, count] of Object.entries(cardCounts)) {
-      if (count > maxCount) {
-        maxCount = count;
-        favoriteCard = cardName;
-      }
-    }
-    profile.stats.favoriteCard = favoriteCard;
-
-    // Sync to database (async, don't wait)
-    updateProfileStats(state, profile.stats, profile.matches);
   }
 };

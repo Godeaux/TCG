@@ -992,6 +992,111 @@
   border-bottom: 2px solid #e5d3a2;
 }
 
+/* Counted collection: fixed-height rows, horizontal browsing, no side inspector. */
+.pe-dense-collection { display:flex; }
+.pe-dense-collection .pe-browser { width:100%; }
+.pe-density-grid {
+  display:grid; grid-auto-flow:column; grid-template-columns:none;
+  grid-template-rows:repeat(var(--collection-rows,3),calc(var(--collection-card-height,90px) + 22px));
+  grid-auto-columns:var(--collection-card-width,64px); gap:12px;
+  flex:none; overflow-x:auto; overflow-y:hidden; padding:4px;
+  scroll-snap-type:x proximity;
+}
+.pe-density-grid .pe-tile { width:var(--collection-card-width); scroll-snap-align:start; }
+.pe-density-grid .pe-card { position:relative; width:var(--collection-card-width); height:var(--collection-card-height); }
+.pe-density-grid .pe-card .card.canonical-card {
+  position:absolute; top:0; left:0; width:210px!important; height:294px!important;
+  zoom:var(--collection-scale); transform:none!important; transform-origin:top left;
+}
+.pe-density-grid .pe-rarity { height:18px; margin:4px 0 0; justify-content:center; font-variant-numeric:tabular-nums; }
+.pe-density-grid .pe-empty { grid-column:1 / span 3; }
+.pe-craft-toolbar,.pe-craft-toolbar>div { display:flex; align-items:center; gap:8px; }
+.pe-craft-toolbar { justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; }
+.pe-craft-toolbar .selected { background:#dcca91!important; color:#142e35!important; }
+.pe-craft-toolbar svg,.pe-craft-price svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.7; }
+.pe-craft-toolbar button,.pe-craft-price { display:inline-flex; align-items:center; gap:6px; }
+.pe-dust { color:#e5d3a2; font-variant-numeric:tabular-nums; }
+.pe-crafting-dialog { width:min(750px,calc(100vw - 24px)); }
+.pe-craft-content { display:grid; grid-template-columns:230px minmax(0,1fr); gap:24px; align-items:center; }
+.pe-craft-preview .card.canonical-card { width:230px!important; height:322px!important; margin:0!important; }
+.pe-craft-row,.pe-craft-labels { display:grid; grid-template-columns:minmax(0,1fr) 44px 102px; gap:6px; align-items:center; }
+.pe-craft-row { min-height:54px; border-top:1px solid #38565f77; }
+.pe-craft-row>span,.pe-craft-labels>span:nth-child(2) { text-align:center; font-variant-numeric:tabular-nums; }
+.pe-craft-labels { font-size:11px; color:#99b1bb; padding-bottom:10px; }
+.pe-craft-labels>span:last-child { text-align:right; }
+.pe-crafting-dialog .pe-finish-name { border:0; background:transparent; padding:6px 0; display:flex; gap:8px; align-items:center; font-size:12px; }
+.pe-finish-name i { width:7px; height:7px; transform:rotate(45deg); flex:none; }
+.pe-finish-name[aria-pressed="true"] { color:#e5d3a2; }
+.pe-crafting-dialog .pe-craft-price { justify-content:space-between; font-variant-numeric:tabular-nums; }
+.pe-finish-owned { color:#95b5aa; font-size:12px; }
+@media(max-width:700px) {
+  .pe-craft-toolbar { gap:6px; margin-bottom:8px; }
+  #player-experience .pe-craft-toolbar button { padding:6px 8px; font-size:12px; }
+  .pe-craft-toolbar>div { gap:5px; }
+  .pe-dust { font-size:12px; }
+  .pe-craft-content { display:flex; flex-direction:column; gap:12px; }
+  .pe-craft-preview .card.canonical-card { width:145px!important; height:203px!important; }
+  .pe-craft-finishes { width:100%; }
+  .pe-crafting-dialog { padding:14px; max-height:calc(100dvh - 24px); }
+}
+@media (max-width:700px) and (max-height:650px) {
+  #player-experience:has(.pe-dense-collection) .pe-top { height:44px; min-height:44px; }
+  #player-experience:has(.pe-dense-collection) .pe-page { padding-top:4px; }
+  #player-experience:has(.pe-dense-collection) .pe-heading { margin-bottom:4px; }
+  #player-experience:has(.pe-dense-collection) .pe-brand small { display:none; }
+}
+.pe-density-grid:has(.pe-empty) {
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:8px;
+}
+.pe-density-grid .pe-empty { max-width:100%; }
+.pe-dense-collection .pe-browser { position:relative; }
+#player-experience .pe-filter-toggle { display:none; }
+@media(max-width:700px) {
+  #player-experience .pe-filter-toggle { display:inline-grid; }
+  .pe-dense-collection .pe-filters { display:none; }
+  .pe-dense-collection .pe-filters.is-open {
+    display:grid; grid-template-columns:1fr 1fr; position:absolute;
+    top:var(--filter-top); left:0; right:0; z-index:5;
+    background:#102e39; border:1px solid #54727a; border-radius:8px;
+    padding:12px; gap:10px; box-shadow:0 10px 30px #0008;
+  }
+  #player-experience .pe-dense-collection .pe-filters select {
+    width:100%; max-width:none; min-height:44px; font-size:12px; padding:8px;
+  }
+  .pe-dense-collection .pe-filters select:last-child { margin:0; }
+}
+/* Small thumbnails retain the real card outline, with artwork replacing tiny text. */
+.pe-density-grid {
+  grid-template-rows:repeat(var(--collection-rows,3),calc(var(--collection-card-height,90px) + 20px));
+  grid-auto-columns:var(--collection-slot-width,64px);
+  gap:6px;
+}
+#player-experience .pe-density-grid .pe-tile { width:var(--collection-slot-width); min-height:44px; }
+.pe-density-grid .pe-card { margin-inline:auto; }
+.pe-density-grid .pe-rarity { margin-top:2px; font-size:11px; }
+.pe-art-face { display:none; }
+.pe-density-grid[data-art-only="true"] .card-inner { visibility:hidden; }
+.pe-density-grid[data-art-only="true"] .card-rarity-seal { display:none!important; }
+.pe-density-grid[data-art-only="true"] .pe-art-face {
+  display:block; position:absolute; inset:0; width:100%; height:100%;
+  object-fit:cover; object-position:center; border-radius:inherit;
+}
+/* Keep the canonical type-color banner above artwork, even at minimum scale. */
+.pe-density-grid[data-art-only="true"] .canonical-card::before {
+  z-index:1; height:calc(3px / var(--collection-scale)); pointer-events:none;
+}
+.pe-density-grid[data-art-only="true"] .pe-card { outline:1px solid var(--rarity); border-radius:4px; }
+.pe-density-grid[data-art-only="true"] .selected .pe-card { outline:2px solid #e5d3a2; }
+.pe-thumbnail-image { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; border-radius:inherit; }
+.pe-missing-content { display:flex; flex-direction:column; justify-content:center; align-items:center; position:absolute; inset:0; padding:calc(6px / var(--collection-scale)); text-align:center; }
+.pe-missing-name { display:none; font:500 calc(11px / var(--collection-scale))/1.2 system-ui; overflow-wrap:anywhere; }
+.pe-missing-symbol { font-size:calc(12px / var(--collection-scale)); }
+.pe-density-grid[data-readable-name="true"] .pe-missing-name { display:block; }
+.pe-density-grid[data-readable-name="true"] .pe-missing-symbol { display:none; }
+.pe-crafting-dialog .pe-dialog-head { position:sticky; top:0; z-index:2; background:inherit; }
 /* The collection is a height-fitted native horizontal gallery, not paged rows. */
 #player-experience { height: 100dvh; }
 .pe-horizontal-gallery {
@@ -1032,3 +1137,6 @@
   background-repeat: no-repeat;
   background-position: right 5px center;
 }
+
+.pe-density-grid { touch-action:pan-x; overscroll-behavior:contain; }
+.pe-scroll-hint { font-size:11px; color:#a9bec3; }

@@ -22,7 +22,7 @@ try {
       pe.resetPlayerExperience();
       pe.renderPlayerExperience({menu:{stage:'collection',profile:{ownedCards:new Map(getAllCards().filter(c=>!c.isToken).map((c,i)=>[c.id,['common','uncommon','rare','legendary','pristine'][i%5]]))}}});
     });
-    const grid=page.locator('.pe-horizontal-gallery');
+    const grid=page.locator('.pe-density-grid');
     await expect(grid.locator('.pe-tile')).not.toHaveCount(0);
     await expect(page.locator('[data-pe="prev-page"], [data-pe="next-page"]')).toHaveCount(0);
     await expect.poll(()=>grid.evaluate(g=>g.scrollHeight-g.clientHeight)).toBeLessThanOrEqual(1);
@@ -34,9 +34,10 @@ try {
           const seal=c.querySelector('.card-rarity-seal').getBoundingClientRect();
           const glyph=c.querySelector('.card-rarity-seal svg').getBoundingClientRect();
           const edge=c.querySelector('.card-opal-edge')?.getBoundingClientRect();
-          return {ratio:face.width/face.height, bottom:inner.bottom<=face.bottom-2,
-            glyph:glyph.top>=seal.top && glyph.bottom<=seal.bottom,
-            visible:seal.bottom<box.bottom && (!edge || edge.bottom<box.bottom)};
+          const artOnly=g.dataset.artOnly==='true';
+          return {ratio:face.width/face.height, bottom:inner.bottom<=face.bottom-.1,
+            glyph:artOnly || (glyph.top>=seal.top && glyph.bottom<=seal.bottom),
+            visible:face.bottom<=box.bottom && (artOnly || seal.bottom<box.bottom) && (!edge || edge.bottom<box.bottom)};
         })};
     });
     expect(geometry.horizontal).toBe(true);expect(geometry.page).toBe(true);

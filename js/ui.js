@@ -4161,6 +4161,7 @@ export const renderGame = (state, callbacks = {}) => {
     state.visualEffects = [];
     state.pendingTrapDecision = null;
     state.pendingReaction = null;
+    state.matchRunId = null;
     state.setup = { stage: 'rolling', rolls: [null, null], winnerIndex: null };
     state.deckSelection = { stage: 'p1', selections: [null, null], readyStatus: [false, false] };
     state.deckBuilder = {
@@ -4242,6 +4243,7 @@ export const renderGame = (state, callbacks = {}) => {
     state.visualEffects = [];
     state.pendingTrapDecision = null;
     state.pendingReaction = null;
+    state.matchRunId = null;
     state.setup = { stage: 'rolling', rolls: [null, null], winnerIndex: null };
     state.deckSelection = {
       stage: 'complete',
@@ -4333,6 +4335,7 @@ export const renderGame = (state, callbacks = {}) => {
     state.visualEffects = [];
     state.pendingTrapDecision = null;
     state.pendingReaction = null;
+    state.matchRunId = null;
     state.setup = { stage: 'rolling', rolls: [null, null], winnerIndex: null };
     state.deckSelection = {
       stage: 'complete',
@@ -4422,6 +4425,7 @@ export const renderGame = (state, callbacks = {}) => {
     state.visualEffects = [];
     state.pendingTrapDecision = null;
     state.pendingReaction = null;
+    state.matchRunId = null;
     state.setup = { stage: 'rolling', rolls: [null, null], winnerIndex: null };
     state.deckSelection = {
       stage: 'p1',

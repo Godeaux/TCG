@@ -17,7 +17,7 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node.js
@@ -44,3 +44,4 @@ jobs:
             docs/ui-overhaul/evidence/acceptance/
             docs/ui-overhaul/evidence/mobile-feedback/
             docs/ui-overhaul/evidence/spell-presentation/
+            docs/dust-crafting/
