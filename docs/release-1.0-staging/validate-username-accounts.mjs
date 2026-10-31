@@ -28,7 +28,7 @@ try{
  create policy old_friend on public.friendships for insert to authenticated with check(requester_id in(select profiles.id from public.profiles where profiles.current_auth_id=auth.uid()));
  insert into auth.users values('${id(1)}','random-a@accounts.invalid','{"tcg_account_kind":"username"}',false),('${id(2)}','random-b@accounts.invalid','{"tcg_account_kind":"username"}',false),('${id(3)}',null,'{}',true),('${id(4)}','other@example.com','{}',false);
  insert into public.profiles(id,username,pin,current_auth_id) values('${id(90)}','Legacy','1234','${id(3)}');`);
- for(const file of ['001-foundation-candidate.sql','002-reward-settlement-candidate.sql','003-pack-opening-candidate.sql','004-authenticated-packs.sql','009-dust-crafting.sql','010-username-accounts.sql','011-account-policies.sql'])await db.exec(await readFile(new URL(file,import.meta.url),'utf8'));
+ for(const file of ['001-foundation-candidate.sql','002-reward-settlement-candidate.sql','003-pack-opening-candidate.sql','004-authenticated-packs.sql','009-dust-crafting.sql','010-username-accounts.sql','011-account-policies.sql','013-host-match-progression.sql'])await db.exec(await readFile(new URL(file,import.meta.url),'utf8'));
  await db.exec('set role authenticated');await deny(()=>register(id(1),'Fresh'),/permission denied/);
  await db.exec('reset role;set role service_role');await deny(()=>register(id(3),'Guest'),/Provider username/);await deny(()=>register(id(4),'Untrusted'),/Provider username/);await deny(()=>register(id(1),'Legacy'),/Username taken/);
  const a=await register(id(1),'Fresh');same(await register(id(1),'Other'),a);
@@ -53,6 +53,19 @@ try{
  await db.exec(`set request.jwt.claim.sub='${id(2)}'`);same((await profile()).id,b);same((await db.query('select * from public.decks')).rows.length,0);
  await db.exec(`set request.jwt.claim.sub='${id(3)}'`);same(await profile(),null);
  await db.exec('reset role;set role anon');await deny(()=>profile(),/permission denied/);
+ // Retain existing browser-run outcomes; validate accounting, not anti-cheat.
+ await db.exec(`reset role;set role authenticated;set request.jwt.claim.sub='${id(1)}'`);
+ const record=async(game,mode,won)=>(await db.query('select public.tcg_record_host_result($1,$2,$3,$4) r',[id(game),mode,won,{opponent:'Rival',deckCards:['Fox','Fox','Frog']}])).rows[0].r;
+ let r=await record(101,'online',true);same(r.economy.packs,1);same(r.profile.stats.gamesPlayed,1);same(r.profile.stats.gamesWon,1);same(r.profile.stats.favoriteCard,'Fox');
+ r=await record(101,'online',true);same(r.economy.packs,1);same(r.profile.matches.length,1);
+ await deny(()=>record(101,'online',false),/identity reused/);
+ r=await record(102,'ai',false);same(r.economy.packs,1);same(r.profile.stats.gamesPlayed,2);same(r.profile.stats.gamesWon,1);
+ r=await record(103,'ai',true);same(r.economy.packs,2);
+ await deny(()=>record(104,'local',true),/Invalid match/);
+ await db.exec(`set request.jwt.claim.sub='${id(2)}'`);
+ r=await record(101,'online',false);same(r.economy.packs,1);same(r.economy.profile_id,b);same(r.profile.stats.gamesWon,0);
+ await db.exec(`set request.jwt.claim.sub='${id(3)}'`);await deny(()=>record(105,'online',true),/Account required/);
+ await db.exec('reset role;set role anon');await deny(()=>record(106,'online',true),/permission denied/);
  await db.exec('reset role');
  await db.exec(`insert into public.decks values(90,'${id(90)}');insert into public.lobbies values(90);insert into public.game_sessions values(90,90);insert into public.duel_invites values(90,'${id(90)}','${a}');insert into public.bug_reports values(90,'${id(90)}','Keep this report');`);
  await db.exec(await readFile(new URL('012-reset-legacy-accounts.sql',import.meta.url),'utf8'));

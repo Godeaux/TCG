@@ -7,8 +7,8 @@ const admin = createClient(url,serviceKey,options);
 Deno.serve(accountHandler({
   admin,
   passwordClient:()=>createClient(url,Deno.env.get('SUPABASE_ANON_KEY')!,options),
-  // Disabled until policy cutover and live acceptance. This is not a UI flag.
-  ready:false,
+  // Deploy this enabled entrypoint only after the coordinated policy/reset cutover.
+  ready:true,
   ipHash:async(request:Request)=>{
     const ip=request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
     const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(ip));

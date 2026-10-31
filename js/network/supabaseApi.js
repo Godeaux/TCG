@@ -1,9 +1,19 @@
+import { createMatchProgression } from './matchProgression.js';
 import { createUsernameAccount } from './usernameAccount.js';
 import { createDustEconomy } from './dustEconomy.js';
 import { supabase } from './supabaseClient.js';
 import { createServerEconomy } from './serverEconomy.js';
 import { getAllCards } from '../cards/index.js';
 
+let matchProgression;
+export const getMatchProgressionClient = () => {
+  if (!matchProgression)
+    matchProgression = createMatchProgression({
+      rpc: (name, args) => supabase.rpc(name, args),
+      storage: window.localStorage,
+    });
+  return matchProgression;
+};
 let dustEconomy;
 export const getDustEconomyClient = () => {
   if (!dustEconomy)

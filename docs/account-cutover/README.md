@@ -56,16 +56,15 @@ The old browser-checked plaintext PIN flow must not return.
 
 ## Remaining release scope
 
-The current published game is host-authoritative and writes match rewards from
-browser victory handling. Moving that unchanged signal into a server ledger would
-not make match outcomes trustworthy. A fully server-run GameController is separate,
-substantial work. The owner was asked whether to retain current host-run multiplayer
-for this account/dust release or include that rewrite; **answer pending**. Do not
-silently substitute browser snapshots as trusted match evidence or claim the
-entire game is hardened. Do not enable policies that remove current progression
-before a working, agreed replacement exists.
+The owner explicitly approved retaining host/browser-run multiplayer at 18:20 PDT,
+October 30 (Discord 1565898118829178905), deferring anti-cheat. No engine rewrite.
+Migration 013 accepts existing match outcomes into a separate, retry-deduplicated
+accounting ledger. It is NOT server verification of gameplay. Online participants
+receive one pack, AI wins one, AI losses none, matching existing reward rules.
+Pending writes persist locally and recover on collection load. Match IDs survive
+JSON reconnect snapshots and reset on a new game/rematch.
 
-Still needed: chosen progression integration, final CI/two-client acceptance,
+Still needed: progression tests, final CI/two-client acceptance,
 freeze/refreshed backup, 011+012 cutover, enable account entrypoint, main publication,
 and exact-version live verification. The registration endpoint being deployed is
 not the same as this rollout being complete.

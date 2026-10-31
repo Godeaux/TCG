@@ -308,6 +308,7 @@ function collection() {
     ],
     filters.sort
   )}</select></div>
+  ${!readOnly && state.menu.rewardError ? `<div role="status">${esc(state.menu.rewardError)} ${btn('retry-collection', 'Retry reward')}</div>` : ''}
   ${unloaded ? empty(state.menu.collectionError || 'Loading your collection…') + (state.menu.collectionError ? btn('retry-collection', 'Retry') : '') : ''}<div class="pe-grid pe-density-grid" tabindex="0" role="region" aria-label="Cards — scroll horizontally">${!unloaded && slice.length ? slice.map((c) => tile(c, owned.get(c.id), c.id === selectedId, true)).join('') : !unloaded ? empty('No cards match. Try All cards or reset the filters.') + btn('reset-filters', 'Reset filters', 'pe-quiet') : ''}</div>
   <div class="pe-pagination"><span data-rows>${density.rows()} rows</span><div>${btn('smaller-cards', '−', 'pe-icon', 'aria-label="Smaller cards"')}${btn('larger-cards', '+', 'pe-icon', 'aria-label="Larger cards"')}<span class="pe-scroll-hint">Swipe to browse →</span></div></div></section></div>${footer(readOnly ? 'Read-only collection' : !signed ? 'Log in to save a collection.' : '')}
   ${inspected && selected ? `<section class="pe-mobile-inspection"><div class="pe-inspection-top">${btn('close-inspect', '← Collection', 'pe-quiet')}<span>${esc(RARITY_LABELS[owned.get(selected.id)] || 'Not collected')}</span></div>${inspector(selected, owned.get(selected.id))}<div class="pe-inspect-nav">${btn('prev-card', '← Previous', 'pe-quiet')}${btn('next-card', 'Next →', 'pe-quiet')}</div></section>` : ''}`;

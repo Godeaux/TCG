@@ -188,6 +188,7 @@ export const createGameState = () => {
     activePlayerIndex: 0,
     phase: 'Setup',
     turn: 1,
+    matchRunId: null, // Stable accounting identity, persisted with network snapshots.
     randomSeed: null, // Shared seed for deterministic PRNG - set by host, synced to opponent
     firstPlayerIndex: null,
     skipFirstDraw: true,
@@ -414,6 +415,8 @@ export const chooseFirstPlayer = (state, chosenIndex) => {
   state.passPending = false;
   state.setup.stage = 'complete';
   state.advantageHistory = []; // Reset advantage graph for new game
+
+  if (!state.matchRunId) state.matchRunId = crypto.randomUUID();
 
   // Initialize PRNG seed if not already set (host generates, opponent receives via sync)
   if (!state.randomSeed) {

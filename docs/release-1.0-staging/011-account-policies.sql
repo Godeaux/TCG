@@ -1,5 +1,5 @@
 -- Coordinated cutover: disables stale PIN clients and browser-authored economy.
--- Requires 010, matching frontend and trusted reward transport before release.
+-- Requires 010, matching frontend and agreed host-result accounting transport before release.
 begin;
 create function public.tcg_owns_profile(p_profile uuid) returns boolean
 language sql stable security definer set search_path='' as $$

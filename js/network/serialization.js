@@ -304,6 +304,7 @@ export const buildLobbySyncPayload = (state) => ({
     activePlayerIndex: state.activePlayerIndex,
     phase: state.phase,
     turn: state.turn,
+    matchRunId: state.matchRunId ?? null,
     randomSeed: state.randomSeed ?? getGameSeed(), // Sync PRNG seed for deterministic random
     randomState: getGameRandomState(),
     cardPlayedThisTurn: state.cardPlayedThisTurn,
@@ -431,6 +432,7 @@ export const applyLobbySyncPayload = (state, payload, options = {}) => {
     skipDeckComplete || forceApply || hasRuntimeState || gameHasStarted;
 
   if (payload.game) {
+    state.matchRunId = payload.game.matchRunId ?? null;
     if (payload.game.activePlayerIndex !== undefined && payload.game.activePlayerIndex !== null) {
       state.activePlayerIndex = payload.game.activePlayerIndex;
     }

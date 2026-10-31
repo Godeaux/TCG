@@ -324,7 +324,7 @@ export const ensurePlayerCardsLoaded = async (state) => {
   if (!state.menu?.profile) {
     return;
   }
-  if (cardsLoading || cardsLoaded) {
+  if (cardsLoading || (cardsLoaded && !state.menu.rewardError)) {
     return;
   }
   cardsLoading = true;
@@ -333,6 +333,12 @@ export const ensurePlayerCardsLoaded = async (state) => {
   try {
     const api = await loadSupabaseApi(state);
     const profile = state.menu.profile;
+    const recovered = await api.getMatchProgressionClient().recover(profile.id);
+    if (recovered && state.menu.profile === profile) {
+      profile.stats = recovered.profile.stats;
+      profile.matches = recovered.profile.matches;
+      state.menu.rewardError = null;
+    }
     const economy = await api.getServerEconomyClient().read();
     if (state.menu.profile !== profile) return;
     if (economy) {
@@ -424,6 +430,32 @@ export const savePlayerCardsToDatabase = async (state, cards) => {
   });
 
   return savedCards;
+};
+
+export const recordMatchResult = async (state, match) => {
+  const profile = state.menu?.profile;
+  if (!profile?.id || !state.matchRunId) return;
+  const gameId = state.matchRunId;
+  try {
+    const api = await loadSupabaseApi(state);
+    const result = await api.getMatchProgressionClient().record(profile.id, {
+      gameId,
+      mode: match.mode,
+      won: match.won,
+      match,
+    });
+    if (state.menu.profile !== profile) return;
+    applyServerEconomy(profile, result.economy);
+    profile.stats = result.profile.stats;
+    profile.matches = result.profile.matches;
+    state.menu.rewardError = null;
+  } catch (error) {
+    if (state.menu.profile !== profile) return;
+    cardsLoaded = false;
+    state.menu.rewardError = 'Match reward pending. Retry from your collection.';
+    console.error('Match result pending:', error.message);
+  }
+  callbacks.onUpdate?.();
 };
 
 /**
